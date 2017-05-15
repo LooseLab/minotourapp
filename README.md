@@ -1,0 +1,2 @@
+# minotourws
+minoTour webservice module
