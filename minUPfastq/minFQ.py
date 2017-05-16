@@ -15,6 +15,15 @@ from Bio import SeqIO
 import numpy as np
 import datetime
 import dateutil.parser
+import requests
+
+
+"""
+Notes for requests
+header = {'Authorization':'Token e45c142b457121278f9b67d713285a7e10382b36', 'Content-Type':'application/json'}
+r=requests.post('http://localhost:8000/api/v1/runs/', headers=header, json={"run_name": "20170612_1630_matt", "run_id": "hj78yy9o-217e-4335-9451-66a7288a9dd5", "barcode": "barcode10"})
+r.text #returns result
+"""
 
 
 def parsefastq(fastq, rundict):
