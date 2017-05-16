@@ -18,26 +18,35 @@ from django.conf.urls import url
 from django.contrib import admin
 
 from rest_framework import routers, serializers, viewsets
-from reads.models import FastqRead, RunStatistic
+from reads.models import FastqRead, RunStatistic, FastqReadType
 from reads.models import MinionRun
 
 
 class MinionRunSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = MinionRun
-        fields = ('run_name', 'run_id', 'barcode')
+        fields = ('id', 'run_name', 'run_id', 'barcode', 'is_barcoded')
+        read_only = ('id',)
 
 
 class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = FastqRead
-        fields = ('run_id', 'read_id', 'read', 'channel', 'barcode', 'sequence', 'quality', 'is_pass', 'start_time')
+        fields = ('id', 'run_id', 'read_id', 'read', 'channel', 'barcode', 'sequence', 'quality', 'is_pass', 'start_time', 'type')
+        read_only = ('id',)
 
 
 class RunStatisticSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = RunStatistic
-        fields = ('run_id', 'sample_time', 'total_length', 'max_length', 'min_length', 'average_length', 'number_of_reads', 'number_of_channels') #, 'type')
+        fields = ('run_id', 'sample_time', 'total_length', 'max_length', 'min_length', 'average_length', 'number_of_reads', 'number_of_channels', 'type')
+
+
+class FastqReadTypeSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = FastqReadType
+        fields = ('id', 'name',)
+        read_only = ('id',)
 
 
 class RunStatisticViewSet(viewsets.ModelViewSet):
@@ -55,9 +64,15 @@ class FastqReadViewSet(viewsets.ModelViewSet):
     serializer_class = FastqReadSerializer
 
 
+class FastqReadTypeViewSet(viewsets.ModelViewSet):
+    queryset = FastqReadType.objects.all()
+    serializer_class = FastqReadTypeSerializer
+
+
 router = routers.DefaultRouter()
 router.register(r'runs', MinionRunViewSet)
 router.register(r'reads', FastqReadViewSet)
+router.register(r'readtypes', FastqReadTypeViewSet)
 router.register(r'statistics', RunStatisticViewSet)
 
 
