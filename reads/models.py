@@ -9,6 +9,7 @@ class MinionRun(models.Model):
     run_name = models.CharField(max_length=64)
     run_id = models.CharField(max_length=64)
     barcode = models.CharField(max_length=32)
+    is_barcoded = models.BooleanField(default=False)
 
     def __str__(self):
         return self.run_name
