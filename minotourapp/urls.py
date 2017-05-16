@@ -31,7 +31,7 @@ class MinionRunSerializer(serializers.HyperlinkedModelSerializer):
 class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = FastqRead
-        fields = ('run_id', 'read_id', 'read', 'channel', 'barcode', 'sequence', 'quality', 'status', 'start_time')
+        fields = ('run_id', 'read_id', 'read', 'channel', 'barcode', 'sequence', 'quality', 'is_pass', 'start_time')
 
 
 class RunStatisticSerializer(serializers.HyperlinkedModelSerializer):
