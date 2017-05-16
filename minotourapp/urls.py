@@ -18,7 +18,7 @@ from django.conf.urls import url
 from django.contrib import admin
 
 from rest_framework import routers, serializers, viewsets
-from reads.models import FastqRead
+from reads.models import FastqRead, RunStatistic
 from reads.models import MinionRun
 
 
@@ -34,6 +34,17 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('run_id', 'read_id', 'read', 'channel', 'barcode', 'sequence', 'quality', 'status', 'start_time')
 
 
+class RunStatisticSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = RunStatistic
+        fields = ('run_id', 'sample_time', 'total_length', 'max_length', 'min_length', 'average_length', 'number_of_reads', 'number_of_channels') #, 'type')
+
+
+class RunStatisticViewSet(viewsets.ModelViewSet):
+    queryset = RunStatistic.objects.all()
+    serializer_class = RunStatisticSerializer
+
+
 class MinionRunViewSet(viewsets.ModelViewSet):
     queryset = MinionRun.objects.all()
     serializer_class = MinionRunSerializer
@@ -47,6 +58,7 @@ class FastqReadViewSet(viewsets.ModelViewSet):
 router = routers.DefaultRouter()
 router.register(r'runs', MinionRunViewSet)
 router.register(r'reads', FastqReadViewSet)
+router.register(r'statistics', RunStatisticViewSet)
 
 
 urlpatterns = [
