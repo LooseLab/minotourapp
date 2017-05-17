@@ -1,10 +1,10 @@
-from rest_framework.views import APIView
-
 from reads.models import MinionRun
 
+from rest_framework import serializers
 
-#class MinionRunViewSet(APIView):
-#    def get(self, request):
-#        user = request.user
-#
-#        minionruns = MinionRun.objects.filter(user=user)
+
+class MinionRunSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = MinionRun
+        fields = ('id', 'run_name', 'run_id', 'barcode', 'is_barcoded')
+        read_only = ('id',)

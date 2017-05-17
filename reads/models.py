@@ -10,6 +10,7 @@ class MinionRun(models.Model):
     run_id = models.CharField(max_length=64)
     barcode = models.CharField(max_length=32)
     is_barcoded = models.BooleanField(default=False)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='runs')
 
     def __str__(self):
         return self.run_name
