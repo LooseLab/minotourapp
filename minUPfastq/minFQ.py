@@ -16,6 +16,7 @@ import numpy as np
 import datetime
 import dateutil.parser
 import requests
+import json
 
 
 """
@@ -33,7 +34,8 @@ def parsefastq(fastq, rundict):
         descriptiondict = parsedescription(record.description)
         if descriptiondict["runid"] not in rundict:
             rundict[descriptiondict["runid"]] = Runcollection(args)
-        rundict[descriptiondict["runid"]].add_read(record, descriptiondict)
+            rundict[descriptiondict["runid"]].add_run(descriptiondict)
+        rundict[descriptiondict["runid"]].add_read(record, descriptiondict,fastq)
         # print(record.format("qual"))
         # print(len(record.seq))
 
@@ -57,8 +59,90 @@ class Runcollection():
         self.readlengths = list()
         self.timeid = dict()
         self.chandict = list()
+        self.runidlink = ""
+        self.readtypes=dict()
+        self.statsrecord=dict()
 
-    def add_read(self, record, descriptiondict):
+    def add_run(self, descriptiondict):
+        print("Seen a new run")
+        # Test to see if the run exists
+        r = requests.get('http://localhost:8000/api/v1/runs', headers=header)
+        print(r.text)
+        print (type(r.text))
+        runid = descriptiondict["runid"]
+        if runid not in r.text:
+            print ('Need to create this run.')
+            #We need to come up with a way of identifying the run name.
+            runname = self.args.run_name
+            if "barcode" in descriptiondict.keys():
+                is_barcoded = True
+                barcoded = "barcoded"
+            else:
+                is_barcoded = False
+                barcoded = "unclassified"
+            createrun = requests.post('http://localhost:8000/api/v1/runs/', headers=header, json={"run_name": runname, "run_id": runid, "barcode": barcoded, "is_barcoded":is_barcoded})
+            print (createrun.text)
+            if createrun.status_code != 201:
+                print (createrun.status_code)
+                print (createrun.text)
+                print ("Houston - we have a problem!")
+            else:
+                print (json.loads(createrun.text)["id"])
+                self.runidlink = json.loads(createrun.text)["id"]
+        else:
+            print ('Run Exists.')
+            for run in json.loads(r.text)["results"]:
+                print (run)
+                if run["run_id"] == runid:
+                    self.runidlink = run["id"]
+        #data = json.dumps(r.text)
+        #print (data)
+        readtypes=requests.get('http://localhost:8000/api/v1/readtypes', headers=header)
+        print (readtypes.text)
+        for readtype in json.loads(readtypes.text)["results"]:
+            print ("READTYPE",readtype)
+            print (readtype["id"])
+            self.readtypes[readtype["name"]]=readtype["id"]
+        #os.kill(os.getpid(), signal.SIGINT)
+
+    def add_read_db(self,runid,readid,read,channel,barcode,sequence,quality,ispass,type,starttime):
+        #print(runid,readid,read,channel,barcode,sequence,quality,ispass,type,starttime)
+        runlink = 'http://localhost:8000/api/v1/runs/' + str(self.runidlink) + "/"
+        typelink = 'http://localhost:8000/api/v1/readtypes/' + str(type) + "/"
+        payload = {'run_id': runlink,'read_id':readid,'read':read,"channel":channel,'barcode':barcode,'sequence':sequence,'quality':quality,'is_pass':ispass,'start_time':starttime,'type':typelink}
+        #print(payload)
+        createread=requests.post('http://localhost:8000/api/v1/reads/',headers=header,json=payload)
+        #print (createread.text)
+
+    def add_or_update_stats(self,sample_time,total_length,max_length,min_length,average_length,number_of_reads,number_of_channels,type):
+        runlink = 'http://localhost:8000/api/v1/runs/' + str(self.runidlink) + "/"
+        typelink = 'http://localhost:8000/api/v1/readtypes/' + str(type) + "/"
+        payload = {'run_id': runlink, 'sample_time':sample_time,'total_length':total_length,'max_length':max_length,'min_length':min_length,'average_length':average_length,'number_of_reads':number_of_reads,'number_of_channels':number_of_channels,'type':typelink}
+        if sample_time not in self.statsrecord.keys():
+            createstats=requests.post('http://localhost:8000/api/v1/statistics/', headers=header, json=payload)
+            print (json.loads(createstats.text)["id"])
+            self.statsrecord[sample_time]=dict()
+            self.statsrecord[sample_time]["id"]=json.loads(createstats.text)["id"]
+            self.statsrecord[sample_time]['payload']=payload
+        else:
+            print ("Seen these stats before!")
+            if self.statsrecord[sample_time]['payload'] != payload:
+                print ("Record changed - needs updating")
+                print(payload)
+                # payload['id']=self.statsrecord[sample_time]['id']
+                # print (payload)
+                deletestats = requests.delete(
+                    'http://localhost:8000/api/v1/statistics/' + str(self.statsrecord[sample_time]['id']) + '/',
+                    headers=header)
+                createstats = requests.post('http://localhost:8000/api/v1/statistics/', headers=header, json=payload)
+                self.statsrecord[sample_time]["id"] = json.loads(createstats.text)["id"]
+                self.statsrecord[sample_time]['payload'] = payload
+                print(createstats.text)
+            else:
+                print ("Record not changed.")
+
+
+    def add_read(self, record, descriptiondict,fastq):
         if record.id not in self.readid:
             self.readid[record.id] = dict()
             for item in descriptiondict:
@@ -85,7 +169,11 @@ class Runcollection():
 
             if self.readid[record.id]["ch"] not in self.timeid[tm]["chandict"]:
                 self.timeid[tm]["chandict"].append(self.readid[record.id]["ch"])
-
+            if "barcode" in self.readid[record.id].keys():
+                barcode = self.readid[record.id]["barcode"]
+            else:
+                barcode = "No Barode"
+            self.add_read_db(self.runidlink,record.id,self.readid[record.id]["read"],self.readid[record.id]["ch"],barcode,str(record.seq),record.format('fastq').split('\n')[3],True,self.readtypes["Template"],self.readid[record.id]["start_time"])
             self.readid[record.id]["len"] = len(record.seq)
             self.cumulength += len(record.seq)
             self.timeid[tm]["cumulength"] += len(record.seq)
@@ -108,9 +196,12 @@ class Runcollection():
 
     def parse1minwin(self):
         for time in sorted(self.timeid):
-            print(time, self.timeid[time]["cumulength"], np.max(self.timeid[time]["readlengths"]),
-                  np.min(self.timeid[time]["readlengths"]), np.average(self.timeid[time]["readlengths"]),
-                  self.timeid[time]["count"], len(self.timeid[time]["chandict"]))
+            self.add_or_update_stats(str(time),self.timeid[time]["cumulength"], np.max(self.timeid[time]["readlengths"]),
+                  np.min(self.timeid[time]["readlengths"]), np.around(np.average(self.timeid[time]["readlengths"]), decimals=2),
+                  self.timeid[time]["count"], len(self.timeid[time]["chandict"]),self.readtypes["Template"])
+            #print(time, self.timeid[time]["cumulength"], np.max(self.timeid[time]["readlengths"]),
+            #      np.min(self.timeid[time]["readlengths"]), np.average(self.timeid[time]["readlengths"]),
+            #      self.timeid[time]["count"], len(self.timeid[time]["chandict"]))
 
 
 def file_dict_of_folder_simple(path):
@@ -253,6 +344,7 @@ class MyHandler(FileSystemEventHandler):
         #     del self.processed[getfilename(event.src_path)]
 
 
+# noinspection PyGlobalUndefined
 if __name__ == '__main__':
 
     global OPER
@@ -286,7 +378,21 @@ if __name__ == '__main__':
         dest='watchdir'
     )
 
+    parser.add(
+        '-n',
+        '--name',
+        type=str,
+        required=True,
+        default=None,
+        help='The run name you wish to provide.',
+        dest='run_name',
+    )
+
     args = parser.parse_args()
+
+    #GLobal creation of header (needs fixing)
+    global header
+    header = {'Authorization': 'Token e45c142b457121278f9b67d713285a7e10382b36', 'Content-Type': 'application/json'}
 
     print(args.watchdir)
 
