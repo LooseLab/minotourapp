@@ -8,7 +8,6 @@ from rest_framework.authtoken.models import Token
 class MinionRun(models.Model):
     run_name = models.CharField(max_length=64)
     run_id = models.CharField(max_length=64)
-    barcode = models.CharField(max_length=32)
     is_barcoded = models.BooleanField(default=False)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='runs')
 
