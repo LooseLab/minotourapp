@@ -23,7 +23,6 @@ from rest_framework import viewsets
 from reads.models import FastqRead
 from reads.models import RunStatistic
 from reads.models import FastqReadType
-from reads import views
 
 
 class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
@@ -71,7 +70,7 @@ router.register(r'statistics', RunStatisticViewSet)
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^api/v1/', include(router.urls)),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
-    url(r'^api/v1/runs/$', views.RunsList.as_view(), name="runs"),
+    url(r'^api/v1/', include(router.urls)),
+    url(r'^', include('reads.urls')),
 ]
