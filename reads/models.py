@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db import models
 from django.conf import settings
 from django.db.models.signals import post_save
@@ -23,7 +25,9 @@ class FastqReadType(models.Model):
 
 
 class FastqRead(models.Model):
-    run_id = models.ForeignKey(MinionRun)
+    run_id = models.ForeignKey(MinionRun,
+                               on_delete=models.CASCADE,
+                               related_name='reads')
     read_id = models.CharField(max_length=64)
     read = models.IntegerField()
     channel = models.IntegerField()
@@ -38,22 +42,132 @@ class FastqRead(models.Model):
         return self.read_id
 
 
+class RunSummary(models.Model):
+    run_id = models.ForeignKey(MinionRun,on_delete=models.CASCADE)
+    total_length = models.IntegerField(default=0)
+    read_count = models.IntegerField(default=0)
+    type = models.ForeignKey(FastqReadType)
+    max_length = models.IntegerField(default=0)
+    min_length = models.IntegerField(default=0)
+    pass_length = models.IntegerField(default=0)
+    pass_max_length = models.IntegerField(default=0)
+    pass_min_length = models.IntegerField(default=0)
+    pass_count = models.IntegerField(default=0)
+
+    def __str__(self):
+        return "{} {} {} {}".format(self.run_id, self.total_length, self.read_count, self.type)
+
+
+class RunSummaryBarCode(models.Model):
+    run_id = models.ForeignKey(MinionRun,on_delete=models.CASCADE)
+    total_length = models.IntegerField(default=0)
+    read_count = models.IntegerField(default=0)
+    type = models.ForeignKey(FastqReadType)
+    barcode = models.CharField(max_length=32)
+    pass_length = models.IntegerField(default=0)
+    pass_max_length = models.IntegerField(default=0)
+    pass_min_length = models.IntegerField(default=0)
+    pass_count = models.IntegerField(default=0)
+    max_length = models.IntegerField(default=0)
+    min_length = models.IntegerField(default=0)
+
+    def __str__(self):
+        return "{} {} {} {} {}".format(self.run_id, self.total_length, self.read_count, self.type, self.barcode)
+
+
 class RunStatistic(models.Model):
-    run_id = models.ForeignKey(MinionRun)
+    run_id = models.ForeignKey(MinionRun, on_delete=models.CASCADE)
     sample_time = models.DateTimeField()
     total_length = models.IntegerField()
     max_length = models.IntegerField()
     min_length = models.IntegerField()
-    average_length = models.DecimalField(max_digits=11, decimal_places=2)
-    number_of_reads = models.IntegerField()
-    number_of_channels = models.IntegerField()
+    #average_length = models.DecimalField(max_digits=11, decimal_places=2)
+    read_count = models.IntegerField(default=0)
+    pass_length = models.IntegerField(default=0)
+    pass_max_length = models.IntegerField(default=0)
+    pass_min_length = models.IntegerField(default=0)
+    pass_count = models.IntegerField(default=0)
+    #number_of_channels = models.IntegerField() #Need to work out how to implement this!
     type = models.ForeignKey(FastqReadType)
 
     def __str__(self):
-        return "{} {} {}".format(self.run_id,self.sample_time,self.type)
+        return "{} {} {}".format(self.run_id, self.sample_time, self.type)
+
+
+class RunStatisticBarcode(models.Model):
+    run_id = models.ForeignKey(MinionRun,on_delete=models.CASCADE)
+    sample_time = models.DateTimeField()
+    total_length = models.IntegerField(default=0)
+    read_count = models.IntegerField(default=0)
+    max_length = models.IntegerField(default=0)
+    min_length = models.IntegerField(default=0)
+    #average_length = models.DecimalField(default=0,max_digits=11, decimal_places=2)
+    pass_length = models.IntegerField(default=0)
+    pass_max_length = models.IntegerField(default=0)
+    pass_min_length = models.IntegerField(default=0)
+    pass_count = models.IntegerField(default=0)
+    #number_of_channels = models.IntegerField() #Need to work out how to implement this!
+    type = models.ForeignKey(FastqReadType)
+    barcode = models.CharField(max_length=32)
+
+    def __str__(self):
+        return "{} {} {} {}".format(self.run_id, self.sample_time, self.type, self.barcode)
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
+
+
+@receiver(post_save, sender=FastqRead)
+def update_global_state(instance, sender, **kwargs):
+    ipn_obj = instance
+    #Here we work out the start time
+    tm = ipn_obj.start_time
+    # print tm
+    tm = tm - datetime.timedelta(minutes=(tm.minute % 1) - 1,
+                                 seconds=tm.second,
+                                 microseconds=tm.microsecond)
+    #print (type(tm))
+    obj1, created = RunSummary.objects.update_or_create(
+        run_id=ipn_obj.run_id, type=ipn_obj.type #, defaults={'total_length': 0, 'read_count': 0}
+    )
+    update_sum_stats(obj1, ipn_obj)
+
+    obj2,created2 = RunSummaryBarCode.objects.update_or_create(
+        run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=ipn_obj.barcode  # , defaults={'total_length': 0, 'read_count': 0}
+    )
+    update_sum_stats(obj2, ipn_obj)
+
+    obj3, created3 = RunStatistic.objects.update_or_create(
+        run_id=ipn_obj.run_id, type=ipn_obj.type, sample_time=tm
+    )
+    update_sum_stats(obj3, ipn_obj)
+
+    obj4, created4 = RunStatisticBarcode.objects.update_or_create(
+        run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=ipn_obj.barcode, sample_time=tm
+        # , defaults={'total_length': 0, 'read_count': 0}
+    )
+    update_sum_stats(obj4, ipn_obj)
+
+
+def update_sum_stats(obj,ipn_obj):
+    if ipn_obj.is_pass:
+        obj.pass_length += len(ipn_obj.sequence)
+        if len(ipn_obj.sequence) > obj.pass_max_length:
+            obj.pass_max_length = len(ipn_obj.sequence)
+        if obj.pass_min_length == 0:
+            obj.pass_min_length = len(ipn_obj.sequence)
+        if len(ipn_obj.sequence) < obj.pass_min_length:
+            obj.pass_min_length = len(ipn_obj.sequence)
+        obj.pass_count += 1
+    obj.total_length += len(ipn_obj.sequence)
+    if len(ipn_obj.sequence) > obj.max_length:
+        obj.max_length = len(ipn_obj.sequence)
+    if obj.min_length == 0:
+        obj.min_length = len(ipn_obj.sequence)
+    if len(ipn_obj.sequence) < obj.min_length:
+        obj.min_length = len(ipn_obj.sequence)
+    obj.read_count += 1
+    obj.save()
