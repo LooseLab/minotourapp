@@ -1,11 +1,14 @@
+from django.core import serializers
 from rest_framework import generics, status
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+import json
 
 from reads.models import MinionRun, FastqRead, FastqReadType
 from reads.permissions import IsOwner
-from reads.serializers import MinionRunSerializer, FastqReadSerializer, FastqReadTypeSerializer
+from reads.serializers import MinionRunSerializer, FastqReadSerializer, FastqReadTypeSerializer, FastqReadNameSerializer
+
 
 
 @api_view(['GET'])
@@ -15,7 +18,7 @@ def read_type_list(request):
     """
     if request.method == 'GET':
         queryset = FastqReadType.objects.all()
-        serializer = FastqReadType(queryset, many=True, context={'request': request})
+        serializer = FastqReadTypeSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -126,6 +129,20 @@ def read_detail(request, pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+@api_view(['GET'])
+def readname_list(request, pk):
+    if request.method == 'GET':
+        queryset = FastqRead.objects.filter(run_id=pk)
+        result=set()
+        for key in queryset:
+            result.add(key.read_id)
+        data = serializers.serialize('json', result)
+        return Response(data)
+        #serializer = FastqReadNameSerializer(queryset, many=True, context={'request': request})
+        #return Response(serializer.data)
+
+
+
 """
 class RunListView(generics.ListCreateAPIView):
     queryset = MinionRun.objects.all()
@@ -163,3 +180,5 @@ class ReadDetailView(generics.RetrieveUpdateDestroyAPIView):
     # permission_classes = (IsOwner,)
 
 """
+
+

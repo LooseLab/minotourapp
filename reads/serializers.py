@@ -26,3 +26,9 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
         model = FastqRead
         fields = ('url', 'read_id', 'read', 'channel', 'barcode', 'sequence', 'quality', 'is_pass',
                   'start_time', 'run_id', 'type')
+
+
+class FastqReadNameSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = FastqRead
+        fields = ('read_id',)

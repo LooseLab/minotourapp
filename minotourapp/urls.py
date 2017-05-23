@@ -26,8 +26,8 @@ from reads.models import RunStatistic
 class RunStatisticSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = RunStatistic
-        fields = ('run_id', 'sample_time', 'total_length', 'max_length', 'min_length', 'average_length',
-                  'number_of_reads', 'number_of_channels', 'type')
+        fields = ('run_id', 'sample_time', 'total_length', 'max_length', 'min_length',
+                  'read_count', 'type')
 
 
 class RunStatisticViewSet(viewsets.ModelViewSet):
@@ -36,7 +36,7 @@ class RunStatisticViewSet(viewsets.ModelViewSet):
 
 
 router = routers.DefaultRouter()
-router.register(r'statistics/$', RunStatisticViewSet)
+router.register(r'statistics', RunStatisticViewSet)
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),

@@ -78,9 +78,9 @@ class RunSummaryBarCode(models.Model):
 class RunStatistic(models.Model):
     run_id = models.ForeignKey(MinionRun, on_delete=models.CASCADE)
     sample_time = models.DateTimeField()
-    total_length = models.IntegerField()
-    max_length = models.IntegerField()
-    min_length = models.IntegerField()
+    total_length = models.IntegerField(default=0)
+    max_length = models.IntegerField(default=0)
+    min_length = models.IntegerField(default=0)
     #average_length = models.DecimalField(max_digits=11, decimal_places=2)
     read_count = models.IntegerField(default=0)
     pass_length = models.IntegerField(default=0)
@@ -120,7 +120,7 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
         Token.objects.create(user=instance)
 
 
-"""
+
 @receiver(post_save, sender=FastqRead)
 def update_global_state(instance, sender, **kwargs):
     ipn_obj = instance
@@ -173,4 +173,3 @@ def update_sum_stats(obj,ipn_obj):
         obj.min_length = len(ipn_obj.sequence)
     obj.read_count += 1
     obj.save()
-"""
