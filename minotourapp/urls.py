@@ -16,14 +16,11 @@ Including another URLconf
 from django.conf.urls import include
 from django.conf.urls import url
 from django.contrib import admin
-
 from rest_framework import routers
 from rest_framework import serializers
 from rest_framework import viewsets
+
 from reads.models import RunStatistic
-
-
-
 
 
 class RunStatisticSerializer(serializers.HyperlinkedModelSerializer):
@@ -33,17 +30,13 @@ class RunStatisticSerializer(serializers.HyperlinkedModelSerializer):
                   'number_of_reads', 'number_of_channels', 'type')
 
 
-
-
 class RunStatisticViewSet(viewsets.ModelViewSet):
     queryset = RunStatistic.objects.all()
     serializer_class = RunStatisticSerializer
 
 
-
 router = routers.DefaultRouter()
-router.register(r'statistics', RunStatisticViewSet)
-
+router.register(r'statistics/$', RunStatisticViewSet)
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),

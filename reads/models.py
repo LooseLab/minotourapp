@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 
 from django.db import models
 from django.conf import settings
@@ -120,16 +120,18 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
         Token.objects.create(user=instance)
 
 
+"""
 @receiver(post_save, sender=FastqRead)
 def update_global_state(instance, sender, **kwargs):
     ipn_obj = instance
     #Here we work out the start time
     tm = ipn_obj.start_time
-    # print tm
+
     tm = tm - datetime.timedelta(minutes=(tm.minute % 1) - 1,
                                  seconds=tm.second,
                                  microseconds=tm.microsecond)
     #print (type(tm))
+
     obj1, created = RunSummary.objects.update_or_create(
         run_id=ipn_obj.run_id, type=ipn_obj.type #, defaults={'total_length': 0, 'read_count': 0}
     )
@@ -171,3 +173,4 @@ def update_sum_stats(obj,ipn_obj):
         obj.min_length = len(ipn_obj.sequence)
     obj.read_count += 1
     obj.save()
+"""
