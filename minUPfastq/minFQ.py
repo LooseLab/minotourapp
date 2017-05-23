@@ -54,6 +54,7 @@ class Runcollection():
     def __init__(self, args):
         self.args = args
         self.readid = dict()
+        self.readnames=list()
         self.cumulength = 0
         self.readcount = 0
         self.readlengths = list()
@@ -95,6 +96,23 @@ class Runcollection():
                 print (run)
                 if run["run_id"] == runid:
                     self.runidlink = run["url"]
+            #Now fetch a list of reads that already exist at that location
+            checkreads = requests.get(self.runidlink + 'readnames', headers=header)
+            #print (json.loads(checkreads.text))
+            teststring = str(checkreads.text)
+            listything = json.loads(teststring)
+            print (type(listything))
+            camel = "testingstrings"
+            print (type(camel))
+            #strtoconvert = "'"+str(checkreads.text)+"'"
+            #listything = json.load(strtoconvert)
+            #print (type(listything))
+            for item in listything:
+                print (item)
+            #for readid in json.loads(checkreads.text):
+            #    print (readid)
+            #    self.readnames.append(readid)
+            sys.exit()
         #data = json.dumps(r.text)
         #print (data)
         readtypes=requests.get(args.full_host+'api/v1/readtypes', headers=header)
