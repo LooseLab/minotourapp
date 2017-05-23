@@ -22,7 +22,7 @@ import json
 """
 Notes for requests
 header = {'Authorization':'Token e45c142b457121278f9b67d713285a7e10382b36', 'Content-Type':'application/json'}
-r=requests.post('http://localhost:8000/api/v1/runs/', headers=header, json={"run_name": "20170612_1630_matt", "run_id": "hj78yy9o-217e-4335-9451-66a7288a9dd5", "barcode": "barcode10"})
+r=requests.post(args.full_host+'api/v1/runs/', headers=header, json={"run_name": "20170612_1630_matt", "run_id": "hj78yy9o-217e-4335-9451-66a7288a9dd5", "barcode": "barcode10"})
 r.text #returns result
 """
 
@@ -66,7 +66,7 @@ class Runcollection():
     def add_run(self, descriptiondict):
         print("Seen a new run")
         # Test to see if the run exists
-        r = requests.get('http://localhost:8000/api/v1/runs', headers=header)
+        r = requests.get(args.full_host+'api/v1/runs', headers=header)
         print(r.text)
         print (type(r.text))
         runid = descriptiondict["runid"]
@@ -80,46 +80,50 @@ class Runcollection():
             else:
                 is_barcoded = False
                 barcoded = "unclassified"
-            createrun = requests.post('http://localhost:8000/api/v1/runs/', headers=header, json={"run_name": runname, "run_id": runid, "barcode": barcoded, "is_barcoded":is_barcoded})
+            createrun = requests.post(args.full_host+'api/v1/runs/', headers=header, json={"run_name": runname, "run_id": runid, "barcode": barcoded, "is_barcoded":is_barcoded})
             print (createrun.text)
             if createrun.status_code != 201:
                 print (createrun.status_code)
                 print (createrun.text)
                 print ("Houston - we have a problem!")
             else:
-                print (json.loads(createrun.text)["id"])
-                self.runidlink = json.loads(createrun.text)["id"]
+                print (json.loads(createrun.text)["url"])
+                self.runidlink = json.loads(createrun.text)["url"]
         else:
             print ('Run Exists.')
-            for run in json.loads(r.text)["results"]:
+            for run in json.loads(r.text):
                 print (run)
                 if run["run_id"] == runid:
-                    self.runidlink = run["id"]
+                    self.runidlink = run["url"]
         #data = json.dumps(r.text)
         #print (data)
-        readtypes=requests.get('http://localhost:8000/api/v1/readtypes', headers=header)
+        readtypes=requests.get(args.full_host+'api/v1/readtypes', headers=header)
         print (readtypes.text)
-        for readtype in json.loads(readtypes.text)["results"]:
+        for readtype in json.loads(readtypes.text):
             print ("READTYPE",readtype)
-            print (readtype["id"])
-            self.readtypes[readtype["name"]]=readtype["id"]
+            print (readtype["url"])
+            self.readtypes[readtype["name"]]=readtype["url"]
         #os.kill(os.getpid(), signal.SIGINT)
 
     def add_read_db(self,runid,readid,read,channel,barcode,sequence,quality,ispass,type,starttime):
         #print(runid,readid,read,channel,barcode,sequence,quality,ispass,type,starttime)
-        runlink = 'http://localhost:8000/api/v1/runs/' + str(self.runidlink) + "/"
-        typelink = 'http://localhost:8000/api/v1/readtypes/' + str(type) + "/"
+        #runlink = args.full_host+'api/v1/runs/' + str(self.runidlink) + "/"
+        runlink = self.runidlink
+        runlinkaddread = self.runidlink + "reads/"
+        #typelink = args.full_host+'api/v1/readtypes/' + str(type) + "/"
+        typelink = type
+        print (runlink,typelink)
         payload = {'run_id': runlink,'read_id':readid,'read':read,"channel":channel,'barcode':barcode,'sequence':sequence,'quality':quality,'is_pass':ispass,'start_time':starttime,'type':typelink}
         #print(payload)
-        createread=requests.post('http://localhost:8000/api/v1/reads/',headers=header,json=payload)
+        createread=requests.post(runlinkaddread,headers=header,json=payload)
         #print (createread.text)
 
     def add_or_update_stats(self,sample_time,total_length,max_length,min_length,average_length,number_of_reads,number_of_channels,type):
-        runlink = 'http://localhost:8000/api/v1/runs/' + str(self.runidlink) + "/"
-        typelink = 'http://localhost:8000/api/v1/readtypes/' + str(type) + "/"
+        runlink = args.full_host+'api/v1/runs/' + str(self.runidlink) + "/"
+        typelink = args.full_host+'api/v1/readtypes/' + str(type) + "/"
         payload = {'run_id': runlink, 'sample_time':sample_time,'total_length':total_length,'max_length':max_length,'min_length':min_length,'average_length':average_length,'number_of_reads':number_of_reads,'number_of_channels':number_of_channels,'type':typelink}
         if sample_time not in self.statsrecord.keys():
-            createstats=requests.post('http://localhost:8000/api/v1/statistics/', headers=header, json=payload)
+            createstats=requests.post(args.full_host+'api/v1/statistics/', headers=header, json=payload)
             print (json.loads(createstats.text)["id"])
             self.statsrecord[sample_time]=dict()
             self.statsrecord[sample_time]["id"]=json.loads(createstats.text)["id"]
@@ -132,9 +136,9 @@ class Runcollection():
                 # payload['id']=self.statsrecord[sample_time]['id']
                 # print (payload)
                 deletestats = requests.delete(
-                    'http://localhost:8000/api/v1/statistics/' + str(self.statsrecord[sample_time]['id']) + '/',
+                    args.full_host+'api/v1/statistics/' + str(self.statsrecord[sample_time]['id']) + '/',
                     headers=header)
-                createstats = requests.post('http://localhost:8000/api/v1/statistics/', headers=header, json=payload)
+                createstats = requests.post(args.full_host+'api/v1/statistics/', headers=header, json=payload)
                 self.statsrecord[sample_time]["id"] = json.loads(createstats.text)["id"]
                 self.statsrecord[sample_time]['payload'] = payload
                 print(createstats.text)
@@ -388,11 +392,43 @@ if __name__ == '__main__':
         dest='run_name',
     )
 
+    parser.add(
+        '-k',
+        '--key',
+        type=str,
+        required=True,
+        default=None,
+        help='The api key for uploading data.',
+        dest='api_key',
+    )
+
+    parser.add(
+        '-p',
+        '--port',
+        type=int,
+        #required=True,
+        default=8100,
+        help='The port number for the local server.',
+        dest='port_number',
+    )
+
+    parser.add(
+        '-hn',
+        '--hostname',
+        type=str,
+        #required=True,
+        default='127.0.0.1',
+        help='The run name you wish to provide.',
+        dest='host_name',
+    )
+
     args = parser.parse_args()
+    
+    args.full_host = "http://" + args.host_name + ":" + str(args.port_number) + "/"
 
     #GLobal creation of header (needs fixing)
     global header
-    header = {'Authorization': 'Token e45c142b457121278f9b67d713285a7e10382b36', 'Content-Type': 'application/json'}
+    header = {'Authorization': 'Token '+args.api_key, 'Content-Type': 'application/json'}
 
     print(args.watchdir)
 
