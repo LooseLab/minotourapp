@@ -1,0 +1,152 @@
+{% load static %}
+<!DOCTYPE html>
+<!--
+This is a starter template page. Use this page to start your new project from
+scratch. This page gets rid of all links and provides the needed markup only.
+-->
+<html>
+{% include 'minoTourTemplates/mT_header.html' %}
+<!--
+BODY TAG OPTIONS:
+=================
+Apply one or more of the following classes to get the
+desired effect
+|---------------------------------------------------------|
+| SKINS         | skin-blue                               |
+|               | skin-black                              |
+|               | skin-purple                             |
+|               | skin-yellow                             |
+|               | skin-red                                |
+|               | skin-green                              |
+|---------------------------------------------------------|
+|LAYOUT OPTIONS | fixed                                   |
+|               | layout-boxed                            |
+|               | layout-top-nav                          |
+|               | sidebar-collapse                        |
+|               | sidebar-mini                            |
+|---------------------------------------------------------|
+-->
+<body class="hold-transition skin-blue sidebar-mini layout-top-nav fixed">
+<div class="wrapper">
+
+  {%  include 'minoTourTemplates/mT_alt_main_header.html' %}
+
+
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
+
+    <!-- Main content -->
+    <section class="content">
+
+        <section class="content-header">
+<h4 class="text-center"><img style="max-width:100px;" src="{% static 'mT_images/minotaurlogo.png' %}" alt="minoTour_logo"><br>- <em>real time data analysis for minION data</em> -</h4>
+
+
+</section>
+
+        <section class="content">
+    <div class="row">
+    <div class="col-md-6 col-md-offset-3">
+    <div class="box">
+    <div class="box-header">
+      <h3 class="box-title">Login or Register</h3>
+    </div><!-- /.box-header -->
+    <div class="box-body">
+                <div class="login-panel panel panel-default">
+                    <div class="panel-heading">
+                        <h3 class="panel-title">Please Sign In</h3>
+                    </div>
+                    <div class="panel-body">
+                        <form role="form" method="post" action="index.php" name="loginform">
+                            <fieldset>
+                                <div class="form-group">
+                                    <input class="form-control" id="login_input_username" placeholder="User Name" name="user_name" type="text" autofocus>
+                                </div>
+                                <div class="form-group">
+                                    <input class="form-control" id="login_input_password" placeholder="Password" name="user_password" autocomplete="off" type="password" required />
+                                </div>
+                                <!-- Change this to a button or input when using this as a form -->
+                                <input type="submit"  class="btn btn-lg btn-success btn-block" name="login" value="Log in" />
+                            </fieldset>
+                        </form>
+                        <h5><a href="register_new.php">Click Here To Register New account</a></h5>
+                    </div>
+                </div>
+
+            </div>
+
+                </div>
+    </div>
+</div>
+<div class="row">
+<div class="col-md-6 col-md-offset-3">
+  <div class="box box-solid">
+    <div class="box-header with-border">
+      <h3 class="box-title">minoTour Screenshots</h3>
+    </div><!-- /.box-header -->
+    <div class="box-body">
+      <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
+        <ol class="carousel-indicators">
+          <li data-target="#carousel-example-generic" data-slide-to="0" class="active"></li>
+          <li data-target="#carousel-example-generic" data-slide-to="1" class=""></li>
+          <li data-target="#carousel-example-generic" data-slide-to="2" class=""></li>
+        </ol>
+        <div class="carousel-inner">
+          <div class="item active">
+            <img src="{% static 'mT_images/real_time_monitoring.JPG' %}" alt="First slide">
+            <div class="carousel-caption">
+              Real Time Run Monitoring
+            </div>
+          </div>
+          <div class="item">
+            <img src="{% static 'mT_images/remote_control.jpg' %}" alt="Second slide">
+            <div class="carousel-caption">
+              Full Remote Control of MinKNOW
+            </div>
+          </div>
+          <div class="item">
+            <img src="{% static 'mT_images/run_archive.jpg' %}" alt="Third slide">
+            <div class="carousel-caption">
+              Archive of Real Time Stats from MinKNOW
+            </div>
+          </div>
+        </div>
+        <a class="left carousel-control" href="#carousel-example-generic" data-slide="prev">
+          <span class="fa fa-angle-left"></span>
+        </a>
+        <a class="right carousel-control" href="#carousel-example-generic" data-slide="next">
+          <span class="fa fa-angle-right"></span>
+        </a>
+      </div>
+    </div><!-- /.box-body -->
+  </div><!-- /.box -->
+</div><!-- /.col -->
+
+
+</div>
+<div class="row">
+<div class="col-md-6 col-md-offset-3">
+<div class="box">
+<div class="box-header">
+  <h3 class="box-title">Video Tour of minoTour</h3>
+</div><!-- /.box-header -->
+<div class="box-body">
+
+
+        <iframe src="//www.youtube.com/embed/gbyvhJOrjZw" frameborder="0" allowfullscreen></iframe>
+
+
+    </div>
+    </div>
+</div>
+</div>
+</section>
+    </section>
+    <!-- /.content -->
+  </div>
+  <!-- /.content-wrapper -->
+
+  {% include 'minoTourTemplates/mT_footer.html' %}
+    {%  include 'minoTourTemplates/mT_javascript.html' %}
+</body>
+</html>

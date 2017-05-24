@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from reads.models import MinionRun, FastqRead, FastqReadType
+from reads.models import MinionRun, FastqRead, FastqReadType, RunStatistic
 from reads.serializers import MinionRunSerializer, FastqReadSerializer, FastqReadTypeSerializer
 
 
@@ -135,4 +135,23 @@ def readname_list(request, pk):
         for key in queryset:
             result.add(key.read_id)
         return HttpResponse(json.dumps(list(result)), content_type="application/json")
+
+@api_view(['GET'])
+def cumulative_read_count(request,pk):
+    if request.method == 'GET':
+        queryset = RunStatistic.objects.filter(run_id=pk).order_by('type','sample_time',)
+        result=dict()
+        for key in queryset:
+            if str(key.type) not in result:
+                result[str(key.type)]=dict()
+            result[str(key.type)][str(key.sample_time)]=key.read_count
+        data_to_return=dict()
+        counter = 0
+        for readtype in result:
+            data_to_return[counter]=dict()
+            data_to_return[counter]['name']=readtype
+            data_to_return[counter]['data']=list()
+            for data in result[readtype]:
+                data_to_return[counter]['data'].append((data, result[readtype][data]))
+        return HttpResponse(json.dumps(data_to_return), content_type="application/json")
 

@@ -98,30 +98,14 @@ class Runcollection():
                     self.runidlink = run["url"]
             #Now fetch a list of reads that already exist at that location
             checkreads = requests.get(self.runidlink + 'readnames', headers=header)
-            #print (json.loads(checkreads.text))
-            teststring = str(checkreads.text)
-            listything = json.loads(teststring)
-            print (type(listything))
-            camel = "testingstrings"
-            print (type(camel))
-            #strtoconvert = "'"+str(checkreads.text)+"'"
-            #listything = json.load(strtoconvert)
-            #print (type(listything))
-            for item in listything:
-                print (item)
-            #for readid in json.loads(checkreads.text):
-            #    print (readid)
-            #    self.readnames.append(readid)
-            sys.exit()
-        #data = json.dumps(r.text)
-        #print (data)
+            for readid in json.loads(checkreads.text):
+                self.readnames.append(readid)
         readtypes=requests.get(args.full_host+'api/v1/readtypes', headers=header)
-        print (readtypes.text)
+        #print (readtypes.text)
         for readtype in json.loads(readtypes.text):
             print ("READTYPE",readtype)
             print (readtype["url"])
             self.readtypes[readtype["name"]]=readtype["url"]
-        #os.kill(os.getpid(), signal.SIGINT)
 
     def add_read_db(self,runid,readid,read,channel,barcode,sequence,quality,ispass,type,starttime):
         #print(runid,readid,read,channel,barcode,sequence,quality,ispass,type,starttime)
@@ -131,10 +115,11 @@ class Runcollection():
         #typelink = args.full_host+'api/v1/readtypes/' + str(type) + "/"
         typelink = type
         print (runlink,typelink)
-        payload = {'run_id': runlink,'read_id':readid,'read':read,"channel":channel,'barcode':barcode,'sequence':sequence,'quality':quality,'is_pass':ispass,'start_time':starttime,'type':typelink}
-        #print(payload)
-        createread=requests.post(runlinkaddread,headers=header,json=payload)
-        #print (createread.text)
+        if readid not in self.readnames:
+            payload = {'run_id': runlink,'read_id':readid,'read':read,"channel":channel,'barcode':barcode,'sequence':sequence,'quality':quality,'is_pass':ispass,'start_time':starttime,'type':typelink}
+            createread = requests.post(runlinkaddread, headers=header, json=payload)
+        else:
+            print ("Read Seen")
 
     def add_or_update_stats(self,sample_time,total_length,max_length,min_length,average_length,number_of_reads,number_of_channels,type):
         runlink = args.full_host+'api/v1/runs/' + str(self.runidlink) + "/"
@@ -311,7 +296,7 @@ class MyHandler(FileSystemEventHandler):
                 (mean, median, std, maxval, minval) = self.rundict[runid].mean_median_std_max_min()
                 print("mean", mean, "median", median, "std", std, "max", maxval, "min", minval)
                 # print self.rundict[runid].timeid
-                self.rundict[runid].parse1minwin()
+                #self.rundict[runid].parse1minwin()
 
             time.sleep(5)
 
