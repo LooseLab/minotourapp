@@ -141,7 +141,7 @@ def readname_list(request, pk):
 @api_view(['GET'])
 def cumulative_read_count(request,pk):
     if request.method == 'GET':
-        queryset = RunStatistic.objects.filter(run_id=pk).order_by('type','sample_time',)
+        queryset = RunStatistic.objects.filter(run_id__owner=request.user).filter(run_id=pk).order_by('type','sample_time',)
         result=dict()
         for key in queryset:
             if str(key.type) not in result:

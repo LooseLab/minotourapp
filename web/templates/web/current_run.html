@@ -69,54 +69,64 @@ desired effect
     {%  include 'minoTourTemplates/mT_javascript.html' %}
 
     <script>
-        $.getJSON('http://localhost:8100/api/v1/runs/23/yield/', function (csv) {
-            console.log(csv['0']['data']);
-        Highcharts.chart('container', {
-        chart: {
-            type: 'spline',
-            animation: Highcharts.svg, // don't animate in old IE
-            marginRight: 10,
 
-        },
-        title: {
-            text: 'Cumulative Yield'
-        },
-        xAxis: {
-            title: {
-                text: 'Time and Date'
-            },
-            type: 'datetime',
-            tickPixelInterval: 150
-        },
-        yAxis: {
-            title: {
-                text: 'Yield (bases)'
-            },
-            plotLines: [{
-                value: 0,
-                width: 1,
-                color: '#808080'
-            }]
-        },
-        tooltip: {
-            formatter: function () {
-                return '<b>' + this.series.name + '</b><br/>' + 'Timepoint:' +
-                    Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x) + '<br/>' +
-                    Highcharts.numberFormat(this.y, 2) + ' bases';
-            }
-        },
-        legend: {
-            enabled: false
-        },
-        exporting: {
-            enabled: false
-        },
-        series:[{
-            name: csv[0]['name'],
-            data: csv[0]['data']
-        }]
-    });
+
+        function update_chart1(run_id) {
+            var url = "/api/v1/runs/" + run_id + "/yield/";
+
+            $.getJSON(url, function (csv) {
+                console.log(csv['0']['data']);
+                Highcharts.chart('container', {
+                    chart: {
+                        type: 'spline',
+                        animation: Highcharts.svg, // don't animate in old IE
+                        marginRight: 10,
+
+                    },
+                    title: {
+                        text: 'Cumulative Yield'
+                    },
+                    xAxis: {
+                        title: {
+                            text: 'Time and Date'
+                        },
+                        type: 'datetime',
+                        tickPixelInterval: 150
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Yield (bases)'
+                        },
+                        plotLines: [{
+                            value: 0,
+                            width: 1,
+                            color: '#808080'
+                        }]
+                    },
+                    tooltip: {
+                        formatter: function () {
+                            return '<b>' + this.series.name + '</b><br/>' + 'Timepoint:' +
+                                Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x) + '<br/>' +
+                                Highcharts.numberFormat(this.y, 2) + ' bases';
+                        }
+                    },
+                    legend: {
+                        enabled: false
+                    },
+                    exporting: {
+                        enabled: false
+                    },
+                    series: [{
+                        name: csv[0]['name'],
+                        data: csv[0]['data']
+                    }]
+                });
 });
+            }
+
+            $(document).ready(function(){
+                update_chart1(23);
+            });
 </script>
 </body>
 </html>
