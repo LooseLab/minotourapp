@@ -1,4 +1,6 @@
 import json
+from dateutil import parser
+
 
 from django.http import HttpResponse
 from rest_framework import status
@@ -144,14 +146,19 @@ def cumulative_read_count(request,pk):
         for key in queryset:
             if str(key.type) not in result:
                 result[str(key.type)]=dict()
-            result[str(key.type)][str(key.sample_time)]=key.read_count
+            result[str(key.type)][str(key.sample_time)]=key.total_length
         data_to_return=dict()
         counter = 0
         for readtype in result:
+            cumuyield=0
             data_to_return[counter]=dict()
             data_to_return[counter]['name']=readtype
             data_to_return[counter]['data']=list()
             for data in result[readtype]:
-                data_to_return[counter]['data'].append((data, result[readtype][data]))
+                cumuyield = cumuyield + result[readtype][data]
+                data_to_return[counter]['data'].append((UTC_time_to_epoch(data), cumuyield))
         return HttpResponse(json.dumps(data_to_return), content_type="application/json")
 
+def UTC_time_to_epoch(timestamp):
+    dt = parser.parse(timestamp)
+    return dt.timestamp()*1000
