@@ -42,7 +42,13 @@ router = routers.DefaultRouter()
 router.register(r'statistics', RunStatisticViewSet)
 
 urlpatterns = [
-    url('^', include('django.contrib.auth.urls')),
+    #url('^', include('django.contrib.auth.urls')),
+    url('^login/$', auth_views.LoginView.as_view(template_name="registration/login.html"), name="login"),
+    url('^logout/$', auth_views.LogoutView.as_view(), name="logout"),
+    url('^change-password/$', auth_views.PasswordChangeView.as_view(template_name="registration/password_change.html"), name="password_change"),
+    url('^change-password-done/$', auth_views.PasswordChangeDoneView.as_view(template_name="registration/password_change_done.html"), name="password_change_done"),
+    url('^reset-password/$', auth_views.PasswordResetView.as_view(template_name="registration/password_reset.html"), name="password_reset"),
+    url('^reset-password-done/$', auth_views.PasswordResetDoneView.as_view(template_name="registration/password_reset_done.html"), name="password_reset_done"),
     url(r'^admin/', admin.site.urls),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^api/v1/', include(router.urls)),

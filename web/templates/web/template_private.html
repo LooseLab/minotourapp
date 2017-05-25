@@ -125,7 +125,7 @@
                                 <!-- Menu Body -->
                                 <li class="user-body">
                                     <div class="col-xs-4 text-center">
-                                        <a href="settings.php">Change Password</a>
+                                        <a href="{% url 'password_change' %}">Change Password</a>
                                     </div>
                                     <div class="col-xs-4 text-center">
                                         <a href="profile.php">Profile</a>
@@ -178,7 +178,7 @@
             checkalerts();
             ?></li>
                 <li id="overview">
-                    <a href="#"><i class="fa fa-dashboard fa-fw"></i><span> Overview</span></a>
+                    <a href="{% url 'private-index' %}"><i class="fa fa-dashboard fa-fw"></i><span> Overview</span></a>
                 </li>
                 <li id="livecontrol">
                     <a href="live_control.php"><i class="fa fa-gamepad fa-fw"></i><span> Remote Control</span></a>

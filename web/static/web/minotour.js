@@ -1,4 +1,4 @@
-var MINOTOUR_VERSION = 0.7;
+var MINOTOUR_VERSION = 0.5;
 
 function check_minotour_version() {
     $.getJSON('http://www.nottingham.ac.uk/~plzloose/minoTourhome/message.php?callback=?', function (result) {
