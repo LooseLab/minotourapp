@@ -58,7 +58,7 @@ ROOT_URLCONF = 'minotourapp.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': ['templates/',],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -138,3 +138,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     )
 }
+
+LOGIN_URL='/login'
+LOGIN_REDIRECT_URL='/web/private/index'
+LOGOUT_REDIRECT_URL=LOGIN_URL

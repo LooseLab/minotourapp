@@ -8,3 +8,6 @@ def current(request):
 
 def log_in(request):
     return render(request, 'web/log_in.html')
+
+def private_index(request):
+    return render(request, 'web/private_index.html')

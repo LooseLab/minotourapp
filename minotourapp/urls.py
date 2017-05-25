@@ -16,6 +16,9 @@ Including another URLconf
 from django.conf.urls import include
 from django.conf.urls import url
 from django.contrib import admin
+
+from django.contrib.auth import views as auth_views
+
 from rest_framework import routers
 from rest_framework import serializers
 from rest_framework import viewsets
@@ -39,6 +42,7 @@ router = routers.DefaultRouter()
 router.register(r'statistics', RunStatisticViewSet)
 
 urlpatterns = [
+    url('^', include('django.contrib.auth.urls')),
     url(r'^admin/', admin.site.urls),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^api/v1/', include(router.urls)),

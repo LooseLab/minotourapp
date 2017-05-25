@@ -1,0 +1,381 @@
+{% extends "web/template_base.html" %}
+{% load static %}
+
+{% block header %}
+    <header class="main-header">
+
+        <!-- Logo -->
+        <a href="#" class="logo">
+            <!-- mini logo for sidebar mini 50x50 pixels -->
+            <span class="logo-mini"><img style="max-width:20px;" src="{% static 'mT_images/minotaurlogo.png' %}"
+                                         alt="minoTour_logo"><small>1.0a</small></span>
+            <!-- logo for regular state and mobile devices -->
+            <span class="logo-lg"><img style="max-width:100px;" src="{% static 'mT_images/minotaurlogo.png' %}"
+                                       alt="minoTour_logo">1.0a</span>
+        </a>
+
+        <!-- Header Navbar -->
+        <nav class="navbar navbar-static-top" role="navigation">
+            <div id='API'></div>
+            <div id='APIPREV'></div>
+            <!-- Sidebar toggle button-->
+            <a href="#" class="sidebar-toggle" data-toggle="offcanvas" role="button">
+                <span class="sr-only">Toggle navigation</span>
+            </a>
+            <!-- Navbar Right Menu -->
+            <div id="sumdat">
+                <div class="navbar-custom-menu">
+                    <ul class="nav navbar-nav">
+                        <!-- Messages: style can be found in dropdown.less-->
+                        <li class="dropdown messages-menu">
+                            <!-- Menu toggle button -->
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                <i class="fa fa-table"></i>
+                                <span class="label label-success">{{ livenumruns }}/{{ prevnumruns }}</span>
+                            </a>
+                            <ul class="dropdown-menu">
+
+                                <li class="header">You have {{ livenumruns }} live runs</li>
+                                <li>
+                                    <!-- inner menu: contains the messages -->
+                                    <ul class="menu">
+                                        <li v-for="run in liverunsnames"><!-- start message -->
+                                            <a href="#">
+                                                <div class="pull-left">
+                                                    <!-- User Image -->
+                                                    <!--<img src="images/minitour144.png" class="img-circle" alt="User Image">-->
+                                                    <!--</div>-->
+                                                    <!-- Message title and timestamp -->
+                                                    <h4>
+                                                        <small>{{ run }}</small>
+                                                        <!--<small><i class="fa fa-clock-o"></i> 5 mins</small>-->
+                                                    </h4>
+                                                    <!-- The message -->
+                                                    <!--<p>Why not buy a new awesome theme?</p></div>-->
+                                            </a>
+                                        </li><!-- end message -->
+                                    </ul><!-- /.menu -->
+                                </li>
+                                <li class="footer"><a href="#">You have {{ prevnumruns }} archived runs.</a></li>
+                            </ul>
+                        </li><!-- /.messages-menu -->
+
+                        <!-- Notifications Menu -->
+                        <li class="dropdown notifications-menu">
+                            <!-- Menu toggle button -->
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                <i class="fa fa-bolt"></i>
+                                <span class="label label-danger">{{ activealerts }}</span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="header">You have {{ activealerts }} active alerts</li>
+                                <li>
+                                    <!-- Inner Menu: contains the notifications -->
+                                    <ul class="menu">
+                                        <li><!-- start notification -->
+                                            <!--<a href="#">
+                                              <i class="fa fa-users text-aqua"></i> 5 new members joined today
+                                          </a>-->
+                                        </li><!-- end notification -->
+                                    </ul>
+                                </li>
+                                <li class="footer"><a href="#">View all</a></li>
+                            </ul>
+                        </li>
+                        <!-- Tasks Menu -->
+                        <li class="dropdown tasks-menu">
+                            <!-- Menu Toggle Button -->
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                <i class="fa fa-flag-o"></i>
+                                <span class="label label-warning">{{ completedalerts }}</span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li class="header">You have {{ completedalerts }} completed alerts</li>
+                                <li>
+                                    <!-- Inner menu: contains the tasks -->
+                                    <ul class="menu">
+                                        <li>
+                                        </li><!-- end task item -->
+                                    </ul>
+                                </li>
+                                <li class="footer">
+                                    <a href="#">View all tasks</a>
+                                </li>
+                            </ul>
+                        </li>
+                        <!-- User Account Menu -->
+                        <li class="dropdown user user-menu">
+                            <!-- Menu Toggle Button -->
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                <!-- The user image in the navbar-->
+                                <img src="{% static 'mT_images/minitour.png' %}" class="user-image" alt="User Image">
+                                <!-- hidden-xs hides the username on small devices so only the image appears. -->
+                                <span class="hidden-xs">{{ request.user }}</span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <!-- The user image in the menu -->
+                                <li class="user-header">
+                                    <img src="{% static 'mT_images/minitour.png' %}" class="img-circle"
+                                         alt="User Image">
+                                    <p>
+                                        {{ request.user }}
+                                        <small>Manage your user account here.</small>
+                                    </p>
+                                </li>
+                                <!-- Menu Body -->
+                                <li class="user-body">
+                                    <div class="col-xs-4 text-center">
+                                        <a href="settings.php">Change Password</a>
+                                    </div>
+                                    <div class="col-xs-4 text-center">
+                                        <a href="profile.php">Profile</a>
+                                    </div>
+                                </li>
+                                <!-- Menu Footer-->
+                                <li class="user-footer">
+                                    <div class="pull-right">
+                                        <a href="{% url 'logout' %}" class="btn btn-default btn-flat">Sign out</a>
+                                    </div>
+                                </li>
+                            </ul>
+                        </li>
+                        <!-- Control Sidebar Toggle Button -->
+                        <li>
+                            <a href="#" data-toggle="control-sidebar"><i class="fa fa-gears"></i></a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+{% endblock %}
+
+{% block sidebar %}
+    <!-- Left side column. contains the logo and sidebar -->
+    <aside class="main-sidebar">
+
+        <!-- sidebar: style can be found in sidebar.less -->
+        <section class="sidebar">
+
+            <!-- Sidebar user panel (optional) -->
+            <div class="user-panel">
+                <div class="pull-left image">
+                    <img src="{% static 'mT_images/minitour.png' %}" class="img-circle" alt="User Image">
+                </div>
+                <div class="pull-left info">
+                    <p>{{ request.user.username }}</p>
+                    <!-- Status -->
+                    <a href="#"><i class="fa fa-circle text-success"></i> Online</a>
+                </div>
+            </div>
+
+            <!-- search form (Optional) -->
+            <!-- /.search form -->
+
+            <!-- Sidebar Menu -->
+            <ul class="sidebar-menu">
+                <li class="header"><?php //if (isset($_SESSION['active_run_name'])) {
+            checkalerts();
+            ?></li>
+                <li id="overview">
+                    <a href="#"><i class="fa fa-dashboard fa-fw"></i><span> Overview</span></a>
+                </li>
+                <li id="livecontrol">
+                    <a href="live_control.php"><i class="fa fa-gamepad fa-fw"></i><span> Remote Control</span></a>
+                </li>
+                <li id="prevcontrol">
+                    <a href="prev_control.php"><i class="fa fa-gamepad fa-fw"></i><span> Remote Archive</span></a>
+                </li>
+                <?php if (checkactiverun()) { ?>
+                <li id="currentruns" class="treeview">
+                    <a href="#"><i class="fa fa-bolt fa-fw"></i><span> Current Sequencing Run</span> <i
+                            class="fa fa-angle-left pull-right"></i></a>
+                    <ul class="treeview-menu">
+                        <?php if ( checknumactive() > 1){?>
+                        <li>
+                            <a href="switch_run.php"><i
+                                    class="fa fa-database fa-fw"></i><span> Switch Active Runs</span></a>
+                        </li>
+                        <?php }; ?>
+                        <li>
+                            <a href="live_data.php"><i class="fa fa-cog fa-spin"></i> Live Data</a>
+                        </li>
+
+                        <?php if (isset($_SESSION['assemblyactive']) && $_SESSION['assemblyactive'] >= 1) {?>
+                        <li>
+                            <a href="current_assembly.php"><i class="fa fa-puzzle-piece"></i><span> Assembly</span></a>
+                        </li>
+                        <?php }; ?>
+
+                        <?php if ($_SESSION['currentbarcode'] >= 1) {?>
+                        <li>
+                            <a href="current_barcodes.php"><i class="fa fa-barcode"></i><span> Barcodes</span></a>
+                        </li>
+
+                        <?php }; ?>
+
+                        <li>
+                            <a href="current_summary.php"><i
+                                    class="fa fa-bar-chart-o fa-fw"></i><span> Data Summary</span></a>
+                        </li>
+                        <?php if ($_SESSION['activereference'] != "NOREFERENCE") {?>
+                        <?php if ($_SESSION['currentBASE'] >=1){?>
+                        <li>
+                            <a href="current_variants.php"><i
+                                    class="fa fa-code-fork"></i><span> Nucleotide Variants</span></a>
+                        </li>
+                        <?php }; ?>
+                        <?php }; ?>
+                        <?php if ($_SESSION['currentBASE'] >=1){?>
+                        <li>
+                            <a href="live_reads_table.php"><i
+                                    class="fa fa-eye fa-fw"></i><span> Individual Read Data</span></a>
+                        </li>
+                        <li>
+                            <a href="export.php"><i
+                                    class="fa fa-file-text-o fa-fw"></i><span> Export Reads/Alignments</span></a>
+                        </li>
+                        <?php }; ?>
+                        <?php if ($_SESSION['currentXML'] >= 1) {?>
+                        <li>
+                            <a href="current_XML.php"><i
+                                    class="fa fa-info-circle"></i><span> ENA Submission Details</span></a>
+                        </li>
+                        <?php }; ?>
+                        <li>
+                            <a href="live_report.php"><i class="fa fa-comments-o fa-fw"></i><span> Run Report</span></a>
+                        </li>
+                        <li>
+                            <a href="jobs.php"><i class="fa fa-building"></i><span> Run Analysis Jobs</span></a>
+                        </li>
+                        <!--<li>
+                            <a href="set_alerts.php"><i class="fa fa-exclamation-circle"></i><span> Set Alerts</span></a>
+                        </li>-->
+                        <?php if ($_SESSION['currentINT'] >=1){?>
+                        <li>
+                            <a href="live_interaction.php"><i class="fa fa-cogs"></i><span> minION control</span></a>
+                        </li>
+                        <?php }?>
+                        <li>
+                            <a href="runadmin.php"><i class="fa fa-stop"></i><span> Run Administration</span></a>
+                        </li>
+
+                    </ul>
+                </li>
+                <?php } ?>
+                <?php if (checkallruns()) {?>
+                <li id="prevruns" class="treeview">
+                    <a href="#"><i class="fa fa-table fa-fw"></i><span> Previous Run</span> <i
+                            class="fa fa-angle-left pull-right"></i></a>
+                    <ul class="treeview-menu">
+                        <?php if (isset($_SESSION['focusrun'])) {?>
+                        <li>
+                            <a href="previous_runs.php" id="SR"><i
+                                    class="fa fa-database fa-fw"></i><span> Change Run</span></a>
+                        </li>
+                        <?php if (isset($_SESSION['focusbarcode']) && $_SESSION['focusbarcode'] >= 1) {?>
+                        <li>
+                            <a href="previous_barcodes.php"><i class="fa fa-barcode"></i><span> Barcodes</span></a>
+                        </li>
+
+                        <?php }; ?>
+                        <li>
+                            <a href="previous_summary.php"><i
+                                    class="fa fa-bar-chart-o fa-fw"></i><span> Data Summary</span></a>
+                        </li>
+                        <?php if (isset($_SESSION['prevassemblyactive']) && $_SESSION['prevassemblyactive'] >= 1) {?>
+                        <li>
+                            <a href="previous_assembly.php"><i class="fa fa-puzzle-piece"></i><span> Assembly</span></a>
+                        </li>
+                        <?php }; ?>
+                        <?php if (isset($_SESSION['previousbarcode']) && $_SESSION['previousbarcode'] >= 1) {?>
+                        <li>
+                            <a href="prev_barcode.php"><i class="fa fa-barcode"></i><span> Barcodes</span></a>
+                        </li>
+
+                        <?php }; ?>
+                        <?php if (isset($_SESSION['focusreference']) && $_SESSION['focusreference'] != "NOREFERENCE") {?>
+                        <?php if ($_SESSION['focusBASE'] >=1){?>
+                        <li>
+                            <a href="previous_variants.php"><i
+                                    class="fa fa-code-fork"></i><span> Nucleotide Variants</span></a>
+                        </li>
+                        <?php }; ?>
+                        <?php }; ?>
+                        <?php if ($_SESSION['focusBASE'] >=1){?>
+                        <li>
+                            <a href="reads_table.php"><i class="fa fa-eye fa-fw"></i><span> Individual Read Data</span></a>
+                        </li>
+                        <!--<li>
+                            <a href="prev_kmers.php"><i class="fa fa-cogs fa-fw"></i><span> K-mer summaries</span></a>
+                        </li>-->
+
+                        <li>
+                            <a href="previous_export.php"><i class="fa fa-file-text-o fa-fw"></i><span> Export Reads/Alignments</span></a>
+                        </li>
+                        <?php }; ?>
+                        <?php if (isset($_SESSION['focusXML']) && $_SESSION['focusXML'] >= 1) {?>
+                        <li>
+                            <a href="previous_XML.php"<i
+                                class="fa fa-info-circle"></i><span> ENA Submission Details</span></a>
+                        </li>
+                        <?php }; ?>
+                        <li>
+                            <a href="previous_report.php"><i class="fa fa-comments-o fa-fw"></i><span> Run Report</span></a>
+                        </li>
+                        <li>
+                            <a href="manage_data.php"><i class="fa fa-pencil-square-o"></i><span> Manage Data</span></a>
+                        </li>
+                        <?php }else{?>
+                        <li>
+                            <a href="previous_runs.php" id="SR"><i
+                                    class="fa fa-database fa-fw"></i><span> Select Run</span></a>
+                        </li>
+                        <?php };?>
+                    </ul>
+                </li>
+
+
+                <?php }?>
+                <?php if ($_SESSION['adminuser'] == 1){?>
+                <li id="admin" class="treeview">
+                    <a href="#"><i class="fa fa-edit fa-fw"></i> <span>Admin</span> <i
+                            class="fa fa-angle-left pull-right"></i></a>
+                    <ul class="treeview-menu">
+                        <li>
+                            <a href="enable.php"><i class="fa fa-child fa-fw"></i><span> Enable User Upload</span></a>
+                        </li>
+                        <li>
+                            <a href="admin.php"><i
+                                    class="fa fa-database fa-fw"></i><span> Database Allocation</span></a>
+                        </li>
+                        <li>
+                            <a href="admin_manage.php"><i
+                                    class="fa fa-database fa-fw"></i><span> Database Management</span></a>
+                        </li>
+                        <li>
+                            <a href="admin_users.php"><i class="fa fa-users fa-fw"></i><span> Set Administrators</span></a>
+                        </li>
+                        <li>
+                            <a href="cache_manage.php"><i
+                                    class="fa fa-database fa-fw"></i><span> Cache Administration</span></a>
+                        </li>
+                    </ul>
+                </li>
+                <?php };?>
+                <li>
+                    <a href="tutorials.php"><i class="fa fa-question-circle fa-fw"></i><span> Tutorials</span></a>
+                <li>
+                <li>
+                    <a href="minup.php"><i class="fa fa-cloud-upload fa-fw"></i><span> minUp Scripts</span></a>
+                <li>
+                    <a href="exlinks.php"><i class="fa fa-files-o fa-fw"></i><span> External Links</span></a>
+
+                    <!-- /.nav-second-level -->
+                </li>
+            </ul>
+            <!-- /.sidebar-menu -->
+        </section>
+        <!-- /.sidebar -->
+    </aside>
+{% endblock %}

@@ -1,36 +1,7 @@
+{% extends "web/template_public.html" %}
 {% load static %}
-<!DOCTYPE html>
-<!--
-This is a starter template page. Use this page to start your new project from
-scratch. This page gets rid of all links and provides the needed markup only.
--->
-<html>
-{% include 'minoTourTemplates/mT_header.html' %}
-<!--
-BODY TAG OPTIONS:
-=================
-Apply one or more of the following classes to get the
-desired effect
-|---------------------------------------------------------|
-| SKINS         | skin-blue                               |
-|               | skin-black                              |
-|               | skin-purple                             |
-|               | skin-yellow                             |
-|               | skin-red                                |
-|               | skin-green                              |
-|---------------------------------------------------------|
-|LAYOUT OPTIONS | fixed                                   |
-|               | layout-boxed                            |
-|               | layout-top-nav                          |
-|               | sidebar-collapse                        |
-|               | sidebar-mini                            |
-|---------------------------------------------------------|
--->
-<body class="hold-transition skin-blue sidebar-mini layout-top-nav fixed">
-<div class="wrapper">
 
-    {% include 'minoTourTemplates/mT_alt_main_header.html' %}
-
+{% block content %}
 
     <!-- Content Wrapper. Contains page content -->
     <div class="content-wrapper">
@@ -38,11 +9,12 @@ desired effect
         <!-- Main content -->
         <section class="content">
             <section class="content-header">
-                <h4 class="text-center"><img style="max-width:100px;" src="{% static 'mT_images/minotaurlogo.png' %}"
-                                             alt="minoTour_logo"><br>- <em>real time data analysis for minION data</em>
-                    -</h4>
-
-
+                <h4 class="text-center">
+                    <img style="max-width:100px;"
+                         src="{% static 'mT_images/minotaurlogo.png' %}"
+                         alt="minoTour_logo">
+                    <br><span>- <em>real time data analysis for minION data</em> -</span>
+                </h4>
             </section>
 
             <section class="content">
@@ -58,24 +30,41 @@ desired effect
                                         <h3 class="panel-title">Please Sign In</h3>
                                     </div>
                                     <div class="panel-body">
-                                        <form role="form" method="post" action="index.php" name="loginform">
+
+                                        {% if form.errors %}
+                                            <p>Your username and password didn't match. Please try again.</p>
+                                        {% endif %}
+
+                                        {% if next %}
+                                            {% if user.is_authenticated %}
+                                                <p>Your account doesn't have access to this page. To proceed,
+                                                    please login with an account that has access.</p>
+                                            {% else %}
+                                                <p>Please login to see this page.</p>
+                                            {% endif %}
+                                        {% endif %}
+
+                                        <form role="form" method="post" action="{% url 'login' %}" name="loginform">
+                                            {% csrf_token %}
                                             <fieldset>
                                                 <div class="form-group">
-                                                    <input class="form-control" id="login_input_username"
-                                                           placeholder="User Name" name="user_name" type="text"
+                                                    <input class="form-control" id="id_username"
+                                                           placeholder="User Name" name="username" type="text"
                                                            autofocus>
                                                 </div>
                                                 <div class="form-group">
-                                                    <input class="form-control" id="login_input_password"
-                                                           placeholder="Password" name="user_password"
+                                                    <input class="form-control" id="id_password"
+                                                           placeholder="Password" name="password"
                                                            autocomplete="off" type="password" required/>
                                                 </div>
                                                 <!-- Change this to a button or input when using this as a form -->
                                                 <input type="submit" class="btn btn-lg btn-success btn-block"
                                                        name="login" value="Log in"/>
+                                                <input type="hidden" name="next" value="{{ next }}"/>
                                             </fieldset>
                                         </form>
                                         <h5><a href="register_new.php">Click Here To Register New account</a></h5>
+                                        <h5><a href="{% url 'password_reset' %}">Lost password?</a></h5>
                                     </div>
                                 </div>
 
@@ -140,12 +129,8 @@ desired effect
                                 <h3 class="box-title">Video Tour of minoTour</h3>
                             </div><!-- /.box-header -->
                             <div class="box-body">
-
-
                                 <iframe src="//www.youtube.com/embed/gbyvhJOrjZw" frameborder="0"
                                         allowfullscreen></iframe>
-
-
                             </div>
                         </div>
                     </div>
@@ -155,8 +140,4 @@ desired effect
         <!-- /.content -->
     </div>
     <!-- /.content-wrapper -->
-
-    {% include 'minoTourTemplates/mT_footer.html' %}
-    {% include 'minoTourTemplates/mT_javascript.html' %}
-</body>
-</html>
+{% endblock %}
