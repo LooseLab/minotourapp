@@ -24,6 +24,7 @@
                     <h3 class="box-title">Overview</h3>
                 </div><!-- /.box-header -->
                 <div class="box-body">
+                    <div id="div-user-runs"></div>
                     <?php checkuserruns(); ?>
                     <h2>Important Notice:</h2>
 
@@ -59,8 +60,8 @@
 
     <script>
         $(document).ready(function(){
-            console.log('test');
-        //    check_minotour_version();
+            check_minotour_version();
+            check_user_runs();
         });
     </script>
 {% endblock %}

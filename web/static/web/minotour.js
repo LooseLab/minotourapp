@@ -22,3 +22,22 @@ function check_minotour_version() {
         });
     });
 }
+
+function check_user_runs() {
+    var url = '/api/v1/runs/';
+
+    $.getJSON(url, function (data) {
+        var items = [];
+        $.each(data, function(key, val){
+        console.log(val);
+            items.push("<li id='" + key + "'>" + val.run_name + "</li>");
+        });
+
+        var text = "<span>You have " + data.length + " minION runs available to view.</span>"
+        text += "<ul>";
+        text += items.join("");
+        text += "</ul>";
+
+        $("#div-user-runs").html(text);
+    });
+}
