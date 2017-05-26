@@ -19,3 +19,7 @@ def private_index(request):
 
 def external_links(request):
     return render(request, 'web/external_links.html')
+
+
+def minup(request):
+    return render(request, 'web/minup.html')
