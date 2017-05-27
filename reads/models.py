@@ -28,7 +28,6 @@ class MinIONRun(models.Model):
     def __str__(self):
         return self.run_name
 
-
 class MinIONEventType(models.Model):
     name = models.CharField(max_length=64)
 
@@ -44,6 +43,12 @@ class MinIONEvent(models.Model):
 
     def __str__(self):
         return "{} {} {} {}".format(self.computer_name, self.minION, self.event, self.datetime)
+
+
+
+
+
+
 
 
 class FastqReadType(models.Model):

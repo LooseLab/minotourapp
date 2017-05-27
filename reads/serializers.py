@@ -14,6 +14,11 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url', 'run_name', 'run_id', 'is_barcoded')
 
 
+class MinIONSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = MinION
+        fields = ('url', 'minION_name',)
+
 class FastqReadTypeSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = FastqReadType
@@ -23,8 +28,8 @@ class FastqReadTypeSerializer(serializers.HyperlinkedModelSerializer):
 class MinIONEventTypeSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = MinIONEventType
-        fields = ('id', 'name',)
-        read_only = ('id')
+        fields = ('url', 'name',)
+        read_only = ('id',)
 
 class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -39,11 +44,7 @@ class FastqReadNameSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('read_id',)
 
 
-class MinIONSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = MinION
-        fields = ('id', 'minION_name',)
-        read_only = ('id',)
+
 
 
 class MinIONEventSerializer(serializers.HyperlinkedModelSerializer):

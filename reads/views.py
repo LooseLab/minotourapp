@@ -22,13 +22,28 @@ def read_type_list(request):
         return Response(serializer.data)
 
 @api_view(['GET'])
-def minION_events_type(request):
+def events_type_list(request):
     """
     Lis of all event types.
     """
     if request.method == "GET":
         queryset = MinIONEventType.objects.all()
         serializer = MinIONEventTypeSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+
+
+@api_view(['GET'])
+def events_type_detail(request, pk):
+    """
+    Lis of all event types.
+    """
+    try:
+        event_ = MinIONEventType.objects.get(pk=pk)
+    except MinIONEventType.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == "GET":
+        serializer = MinIONEventTypeSerializer(event_, context={'request': request})
         return Response(serializer.data)
 
 
@@ -119,8 +134,9 @@ def minION_events_list(request, pk):
     List of all events associated with a minION or add a new event.
     """
     if request.method == 'GET':
-        queryset = MinIONEvent.objects.filter(pk=pk)
+        queryset = MinIONEvent.objects.filter(minION=pk)
         serializer = MinIONEventSerializer(queryset,many=True, context={'request': request})
+        return Response(serializer.data)
 
     elif request.method=='POST':
         serializer = MinIONEventSerializer(data=request.data, context={'request': request})
@@ -148,16 +164,16 @@ def read_list(request, pk):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
-def minION_event(request, pk):
+def minION_detail(request, pk):
     try:
         #print (pk)
         #print (MinIONEvent.objects.all())
-        event = MinIONEvent.objects.get(id=pk)
-    except MinIONEvent.DoesNotExist:
+        minion = MinION.objects.get(pk=pk)
+    except MinION.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
-        serializer = MinIONEventSerializer(event, context={'request': request})
+        serializer = MinIONSerializer(minion, context={'request': request})
         return Response(serializer.data)
 
 @api_view(['GET', 'PUT', 'DELETE'])
