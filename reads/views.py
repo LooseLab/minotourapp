@@ -7,8 +7,8 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from reads.models import MinIONRun, FastqRead, FastqReadType, RunStatistic, MinION, MinIONEvent,MinIONEventType
-from reads.serializers import MinIONRunSerializer, FastqReadSerializer, FastqReadTypeSerializer, MinIONSerializer, MinIONEventSerializer,MinIONEventTypeSerializer
+from reads.models import MinIONRun, FastqRead, FastqReadType, RunStatistic, MinION, MinIONEvent,MinIONEventType, MinIONScripts
+from reads.serializers import MinIONRunSerializer, FastqReadSerializer, FastqReadTypeSerializer, MinIONSerializer, MinIONScriptsSerializer, MinIONEventSerializer,MinIONEventTypeSerializer
 
 
 @api_view(['GET'])
@@ -144,6 +144,51 @@ def minION_events_list(request, pk):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'POST'])
+def minION_scripts_list(request, pk):
+    """
+    List of all scripts associated with a minION.
+    """
+    if request.method == 'GET':
+        queryset = MinIONScripts.objects.filter(minION=pk)
+        serializer = MinIONScriptsSerializer(queryset,many=True, context={'request': request})
+        return Response(serializer.data)
+
+    elif request.method=='POST':
+        serializer = MinIONScriptsSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET','PUT','DELETE'])
+def minION_scripts_detail(request, pk, nk):
+    """
+    Get, update or delete a specific script.
+    :param request: 
+    :param nk: 
+    :return: 
+    """
+    try:
+        script = MinIONScripts.objects.get(pk=nk)
+    except MinIONScripts.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = MinIONScriptsSerializer(script, context={'request': request})
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = MinIONScriptsSerializer(script, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        script.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(['GET', 'POST'])

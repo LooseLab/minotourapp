@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from reads.models import MinIONRun, FastqRead, FastqReadType, MinION, MinIONEvent, MinIONEventType
+from reads.models import MinIONRun, FastqRead, FastqReadType, MinION, MinIONEvent, MinIONEventType, MinIONScripts
 
 
 class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
@@ -51,4 +51,10 @@ class MinIONEventSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = MinIONEvent
         fields = ('id', 'computer_name','minION', 'event', 'datetime')
+        read_only = ('id',)
+
+class MinIONScriptsSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = MinIONScripts
+        fields = ('id', 'minION', 'identifier', 'name', 'experiment_type', 'base_calling', 'flow_cell', 'kit')
         read_only = ('id',)

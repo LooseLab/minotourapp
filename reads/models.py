@@ -17,6 +17,25 @@ class MinION(models.Model):
     def status(self):
         return self.events.order_by('datetime').last()
 
+    def details(self):
+        return self.currentdetails.order_by('datetime').last()
+
+class MinIONStatus(models.Model):
+    minION = models.ForeignKey(MinION, related_name='currentdetails')
+    minKNOW_status = models.CharField(max_length=64)
+    minKNOW_current_script = models.CharField(max_length=256, blank=True, null=True)
+    minKNOW_sample_name = models.CharField(max_length=256,blank=True, null=True)
+    minKNOW_flow_cell_id = models.CharField(max_length=64, blank=True, null=True)
+    minKNOW_run_name = models.CharField(max_length=256,blank=True, null=True)
+    minKNOW_voltage_offset = models.IntegerField(blank=True, null=True)
+    minKNOW_yield = models.IntegerField(blank=True, null=True)
+    minKNOW_total_drive_space = models.FloatField(blank=True, null=True)
+    minKNOW_disk_space_till_shutdown = models.FloatField(blank=True, null=True)
+    minKNOW_warnings = models.BooleanField(default=False)
+
+    def __str__(self):
+        return "{} {}".format(self.minION,self.minKNOW_status)
+
 
 class MinIONRun(models.Model):
     run_name = models.CharField(max_length=64)
@@ -46,10 +65,17 @@ class MinIONEvent(models.Model):
 
 
 
+class MinIONScripts(models.Model):
+    minION = models.ForeignKey(MinION, related_name='scripts')
+    identifier = models.CharField(max_length=256)
+    name = models.CharField(max_length=256)
+    experiment_type = models.CharField(max_length=256, blank=True, null=True)
+    base_calling = models.NullBooleanField(blank=True, null=True)
+    flow_cell = models.CharField(max_length=256, blank=True, null=True)
+    kit = models.CharField(max_length=256, blank=True, null=True)
 
-
-
-
+    def __str__(self):
+        return "{} {} {}".format(self.minION, self.name, self.identifier)
 
 class FastqReadType(models.Model):
     name = models.CharField(max_length=16)

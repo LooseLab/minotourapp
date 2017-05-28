@@ -7,6 +7,8 @@ from .models import RunStatistic
 from .models import MinION
 from .models import MinIONEvent
 from .models import MinIONEventType
+from .models import MinIONScripts
+from .models import MinIONStatus
 
 admin.site.register(FastqRead)
 admin.site.register(FastqReadType)
@@ -15,3 +17,5 @@ admin.site.register(RunStatistic)
 admin.site.register(MinION)
 admin.site.register(MinIONEventType)
 admin.site.register(MinIONEvent)
+admin.site.register(MinIONScripts)
+admin.site.register(MinIONStatus)

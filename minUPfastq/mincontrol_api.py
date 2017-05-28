@@ -4,6 +4,7 @@ import os,sys
 import json
 import requests
 import datetime
+from urlparse import urlparse
 
 import time
 from ws4py.client.threadedclient import WebSocketClient
@@ -21,20 +22,20 @@ class MinControlAPI():
 
     def __init__(self):
         print ("MinControlAPI")
-        #self.minION=minION
+        #self.header=self.header()
 
-    def header ():
+    def header (self):
         return ({'Authorization': 'Token ' + args.api_key, 'Content-Type': 'application/json'})
 
 
-    def create_minion (minION):
+    def create_minion (self,minION):
         print("Seen a new run")
         # Test to see if the run exists
         #header = {'Authorization': 'Token ' + args.api_key, 'Content-Type': 'application/json'}
-        r = requests.get(args.full_host + 'api/v1/minions', headers=MinControlAPI.header())
+        r = requests.get(args.full_host + 'api/v1/minions', headers=self.header())
         if minION not in r.text:
             print ('Need to create minION:', minION)
-            creatminION = requests.post(args.full_host + 'api/v1/minions/', headers=MinControlAPI.header(),
+            creatminION = requests.post(args.full_host + 'api/v1/minions/', headers=self.header(),
                                       json={"minION_name": minION})
             print(creatminION.text)
             if creatminION.status_code != 201:
@@ -44,31 +45,93 @@ class MinControlAPI():
             else:
                 print(json.loads(creatminION.text))
 
-    def update_minion_status (minION,computer,status):
-        print ("Setting the status of {} to {} on {}".format(minION,status,computer))
-        #First get id of minION we are updating
-        r = requests.get(args.full_host + 'api/v1/minions', headers=MinControlAPI.header())
-        minionidlink=""
+    def identify_minion(self,minION):
+        r = requests.get(args.full_host + 'api/v1/minions', headers=self.header())
+        minionidlink = ""
         for minion in json.loads(r.text):
             if minion["minION_name"] == minION:
                 print(minion)
-                minionidlink = minion["id"]
+                minionidlink = minion["url"]
+        return(minionidlink)
+
+    def update_minion_status (self,minION,computer,status):
+        print ("Setting the status of {} to {} on {}".format(minION,status,computer))
+        #First get id of minION we are updating
+        #r = requests.get(args.full_host + 'api/v1/minions', headers=self.header())
+        minionidlink=self.identify_minion(minION)
+        #for minion in json.loads(r.text):
+        #    if minion["minION_name"] == minION:
+        #        print(minion)
+        #        minionidlink = minion["url"]
         print (minionidlink)
         #Second get id of status we are looking for:
         statusidlink=""
-        r = requests.get(args.full_host + 'api/v1/minions/events', headers=MinControlAPI.header())
+        r = requests.get(args.full_host + 'api/v1/events', headers=self.header())
         print (r.text)
         for info in json.loads(r.text):
             if info["name"] == status:
                 print(info)
-                statusidlink= info["id"]
-        print (statusidlink)
-        print ('api/v1/minions/events/{}'.format(statusidlink))
-        print ('api/v1/minions/{}'.format(minionidlink))
-        updatestatus = requests.post(args.full_host + 'api/v1/minions/{}/events/'.format(minionidlink), headers=MinControlAPI.header(),
-                                     json={"computer_name": computer, "datetime": str(datetime.datetime.now()), "event": '{}'.format(statusidlink),"minION": 'api/v1/minions/{}'.format(minionidlink)})
+                statusidlink= info["url"]
+        print ("status",status, statusidlink)
+        print ({"computer_name": computer, "datetime": str(datetime.datetime.now()), "event": str(urlparse(statusidlink).path),"minION": str(urlparse(minionidlink).path)})
+        updatestatus = requests.post(minionidlink + "events/", headers=self.header(),
+                                     json={"computer_name": computer, "datetime": str(datetime.datetime.now()), "event": str(urlparse(statusidlink).path),"minION": str(urlparse(minionidlink).path)})
         print (updatestatus.text)
-        sys.exit()
+
+    def check_scripts(self,minION):
+        minionidlink=self.identify_minion(minION)
+        print (minionidlink)
+        #print(minionidlink+'scripts')
+        r=requests.get(minionidlink + 'scripts/', headers = self.header())
+        print (r.text)
+        self.scripts=r.text
+
+    def update_script(self,minION,script):
+        print ("Updating script registry for {} with {}".format(minION,script))
+        minionidlink=self.identify_minion(minION)
+        print (script['name'])
+        print script["tags"]
+        #Check if we have seen the script before
+        if script["name"] not in self.scripts:
+            #so script is not present.
+            payload=dict()
+            payload["minION"]=minionidlink
+            payload["identifier"]= script["identifier"]
+            payload["name"]= script["name"]
+            if "experiment type" in script["tags"].keys():
+                payload["experiment_type"] = script["tags"]["experiment type"]
+            if "flow cell" in script["tags"].keys():
+                payload["flow_cell"]=script["tags"]["flow cell"]
+            if "base calling" in script["tags"].keys():
+                payload["base_calling"]=script["tags"]["base calling"]
+            if "kit" in script["tags"].keys():
+                payload["kit"]=script["tags"]["kit"]
+            print ("PAYLOAD", payload)
+            updatestate = requests.post(minionidlink + 'scripts/', json=payload, headers=self.header())
+        else:
+            #so script exists, but is the identifier the same or different?
+            if script["identifier"] not in self.scripts:
+                print ("path has changed")
+                for element in json.loads(self.scripts):
+                    if script["name"] in str(element):
+                        print (element)
+                        payload = dict()
+                        payload["minION"] = minionidlink
+                        payload["identifier"] = script["identifier"]
+                        payload["name"] = script["name"]
+                        if "experiment type" in script["tags"].keys():
+                            payload["experiment_type"] = script["tags"]["experiment type"]
+                        if "flow cell" in script["tags"].keys():
+                            payload["flow_cell"] = script["tags"]["flow cell"]
+                        if "base calling" in script["tags"].keys():
+                            payload["base_calling"] = script["tags"]["base calling"]
+                        if "kit" in script["tags"].keys():
+                            payload["kit"] = script["tags"]["kit"]
+                        print("PAYLOAD", payload)
+                        update = requests.put(minionidlink + "scripts/" + str(element["id"]) + "/", json=payload, headers=self.header() )
+                        print (update.text)
+            else:
+                print ("path is the same")
 
 
 
@@ -102,8 +165,9 @@ class HelpTheMinion(WebSocketClient):
                     if thing[1:8] not in minIONdict:
                         print ("INITIALISING MINIONDICT", thing[1:8])
                         minIONdict[thing[1:8]]=dict()
-                        MinControlAPI.create_minion(thing[1:8])
-                        MinControlAPI.update_minion_status(thing[1:8],'UNKNOWN','connected')
+                        APIHelp=MinControlAPI()
+                        APIHelp.create_minion(thing[1:8])
+                        APIHelp.update_minion_status(thing[1:8],'UNKNOWN','connected')
                     #print ("minION ID:", thing[1:8])
                     minIONports =  list(map(lambda x:x-192+8000,filter(lambda x:x>190,map(ord,thing))))
                     if len(minIONports) > 0:
@@ -116,12 +180,19 @@ class HelpTheMinion(WebSocketClient):
                         minIONdict[thing[1:8]]["ws_longpoll_port"]=ws_longpoll_port
                         minIONdict[thing[1:8]]["ws_event_sampler_port"]=ws_event_sampler_port
                         minIONdict[thing[1:8]]["ws_raw_data_sampler_port"]=ws_raw_data_sampler_port
+                        APIHelp = MinControlAPI()
+                        results = execute_command_as_string(commands("machine_name"), ipadd,
+                                                            minIONdict[thing[1:8]]["port"])
+                        print (results["result"])
+                        APIHelp.update_minion_status(thing[1:8], str(results["result"]), 'active')
                     else:
                         minIONdict[thing[1:8]]["state"]="inactive"
                         minIONdict[thing[1:8]]["port"]=""
                         minIONdict[thing[1:8]]["ws_longpoll_port"]=""
                         minIONdict[thing[1:8]]["ws_event_sampler_port"]=""
                         minIONdict[thing[1:8]]["ws_raw_data_sampler_port"]=""
+                        APIHelp = MinControlAPI()
+                        APIHelp.update_minion_status(thing[1:8], 'UNKNOWN', 'inactive')
 
 class DummyClient(WebSocketClient):
 
@@ -471,7 +542,6 @@ if __name__ == '__main__':
                         if "connected" not in minIONclassdict[minION]:
                             connectip = "ws://" + args.ip + ":" + str(minIONdict[minION]["ws_longpoll_port"]) + "/"
                             minIONclassdict[minION]["class"] = DummyClient(connectip)
-                            print ("yo dawg")
                             connectip2 = "ws://" + args.ip + ":" + str(
                                 minIONdict[minION]["ws_longpoll_port"]) + "/user_messages"
                             minIONclassdict[minION]["class2"] = MessagesClient(connectip2)
@@ -505,18 +575,10 @@ if __name__ == '__main__':
                                             results = execute_command_as_string(commands(query), ipadd,
                                                                                 minIONdict[minION]["port"])
                                             livedata[query] = results
-                                            #if query == "disk_space":
-                                                # print results
-                                                # print results["result"][0]["recommend_stop"]
-                                                # print results["result"][0]["recommend_alert"]
-                                            #    check_email_twitter()
-                                            # if query == "biasvoltageget":
-                                            #    print results
-                                            if query == "get_engine_states":
-                                                print (query)
-                                                print (results)
+                                            print (query,results)
                                         minIONdict[minION]["livedata"] = livedata  # append results to data stream
                                         print ("data appended")
+                                        sys.exit()
                                     except Exception as err:
                                         print ("line 1407", err)
                                         pass
@@ -540,16 +602,16 @@ if __name__ == '__main__':
                                                 results = execute_command_as_string(commands(query), ipadd,
                                                                                     minIONdict[minION]["port"])
                                                 livedata[query] = results
+                                                #print (query, results)
                                                 if query == "disk_space":
                                                     # print results
                                                     # print results["result"][0]["recommend_stop"]
                                                     # print results["result"][0]["recommend_alert"]
                                                     check_email_twitter()
-                                                # if query == "get_seq_metrics":
-                                                print (query)
-                                                print (results)
+                                                #if query == "get_seq_metrics":
                                                 # if query == "biasvoltageget":
                                                 #    print results
+
                                             minIONdict[minION]["livedata"] = livedata  # append results to data stream
                                         except Exception as err:
                                             print ("line 1438", err)
@@ -561,8 +623,17 @@ if __name__ == '__main__':
                             print ("here")
                             if "scripts" not in minIONdict[minION]:
                                 minIONdict[minION]["scripts"] = get_run_scripts(minIONdict[minION]["port"])
+                                #print (get_run_scripts(minIONdict[minION]["port"]))
+                                APIHelp = MinControlAPI()
+                                APIHelp.check_scripts(minION)
+                                for script in minIONdict[minION]["scripts"]:
+                                    #print (script)
+                                    APIHelp.update_script(minION,script)
+                                #time.sleep(5)
+                                #sys.exit()
                     else:
                         inactive += 1
+
                 print ("at the end")
             else:
                 print ("Dictionary has changed")
@@ -577,8 +648,7 @@ if __name__ == '__main__':
                                                                                "ws_longpoll_port"]) + "/user_messages"  # Connect to the minIONdict
                                 minIONclassdict[minION] = dict()  # Add minION to the dictionary
                             if "connected" not in minIONclassdict[minION]:
-                                print
-                                "Connecting to this minION", minION
+                                print ("Connecting to this minION", minION)
                                 minIONclassdict[minION]["class"] = DummyClient(connectip)
                                 minIONclassdict[minION]["class2"] = MessagesClient(connectip2)
                             if "connected" not in minIONclassdict[minION]:
@@ -586,19 +656,16 @@ if __name__ == '__main__':
                                     minIONclassdict[minION]["class"].connect()
                                     minIONclassdict[minION]["class2"].connect()
                                 except Exception as err:
-                                    print
-                                    "480 Connection failed", err
+                                    print ("480 Connection failed", err)
                                 try:
-                                    print
-                                    "GETTING THE GOOD STUFF"
+                                    print ("GETTING THE GOOD STUFF")
                                     minIONclassdict[minION]["class"].init_minion(minION)
                                     minIONclassdict[minION]["class2"].init_minion(minION)
                                     results = execute_command_as_string(commands('get_analysis_configuration'), ipadd,
                                                                         minIONdict[minION]["port"])
                                     minIONdict[minION]["channelstuff"] = results["result"]["channel_states"]
                                 except Exception as err:
-                                    print
-                                    "Connection failed", err
+                                    print ("Connection failed", err)
                                 minIONclassdict[minION]["connected"] = "True"
                             livedata = dict()  # collect a dictionary of useful data - might change this
                             minIONdict[minION]["scripts"] = get_run_scripts(minIONdict[minION]["port"])
@@ -618,14 +685,11 @@ if __name__ == '__main__':
                                     # print results["result"][0]["recommend_alert"]
                                     check_email_twitter()
                                 if query == "get_seq_metrics":
-                                    print
-                                    query
-                                    print
-                                    results
+                                    print (query)
+                                    print (results)
                             results = execute_command_as_string(commands('get_statistics'), ipadd,
                                                                 minIONdict[minION]["port"])
-                            print
-                            "Got Stats"
+                            print ("Got Stats")
                             meanratio = list()
                             openpore = list()
                             instrand = list()
@@ -652,12 +716,9 @@ if __name__ == '__main__':
                                     if "detailsdata" not in minIONdict[minION]:
                                         minIONdict[minION]["detailsdata"] = dict()
                                     if np.mean > 0:
-                                        print
-                                        np.mean(meanratio)
-                                        print
-                                        np.mean(openpore)
-                                        print
-                                        np.mean(instrand)
+                                        print (np.mean(meanratio))
+                                        print (np.mean(openpore))
+                                        print (np.mean(instrand))
                                         minIONdict[minION]["detailsdata"]["meanratio"] = np.mean(meanratio)
                                         minIONdict[minION]["detailsdata"]["openpore"] = np.mean(openpore)
                                         minIONdict[minION]["detailsdata"]["instrand"] = np.mean(instrand)
@@ -683,25 +744,20 @@ if __name__ == '__main__':
                                             minIONclassdict[minION]["class"].detailsdict[element]
                         except Exception as err:
                             minIONclassdict.pop(minION)
-                            print
-                            "line 1411", err
-                            print
-                            "Connection Error"
+                            print ("line 1411", err)
+                            print ("Connection Error")
                     else:  # minION state is inactive
                         # print minION, "INACTIVE"
                         if minION in minIONclassdict:
                             if "connected" in minIONclassdict[minION]:
                                 keys = minIONclassdict[minION].keys()
                                 for key in keys:
-                                    print
-                                    key
+                                    print (key)
                                     minIONclassdict[minION].pop(key, None)
             minIONdict_test = minIONdict
             time.sleep(1)
 
 
     except (KeyboardInterrupt, Exception) as err:
-        print
-        ("ctrl-c detected at top level", err)
-        print
-        ("bye bye")
+        print ("ctrl-c detected at top level", err)
+        print ("bye bye")
