@@ -7,15 +7,75 @@ from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
 
-class MinionRun(models.Model):
+class MinION(models.Model):
+    minION_name = models.CharField(max_length=64)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='minIONs')
+
+    def __str__(self):
+        return self.minION_name
+
+    def status(self):
+        return self.events.order_by('datetime').last()
+
+    def details(self):
+        return self.currentdetails.order_by('datetime').last()
+
+class MinIONStatus(models.Model):
+    minION = models.ForeignKey(MinION, related_name='currentdetails')
+    minKNOW_status = models.CharField(max_length=64)
+    minKNOW_current_script = models.CharField(max_length=256, blank=True, null=True)
+    minKNOW_sample_name = models.CharField(max_length=256,blank=True, null=True)
+    minKNOW_flow_cell_id = models.CharField(max_length=64, blank=True, null=True)
+    minKNOW_run_name = models.CharField(max_length=256,blank=True, null=True)
+    minKNOW_voltage_offset = models.IntegerField(blank=True, null=True)
+    minKNOW_yield = models.IntegerField(blank=True, null=True)
+    minKNOW_total_drive_space = models.FloatField(blank=True, null=True)
+    minKNOW_disk_space_till_shutdown = models.FloatField(blank=True, null=True)
+    minKNOW_warnings = models.BooleanField(default=False)
+
+    def __str__(self):
+        return "{} {}".format(self.minION,self.minKNOW_status)
+
+
+class MinIONRun(models.Model):
     run_name = models.CharField(max_length=64)
     run_id = models.CharField(max_length=64)
     is_barcoded = models.BooleanField(default=False)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='runs')
+    minION = models.ForeignKey(MinION, blank=True, null=True)
 
     def __str__(self):
         return self.run_name
 
+class MinIONEventType(models.Model):
+    name = models.CharField(max_length=64)
+
+    def __str__(self):
+        return self.name
+
+
+class MinIONEvent(models.Model):
+    computer_name = models.CharField(max_length=256)
+    minION = models.ForeignKey(MinION, related_name='events')
+    event = models.ForeignKey(MinIONEventType)
+    datetime =models.DateTimeField()
+
+    def __str__(self):
+        return "{} {} {} {}".format(self.computer_name, self.minION, self.event, self.datetime)
+
+
+
+class MinIONScripts(models.Model):
+    minION = models.ForeignKey(MinION, related_name='scripts')
+    identifier = models.CharField(max_length=256)
+    name = models.CharField(max_length=256)
+    experiment_type = models.CharField(max_length=256, blank=True, null=True)
+    base_calling = models.NullBooleanField(blank=True, null=True)
+    flow_cell = models.CharField(max_length=256, blank=True, null=True)
+    kit = models.CharField(max_length=256, blank=True, null=True)
+
+    def __str__(self):
+        return "{} {} {}".format(self.minION, self.name, self.identifier)
 
 class FastqReadType(models.Model):
     name = models.CharField(max_length=16)
@@ -25,7 +85,7 @@ class FastqReadType(models.Model):
 
 
 class FastqRead(models.Model):
-    run_id = models.ForeignKey(MinionRun,
+    run_id = models.ForeignKey(MinIONRun,
                                on_delete=models.CASCADE,
                                related_name='reads')
     read_id = models.CharField(max_length=64)
@@ -43,7 +103,7 @@ class FastqRead(models.Model):
 
 
 class RunSummary(models.Model):
-    run_id = models.ForeignKey(MinionRun,on_delete=models.CASCADE)
+    run_id = models.ForeignKey(MinIONRun,on_delete=models.CASCADE)
     total_length = models.IntegerField(default=0)
     read_count = models.IntegerField(default=0)
     type = models.ForeignKey(FastqReadType)
@@ -59,7 +119,7 @@ class RunSummary(models.Model):
 
 
 class RunSummaryBarCode(models.Model):
-    run_id = models.ForeignKey(MinionRun,on_delete=models.CASCADE)
+    run_id = models.ForeignKey(MinIONRun,on_delete=models.CASCADE)
     total_length = models.IntegerField(default=0)
     read_count = models.IntegerField(default=0)
     type = models.ForeignKey(FastqReadType)
@@ -76,7 +136,7 @@ class RunSummaryBarCode(models.Model):
 
 
 class RunStatistic(models.Model):
-    run_id = models.ForeignKey(MinionRun, on_delete=models.CASCADE)
+    run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
     sample_time = models.DateTimeField()
     total_length = models.IntegerField(default=0)
     max_length = models.IntegerField(default=0)
@@ -95,7 +155,7 @@ class RunStatistic(models.Model):
 
 
 class RunStatisticBarcode(models.Model):
-    run_id = models.ForeignKey(MinionRun,on_delete=models.CASCADE)
+    run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
     sample_time = models.DateTimeField()
     total_length = models.IntegerField(default=0)
     read_count = models.IntegerField(default=0)

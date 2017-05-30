@@ -12,4 +12,11 @@ urlpatterns = [
     url(r'^api/v1/reads/(?P<pk>[0-9]+)/$', views.read_detail, name="fastqread-detail"),
     url(r'^api/v1/readtypes/$', views.read_type_list, name="fastqreadtype-list"),
     url(r'^api/v1/readtypes/(?P<pk>[0-9]+)/$', views.read_type_detail, name="fastqreadtype-detail"),
+    url(r'^api/v1/minions/$', views.minion_list, name="minION_list"),
+    url(r'^api/v1/minions/(?P<pk>[0-9]+)/$', views.minION_detail, name="minion-detail"),
+    url(r'^api/v1/minions/(?P<pk>[0-9]+)/events/$', views.minION_events_list, name="minIONevents-list"),
+    url(r'^api/v1/minions/(?P<pk>[0-9]+)/scripts/$', views.minION_scripts_list, name="minIONscripts-list"),
+    url(r'^api/v1/minions/(?P<pk>[0-9]+)/scripts/(?P<nk>[0-9]+)/$', views.minION_scripts_detail, name="minIONscripts-detail"),
+    url(r'^api/v1/events/$', views.events_type_list, name="eventstype-list"),
+    url(r'^api/v1/events/(?P<pk>[0-9]+)/$', views.events_type_detail, name="minioneventtype-detail"),
 ]
