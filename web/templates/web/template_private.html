@@ -263,15 +263,19 @@
                     </ul>
                 </li>
                 <?php } ?>
-                <?php if (checkallruns()) {?>
+
                 <li id="prevruns" class="treeview">
-                    <a href="#"><i class="fa fa-table fa-fw"></i><span> Previous Run</span> <i
-                            class="fa fa-angle-left pull-right"></i></a>
+                    <a href="#">
+                        <i class="fa fa-table fa-fw"></i>
+                        <span> Previous Run</span>
+                        <i class="fa fa-angle-left pull-right"></i>
+                    </a>
                     <ul class="treeview-menu">
                         <?php if (isset($_SESSION['focusrun'])) {?>
                         <li>
-                            <a href="previous_runs.php" id="SR"><i
-                                    class="fa fa-database fa-fw"></i><span> Change Run</span></a>
+                            <a href="{% url 'previous-runs' %}" id="SR">
+                                <i class="fa fa-database fa-fw"></i><span> Change Run</span>
+                            </a>
                         </li>
                         <?php if (isset($_SESSION['focusbarcode']) && $_SESSION['focusbarcode'] >= 1) {?>
                         <li>
@@ -334,7 +338,7 @@
                         <?php };?>
                     </ul>
                 </li>
-                <?php }?>
+
             
                 {% if user.is_superuser %}
                     <li id="admin" class="treeview">

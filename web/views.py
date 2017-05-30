@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
+from reads.models import MinionRun
 
 
 def index(request):
@@ -32,3 +33,9 @@ def minup(request):
 @login_required
 def tutorial(request):
     return render(request, 'web/tutorial.html')
+
+
+@login_required
+def previous_run(request):
+    minion_runs = MinionRun.objects.filter(owner=request.user)
+    return render(request, 'web/previous_run.html', context={'minion_runs': minion_runs})
