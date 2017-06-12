@@ -1,0 +1,14 @@
+watchdog
+Django
+django-filter
+django-mailgun 
+djangorestframework 
+httpie 
+Markdown 
+mysqlclient 
+python-dateutil
+pytz 
+configargparse
+requests
+BioPython
+numpy
