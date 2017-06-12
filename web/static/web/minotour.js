@@ -29,8 +29,8 @@ function check_user_runs() {
     $.getJSON(url, function (data) {
         var items = [];
         $.each(data, function(key, val){
-        console.log(val);
-            items.push("<li id='" + key + "'>" + val.run_name + "</li>");
+            console.log(val);
+            items.push("<li id='" + key + "'><a href='/web/private/runs/" + val.run_name + "'>" + val.run_name + "</a></li>");
         });
 
         var text = "<span>You have " + data.length + " minION runs available to view.</span>"

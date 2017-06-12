@@ -11,4 +11,5 @@ urlpatterns = [
     url(r'^private/minup/$', views.minup, name='minup'),
     url(r'^private/tutorial/$', views.tutorial, name='tutorial'),
     url(r'^private/previous-runs/$', views.previous_run, name='previous-runs'),
+    url(r'^private/runs/(?P<run_name>[0-9A-Za-z_]+)/$', views.run_index, name='run-index'),
 ]
