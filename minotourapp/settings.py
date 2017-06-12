@@ -25,7 +25,7 @@ SECRET_KEY = '@z+2b+7hj5w6zce6!6puz$s!&amy)j@10#qlzuh9w^p#0zwzvm'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['192.168.100.10', ]
+ALLOWED_HOSTS = ['*', ]
 
 
 # Application definition
@@ -142,3 +142,8 @@ REST_FRAMEWORK = {
 LOGIN_URL='/login'
 LOGIN_REDIRECT_URL='/web/private/index'
 LOGOUT_REDIRECT_URL=LOGIN_URL
+
+EMAIL_BACKEND = 'django_mailgun.MailgunBackend'
+MAILGUN_ACCESS_KEY = 'key-eb3edd3b95bab6e91e6c8fba362de831'
+MAILGUN_SERVER_NAME = 'apps.geodev.com.br'
+
