@@ -334,40 +334,42 @@
                         <?php };?>
                     </ul>
                 </li>
-
-
                 <?php }?>
-                <?php if ($_SESSION['adminuser'] == 1){?>
-                <li id="admin" class="treeview">
-                    <a href="#"><i class="fa fa-edit fa-fw"></i> <span>Admin</span> <i
-                            class="fa fa-angle-left pull-right"></i></a>
-                    <ul class="treeview-menu">
-                        <li>
-                            <a href="enable.php"><i class="fa fa-child fa-fw"></i><span> Enable User Upload</span></a>
-                        </li>
-                        <li>
-                            <a href="admin.php"><i
-                                    class="fa fa-database fa-fw"></i><span> Database Allocation</span></a>
-                        </li>
-                        <li>
-                            <a href="admin_manage.php"><i
-                                    class="fa fa-database fa-fw"></i><span> Database Management</span></a>
-                        </li>
-                        <li>
-                            <a href="admin_users.php"><i class="fa fa-users fa-fw"></i><span> Set Administrators</span></a>
-                        </li>
-                        <li>
-                            <a href="cache_manage.php"><i
-                                    class="fa fa-database fa-fw"></i><span> Cache Administration</span></a>
-                        </li>
-                    </ul>
-                </li>
-                <?php };?>
+            
+                {% if user.is_superuser %}
+                    <li id="admin" class="treeview">
+                        <a href="#"><i class="fa fa-edit fa-fw"></i> <span>Admin</span> <i
+                                class="fa fa-angle-left pull-right"></i></a>
+                        <ul class="treeview-menu">
+                            <li>
+                                <a href="enable.php"><i
+                                        class="fa fa-child fa-fw"></i><span> Enable User Upload</span></a>
+                            </li>
+                            <li>
+                                <a href="admin.php"><i
+                                        class="fa fa-database fa-fw"></i><span> Database Allocation</span></a>
+                            </li>
+                            <li>
+                                <a href="admin_manage.php"><i
+                                        class="fa fa-database fa-fw"></i><span> Database Management</span></a>
+                            </li>
+                            <li>
+                                <a href="admin_users.php"><i
+                                        class="fa fa-users fa-fw"></i><span> Set Administrators</span></a>
+                            </li>
+                            <li>
+                                <a href="cache_manage.php"><i
+                                        class="fa fa-database fa-fw"></i><span> Cache Administration</span></a>
+                            </li>
+                        </ul>
+                    </li>
+                {% endif %}
                 <li>
-                    <a href="tutorials.php"><i class="fa fa-question-circle fa-fw"></i><span> Tutorials</span></a>
+                    <a href="{% url 'tutorial' %}"><i
+                            class="fa fa-question-circle fa-fw"></i><span> Tutorials</span></a>
                 <li>
                 <li>
-                    <a href="minup.php"><i class="fa fa-cloud-upload fa-fw"></i><span> minUp Scripts</span></a>
+                    <a href="{% url 'minup' %}"><i class="fa fa-cloud-upload fa-fw"></i><span> minUp Scripts</span></a>
                 <li>
                     <a href="{% url 'external-links' %}"><i class="fa fa-files-o fa-fw"></i><span> External Links</span></a>
                 </li>

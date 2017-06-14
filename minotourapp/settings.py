@@ -142,3 +142,8 @@ REST_FRAMEWORK = {
 LOGIN_URL='/login'
 LOGIN_REDIRECT_URL='/web/private/index'
 LOGOUT_REDIRECT_URL=LOGIN_URL
+
+EMAIL_BACKEND = 'django_mailgun.MailgunBackend'
+MAILGUN_ACCESS_KEY = 'key-eb3edd3b95bab6e91e6c8fba362de831'
+MAILGUN_SERVER_NAME = 'apps.geodev.com.br'
+

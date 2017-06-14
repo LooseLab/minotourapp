@@ -1,0 +1,110 @@
+{% extends "web/template_private.html" %}
+
+{% block content %}
+    <div class="content-wrapper">
+
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+            <h1>
+                <span>minUP <small>- uploading data to minoTour.</small></span>
+            </h1>
+            <ol class="breadcrumb">
+                <li><a href="#"><i class="fa fa-cloud-upload"></i> minUP Scripts</a></li>
+                <li class="active">Here</li>
+            </ol>
+        </section>
+
+        <!-- Main content -->
+        <section class="content">
+            <div class="box">
+                <div class="box-header">
+                    <h3 class="box-title">Getting Hold Of minUP</h3>
+                </div><!-- /.box-header -->
+                <div class="box-body">
+                    <h4><u>minUP for Windows 0.70</u></h4>
+                    <p>The latest version of minUP for Windows can be downloaded below. Please note that you must
+                    download either a windows 7 or a windows 10 version now. We are trying to rectify this asap. This
+                    compressed folder includes a compiled version of the last and BWA aligners which in turn require
+                    CYGWIN to be installed on your system (available from <a href='http://www.cygwin.com/'
+                                                                             target='_blank'>www.cygwin.com</a>).</p>
+
+                    <p>This version also allows you to use BWA and additinal alignment options will be introduced in the
+                        near future.</p>
+
+                    <p>A new feature for minUP version 0.6 is a GUI - a graphical user interface - to
+                        simplify data upload.</p>
+
+                    <p>minUP 0.70 also enables remote control facilities for your minION
+                        although this is somewhat experimental!</p>
+
+                    <p><a href='https://github.com/minoTour/winminUP/archive/master.zip' target='_blank'><i
+                            class='fa fa-file-code-o'></i> minUP for Windows 10</a></p>
+
+                    <p><a href='https://github.com/minoTour/winminUPwin7/archive/master.zip' target='_blank'><i
+                            class='fa fa-file-code-o'></i> minUP for Windows 7/8</a></p>
+
+                    <p>This version of minUP utilises a configuration file to bypass entering some of the standard
+                        parameters on the command line or in the GUI. You can download custom versions of these files below.
+                        Copy both files into the minUP folder.</p>
+
+                    <h4><u>Windows minUP Configuration Files</u></h4>
+
+                    <p>This file is provided for backwards compatibility only. Click the icon below to download your
+                        personalised Windows minup configuration file. It should be saved in the folder containing the
+                        windows minup executable and you should ensure it is named minup_windows.config - some browsers may
+                        append .txt to the end of the file.</p>
+
+                    <p><a href='minup/GUIconfig.php?user_name=xxxxxx' target='_blank'><i
+                        class='fa fa-file-code-o'></i> minUP Gui Config</a></p>
+
+                    <p><a href='minup/minupwindowsconfig.php?user_name=xxxxxx'
+                    target='_blank'><i class='fa fa-file-code-o'></i> minUP Windows Config</a></p>
+
+                    <p>You are free to edit this file and the parameters within it can be overridden by the
+                        parameter settings on the command line. Do not distribute this file to others as it is specific to
+                        you. Within the file is a hashed out line containing your password for uploading data to the
+                        database.</p>
+
+                    <h4><u>minUP for Linux</u></h4>
+
+                    <p>The latest version of minUP for linux can be downloaded below. This is a python script and
+                        requires several dependencies. This includes the option to run BWA or LAST. It also provides remote
+                        control facilities for your minION. This is EXPERIMENTAL now and more information will be provided
+                        soon.</p>
+
+                    <p><a href='https://github.com/minoTour/linminUP/archive/master.zip' target='_blank'><i
+                        class='fa fa-file-code-o'></i> minUP for Linux</a></p>
+
+                    <h4><u>Linux minUP Configuration File</u></h4>
+
+                    <p>Click the icon below to download your personalised minup configuration file. It should be
+                    saved in the same folder as your minup script and you should ensure it is called minup_posix.config
+                    - some browsers may append .txt to the end of the file.</p>
+
+                    <p><a href='minup/minupposixconfig2.php?user_name=xxxxxx'
+                    target='_blank'><i class='fa fa-file-code-o'></i> minUP Linux Config</a></p>
+
+                    <p>You are free to edit this file and the parameters within it can be overridden by the
+                        parameter settings on the command line. Do not distribute this file to others as it is specific to
+                        you.</p>
+
+                    <p><strong>The password to upload data will have been sent to you seperately - contact the
+                    system administrator if it is lost.</strong></p>
+
+                    <h4><u>Demo Data Set</u></h4>
+
+                    <p>To test your installation we have created a small sample of data from the released Loman
+                        Lab dataset (<a href='http://dx.doi.org/10.5524/100102' target='_blank'>http://dx.doi.org/10.5524/100102'</a>).
+                        This sample set consists of just the first 100 or so reads from the run and some newer features of
+                        minoTour are not supported by the older dataset. Decompress the demo_data_set.zip folder to a
+                        location on your machine. The folder structure is important here. metrichor returns files to a
+                        folder called ‘downloads’ and minup looks for this folder in any location you point it at - so keep
+                        the folder structure. We also include a copy of the reference genome in this dataset.</p>
+
+                    <p><a href='minup/demo_data_set.zip' target='_blank'><i class='fa fa-file-code-o'></i> Demo Data
+                    Set</a></p>
+                </div>
+            </div>
+        </section><!-- /.content -->
+    </div><!-- /.content-wrapper -->
+{% endblock %}
