@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from minotourapp.urls import RunStatisticSerializer
 from reads.models import MinIONRun, FastqRead, FastqReadType, RunStatistic, MinION, MinIONEvent, MinIONEventType, \
     MinIONScripts
 from reads.serializers import MinIONRunSerializer, FastqReadSerializer, FastqReadTypeSerializer, MinIONSerializer, \
@@ -296,7 +297,43 @@ def run_read_statistics(request, pk):
 
     result = queryset.annotate(Sum('read_count'), Avg('read_count'), Max('read_count'))
 
-    return HttpResponse(json.dumps(list(result)), content_type="application/json")
+    result2 = dict()
+    result2.update({'reads_called': []})
+    result2.update({'yield': []})
+    result2.update({'average_read_length': []})
+    result2.update({'maximum_read_length': []})
+
+    for q in result:
+        series = dict()
+        series.update({'name': q['type__name']})
+        series.update({'data': [q['read_count__sum'], ]});
+
+        result2['reads_called'].append(series);
+
+        series = dict()
+        series.update({'name': q['type__name']})
+        series.update({'data': [q['read_count__avg'], ]});
+
+        result2['average_read_length'].append(series);
+
+        series = dict()
+        series.update({'name': q['type__name']})
+        series.update({'data': [q['read_count__max'], ]});
+
+        result2['maximum_read_length'].append(series);
+
+    return HttpResponse(json.dumps(result2), content_type="application/json")
+
+
+@api_view(['GET'])
+def run_read_statistics2(request, pk):
+    queryset = RunStatistic.objects\
+        .filter(run_id__owner=request.user)\
+        .filter(run_id=pk)
+
+    serializer = RunStatisticSerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
 
 
 def UTC_time_to_epoch(timestamp):

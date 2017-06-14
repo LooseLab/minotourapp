@@ -227,16 +227,14 @@
 
     <script>
         $(document).ready(function () {
-            var options = {
+            var options_reads_called = {
                 chart: {
                     renderTo: 'readnum',
                     type: 'column',
-                    //type: 'line'
                 },
                 plotOptions: {
                     column: {
                         animation: false
-
                     }
                 },
                 title: {
@@ -263,18 +261,208 @@
                 },
                 series: []
             };
-            $.getJSON('jsonencode/readnumber.php?prev=1&callback=?', function (data) {
-                //alert("success");
 
-                options.series = data; // <- just assign the data to the series property.
+            var options_reads_avg = {
+                chart: {
+                    renderTo: 'avglen',
+                    type: 'column',
+                },
+                plotOptions: {
+                    column: {
+                        animation: false
+                    }
+                },
+                title: {
+                    text: 'Average Read Length'
+                },
+                xAxis: {
+                    title: {
+                        text: 'Strand'
+                    }
+                },
+                yAxis: {
+                    title: {
+                        text: 'Number of Reads Called'
+                    }
+                },
+                credits: {
+                    enabled: false
+                },
+                legend: {
+                    layout: 'vertical',
+                    align: 'center',
+                    verticalAlign: 'bottom',
+                    borderWidth: 0
+                },
+                series: []
+            };
 
-                //options.series = JSON2;
-                var chart = new Highcharts.Chart(options);
+            var options_reads_max = {
+                chart: {
+                    renderTo: 'maxlen',
+                    type: 'column',
+                },
+                plotOptions: {
+                    column: {
+                        animation: false
+                    }
+                },
+                title: {
+                    text: 'Maximum Read Length'
+                },
+                xAxis: {
+                    title: {
+                        text: 'Strand'
+                    }
+                },
+                yAxis: {
+                    title: {
+                        text: 'Number of Reads Called'
+                    }
+                },
+                credits: {
+                    enabled: false
+                },
+                legend: {
+                    layout: 'vertical',
+                    align: 'center',
+                    verticalAlign: 'bottom',
+                    borderWidth: 0
+                },
+                series: []
+            };
+
+            var options_reads_yield = {
+                chart: {
+                    renderTo: 'yield',
+                    type: 'column',
+                },
+                plotOptions: {
+                    column: {
+                        animation: false
+                    }
+                },
+                title: {
+                    text: 'Yield'
+                },
+                xAxis: {
+                    title: {
+                        text: 'Strand'
+                    }
+                },
+                yAxis: {
+                    title: {
+                        text: 'Number of Reads Called'
+                    }
+                },
+                credits: {
+                    enabled: false
+                },
+                legend: {
+                    layout: 'vertical',
+                    align: 'center',
+                    verticalAlign: 'bottom',
+                    borderWidth: 0
+                },
+                series: []
+            };
+
+            var options_average_read_length_overtime = {
+                chart: {
+                    renderTo: 'lengthtimewindow',
+                    zoomType: 'x',
+                    type: 'spline',
+                },
+                title: {
+                    text: 'Average Read Lengths Over Time'
+                },
+                resetZoomButton: {
+                    position: {
+                        // align: 'right', // by default
+                        // verticalAlign: 'top', // by default
+                        x: -10,
+                        y: 10
+                    },
+                    relativeTo: 'chart'
+                },
+                plotOptions: {
+                    spline: {
+                        animation: false,
+                        marker: {
+                            enabled: false
+                        }
+
+                    },
+
+
+                },
+                xAxis: {
+                    type: 'datetime',
+                    dateTimeLabelFormats: { // don't display the dummy year
+                        month: '%e. %b',
+                        year: '%b'
+                    },
+                    title: {
+                        text: 'Time/Date'
+                    }
+                },
+                yAxis: {
+
+                    labels: {
+                        align: 'right',
+                        x: -3
+                    },
+
+                    title: {
+                        text: 'Average Read Length'
+                    },
+                    height: '100%',
+                    lineWidth: 1,
+                    min: 0
+                },
+                credits: {
+                    enabled: false
+                },
+                legend: {
+                    title: {
+                        text: 'Read Type <span style="font-size: 9px; color: #666; font-weight: normal">(Click to hide)</span>',
+                        style: {
+                            fontStyle: 'italic'
+                        }
+                    },
+
+                    layout: 'horizontal',
+                    align: 'center',
+                    //verticalAlign: 'middle',
+                    borderWidth: 0
+                },
+                series: []
+            };
+            $.getJSON('/api/v1/runs/20/reads_statistics/', function (data) {
+                console.log(data);
+                options_reads_called.series = data.reads_called;
+                options_reads_avg.series = data.average_read_length;
+                options_reads_max.series = data.maximum_read_length;
+                options_reads_yield.series = data.maximum_read_length;
+
+                new Highcharts.Chart(options_reads_called);
+                new Highcharts.Chart(options_reads_avg);
+                new Highcharts.Chart(options_reads_max);
+                new Highcharts.Chart(options_reads_yield);
             });
 
+            $.getJSON('/api/v1/runs/20/reads_statistics2/', function (data) {
+
+                var series = {}
+                series.
+                $.each(data, function(index, value){
+
+                });
+                console.log(data);
+            });
+
+
         });
-
-
     </script>
 
 {% endblock %}
