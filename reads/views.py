@@ -7,8 +7,29 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from reads.models import MinIONRun, FastqRead, FastqReadType, RunStatistic, MinION, MinIONEvent,MinIONEventType, MinIONScripts
-from reads.serializers import MinIONRunSerializer, FastqReadSerializer, FastqReadTypeSerializer, MinIONSerializer, MinIONScriptsSerializer, MinIONEventSerializer,MinIONEventTypeSerializer
+from reads.models import MinIONRun, FastqRead, FastqReadType, RunStatistic, \
+    MinION, \
+    MinIONEvent,\
+    MinIONEventType, \
+    MinIONScripts, \
+    MinIONStatus, \
+    MinIONRunStatus, \
+    MinIONRunStats, \
+    MinIONmessages
+
+from reads.serializers import MinIONRunSerializer, \
+    FastqReadSerializer, \
+    FastqReadTypeSerializer, \
+    MinIONSerializer, \
+    MinIONScriptsSerializer, \
+    MinIONEventSerializer,\
+    MinIONEventTypeSerializer,\
+    MinIONStatusSerializer,\
+    MinIONRunStatusSerializer,\
+    MinIONmessagesSerializer
+    #MinIONRunStatsSerializer
+
+from reads.serializers import MinIONRunStatsSerializer
 
 
 @api_view(['GET'])
@@ -97,6 +118,24 @@ def minion_list(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET', 'POST'])
+def minION_messages_list(request, pk):
+    """
+    Get messages
+    :param request:
+    :return:
+    """
+    if request.method == 'GET':
+        queryset = MinIONmessages.objects.filter(minION=pk)
+        serializer = MinIONmessagesSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        serializer = MinIONmessagesSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'PUT', 'DELETE'])
 def run_detail(request, pk):
@@ -161,6 +200,124 @@ def minION_scripts_list(request, pk):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'PUT', 'POST', 'DELETE'])
+def minION_status_list(request,pk):
+    """
+    Get, update or delete a minION status.
+    :param request: 
+    :param pk: 
+    :return: 
+    """
+    if request.method == 'POST':
+        serializer = MinIONStatusSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        minIONstat = MinIONStatus.objects.get(minION=pk)
+
+    except MinIONStatus.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = MinIONStatusSerializer(minIONstat, context={'request': request})
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = MinIONStatusSerializer(minIONstat, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        minIONstat.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET', 'PUT', 'POST', 'DELETE'])
+def minION_run_stats_list(request,pk):
+    """
+    Get, update or delete a minION status.
+    :param request: 
+    :param pk: 
+    :return: 
+    """
+    if request.method == 'POST':
+        serializer = MinIONRunStatsSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        crazyminIONrunstats = MinIONRunStats.objects.filter(run_id=pk)
+        #minIONrunstats = MinIONRunStats.objects.all()
+        print (len(crazyminIONrunstats))
+
+    except MinIONRunStats.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        print (crazyminIONrunstats)
+        for item in crazyminIONrunstats:
+            print (item.minION, item.run_id, item.sample_time, item.event_yield)
+
+        serializer = MinIONRunStatsSerializer(crazyminIONrunstats, many=True , context={'request': request})
+
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = MinIONRunStatsSerializer(crazyminIONrunstats, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        crazyminIONrunstats.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET', 'PUT', 'POST', 'DELETE'])
+def minION_run_status_list(request,pk):
+    """
+    Get, update or delete a minION status.
+    :param request: 
+    :param pk: 
+    :return: 
+    """
+    if request.method == 'POST':
+        serializer = MinIONRunStatusSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        minIONrunstat = MinIONRunStatus.objects.filter(run_id=pk)
+
+    except MinIONRunStatus.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = MinIONRunStatusSerializer(minIONrunstat, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = MinIONRunStatusSerializer(minIONrunstat, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        minIONrunstat.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 @api_view(['GET','PUT','DELETE'])
 def minION_scripts_detail(request, pk, nk):
