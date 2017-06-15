@@ -137,6 +137,26 @@ def minION_messages_list(request, pk):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET',])
+def minION_currentrun_list(request, pk):
+    """
+    get the latest run for this specific minION
+    :param request:
+    :param pk:
+    :return:
+    """
+    try:
+        #print (pk)
+        #print (MinIONEvent.objects.all())
+        minion = MinION.objects.get(pk=pk)
+    except MinION.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        serializer = MinIONSerializer(minion, context={'request': request})
+        return Response(serializer.data)
+
+
 @api_view(['GET', 'PUT', 'DELETE'])
 def run_detail(request, pk):
     """
@@ -437,3 +457,8 @@ def cumulative_read_count(request,pk):
 def UTC_time_to_epoch(timestamp):
     dt = parser.parse(timestamp)
     return dt.timestamp()*1000
+
+
+@api_view(['GET'])
+def minION_liverun_list(request,pk):
+    return None

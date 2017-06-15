@@ -5,6 +5,8 @@ from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
+from django.urls import reverse
+
 
 
 class MinION(models.Model):
@@ -20,6 +22,15 @@ class MinION(models.Model):
         except AttributeError:
             status = "undefined"
         return status
+
+    def last_run(self):
+        try:
+            #last_run = self.minionrun.last().id
+            return reverse('minIONrunstats_list', args=[self.minionrun.last().id])
+        except AttributeError:
+            last_run = undefined
+        return last_run
+
 
     def computer(self):
         try:
@@ -70,8 +81,6 @@ class MinION(models.Model):
         except AttributeError:
             return "undefined"
 
-    def details(self):
-        return self.currentdetails.order_by('datetime').last()
 
 
 class MinIONStatus(models.Model):
@@ -97,12 +106,14 @@ class MinIONStatus(models.Model):
         return "{} {}".format(self.minION,self.minKNOW_status)
 
 
+
+
 class MinIONRun(models.Model):
     run_name = models.CharField(max_length=64)
     run_id = models.CharField(max_length=64)
     is_barcoded = models.BooleanField(default=False)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='runs')
-    minION = models.ForeignKey(MinION, blank=True, null=True)
+    minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minionrun')
 
     def __str__(self):
         return self.run_name

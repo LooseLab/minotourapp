@@ -28,8 +28,8 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
 class MinIONSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = MinION
-        fields = ('url', 'minION_name', 'status', 'computer','sample_name','run_status','flow_cell_id','run_name','total_drive_space','space_till_shutdown','warnings',)
-        read_only = ('status','computer','sample_name','run_status','flow_cell_id','run_name','total_drive_space','space_till_shutdown','warnings',)
+        fields = ('url', 'minION_name', 'status', 'computer','sample_name','run_status','flow_cell_id','run_name','total_drive_space','space_till_shutdown','warnings','last_run',)
+        read_only = ('status','computer','sample_name','run_status','flow_cell_id','run_name','total_drive_space','space_till_shutdown','warnings','last_run',)
 
 class FastqReadTypeSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -157,3 +157,5 @@ class MinIONRunStatusSerializer(serializers.HyperlinkedModelSerializer):
             #'minKNOW_warnings',
         )
         read_only = ('id',)
+
+

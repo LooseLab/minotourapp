@@ -19,6 +19,7 @@ urlpatterns = [
     url(r'^api/v1/minions/(?P<pk>[0-9]+)/events/$', views.minION_events_list, name="minIONevents-list"),
     url(r'^api/v1/minions/(?P<pk>[0-9]+)/messages/$', views.minION_messages_list, name="minIONmessages-list"),
     url(r'^api/v1/minions/(?P<pk>[0-9]+)/status/$', views.minION_status_list, name="minIONstatus-list"),
+    #url(r'^api/v1/minions/(?P<pk>[0-9]+)/rundetails/$', views.minION_liverun_list, name="minIONliverun-list"),
     url(r'^api/v1/minions/(?P<pk>[0-9]+)/scripts/$', views.minION_scripts_list, name="minIONscripts-list"),
     url(r'^api/v1/minions/(?P<pk>[0-9]+)/scripts/(?P<nk>[0-9]+)/$', views.minION_scripts_detail, name="minIONscripts-detail"),
     url(r'^api/v1/events/$', views.events_type_list, name="eventstype-list"),
