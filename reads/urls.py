@@ -4,13 +4,16 @@ from reads import views
 
 urlpatterns = [
     #url(r'^api/v1/dataset/$', views.data_set, name="data_set"),
-    url(r'^api/v1/runs/$', views.run_list, name="run_list"),
+    url(r'^api/v1/runs/$', views.run_list, name="run-list"),
     url(r'^api/v1/runs/(?P<pk>[0-9]+)/$', views.run_detail, name="minionrun-detail"),
     url(r'^api/v1/runs/(?P<pk>[0-9]+)/reads/$', views.read_list, name="fastqread-list"),
     url(r'^api/v1/runs/(?P<pk>[0-9]+)/readnames/$', views.readname_list, name="fastqreadnames-list"),
     url(r'^api/v1/runs/(?P<pk>[0-9]+)/yield/$', views.cumulative_read_count, name="cumulative_read_count"),
     url(r'^api/v1/runs/(?P<pk>[0-9]+)/rundetails/$', views.minION_run_status_list, name="minIONrunstatus_list"),
     url(r'^api/v1/runs/(?P<pk>[0-9]+)/runstats/$', views.minION_run_stats_list, name="minIONrunstats_list"),
+    url(r'^api/v1/runs/(?P<pk>[0-9]+)/reads_statistics/$', views.run_read_statistics, name="minion-run-read-statistics"),
+    url(r'^api/v1/runs/(?P<pk>[0-9]+)/reads_statistics2/$', views.run_read_statistics2, name="minion-run-read-statistics2"),
+    url(r'^api/v1/runs/(?P<pk>[0-9]+)/barcodes/$', views.run_barcodes, name="minion-run-barcodes"),
     url(r'^api/v1/reads/(?P<pk>[0-9]+)/$', views.read_detail, name="fastqread-detail"),
     url(r'^api/v1/readtypes/$', views.read_type_list, name="fastqreadtype-list"),
     url(r'^api/v1/readtypes/(?P<pk>[0-9]+)/$', views.read_type_detail, name="fastqreadtype-detail"),

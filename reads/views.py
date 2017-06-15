@@ -1,6 +1,6 @@
 import json
 from dateutil import parser
-
+from django.db.models import Sum, Avg, Max
 
 from django.http import HttpResponse
 from rest_framework import status
@@ -29,7 +29,15 @@ from reads.serializers import MinIONRunSerializer, \
     MinIONmessagesSerializer
     #MinIONRunStatsSerializer
 
+from reads.models import MinIONRun, FastqRead, FastqReadType, RunStatistic, MinION, MinIONEvent, MinIONEventType, \
+    MinIONScripts, RunSummary, RunSummaryBarCode
+from reads.serializers import MinIONRunSerializer, FastqReadSerializer, FastqReadTypeSerializer, MinIONSerializer, \
+    MinIONScriptsSerializer, MinIONEventSerializer, MinIONEventTypeSerializer
+
 from reads.serializers import MinIONRunStatsSerializer
+from minotourapp.urls import RunStatisticSerializer
+
+
 
 
 @api_view(['GET'])
@@ -41,6 +49,7 @@ def read_type_list(request):
         queryset = FastqReadType.objects.all()
         serializer = FastqReadTypeSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
+
 
 @api_view(['GET'])
 def events_type_list(request):
@@ -194,15 +203,16 @@ def minION_events_list(request, pk):
     """
     if request.method == 'GET':
         queryset = MinIONEvent.objects.filter(minION=pk)
-        serializer = MinIONEventSerializer(queryset,many=True, context={'request': request})
+        serializer = MinIONEventSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
-    elif request.method=='POST':
+    elif request.method == 'POST':
         serializer = MinIONEventSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET', 'POST'])
 def minION_scripts_list(request, pk):
@@ -211,15 +221,16 @@ def minION_scripts_list(request, pk):
     """
     if request.method == 'GET':
         queryset = MinIONScripts.objects.filter(minION=pk)
-        serializer = MinIONScriptsSerializer(queryset,many=True, context={'request': request})
+        serializer = MinIONScriptsSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
-    elif request.method=='POST':
+    elif request.method == 'POST':
         serializer = MinIONScriptsSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET', 'PUT', 'POST', 'DELETE'])
 def minION_status_list(request,pk):
@@ -339,7 +350,9 @@ def minION_run_status_list(request,pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@api_view(['GET','PUT','DELETE'])
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
 def minION_scripts_detail(request, pk, nk):
     """
     Get, update or delete a specific script.
@@ -385,11 +398,12 @@ def read_list(request, pk):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['GET'])
 def minION_detail(request, pk):
     try:
-        #print (pk)
-        #print (MinIONEvent.objects.all())
+        # print (pk)
+        # print (MinIONEvent.objects.all())
         minion = MinION.objects.get(pk=pk)
     except MinION.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
@@ -397,6 +411,7 @@ def minION_detail(request, pk):
     if request.method == 'GET':
         serializer = MinIONSerializer(minion, context={'request': request})
         return Response(serializer.data)
+
 
 @api_view(['GET', 'PUT', 'DELETE'])
 def read_detail(request, pk):
@@ -428,34 +443,96 @@ def read_detail(request, pk):
 def readname_list(request, pk):
     if request.method == 'GET':
         queryset = FastqRead.objects.filter(run_id=pk)
-        result=set()
+        result = set()
         for key in queryset:
             result.add(key.read_id)
         return HttpResponse(json.dumps(list(result)), content_type="application/json")
 
+
 @api_view(['GET'])
-def cumulative_read_count(request,pk):
+def cumulative_read_count(request, pk):
     if request.method == 'GET':
-        queryset = RunStatistic.objects.filter(run_id__owner=request.user).filter(run_id=pk).order_by('type','sample_time',)
-        result=dict()
+        queryset = RunStatistic.objects.filter(run_id__owner=request.user).filter(run_id=pk).order_by('type',
+                                                                                                      'sample_time', )
+        result = dict()
         for key in queryset:
             if str(key.type) not in result:
-                result[str(key.type)]=dict()
-            result[str(key.type)][str(key.sample_time)]=key.total_length
-        data_to_return=dict()
+                result[str(key.type)] = dict()
+            result[str(key.type)][str(key.sample_time)] = key.total_length
+        data_to_return = dict()
         counter = 0
         for readtype in result:
-            cumuyield=0
-            data_to_return[counter]=dict()
-            data_to_return[counter]['name']=readtype
-            data_to_return[counter]['data']=list()
+            cumuyield = 0
+            data_to_return[counter] = dict()
+            data_to_return[counter]['name'] = readtype
+            data_to_return[counter]['data'] = list()
             for data in result[readtype]:
                 cumuyield = cumuyield + result[readtype][data]
                 data_to_return[counter]['data'].append((UTC_time_to_epoch(data), cumuyield))
         return HttpResponse(json.dumps(data_to_return), content_type="application/json")
 
+
+@api_view(['GET'])
+def run_read_statistics(request, pk):
+    queryset = RunSummaryBarCode.objects \
+        .filter(run_id__owner=request.user) \
+        .filter(run_id=pk)
+
+    result2 = dict()
+    result2.update({'reads_called': []})
+    result2.update({'yield': []})
+    result2.update({'average_read_length': []})
+    result2.update({'maximum_read_length': []})
+
+    for q in queryset:
+        series = dict()
+        series.update({'name': q['type__name']})
+        series.update({'data': [q['read_count__sum'], ]});
+
+        result2['reads_called'].append(series);
+
+        series = dict()
+        series.update({'name': q['type__name']})
+        series.update({'data': [q['read_count__avg'], ]});
+
+        result2['average_read_length'].append(series);
+
+        series = dict()
+        series.update({'name': q['type__name']})
+        series.update({'data': [q['read_count__max'], ]});
+
+        result2['maximum_read_length'].append(series);
+
+    return HttpResponse(json.dumps(result2), content_type="application/json")
+
+
+@api_view(['GET'])
+def run_read_statistics2(request, pk):
+    queryset = RunStatistic.objects\
+        .filter(run_id__owner=request.user)\
+        .filter(run_id=pk)
+
+    serializer = RunStatisticSerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def run_barcodes(request, pk):
+    minion_run = MinIONRun.objects.get(pk=pk)
+
+    barcodes = list()
+    barcodes.append('All reads')
+
+    for b in minion_run.barcodes():
+        barcodes.append(b['barcode'])
+
+    return HttpResponse(json.dumps(barcodes), content_type="application/json")
+
+
 def UTC_time_to_epoch(timestamp):
     dt = parser.parse(timestamp)
+
     return dt.timestamp()*1000
 
 
