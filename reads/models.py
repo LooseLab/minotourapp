@@ -47,6 +47,10 @@ class MinIONRun(models.Model):
     def __str__(self):
         return self.run_name
 
+    def barcodes(self):
+        return FastqRead.objects.filter(run_id=self).values('barcode').distinct()
+
+
 class MinIONEventType(models.Model):
     name = models.CharField(max_length=64)
 
@@ -103,6 +107,7 @@ class FastqRead(models.Model):
 
 
 class RunSummary(models.Model):
+    # TODO we may need to change run_id to an OneToOneField and rename to run
     run_id = models.ForeignKey(MinIONRun,on_delete=models.CASCADE)
     total_length = models.IntegerField(default=0)
     read_count = models.IntegerField(default=0)

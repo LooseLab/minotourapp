@@ -41,6 +41,6 @@ def previous_run(request):
     return render(request, 'web/previous_run.html', context={'minion_runs': minion_runs})
 
 @login_required
-def run_index(request, run_name):
-    minion_runs = MinIONRun.objects.filter(run_name=run_name)
-    return render(request, 'web/run_index.html', context={'minion_runs': minion_runs})
+def run_index(request, pk):
+    minion_run = MinIONRun.objects.get(pk=pk)
+    return render(request, 'web/run_index.html', context={'minion_run': minion_run})

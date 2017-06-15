@@ -9,7 +9,7 @@ from rest_framework.response import Response
 
 from minotourapp.urls import RunStatisticSerializer
 from reads.models import MinIONRun, FastqRead, FastqReadType, RunStatistic, MinION, MinIONEvent, MinIONEventType, \
-    MinIONScripts
+    MinIONScripts, RunSummary, RunSummaryBarCode
 from reads.serializers import MinIONRunSerializer, FastqReadSerializer, FastqReadTypeSerializer, MinIONSerializer, \
     MinIONScriptsSerializer, MinIONEventSerializer, MinIONEventTypeSerializer
 
@@ -290,12 +290,9 @@ def cumulative_read_count(request, pk):
 
 @api_view(['GET'])
 def run_read_statistics(request, pk):
-    queryset = RunStatistic.objects\
-        .filter(run_id__owner=request.user)\
-        .filter(run_id=pk)\
-        .values('type__name')
-
-    result = queryset.annotate(Sum('read_count'), Avg('read_count'), Max('read_count'))
+    queryset = RunSummaryBarCode.objects \
+        .filter(run_id__owner=request.user) \
+        .filter(run_id=pk)
 
     result2 = dict()
     result2.update({'reads_called': []})
@@ -303,7 +300,7 @@ def run_read_statistics(request, pk):
     result2.update({'average_read_length': []})
     result2.update({'maximum_read_length': []})
 
-    for q in result:
+    for q in queryset:
         series = dict()
         series.update({'name': q['type__name']})
         series.update({'data': [q['read_count__sum'], ]});
@@ -334,6 +331,19 @@ def run_read_statistics2(request, pk):
     serializer = RunStatisticSerializer(queryset, many=True, context={'request': request})
 
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+def run_barcodes(request, pk):
+    minion_run = MinIONRun.objects.get(pk=pk)
+
+    barcodes = list()
+    barcodes.append('All reads')
+
+    for b in minion_run.barcodes():
+        barcodes.append(b['barcode'])
+
+    return HttpResponse(json.dumps(barcodes), content_type="application/json")
 
 
 def UTC_time_to_epoch(timestamp):

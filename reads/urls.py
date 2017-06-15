@@ -11,6 +11,7 @@ urlpatterns = [
     url(r'^api/v1/runs/(?P<pk>[0-9]+)/yield/$', views.cumulative_read_count, name="cumulative_read_count"),
     url(r'^api/v1/runs/(?P<pk>[0-9]+)/reads_statistics/$', views.run_read_statistics, name="minion-run-read-statistics"),
     url(r'^api/v1/runs/(?P<pk>[0-9]+)/reads_statistics2/$', views.run_read_statistics2, name="minion-run-read-statistics2"),
+    url(r'^api/v1/runs/(?P<pk>[0-9]+)/barcodes/$', views.run_barcodes, name="minion-run-barcodes"),
     url(r'^api/v1/reads/(?P<pk>[0-9]+)/$', views.read_detail, name="fastqread-detail"),
     url(r'^api/v1/readtypes/$', views.read_type_list, name="fastqreadtype-list"),
     url(r'^api/v1/readtypes/(?P<pk>[0-9]+)/$', views.read_type_detail, name="fastqreadtype-detail"),

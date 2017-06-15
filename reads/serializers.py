@@ -10,8 +10,8 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = MinIONRun
-        # fields = ('url', 'run_name', 'run_id', 'is_barcoded', 'reads')
-        fields = ('url', 'run_name', 'run_id', 'is_barcoded')
+        fields = ('url', 'run_name', 'run_id', 'is_barcoded', 'id')
+        read_only = ('id', )
 
 
 class MinIONSerializer(serializers.HyperlinkedModelSerializer):
