@@ -1,0 +1,142 @@
+{% extends "web/template_private.html" %}
+{% load static %}
+
+{% block content %}
+    <div class="content-wrapper">
+
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+            <h1>
+                Previous Run Information
+                <small> - select a previous run for more information.</small>
+            </h1>
+            <ol class="breadcrumb">
+                <li><a href="#"><i class="fa fa-edit"></i> External Links</a></li>
+                <li class="active">Here</li>
+            </ol>
+        </section>
+
+        <!-- Main content -->
+        <section class="content"><?php include 'includes/run_check.php'; ?>
+
+            <div id="messages"></div>
+
+            <div class="box">
+                <div class="box-header">
+                    <h3 class="box-title">Run Stats</h3>
+                </div><!-- /.box-header -->
+                <div class="box-body">
+                    <?php checkuserruns(); ?>
+                    <br>
+                    <?php // getallruns();?>
+                </div>
+            </div>
+            <div class="box">
+                <div class="box-header">
+                    <h3 class="box-title">Previous Run Data</h3>
+                </div><!-- /.box-header -->
+                <div class="box-body">
+                    <table id="example" class="table table-bordered table-striped table-hover" cellspacing="0">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Id</th>
+                            <th>Is Barcoded</th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr>
+                            <th>Name</th>
+                            <th>Id</th>
+                            <th>Is Barcoded</th>
+                        </tr>
+                        </tfoot>
+                        <!--<thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Flow Cell ID</th>
+                            <th>Comment</th>
+                            <th>Flow Cell Owner</th>
+                            <th>Run Name</th>
+                            <th>Run Order</th>
+                            <th>Ref Sequence</th>
+                            <th>Ref Length</th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr>
+                            <th>Date</th>
+                            <th>Flow Cell ID</th>
+                            <th>Comment</th>
+                            <th>Flow Cell Owner</th>
+                            <th>Run Name</th>
+                            <th>Run Order</th>
+                            <th>Ref Sequence</th>
+                            <th>Ref Length</th>
+                        </tr>
+                        </tfoot>-->
+                    </table>
+                </div>
+            </div>
+
+
+        </section><!-- /.content -->
+    </div><!-- /.content-wrapper -->
+
+    <!-- DataTables -->
+    <!--<script src="plugins/datatables/jquery.dataTables.min.js"></script>-->
+    <!--<script src="{% static 'web/plugins/datatables/dataTables.bootstrap.min.js' %}"></script>-->
+    <!--<script type="text/javascript"
+            src="https://cdn.datatables.net/v/dt/dt-1.10.15/datatables.min.js"></script>-->
+    <script>
+        $(document).ready(function () {
+            $('#example').DataTable({
+                'ajax': {
+                    'url': "{% url 'run-list' %}",
+                    'dataSrc': function(json){
+                        var data = [];
+                        console.log(json);
+                        var ien = json.length;
+                        for (var i = 0; i < ien; i++){
+                            data.push([json[i].run_name, json[i].run_id, json[i].is_barcoded]);
+                        }
+                        return data;
+                    }
+                },
+            });
+
+            $('#example tbody').on('click', 'tr', function () {
+                var name = $('td', this).eq(0).text();
+                console.log(name);
+                /*
+                $.post("views/read_details.php?prev=1", {readname: name})
+                    .done(function (data) {
+                        $("#read_details").html(data);
+                        $('html, body').animate({
+                            'scrollTop': $('#' + name).offset().top
+                        }, 1000);
+
+                    });
+                    */
+            });
+
+            $(document).on('click', '#example tr', function () {
+                var tableData = $(this).children("td").map(function () {
+                    return $(this).text();
+                }).get();
+                var targetrun = $.trim(tableData[4]);
+                var cleanedtarget = targetrun.replace(/ /g, "_");
+                //alert (cleanedtarget);
+                checklen = cleanedtarget.length;
+
+                var url = "previous_summary.php?roi=" + cleanedtarget;
+                if (checklen > 0) {
+                    window.location.href = url;
+                }
+            });
+
+        });
+
+    </script>
+
+{% endblock %}
