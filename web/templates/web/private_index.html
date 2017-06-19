@@ -24,8 +24,17 @@
                     <h3 class="box-title">Overview</h3>
                 </div><!-- /.box-header -->
                 <div class="box-body">
+                    <div id="app">
+                        <ul>
+                            <minionrun-item
+                                v-for="item in minionruns"
+                                v-bind:minionrun="item"
+                                v-bind:key="item.id">
+
+                            </minionrun-item>
+                        </ul>
+                    </div>
                     <div id="div-user-runs"></div>
-                    <?php checkuserruns(); ?>
                     <h2>Important Notice:</h2>
 
                     <div id="notice">minoTour is a platform in development. It is realeased as an 0.x version and may
@@ -58,10 +67,41 @@
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 
+
     <script>
-        $(document).ready(function(){
-            check_minotour_version();
-            check_user_runs();
+        console.log('before vue');
+
+        Vue.component('minionrun-item', {
+            delimiters: ['${', '}'],
+            props: ['minionrun'],
+            template: "<li><a v-bind:href='\"/web/private/runs/\" + minionrun.id'>${ minionrun.run_name }</a></li>"
         });
+
+        var app = new Vue({
+            delimiters: ['${', '}'],
+            el: "#app",
+            data: {
+                minionruns: [],
+            },
+            created: function () {
+                var promise = this.$http.get('/api/v1/runs/');
+                promise
+                    .then(res => res.json())
+                    .then(minionruns => this.minionruns = minionruns);
+                console.log('inside created.')
+            }
+        });
+
+        console.log('after vue');
+
+        $(document).ready(function () {
+            check_minotour_version();
+            //check_user_runs();
+
+        });
+
+
     </script>
+
+
 {% endblock %}
