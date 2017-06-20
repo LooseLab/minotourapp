@@ -2,13 +2,13 @@
 {% load static %}
 
 {% block content %}
-    <div class="content-wrapper">
+    <div class="content-wrapper" id="app">
 
         <!-- Content Header (Page header) -->
         <section class="content-header">
             <h1>
                 Previous Summary
-                <small> - run.</small>
+                <small> -</small>
             </h1>
             <ol class="breadcrumb">
                 <li><a href="#"><i class="fa fa-table"></i> previous run</a></li>
@@ -21,16 +21,18 @@
         <section class="content">
             <div class="box">
                 <div class="box-header">
-                    <h3 class="box-title">Run: {{ minion_run }}</h3>
+                    <h3 class="box-title">Run: ${ minion_run.run_name }</h3>
                 </div><!-- /.box-header -->
                 <div class="box-body">
                     <div class="row">
                         <div class="col-md-12">
                             <div class="nav-tabs-custom">
                                 <ul class="nav nav-tabs">
-                                    {% for barcode in minion_run.barcodes %}
-                                        <li><a href="{{ barcode.barcode }}">{{ barcode.barcode }}</a></li>
-                                    {% endfor %}
+                                    <minionrun-item
+                                            v-for="barcode in minion_run.barcodes"
+                                            v-bind:barcode="barcode"
+                                            v-bind:key="barcode">
+                                    </minionrun-item>
                                 </ul>
                             </div>
                             <div class="tab-content">
@@ -237,6 +239,40 @@
     </div><!-- /.content-wrapper -->
 
     <script>
+        console.log('before vue');
+
+        Vue.component('minionrun-item', {
+            delimiters: ['${', '}'],
+            props: ['barcode'],
+            template: "<li><a v-bind:href='\"/web/private/runs/\" + barcode'>${ barcode }</a></li>"
+        });
+
+        var app = new Vue({
+            delimiters: ['${', '}'],
+            el: "#app",
+            data: {
+                minion_run: '',
+                id: {{ minion_run.id }},
+            },
+            created: function () {
+                var url_run = '/api/v1/runs/' + this.id;
+                var promise_run = this.$http.get(url_run);
+                promise_run
+                    .then(function(res){
+                        return res.json();
+                    })
+                    .then(function(minion_run){
+                        this.minion_run = minion_run;
+                        this.minion_run.barcodes = this.minion_run.barcodes.sort()
+                    });
+                console.log('inside created.')
+            },
+            computed: {
+            }
+        });
+
+        console.log('after vue');
+
         $(document).ready(function () {
             var options_reads_called = {
                 chart: {
@@ -466,7 +502,7 @@
 
                 var series = {}
 
-                $.each(data, function(index, value){
+                $.each(data, function (index, value) {
 
                 });
                 console.log(data);

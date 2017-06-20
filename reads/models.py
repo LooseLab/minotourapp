@@ -48,7 +48,11 @@ class MinIONRun(models.Model):
         return self.run_name
 
     def barcodes(self):
-        return FastqRead.objects.filter(run_id=self).values('barcode').distinct()
+        barcodes = ['All reads', ]
+        for item in FastqRead.objects.filter(run_id=self).values('barcode').distinct():
+            barcodes.append(item['barcode'])
+
+        return barcodes
 
 
 class MinIONEventType(models.Model):
