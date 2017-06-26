@@ -1,5 +1,6 @@
 import json
 from dateutil import parser
+from datetime import datetime, timedelta
 from django.db.models import Sum, Avg, Max
 
 from django.http import HttpResponse
@@ -15,7 +16,8 @@ from reads.models import MinIONRun, FastqRead, FastqReadType, RunStatistic, \
     MinIONStatus, \
     MinIONRunStatus, \
     MinIONRunStats, \
-    MinIONmessages
+    MinIONmessages, \
+    MinIONControl
 
 from reads.serializers import MinIONRunSerializer, \
     FastqReadSerializer, \
@@ -26,7 +28,8 @@ from reads.serializers import MinIONRunSerializer, \
     MinIONEventTypeSerializer,\
     MinIONStatusSerializer,\
     MinIONRunStatusSerializer,\
-    MinIONmessagesSerializer
+    MinIONmessagesSerializer, \
+    MinIONControlSerializer
     #MinIONRunStatsSerializer
 
 from reads.models import MinIONRun, FastqRead, FastqReadType, RunStatistic, MinION, MinIONEvent, MinIONEventType, \
@@ -127,6 +130,17 @@ def minion_list(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET'])
+def activeminion_list(request):
+    """
+    List of all minIONs by user, or create a new minION.
+    """
+    if request.method == 'GET':
+        queryset = MinION.objects.filter(owner=request.user).exclude(events__event__name='unplugged')
+        serializer = MinIONSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+
+
 @api_view(['GET', 'POST'])
 def minION_messages_list(request, pk):
     """
@@ -145,6 +159,94 @@ def minION_messages_list(request, pk):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'],)
+def recentminION_messages_list(request, pk):
+    """
+    Get messages
+    :param request:
+    :return:
+    """
+    if request.method == 'GET':
+        queryset = MinIONmessages.objects.filter(minION=pk).filter(minKNOW_message_timestamp__gte= datetime.now() - timedelta(hours=24))
+        serializer = MinIONmessagesSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+
+@api_view(['GET','POST'],)
+def minION_control_list(request,pk):
+    """
+    Get Control Instructions
+    :param request:
+    :param pk:
+    :return:
+    """
+    if request.method == 'GET':
+        queryset = MinIONControl.objects.filter(minION=pk).filter(complete=False)
+        serializer = MinIONControlSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        serializer = MinIONControlSerializer(data=request.data, context={'request': request})
+        print (serializer)
+        if serializer.is_valid():
+            serializer.save(owner=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET','POST'],)
+def minION_control_update(request,pk,checkid):
+    """
+    Get Control Instructions
+    :param request:
+    :param pk:
+    :return:
+
+    """
+
+    try:
+        event_ = MinIONControl.objects.get(id=checkid)
+
+        if event_.owner != request.user:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+    except MinIONControl.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+    if request.method == 'GET':
+        serializer = MinIONControlSerializer(event_, context={'request': request})
+        print (serializer)
+        return Response(serializer.data)
+
+
+
+    if request.method == 'POST':
+        #serializer = MinIONControlSerializer(data=event_, context={'request': request})
+        #if serializer.is_valid():
+        #    serializer.complete=True
+        #    serializer.save(update_fields=['complete'])
+
+        event_ = MinIONControl.objects.get(id=checkid)
+        event_.complete=True
+        event_.save(update_fields=['complete'])
+        return Response(status=status.HTTP_204_NO_CONTENT)
+        #return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        #
+        # serializer = MinIONControlSerializer(event_, context={'request': request})
+        #if serializer.is_valid():
+        #    serializer.complete=True
+        #    serializer.save()
+        #    return Response(serializer.data, status=status.HTTP_201_CREATED)
+        #return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    #try:
+    #    event_ = MinIONControl.objects.get(id=checkid)
+    #except MinIONControl.DoesNotExist:
+    #    return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+
+
 
 @api_view(['GET',])
 def minION_currentrun_list(request, pk):
@@ -312,6 +414,30 @@ def minION_run_stats_list(request,pk):
         crazyminIONrunstats.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+@api_view(['GET'])
+def minION_run_stats_latest(request,pk,checkid):
+    """
+    Get, update or delete a minION status.
+    :param request:
+    :param pk:
+    :return:
+    """
+    try:
+        crazyminIONrunstats = MinIONRunStats.objects.filter(run_id=pk, id__gt=checkid)
+        #minIONrunstats = MinIONRunStats.objects.all()
+        print (crazyminIONrunstats)
+
+    except MinIONRunStats.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        print (crazyminIONrunstats)
+        for item in crazyminIONrunstats:
+            print (item.minION, item.run_id, item.sample_time, item.event_yield)
+
+        serializer = MinIONRunStatsSerializer(crazyminIONrunstats, many=True , context={'request': request})
+
+        return Response(serializer.data)
 
 @api_view(['GET', 'PUT', 'POST', 'DELETE'])
 def minION_run_status_list(request,pk):

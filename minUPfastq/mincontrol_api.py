@@ -33,6 +33,60 @@ class MinControlAPI():
     def header (self):
         return ({'Authorization': 'Token ' + args.api_key, 'Content-Type': 'application/json'})
 
+    def check_jobs (self,minION):
+        print ("checking jobs")
+        r = requests.get(self.minionidlink + 'control/', headers=self.header())
+        print (r.text)
+        jobs = json.loads(r.text)
+        for job in jobs:
+            print (job['job'])
+            if job["job"] == "testmessage":
+                send_message_port("minoTour is checking communication status with " + str(self.minion) + ".",
+                                  minIONdict[self.minion]["port"])
+                r = requests.post(self.minionidlink + 'control/' + str(job["id"]) + '/', headers=self.header())
+                print (r.text)
+            if job["job"] == "custommessage":
+                send_message_port(str(job["custom"]),
+                                  minIONdict[self.minion]["port"])
+                r = requests.post(self.minionidlink + 'control/' + str(job["id"]) + '/', headers=self.header())
+                print (r.text)
+            if job["job"] == "stopminion":
+                stoprun(minIONdict[self.minion]["port"])
+                r = requests.post(self.minionidlink + 'control/' + str(job["id"]) + '/', headers=self.header())
+                print(r.text)
+
+            if job["job"] == "rename":
+                renamerun(job["custom"], minIONdict[self.minion]["port"])
+                r = requests.post(self.minionidlink + 'control/' + str(job["id"]) + '/', headers=self.header())
+                print(r.text)
+            if job["job"] == "nameflowcell":
+                renameflowcell(job["custom"], minIONdict[self.minion]["port"])
+                r = requests.post(self.minionidlink + 'control/' + str(job["id"]) + '/', headers=self.header())
+                print(r.text)
+            if job["job"] == "stopminion":
+                stoprun(minIONdict[self.minion]["port"])
+                r = requests.post(self.minionidlink + 'control/' + str(job["id"]) + '/', headers=self.header())
+                print(r.text)
+            if job["job"] == "startminion":
+                startrun(job["custom"], minIONdict[self.minion]["port"])
+                r = requests.post(self.minionidlink + 'control/' + str(job["id"]) + '/', headers=self.header())
+                print(r.text)
+            if job["job"] == "initialiseminion":
+                # print "Trying to initialise minION"
+                # result = helper.initialiseminion()
+                startstop('start', self.minion)
+                r = requests.post(self.minionidlink + 'control/' + str(job["id"]) + '/', headers=self.header())
+                print(r.text)
+                # execute_command_as_string(commands('initialiseminion'), ipadd,minIONdict[message["minion"]]["port"])
+            if job["job"] == "shutdownminion":
+                # First we need to stop the minion if it is running...
+                # stoprun(minIONdict[message["minion"]]["port"])
+                # execute_command_as_string(commands('shutdownminion'), ipadd,minIONdict[message["minion"]]["port"])
+                startstop('stop', self.minion)
+                r = requests.post(self.minionidlink + 'control/' + str(job["id"]) + '/', headers=self.header())
+                print(r.text)
+
+
 
     def create_minion (self,minION):
         print("Seen a new run")
@@ -93,17 +147,20 @@ class MinControlAPI():
                    "minKNOW_flow_cell_id": self.status_summary['flow_cell_id'],
                    "minKNOW_run_name": self.status_summary['run_name'],
                    "run_id": self.runidlink,
+                   "minKNOW_version": self.status_summary['minKNOW_version'],
                    "minKNOW_hash_run_id": self.status_summary['hash_run_id'],
                    "minKNOW_script_run_id": self.status_summary['script_run_id'],
                    "minKNOW_real_sample_rate": self.status_summary['real_sample_rate'],
                    "minKNOW_asic_id": self.status_summary['asic_id'],
+                   "minKNOW_start_time": self.status_summary['start_time'],
+                   "minKNOW_colours_string": self.status_summary['colour_data']
                    #"minKNOW_histogram_values": self.status_summary['histogram'],
                    #"minKNOW_histogram_bin_width": self.status_summary['bin_width']
                    #"minKNOW_total_drive_space": self.status_summary['bytes_capacity'],
                    #"minKNOW_disk_space_till_shutdown": self.status_summary['bytes_available'],
                    #"minKNOW_warnings": self.status_summary['recommend_alert'],
                    }
-        print (payload)
+        #print (payload)
         #sys.exit()
         createminIONRunStatus = requests.post(self.runidlink + 'rundetails/', headers=self.header(),
                                            json=payload)
@@ -137,18 +194,25 @@ class MinControlAPI():
                 minionidlink = minion["url"]
         return(minionidlink)
 
-    def update_minion_current_stats (self,livedata,detailsdata,simplesummary):
+    def update_minion_current_stats (self,livedata,detailsdata,simplesummary,channelstuff):
         print ("update minion current stats called")
-        print (livedata["get_seq_metrics"]["result"]["read_event_count_weighted_hist"])
-        print(livedata["get_seq_metrics"]["result"]["read_event_count_weighted_hist_bin_width"])
+        print (livedata)
+        #sys.exit()
+        #print(livedata["get_seq_metrics"]["result"]["read_event_count_weighted_hist_bin_width"])
         #for key in livedata:
         #    print (key)
         #    print (livedata[key])
         #print (simplesummary)
         try:
+            self.status_summary['colour_data']= json.dumps(channelstuff)
+            self.status_summary['start_time'] = datetime.datetime.fromtimestamp(
+        int(livedata['get_engine_states']['result']['daq_start_time'])
+    ).strftime('%Y-%m-%d %H:%M:%S')
             self.status_summary['status'] = livedata['status']['result']
             self.status_summary['current_script'] = livedata['current_script']['result']
             self.status_summary['sample_name']=livedata['get_engine_states']['result']['sample_id']
+            self.status_summary['minKNOW_version']=livedata['get_engine_states']['result']['version_string']
+            print ("MinKNOW Version", self.status_summary['minKNOW_version'])
             self.status_summary['flow_cell_id'] = livedata['get_engine_states']['result']['flow_cell_id']
             self.status_summary['run_name'] = livedata['get_engine_states']['result']['data_set']
             self.status_summary['hash_run_id'] = livedata['get_engine_states']['result']['hash_run_id']
@@ -159,9 +223,12 @@ class MinControlAPI():
             #print (livedata['disk_space']['result'][0]['bytes_capacity'])
             self.status_summary['bytes_capacity'] = livedata['disk_space']['result'][0]['bytes_capacity']
             self.status_summary['bytes_available'] = livedata['disk_space']['result'][0]['bytes_available']
+            self.status_summary['bytes_when_alert_issued'] = livedata['disk_space']['result'][0]['bytes_when_alert_issued']
             self.status_summary['recommend_alert'] = livedata['disk_space']['result'][0]['recommend_alert']
             self.status_summary['histogram']=str(livedata["get_seq_metrics"]["result"]["read_event_count_weighted_hist"])
             self.status_summary['bin_width']=livedata["get_seq_metrics"]["result"]["read_event_count_weighted_hist_bin_width"]
+            self.status_summary['read_count'] = livedata["get_seq_metrics"]["result"]["selected_completed_count"]
+
             #print (self.status_summary)
             #Check if minION exists in database...
             payload = {"minION": self.minionidlink,
@@ -176,7 +243,8 @@ class MinControlAPI():
                     "minKNOW_real_sample_rate": self.status_summary['real_sample_rate'],
                     "minKNOW_asic_id": self.status_summary['asic_id'],
                     "minKNOW_total_drive_space": self.status_summary['bytes_capacity'],
-                    "minKNOW_disk_space_till_shutdown": self.status_summary['bytes_available'],
+                    "minKNOW_disk_space_till_shutdown": self.status_summary['bytes_when_alert_issued'],
+                    "minKNOW_disk_available": self.status_summary['bytes_available'],
                     "minKNOW_warnings": self.status_summary['recommend_alert'],
                     #"minKNOW_histogram_values": self.status_summary['histogram'],
                     #"minKNOW_histogram_bin_width": self.status_summary['bin_width']
@@ -265,7 +333,8 @@ class MinControlAPI():
                    "open_pore":openpore,
                    "in_strand":instrand,
                    "minKNOW_histogram_values": self.status_summary['histogram'],
-                   "minKNOW_histogram_bin_width": self.status_summary['bin_width']
+                   "minKNOW_histogram_bin_width": self.status_summary['bin_width'],
+                    "minKNOW_read_count": self.status_summary['read_count']
                    }
 
                 for category in simplesummary:
@@ -303,17 +372,18 @@ class MinControlAPI():
 
     def check_scripts(self,minION):
         #minionidlink=self.identify_minion(minION)
-        print (self.minionidlink)
+        print ("checking scripts")
+        #print (self.minionidlink)
         #print(minionidlink+'scripts')
         r=requests.get(self.minionidlink + 'scripts/', headers = self.header())
-        print (r.text)
+        #print (r.text)
         self.scripts=r.text
 
     def update_script(self,minION,script):
-        print ("Updating script registry for {} with {}".format(minION,script))
+        #print ("Updating script registry for {} with {}".format(minION,script))
         #minionidlink=self.identify_minion(minION)
-        print (script['name'])
-        print (script["tags"])
+        #print (script['name'])
+        #print (script["tags"])
         #Check if we have seen the script before
         if script["name"] not in self.scripts:
             #so script is not present.
@@ -329,15 +399,18 @@ class MinControlAPI():
                 payload["base_calling"]=script["tags"]["base calling"]
             if "kit" in script["tags"].keys():
                 payload["kit"]=script["tags"]["kit"]
-            print ("PAYLOAD", payload)
+            #print ("PAYLOAD", payload)
             updatestate = requests.post(self.minionidlink + 'scripts/', json=payload, headers=self.header())
         else:
             #so script exists, but is the identifier the same or different?
-            if script["identifier"] not in self.scripts:
-                print ("path has changed")
+            #print ("so script exists, but is the identifier the same or different?")
+            #print (script["identifier"])
+            #print (self.scripts)
+            if str(script["identifier"]) not in self.scripts:
+                #print ("path has changed")
                 for element in json.loads(self.scripts):
                     if script["name"] in str(element):
-                        print (element)
+                        #print (element)
                         payload = dict()
                         payload["minION"] = self.minionidlink
                         payload["identifier"] = script["identifier"]
@@ -350,15 +423,114 @@ class MinControlAPI():
                             payload["base_calling"] = script["tags"]["base calling"]
                         if "kit" in script["tags"].keys():
                             payload["kit"] = script["tags"]["kit"]
-                        print("PAYLOAD", payload)
+                        #print("PAYLOAD", payload)
                         update = requests.put(self.minionidlink + "scripts/" + str(element["id"]) + "/", json=payload, headers=self.header() )
-                        print (update.text)
+                        #print (update.text)
             else:
-                print ("path is the same")
+                #print ("path is the same")
+                pass
+
+def startstop(command,minION):
+    if OPER == "osx":
+        p = os.popen('/Applications/MinKNOW.app/Contents/Resources/bin/mk_manager_client -i ' + minION + ' --' + command,"r")
+        while 1:
+            line = p.readline()
+            if not line: break
+            #print line
+    elif OPER == "windows":
+        p = os.popen('C:\\grouper\\binaries\\bin\\mk_manager_client.exe -i ' + minION + ' --' + command, "r")
+        #print 'C:\\grouper\\binaries\\bin\\mk_manager_client.exe -i ' + minION + ' --' + command, "r"
+        while 1:
+            line = p.readline()
+            if not line: break
+            #print line
+    elif OPER == "linux":
+        print "!!!!!!!!!!!!!! Sorry cannot handle linux yet."
+    else:
+        print "!!!!!!!!!!!!!! Sorry - cannot recognise your operating system."
+
+def send_message_port(message,port):
+    message_to_send = \
+        '{"id":"1", "method":"user_message","params":{"content":"%s"}}' \
+        % message
+    results=""
+    try:
+        results = execute_command_as_string(message_to_send, ipadd, port)
+    except Exception, err:
+        print "message send fail", err
+    return results
+
+def startrun(script,port):
+    #print 'Starting the minION device.'
+    try:
+        startruncustom = \
+            '{"id":1, "method":"start_script","params":{"name":"' \
+            + script + '"}}'
+        print startruncustom,ipadd,port
+        startresult = \
+            execute_command_as_string(startruncustom,
+                ipadd, port)
+        startrunmessage = 'minoTour sent a remote run start command.'
+        startresultmessage = send_message_port(startrunmessage,port)
+    except Exception, err:
+        print >> sys.stderr, err
+
+def stoprun_message(port,message):
+    try:
+        stopresult = execute_command_as_string(commands('stoprun'),
+                ipadd, port)
+        stopprotocolresult = \
+            execute_command_as_string(commands('stopprotocol'), ipadd,
+                port)
+        stoprunmessage = 'minoTour sent a remote run stop command for %s.' % (message)
+        stopresultmessage = send_message_port(stoprunmessage,port)
+    except Exception, err:
+        print >> sys.stderr, err
+
+def send_custom_message(port,message):
+    try:
+        custommessage = "minoTour: %s" % (message)
+        custommessageresult=send_message_port(custommessage,port)
+    except Exception,err:
+        print >> sys.stderr, err
+
+def stoprun(port):
+    try:
+        stopresult = execute_command_as_string(commands('stoprun'),
+                ipadd, port)
+        stopprotocolresult = \
+            execute_command_as_string(commands('stopprotocol'), ipadd,
+                port)
+        stoprunmessage = 'minoTour sent a remote run stop command.'
+        stopresultmessage = send_message_port(stoprunmessage,port)
+    except Exception, err:
+        print >> sys.stderr, err
 
 
+def renameflowcell(name,port):
+    try:
+        set_flowcell_id = \
+            '{"id":1,"method":"set_engine_state","params":{"state_id":"flow_cell_id","value":"'+name+'"}}'
+        set_sample_id_result = \
+            execute_command_as_string(set_flowcell_id,ipadd,port)
+        startresultmessage = \
+            send_message_port('minoTour renamed the flowcell to ' + name,port)
+    except Exception, err:
+        print >> sys.stderr, err
 
-
+def renamerun(name,port):
+    try:
+        set_sample_id = \
+            '{"id":"1","method":"set_engine_state","params":{"state_id":"sample_id","value":"' \
+            + name + '"}}'
+        set_sample_id_result = \
+            execute_command_as_string(set_sample_id, ipadd,
+                port)
+        startresultmessage = \
+            send_message_port('minoTour renamed the run to '
+                + name,port)
+    except Exception, err:
+        print >> sys.stderr, err
 
 
 class HelpTheMinion(WebSocketClient):
@@ -627,22 +799,26 @@ class MessagesClient(WebSocketClient):
                 pass
 
 def get_run_scripts(port):
-    #print "trying to get runscripts on port %s" %(port)
+    print ("trying to get runscripts on port %s" %(port))
     get_scripts = \
-        '{"id":"1", "method":"get_script_info_list","params":{"state_id":"status"}}'
+        '{"id":"1", "method":"get_script_info_list","params":null}'
+        #'{"id":"1", "method":"get_script_info_list","params":{"state_id":"status"}}'
     results = execute_command_as_string(get_scripts, ipadd, port)
     #print type(results['result'])
     #print len(results['result'])
     #for thing in results['result']:
     #    print thing
+    #print (results)
     return results['result']
     #for key in results.keys():
     #    print ("mincontrol:", key, results[key])
-    scriptlist = list()
-    for element in results['result']:
-        for item in results['result'][element]:
-            scriptlist.append("('runscript','all','" + item['name']
-                              + "',1)")
+    #scriptlist = list()
+    #for element in results['result']:
+    #    for item in results['result'][element]:
+    #        scriptlist.append("('runscript','all','" + item['name']
+    #                          + "',1)")
+    #print (scriptlist)
+
 
 
 def process_tracked_yield():
@@ -809,6 +985,7 @@ def process_channel_information():
     for minion in minIONdict:
         if "detailsdata" in minIONdict[minion]:
             if "channelstuff" in minIONdict[minion]:
+                #print ("channelstuff",minIONdict[minion]["channelstuff"])
                 for item in minIONdict[minion]["channelstuff"]:
                     if 'style' in minIONdict[minion]["channelstuff"][item]:
                         colourlookup[minIONdict[minion]["channelstuff"][item]['style']['label']]=minIONdict[minion]["channelstuff"][item]['style']['colour']
@@ -1069,7 +1246,7 @@ if __name__ == '__main__':
                                     results = execute_command_as_string(commands('get_analysis_configuration'), ipadd,
                                                                         minIONdict[minION]["port"])
                                     print ("getting the good stuff")
-                                    #print(results)
+
                                     minIONdict[minION]["channelstuff"] = results["result"]["channel_states"]
                                     print ("connection good")
                                 except Exception as err:
@@ -1098,10 +1275,23 @@ if __name__ == '__main__':
                                     print ("OK")
                                 else:
                                     if "scripts" in minIONdict[minION]:
+                                        print ("running get run scripts line 1110")
                                         if minIONdict[minION]["scripts"] != get_run_scripts(minIONdict[minION]["port"]):
+                                            print("running get run scripts 1111")
                                             minIONdict[minION]["scripts"] = get_run_scripts(minIONdict[minION]["port"])
+                                            print ("calling check scripts 1113")
+                                            minIONdict[minION]["APIHelp"].check_scripts(minION)
+                                            for script in minIONdict[minION]["scripts"]:
+                                                # print (script)
+                                                minIONdict[minION]["APIHelp"].update_script(minION, script)
                                     else:
+                                        print("running get run scripts 1114")
                                         minIONdict[minION]["scripts"] = get_run_scripts(minIONdict[minION]["port"])
+                                        print("calling check scripts 1121")
+                                        minIONdict[minION]["APIHelp"].check_scripts(minION)
+                                        for script in minIONdict[minION]["scripts"]:
+                                            # print (script)
+                                            minIONdict[minION]["APIHelp"].update_script(minION, script)
                                         results = execute_command_as_string(commands('startmessagenew'), ipadd,
                                                                             minIONdict[minION]["port"])
                                         try:  # To catch mysterious bugs
@@ -1135,9 +1325,16 @@ if __name__ == '__main__':
                         else:
                             print ("here")
                             if "scripts" not in minIONdict[minION]:
+                                print ("running get run scripts 1147")
                                 minIONdict[minION]["scripts"] = get_run_scripts(minIONdict[minION]["port"])
+                                print("calling check scripts 1161")
+                                minIONdict[minION]["APIHelp"].check_scripts(minION)
+                                for script in minIONdict[minION]["scripts"]:
+                                    # print (script)
+                                    minIONdict[minION]["APIHelp"].update_script(minION, script)
                                 #print (get_run_scripts(minIONdict[minION]["port"]))
                                 #APIHelp = MinControlAPI()
+                                print("calling check scripts 1168")
                                 minIONdict[minION]["APIHelp"].check_scripts(minION)
                                 for script in minIONdict[minION]["scripts"]:
                                     #print (script)
@@ -1148,141 +1345,154 @@ if __name__ == '__main__':
                         inactive += 1
                     process_tracked_yield()
                     process_channel_information()
-                    minIONdict[minION]["APIHelp"].update_minion_current_stats(minIONdict[minION]['livedata'],minIONdict[minION]['detailsdata'],minIONdict[minION]["simplesummary"])
+                    minIONdict[minION]["APIHelp"].update_minion_current_stats(minIONdict[minION]['livedata'],minIONdict[minION]['detailsdata'],minIONdict[minION]["simplesummary"],minIONdict[minION]["channelstuff"])
+                    minIONdict[minION]["APIHelp"].check_jobs(minION)
             else:
                 print ("Dictionary has changed")
                 for minION in minIONdict:  # if yes then we check each minION to see what is happening
-                    if minIONdict[minION]["state"] == "active":  # we have a sequencing minION - what is it doing?
-                        #APIHelp =
-                        #print (minION, "ACTIVE")
-                        try:
-                            if minION not in minIONclassdict:
-                                connectip = "ws://" + args.ip + ":" + str(
-                                    minIONdict[minION]["ws_longpoll_port"]) + "/"  # Connect to the minIONdict
-                                connectip2 = "ws://" + args.ip + ":" + str(minIONdict[minION][
-                                                                               "ws_longpoll_port"]) + "/user_messages"  # Connect to the minIONdict
-                                minIONclassdict[minION] = dict()  # Add minION to the dictionary
-                            if "connected" not in minIONclassdict[minION]:
-                                print ("Connecting to this minION", minION)
-                                minIONclassdict[minION]["class"] = DummyClient(connectip)
-                                minIONclassdict[minION]["class2"] = MessagesClient(connectip2)
-                            if "connected" not in minIONclassdict[minION]:
-                                try:
-                                    minIONclassdict[minION]["class"].connect()
-                                    minIONclassdict[minION]["class2"].connect()
-                                except Exception as err:
-                                    print ("480 Connection failed", err)
-                                try:
-                                    print ("GETTING THE GOOD STUFF")
-                                    minIONclassdict[minION]["class"].init_minion(minION)
-                                    minIONclassdict[minION]["class2"].init_minion(minION)
-                                    results = execute_command_as_string(commands('get_analysis_configuration'), ipadd,
-                                                                        minIONdict[minION]["port"])
-                                    minIONdict[minION]["channelstuff"] = results["result"]["channel_states"]
-                                except Exception as err:
-                                    print ("Connection failed", err)
-                                minIONclassdict[minION]["connected"] = "True"
-                            livedata = dict()  # collect a dictionary of useful data - might change this
-                            minIONdict[minION]["scripts"] = get_run_scripts(minIONdict[minION]["port"])
-                            for query in (
-                                    'status', 'dataset', 'biasvoltageget', 'bias_voltage_gain', 'machine_id',
-                                    'machine_name',
-                                    'sample_id', 'user_error', 'sequenced_res', 'sequenced_res', 'yield_res',
-                                    'current_script',
-                                    'disk_space', 'flow_cell_id', 'get_tracking_id',
-                                    'get_seq_metrics', 'get_engine_states'):  # ,'getstaticdata','get_analysis_configuration'):
-                                # print query
-                                results = execute_command_as_string(commands(query), ipadd, minIONdict[minION]["port"])
-                                livedata[query] = results
-                                #if query == "disk_space":
-                                    # print results
-                                    # print results["result"][0]["recommend_stop"]
-                                    # print results["result"][0]["recommend_alert"]
-                                #    check_email_twitter()
-                                #if query == "get_seq_metrics":
-                                #    print (query)
-                                #    print (results)
-                            results = execute_command_as_string(commands('get_statistics'), ipadd,
-                                                                minIONdict[minION]["port"])
-                            print ("Got Stats")
-                            meanratio = list()
-                            openpore = list()
-                            instrand = list()
-                            datatofetch = ('seq_pore_level', 'seq_strand_delta', 'tba_pore_level', 'tba_event_delta')
-                            for item in results['result']['stats_for_channel_name']:
-                                # for value in datatofetch:
-                                #    print item, value, results['result']['stats_for_channel_name'][item][value]
-                                if float(results['result']['stats_for_channel_name'][item]['seq_strand_delta']) != 0:
-                                    meanratio.append((float(
-                                        results['result']['stats_for_channel_name'][item]['seq_pore_level']) / float(
-                                        results['result']['stats_for_channel_name'][item]['seq_strand_delta'])))
-                                    openpore.append(
-                                        float(results['result']['stats_for_channel_name'][item]['seq_pore_level']))
-                                    instrand.append(
-                                        float(results['result']['stats_for_channel_name'][item]['seq_strand_delta']))
-                                    # print item, (float(results['result']['stats_for_channel_name'][item]['seq_pore_level'])/float(results['result']['stats_for_channel_name'][item]['seq_strand_delta']))
+                    if "state" in minIONdict[minION].keys():
+                        if minIONdict[minION]["state"] == "active":  # we have a sequencing minION - what is it doing?
+                            #APIHelp =
+                            #print (minION, "ACTIVE")
+                            try:
+                                if minION not in minIONclassdict:
+                                    connectip = "ws://" + args.ip + ":" + str(
+                                        minIONdict[minION]["ws_longpoll_port"]) + "/"  # Connect to the minIONdict
+                                    connectip2 = "ws://" + args.ip + ":" + str(minIONdict[minION][
+                                                                                   "ws_longpoll_port"]) + "/user_messages"  # Connect to the minIONdict
+                                    minIONclassdict[minION] = dict()  # Add minION to the dictionary
+                                if "connected" not in minIONclassdict[minION]:
+                                    print ("Connecting to this minION", minION)
+                                    minIONclassdict[minION]["class"] = DummyClient(connectip)
+                                    minIONclassdict[minION]["class2"] = MessagesClient(connectip2)
+                                if "connected" not in minIONclassdict[minION]:
+                                    try:
+                                        minIONclassdict[minION]["class"].connect()
+                                        minIONclassdict[minION]["class2"].connect()
+                                    except Exception as err:
+                                        print ("480 Connection failed", err)
+                                    try:
+                                        print ("GETTING THE GOOD STUFF")
+                                        minIONclassdict[minION]["class"].init_minion(minION)
+                                        minIONclassdict[minION]["class2"].init_minion(minION)
+                                        results = execute_command_as_string(commands('get_analysis_configuration'), ipadd,
+                                                                            minIONdict[minION]["port"])
+                                        minIONdict[minION]["channelstuff"] = results["result"]["channel_states"]
+                                    except Exception as err:
+                                        print ("Connection failed", err)
+                                    minIONclassdict[minION]["connected"] = "True"
+                                livedata = dict()  # collect a dictionary of useful data - might change this
+                                print ("running get run scripts 1199")
+                                minIONdict[minION]["scripts"] = get_run_scripts(minIONdict[minION]["port"])
+                                print("calling check scripts 1216")
+                                minIONdict[minION]["APIHelp"].check_scripts(minION)
+                                for script in minIONdict[minION]["scripts"]:
+                                    # print (script)
+                                    minIONdict[minION]["APIHelp"].update_script(minION, script)
+                                for query in (
+                                        'status', 'dataset', 'biasvoltageget', 'bias_voltage_gain', 'machine_id',
+                                        'machine_name',
+                                        'sample_id', 'user_error', 'sequenced_res', 'sequenced_res', 'yield_res',
+                                        'current_script',
+                                        'disk_space', 'flow_cell_id', 'get_tracking_id',
+                                        'get_seq_metrics', 'get_engine_states'):  # ,'getstaticdata','get_analysis_configuration'):
+                                    # print query
+                                    results = execute_command_as_string(commands(query), ipadd, minIONdict[minION]["port"])
+                                    livedata[query] = results
+                                    #if query == "disk_space":
+                                        # print results
+                                        # print results["result"][0]["recommend_stop"]
+                                        # print results["result"][0]["recommend_alert"]
+                                    #    check_email_twitter()
+                                    #if query == "get_seq_metrics":
+                                    #    print (query)
+                                    #    print (results)
+                                results = execute_command_as_string(commands('get_statistics'), ipadd,
+                                                                    minIONdict[minION]["port"])
+                                print ("Got Stats")
+                                meanratio = list()
+                                openpore = list()
+                                instrand = list()
+                                datatofetch = ('seq_pore_level', 'seq_strand_delta', 'tba_pore_level', 'tba_event_delta')
+                                for item in results['result']['stats_for_channel_name']:
+                                    # for value in datatofetch:
+                                    #    print item, value, results['result']['stats_for_channel_name'][item][value]
+                                    if float(results['result']['stats_for_channel_name'][item]['seq_strand_delta']) != 0:
+                                        meanratio.append((float(
+                                            results['result']['stats_for_channel_name'][item]['seq_pore_level']) / float(
+                                            results['result']['stats_for_channel_name'][item]['seq_strand_delta'])))
+                                        openpore.append(
+                                            float(results['result']['stats_for_channel_name'][item]['seq_pore_level']))
+                                        instrand.append(
+                                            float(results['result']['stats_for_channel_name'][item]['seq_strand_delta']))
+                                        # print item, (float(results['result']['stats_for_channel_name'][item]['seq_pore_level'])/float(results['result']['stats_for_channel_name'][item]['seq_strand_delta']))
 
-                            results2 = execute_command_as_string(commands('get_analysis_configuration'), ipadd,
-                                                                 minIONdict[minION]["port"])
-                            minIONdict[minION]["channelstuff"] = results2["result"]["channel_states"]
-                            minIONdict[minION]["livedata"] = livedata  # append results to data stream
-                            if "class" in minIONclassdict[minION]:
-                                #print (minIONclassdict[minION])
-                                for element in minIONclassdict[minION]["class"].detailsdict:
-                                    #print (element)
-                                    if "detailsdata" not in minIONdict[minION]:
-                                        print ("creating detailsdata")
-                                        #sys.exit()
-                                        minIONdict[minION]["detailsdata"] = dict()
-                                    if np.mean > 0:
-                                        #print (np.mean(meanratio))
-                                        #print (np.mean(openpore))
-                                        #print (np.mean(instrand))
-                                        minIONdict[minION]["detailsdata"]["meanratio"] = np.mean(meanratio)
-                                        minIONdict[minION]["detailsdata"]["openpore"] = np.mean(openpore)
-                                        minIONdict[minION]["detailsdata"]["instrand"] = np.mean(instrand)
-                                    if element == "statistics" and minIONclassdict[minION]["class"].detailsdict[
-                                        element] != "null":
-                                        if element not in minIONdict[minION]["detailsdata"]:
-                                            minIONdict[minION]["detailsdata"][element] = dict()
-                                        context = dict(list(minIONdict[minION]["detailsdata"][element].items()) + list(
-                                            minIONclassdict[minION]["class"].detailsdict[element].items()))
-                                        minIONdict[minION]["detailsdata"][element] = context
-                                    if element == "engine_states" and minIONclassdict[minION]["class"].detailsdict[
-                                        element] != "null":
-                                        for element2 in minIONclassdict[minION]["class"].detailsdict[element]:
-                                            if minIONclassdict[minION]["class"].detailsdict[element][
-                                                element2] != "null":
-                                                if element not in minIONdict[minION]["detailsdata"]:
-                                                    minIONdict[minION]["detailsdata"][element] = dict()
-                                                minIONdict[minION]["detailsdata"][element][element2] = \
-                                                minIONclassdict[minION]["class"].detailsdict[element][element2]
-                                    else:
-                                        if minIONclassdict[minION]["class"].detailsdict[element] != "null":
-                                            minIONdict[minION]["detailsdata"][element] = \
-                                            minIONclassdict[minION]["class"].detailsdict[element]
-                        except Exception as err:
-                            minIONclassdict.pop(minION)
-                            print ("line 1411", err)
-                            print ("Connection Error")
-                        process_tracked_yield()
-                        process_channel_information()
-                        minIONdict[minION]["APIHelp"].update_minion_current_stats(minIONdict[minION]['livedata'],
-                                                                                  minIONdict[minION]['detailsdata'],
-                                                                                  minIONdict[minION]["simplesummary"])
-                    else:  # minION state is inactive
-                        # print minION, "INACTIVE"
-                        if minION in minIONclassdict:
-                            if "connected" in minIONclassdict[minION]:
-                                keys = minIONclassdict[minION].keys()
-                                for key in keys:
-                                    #print (key)
-                                    minIONclassdict[minION].pop(key, None)
-            #minIONdict_test = minIONdict
-            #for key in minIONdict:
-            #    for thing in minIONdict[key]:
-            #        print (thing)
-            #sys.exit()
+                                results2 = execute_command_as_string(commands('get_analysis_configuration'), ipadd,
+                                                                     minIONdict[minION]["port"])
+                                minIONdict[minION]["channelstuff"] = results2["result"]["channel_states"]
+                                minIONdict[minION]["livedata"] = livedata  # append results to data stream
+                                if "class" in minIONclassdict[minION]:
+                                    #print (minIONclassdict[minION])
+                                    for element in minIONclassdict[minION]["class"].detailsdict:
+                                        #print (element)
+                                        if "detailsdata" not in minIONdict[minION]:
+                                            print ("creating detailsdata")
+                                            #sys.exit()
+                                            minIONdict[minION]["detailsdata"] = dict()
+                                        ## WHat does this line do? Makes no sense!
+                                        #if np.mean > 0:
+                                        try:
+                                            #print (np.mean(meanratio))
+                                            #print (np.mean(openpore))
+                                            #print (np.mean(instrand))
+                                            minIONdict[minION]["detailsdata"]["meanratio"] = np.mean(meanratio)
+                                            minIONdict[minION]["detailsdata"]["openpore"] = np.mean(openpore)
+                                            minIONdict[minION]["detailsdata"]["instrand"] = np.mean(instrand)
+                                        except:
+                                            minIONdict[minION]["detailsdata"]["meanratio"] = 0
+                                            minIONdict[minION]["detailsdata"]["openpore"] = 0
+                                            minIONdict[minION]["detailsdata"]["instrand"] = 0
+                                        if element == "statistics" and minIONclassdict[minION]["class"].detailsdict[
+                                            element] != "null":
+                                            if element not in minIONdict[minION]["detailsdata"]:
+                                                minIONdict[minION]["detailsdata"][element] = dict()
+                                            context = dict(list(minIONdict[minION]["detailsdata"][element].items()) + list(
+                                                minIONclassdict[minION]["class"].detailsdict[element].items()))
+                                            minIONdict[minION]["detailsdata"][element] = context
+                                        if element == "engine_states" and minIONclassdict[minION]["class"].detailsdict[
+                                            element] != "null":
+                                            for element2 in minIONclassdict[minION]["class"].detailsdict[element]:
+                                                if minIONclassdict[minION]["class"].detailsdict[element][
+                                                    element2] != "null":
+                                                    if element not in minIONdict[minION]["detailsdata"]:
+                                                        minIONdict[minION]["detailsdata"][element] = dict()
+                                                    minIONdict[minION]["detailsdata"][element][element2] = \
+                                                    minIONclassdict[minION]["class"].detailsdict[element][element2]
+                                        else:
+                                            if minIONclassdict[minION]["class"].detailsdict[element] != "null":
+                                                minIONdict[minION]["detailsdata"][element] = \
+                                                minIONclassdict[minION]["class"].detailsdict[element]
+                            except Exception as err:
+                                minIONclassdict.pop(minION)
+                                print ("line 1411", err)
+                                print ("Connection Error")
+                            process_tracked_yield()
+                            process_channel_information()
+                            minIONdict[minION]["APIHelp"].update_minion_current_stats(minIONdict[minION]['livedata'],
+                                                                                      minIONdict[minION]['detailsdata'],
+                                                                                      minIONdict[minION]["simplesummary"],
+                                                                                      minIONdict[minION]["channelstuff"])
+                            minIONdict[minION]["APIHelp"].check_jobs(minION)
+
+                        else:  # minION state is inactive
+                            # print minION, "INACTIVE"
+                            if minION in minIONclassdict:
+                                if "connected" in minIONclassdict[minION]:
+                                    keys = minIONclassdict[minION].keys()
+                                    for key in keys:
+                                        #print (key)
+                                        minIONclassdict[minION].pop(key, None)
+
 
             time.sleep(5)
 

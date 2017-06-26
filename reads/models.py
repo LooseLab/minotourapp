@@ -8,7 +8,6 @@ from rest_framework.authtoken.models import Token
 from django.urls import reverse
 
 
-
 class MinION(models.Model):
     minION_name = models.CharField(max_length=64)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='minIONs')
@@ -25,10 +24,10 @@ class MinION(models.Model):
 
     def last_run(self):
         try:
-            #last_run = self.minionrun.last().id
-            return reverse('minIONrunstats_list', args=[self.minionrun.last().id])
+            return self.minionrun.last().id
+            #return reverse('minIONrunstats_list', args=[self.minionrun.last().id])
         except AttributeError:
-            last_run = undefined
+            last_run = "undefined"
         return last_run
 
 
@@ -42,6 +41,12 @@ class MinION(models.Model):
     def sample_name(self):
         try:
             return self.currentdetails.minKNOW_sample_name
+        except AttributeError:
+            return "undefined"
+
+    def minKNOW_version(self):
+        try:
+            return self.currentrundetails.minKNOW_version
         except AttributeError:
             return "undefined"
 
@@ -75,12 +80,60 @@ class MinION(models.Model):
         except AttributeError:
             return "undefined"
 
+    def space_available(self):
+        try:
+            return self.currentdetails.minKNOW_disk_available
+        except AttributeError:
+            return "undefined"
+
     def warnings(self):
         try:
             return self.currentdetails.minKNOW_warnings
         except AttributeError:
             return "undefined"
 
+    def currentscript(self):
+        try:
+            return self.currentdetails.minKNOW_current_script
+        except AttributeError:
+            return "undefined"
+
+    def event_yield(self):
+        try:
+            return self.currentrunstats.order_by('sample_time').last().event_yield
+        except AttributeError:
+            return 0
+
+    def voltage_value(self):
+        try:
+            return self.currentrunstats.order_by('sample_time').last().voltage_value
+        except AttributeError:
+            return 0
+
+class MinIONControl(models.Model):
+    minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minioncontrol')
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='controlcontrol')
+    job = models.CharField(max_length=256, blank=False, null=False)
+    custom = models.CharField(max_length=256, blank=True, null=True)
+    #setdate = models.DateTimeField(blank=False,null=False)
+    #completedate = models.DateTimeField(blank=True,null=True)
+    complete = models.BooleanField(default=False)
+    created_date = models.DateTimeField(auto_now_add=True)
+    modified_date = models.DateTimeField(auto_now=True)  # These last two fields added to enable auto cleanup of event status for a minION incase of disconnect of client.
+
+    def __str__(self):
+        return self.job
+
+
+class MinIONRun(models.Model):
+    run_name = models.CharField(max_length=64)
+    run_id = models.CharField(max_length=64)
+    is_barcoded = models.BooleanField(default=False)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='runs')
+    minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minionrun')
+
+    def __str__(self):
+        return self.run_name
 
 
 class MinIONStatus(models.Model):
@@ -99,25 +152,11 @@ class MinIONStatus(models.Model):
     minKNOW_asic_id = models.CharField(max_length=256, blank=True, null=True)
     minKNOW_total_drive_space = models.FloatField(blank=True, null=True)
     minKNOW_disk_space_till_shutdown = models.FloatField(blank=True, null=True)
+    minKNOW_disk_available = models.FloatField(blank=True,null=True)
     minKNOW_warnings = models.BooleanField(default=False)
-
 
     def __str__(self):
         return "{} {}".format(self.minION,self.minKNOW_status)
-
-
-
-
-class MinIONRun(models.Model):
-    run_name = models.CharField(max_length=64)
-    run_id = models.CharField(max_length=64)
-    is_barcoded = models.BooleanField(default=False)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='runs')
-    minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minionrun')
-
-    def __str__(self):
-        return self.run_name
-
 
 
 class MinIONRunStats(models.Model):
@@ -144,6 +183,7 @@ class MinIONRunStats(models.Model):
     saturated = models.IntegerField(default=0)
     inrange = models.IntegerField(default=0)
     strand = models.IntegerField(default=0)
+    minKNOW_read_count = models.IntegerField(default=0)
     minKNOW_histogram_values = models.TextField(blank=True, null=True)
     minKNOW_histogram_bin_width = models.IntegerField(default=900)
 
@@ -168,6 +208,7 @@ class MinIONRunStatus(models.Model):
     minKNOW_sample_name = models.CharField(max_length=256,blank=True, null=True)
     minKNOW_exp_script_purpose = models.CharField(max_length=256, blank=True, null=True)
     minKNOW_flow_cell_id = models.CharField(max_length=64, blank=True, null=True)
+    minKNOW_version = models.CharField(max_length=64, blank=True, null=True)
     minKNOW_run_name = models.CharField(max_length=256,blank=True, null=True)
     run_id = models.ForeignKey(MinIONRun , related_name='RunDetails')
     minKNOW_hash_run_id = models.CharField(max_length=256, blank=True, null=True)
@@ -176,6 +217,8 @@ class MinIONRunStatus(models.Model):
     #minKNOW_voltage_offset = models.IntegerField(blank=True, null=True)
     #minKNOW_yield = models.IntegerField(blank=True, null=True)
     minKNOW_asic_id = models.CharField(max_length=256, blank=True, null=True)
+    minKNOW_start_time = models.DateTimeField(blank=True,null=True)
+    minKNOW_colours_string = models.TextField(blank=True,null=True)
     #minKNOW_total_drive_space = models.FloatField(blank=True, null=True)
     #minKNOW_disk_space_till_shutdown = models.FloatField(blank=True, null=True)
     #minKNOW_warnings = models.BooleanField(default=False)

@@ -12,6 +12,7 @@ from .models import MinIONStatus
 from .models import MinIONRunStatus
 from .models import MinIONRunStats
 from .models import MinIONmessages
+from .models import MinIONControl
 
 admin.site.register(FastqRead)
 admin.site.register(FastqReadType)
@@ -25,3 +26,4 @@ admin.site.register(MinIONStatus)
 admin.site.register(MinIONRunStatus)
 admin.site.register(MinIONRunStats)
 admin.site.register(MinIONmessages)
+admin.site.register(MinIONControl)
