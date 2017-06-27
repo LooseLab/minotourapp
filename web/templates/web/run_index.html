@@ -36,7 +36,7 @@
                                 </ul>
                             </div>
                             <div class="tab-content">
-                                <div class="tab-pane active">Test</div>
+                                <div class="tab-pane active">selectedBarcode: ${ selectedBarcode }</div>
                             </div>
 
                             <!-- Custom Tabs -->
@@ -100,6 +100,8 @@
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row">
+                                                    <show-chart :mybarcode='selectedBarcode'></show-barcode-charts>
+
                                                     <div class="col-md-6" id="readnum"
                                                          style="width:25%; height:400px;"><i
                                                             class="fa fa-cog fa-spin fa-3x"></i> Calculating
@@ -238,13 +240,128 @@
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 
+
+    <!-- Vue Templates -->
+    <template id="chart">
+        <div class="highcharts"></div>
+    </template>
+
+
     <script>
         console.log('before vue');
 
         Vue.component('minionrun-item', {
             delimiters: ['${', '}'],
             props: ['barcode'],
-            template: "<li><a v-bind:href='\"/web/private/runs/\" + barcode'>${ barcode }</a></li>"
+            template: "<li><a v-on:click='selectedBarcode=loadChartsByBarcode(barcode)' href='#'>${ barcode }</a></li>",
+            methods: {
+                loadChartsByBarcode: function (mybarcode) {
+                    console.log(mybarcode);
+                    app.selectedBarcode = mybarcode;
+                }
+            }
+
+        });
+
+        Vue.component('show-chart', {
+            template: '#chart',
+            props: ['mybarcode'],
+            data: function () {
+                return {
+                    counter: 0,
+                    chart: null,
+                    opts: {
+                        chart: {
+                            type: 'bar'
+                        },
+                        title: {
+                            text: 'Fruit Consumption'
+                        },
+                        xAxis: {
+                            categories: ['Apples', 'Bananas', 'Oranges']
+                        },
+                        yAxis: {
+                            title: {
+                                text: 'Fruit eaten'
+                            }
+                        },
+                        series: [{
+                            name: 'Jane',
+                            data: [1, 0, 4]
+                        }, {
+                            name: 'John',
+                            data: [5, 7, 3]
+                        }]
+                    }
+                };
+            },
+            // lifecycle hooks - ref: https://alligator.io/vuejs/component-lifecycle/
+            created() {
+                console.log('inside created event of the component show-chart');
+                /*setInterval(() => {
+                    this.counter++;
+                    console.log(this.counter);
+                }, 1000);*/
+            },
+            mounted() {
+                console.log('inside mounted event of the component show-chart');
+                if (!this.chart && this.opts) {
+                    this._init();
+                }
+            },
+            beforeUpdate() {
+                console.log('inside updated event of the component show-chart. mybarcode is ' + this.mybarcode);
+                console.log('ola');
+                console.log(this.counter);
+                //this.opts.title.text = mybarcode;
+            },
+            watch: {
+                mybarcode: function (mybarcode) {
+                    console.log('updated barcode ' + this.mybarcode);
+                    this.opts.title.text = this.mybarcode
+
+                    if (this.mybarcode == 'All reads') {
+                        series = [{
+                            name: 'Roberto',
+                            data: [3, 6, 9]
+                        }, {
+                            name: 'Joe',
+                            data: [4, 1, 12]
+                        }];
+                    } else {
+                        series = [{
+                            name: 'Jane',
+                            data: [1, 0, 4]
+                        }, {
+                            name: 'John',
+                            data: [5, 7, 3]
+                        }]
+                    }
+                    this.opts.series = series;
+                    this.chart.update(this.opts);
+                },
+                opts: function (opts) {
+                    if (!this.getChart() && opts) {
+                        this._init()
+                    } else {
+                        this.getChart().update(this.opts);
+                    }
+                }
+            },
+            beforeDestroy() {
+                if (this.chart) {
+                    this.chart.destroy();
+                }
+            },
+            methods: {
+                _init() {
+                    console.log('inside _init method of the component');
+                    if (!this.chart && this.opts) {
+                        let _Highcharts = this.Highcharts || Highcharts;
+                        this.chart = new _Highcharts.Chart(this.$el, this.opts);
+                    }
+                }
+            }
         });
 
         var app = new Vue({
@@ -253,6 +370,7 @@
             data: {
                 minion_run: '',
                 id: {{ minion_run.id }},
+                selectedBarcode: '',
             },
             created: function () {
                 var url_run = '/api/v1/runs/' + this.id;
@@ -268,10 +386,13 @@
                 console.log('inside created.')
             },
             computed: {
-            }
+            },
         });
 
         console.log('after vue');
+
+
+        /*
 
         $(document).ready(function () {
             var options_reads_called = {
@@ -509,7 +630,7 @@
             });
 
 
-        });
+        });*/
     </script>
 
 {% endblock %}
