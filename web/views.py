@@ -48,3 +48,7 @@ def run_index(request, pk):
 @login_required
 def remotecontrol(request):
     return render(request, 'web/remotecontrol.html')
+
+@login_required
+def prevremotecontrol(request):
+    return render(request, 'web/prevremotecontrol.html')

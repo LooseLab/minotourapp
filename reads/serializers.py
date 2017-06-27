@@ -22,8 +22,8 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = MinIONRun
         # fields = ('url', 'run_name', 'run_id', 'is_barcoded', 'reads')
-        fields = ('url', 'run_name', 'run_id', 'is_barcoded','minION')
-        read_only = ('id',)
+        fields = ('url', 'sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id','run_name', 'run_id', 'is_barcoded','minION')
+        read_only = ('id','sample_name','minKNOW_version', 'minKNOW_flow_cell_id')
 
 class MinIONRunStatsSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -154,6 +154,7 @@ class MinIONRunStatusSerializer(serializers.HyperlinkedModelSerializer):
         fields = (
             'id',
             'minION',
+            'minION_name',
             #'minKNOW_status',
             'minKNOW_current_script',
             'minKNOW_sample_name',
@@ -173,6 +174,6 @@ class MinIONRunStatusSerializer(serializers.HyperlinkedModelSerializer):
             #'minKNOW_disk_space_till_shutdown',
             #'minKNOW_warnings',
         )
-        read_only = ('id',)
+        read_only = ('id','minION_name')
 
 

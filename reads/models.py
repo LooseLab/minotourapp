@@ -132,6 +132,30 @@ class MinIONRun(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='runs')
     minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minionrun')
 
+    def sample_name(self):
+        try:
+            return self.RunDetails.last().minKNOW_sample_name
+            #return self.RunDetails.minKNOW_sample_name
+        except AttributeError:
+            return "undefined"
+
+    def minKNOW_flow_cell_id(self):
+        try:
+            return self.RunDetails.last().minKNOW_flow_cell_id
+        except AttributeError:
+            return "undefined"
+
+    def minKNOW_version(self):
+        try:
+            return self.RunDetails.last().minKNOW_version
+        except AttributeError:
+            return "undefined"
+
+
+
+
+
+
     def __str__(self):
         return self.run_name
 
@@ -229,6 +253,10 @@ class MinIONRunStatus(models.Model):
 
     def barcodes(self):
         return FastqRead.objects.filter(run_id=self).values('barcode').distinct()
+
+    def minION_name(self):
+        return self.minION.minION_name
+
 
 
 

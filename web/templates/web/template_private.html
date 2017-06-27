@@ -184,7 +184,7 @@
                     <a href="{% url 'remotecontrol' %}"><i class="fa fa-gamepad fa-fw"></i><span> Remote Control</span></a>
                 </li>
                 <li id="prevcontrol">
-                    <a href="prev_control.php"><i class="fa fa-gamepad fa-fw"></i><span> Remote Archive</span></a>
+                    <a href="{% url 'prevremotecontrol' %}"><i class="fa fa-gamepad fa-fw"></i><span> Remote Archive</span></a>
                 </li>
                 <?php if (checkactiverun()) { ?>
                 <li id="currentruns" class="treeview">

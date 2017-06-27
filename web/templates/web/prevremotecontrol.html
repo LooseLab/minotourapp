@@ -6,7 +6,7 @@
         <!-- Content Header (Page header) -->
         <section class="content-header">
             <h1>
-                <span>remoteControl <small>- remote interaction with minKNOW.</small></span>
+                <span>remoteControl History <small>- remote interaction with minKNOW.</small></span>
             </h1>
             <ol class="breadcrumb">
                 <li><a href="#"><i class="fa fa-cloud-upload"></i> remoteControl</a></li>
@@ -22,10 +22,55 @@
                 </div><!-- /.box-header -->
                 <div class="row">
                         <div class="col-lg-12">
-                            <p>This page allows you to remotely control minKNOW. You use it at your own risk.</p>
-                            <p>Once connected you will see the minION id below. If you have multiple minIONs connected to one account and all active, they can all be controlled from this page. Further options to implement 'Run Until' are available within the Current Sequencing Run folder.</p>
-                            <p>Note that data can take 10-20 seconds to be populated at busy times.</p>
-                            <p>The pore history chart is only updated every 5 minutes to reduce page loading times.</p>
+                            <p>MinION History</p>
+                            <table id="example" class="table table-bordered table-striped table-hover" cellspacing="0">
+                        <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Id</th>
+                            <th>Sample Name</th>
+                            <th>Flow Cell ID</th>
+                            <th>MinKNOW Version</th>
+                            <th>Is Barcoded</th>
+                            <th>URL</th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr>
+                            <th>Name</th>
+                            <th>Id</th>
+                            <th>Sample Name</th>
+                            <th>Flow Cell ID</th>
+                            <th>MinKNOW Version</th>
+                            <th>Is Barcoded</th>
+                            <th>URL</th>
+                        </tr>
+                        </tfoot>
+                        <!--<thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Flow Cell ID</th>
+                            <th>Comment</th>
+                            <th>Flow Cell Owner</th>
+                            <th>Run Name</th>
+                            <th>Run Order</th>
+                            <th>Ref Sequence</th>
+                            <th>Ref Length</th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr>
+                            <th>Date</th>
+                            <th>Flow Cell ID</th>
+                            <th>Comment</th>
+                            <th>Flow Cell Owner</th>
+                            <th>Run Name</th>
+                            <th>Run Order</th>
+                            <th>Ref Sequence</th>
+                            <th>Ref Length</th>
+                        </tr>
+                        </tfoot>-->
+                    </table>
                             <div id="app">
                     {% verbatim %}
 
@@ -39,7 +84,8 @@
   <!-- Tab panes-->
   <div class="tab-content">
     <div v-for="(key,minion) in minions | orderBy 'name'" role="tabpanel" class="tab-pane" id="{{minion.name}}">
-        <div v-if='minion.state=="active"'>
+        <!--<div v-if='minion.state=="active"'>-->
+        <div>
 
             <div class="panel panel-info">
                 <div class="panel-heading">
@@ -124,8 +170,8 @@
                   <hr>
                     <div class="row">
 
-                            <div class="col-lg-6" id="{{minion.name}}"><div is="chartyield" :title="minion.name" :key="key"  :datain2="minion.yield_history"></div></div>
-                            <div class="col-lg-6" id="{{minion.name}}"><div is="porehistory" :title="minion.name" :key="key" :datain2="minion.strand" :datain3="minion.good_single"></div></div>
+                            <div class="col-lg-12" id="{{minion.name}}"><div is="chartyield" :title="minion.name" :key="key"  :datain2="minion.yield_history"></div></div>
+                            <div class="col-lg-12" id="{{minion.name}}"><div is="porehistory" :title="minion.name" :key="key" :datain2="minion.strand" :datain3="minion.good_single"></div></div>
                     </div>
                       <div class="row">
                             <div class="col-lg-12" id="{{minion.name}}"><div is="projchartyield" :start_time="minion.start_time" :seqspeed="seqspeed" :title="minion.name" :key="key" :datain="minion.livedata.event_yield" :datain2="minion.yield_history"></div></div>
@@ -133,21 +179,21 @@
                       <div class="row">
 
 
-                            <div class="col-lg-6" id="{{minion.name}}"><div is="perchistory" :title="minion.name" :key="key" :datain2="minion.percentage"></div></div>
+                            <div class="col-lg-12" id="{{minion.name}}"><div is="perchistory" :title="minion.name" :key="key" :datain2="minion.percentage"></div></div>
 
-                            <div class="col-lg-6" id="{{minion.name}}"><div is="chartporehistdetails" :title="minion.name" :key="key" :datain="minion.colour_stats" :datain2="minion.pore_history" ></div></div>
+                            <div class="col-lg-12" id="{{minion.name}}"><div is="chartporehistdetails" :title="minion.name" :key="key" :datain="minion.colour_stats" :datain2="minion.pore_history" ></div></div>
                       </div>
                       <div class="row">
                             <div class="col-lg-12" id="{{minion.name}}"><div is="chartreadhist" :title="minion.name" :key="key" :datain="minion.histogram_values" :datain2="minion.histogram_bin_width" :totalyield="minion.livedata.event_yield" :seqspeed="seqspeed" :readcount="minion.read_count"></div></div>
                       </div>
                       <div class="row">
-                            <div class="col-lg-6" id="{{minion.name}}"><div is="temphistory" :title="minion.name" :key="key" :datain2="minion.asic_temp" :datain3="minion.heatsinktemp"></div></div>
+                            <div class="col-lg-12" id="{{minion.name}}"><div is="temphistory" :title="minion.name" :key="key" :datain2="minion.asic_temp" :datain3="minion.heatsinktemp"></div></div>
 
-                            <div class="col-lg-6" id="{{minion.name}}"><div is="volthistory" :title="minion.name" :key="key" :datain2="minion.voltage"></div></div>
+                            <div class="col-lg-12" id="{{minion.name}}"><div is="volthistory" :title="minion.name" :key="key" :datain2="minion.voltage"></div></div>
                       </div>
                       <div class="row">
-                            <div class="col-lg-6" id="{{minion.name}}"><div is="porecurrents" :title="minion.name" :key="key" :datain="minion.instrand_history" :datain2="minion.openpore_history"></div></div>
-                            <div class="col-lg-6" id="{{minion.name}}"><div is="meanratio" :title="minion.name" :key="key" :datain="minion.meanratio_history"></div></div>
+                            <div class="col-lg-12" id="{{minion.name}}"><div is="porecurrents" :title="minion.name" :key="key" :datain="minion.instrand_history" :datain2="minion.openpore_history"></div></div>
+                            <div class="col-lg-12" id="{{minion.name}}"><div is="meanratio" :title="minion.name" :key="key" :datain="minion.meanratio_history"></div></div>
                       
 
                     </div>
@@ -204,190 +250,6 @@
           </div>
 
             <div class="col-md-4">
-                <div class="panel panel-warning">
-                    <div class="panel-heading">
-                    <h3 class="panel-title">minKNOW Control options BROKEN</h3>
-                    </div>
-                  <div class="panel-body">
-                      <h5>To test if you have a connection to minKNOW:</h5>
-                        <button v-on:click="testmessage" id='{{minion.url}}' type='button' class='btn btn-info btn-sm'><i class='fa fa-magic'></i> Test Communication</button>
-                          <br>
-
-
-                          <h5>Log Custom Message:</h5>
-                          <!--<button id='renamerun' type='button' class='btn btn-info btn-sm'><i class='fa fa-magic'></i> Rename Run</button>-->
-                          <!-- Indicates a dangerous or potentially negative action -->
-                          <!-- Button trigger modal -->
-                          <button id='custommessage' class='btn btn-info btn-sm' data-toggle='modal' data-target='#{{minion.name}}custommessage'>
-                            <i class='fa fa-magic'></i> Send Message
-                          </button>
-                          <!-- Modal -->
-                          <div class='modal fade' id='{{minion.name}}custommessage' tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>
-                              <div class='modal-dialog'>
-                                  <div class='modal-content'>
-                                      <div class='modal-header'>
-                                          <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
-                                          <h4 class='modal-title' id='myModalLabel'>Send a custom message to MinKNOW</h4>
-                                      </div>
-                                      <div class='modal-body'>
-                                          <div id='{{minion.name}}custommessage'>
-                                              <p>You can log a custom message into minKNOW to document things such as addition of library or other event. This will then be written into the log files for this run.</p>
-                                              <input type="text" id="{{minion.name}}custommessagefield" class="form-control" placeholder="">
-                                          </div>
-                                          <div class='modal-footer'>
-                                              <button type='button' class='btn btn-default' data-dismiss='modal'>Close</button>
-                                              <button v-on:click="custommessage" id='{{minion.url}}' name='{{ minion.name }}' type='button' class='btn btn-danger' data-dismiss='modal'>Send Message</button>
-                                          </div>
-                                      </div><!-- /.modal-content -->
-                                  </div><!-- /.modal-dialog -->
-                              </div><!-- /.modal -->
-                          </div>
-
-
-                          <h5>Rename Your Run:</h5>
-                          <!--<button id='renamerun' type='button' class='btn btn-info btn-sm'><i class='fa fa-magic'></i> Rename Run</button>-->
-                          <!-- Indicates a dangerous or potentially negative action -->
-                          <!-- Button trigger modal -->
-                          <button id='renamerun' class='btn btn-info btn-sm' data-toggle='modal' data-target='#{{minion.name}}renamemodal'>
-                            <i class='fa fa-magic'></i> Rename Run
-                          </button>
-                          <!-- Modal -->
-                          <div class='modal fade' id='{{minion.name}}renamemodal' tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>
-                              <div class='modal-dialog'>
-                                  <div class='modal-content'>
-                                      <div class='modal-header'>
-                                          <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
-                                          <h4 class='modal-title' id='myModalLabel'>Rename Your Run</h4>
-                                      </div>
-                                      <div class='modal-body'>
-                                          <div id='{{minion.url}}renameinfo'>
-                                              <p>You can rename a run if you wish to do so. Note there is no need to do this unless you wish to change the sample ID for some reason.</p>
-                                              <input type="text" id="{{minion.name}}newname" class="form-control" placeholder="New Run Name">
-                                              <p>If you are sure you wish to do this enter your new name above and click 'Rename Run' below. Otherwise close this window.</p>
-                                              <p> We dont recommend doing this when a run is in progress!</p>
-                                          </div>
-                                          <div class='modal-footer'>
-                                              <button type='button' class='btn btn-default' data-dismiss='modal'>Close</button>
-                                              <button v-on:click="renamenow" id='{{minion.url}}' name='{{ minion.name }}' type='button' class='btn btn-danger' data-dismiss='modal'>Rename Run</button>
-                                          </div>
-                                      </div><!-- /.modal-content -->
-                                  </div><!-- /.modal-dialog -->
-                              </div><!-- /.modal -->
-                          </div>
-                          <h5>Rename Flow Cell:</h5>
-                          <!--<button id='renamerun' type='button' class='btn btn-info btn-sm'><i class='fa fa-magic'></i> Rename Run</button>-->
-                          <!-- Indicates a dangerous or potentially negative action -->
-                          <!-- Button trigger modal -->
-                          <button id='renameflowcell' class='btn btn-info btn-sm' data-toggle='modal' data-target='#{{minion.name}}renameflowcell'>
-                            <i class='fa fa-magic'></i> Rename Flowcell
-                          </button>
-                          <!-- Modal -->
-                          <div class='modal fade' id='{{minion.name}}renameflowcell' tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>
-                              <div class='modal-dialog'>
-                                  <div class='modal-content'>
-                                      <div class='modal-header'>
-                                          <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
-                                          <h4 class='modal-title' id='myModalLabel'>Rename Your Flowcell</h4>
-                                      </div>
-                                      <div class='modal-body'>
-                                          <div id='{{minion.name}}renameflowcellinfo'>
-                                              <p>You can rename a flowcell if you wish to do so. Note there is no need to do this unless you wish to change the Flowcell ID for some reason.</p>
-                                              <input type="text" id="{{minion.name}}newflowcellname" class="form-control" placeholder="New Flowcell ID">
-                                              <p>If you are sure you wish to do this enter your new Flowcell ID above and click 'Rename Run' below. Otherwise close this window.</p>
-                                              <p> We dont recommend doing this when a run is in progress!</p>
-                                          </div>
-                                          <div class='modal-footer'>
-                                              <button type='button' class='btn btn-default' data-dismiss='modal'>Close</button>
-                                              <button v-on:click="renameflowcellnow" id='{{minion.url}}' name='{{ minion.name }}' type='button' class='btn btn-danger' data-dismiss='modal'>Rename Flowcell</button>
-                                          </div>
-                                      </div><!-- /.modal-content -->
-                                  </div><!-- /.modal-dialog -->
-                              </div><!-- /.modal -->
-                          </div>
-
-
-
-                          <br>
-                          <h5>Remote Start/Stop Sequencing:</h5>
-
-                                  <!-- Indicates a dangerous or potentially negative action -->
-                                  <!-- Button trigger modal -->
-                                  <button id='stopminion' class='btn btn-danger btn-sm' data-toggle='modal' data-target='#{{minion.name}}stopminionmodal'>
-                                    <i class='fa fa-stop'></i> Stop minION
-                                  </button>
-
-                                  <!-- Modal -->
-                                  <div class='modal fade' id='{{minion.name}}stopminionmodal' tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>
-                                      <div class='modal-dialog'>
-                                          <div class='modal-content'>
-                                              <div class='modal-header'>
-                                                  <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
-                                                  <h4 class='modal-title' id='myModalLabel'>Stop your minION</h4>
-                                              </div>
-                                              <div class='modal-body'>
-                                                  <div id='{{minion.name}}stopminioninfo'>
-                                                      <p>This will attempt to stop your minION sequencer remotely. It should be possible to restart sequencing remotely but software crashes on the minION controlling device may cause problems. You should only stop your minION device remotely if you are certain you wish to do so and <strong> at your own risk</strong>.</p>
-
-                                                      <p>If you are sure you wish to do this, click 'Stop minION' below. Otherwise close this window.</p>
-                                                  </div>
-                                                  <div class='modal-footer'>
-                                                      <button type='button' class='btn btn-default' data-dismiss='modal'>Close</button>
-                                                      <button v-on:click="stopminion" id='{{minion.url}}' type='button' class='btn btn-danger' data-dismiss='modal'>Stop minION</button>
-                                                  </div>
-                                              </div><!-- /.modal-content -->
-                                          </div><!-- /.modal-dialog -->
-                                      </div><!-- /.modal -->
-                                  </div>
-
-
-                                  <!-- Indicates a dangerous or potentially negative action -->
-                                  <!-- Button trigger modal -->
-                                  <button id='startminion' class='btn btn-success btn-sm' data-toggle='modal' data-target='#{{minion.name}}startminionmodal'>
-                                    <i class='fa fa-play'></i> Start minION
-                                  </button>
-
-                                  <!-- Modal -->
-                                  <div class='modal fade' id='{{minion.name}}startminionmodal' tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>
-                                      <div class='modal-dialog'>
-                                          <div class='modal-content'>
-                                              <div class='modal-header'>
-                                                  <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
-                                                  <h4 class='modal-title' id='myModalLabel'>Start your minION</h4>
-                                              </div>
-                                              <div class='modal-body'>
-                                                  <div id='{{minion.name}}startminioninfo'>
-                                                      <p>This will attempt to restart your minION sequencer remotely.</p>
-
-                                                      <p>If you are sure you wish to do this select an available run script and click 'Start minION' below. Otherwise close this window.</p>
-                                                      <div v-for="script in minion.scripts" class='radio'>
-                                                          <label>
-                                                              <input type='radio' name='scriptRadios' id='{{script.name}}' value='{{script.identifier}}' >{{script.name}}.py</label>
-                                                      </div>
-                                                  </div>
-                                                  <div class='modal-footer'>
-                                                      <button type='button' class='btn btn-default btn-sm' data-dismiss='modal'>Close</button>
-                                                      <button v-on:click="startminion" id='{{minion.url}}' type='button' class='btn btn-success' data-dismiss='modal'>Start minION</button>
-                                                  </div>
-                                              </div><!-- /.modal-content -->
-                                          </div><!-- /.modal-dialog -->
-                                      </div><!-- /.modal -->
-                                  </div>
-                                  <br><br>
-                                  <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseExample{{minion.name}}" aria-expanded="false" aria-controls="collapseExample">
-                                    Available Scripts:
-                                  </button>
-                                  <div class="collapse" id="collapseExample{{minion.name}}">
-                                    <div class="well">
-                                      <div v-for="script in minion.scripts">{{script.name}}</div>
-                                    </div>
-                                  </div>
-
-
-                  </div>
-              </div>
-          </div>
-
-            <div class="col-md-4">
             <div class='panel panel-info'>
   				<div class='panel-heading'>
     				<h3 class='panel-title'>minKNOW real time data</h3>
@@ -440,7 +302,7 @@
 
 			</div>
 
-            <div class="col-lg-4" id="{{minion.name}}"><div is="diskusage" :title="minion.livedata.machine_id.result" :key="key" :datain="minion.livedata.disk_space.result"></div></div>
+
 
 
 
@@ -450,41 +312,7 @@
 </div>
         </div>
 
-        <div v-else>
-            <h5>You are interacting with minION: {{minion.name}}</h5>
-            It is currently <i>inactive</i>.
 
-            <!-- Indicates a dangerous or potentially negative action -->
-            <!-- Button trigger modal -->
-            <button id='initminion' class='btn btn-warning btn-sm' data-toggle='modal' data-target='#{{minion.name}}initminionmodal'>
-              <i class='fa fa-stop'></i> Initialise minION
-            </button>
-
-            <!-- Modal -->
-            <div class='modal fade' id='{{minion.name}}initminionmodal' tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>
-                <div class='modal-dialog'>
-                    <div class='modal-content'>
-                        <div class='modal-header'>
-                            <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
-                            <h4 class='modal-title' id='myModalLabel'>Start your minION</h4>
-                        </div>
-                        <div class='modal-body'>
-                            <div id='{{minion.name}}initminioninfo'>
-                                <p>This action will switch the minION to the active state.</p>
-
-                                <p>If you are sure you wish to do this, click 'Initialise minION' below. Otherwise close this window.</p>
-                            </div>
-                            <div class='modal-footer'>
-                                <button type='button' class='btn btn-default' data-dismiss='modal'>Close</button>
-                                <button v-on:click="initminion" id='{{minion.name}}' type='button' class='btn btn-warning' data-dismiss='modal'>Initialise minION</button>
-                            </div>
-                        </div><!-- /.modal-content -->
-                    </div><!-- /.modal-dialog -->
-                </div><!-- /.modal -->
-            </div>
-
-
-        </div>
     </div>
 
   </div>
@@ -501,7 +329,187 @@
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 
+
     <script>
+        $(document).ready(function () {
+            $('#example').DataTable({
+                'ajax': {
+                    'url': "{% url 'run-list' %}",
+                    'dataSrc': function(json){
+                        var data = [];
+                        console.log(json);
+                        var ien = json.length;
+                        for (var i = 0; i < ien; i++){
+                            data.push([json[i].run_name, json[i].run_id, json[i].sample_name,json[i].minKNOW_flow_cell_id,json[i].minKNOW_version, json[i].is_barcoded,json[i].url]);
+                        }
+                        return data;
+                    }
+                },
+            });
+            var table = $('#example').DataTable();
+
+            table.column( 6 ).visible( false );
+
+            $('#example tbody').on('click', 'tr', function () {
+                //var name = $('td', this).eq(5).text();
+                //console.log(name);
+                var row = $(this).closest('tr');
+                var dataurl = $('#example').dataTable().fnGetData(row)[6];
+                console.log(dataurl);
+                $.get( dataurl + "rundetails/", function( data2 ) {
+                    console.log(data2.slice(-1)[0]);
+                    data=data2.slice(-1)[0];
+                    console.log(minionsthings);
+                    minionsthings.minions=[];
+                    minionsthings.minions.push({
+                            scripts:'',
+                        status: data.run_status,
+                        state: data.status,
+                        sample_id: data.minKNOW_sample_name,
+                        run_name: data.minKNOW_run_name,
+                        asic_id: data.minKNOW_asic_id,
+                        histogram_bin_width: '',
+                        histogram_values: [],
+                        read_count: '',
+                        start_time: data.minKNOW_start_time,
+                        last_update: '',
+                        flow_cell_id: data.minKNOW_flow_cell_id,
+                        name: data.minION_name,
+                        livedata: {
+                            voltage_value: data.voltage_value,
+                            event_yield: data.event_yield,
+                            machine_id: {
+                                result: data.computer
+                            },
+                            current_script: {
+                                result: data.currentscript
+                            },
+                            //disk_space: {
+                            //    result: {
+                            //        bytes_capacity: data.total_drive_space,
+                            //        bytes_to_alert: data.space_till_shutdown,
+                            //        bytes_available: data.space_available,
+                            //        recommend_alert: data.warnings,
+                            //    }
+                            //}
+                        },
+                            minKNOW_version: data.minKNOW_version,
+                        voltage: [],
+                        asictemp: [],
+                        heatsinktemp: [],
+                        strand: [],
+                        good_single: [],
+                        percentage: [],
+                        currpercentage: [],
+                        currstrand:[],
+                        yield_history: [],
+                        meanratio_history: [],
+                        messages: [],
+                        instrand_history: [],
+                        openpore_history: [],
+                        colour_stats : [],
+                        pore_history: {
+                            above:[],
+                            adapter:[],
+                            below:[],
+                            good_single:[],
+                            strand:[],
+                            inrange:[],
+                            multiple:[],
+                            pending_mux_change:[],
+                            saturated:[],
+                            unavailable:[],
+                            unblocking:[],
+                            unclassified:[],
+                            unknown:[],
+                        },
+                            url: data.url,
+                            last_counter: 0,
+                    });
+                });
+                //$.get("http://" + window.location.hostname + ":8100/api/v1/runs/" + data[i].last_run + "/runstats/" + counter, function ( data3 ) {
+                $.get(dataurl + "runstats/", function ( data3 ) {
+                            //console.log("http://" + window.location.hostname + ":8100/api/v1/runs/" + data[i].last_run + "/runstats/");
+                            console.log(data3);
+                            console.log(data.minION_name);
+                            for (obj in minionsthings.minions){
+                                    if (minionsthings.minions[obj].name === data.minION_name){
+                                        console.log(data3.slice(-1)[0].minKNOW_histogram_values);
+                                        minionsthings.minions[obj].histogram_bin_width = data3.slice(-1)[0].minKNOW_histogram_bin_width;
+                                        minionsthings.minions[obj].histogram_values = data3.slice(-1)[0].minKNOW_histogram_values;
+                                        minionsthings.minions[obj].read_count=data3.slice(-1)[0].minKNOW_read_count;
+                                        minionsthings.minions[obj].last_update=Date.parse(data3.slice(-1)[0].sample_time);
+                                        minionsthings.minions[obj].livedata.event_yield=data3.slice(-1)[0].event_yield;
+                                        minionsthings.minions[obj].livedata.voltage_value=data3.slice(-1)[0].voltage_value;
+                                        //minionsthings.minions[obj].last_counter=data3.slice(-1)[0].id;
+
+                                }
+                                for (element in data3){
+                                    minionsthings.minions[obj].voltage.push([Date.parse(data3[element].sample_time), data3[element].voltage_value]);
+                                    minionsthings.minions[obj].asictemp.push([Date.parse(data3[element].sample_time), data3[element].asic_temp]);
+                                    minionsthings.minions[obj].heatsinktemp.push([Date.parse(data3[element].sample_time), data3[element].heat_sink_temp]);
+                                    minionsthings.minions[obj].strand.push([Date.parse(data3[element].sample_time), data3[element].strand]);
+                                    minionsthings.minions[obj].good_single.push([Date.parse(data3[element].sample_time), data3[element].good_single]);
+                                    minionsthings.minions[obj].currpercentage = data3[element].occupancy;
+                                    minionsthings.minions[obj].currstrand = data3[element].strand;
+                                    minionsthings.minions[obj].percentage.push([Date.parse(data3[element].sample_time), data3[element].occupancy]);
+                                    minionsthings.minions[obj].yield_history.push([Date.parse(data3[element].sample_time), data3[element].event_yield]);
+                                    minionsthings.minions[obj].meanratio_history.push([Date.parse(data3[element].sample_time), data3[element].mean_ratio]);
+                                    minionsthings.minions[obj].instrand_history.push([Date.parse(data3[element].sample_time), data3[element].in_strand]);
+                                    minionsthings.minions[obj].openpore_history.push([Date.parse(data3[element].sample_time), data3[element].open_pore]);
+                                    var myStringArray = ["above","adapter","below","good_single","strand","inrange","multiple","pending_mux_change","saturated","unavailable","unblocking","unclassified","unknown"];
+                                    var arrayLength = myStringArray.length;
+                                    for (var i = 0; i < arrayLength; i++) {
+                                        minionsthings.minions[obj].pore_history[myStringArray[i]].push([Date.parse(data3[element].sample_time), data3[element][myStringArray[i]]]);
+                                    }
+                                }
+                            }
+
+                        });
+                $.get(dataurl + "rundetails/", function ( data4 ){
+                            for (obj in minionsthings.minions){
+
+                                    if (minionsthings.minions[obj].name === data.minION_name){
+                                        console.log(data.minION_name);
+                                        minionsthings.minions[obj].asic_id=data4.slice(-1)[0].minKNOW_asic_id ;
+                                        minionsthings.minions[obj].livedata.current_script.result=data4.slice(-1)[0].minKNOW_current_script;
+                                        minionsthings.minions[obj].start_time=Date.parse(data4.slice(-1)[0].minKNOW_start_time);
+                                        minionsthings.minions[obj].colour_stats=JSON.parse("[" + data4.slice(-1)[0].minKNOW_colours_string.replace("u'","'") + "]");
+
+                                }
+
+                            }
+                        });
+                /*
+                $.post("views/read_details.php?prev=1", {readname: name})
+                    .done(function (data) {
+                        $("#read_details").html(data);
+                        $('html, body').animate({
+                            'scrollTop': $('#' + name).offset().top
+                        }, 1000);
+
+                    });
+                    */
+            });
+
+            $(document).on('click', '#example tr', function () {
+                var tableData = $(this).children("td").map(function () {
+                    return $(this).text();
+                }).get();
+                var targetrun = $.trim(tableData[4]);
+                var cleanedtarget = targetrun.replace(/ /g, "_");
+                //alert (cleanedtarget);
+                checklen = cleanedtarget.length;
+
+                //var url = "previous_summary.php?roi=" + cleanedtarget;
+                //if (checklen > 0) {
+                //    window.location.href = url;
+                //}
+            });
+
+        });
+
+
 
     $(document).ready(function (){
         function add(a,b) {
@@ -804,7 +812,7 @@
                     });
                         master_minion_list.push(data[i].minION_name);
                         $.get(data[i].url + "scripts", function (scriptstuff) {
-                        //console.log(scriptstuff);
+                        console.log(scriptstuff);
                         for (obj in minionsthings.minions){
                             for (j in data){
                                 if (minionsthings.minions[obj].name === data[j].minION_name){
@@ -816,7 +824,7 @@
 
                         })
                     }else{
-                        //console.log(data[i].minION_name);
+                        console.log(data[i].minION_name);
                         for (obj in minionsthings.minions) {
                             if (minionsthings.minions[obj].name == data[i].minION_name) {
                                 minionsthings.minions[obj].status = data[i].run_status;
@@ -849,24 +857,21 @@
                         for (obj in minionsthings.minions){
                             for (j in data){
                                 if (minionsthings.minions[obj].name === data[j].minION_name){
-                                    //console.log("found it");
-                                    //console.log(minionsthings.minions[obj].last_counter);
+                                    console.log("found it");
+                                    console.log(minionsthings.minions[obj].last_counter);
                                     counter =  minionsthings.minions[obj].last_counter;
                                 }
                             }
                         }
-                        //console.log("http://" + window.location.hostname + ":8100/api/v1/runs/" + data[i].last_run + "/runstats/" + counter);
+                        console.log("http://" + window.location.hostname + ":8100/api/v1/runs/" + data[i].last_run + "/runstats/" + counter);
                         $.get("http://" + window.location.hostname + ":8100/api/v1/runs/" + data[i].last_run + "/runstats/" + counter, function ( data3 ) {
                             //console.log("http://" + window.location.hostname + ":8100/api/v1/runs/" + data[i].last_run + "/runstats/");
-                            //console.log("sausage");
+                            console.log("sausage");
                             for (obj in minionsthings.minions){
                                 for (j in data){
                                     if (minionsthings.minions[obj].name === data[j].minION_name){
-                                        //console.log("updating historgram");
                                         minionsthings.minions[obj].histogram_bin_width = data3.slice(-1)[0].minKNOW_histogram_bin_width;
-                                        //console.log(minionsthings.minions[obj].histogram_values);
                                         minionsthings.minions[obj].histogram_values = data3.slice(-1)[0].minKNOW_histogram_values;
-                                        //console.log(minionsthings.minions[obj].histogram_values);
                                         minionsthings.minions[obj].read_count=data3.slice(-1)[0].minKNOW_read_count;
                                         minionsthings.minions[obj].last_update=Date.parse(data3.slice(-1)[0].sample_time);
                                         minionsthings.minions[obj].last_counter=data3.slice(-1)[0].id;
@@ -898,7 +903,7 @@
                             for (obj in minionsthings.minions){
                                 for (j in data){
                                     if (minionsthings.minions[obj].name === data[j].minION_name){
-                                        //console.log(data[j].minION_name);
+                                        console.log(data[j].minION_name);
                                         minionsthings.minions[obj].asic_id=data4.slice(-1)[0].minKNOW_asic_id ;
                                         minionsthings.minions[obj].start_time=Date.parse(data4.slice(-1)[0].minKNOW_start_time);
                                         minionsthings.minions[obj].colour_stats=JSON.parse("[" + data4.slice(-1)[0].minKNOW_colours_string.replace("u'","'") + "]");
@@ -925,8 +930,8 @@
 
 
         }
-        start();
-        setInterval(start, 10000);
+        //start();
+        //setInterval(start, 10000);
 
 
 
@@ -1027,7 +1032,7 @@
             this.chart.series[0].setData(converttobases(this.datain2,this.seqspeed));
             this.chart.redraw();
 
-            setInterval(function () {
+            setTimeout(function () {
                 var timeleft = geteighthours(this.datain2.slice(-1),this.start_time);
                 var firsthour = 120;
                 [scalingfactor,difference] = projectdata(this.datain2);
@@ -1040,7 +1045,7 @@
                 this.chart.series[1].setData(converttobases(newarray,this.seqspeed));
                 this.chart.series[2].setData(converttobases(newarray1,this.seqspeed));
                 this.chart.series[3].setData(converttobases(newarray2,this.seqspeed));
-        }.bind(this), 15000);
+        }.bind(this), 1000);
             });
         }
     })
@@ -1120,14 +1125,14 @@
             for (var i = 0; i< returndata.length; i++){
                 this.chart.addSeries(returndata[i]);
             }
-          setInterval(function () {
+          setTimeout(function () {
                 var returndata=parseporehist(this.datain[0],this.datain2);
                 while(this.chart.series.length > 0)
                     this.chart.series[0].remove(true);
                 for (var i = 0; i< returndata.length; i++){
                     this.chart.addSeries(returndata[i]);
                  }
-        }.bind(this), 10000);
+        }.bind(this), 1000);
             });
         }
     })
@@ -1224,12 +1229,12 @@
       		this.chart = new Highcharts.stockChart(this.opts);
             this.chart.series[0].setData(this.datain);
             this.chart.series[1].setData(this.datain2);
-            setInterval(function () {
+            setTimeout(function () {
                 //console.log(this.datain);
                 this.chart.series[0].setData(this.datain);
                 this.chart.series[1].setData(this.datain2);
                 this.chart.redraw();
-        }.bind(this), 15000);
+        }.bind(this), 1000);
             });
         }
     })
@@ -1318,11 +1323,11 @@
       this.$nextTick(function() {
       		this.chart = new Highcharts.stockChart(this.opts);
             this.chart.series[0].setData(this.datain);
-            setInterval(function () {
+            setTimeout(function () {
                 //console.log(this.datain);
                 this.chart.series[0].setData(this.datain);
                 this.chart.redraw();
-        }.bind(this), 15000);
+        }.bind(this), 1000);
             });
         }
     })
@@ -1334,7 +1339,7 @@
     data: function() {
         //var d = new Date();
         //var t = d.getTime();
-        return { 
+        return {
         	opts: {
 		        chart: {
         	    	renderTo: 'containeryield'+this.title,
@@ -1408,11 +1413,11 @@
             this.chart = new Highcharts.stockChart(this.opts);
       		//this.chart = new Highcharts.Chart(this.opts);
             this.chart.series[0].setData(this.datain2);
-            setInterval(function () {
+            setTimeout(function () {
                 //console.log(this.datain2);
                 this.chart.series[0].setData(this.datain2);
                 this.chart.redraw();
-        }.bind(this), 15000);
+        }.bind(this), 1000);
             });
         }
     })
@@ -1496,11 +1501,11 @@
             this.chart = new Highcharts.stockChart(this.opts);
       		//this.chart = new Highcharts.Chart(this.opts);
             this.chart.series[0].setData(this.datain2);
-            setInterval(function () {
+            setTimeout(function () {
                 //console.log(this.datain2);
                 this.chart.series[0].setData(this.datain2);
                 this.chart.redraw();
-        }.bind(this), 15000);
+        }.bind(this), 1000);
             });
         }
     })
@@ -1589,12 +1594,12 @@
       		this.chart = new Highcharts.stockChart(this.opts);
             this.chart.series[0].setData(this.datain2);
             this.chart.series[1].setData(this.datain3);
-            setInterval(function () {
+            setTimeout(function () {
                 //console.log(this.datain2);
                 this.chart.series[0].setData(this.datain2);
                 this.chart.series[1].setData(this.datain3);
                 this.chart.redraw();
-        }.bind(this), 15000);
+        }.bind(this), 1000);
             });
         }
     })
@@ -1682,12 +1687,12 @@
       		this.chart = new Highcharts.stockChart(this.opts);
             this.chart.series[0].setData(this.datain2);
             this.chart.series[1].setData(this.datain3);
-            setInterval(function () {
+            setTimeout(function () {
                 //console.log(this.datain2["asictemp"]);
                 this.chart.series[0].setData(this.datain2);
                 this.chart.series[1].setData(this.datain3);
                 this.chart.redraw();
-        }.bind(this), 15000);
+        }.bind(this), 1000);
             });
         }
     })
@@ -1778,13 +1783,13 @@
       		this.chart = new Highcharts.stockChart(this.opts);
             this.chart.series[0].setData(this.datain2["voltage"]);
             //this.chart.series[1].setData(this.datain2["heatsinktemp"]);
-            setInterval(function () {
+            setTimeout(function () {
                 //console.log(this.datain2["asictemp"]);
                 //console.log(this.datain2);
                 this.chart.series[0].setData(this.datain2);
                 //this.chart.series[1].setData(this.datain2["heatsinktemp"]);
                 this.chart.redraw();
-        }.bind(this), 15000);
+        }.bind(this), 1000);
             });
         }
     })
@@ -1902,7 +1907,7 @@
                     //alert("camel");
                 }
 
-                setInterval(function () {
+                setTimeout(function () {
                 //    this.chart.series[0].setData(this.datain);
                 //    this.chart.redraw();
                 if (this.chart) {
@@ -2024,7 +2029,7 @@
                         //alert("camel");
                     }
 
-                    setInterval(function () {
+                    setTimeout(function () {
                     //    this.chart.series[0].setData(this.datain);
                     //    this.chart.redraw();
                     if (this.chart) {
@@ -2147,7 +2152,7 @@
                             this.chart.series[0].points[0].update(this.datain);
                         }
 
-                        setInterval(function () {
+                        setTimeout(function () {
                         if (this.chart) {
                             point = this.chart.series[0].points[0];
                             point.update(parseFloat(this.datain));
@@ -2267,7 +2272,7 @@
                                 //alert("camel");
                             }
 
-                            setInterval(function () {
+                            setTimeout(function () {
                             //    this.chart.series[0].setData(this.datain);
                             //    this.chart.redraw();
                             if (this.chart) {
@@ -2375,7 +2380,7 @@
 
     {% endverbatim %}
 
-        var minionsthings = new Vue({
+        minionsthings = new Vue({
         el: '#app',
         data: {
             minions: [ ],
@@ -2708,14 +2713,14 @@
         ready:function () {
             this.$nextTick(function() {
                 //console.log(this.datain.bytes_available);
-                setInterval(function () {
+                setTimeout(function () {
                     //console.log(this.datain);
                     //this.space = formatBytes(this.datain.bytes_available);
                     this.capacity = formatBytes(this.datain.bytes_capacity);
                     //this.percent = (this.datain.bytes_available/this.datain.bytes_capacity * 100).toFixed(2);
                     this.bytealert = formatBytes(this.datain.bytes_available-this.datain.bytes_to_alert);
                     this.recalert = this.datain.recommend_alert;
-                }.bind(this), 15000);
+                }.bind(this), 1000);
             });
         }
     })
@@ -2763,12 +2768,11 @@
       		this.chart = new Highcharts.Chart(this.opts);
             //minion=this.key;
 
-            setInterval(function () {
+            setTimeout(function () {
                 var returndata = tohistogram(this.datain,parseInt(this.datain2),this.totalyield);
                 this.chart.series[0].setData(returndata[0]);
                 this.chart.xAxis[0].setCategories(returndata[1]);
-                console.log('updating highcharts histogram');
-                console.log(this.datain);
+                //console.log(returndata[2]);
                 //console.log(returndata[2]-0.5);
                 //console.log(typeof(returndata[2]));
                 var N50 = parseInt(returndata[2]);
@@ -2808,7 +2812,7 @@
                     },
                     id :'plot-band-3',
                 });
-        }.bind(this), 15000);
+        }.bind(this), 1000);
             });
         }
     })
@@ -2941,7 +2945,7 @@
                     //alert("camel");
                 }
 
-                setInterval(function () {
+                setTimeout(function () {
                 //    this.chart.series[0].setData(this.datain);
                 //    this.chart.redraw();
                 if (this.chart) {
@@ -2965,7 +2969,7 @@
 
 
                 }
-            }.bind(this), 15000);
+            }.bind(this), 1000);
                 });
             }
         })
