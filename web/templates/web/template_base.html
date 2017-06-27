@@ -56,9 +56,18 @@ scratch. This page gets rid of all links and provides the needed markup only.
     <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.3.4"></script>
 
     <!-- Highcharts -->
-    <script src="http://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/stock/5.0.9/highstock.js"></script>
+    <script src="https://code.highcharts.com/5.0.9/highcharts-more.js"></script>
+    <script src="https://code.highcharts.com/5.0.9/modules/solid-gauge.src.js"></script>
     <script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>
+    <script src="http://code.highcharts.com/5.0.9/modules/heatmap.js"></script>
+    <script src="http://code.highcharts.com/5.0.9/modules/exporting.js"></script>
+    <script src="http://code.highcharts.com/modules/no-data-to-display.js"></script>
     <script src="{% static 'web/minotour.js' %}"></script>
+
+    <!-- Vue JS -->
+    <script src="{%  static 'web/vuejs/vue.min.js' %}"></script>
+    <script src="{%  static 'web/vuejs/vue-filter.min.js' %}"></script>
 
     <!-- Optionally, you can add Slimscroll and FastClick plugins.
          Both of these plugins are recommended to enhance the
