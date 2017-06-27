@@ -12,6 +12,10 @@ class MinION(models.Model):
     minION_name = models.CharField(max_length=64)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='minIONs')
 
+    class Meta:
+        verbose_name = 'MinION'
+        verbose_name_plural = 'MinIONs'
+
     def __str__(self):
         return self.minION_name
 
@@ -29,7 +33,6 @@ class MinION(models.Model):
         except AttributeError:
             last_run = "undefined"
         return last_run
-
 
     def computer(self):
         try:
@@ -121,6 +124,10 @@ class MinIONControl(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)  # These last two fields added to enable auto cleanup of event status for a minION incase of disconnect of client.
 
+    class Meta:
+        verbose_name = 'MinION Control'
+        verbose_name_plural = 'MinION Controls'
+
     def __str__(self):
         return self.job
 
@@ -131,6 +138,10 @@ class MinIONRun(models.Model):
     is_barcoded = models.BooleanField(default=False)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='runs')
     minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minionrun')
+
+    class Meta:
+        verbose_name = 'MinION Run'
+        verbose_name_plural = 'MinION Runs'
 
     def sample_name(self):
         try:
@@ -150,11 +161,6 @@ class MinIONRun(models.Model):
             return self.RunDetails.last().minKNOW_version
         except AttributeError:
             return "undefined"
-
-
-
-
-
 
     def __str__(self):
         return self.run_name
@@ -178,6 +184,10 @@ class MinIONStatus(models.Model):
     minKNOW_disk_space_till_shutdown = models.FloatField(blank=True, null=True)
     minKNOW_disk_available = models.FloatField(blank=True,null=True)
     minKNOW_warnings = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'MinION Status'
+        verbose_name_plural = 'MinION Status'
 
     def __str__(self):
         return "{} {}".format(self.minION,self.minKNOW_status)
@@ -211,6 +221,9 @@ class MinIONRunStats(models.Model):
     minKNOW_histogram_values = models.TextField(blank=True, null=True)
     minKNOW_histogram_bin_width = models.IntegerField(default=900)
 
+    class Meta:
+        verbose_name = 'MinION Run Stats'
+        verbose_name_plural = 'MinION Run Stats'
 
     def __str__(self):
         return "{} {} {}".format(self.minION,self.run_id,self.sample_time)
@@ -221,8 +234,6 @@ class MinIONRunStats(models.Model):
         else:
             occupancy = 0
         return occupancy
-
-
 
 
 class MinIONRunStatus(models.Model):
@@ -247,6 +258,9 @@ class MinIONRunStatus(models.Model):
     #minKNOW_disk_space_till_shutdown = models.FloatField(blank=True, null=True)
     #minKNOW_warnings = models.BooleanField(default=False)
 
+    class Meta:
+        verbose_name = 'MinION Run Status'
+        verbose_name_plural = 'MinION Run Status'
 
     def __str__(self):
         return "{} {} {}".format(self.minION,self.minKNOW_current_script, self.run_id)
@@ -262,10 +276,12 @@ class MinIONRunStatus(models.Model):
         return self.minION.minION_name
 
 
-
-
 class MinIONEventType(models.Model):
     name = models.CharField(max_length=64)
+
+    class Meta:
+        verbose_name = 'MinION Event Type'
+        verbose_name_plural = 'MinION Event Types'
 
     def __str__(self):
         return self.name
@@ -279,9 +295,12 @@ class MinIONEvent(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     modified_date = models.DateTimeField(auto_now=True)  #These last two fields added to enable auto cleanup of event status for a minION incase of disconnect of client.
 
+    class Meta:
+        verbose_name = 'MinION Event'
+        verbose_name_plural = 'MinION Events'
+
     def __str__(self):
         return "{} {} {} {}".format(self.computer_name, self.minION, self.event, self.datetime)
-
 
 
 class MinIONScripts(models.Model):
@@ -293,11 +312,19 @@ class MinIONScripts(models.Model):
     flow_cell = models.CharField(max_length=256, blank=True, null=True)
     kit = models.CharField(max_length=256, blank=True, null=True)
 
+    class Meta:
+        verbose_name = 'MinION Script'
+        verbose_name_plural = 'MinION Scripts'
+
     def __str__(self):
         return "{} {} {}".format(self.minION, self.name, self.identifier)
 
 class FastqReadType(models.Model):
     name = models.CharField(max_length=16)
+
+    class Meta:
+        verbose_name = 'FASTQ Read Type'
+        verbose_name_plural = 'FASTQ Read Types'
 
     def __str__(self):
         return self.name
@@ -317,12 +344,15 @@ class FastqRead(models.Model):
     type = models.ForeignKey(FastqReadType)
     start_time = models.DateTimeField()
 
+    class Meta:
+        verbose_name = 'FASTQ Read'
+        verbose_name_plural = 'FASTQ Read'
+
     def __str__(self):
         return self.read_id
 
 
 class RunSummary(models.Model):
-
     run_id = models.OneToOneField(MinIONRun,on_delete=models.CASCADE, related_name='runsummary')
     # TODO we may need to change run_id to an OneToOneField and rename to run
 #    run_id = models.ForeignKey(MinIONRun,on_delete=models.CASCADE)
@@ -335,6 +365,10 @@ class RunSummary(models.Model):
     pass_max_length = models.IntegerField(default=0)
     pass_min_length = models.IntegerField(default=0)
     pass_count = models.IntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Run Summary'
+        verbose_name_plural = 'Run Summaries'
 
     def __str__(self):
         return "{} {} {} {}".format(self.run_id, self.total_length, self.read_count, self.type)
@@ -352,6 +386,10 @@ class RunSummaryBarCode(models.Model):
     pass_count = models.IntegerField(default=0)
     max_length = models.IntegerField(default=0)
     min_length = models.IntegerField(default=0)
+
+    class Meta:
+        verbose_name = 'Run Summary Barcode'
+        verbose_name_plural = 'Run Summary Barcodes'
 
     def __str__(self):
         return "{} {} {} {} {}".format(self.run_id, self.total_length, self.read_count, self.type, self.barcode)
@@ -371,6 +409,10 @@ class RunStatistic(models.Model):
     pass_count = models.IntegerField(default=0)
     #number_of_channels = models.IntegerField() #Need to work out how to implement this!
     type = models.ForeignKey(FastqReadType)
+
+    class Meta:
+        verbose_name = 'Run Statistics'
+        verbose_name_plural = 'Run Statistics'
 
     def __str__(self):
         return "{} {} {}".format(self.run_id, self.sample_time, self.type)
@@ -392,6 +434,10 @@ class RunStatisticBarcode(models.Model):
     type = models.ForeignKey(FastqReadType)
     barcode = models.CharField(max_length=32)
 
+    class Meta:
+        verbose_name = 'Run Statistics Barcode'
+        verbose_name_plural = 'Run Statistics Barcodes'
+
     def __str__(self):
         return "{} {} {} {}".format(self.run_id, self.sample_time, self.type, self.barcode)
 
@@ -402,17 +448,20 @@ class MinIONmessages(models.Model):
     minKNOW_identifier = models.CharField(max_length=256)
     minKNOW_severity = models.CharField(max_length=64)
     minKNOW_message_timestamp = models.DateTimeField()
+
     class Meta:
         unique_together = (("minION", "run_id", "minKNOW_message_timestamp"))
+        verbose_name = 'MinION Message'
+        verbose_name_plural = 'MinION Messages'
 
     def __str__(self):
         return "{} {} {} {}".format(self.minION, self.minKNOW_message, self.minKNOW_severity, self.minKNOW_message_timestamp)
+
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
-
 
 
 @receiver(post_save, sender=FastqRead)

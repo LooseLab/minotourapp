@@ -1,8 +1,10 @@
+numpy
+wheel
 watchdog
 Django
 django-filter
 django-mailgun 
-djangorestframework 
+djangorestframework==3.6.2 
 httpie 
 Markdown 
 mysqlclient 
@@ -11,4 +13,4 @@ pytz
 configargparse
 requests
 BioPython
-numpy
+
