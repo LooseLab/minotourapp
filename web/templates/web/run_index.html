@@ -35,9 +35,6 @@
                                     </minionrun-item>
                                 </ul>
                             </div>
-                            <div class="tab-content">
-                                <div class="tab-pane active">selectedBarcode: ${ selectedBarcode }</div>
-                            </div>
 
                             <!-- Custom Tabs -->
                             <div class="nav-tabs-custom">
@@ -377,6 +374,7 @@
                 var promise_run = this.$http.get(url_run);
                 promise_run
                     .then(function(res){
+                        console.log(res.json());
                         return res.json();
                     })
                     .then(function(minion_run){

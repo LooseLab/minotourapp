@@ -1,11 +1,10 @@
 import datetime
 
-from django.db import models
 from django.conf import settings
+from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
-from django.urls import reverse
 
 
 class MinION(models.Model):
@@ -320,6 +319,7 @@ class MinIONScripts(models.Model):
     def __str__(self):
         return "{} {} {}".format(self.minION, self.name, self.identifier)
 
+
 class FastqReadType(models.Model):
     name = models.CharField(max_length=16)
 
@@ -356,7 +356,6 @@ class FastqRead(models.Model):
 class RunSummary(models.Model):
     run_id = models.OneToOneField(MinIONRun,on_delete=models.CASCADE, related_name='runsummary')
     # TODO we may need to change run_id to an OneToOneField and rename to run
-#    run_id = models.ForeignKey(MinIONRun,on_delete=models.CASCADE)
     total_length = models.IntegerField(default=0)
     read_count = models.IntegerField(default=0)
     type = models.ForeignKey(FastqReadType)
@@ -441,6 +440,7 @@ class RunStatisticBarcode(models.Model):
 
     def __str__(self):
         return "{} {} {} {}".format(self.run_id, self.sample_time, self.type, self.barcode)
+
 
 class MinIONmessages(models.Model):
     minION = models.ForeignKey(MinION, related_name='messages')
