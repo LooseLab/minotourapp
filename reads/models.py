@@ -113,6 +113,7 @@ class MinION(models.Model):
         except AttributeError:
             return 0
 
+
 class MinIONControl(models.Model):
     minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minioncontrol')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='controlcontrol')
@@ -143,6 +144,9 @@ class MinIONRun(models.Model):
         verbose_name = 'MinION Run'
         verbose_name_plural = 'MinION Runs'
 
+    def __str__(self):
+        return self.run_name
+
     def sample_name(self):
         try:
             return self.RunDetails.last().minKNOW_sample_name
@@ -162,8 +166,12 @@ class MinIONRun(models.Model):
         except AttributeError:
             return "undefined"
 
-    def __str__(self):
-        return self.run_name
+    def barcodes(self):
+        barcodes = ['All reads', ]
+        for item in FastqRead.objects.filter(run_id=self).values('barcode').distinct():
+            barcodes.append(item['barcode'])
+
+        return barcodes
 
 
 class MinIONStatus(models.Model):
@@ -264,13 +272,6 @@ class MinIONRunStatus(models.Model):
 
     def __str__(self):
         return "{} {} {}".format(self.minION,self.minKNOW_current_script, self.run_id)
-
-    def barcodes(self):
-        barcodes = ['All reads', ]
-        for item in FastqRead.objects.filter(run_id=self).values('barcode').distinct():
-            barcodes.append(item['barcode'])
-
-        return barcodes
 
     def minION_name(self):
         return self.minION.minION_name
