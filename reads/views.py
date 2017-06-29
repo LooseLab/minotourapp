@@ -1,6 +1,7 @@
 import json
 from dateutil import parser
 from datetime import datetime, timedelta
+from django.utils import timezone
 from django.db.models import Sum, Avg, Max
 
 from django.http import HttpResponse
@@ -168,7 +169,7 @@ def recentminION_messages_list(request, pk):
     :return:
     """
     if request.method == 'GET':
-        queryset = MinIONmessages.objects.filter(minION=pk).filter(minKNOW_message_timestamp__gte= datetime.now() - timedelta(hours=24))
+        queryset = MinIONmessages.objects.filter(minION=pk).filter(minKNOW_message_timestamp__gte= timezone.now() - timedelta(hours=24))
         serializer = MinIONmessagesSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 

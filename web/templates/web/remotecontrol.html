@@ -20,6 +20,7 @@
                 <div class="box-header">
                     <h3 class="box-title">minIONs Available</h3>
                 </div><!-- /.box-header -->
+                <div class="box-body">
                 <div class="row">
                         <div class="col-lg-12">
                             <p>This page allows you to remotely control minKNOW. You use it at your own risk.</p>
@@ -83,7 +84,7 @@
 
                         </div>
                          <div class="col-md-4">
-                             <div class="col-md-12" id="{{minion.name}}"><div is="chartporehist" :title="minion.name" :key="key" :datain="minion.channelstuff" :datain2="minion.simplesummary"></div></div>
+                             <div class="col-md-12" id="{{minion.name}}"><div is="chartporehist" :title="minion.name" :key="key" :datain="minion.colour_stats" :datain2="minion.pore_history"></div></div>
                         </div>
                         <div class="col-md-3">
                             <h5><b>Messages from MinKNOW:</b></h5>
@@ -206,7 +207,7 @@
             <div class="col-md-4">
                 <div class="panel panel-warning">
                     <div class="panel-heading">
-                    <h3 class="panel-title">minKNOW Control options BROKEN</h3>
+                    <h3 class="panel-title">minKNOW Control options</h3>
                     </div>
                   <div class="panel-body">
                       <h5>To test if you have a connection to minKNOW:</h5>
@@ -704,7 +705,9 @@
                     //console.log('n50',(i+1)*readeventcountweightedhistbinwidth, n50count);
                     check += 1;
                 }
-                var category = String((i) * readeventcountweightedhistbinwidth) + " - " + String((i+1) * readeventcountweightedhistbinwidth) + " ev";
+                //console.log(i);
+                //console.log(parseInt(i)+1);
+                var category = String((parseInt(i)) * readeventcountweightedhistbinwidth) + " - " + String((parseInt(i)+1) * readeventcountweightedhistbinwidth) + " ev";
                 categories.push(category);
                 if (check == 1) {
                     n50index = i;
@@ -856,7 +859,8 @@
                             }
                         }
                         //console.log("http://" + window.location.hostname + ":8100/api/v1/runs/" + data[i].last_run + "/runstats/" + counter);
-                        $.get("http://" + window.location.hostname + ":8100/api/v1/runs/" + data[i].last_run + "/runstats/" + counter, function ( data3 ) {
+                        //$.get("http://" + window.location.hostname + ":8100/api/v1/runs/" + data[i].last_run + "/runstats/" + counter, function ( data3 ) {
+                        $.get("/api/v1/runs/" + data[i].last_run + "/runstats/" + counter, function ( data3 ) {
                             //console.log("http://" + window.location.hostname + ":8100/api/v1/runs/" + data[i].last_run + "/runstats/");
                             //console.log("sausage");
                             for (obj in minionsthings.minions){
@@ -894,7 +898,7 @@
                             }
 
                         });
-                        $.get("http://" + window.location.hostname + ":8100/api/v1/runs/" + data[i].last_run + "/rundetails/", function ( data4 ){
+                        $.get("/api/v1/runs/" + data[i].last_run + "/rundetails/", function ( data4 ){
                             for (obj in minionsthings.minions){
                                 for (j in data){
                                     if (minionsthings.minions[obj].name === data[j].minION_name){
@@ -1788,6 +1792,133 @@
             });
         }
     })
+
+        Vue.component('chartporehist', {
+	template: '<div id="container-pore{{title}}" style="margin: 0 auto"</div>',
+    props: ['title','key','datain','datain2'],
+    data: function() {
+        return {
+        	opts: {
+		        chart: {
+        	    	renderTo: 'container-pore'+this.title,
+                    type:'column',
+                    zoomType: 'xy',
+                    height: 350,
+                    animation: false
+	        	},
+    	    	title: {
+        	    	text: 'Pore States'
+	        	},
+                xAxis: {
+                    categories: []
+                },
+                //colors:[],
+                yAxis: {
+                    title: {
+                        //text: 'Pore Type'
+                    }
+                },
+                legend: {
+            enabled: false
+        },
+                plotOptions: {
+            series: {
+                dataLabels: {
+                    enabled: true,
+                    formatter:function() {
+                        return this.y;
+                    }
+                }
+            }
+        },
+                credits: {
+                    enabled: false
+                },
+                series: [{
+                    name: 'porestates',
+                    data:[],
+                }
+                ],
+
+         			}
+    	    }
+    }
+    ,
+
+
+    created: function() {
+    },
+    ready: function() {
+        //var returndata=parsechanstats(this.datain,this.datain2);
+        //console.log(returndata);
+        //var returndata = tohistogram(this.datain,parseInt(this.datain2));
+        //this.chart.series[0].setData(returndata[3]);
+        //console.log(returndata[2]);
+        //this.chart.xAxis[0].setCategories(returndata[2]);
+        //var returndata=parsechanstats(this.datain,this.datain2);
+      this.$nextTick(function() {
+      		this.chart = new Highcharts.Chart(this.opts);
+            //minion=this.key;
+            setInterval(function () {
+                //console.log(this.datain);
+                //console.log(this.datain2);
+                var returndata=parsechanstats(this.datain,this.datain2);
+                //console.log(returndata);
+                //var returndata = tohistogram(this.datain,parseInt(this.datain2));
+                this.chart.series[0].setData(returndata[3]);
+                //console.log(returndata[2]);
+                this.chart.xAxis[0].setCategories(returndata[2]);
+                //while(this.chart.series.length > 0)
+                //    this.chart.series[0].remove(true);
+                //for (var i = 0; i < returndata[0].length; i++) {
+                //    this.chart.addSeries(returndata[0][i]);
+                //}
+                //this.chart.colors=returndata[1];
+                //this.chart.redraw();
+                //console.log(returndata[1]);
+        }.bind(this), 15000);
+            });
+        }
+    })
+
+    function parsechanstats(descriptions,counts) {
+        var results =[];
+        var colors = [];
+        var categories = [];
+        var datam = [];
+        //console.log(descriptions);
+        //console.log(counts);
+
+        //for (var i = 0; i < descriptions.length; i++) {
+        for (var thing in descriptions) {
+            //console.log("in decsriptions");
+            if (descriptions.hasOwnProperty(thing)) {
+                //console.log(thing);
+                //console.log(descriptions[thing]);
+                for (var element in descriptions[thing]) {
+                if (descriptions[thing][element].hasOwnProperty("style")) {
+                    //console.log(descriptions[thing][element]["style"]["label"]);
+                    //console.log(descriptions[thing][element]["style"]["colour"]);
+
+                    if(counts.hasOwnProperty(descriptions[thing][element]["name"])){
+                        var porenumber = counts[descriptions[thing][element]["name"]].slice(-1)[0][1];
+                        //console.log(counts[descriptions[thing][element]["name"]].slice(-1)[0][1]);
+                    }else{
+                        var porenumber = 0;
+                        //console.log("0");
+                    }
+
+                    results.push({"name":descriptions[thing][element]["style"]["label"], "data":[{"y":porenumber}],"color":"#"+descriptions[thing][element]["style"]["colour"]});
+                    colors.push("#"+descriptions[thing][element]["style"]["colour"]);
+                    categories.push(descriptions[thing][element]["style"]["label"]);
+                    datam.push({"y":porenumber,"color":"#"+descriptions[thing][element]["style"]["colour"]});
+
+                }
+                }
+            }
+        }
+        return [results,colors,categories,datam];
+    }
 
         Vue.component('container-avg', {
         template: '<div id="container-avg{{title}}" style="height: 140px; margin: 0 auto"</div>',
