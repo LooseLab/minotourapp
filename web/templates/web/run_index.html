@@ -35,21 +35,18 @@
                                     </minionrun-item>
                                 </ul>
                             </div>
-                            <div class="tab-content">
-                                <div class="tab-pane active">selectedBarcode: ${ selectedBarcode }</div>
-                            </div>
 
                             <!-- Custom Tabs -->
                             <div class="nav-tabs-custom">
                                 <ul class="nav nav-tabs">
-                                    <li class="active"><a href="previous_summary.php">Read Summaries</a></li>
-                                    <li><a href="previous_basecalling.php">Basecaller Summary</a></li>
-                                    <li><a href="previous_histogram.php">Read Histograms</a></li>
-                                    <li><a href="previous_rates.php">Sequencing Rates</a></li>
-                                    <li><a href="previous_pores.php">Pore Activity</a></li>
-                                    <li><a href="previous_quality.php">Read Quality</a></li>
-                                    <li><a href="previous_coverage.php">Coverage Detail</a></li>
-                                    <li><a href="previous_bases.php">Base Coverage</a></li>
+                                    <li class="active"><a href="#">Read Summaries</a></li>
+                                    <li><a href="#">Basecaller Summary</a></li>
+                                    <li><a href="#">Read Histograms</a></li>
+                                    <li><a href="#">Sequencing Rates</a></li>
+                                    <li><a href="#">Pore Activity</a></li>
+                                    <li><a href="#">Read Quality</a></li>
+                                    <li><a href="#">Coverage Detail</a></li>
+                                    <li><a href="#">Base Coverage</a></li>
                                 </ul>
                                 <div class="tab-content">
                                     <div class="tab-pane active" id="tab_1">
@@ -100,34 +97,45 @@
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row">
-                                                    <show-chart :mybarcode='selectedBarcode'></show-barcode-charts>
+                                                        <show-chart
+                                                                chartid="reads-called"
+                                                                :mybarcode='selectedBarcode'
+                                                                :id="id"
+                                                                title="reads called"
+                                                                ytitle="number of reads called">
+                                                        </show-chart>
 
-                                                    <div class="col-md-6" id="readnum"
-                                                         style="width:25%; height:400px;"><i
-                                                            class="fa fa-cog fa-spin fa-3x"></i> Calculating
-                                                        Read Numbers
-                                                    </div>
-                                                    <div class="col-md-6" id="yield"
-                                                         style="width:25%; height:400px;"><i
-                                                            class="fa fa-cog fa-spin fa-3x"></i> Calculating
-                                                        Yield
-                                                    </div>
-                                                    <div class="col-md-6" id="avglen"
-                                                         style="width:25%; height:400px;"><i
-                                                            class="fa fa-cog fa-spin fa-3x"></i> Calculating
-                                                        Read Average Length
-                                                    </div>
-                                                    <div class="col-md-6" id="maxlen"
-                                                         style="width:25%; height:400px;"><i
-                                                            class="fa fa-cog fa-spin fa-3x"></i> Calculating
-                                                        Read Max Length
-                                                    </div>
-                                                    <div class="col-md-12" id="boxplotlength" style="height:400px;">
-                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Box
-                                                        Plots
-                                                    </div>
+                                                        <show-chart
+                                                                chartid="yield"
+                                                                :mybarcode='selectedBarcode'
+                                                                :id="id"
+                                                                title="yield"
+                                                                ytitle="yield">
+                                                        </show-chart>
+
+                                                        <show-chart
+                                                                chartid="average-read-length"
+                                                                :mybarcode='selectedBarcode'
+                                                                :id="id"
+                                                                title="average read length"
+                                                                ytitle="average read length">
+                                                        </show-chart>
+
+                                                        <show-chart
+                                                                chartid="maximum-read-length"
+                                                                :mybarcode='selectedBarcode'
+                                                                :id="id"
+                                                                title="maximum read length"
+                                                                ytitle="maximum read length">
+                                                        </show-chart>
+
+                                                        <!--<div class="col-md-12" id="boxplotlength" style="height:400px;">
+                                                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Box
+                                                            Plots
+                                                        </div>-->
                                                 </div>
-                                                <div id="lengthtimewindow" style="height:400px;"><i
+
+                                                <!--<div id="lengthtimewindow" style="height:400px;"><i
                                                         class="fa fa-cog fa-spin fa-3x"></i> Read Lengths Over
                                                     Time.
                                                 </div>
@@ -176,54 +184,20 @@
                                                         </p>
                                                     </div>
                                                     <?php }; ?>
-                                                </div>
+                                                </div>-->
                                             </div>
                                         </div>
 
                                         <div class="panel panel-default">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title"><!-- Button trigger modal -->
-                                                    <button class="btn btn-info" data-toggle="modal"
-                                                            data-target="#modal6">
-                                                        <i class="fa fa-info-circle"></i> Run Summary</h4>
-                                                    </button>
-
-                                                    <!-- Modal -->
-                                                    <div class="modal fade" id="modal6" tabindex="-1" role="dialog"
-                                                         aria-labelledby="myModalLabel" aria-hidden="true">
-                                                        <div class="modal-dialog">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header">
-                                                                    <button type="button" class="close"
-                                                                            data-dismiss="modal"><span
-                                                                            aria-hidden="true">&times;</span><span
-                                                                            class="sr-only">Close</span>
-                                                                    </button>
-                                                                    <h4 class="modal-title" id="myModalLabel"> Run
-                                                                        Summary</h4>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    Key details on the run.<br><br>
-                                                                </div>
-                                                                <div class="modal-footer">
-                                                                    <button type="button" class="btn btn-default"
-                                                                            data-dismiss="modal">Close
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                            </div>
+                                            <div class="panel-heading">Run Summary</div>
                                             <div class="panel-body">
-                                                <?php prevrunsummary(); ?>
+
                                             </div>
                                         </div>
 
 
                                     </div>
                                     <!-- /.col-lg-12 -->
-
-
                                     <!-- /.tab-pane -->
                                 </div>
                                 <!-- /.tab-content -->
@@ -231,8 +205,6 @@
                             <!-- nav-tabs-custom -->
                         </div>
                         <!-- /.col -->
-
-
                         <!-- /.col -->
                     </div>
                 </div>
@@ -243,7 +215,9 @@
 
     <!-- Vue Templates -->
     <template id="chart">
-        <div class="highcharts"></div>
+        <div class="col-md-6 highcharts" style="width:25%; height:400px;">
+            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
+        </div>
     </template>
 
 
@@ -265,43 +239,45 @@
 
         Vue.component('show-chart', {
             template: '#chart',
-            props: ['mybarcode'],
+            props: ['chartid', 'mybarcode', 'id', 'title', 'ytitle'],
             data: function () {
                 return {
                     counter: 0,
                     chart: null,
                     opts: {
                         chart: {
-                            type: 'bar'
+                            type: 'column'
                         },
                         title: {
-                            text: 'Fruit Consumption'
+                            text: this.title
                         },
                         xAxis: {
-                            categories: ['Apples', 'Bananas', 'Oranges']
+                            categories: ['strand']
                         },
                         yAxis: {
                             title: {
-                                text: 'Fruit eaten'
+                                text: this.ytitle
                             }
                         },
                         series: [{
-                            name: 'Jane',
-                            data: [1, 0, 4]
+                            name: 'template',
+                            data: [1]
                         }, {
-                            name: 'John',
-                            data: [5, 7, 3]
+                            name: 'complement',
+                            data: [5]
+                        }, {
+                            name: '2d',
+                            data: [5]
                         }]
                     }
                 };
+                return {
+                    chart: undefined
+                }
             },
             // lifecycle hooks - ref: https://alligator.io/vuejs/component-lifecycle/
             created() {
                 console.log('inside created event of the component show-chart');
-                /*setInterval(() => {
-                    this.counter++;
-                    console.log(this.counter);
-                }, 1000);*/
             },
             mounted() {
                 console.log('inside mounted event of the component show-chart');
@@ -311,34 +287,11 @@
             },
             beforeUpdate() {
                 console.log('inside updated event of the component show-chart. mybarcode is ' + this.mybarcode);
-                console.log('ola');
-                console.log(this.counter);
-                //this.opts.title.text = mybarcode;
             },
             watch: {
                 mybarcode: function (mybarcode) {
                     console.log('updated barcode ' + this.mybarcode);
-                    this.opts.title.text = this.mybarcode
-
-                    if (this.mybarcode == 'All reads') {
-                        series = [{
-                            name: 'Roberto',
-                            data: [3, 6, 9]
-                        }, {
-                            name: 'Joe',
-                            data: [4, 1, 12]
-                        }];
-                    } else {
-                        series = [{
-                            name: 'Jane',
-                            data: [1, 0, 4]
-                        }, {
-                            name: 'John',
-                            data: [5, 7, 3]
-                        }]
-                    }
-                    this.opts.series = series;
-                    this.chart.update(this.opts);
+                    this.redraw();
                 },
                 opts: function (opts) {
                     if (!this.getChart() && opts) {
@@ -359,7 +312,53 @@
                     if (!this.chart && this.opts) {
                         let _Highcharts = this.Highcharts || Highcharts;
                         this.chart = new _Highcharts.Chart(this.$el, this.opts);
+                        this.get_data();
                     }
+                },
+                get_data() {
+                    console.log('inside get data');
+                    this.opts.series[0] = [20]
+                    this.chart.update(this.opts);
+                },
+                redraw() {
+                    var url_run = '/api/v1/runs/' + this.id + '/summary/';
+                    var promise_run = this.$http.get(url_run);
+                    promise_run
+                        .then(function (res) {
+                            console.log(res.json());
+                            return res.json();
+                        })
+                        .then(function (summaries) {
+                            //this.minion_run = minion_run;
+                            //this.minion_run.barcodes = this.minion_run.barcodes.sort()
+                            console.log('qt the sumaries: ' + summaries.length)
+                            console.log(summaries);
+                            var series = [];
+                            for (var i = 0; i < summaries.length; i++) {
+                                var value = 0;
+
+                                if (this.chartid == 'reads-called') {
+                                    value = summaries[i].read_count;
+                                } else if (this.chartid == 'yield') {
+                                    value = summaries[i].total_length;
+                                } else if (this.chartid == 'average-read-length') {
+                                    value = summaries[i].total_length / summaries[i].read_count;
+                                } else if (this.chartid == 'maximum-read-length') {
+                                    value = summaries[i].max_length;
+                                }
+
+                                var serie = {
+                                    'name': summaries[i].typename,
+                                    'data': [ value ]
+                                }
+
+                                series.push(serie);
+                            }
+                            this.opts.series = series;
+                            this.chart.update(this.opts);
+
+                        });
+                    //this.chart.series[0].setData([20], true);
                 }
             }
         });
@@ -371,266 +370,24 @@
                 minion_run: '',
                 id: {{ minion_run.id }},
                 selectedBarcode: '',
+                selectedTab: 'read-summaries',
             },
             created: function () {
                 var url_run = '/api/v1/runs/' + this.id;
                 var promise_run = this.$http.get(url_run);
                 promise_run
-                    .then(function(res){
+                    .then(function (res) {
+                        console.log(res.json());
                         return res.json();
                     })
-                    .then(function(minion_run){
+                    .then(function (minion_run) {
                         this.minion_run = minion_run;
                         this.minion_run.barcodes = this.minion_run.barcodes.sort()
                     });
-                console.log('inside created.')
             },
-            computed: {
-            },
+            computed: {},
         });
-
-        console.log('after vue');
-
-
-        /*
-
-        $(document).ready(function () {
-            var options_reads_called = {
-                chart: {
-                    renderTo: 'readnum',
-                    type: 'column',
-                },
-                plotOptions: {
-                    column: {
-                        animation: false
-                    }
-                },
-                title: {
-                    text: 'Reads Called'
-                },
-                xAxis: {
-                    title: {
-                        text: 'Strand'
-                    }
-                },
-                yAxis: {
-                    title: {
-                        text: 'Number of Reads Called'
-                    }
-                },
-                credits: {
-                    enabled: false
-                },
-                legend: {
-                    layout: 'vertical',
-                    align: 'center',
-                    verticalAlign: 'bottom',
-                    borderWidth: 0
-                },
-                series: []
-            };
-
-            var options_reads_avg = {
-                chart: {
-                    renderTo: 'avglen',
-                    type: 'column',
-                },
-                plotOptions: {
-                    column: {
-                        animation: false
-                    }
-                },
-                title: {
-                    text: 'Average Read Length'
-                },
-                xAxis: {
-                    title: {
-                        text: 'Strand'
-                    }
-                },
-                yAxis: {
-                    title: {
-                        text: 'Number of Reads Called'
-                    }
-                },
-                credits: {
-                    enabled: false
-                },
-                legend: {
-                    layout: 'vertical',
-                    align: 'center',
-                    verticalAlign: 'bottom',
-                    borderWidth: 0
-                },
-                series: []
-            };
-
-            var options_reads_max = {
-                chart: {
-                    renderTo: 'maxlen',
-                    type: 'column',
-                },
-                plotOptions: {
-                    column: {
-                        animation: false
-                    }
-                },
-                title: {
-                    text: 'Maximum Read Length'
-                },
-                xAxis: {
-                    title: {
-                        text: 'Strand'
-                    }
-                },
-                yAxis: {
-                    title: {
-                        text: 'Number of Reads Called'
-                    }
-                },
-                credits: {
-                    enabled: false
-                },
-                legend: {
-                    layout: 'vertical',
-                    align: 'center',
-                    verticalAlign: 'bottom',
-                    borderWidth: 0
-                },
-                series: []
-            };
-
-            var options_reads_yield = {
-                chart: {
-                    renderTo: 'yield',
-                    type: 'column',
-                },
-                plotOptions: {
-                    column: {
-                        animation: false
-                    }
-                },
-                title: {
-                    text: 'Yield'
-                },
-                xAxis: {
-                    title: {
-                        text: 'Strand'
-                    }
-                },
-                yAxis: {
-                    title: {
-                        text: 'Number of Reads Called'
-                    }
-                },
-                credits: {
-                    enabled: false
-                },
-                legend: {
-                    layout: 'vertical',
-                    align: 'center',
-                    verticalAlign: 'bottom',
-                    borderWidth: 0
-                },
-                series: []
-            };
-
-            var options_average_read_length_overtime = {
-                chart: {
-                    renderTo: 'lengthtimewindow',
-                    zoomType: 'x',
-                    type: 'spline',
-                },
-                title: {
-                    text: 'Average Read Lengths Over Time'
-                },
-                resetZoomButton: {
-                    position: {
-                        // align: 'right', // by default
-                        // verticalAlign: 'top', // by default
-                        x: -10,
-                        y: 10
-                    },
-                    relativeTo: 'chart'
-                },
-                plotOptions: {
-                    spline: {
-                        animation: false,
-                        marker: {
-                            enabled: false
-                        }
-
-                    },
-
-
-                },
-                xAxis: {
-                    type: 'datetime',
-                    dateTimeLabelFormats: { // don't display the dummy year
-                        month: '%e. %b',
-                        year: '%b'
-                    },
-                    title: {
-                        text: 'Time/Date'
-                    }
-                },
-                yAxis: {
-
-                    labels: {
-                        align: 'right',
-                        x: -3
-                    },
-
-                    title: {
-                        text: 'Average Read Length'
-                    },
-                    height: '100%',
-                    lineWidth: 1,
-                    min: 0
-                },
-                credits: {
-                    enabled: false
-                },
-                legend: {
-                    title: {
-                        text: 'Read Type <span style="font-size: 9px; color: #666; font-weight: normal">(Click to hide)</span>',
-                        style: {
-                            fontStyle: 'italic'
-                        }
-                    },
-
-                    layout: 'horizontal',
-                    align: 'center',
-                    //verticalAlign: 'middle',
-                    borderWidth: 0
-                },
-                series: []
-            };
-            $.getJSON('/api/v1/runs/20/reads_statistics/', function (data) {
-                console.log(data);
-                options_reads_called.series = data.reads_called;
-                options_reads_avg.series = data.average_read_length;
-                options_reads_max.series = data.maximum_read_length;
-                options_reads_yield.series = data.maximum_read_length;
-
-                new Highcharts.Chart(options_reads_called);
-                new Highcharts.Chart(options_reads_avg);
-                new Highcharts.Chart(options_reads_max);
-                new Highcharts.Chart(options_reads_yield);
-            });
-
-            $.getJSON('/api/v1/runs/20/reads_statistics2/', function (data) {
-
-                var series = {}
-
-                $.each(data, function (index, value) {
-
-                });
-                console.log(data);
-            });
-
-
-        });*/
+    
     </script>
 
 {% endblock %}

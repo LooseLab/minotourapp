@@ -1,47 +1,40 @@
 import json
-from dateutil import parser
 from datetime import datetime, timedelta
 from django.utils import timezone
-from django.db.models import Sum, Avg, Max
-
+from dateutil import parser
 from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from reads.models import MinIONRun, FastqRead, FastqReadType, RunStatistic, \
-    MinION, \
-    MinIONEvent,\
-    MinIONEventType, \
-    MinIONScripts, \
-    MinIONStatus, \
-    MinIONRunStatus, \
-    MinIONRunStats, \
-    MinIONmessages, \
-    MinIONControl
+from reads.models import FastqRead
+from reads.models import FastqReadType
+from reads.models import MinION
+from reads.models import MinIONControl
+from reads.models import MinIONEvent
+from reads.models import MinIONEventType
+from reads.models import MinIONRun
+from reads.models import MinIONRunStats
+from reads.models import MinIONRunStatus
+from reads.models import MinIONScripts
+from reads.models import MinIONStatus
+from reads.models import MinIONmessages
+from reads.models import RunStatistic
+from reads.models import RunSummary
 
-from reads.serializers import MinIONRunSerializer, \
-    FastqReadSerializer, \
-    FastqReadTypeSerializer, \
-    MinIONSerializer, \
-    MinIONScriptsSerializer, \
-    MinIONEventSerializer,\
-    MinIONEventTypeSerializer,\
-    MinIONStatusSerializer,\
-    MinIONRunStatusSerializer,\
-    MinIONmessagesSerializer, \
-    MinIONControlSerializer
-    #MinIONRunStatsSerializer
-
-from reads.models import MinIONRun, FastqRead, FastqReadType, RunStatistic, MinION, MinIONEvent, MinIONEventType, \
-    MinIONScripts, RunSummary, RunSummaryBarCode
-from reads.serializers import MinIONRunSerializer, FastqReadSerializer, FastqReadTypeSerializer, MinIONSerializer, \
-    MinIONScriptsSerializer, MinIONEventSerializer, MinIONEventTypeSerializer
-
+from reads.serializers import FastqReadSerializer
+from reads.serializers import FastqReadTypeSerializer
+from reads.serializers import MinIONControlSerializer
+from reads.serializers import MinIONEventSerializer
+from reads.serializers import MinIONEventTypeSerializer
+from reads.serializers import MinIONRunSerializer
 from reads.serializers import MinIONRunStatsSerializer
-from minotourapp.urls import RunStatisticSerializer
-
-
+from reads.serializers import MinIONRunStatusSerializer
+from reads.serializers import MinIONScriptsSerializer
+from reads.serializers import MinIONSerializer
+from reads.serializers import MinIONStatusSerializer
+from reads.serializers import MinIONmessagesSerializer
+from reads.serializers import RunSummarySerializer
 
 
 @api_view(['GET'])
@@ -131,6 +124,7 @@ def minion_list(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['GET'])
 def activeminion_list(request):
     """
@@ -145,9 +139,7 @@ def activeminion_list(request):
 @api_view(['GET', 'POST'])
 def minION_messages_list(request, pk):
     """
-    Get messages
-    :param request:
-    :return:
+    TODO describe function
     """
     if request.method == 'GET':
         queryset = MinIONmessages.objects.filter(minION=pk)
@@ -161,25 +153,22 @@ def minION_messages_list(request, pk):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['GET'],)
 def recentminION_messages_list(request, pk):
     """
-    Get messages
-    :param request:
-    :return:
+    TODO describe function
     """
     if request.method == 'GET':
         queryset = MinIONmessages.objects.filter(minION=pk).filter(minKNOW_message_timestamp__gte= timezone.now() - timedelta(hours=24))
         serializer = MinIONmessagesSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
+
 @api_view(['GET','POST'],)
 def minION_control_list(request,pk):
     """
-    Get Control Instructions
-    :param request:
-    :param pk:
-    :return:
+    TODO describe function
     """
     if request.method == 'GET':
         queryset = MinIONControl.objects.filter(minION=pk).filter(complete=False)
@@ -194,16 +183,12 @@ def minION_control_list(request,pk):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['GET','POST'],)
 def minION_control_update(request,pk,checkid):
     """
-    Get Control Instructions
-    :param request:
-    :param pk:
-    :return:
-
+    TODO describe function
     """
-
     try:
         event_ = MinIONControl.objects.get(id=checkid)
 
@@ -213,13 +198,10 @@ def minION_control_update(request,pk,checkid):
     except MinIONControl.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-
     if request.method == 'GET':
         serializer = MinIONControlSerializer(event_, context={'request': request})
         print (serializer)
         return Response(serializer.data)
-
-
 
     if request.method == 'POST':
         #serializer = MinIONControlSerializer(data=event_, context={'request': request})
@@ -246,16 +228,10 @@ def minION_control_update(request,pk,checkid):
     #    return Response(status=status.HTTP_404_NOT_FOUND)
 
 
-
-
-
 @api_view(['GET',])
 def minION_currentrun_list(request, pk):
     """
-    get the latest run for this specific minION
-    :param request:
-    :param pk:
-    :return:
+    TODO describe function
     """
     try:
         #print (pk)
@@ -338,10 +314,7 @@ def minION_scripts_list(request, pk):
 @api_view(['GET', 'PUT', 'POST', 'DELETE'])
 def minION_status_list(request,pk):
     """
-    Get, update or delete a minION status.
-    :param request: 
-    :param pk: 
-    :return: 
+    TODO describe function
     """
     if request.method == 'POST':
         serializer = MinIONStatusSerializer(data=request.data, context={'request': request})
@@ -375,10 +348,7 @@ def minION_status_list(request,pk):
 @api_view(['GET', 'PUT', 'POST', 'DELETE'])
 def minION_run_stats_list(request,pk):
     """
-    Get, update or delete a minION status.
-    :param request: 
-    :param pk: 
-    :return: 
+    TODO describe function
     """
     if request.method == 'POST':
         serializer = MinIONRunStatsSerializer(data=request.data, context={'request': request})
@@ -415,13 +385,11 @@ def minION_run_stats_list(request,pk):
         crazyminIONrunstats.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+
 @api_view(['GET'])
 def minION_run_stats_latest(request,pk,checkid):
     """
-    Get, update or delete a minION status.
-    :param request:
-    :param pk:
-    :return:
+    TODO describe function
     """
     try:
         crazyminIONrunstats = MinIONRunStats.objects.filter(run_id=pk, id__gt=checkid)
@@ -440,13 +408,11 @@ def minION_run_stats_latest(request,pk,checkid):
 
         return Response(serializer.data)
 
+
 @api_view(['GET', 'PUT', 'POST', 'DELETE'])
 def minION_run_status_list(request,pk):
     """
-    Get, update or delete a minION status.
-    :param request: 
-    :param pk: 
-    :return: 
+    TODO describe function
     """
     if request.method == 'POST':
         serializer = MinIONRunStatusSerializer(data=request.data, context={'request': request})
@@ -477,15 +443,10 @@ def minION_run_status_list(request,pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-
-
 @api_view(['GET', 'PUT', 'DELETE'])
 def minION_scripts_detail(request, pk, nk):
     """
-    Get, update or delete a specific script.
-    :param request: 
-    :param nk: 
-    :return: 
+    TODO describe function
     """
     try:
         script = MinIONScripts.objects.get(pk=nk)
@@ -528,6 +489,9 @@ def read_list(request, pk):
 
 @api_view(['GET'])
 def minION_detail(request, pk):
+    """
+    TODO describe function
+    """
     try:
         # print (pk)
         # print (MinIONEvent.objects.all())
@@ -568,6 +532,9 @@ def read_detail(request, pk):
 
 @api_view(['GET'])
 def readname_list(request, pk):
+    """
+    TODO describe function
+    """
     if request.method == 'GET':
         queryset = FastqRead.objects.filter(run_id=pk)
         result = set()
@@ -578,6 +545,9 @@ def readname_list(request, pk):
 
 @api_view(['GET'])
 def cumulative_read_count(request, pk):
+    """
+    TODO describe function
+    """
     if request.method == 'GET':
         queryset = RunStatistic.objects.filter(run_id__owner=request.user).filter(run_id=pk).order_by('type',
                                                                                                       'sample_time', )
@@ -600,64 +570,23 @@ def cumulative_read_count(request, pk):
 
 
 @api_view(['GET'])
-def run_read_statistics(request, pk):
-    queryset = RunSummaryBarCode.objects \
-        .filter(run_id__owner=request.user) \
-        .filter(run_id=pk)
-
-    result2 = dict()
-    result2.update({'reads_called': []})
-    result2.update({'yield': []})
-    result2.update({'average_read_length': []})
-    result2.update({'maximum_read_length': []})
-
-    for q in queryset:
-        series = dict()
-        series.update({'name': q['type__name']})
-        series.update({'data': [q['read_count__sum'], ]});
-
-        result2['reads_called'].append(series);
-
-        series = dict()
-        series.update({'name': q['type__name']})
-        series.update({'data': [q['read_count__avg'], ]});
-
-        result2['average_read_length'].append(series);
-
-        series = dict()
-        series.update({'name': q['type__name']})
-        series.update({'data': [q['read_count__max'], ]});
-
-        result2['maximum_read_length'].append(series);
-
-    return HttpResponse(json.dumps(result2), content_type="application/json")
-
-
-@api_view(['GET'])
-def run_read_statistics2(request, pk):
-    queryset = RunStatistic.objects\
+def run_summary(request, pk):
+    """
+    Return a list with summaries for each read type of a given run.
+    """
+    queryset = RunSummary.objects\
         .filter(run_id__owner=request.user)\
         .filter(run_id=pk)
 
-    serializer = RunStatisticSerializer(queryset, many=True, context={'request': request})
+    serializer = RunSummarySerializer(queryset, many=True, context={'request': request})
 
     return Response(serializer.data)
 
 
-@api_view(['GET'])
-def run_barcodes(request, pk):
-    minion_run = MinIONRun.objects.get(pk=pk)
-
-    barcodes = list()
-    barcodes.append('All reads')
-
-    for b in minion_run.barcodes():
-        barcodes.append(b['barcode'])
-
-    return HttpResponse(json.dumps(barcodes), content_type="application/json")
-
-
 def UTC_time_to_epoch(timestamp):
+    """
+    TODO describe function
+    """
     dt = parser.parse(timestamp)
 
     return dt.timestamp()*1000
@@ -665,4 +594,7 @@ def UTC_time_to_epoch(timestamp):
 
 @api_view(['GET'])
 def minION_liverun_list(request,pk):
+    """
+    TODO describe function
+    """
     return None

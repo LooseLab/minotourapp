@@ -1,35 +1,31 @@
 from rest_framework import serializers
 
-from reads.models import MinIONRun, \
-    FastqRead, \
-    FastqReadType, \
-    MinION, \
-    MinIONEvent, \
-    MinIONEventType, \
-    MinIONScripts, \
-    MinIONStatus,   \
-    MinIONRunStatus, \
-    MinIONRunStats, \
-    MinIONmessages, \
-    MinIONControl
+from reads.models import FastqRead
+from reads.models import FastqReadType
+from reads.models import MinION
+from reads.models import MinIONControl
+from reads.models import MinIONEvent
+from reads.models import MinIONEventType
+from reads.models import MinIONRun
+from reads.models import MinIONRunStats
+from reads.models import MinIONRunStatus
+from reads.models import MinIONScripts
+from reads.models import MinIONStatus
+from reads.models import MinIONmessages
+from reads.models import RunSummary
 
 
 class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
-    # reads = serializers.HyperlinkedRelatedField(many=True,
-    #                                            view_name='fastqread-detail',
-    #                                            read_only=True)
-
     class Meta:
         model = MinIONRun
-        # fields = ('url', 'run_name', 'run_id', 'is_barcoded', 'reads')
-        fields = ('url', 'sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','minION')#, 'barcodes')
-        read_only = ('id','sample_name','minKNOW_version', 'minKNOW_flow_cell_id')#, 'barcodes')
+        fields = ('url', 'sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','minION', 'barcodes', 'id')
+        read_only = ('id','sample_name','minKNOW_version', 'minKNOW_flow_cell_id', 'barcodes')
+
 
 class MinIONRunStatsSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = MinIONRunStats
         fields = (
-            #'__all__'
             'id',
             'minION',
             'run_id',
@@ -61,19 +57,20 @@ class MinIONRunStatsSerializer(serializers.HyperlinkedModelSerializer):
         )
         read_only = ('id','occupancy',)
 
-class MinIONSerializer(serializers.HyperlinkedModelSerializer):
-    #currentrunstats = MinIONRunStatsSerializer(many=True, read_only=True)
 
+class MinIONSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = MinION
         fields = ('url', 'space_available','minKNOW_version', 'minION_name', 'status', 'computer','sample_name','run_status','flow_cell_id','run_name','total_drive_space','space_till_shutdown','warnings','last_run','currentscript','event_yield','voltage_value',)
         read_only = ('status','space_available','minKNOW_version','computer','sample_name','run_status','flow_cell_id','run_name','total_drive_space','space_till_shutdown','warnings','last_run','currentscript','event_yield','voltage_value',)
+
 
 class FastqReadTypeSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = FastqReadType
         fields = ('url', 'name',)
         read_only = ('id',)
+
 
 class MinIONmessagesSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -94,6 +91,7 @@ class MinIONEventTypeSerializer(serializers.HyperlinkedModelSerializer):
         model = MinIONEventType
         fields = ('url', 'name',)
         read_only = ('id',)
+
 
 class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -121,6 +119,7 @@ class MinIONScriptsSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('id', 'minION', 'identifier', 'name', 'experiment_type', 'base_calling', 'flow_cell', 'kit')
         read_only = ('id',)
 
+
 class MinIONStatusSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = MinIONStatus
@@ -144,8 +143,6 @@ class MinIONStatusSerializer(serializers.HyperlinkedModelSerializer):
 
         )
         read_only = ('id',)
-
-
 
 
 class MinIONRunStatusSerializer(serializers.HyperlinkedModelSerializer):
@@ -176,4 +173,12 @@ class MinIONRunStatusSerializer(serializers.HyperlinkedModelSerializer):
         )
         read_only = ('id','minION_name')
 
+
+class RunSummarySerializer(serializers.HyperlinkedModelSerializer):
+    typename = serializers.ReadOnlyField(source="type.name")
+
+    class Meta:
+        model = RunSummary
+        fields = ('url', 'total_length', 'read_count', 'type', 'typename', 'max_length', 'min_length', 'pass_length', 'pass_max_length', 'pass_min_length', 'pass_count', 'id')
+        read_only = ('id',)
 
