@@ -175,8 +175,10 @@ class MinIONRunStatusSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class RunSummarySerializer(serializers.HyperlinkedModelSerializer):
+    typename = serializers.ReadOnlyField(source="type.name")
+
     class Meta:
         model = RunSummary
-        fields = ('url', 'total_length', 'read_count', 'type', 'max_length', 'min_length', 'pass_length','pass_max_length', 'pass_min_length', 'pass_count', 'id')
+        fields = ('url', 'total_length', 'read_count', 'type', 'typename', 'max_length', 'min_length', 'pass_length', 'pass_max_length', 'pass_min_length', 'pass_count', 'id')
         read_only = ('id',)
 

@@ -354,8 +354,7 @@ class FastqRead(models.Model):
 
 
 class RunSummary(models.Model):
-    run_id = models.OneToOneField(MinIONRun,on_delete=models.CASCADE, related_name='runsummary')
-    # TODO we may need to change run_id to an OneToOneField and rename to run
+    run_id = models.ForeignKey(MinIONRun,on_delete=models.CASCADE, related_name='runsummaries')
     total_length = models.IntegerField(default=0)
     read_count = models.IntegerField(default=0)
     type = models.ForeignKey(FastqReadType)
