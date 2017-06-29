@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from reads.models import FastqRead
+from reads.models import FastqRead, RunSummaryBarCode
 from reads.models import FastqReadType
 from reads.models import MinION
 from reads.models import MinIONControl
@@ -13,13 +13,6 @@ from reads.models import MinIONScripts
 from reads.models import MinIONStatus
 from reads.models import MinIONmessages
 from reads.models import RunSummary
-
-
-class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = MinIONRun
-        fields = ('url', 'sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','minION', 'barcodes', 'id')
-        read_only = ('id','sample_name','minKNOW_version', 'minKNOW_flow_cell_id', 'barcodes')
 
 
 class MinIONRunStatsSerializer(serializers.HyperlinkedModelSerializer):
@@ -181,4 +174,30 @@ class RunSummarySerializer(serializers.HyperlinkedModelSerializer):
         model = RunSummary
         fields = ('url', 'total_length', 'read_count', 'type', 'typename', 'max_length', 'min_length', 'pass_length', 'pass_max_length', 'pass_min_length', 'pass_count', 'id')
         read_only = ('id',)
+
+
+class RunSummaryBarcodeSerializer(serializers.HyperlinkedModelSerializer):
+    typename = serializers.ReadOnlyField(source="type.name")
+
+    class Meta:
+        model = RunSummaryBarCode
+        fields = ('url', 'total_length', 'read_count', 'type', 'typename', 'max_length', 'min_length', 'pass_length', 'pass_max_length', 'pass_min_length', 'pass_count', 'id', 'barcode')
+        read_only = ('id',)
+
+
+class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
+    runsummaries = RunSummarySerializer(
+        many=True,
+        read_only=True,
+    )
+
+    runsummariesbarcodes = RunSummaryBarcodeSerializer(
+        many=True,
+        read_only=True,
+    )
+
+    class Meta:
+        model = MinIONRun
+        fields = ('url', 'sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','minION', 'barcodes', 'id', 'runsummaries', 'runsummariesbarcodes')
+        read_only = ('id','sample_name','minKNOW_version', 'minKNOW_flow_cell_id', 'barcodes', 'runsummaries', 'runsummariesbarcodes')
 

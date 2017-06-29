@@ -12,6 +12,7 @@ urlpatterns = [
     url(r'^api/v1/runs/(?P<pk>[0-9]+)/runstats/$', views.minION_run_stats_list, name="minIONrunstats_list"),
     url(r'^api/v1/runs/(?P<pk>[0-9]+)/runstats/(?P<checkid>[0-9]+)/$', views.minION_run_stats_latest, name="minIONrunstats_latest"),
     url(r'^api/v1/runs/(?P<pk>[0-9]+)/summary/$', views.run_summary, name="runsummary-detail"),
+    url(r'^api/v1/runs/(?P<pk>[0-9]+)/summarybarcode/$', views.run_summary_barcode, name="runsummarybarcode-detail"),
     url(r'^api/v1/reads/(?P<pk>[0-9]+)/$', views.read_detail, name="fastqread-detail"),
     url(r'^api/v1/readtypes/$', views.read_type_list, name="fastqreadtype-list"),
     url(r'^api/v1/readtypes/(?P<pk>[0-9]+)/$', views.read_type_detail, name="fastqreadtype-detail"),

@@ -374,7 +374,7 @@ class RunSummary(models.Model):
 
 
 class RunSummaryBarCode(models.Model):
-    run_id = models.ForeignKey(MinIONRun,on_delete=models.CASCADE)
+    run_id = models.ForeignKey(MinIONRun,on_delete=models.CASCADE, related_name='runsummariesbarcodes')
     total_length = models.IntegerField(default=0)
     read_count = models.IntegerField(default=0)
     type = models.ForeignKey(FastqReadType)
@@ -400,13 +400,11 @@ class RunStatistic(models.Model):
     total_length = models.IntegerField(default=0)
     max_length = models.IntegerField(default=0)
     min_length = models.IntegerField(default=0)
-    #average_length = models.DecimalField(max_digits=11, decimal_places=2)
     read_count = models.IntegerField(default=0)
     pass_length = models.IntegerField(default=0)
     pass_max_length = models.IntegerField(default=0)
     pass_min_length = models.IntegerField(default=0)
     pass_count = models.IntegerField(default=0)
-    #number_of_channels = models.IntegerField() #Need to work out how to implement this!
     type = models.ForeignKey(FastqReadType)
 
     class Meta:
@@ -424,12 +422,10 @@ class RunStatisticBarcode(models.Model):
     read_count = models.IntegerField(default=0)
     max_length = models.IntegerField(default=0)
     min_length = models.IntegerField(default=0)
-    #average_length = models.DecimalField(default=0,max_digits=11, decimal_places=2)
     pass_length = models.IntegerField(default=0)
     pass_max_length = models.IntegerField(default=0)
     pass_min_length = models.IntegerField(default=0)
     pass_count = models.IntegerField(default=0)
-    #number_of_channels = models.IntegerField() #Need to work out how to implement this!
     type = models.ForeignKey(FastqReadType)
     barcode = models.CharField(max_length=32)
 
