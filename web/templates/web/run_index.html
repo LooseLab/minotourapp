@@ -141,6 +141,17 @@
                                                         Plots
                                                     </div>-->
                                                 </div>
+                                                <div class="row">
+                                                    <show-chart-spline
+                                                            chartid="average-read-lengths-overtime"
+                                                            title="average read lengths over time"
+                                                            ytitle="average read length"
+                                                            :chart_data="summary_by_minute"
+                                                            :mybarcode='selectedBarcode'
+                                                            :id="id"
+                                                            :minion_run="minion_run">
+                                                    </show-chart-spline>
+                                                </div>
 
                                                 <!--<div id="lengthtimewindow" style="height:400px;"><i
                                                         class="fa fa-cog fa-spin fa-3x"></i> Read Lengths Over
@@ -227,6 +238,12 @@
         </div>
     </template>
 
+    <template id="chart-spline">
+        <div style="height:400px;">
+            <i class="fa fa-cog fa-spin fa-3x"></i> Read Lengths Over Time.
+        </div>
+    </template>
+
 
     <script>
         console.log('before vue');
@@ -237,12 +254,121 @@
             template: "<li><a v-on:click='loadChartsByBarcode(barcode)' href='#'>${ barcode }</a></li>",
             methods: {
                 loadChartsByBarcode: function (mybarcode) {
-                    console.log(mybarcode);
                     app.selectedBarcode = mybarcode;
                 }
             }
 
         });
+
+        Vue.component('show-chart-spline', {
+            template: '#chart-spline',
+            props: ['chartid', 'mybarcode', 'id', 'title', 'ytitle', 'minion_run', 'chart_data'],
+            data: function () {
+                return {
+                    counter: 0,
+                    chart: null,
+                    opts: {
+                        chart: {
+                            type: 'spline',
+                            animation: false
+                        },
+                        title: {
+                            text: this.title
+                        },
+                        yAxis: {
+                            title: {
+                                text: this.ytitle
+                            }
+                        },
+                        xAxis: {
+                            type: 'datetime'
+                        }
+                    }
+                };
+                return {
+                    chart: undefined
+                }
+            },
+            mounted() {
+                if (!this.chart && this.opts) {
+                    let _Highcharts = this.Highcharts || Highcharts;
+                    this.chart = new _Highcharts.Chart(this.$el, this.opts);
+                }
+            },
+            watch: {
+                mybarcode: function (mybarcode) {
+                    console.log('updated barcode ' + this.mybarcode);
+                    this.redraw();
+                },
+                minion_run: function () {
+                    console.log('--- minion run changed : ' + this._uid + ' ---');
+                    this.redraw();
+                },
+                chart_data: function () {
+                    this.redraw();
+                }
+            },
+            beforeDestroy() {
+                if (this.chart) {
+                    this.chart.destroy();
+                }
+            },
+            methods: {
+                redraw() {
+                    if (this.chart_data == null) {
+                        console.log('---- chart_data is null ----');
+
+                    } else {
+                        console.log('---- chart_data is NOT null ----');
+
+                        var chart_data = this.chart_data;
+
+                        // Remove previous series
+                        while (this.chart.series.length > 0) {
+                            this.chart.series[0].remove();
+                        }
+
+                        this.chart.colorCounter = 0;
+                        this.chart.symbolCounter = 0;
+
+                        var summaries = [];
+                        if (this.mybarcode == 'All reads') {
+
+                            for (var i = 0; i < chart_data.length; i++) {
+                                var average_read_length = chart_data[i].total_length / chart_data[i].read_count;
+                                var sample_time = new Date(chart_data[i].sample_time);
+
+                                var point = {
+                                    x: sample_time,
+                                    y: average_read_length
+                                }
+
+                                summaries.push(point);
+                            }
+                        } /*else {
+                            for (var i = 0; i < chart_data.length; i++) {
+                                var item = chart_data[i];
+                                if (item.barcode == this.mybarcode) {
+                                    //summaries.push(item);
+                                    var average_read_length = item.total_length / item.read_count;
+                                    //var sample_date = chart_data[i].sample_date;
+                                    var sample_date = time + i * 1000 * 60 * 60 * 24    ;
+                                    this.chart.series[0].addPoint([sample_date, average_read_length], true, false);
+
+                                }
+                            }
+                        }*/
+
+                        summaries.sort(function(a, b) {
+                            return a.x - b.x;
+                        })
+
+                        this.chart.addSeries({name: '', data: summaries});
+                    }
+                }
+            }
+        })
+        ;
 
         Vue.component('show-chart', {
             template: '#chart',
@@ -316,23 +442,12 @@
                 //    this.chart.update(this.opts);
                 //},
                 redraw() {
-                    //this.chart.destroy();
-
-                    //this.chart = new Highcharts.Chart(this.$el, this.opts);
-
                     var minion_run = this.minion_run;
 
                     // Remove previous series
-                    console.log('-- series ---');
-                    console.log(this.chart.series);
-
-                    //for (var i = 0; i < this.chart.series.length; i++) {
                     while (this.chart.series.length > 0) {
                         this.chart.series[0].remove();
-                        console.log('value of i is: ' + i);
                     }
-
-                    console.log('number of series available: ' + this.chart.series.length);
 
                     this.chart.colorCounter = 0;
                     this.chart.symbolCounter = 0;
@@ -352,12 +467,7 @@
                         }
                     }
 
-                    console.log('--- summaries ---');
-                    console.log(summaries);
-
-                    //var series = [];
                     for (var i = 0; i < summaries.length; i++) {
-                        console.log('-- ' + i);
                         var value = 0;
 
                         if (this.chartid == 'reads-called') {
@@ -391,17 +501,12 @@
                 selectedBarcode: '',
                 selectedTab: 'read-summaries',
                 newdata: null,
+                summary_by_minute: null,
+                summary_barcode_by_minute: null
             },
             created: function () {
                 this.requestInitialData();
             },
-            computed: {},
-            //watch: {
-            //    minion_run: function (minion_run) {
-            //        console.log('minion_run mudou.')
-            //        this.requestData();
-            //    }
-            //},
             methods: {
                 requestInitialData() {
                     console.log('inside request initial data');
@@ -419,7 +524,20 @@
                             this.minion_run.barcodes = this.minion_run.barcodes.sort()
                         });
 
-                    this.counterDown();
+                    url_run = '/api/v1/runs/' + this.id + '/summarybyminute';
+                    promise_run = this.$http.get(url_run);
+                    promise_run
+                        .then(function (res) {
+                            return res.json();
+                        })
+                        .then(function (summarybyminute) {
+                            this.summary_by_minute = summarybyminute;
+                            console.log('---- summary by minute ----');
+                            console.log(summarybyminute);
+                            console.log('---- summary by minute ----');
+                        });
+
+                    //this.counterDown();
 
                 },
                 requestData() {
@@ -437,7 +555,7 @@
                             //this.minion_run.barcodes = this.minion_run.barcodes.sort()
                         });
 
-                    this.counterDown();
+                    //this.counterDown();
 
                 },
                 counterDown() {

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from reads.models import FastqRead, RunSummaryBarCode
+from reads.models import FastqRead, RunSummaryBarCode, RunStatistic, RunStatisticBarcode
 from reads.models import FastqReadType
 from reads.models import MinION
 from reads.models import MinIONControl
@@ -182,6 +182,24 @@ class RunSummaryBarcodeSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = RunSummaryBarCode
         fields = ('url', 'total_length', 'read_count', 'type', 'typename', 'max_length', 'min_length', 'pass_length', 'pass_max_length', 'pass_min_length', 'pass_count', 'id', 'barcode')
+        read_only = ('id',)
+
+
+class RunStatisticSerializer(serializers.ModelSerializer):
+    typename = serializers.ReadOnlyField(source="type.name")
+
+    class Meta:
+        model = RunStatistic
+        fields = ('total_length', 'read_count', 'type', 'typename', 'max_length', 'min_length', 'pass_length', 'pass_max_length', 'pass_min_length', 'pass_count', 'id', 'sample_time')
+        read_only = ('id',)
+
+
+class RunStatisticBarcodeSerializer(serializers.ModelSerializer):
+    typename = serializers.ReadOnlyField(source="type.name")
+
+    class Meta:
+        model = RunStatisticBarcode
+        fields = ('total_length', 'read_count', 'type', 'typename', 'max_length', 'min_length', 'pass_length', 'pass_max_length', 'pass_min_length', 'pass_count', 'id', 'sample_time', 'barcode')
         read_only = ('id',)
 
 
