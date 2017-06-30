@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from reads.models import FastqRead
+from reads.models import FastqRead, RunSummaryBarCode
 from reads.models import FastqReadType
 from reads.models import MinION
 from reads.models import MinIONControl
@@ -22,7 +22,7 @@ from reads.models import MinIONmessages
 from reads.models import RunStatistic
 from reads.models import RunSummary
 
-from reads.serializers import FastqReadSerializer
+from reads.serializers import FastqReadSerializer, RunSummaryBarcodeSerializer
 from reads.serializers import FastqReadTypeSerializer
 from reads.serializers import MinIONControlSerializer
 from reads.serializers import MinIONEventSerializer
@@ -579,6 +579,20 @@ def run_summary(request, pk):
         .filter(run_id=pk)
 
     serializer = RunSummarySerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def run_summary_barcode(request, pk):
+    """
+    Return a list with summaries for each read type of a given run.
+    """
+    queryset = RunSummaryBarCode.objects\
+        .filter(run_id__owner=request.user)\
+        .filter(run_id=pk)
+
+    serializer = RunSummaryBarcodeSerializer(queryset, many=True, context={'request': request})
 
     return Response(serializer.data)
 

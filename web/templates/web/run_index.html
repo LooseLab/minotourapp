@@ -25,6 +25,9 @@
                 </div><!-- /.box-header -->
                 <div class="box-body">
                     <div class="row">
+                        <button id="counterdown-btn">Reloading in 30 seconds</button>
+                    </div>
+                    <div class="row">
                         <div class="col-md-12">
                             <div class="nav-tabs-custom">
                                 <ul class="nav nav-tabs">
@@ -97,42 +100,46 @@
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row">
-                                                        <show-chart
-                                                                chartid="reads-called"
-                                                                :mybarcode='selectedBarcode'
-                                                                :id="id"
-                                                                title="reads called"
-                                                                ytitle="number of reads called">
-                                                        </show-chart>
+                                                    <show-chart
+                                                            chartid="reads-called"
+                                                            :mybarcode='selectedBarcode'
+                                                            :id="id"
+                                                            :minion_run="minion_run"
+                                                            title="reads called"
+                                                            ytitle="number of reads called">
+                                                    </show-chart>
 
-                                                        <show-chart
-                                                                chartid="yield"
-                                                                :mybarcode='selectedBarcode'
-                                                                :id="id"
-                                                                title="yield"
-                                                                ytitle="yield">
-                                                        </show-chart>
+                                                    <show-chart
+                                                            chartid="yield"
+                                                            :mybarcode='selectedBarcode'
+                                                            :id="id"
+                                                            :minion_run="minion_run"
+                                                            title="yield"
+                                                            ytitle="yield">
+                                                    </show-chart>
 
-                                                        <show-chart
-                                                                chartid="average-read-length"
-                                                                :mybarcode='selectedBarcode'
-                                                                :id="id"
-                                                                title="average read length"
-                                                                ytitle="average read length">
-                                                        </show-chart>
+                                                    <show-chart
+                                                            chartid="average-read-length"
+                                                            :mybarcode='selectedBarcode'
+                                                            :id="id"
+                                                            :minion_run="minion_run"
+                                                            title="average read length"
+                                                            ytitle="average read length">
+                                                    </show-chart>
 
-                                                        <show-chart
-                                                                chartid="maximum-read-length"
-                                                                :mybarcode='selectedBarcode'
-                                                                :id="id"
-                                                                title="maximum read length"
-                                                                ytitle="maximum read length">
-                                                        </show-chart>
+                                                    <show-chart
+                                                            chartid="maximum-read-length"
+                                                            :mybarcode='selectedBarcode'
+                                                            :id="id"
+                                                            :minion_run="minion_run"
+                                                            title="maximum read length"
+                                                            ytitle="maximum read length">
+                                                    </show-chart>
 
-                                                        <!--<div class="col-md-12" id="boxplotlength" style="height:400px;">
-                                                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Box
-                                                            Plots
-                                                        </div>-->
+                                                    <!--<div class="col-md-12" id="boxplotlength" style="height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Box
+                                                        Plots
+                                                    </div>-->
                                                 </div>
 
                                                 <!--<div id="lengthtimewindow" style="height:400px;"><i
@@ -227,7 +234,7 @@
         Vue.component('minionrun-item', {
             delimiters: ['${', '}'],
             props: ['barcode'],
-            template: "<li><a v-on:click='selectedBarcode=loadChartsByBarcode(barcode)' href='#'>${ barcode }</a></li>",
+            template: "<li><a v-on:click='loadChartsByBarcode(barcode)' href='#'>${ barcode }</a></li>",
             methods: {
                 loadChartsByBarcode: function (mybarcode) {
                     console.log(mybarcode);
@@ -239,36 +246,24 @@
 
         Vue.component('show-chart', {
             template: '#chart',
-            props: ['chartid', 'mybarcode', 'id', 'title', 'ytitle'],
+            props: ['chartid', 'mybarcode', 'id', 'title', 'ytitle', 'minion_run'],
             data: function () {
                 return {
                     counter: 0,
                     chart: null,
                     opts: {
                         chart: {
-                            type: 'column'
+                            type: 'column',
+                            animation: false
                         },
                         title: {
                             text: this.title
-                        },
-                        xAxis: {
-                            categories: ['strand']
                         },
                         yAxis: {
                             title: {
                                 text: this.ytitle
                             }
                         },
-                        series: [{
-                            name: 'template',
-                            data: [1]
-                        }, {
-                            name: 'complement',
-                            data: [5]
-                        }, {
-                            name: '2d',
-                            data: [5]
-                        }]
                     }
                 };
                 return {
@@ -276,29 +271,29 @@
                 }
             },
             // lifecycle hooks - ref: https://alligator.io/vuejs/component-lifecycle/
-            created() {
-                console.log('inside created event of the component show-chart');
-            },
+            // created() { console.log('inside created event of the component show-chart'); },
+            // beforeUpdate() { console.log('inside updated event of the component show-chart. mybarcode is ' + this.mybarcode); },
             mounted() {
                 console.log('inside mounted event of the component show-chart');
                 if (!this.chart && this.opts) {
                     this._init();
                 }
             },
-            beforeUpdate() {
-                console.log('inside updated event of the component show-chart. mybarcode is ' + this.mybarcode);
-            },
             watch: {
                 mybarcode: function (mybarcode) {
                     console.log('updated barcode ' + this.mybarcode);
                     this.redraw();
                 },
-                opts: function (opts) {
-                    if (!this.getChart() && opts) {
-                        this._init()
-                    } else {
-                        this.getChart().update(this.opts);
-                    }
+                //opts: function (opts) {
+                //    if (!this.getChart() && opts) {
+                //        this._init()
+                //    } else {
+                //        this.getChart().update(this.opts);
+                //    }
+                //},
+                minion_run: function () {
+                    console.log('--- minion run changed : ' + this._uid + ' ---');
+                    this.redraw();
                 }
             },
             beforeDestroy() {
@@ -312,53 +307,76 @@
                     if (!this.chart && this.opts) {
                         let _Highcharts = this.Highcharts || Highcharts;
                         this.chart = new _Highcharts.Chart(this.$el, this.opts);
-                        this.get_data();
+                        //this.get_data();
                     }
                 },
-                get_data() {
-                    console.log('inside get data');
-                    this.opts.series[0] = [20]
-                    this.chart.update(this.opts);
-                },
+                //get_data() {
+                //    console.log('inside get data');
+                //    this.opts.series[0] = [20]
+                //    this.chart.update(this.opts);
+                //},
                 redraw() {
-                    var url_run = '/api/v1/runs/' + this.id + '/summary/';
-                    var promise_run = this.$http.get(url_run);
-                    promise_run
-                        .then(function (res) {
-                            console.log(res.json());
-                            return res.json();
-                        })
-                        .then(function (summaries) {
-                            //this.minion_run = minion_run;
-                            //this.minion_run.barcodes = this.minion_run.barcodes.sort()
-                            console.log('qt the sumaries: ' + summaries.length)
-                            console.log(summaries);
-                            var series = [];
-                            for (var i = 0; i < summaries.length; i++) {
-                                var value = 0;
+                    //this.chart.destroy();
 
-                                if (this.chartid == 'reads-called') {
-                                    value = summaries[i].read_count;
-                                } else if (this.chartid == 'yield') {
-                                    value = summaries[i].total_length;
-                                } else if (this.chartid == 'average-read-length') {
-                                    value = summaries[i].total_length / summaries[i].read_count;
-                                } else if (this.chartid == 'maximum-read-length') {
-                                    value = summaries[i].max_length;
-                                }
+                    //this.chart = new Highcharts.Chart(this.$el, this.opts);
 
-                                var serie = {
-                                    'name': summaries[i].typename,
-                                    'data': [ value ]
-                                }
+                    var minion_run = this.minion_run;
 
-                                series.push(serie);
+                    // Remove previous series
+                    console.log('-- series ---');
+                    console.log(this.chart.series);
+
+                    //for (var i = 0; i < this.chart.series.length; i++) {
+                    while (this.chart.series.length > 0) {
+                        this.chart.series[0].remove();
+                        console.log('value of i is: ' + i);
+                    }
+
+                    console.log('number of series available: ' + this.chart.series.length);
+
+                    this.chart.colorCounter = 0;
+                    this.chart.symbolCounter = 0;
+
+                    var summaries = [];
+                    if (this.mybarcode == 'All reads') {
+                        for (var i = 0; i < minion_run.runsummaries.length; i++) {
+                            summaries.push(minion_run.runsummaries[i]);
+                        }
+
+                    } else {
+                        for (var i = 0; i < minion_run.runsummariesbarcodes.length; i++) {
+                            var item = minion_run.runsummariesbarcodes[i];
+                            if (item.barcode == this.mybarcode) {
+                                summaries.push(item);
                             }
-                            this.opts.series = series;
-                            this.chart.update(this.opts);
+                        }
+                    }
 
-                        });
-                    //this.chart.series[0].setData([20], true);
+                    console.log('--- summaries ---');
+                    console.log(summaries);
+
+                    //var series = [];
+                    for (var i = 0; i < summaries.length; i++) {
+                        console.log('-- ' + i);
+                        var value = 0;
+
+                        if (this.chartid == 'reads-called') {
+                            value = summaries[i].read_count;
+                        } else if (this.chartid == 'yield') {
+                            value = summaries[i].total_length;
+                        } else if (this.chartid == 'average-read-length') {
+                            value = summaries[i].total_length / summaries[i].read_count;
+                        } else if (this.chartid == 'maximum-read-length') {
+                            value = summaries[i].max_length;
+                        }
+
+                        var series = {
+                            'name': summaries[i].typename,
+                            'data': [value]
+                        }
+
+                        this.chart.addSeries(series);
+                    }
                 }
             }
         });
@@ -371,23 +389,78 @@
                 id: {{ minion_run.id }},
                 selectedBarcode: '',
                 selectedTab: 'read-summaries',
+                newdata: null,
             },
             created: function () {
-                var url_run = '/api/v1/runs/' + this.id;
-                var promise_run = this.$http.get(url_run);
-                promise_run
-                    .then(function (res) {
-                        console.log(res.json());
-                        return res.json();
-                    })
-                    .then(function (minion_run) {
-                        this.minion_run = minion_run;
-                        this.minion_run.barcodes = this.minion_run.barcodes.sort()
-                    });
+                this.requestInitialData();
             },
             computed: {},
+            //watch: {
+            //    minion_run: function (minion_run) {
+            //        console.log('minion_run mudou.')
+            //        this.requestData();
+            //    }
+            //},
+            methods: {
+                requestInitialData() {
+                    console.log('inside request initial data');
+
+                    var url_run = '/api/v1/runs/' + this.id;
+                    var promise_run = this.$http.get(url_run);
+                    promise_run
+                        .then(function (res) {
+                            console.log(res.json());
+                            return res.json();
+                        })
+                        .then(function (minion_run) {
+                            this.selectedBarcode = 'All reads';
+                            this.minion_run = minion_run;
+                            this.minion_run.barcodes = this.minion_run.barcodes.sort()
+                        });
+
+                    this.counterDown();
+
+                },
+                requestData() {
+                    console.log('inside request data');
+
+                    var url_run = '/api/v1/runs/' + this.id;
+                    var promise_run = this.$http.get(url_run);
+                    promise_run
+                        .then(function (res) {
+                            console.log(res.json());
+                            return res.json();
+                        })
+                        .then(function (minion_run) {
+                            this.minion_run = minion_run;
+                            //this.minion_run.barcodes = this.minion_run.barcodes.sort()
+                        });
+
+                    this.counterDown();
+
+                },
+                counterDown() {
+                    var counter = 10;
+                    setInterval(function () {
+                        counter--;
+
+                        if (counter >= 0) {
+                            btn = document.getElementById('counterdown-btn');
+                            btn.innerHTML = 'Reloading in ' + counter;
+                        }
+
+                        if (counter === 0) {
+                            //clearInterval(counter);
+                            console.log('time to requestData');
+                            this.requestData();
+
+                        }
+                    }.bind(this), 1000);
+                },
+
+            }
         });
-    
+
     </script>
 
 {% endblock %}
