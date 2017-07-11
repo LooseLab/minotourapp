@@ -42,17 +42,21 @@
                             <!-- Custom Tabs -->
                             <div class="nav-tabs-custom">
                                 <ul class="nav nav-tabs">
-                                    <li class="active"><a href="#">Read Summaries</a></li>
-                                    <li><a href="#">Basecaller Summary</a></li>
-                                    <li><a href="#">Read Histograms</a></li>
-                                    <li><a href="#">Sequencing Rates</a></li>
-                                    <li><a href="#">Pore Activity</a></li>
-                                    <li><a href="#">Read Quality</a></li>
-                                    <li><a href="#">Coverage Detail</a></li>
-                                    <li><a href="#">Base Coverage</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('read-summaries-tab', $event)">Read Summaries</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('basecaller-summary-tab', $event)">Basecaller Summary</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('read-histograms-tab', $event)">Read Histograms</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('sequencing-rates-tab', $event)">Sequencing Rates</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('pore-activity-tab', $event)">Pore Activity</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('read-quality-tab', $event)">Read Quality</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('coverage-detail-tab', $event)">Coverage Detail</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('base-coverage-tab', $event)">Base Coverage</a></li>
                                 </ul>
+
+
+
+
                                 <div class="tab-content">
-                                    <div class="tab-pane active" id="tab_1">
+                                    <div class="tab-pane active" id="tab_1" v-show="isActiveTab('read-summaries-tab')">
                                         <div class="panel panel-default">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title"><!-- Button trigger modal -->
@@ -152,57 +156,6 @@
                                                             :minion_run="minion_run">
                                                     </show-chart-spline>
                                                 </div>
-
-                                                <!--<div id="lengthtimewindow" style="height:400px;"><i
-                                                        class="fa fa-cog fa-spin fa-3x"></i> Read Lengths Over
-                                                    Time.
-                                                </div>
-
-                                                <div class="row">
-                                                    <?php if ($_SESSION['focusreference'] != "NOREFERENCE") { ?>
-
-                                                    <?php if (count($_SESSION['focusrefnames']) >= 3) {
-                                                    //echo "We need something else to handle this bad boy.";?>
-                                                    <div class="col-md-6" id="percentcoverageglob"
-                                                         style="height:400px;"><i
-                                                            class="fa fa-cog fa-spin fa-3x"></i>
-                                                        Calculating Reference Coverage for sequences
-                                                    </div>
-                                                    <div class="col-md-6" id="depthcoverageglob"
-                                                         style="height:400px;"><i
-                                                            class="fa fa-cog fa-spin fa-3x"></i>
-                                                        Calculating Reference Depth for sequences
-                                                    </div>
-                                                    <?php
-                                                            } else { ?>
-                                                    <?php var_dump($_SESSION['focusrefnames']); ?>
-                                                    <?php foreach ($_SESSION['focusrefnames'] as $key => $value) {
-                                                    echo $key . " " . $value . "<br>"; ?>
-                                                    <div class="col-md-6"
-                                                         id="percentcoverage<?php echo $key; ?>"
-                                                         style="height:200px;"><i
-                                                            class="fa fa-cog fa-spin fa-3x"></i>
-                                                        Calculating Reference Coverage
-                                                        for <?php echo $value; ?></div>
-                                                    <div class="col-md-6"
-                                                         id="depthcoverage<?php echo $key; ?>"
-                                                         style="height:200px;"><i
-                                                            class="fa fa-cog fa-spin fa-3x"></i>
-                                                        Calculating Reference Depth
-                                                        for <?php echo $value; ?></div>
-                                                    <?php
-                                                                }
-                                                            }
-                                                        } else { ?>
-                                                    <div>
-                                                        <p class="text-center">
-                                                            <small>This dataset has not been aligned to a
-                                                                reference sequence.
-                                                            </small>
-                                                        </p>
-                                                    </div>
-                                                    <?php }; ?>
-                                                </div>-->
                                             </div>
                                         </div>
 
@@ -217,6 +170,25 @@
                                     </div>
                                     <!-- /.col-lg-12 -->
                                     <!-- /.tab-pane -->
+
+
+                                    <div class="tab-pane active" id="tab_1" v-show="isActiveTab('basecaller-summary-tab')">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"><!-- Button trigger modal -->
+                                                    <button class="btn btn-info" data-toggle="modal"
+                                                            data-target="#modal1">
+                                                        <i class="fa fa-info-circle"></i> XXXXXX
+                                                    </button>
+                                                </h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="row">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
                                 </div>
                                 <!-- /.tab-content -->
                             </div>
@@ -576,7 +548,18 @@
                         }
                     }.bind(this), 1000);
                 },
+                setActiveTab: function(val, event) {
+                    var tabs = event.target.parentNode.parentNode.children;
+                    for (var i = 0; i < tabs.length; i++) {
+                        tabs[i].classList.remove('active');
+                    }
+                    event.target.parentNode.classList.add('active');
 
+                    this.selectedTab = val;
+                },
+                isActiveTab: function(val) {
+                    return this.selectedTab === val;
+                }
             }
         });
 
