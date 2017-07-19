@@ -598,13 +598,21 @@ def run_summary_barcode(request, pk):
 
 
 @api_view(['GET'])
-def run_summary_by_minute(request, pk):
+def run_summary_by_minute(request, pk, last=''):
     """
     Return a list with summaries for a particular run grouped by minute.
     """
-    queryset = RunStatistic.objects\
-        .filter(run_id__owner=request.user)\
-        .filter(run_id=pk)
+
+    if last == '':
+        queryset = RunStatistic.objects\
+            .filter(run_id__owner=request.user)\
+            .filter(run_id=pk)
+    
+    else:
+        queryset = RunStatistic.objects\
+            .filter(run_id__owner=request.user)\
+            .filter(run_id=pk)\
+            .filter(sample_time__gt=last)
 
     serializer = RunStatisticSerializer(queryset, many=True, context={'request': request})
 

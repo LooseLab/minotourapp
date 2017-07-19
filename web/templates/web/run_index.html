@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-    <div class="content-wrapper" id="app">
+    <div class="content-wrapper">
 
         <!-- Content Header (Page header) -->
         <section class="content-header">
@@ -25,34 +25,40 @@
                 </div><!-- /.box-header -->
                 <div class="box-body">
                     <div class="row">
-                        <button id="counterdown-btn">Reloading in 30 seconds</button>
+                        <div class="col-md-12">
+                            <button id="counterdown-btn">Reloading in 30 seconds</button>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-md-12">
                             <div class="nav-tabs-custom">
-                                <ul class="nav nav-tabs">
-                                    <minionrun-item
-                                            v-for="barcode in minion_run.barcodes"
-                                            v-bind:barcode="barcode"
-                                            v-bind:key="barcode">
-                                    </minionrun-item>
+                                <ul class="nav nav-tabs" id="nav-tabs-barcodes">
                                 </ul>
                             </div>
-
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
                             <!-- Custom Tabs -->
                             <div class="nav-tabs-custom">
                                 <ul class="nav nav-tabs">
-                                    <li><a href="#" v-on:click="setActiveTab('read-summaries-tab', $event)">Read Summaries</a></li>
-                                    <li><a href="#" v-on:click="setActiveTab('basecaller-summary-tab', $event)">Basecaller Summary</a></li>
-                                    <li><a href="#" v-on:click="setActiveTab('read-histograms-tab', $event)">Read Histograms</a></li>
-                                    <li><a href="#" v-on:click="setActiveTab('sequencing-rates-tab', $event)">Sequencing Rates</a></li>
-                                    <li><a href="#" v-on:click="setActiveTab('pore-activity-tab', $event)">Pore Activity</a></li>
-                                    <li><a href="#" v-on:click="setActiveTab('read-quality-tab', $event)">Read Quality</a></li>
-                                    <li><a href="#" v-on:click="setActiveTab('coverage-detail-tab', $event)">Coverage Detail</a></li>
-                                    <li><a href="#" v-on:click="setActiveTab('base-coverage-tab', $event)">Base Coverage</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('read-summaries-tab', $event)">Read
+                                        Summaries</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('basecaller-summary-tab', $event)">Basecaller
+                                        Summary</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('read-histograms-tab', $event)">Read
+                                        Histograms</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('sequencing-rates-tab', $event)">Sequencing
+                                        Rates</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('pore-activity-tab', $event)">Pore
+                                        Activity</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('read-quality-tab', $event)">Read
+                                        Quality</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('coverage-detail-tab', $event)">Coverage
+                                        Detail</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('base-coverage-tab', $event)">Base
+                                        Coverage</a></li>
                                 </ul>
-
-
 
 
                                 <div class="tab-content">
@@ -104,57 +110,27 @@
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row">
-                                                    <show-chart
-                                                            chartid="reads-called"
-                                                            :mybarcode='selectedBarcode'
-                                                            :id="id"
-                                                            :minion_run="minion_run"
-                                                            title="reads called"
-                                                            ytitle="number of reads called">
-                                                    </show-chart>
+                                                    <div id="reads-called" class="col-md-6 highcharts" style="width:25%; height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
+                                                    </div>
 
-                                                    <show-chart
-                                                            chartid="yield"
-                                                            :mybarcode='selectedBarcode'
-                                                            :id="id"
-                                                            :minion_run="minion_run"
-                                                            title="yield"
-                                                            ytitle="yield">
-                                                    </show-chart>
+                                                    <div id="yield" class="col-md-6 highcharts" style="width:25%; height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
+                                                    </div>
 
-                                                    <show-chart
-                                                            chartid="average-read-length"
-                                                            :mybarcode='selectedBarcode'
-                                                            :id="id"
-                                                            :minion_run="minion_run"
-                                                            title="average read length"
-                                                            ytitle="average read length">
-                                                    </show-chart>
+                                                    <div id="average-read-length" class="col-md-6 highcharts" style="width:25%; height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
+                                                    </div>
 
-                                                    <show-chart
-                                                            chartid="maximum-read-length"
-                                                            :mybarcode='selectedBarcode'
-                                                            :id="id"
-                                                            :minion_run="minion_run"
-                                                            title="maximum read length"
-                                                            ytitle="maximum read length">
-                                                    </show-chart>
+                                                    <div id="maximum-read-length" class="col-md-6 highcharts" style="width:25%; height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
+                                                    </div>
 
-                                                    <!--<div class="col-md-12" id="boxplotlength" style="height:400px;">
-                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Box
-                                                        Plots
-                                                    </div>-->
                                                 </div>
                                                 <div class="row">
-                                                    <show-chart-spline
-                                                            chartid="average-read-lengths-overtime"
-                                                            title="average read lengths over time"
-                                                            ytitle="average read length"
-                                                            :chart_data="summary_by_minute"
-                                                            :mybarcode='selectedBarcode'
-                                                            :id="id"
-                                                            :minion_run="minion_run">
-                                                    </show-chart-spline>
+                                                    <div id="average-read-lengths-overtime" class="col-md-12 highcharts" style="width:100%; height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -171,24 +147,85 @@
                                     <!-- /.col-lg-12 -->
                                     <!-- /.tab-pane -->
 
-
-                                    <div class="tab-pane active" id="tab_1" v-show="isActiveTab('basecaller-summary-tab')">
+                                    <div class="tab-pane active" v-show="isActiveTab('basecaller-summary-tab')">
                                         <div class="panel panel-default">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title"><!-- Button trigger modal -->
-                                                    <button class="btn btn-info" data-toggle="modal"
-                                                            data-target="#modal1">
-                                                        <i class="fa fa-info-circle"></i> XXXXXX
-                                                    </button>
-                                                </h3>
+                                                <h3 class="panel-title"></h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="row"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="tab-pane active" v-show="isActiveTab('read-histograms-tab')">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"></h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="row"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="tab-pane active" v-show="isActiveTab('sequencing-rates-tab')">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"></h3>
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row">
+
                                                 </div>
                                             </div>
                                         </div>
-
                                     </div>
+
+                                    <div class="tab-pane active" v-show="isActiveTab('pore-activity-tab')">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"></h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="row"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="tab-pane active" v-show="isActiveTab('read-quality-tab')">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"></h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="row"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="tab-pane active" v-show="isActiveTab('coverage-detail-tab')">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"></h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="row"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="tab-pane active" v-show="isActiveTab('base-coverage-tab')">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"></h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="row"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
                                 <!-- /.tab-content -->
                             </div>
@@ -218,6 +255,7 @@
 
 
     <script>
+        /*
         console.log('before vue');
 
         Vue.component('minionrun-item', {
@@ -317,21 +355,9 @@
 
                                 summaries.push(point);
                             }
-                        } /*else {
-                            for (var i = 0; i < chart_data.length; i++) {
-                                var item = chart_data[i];
-                                if (item.barcode == this.mybarcode) {
-                                    //summaries.push(item);
-                                    var average_read_length = item.total_length / item.read_count;
-                                    //var sample_date = chart_data[i].sample_date;
-                                    var sample_date = time + i * 1000 * 60 * 60 * 24    ;
-                                    this.chart.series[0].addPoint([sample_date, average_read_length], true, false);
+                        }
 
-                                }
-                            }
-                        }*/
-
-                        summaries.sort(function(a, b) {
+                        summaries.sort(function (a, b) {
                             return a.x - b.x;
                         })
 
@@ -339,8 +365,9 @@
                     }
                 }
             }
-        })
-        ;
+        });
+
+
 
         Vue.component('show-chart', {
             template: '#chart',
@@ -548,7 +575,7 @@
                         }
                     }.bind(this), 1000);
                 },
-                setActiveTab: function(val, event) {
+                setActiveTab: function (val, event) {
                     var tabs = event.target.parentNode.parentNode.children;
                     for (var i = 0; i < tabs.length; i++) {
                         tabs[i].classList.remove('active');
@@ -557,12 +584,12 @@
 
                     this.selectedTab = val;
                 },
-                isActiveTab: function(val) {
+                isActiveTab: function (val) {
                     return this.selectedTab === val;
                 }
             }
         });
-
+        */
     </script>
 
 {% endblock %}
