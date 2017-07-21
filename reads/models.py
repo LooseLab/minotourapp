@@ -204,7 +204,7 @@ class MinIONRunStats(models.Model):
     minION = models.ForeignKey(MinION, related_name = 'currentrunstats')
     run_id = models.ForeignKey(MinIONRun, related_name='RunStats')
     sample_time = models.DateTimeField()
-    event_yield = models.IntegerField(default=0)
+    event_yield = models.BigIntegerField(default=0)
     asic_temp = models.FloatField(default=0)
     heat_sink_temp= models.FloatField(default=0)
     voltage_value= models.FloatField(default=0)
@@ -355,7 +355,7 @@ class FastqRead(models.Model):
 
 class RunSummary(models.Model):
     run_id = models.ForeignKey(MinIONRun,on_delete=models.CASCADE, related_name='runsummaries')
-    total_length = models.IntegerField(default=0)
+    total_length = models.BigIntegerField(default=0)
     read_count = models.IntegerField(default=0)
     type = models.ForeignKey(FastqReadType)
     max_length = models.IntegerField(default=0)
@@ -375,7 +375,7 @@ class RunSummary(models.Model):
 
 class RunSummaryBarCode(models.Model):
     run_id = models.ForeignKey(MinIONRun,on_delete=models.CASCADE, related_name='runsummariesbarcodes')
-    total_length = models.IntegerField(default=0)
+    total_length = models.BigIntegerField(default=0)
     read_count = models.IntegerField(default=0)
     type = models.ForeignKey(FastqReadType)
     barcode = models.CharField(max_length=32)
@@ -397,7 +397,7 @@ class RunSummaryBarCode(models.Model):
 class RunStatistic(models.Model):
     run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
     sample_time = models.DateTimeField()
-    total_length = models.IntegerField(default=0)
+    total_length = models.BigIntegerField(default=0)
     max_length = models.IntegerField(default=0)
     min_length = models.IntegerField(default=0)
     read_count = models.IntegerField(default=0)
@@ -418,7 +418,7 @@ class RunStatistic(models.Model):
 class RunStatisticBarcode(models.Model):
     run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
     sample_time = models.DateTimeField()
-    total_length = models.IntegerField(default=0)
+    total_length = models.BigIntegerField(default=0)
     read_count = models.IntegerField(default=0)
     max_length = models.IntegerField(default=0)
     min_length = models.IntegerField(default=0)

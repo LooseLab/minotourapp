@@ -37,6 +37,7 @@ from reads.serializers import MinIONmessagesSerializer
 from reads.serializers import RunSummarySerializer
 
 
+
 @api_view(['GET'])
 def read_type_list(request):
     """

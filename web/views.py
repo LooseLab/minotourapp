@@ -1,9 +1,10 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from reads.models import MinIONRun
-
+from minotourapp.tasks import contact_user
 
 def index(request):
+    contact_user.delay('test')
     return render(request, 'web/index.html')
 
 

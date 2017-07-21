@@ -372,8 +372,9 @@
 
                         var series = {
                             'name': summaries[i].typename,
-                            'data': [value]
-                        }
+                            'data': [value],
+                            'animation': false,
+                            }
 
                         this.chart.addSeries(series);
                     }

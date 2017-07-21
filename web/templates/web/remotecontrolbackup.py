@@ -12,13 +12,11 @@
             </ol>
         </section>
         <!-- Main content -->
-
         <section class="content">
             <div class="box">
                 <div class="box-header">
                     <h3 class="box-title">minIONs Available</h3>
-                </div>
-
+                </div><!-- /.box-header -->
                 <div class="box-body">
                     <div class="row">
                         <div class="col-lg-12">
@@ -29,98 +27,96 @@
                                 folder.</p>
                             <p>Note that data can take 10-20 seconds to be populated at busy times.</p>
                             <p>The pore history chart is only updated every 5 minutes to reduce page loading times.</p>
-                            <div id="app-new">
+                            <div id="app">
                                 {% verbatim %}
                                 <!-- Nav tabs -->
                                 <ul class="nav nav-tabs" role="tablist">
-                                    <li v-for="(keydata,minion) in minions " role="presentation"><a v-bind:href="'#' + minions[minion].name" role="tab" data-toggle="tab">
-                                        <div v-if='minions[minion].status=="processing"'>
-                                            Sequencing:{{minions[minion].livedata.machine_id.result}}/{{minions[minion].name}}
+                                    <!--  <li v-for="(key,minion) in minIONdict "><a v-bind:href="'#' + minion" role = "tab" data-toggle="tab">{{ minion }}</a></li>-->
+                                    <li v-for="(key,minion) in minions " role="presentation"><a
+                                            v-bind:href="'#' + minion.name" role="tab" data-toggle="tab">
+                                        <div v-if='minion.status=="processing"'>
+                                            Sequencing:{{minion.livedata.machine_id.result}}/{{minion.name}}
                                         </div>
                                         <div v-else>
-                                            <div v-if='minions[minion].livedata.machine_id.result!="unknown"'>
-                                                On:{{minions[minion].livedata.machine_id.result}}/{{minions[minion].name}}
+                                            <div v-if='minion.livedata.machine_id.result!="unknown"'>
+                                                On:{{minion.livedata.machine_id.result}}/{{minion.name}}
                                             </div>
-                                            <div v-else>Off:{{minions[minion].name}}</div>
+                                            <div v-else>Off:{{minion.name}}</div>
                                         </div>
                                     </a></li>
                                 </ul>
                                 <div class="tab-content">
-                                    <div v-for="(keydata,minion) in minions" role="tabpanel" class="tab-pane" :id="minions[minion].name">
-                                        <div v-if='minions[minion].state=="active"'>
-                                            <div v-if="minions[minion].livedata.current_script.result">
-                                                <div v-if="minions[minion].livedata.current_script.result.length>0">
-                                                minION has a script currently running
-                                                    Present Graphs Here
-                                                    <div class="panel panel-info">
+                                    <div v-for="(key,minion) in minions" role="tabpanel" class="tab-pane" :id="minion.name">
+                                        <div v-if='minion.state=="active"'>
+                                            <div class="panel panel-info">
                                                 <div class="panel-heading">
                                                     <h3 class="panel-title">minKNOW Details -
-                                                        {{minions[minion].livedata.dataset.result}}</h3>
+                                                        {{minion.livedata.dataset.result}}</h3>
                                                 </div>
                                                 <div class="panel-body">
-                                                    <div v-if="minions[minion].livedata.current_script.result.length>0">
+                                                    <div v-if="minion.livedata.current_script.result.length>0">
                                                         <div class="row">
                                                             <div class="col-md-5">
                                                                 <div class="row">
                                                                     <div class="col-md-8"><p><b></i>Experiment
-                                                                        Started</i>: {{minions[minion].start_time}}</b></p></div>
+                                                                        Started</i>: {{minion.start_time}}</b></p></div>
                                                                     <div class="col-md-4"><p><i>(Last Update</i>: {{
-                                                                        minions[minion].last_update }}</p></div>
+                                                                        minion.last_update }}</p></div>
                                                                 </div>
                                                                 <div class="row">
                                                                     <div class="col-md-3"><p><i>MinKNOW version</i>:
-                                                                        {{minions[minion].minKNOW_version}}</p></div>
+                                                                        {{minion.minKNOW_version}}</p></div>
                                                                     <div class="col-md-3"><p><i>Flow Cell ID</i>:
-                                                                        {{minions[minion].flow_cell_id}}</p></div>
+                                                                        {{minion.flow_cell_id}}</p></div>
                                                                     <div class="col-md-3"><p><i>minION ID</i>:
-                                                                        {{minions[minion].name}}</p></div>
+                                                                        {{minion.name}}</p></div>
                                                                     <div class="col-md-3"><p><i>ASIC ID</i>:
-                                                                        {{minions[minion].asic_id}}</p></div>
+                                                                        {{minion.asic_id}}</p></div>
                                                                 </div>
                                                                 <div class="row">
                                                                     <div class="col-md-8"><p><i>Run Name</i>:
-                                                                        {{minions[minion].run_name}}</p></div>
+                                                                        {{minion.run_name}}</p></div>
                                                                     <div class="col-md-4"><p><i>Status</i>:
-                                                                        {{minions[minion].status}}</p></div>
+                                                                        {{minion.status}}</p></div>
                                                                 </div>
                                                                 <div class="row">
                                                                     <div class="col-md-3"><p><i>Yield</i>:
-                                                                        {{minions[minion].livedata.event_yield}}</p></div>
-                                                                    <!--<div class="col-md-3"><p><i>Channels with Reads</i>: {{minions[minion].statistics.channels_with_read_event_count}}</p></div>-->
-                                                                    <!--<div class="col-md-3"><p><i>Read Event Count</i>: {{minions[minion].statistics.read_event_count}}</p></div>-->
+                                                                        {{minion.livedata.event_yield}}</p></div>
+                                                                    <!--<div class="col-md-3"><p><i>Channels with Reads</i>: {{minion.statistics.channels_with_read_event_count}}</p></div>-->
+                                                                    <!--<div class="col-md-3"><p><i>Read Event Count</i>: {{minion.statistics.read_event_count}}</p></div>-->
                                                                     <div class="col-md-3"><p><i>Completed Read Count</i>:
-                                                                        {{minions[minion].read_count}}</p></div>
+                                                                        {{minion.read_count}}</p></div>
                                                                 </div>
                                                                 <div class="row">
-                                                                    <div class="col-md-3" :id="minions[minion].name">
-                                                                        <div is="container-avg" :title="minions[minion].name"
-                                                                             :keydata="keydata"
-                                                                             :datain="minions[minion].livedata.event_yield"
-                                                                             :datain2="minions[minion].read_count">Graph should appear here.</div>
+                                                                    <div class="col-md-3" :id="minion.name">
+                                                                        <div is="container-avg" :title="minion.name"
+                                                                             :key="key"
+                                                                             :datain="minion.livedata.event_yield"
+                                                                             :datain2="minion.read_count"></div>
                                                                     </div>
-                                                                    <div class="col-md-3" :id="minions[minion].name">
-                                                                        <div is="container-strand" :title="minions[minion].name"
-                                                                             :keydata="keydata"
-                                                                             :datain="minions[minion].currstrand"></div>
+                                                                    <div class="col-md-3" :id="minion.name">
+                                                                        <div is="container-strand" :title="minion.name"
+                                                                             :key="key"
+                                                                             :datain="minion.currstrand"></div>
                                                                     </div>
-                                                                    <div class="col-md-3" :id="minions[minion].name">
-                                                                        <div is="container-perc" :title="minions[minion].name"
-                                                                             :keydata="keydata"
-                                                                             :datain="minions[minion].currpercentage"></div>
+                                                                    <div class="col-md-3" :id="minion.name">
+                                                                        <div is="container-perc" :title="minion.name"
+                                                                             :key="key"
+                                                                             :datain="minion.currpercentage"></div>
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-4">
-                                                                <div class="col-md-12" :id="minions[minion].name">
-                                                                    <div is="chartporehist" :title="minions[minion].name"
-                                                                         :keydata="keydata" :datain="minions[minion].colour_stats"
-                                                                         :datain2="minions[minion].pore_history"></div>
+                                                                <div class="col-md-12" :id="minion.name">
+                                                                    <div is="chartporehist" :title="minion.name"
+                                                                         :key="key" :datain="minion.colour_stats"
+                                                                         :datain2="minion.pore_history"></div>
                                                                 </div>
                                                             </div>
                                                             <div class="col-md-3">
                                                                 <h5><b>Messages from MinKNOW:</b></h5>
                                                                 <div class="pre-scrollable">
-                                                                    <div v-for="message in minions[minion].messages">
+                                                                    <div v-for="message in minion.messages | reverse">
                                                                         <!--<div class="alert alert-{{message.severity}} alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>{{message.message}}<br>{{message.timestamp}}</div>-->
                                                                         <span v-bind:class="'label label-' + message.severity">{{message.severity}}</span>
                                                                         {{message.message}}<br><i>{{message.timestamp}}</i>
@@ -136,7 +132,7 @@
                                                                     and 48 hours will update dynamically throuhgout the
                                                                     run.
                                                             </div>
-                                                        </div
+                                                        </div>
                                                         <div class="row">
                                                             <div class="col-md-2">
                                                                 <p> Set sequencing speed: </p>
@@ -149,98 +145,158 @@
                                                                 <p><span>Selected: {{ seqspeed }}</span></p>
                                                             </div>
                                                             <div is="predictedvals" :seqspeed="seqspeed"
-                                                                 :currentyield="minions[minion].livedata.event_yield"
-                                                                 :compreads="minions[minion].read_count"
-                                                                 :calcurrenttime="minions[minion].start_time"
-                                                                 :calcstarttime="minions[minion].start_time"></div>
+                                                                 :currentyield="minion.livedata.event_yield"
+                                                                 :compreads="minion.read_count"
+                                                                 :calcurrenttime="minion.start_time"
+                                                                 :calcstarttime="minion.start_time"></div>
                                                         </div>
                                                         <div class="row">
                                                         </div>
                                                         <hr>
                                                         <div class="row">
-                                                            <div class="col-lg-6" :id="minions[minion].name">
-                                                                <div is="chartyield" :title="minions[minion].name" :keydata="keydata"
-                                                                     :datain2="minions[minion].yield_history"></div>
+                                                            <div class="col-lg-6" :id="minion.name">
+                                                                <div is="chartyield" :title="minion.name" :key="key"
+                                                                     :datain2="minion.yield_history"></div>
                                                             </div>
-                                                            <div class="col-lg-6" :id="minions[minion].name">
-                                                                <div is="porehistory" :title="minions[minion].name" :keydata="keydata"
-                                                                     :datain2="minions[minion].strand"
-                                                                     :datain3="minions[minion].good_single"></div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="row">
-                                                            <div class="col-lg-12" :id="minions[minion].name">
-                                                                <div is="projchartyield" :start_time="minions[minion].start_time"
-                                                                     :seqspeed="seqspeed" :title="minions[minion].name"
-                                                                     :keydata="keydata" :datain="minions[minion].livedata.event_yield"
-                                                                     :datain2="minions[minion].yield_history"></div>
+                                                            <div class="col-lg-6" :id="minion.name">
+                                                                <div is="porehistory" :title="minion.name" :key="key"
+                                                                     :datain2="minion.strand"
+                                                                     :datain3="minion.good_single"></div>
                                                             </div>
                                                         </div>
                                                         <div class="row">
-                                                            <div class="col-lg-6" :id="minions[minion].name">
-                                                                <div is="perchistory" :title="minions[minion].name" :keydata="keydata"
-                                                                     :datain2="minions[minion].percentage"></div>
-                                                            </div>
-                                                            <div class="col-lg-6" :id="minions[minion].name">
-                                                                <div is="chartporehistdetails" :title="minions[minion].name"
-                                                                     :keydata="keydata" :datain="minions[minion].colour_stats"
-                                                                     :datain2="minions[minion].pore_history"></div>
+                                                            <div class="col-lg-12" :id="minion.name">
+                                                                <div is="projchartyield" :start_time="minion.start_time"
+                                                                     :seqspeed="seqspeed" :title="minion.name"
+                                                                     :key="key" :datain="minion.livedata.event_yield"
+                                                                     :datain2="minion.yield_history"></div>
                                                             </div>
                                                         </div>
                                                         <div class="row">
-                                                            <div class="col-lg-12" :id="minions[minion].name">
-                                                                <div is="chartreadhist" :title="minions[minion].name" :keydata="keydata"
-                                                                     :datain="minions[minion].histogram_values"
-                                                                     :datain2="minions[minion].histogram_bin_width"
-                                                                     :totalyield="minions[minion].livedata.event_yield"
+                                                            <div class="col-lg-6" :id="minion.name">
+                                                                <div is="perchistory" :title="minion.name" :key="key"
+                                                                     :datain2="minion.percentage"></div>
+                                                            </div>
+                                                            <div class="col-lg-6" :id="minion.name">
+                                                                <div is="chartporehistdetails" :title="minion.name"
+                                                                     :key="key" :datain="minion.colour_stats"
+                                                                     :datain2="minion.pore_history"></div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-lg-12" :id="minion.name">
+                                                                <div is="chartreadhist" :title="minion.name" :key="key"
+                                                                     :datain="minion.histogram_values"
+                                                                     :datain2="minion.histogram_bin_width"
+                                                                     :totalyield="minion.livedata.event_yield"
                                                                      :seqspeed="seqspeed"
-                                                                     :readcount="minions[minion].read_count"></div>
+                                                                     :readcount="minion.read_count"></div>
                                                             </div>
                                                         </div>
                                                         <div class="row">
-                                                            <div class="col-lg-6" :id="minions[minion].name">
-                                                                <div is="temphistory" :title="minions[minion].name" :keydata="keydata"
-                                                                     :datain2="minions[minion].asic_temp"
-                                                                     :datain3="minions[minion].heatsinktemp"></div>
+                                                            <div class="col-lg-6" :id="minion.name">
+                                                                <div is="temphistory" :title="minion.name" :key="key"
+                                                                     :datain2="minion.asic_temp"
+                                                                     :datain3="minion.heatsinktemp"></div>
                                                             </div>
-                                                            <div class="col-lg-6" :id="minions[minion].name">
-                                                                <div is="volthistory" :title="minions[minion].name" :keydata="keydata"
-                                                                     :datain2="minions[minion].voltage"></div>
+                                                            <div class="col-lg-6" :id="minion.name">
+                                                                <div is="volthistory" :title="minion.name" :key="key"
+                                                                     :datain2="minion.voltage"></div>
                                                             </div>
                                                         </div>
                                                         <div class="row">
-                                                            <div class="col-lg-6" :id="minions[minion].name">
-                                                                <div is="porecurrents" :title="minions[minion].name" :keydata="keydata"
-                                                                     :datain="minions[minion].instrand_history"
-                                                                     :datain2="minions[minion].openpore_history"></div>
+                                                            <div class="col-lg-6" :id="minion.name">
+                                                                <div is="porecurrents" :title="minion.name" :key="key"
+                                                                     :datain="minion.instrand_history"
+                                                                     :datain2="minion.openpore_history"></div>
                                                             </div>
-                                                            <div class="col-lg-6" :id="minions[minion].name">
-                                                                <div is="meanratio" :title="minions[minion].name" :keydata="keydata"
-                                                                     :datain="minions[minion].meanratio_history"></div>
+                                                            <div class="col-lg-6" :id="minion.name">
+                                                                <div is="meanratio" :title="minion.name" :key="key"
+                                                                     :datain="minion.meanratio_history"></div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                    <div v-else>
+                                                        <div class="row">
+                                                            <div class="col-md-7">
+                                                                <p>This minION is not currently running.</p>
+                                                                <button id='inactivateminion'
+                                                                        class='btn btn-danger btn-sm'
+                                                                        data-toggle='modal'
+                                                                        v-bind:data-target="'#' + minion.name + 'offminionmodal'">
+                                                                    <i class='fa fa-stop'></i> Switch Off minION
+                                                                </button>
+                                                            </div>
+                                                            <div class="col-md-5">
+                                                                <h5><b>Messages from MinKNOW:</b></h5>
+                                                                <div class="pre-scrollable">
+                                                                    <!--<div v-for="message in minion.messages | reverse" >-->
+                                                                    <div v-for="message in minion.messages">
+                                                                        <!--<div class="alert alert-{{message.severity}} alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>{{message.message}}<br>{{message.timestamp}}</div>-->
+                                                                        <!--<span v-bind:class="'label label-' + message.severity">{{message.severity}}</span>  {{message.message}}<br><i>{{message.timestamp | date "%c"}}</i>-->
+                                                                        <span v-bind:class="'label label-' + message.severity">{{message.severity}}</span>
+                                                                        {{message.message}}<br><i>{{message.timestamp}}</i>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <!-- Modal -->
+                                                        <div class='modal fade'
+                                                             v-bind:id="minion.name + 'offminionmodal'" tabindex='-1'
+                                                             role='dialog' aria-labelledby='myModalLabel'
+                                                             aria-hidden='true'>
+                                                            <div class='modal-dialog'>
+                                                                <div class='modal-content'>
+                                                                    <div class='modal-header'>
+                                                                        <button type='button' class='close'
+                                                                                data-dismiss='modal' aria-hidden='true'>
+                                                                            &times;
+                                                                        </button>
+                                                                        <h4 class='modal-title' id='myModalLabel'>Stop
+                                                                            your minION</h4>
+                                                                    </div>
+                                                                    <div class='modal-body'>
+                                                                        <div v-bind:id="minion.name + 'offminioninfo'"
+                                                                        <p>This action will switch the minION to an
+                                                                            inactive state. It should be possible to
+                                                                            reactivate the minION remotely but software
+                                                                            crashes on the minION controlling device may
+                                                                            cause problems. You should only inactivate
+                                                                            your minION device remotely if you are
+                                                                            certain you wish to do so and <strong> at
+                                                                                your own risk</strong>.</p>
 
-
-                                                </div>
-                                            </div>
-                                            <div v-else>
-                                                <div class="row">
-                                                    <div class="col-md-7">
-                                                        <p>This minION is not currently running.</p>
+                                                                        <p>If you are sure you wish to do this, click
+                                                                            'Inactivate minION' below. Otherwise close
+                                                                            this window.</p>
+                                                                    </div>
+                                                                    <div class='modal-footer'>
+                                                                        <button type='button' class='btn btn-default'
+                                                                                data-dismiss='modal'>Close
+                                                                        </button>
+                                                                        <button v-on:click="inactivateminion"
+                                                                                :id='minion.name' type='button'
+                                                                                class='btn btn-danger'
+                                                                                data-dismiss='modal'>Switch Off minION
+                                                                        </button>
+                                                                    </div>
+                                                                </div><!-- /.modal-content -->
+                                                            </div><!-- /.modal-dialog -->
+                                                        </div><!-- /.modal -->
                                                     </div>
                                                 </div>
-                                            </div>
 
-                                                <div class="col-md-4">
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-4">
                                             <div class="panel panel-warning">
                                                 <div class="panel-heading">
                                                     <h3 class="panel-title">minKNOW Control options</h3>
                                                 </div>
                                                 <div class="panel-body">
                                                     <h5>To test if you have a connection to minKNOW:</h5>
-                                                    <button v-on:click="testmessage" :id='minions[minion].url' type='button'
+                                                    <button v-on:click="testmessage" :id='minion.url' type='button'
                                                             class='btn btn-info btn-sm'><i class='fa fa-magic'></i> Test
                                                         Communication
                                                     </button>
@@ -253,11 +309,11 @@
                                                     <!-- Button trigger modal -->
                                                     <button id='custommessage' class='btn btn-info btn-sm'
                                                             data-toggle='modal'
-                                                            v-bind:data-target="'#' + minions[minion].name + 'custommessage'">
+                                                            v-bind:data-target="'#' + minion.name + 'custommessage'">
                                                         <i class='fa fa-magic'></i> Send Message
                                                     </button>
                                                     <!-- Modal -->
-                                                    <div class='modal fade' v-bind:id="minions[minion].name+'custommessage'"
+                                                    <div class='modal fade' v-bind:id="minion.name+'custommessage'"
                                                          tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
                                                          aria-hidden='true'>
                                                         <div class='modal-dialog'>
@@ -271,13 +327,13 @@
                                                                         custom message to MinKNOW</h4>
                                                                 </div>
                                                                 <div class='modal-body'>
-                                                                    <div v-bind:id="minions[minion].name + 'custommessage'">
+                                                                    <div v-bind:id="minion.name + 'custommessage'">
                                                                         <p>You can log a custom message into minKNOW to
                                                                             document things such as addition of library
                                                                             or other event. This will then be written
                                                                             into the log files for this run.</p>
                                                                         <input type="text"
-                                                                               v-bind:id="minions[minion].name+'custommessagefield'"
+                                                                               v-bind:id="minion.name+'custommessagefield'"
                                                                                class="form-control" placeholder="">
                                                                     </div>
                                                                     <div class='modal-footer'>
@@ -285,7 +341,7 @@
                                                                                 data-dismiss='modal'>Close
                                                                         </button>
                                                                         <button v-on:click="custommessage"
-                                                                                :id='minions[minion].url' :name='minions[minion].name'
+                                                                                :id='minion.url' :name='minion.name'
                                                                                 type='button' class='btn btn-danger'
                                                                                 data-dismiss='modal'>Send Message
                                                                         </button>
@@ -302,11 +358,11 @@
                                                     <!-- Button trigger modal -->
                                                     <button id='renamerun' class='btn btn-info btn-sm'
                                                             data-toggle='modal'
-                                                            v-bind:data-target="'#' + minions[minion].name + 'renamemodal'">
+                                                            v-bind:data-target="'#' + minion.name + 'renamemodal'">
                                                         <i class='fa fa-magic'></i> Rename Run
                                                     </button>
                                                     <!-- Modal -->
-                                                    <div class='modal fade' v-bind:id="minions[minion].name+'renamemodal'"
+                                                    <div class='modal fade' v-bind:id="minion.name+'renamemodal'"
                                                          tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
                                                          aria-hidden='true'>
                                                         <div class='modal-dialog'>
@@ -320,13 +376,13 @@
                                                                         Your Run</h4>
                                                                 </div>
                                                                 <div class='modal-body'>
-                                                                    <div v-bind:id="minions[minion].url+'renameinfo'">
+                                                                    <div v-bind:id="minion.url+'renameinfo'">
                                                                         <p>You can rename a run if you wish to do so.
                                                                             Note there is no need to do this unless you
                                                                             wish to change the sample ID for some
                                                                             reason.</p>
                                                                         <input type="text"
-                                                                               v-bind:id="minions[minion].name+'newname'"
+                                                                               v-bind:id="minion.name+'newname'"
                                                                                class="form-control"
                                                                                placeholder="New Run Name">
                                                                         <p>If you are sure you wish to do this enter
@@ -339,8 +395,8 @@
                                                                         <button type='button' class='btn btn-default'
                                                                                 data-dismiss='modal'>Close
                                                                         </button>
-                                                                        <button v-on:click="renamenow" :id='minions[minion].url'
-                                                                                :name='minions[minion].name' type='button'
+                                                                        <button v-on:click="renamenow" :id='minion.url'
+                                                                                :name='minion.name' type='button'
                                                                                 class='btn btn-danger'
                                                                                 data-dismiss='modal'>Rename Run
                                                                         </button>
@@ -355,11 +411,11 @@
                                                     <!-- Button trigger modal -->
                                                     <button id='renameflowcell' class='btn btn-info btn-sm'
                                                             data-toggle='modal'
-                                                            v-bind:data-target="'#' + minions[minion].name + 'renameflowcell'">
+                                                            v-bind:data-target="'#' + minion.name + 'renameflowcell'">
                                                         <i class='fa fa-magic'></i> Rename Flowcell
                                                     </button>
                                                     <!-- Modal -->
-                                                    <div class='modal fade' v-bind:id="minions[minion].name+'renameflowcell'"
+                                                    <div class='modal fade' v-bind:id="minion.name+'renameflowcell'"
                                                          tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
                                                          aria-hidden='true'>
                                                         <div class='modal-dialog'>
@@ -373,13 +429,13 @@
                                                                         Your Flowcell</h4>
                                                                 </div>
                                                                 <div class='modal-body'>
-                                                                    <div v-bind:id="minions[minion].name+'renameflowcellinfo'">
+                                                                    <div v-bind:id="minion.name+'renameflowcellinfo'">
                                                                         <p>You can rename a flowcell if you wish to do
                                                                             so. Note there is no need to do this unless
                                                                             you wish to change the Flowcell ID for some
                                                                             reason.</p>
                                                                         <input type="text"
-                                                                               v-bind:id="minions[minion].name+'newflowcellname'"
+                                                                               v-bind:id="minion.name+'newflowcellname'"
                                                                                class="form-control"
                                                                                placeholder="New Flowcell ID">
                                                                         <p>If you are sure you wish to do this enter
@@ -393,7 +449,7 @@
                                                                                 data-dismiss='modal'>Close
                                                                         </button>
                                                                         <button v-on:click="renameflowcellnow"
-                                                                                :id='minions[minion].url' :name='minions[minion].name'
+                                                                                :id='minion.url' :name='minion.name'
                                                                                 type='button' class='btn btn-danger'
                                                                                 data-dismiss='modal'>Rename Flowcell
                                                                         </button>
@@ -411,12 +467,12 @@
                                                     <!-- Button trigger modal -->
                                                     <button id='stopminion' class='btn btn-danger btn-sm'
                                                             data-toggle='modal'
-                                                            v-bind:data-target="'#' + minions[minion].name + 'stopminionmodal'">
+                                                            v-bind:data-target="'#' + minion.name + 'stopminionmodal'">
                                                         <i class='fa fa-stop'></i> Stop minION
                                                     </button>
 
                                                     <!-- Modal -->
-                                                    <div class='modal fade' v-bind:id="minions[minion].name+'stopminionmodal'"
+                                                    <div class='modal fade' v-bind:id="minion.name+'stopminionmodal'"
                                                          tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
                                                          aria-hidden='true'>
                                                         <div class='modal-dialog'>
@@ -430,7 +486,7 @@
                                                                         minION</h4>
                                                                 </div>
                                                                 <div class='modal-body'>
-                                                                    <div v-bind:id="minions[minion].name+'stopminioninfo'">
+                                                                    <div v-bind:id="minion.name+'stopminioninfo'">
                                                                         <p>This will attempt to stop your minION
                                                                             sequencer remotely. It should be possible to
                                                                             restart sequencing remotely but software
@@ -448,7 +504,7 @@
                                                                         <button type='button' class='btn btn-default'
                                                                                 data-dismiss='modal'>Close
                                                                         </button>
-                                                                        <button v-on:click="stopminion" :id='minions[minion].url'
+                                                                        <button v-on:click="stopminion" :id='minion.url'
                                                                                 type='button' class='btn btn-danger'
                                                                                 data-dismiss='modal'>Stop minION
                                                                         </button>
@@ -463,12 +519,12 @@
                                                     <!-- Button trigger modal -->
                                                     <button id='startminion' class='btn btn-success btn-sm'
                                                             data-toggle='modal'
-                                                            v-bind:data-target="'#' + minions[minion].name + 'startminionmodal'">
+                                                            v-bind:data-target="'#' + minion.name + 'startminionmodal'">
                                                         <i class='fa fa-play'></i> Start minION
                                                     </button>
 
                                                     <!-- Modal -->
-                                                    <div class='modal fade' v-bind:id="minions[minion].name+'startminionmodal'"
+                                                    <div class='modal fade' v-bind:id="minion.name+'startminionmodal'"
                                                          tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
                                                          aria-hidden='true'>
                                                         <div class='modal-dialog'>
@@ -482,7 +538,7 @@
                                                                         minION</h4>
                                                                 </div>
                                                                 <div class='modal-body'>
-                                                                    <div v-bind:id="minions[minion].name+'startminioninfo'">
+                                                                    <div v-bind:id="minion.name+'startminioninfo'">
                                                                         <p>This will attempt to restart your minION
                                                                             sequencer remotely.</p>
 
@@ -490,7 +546,7 @@
                                                                             available run script and click 'Start
                                                                             minION' below. Otherwise close this
                                                                             window.</p>
-                                                                        <div v-for="script in minions[minion].scripts"
+                                                                        <div v-for="script in minion.scripts"
                                                                              class='radio'>
                                                                             <label>
                                                                                 <input type='radio' name='scriptRadios'
@@ -504,7 +560,7 @@
                                                                                 data-dismiss='modal'>Close
                                                                         </button>
                                                                         <button v-on:click="startminion"
-                                                                                :id='minions[minion].url' type='button'
+                                                                                :id='minion.url' type='button'
                                                                                 class='btn btn-success'
                                                                                 data-dismiss='modal'>Start minION
                                                                         </button>
@@ -515,19 +571,22 @@
                                                     </div>
                                                     <br><br>
                                                     <button class="btn btn-primary" type="button" data-toggle="collapse"
-                                                            v-bind:data-target="'#collapseExample' + minions[minion].name"
+                                                            v-bind:data-target="'#collapseExample' + minion.name"
                                                             aria-expanded="false" aria-controls="collapseExample">
                                                         Available Scripts:
                                                     </button>
-                                                    <div class="collapse" v-bind:id="'collapseExample' + minions[minion].name">
+                                                    <div class="collapse" v-bind:id="'collapseExample' + minion.name">
                                                         <div class="well">
-                                                            <div v-for="script in minions[minion].scripts">{{script.name}}</div>
+                                                            <div v-for="script in minion.scripts">{{script.name}}</div>
                                                         </div>
                                                     </div>
+
+
                                                 </div>
                                             </div>
-                                                </div>
-                                                    <div class="col-md-4">
+                                        </div>
+
+                                        <div class="col-md-4">
                                             <div class='panel panel-info'>
                                                 <div class='panel-heading'>
                                                     <h3 class='panel-title'>minKNOW real time data</h3>
@@ -543,61 +602,119 @@
                                                             </tr>
                                                             <tr>
                                                                 <td>minKNOW computer name</td>
-                                                                <td>{{minions[minion].livedata.machine_id.result}}</td>
+                                                                <td>{{minion.livedata.machine_id.result}}</td>
                                                             </tr>
                                                             <tr>
                                                                 <td>minKNOW Status</td>
-                                                                <td>{{minions[minion].status}}</td>
+                                                                <td>{{minion.status}}</td>
                                                             </tr>
                                                             <tr>
                                                                 <td>Current Script</td>
-                                                                <td>{{minions[minion].livedata.current_script.result}}</td>
+                                                                <td>{{minion.livedata.current_script.result}}</td>
                                                             </tr>
                                                             <tr>
                                                                 <td>Sample Name</td>
-                                                                <td>{{minions[minion].sample_id}}</td>
+                                                                <td>{{minion.sample_id}}</td>
                                                             </tr>
                                                             <tr>
                                                                 <td>Flow Cell ID</td>
-                                                                <td>{{minions[minion].flow_cell_id}}</td>
+                                                                <td>{{minion.flow_cell_id}}</td>
                                                             </tr>
                                                             <tr>
                                                                 <td>Run Name</td>
-                                                                <td>{{minions[minion].run_name}}</td>
+                                                                <td>{{minion.run_name}}</td>
                                                             </tr>
                                                             <tr>
                                                                 <td>Voltage Offset</td>
-                                                                <td>{{minions[minion].livedata.voltage_value}} mV</td>
+                                                                <td>{{minion.livedata.voltage_value}} mV</td>
                                                             </tr>
                                                             <tr>
                                                                 <td>Yield</td>
-                                                                <td>{{minions[minion].livedata.event_yield}}</td>
+                                                                <td>{{minion.livedata.event_yield}}</td>
                                                             </tr>
                                                         </table>
                                                     </div>
                                                 </div>
 
                                             </div>
-                                                    </div>
-                                            <div class="col-lg-4" :id="minions[minion].name">
-                                            <div is="diskusage" :title="minions[minion].livedata.machine_id.result" :keydata="keydata"
-                                                 :datain="minions[minion].livedata.disk_space.result"></div>
+
+
                                         </div>
+
+                                        <div class="col-lg-4" :id="minion.name">
+                                            <div is="diskusage" :title="minion.livedata.machine_id.result" :key="key"
+                                                 :datain="minion.livedata.disk_space.result"></div>
+                                        </div>
+
+
+                                        <div class="col-md-12">
+                                            <br>
 
                                         </div>
                                     </div>
+
+                                   <!-- <div v-else>-->
+                                    <div>
+                                        <h5>You are interacting with minION: {{minion.name}}</h5>
+                                        It is currently <i>inactive</i>.
+
+                                        <!-- Indicates a dangerous or potentially negative action -->
+                                        <!-- Button trigger modal -->
+                                        <button id='initminion' class='btn btn-warning btn-sm' data-toggle='modal'
+                                                v-bind:data-target="'#' + minion.name + 'initminionmodal'">
+                                            <i class='fa fa-stop'></i> Initialise minION
+                                        </button>
+
+                                        <!-- Modal -->
+                                        <div class='modal fade' v-bind:id="minion.name+'initminionmodal'" tabindex='-1'
+                                             role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>
+                                            <div class='modal-dialog'>
+                                                <div class='modal-content'>
+                                                    <div class='modal-header'>
+                                                        <button type='button' class='close' data-dismiss='modal'
+                                                                aria-hidden='true'>&times;
+                                                        </button>
+                                                        <h4 class='modal-title' id='myModalLabel'>Start your minION</h4>
+                                                    </div>
+                                                    <div class='modal-body'>
+                                                        <div v-bind:id="minion.name+'initminioninfo'">
+                                                            <p>This action will switch the minION to the active
+                                                                state.</p>
+
+                                                            <p>If you are sure you wish to do this, click 'Initialise
+                                                                minION' below. Otherwise close this window.</p>
+                                                        </div>
+                                                        <div class='modal-footer'>
+                                                            <button type='button' class='btn btn-default'
+                                                                    data-dismiss='modal'>Close
+                                                            </button>
+                                                            <button v-on:click="initminion" :id='minion.name'
+                                                                    type='button' class='btn btn-warning'
+                                                                    data-dismiss='modal'>Initialise minION
+                                                            </button>
+                                                        </div>
+                                                    </div><!-- /.modal-content -->
+                                                </div><!-- /.modal-dialog -->
+                                            </div><!-- /.modal -->
+                                        </div>
+
+
                                     </div>
                                 </div>
 
-                                {% endverbatim %}
                             </div>
+
+
+                            <!-- Tab panes-->
+                            {% endverbatim %}
+
                         </div>
                     </div>
                 </div>
             </div>
-        </section>
 
 
+        </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 
     <script>
@@ -821,7 +938,6 @@
 
             console.log(master_minion_list);
             function start() {
-                console.log('running start');
                 $.get("{% url 'activeminION_list' %}", function (data) {
                     //$( ".result" ).html( data
                     var data2 = [];
@@ -850,9 +966,6 @@
                                     event_yield: data[i].event_yield,
                                     machine_id: {
                                         result: data[i].computer
-                                    },
-                                    dataset:{
-                                        result: ''
                                     },
                                     current_script: {
                                         result: data[i].currentscript
@@ -961,7 +1074,7 @@
                                     for (j in data) {
                                         if (minionsthings.minions[obj].name === data[j].minION_name) {
                                             //console.log("updating historgram");
-                                            minionsthings.minions[obj].histogram_bin_width = data3.slice(-1)[0].histogram_bin_width;
+                                            minionsthings.minions[obj].histogram_bin_width = data3.slice(-1)[0].minKNOW_histogram_bin_width;
                                             //console.log(minionsthings.minions[obj].histogram_values);
                                             minionsthings.minions[obj].histogram_values = data3.slice(-1)[0].minKNOW_histogram_values;
                                             //console.log(minionsthings.minions[obj].histogram_values);
@@ -1021,14 +1134,14 @@
                             })
                         }
                     }
-                    //console.log(minionsthings);
+                    console.log(minionsthings);
                 });
 
 
             }
 
             start();
-            setInterval(start, 20000);
+            setInterval(start, 10000);
 
 
             {% verbatim %}
@@ -1049,8 +1162,8 @@
             })
 
             Vue.component('projchartyield', {
-                template: '<div v-bind:id="\'projcontaineryield\'+title" style="margin: 0 auto"></div>',
-                props: ['title', 'keydata', 'datain', 'datain2', 'seqspeed', 'start_time'],
+                template: '<div id="projcontaineryield{{title}}" style="margin: 0 auto"</div>',
+                props: ['title', 'key', 'datain', 'datain2', 'seqspeed', 'start_time'],
                 data: function () {
                     //var d = new Date();
                     //var t = d.getTime();
@@ -1119,7 +1232,7 @@
                 ,
 
 
-                mounted: function () {
+                ready: function () {
                     this.$nextTick(function () {
                         this.chart = new Highcharts.Chart(this.opts);
                         //this.chart = new Highcharts.stockChart(this.opts);
@@ -1140,14 +1253,14 @@
                             this.chart.series[1].setData(converttobases(newarray, this.seqspeed));
                             this.chart.series[2].setData(converttobases(newarray1, this.seqspeed));
                             this.chart.series[3].setData(converttobases(newarray2, this.seqspeed));
-                        }.bind(this), 10000);
+                        }.bind(this), 15000);
                     });
                 }
             })
 
             Vue.component('chartporehistdetails', {
-                template: '<div v-bind:id="\'container-porehist\'+title" style="margin: 0 auto"></div>',
-                props: ['title', 'keydata', 'datain', 'datain2'],
+                template: '<div id="container-porehist{{title}}" style="margin: 0 auto"</div>',
+                props: ['title', 'key', 'datain', 'datain2'],
                 data: function () {
                     return {
                         opts: {
@@ -1206,7 +1319,10 @@
                 }
                 ,
 
-                mounted: function () {
+
+                created: function () {
+                },
+                ready: function () {
                     //var returndata=parsechanstats(this.datain,this.datain2);
                     this.$nextTick(function () {
                         this.chart = new Highcharts.stockChart(this.opts);
@@ -1230,8 +1346,8 @@
 
 
             Vue.component('porecurrents', {
-                template: '<div v-bind:id="\'porecurrents\'+title" style="margin: 0 auto"></div>',
-                props: ['title', 'keydata', 'datain', 'datain2'],
+                template: '<div id="porecurrents{{title}}" style="margin: 0 auto"</div>',
+                props: ['title', 'key', 'datain', 'datain2'],
                 data: function () {
                     //var d = new Date();
                     //var t = d.getTime();
@@ -1315,7 +1431,7 @@
                     }
                 }
                 ,
-                mounted: function () {
+                ready: function () {
                     this.$nextTick(function () {
                         this.chart = new Highcharts.stockChart(this.opts);
                         this.chart.series[0].setData(this.datain);
@@ -1325,14 +1441,14 @@
                             this.chart.series[0].setData(this.datain);
                             this.chart.series[1].setData(this.datain2);
                             this.chart.redraw();
-                        }.bind(this), 10000);
+                        }.bind(this), 15000);
                     });
                 }
             })
 
             Vue.component('meanratio', {
-                template: '<div v-bind:id="\'meanratio\'+title" style="margin: 0 auto"></div>',
-                props: ['title', 'keydata', 'datain'],
+                template: '<div id="meanratio{{title}}" style="margin: 0 auto"</div>',
+                props: ['title', 'key', 'datain'],
                 data: function () {
                     //var d = new Date();
                     //var t = d.getTime();
@@ -1410,7 +1526,7 @@
                     }
                 }
                 ,
-                mounted: function () {
+                ready: function () {
                     this.$nextTick(function () {
                         this.chart = new Highcharts.stockChart(this.opts);
                         this.chart.series[0].setData(this.datain);
@@ -1418,15 +1534,15 @@
                             //console.log(this.datain);
                             this.chart.series[0].setData(this.datain);
                             this.chart.redraw();
-                        }.bind(this), 10000);
+                        }.bind(this), 15000);
                     });
                 }
             })
 
 
             Vue.component('chartyield', {
-                template: '<div v-bind:id="\'containeryield\'+title" style="margin: 0 auto"></div>',
-                props: ['title', 'keydata', 'datain2'],
+                template: '<div id="containeryield{{title}}" style="margin: 0 auto"</div>',
+                props: ['title', 'key', 'datain2'],
                 data: function () {
                     //var d = new Date();
                     //var t = d.getTime();
@@ -1499,7 +1615,7 @@
                 ,
 
 
-                mounted: function () {
+                ready: function () {
                     this.$nextTick(function () {
                         this.chart = new Highcharts.stockChart(this.opts);
                         //this.chart = new Highcharts.Chart(this.opts);
@@ -1508,14 +1624,14 @@
                             //console.log(this.datain2);
                             this.chart.series[0].setData(this.datain2);
                             this.chart.redraw();
-                        }.bind(this), 10000);
+                        }.bind(this), 15000);
                     });
                 }
             })
 
             Vue.component('perchistory', {
-                template: '<div v-bind:id="\'perchistory\' + title" style="margin: 0 auto"></div>',
-                props: ['title', 'keydata', 'datain2'],
+                template: '<div id="perchistory{{title}}" style="margin: 0 auto"</div>',
+                props: ['title', 'key', 'datain2'],
                 data: function () {
                     //var d = new Date();
                     //var t = d.getTime();
@@ -1587,7 +1703,7 @@
                     }
                 }
                 ,
-                mounted: function () {
+                ready: function () {
                     this.$nextTick(function () {
                         this.chart = new Highcharts.stockChart(this.opts);
                         //this.chart = new Highcharts.Chart(this.opts);
@@ -1596,14 +1712,14 @@
                             //console.log(this.datain2);
                             this.chart.series[0].setData(this.datain2);
                             this.chart.redraw();
-                        }.bind(this), 10000);
+                        }.bind(this), 15000);
                     });
                 }
             })
 
             Vue.component('porehistory', {
-                template: '<div v-bind:id="\'porehistory\' + title" style="margin: 0 auto"></div>',
-                props: ['title', 'keydata', 'datain2', 'datain3'],
+                template: '<div id="porehistory{{title}}" style="margin: 0 auto"</div>',
+                props: ['title', 'key', 'datain2', 'datain3'],
                 data: function () {
                     //var d = new Date();
                     //var t = d.getTime();
@@ -1679,7 +1795,7 @@
                     }
                 }
                 ,
-                mounted: function () {
+                ready: function () {
                     this.$nextTick(function () {
                         //this.chart = new Highcharts.Chart(this.opts);
                         this.chart = new Highcharts.stockChart(this.opts);
@@ -1690,14 +1806,14 @@
                             this.chart.series[0].setData(this.datain2);
                             this.chart.series[1].setData(this.datain3);
                             this.chart.redraw();
-                        }.bind(this), 10000);
+                        }.bind(this), 15000);
                     });
                 }
             })
 
             Vue.component('temphistory', {
-                template: '<div v-bind:id="\'temphistory\'+title" style="margin: 0 auto"></div>',
-                props: ['title', 'keydata', 'datain2', 'datain3'],
+                template: '<div id="temphistory{{title}}" style="margin: 0 auto"</div>',
+                props: ['title', 'key', 'datain2', 'datain3'],
                 data: function () {
                     //var d = new Date();
                     //var t = d.getTime();
@@ -1772,7 +1888,7 @@
                     }
                 }
                 ,
-                mounted: function () {
+                ready: function () {
                     this.$nextTick(function () {
                         //this.chart = new Highcharts.Chart(this.opts);
                         this.chart = new Highcharts.stockChart(this.opts);
@@ -1783,14 +1899,14 @@
                             this.chart.series[0].setData(this.datain2);
                             this.chart.series[1].setData(this.datain3);
                             this.chart.redraw();
-                        }.bind(this), 10000);
+                        }.bind(this), 15000);
                     });
                 }
             })
 
             Vue.component('volthistory', {
-                template: '<div v-bind:id="\'volthistory\' + title" style="margin: 0 auto"></div>',
-                props: ['title', 'keydata', 'datain2'],
+                template: '<div id="volthistory{{title}}" style="margin: 0 auto"</div>',
+                props: ['title', 'key', 'datain2'],
                 data: function () {
                     //var d = new Date();
                     //var t = d.getTime();
@@ -1866,11 +1982,11 @@
                     }
                 }
                 ,
-                mounted: function () {
+                ready: function () {
                     this.$nextTick(function () {
                         //console.log(this.title);
                         //console.log(this.datain2);
-                        //console.log(this.keydata);
+                        //console.log(this.key);
                         this.chart = new Highcharts.stockChart(this.opts);
                         this.chart.series[0].setData(this.datain2["voltage"]);
                         //this.chart.series[1].setData(this.datain2["heatsinktemp"]);
@@ -1880,14 +1996,14 @@
                             this.chart.series[0].setData(this.datain2);
                             //this.chart.series[1].setData(this.datain2["heatsinktemp"]);
                             this.chart.redraw();
-                        }.bind(this), 10000);
+                        }.bind(this), 15000);
                     });
                 }
             })
 
             Vue.component('chartporehist', {
-                template: '<div v-bind:id="\'container-pore\' + title" style="margin: 0 auto"></div>',
-                props: ['title', 'keydata', 'datain', 'datain2'],
+                template: '<div id="container-pore{{title}}" style="margin: 0 auto"</div>',
+                props: ['title', 'key', 'datain', 'datain2'],
                 data: function () {
                     return {
                         opts: {
@@ -1938,7 +2054,9 @@
                 ,
 
 
-                mounted: function () {
+                created: function () {
+                },
+                ready: function () {
                     //var returndata=parsechanstats(this.datain,this.datain2);
                     //console.log(returndata);
                     //var returndata = tohistogram(this.datain,parseInt(this.datain2));
@@ -1948,7 +2066,7 @@
                     //var returndata=parsechanstats(this.datain,this.datain2);
                     this.$nextTick(function () {
                         this.chart = new Highcharts.Chart(this.opts);
-                        //minion=this.keydata;
+                        //minion=this.key;
                         setInterval(function () {
                             //console.log(this.datain);
                             //console.log(this.datain2);
@@ -1966,7 +2084,7 @@
                             //this.chart.colors=returndata[1];
                             //this.chart.redraw();
                             //console.log(returndata[1]);
-                        }.bind(this), 10000);
+                        }.bind(this), 15000);
                     });
                 }
             })
@@ -1991,7 +2109,6 @@
                                 //console.log(descriptions[thing][element]["style"]["colour"]);
 
                                 if (counts.hasOwnProperty(descriptions[thing][element]["name"])) {
-                                    //console.log(counts[descriptions[thing][element]["name"]].slice(-1)[0][1]);
                                     var porenumber = counts[descriptions[thing][element]["name"]].slice(-1)[0][1];
                                     //console.log(counts[descriptions[thing][element]["name"]].slice(-1)[0][1]);
                                 } else {
@@ -2019,8 +2136,8 @@
             }
 
             Vue.component('container-avg', {
-                template: '<div v-bind:id="\'container-avg\' + title" style="height: 140px; margin: 0 auto"></div>',
-                props: ['title', 'keydata', 'datain', 'datain2'],
+                template: '<div id="container-avg{{title}}" style="height: 140px; margin: 0 auto"</div>',
+                props: ['title', 'key', 'datain', 'datain2'],
                 data: function () {
                     return {
 
@@ -2117,26 +2234,35 @@
 
 
                 ,
-                mounted: function () {
+                ready: function () {
+                    //alert(this.datain);
+
                     this.$nextTick(function () {
                         this.chart = new Highcharts.Chart(this.opts);
+                        //this.chart.series[0].setData(this.datain);
                         if (this.chart) {
+                            //point = this.chart.series[0].points[0];
+
                             this.chart.series[0].points[0].update(round(parseFloat(this.datain / this.datain2), 0));
+                            //point.update(this.datain);
+                            //alert("camel");
                         }
 
                         setInterval(function () {
+                            //    this.chart.series[0].setData(this.datain);
+                            //    this.chart.redraw();
                             if (this.chart) {
                                 point = this.chart.series[0].points[0];
                                 point.update(round(parseFloat(this.datain / this.datain2), 0));
                             }
-                        }.bind(this), 10000);
+                        }.bind(this), 5000);
                     });
                 }
             }),
 
                 Vue.component('container-chan', {
-                    template: '<div id="container-chan{{title}}" style="height: 140px; margin: 0 auto"></div>',
-                    props: ['title', 'keydata', 'datain'],
+                    template: '<div id="container-chan{{title}}" style="height: 140px; margin: 0 auto"</div>',
+                    props: ['title', 'key', 'datain'],
                     data: function () {
                         return {
                             opts: {
@@ -2255,15 +2381,15 @@
 
 
                                 }
-                            }.bind(this), 10000);
+                            }.bind(this), 5000);
                         });
                     }
                 }),
 
 
                 Vue.component('container-strand', {
-                    template: '<div v-bind:id="\'container-strand\'+ title" style="height: 140px; margin: 0 auto"></div>',
-                    props: ['title', 'keydata', 'datain'],
+                    template: '<div id="container-strand{{title}}" style="height: 140px; margin: 0 auto"</div>',
+                    props: ['title', 'key', 'datain'],
                     data: function () {
                         return {
                             opts: {
@@ -2358,7 +2484,7 @@
                         }
                     }
                     ,
-                    mounted: function () {
+                    ready: function () {
                         //alert(this.datain);
 
                         this.$nextTick(function () {
@@ -2372,14 +2498,14 @@
                                     point = this.chart.series[0].points[0];
                                     point.update(parseFloat(this.datain));
                                 }
-                            }.bind(this), 10000);
+                            }.bind(this), 5000);
                         });
                     }
                 }),
 
                 Vue.component('container-perc', {
-                    template: '<div v-bind:id="\'container-perc\' +title" style="height: 140px; margin: 0 auto"></div>',
-                    props: ['title', 'keydata', 'datain'],
+                    template: '<div id="container-perc{{title}}" style="height: 140px; margin: 0 auto"</div>',
+                    props: ['title', 'key', 'datain'],
                     data: function () {
                         return {
                             opts: {
@@ -2474,7 +2600,7 @@
                         }
                     }
                     ,
-                    mounted: function () {
+                    ready: function () {
                         //alert(this.datain);
 
                         this.$nextTick(function () {
@@ -2504,13 +2630,13 @@
 
 
                                 }
-                            }.bind(this), 10000);
+                            }.bind(this), 5000);
                         });
                     }
                 }),
 
                 Vue.component('predictedvals', {
-                    template: '<div><div class="col-md-2"><p>Estimated Current Yield (bases) <strong>  {{ speedresult }}  </strong></p></div><div class="col-md-2"><p>Estimated Average Read Length (bases) <strong>{{averageresult}}</strong></p></div><div class="col-md-2"><p>Theoretical Predicted Yield at 24 hours (bases) <strong>{{startbit}}</strong></p></div><div class="col-md-2"><p> Theoretical Predicted Yield at 48 hours (bases) <strong>{{endbit}}</strong></p></div></div>',
+                    template: '<div class="col-md-2"><p>Estimated Current Yield (bases) <strong>  {{ speedresult }}  </strong></p></div><div class="col-md-2"><p>Estimated Average Read Length (bases) <strong>{{averageresult}}</strong></p></div><div class="col-md-2"><p>Theoretical Predicted Yield at 24 hours (bases) <strong>{{startbit}}</strong></p></div><div class="col-md-2"><p> Theoretical Predicted Yield at 48 hours (bases) <strong>{{endbit}}</strong></p></div>',
                     props: ['seqspeed', 'currentyield', 'compreads', 'calcurrenttime', 'calcstarttime'],
                     computed: {
                         speedresult: function () {
@@ -2596,299 +2722,7 @@
             {% endverbatim %}
 
 
-
-            {% verbatim %}
-
-            Vue.component('diskusage', {
-                template: "<div class='panel panel-info'><div class='panel-heading'><h3 class='panel-title'>Disk Space</h3></div><div class='panel-body'><div class='table-responsive'><table class='table table-condensed' ><tr><td>Category</td><td>Info</td></tr><tr><td>minKNOW computer name</td><td>{{title}}</td></tr><tr><td>Total Drive Capacity</td><td>{{capacity}}</td></tr><tr><td>Free Drive Space</td><td>{{space}} / {{percent}}%</td></tr><tr><td>Disk Space till Shutdown</td><td>{{bytealert}}</td></tr><tr><td>Warnings?</td><td>{{recalert}}</td></tr></table></div></div></div>",
-                props: ['title', 'keydata', 'datain'],
-
-                data: function () {
-                    //var bytes_available = formatBytes(this.datain[0].bytes_available);
-                    //console.log(this.datain[0].bytes_available);
-                    var bytes_available = formatBytes(this.datain.bytes_available);
-
-                    var drive_capacity = formatBytes(this.datain.bytes_capacity);
-                    var percentage = (this.datain.bytes_available / this.datain.bytes_capacity * 100).toFixed(2);
-                    //var percentage = "n/a";
-                    var bytes_to_alert = formatBytes(this.datain.bytes_available - this.datain.bytes_to_alert);
-                    var recommend_alert = this.datain.recommend_alert;
-                    return {
-                        space: bytes_available,
-                        capacity: drive_capacity,
-                        percent: percentage,
-                        bytealert: bytes_to_alert,
-                        recalert: recommend_alert
-                    }
-
-                },
-                ready: function () {
-                    this.$nextTick(function () {
-                        //console.log(this.datain.bytes_available);
-                        setInterval(function () {
-                            //console.log(this.datain);
-                            //this.space = formatBytes(this.datain.bytes_available);
-                            this.capacity = formatBytes(this.datain.bytes_capacity);
-                            //this.percent = (this.datain.bytes_available/this.datain.bytes_capacity * 100).toFixed(2);
-                            this.bytealert = formatBytes(this.datain.bytes_available - this.datain.bytes_to_alert);
-                            this.recalert = this.datain.recommend_alert;
-                        }.bind(this), 10000);
-                    });
-                }
-            })
-
-            Vue.component('chartreadhist', {
-                template: '<div v-bind:id="\'container\'+title" style="margin: 0 auto"></div>',
-                props: ['title', 'keydata', 'datain', 'datain2', 'totalyield', 'seqspeed', 'readcount'],
-                data: function () {
-                    return {
-                        opts: {
-                            chart: {
-                                renderTo: 'container' + this.title,
-                                type: 'column',
-                                zoomType: 'x'
-                            },
-                            title: {
-                                text: 'Read length Histograms'
-                            },
-                            xAxis: {
-                                categories: [],
-                            },
-                            yAxis: {
-                                title: {
-                                    text: 'Total Event Length'
-                                }
-                            },
-                            credits: {
-                                enabled: false
-                            },
-                            series: [{
-                                name: 'Read Histogram',
-                                //data: this.datain
-                            }]
-                        }
-                    }
-                }
-                ,
-                mounted : function () {
-
-                    this.$nextTick(function () {
-                        this.chart = new Highcharts.Chart(this.opts);
-                        //minion=this.keydata;
-
-                        setInterval(function () {
-                            var returndata = tohistogram(this.datain, parseInt(this.datain2), this.totalyield);
-                            this.chart.series[0].setData(returndata[0]);
-                            this.chart.xAxis[0].setCategories(returndata[1]);
-                            //console.log('updating highcharts histogram');
-                            //console.log(this.datain);
-                            //console.log(returndata[2]-0.5);
-                            //console.log(typeof(returndata[2]));
-                            var N50 = parseInt(returndata[2]);
-                            this.chart.xAxis[0].removePlotBand('plot-band-1');
-                            this.chart.xAxis[0].addPlotBand({
-                                from: N50 - 0.5,
-                                to: N50 + 0.5,
-                                color: '#FCFFC5',
-                                id: 'plot-band-1',
-                            });
-                            this.chart.xAxis[0].removePlotBand('plot-band-2');
-                            this.chart.xAxis[0].addPlotBand({
-                                color: 'black',
-                                width: 2,
-                                dashStyle: 'longdashdot',
-                                value: returndata[2],
-                                label: {
-                                    text: 'Estimated Read N50',
-                                    align: 'left',
-                                    rotation: 0,
-                                    x: +10 // Amount of pixels the label will be repositioned according to the alignment.
-                                },
-                                id: 'plot-band-2',
-                            });
-                            this.chart.xAxis[0].removePlotBand('plot-band-3');
-                            this.chart.xAxis[0].addPlotBand({
-                                color: 'black',
-                                width: 2,
-                                dashStyle: 'longdashdot',
-                                value: (Math.floor(this.totalyield / this.readcount / this.datain2)),
-                                label: {
-                                    text: 'Estimated Read Average - ' + Math.round(this.totalyield / this.readcount / 1000 * 100) / 100 + ' K events',
-                                    align: 'left',
-                                    rotation: 0,
-                                    x: +10,
-                                    y: +30, // Amount of pixels the label will be repositioned according to the alignment.
-                                },
-                                id: 'plot-band-3',
-                            });
-                        }.bind(this), 10000);
-                    });
-                }
-            })
-
-            Vue.component('container-curr-yield-prediction', {
-                template: '<div id="container-curr-yield-prediction{{title}}" style="height: 140px; margin: 0 auto"></div>',
-                props: ['title', 'keydata', 'script', 'eventcount'],
-                data: function () {
-                    return {
-
-                        opts: {
-                            chart: {
-                                renderTo: 'container-curr-yield-prediction' + this.title,
-                                type: 'solidgauge'
-                            },
-
-                            title: "Predicted Current Yield",
-
-                            pane: {
-                                center: ['50%', '85%'],
-                                size: '100%',
-                                startAngle: -90,
-                                endAngle: 90,
-                                background: {
-                                    backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
-                                    innerRadius: '60%',
-                                    outerRadius: '100%',
-                                    shape: 'arc'
-                                }
-                            },
-
-                            tooltip: {
-                                enabled: false
-                            },
-
-                            // the value axis
-                            yAxis: {
-                                type: 'logarithmic',
-                                stops: [
-                                    [0.3, '#0000FF'], // blue
-                                    [0.37, '#DDDF0D'], // green
-                                    [0.43, '#DF5353'], // red
-                                ],
-                                lineWidth: 0,
-                                minorTickInterval: null,
-                                tickPixelInterval: 400,
-                                tickWidth: 0,
-                                title: {
-                                    y: -70
-                                },
-                                labels: {
-                                    y: 16
-                                },
-                                min: 0.1,
-                                max: 100000,
-                                title: {
-                                    text: null
-                                }
-                            },
-
-                            plotOptions: {
-                                solidgauge: {
-                                    dataLabels: {
-                                        y: -30,
-                                        borderWidth: 0,
-                                        useHTML: true
-                                    }
-                                }
-                            },
-
-
-                            credits: {
-                                enabled: false
-                            },
-
-                            series: [{
-                                name: 'Events',
-                                data: [0],
-                                dataLabels: {
-                                    format: '<div style="text-align:center"><span style="font-size:15px;color:' +
-                                    ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
-                                    '<span style="font-size:12px;color:silver"> Predicted Yield</span></div>'
-                                },
-                                tooltip: {
-                                    valueSuffix: ' events'
-                                }
-                            }],
-
-                            plotOptions: {
-                                solidgauge: {
-                                    dataLabels: {
-                                        y: 30,
-                                        borderWidth: 0,
-                                        useHTML: true
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-
-                ,
-                ready: function () {
-
-
-                    this.$nextTick(function () {
-
-                        switch (this.script) {
-                            case "MegaCrazy Runs":
-                                scaling = 3.5;
-                                break;
-                            case "450 b/s":
-                                scaling = 1.8;
-                                break;
-                            case "250 b/s":
-                                scaling = 1.1;
-                                break;
-                            case "70 b/s":
-                                scaling = 1.0;
-                                break;
-                        }
-                        //alert(scaling);
-                        this.chart = new Highcharts.Chart(this.opts);
-                        //this.chart.series[0].setData(this.datain);
-                        if (this.chart) {
-                            //point = this.chart.series[0].points[0];
-                            this.chart.series[0].points[0].update(round(parseFloat((this.eventcount) * scaling), 0));
-                            //point.update(this.datain);
-                            //alert("camel");
-                        }
-
-                        setInterval(function () {
-                            //    this.chart.series[0].setData(this.datain);
-                            //    this.chart.redraw();
-                            if (this.chart) {
-                                switch (this.script) {
-                                    case "MegaCrazy Runs":
-                                        scaling = 3.5;
-                                        break;
-                                    case "450 b/s":
-                                        scaling = 1.8;
-                                        break;
-                                    case "250 b/s":
-                                        scaling = 1.1;
-                                        break;
-                                    case "70 b/s":
-                                        scaling = 1.0;
-                                        break;
-                                }
-                                point = this.chart.series[0].points[0];
-                                point.update(round(parseFloat((this.eventcount) * scaling), 0));
-                                //this.chart.redraw();
-
-
-                            }
-                        }.bind(this), 10000);
-                    });
-                }
-            })
-        })
-
-
-        {% endverbatim %}
-
-
-        function getCookie(name) {
+            function getCookie(name) {
                 var cookieValue = null;
                 if (document.cookie && document.cookie !== '') {
                     var cookies = document.cookie.split(';');
@@ -2904,12 +2738,13 @@
                 return cookieValue;
             }
 
-        var minionsthings = new Vue({
-                el: '#app-new',
+
+
+            var minionsthings = new Vue({
+                el: '#app',
                 data: {
                     minions: [],
                     message: '',
-                    seqspeed:'450 b/s',
                 },
                 computed: {
                     speedresult: function () {
@@ -2932,7 +2767,6 @@
                 },
                 methods: {
                     testmessage: function (event) {
-
                         var instructionmessage = {
                             "INSTRUCTION": {
                                 "USER": "<?php echo $_SESSION['user_name'];?>",
@@ -3284,6 +3118,300 @@
 
 
             });
+
+            {% verbatim %}
+
+            Vue.component('diskusage', {
+                template: "<div class='panel panel-info'><div class='panel-heading'><h3 class='panel-title'>Disk Space</h3></div><div class='panel-body'><div class='table-responsive'><table class='table table-condensed' ><tr><th>Category</td><th>Info</td></tr><tr><td>minKNOW computer name</td><td>{{title}}</td></tr><tr><td>Total Drive Capacity</td><td>{{capacity}}</td></tr><tr><td>Free Drive Space</td><td>{{space}} / {{percent}}%</td></tr><tr><td>Disk Space till Shutdown</td><td>{{bytealert}}</td></tr><tr><td>Warnings?</td><td>{{recalert}}</td></tr></table></div></div></div>",
+                props: ['title', 'key', 'datain'],
+
+                data: function () {
+                    //var bytes_available = formatBytes(this.datain[0].bytes_available);
+                    //console.log(this.datain[0].bytes_available);
+                    var bytes_available = formatBytes(this.datain.bytes_available);
+
+                    var drive_capacity = formatBytes(this.datain.bytes_capacity);
+                    var percentage = (this.datain.bytes_available / this.datain.bytes_capacity * 100).toFixed(2);
+                    //var percentage = "n/a";
+                    var bytes_to_alert = formatBytes(this.datain.bytes_available - this.datain.bytes_to_alert);
+                    var recommend_alert = this.datain.recommend_alert;
+                    return {
+                        space: bytes_available,
+                        capacity: drive_capacity,
+                        percent: percentage,
+                        bytealert: bytes_to_alert,
+                        recalert: recommend_alert
+                    }
+
+                },
+                ready: function () {
+                    this.$nextTick(function () {
+                        //console.log(this.datain.bytes_available);
+                        setInterval(function () {
+                            //console.log(this.datain);
+                            //this.space = formatBytes(this.datain.bytes_available);
+                            this.capacity = formatBytes(this.datain.bytes_capacity);
+                            //this.percent = (this.datain.bytes_available/this.datain.bytes_capacity * 100).toFixed(2);
+                            this.bytealert = formatBytes(this.datain.bytes_available - this.datain.bytes_to_alert);
+                            this.recalert = this.datain.recommend_alert;
+                        }.bind(this), 15000);
+                    });
+                }
+            })
+
+            Vue.component('chartreadhist', {
+                template: '<div id="container{{title}}" style="margin: 0 auto"</div>',
+                props: ['title', 'key', 'datain', 'datain2', 'totalyield', 'seqspeed', 'readcount'],
+                data: function () {
+                    return {
+                        opts: {
+                            chart: {
+                                renderTo: 'container' + this.title,
+                                type: 'column',
+                                zoomType: 'x'
+                            },
+                            title: {
+                                text: 'Read length Histograms'
+                            },
+                            xAxis: {
+                                categories: [],
+                            },
+                            yAxis: {
+                                title: {
+                                    text: 'Total Event Length'
+                                }
+                            },
+                            credits: {
+                                enabled: false
+                            },
+                            series: [{
+                                name: 'Read Histogram',
+                                //data: this.datain
+                            }]
+                        }
+                    }
+                }
+                ,
+
+
+                created: function () {
+                },
+                ready: function () {
+
+                    this.$nextTick(function () {
+                        this.chart = new Highcharts.Chart(this.opts);
+                        //minion=this.key;
+
+                        setInterval(function () {
+                            var returndata = tohistogram(this.datain, parseInt(this.datain2), this.totalyield);
+                            this.chart.series[0].setData(returndata[0]);
+                            this.chart.xAxis[0].setCategories(returndata[1]);
+                            console.log('updating highcharts histogram');
+                            console.log(this.datain);
+                            //console.log(returndata[2]-0.5);
+                            //console.log(typeof(returndata[2]));
+                            var N50 = parseInt(returndata[2]);
+                            this.chart.xAxis[0].removePlotBand('plot-band-1');
+                            this.chart.xAxis[0].addPlotBand({
+                                from: N50 - 0.5,
+                                to: N50 + 0.5,
+                                color: '#FCFFC5',
+                                id: 'plot-band-1',
+                            });
+                            this.chart.xAxis[0].removePlotBand('plot-band-2');
+                            this.chart.xAxis[0].addPlotBand({
+                                color: 'black',
+                                width: 2,
+                                dashStyle: 'longdashdot',
+                                value: returndata[2],
+                                label: {
+                                    text: 'Estimated Read N50',
+                                    align: 'left',
+                                    rotation: 0,
+                                    x: +10 // Amount of pixels the label will be repositioned according to the alignment.
+                                },
+                                id: 'plot-band-2',
+                            });
+                            this.chart.xAxis[0].removePlotBand('plot-band-3');
+                            this.chart.xAxis[0].addPlotBand({
+                                color: 'black',
+                                width: 2,
+                                dashStyle: 'longdashdot',
+                                value: (Math.floor(this.totalyield / this.readcount / this.datain2)),
+                                label: {
+                                    text: 'Estimated Read Average - ' + Math.round(this.totalyield / this.readcount / 1000 * 100) / 100 + ' K events',
+                                    align: 'left',
+                                    rotation: 0,
+                                    x: +10,
+                                    y: +30, // Amount of pixels the label will be repositioned according to the alignment.
+                                },
+                                id: 'plot-band-3',
+                            });
+                        }.bind(this), 15000);
+                    });
+                }
+            })
+
+            Vue.component('container-curr-yield-prediction', {
+                template: '<div id="container-curr-yield-prediction{{title}}" style="height: 140px; margin: 0 auto"</div>',
+                props: ['title', 'key', 'script', 'eventcount'],
+                data: function () {
+                    return {
+
+                        opts: {
+                            chart: {
+                                renderTo: 'container-curr-yield-prediction' + this.title,
+                                type: 'solidgauge'
+                            },
+
+                            title: "Predicted Current Yield",
+
+                            pane: {
+                                center: ['50%', '85%'],
+                                size: '100%',
+                                startAngle: -90,
+                                endAngle: 90,
+                                background: {
+                                    backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                                    innerRadius: '60%',
+                                    outerRadius: '100%',
+                                    shape: 'arc'
+                                }
+                            },
+
+                            tooltip: {
+                                enabled: false
+                            },
+
+                            // the value axis
+                            yAxis: {
+                                type: 'logarithmic',
+                                stops: [
+                                    [0.3, '#0000FF'], // blue
+                                    [0.37, '#DDDF0D'], // green
+                                    [0.43, '#DF5353'], // red
+                                ],
+                                lineWidth: 0,
+                                minorTickInterval: null,
+                                tickPixelInterval: 400,
+                                tickWidth: 0,
+                                title: {
+                                    y: -70
+                                },
+                                labels: {
+                                    y: 16
+                                },
+                                min: 0.1,
+                                max: 100000,
+                                title: {
+                                    text: null
+                                }
+                            },
+
+                            plotOptions: {
+                                solidgauge: {
+                                    dataLabels: {
+                                        y: -30,
+                                        borderWidth: 0,
+                                        useHTML: true
+                                    }
+                                }
+                            },
+
+
+                            credits: {
+                                enabled: false
+                            },
+
+                            series: [{
+                                name: 'Events',
+                                data: [0],
+                                dataLabels: {
+                                    format: '<div style="text-align:center"><span style="font-size:15px;color:' +
+                                    ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
+                                    '<span style="font-size:12px;color:silver"> Predicted Yield</span></div>'
+                                },
+                                tooltip: {
+                                    valueSuffix: ' events'
+                                }
+                            }],
+
+                            plotOptions: {
+                                solidgauge: {
+                                    dataLabels: {
+                                        y: 30,
+                                        borderWidth: 0,
+                                        useHTML: true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+                ,
+                ready: function () {
+
+
+                    this.$nextTick(function () {
+
+                        switch (this.script) {
+                            case "MegaCrazy Runs":
+                                scaling = 3.5;
+                                break;
+                            case "450 b/s":
+                                scaling = 1.8;
+                                break;
+                            case "250 b/s":
+                                scaling = 1.1;
+                                break;
+                            case "70 b/s":
+                                scaling = 1.0;
+                                break;
+                        }
+                        //alert(scaling);
+                        this.chart = new Highcharts.Chart(this.opts);
+                        //this.chart.series[0].setData(this.datain);
+                        if (this.chart) {
+                            //point = this.chart.series[0].points[0];
+                            this.chart.series[0].points[0].update(round(parseFloat((this.eventcount) * scaling), 0));
+                            //point.update(this.datain);
+                            //alert("camel");
+                        }
+
+                        setInterval(function () {
+                            //    this.chart.series[0].setData(this.datain);
+                            //    this.chart.redraw();
+                            if (this.chart) {
+                                switch (this.script) {
+                                    case "MegaCrazy Runs":
+                                        scaling = 3.5;
+                                        break;
+                                    case "450 b/s":
+                                        scaling = 1.8;
+                                        break;
+                                    case "250 b/s":
+                                        scaling = 1.1;
+                                        break;
+                                    case "70 b/s":
+                                        scaling = 1.0;
+                                        break;
+                                }
+                                point = this.chart.series[0].points[0];
+                                point.update(round(parseFloat((this.eventcount) * scaling), 0));
+                                //this.chart.redraw();
+
+
+                            }
+                        }.bind(this), 15000);
+                    });
+                }
+            })
+        })
+
+
+        {% endverbatim %}
 
     </script>
 {% endblock %}
