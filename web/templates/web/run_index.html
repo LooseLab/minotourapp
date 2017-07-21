@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-    <div class="content-wrapper" id="app">
+    <div class="content-wrapper">
 
         <!-- Content Header (Page header) -->
         <section class="content-header">
@@ -25,34 +25,44 @@
                 </div><!-- /.box-header -->
                 <div class="box-body">
                     <div class="row">
-                        <button id="counterdown-btn">Reloading in 30 seconds</button>
+                        <div class="col-md-12">
+                            <button id="counterdown-btn">Reloading in 30 seconds</button>
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-md-12">
                             <div class="nav-tabs-custom">
-                                <ul class="nav nav-tabs">
-                                    <minionrun-item
-                                            v-for="barcode in minion_run.barcodes"
-                                            v-bind:barcode="barcode"
-                                            v-bind:key="barcode">
-                                    </minionrun-item>
+                                <ul class="nav nav-tabs" id="nav-tabs-barcodes">
                                 </ul>
                             </div>
-
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
                             <!-- Custom Tabs -->
                             <div class="nav-tabs-custom">
                                 <ul class="nav nav-tabs">
-                                    <li class="active"><a href="#">Read Summaries</a></li>
-                                    <li><a href="#">Basecaller Summary</a></li>
-                                    <li><a href="#">Read Histograms</a></li>
-                                    <li><a href="#">Sequencing Rates</a></li>
-                                    <li><a href="#">Pore Activity</a></li>
-                                    <li><a href="#">Read Quality</a></li>
-                                    <li><a href="#">Coverage Detail</a></li>
-                                    <li><a href="#">Base Coverage</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('read-summaries-tab', $event)">Read
+                                        Summaries</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('basecaller-summary-tab', $event)">Basecaller
+                                        Summary</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('read-histograms-tab', $event)">Read
+                                        Histograms</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('sequencing-rates-tab', $event)">Sequencing
+                                        Rates</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('pore-activity-tab', $event)">Pore
+                                        Activity</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('read-quality-tab', $event)">Read
+                                        Quality</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('coverage-detail-tab', $event)">Coverage
+                                        Detail</a></li>
+                                    <li><a href="#" v-on:click="setActiveTab('base-coverage-tab', $event)">Base
+                                        Coverage</a></li>
                                 </ul>
+
+
                                 <div class="tab-content">
-                                    <div class="tab-pane active" id="tab_1">
+                                    <div class="tab-pane active" id="tab_1" v-show="isActiveTab('read-summaries-tab')">
                                         <div class="panel panel-default">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title"><!-- Button trigger modal -->
@@ -100,98 +110,28 @@
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row">
-                                                    <show-chart
-                                                            chartid="reads-called"
-                                                            :mybarcode='selectedBarcode'
-                                                            :id="id"
-                                                            :minion_run="minion_run"
-                                                            title="reads called"
-                                                            ytitle="number of reads called">
-                                                    </show-chart>
+                                                    <div id="reads-called" class="col-md-6 highcharts" style="width:25%; height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
+                                                    </div>
 
-                                                    <show-chart
-                                                            chartid="yield"
-                                                            :mybarcode='selectedBarcode'
-                                                            :id="id"
-                                                            :minion_run="minion_run"
-                                                            title="yield"
-                                                            ytitle="yield">
-                                                    </show-chart>
+                                                    <div id="yield" class="col-md-6 highcharts" style="width:25%; height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
+                                                    </div>
 
-                                                    <show-chart
-                                                            chartid="average-read-length"
-                                                            :mybarcode='selectedBarcode'
-                                                            :id="id"
-                                                            :minion_run="minion_run"
-                                                            title="average read length"
-                                                            ytitle="average read length">
-                                                    </show-chart>
+                                                    <div id="average-read-length" class="col-md-6 highcharts" style="width:25%; height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
+                                                    </div>
 
-                                                    <show-chart
-                                                            chartid="maximum-read-length"
-                                                            :mybarcode='selectedBarcode'
-                                                            :id="id"
-                                                            :minion_run="minion_run"
-                                                            title="maximum read length"
-                                                            ytitle="maximum read length">
-                                                    </show-chart>
+                                                    <div id="maximum-read-length" class="col-md-6 highcharts" style="width:25%; height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
+                                                    </div>
 
-                                                    <!--<div class="col-md-12" id="boxplotlength" style="height:400px;">
-                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Box
-                                                        Plots
-                                                    </div>-->
                                                 </div>
-
-                                                <!--<div id="lengthtimewindow" style="height:400px;"><i
-                                                        class="fa fa-cog fa-spin fa-3x"></i> Read Lengths Over
-                                                    Time.
-                                                </div>
-
                                                 <div class="row">
-                                                    <?php if ($_SESSION['focusreference'] != "NOREFERENCE") { ?>
-
-                                                    <?php if (count($_SESSION['focusrefnames']) >= 3) {
-                                                    //echo "We need something else to handle this bad boy.";?>
-                                                    <div class="col-md-6" id="percentcoverageglob"
-                                                         style="height:400px;"><i
-                                                            class="fa fa-cog fa-spin fa-3x"></i>
-                                                        Calculating Reference Coverage for sequences
+                                                    <div id="average-read-lengths-overtime" class="col-md-12 highcharts" style="width:100%; height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
                                                     </div>
-                                                    <div class="col-md-6" id="depthcoverageglob"
-                                                         style="height:400px;"><i
-                                                            class="fa fa-cog fa-spin fa-3x"></i>
-                                                        Calculating Reference Depth for sequences
-                                                    </div>
-                                                    <?php
-                                                            } else { ?>
-                                                    <?php var_dump($_SESSION['focusrefnames']); ?>
-                                                    <?php foreach ($_SESSION['focusrefnames'] as $key => $value) {
-                                                    echo $key . " " . $value . "<br>"; ?>
-                                                    <div class="col-md-6"
-                                                         id="percentcoverage<?php echo $key; ?>"
-                                                         style="height:200px;"><i
-                                                            class="fa fa-cog fa-spin fa-3x"></i>
-                                                        Calculating Reference Coverage
-                                                        for <?php echo $value; ?></div>
-                                                    <div class="col-md-6"
-                                                         id="depthcoverage<?php echo $key; ?>"
-                                                         style="height:200px;"><i
-                                                            class="fa fa-cog fa-spin fa-3x"></i>
-                                                        Calculating Reference Depth
-                                                        for <?php echo $value; ?></div>
-                                                    <?php
-                                                                }
-                                                            }
-                                                        } else { ?>
-                                                    <div>
-                                                        <p class="text-center">
-                                                            <small>This dataset has not been aligned to a
-                                                                reference sequence.
-                                                            </small>
-                                                        </p>
-                                                    </div>
-                                                    <?php }; ?>
-                                                </div>-->
+                                                </div>
                                             </div>
                                         </div>
 
@@ -206,6 +146,86 @@
                                     </div>
                                     <!-- /.col-lg-12 -->
                                     <!-- /.tab-pane -->
+
+                                    <div class="tab-pane active" v-show="isActiveTab('basecaller-summary-tab')">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"></h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="row"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="tab-pane active" v-show="isActiveTab('read-histograms-tab')">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"></h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="row"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="tab-pane active" v-show="isActiveTab('sequencing-rates-tab')">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"></h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="row">
+
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="tab-pane active" v-show="isActiveTab('pore-activity-tab')">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"></h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="row"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="tab-pane active" v-show="isActiveTab('read-quality-tab')">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"></h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="row"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="tab-pane active" v-show="isActiveTab('coverage-detail-tab')">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"></h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="row"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="tab-pane active" v-show="isActiveTab('base-coverage-tab')">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title"></h3>
+                                            </div>
+                                            <div class="panel-body">
+                                                <div class="row"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
                                 <!-- /.tab-content -->
                             </div>
@@ -227,8 +247,15 @@
         </div>
     </template>
 
+    <template id="chart-spline">
+        <div style="height:400px;">
+            <i class="fa fa-cog fa-spin fa-3x"></i> Read Lengths Over Time.
+        </div>
+    </template>
+
 
     <script>
+        /*
         console.log('before vue');
 
         Vue.component('minionrun-item', {
@@ -237,12 +264,110 @@
             template: "<li><a v-on:click='loadChartsByBarcode(barcode)' href='#'>${ barcode }</a></li>",
             methods: {
                 loadChartsByBarcode: function (mybarcode) {
-                    console.log(mybarcode);
                     app.selectedBarcode = mybarcode;
                 }
             }
 
         });
+
+        Vue.component('show-chart-spline', {
+            template: '#chart-spline',
+            props: ['chartid', 'mybarcode', 'id', 'title', 'ytitle', 'minion_run', 'chart_data'],
+            data: function () {
+                return {
+                    counter: 0,
+                    chart: null,
+                    opts: {
+                        chart: {
+                            type: 'spline',
+                            animation: false
+                        },
+                        title: {
+                            text: this.title
+                        },
+                        yAxis: {
+                            title: {
+                                text: this.ytitle
+                            }
+                        },
+                        xAxis: {
+                            type: 'datetime'
+                        }
+                    }
+                };
+                return {
+                    chart: undefined
+                }
+            },
+            mounted() {
+                if (!this.chart && this.opts) {
+                    let _Highcharts = this.Highcharts || Highcharts;
+                    this.chart = new _Highcharts.Chart(this.$el, this.opts);
+                }
+            },
+            watch: {
+                mybarcode: function (mybarcode) {
+                    console.log('updated barcode ' + this.mybarcode);
+                    this.redraw();
+                },
+                minion_run: function () {
+                    console.log('--- minion run changed : ' + this._uid + ' ---');
+                    this.redraw();
+                },
+                chart_data: function () {
+                    this.redraw();
+                }
+            },
+            beforeDestroy() {
+                if (this.chart) {
+                    this.chart.destroy();
+                }
+            },
+            methods: {
+                redraw() {
+                    if (this.chart_data == null) {
+                        console.log('---- chart_data is null ----');
+
+                    } else {
+                        console.log('---- chart_data is NOT null ----');
+
+                        var chart_data = this.chart_data;
+
+                        // Remove previous series
+                        while (this.chart.series.length > 0) {
+                            this.chart.series[0].remove();
+                        }
+
+                        this.chart.colorCounter = 0;
+                        this.chart.symbolCounter = 0;
+
+                        var summaries = [];
+                        if (this.mybarcode == 'All reads') {
+
+                            for (var i = 0; i < chart_data.length; i++) {
+                                var average_read_length = chart_data[i].total_length / chart_data[i].read_count;
+                                var sample_time = new Date(chart_data[i].sample_time);
+
+                                var point = {
+                                    x: sample_time,
+                                    y: average_read_length
+                                }
+
+                                summaries.push(point);
+                            }
+                        }
+
+                        summaries.sort(function (a, b) {
+                            return a.x - b.x;
+                        })
+
+                        this.chart.addSeries({name: '', data: summaries});
+                    }
+                }
+            }
+        });
+
+
 
         Vue.component('show-chart', {
             template: '#chart',
@@ -316,23 +441,12 @@
                 //    this.chart.update(this.opts);
                 //},
                 redraw() {
-                    //this.chart.destroy();
-
-                    //this.chart = new Highcharts.Chart(this.$el, this.opts);
-
                     var minion_run = this.minion_run;
 
                     // Remove previous series
-                    console.log('-- series ---');
-                    console.log(this.chart.series);
-
-                    //for (var i = 0; i < this.chart.series.length; i++) {
                     while (this.chart.series.length > 0) {
                         this.chart.series[0].remove();
-                        console.log('value of i is: ' + i);
                     }
-
-                    console.log('number of series available: ' + this.chart.series.length);
 
                     this.chart.colorCounter = 0;
                     this.chart.symbolCounter = 0;
@@ -352,12 +466,7 @@
                         }
                     }
 
-                    console.log('--- summaries ---');
-                    console.log(summaries);
-
-                    //var series = [];
                     for (var i = 0; i < summaries.length; i++) {
-                        console.log('-- ' + i);
                         var value = 0;
 
                         if (this.chartid == 'reads-called') {
@@ -374,7 +483,7 @@
                             'name': summaries[i].typename,
                             'data': [value],
                             'animation': false,
-                            }
+                       }
 
                         this.chart.addSeries(series);
                     }
@@ -391,17 +500,12 @@
                 selectedBarcode: '',
                 selectedTab: 'read-summaries',
                 newdata: null,
+                summary_by_minute: null,
+                summary_barcode_by_minute: null
             },
             created: function () {
                 this.requestInitialData();
             },
-            computed: {},
-            //watch: {
-            //    minion_run: function (minion_run) {
-            //        console.log('minion_run mudou.')
-            //        this.requestData();
-            //    }
-            //},
             methods: {
                 requestInitialData() {
                     console.log('inside request initial data');
@@ -419,7 +523,20 @@
                             this.minion_run.barcodes = this.minion_run.barcodes.sort()
                         });
 
-                    this.counterDown();
+                    url_run = '/api/v1/runs/' + this.id + '/summarybyminute';
+                    promise_run = this.$http.get(url_run);
+                    promise_run
+                        .then(function (res) {
+                            return res.json();
+                        })
+                        .then(function (summarybyminute) {
+                            this.summary_by_minute = summarybyminute;
+                            console.log('---- summary by minute ----');
+                            console.log(summarybyminute);
+                            console.log('---- summary by minute ----');
+                        });
+
+                    //this.counterDown();
 
                 },
                 requestData() {
@@ -437,7 +554,7 @@
                             //this.minion_run.barcodes = this.minion_run.barcodes.sort()
                         });
 
-                    this.counterDown();
+                    //this.counterDown();
 
                 },
                 counterDown() {
@@ -458,10 +575,21 @@
                         }
                     }.bind(this), 1000);
                 },
+                setActiveTab: function (val, event) {
+                    var tabs = event.target.parentNode.parentNode.children;
+                    for (var i = 0; i < tabs.length; i++) {
+                        tabs[i].classList.remove('active');
+                    }
+                    event.target.parentNode.classList.add('active');
 
+                    this.selectedTab = val;
+                },
+                isActiveTab: function (val) {
+                    return this.selectedTab === val;
+                }
             }
         });
-
+        */
     </script>
 
 {% endblock %}

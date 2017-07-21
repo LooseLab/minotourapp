@@ -320,6 +320,10 @@ class MinIONScripts(models.Model):
         return "{} {} {}".format(self.minION, self.name, self.identifier)
 
 
+class Read(models.Model):
+    pass
+
+
 class FastqReadType(models.Model):
     name = models.CharField(max_length=16)
 

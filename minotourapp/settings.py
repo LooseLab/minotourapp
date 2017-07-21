@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+from minotourapp.utils import get_env_variable
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -91,11 +93,11 @@ WSGI_APPLICATION = 'minotourapp.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'USER': 'root',
-        'PASSWORD': '',
-        'HOST': 'localhost',
-        'PORT': '3306',
-        'NAME': 'minotourws2',
+        'USER': get_env_variable("MT_DB_USER"),
+        'PASSWORD': get_env_variable("MT_DB_PASS"),
+        'HOST': get_env_variable("MT_DB_HOST"),
+        'PORT': get_env_variable("MT_DB_PORT"),
+        'NAME': get_env_variable("MT_DB_NAME"),
     }
 }
 
