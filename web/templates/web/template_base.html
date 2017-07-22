@@ -29,6 +29,7 @@
     -->
     <link rel="stylesheet" href="{% static 'web/dist/css/skins/skin-blue.min.css' %}">
 
+    <link rel="stylesheet" href="{% static 'web/datatables/css/jquery.dataTables.css' %}">
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
     <!--[if lt IE 9]>
@@ -36,7 +37,30 @@
     <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
 
-    <link rel="stylesheet" type="text/css" href="http://cdn.datatables.net/1.10.15/css/jquery.dataTables.css">
+    <!-- jQuery 2.2.3 -->
+    <script src="{% static 'web/plugins/jQuery/jquery-2.2.3.min.js' %}"></script>
+
+    <!-- Bootstrap 3.3.6 -->
+    <script src="{% static 'web/bootstrap/js/bootstrap.min.js' %}"></script>
+
+    <!-- AdminLTE App -->
+    <script src="{% static 'web/dist/js/app.min.js' %}"></script>
+
+    <!-- Highcharts -->
+    <script src="{% static 'web/highcharts/highcharts.js' %}"></script>
+    <script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>
+    <script src="{% static 'web/minotour.js' %}"></script>
+
+    <!-- Data tables -->
+    <script src="{% static 'web/datatables/js/jquery.dataTables.min.js' %}"></script>
+
+    <!-- Optionally, you can add Slimscroll and FastClick plugins.
+         Both of these plugins are recommended to enhance the
+         user experience. Slimscroll is required when using the
+         fixed layout. -->
+    <script src="{% static 'web/plugins/slimScroll/jquery.slimscroll.min.js' %}"></script>
+    <script src="{% static 'web/plugins/fastclick/fastclick.min.js' %}"></script>
+
 </head>
 
 {% block body_tag %}
@@ -169,11 +193,8 @@
 </div>
 <!-- ./wrapper -->
 
-<!-- REQUIRED JS SCRIPTS -->
-<script src="{% static 'web/bundle.js' %}"></script>
-
 <!-- AdminLTE App -->
-<script src="{% static 'web/dist/js/app.min.js' %}"></script>
+<script src="{% static 'web/dist/js/app.min.js' %}?dev=19"></script>
 
 <!-- Optionally, you can add Slimscroll and FastClick plugins.
      Both of these plugins are recommended to enhance the

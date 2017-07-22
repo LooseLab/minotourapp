@@ -1,17 +1,10 @@
-import jQuery from 'jquery';
-import Highcharts from 'highcharts';
-//import Vue from 'vue';
-//import VueResource from 'vue-resource';
-
-// https://stackoverflow.com/questions/34338411/how-to-import-jquery-using-es6-syntax
-window.$ = window.jQuery = jQuery;
-//window.Vue = Vue;
-
-//Vue.use(VueResource);
-
-require('bootstrap');
-//require('highcharts');
-require('datatables');
+Highcharts.setOptions({
+    plotOptions: {
+        series: {
+            animation: false
+        }
+    }
+});
 
 var MINOTOUR_VERSION = 0.5;
 
@@ -57,57 +50,6 @@ function check_user_runs() {
     });
 }
 
-function chart_cumulative_reads_init() {
-    console.log('inside chart_cumulative_reads_init.')
-}
-
-function chart_cumulative_reads_update() {
-    console.log('inside chart_cumulative_reads_update.')
-
-    if (this.chart_data == null) {
-        console.log('---- chart_data is null ----');
-
-    } else {
-        console.log('---- chart_data is NOT null ----');
-
-        var chart_data = this.chart_data;
-
-        // Remove previous series
-        while (this.chart.series.length > 0) {
-            this.chart.series[0].remove();
-        }
-
-        this.chart.colorCounter = 0;
-        this.chart.symbolCounter = 0;
-
-        var summaries = [];
-        if (this.mybarcode == 'All reads') {
-
-            for (var i = 0; i < chart_data.length; i++) {
-                var average_read_length = chart_data[i].total_length / chart_data[i].read_count;
-                var sample_time = new Date(chart_data[i].sample_time);
-
-                var point = {
-                    x: sample_time,
-                    y: average_read_length
-                }
-
-                summaries.push(point);
-            }
-        }
-
-        summaries.sort(function (a, b) {
-            return a.x - b.x;
-        })
-
-        this.chart.addSeries({name: '', data: summaries});
-    }
-
-}
-
-function chartLoadInitialData(data) {
-
-}
 
 function chartLoadUpdateData(data) {
     var chart_data = data;
@@ -144,31 +86,15 @@ function chartLoadUpdateData(data) {
     
 }
 
-function makeChart(divName) {
+function makeChart(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.chart(divName, {
         chart: {
-            type: 'spline',
+            type: 'column',
             animation: Highcharts.svg, // don't animate in old IE
             marginRight: 10,
-            events: {
-                load: function () {
-
-                    // set up the updating of the chart each second
-                    var series = this.series[0];
-                    setInterval(function () {
-                        var x = (new Date()).getTime(), // current time
-                            y = Math.random();
-                        series.addPoint([x, y], true, true);
-                    }, 1000);
-                }
-            }
         },
         title: {
             text: 'Live random data'
-        },
-        xAxis: {
-            type: 'datetime',
-            tickPixelInterval: 150
         },
         yAxis: {
             title: {
@@ -180,36 +106,13 @@ function makeChart(divName) {
                 color: '#808080'
             }]
         },
-        tooltip: {
-            formatter: function () {
-                return '<b>' + this.series.name + '</b><br/>' +
-                    Highcharts.dateFormat('%Y-%m-%d %H:%M:%S', this.x) + '<br/>' +
-                    Highcharts.numberFormat(this.y, 2);
-            }
-        },
         legend: {
-            enabled: false
+            enabled: true
         },
         exporting: {
             enabled: false
         },
-        series: [{
-            name: 'Random data',
-            data: (function () {
-                // generate an array of random data
-                var data = [],
-                    time = (new Date()).getTime(),
-                    i;
-
-                for (i = -19; i <= 0; i += 1) {
-                    data.push({
-                        x: time + i * 1000,
-                        y: Math.random()
-                    });
-                }
-                return data;
-            }())
-        }]
+        series: []
     });
 
     return chart;
@@ -220,8 +123,8 @@ function makeChart2(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.chart(divName, {
         chart: {
             type: 'spline',
-            animation: Highcharts.svg, // don't animate in old IE
             marginRight: 10,
+            animation: false
         },
         title: {
             text: chartTitle,
@@ -251,88 +154,8 @@ function makeChart2(divName, chartTitle, yAxisTitle) {
     return chart;
 }
 
+function updateChart (chart, data, func) {
 
-function test() {
-    return 3;
-}
-
-
-
-
-
-
-
-function updateChartReadsCalled() {
-    if (this.chart_reads_called) {
-
-    }
-
-}
-
-function updateChartsBasedOnBarcode (event) {
-    console.log(event);
-    console.log(event.target.innerText);
-
-    this.updateChartReadsCalled();
-
-}
-
-function updateBarcodeNavTab () {
-    var ul = document.getElementById('nav-tabs-barcodes');
-    var sortedBarcodes = this.barcodes();
-
-    for (var i = 0; i < sortedBarcodes.length; i++) {
-        var li = document.createElement('li');
-        var a = document.createElement('a');
-        a.onclick = this.updateChartsBasedOnBarcode;
-        a.href = '#';
-        a.text = sortedBarcodes[i];
-        li.appendChild(a);
-        ul.appendChild(li);
-    }
-}
-
-function requestInitialData () {
-    console.log('inside request initial data');
-
-    const id = 1;
-
-    var url_run = '/api/v1/runs/' + id;
-
-    $.get(url_run, function (data) {
-        console.log(data);
-        console.log(data.barcodes);
-
-        this.barcodes = data.barcodes.sort();
-        this.updateBarcodeNavTab();
-    });
-
-    /*
-     .then(function (minion_run) {
-     this.selectedBarcode = 'All reads';
-     this.minion_run = minion_run;
-     this.minion_run.barcodes = this.minion_run.barcodes.sort()
-     });
-
-     url_run = '/api/v1/runs/' + this.id + '/summarybyminute';
-     //promise_run = this.$http.get(url_run);
-
-     promise_run =
-     */
-    /*
-     promise_run
-     .then(function (res) {
-     return res.json();
-     })
-     .then(function (summarybyminute) {
-     this.summary_by_minute = summarybyminute;
-     console.log('---- summary by minute ----');
-     console.log(summarybyminute);
-     console.log('---- summary by minute ----');
-     });
-
-     //this.counterDown();
-     */
 }
 
 function MinotourApp() {
@@ -345,30 +168,61 @@ function MinotourApp() {
     this.barcodes = null;
 
     this.summaryByMinute = null;
+    this.id = null;
+    this.selectedBarcode = null;
 
-    this.updateChartsBasedOnBarcode = updateChartsBasedOnBarcode;
     this.makeChart = makeChart;
     this.makeChart2 = makeChart2;
 
     var self = this;
 
     this.init = function() {
-        this.chart_reads_called = this.makeChart('reads-called');
-        this.chart_yield = this.makeChart('yield');
-        this.chart_average_read_length = this.makeChart('average-read-length');
-        this.chart_maximum_read_length = this.makeChart('maximum-read-length');
-        this.average_read_lengths_overtime = this.makeChart2(
-            'average-read-lengths-overtime', 
-            'average read length over time',
-            'average read length'.toUpperCase
+        this.chart_reads_called = this.makeChart(
+            'reads-called',
+            'reads called'.toUpperCase(),
+            'number of reads called'.toUpperCase()
         );
 
-        //this.request
+        this.chart_yield = this.makeChart(
+            'yield',
+            'yield'.toUpperCase(),
+            'yield'.toUpperCase()
+        );
+
+        this.chart_average_read_length = this.makeChart(
+            'average-read-length',
+            'average read length'.toUpperCase(),
+            'average read length'.toUpperCase()
+        );
+
+        this.chart_maximum_read_length = this.makeChart(
+            'maximum-read-length',
+            'maximum read length'.toUpperCase(),
+            'maximum read length'.toUpperCase()
+        );
+        
+        this.average_read_lengths_overtime = this.makeChart2(
+            'average-read-lengths-overtime', 
+            'average read length over time'.toUpperCase(),
+            'average read length'.toUpperCase()
+        );
+
+        self.id = document.getElementById('run-id').innerText;
+        self.selectedBarcode = 'All Reads';
+
+        this.requestData();
+
         setInterval(function(){
-            this.test();
             this.requestData();
-        }.bind(this), 5000);
+        }.bind(this), 60000);
     }; 
+
+    this.updateChartsBasedOnBarcode = function (event) {
+        console.log(event);
+        console.log(event.target.innerText);
+
+        self.requestData();
+    }
 
     this.updateBarcodeNavTab = function () {
         var ul = document.getElementById('nav-tabs-barcodes');
@@ -388,150 +242,160 @@ function MinotourApp() {
         }
     }
     
-    this.requestInitialData = function () {
-        console.log('inside request initial data');
-
-        const id = 1;
-
-        var url_run = '/api/v1/runs/' + id;
-
-        $.get(url_run, function (data) {
-            console.log(data);
-            console.log(data.barcodes);
-
-            self.barcodes = data.barcodes.sort();
-            self.updateBarcodeNavTab();
-        });
-
-        $.get('/api/v1/runs/' + id + '/summarybyminute', function(data) {
-            self.summaryByMinute = data;
-            console.log('---- summary by minute ----');
-            console.log(self.summaryByMinute);
-            console.log('---- summary by minute ----');
-        });
-
-        //this.counterDown();
-    }
-
     this.updateSummaryByMinute = function (data) {
 
     }
 
-    this.requestData = function () {
-        console.log('inside request data');
-
-        const id = 1;
-
-        var url_run = '/api/v1/runs/' + id;
-
-        $.get(url_run, function (data) {
-            self.barcodes = data.barcodes.sort();
-            self.updateBarcodeNavTab();
-        });
-
+    this.requestSummaryByMinuteData = function (id) {
         /*
          * Request summary by minute data
          */
-        var url = '';
-        if (!this.summaryByMinute) {
-            console.log('-- summaries by minute equal null.');
-            url = '/api/v1/runs/' + id + '/summarybyminute';
-
-        } else {
-            console.log('-- summaries by minute NOT equal null.');
-            var lastSummary = this.summaryByMinute[this.summaryByMinute.length - 1];
-            console.log(lastSummary.sample_time);
-            url = '/api/v1/runs/' + id + '/summarybyminute/' + lastSummary.sample_time;
-        }
+        var url = '/api/v1/runs/' + id + '/summarybyminute';
 
         $.get(url, function(data) {
             console.log('--- data length: ' + data.length);
+            console.log('selected barcador: ' + self.selectedBarcode);
 
             if (data.length > 0) {
                 var orderedData = data.sort(function(a, b){
                     return new Date(a.sample_time) - new Date(b.sample_time);
                 });
-                
-                console.log(orderedData);
 
-                if (self.summaryByMinute) {
-                    orderedData.forEach(function(element) {
-                        self.summaryByMinute.push(element);
-
-                        self.average_read_lengths_overtime.series.forEach(function(theSerie){
-                            var average_read_length = element.total_length / element.read_count;
-                            var sample_time = new Date(element.sample_time);
-
-                            var point = {
-                                x: sample_time,
-                                y: average_read_length
-                            }
-
-                            if (theSerie.name === element.typename) {
-                                theSerie.addPoint(point);
-                            } else {
-                                self.average_read_lengths_overtime.addSeries({name: element.typename, data: [point]});
-                            }
-                        })
-                    }, this);
+                /*
+                if (self.selectedBarcode == 'All Reads') {
+                    self.filteredData = orderedData;
                 } else {
-                    self.summaryByMinute = orderedData;
+                    var filteredData = orderedData.filter(function(el){
+                        console.log(el.barcode);
+                        console.log(self.selectedBarcode);
+                        return el.typename == self.selectedBarcode;
+                    });
+                }
+                */
 
-                    if (self.average_read_lengths_overtime.series.length == 0) {
-                        console.log(self.average_read_lengths_overtime.series);
+                self.summaryByMinute = orderedData;
 
-                        var summaries = {};
-                        //if (this.mybarcode == 'All reads') {
-                            for (var i = 0; i < self.summaryByMinute.length; i++) {
-                                if (summaries[self.summaryByMinute[i].typename] === undefined) {
-                                    summaries[self.summaryByMinute[i].typename] = [];
-                                }
-                                var average_read_length = self.summaryByMinute[i].total_length / self.summaryByMinute[i].read_count;
-                                var sample_time = new Date(self.summaryByMinute[i].sample_time);
+                // Remove previous series
+                while (self.average_read_lengths_overtime.series.length > 0) {
+                    self.average_read_lengths_overtime.series[0].remove();
+                }
 
-                                var point = {
-                                    x: sample_time,
-                                    y: average_read_length
-                                }
+                var summaries = {};
 
-                                summaries[self.summaryByMinute[i].typename].push(point);
-                            }
-                        //}
+                for (var i = 0; i < self.summaryByMinute.length; i++) {
+                    if (summaries[self.summaryByMinute[i].typename] === undefined) {
+                        summaries[self.summaryByMinute[i].typename] = [];
+                    }
+                    var average_read_length = self.summaryByMinute[i].total_length / self.summaryByMinute[i].read_count;
+                    var sample_time = new Date(self.summaryByMinute[i].sample_time);
 
-                        //summaries.sort(function (a, b) {
-                        //    return a.x - b.x;
-                        //})
-
-                        for (var key in summaries) {
-                            self.average_read_lengths_overtime.addSeries({name: key, data: summaries[key]});
-                        }
-                        
-
-
+                    var point = {
+                        x: sample_time,
+                        y: average_read_length
                     }
 
+                    summaries[self.summaryByMinute[i].typename].push(point);
+                }
 
-
+                for (var key in summaries) {
+                    self.average_read_lengths_overtime.addSeries({name: key, data: summaries[key]});
                 }
             }
         });
+    }
+
+    this.requestSummaryData = function (id) {
+        /*
+         * Request summary by barcode data
+         */
+        var url = '/api/v1/runs/' + id + '/summarybarcode';
+
+        $.get(url, function(data) {
+            console.log('--- data length: ' + data.length);
+            console.log('selected barcador: ' + self.selectedBarcode);
+
+            if (data.length > 0) {
+                var summaries = {};
+                for (var i = 0; i < data.length; i++) {
+                    var item = data[i];
+
+                    if (summaries[item.barcode] === undefined) {
+                        summaries[item.barcode] = {};
+                    }
+
+                    if (summaries[item.barcode][item.typename] === undefined) {
+                        summaries[item.barcode][item.typename] = {
+                            'read_count': null,
+                            'yield': null,
+                            'average_read_length': null,
+                            'max_length': null
+                        };
+
+                        summaries[item.barcode][item.typename]['read_count'] = { 
+                            'name': item.typename, 
+                            'data': [ item.read_count ], 
+                            'animation': false
+                        };
+
+                        summaries[item.barcode][item.typename]['yield'] = {
+                            'name': item.typename, 
+                            'data': [ item.total_length ], 
+                            'animation': false
+                        };
+                        
+                        summaries[item.barcode][item.typename]['average_read_length'] = {
+                            'name': item.typename,
+                            'data': [ item.total_length / item.read_count ],
+                            'animation': false
+                        };
+                        
+                        summaries[item.barcode][item.typename]['max_length'] = {
+                            'name': item.typename,
+                            'data': [ item.max_length ],
+                            'animation': false
+                        };
+                    }
+                }
+
+                console.log(summaries);
+
+                while (self.chart_reads_called.series.length  > 0) {
+                    self.chart_reads_called.series[0].remove();
+                }
+                self.chart_reads_called.addSeries(summaries[item.barcode][item.typename]['read_count']);
+
+                while (self.chart_yield.series.length > 0) {
+                    self.chart_yield.series[0].remove();
+                }
+                self.chart_yield.addSeries(summaries[item.barcode][item.typename]['yield']);
+
+                while (self.chart_average_read_length.series.length > 0) {
+                    self.chart_average_read_length.series[0].remove();
+                }
+                self.chart_average_read_length.addSeries(summaries[item.barcode][item.typename]['average_read_length']);
+
+                while (self.chart_maximum_read_length.series.length > 0) {
+                    self.chart_maximum_read_length.series[0].remove();
+                }
+                self.chart_maximum_read_length.addSeries(summaries[item.barcode][item.typename]['max_length']);
+
+            }
+        });
+    }
+
+    this.requestData = function () {
+        console.log('inside request data');
+
+        var url_run = '/api/v1/runs/' + self.id;
+
+        $.get(url_run, function (data) {
+            self.barcodes = data.barcodes.sort();
+            self.updateBarcodeNavTab();
+        });
+
+        self.requestSummaryByMinuteData(self.id);
+        self.requestSummaryData(self.id);
 
         //this.counterDown();
     }
-
-    this.test = function() {
-        console.log('teste');
-    }
 }
-
-
-
-
-
-
-
-var app = new MinotourApp();
-
-//app.requestInitialData();
-app.init();
-
