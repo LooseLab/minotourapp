@@ -94,7 +94,7 @@ function makeChart(divName, chartTitle, yAxisTitle) {
             marginRight: 10,
         },
         title: {
-            text: 'Live random data'
+            text: ''
         },
         yAxis: {
             title: {
@@ -250,7 +250,7 @@ function MinotourApp() {
         /*
          * Request summary by minute data
          */
-        var url = '/api/v1/runs/' + id + '/summarybyminute';
+        var url = '/api/v1/runs/' + id + '/summarybarcodebyminute';
 
         $.get(url, function(data) {
             console.log('--- data length: ' + data.length);

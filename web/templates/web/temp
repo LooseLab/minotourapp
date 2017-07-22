@@ -1,0 +1,694 @@
+<!-- Tab panes-->
+                                <div class="tab-content">
+                                    <!--<div v-for="(key,minion) in minions | orderBy 'name'" role="tabpanel" class="tab-pane" :id="minion.name">-->
+                                    <div v-for="(key,minion) in minions" role="tabpanel" class="tab-pane"
+                                         :id="minion.name">
+                                        <div v-if='minion.state=="active"'>
+
+                                            <div class="panel panel-info">
+                                                <div class="panel-heading">
+                                                    <h3 class="panel-title">minKNOW Details -
+                                                        {{minion.livedata.dataset.result}}</h3>
+                                                </div>
+
+                                                <div class="panel-body">
+                                                    <!--<div v-if='minion.engine_states.status!="ready"'>-->
+                                                    <div v-if="minion.livedata.current_script.result.length>0">
+                                                        <div class="row">
+                                                            <div class="col-md-5">
+                                                                <div class="row">
+                                                                    <div class="col-md-8"><p><b></i>Experiment
+                                                                        <!--Started</i>: {{ (minion.start_time) | date
+                                                                        '%Y-%m-%d %I:%M:%s %p' }}</b></p></div>-->
+                                                                        Started</i>: {{minion.start_time}}</b></p></div>-->
+                                                                    <!--<div class="col-md-4"><p><i>(Last Update</i>: {{
+                                                                        (minion.last_update) | date '%Y-%m-%d %I:%M:%s
+                                                                        %p' }})</p></div>-->
+                                                                    <div class="col-md-4"><p><i>(Last Update</i>: {{
+                                                                        minion.last_update }}</p></div>
+                                                                </div>
+                                                                <div class="row">
+                                                                    <div class="col-md-3"><p><i>MinKNOW version</i>:
+                                                                        {{minion.minKNOW_version}}</p></div>
+                                                                    <div class="col-md-3"><p><i>Flow Cell ID</i>:
+                                                                        {{minion.flow_cell_id}}</p></div>
+                                                                    <div class="col-md-3"><p><i>minION ID</i>:
+                                                                        {{minion.name}}</p></div>
+                                                                    <div class="col-md-3"><p><i>ASIC ID</i>:
+                                                                        {{minion.asic_id}}</p></div>
+                                                                </div>
+                                                                <div class="row">
+                                                                    <div class="col-md-8"><p><i>Run Name</i>:
+                                                                        {{minion.run_name}}</p></div>
+                                                                    <div class="col-md-4"><p><i>Status</i>:
+                                                                        {{minion.status}}</p></div>
+                                                                </div>
+                                                                <div class="row">
+                                                                    <div class="col-md-3"><p><i>Yield</i>:
+                                                                        {{minion.livedata.event_yield}}</p></div>
+                                                                    <!--<div class="col-md-3"><p><i>Channels with Reads</i>: {{minion.statistics.channels_with_read_event_count}}</p></div>-->
+                                                                    <!--<div class="col-md-3"><p><i>Read Event Count</i>: {{minion.statistics.read_event_count}}</p></div>-->
+                                                                    <div class="col-md-3"><p><i>Completed Read Count</i>:
+                                                                        {{minion.read_count}}</p></div>
+                                                                </div>
+                                                                <div class="row">
+
+                                                                    <div class="col-md-3" :id="minion.name">
+                                                                        <div is="container-avg" :title="minion.name"
+                                                                             :key="key"
+                                                                             :datain="minion.livedata.event_yield"
+                                                                             :datain2="minion.read_count"></div>
+                                                                    </div>
+                                                                    <!--<div class="col-md-3" :id="minion.name"><div is="container-chan" :title="minion.name" :key="key" :datain="minion.statistics.channels_with_read_event_count"></div></div>-->
+                                                                    <div class="col-md-3" :id="minion.name">
+                                                                        <div is="container-strand" :title="minion.name"
+                                                                             :key="key"
+                                                                             :datain="minion.currstrand"></div>
+                                                                    </div>
+                                                                    <div class="col-md-3" :id="minion.name">
+                                                                        <div is="container-perc" :title="minion.name"
+                                                                             :key="key"
+                                                                             :datain="minion.currpercentage"></div>
+                                                                    </div>
+
+
+                                                                </div>
+
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="col-md-12" :id="minion.name">
+                                                                    <div is="chartporehist" :title="minion.name"
+                                                                         :key="key" :datain="minion.colour_stats"
+                                                                         :datain2="minion.pore_history"></div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <h5><b>Messages from MinKNOW:</b></h5>
+                                                                <div class="pre-scrollable">
+                                                                    <div v-for="message in minion.messages | reverse">
+                                                                        <!--<div class="alert alert-{{message.severity}} alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>{{message.message}}<br>{{message.timestamp}}</div>-->
+                                                                        <span v-bind:class="'label label-' + message.severity">{{message.severity}}</span>
+                                                                        {{message.message}}<br><i>{{message.timestamp}}</i>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <p>The values below are estimated from the run based on
+                                                                    a scaling factor from events determined by
+                                                                    sequencing speed. The projected yield for 24 hours
+                                                                    and 48 hours will update dynamically throuhgout the
+                                                                    run.
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-2">
+                                                                <p> Set sequencing speed: </p>
+                                                                <select v-model="seqspeed">
+                                                                    <option>MegaCrazy Runs</option>
+                                                                    <option selected="selected">450 b/s</option>
+                                                                    <option>250 b/s</option>
+                                                                    <option>70 b/s</option>
+                                                                </select>
+                                                                <p><span>Selected: {{ seqspeed }}</span></p>
+                                                            </div>
+                                                            <div is="predictedvals" :seqspeed="seqspeed"
+                                                                 :currentyield="minion.livedata.event_yield"
+                                                                 :compreads="minion.read_count"
+                                                                 :calcurrenttime="minion.start_time"
+                                                                 :calcstarttime="minion.start_time"></div>
+
+                                                            <!--<div class="col-md-3" :id="minion.name"><div is="container-strand" :title="minion.name" :key="key" :datain="minion.simplesummary"></div></div>-->
+                                                            <!--<div class="col-md-3" :id="minion.name"><div is="container-perc" :title="minion.name" :key="key" :datain="minion.currpercentage"></div></div>-->
+
+
+                                                        </div>
+                                                        <div class="row">
+                                                        </div>
+
+                                                        <hr>
+                                                        <div class="row">
+
+                                                            <div class="col-lg-6" :id="minion.name">
+                                                                <div is="chartyield" :title="minion.name" :key="key"
+                                                                     :datain2="minion.yield_history"></div>
+                                                            </div>
+                                                            <div class="col-lg-6" :id="minion.name">
+                                                                <div is="porehistory" :title="minion.name" :key="key"
+                                                                     :datain2="minion.strand"
+                                                                     :datain3="minion.good_single"></div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-lg-12" :id="minion.name">
+                                                                <div is="projchartyield" :start_time="minion.start_time"
+                                                                     :seqspeed="seqspeed" :title="minion.name"
+                                                                     :key="key" :datain="minion.livedata.event_yield"
+                                                                     :datain2="minion.yield_history"></div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+
+
+                                                            <div class="col-lg-6" :id="minion.name">
+                                                                <div is="perchistory" :title="minion.name" :key="key"
+                                                                     :datain2="minion.percentage"></div>
+                                                            </div>
+
+                                                            <div class="col-lg-6" :id="minion.name">
+                                                                <div is="chartporehistdetails" :title="minion.name"
+                                                                     :key="key" :datain="minion.colour_stats"
+                                                                     :datain2="minion.pore_history"></div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-lg-12" :id="minion.name">
+                                                                <div is="chartreadhist" :title="minion.name" :key="key"
+                                                                     :datain="minion.histogram_values"
+                                                                     :datain2="minion.histogram_bin_width"
+                                                                     :totalyield="minion.livedata.event_yield"
+                                                                     :seqspeed="seqspeed"
+                                                                     :readcount="minion.read_count"></div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-lg-6" :id="minion.name">
+                                                                <div is="temphistory" :title="minion.name" :key="key"
+                                                                     :datain2="minion.asic_temp"
+                                                                     :datain3="minion.heatsinktemp"></div>
+                                                            </div>
+
+                                                            <div class="col-lg-6" :id="minion.name">
+                                                                <div is="volthistory" :title="minion.name" :key="key"
+                                                                     :datain2="minion.voltage"></div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-lg-6" :id="minion.name">
+                                                                <div is="porecurrents" :title="minion.name" :key="key"
+                                                                     :datain="minion.instrand_history"
+                                                                     :datain2="minion.openpore_history"></div>
+                                                            </div>
+                                                            <div class="col-lg-6" :id="minion.name">
+                                                                <div is="meanratio" :title="minion.name" :key="key"
+                                                                     :datain="minion.meanratio_history"></div>
+                                                            </div>
+
+
+                                                        </div>
+                                                        <!--  <div v-for="(key,value) in minion.engine_states">{{key}}:{{value}}</div>-->
+                                                    </div>
+
+
+                                                    <div v-else>
+                                                        <div class="row">
+                                                            <div class="col-md-7">
+                                                                <p>This minION is not currently running.</p>
+                                                                <button id='inactivateminion'
+                                                                        class='btn btn-danger btn-sm'
+                                                                        data-toggle='modal'
+                                                                        v-bind:data-target="'#' + minion.name + 'offminionmodal'">
+                                                                    <i class='fa fa-stop'></i> Switch Off minION
+                                                                </button>
+                                                            </div>
+                                                            <div class="col-md-5">
+                                                                <h5><b>Messages from MinKNOW:</b></h5>
+                                                                <div class="pre-scrollable">
+                                                                    <!--<div v-for="message in minion.messages | reverse" >-->
+                                                                    <div v-for="message in minion.messages">
+                                                                        <!--<div class="alert alert-{{message.severity}} alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>{{message.message}}<br>{{message.timestamp}}</div>-->
+                                                                        <!--<span v-bind:class="'label label-' + message.severity">{{message.severity}}</span>  {{message.message}}<br><i>{{message.timestamp | date "%c"}}</i>-->
+                                                                        <span v-bind:class="'label label-' + message.severity">{{message.severity}}</span>
+                                                                        {{message.message}}<br><i>{{message.timestamp}}</i>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- Modal -->
+                                                        <div class='modal fade'
+                                                             v-bind:id="minion.name + 'offminionmodal'" tabindex='-1'
+                                                             role='dialog' aria-labelledby='myModalLabel'
+                                                             aria-hidden='true'>
+                                                            <div class='modal-dialog'>
+                                                                <div class='modal-content'>
+                                                                    <div class='modal-header'>
+                                                                        <button type='button' class='close'
+                                                                                data-dismiss='modal' aria-hidden='true'>
+                                                                            &times;
+                                                                        </button>
+                                                                        <h4 class='modal-title' id='myModalLabel'>Stop
+                                                                            your minION</h4>
+                                                                    </div>
+                                                                    <div class='modal-body'>
+                                                                        <div v-bind:id="minion.name + 'offminioninfo'"
+                                                                        <p>This action will switch the minION to an
+                                                                            inactive state. It should be possible to
+                                                                            reactivate the minION remotely but software
+                                                                            crashes on the minION controlling device may
+                                                                            cause problems. You should only inactivate
+                                                                            your minION device remotely if you are
+                                                                            certain you wish to do so and <strong> at
+                                                                                your own risk</strong>.</p>
+
+                                                                        <p>If you are sure you wish to do this, click
+                                                                            'Inactivate minION' below. Otherwise close
+                                                                            this window.</p>
+                                                                    </div>
+                                                                    <div class='modal-footer'>
+                                                                        <button type='button' class='btn btn-default'
+                                                                                data-dismiss='modal'>Close
+                                                                        </button>
+                                                                        <button v-on:click="inactivateminion"
+                                                                                :id='minion.name' type='button'
+                                                                                class='btn btn-danger'
+                                                                                data-dismiss='modal'>Switch Off minION
+                                                                        </button>
+                                                                    </div>
+                                                                </div><!-- /.modal-content -->
+                                                            </div><!-- /.modal-dialog -->
+                                                        </div><!-- /.modal -->
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <div class="panel panel-warning">
+                                                <div class="panel-heading">
+                                                    <h3 class="panel-title">minKNOW Control options</h3>
+                                                </div>
+                                                <div class="panel-body">
+                                                    <h5>To test if you have a connection to minKNOW:</h5>
+                                                    <button v-on:click="testmessage" :id='minion.url' type='button'
+                                                            class='btn btn-info btn-sm'><i class='fa fa-magic'></i> Test
+                                                        Communication
+                                                    </button>
+                                                    <br>
+
+
+                                                    <h5>Log Custom Message:</h5>
+                                                    <!--<button id='renamerun' type='button' class='btn btn-info btn-sm'><i class='fa fa-magic'></i> Rename Run</button>-->
+                                                    <!-- Indicates a dangerous or potentially negative action -->
+                                                    <!-- Button trigger modal -->
+                                                    <button id='custommessage' class='btn btn-info btn-sm'
+                                                            data-toggle='modal'
+                                                            v-bind:data-target="'#' + minion.name + 'custommessage'">
+                                                        <i class='fa fa-magic'></i> Send Message
+                                                    </button>
+                                                    <!-- Modal -->
+                                                    <div class='modal fade' v-bind:id="minion.name+'custommessage'"
+                                                         tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
+                                                         aria-hidden='true'>
+                                                        <div class='modal-dialog'>
+                                                            <div class='modal-content'>
+                                                                <div class='modal-header'>
+                                                                    <button type='button' class='close'
+                                                                            data-dismiss='modal' aria-hidden='true'>
+                                                                        &times;
+                                                                    </button>
+                                                                    <h4 class='modal-title' id='myModalLabel'>Send a
+                                                                        custom message to MinKNOW</h4>
+                                                                </div>
+                                                                <div class='modal-body'>
+                                                                    <div v-bind:id="minion.name + 'custommessage'">
+                                                                        <p>You can log a custom message into minKNOW to
+                                                                            document things such as addition of library
+                                                                            or other event. This will then be written
+                                                                            into the log files for this run.</p>
+                                                                        <input type="text"
+                                                                               v-bind:id="minion.name+'custommessagefield'"
+                                                                               class="form-control" placeholder="">
+                                                                    </div>
+                                                                    <div class='modal-footer'>
+                                                                        <button type='button' class='btn btn-default'
+                                                                                data-dismiss='modal'>Close
+                                                                        </button>
+                                                                        <button v-on:click="custommessage"
+                                                                                :id='minion.url' :name='minion.name'
+                                                                                type='button' class='btn btn-danger'
+                                                                                data-dismiss='modal'>Send Message
+                                                                        </button>
+                                                                    </div>
+                                                                </div><!-- /.modal-content -->
+                                                            </div><!-- /.modal-dialog -->
+                                                        </div><!-- /.modal -->
+                                                    </div>
+
+
+                                                    <h5>Rename Your Run:</h5>
+                                                    <!--<button id='renamerun' type='button' class='btn btn-info btn-sm'><i class='fa fa-magic'></i> Rename Run</button>-->
+                                                    <!-- Indicates a dangerous or potentially negative action -->
+                                                    <!-- Button trigger modal -->
+                                                    <button id='renamerun' class='btn btn-info btn-sm'
+                                                            data-toggle='modal'
+                                                            v-bind:data-target="'#' + minion.name + 'renamemodal'">
+                                                        <i class='fa fa-magic'></i> Rename Run
+                                                    </button>
+                                                    <!-- Modal -->
+                                                    <div class='modal fade' v-bind:id="minion.name+'renamemodal'"
+                                                         tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
+                                                         aria-hidden='true'>
+                                                        <div class='modal-dialog'>
+                                                            <div class='modal-content'>
+                                                                <div class='modal-header'>
+                                                                    <button type='button' class='close'
+                                                                            data-dismiss='modal' aria-hidden='true'>
+                                                                        &times;
+                                                                    </button>
+                                                                    <h4 class='modal-title' id='myModalLabel'>Rename
+                                                                        Your Run</h4>
+                                                                </div>
+                                                                <div class='modal-body'>
+                                                                    <div v-bind:id="minion.url+'renameinfo'">
+                                                                        <p>You can rename a run if you wish to do so.
+                                                                            Note there is no need to do this unless you
+                                                                            wish to change the sample ID for some
+                                                                            reason.</p>
+                                                                        <input type="text"
+                                                                               v-bind:id="minion.name+'newname'"
+                                                                               class="form-control"
+                                                                               placeholder="New Run Name">
+                                                                        <p>If you are sure you wish to do this enter
+                                                                            your new name above and click 'Rename Run'
+                                                                            below. Otherwise close this window.</p>
+                                                                        <p> We dont recommend doing this when a run is
+                                                                            in progress!</p>
+                                                                    </div>
+                                                                    <div class='modal-footer'>
+                                                                        <button type='button' class='btn btn-default'
+                                                                                data-dismiss='modal'>Close
+                                                                        </button>
+                                                                        <button v-on:click="renamenow" :id='minion.url'
+                                                                                :name='minion.name' type='button'
+                                                                                class='btn btn-danger'
+                                                                                data-dismiss='modal'>Rename Run
+                                                                        </button>
+                                                                    </div>
+                                                                </div><!-- /.modal-content -->
+                                                            </div><!-- /.modal-dialog -->
+                                                        </div><!-- /.modal -->
+                                                    </div>
+                                                    <h5>Rename Flow Cell:</h5>
+                                                    <!--<button id='renamerun' type='button' class='btn btn-info btn-sm'><i class='fa fa-magic'></i> Rename Run</button>-->
+                                                    <!-- Indicates a dangerous or potentially negative action -->
+                                                    <!-- Button trigger modal -->
+                                                    <button id='renameflowcell' class='btn btn-info btn-sm'
+                                                            data-toggle='modal'
+                                                            v-bind:data-target="'#' + minion.name + 'renameflowcell'">
+                                                        <i class='fa fa-magic'></i> Rename Flowcell
+                                                    </button>
+                                                    <!-- Modal -->
+                                                    <div class='modal fade' v-bind:id="minion.name+'renameflowcell'"
+                                                         tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
+                                                         aria-hidden='true'>
+                                                        <div class='modal-dialog'>
+                                                            <div class='modal-content'>
+                                                                <div class='modal-header'>
+                                                                    <button type='button' class='close'
+                                                                            data-dismiss='modal' aria-hidden='true'>
+                                                                        &times;
+                                                                    </button>
+                                                                    <h4 class='modal-title' id='myModalLabel'>Rename
+                                                                        Your Flowcell</h4>
+                                                                </div>
+                                                                <div class='modal-body'>
+                                                                    <div v-bind:id="minion.name+'renameflowcellinfo'">
+                                                                        <p>You can rename a flowcell if you wish to do
+                                                                            so. Note there is no need to do this unless
+                                                                            you wish to change the Flowcell ID for some
+                                                                            reason.</p>
+                                                                        <input type="text"
+                                                                               v-bind:id="minion.name+'newflowcellname'"
+                                                                               class="form-control"
+                                                                               placeholder="New Flowcell ID">
+                                                                        <p>If you are sure you wish to do this enter
+                                                                            your new Flowcell ID above and click 'Rename
+                                                                            Run' below. Otherwise close this window.</p>
+                                                                        <p> We dont recommend doing this when a run is
+                                                                            in progress!</p>
+                                                                    </div>
+                                                                    <div class='modal-footer'>
+                                                                        <button type='button' class='btn btn-default'
+                                                                                data-dismiss='modal'>Close
+                                                                        </button>
+                                                                        <button v-on:click="renameflowcellnow"
+                                                                                :id='minion.url' :name='minion.name'
+                                                                                type='button' class='btn btn-danger'
+                                                                                data-dismiss='modal'>Rename Flowcell
+                                                                        </button>
+                                                                    </div>
+                                                                </div><!-- /.modal-content -->
+                                                            </div><!-- /.modal-dialog -->
+                                                        </div><!-- /.modal -->
+                                                    </div>
+
+
+                                                    <br>
+                                                    <h5>Remote Start/Stop Sequencing:</h5>
+
+                                                    <!-- Indicates a dangerous or potentially negative action -->
+                                                    <!-- Button trigger modal -->
+                                                    <button id='stopminion' class='btn btn-danger btn-sm'
+                                                            data-toggle='modal'
+                                                            v-bind:data-target="'#' + minion.name + 'stopminionmodal'">
+                                                        <i class='fa fa-stop'></i> Stop minION
+                                                    </button>
+
+                                                    <!-- Modal -->
+                                                    <div class='modal fade' v-bind:id="minion.name+'stopminionmodal'"
+                                                         tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
+                                                         aria-hidden='true'>
+                                                        <div class='modal-dialog'>
+                                                            <div class='modal-content'>
+                                                                <div class='modal-header'>
+                                                                    <button type='button' class='close'
+                                                                            data-dismiss='modal' aria-hidden='true'>
+                                                                        &times;
+                                                                    </button>
+                                                                    <h4 class='modal-title' id='myModalLabel'>Stop your
+                                                                        minION</h4>
+                                                                </div>
+                                                                <div class='modal-body'>
+                                                                    <div v-bind:id="minion.name+'stopminioninfo'">
+                                                                        <p>This will attempt to stop your minION
+                                                                            sequencer remotely. It should be possible to
+                                                                            restart sequencing remotely but software
+                                                                            crashes on the minION controlling device may
+                                                                            cause problems. You should only stop your
+                                                                            minION device remotely if you are certain
+                                                                            you wish to do so and <strong> at your own
+                                                                                risk</strong>.</p>
+
+                                                                        <p>If you are sure you wish to do this, click
+                                                                            'Stop minION' below. Otherwise close this
+                                                                            window.</p>
+                                                                    </div>
+                                                                    <div class='modal-footer'>
+                                                                        <button type='button' class='btn btn-default'
+                                                                                data-dismiss='modal'>Close
+                                                                        </button>
+                                                                        <button v-on:click="stopminion" :id='minion.url'
+                                                                                type='button' class='btn btn-danger'
+                                                                                data-dismiss='modal'>Stop minION
+                                                                        </button>
+                                                                    </div>
+                                                                </div><!-- /.modal-content -->
+                                                            </div><!-- /.modal-dialog -->
+                                                        </div><!-- /.modal -->
+                                                    </div>
+
+
+                                                    <!-- Indicates a dangerous or potentially negative action -->
+                                                    <!-- Button trigger modal -->
+                                                    <button id='startminion' class='btn btn-success btn-sm'
+                                                            data-toggle='modal'
+                                                            v-bind:data-target="'#' + minion.name + 'startminionmodal'">
+                                                        <i class='fa fa-play'></i> Start minION
+                                                    </button>
+
+                                                    <!-- Modal -->
+                                                    <div class='modal fade' v-bind:id="minion.name+'startminionmodal'"
+                                                         tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
+                                                         aria-hidden='true'>
+                                                        <div class='modal-dialog'>
+                                                            <div class='modal-content'>
+                                                                <div class='modal-header'>
+                                                                    <button type='button' class='close'
+                                                                            data-dismiss='modal' aria-hidden='true'>
+                                                                        &times;
+                                                                    </button>
+                                                                    <h4 class='modal-title' id='myModalLabel'>Start your
+                                                                        minION</h4>
+                                                                </div>
+                                                                <div class='modal-body'>
+                                                                    <div v-bind:id="minion.name+'startminioninfo'">
+                                                                        <p>This will attempt to restart your minION
+                                                                            sequencer remotely.</p>
+
+                                                                        <p>If you are sure you wish to do this select an
+                                                                            available run script and click 'Start
+                                                                            minION' below. Otherwise close this
+                                                                            window.</p>
+                                                                        <div v-for="script in minion.scripts"
+                                                                             class='radio'>
+                                                                            <label>
+                                                                                <input type='radio' name='scriptRadios'
+                                                                                       :id='script.name'
+                                                                                       :value='script.identifier'>{{script.name}}.py</label>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class='modal-footer'>
+                                                                        <button type='button'
+                                                                                class='btn btn-default btn-sm'
+                                                                                data-dismiss='modal'>Close
+                                                                        </button>
+                                                                        <button v-on:click="startminion"
+                                                                                :id='minion.url' type='button'
+                                                                                class='btn btn-success'
+                                                                                data-dismiss='modal'>Start minION
+                                                                        </button>
+                                                                    </div>
+                                                                </div><!-- /.modal-content -->
+                                                            </div><!-- /.modal-dialog -->
+                                                        </div><!-- /.modal -->
+                                                    </div>
+                                                    <br><br>
+                                                    <button class="btn btn-primary" type="button" data-toggle="collapse"
+                                                            v-bind:data-target="'#collapseExample' + minion.name"
+                                                            aria-expanded="false" aria-controls="collapseExample">
+                                                        Available Scripts:
+                                                    </button>
+                                                    <div class="collapse" v-bind:id="'collapseExample' + minion.name">
+                                                        <div class="well">
+                                                            <div v-for="script in minion.scripts">{{script.name}}</div>
+                                                        </div>
+                                                    </div>
+
+
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-4">
+                                            <div class='panel panel-info'>
+                                                <div class='panel-heading'>
+                                                    <h3 class='panel-title'>minKNOW real time data</h3>
+                                                </div>
+                                                <div class='panel-body'>
+                                                    <div class='table-responsive'>
+                                                        <table class='table table-condensed'>
+                                                            <tr>
+                                                                <th>Category
+                                                                </td>
+                                                                <th>Info
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>minKNOW computer name</td>
+                                                                <td>{{minion.livedata.machine_id.result}}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>minKNOW Status</td>
+                                                                <td>{{minion.status}}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Current Script</td>
+                                                                <td>{{minion.livedata.current_script.result}}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Sample Name</td>
+                                                                <td>{{minion.sample_id}}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Flow Cell ID</td>
+                                                                <td>{{minion.flow_cell_id}}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Run Name</td>
+                                                                <td>{{minion.run_name}}</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Voltage Offset</td>
+                                                                <td>{{minion.livedata.voltage_value}} mV</td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td>Yield</td>
+                                                                <td>{{minion.livedata.event_yield}}</td>
+                                                            </tr>
+                                                        </table>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+
+
+                                        </div>
+
+                                        <div class="col-lg-4" :id="minion.name">
+                                            <div is="diskusage" :title="minion.livedata.machine_id.result" :key="key"
+                                                 :datain="minion.livedata.disk_space.result"></div>
+                                        </div>
+
+
+                                        <div class="col-md-12">
+                                            <br>
+
+                                        </div>
+                                    </div>
+
+                                   <!-- <div v-else>-->
+                                    <div>
+                                        <h5>You are interacting with minION: {{minion.name}}</h5>
+                                        It is currently <i>inactive</i>.
+
+                                        <!-- Indicates a dangerous or potentially negative action -->
+                                        <!-- Button trigger modal -->
+                                        <button id='initminion' class='btn btn-warning btn-sm' data-toggle='modal'
+                                                v-bind:data-target="'#' + minion.name + 'initminionmodal'">
+                                            <i class='fa fa-stop'></i> Initialise minION
+                                        </button>
+
+                                        <!-- Modal -->
+                                        <div class='modal fade' v-bind:id="minion.name+'initminionmodal'" tabindex='-1'
+                                             role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>
+                                            <div class='modal-dialog'>
+                                                <div class='modal-content'>
+                                                    <div class='modal-header'>
+                                                        <button type='button' class='close' data-dismiss='modal'
+                                                                aria-hidden='true'>&times;
+                                                        </button>
+                                                        <h4 class='modal-title' id='myModalLabel'>Start your minION</h4>
+                                                    </div>
+                                                    <div class='modal-body'>
+                                                        <div v-bind:id="minion.name+'initminioninfo'">
+                                                            <p>This action will switch the minION to the active
+                                                                state.</p>
+
+                                                            <p>If you are sure you wish to do this, click 'Initialise
+                                                                minION' below. Otherwise close this window.</p>
+                                                        </div>
+                                                        <div class='modal-footer'>
+                                                            <button type='button' class='btn btn-default'
+                                                                    data-dismiss='modal'>Close
+                                                            </button>
+                                                            <button v-on:click="initminion" :id='minion.name'
+                                                                    type='button' class='btn btn-warning'
+                                                                    data-dismiss='modal'>Initialise minION
+                                                            </button>
+                                                        </div>
+                                                    </div><!-- /.modal-content -->
+                                                </div><!-- /.modal-dialog -->
+                                            </div><!-- /.modal -->
+                                        </div>
+
+
+                                    </div>
+                                </div>
+
+                            </div>
+
+
+                            <!-- Tab panes-->

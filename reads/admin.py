@@ -1,6 +1,8 @@
 from django.contrib import admin
 
-from .models import FastqRead, RunSummaryBarCode
+from .models import FastqRead
+from .models import RunSummaryBarCode
+from .models import RunStatisticBarcode
 from .models import FastqReadType
 from .models import MinION
 from .models import MinIONControl
@@ -16,7 +18,7 @@ from .models import RunStatistic
 from .models import RunSummary
 
 
-class RunSummaryAdmin(admin.ModelAdmin):
+class RunStatisticsBarcodeAdmin(admin.ModelAdmin):
     list_display = ('run_id', 'type')
     list_filter = ('run_id', )
     ordering = ('run_id', 'type__name')
@@ -29,7 +31,6 @@ class RunSummaryBarcodeAdmin(admin.ModelAdmin):
 admin.site.register(FastqRead)
 admin.site.register(FastqReadType)
 admin.site.register(MinIONRun)
-admin.site.register(RunStatistic)
 admin.site.register(MinION)
 admin.site.register(MinIONEventType)
 admin.site.register(MinIONEvent)
@@ -39,6 +40,8 @@ admin.site.register(MinIONRunStatus)
 admin.site.register(MinIONRunStats)
 admin.site.register(MinIONmessages)
 admin.site.register(MinIONControl)
-admin.site.register(RunSummary, RunSummaryAdmin)
+admin.site.register(RunStatisticBarcode, RunStatisticsBarcodeAdmin)
 admin.site.register(RunSummaryBarCode, RunSummaryBarcodeAdmin)
+admin.site.register(RunStatistic)
+admin.site.register(RunSummary)
 

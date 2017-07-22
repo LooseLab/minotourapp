@@ -13,4 +13,5 @@ pytz
 configargparse
 requests
 BioPython
-
+celery
+django_celery_beat

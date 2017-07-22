@@ -30,6 +30,16 @@ DEBUG = True
 ALLOWED_HOSTS = ['*', ]
 
 
+# For RabbitMQ
+BROKER_URL = 'amqp://[ipaddress]'
+CELERY_RESULT_BACKEND = 'amqp://[ipaddress]'
+# Celery Data Format
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Europe/London'
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -43,6 +53,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'reads',
     'web',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [

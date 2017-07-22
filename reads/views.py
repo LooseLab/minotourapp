@@ -1,6 +1,6 @@
 import json
 from datetime import datetime, timedelta
-
+from django.utils import timezone
 from dateutil import parser
 from django.http import HttpResponse
 from rest_framework import status
@@ -35,6 +35,7 @@ from reads.serializers import MinIONSerializer
 from reads.serializers import MinIONStatusSerializer
 from reads.serializers import MinIONmessagesSerializer
 from reads.serializers import RunSummarySerializer
+
 
 
 @api_view(['GET'])
@@ -160,7 +161,7 @@ def recentminION_messages_list(request, pk):
     TODO describe function
     """
     if request.method == 'GET':
-        queryset = MinIONmessages.objects.filter(minION=pk).filter(minKNOW_message_timestamp__gte= datetime.now() - timedelta(hours=24))
+        queryset = MinIONmessages.objects.filter(minION=pk).filter(minKNOW_message_timestamp__gte= timezone.now() - timedelta(hours=24))
         serializer = MinIONmessagesSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 

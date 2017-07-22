@@ -15,6 +15,7 @@ from reads.models import MinIONmessages
 from reads.models import RunSummary
 
 
+
 class MinIONRunStatsSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = MinIONRunStats
