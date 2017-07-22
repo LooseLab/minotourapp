@@ -467,34 +467,36 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
 @receiver(post_save, sender=FastqRead)
 def update_global_state(instance, sender, **kwargs):
     ipn_obj = instance
-    #Here we work out the start time
+
+    barcode = ipn_obj.barcode
+
     tm = ipn_obj.start_time
 
     tm = tm - datetime.timedelta(minutes=(tm.minute % 1) - 1,
                                  seconds=tm.second,
                                  microseconds=tm.microsecond)
-    #print (type(tm))
 
-    obj1, created = RunSummary.objects.update_or_create(
-        run_id=ipn_obj.run_id, type=ipn_obj.type #, defaults={'total_length': 0, 'read_count': 0}
+    obj1,created1 = RunSummaryBarCode.objects.update_or_create(
+        run_id=ipn_obj.run_id, type=ipn_obj.type, barcode='All reads'
     )
     update_sum_stats(obj1, ipn_obj)
 
-    obj2,created2 = RunSummaryBarCode.objects.update_or_create(
-        run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=ipn_obj.barcode  # , defaults={'total_length': 0, 'read_count': 0}
-    )
-    update_sum_stats(obj2, ipn_obj)
-
-    obj3, created3 = RunStatistic.objects.update_or_create(
-        run_id=ipn_obj.run_id, type=ipn_obj.type, sample_time=tm
+    # all reads and barcodes are saved on RunStatisticBarcode
+    obj3, created3 = RunStatisticBarcode.objects.update_or_create(
+        run_id=ipn_obj.run_id, type=ipn_obj.type, barcode='All reads', sample_time=tm
     )
     update_sum_stats(obj3, ipn_obj)
 
-    obj4, created4 = RunStatisticBarcode.objects.update_or_create(
-        run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=ipn_obj.barcode, sample_time=tm
-        # , defaults={'total_length': 0, 'read_count': 0}
-    )
-    update_sum_stats(obj4, ipn_obj)
+    if barcode is not None and barcode != '':
+        obj2,created2 = RunSummaryBarCode.objects.update_or_create(
+            run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode
+        )
+        update_sum_stats(obj2, ipn_obj)
+
+        obj3, created3 = RunStatisticBarcode.objects.update_or_create(
+            run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode, sample_time=tm
+        )
+        update_sum_stats(obj3, ipn_obj)
 
 
 def update_sum_stats(obj,ipn_obj):
