@@ -1,0 +1,88 @@
+{% extends "web/template_private.html" %}
+{% load static %}
+
+{% block content %}
+    <div class="content-wrapper">
+
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+            <h1>
+                Current Run Information
+                <small> - select a run currently uploading to the database for more information.</small>
+            </h1>
+            <ol class="breadcrumb">
+                <li><a href="#"><i class="fa fa-edit"></i> External Links</a></li>
+                <li class="active">Here</li>
+            </ol>
+        </section>
+
+        <!-- Main content -->
+        <section class="content">
+
+            <div id="messages"></div>
+
+            <div class="box">
+                <div class="box-header">
+                    <h3 class="box-title">Current Run Data</h3>
+                </div><!-- /.box-header -->
+                <div class="box-body">
+                    <table id="example" class="table table-bordered table-striped table-hover" cellspacing="0">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Id</th>
+                            <th>Sample Name</th>
+                            <th>Flow Cell ID</th>
+                            <th>MinKNOW Version</th>
+                            <th>Is Barcoded</th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Id</th>
+                            <th>Sample Name</th>
+                            <th>Flow Cell ID</th>
+                            <th>MinKNOW Version</th>
+                            <th>Is Barcoded</th>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+
+        </section><!-- /.content -->
+    </div><!-- /.content-wrapper -->
+
+    <script>
+        $(document).ready(function () {
+            $('#example').DataTable({
+                'ajax': {
+                    'url': "{% url 'current-run-list' %}",
+                    'dataSrc': function(json){
+                        var data = [];
+                        console.log(json);
+                        var ien = json.length;
+                        for (var i = 0; i < ien; i++){
+                            data.push([json[i].id, json[i].run_name, json[i].run_id, json[i].sample_name,json[i].minKNOW_flow_cell_id,json[i].minKNOW_version, json[i].is_barcoded]);
+                        }
+                        return data;
+                    }
+                },
+                'columnDefs': [{
+                    'targets': 0,
+                    'data': 0,
+                    'render': function(data, type, full, meta){
+                        console.log(data);
+                        return '<a href="/web/private/runs/' + data + '/"> See details</a>';
+                    }
+                }]
+            });
+        });
+
+    </script>
+
+{% endblock %}

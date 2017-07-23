@@ -1,13 +1,20 @@
+from __future__ import absolute_import, unicode_literals
 from celery import Celery
 import os
 
-# Setting the Default Django settings module
-os.environ.setdefault('DJANGO_SETTINGS_MODULE','celeryProj.settings')
-app=Celery('celeryProj')
+# set the default Django settings module for the 'celery' program.
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'minotourapp.settings')
 
-# Using a String here means the worker will always find the configuration information
-app.config_from_object('django.conf:settings')
-app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+app = Celery('minotourapp')
+
+# Using a string here means the worker don't have to serialize
+# the configuration object to child processes.
+# - namespace='CELERY' means all celery-related configuration keys
+#   should have a `CELERY_` prefix.
+app.config_from_object('django.conf:settings', namespace='CELERY')
+
+# Load task modules from all registered Django app configs.
+app.autodiscover_tasks()
 
 
 @app.task(bind=True)

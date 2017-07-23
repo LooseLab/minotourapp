@@ -107,6 +107,16 @@ def run_list(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET'])
+def current_run_list(request):
+    """
+    List of all runs by user, or create a new run.
+    """
+    if request.method == 'GET':
+        queryset = MinIONRun.objects.filter(owner=request.user).filter(reads__created_date__gte=datetime.now()-timedelta(hours=1)).distinct()
+        serializer = MinIONRunSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+
 
 @api_view(['GET', 'POST'])
 def minion_list(request):

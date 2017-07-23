@@ -1,10 +1,11 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from reads.models import MinIONRun
-from minotourapp.tasks import contact_user
+from django.db.models import Q
+from datetime import datetime, timedelta
+from django.utils import timezone
 
 def index(request):
-    contact_user.delay('test')
     return render(request, 'web/index.html')
 
 
@@ -35,6 +36,15 @@ def minup(request):
 def tutorial(request):
     return render(request, 'web/tutorial.html')
 
+@login_required
+def current_run(request):
+    minion_runs = MinIONRun.objects.filter(owner=request.user).filter(reads__created_date__gte=timezone.now()-timedelta(days=4)).distinct()
+    print (minion_runs)
+    print (len(minion_runs))
+    #for minion_run in minion_runs:
+        #print (minion_run.last_entry)
+    #    print (minion_run)
+    return render(request, 'web/current_run2.html', context={'minion_runs': minion_runs})
 
 @login_required
 def previous_run(request):

@@ -21,6 +21,7 @@
     "bootstrap": "^3.3.7",
     "datatables": "^1.10.13",
     "highcharts": "^5.0.12",
+    "highstocks": "^5.0.12",
     "jquery": "^3.2.1",
     "node": "^0.0.0",
     "vue": "^2.4.1",

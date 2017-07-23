@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+from celery.schedules import crontab
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 from minotourapp.utils import get_env_variable
@@ -31,13 +32,20 @@ ALLOWED_HOSTS = ['*', ]
 
 
 # For RabbitMQ
-BROKER_URL = 'amqp://[ipaddress]'
-CELERY_RESULT_BACKEND = 'amqp://[ipaddress]'
+CELERY_BROKER_URL = 'amqp://'
+CELERY_RESULT_BACKEND = 'amqp://'
 # Celery Data Format
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Europe/London'
+CELERY_BEAT_SCHEDULE = {
+    'task-number-one': {
+        'task': 'web.tasks.task_number_one',
+        'schedule': 5.0,
+        #'args': (*args)
+    },
+}
 
 
 # Application definition

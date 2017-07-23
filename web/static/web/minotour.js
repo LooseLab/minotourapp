@@ -1,7 +1,8 @@
 Highcharts.setOptions({
     plotOptions: {
         series: {
-            animation: false
+            animation: false,
+            turboThreshold: 0,
         }
     }
 });
@@ -124,7 +125,8 @@ function makeChart2(divName, chartTitle, yAxisTitle) {
         chart: {
             type: 'spline',
             marginRight: 10,
-            animation: false
+            animation: false,
+            zoomType: 'x',
         },
         title: {
             text: chartTitle,
@@ -220,7 +222,8 @@ function MinotourApp() {
     this.updateChartsBasedOnBarcode = function (event) {
         console.log(event);
         console.log(event.target.innerText);
-
+        self.selectedBarcode = event.target.innerText;
+        //console.log(self.selectedBarcode);
         self.requestData();
     }
 
@@ -261,17 +264,17 @@ function MinotourApp() {
                     return new Date(a.sample_time) - new Date(b.sample_time);
                 });
 
-                /*
+
                 if (self.selectedBarcode == 'All Reads') {
                     self.filteredData = orderedData;
                 } else {
                     var filteredData = orderedData.filter(function(el){
-                        console.log(el.barcode);
-                        console.log(self.selectedBarcode);
+                        //console.log(el.barcode);
+                        //console.log(self.selectedBarcode);
                         return el.typename == self.selectedBarcode;
                     });
                 }
-                */
+
 
                 self.summaryByMinute = orderedData;
 

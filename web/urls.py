@@ -11,6 +11,7 @@ urlpatterns = [
     url(r'^private/minup/$', views.minup, name='minup'),
     url(r'^private/tutorial/$', views.tutorial, name='tutorial'),
     url(r'^private/previous-runs/$', views.previous_run, name='previous-runs'),
+    url(r'^private/current-runs/$', views.current_run, name='current-runs'),
     url(r'^private/runs/(?P<pk>[0-9]+)/$', views.run_index, name='run-index'),
     url(r'^private/remote-control/$', views.remotecontrol, name='remotecontrol'),
     url(r'^private/prev-remote-control/$', views.prevremotecontrol, name='prevremotecontrol'),

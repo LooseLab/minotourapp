@@ -146,6 +146,19 @@ class MinIONRun(models.Model):
     def __str__(self):
         return self.run_name
 
+    def last_entry(self):
+        try:
+            return self.RunStats.last().created_date
+        except AttributeError:
+            return "undefined"
+
+    def last_read(self):
+        try:
+            #print (self.reads.last().created_date)
+            return self.reads.last().created_date
+        except AttributeError:
+            return "undefined"
+
     def sample_name(self):
         try:
             return self.RunDetails.last().minKNOW_sample_name
@@ -227,6 +240,7 @@ class MinIONRunStats(models.Model):
     minKNOW_read_count = models.IntegerField(default=0)
     minKNOW_histogram_values = models.TextField(blank=True, null=True)
     minKNOW_histogram_bin_width = models.IntegerField(default=900)
+    created_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'MinION Run Stats'
@@ -348,6 +362,8 @@ class FastqRead(models.Model):
     is_pass = models.BooleanField() # pass = true, fail = false
     type = models.ForeignKey(FastqReadType)
     start_time = models.DateTimeField()
+    created_date = models.DateTimeField(auto_now_add=True)
+    modified_date = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = 'FASTQ Read'

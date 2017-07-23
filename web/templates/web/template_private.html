@@ -193,7 +193,7 @@
                     <ul class="treeview-menu">
                         <?php if ( checknumactive() > 1){?>
                         <li>
-                            <a href="switch_run.php"><i
+                            <a href={% url 'current-runs' %}><i
                                     class="fa fa-database fa-fw"></i><span> Switch Active Runs</span></a>
                         </li>
                         <?php }; ?>
