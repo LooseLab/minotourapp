@@ -2,6 +2,7 @@ import json
 from datetime import datetime, timedelta
 from django.utils import timezone
 from dateutil import parser
+from django.db.models import Q
 from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -113,7 +114,7 @@ def current_run_list(request):
     List of all runs by user, or create a new run.
     """
     if request.method == 'GET':
-        queryset = MinIONRun.objects.filter(owner=request.user).filter(reads__created_date__gte=datetime.now()-timedelta(hours=1)).distinct()
+        queryset = MinIONRun.objects.filter(owner=request.user).filter(Q(reads__created_date__gte = datetime.now()-timedelta(hours=1))  | Q(RunStats__created_date__gte = datetime.now()-timedelta(hours=1) )).distinct()
         serializer = MinIONRunSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
