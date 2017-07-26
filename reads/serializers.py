@@ -16,7 +16,6 @@ from reads.models import RunSummary
 from reads.models import JobMaster
 
 
-
 class MinIONRunStatsSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = MinIONRunStats
@@ -214,25 +213,14 @@ class JobSerializer(serializers.ModelSerializer):
 
 
 class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
-    runsummaries = RunSummarySerializer(
-        many=True,
-        read_only=True,
-    )
-
-    runsummariesbarcodes = RunSummaryBarcodeSerializer(
-        many=True,
-        read_only=True,
-    )
 
     jobstodo = JobSerializer(
         many=True,
         read_only=True,
     )
 
-
-
     class Meta:
         model = MinIONRun
-        fields = ('url', 'sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','minION', 'barcodes', 'id', 'runsummaries', 'runsummariesbarcodes','last_read','last_entry','jobstodo')
-        read_only = ('id','sample_name','minKNOW_version', 'minKNOW_flow_cell_id', 'barcodes', 'runsummaries', 'runsummariesbarcodes','last_read','last_entry','jobstodo')
+        fields = ('url', 'sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','minION', 'barcodes', 'id', 'last_read', 'last_entry','jobstodo')
+        read_only = ('id','sample_name','minKNOW_version', 'minKNOW_flow_cell_id', 'barcodes', 'last_read', 'last_entry','jobstodo')
 

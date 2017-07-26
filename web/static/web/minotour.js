@@ -7,6 +7,8 @@ Highcharts.setOptions({
     }
 });
 
+var NUMBER_SECONDS_IN_A_MINUTE = 60;
+
 var MINOTOUR_VERSION = 0.5;
 
 function check_minotour_version() {
@@ -52,41 +54,6 @@ function check_user_runs() {
 }
 
 
-function chartLoadUpdateData(data) {
-    var chart_data = data;
-
-    // Remove previous series
-    while (this.chart.series.length > 0) {
-        this.chart.series[0].remove();
-    }
-
-    this.chart.colorCounter = 0;
-    this.chart.symbolCounter = 0;
-
-    var summaries = [];
-    if (this.mybarcode == 'All reads') {
-
-        for (var i = 0; i < chart_data.length; i++) {
-            var average_read_length = chart_data[i].total_length / chart_data[i].read_count;
-            var sample_time = new Date(chart_data[i].sample_time);
-
-            var point = {
-                x: sample_time,
-                y: average_read_length
-            }
-
-            summaries.push(point);
-        }
-    }
-
-    summaries.sort(function (a, b) {
-        return a.x - b.x;
-    })
-
-    this.chart.addSeries({name: '', data: summaries});
-    
-}
-
 function makeChart(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.chart(divName, {
         chart: {
@@ -95,11 +62,11 @@ function makeChart(divName, chartTitle, yAxisTitle) {
             marginRight: 10,
         },
         title: {
-            text: ''
+            text: chartTitle
         },
         yAxis: {
             title: {
-                text: 'Value'
+                text: yAxisTitle
             },
             plotLines: [{
                 value: 0,
@@ -156,9 +123,6 @@ function makeChart2(divName, chartTitle, yAxisTitle) {
     return chart;
 }
 
-function updateChart (chart, data, func) {
-
-}
 
 function MinotourApp() {
     this.chart_reads_called = null;
@@ -166,6 +130,8 @@ function MinotourApp() {
     this.chart_average_read_length = null;
     this.chart_maximum_read_length = null;
     this.average_read_lengths_overtime = null;
+    this.chart_chart_cumulative_number_reads_overtime = null;
+    this.chartSequencingRate = null;
 
     this.barcodes = null;
 
@@ -178,7 +144,7 @@ function MinotourApp() {
 
     var self = this;
 
-    this.init = function() {
+    this.init = function () {
         this.chart_reads_called = this.makeChart(
             'reads-called',
             'reads called'.toUpperCase(),
@@ -202,31 +168,50 @@ function MinotourApp() {
             'maximum read length'.toUpperCase(),
             'maximum read length'.toUpperCase()
         );
-        
+
         this.average_read_lengths_overtime = this.makeChart2(
-            'average-read-lengths-overtime', 
+            'average-read-lengths-overtime',
             'average read length over time'.toUpperCase(),
             'average read length'.toUpperCase()
         );
 
+        this.chart_cumulative_number_reads_overtime = this.makeChart2(
+            'cumulative-number-reads-overtime',
+            'cumulative reads'.toUpperCase(),
+            'cumulative reads'.toUpperCase()
+        );
+
+        this.chartSequencingRate = this.makeChart2(
+            'sequencing-rate',
+            'sequencing rate'.toUpperCase(),
+            'bases/second'.toUpperCase()
+        );
+
+
+
         self.id = document.getElementById('run-id').innerText;
-        self.selectedBarcode = 'All Reads';
+        self.selectedBarcode = 'All reads';
 
         this.requestData();
 
-        setInterval(function(){
+        setInterval(function () {
             this.requestData();
-        }.bind(this), 60000);
-    }; 
+        }.bind(this), 10000);
+    };
 
+    /*
+     * Each click on a barcode tab fires this function
+     * that calls requestData and update all charts
+     */
     this.updateChartsBasedOnBarcode = function (event) {
-        console.log(event);
-        console.log(event.target.innerText);
         self.selectedBarcode = event.target.innerText;
-        //console.log(self.selectedBarcode);
         self.requestData();
     }
 
+    /*
+     * Updates the list of barcodes tab and attach
+     * click event to function updateChartsBasedOnBarcode
+     */
     this.updateBarcodeNavTab = function () {
         var ul = document.getElementById('nav-tabs-barcodes');
 
@@ -240,13 +225,125 @@ function MinotourApp() {
             a.onclick = this.updateChartsBasedOnBarcode;
             a.href = '#';
             a.text = sortedBarcodes[i];
+
+            if (sortedBarcodes[i] === self.selectedBarcode) {
+                li.classList.add('active');
+            }
+
             li.appendChild(a);
             ul.appendChild(li);
         }
     }
-    
-    this.updateSummaryByMinute = function (data) {
 
+    this.updateCumulativeNumberOfReadsOverTime = function() {
+        // chart chart_cumulative_number_reads_overtime
+        var summaries = {};
+
+        for (var i = 0; i < self.summaryByMinute.length; i++) {
+            if (summaries[self.summaryByMinute[i].typename] === undefined) {
+                summaries[self.summaryByMinute[i].typename] = {
+                    'lastCumulativeReadCount': 0,
+                    'data': []
+                };
+            }
+
+            var cumulativeReadCount  = self.summaryByMinute[i].read_count + summaries[self.summaryByMinute[i].typename].lastCumulativeReadCount;
+            summaries[self.summaryByMinute[i].typename].lastCumulativeReadCount = cumulativeReadCount;
+
+            var sample_time = new Date(self.summaryByMinute[i].sample_time);
+
+            var point = {
+                x: sample_time,
+                y: cumulativeReadCount
+            }
+
+            summaries[self.summaryByMinute[i].typename]['data'].push(point);
+        }
+
+        for (var key in summaries) {
+            self.chart_cumulative_number_reads_overtime.addSeries({name: key, data: summaries[key]['data']});
+        }
+
+    }
+
+    this.updateSequencingRateChart = function () {
+
+        // Remove previous series
+        while (self.chartSequencingRate.series.length > 0) {
+            self.chartSequencingRate.series[0].remove();
+        }
+
+        var summaries = {};
+
+        for (var i = 0; i < self.summaryByMinute.length; i++) {
+            if (summaries[self.summaryByMinute[i].typename] === undefined) {
+                summaries[self.summaryByMinute[i].typename] = {
+                    'data': []
+                };
+            }
+
+            var sequencingRate = self.summaryByMinute[i].total_length / NUMBER_SECONDS_IN_A_MINUTE;
+
+            var sample_time = new Date(self.summaryByMinute[i].sample_time);
+
+            var point = {
+                x: sample_time,
+                y: sequencingRate
+            }
+
+            summaries[self.summaryByMinute[i].typename]['data'].push(point);
+        }
+
+        for (var key in summaries) {
+            self.chartSequencingRate.addSeries({name: key, data: summaries[key]['data']});
+        }
+        self.chartSequencingRate.update({
+            chart: {
+                type: 'column'
+            }
+        });
+    }
+
+    this.updateCumulativeNumberOfReadsOverTime = function() {
+
+        // Remove previous series
+        while (self.chart_cumulative_number_reads_overtime.series.length > 0) {
+            self.chart_cumulative_number_reads_overtime.series[0].remove();
+        }
+
+        var summaries = {};
+
+        for (var i = 0; i < self.summaryByMinute.length; i++) {
+            if (summaries[self.summaryByMinute[i].typename] === undefined) {
+                summaries[self.summaryByMinute[i].typename] = {
+                    'lastCumulativeReadCount': 0,
+                    'data': []
+                };
+            }
+
+            var cumulativeReadCount  = self.summaryByMinute[i].read_count + summaries[self.summaryByMinute[i].typename].lastCumulativeReadCount;
+            summaries[self.summaryByMinute[i].typename].lastCumulativeReadCount = cumulativeReadCount;
+
+            var sample_time = new Date(self.summaryByMinute[i].sample_time);
+
+            var point = {
+                x: sample_time,
+                y: cumulativeReadCount
+            }
+
+            summaries[self.summaryByMinute[i].typename]['data'].push(point);
+        }
+
+        for (var key in summaries) {
+            self.chart_cumulative_number_reads_overtime.addSeries({name: key, data: summaries[key]['data']});
+        }
+
+    }
+
+
+    this.updateSummaryByMinuteBasedCharts = function () {
+        self.updateCumulativeNumberOfReadsOverTime();
+        self.updateSequencingRateChart();
     }
 
     this.requestSummaryByMinuteData = function (id) {
@@ -255,28 +352,18 @@ function MinotourApp() {
          */
         var url = '/api/v1/runs/' + id + '/summarybarcodebyminute';
 
-        $.get(url, function(data) {
-            console.log('--- data length: ' + data.length);
-            console.log('selected barcador: ' + self.selectedBarcode);
+        $.get(url, function (data) {
 
             if (data.length > 0) {
-                var orderedData = data.sort(function(a, b){
+                var orderedData = data.sort(function (a, b) {
                     return new Date(a.sample_time) - new Date(b.sample_time);
                 });
 
+                var filteredData = orderedData.filter(function (el) {
+                    return el.barcode === self.selectedBarcode;
+                });
 
-                if (self.selectedBarcode == 'All Reads') {
-                    self.filteredData = orderedData;
-                } else {
-                    var filteredData = orderedData.filter(function(el){
-                        //console.log(el.barcode);
-                        //console.log(self.selectedBarcode);
-                        return el.typename == self.selectedBarcode;
-                    });
-                }
-
-
-                self.summaryByMinute = orderedData;
+                self.summaryByMinute = filteredData;
 
                 // Remove previous series
                 while (self.average_read_lengths_overtime.series.length > 0) {
@@ -303,6 +390,9 @@ function MinotourApp() {
                 for (var key in summaries) {
                     self.average_read_lengths_overtime.addSeries({name: key, data: summaries[key]});
                 }
+
+                // update chart - TODO split ajax call and update of self.summaryByMinute from the redrawing the charts
+                self.updateSummaryByMinuteBasedCharts();
             }
         });
     }
@@ -313,9 +403,7 @@ function MinotourApp() {
          */
         var url = '/api/v1/runs/' + id + '/summarybarcode';
 
-        $.get(url, function(data) {
-            console.log('--- data length: ' + data.length);
-            console.log('selected barcador: ' + self.selectedBarcode);
+        $.get(url, function (data) {
 
             if (data.length > 0) {
                 var summaries = {};
@@ -334,61 +422,54 @@ function MinotourApp() {
                             'max_length': null
                         };
 
-                        summaries[item.barcode][item.typename]['read_count'] = { 
-                            'name': item.typename, 
-                            'data': [ item.read_count ], 
+                        summaries[item.barcode][item.typename]['read_count'] = {
+                            'name': item.typename,
+                            'data': [item.read_count],
                             'animation': false
                         };
 
                         summaries[item.barcode][item.typename]['yield'] = {
-                            'name': item.typename, 
-                            'data': [ item.total_length ], 
+                            'name': item.typename,
+                            'data': [item.total_length],
                             'animation': false
                         };
-                        
+
                         summaries[item.barcode][item.typename]['average_read_length'] = {
                             'name': item.typename,
-                            'data': [ item.total_length / item.read_count ],
+                            'data': [item.total_length / item.read_count],
                             'animation': false
                         };
-                        
+
                         summaries[item.barcode][item.typename]['max_length'] = {
                             'name': item.typename,
-                            'data': [ item.max_length ],
+                            'data': [item.max_length],
                             'animation': false
                         };
                     }
                 }
 
-                console.log(summaries);
+                var charts = {
+                    'read_count': self.chart_reads_called,
+                    'yield': self.chart_yield,
+                    'average_read_length': self.chart_average_read_length,
+                    'max_length': self.chart_maximum_read_length
+                };
 
-                while (self.chart_reads_called.series.length  > 0) {
-                    self.chart_reads_called.series[0].remove();
+
+                for (var prop in charts) {
+                    while (charts[prop].series.length > 0) {
+                        charts[prop].series[0].remove();
+                    }
+
+                    for (key in summaries[self.selectedBarcode]) {
+                        charts[prop].addSeries(summaries[self.selectedBarcode][key][prop]);
+                    }
                 }
-                self.chart_reads_called.addSeries(summaries[item.barcode][item.typename]['read_count']);
-
-                while (self.chart_yield.series.length > 0) {
-                    self.chart_yield.series[0].remove();
-                }
-                self.chart_yield.addSeries(summaries[item.barcode][item.typename]['yield']);
-
-                while (self.chart_average_read_length.series.length > 0) {
-                    self.chart_average_read_length.series[0].remove();
-                }
-                self.chart_average_read_length.addSeries(summaries[item.barcode][item.typename]['average_read_length']);
-
-                while (self.chart_maximum_read_length.series.length > 0) {
-                    self.chart_maximum_read_length.series[0].remove();
-                }
-                self.chart_maximum_read_length.addSeries(summaries[item.barcode][item.typename]['max_length']);
-
             }
         });
     }
 
     this.requestData = function () {
-        console.log('inside request data');
-
         var url_run = '/api/v1/runs/' + self.id;
 
         $.get(url_run, function (data) {
@@ -398,7 +479,5 @@ function MinotourApp() {
 
         self.requestSummaryByMinuteData(self.id);
         self.requestSummaryData(self.id);
-
-        //this.counterDown();
     }
 }
