@@ -114,7 +114,7 @@ def current_run_list(request):
     List of all runs by user, or create a new run.
     """
     if request.method == 'GET':
-        queryset = MinIONRun.objects.filter(owner=request.user).filter(Q(reads__created_date__gte = datetime.now()-timedelta(hours=1))  | Q(RunStats__created_date__gte = datetime.now()-timedelta(hours=1) )).distinct()
+        queryset = MinIONRun.objects.filter(owner=request.user).filter(Q(reads__created_date__gte = datetime.now()-timedelta(minutes=10))  | Q(RunStats__created_date__gte = datetime.now()-timedelta(minutes=10) )).distinct()
         serializer = MinIONRunSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
