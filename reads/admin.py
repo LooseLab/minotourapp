@@ -18,10 +18,15 @@ from .models import RunStatistic
 from .models import RunSummary
 
 
+class MinionRunAdmin(admin.ModelAdmin):
+    list_display = ('run_name', 'run_id', 'is_barcoded', 'owner', 'minION')
+
+
 class RunStatisticsBarcodeAdmin(admin.ModelAdmin):
     list_display = ('run_id', 'type')
     list_filter = ('run_id', )
     ordering = ('run_id', 'type__name')
+
 
 class RunSummaryBarcodeAdmin(admin.ModelAdmin):
     list_display = ('run_id', 'barcode', 'type')
@@ -30,7 +35,7 @@ class RunSummaryBarcodeAdmin(admin.ModelAdmin):
 
 admin.site.register(FastqRead)
 admin.site.register(FastqReadType)
-admin.site.register(MinIONRun)
+admin.site.register(MinIONRun, MinionRunAdmin)
 admin.site.register(MinION)
 admin.site.register(MinIONEventType)
 admin.site.register(MinIONEvent)

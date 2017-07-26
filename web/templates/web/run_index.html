@@ -21,14 +21,16 @@
         <section class="content">
             <div class="box">
                 <div class="box-header">
-                    <h3 class="box-title">Run: <span>{{ minion_run.run_name }}</span> (<span id='run-id'>{{ minion_run.id}}</span>)</h3>
+                    <h3 class="box-title">Run: <span>{{ minion_run.run_name }}</span> (<span
+                            id='run-id'>{{ minion_run.id }}</span>)</h3>
                 </div><!-- /.box-header -->
                 <div class="box-body">
                     <div class="row">
                         <div class="col-md-12">
-                            <button id="counterdown-btn">Reloading in 30 seconds</button>
+                            <button id="counterdown-btn" class="btn btn-default">Reloading in 30 seconds</button>
                         </div>
                     </div>
+                    <br/>
                     <div class="row">
                         <div class="col-md-12">
                             <div class="nav-tabs-custom">
@@ -60,9 +62,10 @@
                                         Coverage</a></li>
                                 </ul>
 
-
                                 <div class="tab-content">
                                     <div class="tab-pane active" id="tab_1" v-show="isActiveTab('read-summaries-tab')">
+
+
                                         <div class="panel panel-default">
                                             <div class="panel-heading">
                                                 <h3 class="panel-title"><!-- Button trigger modal -->
@@ -110,25 +113,30 @@
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row">
-                                                    <div id="reads-called" class="col-md-6 highcharts" style="width:25%; height:400px;">
+                                                    <div id="reads-called" class="col-md-6 highcharts"
+                                                         style="width:25%; height:400px;">
                                                         <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
                                                     </div>
 
-                                                    <div id="yield" class="col-md-6 highcharts" style="width:25%; height:400px;">
+                                                    <div id="yield" class="col-md-6 highcharts"
+                                                         style="width:25%; height:400px;">
                                                         <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
                                                     </div>
 
-                                                    <div id="average-read-length" class="col-md-6 highcharts" style="width:25%; height:400px;">
+                                                    <div id="average-read-length" class="col-md-6 highcharts"
+                                                         style="width:25%; height:400px;">
                                                         <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
                                                     </div>
 
-                                                    <div id="maximum-read-length" class="col-md-6 highcharts" style="width:25%; height:400px;">
+                                                    <div id="maximum-read-length" class="col-md-6 highcharts"
+                                                         style="width:25%; height:400px;">
                                                         <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
                                                     </div>
 
                                                 </div>
                                                 <div class="row">
-                                                    <div id="average-read-lengths-overtime" class="col-md-12 highcharts" style="width:100%; height:400px;">
+                                                    <div id="average-read-lengths-overtime" class="col-md-12 highcharts"
+                                                         style="width:100%; height:400px;">
                                                         <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
                                                     </div>
                                                 </div>
@@ -139,10 +147,139 @@
                                             <div class="panel-heading">Run Summary</div>
                                             <div class="panel-body">
 
+                                                <h3>Read Data</h3><h4>Basecalled Template</h4>
+                                                <table class='table table-condensed'>
+                                                    <thead>
+                                                    <tr>
+                                                        <th>Experiment Purpose</th>
+                                                        <th>Sequenced Reads</th>
+                                                        <th>Average Length</th>
+                                                        <th>Standard Deviation</th>
+                                                        <th>Max Length</th>
+                                                        <th>Min Length</th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    <tr>
+                                                        <td>sequencing_run</td>
+                                                        <td>211158</td>
+                                                        <td>5878</td>
+                                                        <td>3788.01</td>
+                                                        <td>110841</td>
+                                                        <td>5</td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                                <h4>Basecalled Complement</h4>
+                                                <table class='table table-condensed'>
+                                                    <thead>
+                                                    <tr>
+                                                        <th>Experiment Purpose</th>
+                                                        <th>Sequenced Reads</th>
+                                                        <th>Average Length</th>
+                                                        <th>Standard Deviation</th>
+                                                        <th>Max Length</th>
+                                                        <th>Min Length</th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    <tr>
+                                                        <td>sequencing_run</td>
+                                                        <td>142721</td>
+                                                        <td>4662</td>
+                                                        <td>3400.82</td>
+                                                        <td>253028</td>
+                                                        <td>5</td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                                <h4>Basecalled 2d</h4>
+                                                <table class='table table-condensed'>
+                                                    <thead>
+                                                    <tr>
+                                                        <th>Experiment Purpose</th>
+                                                        <th>Sequenced Reads</th>
+                                                        <th>Average Length</th>
+                                                        <th>Standard Deviation</th>
+                                                        <th>Max Length</th>
+                                                        <th>Min Length</th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    <tr>
+                                                        <td>sequencing_run</td>
+                                                        <td>108895</td>
+                                                        <td>5973</td>
+                                                        <td>3101.42</td>
+                                                        <td>40111</td>
+                                                        <td>87</td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+
                                             </div>
                                         </div>
 
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">Run details</div>
+                                            <div class="panel-body">
 
+                                                <table class='table table-condensed'>
+                                                    <thead>
+                                                    <tr>
+                                                        <th>Device ID</th>
+                                                        <th>Experiment Purpose</th>
+                                                        <th>Reads Generated</th>
+                                                        <th>Start Time</th>
+                                                        <th>Start Date</th>
+                                                        <th>Run ID</th>
+                                                        <th>Version Name</th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    <tr>
+                                                        <td>MN16458</td>
+                                                        <td>sequencing_run</td>
+                                                        <td>211246</td>
+                                                        <td>15:01:18</td>
+                                                        <td>27-07-16</td>
+                                                        <td>73e7ea065b890b481d1e8de9ff187d707af5ecdb</td>
+                                                        <td>0.51.3.55 b201606151601</td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading">Reads summary</div>
+                                            <div class="panel-body">
+
+                                                <h4>Basecalled Template</h4>
+                                                <table class='table table-condensed'>
+                                                    <thead>
+                                                    <tr>
+                                                        <th>Experiment Purpose</th>
+                                                        <th>Sequenced Reads</th>
+                                                        <th>Average Length</th>
+                                                        <th>Standard Deviation</th>
+                                                        <th>Max Length</th>
+                                                        <th>Min Length</th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    <tr>
+                                                        <td>sequencing_run</td>
+                                                        <td>211158</td>
+                                                        <td>5878</td>
+                                                        <td>3788.01</td>
+                                                        <td>110841</td>
+                                                        <td>5</td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </div>
                                     <!-- /.col-lg-12 -->
                                     <!-- /.tab-pane -->
@@ -176,7 +313,16 @@
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row">
-
+                                                    <div id="cumulative-number-reads-overtime" class="col-md-12 highcharts"
+                                                         style="width:100%; height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div id="sequencing-rate" class="col-md-12 highcharts"
+                                                         style="width:100%; height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -241,7 +387,7 @@
 
     <script src="{% static 'web/minotour.js' %}?{% now 'c' %}"></script>
     <script>
-        $(document).ready(function(){
+        $(document).ready(function () {
             var app = new MinotourApp();
             app.init();
         });
