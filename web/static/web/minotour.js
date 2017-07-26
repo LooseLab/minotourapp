@@ -7,7 +7,7 @@ Highcharts.setOptions({
     }
 });
 
-var NUMBER_SECONDS_IN_A_MINUTE = 3600;
+var NUMBER_SECONDS_IN_A_MINUTE = 60;
 
 var MINOTOUR_VERSION = 0.5;
 
