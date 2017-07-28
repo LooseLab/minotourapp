@@ -19,6 +19,7 @@ from .models import RunSummary
 from .models import JobMaster
 from .models import Job
 from .models import SamStore
+from .models import ChannelSummary
 
 class MinionRunAdmin(admin.ModelAdmin):
     list_display = ('run_name', 'run_id', 'is_barcoded', 'owner', 'minION')
@@ -61,4 +62,5 @@ admin.site.register(RunSummary)
 admin.site.register(JobMaster)
 admin.site.register(Job)
 admin.site.register(SamStore, SamStoreAdmin)
+admin.site.register(ChannelSummary)
 

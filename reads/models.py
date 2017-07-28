@@ -413,6 +413,14 @@ class RunSummaryBarCode(models.Model):
     def __str__(self):
         return "{} {} {} {} {}".format(self.run_id, self.total_length, self.read_count, self.type, self.barcode)
 
+class ChannelSummary(models.Model):
+    run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
+    channel_number = models.IntegerField()
+    read_count = models.BigIntegerField()
+    read_length = models.BigIntegerField()
+
+    def __str__(self):
+        return "{} {} {}".format(self.run_id,self.channel_number,self.read_count)
 
 class RunStatistic(models.Model):
     run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)

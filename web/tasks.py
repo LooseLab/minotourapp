@@ -4,10 +4,13 @@ from reads.models import MinIONRun
 from reads.models import JobMaster
 from reads.models import FastqRead
 from reads.models import SamStore
+from reads.models import ChannelSummary
+from reads.models import Job
 from datetime import datetime, timedelta
 from django.db.models import Q
 import subprocess
 import tempfile
+from django.core.cache import cache
 
 @task()
 def run_monitor():
@@ -33,6 +36,8 @@ def run_monitor():
 def slow_monitor():
     # Do something...
     print ("Slow Monitor Called")
+    testset={}
+    cachesiz={}
     minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=1)) | Q(
             RunStats__created_date__gte=datetime.now() - timedelta(days=1))).distinct()
     print(minion_runs)
@@ -40,12 +45,72 @@ def slow_monitor():
     for minion_run in minion_runs:
         print ("checking jobs for {}".format(minion_run))
         print (minion_run.run_id)
+        cachesiz[str(minion_run.run_id)]=minion_run
         run_jobs = JobMaster.objects.filter(run_id=minion_run.id)
         for run_job in run_jobs:
             print (type(run_job.job_name))
             if str(run_job.job_name)=="ProcAlign" and run_job.running is False:
                 print ("trying to process alignment")
                 proc_alignment.delay(minion_run.id, run_job.id, run_job.var1, run_job.var2)
+            if str(run_job.job_name)=="ChanCalc" and run_job.running is False:
+                print ("ChannelCalc")
+                calculate_channels.delay(minion_run.id, run_job.id, run_job.var1, run_job.var2)
+    try:
+        testset = cache.get('a-unique-key', {})
+    except:
+        print('a-unique-key not found')
+    print('a-unique-key is {}'.format(testset))
+    deleted,added = compare_two(testset,cachesiz)
+    processrun(deleted,added)
+    cache.set('a-unique-key',cachesiz)
+    ### We need someway of removing things from the dictionary which aren't still active - otherwise things will persist for ever - so a compare to dictionaries.
+
+def processrun(deleted,added):
+    for run in added:
+        runinstance = MinIONRun.objects.get(run_id=run)
+        jobinstance = Job.objects.get(jobname="ChanCalc")
+        newjob = JobMaster(run_id=runinstance,job_name=jobinstance,var2=0)
+        newjob.save()
+    for run in deleted:
+        runinstance = MinIONRun.objects.get(run_id=run)
+        jobinstance = Job.objects.get(jobname="ChanCalc")
+        jobrecord=JobMaster.objects.filter(job_name=jobinstance,run_id=runinstance).update(complete=True)
+
+def compare_two(newset,cacheset):
+    # Do somehing ....
+    #print ("newset",newset.keys())
+    #print ("cached",cacheset.keys())
+    print ("deleted keys",newset.keys()-cacheset.keys())
+    deleted = newset.keys()-cacheset.keys()
+    print("added keys",cacheset.keys() - newset.keys())
+    added = cacheset.keys() - newset.keys()
+    return deleted,added
+
+@task()
+def calculate_channels(runid,id,var1,last_read):
+    JobMaster.objects.filter(pk=id).update(running=True)
+    fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:10000]
+    tempstore=dict()
+    for fastq in fastqs:
+        #print (fastq)
+        if fastq.channel not in tempstore.keys():
+            tempstore[fastq.channel]=dict()
+            tempstore[fastq.channel]['count']=0
+            tempstore[fastq.channel]['length']=0
+        tempstore[fastq.channel]['count']+=1
+        tempstore[fastq.channel]['length']+=len(fastq.sequence)
+        last_read = fastq.id
+    #print (tempstore)
+    runinstance = MinIONRun.objects.get(pk=runid)
+    for chan in tempstore:
+        #print (chan)
+        channel, created = ChannelSummary.objects.get_or_create(run_id=runinstance,channel_number=int(chan),read_count=0,read_length=0)
+        #print (tempstore[chan]['count'])
+        channel.read_count+=tempstore[chan]['count']
+        channel.read_length+=tempstore[chan]['length']
+        channel.save()
+    JobMaster.objects.filter(pk=id).update(running=False, var2=last_read)
+
 
 @task()
 def proc_alignment(runid,id,reference,last_read):

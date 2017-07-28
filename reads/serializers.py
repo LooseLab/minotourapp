@@ -14,6 +14,20 @@ from reads.models import MinIONStatus
 from reads.models import MinIONmessages
 from reads.models import RunSummary
 from reads.models import JobMaster
+from reads.models import ChannelSummary
+
+
+class ChannelSummarySerialzer(serializers.ModelSerializer):
+    class Meta:
+        model = ChannelSummary
+        fields = (
+            'id',
+            'run_id',
+            'channel_number',
+            'read_count',
+            'read_length',
+        )
+        read_only = ('id',)
 
 
 class MinIONRunStatsSerializer(serializers.HyperlinkedModelSerializer):
