@@ -16,7 +16,19 @@ from reads.models import RunSummary
 from reads.models import JobMaster
 from reads.models import ChannelSummary
 from reads.models import HistogramSummary
+from reads.models import UserOptions
 
+class UserOptionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserOptions
+        fields = (
+            'id',
+            'owner',
+            'twitterhandle',
+            'tweet',
+            'email',
+        )
+        read_only = ('id',)
 
 
 class HistogramSummarySerializer(serializers.ModelSerializer):

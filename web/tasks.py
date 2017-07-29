@@ -7,23 +7,42 @@ from reads.models import SamStore
 from reads.models import ChannelSummary
 from reads.models import HistogramSummary
 from reads.models import Job
+from reads.models import UserOptions
 from datetime import datetime, timedelta
 from django.db.models import Q
 import subprocess
 import tempfile
 from django.core.cache import cache
+from django.contrib.auth.models import User
+from django.conf import settings
+from twitter import *
+
+
+def send_tweet(message):
+    TWITTOKEN = getattr(settings, "TWITTOKEN", None)
+    TWITTOKEN_SECRET = getattr(settings, "TWITTOKEN_SECRET", None)
+    TWITCONSUMER_KEY = getattr(settings, "TWITCONSUMER_KEY", None)
+    TWITCONSUMER_SECRET = getattr(settings, "TWITCONSUMER_SECRET", None)
+    t = Twitter(
+        auth=OAuth(TWITTOKEN, TWITTOKEN_SECRET, TWITCONSUMER_KEY, TWITCONSUMER_SECRET))
+    print ("Gonna try and send a tweet")
+    t.statuses.update(
+        status=message)
+
 
 @task()
 def run_monitor():
     # Do something...
     print ("Rapid Monitor Called")
-    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=2)) | Q(
-            RunStats__created_date__gte=datetime.now() - timedelta(days=2))).distinct()
+    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=3)) | Q(
+            RunStats__created_date__gte=datetime.now() - timedelta(days=3))).distinct()
     print(minion_runs)
     print(len(minion_runs))
     for minion_run in minion_runs:
-        print ("checking jobs for {}".format(minion_run))
+        print ("Run Monitor jobs for {}".format(minion_run))
         print (minion_run.run_id)
+        #print (minion_run.owner)
+        SendUserMessage.delay(minion_run.id,"a test","testing")
         run_jobs = JobMaster.objects.filter(run_id=minion_run.id)
         for run_job in run_jobs:
             print (type(run_job.job_name))
@@ -39,8 +58,8 @@ def slow_monitor():
     print ("Slow Monitor Called")
     testset={}
     cachesiz={}
-    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=2)) | Q(
-            RunStats__created_date__gte=datetime.now() - timedelta(days=2))).distinct()
+    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=3)) | Q(
+            RunStats__created_date__gte=datetime.now() - timedelta(days=3))).distinct()
     print(minion_runs)
     print(len(minion_runs))
     for minion_run in minion_runs:
@@ -86,6 +105,17 @@ def compare_two(newset,cacheset):
     print("added keys",cacheset.keys() - newset.keys())
     added = cacheset.keys() - newset.keys()
     return deleted,added
+
+@task()
+def SendUserMessage(runid,messagetype,messagestring):
+    print ("Message Sending Initiated")
+    print ("looking for {}".format(runid))
+    runinstance = MinIONRun.objects.get(id=runid)
+    print ("and now for {}".format(runinstance.owner))
+    UserObject = User.objects.get(username=runinstance.owner)
+    print (UserObject.extendedopts.tweet)
+    print (runinstance,UserObject)
+
 
 @task()
 def processreads(runid,id,var1,last_read):
