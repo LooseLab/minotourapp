@@ -413,6 +413,16 @@ class RunSummaryBarCode(models.Model):
     def __str__(self):
         return "{} {} {} {} {}".format(self.run_id, self.total_length, self.read_count, self.type, self.barcode)
 
+class HistogramSummary(models.Model):
+    run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
+    read_type = models.ForeignKey(FastqReadType)
+    bin_width=models.BigIntegerField()
+    read_count = models.BigIntegerField()
+    read_length = models.BigIntegerField()
+
+    def __str__(self):
+        return "{} {} {}".format(self.run_id,self.read_type,self.bin_width)
+
 class ChannelSummary(models.Model):
     run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
     channel_number = models.IntegerField()

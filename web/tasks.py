@@ -5,6 +5,7 @@ from reads.models import JobMaster
 from reads.models import FastqRead
 from reads.models import SamStore
 from reads.models import ChannelSummary
+from reads.models import HistogramSummary
 from reads.models import Job
 from datetime import datetime, timedelta
 from django.db.models import Q
@@ -16,8 +17,8 @@ from django.core.cache import cache
 def run_monitor():
     # Do something...
     print ("Rapid Monitor Called")
-    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=1)) | Q(
-            RunStats__created_date__gte=datetime.now() - timedelta(days=1))).distinct()
+    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=2)) | Q(
+            RunStats__created_date__gte=datetime.now() - timedelta(days=2))).distinct()
     print(minion_runs)
     print(len(minion_runs))
     for minion_run in minion_runs:
@@ -38,8 +39,8 @@ def slow_monitor():
     print ("Slow Monitor Called")
     testset={}
     cachesiz={}
-    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=1)) | Q(
-            RunStats__created_date__gte=datetime.now() - timedelta(days=1))).distinct()
+    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=2)) | Q(
+            RunStats__created_date__gte=datetime.now() - timedelta(days=2))).distinct()
     print(minion_runs)
     print(len(minion_runs))
     for minion_run in minion_runs:
@@ -54,7 +55,7 @@ def slow_monitor():
                 proc_alignment.delay(minion_run.id, run_job.id, run_job.var1, run_job.var2)
             if str(run_job.job_name)=="ChanCalc" and run_job.running is False:
                 print ("ChannelCalc")
-                calculate_channels.delay(minion_run.id, run_job.id, run_job.var1, run_job.var2)
+                processreads.delay(minion_run.id, run_job.id, run_job.var1, run_job.var2)
     try:
         testset = cache.get('a-unique-key', {})
     except:
@@ -87,30 +88,51 @@ def compare_two(newset,cacheset):
     return deleted,added
 
 @task()
-def calculate_channels(runid,id,var1,last_read):
+def processreads(runid,id,var1,last_read):
     JobMaster.objects.filter(pk=id).update(running=True)
     fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:10000]
-    tempstore=dict()
+    chanstore=dict()
+    histstore=dict()
     for fastq in fastqs:
         #print (fastq)
-        if fastq.channel not in tempstore.keys():
-            tempstore[fastq.channel]=dict()
-            tempstore[fastq.channel]['count']=0
-            tempstore[fastq.channel]['length']=0
-        tempstore[fastq.channel]['count']+=1
-        tempstore[fastq.channel]['length']+=len(fastq.sequence)
+        if fastq.channel not in chanstore.keys():
+            chanstore[fastq.channel]=dict()
+            chanstore[fastq.channel]['count']=0
+            chanstore[fastq.channel]['length']=0
+        chanstore[fastq.channel]['count']+=1
+        chanstore[fastq.channel]['length']+=len(fastq.sequence)
+
+        bin_width = findbin(len(fastq.sequence))
+        if bin_width not in histstore.keys():
+            histstore[bin_width]=dict()
+        if fastq.type not in histstore[bin_width].keys():
+            histstore[bin_width][fastq.type]=dict()
+            histstore[bin_width][fastq.type]['count']=0
+            histstore[bin_width][fastq.type]['length']=0
+            ###NEED TO HANDLE TYPE!
+        histstore[bin_width][fastq.type]['count']+=1
+        histstore[bin_width][fastq.type]['length']+=len(fastq.sequence)
         last_read = fastq.id
     #print (tempstore)
     runinstance = MinIONRun.objects.get(pk=runid)
-    for chan in tempstore:
+    for chan in chanstore:
         #print (chan)
         channel, created = ChannelSummary.objects.get_or_create(run_id=runinstance,channel_number=int(chan),read_count=0,read_length=0)
         #print (tempstore[chan]['count'])
-        channel.read_count+=tempstore[chan]['count']
-        channel.read_length+=tempstore[chan]['length']
+        channel.read_count+=chanstore[chan]['count']
+        channel.read_length+=chanstore[chan]['length']
         channel.save()
+    for hist in histstore:
+        for type in histstore[hist]:
+            histogram,created = HistogramSummary.objects.get_or_create(run_id=runinstance,bin_width=int(hist),read_type=type,read_count=0,read_length=0)
+            histogram.read_count+=histstore[hist][type]["count"]
+            histogram.read_length+=histstore[hist][type]["length"]
+            histogram.save()
     JobMaster.objects.filter(pk=id).update(running=False, var2=last_read)
 
+
+def findbin(x,bin_width=900):
+    return ((x - x % bin_width) / bin_width)
 
 @task()
 def proc_alignment(runid,id,reference,last_read):

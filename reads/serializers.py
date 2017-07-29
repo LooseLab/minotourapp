@@ -15,9 +15,25 @@ from reads.models import MinIONmessages
 from reads.models import RunSummary
 from reads.models import JobMaster
 from reads.models import ChannelSummary
+from reads.models import HistogramSummary
 
 
-class ChannelSummarySerialzer(serializers.ModelSerializer):
+
+class HistogramSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HistogramSummary
+        fields = (
+            'id',
+            'run_id',
+            'read_type',
+            'bin_width',
+            'read_count',
+            'read_length',
+        )
+        read_only = ('id',)
+
+
+class ChannelSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = ChannelSummary
         fields = (
