@@ -13,6 +13,49 @@ from reads.models import MinIONScripts
 from reads.models import MinIONStatus
 from reads.models import MinIONmessages
 from reads.models import RunSummary
+from reads.models import JobMaster
+from reads.models import ChannelSummary
+from reads.models import HistogramSummary
+from reads.models import UserOptions
+
+class UserOptionsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserOptions
+        fields = (
+            'id',
+            'owner',
+            'twitterhandle',
+            'tweet',
+            'email',
+        )
+        read_only = ('id',)
+
+
+class HistogramSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HistogramSummary
+        fields = (
+            'id',
+            'run_id',
+            'read_type',
+            'bin_width',
+            'read_count',
+            'read_length',
+        )
+        read_only = ('id',)
+
+
+class ChannelSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChannelSummary
+        fields = (
+            'id',
+            'run_id',
+            'channel_number',
+            'read_count',
+            'read_length',
+        )
+        read_only = ('id',)
 
 
 class MinIONRunStatsSerializer(serializers.HyperlinkedModelSerializer):
@@ -202,11 +245,24 @@ class RunStatisticBarcodeSerializer(serializers.ModelSerializer):
         fields = ('total_length', 'read_count', 'type', 'typename', 'max_length', 'min_length', 'pass_length', 'pass_max_length', 'pass_min_length', 'pass_count', 'id', 'sample_time', 'barcode')
         read_only = ('id',)
 
+class JobSerializer(serializers.ModelSerializer):
+    typename = serializers.ReadOnlyField(source="type.name")
+
+    class Meta:
+        model = JobMaster
+        fields = ('run_id','job_name','var1','var2','var3','complete')
+
+
 
 class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
 
+    jobstodo = JobSerializer(
+        many=True,
+        read_only=True,
+    )
+
     class Meta:
         model = MinIONRun
-        fields = ('url', 'sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','minION', 'barcodes', 'id', 'last_read', 'last_entry')
-        read_only = ('id','sample_name','minKNOW_version', 'minKNOW_flow_cell_id', 'barcodes', 'last_read', 'last_entry')
+        fields = ('url', 'sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','minION', 'barcodes', 'id', 'last_read', 'last_entry','jobstodo')
+        read_only = ('id','sample_name','minKNOW_version', 'minKNOW_flow_cell_id', 'barcodes', 'last_read', 'last_entry','jobstodo')
 

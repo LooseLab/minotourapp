@@ -131,6 +131,16 @@ class MinIONControl(models.Model):
     def __str__(self):
         return self.job
 
+class UserOptions(models.Model):
+    owner = models.OneToOneField(settings.AUTH_USER_MODEL, related_name='extendedopts')
+    twitterhandle = models.CharField(max_length=64)
+    tweet = models.BooleanField(default=False)
+    email = models.BooleanField(default=False)
+
+    def __str__(self):
+        return "{}".format(str(self.owner))
+
+
 
 class MinIONRun(models.Model):
     run_name = models.CharField(max_length=64)
@@ -413,6 +423,24 @@ class RunSummaryBarCode(models.Model):
     def __str__(self):
         return "{} {} {} {} {}".format(self.run_id, self.total_length, self.read_count, self.type, self.barcode)
 
+class HistogramSummary(models.Model):
+    run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
+    read_type = models.ForeignKey(FastqReadType)
+    bin_width=models.BigIntegerField()
+    read_count = models.BigIntegerField()
+    read_length = models.BigIntegerField()
+
+    def __str__(self):
+        return "{} {} {}".format(self.run_id,self.read_type,self.bin_width)
+
+class ChannelSummary(models.Model):
+    run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
+    channel_number = models.IntegerField()
+    read_count = models.BigIntegerField()
+    read_length = models.BigIntegerField()
+
+    def __str__(self):
+        return "{} {} {}".format(self.run_id,self.channel_number,self.read_count)
 
 class RunStatistic(models.Model):
     run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
@@ -473,6 +501,63 @@ class MinIONmessages(models.Model):
     def __str__(self):
         return "{} {} {} {}".format(self.minION, self.minKNOW_message, self.minKNOW_severity, self.minKNOW_message_timestamp)
 
+
+##### Job Management System
+
+class Job(models.Model):
+    jobname = models.CharField(max_length=256)
+
+    def __str__(self):
+        return "{}".format(self.jobname)
+
+class JobMaster(models.Model):
+    run_id = models.ForeignKey(MinIONRun, related_name='runjobs')
+    job_name = models.ForeignKey(Job, related_name='taskname')
+    var1 = models.CharField(max_length=256,blank=True, null=True)
+    var2 = models.CharField(max_length=256,blank=True, null=True)
+    var3 = models.CharField(max_length=256,blank=True, null=True)
+    complete = models.BooleanField(default=False)
+    running = models.BooleanField(default=False)
+
+
+    def __str__(self):
+        return "{} {}".format(self.run_id,self.job_name)
+
+##### Alignment Management
+
+
+##### This class replicates original minoTour design but perhaps it is better just to store the sam file as a single row? Lets try that
+"""
+class SamStore(models.Model):
+    run_id = models.ForeignKey(MinIONRun, related_name='runalignments')
+    read_id = models.ForeignKey(FastqRead, related_name='readalignment')
+    flag = models.IntegerField()
+    rname = models.CharField(max_length=512)
+    pos = models.BigIntegerField()
+    mapq = models.IntegerField()
+    cigar = models.TextField()
+    rnext = models.CharField(max_length=512)
+    pnext = models.IntegerField()
+    tlen = models.IntegerField()
+    seq = models.TextField()
+    qual = models.TextField()
+    nm = models.CharField(max_length=512)
+    md = models.TextField()
+    ass = models.CharField(max_length=512)
+    xs = models.CharField(max_length=512)
+
+    def __str__(self):
+        return "{} {}".format(self.run_id,self.read_id)
+
+"""
+
+class SamStore(models.Model):
+    run_id = models.ForeignKey(MinIONRun, related_name='runalignments')
+    read_id = models.ForeignKey(FastqRead, related_name='readalignment')
+    samline = models.TextField()
+
+    def __str__(self):
+        return "{} {}".format(self.run_id,self.read_id)
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):

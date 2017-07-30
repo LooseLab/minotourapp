@@ -196,7 +196,7 @@ function MinotourApp() {
 
         setInterval(function () {
             this.requestData();
-        }.bind(this), 60000);
+        }.bind(this), 10000);
     };
 
     /*
@@ -473,6 +473,7 @@ function MinotourApp() {
         var url_run = '/api/v1/runs/' + self.id;
 
         $.get(url_run, function (data) {
+            //console.log(data);
             self.barcodes = data.barcodes.sort();
             self.updateBarcodeNavTab();
         });

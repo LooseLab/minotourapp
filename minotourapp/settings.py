@@ -32,20 +32,34 @@ ALLOWED_HOSTS = ['*', ]
 
 
 # For RabbitMQ
-CELERY_BROKER_URL = 'amqp://'
-CELERY_RESULT_BACKEND = 'amqp://'
+#CELERY_BROKER_URL = 'amqp://'
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+#CELERY_RESULT_BACKEND = 'amqp://'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 # Celery Data Format
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Europe/London'
 CELERY_BEAT_SCHEDULE = {
-    'task-number-one': {
-        'task': 'web.tasks.task_number_one',
+    'rapid-monitor': {
+        'task': 'web.tasks.run_monitor',
         'schedule': 5.0,
         #'args': (*args)
     },
+    'slow-monitor': {
+        'task': 'web.tasks.slow_monitor',
+        'schedule': 15.0,
+        #'args': (*args)
+    },
 }
+
+
+# For sending twitter messages
+TWITTOKEN = get_env_variable("MT_twittoken")
+TWITTOKEN_SECRET=get_env_variable("MT_twittoken_secret")
+TWITCONSUMER_KEY=get_env_variable("MT_twitconsumer_key")
+TWITCONSUMER_SECRET=get_env_variable("MT_twitconsumer_secret")
 
 
 # Application definition
@@ -93,6 +107,17 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'minotourapp.wsgi.application'
+
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
 
 
 # Database
