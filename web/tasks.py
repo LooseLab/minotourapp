@@ -42,7 +42,7 @@ def run_monitor():
         print ("Run Monitor jobs for {}".format(minion_run))
         print (minion_run.run_id)
         #print (minion_run.owner)
-        SendUserMessage.delay(minion_run.id,"a test","testing")
+        #SendUserMessage.delay(minion_run.id,"a test","testing")
         run_jobs = JobMaster.objects.filter(run_id=minion_run.id)
         for run_job in run_jobs:
             print (type(run_job.job_name))
@@ -58,8 +58,8 @@ def slow_monitor():
     print ("Slow Monitor Called")
     testset={}
     cachesiz={}
-    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=3)) | Q(
-            RunStats__created_date__gte=datetime.now() - timedelta(days=3))).distinct()
+    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=1)) | Q(
+            RunStats__created_date__gte=datetime.now() - timedelta(days=1))).distinct()
     print(minion_runs)
     print(len(minion_runs))
     for minion_run in minion_runs:
@@ -89,10 +89,14 @@ def processrun(deleted,added):
     for run in added:
         runinstance = MinIONRun.objects.get(run_id=run)
         jobinstance = Job.objects.get(jobname="ChanCalc")
+        runinstance.active=True
+        runinstance.save()
         newjob = JobMaster(run_id=runinstance,job_name=jobinstance,var2=0)
         newjob.save()
     for run in deleted:
         runinstance = MinIONRun.objects.get(run_id=run)
+        runinstance.active=False
+        runinstance.save()
         jobinstance = Job.objects.get(jobname="ChanCalc")
         jobrecord=JobMaster.objects.filter(job_name=jobinstance,run_id=runinstance).update(complete=True)
 

@@ -123,8 +123,44 @@ function makeChart2(divName, chartTitle, yAxisTitle) {
     return chart;
 }
 
+function MonitorAPP() {
+    this.livedata = new Array();
+    var self = this;
+
+    this.init=function (){
+        console.log('This is MonitorApp Running');
+        this.requestData();
+
+        setInterval(function () {
+            this.requestData();
+        }.bind(this), 10000);
+    }
+
+    this.updatecounters = function (live) {
+        var thing = document.getElementById('livenum');
+        thing.innerHTML = live;
+        var thing2 = document.getElementById('livenumruns');
+        thing2.innerHTML = 'You have '+live+' live runs.';
+    }
+
+    this.requestData = function () {
+        var url_run = '/api/v1/currentruns/';
+
+        $.get(url_run, function (data) {
+            //console.log(data);
+            this.livedata = data;
+            //self.barcodes = data.barcodes.sort();
+            //self.updateBarcodeNavTab();
+        }.bind(this));
+        console.log(self.livedata.length);
+        self.updatecounters(self.livedata.length + '/' + '0');
+        //self.requestSummaryByMinuteData(self.id);
+        //self.requestSummaryData(self.id);
+    }
+}
 
 function MinotourApp() {
+    console.log('This is MinotourApp Running');
     this.chart_reads_called = null;
     this.chart_yield = null;
     this.chart_average_read_length = null;

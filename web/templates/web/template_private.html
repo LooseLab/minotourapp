@@ -1,6 +1,8 @@
 {% extends "web/template_base.html" %}
 {% load static %}
 
+
+
 {% block header %}
     <header class="main-header">
 
@@ -13,6 +15,13 @@
             <span class="logo-lg"><img style="max-width:100px;" src="{% static 'mT_images/minotaurlogo.png' %}"
                                        alt="minoTour_logo">1.0a</span>
         </a>
+        <script src="{% static 'web/minotour.js' %}?{% now 'c' %}"></script>
+        <script>
+        $(document).ready(function () {
+            var app2 = new MonitorAPP();
+            app2.init();
+        });
+    </script>
 
         <!-- Header Navbar -->
         <nav class="navbar navbar-static-top" role="navigation">
@@ -31,11 +40,11 @@
                             <!-- Menu toggle button -->
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                                 <i class="fa fa-table"></i>
-                                <span class="label label-success">{{ livenumruns }}/{{ prevnumruns }}</span>
+                                <span class="label label-success"><div id="livenum"></div></span>
                             </a>
                             <ul class="dropdown-menu">
 
-                                <li class="header">You have {{ livenumruns }} live runs</li>
+                                <li class="header" id="livenumruns"></li>
                                 <li>
                                     <!-- inner menu: contains the messages -->
                                     <ul class="menu">

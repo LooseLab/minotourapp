@@ -148,6 +148,7 @@ class MinIONRun(models.Model):
     is_barcoded = models.BooleanField(default=False)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='runs')
     minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minionrun')
+    active = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'MinION Run'
