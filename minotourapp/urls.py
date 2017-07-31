@@ -1,7 +1,7 @@
 from django.conf.urls import include
 from django.conf.urls import url
 from django.contrib import admin
-import notifications.urls
+#import notifications.urls
 
 from django.contrib.auth import views as auth_views
 
@@ -18,5 +18,5 @@ urlpatterns = [
     url(r'^web/', include('web.urls')),
     url(r'^', include('reads.urls')),
     url(r'^$', auth_views.LoginView.as_view(template_name="registration/login.html")),
-    url('^inbox/notifications/', include(notifications.urls, namespace='notifications')),
+#    url('^inbox/notifications/', include(notifications.urls, namespace='notifications')),
 ]
