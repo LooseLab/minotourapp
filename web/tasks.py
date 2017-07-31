@@ -34,8 +34,9 @@ def send_tweet(message):
 def run_monitor():
     # Do something...
     print ("Rapid Monitor Called")
-    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=3)) | Q(
-            RunStats__created_date__gte=datetime.now() - timedelta(days=3))).distinct()
+    #minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=3)) | Q(
+    #        RunStats__created_date__gte=datetime.now() - timedelta(days=3))).distinct()
+    minion_runs = MinIONRun.objects.filter(active=True).distinct()
     print(minion_runs)
     print(len(minion_runs))
     for minion_run in minion_runs:
@@ -58,8 +59,8 @@ def slow_monitor():
     print ("Slow Monitor Called")
     testset={}
     cachesiz={}
-    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=1)) | Q(
-            RunStats__created_date__gte=datetime.now() - timedelta(days=1))).distinct()
+    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=7)) | Q(
+            RunStats__created_date__gte=datetime.now() - timedelta(days=7))).distinct()
     print(minion_runs)
     print(len(minion_runs))
     for minion_run in minion_runs:

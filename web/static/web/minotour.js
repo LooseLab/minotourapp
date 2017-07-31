@@ -137,6 +137,7 @@ function MonitorAPP() {
     }
 
     this.updatecounters = function (live) {
+        console.log('update called');
         var thing = document.getElementById('livenum');
         thing.innerHTML = live;
         var thing2 = document.getElementById('livenumruns');
@@ -148,12 +149,13 @@ function MonitorAPP() {
 
         $.get(url_run, function (data) {
             //console.log(data);
-            this.livedata = data;
+            self.livedata = data;
+            self.updatecounters(self.livedata.length + '/' + '0');
             //self.barcodes = data.barcodes.sort();
             //self.updateBarcodeNavTab();
         }.bind(this));
         console.log(self.livedata.length);
-        self.updatecounters(self.livedata.length + '/' + '0');
+        //self.updatecounters(self.livedata.length + '/' + '0');
         //self.requestSummaryByMinuteData(self.id);
         //self.requestSummaryData(self.id);
     }
