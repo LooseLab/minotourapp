@@ -163,6 +163,13 @@ class MinIONRun(models.Model):
         except AttributeError:
             return "undefined"
 
+    def start_time(self):
+        try:
+            return self.RunDetails.last().minKNOW_start_time
+        except AttributeError:
+            return "undefined"
+
+
     def last_read(self):
         try:
             #print (self.reads.last().created_date)

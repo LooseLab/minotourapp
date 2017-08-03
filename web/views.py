@@ -38,13 +38,6 @@ def tutorial(request):
 
 @login_required
 def current_run(request):
-    #minion_runs = MinIONRun.objects.filter(owner=request.user).filter(reads__created_date__gte=timezone.now()-timedelta(days=4)).distinct()
-    #print (minion_runs)
-    #print (len(minion_runs))
-    #for minion_run in minion_runs:
-        #print (minion_run.last_entry)
-    #    print (minion_run)
-    #return render(request, 'web/current_run2.html', context={'minion_runs': minion_runs})
     return render(request, 'web/current_run2.html')
 
 @login_required

@@ -44,12 +44,12 @@ CELERY_TIMEZONE = 'Europe/London'
 CELERY_BEAT_SCHEDULE = {
     'rapid-monitor': {
         'task': 'web.tasks.run_monitor',
-        'schedule': 5.0,
+        'schedule': 10.0,
         #'args': (*args)
     },
     'slow-monitor': {
         'task': 'web.tasks.slow_monitor',
-        'schedule': 15.0,
+        'schedule': 30.0,
         #'args': (*args)
     },
 }

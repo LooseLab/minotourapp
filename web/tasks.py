@@ -59,8 +59,8 @@ def slow_monitor():
     print ("Slow Monitor Called")
     testset={}
     cachesiz={}
-    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=7)) | Q(
-            RunStats__created_date__gte=datetime.now() - timedelta(days=7))).distinct()
+    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=1)) | Q(
+            RunStats__created_date__gte=datetime.now() - timedelta(days=1))).distinct()
     print(minion_runs)
     print(len(minion_runs))
     for minion_run in minion_runs:
