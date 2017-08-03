@@ -174,6 +174,8 @@ function MinotourApp() {
     this.barcodes = null;
 
     this.summaryByMinute = null;
+    this.summaryByMinute2 = null;
+
     this.summary = null;
 
     this.id = null;
@@ -463,74 +465,31 @@ function MinotourApp() {
         }
     };
 
-    this.updateCumulativeNumberOfReadsOverTimeChart2 = function () {
-        // chart chart_cumulative_number_reads_overtime
-        var summaries = {};
-
-        for (var i = 0; i < self.summaryByMinute.length; i++) {
-            if (summaries[self.summaryByMinute[i].typename] === undefined) {
-                summaries[self.summaryByMinute[i].typename] = {
-                    'lastCumulativeReadCount': 0,
-                    'data': []
-                };
-            }
-
-            var cumulativeReadCount = self.summaryByMinute[i].read_count + summaries[self.summaryByMinute[i].typename].lastCumulativeReadCount;
-            summaries[self.summaryByMinute[i].typename].lastCumulativeReadCount = cumulativeReadCount;
-
-            var sample_time = new Date(self.summaryByMinute[i].sample_time);
-
-            var point = {
-                x: sample_time,
-                y: cumulativeReadCount
-            }
-
-            summaries[self.summaryByMinute[i].typename]['data'].push(point);
-        }
-
-        for (var key in summaries) {
-            self.chart_cumulative_number_reads_overtime.addSeries({name: key, data: summaries[key]['data']});
-        }
-
-    };
-
     this.updateSequencingRateChart = function () {
+        var chart = self.chartSequencingRate;
+        var selectedBarcode = self.selectedBarcode;
 
         // Remove previous series
-        while (self.chartSequencingRate.series.length > 0) {
-            self.chartSequencingRate.series[0].remove();
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
         }
 
-        var summaries = {};
+        for (var barcode of Object.keys(self.summaryByMinute2)) {
+            for (var typeName of Object.keys(self.summaryByMinute2[barcode])) {
 
-        for (var i = 0; i < self.summaryByMinute.length; i++) {
-            if (summaries[self.summaryByMinute[i].typename] === undefined) {
-                summaries[self.summaryByMinute[i].typename] = {
-                    'data': []
-                };
+                chart.addSeries({
+                    name: barcode + ' - ' + typeName,
+                    data: self.summaryByMinute2[barcode][typeName]['sequencingRate']
+                });
+
             }
-
-            var sequencingRate = self.summaryByMinute[i].total_length / NUMBER_SECONDS_IN_A_MINUTE;
-
-            var sample_time = new Date(self.summaryByMinute[i].sample_time);
-
-            var point = {
-                x: sample_time,
-                y: sequencingRate
-            }
-
-            summaries[self.summaryByMinute[i].typename]['data'].push(point);
-        }
-
-        for (var key in summaries) {
-            self.chartSequencingRate.addSeries({name: key, data: summaries[key]['data']});
         }
     };
 
     this.updateSummaryByMinuteBasedCharts = function () {
+        self.updateAverageReadLengthOverTimeChart()
         self.updateCumulativeNumberOfReadsOverTimeChart();
         self.updateSequencingRateChart();
-        self.updateAverageReadLengthOverTimeChart()
     };
 
     this.updateSummaryBasedCharts = function () {
@@ -560,6 +519,45 @@ function MinotourApp() {
                 });
 
                 self.summaryByMinute = orderedData;
+
+                /*********/
+
+                var summaries = {};
+
+                for (var barcode of self.barcodes) {
+                    summaries[barcode] =  {};
+                }
+
+                for (var i = 0; i < self.summaryByMinute.length; i++) {
+                    var item = self.summaryByMinute[i];
+
+                    if (summaries[item.barcode][item.typename] === undefined) {
+                        summaries[item.barcode][item.typename] = {
+                            'data': [],
+                            'sequencingRate': [],
+                        };
+                    }
+
+                    var sampleTime = new Date(item.sample_time);
+
+                    var singleData = {
+                        sampleTime: sampleTime,
+                        totalLength: item.total_length,
+                        readCount: item.read_count,
+                        maxLength: item.max_length,
+                        minLength: item.min_length,
+                    }
+
+                    summaries[item.barcode][item.typename]['sequencingRate'].push({
+                        x: sampleTime,
+                        y: item.total_length / NUMBER_SECONDS_IN_A_MINUTE
+                    });
+
+                }
+
+                self.summaryByMinute2 = summaries;
+
+                /*********/
 
                 // update chart - TODO split ajax call and update of self.summaryByMinute from the redrawing the charts
                 self.updateSummaryByMinuteBasedCharts();
