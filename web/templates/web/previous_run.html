@@ -36,6 +36,7 @@
                             <th>Flow Cell ID</th>
                             <th>MinKNOW Version</th>
                             <th>Is Barcoded</th>
+                            <th>Run Start Date</th>
                         </tr>
                         </thead>
                         <tfoot>
@@ -47,6 +48,7 @@
                             <th>Flow Cell ID</th>
                             <th>MinKNOW Version</th>
                             <th>Is Barcoded</th>
+                            <th>Run Start Date</th>
                         </tr>
                         </tfoot>
                     </table>
@@ -67,7 +69,7 @@
                         console.log(json);
                         var ien = json.length;
                         for (var i = 0; i < ien; i++){
-                            data.push([json[i].id, json[i].run_name, json[i].run_id, json[i].sample_name,json[i].minKNOW_flow_cell_id,json[i].minKNOW_version, json[i].is_barcoded]);
+                            data.push([json[i].id, json[i].run_name, json[i].run_id, json[i].sample_name,json[i].minKNOW_flow_cell_id,json[i].minKNOW_version, json[i].is_barcoded, json[i].start_time]);
                         }
                         return data;
                     }

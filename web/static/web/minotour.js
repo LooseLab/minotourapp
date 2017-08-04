@@ -150,11 +150,12 @@ function MonitorAPP() {
         $.get(url_run, function (data) {
             //console.log(data);
             self.livedata = data;
-            self.updatecounters(self.livedata.length + '/' + '0');
+            self.updatecounters(self.livedata.length);
+            console.log(self.livedata);
             //self.barcodes = data.barcodes.sort();
             //self.updateBarcodeNavTab();
         }.bind(this));
-        console.log(self.livedata.length);
+
         //self.updatecounters(self.livedata.length + '/' + '0');
         //self.requestSummaryByMinuteData(self.id);
         //self.requestSummaryData(self.id);

@@ -24,7 +24,7 @@ from .models import HistogramSummary
 from .models import UserOptions
 
 class MinionRunAdmin(admin.ModelAdmin):
-    list_display = ('run_name', 'run_id', 'is_barcoded', 'owner', 'minION')
+    list_display = ('start_time', 'active','sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','minION', 'id', 'last_read', 'last_entry')
 
 
 class RunStatisticsBarcodeAdmin(admin.ModelAdmin):
