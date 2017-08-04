@@ -6,36 +6,33 @@
 
         <!-- Content Header (Page header) -->
         <section class="content-header">
-            <h1>
-                Previous Summary
-                <small> -</small>
-            </h1>
-            <ol class="breadcrumb">
-                <li><a href="#"><i class="fa fa-table"></i> previous run</a></li>
-                <li><a href="#"><i class="fa fa-bar-chart-o"></i> Data Summary</a></li>
-                <li class="active">Here</li>
-            </ol>
+            <h1>Run - <span>{{ minion_run.run_name }}</span> (<span
+                    id='run-id'>{{ minion_run.id }}</span>)</h1>
         </section>
 
         <!-- Main content -->
         <section class="content">
             <div class="box">
-                <div class="box-header">
-                    <h3 class="box-title">Run: <span>{{ minion_run.run_name }}</span> (<span
-                            id='run-id'>{{ minion_run.id }}</span>)</h3>
-                </div><!-- /.box-header -->
                 <div class="box-body">
-                    <div class="row">
+                    <!--<div class="row">
                         <div class="col-md-12">
                             <button id="counterdown-btn" class="btn btn-default">Reloading in 30 seconds</button>
                         </div>
-                    </div>
-                    <br/>
+                    </div>-->
                     <div class="row">
                         <div class="col-md-12">
                             <div class="nav-tabs-custom">
-                                <ul class="nav nav-tabs" id="nav-tabs-barcodes">
+                                <ul class="nav nav-tabs">
+                                    <li><a href="#">Live data</a></li>
+                                    <li class="active"><a href="#">Basecalled data</a></li>
                                 </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="nav-tabs-custom">
+                                <ul class="nav nav-tabs" id="nav-tabs-barcodes"></ul>
                             </div>
                         </div>
                     </div>
