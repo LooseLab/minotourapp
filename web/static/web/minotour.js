@@ -188,6 +188,27 @@ function MinotourApp() {
     var self = this;
 
     this.init = function () {
+        /*
+        * Add event listeners
+        */
+
+        document.getElementById('panel-live-data').style.display = 'none';
+        document.getElementById('panel-basecalled-data').style.display = 'block';
+
+        document.getElementById('nav-live-data').onclick = function(e) {
+            document.getElementById('panel-basecalled-data').style.display = 'none';
+            document.getElementById('nav-basecalled-data').parentNode.classList.remove('active');
+            document.getElementById('panel-live-data').style.display = 'block';
+            document.getElementById('nav-live-data').parentNode.classList.add('active');
+        };
+
+        document.getElementById('nav-basecalled-data').onclick = function(e) {
+            document.getElementById('panel-basecalled-data').style.display = 'block';
+            document.getElementById('nav-basecalled-data').parentNode.classList.add('active');
+            document.getElementById('panel-live-data').style.display = 'none';
+            document.getElementById('nav-live-data').parentNode.classList.remove('active');
+        };
+
         this.chart_reads_called = this.makeChart(
             'reads-called',
             'reads called'.toUpperCase(),
