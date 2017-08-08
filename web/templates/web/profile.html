@@ -28,23 +28,14 @@
 
                     <p><i>User Name:</i> <strong>{{ request.user.username }}</strong></p>
                     <p><i>Email Address:</i> <strong>{{ request.user.email }}</strong></p>
-                    <p><i>Access Token:</i> <strong>{{ auth_token }}</strong></p>
-                    <p><i>Twitter Handle:</i> <strong>{{ UserDetails.twitterhandle }}</strong></p>
-                    <p><i>Receive Emails:</i> <strong>{{ UserDetails.email }}</strong></p>
-                    <p><i>Receive Tweets:</i> <strong>{{ UserDetails.tweet }}</strong></p>
+                    <p><i>Access Token:</i> <strong>{{ authToken }}</strong></p>
+                    <p><i>Twitter Handle:</i> <strong>{{ userDetails.twitterhandle }}</strong></p>
+                    <p><i>Receive Emails:</i> <strong>{{ userDetails.email }}</strong></p>
+                    <p><i>Receive Tweets:</i> <strong>{{ userDetails.tweet }}</strong></p>
 
                 </div>
             </div>
-
-
-
-
-
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
-
-
-
-
 
 {% endblock %}

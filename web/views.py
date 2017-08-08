@@ -1,5 +1,7 @@
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
+
 from reads.models import MinIONRun
 from reads.models import UserOptions
 from django.db.models import Q
@@ -25,9 +27,20 @@ def private_index(request):
 
 @login_required
 def profile(request):
-    AuthToken = Token.objects.filter(user=request.user)
-    UserDetails = UserOptions.objects.filter(owner=request.user)
-    return render(request, 'web/profile.html', context={'auth_token': AuthToken[0], 'UserDetails': UserDetails[0] })
+    authToken = Token.objects.get(user=request.user)
+
+    try:
+        userDetails = UserOptions.objects.get(owner=request.user)
+    except ObjectDoesNotExist:
+        userDetails = UserOptions.objects.create(owner=request.user)
+
+    return render(
+        request, 'web/profile.html',
+        context={
+            'authToken': authToken,
+            'userDetails': userDetails
+        }
+    )
 
 @login_required
 def external_links(request):
