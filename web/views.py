@@ -1,9 +1,11 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from reads.models import MinIONRun
+from reads.models import UserOptions
 from django.db.models import Q
 from datetime import datetime, timedelta
 from django.utils import timezone
+from rest_framework.authtoken.models import Token
 
 def index(request):
     return render(request, 'web/index.html')
@@ -21,6 +23,11 @@ def log_in(request):
 def private_index(request):
     return render(request, 'web/private_index.html')
 
+@login_required
+def profile(request):
+    AuthToken = Token.objects.filter(user=request.user)
+    UserDetails = UserOptions.objects.filter(owner=request.user)
+    return render(request, 'web/profile.html', context={'auth_token': AuthToken[0], 'UserDetails': UserDetails[0] })
 
 @login_required
 def external_links(request):

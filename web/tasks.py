@@ -8,6 +8,7 @@ from reads.models import ChannelSummary
 from reads.models import HistogramSummary
 from reads.models import Job
 from reads.models import UserOptions
+from reads.models import Barcode
 from datetime import datetime, timedelta
 from django.db.models import Q
 import subprocess
@@ -128,8 +129,10 @@ def processreads(runid,id,var1,last_read):
     fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:10000]
     chanstore=dict()
     histstore=dict()
+    barstore=set()
     for fastq in fastqs:
         #print (fastq)
+        barstore.add(fastq.barcode)
         if fastq.channel not in chanstore.keys():
             chanstore[fastq.channel]=dict()
             chanstore[fastq.channel]['count']=0
@@ -150,6 +153,8 @@ def processreads(runid,id,var1,last_read):
         last_read = fastq.id
     #print (tempstore)
     runinstance = MinIONRun.objects.get(pk=runid)
+    for barcode in barstore:
+        result, created = Barcode.objects.get_or_create(run_id=runinstance, barcode=barcode)
     for chan in chanstore:
         #print (chan)
         channel, created = ChannelSummary.objects.get_or_create(run_id=runinstance,channel_number=int(chan),read_count=0,read_length=0)

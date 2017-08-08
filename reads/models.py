@@ -450,6 +450,14 @@ class ChannelSummary(models.Model):
     def __str__(self):
         return "{} {} {}".format(self.run_id,self.channel_number,self.read_count)
 
+class Barcode(models.Model):
+    run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
+    barcode = models.CharField(max_length=32)
+
+    def __str__(self):
+        return "{} {}".format(self.run_id,self.barcode)
+
+
 class RunStatistic(models.Model):
     run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
     sample_time = models.DateTimeField()

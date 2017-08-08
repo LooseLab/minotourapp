@@ -1,0 +1,50 @@
+{% extends "web/template_private.html" %}
+
+{% block content %}
+    <div class="content-wrapper">
+
+        <!-- Content Header (Page header) -->
+
+        <section class="content-header">
+            <h1>
+                User Profile
+            </h1>
+            <ol class="breadcrumb">
+                <li><a href="#"><i class="fa fa-dashboard"></i> Profile</a></li>
+                <li class="active">Here</li>
+            </ol>
+        </section>
+
+        <!-- Main content -->
+        <section class="content">
+
+            <div class="box">
+                <div class="box-header">
+                    <h3 class="box-title">Overview</h3>
+                </div><!-- /.box-header -->
+                <div class="box-body">
+
+                    <p>Below are your registered user details. Your access token is required to upload data to minoTour.</p>
+
+                    <p><i>User Name:</i> <strong>{{ request.user.username }}</strong></p>
+                    <p><i>Email Address:</i> <strong>{{ request.user.email }}</strong></p>
+                    <p><i>Access Token:</i> <strong>{{ auth_token }}</strong></p>
+                    <p><i>Twitter Handle:</i> <strong>{{ UserDetails.twitterhandle }}</strong></p>
+                    <p><i>Receive Emails:</i> <strong>{{ UserDetails.email }}</strong></p>
+                    <p><i>Receive Tweets:</i> <strong>{{ UserDetails.tweet }}</strong></p>
+
+                </div>
+            </div>
+
+
+
+
+
+        </section><!-- /.content -->
+    </div><!-- /.content-wrapper -->
+
+
+
+
+
+{% endblock %}
