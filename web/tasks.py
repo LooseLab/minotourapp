@@ -93,7 +93,10 @@ def processrun(deleted,added):
         jobinstance = Job.objects.get(jobname="ChanCalc")
         runinstance.active=True
         runinstance.save()
-        newjob = JobMaster(run_id=runinstance,job_name=jobinstance,var2=0)
+        #newjob = JobMaster(run_id=runinstance,job_name=jobinstance,var2=0)
+        newjob,created = JobMaster.objects.get_or_create(run_id=runinstance, job_name=jobinstance)
+        if created is True:
+            newjob.var2=0
         newjob.save()
     for run in deleted:
         runinstance = MinIONRun.objects.get(run_id=run)
@@ -157,14 +160,16 @@ def processreads(runid,id,var1,last_read):
         result, created = Barcode.objects.get_or_create(run_id=runinstance, barcode=barcode)
     for chan in chanstore:
         #print (chan)
-        channel, created = ChannelSummary.objects.get_or_create(run_id=runinstance,channel_number=int(chan),read_count=0,read_length=0)
+        channel, created = ChannelSummary.objects.get_or_create(run_id=runinstance,channel_number=int(chan))
+        print ('created',created)
+        print (channel)
         #print (tempstore[chan]['count'])
         channel.read_count+=chanstore[chan]['count']
         channel.read_length+=chanstore[chan]['length']
         channel.save()
     for hist in histstore:
         for type in histstore[hist]:
-            histogram,created = HistogramSummary.objects.get_or_create(run_id=runinstance,bin_width=int(hist),read_type=type,read_count=0,read_length=0)
+            histogram,created = HistogramSummary.objects.get_or_create(run_id=runinstance,bin_width=int(hist),read_type=type)
             histogram.read_count+=histstore[hist][type]["count"]
             histogram.read_length+=histstore[hist][type]["length"]
             histogram.save()

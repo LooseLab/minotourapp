@@ -22,6 +22,7 @@ from .models import SamStore
 from .models import ChannelSummary
 from .models import HistogramSummary
 from .models import UserOptions
+from .models import Barcode
 
 class MinionRunAdmin(admin.ModelAdmin):
     list_display = ('start_time', 'active','sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','minION', 'id', 'last_read', 'last_entry')
@@ -67,4 +68,5 @@ admin.site.register(SamStore, SamStoreAdmin)
 admin.site.register(ChannelSummary)
 admin.site.register(HistogramSummary)
 admin.site.register(UserOptions)
+admin.site.register(Barcode)
 

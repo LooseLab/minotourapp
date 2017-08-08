@@ -198,8 +198,8 @@ class MinIONRun(models.Model):
 
     def barcodes(self):
         barcodes = ['All reads', ]
-        for item in FastqRead.objects.filter(run_id=self).values('barcode').distinct():
-            barcodes.append(item['barcode'])
+        for item in Barcode.objects.filter(run_id=self):
+            barcodes.append(item.barcode)
 
         return barcodes
 
@@ -435,8 +435,8 @@ class HistogramSummary(models.Model):
     run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
     read_type = models.ForeignKey(FastqReadType)
     bin_width=models.BigIntegerField()
-    read_count = models.BigIntegerField()
-    read_length = models.BigIntegerField()
+    read_count = models.BigIntegerField(default=0)
+    read_length = models.BigIntegerField(default=0)
 
     def __str__(self):
         return "{} {} {}".format(self.run_id,self.read_type,self.bin_width)
@@ -444,8 +444,8 @@ class HistogramSummary(models.Model):
 class ChannelSummary(models.Model):
     run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
     channel_number = models.IntegerField()
-    read_count = models.BigIntegerField()
-    read_length = models.BigIntegerField()
+    read_count = models.BigIntegerField(default=0)
+    read_length = models.BigIntegerField(default=0)
 
     def __str__(self):
         return "{} {} {}".format(self.run_id,self.channel_number,self.read_count)
