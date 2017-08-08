@@ -131,6 +131,7 @@ class MinIONControl(models.Model):
     def __str__(self):
         return self.job
 
+
 class UserOptions(models.Model):
     owner = models.OneToOneField(settings.AUTH_USER_MODEL, related_name='extendedopts')
     twitterhandle = models.CharField(max_length=64)
@@ -139,7 +140,6 @@ class UserOptions(models.Model):
 
     def __str__(self):
         return "{}".format(str(self.owner))
-
 
 
 class MinIONRun(models.Model):
