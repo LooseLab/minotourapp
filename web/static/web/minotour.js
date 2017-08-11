@@ -776,10 +776,10 @@ function MinotourApp() {
         //console.log(self.LiveCumuYield);
         if (self.LiveCumuYield.series.length < 1){
             self.LiveCumuYield.addSeries({
-                data: self.livedatayield });
+                data: self.livedata.yield_history });
             self.LiveCumuYield.series[0].update({name: "Events"}, false);
         }else {
-            self.LiveCumuYield.series[0].setData(self.livedatayield);
+            self.LiveCumuYield.series[0].setData(self.livedata.yield_history);
             self.LiveCumuYield.series[0].update({name: "Events"}, false);
         }
         self.LiveCumuYield.redraw();
@@ -1217,8 +1217,6 @@ function MinotourApp() {
                 for (var i = 0; i < data.length; i++) {
                     //console.log(data[i]);
                     timestamp = new Date(data[i].sample_time).getTime()
-                    self.livedatayield.push([timestamp,data[i].event_yield]);
-                    
                     self.livedata.voltage.push([timestamp, data[i].voltage_value]);
                     self.livedata.asictemp.push([timestamp, data[i].asic_temp]);
                     self.livedata.heatsinktemp.push([timestamp, data[i].heat_sink_temp]);
