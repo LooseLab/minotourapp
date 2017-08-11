@@ -1145,16 +1145,16 @@ function MinotourApp() {
         //commented out below as it wasn't being used - not sure why - need to check
         //var timeleft = self.geteighthours(self.livedatayield.slice(-1), self.rundata.start_time);
         var firsthour = 120;
-        [scalingfactor, difference] = self.projectdata(self.livedatayield);
-        [scalingfactor2, difference2] = self.projectdata(self.livedatayield.slice(0, firsthour));
-        var syntheticdata = self.livedatayield;
+        [scalingfactor, difference] = self.projectdata(self.livedata.yield_history);
+        [scalingfactor2, difference2] = self.projectdata(self.livedata.yield_history.slice(0, firsthour));
+        var syntheticdata = self.livedata.yield_history;
         //console.log("synthetic data");
         //console.log(syntheticdata);
         newarray = self.projectresults(syntheticdata, scalingfactor, 4000, difference, new Date(self.rundata.start_time).getTime());
         //console.log(newarray);
         newarray1 = self.projectresults(syntheticdata.slice(0, firsthour), scalingfactor2, 4000, difference2, new Date(self.rundata.start_time).getTime());
         newarray2 = self.projectresults(syntheticdata.slice(0, firsthour), 1, 4000, difference2, new Date(self.rundata.start_time).getTime());
-        self.LiveYield.series[0].setData(self.converttobases(self.livedatayield, seqspeed));
+        self.LiveYield.series[0].setData(self.converttobases(self.livedata.yield_history, seqspeed));
         self.LiveYield.series[1].setData(self.converttobases(newarray, seqspeed));
         self.LiveYield.series[2].setData(self.converttobases(newarray1, seqspeed));
         self.LiveYield.series[3].setData(self.converttobases(newarray2, seqspeed));
