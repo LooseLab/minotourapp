@@ -373,15 +373,15 @@ def minION_run_stats_list(request,pk):
     try:
         crazyminIONrunstats = MinIONRunStats.objects.filter(run_id=pk)
         #minIONrunstats = MinIONRunStats.objects.all()
-        print (len(crazyminIONrunstats))
+        #print (len(crazyminIONrunstats))
 
     except MinIONRunStats.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
-        print (crazyminIONrunstats)
-        for item in crazyminIONrunstats:
-            print (item.minION, item.run_id, item.sample_time, item.event_yield)
+        #print (crazyminIONrunstats)
+        #for item in crazyminIONrunstats:
+        #    print (item.minION, item.run_id, item.sample_time, item.event_yield)
 
         serializer = MinIONRunStatsSerializer(crazyminIONrunstats, many=True , context={'request': request})
 
@@ -405,7 +405,7 @@ def minION_run_stats_latest(request,pk,checkid):
     TODO describe function
     """
     try:
-        crazyminIONrunstats = MinIONRunStats.objects.filter(run_id=pk, id__gt=checkid)
+        crazyminIONrunstats = MinIONRunStats.objects.filter(run_id=pk, id__gt=checkid)[:1000]
         #minIONrunstats = MinIONRunStats.objects.all()
         print (crazyminIONrunstats)
 

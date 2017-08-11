@@ -179,7 +179,7 @@ class Runcollection():
             if "barcode" in self.readid[record.id].keys():
                 barcode = self.readid[record.id]["barcode"]
             else:
-                barcode = "No Barode"
+                barcode = "No Barcode"
             self.add_read_db(self.runidlink,record.id,self.readid[record.id]["read"],self.readid[record.id]["ch"],barcode,str(record.seq),record.format('fastq').split('\n')[3],True,self.readtypes["Template"],self.readid[record.id]["start_time"])
             self.readid[record.id]["len"] = len(record.seq)
             self.cumulength += len(record.seq)

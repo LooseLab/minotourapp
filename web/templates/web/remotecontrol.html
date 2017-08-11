@@ -1129,10 +1129,17 @@
                         this.chart = new Highcharts.Chart(this.opts);
                         //this.chart = new Highcharts.stockChart(this.opts);
                         //this.chart.series[0].setData(this.datain2.slice(-15));
+
+                        //datain2 array of arrays where first value is time and second is yield
+                        //seqspeed is the sequencing speed in b/s e.g 450 b/s
+                        //start_time is the run start time
+
                         this.chart.series[0].setData(converttobases(this.datain2, this.seqspeed));
                         this.chart.redraw();
 
                         setInterval(function () {
+                            console.log('check me out');
+                            console.log(this.start_time);
                             var timeleft = geteighthours(this.datain2.slice(-1), this.start_time);
                             var firsthour = 120;
                             [scalingfactor, difference] = projectdata(this.datain2);
@@ -1510,7 +1517,7 @@
                         //this.chart = new Highcharts.Chart(this.opts);
                         this.chart.series[0].setData(this.datain2);
                         setInterval(function () {
-                            //console.log(this.datain2);
+                            console.log(this.datain2);
                             this.chart.series[0].setData(this.datain2);
                             this.chart.redraw();
                         }.bind(this), 10000);
@@ -2682,11 +2689,12 @@
                         //minion=this.keydata;
 
                         setInterval(function () {
+                            //datain is histogram values, datain2 is probably bin width? total yield is total yield.
                             var returndata = tohistogram(this.datain, parseInt(this.datain2), this.totalyield);
                             this.chart.series[0].setData(returndata[0]);
                             this.chart.xAxis[0].setCategories(returndata[1]);
                             //console.log('updating highcharts histogram');
-                            //console.log(this.datain);
+                            console.log(this.datain2);
                             //console.log(returndata[2]-0.5);
                             //console.log(typeof(returndata[2]));
                             var N50 = parseInt(returndata[2]);

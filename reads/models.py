@@ -267,6 +267,8 @@ class MinIONRunStats(models.Model):
     def __str__(self):
         return "{} {} {}".format(self.minION,self.run_id,self.sample_time)
 
+
+    ## This is something to look at for optimisation
     def occupancy(self):
         if (self.strand > 0 and self.inrange > 0):
             occupancy = (self.strand / (self.strand + self.inrange)) * 100
