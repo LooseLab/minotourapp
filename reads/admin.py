@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from .models import FastqRead
-from .models import RunSummaryBarCode
+from .models import RunSummaryBarcode
 from .models import RunStatisticBarcode
 from .models import FastqReadType
 from .models import MinION
@@ -59,7 +59,7 @@ admin.site.register(MinIONRunStats)
 admin.site.register(MinIONmessages)
 admin.site.register(MinIONControl)
 admin.site.register(RunStatisticBarcode, RunStatisticsBarcodeAdmin)
-admin.site.register(RunSummaryBarCode, RunSummaryBarcodeAdmin)
+admin.site.register(RunSummaryBarcode, RunSummaryBarcodeAdmin)
 admin.site.register(RunStatistic)
 admin.site.register(RunSummary)
 admin.site.register(JobMaster)
@@ -69,4 +69,3 @@ admin.site.register(ChannelSummary)
 admin.site.register(HistogramSummary)
 admin.site.register(UserOptions)
 admin.site.register(Barcode)
-

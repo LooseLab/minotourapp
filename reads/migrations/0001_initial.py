@@ -235,7 +235,7 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
-            name='RunSummaryBarCode',
+            name='RunSummaryBarcode',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('total_length', models.IntegerField(default=0)),

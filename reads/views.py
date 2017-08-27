@@ -8,8 +8,10 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from reads.models import FastqRead, RunSummaryBarCode, RunStatisticBarcode
+from reads.models import Barcode
+from reads.models import FastqRead
 from reads.models import FastqReadType
+from reads.models import HistogramSummary
 from reads.models import MinION
 from reads.models import MinIONControl
 from reads.models import MinIONEvent
@@ -21,9 +23,14 @@ from reads.models import MinIONScripts
 from reads.models import MinIONStatus
 from reads.models import MinIONmessages
 from reads.models import RunStatistic
+from reads.models import RunStatisticBarcode
 from reads.models import RunSummary
-from reads.serializers import FastqReadSerializer, RunSummaryBarcodeSerializer, RunStatisticBarcodeSerializer, \
-    RunStatisticSerializer
+from reads.models import RunSummaryBarcode
+from reads.serializers import BarcodeSerializer
+from reads.serializers import FastqReadSerializer
+from reads.serializers import RunSummaryBarcodeSerializer
+from reads.serializers import RunStatisticBarcodeSerializer
+from reads.serializers import RunStatisticSerializer
 from reads.serializers import FastqReadTypeSerializer
 from reads.serializers import MinIONControlSerializer
 from reads.serializers import MinIONEventSerializer
@@ -35,8 +42,8 @@ from reads.serializers import MinIONScriptsSerializer
 from reads.serializers import MinIONSerializer
 from reads.serializers import MinIONStatusSerializer
 from reads.serializers import MinIONmessagesSerializer
+from reads.serializers import RunHistogramSummarySerializer
 from reads.serializers import RunSummarySerializer
-
 
 
 @api_view(['GET'])
@@ -601,7 +608,7 @@ def run_summary_barcode(request, pk):
     """
     Return a list with summaries for each read type of a given run.
     """
-    queryset = RunSummaryBarCode.objects\
+    queryset = RunSummaryBarcode.objects\
         .filter(run_id__owner=request.user)\
         .filter(run_id=pk)
 
@@ -620,7 +627,7 @@ def run_summary_by_minute(request, pk, last=''):
         queryset = RunStatistic.objects\
             .filter(run_id__owner=request.user)\
             .filter(run_id=pk)
-    
+
     else:
         queryset = RunStatistic.objects\
             .filter(run_id__owner=request.user)\
@@ -642,6 +649,58 @@ def run_summary_barcode_by_minute(request, pk):
         .filter(run_id=pk)
 
     serializer = RunStatisticBarcodeSerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def run_histogram_summary(request, pk):
+    """
+    Return a list with histogram summaries for a particular run.
+    """
+    queryset = HistogramSummary.objects\
+        .filter(run_id__owner=request.user)\
+        .filter(run_id=pk)
+
+    serializer = RunHistogramSummarySerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
+
+
+@api_view(['GET', 'POST'])
+def barcode_list(request, pk):
+    """
+    Return a list of barcodes of a particular run.
+    """
+
+    if request.method == 'GET':
+        queryset = Barcode.objects \
+            .filter(run__owner=request.user) \
+            .filter(run__id=pk)
+
+        serializer = BarcodeSerializer(queryset, many=True, context={'request': request})
+
+        return Response(serializer.data)
+
+
+    elif request.method == 'POST':
+        serializer = BarcodeSerializer(data=request.data, context={'request': request})
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def barcode_detail(request, pk):
+    """
+    Return the details of a particular barcode.
+    """
+    queryset = Barcode.objects.get(pk=pk)
+
+    serializer = BarcodeSerializer(queryset, many=False, context={'request': request})
 
     return Response(serializer.data)
 

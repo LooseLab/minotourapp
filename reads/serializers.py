@@ -1,7 +1,12 @@
 from rest_framework import serializers
 
-from reads.models import FastqRead, RunSummaryBarCode, RunStatistic, RunStatisticBarcode
+from reads.models import Barcode
+from reads.models import ChannelSummary
+from reads.models import FastqRead
 from reads.models import FastqReadType
+from reads.models import HistogramSummary
+from reads.models import HistogramSummary
+from reads.models import JobMaster
 from reads.models import MinION
 from reads.models import MinIONControl
 from reads.models import MinIONEvent
@@ -13,10 +18,11 @@ from reads.models import MinIONScripts
 from reads.models import MinIONStatus
 from reads.models import MinIONmessages
 from reads.models import RunSummary
-from reads.models import JobMaster
-from reads.models import ChannelSummary
-from reads.models import HistogramSummary
+from reads.models import RunSummaryBarcode
+from reads.models import RunStatistic
+from reads.models import RunStatisticBarcode
 from reads.models import UserOptions
+
 
 class UserOptionsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -223,7 +229,7 @@ class RunSummaryBarcodeSerializer(serializers.HyperlinkedModelSerializer):
     typename = serializers.ReadOnlyField(source="type.name")
 
     class Meta:
-        model = RunSummaryBarCode
+        model = RunSummaryBarcode
         fields = ('url', 'total_length', 'read_count', 'type', 'typename', 'max_length', 'min_length', 'pass_length', 'pass_max_length', 'pass_min_length', 'pass_count', 'id', 'barcode')
         read_only = ('id',)
 
@@ -245,6 +251,7 @@ class RunStatisticBarcodeSerializer(serializers.ModelSerializer):
         fields = ('total_length', 'read_count', 'type', 'typename', 'max_length', 'min_length', 'pass_length', 'pass_max_length', 'pass_min_length', 'pass_count', 'id', 'sample_time', 'barcode')
         read_only = ('id',)
 
+
 class JobSerializer(serializers.ModelSerializer):
     typename = serializers.ReadOnlyField(source="type.name")
 
@@ -252,6 +259,24 @@ class JobSerializer(serializers.ModelSerializer):
         model = JobMaster
         fields = ('run_id','job_name','var1','var2','var3','complete')
 
+
+class BarcodeSerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+
+        model = Barcode
+
+        fields = (
+            'url',
+            'id',
+            'name',
+            'run',
+        )
+
+        read_only = (
+            'url',
+            'id'
+        )
 
 
 class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
@@ -263,6 +288,47 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = MinIONRun
-        fields = ('url', 'start_time', 'active','sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','minION', 'barcodes', 'id', 'last_read', 'last_entry','jobstodo')
-        read_only = ('id','start_time', 'sample_name','minKNOW_version', 'minKNOW_flow_cell_id', 'barcodes', 'last_read', 'last_entry','jobstodo')
+        fields = (
+            'url',
+            'start_time',
+            'active',
+            'sample_name',
+            'minKNOW_version',
+            'minKNOW_flow_cell_id',
+            'run_name',
+            'run_id',
+            'is_barcoded',
+            'minION',
+            'id',
+            'last_read',
+            'last_entry',
+            'jobstodo',
+        )
 
+        read_only = (
+            'id',
+            'start_time',
+            'sample_name',
+            'minKNOW_version',
+            'minKNOW_flow_cell_id',
+            'last_read',
+            'last_entry',
+            'jobstodo'
+        )
+
+
+class RunHistogramSummarySerializer(serializers.ModelSerializer):
+    typename = serializers.ReadOnlyField(source="readtype.name")
+
+    class Meta:
+        model = HistogramSummary
+        fields = (
+            'run_id',
+            'read_type',
+            'typename',
+            'bin_width',
+            'read_count',
+            'read_length'
+        )
+
+        read_only = ('id',)

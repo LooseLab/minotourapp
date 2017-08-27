@@ -143,12 +143,33 @@ class UserOptions(models.Model):
 
 
 class MinIONRun(models.Model):
-    run_name = models.CharField(max_length=64)
-    run_id = models.CharField(max_length=64)
-    is_barcoded = models.BooleanField(default=False)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='runs')
-    minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minionrun')
-    active = models.BooleanField(default=False)
+    run_name = models.CharField(
+        max_length=64
+    )
+
+    run_id = models.CharField(
+        max_length=64
+    )
+
+    is_barcoded = models.BooleanField(
+        default=False
+    )
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='runs'
+    )
+
+    minION = models.ForeignKey(
+        MinION,
+        blank=True,
+        null=True,
+        related_name='minionrun'
+    )
+
+    active = models.BooleanField(
+        default=False
+    )
 
     class Meta:
         verbose_name = 'MinION Run'
@@ -169,10 +190,8 @@ class MinIONRun(models.Model):
         except AttributeError:
             return "undefined"
 
-
     def last_read(self):
         try:
-            #print (self.reads.last().created_date)
             return self.reads.last().created_date
         except AttributeError:
             return "undefined"
@@ -180,7 +199,6 @@ class MinIONRun(models.Model):
     def sample_name(self):
         try:
             return self.RunDetails.last().minKNOW_sample_name
-            #return self.RunDetails.minKNOW_sample_name
         except AttributeError:
             return "undefined"
 
@@ -196,12 +214,12 @@ class MinIONRun(models.Model):
         except AttributeError:
             return "undefined"
 
-    def barcodes(self):
-        barcodes = ['All reads', ]
-        for item in Barcode.objects.filter(run_id=self):
-            barcodes.append(item.barcode)
-
-        return barcodes
+    #def barcodes(self):
+    #    barcodes = []
+    #    for item in Barcode.objects.filter(run=self):
+    #        barcodes.append(item.name)
+    #
+    #    return barcodes
 
 
 class MinIONStatus(models.Model):
@@ -354,12 +372,10 @@ class MinIONScripts(models.Model):
         return "{} {} {}".format(self.minION, self.name, self.identifier)
 
 
-class Read(models.Model):
-    pass
-
-
 class FastqReadType(models.Model):
-    name = models.CharField(max_length=16)
+    name = models.CharField(
+        max_length=16
+    )
 
     class Meta:
         verbose_name = 'FASTQ Read Type'
@@ -370,20 +386,55 @@ class FastqReadType(models.Model):
 
 
 class FastqRead(models.Model):
-    run_id = models.ForeignKey(MinIONRun,
-                               on_delete=models.CASCADE,
-                               related_name='reads')
-    read_id = models.CharField(max_length=64)
-    read = models.IntegerField()
-    channel = models.IntegerField()
-    barcode = models.CharField(max_length=32)
-    sequence = models.TextField()
-    quality = models.TextField()
-    is_pass = models.BooleanField() # pass = true, fail = false
-    type = models.ForeignKey(FastqReadType)
-    start_time = models.DateTimeField()
-    created_date = models.DateTimeField(auto_now_add=True)
-    modified_date = models.DateTimeField(auto_now=True)
+    run_id = models.ForeignKey(
+        MinIONRun,
+        on_delete=models.CASCADE,
+        related_name='reads'
+    )
+
+    read_id = models.CharField(
+        max_length=64
+    )
+
+    read = models.IntegerField(
+
+    )
+
+    channel = models.IntegerField(
+
+    )
+
+    barcode = models.CharField(
+        max_length=32
+    )
+
+    sequence = models.TextField(
+
+    )
+
+    quality = models.TextField(
+
+    )
+
+    is_pass = models.BooleanField(
+
+    ) # pass = true, fail = false
+
+    type = models.ForeignKey(
+        FastqReadType
+    )
+
+    start_time = models.DateTimeField(
+
+    )
+
+    created_date = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    modified_date = models.DateTimeField(
+        auto_now=True
+    )
 
     class Meta:
         verbose_name = 'FASTQ Read'
@@ -413,35 +464,93 @@ class RunSummary(models.Model):
         return "{} {} {} {}".format(self.run_id, self.total_length, self.read_count, self.type)
 
 
-class RunSummaryBarCode(models.Model):
-    run_id = models.ForeignKey(MinIONRun,on_delete=models.CASCADE, related_name='runsummariesbarcodes')
-    total_length = models.BigIntegerField(default=0)
-    read_count = models.IntegerField(default=0)
-    type = models.ForeignKey(FastqReadType)
-    barcode = models.CharField(max_length=32)
-    pass_length = models.BigIntegerField(default=0)
-    pass_max_length = models.IntegerField(default=0)
-    pass_min_length = models.IntegerField(default=0)
-    pass_count = models.IntegerField(default=0)
-    max_length = models.IntegerField(default=0)
-    min_length = models.IntegerField(default=0)
+class RunSummaryBarcode(models.Model):
+    run_id = models.ForeignKey(
+        MinIONRun,
+        on_delete=models.CASCADE,
+        related_name='runsummariesbarcodes'
+    )
+
+    total_length = models.BigIntegerField(
+        default=0
+    )
+
+    read_count = models.IntegerField(
+        default=0
+    )
+
+    type = models.ForeignKey(
+        FastqReadType
+    )
+
+    barcode = models.CharField(
+        max_length=32
+    )
+
+    pass_length = models.BigIntegerField(
+        default=0
+    )
+
+    pass_max_length = models.IntegerField(
+        default=0
+    )
+
+    pass_min_length = models.IntegerField(
+        default=0
+    )
+
+    pass_count = models.IntegerField(
+        default=0
+    )
+
+    max_length = models.IntegerField(
+        default=0
+    )
+
+    min_length = models.IntegerField(
+        default=0
+    )
 
     class Meta:
         verbose_name = 'Run Summary Barcode'
         verbose_name_plural = 'Run Summary Barcodes'
 
     def __str__(self):
-        return "{} {} {} {} {}".format(self.run_id, self.total_length, self.read_count, self.type, self.barcode)
+        return "{} {} {} {} {}".format(
+            self.run_id,
+            self.total_length,
+            self.read_count,
+            self.type,
+            self.barcode
+        )
+
+
+class Barcode(models.Model):
+    run = models.ForeignKey(
+        MinIONRun,
+        on_delete=models.CASCADE,
+        related_name = 'barcodes'
+    )
+
+    name = models.CharField(
+        max_length=32
+    )
+
+    def __str__(self):
+        return "{} {} {}".format(self.run, self.run.run_id, self.name)
+
 
 class HistogramSummary(models.Model):
     run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
+    barcode = models.ForeignKey(Barcode, on_delete=models.CASCADE)
     read_type = models.ForeignKey(FastqReadType)
-    bin_width=models.BigIntegerField()
+    bin_width = models.BigIntegerField()
     read_count = models.BigIntegerField(default=0)
     read_length = models.BigIntegerField(default=0)
 
     def __str__(self):
         return "{} {} {}".format(self.run_id,self.read_type,self.bin_width)
+
 
 class ChannelSummary(models.Model):
     run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
@@ -451,13 +560,6 @@ class ChannelSummary(models.Model):
 
     def __str__(self):
         return "{} {} {}".format(self.run_id,self.channel_number,self.read_count)
-
-class Barcode(models.Model):
-    run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
-    barcode = models.CharField(max_length=32)
-
-    def __str__(self):
-        return "{} {}".format(self.run_id,self.barcode)
 
 
 class RunStatistic(models.Model):
@@ -577,6 +679,14 @@ class SamStore(models.Model):
     def __str__(self):
         return "{} {}".format(self.run_id,self.read_id)
 
+
+@receiver(post_save, sender=MinIONRun)
+def create_all_reads_barcode(sender, instance=None, created=False, **kwargs):
+    if created:
+        Barcode.objects.create(run=instance, name='All reads')
+        Barcode.objects.create(run=instance, name='No barcode')
+
+
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
@@ -595,7 +705,7 @@ def update_global_state(instance, sender, **kwargs):
                                  seconds=tm.second,
                                  microseconds=tm.microsecond)
 
-    obj1,created1 = RunSummaryBarCode.objects.update_or_create(
+    obj1,created1 = RunSummaryBarcode.objects.update_or_create(
         run_id=ipn_obj.run_id, type=ipn_obj.type, barcode='All reads'
     )
     update_sum_stats(obj1, ipn_obj)
@@ -607,7 +717,7 @@ def update_global_state(instance, sender, **kwargs):
     update_sum_stats(obj3, ipn_obj)
 
     if barcode is not None and barcode != '':
-        obj2,created2 = RunSummaryBarCode.objects.update_or_create(
+        obj2,created2 = RunSummaryBarcode.objects.update_or_create(
             run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode
         )
         update_sum_stats(obj2, ipn_obj)

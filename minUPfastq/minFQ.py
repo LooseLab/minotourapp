@@ -63,6 +63,7 @@ class Runcollection():
         self.runidlink = ""
         self.readtypes=dict()
         self.statsrecord=dict()
+        self.barcodes = dict()
 
     def add_run(self, descriptiondict):
         print("Seen a new run")
@@ -106,6 +107,20 @@ class Runcollection():
             print ("READTYPE",readtype)
             print (readtype["url"])
             self.readtypes[readtype["name"]]=readtype["url"]
+
+        response = requests.get(
+            str(self.runidlink) + "barcodes/",
+            headers=header
+        )
+
+        print('<<<<<<')
+        print(response.text)
+
+        for item in json.loads(response.text):
+            print(item)
+            self.barcodes.update({
+                item['name']: item['url']
+            })
 
     def add_read_db(self,runid,readid,read,channel,barcode,sequence,quality,ispass,type,starttime):
         #print(runid,readid,read,channel,barcode,sequence,quality,ispass,type,starttime)
@@ -176,11 +191,53 @@ class Runcollection():
 
             if self.readid[record.id]["ch"] not in self.timeid[tm]["chandict"]:
                 self.timeid[tm]["chandict"].append(self.readid[record.id]["ch"])
+
             if "barcode" in self.readid[record.id].keys():
-                barcode = self.readid[record.id]["barcode"]
+
+                barcode_local = self.readid[record.id]["barcode"]
+
+                if barcode_local not in self.barcodes.keys():
+
+                    print(">> Found new barcode {} for run {}.".format(barcode_local, self.runidlink))
+
+                    request_body = {
+                        'name': barcode_local,
+                        'run': str(self.runidlink)
+                    }
+
+                    response = requests.post(
+                        str(self.runidlink) + "barcodes/",
+                        headers=header,
+                        json=request_body
+                    )
+
+                    if response.status_code == 201:
+                        item = json.loads(response.text)
+
+                        self.barcodes.update({
+                            item['name']: item['url']
+                        })
+
+                        print(">> Barcode {} for run {} created with success.".format(item['url'], self.runidlink))
+
+                barcode_url = self.barcodes[barcode_local]
+
             else:
-                barcode = "No Barcode"
-            self.add_read_db(self.runidlink,record.id,self.readid[record.id]["read"],self.readid[record.id]["ch"],barcode,str(record.seq),record.format('fastq').split('\n')[3],True,self.readtypes["Template"],self.readid[record.id]["start_time"])
+                barcode_url = self.barcodes["No Barcode"]
+
+            self.add_read_db(
+                self.runidlink,
+                record.id,
+                self.readid[record.id]["read"],
+                self.readid[record.id]["ch"],
+                barcode_url,
+                str(record.seq),
+                record.format('fastq').split('\n')[3],
+                True,
+                self.readtypes["Template"],
+                self.readid[record.id]["start_time"]
+            )
+
             self.readid[record.id]["len"] = len(record.seq)
             self.cumulength += len(record.seq)
             self.timeid[tm]["cumulength"] += len(record.seq)
