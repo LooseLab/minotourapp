@@ -532,7 +532,7 @@
                                                 </div>
                                             </div>
                                                 </div>
-                                                    <div class="col-md-4">
+                                        <div class="col-md-4">
                                             <div class='panel panel-info'>
                                                 <div class='panel-heading'>
                                                     <h3 class='panel-title'>minKNOW real time data</h3>
@@ -1232,6 +1232,7 @@
                             var returndata = parseporehist(this.datain[0], this.datain2);
                             while (this.chart.series.length > 0)
                                 this.chart.series[0].remove(true);
+                            console.log(returndata[0]);
                             for (var i = 0; i < returndata.length; i++) {
                                 this.chart.addSeries(returndata[i]);
                             }

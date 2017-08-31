@@ -295,6 +295,7 @@ class MinIONRunStatus(models.Model):
     minKNOW_asic_id = models.CharField(max_length=256, blank=True, null=True)
     minKNOW_start_time = models.DateTimeField(blank=True,null=True)
     minKNOW_colours_string = models.TextField(blank=True,null=True)
+    minKNOW_computer = models.TextField(max_length=128,blank=True,null=True)
     #minKNOW_total_drive_space = models.FloatField(blank=True, null=True)
     #minKNOW_disk_space_till_shutdown = models.FloatField(blank=True, null=True)
     #minKNOW_warnings = models.BooleanField(default=False)

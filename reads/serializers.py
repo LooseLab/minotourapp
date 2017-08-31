@@ -201,11 +201,8 @@ class MinIONRunStatusSerializer(serializers.HyperlinkedModelSerializer):
             'minKNOW_real_sample_rate',
             'minKNOW_asic_id',
             'minKNOW_start_time',
-            'minKNOW_colours_string'
-
-            #'minKNOW_total_drive_space',
-            #'minKNOW_disk_space_till_shutdown',
-            #'minKNOW_warnings',
+            'minKNOW_colours_string',
+            'minKNOW_computer',
         )
         read_only = ('id','minION_name')
 

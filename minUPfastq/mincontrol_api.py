@@ -29,6 +29,7 @@ class MinControlAPI():
         self.status_summary=dict()
         self.minstatexist=False
         self.current_run_id=""
+        self.computer=""
 
     def header (self):
         return ({'Authorization': 'Token ' + args.api_key, 'Content-Type': 'application/json'})
@@ -153,7 +154,8 @@ class MinControlAPI():
                    "minKNOW_real_sample_rate": self.status_summary['real_sample_rate'],
                    "minKNOW_asic_id": self.status_summary['asic_id'],
                    "minKNOW_start_time": self.status_summary['start_time'],
-                   "minKNOW_colours_string": self.status_summary['colour_data']
+                   "minKNOW_colours_string": self.status_summary['colour_data'],
+                   "minKNOW_computer": self.computer,
                    #"minKNOW_histogram_values": self.status_summary['histogram'],
                    #"minKNOW_histogram_bin_width": self.status_summary['bin_width']
                    #"minKNOW_total_drive_space": self.status_summary['bytes_capacity'],
@@ -355,6 +357,7 @@ class MinControlAPI():
         #    if minion["minION_name"] == minION:
         #        print(minion)
         #        minionidlink = minion["url"]
+        self.computer = computer
         print (self.minionidlink)
         #Second get id of status we are looking for:
         statusidlink=""
