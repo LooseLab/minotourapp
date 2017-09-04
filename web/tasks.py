@@ -157,7 +157,7 @@ def processreads(runid,id,var1,last_read):
     #print (tempstore)
     runinstance = MinIONRun.objects.get(pk=runid)
     for barcode in barstore:
-        result, created = Barcode.objects.get_or_create(run_id=runinstance, barcode=barcode)
+        result, created = Barcode.objects.get_or_create(run=runinstance, name=barcode)
     for chan in chanstore:
         #print (chan)
         channel, created = ChannelSummary.objects.get_or_create(run_id=runinstance,channel_number=int(chan))
@@ -209,7 +209,7 @@ def proc_alignment(runid,id,reference,last_read):
         samtools sort workfile.bam > sort_workfile.bam
         samtools index sort_workfile.bam
         pysamstats --type variation sort_workfile.bam  --fasta references/hep_ref.fasta
-        
+
     After all that we just (!) parse the pysamstats lines into the existing reference table covering this information.
     """
     JobMaster.objects.filter(pk=id).update(running=False,var2=last_read)
@@ -265,4 +265,3 @@ def run_alignment(runid,id,reference,last_read):
                     last_read=fastq.id
                     #print (last_read)
     JobMaster.objects.filter(pk=id).update(running=False,var2=last_read)
-

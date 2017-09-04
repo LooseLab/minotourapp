@@ -283,6 +283,11 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
         read_only=True,
     )
 
+    barcodes = BarcodeSerializer(
+        many=True,
+        read_only=True
+    )
+
     class Meta:
         model = MinIONRun
         fields = (
@@ -300,6 +305,7 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
             'last_read',
             'last_entry',
             'jobstodo',
+            'barcodes'
         )
 
         read_only = (
@@ -310,7 +316,8 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
             'minKNOW_flow_cell_id',
             'last_read',
             'last_entry',
-            'jobstodo'
+            'jobstodo',
+            'barcodes'
         )
 
 
