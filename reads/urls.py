@@ -124,6 +124,10 @@ urlpatterns = [
         views.recentminION_messages_list,
         name="recentmessages-list"),
     url(
+        r'^api/v1/minions/(?P<pk>[0-9]+)/messagessince/(?P<starttime>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)/(?P<endtime>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z)/$',
+        views.sinceminION_messages_list,
+        name="sincemessages-list"),
+    url(
         r'^api/v1/minions/(?P<pk>[0-9]+)/status/$',
         views.minION_status_list,
         name="minIONstatus-list"),

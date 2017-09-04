@@ -173,6 +173,17 @@ def minION_messages_list(request, pk):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET'],)
+def sinceminION_messages_list(request, pk,starttime,endtime):
+    if request.method == 'GET':
+        #print (starttime)
+        correctedstart = parser.parse(starttime) - timedelta(minutes=180)
+        correctedend = parser.parse(endtime) + timedelta(minutes=180)
+        #print (correctedstart.isoformat().replace('+00:00', 'Z'))
+        queryset = MinIONmessages.objects.filter(minION=pk).filter(
+        minKNOW_message_timestamp__gte=correctedstart.isoformat().replace('+00:00', 'Z')).filter(minKNOW_message_timestamp__lte=correctedend.isoformat().replace('+00:00', 'Z'))
+        serializer = MinIONmessagesSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
 
 @api_view(['GET'],)
 def recentminION_messages_list(request, pk):
@@ -197,7 +208,7 @@ def minION_control_list(request,pk):
 
     elif request.method == 'POST':
         serializer = MinIONControlSerializer(data=request.data, context={'request': request})
-        print (serializer)
+        #print (serializer)
         if serializer.is_valid():
             serializer.save(owner=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -220,7 +231,7 @@ def minION_control_update(request,pk,checkid):
 
     if request.method == 'GET':
         serializer = MinIONControlSerializer(event_, context={'request': request})
-        print (serializer)
+        #print (serializer)
         return Response(serializer.data)
 
     if request.method == 'POST':
@@ -414,15 +425,15 @@ def minION_run_stats_latest(request,pk,checkid):
     try:
         crazyminIONrunstats = MinIONRunStats.objects.filter(run_id=pk, id__gt=checkid)[:1000]
         #minIONrunstats = MinIONRunStats.objects.all()
-        print (crazyminIONrunstats)
+        #print (crazyminIONrunstats)
 
     except MinIONRunStats.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
-        print (crazyminIONrunstats)
-        for item in crazyminIONrunstats:
-            print (item.minION, item.run_id, item.sample_time, item.event_yield)
+        #print (crazyminIONrunstats)
+        #for item in crazyminIONrunstats:
+        #    print (item.minION, item.run_id, item.sample_time, item.event_yield)
 
         serializer = MinIONRunStatsSerializer(crazyminIONrunstats, many=True , context={'request': request})
 

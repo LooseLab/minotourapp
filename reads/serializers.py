@@ -207,11 +207,8 @@ class MinIONRunStatusSerializer(serializers.HyperlinkedModelSerializer):
             'minKNOW_real_sample_rate',
             'minKNOW_asic_id',
             'minKNOW_start_time',
-            'minKNOW_colours_string'
-
-            #'minKNOW_total_drive_space',
-            #'minKNOW_disk_space_till_shutdown',
-            #'minKNOW_warnings',
+            'minKNOW_colours_string',
+            'minKNOW_computer',
         )
         read_only = ('id','minION_name')
 
@@ -286,6 +283,11 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
         read_only=True,
     )
 
+    barcodes = BarcodeSerializer(
+        many=True,
+        read_only=True
+    )
+
     class Meta:
         model = MinIONRun
         fields = (
@@ -303,6 +305,7 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
             'last_read',
             'last_entry',
             'jobstodo',
+            'barcodes'
         )
 
         read_only = (
@@ -313,7 +316,8 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
             'minKNOW_flow_cell_id',
             'last_read',
             'last_entry',
-            'jobstodo'
+            'jobstodo',
+            'barcodes'
         )
 
 
