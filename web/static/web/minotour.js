@@ -664,7 +664,7 @@ function MinotourApp() {
                 y: average_read_length
             }
 
-            if (self.summaryByMinute[i].barcode === "All reads") {
+            if (self.summaryByMinute[i].barcodename === "All reads") {
                 if (summaries["All reads"][self.summaryByMinute[i].typename] === undefined) {
                     summaries["All reads"][self.summaryByMinute[i].typename] = [];
                 }
@@ -672,7 +672,7 @@ function MinotourApp() {
                 summaries["All reads"][self.summaryByMinute[i].typename].push(point);
             }
 
-            if (self.summaryByMinute[i].barcode === selectedBarcode && selectedBarcode !== "All reads") {
+            if (self.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
                 if (summaries[selectedBarcode][self.summaryByMinute[i].typename] === undefined) {
                     summaries[selectedBarcode][self.summaryByMinute[i].typename] = [];
                 }
@@ -711,7 +711,7 @@ function MinotourApp() {
 
         for (var i = 0; i < self.summaryByMinute.length; i++) {
 
-            if (self.summaryByMinute[i].barcode === "All reads") {
+            if (self.summaryByMinute[i].barcodename === "All reads") {
                 if (summaries["All reads"][self.summaryByMinute[i].typename] === undefined) {
                     summaries["All reads"][self.summaryByMinute[i].typename] = {
                         "lastCumulativeReadCount": 0,
@@ -731,7 +731,7 @@ function MinotourApp() {
                 summaries["All reads"][self.summaryByMinute[i].typename].data.push(point);
             }
 
-            if (self.summaryByMinute[i].barcode === selectedBarcode && selectedBarcode !== "All reads") {
+            if (self.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
                 if (summaries[selectedBarcode][self.summaryByMinute[i].typename] === undefined) {
                     summaries[selectedBarcode][self.summaryByMinute[i].typename] = {
                         "lastCumulativeReadCount": 0,
@@ -753,7 +753,6 @@ function MinotourApp() {
 
         }
 
-        console.log(summaries);
         for (var barcode in summaries) {
             for (var readtype in summaries[barcode]) {
                 chart.addSeries({name: barcode + " - " + readtype, data: summaries[barcode][readtype]["data"]});
@@ -771,15 +770,22 @@ function MinotourApp() {
         }
 
         for (var barcode of Object.keys(self.summaryByMinute2)) {
-            for (var typeName of Object.keys(self.summaryByMinute2[barcode])) {
 
-                chart.addSeries({
-                    name: barcode + " - " + typeName,
-                    data: self.summaryByMinute2[barcode][typeName]["sequencingRate"]
-                });
+            if (barcode === 'All reads' || barcode === self.selectedBarcode) {
+                for (var typeName of Object.keys(self.summaryByMinute2[barcode])) {
 
+                    chart.addSeries({
+                        name: barcode + " - " + typeName,
+                        data: self.summaryByMinute2[barcode][typeName]["sequencingRate"]
+                    });
+
+                }
             }
         }
+
+        console.log('>>>>>>>>');
+        console.log(self.summaryByMinute2);
+
     };
 
     this.updateSummaryByMinuteBasedCharts = function () {
