@@ -222,6 +222,21 @@ class MinIONRun(models.Model):
     #    return barcodes
 
 
+class Barcode(models.Model):
+    run = models.ForeignKey(
+        MinIONRun,
+        on_delete=models.CASCADE,
+        related_name = 'barcodes'
+    )
+
+    name = models.CharField(
+        max_length=32
+    )
+
+    def __str__(self):
+        return "{} {} {}".format(self.run, self.run.run_id, self.name)
+
+
 class MinIONStatus(models.Model):
     minION = models.OneToOneField(MinION, related_name='currentdetails')
     minKNOW_status = models.CharField(max_length=64)
@@ -405,8 +420,11 @@ class FastqRead(models.Model):
 
     )
 
-    barcode = models.CharField(
-        max_length=32
+    barcode = models.ForeignKey(
+        Barcode,
+        on_delete=models.CASCADE,
+        related_name='reads',
+        null=True
     )
 
     sequence = models.TextField(
@@ -484,8 +502,11 @@ class RunSummaryBarcode(models.Model):
         FastqReadType
     )
 
-    barcode = models.CharField(
-        max_length=32
+    barcode = models.ForeignKey(
+        Barcode,
+        on_delete=models.CASCADE,
+        related_name='runsummaries',
+        null=True
     )
 
     pass_length = models.BigIntegerField(
@@ -524,21 +545,6 @@ class RunSummaryBarcode(models.Model):
             self.type,
             self.barcode
         )
-
-
-class Barcode(models.Model):
-    run = models.ForeignKey(
-        MinIONRun,
-        on_delete=models.CASCADE,
-        related_name = 'barcodes'
-    )
-
-    name = models.CharField(
-        max_length=32
-    )
-
-    def __str__(self):
-        return "{} {} {}".format(self.run, self.run.run_id, self.name)
 
 
 class HistogramSummary(models.Model):
@@ -596,7 +602,12 @@ class RunStatisticBarcode(models.Model):
     pass_min_length = models.IntegerField(default=0)
     pass_count = models.IntegerField(default=0)
     type = models.ForeignKey(FastqReadType)
-    barcode = models.CharField(max_length=32)
+    barcode = models.ForeignKey(
+        Barcode,
+        on_delete=models.CASCADE,
+        related_name='runstatistics',
+        null=True
+    )
 
     class Meta:
         verbose_name = 'Run Statistics Barcode'
@@ -700,6 +711,10 @@ def update_global_state(instance, sender, **kwargs):
 
     barcode = ipn_obj.barcode
 
+    barcode_all_reads = ipn_obj.run_id.barcodes.filter(name='All reads').first()
+    print('--- barcodes ---')
+    print(ipn_obj.run_id.barcodes.all())
+
     tm = ipn_obj.start_time
 
     tm = tm - datetime.timedelta(minutes=(tm.minute % 1) - 1,
@@ -707,17 +722,17 @@ def update_global_state(instance, sender, **kwargs):
                                  microseconds=tm.microsecond)
 
     obj1,created1 = RunSummaryBarcode.objects.update_or_create(
-        run_id=ipn_obj.run_id, type=ipn_obj.type, barcode='All reads'
+        run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode_all_reads
     )
     update_sum_stats(obj1, ipn_obj)
 
     # all reads and barcodes are saved on RunStatisticBarcode
     obj3, created3 = RunStatisticBarcode.objects.update_or_create(
-        run_id=ipn_obj.run_id, type=ipn_obj.type, barcode='All reads', sample_time=tm
+        run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode_all_reads, sample_time=tm
     )
     update_sum_stats(obj3, ipn_obj)
 
-    if barcode is not None and barcode != '':
+    if barcode is not None and barcode.name != '':
         obj2,created2 = RunSummaryBarcode.objects.update_or_create(
             run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode
         )

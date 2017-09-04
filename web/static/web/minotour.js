@@ -827,8 +827,8 @@ function MinotourApp() {
                 for (var i = 0; i < self.summaryByMinute.length; i++) {
                     var item = self.summaryByMinute[i];
 
-                    if (summaries[item.barcode][item.typename] === undefined) {
-                        summaries[item.barcode][item.typename] = {
+                    if (summaries[item.barcodename][item.typename] === undefined) {
+                        summaries[item.barcodename][item.typename] = {
                             "data": [],
                             "sequencingRate": [],
                         };
@@ -844,7 +844,7 @@ function MinotourApp() {
                         minLength: item.min_length,
                     }
 
-                    summaries[item.barcode][item.typename]["sequencingRate"].push({
+                    summaries[item.barcodename][item.typename]["sequencingRate"].push({
                         x: sampleTime,
                         y: item.total_length / NUMBER_SECONDS_IN_A_MINUTE
                     });
@@ -885,37 +885,37 @@ function MinotourApp() {
                 for (var i = 0; i < data.length; i++) {
                     var item = data[i];
 
-                    if (summaries[item.barcode] === undefined) {
-                        summaries[item.barcode] = {};
+                    if (summaries[item.barcodename] === undefined) {
+                        summaries[item.barcodename] = {};
                     }
 
-                    if (summaries[item.barcode][item.typename] === undefined) {
-                        summaries[item.barcode][item.typename] = {
+                    if (summaries[item.barcodename][item.typename] === undefined) {
+                        summaries[item.barcodename][item.typename] = {
                             "read_count": null,
                             "yield": null,
                             "average_read_length": null,
                             "max_length": null
                         };
 
-                        summaries[item.barcode][item.typename]["read_count"] = {
+                        summaries[item.barcodename][item.typename]["read_count"] = {
                             "name": item.typename,
                             "data": [item.read_count],
                             "animation": false
                         };
 
-                        summaries[item.barcode][item.typename]["yield"] = {
+                        summaries[item.barcodename][item.typename]["yield"] = {
                             "name": item.typename,
                             "data": [item.total_length],
                             "animation": false
                         };
 
-                        summaries[item.barcode][item.typename]["average_read_length"] = {
+                        summaries[item.barcodename][item.typename]["average_read_length"] = {
                             "name": item.typename,
                             "data": [item.total_length / item.read_count],
                             "animation": false
                         };
 
-                        summaries[item.barcode][item.typename]["max_length"] = {
+                        summaries[item.barcodename][item.typename]["max_length"] = {
                             "name": item.typename,
                             "data": [item.max_length],
                             "animation": false

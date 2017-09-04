@@ -131,7 +131,18 @@ class Runcollection():
         typelink = type
         print (runlink,typelink)
         if readid not in self.readnames:
-            payload = {'run_id': runlink,'read_id':readid,'read':read,"channel":channel,'barcode':barcode,'sequence':sequence,'quality':quality,'is_pass':ispass,'start_time':starttime,'type':typelink}
+            payload = {
+                'run_id': runlink,
+                'read_id': readid,
+                'read': read,
+                "channel": channel,
+                'barcode': barcode,
+                'sequence': sequence,
+                'quality': quality,
+                'is_pass': ispass,
+                'start_time': starttime,
+                'type': typelink
+            }
             createread = requests.post(runlinkaddread, headers=header, json=payload)
         else:
             print ("Read Seen")

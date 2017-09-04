@@ -224,10 +224,12 @@ class RunSummarySerializer(serializers.HyperlinkedModelSerializer):
 
 class RunSummaryBarcodeSerializer(serializers.HyperlinkedModelSerializer):
     typename = serializers.ReadOnlyField(source="type.name")
+    barcodename = serializers.ReadOnlyField(source="barcode.name")
 
     class Meta:
         model = RunSummaryBarcode
-        fields = ('url', 'total_length', 'read_count', 'type', 'typename', 'max_length', 'min_length', 'pass_length', 'pass_max_length', 'pass_min_length', 'pass_count', 'id', 'barcode')
+        fields = ('url', 'total_length', 'read_count', 'type', 'typename', 'max_length', 'min_length', 'pass_length',
+                  'pass_max_length', 'pass_min_length', 'pass_count', 'id', 'barcode', 'barcodename')
         read_only = ('id',)
 
 
@@ -242,10 +244,12 @@ class RunStatisticSerializer(serializers.ModelSerializer):
 
 class RunStatisticBarcodeSerializer(serializers.ModelSerializer):
     typename = serializers.ReadOnlyField(source="type.name")
+    barcodename = serializers.ReadOnlyField(source="barcode.name")
 
     class Meta:
         model = RunStatisticBarcode
-        fields = ('total_length', 'read_count', 'type', 'typename', 'max_length', 'min_length', 'pass_length', 'pass_max_length', 'pass_min_length', 'pass_count', 'id', 'sample_time', 'barcode')
+        fields = ('total_length', 'read_count', 'type', 'typename', 'max_length', 'min_length', 'pass_length',
+                  'pass_max_length', 'pass_min_length', 'pass_count', 'id', 'sample_time', 'barcode', 'barcodename')
         read_only = ('id',)
 
 
