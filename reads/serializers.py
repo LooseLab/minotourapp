@@ -5,7 +5,6 @@ from reads.models import ChannelSummary
 from reads.models import FastqRead
 from reads.models import FastqReadType
 from reads.models import HistogramSummary
-from reads.models import HistogramSummary
 from reads.models import JobMaster
 from reads.models import MinION
 from reads.models import MinIONControl
@@ -33,20 +32,6 @@ class UserOptionsSerializer(serializers.ModelSerializer):
             'twitterhandle',
             'tweet',
             'email',
-        )
-        read_only = ('id',)
-
-
-class HistogramSummarySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = HistogramSummary
-        fields = (
-            'id',
-            'run_id',
-            'read_type',
-            'bin_width',
-            'read_count',
-            'read_length',
         )
         read_only = ('id',)
 
@@ -326,17 +311,18 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class RunHistogramSummarySerializer(serializers.ModelSerializer):
-    typename = serializers.ReadOnlyField(source="readtype.name")
+
+    read_type_name = serializers.ReadOnlyField(source="read_type.name")
+    barcode_name = serializers.ReadOnlyField(source="barcode.name")
 
     class Meta:
+
         model = HistogramSummary
+
         fields = (
-            'run_id',
-            'read_type',
-            'typename',
+            'barcode_name',
+            'read_type_name',
             'bin_width',
             'read_count',
             'read_length'
         )
-
-        read_only = ('id',)

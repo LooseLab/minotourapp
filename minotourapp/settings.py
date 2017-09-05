@@ -30,38 +30,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*', ]
 
-CELERY_IMPORTS = ('web.tasks',)
-# For RabbitMQ
-#CELERY_BROKER_URL = 'amqp://'
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-#CELERY_RESULT_BACKEND = 'amqp://'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-# Celery Data Format
-CELERY_ACCEPT_CONTENT = ['application/json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'Europe/London'
-CELERY_BEAT_SCHEDULE = {
-    'rapid-monitor': {
-        'task': 'web.tasks.run_monitor',
-        'schedule': 15.0,
-        #'args': (*args)
-    },
-    'slow-monitor': {
-        'task': 'web.tasks.slow_monitor',
-        'schedule': 60.0,
-        #'args': (*args)
-    },
-}
-
-
-# For sending twitter messages
-TWITTOKEN = get_env_variable("MT_twittoken")
-TWITTOKEN_SECRET=get_env_variable("MT_twittoken_secret")
-TWITCONSUMER_KEY=get_env_variable("MT_twitconsumer_key")
-TWITCONSUMER_SECRET=get_env_variable("MT_twitconsumer_secret")
-
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -192,4 +160,54 @@ LOGOUT_REDIRECT_URL=LOGIN_URL
 EMAIL_BACKEND = 'django_mailgun.MailgunBackend'
 MAILGUN_ACCESS_KEY = 'key-eb3edd3b95bab6e91e6c8fba362de831'
 MAILGUN_SERVER_NAME = 'apps.geodev.com.br'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
+CELERY_IMPORTS = ('web.tasks',)
+# For RabbitMQ
+#CELERY_BROKER_URL = 'amqp://'
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+#CELERY_RESULT_BACKEND = 'amqp://'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+# Celery Data Format
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Europe/London'
+CELERY_BEAT_SCHEDULE = {
+    'rapid-monitor': {
+        'task': 'web.tasks.run_monitor',
+        'schedule': 15.0,
+    },
+    'slow-monitor': {
+        'task': 'web.tasks.slow_monitor',
+        'schedule': 60.0,
+    },
+}
+
+
+# For sending twitter messages
+TWITTOKEN = get_env_variable("MT_twittoken")
+TWITTOKEN_SECRET=get_env_variable("MT_twittoken_secret")
+TWITCONSUMER_KEY=get_env_variable("MT_twitconsumer_key")
+TWITCONSUMER_SECRET=get_env_variable("MT_twitconsumer_secret")
+
+
 
