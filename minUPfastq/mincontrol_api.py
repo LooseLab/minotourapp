@@ -559,7 +559,7 @@ class HelpTheMinion(WebSocketClient):
         for thing in ''.join(map(chr,map(ord,(m.data).decode('windows-1252')))).split('\n'):
             print (thing)
             if len(thing) > 5 and "2L" not in thing and "2n" not in thing:
-                if len(thing) > 5 and thing[1] == "M":
+                if len(thing) > 5 and (thing[1] == "M" or thing[1] == "G"):
                     if thing[1:8] not in minIONdict:
                         print ("INITIALISING MINIONDICT", thing[1:8])
                         minIONdict[thing[1:8]]=dict()
@@ -1177,7 +1177,7 @@ if __name__ == '__main__':
         '--key',
         type=str,
         required=True,
-        default='caf6c3c35db714bacc92e206a75e402b3eec2e05',
+        default='',
         help='The api key for uploading data.',
         dest='api_key',
     )
@@ -1188,7 +1188,7 @@ if __name__ == '__main__':
         type=int,
         # required=True,
         default=8100,
-        help='The port number for the local server.',
+        help='The port number for the minoTour server.',
         dest='port_number',
     )
 
@@ -1198,7 +1198,7 @@ if __name__ == '__main__':
         type=str,
         # required=True,
         default='127.0.0.1',
-        help='The run name you wish to provide.',
+        help='The IP address for the minoTour installation you are connecting too.',
         dest='host_name',
     )
 
