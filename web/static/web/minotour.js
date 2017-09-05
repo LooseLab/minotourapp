@@ -495,7 +495,56 @@ function MinotourApp() {
             "sequencing rate".toUpperCase(),
             "bases/second".toUpperCase()
         );
+        this.LiveHistogram = this.makeLiveHistogram(
+            'live-histogram',
+            'Histogram of Read Lengths (Events)',
+            'test'
+        );
 
+        this.LiveYield = this.makeYieldProjection(
+            'yield-projection',
+            'Yield Projection',
+            'Yield Projection'
+        );
+
+        this.LiveCumuYield = this.makeLiveChart(
+            'chart-yield',
+            'Yield Over Time',
+            'cumulative yield'
+        );
+
+        this.LiveInStrand = this.makeLiveChart(
+            'live-strand',
+            'in strand counts',
+            'number of pores in strand/single'
+        );
+
+        this.LiveOccupancy = this.makeLiveChart(
+            'live-occupancy',
+            '% Occupancy Over Time',
+            '% Occupancy'
+        );
+
+        this.LiveTemperature = this.makeLiveChart(
+            'live-temperature',
+            'Temperature Over Time',
+            '°Celcius'
+        );
+        this.LiveVoltage = this.makeLiveChart(
+            'live-voltage',
+            'Voltage Over Time',
+            'mV'
+        );
+        this.LivePoreState = this.makeLiveChart(
+            'live-porestate',
+            'Pore State Currents',
+            'Current pA'
+        );
+        this.LiveCurrentRatio = this.makeLiveChart(
+            'live-currentratio',
+            'Current Ratio In Strand/Open Pore',
+            'Current Ratio'
+        );
 
         self.id = document.getElementById("run-id").innerText;
         self.selectedBarcode = "All reads";
@@ -792,6 +841,83 @@ function MinotourApp() {
         self.updateAverageReadLengthOverTimeChart()
         self.updateCumulativeNumberOfReadsOverTimeChart();
         self.updateSequencingRateChart();
+    };
+
+    this.updateLiveCumuYield = function () {
+        //console.log(self.LiveCumuYield);
+        if (self.LiveCumuYield.series.length < 1){
+            self.LiveCumuYield.addSeries({
+                data: self.livedata.yield_history });
+            self.LiveCumuYield.series[0].update({name: "Events"}, false);
+        }else {
+            self.LiveCumuYield.series[0].setData(self.livedata.yield_history);
+            self.LiveCumuYield.series[0].update({name: "Events"}, false);
+        }
+        self.LiveCumuYield.redraw();
+        self.LiveCumuYield.reflow();
+        if (self.LiveOccupancy.series.length < 1){
+            self.LiveOccupancy.addSeries({
+                data: self.livedata.percentage });
+            self.LiveOccupancy.series[0].update({name: "% Occupancy"}, false);
+        }else {
+            self.LiveOccupancy.series[0].setData(self.livedata.percentage);
+            self.LiveOccupancy.series[0].update({name: "% Occupancy"}, false);
+        }
+        self.LiveOccupancy.redraw();
+        self.LiveOccupancy.reflow();
+        if (self.LiveInStrand.series.length < 2){
+            self.LiveInStrand.addSeries({data:self.livedata.strand});
+            self.LiveInStrand.series[0].update({name: "In Strand"}, false);
+            self.LiveInStrand.addSeries({data:self.livedata.good_single});
+            self.LiveInStrand.series[1].update({name: "Single Pore"}, false);
+
+        }else {
+            self.LiveInStrand.series[0].setData(self.livedata.strand);
+            self.LiveInStrand.series[0].update({name: "In Strand"}, false);
+            self.LiveInStrand.series[1].setData(self.livedata.good_single);
+            self.LiveInStrand.series[1].update({name: "Single Pore"}, false);
+        }
+        self.LiveInStrand.redraw();
+        self.LiveInStrand.reflow();
+        if (self.LivePoreState.series.length < 1){
+            self.LivePoreState.addSeries({data: self.livedata.instrand_history});
+            self.LivePoreState.addSeries({data: self.livedata.openpore_history});
+        }else{
+            self.LivePoreState.series[0].setData(self.livedata.instrand_history);
+            self.LivePoreState.series[1].setData(self.livedata.openpore_history);
+        }
+        self.LivePoreState.series[0].update({name: "In Strand"}, false);
+        self.LivePoreState.series[1].update({name: "Open Pore"}, false);
+        self.LivePoreState.redraw();
+        self.LivePoreState.reflow();
+        if (self.LiveCurrentRatio.series.length < 1){
+            self.LiveCurrentRatio.addSeries({data: self.livedata.meanratio_history});
+        }else{
+            self.LiveCurrentRatio.series[0].setData(self.livedata.meanratio_history);
+        }
+        self.LiveCurrentRatio.series[0].update({name: "Current Ratio"}, false);
+        self.LiveCurrentRatio.redraw();
+        self.LiveCurrentRatio.reflow();
+        if (self.LiveTemperature.series.length < 1){
+            self.LiveTemperature.addSeries({data: self.livedata.asictemp});
+            self.LiveTemperature.addSeries({data: self.livedata.heatsinktemp});
+        }else{
+            self.LiveTemperature.series[0].setData(self.livedata.asictemp);
+            self.LiveTemperature.series[1].setData(self.livedata.heatsinktemp);
+        }
+        self.LiveTemperature.series[0].update({name: "Asic Temp"}, false);
+        self.LiveTemperature.series[1].update({name: "HeatSink Temp"}, false);
+        self.LiveTemperature.redraw();
+        self.LiveTemperature.reflow();
+        if (self.LiveVoltage.series.length < 1){
+            self.LiveVoltage.addSeries({data: self.livedata.voltage});
+        }else{
+            self.LiveVoltage.series[0].setData(self.livedata.voltage);
+        }
+        self.LiveVoltage.series[0].update({name: "Voltage"}, false);
+        self.LiveVoltage.redraw();
+        self.LiveVoltage.reflow();
+
     };
 
     this.updateSummaryBasedCharts = function () {
