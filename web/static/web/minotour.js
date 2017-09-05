@@ -372,6 +372,7 @@ function MinotourApp() {
     this.chart_cumulative_number_reads_overtime = null;
     this.chartSequencingRate = null;
     this.chartHistogramReadLength = null;
+    this.chartHistogramBasesSequencedByReadLength = null;
 
     this.barcodes = null;
 
@@ -496,6 +497,12 @@ function MinotourApp() {
             "histogram-read-lengths",
             "Histogram of Read Lengths".toUpperCase(),
             "Number of reads".toUpperCase()
+        );
+
+        this.chartHistogramBasesSequencedByReadLength = this.makeChart2(
+            "histogram-bases-sequenced-by-read-length",
+            "Histogram of Bases Sequenced by Read Length".toUpperCase(),
+            "Number of bases".toUpperCase()
         );
 
         this.LiveHistogram = this.makeLiveHistogram(
@@ -884,6 +891,53 @@ function MinotourApp() {
 
     };
 
+    this.updateHistogramBasesSequencedReadLengthChart = function () {
+
+        var chart = self.chartHistogramBasesSequencedByReadLength;
+
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        //console.log('Inside function updateHistogramReadLengthChart.');
+        //console.log(Object.keys(self.histogramSummary));
+
+        for (var barcode_name of Object.keys(self.histogramSummary)) {
+
+            //console.log('barcode_name: '+ barcode_name + ', self.selectedBarcode: ' + self.selectedBarcode);
+            //console.log(barcode_name === self.selectedBarcode);
+
+            //if (barcode_name === 'All reads' || barcode_name === self.selectedBarcode) {
+            if (barcode_name === self.selectedBarcode) {
+
+                for (var typeName of Object.keys(self.histogramSummary[barcode_name])) {
+
+                    //console.log('typeName: ' + typeName);
+                    //console.log(self.histogramSummary[barcode_name][typeName]['bin_width']);
+                    //console.log(self.histogramSummary[barcode_name][typeName]["read_count"]);
+
+                    chart.update({
+                        chart: {
+                            type: 'column'
+                        },
+                        xAxis: {
+                            type: 'category',
+                            categories: self.histogramSummary[barcode_name][typeName]['bin_width']
+                        }
+                    });
+
+                    chart.addSeries({
+                        name: barcode_name + " - " + typeName,
+                        data: self.histogramSummary[barcode_name][typeName]["read_length"]
+                    });
+
+                }
+            }
+        }
+
+    };
+
     this.updateSummaryByMinuteBasedCharts = function () {
         self.updateAverageReadLengthOverTimeChart()
         self.updateCumulativeNumberOfReadsOverTimeChart();
@@ -982,6 +1036,7 @@ function MinotourApp() {
 
     this.updateHistogramBasedCharts = function () {
         self.updateHistogramReadLengthChart();
+        self.updateHistogramBasesSequencedReadLengthChart();
     }
 
     this.requestSummaryByMinuteData = function (id) {
