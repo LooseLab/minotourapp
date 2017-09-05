@@ -347,17 +347,6 @@
                                     <!-- /.col-lg-12 -->
                                     <!-- /.tab-pane -->
 
-                                    <div class="tab-pane active" v-show="isActiveTab('basecaller-summary-tab')">
-                                        <div class="panel panel-default">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title"></h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <div class="row"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-
                                     <div class="tab-pane active" v-show="isActiveTab('read-histograms-tab')">
                                         <div class="panel panel-default">
                                             <div class="panel-heading">
@@ -365,12 +354,18 @@
                                             </div>
                                             <div class="panel-body">
                                                 <div class="row">
-                                                    <div class="row">
-                                                        <div id="histogram-of-read-lengths"
-                                                             class="col-md-12 highcharts"
-                                                             style="width:100%; height:400px;">
-                                                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
-                                                        </div>
+                                                    <div id="histogram-read-lengths"
+                                                         class="col-md-12 highcharts"
+                                                         style="width:100%; height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating histogram of read lengths
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div id="histogram-bases-sequenced-by-read-length"
+                                                         class="col-md-12 highcharts"
+                                                         style="width:100%; height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating bases sequenced by read length
                                                     </div>
                                                 </div>
                                             </div>
