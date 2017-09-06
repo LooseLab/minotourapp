@@ -40,7 +40,6 @@ function check_user_runs() {
     $.getJSON(url, function (data) {
         var items = [];
         $.each(data, function (key, val) {
-            console.log(val);
             items.push("<li id=" + key + "><a href='/web/private/runs/" + val.id + "'>" + val.run_name + "</a></li>");
         });
 
@@ -333,7 +332,6 @@ function MonitorAPP() {
     var self = this;
 
     this.init = function () {
-        console.log("This is MonitorApp Running");
         this.requestData();
 
         setInterval(function () {
@@ -342,7 +340,6 @@ function MonitorAPP() {
     };
 
     this.updatecounters = function (live) {
-        console.log("update called");
         var thing = document.getElementById("livenum");
         thing.innerHTML = live;
         var thing2 = document.getElementById("livenumruns");
@@ -356,7 +353,6 @@ function MonitorAPP() {
             //console.log(data);
             self.livedata = data;
             self.updatecounters(self.livedata.length);
-            console.log(self.livedata);
             //self.barcodes = data.barcodes.sort();
             //self.updateBarcodeNavTab();
         }.bind(this));
@@ -368,14 +364,15 @@ function MonitorAPP() {
 }
 
 function MinotourApp() {
-    console.log("This is MinotourApp Running");
     this.chart_reads_called = null;
     this.chart_yield = null;
     this.chart_average_read_length = null;
     this.chart_maximum_read_length = null;
     this.average_read_lengths_overtime = null;
-    this.chart_chart_cumulative_number_reads_overtime = null;
+    this.chart_cumulative_number_reads_overtime = null;
     this.chartSequencingRate = null;
+    this.chartHistogramReadLength = null;
+    this.chartHistogramBasesSequencedByReadLength = null;
 
     this.barcodes = null;
 
@@ -509,6 +506,19 @@ function MinotourApp() {
             "sequencing rate".toUpperCase(),
             "bases/second".toUpperCase()
         );
+
+        this.chartHistogramReadLength = this.makeChart2(
+            "histogram-read-lengths",
+            "Histogram of Read Lengths".toUpperCase(),
+            "Number of reads".toUpperCase()
+        );
+
+        this.chartHistogramBasesSequencedByReadLength = this.makeChart2(
+            "histogram-bases-sequenced-by-read-length",
+            "Histogram of Bases Sequenced by Read Length".toUpperCase(),
+            "Number of bases".toUpperCase()
+        );
+
         this.LiveHistogram = this.makeLiveHistogram(
             'live-histogram',
             'Histogram of Read Lengths (Events)',
@@ -846,8 +856,99 @@ function MinotourApp() {
             }
         }
 
-        console.log('>>>>>>>>');
-        console.log(self.summaryByMinute2);
+    };
+
+    this.updateHistogramReadLengthChart = function () {
+
+        var chart = self.chartHistogramReadLength;
+
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        //console.log('Inside function updateHistogramReadLengthChart.');
+        //console.log(Object.keys(self.histogramSummary));
+
+        for (var barcode_name of Object.keys(self.histogramSummary)) {
+
+            //console.log('barcode_name: '+ barcode_name + ', self.selectedBarcode: ' + self.selectedBarcode);
+            //console.log(barcode_name === self.selectedBarcode);
+
+            //if (barcode_name === 'All reads' || barcode_name === self.selectedBarcode) {
+            if (barcode_name === self.selectedBarcode) {
+
+                for (var typeName of Object.keys(self.histogramSummary[barcode_name])) {
+
+                    //console.log('typeName: ' + typeName);
+                    //console.log(self.histogramSummary[barcode_name][typeName]['bin_width']);
+                    //console.log(self.histogramSummary[barcode_name][typeName]["read_count"]);
+
+                    chart.update({
+                        chart: {
+                            type: 'column'
+                        },
+                        xAxis: {
+                            type: 'category',
+                            categories: self.histogramSummary[barcode_name][typeName]['bin_width']
+                        }
+                    });
+
+                    chart.addSeries({
+                        name: barcode_name + " - " + typeName,
+                        data: self.histogramSummary[barcode_name][typeName]["read_count"]
+                    });
+
+                }
+            }
+        }
+
+    };
+
+    this.updateHistogramBasesSequencedReadLengthChart = function () {
+
+        var chart = self.chartHistogramBasesSequencedByReadLength;
+
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        //console.log('Inside function updateHistogramReadLengthChart.');
+        //console.log(Object.keys(self.histogramSummary));
+
+        for (var barcode_name of Object.keys(self.histogramSummary)) {
+
+            //console.log('barcode_name: '+ barcode_name + ', self.selectedBarcode: ' + self.selectedBarcode);
+            //console.log(barcode_name === self.selectedBarcode);
+
+            //if (barcode_name === 'All reads' || barcode_name === self.selectedBarcode) {
+            if (barcode_name === self.selectedBarcode) {
+
+                for (var typeName of Object.keys(self.histogramSummary[barcode_name])) {
+
+                    //console.log('typeName: ' + typeName);
+                    //console.log(self.histogramSummary[barcode_name][typeName]['bin_width']);
+                    //console.log(self.histogramSummary[barcode_name][typeName]["read_count"]);
+
+                    chart.update({
+                        chart: {
+                            type: 'column'
+                        },
+                        xAxis: {
+                            type: 'category',
+                            categories: self.histogramSummary[barcode_name][typeName]['bin_width']
+                        }
+                    });
+
+                    chart.addSeries({
+                        name: barcode_name + " - " + typeName,
+                        data: self.histogramSummary[barcode_name][typeName]["read_length"]
+                    });
+
+                }
+            }
+        }
 
     };
 
@@ -946,6 +1047,11 @@ function MinotourApp() {
             self.updateReadsColumnBasedChart(charts[prop], prop);
         }
     };
+
+    this.updateHistogramBasedCharts = function () {
+        self.updateHistogramReadLengthChart();
+        self.updateHistogramBasesSequencedReadLengthChart();
+    }
 
     this.requestSummaryByMinuteData = function (id) {
         /*
@@ -1076,60 +1182,51 @@ function MinotourApp() {
             }
         });
 
+    };
+
+    this.requestHistogramData = function (id) {
+        /*
+         * Request histogram data
+         */
+
         var url = "/api/v1/runs/" + id + "/histogramsummary";
 
         $.get(url, function (data) {
 
             if (data.length > 0) {
+
                 var summaries = {};
+
                 for (var i = 0; i < data.length; i++) {
+
                     var item = data[i];
 
-                    if (summaries[item.barcode] === undefined) {
-                        summaries[item.barcode] = {};
+                    if (summaries[item.barcode_name] === undefined) {
+                        summaries[item.barcode_name] = {};
                     }
 
-                    if (summaries[item.barcode][item.typename] === undefined) {
-                        summaries[item.barcode][item.typename] = {
-                            "read_count": null,
-                            "yield": null,
-                            "average_read_length": null,
-                            "max_length": null
-                        };
-
-                        summaries[item.barcode][item.typename]["read_count"] = {
-                            "name": item.typename,
-                            "data": [item.read_count],
-                            "animation": false
-                        };
-
-                        summaries[item.barcode][item.typename]["yield"] = {
-                            "name": item.typename,
-                            "data": [item.total_length],
-                            "animation": false
-                        };
-
-                        summaries[item.barcode][item.typename]["average_read_length"] = {
-                            "name": item.typename,
-                            "data": [item.total_length / item.read_count],
-                            "animation": false
-                        };
-
-                        summaries[item.barcode][item.typename]["max_length"] = {
-                            "name": item.typename,
-                            "data": [item.max_length],
-                            "animation": false
+                    if (summaries[item.barcode_name][item.read_type_name] === undefined) {
+                        summaries[item.barcode_name][item.read_type_name] = {
+                            'bin_width': [],
+                            'read_count': [],
+                            'read_length': []
                         };
                     }
+
+                    //summaries[item.barcode_name][item.read_type_name]['read_count'][item.bin_width] = item.read_count; // var a = []; a[100] = 20;
+                    //summaries[item.barcode_name][item.read_type_name]['read_length'][item.bin_width] = item.read_length;
+                    summaries[item.barcode_name][item.read_type_name]['read_count'].push(item.read_count); // var a = []; a[100] = 20;
+                    summaries[item.barcode_name][item.read_type_name]['read_length'].push(item.read_length);
+                    summaries[item.barcode_name][item.read_type_name]['bin_width'].push(parseInt(item.bin_width));
                 }
 
-                self.summary = summaries;
+                self.histogramSummary = summaries;
 
-                self.updateSummaryBasedCharts();
+                self.updateHistogramBasedCharts();
 
             }
         });
-    };
+    }
 
     this.parseporehist = function (descriptions, counts) {
         var results = [];
@@ -1316,7 +1413,7 @@ function MinotourApp() {
         [scalingfactor2, difference2] = self.projectdata(self.livedata.yield_history.slice(0, firsthour));
         //synthericdata needs renaming!!!
         var syntheticdata = self.livedata.yield_history;
-        console.log(scalingfactor2);
+        //console.log(scalingfactor2);
         //console.log(syntheticdata);
         newarray = self.projectresults(syntheticdata, scalingfactor, 4000, difference, new Date(self.rundata.start_time).getTime());
         //console.log(newarray);
@@ -1404,7 +1501,7 @@ function MinotourApp() {
 
     this.requestMessages = function () {
         var url_sincemessages = self.rundata.minION + 'messagessince/' + self.rundata.start_time + '/' + self.lasttime.toISOString() + "/";
-        console.log(url_sincemessages);
+        //console.log(url_sincemessages);
         $.get(url_sincemessages, function (data) {
             //console.log(data);
             stringtowrite = '<table class="table table-condensed"><tr><th>Message</th><th>Time</th></tr>';
@@ -1472,6 +1569,7 @@ function MinotourApp() {
     };
 
     this.requestData = function () {
+
         var url_run = '/api/v1/runs/' + self.id;
 
         $.get(url_run, function (data) {
@@ -1496,8 +1594,10 @@ function MinotourApp() {
         self.requestLiveRunStats(self.id);
         self.requestSummaryByMinuteData(self.id);
         self.requestSummaryData(self.id);
-        console.log(self);
+        self.requestHistogramData(self.id);
 
+        //console.log(self);
 
     };
+
 }

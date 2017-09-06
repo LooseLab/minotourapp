@@ -1,6 +1,8 @@
 from __future__ import absolute_import, unicode_literals
 from celery import task
-from reads.models import MinIONRun
+from celery.utils.log import get_task_logger
+
+from reads.models import MinIONRun, FastqReadType
 from reads.models import JobMaster
 from reads.models import FastqRead
 from reads.models import SamStore
@@ -18,6 +20,8 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from twitter import *
 
+logger = get_task_logger(__name__)
+
 
 def send_tweet(message):
     TWITTOKEN = getattr(settings, "TWITTOKEN", None)
@@ -33,55 +37,60 @@ def send_tweet(message):
 
 @task()
 def run_monitor():
+    logger.info('Running run_monitor celery task.')
     # Do something...
     print ("Rapid Monitor Called")
     #minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=3)) | Q(
     #        RunStats__created_date__gte=datetime.now() - timedelta(days=3))).distinct()
     minion_runs = MinIONRun.objects.filter(active=True).distinct()
-    print(minion_runs)
-    print(len(minion_runs))
+    #print(minion_runs)
+    #print(len(minion_runs))
     for minion_run in minion_runs:
-        print ("Run Monitor jobs for {}".format(minion_run))
-        print (minion_run.run_id)
+        #print ("Run Monitor jobs for {}".format(minion_run))
+        #print (minion_run.run_id)
         #print (minion_run.owner)
         #SendUserMessage.delay(minion_run.id,"a test","testing")
         run_jobs = JobMaster.objects.filter(run_id=minion_run.id)
         for run_job in run_jobs:
-            print (type(run_job.job_name))
+            #print (type(run_job.job_name))
             if str(run_job.job_name)=="Alignment" and run_job.running is False:
-                print ("trying to run alignment")
+                #print ("trying to run alignment")
                 run_alignment.delay(minion_run.id,run_job.id,run_job.var1,run_job.var2)
             if run_job.running is True:
-                print ("{} is already running!".format(run_job.job_name) )
+                #print ("{} is already running!".format(run_job.job_name) )
 
 @task()
 def slow_monitor():
+    logger.info('Running slow_monitor celery task.')
     # Do something...
     print ("Slow Monitor Called")
     testset={}
     cachesiz={}
-    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(hours=1)) | Q(
-            RunStats__created_date__gte=datetime.now() - timedelta(hours=1))).distinct()
-    print(minion_runs)
-    print(len(minion_runs))
+    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(hours=10)) | Q(
+            RunStats__created_date__gte=datetime.now() - timedelta(hours=10))).distinct()
+    #print(minion_runs)
+    #print(len(minion_runs))
     for minion_run in minion_runs:
-        print ("checking jobs for {}".format(minion_run))
-        print (minion_run.run_id)
+        #print ("checking jobs for {}".format(minion_run))
+        #print (minion_run.run_id)
         cachesiz[str(minion_run.run_id)]=minion_run
         run_jobs = JobMaster.objects.filter(run_id=minion_run.id)
         for run_job in run_jobs:
-            print (type(run_job.job_name))
+            #print('>>> run_jobs')
+            #print(run_job.job_name)
+            #print(run_job.running)
+
             if str(run_job.job_name)=="ProcAlign" and run_job.running is False:
-                print ("trying to process alignment")
+                #print ("trying to process alignment")
                 proc_alignment.delay(minion_run.id, run_job.id, run_job.var1, run_job.var2)
             if str(run_job.job_name)=="ChanCalc" and run_job.running is False:
-                print ("ChannelCalc")
+                #print ("ChannelCalc")
                 processreads.delay(minion_run.id, run_job.id, run_job.var1, run_job.var2)
     try:
         testset = cache.get('a-unique-key', {})
     except:
         print('a-unique-key not found')
-    print('a-unique-key is {}'.format(testset))
+    #print('a-unique-key is {}'.format(testset))
     deleted,added = compare_two(testset,cachesiz)
     processrun(deleted,added)
     cache.set('a-unique-key',cachesiz)
@@ -128,14 +137,21 @@ def SendUserMessage(runid,messagetype,messagestring):
 
 @task()
 def processreads(runid,id,var1,last_read):
+    #print('>>>> Running processreads celery task.')
+
     JobMaster.objects.filter(pk=id).update(running=True)
     fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:10000]
     chanstore=dict()
+
     histstore=dict()
+    histstore['All reads'] = {}
+
     barstore=set()
+
     for fastq in fastqs:
         #print (fastq)
         barstore.add(fastq.barcode)
+        #print('>>>> barcode: {}'.format(fastq.barcode))
         if fastq.channel not in chanstore.keys():
             chanstore[fastq.channel]=dict()
             chanstore[fastq.channel]['count']=0
@@ -143,36 +159,75 @@ def processreads(runid,id,var1,last_read):
         chanstore[fastq.channel]['count']+=1
         chanstore[fastq.channel]['length']+=len(fastq.sequence)
 
+        if fastq.barcode.name not in histstore.keys():
+            histstore[fastq.barcode.name] = {}
+
+        if fastq.type.name not in histstore[fastq.barcode.name].keys():
+            histstore[fastq.barcode.name][fastq.type.name] = {}
+
+        if fastq.type.name not in histstore['All reads'].keys():
+            histstore['All reads'][fastq.type.name] = {}
+
         bin_width = findbin(len(fastq.sequence))
-        if bin_width not in histstore.keys():
-            histstore[bin_width]=dict()
-        if fastq.type not in histstore[bin_width].keys():
-            histstore[bin_width][fastq.type]=dict()
-            histstore[bin_width][fastq.type]['count']=0
-            histstore[bin_width][fastq.type]['length']=0
-            ###NEED TO HANDLE TYPE!
-        histstore[bin_width][fastq.type]['count']+=1
-        histstore[bin_width][fastq.type]['length']+=len(fastq.sequence)
+
+        if bin_width not in histstore[fastq.barcode.name][fastq.type.name].keys():
+            histstore[fastq.barcode.name][fastq.type.name][bin_width] = {}
+
+            histstore[fastq.barcode.name][fastq.type.name][bin_width]['count'] = 0
+            histstore[fastq.barcode.name][fastq.type.name][bin_width]['length'] = 0
+
+        if bin_width not in histstore['All reads'][fastq.type.name].keys():
+            histstore['All reads'][fastq.type.name][bin_width] = {}
+
+            histstore['All reads'][fastq.type.name][bin_width]['count'] = 0
+            histstore['All reads'][fastq.type.name][bin_width]['length'] = 0
+
+        histstore[fastq.barcode.name][fastq.type.name][bin_width]['count'] += 1
+        histstore[fastq.barcode.name][fastq.type.name][bin_width]['length'] += len(fastq.sequence)
+
+        histstore['All reads'][fastq.type.name][bin_width]['count'] += 1
+        histstore['All reads'][fastq.type.name][bin_width]['length'] += len(fastq.sequence)
+
         last_read = fastq.id
+
     #print (tempstore)
     runinstance = MinIONRun.objects.get(pk=runid)
-    for barcode in barstore:
-        result, created = Barcode.objects.get_or_create(run=runinstance, name=barcode)
+    #for barcode in barstore:
+    #    result, created = Barcode.objects.get_or_create(run=runinstance, name=barcode)
+
     for chan in chanstore:
         #print (chan)
         channel, created = ChannelSummary.objects.get_or_create(run_id=runinstance,channel_number=int(chan))
-        print ('created',created)
-        print (channel)
+        #print ('created',created)
+        #print (channel)
         #print (tempstore[chan]['count'])
         channel.read_count+=chanstore[chan]['count']
         channel.read_length+=chanstore[chan]['length']
         channel.save()
-    for hist in histstore:
-        for type in histstore[hist]:
-            histogram,created = HistogramSummary.objects.get_or_create(run_id=runinstance,bin_width=int(hist),read_type=type)
-            histogram.read_count+=histstore[hist][type]["count"]
-            histogram.read_length+=histstore[hist][type]["length"]
-            histogram.save()
+
+    #print('>>>> {}'.format(histstore))
+
+    for barcodename in histstore.keys():
+        #print('>>>> {}'.format(barcodename))
+
+        barcode = Barcode.objects.filter(run=runinstance, name=barcodename).first()
+
+        for read_type_name in histstore[barcodename].keys():
+            read_type = FastqReadType.objects.get(name=read_type_name)
+            #print('>>>> {}'.format(read_type_name))
+
+            for hist in histstore[barcodename][read_type_name].keys():
+                histogram, created = HistogramSummary.objects.get_or_create(
+                    run_id=runinstance,
+                    bin_width=int(hist),
+                    read_type=read_type,
+                    barcode=barcode
+                )
+
+                histogram.read_count += histstore[barcodename][read_type_name][hist]["count"]
+                histogram.read_length += histstore[barcodename][read_type_name][hist]["length"]
+                histogram.save()
+
     JobMaster.objects.filter(pk=id).update(running=False, var2=last_read)
 
 
