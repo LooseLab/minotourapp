@@ -429,13 +429,25 @@ function MinotourApp() {
         */
 
         document.getElementById("panel-live-data").style.display = "none";
+        document.getElementById("panel-run-summary-data").style.display = "none";
         document.getElementById("panel-basecalled-data").style.display = "block";
+
+        document.getElementById("run-summary-data").onclick = function (e) {
+            document.getElementById("panel-basecalled-data").style.display = "none";
+            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
+            document.getElementById("panel-live-data").style.display = "none";
+            document.getElementById("nav-live-data").parentNode.classList.remove("active");
+            document.getElementById("panel-run-summary-data").style.display = "block";
+            document.getElementById("run-summary-data").parentNode.classList.add("active");
+        };
 
         document.getElementById("nav-live-data").onclick = function (e) {
             document.getElementById("panel-basecalled-data").style.display = "none";
             document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
             document.getElementById("panel-live-data").style.display = "block";
             document.getElementById("nav-live-data").parentNode.classList.add("active");
+            document.getElementById("panel-run-summary-data").style.display = "none";
+            document.getElementById("run-summary-data").parentNode.classList.remove("active");
         };
 
         document.getElementById("nav-basecalled-data").onclick = function (e) {
@@ -443,6 +455,8 @@ function MinotourApp() {
             document.getElementById("nav-basecalled-data").parentNode.classList.add("active");
             document.getElementById("panel-live-data").style.display = "none";
             document.getElementById("nav-live-data").parentNode.classList.remove("active");
+            document.getElementById("panel-run-summary-data").style.display = "none";
+            document.getElementById("run-summary-data").parentNode.classList.remove("active");
         };
 
         this.PoreShizzle = this.makeAreaPlot(

@@ -19,439 +19,504 @@
                             <button id="counterdown-btn" class="btn btn-default">Reloading in 30 seconds</button>
                         </div>
                     </div>-->
-                    <div class="col-md-4">
-                        <div class='panel panel-info'>
-                            <div class='panel-heading'>
-                                <h3 class='panel-title'>minKNOW real time data</h3>
-                            </div>
-                            <div class='panel-body'>
-                                <div class='table-responsive'>
-                                    <table class='table table-condensed'>
-                                        <tr>
-                                            <th>Category
-                                            </td>
-                                            <th>Info
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>Run Start Time</td>
-                                            <td><span id="RunStartTime"></span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>minKNOW computer name</td>
-                                            <td><span id="ComputerName"></span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>MinION Name</td>
-                                            <td><span id="MinIONName"></span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>ASIC ID</td>
-                                            <td><span id="asicid"></span></td>
-                                        </tr>
-                                        <!--<tr>
-                                            <td>minKNOW Status</td>
-                                            <td></td>
-                                        </tr>-->
-                                        <tr>
-                                            <td>Current Script</td>
-                                            <td><span id="ScriptID"></span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Sample Name</td>
-                                            <td><span id="SampleName"></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Run ID</td>
-                                            <td><span id="RunID"></span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>MinKNOW Version</td>
-                                            <td><span id="MinKNOWVersion"></span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Flow Cell ID</td>
-                                            <td><span id="FlowCellID"></span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Run Name</td>
-                                            <td><span id="RunName"></span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Sequencing Now</td>
-                                            <td><span id="CurrentlySequencing"></span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Barcoded</td>
-                                            <td><span id="Barcoded"></span></td>
-                                        </tr>
-                                    </table>
-                                </div>
-                            </div>
 
-                        </div>
-                    </div>
-                    <div class="col-md-8">
-                        <div class="panel panel-info">
-                            <div class="panel-heading">
-                                <h3 class="panel-title">
-                                    <i class="fa fa-comments"></i> MinKNOW Messages
-                                </h3>
-                            </div>
-                            <div class="panel-body">
-                                <span id="Messages">Fetching Messages
-                                <div class="progress">
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="nav-tabs-custom">
+                                <ul class="nav nav-tabs">
+                                    <li><a id="run-summary-data">Run Summary</a></li>
+                                    <li><a id='nav-live-data'>Live data</a></li>
+                                    <li class="active"><a id='nav-basecalled-data'>Basecalled data</a></li>
+                                </ul>
+                                <div id="panel-run-summary-data" class="row">
+                                    <div class="col-md-4">
+                                        <div class='panel panel-info'>
+                                            <div class='panel-heading'>
+                                                <h3 class='panel-title'>minKNOW real time data</h3>
+                                            </div>
+                                            <div class='panel-body'>
+                                                <div class='table-responsive'>
+                                                    <table class='table table-condensed'>
+                                                        <tr>
+                                                            <th>Category
+                                                            </td>
+                                                            <th>Info
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Run Start Time</td>
+                                                            <td><span id="RunStartTime"></span></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>minKNOW computer name</td>
+                                                            <td><span id="ComputerName"></span></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>MinION Name</td>
+                                                            <td><span id="MinIONName"></span></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>ASIC ID</td>
+                                                            <td><span id="asicid"></span></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Current Script</td>
+                                                            <td><span id="ScriptID"></span></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Sample Name</td>
+                                                            <td><span id="SampleName"></span></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Run ID</td>
+                                                            <td><span id="RunID"></span></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>MinKNOW Version</td>
+                                                            <td><span id="MinKNOWVersion"></span></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Flow Cell ID</td>
+                                                            <td><span id="FlowCellID"></span></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Run Name</td>
+                                                            <td><span id="RunName"></span></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Sequencing Now</td>
+                                                            <td><span id="CurrentlySequencing"></span></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Barcoded</td>
+                                                            <td><span id="Barcoded"></span></td>
+                                                        </tr>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="panel panel-info">
+                                            <div class="panel-heading">
+                                                <h3 class="panel-title">
+                                                    <i class="fa fa-comments"></i> MinKNOW Messages
+                                                </h3>
+                                            </div>
+
+                                            <span id="Messages">
+                                    <div class="panel-body" style="max-height: 1;overflow-y: scroll;">
+                                Fetching Messages
+                                        <div class="progress">
                                     <div class="progress-bar progress-bar-striped active" role="progressbar"
                                          aria-valuenow="45" aria-valuemin="0"
                                          aria-valuemax="100" style="width: 45%">
                                         <span class="sr-only">45% Complete</span>
                                     </div>
                                 </div>
-                                </span>
-                            </div>
-                        </div>
 
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="nav-tabs-custom">
-                                <ul class="nav nav-tabs">
-                                    <li><a id='nav-live-data'>Live data</a></li>
-                                    <li class="active"><a id='nav-basecalled-data'>Basecalled data</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-
-                    <div id='panel-live-data' class="row">
-                        <div class="col-md-12">
-                            <div class="panel panel-default">
-                                <div class="panel-heading">
-                                    <h3 class="panel-title">
-                                        <i class="fa fa-info-circle"></i> Live Run Charts
-                                    </h3>
-                                </div>
-                                <div id='live-run-data' class="panel-body">
-                                    <div class="row">
-                                        <div class="col-md-12">
-                                            <h4 class="panel-heading">We're going to estimate yield in bases here.</h4>
-                                            <p>If basecalling is occuring concurrently with the run and data uploaded to
-                                                minoTour, the scaling from events to bases is dynamically calculated. If
-                                                not, the scaling factor can be chosen in the drop down box.</p>
-                                            <div class="col-md-2">
-                                                <p> Set sequencing speed: </p>
-                                                <select id="seqspeed">
-                                                    <option selected="selected">450 b/s</option>
-                                                    <option>250 b/s</option>
-                                                    <option>70 b/s</option>
-                                                </select>
                                             </div>
-                                            <div>
-                                                <div class="col-md-2">
-                                                    <p>Estimated Current Yield (bases) <strong><span
-                                                            id="speedresult"></span></strong></p>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <p>Estimated Average Read Length (bases) <strong><span
-                                                            id="averageresult"></span></strong></p>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <p>Theoretical Predicted Yield at 24 hours (bases) <strong><span
-                                                            id="startbit"></span></strong></p>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <p> Theoretical Predicted Yield at 48 hours (bases) <strong><span
-                                                            id="endbit"></span></strong></p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div id="chart-yield" class="col-md-6 highcharts"
-                                             style="width:50%; height:400px;display:block;">
-                                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+                                    </span>
                                         </div>
 
-                                        <div id="poreshizzle" class="col-md-6 highcharts"
-                                             style="width:50%; height:400px;display:block;">
-                                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
-                                        </div>
                                     </div>
-                                    <div class="row">
-                                        <div id="live-histogram" class="col-md-12 highcharts"
-                                             style="width:100%; height:400px;display:block;">
-                                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div id="yield-projection" class="col-md-12 highcharts"
-                                             style="width:100%; height:400px;display:block;">
-                                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield Projections
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div id="live-strand" class="col-md-6 highcharts"
-                                             style="width:50%; height:400px;display:block;">
-                                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Strand
-                                        </div>
-
-                                        <div id="live-occupancy" class="col-md-6 highcharts"
-                                             style="width:50%; height:400px;display:block;">
-                                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Occupancy
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div id="live-porestate" class="col-md-6 highcharts"
-                                             style="width:50%; height:400px;display:block;">
-                                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield Projections
-                                        </div>
-
-                                        <div id="live-currentratio" class="col-md-6 highcharts"
-                                             style="width:50%; height:400px;display:block;">
-                                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield Projections
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div id="live-temperature" class="col-md-6 highcharts"
-                                             style="width:50%; height:400px;">
-                                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield Projections
-                                        </div>
-
-                                        <div id="live-voltage" class="col-md-6 highcharts"
-                                             style="width:50%; height:400px;">
-                                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield Projections
-                                        </div>
-                                    </div>
-
-
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id='panel-basecalled-data' class="row">
-
-                        <div class="col-md-12">
-                            <div class="nav-tabs-custom">
-                                <ul class="nav nav-tabs" id="nav-tabs-barcodes"></ul>
-                            </div>
-                        </div>
-
-                        <div class="col-md-12">
-                            <!-- Custom Tabs -->
-                            <div class="nav-tabs-custom">
-                                <ul class="nav nav-tabs">
-                                    <li><a href="#" v-on:click="setActiveTab('read-summaries-tab', $event)">Read
-                                        Summaries</a></li>
-                                    <li><a href="#" v-on:click="setActiveTab('basecaller-summary-tab', $event)">Basecaller
-                                        Summary</a></li>
-                                    <li><a href="#" v-on:click="setActiveTab('read-histograms-tab', $event)">Read
-                                        Histograms</a></li>
-                                    <li><a href="#" v-on:click="setActiveTab('sequencing-rates-tab', $event)">Sequencing
-                                        Rates</a></li>
-                                    <li><a href="#" v-on:click="setActiveTab('pore-activity-tab', $event)">Pore
-                                        Activity</a></li>
-                                    <li><a href="#" v-on:click="setActiveTab('read-quality-tab', $event)">Read
-                                        Quality</a></li>
-                                    <li><a href="#" v-on:click="setActiveTab('coverage-detail-tab', $event)">Coverage
-                                        Detail</a></li>
-                                    <li><a href="#" v-on:click="setActiveTab('base-coverage-tab', $event)">Base
-                                        Coverage</a></li>
-                                </ul>
-
-                                <div class="tab-content">
-                                    <div class="tab-pane active" id="tab_1" v-show="isActiveTab('read-summaries-tab')">
 
 
+                                <div id='panel-live-data' class="row">
+                                    <div class="col-md-12">
                                         <div class="panel panel-default">
                                             <div class="panel-heading">
-                                                <h3 class="panel-title"><!-- Button trigger modal -->
-                                                    <button class="btn btn-info" data-toggle="modal"
-                                                            data-target="#modal1">
-                                                        <i class="fa fa-info-circle"></i> Reads And Coverage Summary
-                                                    </button>
+                                                <h3 class="panel-title">
+                                                    <i class="fa fa-info-circle"></i> Live Run Charts
+                                                </h3>
+                                            </div>
+                                            <div id='live-run-data' class="panel-body">
+                                                <div class="row">
+                                                    <div class="col-md-12">
+                                                        <h4 class="panel-heading">We're going to estimate yield in bases
+                                                            here.</h4>
+                                                        <p>If basecalling is occuring concurrently with the run and data
+                                                            uploaded to
+                                                            minoTour, the scaling from events to bases is dynamically
+                                                            calculated. If
+                                                            not, the scaling factor can be chosen in the drop down
+                                                            box.</p>
+                                                        <div class="col-md-2">
+                                                            <p> Set sequencing speed: </p>
+                                                            <select id="seqspeed">
+                                                                <option selected="selected">450 b/s</option>
+                                                                <option>250 b/s</option>
+                                                                <option>70 b/s</option>
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <div class="col-md-2">
+                                                                <p>Estimated Current Yield (bases) <strong><span
+                                                                        id="speedresult"></span></strong></p>
+                                                            </div>
+                                                            <div class="col-md-2">
+                                                                <p>Estimated Average Read Length (bases) <strong><span
+                                                                        id="averageresult"></span></strong></p>
+                                                            </div>
+                                                            <div class="col-md-2">
+                                                                <p>Theoretical Predicted Yield at 24 hours (bases)
+                                                                    <strong><span
+                                                                            id="startbit"></span></strong></p>
+                                                            </div>
+                                                            <div class="col-md-2">
+                                                                <p> Theoretical Predicted Yield at 48 hours (bases)
+                                                                    <strong><span
+                                                                            id="endbit"></span></strong></p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div id="chart-yield" class="col-md-6 highcharts"
+                                                         style="width:50%; height:400px;display:block;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+                                                    </div>
 
-                                                    <!-- Modal -->
-                                                    <div class="modal fade" id="modal1" tabindex="-1" role="dialog"
-                                                         aria-labelledby="myModalLabel" aria-hidden="true">
-                                                        <div class="modal-dialog">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header">
-                                                                    <button type="button" class="close"
-                                                                            data-dismiss="modal"><span
-                                                                            aria-hidden="true">&times;</span><span
-                                                                            class="sr-only">Close</span>
-                                                                    </button>
-                                                                    <h4 class="modal-title" id="myModalLabel">Reads
-                                                                        And Coverage Summary</h4>
+                                                    <div id="poreshizzle" class="col-md-6 highcharts"
+                                                         style="width:50%; height:400px;display:block;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div id="live-histogram" class="col-md-12 highcharts"
+                                                         style="width:100%; height:400px;display:block;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div id="yield-projection" class="col-md-12 highcharts"
+                                                         style="width:100%; height:400px;display:block;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+                                                        Projections
+                                                    </div>
+                                                </div>
+
+                                                <div class="row">
+                                                    <div id="live-strand" class="col-md-6 highcharts"
+                                                         style="width:50%; height:400px;display:block;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Strand
+                                                    </div>
+
+                                                    <div id="live-occupancy" class="col-md-6 highcharts"
+                                                         style="width:50%; height:400px;display:block;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Occupancy
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div id="live-porestate" class="col-md-6 highcharts"
+                                                         style="width:50%; height:400px;display:block;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+                                                        Projections
+                                                    </div>
+
+                                                    <div id="live-currentratio" class="col-md-6 highcharts"
+                                                         style="width:50%; height:400px;display:block;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+                                                        Projections
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div id="live-temperature" class="col-md-6 highcharts"
+                                                         style="width:50%; height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+                                                        Projections
+                                                    </div>
+
+                                                    <div id="live-voltage" class="col-md-6 highcharts"
+                                                         style="width:50%; height:400px;">
+                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+                                                        Projections
+                                                    </div>
+                                                </div>
+
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!--</div>-->
+                                <!---<div role="tabpanel" class="tab-pane" id="nav-basecalled-data">--->
+                                <div id='panel-basecalled-data' class="row">
+
+                                    <div class="col-md-12">
+                                        <div class="nav-tabs-custom">
+                                            <ul class="nav nav-tabs" id="nav-tabs-barcodes"></ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-12">
+                                        <!-- Custom Tabs -->
+                                        <div class="nav-tabs-custom">
+                                            <ul class="nav nav-tabs">
+                                                <li><a href="#" v-on:click="setActiveTab('read-summaries-tab', $event)">Read
+                                                    Summaries</a></li>
+                                                <li><a href="#"
+                                                       v-on:click="setActiveTab('basecaller-summary-tab', $event)">Basecaller
+                                                    Summary</a></li>
+                                                <li><a href="#"
+                                                       v-on:click="setActiveTab('read-histograms-tab', $event)">Read
+                                                    Histograms</a></li>
+                                                <li><a href="#"
+                                                       v-on:click="setActiveTab('sequencing-rates-tab', $event)">Sequencing
+                                                    Rates</a></li>
+                                                <li><a href="#" v-on:click="setActiveTab('pore-activity-tab', $event)">Pore
+                                                    Activity</a></li>
+                                                <li><a href="#" v-on:click="setActiveTab('read-quality-tab', $event)">Read
+                                                    Quality</a></li>
+                                                <li><a href="#"
+                                                       v-on:click="setActiveTab('coverage-detail-tab', $event)">Coverage
+                                                    Detail</a></li>
+                                                <li><a href="#" v-on:click="setActiveTab('base-coverage-tab', $event)">Base
+                                                    Coverage</a></li>
+                                            </ul>
+
+                                            <div class="tab-content">
+                                                <div class="tab-pane active" id="tab_1"
+                                                     v-show="isActiveTab('read-summaries-tab')">
+
+
+                                                    <div class="panel panel-default">
+                                                        <div class="panel-heading">
+                                                            <h3 class="panel-title"><!-- Button trigger modal -->
+                                                                <button class="btn btn-info" data-toggle="modal"
+                                                                        data-target="#modal1">
+                                                                    <i class="fa fa-info-circle"></i> Reads And Coverage
+                                                                    Summary
+                                                                </button>
+
+                                                                <!-- Modal -->
+                                                                <div class="modal fade" id="modal1" tabindex="-1"
+                                                                     role="dialog"
+                                                                     aria-labelledby="myModalLabel" aria-hidden="true">
+                                                                    <div class="modal-dialog">
+                                                                        <div class="modal-content">
+                                                                            <div class="modal-header">
+                                                                                <button type="button" class="close"
+                                                                                        data-dismiss="modal"><span
+                                                                                        aria-hidden="true">&times;</span><span
+                                                                                        class="sr-only">Close</span>
+                                                                                </button>
+                                                                                <h4 class="modal-title"
+                                                                                    id="myModalLabel">Reads
+                                                                                    And Coverage Summary</h4>
+                                                                            </div>
+                                                                            <div class="modal-body">
+                                                                                This panel provides information on the
+                                                                                number of
+                                                                                reads of each type generated by the
+                                                                                metrichor
+                                                                                analysis. The avergae read lengths and
+                                                                                the
+                                                                                maximum read length for each are
+                                                                                shown.<br><br>
+                                                                                Where a reference sequence is available
+                                                                                for
+                                                                                mapping, the proportion of the reference
+                                                                                covered
+                                                                                by reads is shown as "Percentage of
+                                                                                Reference
+                                                                                with Read".<br><br>
+                                                                                The average depth of sequencing over
+                                                                                these
+                                                                                positions is shown as "Average Depth Of
+                                                                                Sequenced Positions".<br>
+                                                                            </div>
+                                                                            <div class="modal-footer">
+                                                                                <button type="button"
+                                                                                        class="btn btn-default"
+                                                                                        data-dismiss="modal">Close
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
-                                                                <div class="modal-body">
-                                                                    This panel provides information on the number of
-                                                                    reads of each type generated by the metrichor
-                                                                    analysis. The avergae read lengths and the
-                                                                    maximum read length for each are shown.<br><br>
-                                                                    Where a reference sequence is available for
-                                                                    mapping, the proportion of the reference covered
-                                                                    by reads is shown as "Percentage of Reference
-                                                                    with Read".<br><br>
-                                                                    The average depth of sequencing over these
-                                                                    positions is shown as "Average Depth Of
-                                                                    Sequenced Positions".<br>
+                                                            </h3>
+                                                        </div>
+                                                        <div class="panel-body">
+                                                            <div class="row">
+                                                                <div id="reads-called" class="col-md-6 highcharts"
+                                                                     style="width:25%; height:400px;">
+                                                                    <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
+                                                                    Read Numbers
                                                                 </div>
-                                                                <div class="modal-footer">
-                                                                    <button type="button" class="btn btn-default"
-                                                                            data-dismiss="modal">Close
-                                                                    </button>
+
+                                                                <div id="yield" class="col-md-6 highcharts"
+                                                                     style="width:25%; height:400px;">
+                                                                    <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
+                                                                    Read Numbers
+                                                                </div>
+
+                                                                <div id="average-read-length"
+                                                                     class="col-md-6 highcharts"
+                                                                     style="width:25%; height:400px;">
+                                                                    <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
+                                                                    Read Numbers
+                                                                </div>
+
+                                                                <div id="maximum-read-length"
+                                                                     class="col-md-6 highcharts"
+                                                                     style="width:25%; height:400px;">
+                                                                    <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
+                                                                    Read Numbers
+                                                                </div>
+
+                                                            </div>
+                                                            <div class="row">
+                                                                <div id="average-read-lengths-overtime"
+                                                                     class="col-md-12 highcharts"
+                                                                     style="width:100%; height:400px;">
+                                                                    <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <div class="row">
-                                                    <div id="reads-called" class="col-md-6 highcharts"
-                                                         style="width:25%; height:400px;">
-                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
-                                                    </div>
-
-                                                    <div id="yield" class="col-md-6 highcharts"
-                                                         style="width:25%; height:400px;">
-                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
-                                                    </div>
-
-                                                    <div id="average-read-length" class="col-md-6 highcharts"
-                                                         style="width:25%; height:400px;">
-                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
-                                                    </div>
-
-                                                    <div id="maximum-read-length" class="col-md-6 highcharts"
-                                                         style="width:25%; height:400px;">
-                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
-                                                    </div>
 
                                                 </div>
-                                                <div class="row">
-                                                    <div id="average-read-lengths-overtime" class="col-md-12 highcharts"
-                                                         style="width:100%; height:400px;">
-                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
+                                                <!-- /.col-lg-12 -->
+                                                <!-- /.tab-pane -->
+
+                                                <div class="tab-pane active"
+                                                     v-show="isActiveTab('basecaller-summary-tab')">
+                                                    <div class="panel panel-default">
+                                                        <div class="panel-heading">
+                                                            <h3 class="panel-title"></h3>
+                                                        </div>
+                                                        <div class="panel-body">
+                                                            <div class="row"></div>
+                                                        </div>
+
+                                                        <div class="tab-pane active"
+                                                             v-show="isActiveTab('read-histograms-tab')">
+                                                            <div class="panel panel-default">
+                                                                <div class="panel-heading">
+                                                                    <h3 class="panel-title"></h3>
+                                                                </div>
+                                                                <div class="panel-body">
+                                                                    <div class="row">
+                                                                        <div id="histogram-read-lengths"
+                                                                             class="col-md-12 highcharts"
+                                                                             style="width:100%; height:400px;">
+                                                                            <i class="fa fa-cog fa-spin fa-3x"></i>
+                                                                            Calculating histogram of read lengths
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div class="row">
+                                                                        <div id="histogram-bases-sequenced-by-read-length"
+                                                                             class="col-md-12 highcharts"
+                                                                             style="width:100%; height:400px;">
+                                                                            <i class="fa fa-cog fa-spin fa-3x"></i>
+                                                                            Calculating bases sequenced by read length
+
+                                                                        </div>
+                                                                    </div>
+
+
+                                                                    <div class="tab-pane active"
+                                                                         v-show="isActiveTab('sequencing-rates-tab')">
+                                                                        <div class="panel panel-default">
+                                                                            <div class="panel-heading">
+                                                                                <h3 class="panel-title"></h3>
+                                                                            </div>
+                                                                            <div class="panel-body">
+                                                                                <div class="row">
+                                                                                    <div id="cumulative-number-reads-overtime"
+                                                                                         class="col-md-12 highcharts"
+                                                                                         style="width:100%; height:400px;">
+                                                                                        <i class="fa fa-cog fa-spin fa-3x"></i>
+                                                                                        Calculating
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div class="row">
+                                                                                    <div id="sequencing-rate"
+                                                                                         class="col-md-12 highcharts"
+                                                                                         style="width:100%; height:400px;">
+                                                                                        <i class="fa fa-cog fa-spin fa-3x"></i>
+                                                                                        Calculating
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div class="tab-pane active"
+                                                                         v-show="isActiveTab('pore-activity-tab')">
+                                                                        <div class="panel panel-default">
+                                                                            <div class="panel-heading">
+                                                                                <h3 class="panel-title"></h3>
+                                                                            </div>
+                                                                            <div class="panel-body">
+                                                                                <div class="row"></div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="row">
+                                                                        <div id="sequencing-speed"
+                                                                             class="col-md-12 highcharts"
+                                                                             style="width:100%; height:400px;">
+                                                                            <i class="fa fa-cog fa-spin fa-3x"></i>
+                                                                            Calculating
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="tab-pane active"
+                                                             v-show="isActiveTab('read-quality-tab')">
+                                                            <div class="panel panel-default">
+                                                                <div class="panel-heading">
+                                                                    <h3 class="panel-title"></h3>
+                                                                </div>
+                                                                <div class="panel-body">
+                                                                    <div class="row"></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="tab-pane active"
+                                                             v-show="isActiveTab('coverage-detail-tab')">
+                                                            <div class="panel panel-default">
+                                                                <div class="panel-heading">
+                                                                    <h3 class="panel-title"></h3>
+                                                                </div>
+                                                                <div class="panel-body">
+                                                                    <div class="row"></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="tab-pane active"
+                                                             v-show="isActiveTab('base-coverage-tab')">
+                                                            <div class="panel panel-default">
+                                                                <div class="panel-heading">
+                                                                    <h3 class="panel-title"></h3>
+                                                                </div>
+                                                                <div class="panel-body">
+                                                                    <div class="row"></div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
                                                     </div>
+                                                    <!-- /.tab-content -->
                                                 </div>
+                                                <!-- nav-tabs-custom -->
                                             </div>
-                                        </div>
-
-                                    </div>
-                                    <!-- /.col-lg-12 -->
-                                    <!-- /.tab-pane -->
-
-                                    <div class="tab-pane active" v-show="isActiveTab('read-histograms-tab')">
-                                        <div class="panel panel-default">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title"></h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <div class="row">
-                                                    <div id="histogram-read-lengths"
-                                                         class="col-md-12 highcharts"
-                                                         style="width:100%; height:400px;">
-                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating histogram of read lengths
-                                                    </div>
-                                                </div>
-
-                                                <div class="row">
-                                                    <div id="histogram-bases-sequenced-by-read-length"
-                                                         class="col-md-12 highcharts"
-                                                         style="width:100%; height:400px;">
-                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating bases sequenced by read length
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <!-- /.col -->
+                                            <!-- /.col -->
                                         </div>
                                     </div>
-
-                                    <div class="tab-pane active" v-show="isActiveTab('sequencing-rates-tab')">
-                                        <div class="panel panel-default">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title"></h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <div class="row">
-                                                    <div id="cumulative-number-reads-overtime"
-                                                         class="col-md-12 highcharts"
-                                                         style="width:100%; height:400px;">
-                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div id="sequencing-rate" class="col-md-12 highcharts"
-                                                         style="width:100%; height:400px;">
-                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div id="sequencing-speed" class="col-md-12 highcharts"
-                                                         style="width:100%; height:400px;">
-                                                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="tab-pane active" v-show="isActiveTab('pore-activity-tab')">
-                                        <div class="panel panel-default">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title"></h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <div class="row"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="tab-pane active" v-show="isActiveTab('read-quality-tab')">
-                                        <div class="panel panel-default">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title"></h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <div class="row"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="tab-pane active" v-show="isActiveTab('coverage-detail-tab')">
-                                        <div class="panel panel-default">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title"></h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <div class="row"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="tab-pane active" v-show="isActiveTab('base-coverage-tab')">
-                                        <div class="panel panel-default">
-                                            <div class="panel-heading">
-                                                <h3 class="panel-title"></h3>
-                                            </div>
-                                            <div class="panel-body">
-                                                <div class="row"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-
                                 </div>
-                                <!-- /.tab-content -->
                             </div>
-                            <!-- nav-tabs-custom -->
                         </div>
-                        <!-- /.col -->
-                        <!-- /.col -->
                     </div>
                 </div>
             </div>

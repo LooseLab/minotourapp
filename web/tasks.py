@@ -58,6 +58,7 @@ def run_monitor():
                 run_alignment.delay(minion_run.id,run_job.id,run_job.var1,run_job.var2)
             if run_job.running is True:
                 #print ("{} is already running!".format(run_job.job_name) )
+                pass
 
 @task()
 def slow_monitor():
@@ -66,8 +67,8 @@ def slow_monitor():
     print ("Slow Monitor Called")
     testset={}
     cachesiz={}
-    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(hours=10)) | Q(
-            RunStats__created_date__gte=datetime.now() - timedelta(hours=10))).distinct()
+    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=10)) | Q(
+            RunStats__created_date__gte=datetime.now() - timedelta(days=10))).distinct()
     #print(minion_runs)
     #print(len(minion_runs))
     for minion_run in minion_runs:
