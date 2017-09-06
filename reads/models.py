@@ -533,6 +533,11 @@ class RunSummaryBarcode(models.Model):
         default=0
     )
 
+    channel_presence = models.CharField(
+        max_length=512,
+        default='0' * 512
+    )
+
     class Meta:
         verbose_name = 'Run Summary Barcode'
         verbose_name_plural = 'Run Summary Barcodes'
@@ -545,6 +550,9 @@ class RunSummaryBarcode(models.Model):
             self.type,
             self.barcode
         )
+
+    def number_active_channels(self):
+        return len(self.channel_presence.replace('0', ''))
 
 
 class HistogramSummary(models.Model):
@@ -591,17 +599,51 @@ class RunStatistic(models.Model):
 
 
 class RunStatisticBarcode(models.Model):
-    run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
-    sample_time = models.DateTimeField()
-    total_length = models.BigIntegerField(default=0)
-    read_count = models.IntegerField(default=0)
-    max_length = models.IntegerField(default=0)
-    min_length = models.IntegerField(default=0)
-    pass_length = models.BigIntegerField(default=0)
-    pass_max_length = models.IntegerField(default=0)
-    pass_min_length = models.IntegerField(default=0)
-    pass_count = models.IntegerField(default=0)
-    type = models.ForeignKey(FastqReadType)
+    run_id = models.ForeignKey(
+        MinIONRun,
+        on_delete=models.CASCADE
+    )
+
+    sample_time = models.DateTimeField(
+
+    )
+
+    total_length = models.BigIntegerField(
+        default=0
+    )
+
+    read_count = models.IntegerField(
+        default=0
+    )
+
+    max_length = models.IntegerField(
+        default=0
+    )
+
+    min_length = models.IntegerField(
+        default=0
+    )
+
+    pass_length = models.BigIntegerField(
+        default=0
+    )
+
+    pass_max_length = models.IntegerField(
+        default=0
+    )
+
+    pass_min_length = models.IntegerField(
+        default=0
+    )
+
+    pass_count = models.IntegerField(
+        default=0
+    )
+
+    type = models.ForeignKey(
+        FastqReadType
+    )
+
     barcode = models.ForeignKey(
         Barcode,
         on_delete=models.CASCADE,
@@ -609,12 +651,25 @@ class RunStatisticBarcode(models.Model):
         null=True
     )
 
+    channel_presence = models.CharField(
+        max_length=512,
+        default='0' * 512
+    )
+
     class Meta:
         verbose_name = 'Run Statistics Barcode'
         verbose_name_plural = 'Run Statistics Barcodes'
 
     def __str__(self):
-        return "{} {} {} {}".format(self.run_id, self.sample_time, self.type, self.barcode)
+        return "{} {} {} {}".format(
+            self.run_id,
+            self.sample_time,
+            self.type,
+            self.barcode
+        )
+
+    def number_active_channels(self):
+        return len(self.channel_presence.replace('0', ''))
 
 
 class MinIONmessages(models.Model):
@@ -631,7 +686,8 @@ class MinIONmessages(models.Model):
         verbose_name_plural = 'MinION Messages'
 
     def __str__(self):
-        return "{} {} {} {}".format(self.minION, self.minKNOW_message, self.minKNOW_severity, self.minKNOW_message_timestamp)
+        return "{} {} {} {}".format(
+            self.minION, self.minKNOW_message, self.minKNOW_severity, self.minKNOW_message_timestamp)
 
 
 ##### Job Management System
@@ -707,13 +763,12 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
 
 @receiver(post_save, sender=FastqRead)
 def update_global_state(instance, sender, **kwargs):
+
     ipn_obj = instance
 
     barcode = ipn_obj.barcode
 
     barcode_all_reads = ipn_obj.run_id.barcodes.filter(name='All reads').first()
-    print('--- barcodes ---')
-    print(ipn_obj.run_id.barcodes.all())
 
     tm = ipn_obj.start_time
 
@@ -721,7 +776,7 @@ def update_global_state(instance, sender, **kwargs):
                                  seconds=tm.second,
                                  microseconds=tm.microsecond)
 
-    obj1,created1 = RunSummaryBarcode.objects.update_or_create(
+    obj1, created1 = RunSummaryBarcode.objects.update_or_create(
         run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode_all_reads
     )
     update_sum_stats(obj1, ipn_obj)
@@ -744,22 +799,45 @@ def update_global_state(instance, sender, **kwargs):
         update_sum_stats(obj3, ipn_obj)
 
 
-def update_sum_stats(obj,ipn_obj):
+def update_sum_stats(obj, ipn_obj):
+
     if ipn_obj.is_pass:
+
         obj.pass_length += len(ipn_obj.sequence)
+
         if len(ipn_obj.sequence) > obj.pass_max_length:
             obj.pass_max_length = len(ipn_obj.sequence)
+
         if obj.pass_min_length == 0:
             obj.pass_min_length = len(ipn_obj.sequence)
+
         if len(ipn_obj.sequence) < obj.pass_min_length:
             obj.pass_min_length = len(ipn_obj.sequence)
+
         obj.pass_count += 1
+
     obj.total_length += len(ipn_obj.sequence)
+
     if len(ipn_obj.sequence) > obj.max_length:
         obj.max_length = len(ipn_obj.sequence)
+
     if obj.min_length == 0:
         obj.min_length = len(ipn_obj.sequence)
+
     if len(ipn_obj.sequence) < obj.min_length:
         obj.min_length = len(ipn_obj.sequence)
+
+    #
+    # channel_presence is a 512 characters length string containing 0
+    # for each channel (id between 1 - 512) seen, we set the position on
+    # the string to 1. afterwards, we can calculate the number of active
+    # channels in a particular minute.
+    #
+    channel = ipn_obj.channel
+    channel_sequence = obj.channel_presence
+    channel_sequence_list = list(channel_sequence)
+    channel_sequence_list[channel] = '1'
+    obj.channel_presence = ''.join(channel_sequence_list)
+
     obj.read_count += 1
     obj.save()

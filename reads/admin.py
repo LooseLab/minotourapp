@@ -14,8 +14,6 @@ from .models import MinIONRunStatus
 from .models import MinIONScripts
 from .models import MinIONStatus
 from .models import MinIONmessages
-from .models import RunStatistic
-from .models import RunSummary
 from .models import JobMaster
 from .models import Job
 from .models import SamStore
@@ -23,6 +21,7 @@ from .models import ChannelSummary
 from .models import HistogramSummary
 from .models import UserOptions
 from .models import Barcode
+
 
 class MinionRunAdmin(admin.ModelAdmin):
     list_display = ('start_time', 'active','sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','minION', 'id', 'last_read', 'last_entry')
@@ -60,8 +59,6 @@ admin.site.register(MinIONmessages)
 admin.site.register(MinIONControl)
 admin.site.register(RunStatisticBarcode, RunStatisticsBarcodeAdmin)
 admin.site.register(RunSummaryBarcode, RunSummaryBarcodeAdmin)
-admin.site.register(RunStatistic)
-admin.site.register(RunSummary)
 admin.site.register(JobMaster)
 admin.site.register(Job)
 admin.site.register(SamStore, SamStoreAdmin)
