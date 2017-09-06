@@ -1233,11 +1233,15 @@ function MinotourApp() {
 
             if (data.length > 0) {
 
+                var ordered_data = data.sort(function (a, b) {
+                    return a.bin_width - b.bin_width;
+                });
+
                 var summaries = {};
 
-                for (var i = 0; i < data.length; i++) {
+                for (var i = 0; i < ordered_data.length; i++) {
 
-                    var item = data[i];
+                    var item = ordered_data[i];
 
                     if (summaries[item.barcode_name] === undefined) {
                         summaries[item.barcode_name] = {};
@@ -1251,9 +1255,7 @@ function MinotourApp() {
                         };
                     }
 
-                    //summaries[item.barcode_name][item.read_type_name]['read_count'][item.bin_width] = item.read_count; // var a = []; a[100] = 20;
-                    //summaries[item.barcode_name][item.read_type_name]['read_length'][item.bin_width] = item.read_length;
-                    summaries[item.barcode_name][item.read_type_name]['read_count'].push(item.read_count); // var a = []; a[100] = 20;
+                    summaries[item.barcode_name][item.read_type_name]['read_count'].push(item.read_count);
                     summaries[item.barcode_name][item.read_type_name]['read_length'].push(item.read_length);
                     summaries[item.barcode_name][item.read_type_name]['bin_width'].push(parseInt(item.bin_width));
                 }
