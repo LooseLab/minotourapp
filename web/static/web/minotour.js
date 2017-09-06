@@ -493,6 +493,12 @@ function MinotourApp() {
             "bases/second".toUpperCase()
         );
 
+        this.chartSequencingSpeed = this.makeChart2(
+            "sequencing-speed",
+            "sequencing speed".toUpperCase(),
+            "bases/channel/second".toUpperCase()
+        );
+
         this.chartHistogramReadLength = this.makeChart2(
             "histogram-read-lengths",
             "Histogram of Read Lengths".toUpperCase(),
@@ -844,6 +850,31 @@ function MinotourApp() {
 
     };
 
+    this.updateSequencingSpeedChart = function () {
+        var chart = self.chartSequencingSpeed;
+        var selectedBarcode = self.selectedBarcode;
+
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        for (var barcode of Object.keys(self.summaryByMinute2)) {
+
+            if (barcode === 'All reads' || barcode === self.selectedBarcode) {
+                for (var typeName of Object.keys(self.summaryByMinute2[barcode])) {
+
+                    chart.addSeries({
+                        name: barcode + " - " + typeName,
+                        data: self.summaryByMinute2[barcode][typeName]["sequencingSpeed"]
+                    });
+
+                }
+            }
+        }
+
+    };
+
     this.updateHistogramReadLengthChart = function () {
 
         var chart = self.chartHistogramReadLength;
@@ -942,6 +973,7 @@ function MinotourApp() {
         self.updateAverageReadLengthOverTimeChart()
         self.updateCumulativeNumberOfReadsOverTimeChart();
         self.updateSequencingRateChart();
+        self.updateSequencingSpeedChart();
     };
 
     this.updateLiveCumuYield = function () {
@@ -1069,6 +1101,7 @@ function MinotourApp() {
                         summaries[item.barcodename][item.typename] = {
                             "data": [],
                             "sequencingRate": [],
+                            "sequencingSpeed": [],
                         };
                     }
 
@@ -1085,6 +1118,11 @@ function MinotourApp() {
                     summaries[item.barcodename][item.typename]["sequencingRate"].push({
                         x: sampleTime,
                         y: item.total_length / NUMBER_SECONDS_IN_A_MINUTE
+                    });
+
+                    summaries[item.barcodename][item.typename]["sequencingSpeed"].push({
+                        x: sampleTime,
+                        y: item.total_length / item.number_active_channels / NUMBER_SECONDS_IN_A_MINUTE
                     });
 
                 }
