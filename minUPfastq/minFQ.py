@@ -234,7 +234,7 @@ class Runcollection():
                 barcode_url = self.barcodes[barcode_local]
 
             else:
-                barcode_url = self.barcodes["No Barcode"]
+                barcode_url = self.barcodes["No barcode"]
 
             self.add_read_db(
                 self.runidlink,
