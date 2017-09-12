@@ -76,6 +76,10 @@ urlpatterns = [
         views.run_histogram_summary,
         name="runhistogramsummary-detail"),
     url(
+        r'^api/v1/runs/(?P<pk>[0-9]+)/channelsummary/$',
+        views.run_channel_summary,
+        name="runchannelsummary-list"),
+    url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/barcodes/$',
         views.barcode_list,
         name="runbarcode-list"),

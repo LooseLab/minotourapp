@@ -8,7 +8,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from reads.models import Barcode
+from reads.models import Barcode, ChannelSummary
 from reads.models import FastqRead
 from reads.models import FastqReadType
 from reads.models import HistogramSummary
@@ -27,6 +27,7 @@ from reads.models import RunStatisticBarcode
 from reads.models import RunSummary
 from reads.models import RunSummaryBarcode
 from reads.serializers import BarcodeSerializer
+from reads.serializers import ChannelSummarySerializer
 from reads.serializers import FastqReadSerializer
 from reads.serializers import RunSummaryBarcodeSerializer
 from reads.serializers import RunStatisticBarcodeSerializer
@@ -677,6 +678,20 @@ def run_histogram_summary(request, pk):
         .filter(run_id=pk)
 
     serializer = RunHistogramSummarySerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def run_channel_summary(request, pk):
+    """
+    Return a list with channel info for a particular run.
+    """
+    queryset = ChannelSummary.objects\
+        .filter(run_id__owner=request.user)\
+        .filter(run_id=pk)
+
+    serializer = ChannelSummarySerializer(queryset, many=True, context={'request': request})
 
     return Response(serializer.data)
 

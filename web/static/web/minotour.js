@@ -86,6 +86,49 @@ function makeChart(divName, chartTitle, yAxisTitle) {
 }
 
 
+function makeHeatmapChart(divName, chartTitle, yAxisTitle) {
+    var chart = Highcharts.chart(divName, {
+        chart: {
+            type: "heatmap",
+        },
+        title: {
+            text: chartTitle
+        },
+        colorAxis: {
+            min: 0,
+            minColor: '#FFFFFF',
+            maxColor: Highcharts.getOptions().colors[0]
+        },
+        xAxis: {
+            title: null,
+            labels: {
+                enabled: false
+            },
+
+        },
+        yAxis: {
+            title: null,
+            labels: {
+                enabled: false
+            },
+
+        },
+        legend: {
+            align: 'right',
+            layout: 'vertical',
+            margin: 0,
+            verticalAlign: 'top',
+            y: 25,
+            symbolHeight: 280
+        },
+        exporting: {
+            enabled: false
+        }
+    });
+
+    return chart;
+}
+
 function makeChart2(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.chart(divName, {
         chart: {
@@ -418,6 +461,7 @@ function MinotourApp() {
     this.makeYieldProjection = makeYieldProjection;
     this.makeLiveChart = makeLiveChart;
     this.makeAreaPlot = makeAreaPlot;
+    this.makeHeatmapChart = makeHeatmapChart;
     this.lastread = 0;
     this.needtoupdatecharts = false;
 
@@ -523,6 +567,18 @@ function MinotourApp() {
             "histogram-bases-sequenced-by-read-length",
             "Histogram of Bases Sequenced by Read Length".toUpperCase(),
             "Number of bases".toUpperCase()
+        );
+
+        this.chartReadsPerPore = this.makeHeatmapChart(
+            "reads-per-pore",
+            "Reads per pore".toUpperCase(),
+            ""
+        );
+
+        this.chartBasesPerPore = this.makeHeatmapChart(
+            "bases-per-pore",
+            "bases (kb) per pore".toUpperCase(),
+            ""
         );
 
         this.LiveHistogram = this.makeLiveHistogram(
@@ -983,6 +1039,92 @@ function MinotourApp() {
 
     };
 
+    this.updateReadsPerPoreChart = function () {
+
+        var chart = self.chartReadsPerPore;
+
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        var summary = self.channelSummary;
+
+        var data = {};
+
+        for (var j = 0; j < 32; j++) {
+            for (var i = 0; i < 16; i++) {
+                var key = 16 * j + i;
+                data[key] = [i, j, 0];
+            }
+        }
+
+        for (var channel_number of Object.keys(summary)) {
+
+            var column = channel_number % 16;
+            var row = (channel_number - column) / 16;
+
+            data[channel_number] = [column, row, summary[channel_number].read_count];
+        }
+
+        chart.addSeries({
+            name: 'read_count',
+            data: Object.values(data),
+            borderWidth: 1,
+            dataLabels: {
+                "enabled": true,
+                "color": "black",
+                "style": {
+                    "textShadow": "none"
+                }
+            }
+        });
+
+    };
+
+    this.updateBasesPerPoreChart = function () {
+
+        var chart = self.chartBasesPerPore;
+
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        var summary = self.channelSummary;
+
+        var data = {};
+
+        for (var j = 0; j < 32; j++) {
+            for (var i = 0; i < 16; i++) {
+                var key = 16 * j + i;
+                data[key] = [i, j, 0];
+            }
+        }
+
+        for (var channel_number of Object.keys(summary)) {
+
+            var column = channel_number % 16;
+            var row = (channel_number - column) / 16;
+
+            data[channel_number] = [column, row, summary[channel_number].read_length];
+        }
+
+        chart.addSeries({
+            name: 'read_length',
+            data: Object.values(data),
+            borderWidth: 1,
+            dataLabels: {
+                "enabled": true,
+                "color": "black",
+                "style": {
+                    "textShadow": "none"
+                }
+            }
+        });
+
+    };
+
     this.updateSummaryByMinuteBasedCharts = function () {
         self.updateAverageReadLengthOverTimeChart()
         self.updateCumulativeNumberOfReadsOverTimeChart();
@@ -992,33 +1134,35 @@ function MinotourApp() {
 
     this.updateLiveCumuYield = function () {
         //console.log(self.LiveCumuYield);
-        if (self.LiveCumuYield.series.length < 1){
+        if (self.LiveCumuYield.series.length < 1) {
             self.LiveCumuYield.addSeries({
-                data: self.livedata.yield_history });
+                data: self.livedata.yield_history
+            });
             self.LiveCumuYield.series[0].update({name: "Events"}, false);
-        }else {
+        } else {
             self.LiveCumuYield.series[0].setData(self.livedata.yield_history);
             self.LiveCumuYield.series[0].update({name: "Events"}, false);
         }
         self.LiveCumuYield.redraw();
         self.LiveCumuYield.reflow();
-        if (self.LiveOccupancy.series.length < 1){
+        if (self.LiveOccupancy.series.length < 1) {
             self.LiveOccupancy.addSeries({
-                data: self.livedata.percentage });
+                data: self.livedata.percentage
+            });
             self.LiveOccupancy.series[0].update({name: "% Occupancy"}, false);
-        }else {
+        } else {
             self.LiveOccupancy.series[0].setData(self.livedata.percentage);
             self.LiveOccupancy.series[0].update({name: "% Occupancy"}, false);
         }
         self.LiveOccupancy.redraw();
         self.LiveOccupancy.reflow();
-        if (self.LiveInStrand.series.length < 2){
-            self.LiveInStrand.addSeries({data:self.livedata.strand});
+        if (self.LiveInStrand.series.length < 2) {
+            self.LiveInStrand.addSeries({data: self.livedata.strand});
             self.LiveInStrand.series[0].update({name: "In Strand"}, false);
-            self.LiveInStrand.addSeries({data:self.livedata.good_single});
+            self.LiveInStrand.addSeries({data: self.livedata.good_single});
             self.LiveInStrand.series[1].update({name: "Single Pore"}, false);
 
-        }else {
+        } else {
             self.LiveInStrand.series[0].setData(self.livedata.strand);
             self.LiveInStrand.series[0].update({name: "In Strand"}, false);
             self.LiveInStrand.series[1].setData(self.livedata.good_single);
@@ -1026,10 +1170,10 @@ function MinotourApp() {
         }
         self.LiveInStrand.redraw();
         self.LiveInStrand.reflow();
-        if (self.LivePoreState.series.length < 1){
+        if (self.LivePoreState.series.length < 1) {
             self.LivePoreState.addSeries({data: self.livedata.instrand_history});
             self.LivePoreState.addSeries({data: self.livedata.openpore_history});
-        }else{
+        } else {
             self.LivePoreState.series[0].setData(self.livedata.instrand_history);
             self.LivePoreState.series[1].setData(self.livedata.openpore_history);
         }
@@ -1037,18 +1181,18 @@ function MinotourApp() {
         self.LivePoreState.series[1].update({name: "Open Pore"}, false);
         self.LivePoreState.redraw();
         self.LivePoreState.reflow();
-        if (self.LiveCurrentRatio.series.length < 1){
+        if (self.LiveCurrentRatio.series.length < 1) {
             self.LiveCurrentRatio.addSeries({data: self.livedata.meanratio_history});
-        }else{
+        } else {
             self.LiveCurrentRatio.series[0].setData(self.livedata.meanratio_history);
         }
         self.LiveCurrentRatio.series[0].update({name: "Current Ratio"}, false);
         self.LiveCurrentRatio.redraw();
         self.LiveCurrentRatio.reflow();
-        if (self.LiveTemperature.series.length < 1){
+        if (self.LiveTemperature.series.length < 1) {
             self.LiveTemperature.addSeries({data: self.livedata.asictemp});
             self.LiveTemperature.addSeries({data: self.livedata.heatsinktemp});
-        }else{
+        } else {
             self.LiveTemperature.series[0].setData(self.livedata.asictemp);
             self.LiveTemperature.series[1].setData(self.livedata.heatsinktemp);
         }
@@ -1056,9 +1200,9 @@ function MinotourApp() {
         self.LiveTemperature.series[1].update({name: "HeatSink Temp"}, false);
         self.LiveTemperature.redraw();
         self.LiveTemperature.reflow();
-        if (self.LiveVoltage.series.length < 1){
+        if (self.LiveVoltage.series.length < 1) {
             self.LiveVoltage.addSeries({data: self.livedata.voltage});
-        }else{
+        } else {
             self.LiveVoltage.series[0].setData(self.livedata.voltage);
         }
         self.LiveVoltage.series[0].update({name: "Voltage"}, false);
@@ -1083,6 +1227,11 @@ function MinotourApp() {
     this.updateHistogramBasedCharts = function () {
         self.updateHistogramReadLengthChart();
         self.updateHistogramBasesSequencedReadLengthChart();
+    }
+
+    this.updateChannelBasedCharts = function () {
+        self.updateReadsPerPoreChart();
+        self.updateBasesPerPoreChart();
     }
 
     this.requestSummaryByMinuteData = function (id) {
@@ -1263,6 +1412,38 @@ function MinotourApp() {
                 self.histogramSummary = summaries;
 
                 self.updateHistogramBasedCharts();
+
+            }
+        });
+    }
+
+    this.requestChannelSummaryData = function (id) {
+        /*
+         * Request channel summary data
+         */
+
+        var url = "/api/v1/runs/" + id + "/channelsummary";
+
+        $.get(url, function (data) {
+
+            if (data.length > 0) {
+
+                var summaries = {};
+
+                for (var i = 0; i < data.length; i++) {
+
+                    var item = data[i];
+
+                    summaries[item.channel_number] = {
+                        'read_count': item.read_count,
+                        'read_length': item.read_length
+                    };
+
+                }
+
+                self.channelSummary = summaries;
+
+                self.updateChannelBasedCharts();
 
             }
         });
@@ -1628,13 +1809,14 @@ function MinotourApp() {
             self.updateBarcodeNavTab();
 
             //self.getlivedata(self.rundata);
+            self.requestSummaryByMinuteData(self.id);
+            self.requestSummaryData(self.id);
+            self.requestHistogramData(self.id);
+            self.requestChannelSummaryData(self.id);
         });
 
         self.requestRunDetails(self.id);
         self.requestLiveRunStats(self.id);
-        self.requestSummaryByMinuteData(self.id);
-        self.requestSummaryData(self.id);
-        self.requestHistogramData(self.id);
 
         //console.log(self);
 
