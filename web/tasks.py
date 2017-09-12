@@ -18,6 +18,7 @@ import tempfile
 from django.core.cache import cache
 from django.contrib.auth.models import User
 from django.conf import settings
+import pytz
 from twitter import *
 
 logger = get_task_logger(__name__)
@@ -34,13 +35,16 @@ def send_tweet(message):
     t.statuses.update(
         status=message)
 
+def utcnow():
+    return datetime.now(tz=pytz.utc)
+
 
 @task()
 def run_monitor():
     logger.info('Running run_monitor celery task.')
     # Do something...
     print ("Rapid Monitor Called")
-    #minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=3)) | Q(
+    #minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.utcnow() - timedelta(days=3)) | Q(
     #        RunStats__created_date__gte=datetime.now() - timedelta(days=3))).distinct()
     minion_runs = MinIONRun.objects.filter(active=True).distinct()
     #print(minion_runs)
@@ -67,9 +71,10 @@ def slow_monitor():
     print ("Slow Monitor Called")
     testset={}
     cachesiz={}
-    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.now() - timedelta(days=10)) | Q(
-            RunStats__created_date__gte=datetime.now() - timedelta(days=10))).distinct()
-    #print(minion_runs)
+    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=utcnow() - timedelta(days=10)) | Q(
+            RunStats__created_date__gte=utcnow() - timedelta(days=10))).distinct()
+    #minion_runs = MinIONRun.objects.all()
+    print(minion_runs)
     #print(len(minion_runs))
     for minion_run in minion_runs:
         #print ("checking jobs for {}".format(minion_run))
@@ -91,7 +96,7 @@ def slow_monitor():
         testset = cache.get('a-unique-key', {})
     except:
         print('a-unique-key not found')
-    #print('a-unique-key is {}'.format(testset))
+    print('a-unique-key is {}'.format(testset))
     deleted,added = compare_two(testset,cachesiz)
     processrun(deleted,added)
     cache.set('a-unique-key',cachesiz)
