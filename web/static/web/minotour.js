@@ -85,50 +85,6 @@ function makeChart(divName, chartTitle, yAxisTitle) {
     return chart;
 }
 
-
-function makeHeatmapChart(divName, chartTitle, yAxisTitle) {
-    var chart = Highcharts.chart(divName, {
-        chart: {
-            type: "heatmap",
-        },
-        title: {
-            text: chartTitle
-        },
-        colorAxis: {
-            min: 0,
-            minColor: '#FFFFFF',
-            maxColor: Highcharts.getOptions().colors[0]
-        },
-        xAxis: {
-            title: null,
-            labels: {
-                enabled: false
-            },
-
-        },
-        yAxis: {
-            title: null,
-            labels: {
-                enabled: false
-            },
-
-        },
-        legend: {
-            align: 'right',
-            layout: 'vertical',
-            margin: 0,
-            verticalAlign: 'top',
-            y: 25,
-            symbolHeight: 280
-        },
-        exporting: {
-            enabled: false
-        }
-    });
-
-    return chart;
-}
-
 function makeChart2(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.chart(divName, {
         chart: {
@@ -379,7 +335,7 @@ function MonitorAPP() {
 
         setInterval(function () {
             this.requestData();
-        }.bind(this), 10000);
+        }.bind(this), 30000);
     };
 
     this.updatecounters = function (live) {
@@ -464,6 +420,12 @@ function MinotourApp() {
     this.makeHeatmapChart = makeHeatmapChart;
     this.lastread = 0;
     this.needtoupdatecharts = false;
+
+    this.updatePoreChart = updatePoreChart;
+
+    //this.updateReadsPerPoreChart = updateReadsPerPoreChart;
+
+    //this.updateBasesPerPoreChart = updateBasesPerPoreChart;
 
     var self = this;
 
@@ -639,7 +601,7 @@ function MinotourApp() {
 
         setInterval(function () {
             this.requestData();
-        }.bind(this), 10000);
+        }.bind(this), 30000);
     };
 
     this.numberWithCommas = function (x) {
@@ -1039,92 +1001,6 @@ function MinotourApp() {
 
     };
 
-    this.updateReadsPerPoreChart = function () {
-
-        var chart = self.chartReadsPerPore;
-
-        // Remove previous series
-        while (chart.series.length > 0) {
-            chart.series[0].remove();
-        }
-
-        var summary = self.channelSummary;
-
-        var data = {};
-
-        for (var j = 0; j < 32; j++) {
-            for (var i = 0; i < 16; i++) {
-                var key = 16 * j + i;
-                data[key] = [i, j, 0];
-            }
-        }
-
-        for (var channel_number of Object.keys(summary)) {
-
-            var column = channel_number % 16;
-            var row = (channel_number - column) / 16;
-
-            data[channel_number] = [column, row, summary[channel_number].read_count];
-        }
-
-        chart.addSeries({
-            name: 'read_count',
-            data: Object.values(data),
-            borderWidth: 1,
-            dataLabels: {
-                "enabled": true,
-                "color": "black",
-                "style": {
-                    "textShadow": "none"
-                }
-            }
-        });
-
-    };
-
-    this.updateBasesPerPoreChart = function () {
-
-        var chart = self.chartBasesPerPore;
-
-        // Remove previous series
-        while (chart.series.length > 0) {
-            chart.series[0].remove();
-        }
-
-        var summary = self.channelSummary;
-
-        var data = {};
-
-        for (var j = 0; j < 32; j++) {
-            for (var i = 0; i < 16; i++) {
-                var key = 16 * j + i;
-                data[key] = [i, j, 0];
-            }
-        }
-
-        for (var channel_number of Object.keys(summary)) {
-
-            var column = channel_number % 16;
-            var row = (channel_number - column) / 16;
-
-            data[channel_number] = [column, row, summary[channel_number].read_length];
-        }
-
-        chart.addSeries({
-            name: 'read_length',
-            data: Object.values(data),
-            borderWidth: 1,
-            dataLabels: {
-                "enabled": true,
-                "color": "black",
-                "style": {
-                    "textShadow": "none"
-                }
-            }
-        });
-
-    };
-
     this.updateSummaryByMinuteBasedCharts = function () {
         self.updateAverageReadLengthOverTimeChart()
         self.updateCumulativeNumberOfReadsOverTimeChart();
@@ -1230,8 +1106,8 @@ function MinotourApp() {
     }
 
     this.updateChannelBasedCharts = function () {
-        self.updateReadsPerPoreChart();
-        self.updateBasesPerPoreChart();
+        self.updatePoreChart(self.chartReadsPerPore, self.channelSummary, 'read_count');
+        self.updatePoreChart(self.chartBasesPerPore, self.channelSummary, 'read_length');
     }
 
     this.requestSummaryByMinuteData = function (id) {
@@ -1436,7 +1312,7 @@ function MinotourApp() {
 
                     summaries[item.channel_number] = {
                         'read_count': item.read_count,
-                        'read_length': item.read_length
+                        'read_length': (parseInt(item.read_length) / 1000).toFixed(0)
                     };
 
                 }

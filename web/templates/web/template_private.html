@@ -1,8 +1,6 @@
 {% extends "web/template_base.html" %}
 {% load static %}
 
-
-
 {% block header %}
     <header class="main-header">
 
@@ -15,13 +13,19 @@
             <span class="logo-lg"><img style="max-width:100px;" src="{% static 'mT_images/minotaurlogo.png' %}"
                                        alt="minoTour_logo">1.0a</span>
         </a>
+
+        <script src="{% static 'web/flowcell_lookuptable.js' %}?{% now 'c' %}"></script>
+
+        <script src="{% static 'web/heatmap_chart.js' %}?{% now 'c' %}"></script>
+
         <script src="{% static 'web/minotour.js' %}?{% now 'c' %}"></script>
+
         <script>
-        $(document).ready(function () {
-            var app2 = new MonitorAPP();
-            app2.init();
-        });
-    </script>
+            $(document).ready(function () {
+                var app2 = new MonitorAPP();
+                app2.init();
+            });
+        </script>
 
         <!-- Header Navbar -->
         <nav class="navbar navbar-static-top" role="navigation">
@@ -183,208 +187,136 @@
 
             <!-- Sidebar Menu -->
             <ul class="sidebar-menu">
-                <li class="header"><?php //if (isset($_SESSION['active_run_name'])) {
-            checkalerts();
-            ?></li>
                 <li id="overview">
-                    <a href="{% url 'private-index' %}"><i class="fa fa-dashboard fa-fw"></i><span> Overview</span></a>
+                    <a href="{% url 'private-index' %}">
+                        <i class="fa fa-dashboard fa-fw"></i><span> Overview</span>
+                    </a>
                 </li>
                 <li id="livecontrol">
-                    <a href="{% url 'remotecontrol' %}"><i class="fa fa-gamepad fa-fw"></i><span> Remote Control</span></a>
+                    <a href="{% url 'remotecontrol' %}">
+                        <i class="fa fa-gamepad fa-fw"></i><span> Remote Control</span>
+                    </a>
                 </li>
                 <li id="prevcontrol">
-                    <a href="{% url 'prevremotecontrol' %}"><i class="fa fa-gamepad fa-fw"></i><span> Remote Archive</span></a>
+                    <a href="{% url 'prevremotecontrol' %}">
+                        <i class="fa fa-gamepad fa-fw"></i><span> Remote Archive</span>
+                    </a>
                 </li>
-                <?php if (checkactiverun()) { ?>
-                <li id="currentruns" class="treeview">
-                    <a href="#"><i class="fa fa-bolt fa-fw"></i><span> Current Sequencing Run</span> <i
-                            class="fa fa-angle-left pull-right"></i></a>
-                    <ul class="treeview-menu">
-                        <?php if ( checknumactive() > 1){?>
-                        <li>
-                            <a href={% url 'current-runs' %}><i
-                                    class="fa fa-database fa-fw"></i><span> Switch Active Runs</span></a>
-                        </li>
-                        <?php }; ?>
-                        <li>
-                            <a href="live_data.php"><i class="fa fa-cog fa-spin"></i> Live Data</a>
-                        </li>
-
-                        <?php if (isset($_SESSION['assemblyactive']) && $_SESSION['assemblyactive'] >= 1) {?>
-                        <li>
-                            <a href="current_assembly.php"><i class="fa fa-puzzle-piece"></i><span> Assembly</span></a>
-                        </li>
-                        <?php }; ?>
-
-                        <?php if ($_SESSION['currentbarcode'] >= 1) {?>
-                        <li>
-                            <a href="current_barcodes.php"><i class="fa fa-barcode"></i><span> Barcodes</span></a>
-                        </li>
-
-                        <?php }; ?>
-
-                        <li>
-                            <a href="current_summary.php"><i
-                                    class="fa fa-bar-chart-o fa-fw"></i><span> Data Summary</span></a>
-                        </li>
-                        <?php if ($_SESSION['activereference'] != "NOREFERENCE") {?>
-                        <?php if ($_SESSION['currentBASE'] >=1){?>
-                        <li>
-                            <a href="current_variants.php"><i
-                                    class="fa fa-code-fork"></i><span> Nucleotide Variants</span></a>
-                        </li>
-                        <?php }; ?>
-                        <?php }; ?>
-                        <?php if ($_SESSION['currentBASE'] >=1){?>
-                        <li>
-                            <a href="live_reads_table.php"><i
-                                    class="fa fa-eye fa-fw"></i><span> Individual Read Data</span></a>
-                        </li>
-                        <li>
-                            <a href="export.php"><i
-                                    class="fa fa-file-text-o fa-fw"></i><span> Export Reads/Alignments</span></a>
-                        </li>
-                        <?php }; ?>
-                        <?php if ($_SESSION['currentXML'] >= 1) {?>
-                        <li>
-                            <a href="current_XML.php"><i
-                                    class="fa fa-info-circle"></i><span> ENA Submission Details</span></a>
-                        </li>
-                        <?php }; ?>
-                        <li>
-                            <a href="live_report.php"><i class="fa fa-comments-o fa-fw"></i><span> Run Report</span></a>
-                        </li>
-                        <li>
-                            <a href="jobs.php"><i class="fa fa-building"></i><span> Run Analysis Jobs</span></a>
-                        </li>
-                        <!--<li>
-                            <a href="set_alerts.php"><i class="fa fa-exclamation-circle"></i><span> Set Alerts</span></a>
-                        </li>-->
-                        <?php if ($_SESSION['currentINT'] >=1){?>
-                        <li>
-                            <a href="live_interaction.php"><i class="fa fa-cogs"></i><span> minION control</span></a>
-                        </li>
-                        <?php }?>
-                        <li>
-                            <a href="runadmin.php"><i class="fa fa-stop"></i><span> Run Administration</span></a>
-                        </li>
-
-                    </ul>
-                </li>
-                <?php } ?>
-
                 <li id="prevruns" class="treeview">
                     <a href="#">
-                        <i class="fa fa-table fa-fw"></i>
-                        <span>Runs</span>
-                        <i class="fa fa-angle-left pull-right"></i>
+                        <i class="fa fa-table fa-fw"></i>&nbsp;<span>Runs</span><i class="fa fa-angle-left pull-right"></i>
                     </a>
                     <ul class="treeview-menu">
-                        <?php if (isset($_SESSION['focusrun'])) {?>
                         <li>
                             <a href="{% url 'previous-runs' %}" id="SR">
                                 <i class="fa fa-database fa-fw"></i><span> Change Run</span>
                             </a>
                         </li>
-                        <?php if (isset($_SESSION['focusbarcode']) && $_SESSION['focusbarcode'] >= 1) {?>
                         <li>
-                            <a href="previous_barcodes.php"><i class="fa fa-barcode"></i><span> Barcodes</span></a>
-                        </li>
-
-                        <?php }; ?>
-                        <li>
-                            <a href="previous_summary.php"><i
-                                    class="fa fa-bar-chart-o fa-fw"></i><span> Data Summary</span></a>
-                        </li>
-                        <?php if (isset($_SESSION['prevassemblyactive']) && $_SESSION['prevassemblyactive'] >= 1) {?>
-                        <li>
-                            <a href="previous_assembly.php"><i class="fa fa-puzzle-piece"></i><span> Assembly</span></a>
-                        </li>
-                        <?php }; ?>
-                        <?php if (isset($_SESSION['previousbarcode']) && $_SESSION['previousbarcode'] >= 1) {?>
-                        <li>
-                            <a href="prev_barcode.php"><i class="fa fa-barcode"></i><span> Barcodes</span></a>
-                        </li>
-
-                        <?php }; ?>
-                        <?php if (isset($_SESSION['focusreference']) && $_SESSION['focusreference'] != "NOREFERENCE") {?>
-                        <?php if ($_SESSION['focusBASE'] >=1){?>
-                        <li>
-                            <a href="previous_variants.php"><i
-                                    class="fa fa-code-fork"></i><span> Nucleotide Variants</span></a>
-                        </li>
-                        <?php }; ?>
-                        <?php }; ?>
-                        <?php if ($_SESSION['focusBASE'] >=1){?>
-                        <li>
-                            <a href="reads_table.php"><i class="fa fa-eye fa-fw"></i><span> Individual Read Data</span></a>
-                        </li>
-                        <!--<li>
-                            <a href="prev_kmers.php"><i class="fa fa-cogs fa-fw"></i><span> K-mer summaries</span></a>
-                        </li>-->
-
-                        <li>
-                            <a href="previous_export.php"><i class="fa fa-file-text-o fa-fw"></i><span> Export Reads/Alignments</span></a>
-                        </li>
-                        <?php }; ?>
-                        <?php if (isset($_SESSION['focusXML']) && $_SESSION['focusXML'] >= 1) {?>
-                        <li>
-                            <a href="previous_XML.php"<i
-                                class="fa fa-info-circle"></i><span> ENA Submission Details</span></a>
-                        </li>
-                        <?php }; ?>
-                        <li>
-                            <a href="previous_report.php"><i class="fa fa-comments-o fa-fw"></i><span> Run Report</span></a>
+                            <a href="previous_barcodes.php">
+                                <i class="fa fa-barcode"></i><span> Barcodes</span>
+                            </a>
                         </li>
                         <li>
-                            <a href="manage_data.php"><i class="fa fa-pencil-square-o"></i><span> Manage Data</span></a>
+                            <a href="previous_summary.php">
+                                <i class="fa fa-bar-chart-o fa-fw"></i><span> Data Summary</span>
+                            </a>
                         </li>
-                        <?php }else{?>
                         <li>
-                            <a href="previous_runs.php" id="SR"><i
-                                    class="fa fa-database fa-fw"></i><span> Select Run</span></a>
+                            <a href="previous_assembly.php">
+                                <i class="fa fa-puzzle-piece"></i><span> Assembly</span>
+                            </a>
                         </li>
-                        <?php };?>
+                        <li>
+                            <a href="prev_barcode.php">
+                                <i class="fa fa-barcode"></i><span> Barcodes</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="previous_variants.php">
+                                <i class="fa fa-code-fork"></i><span> Nucleotide Variants</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="reads_table.php">
+                                <i class="fa fa-eye fa-fw"></i><span> Individual Read Data</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="previous_export.php">
+                                <i class="fa fa-file-text-o fa-fw"></i><span> Export Reads/Alignments</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="previous_XML.php">
+                                <i class="fa fa-info-circle"></i><span> ENA Submission Details</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="previous_report.php">
+                                <i class="fa fa-comments-o fa-fw"></i><span> Run Report</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="manage_data.php">
+                                <i class="fa fa-pencil-square-o"></i><span> Manage Data</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="previous_runs.php" id="SR">
+                                <i class="fa fa-database fa-fw"></i><span> Select Run</span>
+                            </a>
+                        </li>
                     </ul>
                 </li>
 
-            
                 {% if user.is_superuser %}
                     <li id="admin" class="treeview">
-                        <a href="#"><i class="fa fa-edit fa-fw"></i> <span>Admin</span> <i
-                                class="fa fa-angle-left pull-right"></i></a>
+                        <a href="#">
+                            <i class="fa fa-edit fa-fw"></i>&nbsp;<span>Admin</span><i class="fa fa-angle-left pull-right"></i>
+                        </a>
                         <ul class="treeview-menu">
                             <li>
-                                <a href="enable.php"><i
-                                        class="fa fa-child fa-fw"></i><span> Enable User Upload</span></a>
+                                <a href="enable.php">
+                                    <i class="fa fa-child fa-fw"></i><span> Enable User Upload</span>
+                                </a>
                             </li>
                             <li>
-                                <a href="admin.php"><i
-                                        class="fa fa-database fa-fw"></i><span> Database Allocation</span></a>
+                                <a href="admin.php">
+                                    <i class="fa fa-database fa-fw"></i><span> Database Allocation</span>
+                                </a>
                             </li>
                             <li>
-                                <a href="admin_manage.php"><i
-                                        class="fa fa-database fa-fw"></i><span> Database Management</span></a>
+                                <a href="admin_manage.php">
+                                    <i class="fa fa-database fa-fw"></i><span> Database Management</span>
+                                </a>
                             </li>
                             <li>
-                                <a href="admin_users.php"><i
-                                        class="fa fa-users fa-fw"></i><span> Set Administrators</span></a>
+                                <a href="admin_users.php">
+                                    <i class="fa fa-users fa-fw"></i><span> Set Administrators</span>
+                                </a>
                             </li>
                             <li>
-                                <a href="cache_manage.php"><i
-                                        class="fa fa-database fa-fw"></i><span> Cache Administration</span></a>
+                                <a href="cache_manage.php">
+                                    <i class="fa fa-database fa-fw"></i><span> Cache Administration</span>
+                                </a>
                             </li>
                         </ul>
                     </li>
                 {% endif %}
                 <li>
-                    <a href="{% url 'tutorial' %}"><i
-                            class="fa fa-question-circle fa-fw"></i><span> Tutorials</span></a>
+                    <a href="{% url 'tutorial' %}">
+                        <i class="fa fa-question-circle fa-fw"></i><span> Tutorials</span>
+                    </a>
                 <li>
                 <li>
-                    <a href="{% url 'minup' %}"><i class="fa fa-cloud-upload fa-fw"></i><span> minUp Scripts</span></a>
+                    <a href="{% url 'minup' %}">
+                        <i class="fa fa-cloud-upload fa-fw"></i><span> minUp Scripts</span>
+                    </a>
                 <li>
-                    <a href="{% url 'external-links' %}"><i class="fa fa-files-o fa-fw"></i><span> External Links</span></a>
+                    <a href="{% url 'external-links' %}">
+                        <i class="fa fa-files-o fa-fw"></i><span> External Links</span>
+                    </a>
                 </li>
                 <!-- /.nav-second-level -->
             </ul>
