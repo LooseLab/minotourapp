@@ -5,12 +5,13 @@ from celery.utils.log import get_task_logger
 from reads.models import MinIONRun, FastqReadType
 from reads.models import JobMaster
 from reads.models import FastqRead
-from reads.models import SamStore
+from alignment.models import SamStore
 from reads.models import ChannelSummary
 from reads.models import HistogramSummary
 from reads.models import Job
 from reads.models import UserOptions
 from reads.models import Barcode
+from alignment.models import PafStore
 from datetime import datetime, timedelta
 from django.db.models import Q
 import subprocess
@@ -60,6 +61,9 @@ def run_monitor():
             if str(run_job.job_name)=="Alignment" and run_job.running is False:
                 #print ("trying to run alignment")
                 run_alignment.delay(minion_run.id,run_job.id,run_job.var1,run_job.var2)
+            if str(run_job.job_name)=="Minimap2" and run_job.running is False:
+                #print ("trying to run alignment")
+                run_minimap2.delay(minion_run.id,run_job.id,run_job.var1,run_job.var2)
             if run_job.running is True:
                 #print ("{} is already running!".format(run_job.job_name) )
                 pass
@@ -243,7 +247,7 @@ def findbin(x,bin_width=900):
 @task()
 def proc_alignment(runid,id,reference,last_read):
     JobMaster.objects.filter(pk=id).update(running=True)
-    sams = SamStore.objects.filter(run_id=runid,id__gt=int(last_read))[:250]
+    sams = SamStore.objects.filter(run_id=runid,id__gt=int(last_read))[:1000]
     #fp = tempfile.TemporaryFile()
     fp = open('workfile', 'w')
     for sam in sams:
@@ -253,14 +257,14 @@ def proc_alignment(runid,id,reference,last_read):
         last_read=sam.id
     #print (fp.read())
     fp.close()
-    subprocess.run(["samtools", "faidx", "references/hep_ref.fasta"])
-    subprocess.run(["samtools", "view", "-bt", "references/hep_ref.fasta.fai", "workfile", "-o" ,"workfile.bam"])
+    #subprocess.run(["samtools", "faidx", "references/hep_ref.fasta"])
+    subprocess.run(["samtools", "view", "-bt", "/Volumes/BigElements/human_ref/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa.fai", "workfile", "-o" ,"workfile.bam"])
     #subprocess.run(["rm", "workfile"])
     subprocess.run(["samtools", "sort", "workfile.bam", "-o", "sort_workfile.bam"])
     #subprocess.run(["rm", "workfile.bam"])
     subprocess.run(["samtools", "index", "sort_workfile.bam"])
-    stdoutdata = subprocess.getoutput("pysamstats --type variation sort_workfile.bam  --fasta references/hep_ref.fasta")
-    print("stdoutdata:\r\n " + stdoutdata)
+    stdoutdata = subprocess.getoutput("pysamstats --type variation sort_workfile.bam  --fasta /Volumes/BigElements/human_ref/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa")
+    #print("stdoutdata:\r\n " + stdoutdata)
     #subprocess.run(["rm sort_workfile.bam"])
 
     """
@@ -276,13 +280,57 @@ def proc_alignment(runid,id,reference,last_read):
     JobMaster.objects.filter(pk=id).update(running=False,var2=last_read)
 
 @task()
+def run_minimap2(runid,id,reference,last_read):
+    JobMaster.objects.filter(pk=id).update(running=True)
+    fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:250]
+    read = ''
+    fastqdict=dict()
+    for fastq in fastqs:
+        #minimap2_ref = '/Volumes/BigElements/human_ref/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa.mmi'
+        minimap2_ref = '/Volumes/BigElements/References/Ecoli.mmi'
+        read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
+        fastqdict[fastq.read_id]=fastq
+        last_read = fastq.id
+    cmd = 'minimap2 -x map-ont -t 8 -N 0 %s -' % (minimap2_ref)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            stdin=subprocess.PIPE, shell=True)
+    (out, err) = proc.communicate(input=read.encode("utf-8"))
+    status = proc.wait()
+    paf = out.decode("utf-8")
+    pafdata = paf.splitlines()
+    runinstance = MinIONRun.objects.get(pk=runid)
+    for line in pafdata:
+        line = line.strip('\n')
+        record = line.split('\t')
+        #print(record)
+        #readid = FastqRead.objects.get(read_id=record[0])
+        readid=fastqdict[record[0]]
+        newpaf = PafStore(run=runinstance, read=readid)
+        newpaf.qsn = record[0] #models.CharField(max_length=256)#1	string	Query sequence name
+        newpaf.qsl = int(record[1]) #models.IntegerField()#2	int	Query sequence length
+        newpaf.qs  = int(record[2]) #models.IntegerField()#3	int	Query start (0-based)
+        newpaf.qe = int(record[3]) #models.IntegerField()#4	int	Query end (0-based)
+        newpaf.rs = record[4] #models.CharField(max_length=1)#5	char	Relative strand: "+" or "-"
+        newpaf.tsn = record[5] #models.CharField(max_length=256)#6	string	Target sequence name
+        newpaf.tsl = int(record[6]) #models.IntegerField()#7	int	Target sequence length
+        newpaf.ts = int(record[7]) #models.IntegerField()#8	int	Target start on original strand (0-based)
+        newpaf.te = int(record[8]) #models.IntegerField()#9	int	Target end on original strand (0-based)
+        newpaf.nrm = int(record[9]) #models.IntegerField()#10	int	Number of residue matches
+        newpaf.abl = int(record[10]) #models.IntegerField()#11	int	Alignment block length
+        newpaf.mq = int(record[11]) #models.IntegerField()#12	int	Mapping quality (0-255; 255 for missing)
+        newpaf.save()
+
+    JobMaster.objects.filter(pk=id).update(running=False, var2=last_read)
+
+@task()
 def run_alignment(runid,id,reference,last_read):
     JobMaster.objects.filter(pk=id).update(running=True)
-    print (runid,id,reference,last_read)
-    fastqs = FastqRead.objects.filter(run_id=runid,id__gt=int(last_read))[:250]
+    #print (runid,id,reference,last_read)
+    fastqs = FastqRead.objects.filter(run_id=runid,id__gt=int(last_read))[:1000]
     for fastq in fastqs:
         #print (fastq.sequence)
-        bwaindex = 'references/hep_ref.fasta'
+        bwaindex = 'Human'
         read = '>{} \r\n{}\r\n'.format(fastq,fastq.sequence)
         cmd = 'bwa mem -x ont2d %s -' % (bwaindex)
         #print (cmd)

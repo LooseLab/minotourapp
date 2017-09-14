@@ -711,41 +711,6 @@ class JobMaster(models.Model):
     def __str__(self):
         return "{} {}".format(self.run_id,self.job_name)
 
-##### Alignment Management
-
-
-##### This class replicates original minoTour design but perhaps it is better just to store the sam file as a single row? Lets try that
-"""
-class SamStore(models.Model):
-    run_id = models.ForeignKey(MinIONRun, related_name='runalignments')
-    read_id = models.ForeignKey(FastqRead, related_name='readalignment')
-    flag = models.IntegerField()
-    rname = models.CharField(max_length=512)
-    pos = models.BigIntegerField()
-    mapq = models.IntegerField()
-    cigar = models.TextField()
-    rnext = models.CharField(max_length=512)
-    pnext = models.IntegerField()
-    tlen = models.IntegerField()
-    seq = models.TextField()
-    qual = models.TextField()
-    nm = models.CharField(max_length=512)
-    md = models.TextField()
-    ass = models.CharField(max_length=512)
-    xs = models.CharField(max_length=512)
-
-    def __str__(self):
-        return "{} {}".format(self.run_id,self.read_id)
-
-"""
-
-class SamStore(models.Model):
-    run_id = models.ForeignKey(MinIONRun, related_name='runalignments')
-    read_id = models.ForeignKey(FastqRead, related_name='readalignment')
-    samline = models.TextField()
-
-    def __str__(self):
-        return "{} {}".format(self.run_id,self.read_id)
 
 
 @receiver(post_save, sender=MinIONRun)

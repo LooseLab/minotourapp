@@ -23,6 +23,9 @@ from reads.models import RunStatisticBarcode
 from reads.models import UserOptions
 
 
+
+
+
 class UserOptionsSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserOptions
@@ -101,6 +104,7 @@ class MinIONmessagesSerializer(serializers.HyperlinkedModelSerializer):
         model = MinIONmessages
         fields = ('minION', 'run_id', 'minKNOW_message', 'minKNOW_severity', 'minKNOW_message_timestamp', 'minKNOW_identifier',)
         read_only = ('id',)
+
 
 
 class MinIONControlSerializer(serializers.HyperlinkedModelSerializer):

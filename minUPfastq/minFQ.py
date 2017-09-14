@@ -203,9 +203,18 @@ class Runcollection():
             if self.readid[record.id]["ch"] not in self.timeid[tm]["chandict"]:
                 self.timeid[tm]["chandict"].append(self.readid[record.id]["ch"])
 
-            if "barcode" in self.readid[record.id].keys():
+            if "barcode" in self.readid[record.id].keys() or args.cust_barc=='oddeven':
 
-                barcode_local = self.readid[record.id]["barcode"]
+                if "barcode" in self.readid[record.id]:
+                    barcode_local = self.readid[record.id]["barcode"]
+                else:
+                    barcode_local = ""
+
+                if args.cust_barc=='oddeven':
+                    if int(self.readid[record.id]["ch"]) % 2 == 0:
+                        barcode_local = barcode_local + 'even'
+                    else:
+                        barcode_local = barcode_local + 'odd'
 
                 if barcode_local not in self.barcodes.keys():
 
@@ -491,6 +500,16 @@ if __name__ == '__main__':
         default='127.0.0.1',
         help='The run name you wish to provide.',
         dest='host_name',
+    )
+
+    parser.add(
+        '-c',
+        '--custom_barcode',
+        type=str,
+        required=False,
+        default=None,
+        help='Optionally split reads based on odd/even channel description. Not a standard option.',
+        dest='cust_barc'
     )
 
     args = parser.parse_args()

@@ -1813,10 +1813,11 @@ function MinotourApp() {
             self.requestSummaryData(self.id);
             self.requestHistogramData(self.id);
             self.requestChannelSummaryData(self.id);
+            self.requestRunDetails(self.id);
+            self.requestLiveRunStats(self.id);
         });
 
-        self.requestRunDetails(self.id);
-        self.requestLiveRunStats(self.id);
+
 
         //console.log(self);
 
