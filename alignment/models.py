@@ -7,6 +7,10 @@ from reads.models import FastqRead
 from reads.models import FastqReadType
 from reads.models import Barcode
 
+from reference.models import ReferenceLine
+from reference.models import ReferenceInfo
+
+
 # Create your models here.
 ##### Alignment Management
 
@@ -39,13 +43,15 @@ class SamStore(models.Model):
 class PafStore(models.Model):
     run = models.ForeignKey(MinIONRun, related_name='pafalignemnts')
     read = models.ForeignKey(FastqRead, related_name='pafreadalignment')
+    reference = models.ForeignKey(ReferenceInfo, related_name='pafstorereference')
     #PAF File Format:
     qsn = models.CharField(max_length=256)#1	string	Query sequence name
     qsl = models.IntegerField()#2	int	Query sequence length
     qs  = models.IntegerField()#3	int	Query start (0-based)
     qe = models.IntegerField()#4	int	Query end (0-based)
     rs = models.CharField(max_length=1)#5	char	Relative strand: "+" or "-"
-    tsn = models.CharField(max_length=256)#6	string	Target sequence name
+    #tsn = models.CharField(max_length=256)#6	string	Target sequence name
+    tsn = models.ForeignKey(ReferenceLine, related_name='pafstorechromosome')#6	string	Target sequence name
     tsl = models.IntegerField()#7	int	Target sequence length
     ts = models.IntegerField()#8	int	Target start on original strand (0-based)
     te = models.IntegerField()#9	int	Target end on original strand (0-based)
@@ -67,8 +73,10 @@ class SamStore(models.Model):
 class SamRoughCov(models.Model):
     run = models.ForeignKey(MinIONRun, related_name='rc_runid')
     read_type = models.ForeignKey(FastqReadType, related_name='rc_type')
-    reference = models.TextField() #should switch to a reference database
-    chromosome = models.TextField() #could be repeated of the reference name
+    #reference = models.TextField() #should switch to a reference database
+    reference = models.ForeignKey(ReferenceInfo, related_name='samreference')
+    #chromosome = models.TextField() #could be repeated of the reference name
+    chromosome = models.ForeignKey(ReferenceLine, related_name='samchromosome')
     position = models.IntegerField()
     incdel = models.IntegerField()
 
@@ -79,8 +87,10 @@ class PafRoughCov(models.Model):
     run = models.ForeignKey(MinIONRun, related_name='prc_run')
     read_type = models.ForeignKey(FastqReadType, related_name='prc_type')
     barcode = models.ForeignKey(Barcode, related_name='prc_barcode', null=True)
-    reference = models.TextField() #should switch to a reference database
-    chromosome = models.TextField() #could be repeat of the reference name
+    #reference = models.TextField() #should switch to a reference database
+    reference = models.ForeignKey(ReferenceInfo, related_name='pafreference')
+    #chromosome = models.TextField() #could be repeat of the reference name
+    chromosome = models.ForeignKey(ReferenceLine, related_name='pafchromosome')
     position = models.IntegerField()
     incdel = models.IntegerField(default=0)
 
@@ -94,7 +104,7 @@ def updatePafRoughCov(instance, sender, **kwargs):
         run=pafline.run,
         read_type=pafline.read.type,
         barcode=pafline.read.barcode,
-        reference=pafline.tsn,
+        reference=pafline.reference,
         chromosome=pafline.tsn,
         position=pafline.ts
     )

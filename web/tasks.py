@@ -11,6 +11,8 @@ from reads.models import HistogramSummary
 from reads.models import Job
 from reads.models import UserOptions
 from reads.models import Barcode
+from reference.models import ReferenceInfo
+from reference.models import ReferenceLine
 from alignment.models import PafStore
 from datetime import datetime, timedelta
 from django.db.models import Q
@@ -21,6 +23,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 import pytz
 from twitter import *
+import os
 
 logger = get_task_logger(__name__)
 
@@ -63,7 +66,7 @@ def run_monitor():
                 run_alignment.delay(minion_run.id,run_job.id,run_job.var1,run_job.var2)
             if str(run_job.job_name)=="Minimap2" and run_job.running is False:
                 #print ("trying to run alignment")
-                run_minimap2.delay(minion_run.id,run_job.id,run_job.var1,run_job.var2)
+                run_minimap2.delay(minion_run.id,run_job.id,run_job.var1.id,run_job.var2)
             if run_job.running is True:
                 #print ("{} is already running!".format(run_job.job_name) )
                 pass
@@ -280,14 +283,34 @@ def proc_alignment(runid,id,reference,last_read):
     JobMaster.objects.filter(pk=id).update(running=False,var2=last_read)
 
 @task()
+def test_task(string, reference):
+    REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
+    print (reference)
+    Reference = ReferenceInfo.objects.get(pk=reference)
+    print (type(Reference))
+    print (string, REFERENCELOCATION)
+    print (Reference)
+    print (Reference.minimap2_index_file_location)
+    lines = Reference.referencelines.all()
+    for line in lines:
+        print (line.id)
+
+@task()
 def run_minimap2(runid,id,reference,last_read):
     JobMaster.objects.filter(pk=id).update(running=True)
+    REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
+    Reference = ReferenceInfo.objects.get(pk=reference)
+    chromdict=dict()
+    chromosomes = Reference.referencelines.all()
+    for chromosome in chromosomes:
+        chromdict[chromosome.line_name]=chromosome
+    minimap2 = Reference.minimap2_index_file_location
+    minimap2_ref = os.path.join(REFERENCELOCATION, minimap2)
     fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:250]
     read = ''
     fastqdict=dict()
+
     for fastq in fastqs:
-        #minimap2_ref = '/Volumes/BigElements/human_ref/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa.mmi'
-        minimap2_ref = '/Volumes/BigElements/References/Ecoli.mmi'
         read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
         fastqdict[fastq.read_id]=fastq
         last_read = fastq.id
@@ -300,6 +323,7 @@ def run_minimap2(runid,id,reference,last_read):
     paf = out.decode("utf-8")
     pafdata = paf.splitlines()
     runinstance = MinIONRun.objects.get(pk=runid)
+
     for line in pafdata:
         line = line.strip('\n')
         record = line.split('\t')
@@ -307,12 +331,14 @@ def run_minimap2(runid,id,reference,last_read):
         #readid = FastqRead.objects.get(read_id=record[0])
         readid=fastqdict[record[0]]
         newpaf = PafStore(run=runinstance, read=readid)
+        newpaf.reference_id = ReferenceInfo.objects.get(pk=reference)
         newpaf.qsn = record[0] #models.CharField(max_length=256)#1	string	Query sequence name
         newpaf.qsl = int(record[1]) #models.IntegerField()#2	int	Query sequence length
         newpaf.qs  = int(record[2]) #models.IntegerField()#3	int	Query start (0-based)
         newpaf.qe = int(record[3]) #models.IntegerField()#4	int	Query end (0-based)
         newpaf.rs = record[4] #models.CharField(max_length=1)#5	char	Relative strand: "+" or "-"
-        newpaf.tsn = record[5] #models.CharField(max_length=256)#6	string	Target sequence name
+        #newpaf.tsn = record[5] #models.CharField(max_length=256)#6	string	Target sequence name
+        newpaf.tsn = chromdict[record[5]] #models.CharField(max_length=256)#6	string	Target sequence name
         newpaf.tsl = int(record[6]) #models.IntegerField()#7	int	Target sequence length
         newpaf.ts = int(record[7]) #models.IntegerField()#8	int	Target start on original strand (0-based)
         newpaf.te = int(record[8]) #models.IntegerField()#9	int	Target end on original strand (0-based)
@@ -322,6 +348,7 @@ def run_minimap2(runid,id,reference,last_read):
         newpaf.save()
 
     JobMaster.objects.filter(pk=id).update(running=False, var2=last_read)
+    
 
 @task()
 def run_alignment(runid,id,reference,last_read):

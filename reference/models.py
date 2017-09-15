@@ -16,7 +16,7 @@ class ReferenceInfo(models.Model):
         return "{} {}".format(self.reference_name, self.filename)
 
 class ReferenceLine(models.Model):
-    reference = models.ForeignKey(ReferenceInfo, related_name='referencelines')
+    reference = models.ForeignKey(ReferenceInfo, on_delete=models.CASCADE, related_name='referencelines')
     line_name = models.CharField(max_length=512)
     chromosome_length = models.BigIntegerField()
 

@@ -434,17 +434,31 @@ function MinotourApp() {
         * Add event listeners
         */
 
+
+
         document.getElementById("panel-live-data").style.display = "none";
-        document.getElementById("panel-run-summary-data").style.display = "none";
-        document.getElementById("panel-basecalled-data").style.display = "block";
+        document.getElementById("panel-summary-data").style.display = "block";
+        document.getElementById("panel-basecalled-data").style.display = "none";
+        document.getElementById("panel-seq-id").style.display = "none";
+        document.getElementById("panel-seq-map").style.display = "none";
+        document.getElementById("panel-tasks").style.display = "none";
+
 
         document.getElementById("run-summary-data").onclick = function (e) {
             document.getElementById("panel-basecalled-data").style.display = "none";
             document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
             document.getElementById("panel-live-data").style.display = "none";
             document.getElementById("nav-live-data").parentNode.classList.remove("active");
-            document.getElementById("panel-run-summary-data").style.display = "block";
+            document.getElementById("panel-summary-data").style.display = "block";
             document.getElementById("run-summary-data").parentNode.classList.add("active");
+            document.getElementById("panel-seq-id").style.display = "none";
+            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-map").style.display = "none";
+            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-tasks").style.display = "none";
+            document.getElementById("nav-tasks").parentNode.classList.remove("active");
+
+
         };
 
         document.getElementById("nav-live-data").onclick = function (e) {
@@ -452,8 +466,14 @@ function MinotourApp() {
             document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
             document.getElementById("panel-live-data").style.display = "block";
             document.getElementById("nav-live-data").parentNode.classList.add("active");
-            document.getElementById("panel-run-summary-data").style.display = "none";
+            document.getElementById("panel-summary-data").style.display = "none";
             document.getElementById("run-summary-data").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-id").style.display = "none";
+            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-map").style.display = "none";
+            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-tasks").style.display = "none";
+            document.getElementById("nav-tasks").parentNode.classList.remove("active");
         };
 
         document.getElementById("nav-basecalled-data").onclick = function (e) {
@@ -461,9 +481,62 @@ function MinotourApp() {
             document.getElementById("nav-basecalled-data").parentNode.classList.add("active");
             document.getElementById("panel-live-data").style.display = "none";
             document.getElementById("nav-live-data").parentNode.classList.remove("active");
-            document.getElementById("panel-run-summary-data").style.display = "none";
+            document.getElementById("panel-summary-data").style.display = "none";
             document.getElementById("run-summary-data").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-id").style.display = "none";
+            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-map").style.display = "none";
+            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-tasks").style.display = "none";
+            document.getElementById("nav-tasks").parentNode.classList.remove("active");
         };
+
+        document.getElementById("nav-seq-id").onclick = function (e) {
+            document.getElementById("panel-basecalled-data").style.display = "none";
+            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
+            document.getElementById("panel-live-data").style.display = "none";
+            document.getElementById("nav-live-data").parentNode.classList.remove("active");
+            document.getElementById("panel-summary-data").style.display = "none";
+            document.getElementById("run-summary-data").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-id").style.display = "block";
+            document.getElementById("nav-seq-id").parentNode.classList.add("active");
+            document.getElementById("panel-seq-map").style.display = "none";
+            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-tasks").style.display = "none";
+            document.getElementById("nav-tasks").parentNode.classList.remove("active");
+        };
+
+        document.getElementById("nav-seq-map").onclick = function (e) {
+            document.getElementById("panel-basecalled-data").style.display = "none";
+            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
+            document.getElementById("panel-live-data").style.display = "none";
+            document.getElementById("nav-live-data").parentNode.classList.remove("active");
+            document.getElementById("panel-summary-data").style.display = "none";
+            document.getElementById("run-summary-data").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-id").style.display = "none";
+            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-map").style.display = "block";
+            document.getElementById("nav-seq-map").parentNode.classList.add("active");
+            document.getElementById("panel-tasks").style.display = "none";
+            document.getElementById("nav-tasks").parentNode.classList.remove("active");
+        };
+
+        document.getElementById("nav-tasks").onclick = function (e) {
+            document.getElementById("panel-basecalled-data").style.display = "none";
+            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
+            document.getElementById("panel-live-data").style.display = "none";
+            document.getElementById("nav-live-data").parentNode.classList.remove("active");
+            document.getElementById("panel-summary-data").style.display = "none";
+            document.getElementById("run-summary-data").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-id").style.display = "none";
+            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-map").style.display = "none";
+            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-tasks").style.display = "block";
+            document.getElementById("nav-tasks").parentNode.classList.add("active");
+        };
+
+
 
         this.PoreShizzle = this.makeAreaPlot(
             'poreshizzle',
