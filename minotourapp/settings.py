@@ -212,4 +212,9 @@ TWITCONSUMER_KEY=get_env_variable("MT_twitconsumer_key")
 TWITCONSUMER_SECRET=get_env_variable("MT_twitconsumer_secret")
 
 
+# Variables for storing additonal files
+# References
+REFERENCELOCATION = get_env_variable("Reference_Location")
+
+
 

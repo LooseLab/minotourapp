@@ -5,6 +5,7 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
+from reference.models import ReferenceInfo
 
 
 class MinION(models.Model):
@@ -694,6 +695,7 @@ class MinIONmessages(models.Model):
 
 class Job(models.Model):
     jobname = models.CharField(max_length=256)
+    private = models.BooleanField(default=True)
 
     def __str__(self):
         return "{}".format(self.jobname)
@@ -701,7 +703,8 @@ class Job(models.Model):
 class JobMaster(models.Model):
     run_id = models.ForeignKey(MinIONRun, related_name='runjobs')
     job_name = models.ForeignKey(Job, related_name='taskname')
-    var1 = models.CharField(max_length=256,blank=True, null=True)
+    #var1 = models.CharField(max_length=256,blank=True, null=True)
+    var1 = models.ForeignKey(ReferenceInfo, related_name='referencejob', null=True)
     var2 = models.CharField(max_length=256,blank=True, null=True)
     var3 = models.CharField(max_length=256,blank=True, null=True)
     complete = models.BooleanField(default=False)
