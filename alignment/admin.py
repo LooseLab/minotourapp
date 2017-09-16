@@ -4,6 +4,7 @@ from django.contrib import admin
 from .models import SamStore
 from .models import PafStore
 from .models import PafRoughCov
+from .models import PafSummaryCov
 
 class SamStoreAdmin(admin.ModelAdmin):
     list_display = ('run_id',)
@@ -15,3 +16,4 @@ class SamStoreAdmin(admin.ModelAdmin):
 admin.site.register(SamStore, SamStoreAdmin)
 admin.site.register(PafStore)
 admin.site.register(PafRoughCov)
+admin.site.register(PafSummaryCov)

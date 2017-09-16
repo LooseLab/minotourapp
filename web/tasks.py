@@ -15,6 +15,7 @@ from reference.models import ReferenceInfo
 from reference.models import ReferenceLine
 from alignment.models import PafStore
 from alignment.models import PafRoughCov
+from alignment.models import PafSummaryCov
 from datetime import datetime, timedelta
 from django.db.models import Q
 import subprocess
@@ -310,10 +311,12 @@ def run_minimap2(runid,id,reference,last_read):
     fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:1000]
     read = ''
     fastqdict=dict()
+    fastqtypedict=dict()
 
     for fastq in fastqs:
         read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
         fastqdict[fastq.read_id]=fastq
+        fastqtypedict[fastq.read_id]=fastq.type
         last_read = fastq.id
     cmd = 'minimap2 -x map-ont -t 8 -N 0 %s -' % (minimap2_ref)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
@@ -325,13 +328,16 @@ def run_minimap2(runid,id,reference,last_read):
     pafdata = paf.splitlines()
     runinstance = MinIONRun.objects.get(pk=runid)
 
+    resultstore=dict()
+
     for line in pafdata:
         line = line.strip('\n')
         record = line.split('\t')
         #print(record)
         #readid = FastqRead.objects.get(read_id=record[0])
         readid=fastqdict[record[0]]
-        newpaf = PafStore(run=runinstance, read=readid)
+        typeid=fastqtypedict[record[0]]
+        newpaf = PafStore(run=runinstance, read=readid, read_type=typeid)
         newpaf.reference = Reference
         newpaf.qsn = record[0] #models.CharField(max_length=256)#1	string	Query sequence name
         newpaf.qsl = int(record[1]) #models.IntegerField()#2	int	Query sequence length
@@ -347,6 +353,35 @@ def run_minimap2(runid,id,reference,last_read):
         newpaf.abl = int(record[10]) #models.IntegerField()#11	int	Alignment block length
         newpaf.mq = int(record[11]) #models.IntegerField()#12	int	Mapping quality (0-255; 255 for missing)
         newpaf.save()
+        if Reference not in resultstore:
+            resultstore[Reference]=dict()
+        if chromdict[record[5]] not in resultstore[Reference]:
+            resultstore[Reference][chromdict[record[5]]]=dict()
+        if readid.barcode not in resultstore[Reference][chromdict[record[5]]]:
+            resultstore[Reference][chromdict[record[5]]][readid.barcode]=dict()
+        if typeid not in resultstore[Reference][chromdict[record[5]]][readid.barcode]:
+            resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]=dict()
+        if 'read' not in resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]:
+            resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['read']=set()
+            resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['length']=0
+        resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['read'].add(record[0])
+        resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['length']+=int(record[3])-int(record[2])+1
+
+    for ref in resultstore:
+        for ch in resultstore[ref]:
+            for bc in resultstore[ref][ch]:
+                for ty in resultstore[ref][ch][bc]:
+                    #print (ref,ch,bc,ty,len(resultstore[ref][ch][bc][ty]['read']),resultstore[ref][ch][bc][ty]['length'])
+                    summarycov, created2 = PafSummaryCov.objects.update_or_create(
+                        run=runinstance,
+                        read_type=ty,
+                        barcode=bc,
+                        reference=ref,
+                        chromosome=ch,
+                    )
+                    summarycov.read_count += len(resultstore[ref][ch][bc][ty]['read'])
+                    summarycov.cumu_length += resultstore[ref][ch][bc][ty]['length']
+                    summarycov.save()
 
     JobMaster.objects.filter(pk=id).update(running=False, var2=last_read)
 

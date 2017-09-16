@@ -21,8 +21,8 @@ class PafRoughCovSerializer(serializers.HyperlinkedModelSerializer):
             'barcode',
             'reference',
             'chromosome',
-            'p',
-            'i',
+            #'p',
+            #'i',
         )
         read_only = (
             'id',

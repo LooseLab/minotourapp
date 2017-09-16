@@ -46,6 +46,7 @@ class PafStore(models.Model):
     run = models.ForeignKey(MinIONRun, related_name='pafalignemnts')
     read = models.ForeignKey(FastqRead, related_name='pafreadalignment')
     reference = models.ForeignKey(ReferenceInfo, related_name='pafstorereference')
+    read_type = models.ForeignKey(FastqReadType, related_name='pafstoretype')
     #PAF File Format:
     qsn = models.CharField(max_length=256)#1	string	Query sequence name
     qsl = models.IntegerField()#2	int	Query sequence length
@@ -97,7 +98,19 @@ class PafRoughCov(models.Model):
     i = models.IntegerField(default=0) #incdel
 
     def __str__(self):
-        return "{} {}".format(self.run,self.position)
+        return "{} {}".format(self.run,self.p)
+
+class PafSummaryCov(models.Model):
+    run = models.ForeignKey(MinIONRun, related_name='paf_summary')
+    read_type = models.ForeignKey(FastqReadType, related_name='paf_summary_type')
+    barcode = models.ForeignKey(Barcode, related_name='paf_summary_barcode', null=True)
+    reference = models.ForeignKey(ReferenceInfo,related_name='paf_summary_reference')
+    chromosome = models.ForeignKey(ReferenceLine, related_name='paf_summary_chromosome')
+    read_count = models.BigIntegerField(default=0)
+    cumu_length = models.BigIntegerField(default=0)
+
+    def __str__(self):
+        return "{} {} {}".format(self.run,self.reference,self.chromosome)
 
 @receiver(post_save, sender=PafStore)
 def updatePafRoughCov(instance, sender, **kwargs):
@@ -110,7 +123,7 @@ def updatePafRoughCov(instance, sender, **kwargs):
         chromosome=pafline.tsn,
         p=pafline.ts #position
     )
-    pafstart.incdel+=1
+    pafstart.i+=1
     pafstart.save()
     pafend, created2 = PafRoughCov.objects.update_or_create(
         run=pafline.run,
@@ -120,7 +133,7 @@ def updatePafRoughCov(instance, sender, **kwargs):
         chromosome=pafline.tsn,
         p=(pafline.te)+1 #position
     )
-    pafend.incdel -= 1
+    pafend.i -= 1
     pafend.save()
 
 
