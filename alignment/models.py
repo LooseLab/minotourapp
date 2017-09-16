@@ -114,7 +114,7 @@ def updatePafRoughCov(instance, sender, **kwargs):
         run=pafline.run,
         read_type=pafline.read.type,
         barcode=pafline.read.barcode,
-        reference=pafline.tsn,
+        reference=pafline.reference,
         chromosome=pafline.tsn,
         position=(pafline.te)+1
     )

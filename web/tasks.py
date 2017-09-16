@@ -306,7 +306,7 @@ def run_minimap2(runid,id,reference,last_read):
         chromdict[chromosome.line_name]=chromosome
     minimap2 = Reference.minimap2_index_file_location
     minimap2_ref = os.path.join(REFERENCELOCATION, minimap2)
-    fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:250]
+    fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:1000]
     read = ''
     fastqdict=dict()
 
@@ -331,7 +331,7 @@ def run_minimap2(runid,id,reference,last_read):
         #readid = FastqRead.objects.get(read_id=record[0])
         readid=fastqdict[record[0]]
         newpaf = PafStore(run=runinstance, read=readid)
-        newpaf.reference_id = ReferenceInfo.objects.get(pk=reference)
+        newpaf.reference = Reference
         newpaf.qsn = record[0] #models.CharField(max_length=256)#1	string	Query sequence name
         newpaf.qsl = int(record[1]) #models.IntegerField()#2	int	Query sequence length
         newpaf.qs  = int(record[2]) #models.IntegerField()#3	int	Query start (0-based)
@@ -348,7 +348,7 @@ def run_minimap2(runid,id,reference,last_read):
         newpaf.save()
 
     JobMaster.objects.filter(pk=id).update(running=False, var2=last_read)
-    
+
 
 @task()
 def run_alignment(runid,id,reference,last_read):
