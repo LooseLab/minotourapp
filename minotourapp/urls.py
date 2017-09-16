@@ -18,6 +18,7 @@ urlpatterns = [
     url(r'^web/', include('web.urls')),
     url(r'^', include('reads.urls')),
     url(r'^', include('alignment.urls')),
+    url(r'^', include('reference.urls')),
     url(r'^$', auth_views.LoginView.as_view(template_name="registration/login.html")),
     url(r'^api-token-auth/', tok_views.obtain_auth_token),
 #    url('^inbox/notifications/', include(notifications.urls, namespace='notifications')),

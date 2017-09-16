@@ -14,6 +14,7 @@ from reads.models import Barcode
 from reference.models import ReferenceInfo
 from reference.models import ReferenceLine
 from alignment.models import PafStore
+from alignment.models import PafRoughCov
 from datetime import datetime, timedelta
 from django.db.models import Q
 import subprocess

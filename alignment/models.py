@@ -1,14 +1,16 @@
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.conf import settings
 
 from reads.models import MinIONRun
 from reads.models import FastqRead
 from reads.models import FastqReadType
 from reads.models import Barcode
 
-from reference.models import ReferenceLine
 from reference.models import ReferenceInfo
+from reference.models import ReferenceLine
+
 
 
 # Create your models here.
@@ -77,8 +79,8 @@ class SamRoughCov(models.Model):
     reference = models.ForeignKey(ReferenceInfo, related_name='samreference')
     #chromosome = models.TextField() #could be repeated of the reference name
     chromosome = models.ForeignKey(ReferenceLine, related_name='samchromosome')
-    position = models.IntegerField()
-    incdel = models.IntegerField()
+    p = models.IntegerField() #position
+    i = models.IntegerField() #incdel
 
     def __str__(self):
         return "{} {}".format(self.run,self.read_type)
@@ -91,8 +93,8 @@ class PafRoughCov(models.Model):
     reference = models.ForeignKey(ReferenceInfo, related_name='pafreference')
     #chromosome = models.TextField() #could be repeat of the reference name
     chromosome = models.ForeignKey(ReferenceLine, related_name='pafchromosome')
-    position = models.IntegerField()
-    incdel = models.IntegerField(default=0)
+    p = models.IntegerField() #position
+    i = models.IntegerField(default=0) #incdel
 
     def __str__(self):
         return "{} {}".format(self.run,self.position)
@@ -106,7 +108,7 @@ def updatePafRoughCov(instance, sender, **kwargs):
         barcode=pafline.read.barcode,
         reference=pafline.reference,
         chromosome=pafline.tsn,
-        position=pafline.ts
+        p=pafline.ts #position
     )
     pafstart.incdel+=1
     pafstart.save()
@@ -116,7 +118,7 @@ def updatePafRoughCov(instance, sender, **kwargs):
         barcode=pafline.read.barcode,
         reference=pafline.reference,
         chromosome=pafline.tsn,
-        position=(pafline.te)+1
+        p=(pafline.te)+1 #position
     )
     pafend.incdel -= 1
     pafend.save()
