@@ -43,3 +43,24 @@ class PafRoughCovChromSerializer(serializers.HyperlinkedModelSerializer):
         read_only = (
             'id',
         )
+
+class PafRoughCovChromSerializerCount(serializers.HyperlinkedModelSerializer):
+    sumcount = serializers.IntegerField()
+    reference = serializers.IntegerField()
+
+    class Meta:
+        model = PafRoughCov
+        fields = (
+            #'id',
+            #'run',
+            #'barcode',
+            'reference',
+            #'chromosome',
+            #'p',
+            #'i',
+            'sumcount',
+
+        )
+        read_only = (
+            'id',
+        )
