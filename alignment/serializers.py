@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from alignment.models import PafStore
 from alignment.models import PafRoughCov
+from alignment.models import PafSummaryCov
 
 from reference.models import ReferenceLine
 from reference.models import ReferenceInfo
@@ -23,6 +24,23 @@ class PafRoughCovSerializer(serializers.HyperlinkedModelSerializer):
             'chromosome',
             #'p',
             #'i',
+        )
+        read_only = (
+            'id',
+        )
+
+class PafSummaryCovSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = PafSummaryCov
+        fields = (
+            'id',
+            'run',
+            'read_type',
+            'barcode',
+            'reference',
+            'chromosome',
+            'read_count',
+            'cumu_length',
         )
         read_only = (
             'id',

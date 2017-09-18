@@ -8,9 +8,11 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from alignment.models import PafRoughCov
+from alignment.models import PafSummaryCov
 from alignment.serializers import PafRoughCovSerializer
 from alignment.serializers import PafRoughCovChromSerializer
 from alignment.serializers import PafRoughCovChromSerializerCount
+from alignment.serializers import PafSummaryCovSerializer
 
 from reference.models import ReferenceInfo
 from reference.models import ReferenceLine
@@ -30,6 +32,24 @@ def paf_alignment_list(request, pk):#,bc,ch):
             #.filter(run__id=pk,barcode=bc,chromosome=ch)
 
         serializer = PafRoughCovSerializer(queryset, many=True, context={'request': request})
+
+        return Response(serializer.data)
+
+@api_view(['GET'])
+def paf_alignment_summary(request, pk):#,bc,ch):
+    """
+
+    :param request:
+    :param pk:
+    :return:
+    """
+    if request.method == 'GET':
+        queryset = PafSummaryCov.objects \
+            .filter(run__owner=request.user) \
+            .filter(run__id=pk)
+            #.filter(run__id=pk,barcode=bc,chromosome=ch)
+
+        serializer = PafSummaryCovSerializer(queryset, many=True, context={'request': request})
 
         return Response(serializer.data)
 
