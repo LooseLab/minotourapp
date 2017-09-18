@@ -34,7 +34,7 @@ def paf_alignment_list(request, pk):#,bc,ch):
         return Response(serializer.data)
 
 @api_view(['GET'])
-def paf_test(request, pk,bc,ch,ty):
+def paf_test(request, pk,bc,ch,ty,po,ln):
     """
 
     :param request:
@@ -48,7 +48,7 @@ def paf_test(request, pk,bc,ch,ty):
             .filter(barcode__id=bc) \
             .filter(chromosome__id=ch) \
             .filter(read_type__id=ty) \
-            .filter(p__lte=80000).values('reference').annotate(sumcount=Sum('i'))
+            .filter(p__lte=po).values('reference').annotate(sumcount=Sum('i'))
         # .filter(run__id=pk,barcode=bc,chromosome=ch)
 
         #serializer = PafRoughCovSerializer(queryset, many=True, context={'request': request})
@@ -63,7 +63,8 @@ def paf_test(request, pk,bc,ch,ty):
             .filter(barcode__id=bc) \
             .filter(chromosome__id=ch) \
             .filter(read_type__id=ty) \
-            .filter(p__gt=80000) \
+            .filter(p__gt=po)\
+            .filter(p__lt=(po+ln))\
             .order_by('p')
 
         serializer2 = PafRoughCovChromSerializer(queryset2, many=True, context={'request': request})
