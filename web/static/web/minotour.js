@@ -1257,7 +1257,10 @@ function MinotourApp() {
             totalyield = totalyield + parseInt(self.summary['All reads'][readtype]['yield']['data']);
             readcount = readcount + parseInt(self.summary['All reads'][readtype]['read_count']['data']);
         }
-        self.livedata.scalingfactor = (totalyield / readcount) / (self.livedata.yield_history[self.livedata.yield_history.length - 1][1] / self.livedata.live_read_count);
+        console.log(self.livedata.yield_history);
+        if (self.livedata.yield_history.length > 1) {
+            self.livedata.scalingfactor = (totalyield / readcount) / (self.livedata.yield_history[self.livedata.yield_history.length - 1][1] / self.livedata.live_read_count);
+        }
     };
 
     this.requestSummaryData = function (id) {
@@ -1684,6 +1687,24 @@ function MinotourApp() {
         })
     }
 
+    this.requestPafData = function(id) {
+        var pafurl = '/api/v1/runs/' + id + '/pafsummary/';
+        $.get(pafurl, function (data){
+            console.log(data);
+            if (data.length <1 ) {
+                document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+                document.getElementById("nav-seq-map").style.display = "none";
+                document.getElementById("panel-tasks").style.display = "none";
+            } else{
+                //document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+                document.getElementById("nav-seq-map").style.display = "block";
+                //document.getElementById("panel-tasks").style.display = "none";
+                console.log('hello');
+            }
+
+        })
+    }
+
     this.requestLiveRunStats = function (id) {
         //console.log('lastread ' + this.lastread);
         var url_livestats = '/api/v1/runs/' + id + '/runstats/' + this.lastread;
@@ -1764,6 +1785,7 @@ function MinotourApp() {
             self.requestChannelSummaryData(self.id);
             self.requestRunDetails(self.id);
             self.requestLiveRunStats(self.id);
+            self.requestPafData(self.id);
         });
 
 

@@ -109,6 +109,55 @@ class PafSummaryCov(models.Model):
     read_count = models.BigIntegerField(default=0)
     cumu_length = models.BigIntegerField(default=0)
 
+    def barcode_name(self):
+        try:
+            return self.barcode.name
+        except AttributeError:
+            return "undefined"
+
+    def read_type_name(self):
+        try:
+            return self.read_type.name
+        except AttributeError:
+            return "undefined"
+
+    def ref_name(self):
+        try:
+            return self.reference.reference_name
+        except AttributeError:
+            return "undefined"
+
+    def ref_len(self):
+        try:
+            return self.reference.totalrefleN
+        except AttributeError:
+            return "undefined"
+
+    def chrom_name(self):
+        try:
+            return self.chromosome.line_name
+        except AttributeError:
+            return "undefined"
+
+    def chrom_len(self):
+        try:
+            return self.chromosome.chromosome_length
+        except AttributeError:
+            return "undefined"
+
+    def chrom_cover(self):
+        try:
+            return (self.cumu_length/self.chrom_len())
+        except AttributeError:
+            return "undefined"
+
+    def avg_read_len(self):
+        try:
+            return (self.cumu_length/self.read_count)
+        except AttributeError:
+            return "undefined"
+
+
     def __str__(self):
         return "{} {} {}".format(self.run,self.reference,self.chromosome)
 

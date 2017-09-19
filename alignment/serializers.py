@@ -38,9 +38,17 @@ class PafSummaryCovSerializer(serializers.HyperlinkedModelSerializer):
             'read_type',
             'barcode',
             'reference',
+            'ref_name',
+            'ref_len',
             'chromosome',
+            'chrom_name',
+            'chrom_len',
             'read_count',
             'cumu_length',
+            'chrom_cover',
+            'avg_read_len',
+            'read_type_name',
+            'barcode_name'
         )
         read_only = (
             'id',

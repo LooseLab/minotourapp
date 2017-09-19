@@ -67,7 +67,7 @@ def run_monitor():
                 #print ("trying to run alignment")
                 run_alignment.delay(minion_run.id,run_job.id,run_job.var1,run_job.var2)
             if str(run_job.job_name)=="Minimap2" and run_job.running is False:
-                #print ("trying to run alignment")
+                print ("trying to run alignment")
                 run_minimap2.delay(minion_run.id,run_job.id,run_job.var1.id,run_job.var2)
             if run_job.running is True:
                 #print ("{} is already running!".format(run_job.job_name) )
