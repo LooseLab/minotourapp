@@ -17,7 +17,7 @@ urlpatterns = [
         name="minionrun-detail"
     ),
     url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/reads/$',
+        r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<page>[0-9]+)/$',
         views.read_list,
         name="fastqread-list"
     ),

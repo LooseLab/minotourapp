@@ -411,6 +411,11 @@ function MinotourApp() {
     this.livedata.colours_string = null;
     this.livedata.scalingfactor = 0;
 
+    this.chart_per_chrom_cov = null;
+
+    this.coveragedata = new Array();
+    this.coveragedata.read_type = new Array();
+
     this.makeChart = makeChart;
     this.makeChart2 = makeChart2;
     this.makeLiveHistogram = makeLiveHistogram;
@@ -548,6 +553,23 @@ function MinotourApp() {
             "reads-called",
             "reads called".toUpperCase(),
             "number of reads called".toUpperCase()
+        );
+
+        this.chart_per_chrom_cov = this.makeChart(
+            "per-chrom-cov",
+            "Chromosome Coverage".toUpperCase(),
+            "Chromosome Coverage".toUpperCase()
+        );
+        this.chart_per_chrom_cov_norm = this.makeChart(
+            "per-chrom-cov-norm",
+            "Chromosome Coverage (Normalised)".toUpperCase(),
+            "Chromosome Coverage (Normalised)".toUpperCase()
+        );
+
+        this.chart_per_chrom_avg = this.makeChart(
+            "per-chrom-avg",
+            "Read Length By Chromosome".toUpperCase(),
+            "Read Length By Chromosome".toUpperCase()
         );
 
         this.chart_yield = this.makeChart(
@@ -740,6 +762,43 @@ function MinotourApp() {
             li.appendChild(a);
             ul.appendChild(li);
         }
+    };
+
+    this.updateCoverageBasedCharts = function(chart,field) {
+        var summarycoverage = this.summarycoverage;
+        var series = [];
+        var categories=[];
+        for (var barcode of Object.keys(summarycoverage)) {
+//            console.log(summarycoverage[barcode]);
+            data = [];
+            for (var readtype of Object.keys(summarycoverage[barcode])) {
+
+                for (var chromosome of Object.keys(summarycoverage[barcode][readtype])) {
+                    categories.push(chromosome);
+//                    console.log(summarycoverage[barcode][readtype][chromosome]['coverage']["data"]);
+                    data.push(summarycoverage[barcode][readtype][chromosome][field]["data"]);
+                }
+            }
+            serie = {
+                "name": barcode + ' ' + readtype,
+                "data": data
+            };
+            series.push(serie);
+        };
+        chart.xAxis[0].setCategories(categories);
+        var chartSeriesLength = (chart.series ? chart.series.length : 0);
+        for (var i = 0; i < series.length; i++) {
+            if (i <= (chartSeriesLength - 1)) {
+                chart.series[i].setData(series[i].data);
+                chart.series[i].update({
+                    name: series[i].name
+                });
+            } else {
+                chart.addSeries(series[i]);
+            }
+        }
+
+
     };
 
     this.updateReadsColumnBasedChart = function (chart, field) {
@@ -1690,7 +1749,7 @@ function MinotourApp() {
     this.requestPafData = function(id) {
         var pafurl = '/api/v1/runs/' + id + '/pafsummary/';
         $.get(pafurl, function (data){
-            console.log(data);
+            //console.log(data);
             if (data.length <1 ) {
                 document.getElementById("nav-seq-map").parentNode.classList.remove("active");
                 document.getElementById("nav-seq-map").style.display = "none";
@@ -1699,7 +1758,46 @@ function MinotourApp() {
                 //document.getElementById("nav-seq-map").parentNode.classList.remove("active");
                 document.getElementById("nav-seq-map").style.display = "block";
                 //document.getElementById("panel-tasks").style.display = "none";
-                console.log('hello');
+                //document.getElementById('mapping-data').innerHTML = JSON.stringify(data);
+                //console.log('hello');
+                summarycoverage={};
+                for (var i = 0; i < data.length; i++) {
+                    //console.log(data[i].chrom_name);
+                    if (summarycoverage[data[i].barcode_name]===undefined) {
+                        summarycoverage[data[i].barcode_name] = {};
+                    }
+                    if (summarycoverage[data[i].barcode_name][data[i].read_type_name]===undefined) {
+                        summarycoverage[data[i].barcode_name][data[i].read_type_name] = {};
+                    }
+                    if (summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].chrom_name]===undefined) {
+                       summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].chrom_name] = {};
+                    }
+                    summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].chrom_name]["coverage"] = {
+                        "name": "coverage",
+                        "data": [data[i].chrom_cover],
+                        "animation": false
+                    };
+                    summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].chrom_name]["ave_read_len"] = {
+                        "name": "Average Read Length",
+                        "data": [data[i].avg_read_len],
+                        "animation": false
+                    };
+                    var norm_cov = data[i].chrom_cover*(data[i].chrom_len/data[i].ref_len);
+                    console.log(norm_cov);
+                    summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].chrom_name]["coverage-norm"] = {
+                        "name": "coverage-norm",
+                        "data": norm_cov,
+                        "animation": false
+                    };
+                    //console.log(data[i]);
+                    //self.coveragedata.read_type.push([data[i].read_type_name])
+                }
+                //console.log('summary coverage');
+                //console.log(summarycoverage);
+                self.summarycoverage = summarycoverage;
+                self.updateCoverageBasedCharts(self.chart_per_chrom_cov,"coverage");
+                self.updateCoverageBasedCharts(self.chart_per_chrom_cov_norm,"coverage-norm");
+                self.updateCoverageBasedCharts(self.chart_per_chrom_avg,"ave_read_len");
             }
 
         })
@@ -1790,7 +1888,7 @@ function MinotourApp() {
 
 
 
-        //console.log(self);
+        console.log(self);
 
     };
 

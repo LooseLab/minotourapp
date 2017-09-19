@@ -147,13 +147,13 @@ class PafSummaryCov(models.Model):
 
     def chrom_cover(self):
         try:
-            return (self.cumu_length/self.chrom_len())
+            return (round(self.cumu_length/self.chrom_len(),3))
         except AttributeError:
             return "undefined"
 
     def avg_read_len(self):
         try:
-            return (self.cumu_length/self.read_count)
+            return (round(self.cumu_length/self.read_count,3))
         except AttributeError:
             return "undefined"
 
