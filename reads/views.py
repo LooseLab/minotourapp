@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+#from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from reads.models import Barcode, ChannelSummary
 from reads.models import FastqRead
@@ -504,25 +504,26 @@ def minION_scripts_detail(request, pk, nk):
 
 
 @api_view(['GET', 'POST'])
-def read_list(request, pk,page):
+#def read_list(request, pk,page):
+def read_list(request, pk):
     """
     List of all runs by user, or create a new run.
     """
     if request.method == 'GET':
-        querysets = FastqRead.objects.filter(run_id=pk).order_by('read_id')
-        paginator = Paginator(querysets, 25)  # Show 25 contacts per page
+        querysets = FastqRead.objects.filter(run_id=pk)
+        #paginator = Paginator(querysets, 25)  # Show 25 contacts per page
         #page = page
-        print (paginator.count,paginator.num_pages)
-        try:
-            queryset = paginator.page(page)
-        except PageNotAnInteger:
+        #print (paginator.count,paginator.num_pages)
+        #try:
+        #    queryset = paginator.page(page)
+        #except PageNotAnInteger:
             # If page is not an integer, deliver first page.
-            queryset = paginator.page(1)
-        except EmptyPage:
+        #    queryset = paginator.page(1)
+        #except EmptyPage:
             # If page is out of range (e.g. 9999), deliver last page of results.
-            queryset = paginator.page(paginator.num_pages)
+        #    queryset = paginator.page(paginator.num_pages)
 
-        serializer = FastqReadSerializer(queryset, many=True, context={'request': request})
+        serializer = FastqReadSerializer(querysets, many=True, context={'request': request})
         return Response(serializer.data)
 
     elif request.method == 'POST':
