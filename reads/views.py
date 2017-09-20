@@ -4,6 +4,7 @@ from django.utils import timezone
 from dateutil import parser
 from django.db.models import Q
 from django.http import HttpResponse
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -47,6 +48,7 @@ from reads.serializers import MinIONmessagesSerializer
 from reads.serializers import RunHistogramSummarySerializer
 from reads.serializers import RunSummarySerializer
 
+from minotourapp import settings
 
 @api_view(['GET'])
 def read_type_list(request):
@@ -585,11 +587,27 @@ def readname_list(request, pk):
     TODO describe function
     """
     if request.method == 'GET':
-        queryset = FastqRead.objects.filter(run_id=pk)
-        result = set()
-        for key in queryset:
-            result.add(key.read_id)
-        return HttpResponse(json.dumps(list(result)), content_type="application/json")
+        queryset = FastqRead.objects.filter(run_id=pk).order_by('id')
+
+        paginator = Paginator(queryset, settings.PAGINATION_PAGE_SIZE)
+
+        page = request.GET.get('page')
+
+        try:
+            result = paginator.page(page)
+        except PageNotAnInteger:
+            result = paginator.page(1)
+        except EmptyPage:
+            result = paginator.page(paginator.num_pages)
+
+        result2 = set()
+        for key in result:
+            result2.add(key.read_id)
+
+        result3 = {}
+        result3['number_pages'] = paginator.num_pages
+        result3['data'] = list(result2)
+        return HttpResponse(json.dumps(result3), content_type="application/json")
 
 
 @api_view(['GET'])
@@ -763,5 +781,3 @@ def minION_liverun_list(request,pk):
     TODO describe function
     """
     return None
-
-

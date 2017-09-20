@@ -26,6 +26,11 @@ from django.conf import settings
 import pytz
 from twitter import *
 import os
+import redis
+import json
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+
 
 logger = get_task_logger(__name__)
 
@@ -437,3 +442,35 @@ def run_alignment(runid,id,reference,last_read):
                     last_read=fastq.id
                     #print (last_read)
     JobMaster.objects.filter(pk=id).update(running=False,var2=last_read)
+
+@task
+def updateReadNamesOnRedis():
+    print ('>>> running updateReadNamesOnRedis')
+    r = redis.StrictRedis(host='localhost', port=6379, db=0)
+
+    runs = MinIONRun.objects.all()
+
+    for run in runs:
+        print ('>>> run: {}'.format(run.id))
+
+        reads = FastqRead.objects.filter(run_id=run).order_by('id')
+
+        paginator = Paginator(reads, 25)
+
+        key = 'run.{}.reads.number_pages'.format(run.id)
+
+        r.set(key, paginator.num_pages)
+
+        for page in range(1, paginator.num_pages + 1):
+            print ('>>> run {}, page {} of {}'.format(run.id, page, paginator.num_pages))
+
+            key = 'run.{}.reads.page.{}'.format(run.id, page)
+
+            result = paginator.page(page)
+
+            result2 = set()
+
+            for key in result:
+                result2.add(key.read_id)
+
+            r.set(key, json.dumps(list(result2)))
