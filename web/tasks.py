@@ -29,8 +29,7 @@ import os
 import redis
 import json
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
-
+from django.core.mail import send_mail
 
 logger = get_task_logger(__name__)
 
@@ -474,3 +473,18 @@ def updateReadNamesOnRedis():
                 result2.add(key.read_id)
 
             r.set(key, json.dumps(list(result2)))
+
+
+@task
+def sendmessages():
+    print ('>>> sending emails')
+
+    now = datetime.now()
+
+    send_mail(
+        'Django Test',
+        'Sending from minotour - {}.'.format(now),
+        'roberto@geodev.com.br',
+        ['py5gol@gmail.com'],
+        fail_silently=False,
+    )
