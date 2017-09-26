@@ -2,6 +2,7 @@ from __future__ import absolute_import, unicode_literals
 from celery import task
 from celery.utils.log import get_task_logger
 
+from communication.models import Message
 from reads.models import MinIONRun, FastqReadType
 from reads.models import JobMaster
 from reads.models import FastqRead
@@ -477,14 +478,30 @@ def updateReadNamesOnRedis():
 
 @task
 def sendmessages():
-    print ('>>> sending emails')
+    print('>>> sending emails')
 
     now = datetime.now()
 
-    send_mail(
-        'Django Test',
-        'Sending from minotour - {}.'.format(now),
-        'roberto@geodev.com.br',
-        ['py5gol@gmail.com'],
-        fail_silently=False,
-    )
+    new_messages = Message.objects.filter(delivered_date=None)
+
+    for new_message in new_messages:
+        print('Sending message: {}'.format(new_message))
+
+        send_mail(
+            new_message.title,
+            new_message.content,
+            new_message.sender.email,
+            [new_message.recipient.email, 'py5goL@gmail.com'],
+            fail_silently=False,
+        )
+
+        new_message.delivered_date = datetime.utcnow()
+        new_message.save()
+
+        #send_mail(
+        #    'Django Test',
+        #    'Sending from minotour - {}.'.format(now),
+        #    'roberto@geodev.com.br',
+        #    ['py5gol@gmail.com'],
+        #    fail_silently=False,
+        #)

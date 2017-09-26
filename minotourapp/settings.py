@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'alignment',
     'reference',
     'django_celery_beat',
+    'communication',
 ]
 
 MIDDLEWARE = [
@@ -198,14 +199,14 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'web.tasks.sendmessages',
         'schedule': 60,
     },
-    'rapid-monitor': {
-        'task': 'web.tasks.run_monitor',
-        'schedule': 5.0,
-    },
-    'slow-monitor': {
-        'task': 'web.tasks.slow_monitor',
-        'schedule': 30.0,
-    }
+    #'rapid-monitor': {
+    #    'task': 'web.tasks.run_monitor',
+    #    'schedule': 5.0,
+    #},
+    #'slow-monitor': {
+    #    'task': 'web.tasks.slow_monitor',
+    #    'schedule': 30.0,
+    #}
 }
 
 

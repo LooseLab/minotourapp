@@ -1,13 +1,20 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 
+from communication.models import Message
 from reads.models import MinIONRun
 from reads.models import UserOptions
 from django.db.models import Q
 from datetime import datetime, timedelta
 from django.utils import timezone
+from django.core.mail import send_mail
+
 from rest_framework.authtoken.models import Token
+
+from web.forms import UserOptionsForm
+
 
 def index(request):
     return render(request, 'web/index.html')
@@ -27,18 +34,45 @@ def private_index(request):
 
 @login_required
 def profile(request):
-    authToken = Token.objects.get(user=request.user)
 
     try:
-        userDetails = UserOptions.objects.get(owner=request.user)
+
+        user_options = UserOptions.objects.get(owner=request.user)
+
     except ObjectDoesNotExist:
-        userDetails = UserOptions.objects.create(owner=request.user)
+
+        user_options = UserOptions.objects.create(owner=request.user)
+
+    auth_token = Token.objects.get(user=request.user)
+
+    messages = Message.objects.filter(recipient=request.user).order_by('created_date')
+
+    if request.method == 'POST':
+
+        form = UserOptionsForm(request.POST)
+
+        if form.is_valid():
+
+            user = User.objects.get(pk=user_options.owner_id)
+            user.email = form.cleaned_data['email']
+            user.save()
+
+            user_options.twitterhandle = form.cleaned_data['twitter_handle']
+            user_options.tweet = form.cleaned_data['receive_tweets']
+            user_options.email = form.cleaned_data['receive_emails']
+            user_options.save()
+
+    else:
+
+        form = UserOptionsForm()
 
     return render(
         request, 'web/profile.html',
         context={
-            'authToken': authToken,
-            'userDetails': userDetails
+            'authToken': auth_token,
+            'userDetails': user_options,
+            'messages': messages,
+            'form': form,
         }
     )
 
