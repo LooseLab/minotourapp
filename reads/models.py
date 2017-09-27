@@ -6,6 +6,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 from reference.models import ReferenceInfo
+from celery import task
+from celery.utils.log import get_task_logger
 
 
 class MinION(models.Model):
@@ -731,7 +733,12 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
 
 @receiver(post_save, sender=FastqRead)
 def update_global_state(instance, sender, **kwargs):
+#    print ("trying to run")
+#    update_global_state_task.delay(instance)
 
+#@task()
+#def update_global_state_task(instance):
+#    print ("update task running")
     ipn_obj = instance
 
     barcode = ipn_obj.barcode
