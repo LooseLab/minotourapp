@@ -201,7 +201,7 @@ CELERY_BEAT_SCHEDULE = {
     'slow-monitor': {
         'task': 'web.tasks.slow_monitor',
         'schedule': 30.0,
-    },
+    }
 }
 
 
@@ -216,5 +216,4 @@ TWITCONSUMER_SECRET=get_env_variable("MT_twitconsumer_secret")
 # References
 REFERENCELOCATION = get_env_variable("Reference_Location")
 
-
-
+PAGINATION_PAGE_SIZE = 100
