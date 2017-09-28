@@ -339,10 +339,10 @@ function MonitorAPP() {
     };
 
     this.updatecounters = function (live) {
-        var thing = document.getElementById("livenum");
-        thing.innerHTML = live;
-        var thing2 = document.getElementById("livenumruns");
-        thing2.innerHTML = "You have " + live + " live runs.";
+        //var thing = document.getElementById("livenum");
+        //thing.innerHTML = live;
+        //var thing2 = document.getElementById("livenumruns");
+        //thing2.innerHTML = "You have " + live + " live runs.";
     };
 
     this.requestData = function () {
@@ -697,6 +697,7 @@ function MinotourApp() {
         setInterval(function () {
             this.requestData();
         }.bind(this), 30000);
+
     };
 
     this.numberWithCommas = function (x) {

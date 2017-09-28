@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'alignment',
     'reference',
     'django_celery_beat',
+    'communication',
 ]
 
 MIDDLEWARE = [
@@ -198,26 +199,26 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'web.tasks.sendmessages',
         'schedule': 60,
     },
-    'rapid-monitor': {
-        'task': 'web.tasks.run_monitor',
-        'schedule': 5.0,
-    },
-    'slow-monitor': {
-        'task': 'web.tasks.slow_monitor',
-        'schedule': 30.0,
-    }
+    #'rapid-monitor': {
+    #    'task': 'web.tasks.run_monitor',
+    #    'schedule': 5.0,
+    #},
+    #'slow-monitor': {
+    #    'task': 'web.tasks.slow_monitor',
+    #    'schedule': 30.0,
+    #}
 }
 
 
 # For sending twitter messages
-TWITTOKEN = get_env_variable("MT_twittoken")
-TWITTOKEN_SECRET=get_env_variable("MT_twittoken_secret")
-TWITCONSUMER_KEY=get_env_variable("MT_twitconsumer_key")
-TWITCONSUMER_SECRET=get_env_variable("MT_twitconsumer_secret")
+TWITTOKEN = get_env_variable("MT_TWITTOKEN")
+TWITTOKEN_SECRET=get_env_variable("MT_TWITTOKEN_SECRET")
+TWITCONSUMER_KEY=get_env_variable("MT_TWITCONSUMER_KEY")
+TWITCONSUMER_SECRET=get_env_variable("MT_TWITCONSUMER_SECRET")
 
 
 # Variables for storing additonal files
 # References
-REFERENCELOCATION = get_env_variable("Reference_Location")
+REFERENCELOCATION = get_env_variable("MT_REFERENCE_LOCATION")
 
 PAGINATION_PAGE_SIZE = 100

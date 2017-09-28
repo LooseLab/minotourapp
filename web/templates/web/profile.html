@@ -17,24 +17,125 @@
 
         <!-- Main content -->
         <section class="content">
+            <div class="box box-info">
+                <div class="box-header with-border">
+                    <h3 class="box-title">Overview - Below are your registered user details. Your access token is required to upload data to
+                        minoTour</h3>
+                </div>
+                <!-- /.box-header -->
+                <!-- form start -->
+                {{ form.non_field_errors }}
+
+                <form class="form-horizontal" method="post" action="{% url 'profile' %}">
+                    {% csrf_token %}
+                    <div class="box-body">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">Username</label>
+
+                            <div class="col-sm-10 control-label" style="height: 100%; text-align: left;">
+                                {{ request.user.username }}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="id_email" class="col-sm-2 control-label">Email</label>
+
+                            <div class="col-sm-10">
+                                {{ form.email.errors }}
+                                <input class="form-control" type="email" name="email" id="id_email" maxlength="120" required
+                                       value="{{ request.user.email }}">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">Access Token</label>
+
+                            <div class="col-sm-10 control-label" style="height: 100%; text-align: left;">
+                                {{ authToken }}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="id_twitter_handle" class="col-sm-2 control-label">Twitter Handle</label>
+
+                            <div class="col-sm-10">
+                                {{ form.twitter_handle.errors }}
+                                <input class="form-control" type="text" name="twitter_handle" id="id_twitter_handle" maxlength="32"
+                                       value="{{ userDetails.twitterhandle }}">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-2 col-sm-10">
+                                <div class="checkbox">
+                                    <label>
+                                        {{ form.receive_emails.errors }}
+                                        {% if userDetails.email %}
+                                            <input type="checkbox" name="receive_emails" id="id_receive_emails" checked> Receive Emails
+                                        {% else %}
+                                            <input type="checkbox" name="receive_emails" id="id_receive_emails"> Receive Emails
+                                        {% endif %}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-sm-offset-2 col-sm-10">
+                                <div class="checkbox">
+                                    <label>
+                                        {{ form.receive_tweets.errors }}
+                                        {% if userDetails.tweet %}
+                                            <input type="checkbox" name="receive_tweets" id="id_receive_tweets" checked> Receive Tweets
+                                        {% else %}
+                                            <input type="checkbox" name="receive_tweets" id="id_receive_tweets"> Receive Tweets
+                                        {% endif %}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- /.box-body -->
+                    <div class="box-footer">
+                        <button type="submit" class="btn btn-info pull-right">Save</button>
+                    </div>
+                    <!-- /.box-footer -->
+                </form>
+            </div>
 
             <div class="box">
                 <div class="box-header">
-                    <h3 class="box-title">Overview</h3>
-                </div><!-- /.box-header -->
-                <div class="box-body">
+                    <h3 class="box-title">Messages</h3>
 
-                    <p>Below are your registered user details. Your access token is required to upload data to minoTour.</p>
-
-                    <p><i>User Name:</i> <strong>{{ request.user.username }}</strong></p>
-                    <p><i>Email Address:</i> <strong>{{ request.user.email }}</strong></p>
-                    <p><i>Access Token:</i> <strong>{{ authToken }}</strong></p>
-                    <p><i>Twitter Handle:</i> <strong>{{ userDetails.twitterhandle }}</strong></p>
-                    <p><i>Receive Emails:</i> <strong>{{ userDetails.email }}</strong></p>
-                    <p><i>Receive Tweets:</i> <strong>{{ userDetails.tweet }}</strong></p>
-
+                    <div class="box-tools">
+                        <ul class="pagination pagination-sm no-margin pull-right">
+                            <li><a href="#">&laquo;</a></li>
+                            <li><a href="#">1</a></li>
+                            <li><a href="#">2</a></li>
+                            <li><a href="#">3</a></li>
+                            <li><a href="#">&raquo;</a></li>
+                        </ul>
+                    </div>
                 </div>
+                <!-- /.box-header -->
+                <div class="box-body no-padding">
+                    <table class="table">
+                        <tr>
+                            <th style="width: 180px;">Date</th>
+                            <th style="width: 300px;">Sender</th>
+                            <th>Title</th>
+                        </tr>
+
+                        {% for message in messages %}
+                            <tr>
+                                <td>{{ message.created_date|date:'d-m-Y H:i' }}</td>
+                                <td>{{ message.sender.first_name }}&nbsp;{{ message.sender.last_name }}
+                                    <{{ message.sender.email }}>
+                                </td>
+                                <td>{{ message.title }}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                <!-- /.box-body -->
             </div>
+            <!-- /.box -->
+
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 

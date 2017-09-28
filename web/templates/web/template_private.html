@@ -20,6 +20,8 @@
 
         <script src="{% static 'web/minotour.js' %}?{% now 'c' %}"></script>
 
+        <script src="{% static 'web/messages.js' %}?{% now 'c' %}"></script>
+
         <script>
             $(document).ready(function () {
                 var app2 = new MonitorAPP();
@@ -44,29 +46,34 @@
                             <!-- Menu toggle button -->
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                                 <i class="fa fa-table"></i>
-                                <span class="label label-success"><div id="livenum"></div></span>
+                                <span class="label label-success">
+                                    <div id="all-messages-number"></div>
+                                </span>
                             </a>
                             <ul class="dropdown-menu">
 
                                 <li class="header" id="livenumruns"></li>
                                 <li>
                                     <!-- inner menu: contains the messages -->
-                                    <ul class="menu">
-                                        <li v-for="run in liverunsnames"><!-- start message -->
+                                    <ul class="menu" id="all-messages">
+                                        <li>
+                                            <!-- start message -->
                                             <a href="#">
                                                 <div class="pull-left">
                                                     <!-- User Image -->
-                                                    <!--<img src="images/minitour144.png" class="img-circle" alt="User Image">-->
-                                                    <!--</div>-->
-                                                    <!-- Message title and timestamp -->
-                                                    <h4>
-                                                        <small>{{ run }}</small>
-                                                        <!--<small><i class="fa fa-clock-o"></i> 5 mins</small>-->
-                                                    </h4>
-                                                    <!-- The message -->
-                                                    <!--<p>Why not buy a new awesome theme?</p></div>-->
+                                                    <img src="https://almsaeedstudio.com/themes/AdminLTE/dist/img/user2-160x160.jpg"
+                                                         class="img-circle" alt="User Image">
+                                                </div>
+                                                <!-- Message title and timestamp -->
+                                                <h4>
+                                                    Support Team
+                                                    <small><i class="fa fa-clock-o"></i> 5 mins</small>
+                                                </h4>
+                                                <!-- The message -->
+                                                <p>Why not buy a new awesome theme?</p>
                                             </a>
-                                        </li><!-- end message -->
+                                        </li>
+                                        <!-- end message -->
                                     </ul><!-- /.menu -->
                                 </li>
                                 <li class="footer"><a href="#">You have {{ prevnumruns }} archived runs.</a></li>
@@ -204,7 +211,8 @@
                 </li>
                 <li id="prevruns" class="treeview">
                     <a href="#">
-                        <i class="fa fa-table fa-fw"></i>&nbsp;<span>Runs</span><i class="fa fa-angle-left pull-right"></i>
+                        <i class="fa fa-table fa-fw"></i>&nbsp;<span>Runs</span><i
+                            class="fa fa-angle-left pull-right"></i>
                     </a>
                     <ul class="treeview-menu">
                         <li>
@@ -273,7 +281,8 @@
                 {% if user.is_superuser %}
                     <li id="admin" class="treeview">
                         <a href="#">
-                            <i class="fa fa-edit fa-fw"></i>&nbsp;<span>Admin</span><i class="fa fa-angle-left pull-right"></i>
+                            <i class="fa fa-edit fa-fw"></i>&nbsp;<span>Admin</span><i
+                                class="fa fa-angle-left pull-right"></i>
                         </a>
                         <ul class="treeview-menu">
                             <li>
