@@ -182,7 +182,7 @@ LOGGING = {
     },
 }
 
-CELERY_IMPORTS = ('web.tasks',)
+CELERY_IMPORTS = ('web.tasks')
 # For RabbitMQ
 #CELERY_BROKER_URL = 'amqp://'
 CELERY_BROKER_URL = 'redis://localhost:6379/0'

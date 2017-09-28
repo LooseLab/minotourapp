@@ -54,9 +54,10 @@ def run_monitor():
     logger.info('Running run_monitor celery task.')
     # Do something...
     print ("Rapid Monitor Called")
-    #minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.utcnow() - timedelta(days=3)) | Q(
-    #        RunStats__created_date__gte=datetime.now() - timedelta(days=3))).distinct()
+    #minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.utcnow() - timedelta(days=1)) | Q(
+    #        RunStats__created_date__gte=datetime.now() - timedelta(days=1))).distinct()
     minion_runs = MinIONRun.objects.filter(active=True).distinct()
+    #minion_runs = MinIONRun.objects.filter(id=87).distinct()
     #print(minion_runs)
     #print(len(minion_runs))
     for minion_run in minion_runs:
@@ -71,7 +72,7 @@ def run_monitor():
                 #print ("trying to run alignment")
                 run_alignment.delay(minion_run.id,run_job.id,run_job.var1,run_job.var2)
             if str(run_job.job_name)=="Minimap2" and run_job.running is False:
-                print ("trying to run alignment")
+                print ("trying to run alignment {} {} {} {}".format(minion_run.id,run_job.id,run_job.var1.id,run_job.var2) )
                 run_minimap2.delay(minion_run.id,run_job.id,run_job.var1.id,run_job.var2)
             if run_job.running is True:
                 #print ("{} is already running!".format(run_job.job_name) )
@@ -87,12 +88,12 @@ def slow_monitor():
     minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=utcnow() - timedelta(days=1)) | Q(
             RunStats__created_date__gte=utcnow() - timedelta(days=1))).distinct()
     #minion_runs = MinIONRun.objects.all()
-    print(minion_runs)
+    #print(minion_runs)
     #print(len(minion_runs))
     for minion_run in minion_runs:
         #print ("checking jobs for {}".format(minion_run))
         #print (minion_run.run_id)
-        cachesiz[str(minion_run.run_id)]=minion_run
+        cachesiz[str(minion_run.id)]=minion_run
         run_jobs = JobMaster.objects.filter(run_id=minion_run.id)
         for run_job in run_jobs:
             #print('>>> run_jobs')
@@ -101,10 +102,10 @@ def slow_monitor():
 
             if str(run_job.job_name)=="ProcAlign" and run_job.running is False:
                 #print ("trying to process alignment")
-                proc_alignment.delay(minion_run.id, run_job.id, run_job.var1, run_job.var2)
+                proc_alignment.delay(minion_run.id, run_job.id, run_job.var1.id, run_job.var2)
             if str(run_job.job_name)=="ChanCalc" and run_job.running is False:
                 #print ("ChannelCalc")
-                processreads.delay(minion_run.id, run_job.id, run_job.var1, run_job.var2)
+                processreads.delay(minion_run.id, run_job.id, run_job.var1.id, run_job.var2)
     try:
         testset = cache.get('a-unique-key', {})
     except:
@@ -117,7 +118,7 @@ def slow_monitor():
 
 def processrun(deleted,added):
     for run in added:
-        runinstance = MinIONRun.objects.get(run_id=run)
+        runinstance = MinIONRun.objects.get(pk=run)
         jobinstance = Job.objects.get(jobname="ChanCalc")
         runinstance.active=True
         runinstance.save()
@@ -127,7 +128,7 @@ def processrun(deleted,added):
             newjob.var2=0
         newjob.save()
     for run in deleted:
-        runinstance = MinIONRun.objects.get(run_id=run)
+        runinstance = MinIONRun.objects.get(pk=run)
         runinstance.active=False
         runinstance.save()
         jobinstance = Job.objects.get(jobname="ChanCalc")
@@ -303,6 +304,7 @@ def test_task(string, reference):
 
 @task()
 def run_minimap2(runid,id,reference,last_read):
+    #print ("hello roberto {}".format(runid))
     JobMaster.objects.filter(pk=id).update(running=True)
     REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
     Reference = ReferenceInfo.objects.get(pk=reference)
@@ -312,7 +314,9 @@ def run_minimap2(runid,id,reference,last_read):
         chromdict[chromosome.line_name]=chromosome
     minimap2 = Reference.minimap2_index_file_location
     minimap2_ref = os.path.join(REFERENCELOCATION, minimap2)
-    fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:1000]
+    #print ("runid:{} last_read:{}".format(runid,last_read))
+    fastqs = FastqRead.objects.filter(run_id__id=runid, id__gt=int(last_read))[:1000]
+    #print ("fastqs",fastqs)
     read = ''
     fastqdict=dict()
     fastqtypedict=dict()
@@ -322,6 +326,7 @@ def run_minimap2(runid,id,reference,last_read):
         fastqdict[fastq.read_id]=fastq
         fastqtypedict[fastq.read_id]=fastq.type
         last_read = fastq.id
+    #print (read)
     cmd = 'minimap2 -x map-ont -t 8 -N 0 %s -' % (minimap2_ref)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
@@ -329,6 +334,7 @@ def run_minimap2(runid,id,reference,last_read):
     (out, err) = proc.communicate(input=read.encode("utf-8"))
     status = proc.wait()
     paf = out.decode("utf-8")
+
     pafdata = paf.splitlines()
     runinstance = MinIONRun.objects.get(pk=runid)
 
@@ -386,7 +392,7 @@ def run_minimap2(runid,id,reference,last_read):
                     summarycov.read_count += len(resultstore[ref][ch][bc][ty]['read'])
                     summarycov.cumu_length += resultstore[ref][ch][bc][ty]['length']
                     summarycov.save()
-
+    #print("!*!*!*!*!*!*!*!*!*!*! ------- running alignment")
     JobMaster.objects.filter(pk=id).update(running=False, var2=last_read)
 
 
