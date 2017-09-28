@@ -1,4 +1,4 @@
-from communication.models import Message
+`from communication.models import Message
 
 
 def send_message(recipients, sender, title, message):

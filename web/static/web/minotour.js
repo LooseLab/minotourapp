@@ -1418,7 +1418,7 @@ function MinotourApp() {
 
                     summaries[item.barcode_name][item.read_type_name]['read_count'].push(item.read_count);
                     summaries[item.barcode_name][item.read_type_name]['read_length'].push(item.read_length);
-                    summaries[item.barcode_name][item.read_type_name]['bin_width'].push(parseInt(item.bin_width));
+                    summaries[item.barcode_name][item.read_type_name]['bin_width'].push(parseInt(item.bin_width*900+900));
                 }
 
                 self.histogramSummary = summaries;
