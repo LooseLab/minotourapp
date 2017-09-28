@@ -103,10 +103,10 @@ def slow_monitor():
 
             if str(run_job.job_name)=="ProcAlign" and run_job.running is False:
                 #print ("trying to process alignment")
-                proc_alignment.delay(minion_run.id, run_job.id, run_job.var1, run_job.var2)
+                proc_alignment.delay(minion_run.id, run_job.id, run_job.var1.id, run_job.var2)
             if str(run_job.job_name)=="ChanCalc" and run_job.running is False:
                 #print ("ChannelCalc")
-                processreads.delay(minion_run.id, run_job.id, run_job.var1, run_job.var2)
+                processreads.delay(minion_run.id, run_job.id, run_job.var1.id, run_job.var2)
     try:
         testset = cache.get('a-unique-key', {})
     except:
