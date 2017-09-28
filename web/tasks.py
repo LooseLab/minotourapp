@@ -35,17 +35,6 @@ from django.core.mail import send_mail
 logger = get_task_logger(__name__)
 
 
-def send_tweet(message):
-    TWITTOKEN = getattr(settings, "TWITTOKEN", None)
-    TWITTOKEN_SECRET = getattr(settings, "TWITTOKEN_SECRET", None)
-    TWITCONSUMER_KEY = getattr(settings, "TWITCONSUMER_KEY", None)
-    TWITCONSUMER_SECRET = getattr(settings, "TWITCONSUMER_SECRET", None)
-    t = Twitter(
-        auth=OAuth(TWITTOKEN, TWITTOKEN_SECRET, TWITCONSUMER_KEY, TWITCONSUMER_SECRET))
-    print ("Gonna try and send a tweet")
-    t.statuses.update(
-        status=message)
-
 def utcnow():
     return datetime.now(tz=pytz.utc)
 
@@ -478,30 +467,46 @@ def updateReadNamesOnRedis():
 
 @task
 def sendmessages():
-    print('>>> sending emails')
-
-    now = datetime.now()
 
     new_messages = Message.objects.filter(delivered_date=None)
 
     for new_message in new_messages:
+
         print('Sending message: {}'.format(new_message))
 
-        send_mail(
-            new_message.title,
-            new_message.content,
-            new_message.sender.email,
-            [new_message.recipient.email, 'py5goL@gmail.com'],
-            fail_silently=False,
-        )
+        message_sent = False
 
-        new_message.delivered_date = datetime.utcnow()
-        new_message.save()
+        #if new_message.recipient.extendedopts.email:
+        #    send_mail(
+        #        new_message.title,
+        #        new_message.content,
+        #        new_message.sender.email,
+        #        [new_message.recipient.email, 'py5goL@gmail.com'],
+        #        fail_silently=False,
+        #    )
 
-        #send_mail(
-        #    'Django Test',
-        #    'Sending from minotour - {}.'.format(now),
-        #    'roberto@geodev.com.br',
-        #    ['py5gol@gmail.com'],
-        #    fail_silently=False,
-        #)
+        #    message_sent = True
+
+        if new_message.recipient.extendedopts.tweet:
+
+            TWITTOKEN = settings.TWITTOKEN
+            TWITTOKEN_SECRET = settings.TWITTOKEN_SECRET
+            TWITCONSUMER_KEY = settings.TWITCONSUMER_KEY
+            TWITCONSUMER_SECRET = settings.TWITCONSUMER_SECRET
+
+            t = Twitter(
+                auth=OAuth(TWITTOKEN, TWITTOKEN_SECRET, TWITCONSUMER_KEY, TWITCONSUMER_SECRET)
+            )
+
+            t.direct_messages.new(
+                user=new_message.recipient.extendedopts.twitterhandle,
+                text=new_message.title
+            )
+
+            message_sent = True
+
+        if message_sent:
+            print('inside message_sent')
+            new_message.delivered_date = utcnow()
+            new_message.save()
+

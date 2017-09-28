@@ -45,7 +45,7 @@ def profile(request):
 
     auth_token = Token.objects.get(user=request.user)
 
-    messages = Message.objects.filter(recipient=request.user).order_by('created_date')
+    messages = Message.objects.filter(recipient=request.user).order_by('-created_date')
 
     if request.method == 'POST':
 
