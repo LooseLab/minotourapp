@@ -8,7 +8,7 @@ from rest_framework.authtoken.models import Token
 from reference.models import ReferenceInfo
 from celery import task
 from celery.utils.log import get_task_logger
-
+from communication.utils import send_message
 
 class MinION(models.Model):
     minION_name = models.CharField(max_length=64)
@@ -706,8 +706,8 @@ class JobMaster(models.Model):
     run_id = models.ForeignKey(MinIONRun, related_name='runjobs')
     job_name = models.ForeignKey(Job, related_name='taskname')
     #var1 = models.CharField(max_length=256,blank=True, null=True)
-    var1 = models.ForeignKey(ReferenceInfo, related_name='referencejob', null=True)
-    var2 = models.CharField(max_length=256,blank=True, null=True)
+    reference = models.ForeignKey(ReferenceInfo, related_name='referencejob', null=True, blank=True)
+    last_read = models.CharField(max_length=256,blank=True, null=True)
     var3 = models.CharField(max_length=256,blank=True, null=True)
     complete = models.BooleanField(default=False)
     running = models.BooleanField(default=False)
@@ -731,7 +731,7 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
         Token.objects.create(user=instance)
 
 
-@receiver(post_save, sender=FastqRead)
+#@receiver(post_save, sender=FastqRead)
 def update_global_state(instance, sender, **kwargs):
 #    print ("trying to run")
 #    update_global_state_task.delay(instance)

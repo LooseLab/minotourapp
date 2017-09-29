@@ -1448,7 +1448,8 @@ function MinotourApp() {
 
                     summaries[item.channel_number] = {
                         'read_count': item.read_count,
-                        'read_length': (parseInt(item.read_length) / 1000).toFixed(0)
+                        'read_length': parseInt((parseInt(item.read_length)/1000).toFixed(0))
+
                     };
 
                 }

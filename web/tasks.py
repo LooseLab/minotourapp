@@ -9,6 +9,8 @@ from reads.models import FastqRead
 from alignment.models import SamStore
 from reads.models import ChannelSummary
 from reads.models import HistogramSummary
+from reads.models import RunSummaryBarcode
+from reads.models import RunStatisticBarcode
 from reads.models import Job
 from reads.models import UserOptions
 from reads.models import Barcode
@@ -29,6 +31,7 @@ from twitter import *
 import os
 import redis
 import json
+
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.mail import send_mail
 
@@ -60,10 +63,10 @@ def run_monitor():
             #print (type(run_job.job_name))
             if str(run_job.job_name)=="Alignment" and run_job.running is False:
                 #print ("trying to run alignment")
-                run_alignment.delay(minion_run.id,run_job.id,run_job.var1,run_job.var2)
+                run_alignment.delay(minion_run.id,run_job.id,run_job.reference,run_job.last_read)
             if str(run_job.job_name)=="Minimap2" and run_job.running is False:
-                print ("trying to run alignment {} {} {} {}".format(minion_run.id,run_job.id,run_job.var1.id,run_job.var2) )
-                run_minimap2.delay(minion_run.id,run_job.id,run_job.var1.id,run_job.var2)
+                print ("trying to run alignment {} {} {} {}".format(minion_run.id,run_job.id,run_job.reference.id,run_job.last_read) )
+                run_minimap2.delay(minion_run.id,run_job.id,run_job.reference.id,run_job.last_read)
             if run_job.running is True:
                 #print ("{} is already running!".format(run_job.job_name) )
                 pass
@@ -92,10 +95,10 @@ def slow_monitor():
 
             if str(run_job.job_name)=="ProcAlign" and run_job.running is False:
                 #print ("trying to process alignment")
-                proc_alignment.delay(minion_run.id, run_job.id, run_job.var1.id, run_job.var2)
+                proc_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
             if str(run_job.job_name)=="ChanCalc" and run_job.running is False:
                 #print ("ChannelCalc")
-                processreads.delay(minion_run.id, run_job.id, run_job.var1.id, run_job.var2)
+                processreads.delay(minion_run.id, run_job.id, run_job.last_read)
     try:
         testset = cache.get('a-unique-key', {})
     except:
@@ -112,10 +115,10 @@ def processrun(deleted,added):
         jobinstance = Job.objects.get(jobname="ChanCalc")
         runinstance.active=True
         runinstance.save()
-        #newjob = JobMaster(run_id=runinstance,job_name=jobinstance,var2=0)
+        #newjob = JobMaster(run_id=runinstance,job_name=jobinstance,last_read=0)
         newjob,created = JobMaster.objects.get_or_create(run_id=runinstance, job_name=jobinstance)
         if created is True:
-            newjob.var2=0
+            newjob.last_read=0
         newjob.save()
     for run in deleted:
         runinstance = MinIONRun.objects.get(pk=run)
@@ -146,7 +149,7 @@ def SendUserMessage(runid,messagetype,messagestring):
 
 
 @task()
-def processreads(runid,id,var1,last_read):
+def processreads(runid,id,last_read):
     #print('>>>> Running processreads celery task.')
 
     JobMaster.objects.filter(pk=id).update(running=True)
@@ -198,6 +201,43 @@ def processreads(runid,id,var1,last_read):
         histstore['All reads'][fastq.type.name][bin_width]['count'] += 1
         histstore['All reads'][fastq.type.name][bin_width]['length'] += len(fastq.sequence)
 
+
+        ### Adding in the current post save behaviour:
+
+        ipn_obj = fastq
+
+        barcode = ipn_obj.barcode
+
+        barcode_all_reads = ipn_obj.run_id.barcodes.filter(name='All reads').first()
+
+        tm = ipn_obj.start_time
+
+        tm = tm - timedelta(minutes=(tm.minute % 1) - 1,
+                                     seconds=tm.second,
+                                     microseconds=tm.microsecond)
+
+        obj1, created1 = RunSummaryBarcode.objects.update_or_create(
+            run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode_all_reads
+        )
+        update_sum_stats(obj1, ipn_obj)
+
+        # all reads and barcodes are saved on RunStatisticBarcode
+        obj3, created3 = RunStatisticBarcode.objects.update_or_create(
+            run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode_all_reads, sample_time=tm
+        )
+        update_sum_stats(obj3, ipn_obj)
+
+        if barcode is not None and barcode.name != '':
+            obj2, created2 = RunSummaryBarcode.objects.update_or_create(
+                run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode
+            )
+            update_sum_stats(obj2, ipn_obj)
+
+            obj3, created3 = RunStatisticBarcode.objects.update_or_create(
+                run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode, sample_time=tm
+            )
+            update_sum_stats(obj3, ipn_obj)
+
         last_read = fastq.id
 
     #print (tempstore)
@@ -238,7 +278,51 @@ def processreads(runid,id,var1,last_read):
                 histogram.read_length += histstore[barcodename][read_type_name][hist]["length"]
                 histogram.save()
 
-    JobMaster.objects.filter(pk=id).update(running=False, var2=last_read)
+    JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
+
+def update_sum_stats(obj, ipn_obj):
+
+    if ipn_obj.is_pass:
+
+        obj.pass_length += len(ipn_obj.sequence)
+
+        if len(ipn_obj.sequence) > obj.pass_max_length:
+            obj.pass_max_length = len(ipn_obj.sequence)
+
+        if obj.pass_min_length == 0:
+            obj.pass_min_length = len(ipn_obj.sequence)
+
+        if len(ipn_obj.sequence) < obj.pass_min_length:
+            obj.pass_min_length = len(ipn_obj.sequence)
+
+        obj.pass_count += 1
+
+    obj.total_length += len(ipn_obj.sequence)
+
+    if len(ipn_obj.sequence) > obj.max_length:
+        obj.max_length = len(ipn_obj.sequence)
+
+    if obj.min_length == 0:
+        obj.min_length = len(ipn_obj.sequence)
+
+    if len(ipn_obj.sequence) < obj.min_length:
+        obj.min_length = len(ipn_obj.sequence)
+
+    #
+    # channel_presence is a 512 characters length string containing 0
+    # for each channel (id between 1 - 512) seen, we set the position on
+    # the string to 1. afterwards, we can calculate the number of active
+    # channels in a particular minute.
+    #
+    channel = ipn_obj.channel
+    channel_sequence = obj.channel_presence
+    channel_sequence_list = list(channel_sequence)
+    channel_sequence_list[channel-1] = '1'
+    obj.channel_presence = ''.join(channel_sequence_list)
+
+    obj.read_count += 1
+    obj.save()
+
 
 
 def findbin(x,bin_width=900):
@@ -277,7 +361,7 @@ def proc_alignment(runid,id,reference,last_read):
 
     After all that we just (!) parse the pysamstats lines into the existing reference table covering this information.
     """
-    JobMaster.objects.filter(pk=id).update(running=False,var2=last_read)
+    JobMaster.objects.filter(pk=id).update(running=False,last_read=last_read)
 
 @task()
 def test_task(string, reference):
@@ -383,7 +467,7 @@ def run_minimap2(runid,id,reference,last_read):
                     summarycov.cumu_length += resultstore[ref][ch][bc][ty]['length']
                     summarycov.save()
     #print("!*!*!*!*!*!*!*!*!*!*! ------- running alignment")
-    JobMaster.objects.filter(pk=id).update(running=False, var2=last_read)
+    JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
 
 
 @task()
@@ -436,7 +520,7 @@ def run_alignment(runid,id,reference,last_read):
                     newsam.save()
                     last_read=fastq.id
                     #print (last_read)
-    JobMaster.objects.filter(pk=id).update(running=False,var2=last_read)
+    JobMaster.objects.filter(pk=id).update(running=False,last_read=last_read)
 
 @task
 def updateReadNamesOnRedis():
@@ -508,6 +592,10 @@ def sendmessages():
                 user=new_message.recipient.extendedopts.twitterhandle,
                 text=new_message.title
             )
+            #status = '@{} {}'.format(new_message.recipient.extendedopts.twitterhandle,new_message.title)
+            #t.statuses.update(
+            #    status=status
+            #)
 
             message_sent = True
 

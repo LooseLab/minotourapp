@@ -13,6 +13,8 @@ class Message(models.Model):
     sender = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name='messages_sender',
+        null=True,
+        blank=True
     )
 
     title = models.CharField(
