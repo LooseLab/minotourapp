@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'web',
     'alignment',
     'reference',
+    'minikraken',
     'django_celery_beat',
     'communication',
 ]
