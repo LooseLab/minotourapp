@@ -166,8 +166,19 @@ class Runcollection():
             else:
                 print ("Record not changed.")
 
+    def check_pass(self,path):
+        folders = os.path.split(path)
+        #print folders[0]
+        if 'pass' in folders[0]:
+            return True
+        elif 'fail' in folders[0]:
+            return False
+        else:
+            return True #This assumes we have been unable to find either pass or fail and thus we assume the run is a pass run.
 
     def add_read(self, record, descriptiondict,fastq):
+        passstatus=(self.check_pass(fastq))
+
         if record.id not in self.readid:
             self.readid[record.id] = dict()
             for item in descriptiondict:
@@ -245,7 +256,7 @@ class Runcollection():
                 barcode_url,
                 str(record.seq),
                 record.format('fastq').split('\n')[3],
-                True,
+                passstatus,
                 self.readtypes["Template"],
                 self.readid[record.id]["start_time"]
             )
@@ -321,7 +332,9 @@ class MyHandler(FileSystemEventHandler):
         try:
             t.start()
             print("Watchdog started")
-        except (KeyboardInterrupt, SystemExit):
+        #except (KeyboardInterrupt, SystemExit):
+        except KeyboardInterrupt:
+            print ("Seen a ctrl-c")
             t.stop()
 
     def lencreates(self):
@@ -518,11 +531,12 @@ if __name__ == '__main__':
     observer = Observer()
     observer.schedule(event_handler, path=args.watchdir, recursive=True)
     observer.daemon = True
+    observer.start()
     try:
-        observer.start()
         while 1:
             time.sleep(1)
-    except (KeyboardInterrupt, SystemExit):
+    except KeyboardInterrupt:
+    #except (KeyboardInterrupt, SystemExit):
         print("catching a ctrl-c event")
         # my_client.stop()
         observer.stop()

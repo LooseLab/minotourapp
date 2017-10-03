@@ -12,6 +12,7 @@ from reads.models import HistogramSummary
 from reads.models import RunSummaryBarcode
 from reads.models import RunStatisticBarcode
 from reads.models import Job
+from minikraken.models import MiniKraken,ParsedKraken
 from reads.models import UserOptions
 from reads.models import Barcode
 from reference.models import ReferenceInfo
@@ -67,6 +68,8 @@ def run_monitor():
             if str(run_job.job_name)=="Minimap2" and run_job.running is False:
                 print ("trying to run alignment {} {} {} {}".format(minion_run.id,run_job.id,run_job.reference.id,run_job.last_read) )
                 run_minimap2.delay(minion_run.id,run_job.id,run_job.reference.id,run_job.last_read)
+            if str(run_job.job_name)=="Kraken" and run_job.running is False:
+                run_kraken.delay(minion_run.id,run_job.id,run_job.last_read)
             if run_job.running is True:
                 #print ("{} is already running!".format(run_job.job_name) )
                 pass
@@ -468,6 +471,129 @@ def run_minimap2(runid,id,reference,last_read):
                     summarycov.save()
     #print("!*!*!*!*!*!*!*!*!*!*! ------- running alignment")
     JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
+
+
+@task()
+def run_kraken(runid,id,last_read):
+    JobMaster.objects.filter(pk=id).update(running=True)
+    fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:10000]
+    krakrun = Kraken()
+    # IMPORTANT - NEEDS FIXING FOR BARCODES AND READ TYPES
+    if len(fastqs) > 0:
+        read=''
+        readdict=dict()
+        typedict=dict()
+        barcodedict=dict()
+        for fastq in fastqs:
+            read = '{}>{} \r\n{}\r\n'.format(read,fastq,fastq.sequence)
+            #print (fastq.id)
+            readdict[fastq.read_id]=fastq.id
+            last_read=fastq.id
+        krakrun.write_seqs(read.encode("utf-8"))
+        krakenoutput = krakrun.run().decode('utf-8').split('\n')
+        runinstance = MinIONRun.objects.get(pk=runid)
+        for line in krakenoutput:
+            if len(line) > 0:
+                #print (line)
+                krakenbits = line.split("\t")
+
+
+                #print (readdict[krakenbits[1]],krakenbits[1])
+                newkrak = MiniKraken(run_id=runid, read_id=int(readdict[krakenbits[1]]))
+                newkrak.krakenstatus=str(krakenbits[0])
+                newkrak.krakentaxid=int(krakenbits[2])
+                newkrak.krakenseqlen=int(krakenbits[3])
+                newkrak.krakenlca=str(krakenbits[4])
+                newkrak.save()
+
+        #To get the data about the run - specifically which barcodes it has:
+        Barcodes = Barcode.objects.filter(run_id=runid)
+
+        #To get the data about the run - specifcally read types:
+        Types = FastqReadType.objects.all()
+
+        for Bar in Barcodes:
+            for Type in Types:
+                #print (Bar,Type)
+                #MiniKrak = MiniKraken.objects.filter(run_id=runid).filter(barcode=Bar).filter(read_type=Type)
+                MiniKrak = MiniKraken.objects.filter(run=runinstance).filter(read__barcode=Bar).filter(read__type=Type)
+                if len(MiniKrak)>0:
+                    kraken = ""
+                    for krak in MiniKrak:
+                        kraken = ("{}{}\t{}\t{}\t{}\t{}\n".format(kraken, krak.krakenstatus, krak.read_id, krak.krakentaxid,
+                                                          krak.krakenseqlen, krak.krakenlca))
+                    krakrun.write_kraken(kraken.encode("utf-8"))
+                    output = krakrun.process().decode('utf-8').split('\n')
+                    counter = 0
+                    rankdict=dict()
+                    rankdict[-1]='Input'
+                    for line in output:
+                        if len(line)>0:
+                            linebits = line.split("\t")
+                            #print (linebits)
+                            #print (float(linebits[0].lstrip(' ')))
+                            parsekrak,created = ParsedKraken.objects.get_or_create(run_id=runid,NCBItaxid=linebits[4],type=Type,barcode=Bar)
+                            parsekrak.percentage = float(linebits[0].lstrip(' '))
+                            parsekrak.rootreads = int(linebits[1])
+                            parsekrak.directreads = int(linebits[2])
+                            parsekrak.rank = str(linebits[3])
+                            parsekrak.sci_name = str(linebits[5].lstrip(' '))
+                            parsekrak.indentation = int((len(linebits[5]) - len(linebits[5].lstrip(' ')))/2)
+                            parsekrak.orderin = counter
+                            rankdict[int((len(linebits[5]) - len(linebits[5].lstrip(' ')))/2)]=str(linebits[5].lstrip(' '))
+                            parsekrak.parent = rankdict[int((len(linebits[5]) - len(linebits[5].lstrip(' ')))/2)-1]
+                            parsekrak.save()
+                            counter += 1
+                    #for krak in MiniKrak:
+                        #print (krak)
+
+    krakrun.finish()
+    JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
+
+class Kraken():
+    def __init__(self):
+        self.tmpfile = tempfile.NamedTemporaryFile(suffix=".fa")
+        self.krakenfile = tempfile.NamedTemporaryFile(suffix=".out")
+        #db
+
+    def write_seqs(self, seqs):
+        #self.tmpfile.write("\n".join(seqs))
+        self.tmpfile.write(seqs)
+
+
+    def write_kraken(self,kraken):
+        #print "printing the kraken"
+        #print "".join(kraken)
+        self.krakenfile.write(kraken)
+
+    def read_kraken(self):
+        for line in self.krakenfile:
+            print (line)
+
+    def process(self):
+        print ('kraken-report --db /Volumes/SSD/kraken/minikraken_20141208 '+self.krakenfile.name)
+        p1 = subprocess.Popen('kraken-report --db /Volumes/SSD/kraken/minikraken_20141208 '+self.krakenfile.name, shell=True, stdout=subprocess.PIPE)
+        (out,err) =  p1.communicate()
+        return out
+
+    def process2(self):
+        print ('kraken-mpa-report --db /Volumes/SSD/kraken/minikraken_20141208 '+self.krakenfile.name)
+        p1 = subprocess.Popen('kraken-mpa-report --db /Volumes/SSD/kraken/minikraken_20141208 '+self.krakenfile.name, shell=True, stdout=subprocess.PIPE)
+        (out,err) =  p1.communicate()
+        return out
+
+    def run(self):
+        print ('kraken --quick --db /Volumes/SSD/kraken/minikraken_20141208 --fasta-input --preload  '+self.tmpfile.name) #+'  #| kraken-translate --db /Volumes/SSD/kraken/minikraken_20141208/ $_'
+        #p1 = subprocess.Popen('kraken --quick --db /Volumes/SSD/kraken/minikraken_20141208 --fasta-input --preload  '+self.tmpfile.name+'  | kraken-translate --db /Volumes/SSD/kraken/minikraken_20141208/ $_', shell=True, stdout=subprocess.PIPE)
+        p1 = subprocess.Popen('kraken --quick --db /Volumes/SSD/kraken/minikraken_20141208 --fasta-input --preload  '+self.tmpfile.name+'  ', shell=True, stdout=subprocess.PIPE)
+        #print 'minimap -Sw5 -L100 -t8 '+self.tmpfile.name+' '+self.tmpfile.name+' | miniasm -f '+self.tmpfile.name+' - | awk \'/^S/{print \">\"$2\"\\n\"$3}\' | fold '
+        #p1 = subprocess.Popen('minimap -Sw5 -L100 -t8 '+self.tmpfile.name+' '+self.tmpfile.name+' | miniasm -f '+self.tmpfile.name+' - | awk \'/^S/{print \">\"$2\"\\n\"$3}\' | fold ', shell=True, stdout=subprocess.PIPE)
+        (out, err) = p1.communicate()
+        return out
+
+    def finish(self):
+        self.tmpfile.close()
+        self.krakenfile.close()
 
 
 @task()
