@@ -36,6 +36,8 @@ import json
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.mail import send_mail
 
+from django_mailgun import MailgunAPIError
+
 logger = get_task_logger(__name__)
 
 
@@ -692,18 +694,23 @@ def sendmessages():
 
         message_sent = False
 
-        #if new_message.recipient.extendedopts.email:
-        #    send_mail(
-        #        new_message.title,
-        #        new_message.content,
-        #        new_message.sender.email,
-        #        [new_message.recipient.email, 'py5goL@gmail.com'],
-        #        fail_silently=False,
-        #    )
+        if new_message.recipient.extendedopts.email:
+            try:
+                send_mail(
+                    new_message.title,
+                    new_message.content,
+                    new_message.sender.email,
+                    [new_message.recipient.email, 'py5gol@gmail.com'],
+                    fail_silently=False,
+                )
 
-        #    message_sent = True
+                message_sent = True
 
-        if new_message.recipient.extendedopts.tweet:
+            except MailgunAPIError as e:
+                print(e)
+
+        if new_message.recipient.extendedopts.tweet \
+            and new_message.recipient.extendedopts.twitterhandle != '':
 
             TWITTOKEN = settings.TWITTOKEN
             TWITTOKEN_SECRET = settings.TWITTOKEN_SECRET
@@ -729,4 +736,3 @@ def sendmessages():
             print('inside message_sent')
             new_message.delivered_date = utcnow()
             new_message.save()
-

@@ -162,8 +162,8 @@ LOGIN_REDIRECT_URL='/web/private/index'
 LOGOUT_REDIRECT_URL=LOGIN_URL
 
 EMAIL_BACKEND = 'django_mailgun.MailgunBackend'
-MAILGUN_ACCESS_KEY = 'key-eb3edd3b95bab6e91e6c8fba362de831'
-MAILGUN_SERVER_NAME = 'apps.geodev.com.br'
+MAILGUN_ACCESS_KEY = get_env_variable("MT_MAILGUN_ACCESS_KEY")
+MAILGUN_SERVER_NAME = get_env_variable("MT_MAILGUN_SERVER_NAME")
 
 LOGGING = {
     'version': 1,
@@ -198,16 +198,8 @@ CELERY_TIMEZONE = 'Europe/London'
 CELERY_BEAT_SCHEDULE = {
     'send-email': {
         'task': 'web.tasks.sendmessages',
-        'schedule': 60,
+        'schedule': 10,
     },
-    'rapid-monitor': {
-        'task': 'web.tasks.run_monitor',
-        'schedule': 5.0,
-    },
-    'slow-monitor': {
-        'task': 'web.tasks.slow_monitor',
-        'schedule': 30.0,
-    }
 }
 
 
