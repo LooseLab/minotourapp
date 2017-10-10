@@ -695,12 +695,22 @@ def sendmessages():
         message_sent = False
 
         if new_message.recipient.extendedopts.email:
+
             try:
+
+                if new_message.sender:
+
+                    sender = new_message.sender.email
+
+                else:
+
+                    sender = 'contact@minotour.org'
+
                 send_mail(
                     new_message.title,
                     new_message.content,
-                    new_message.sender.email,
-                    [new_message.recipient.email, 'py5gol@gmail.com'],
+                    sender,
+                    [new_message.recipient.email],
                     fail_silently=False,
                 )
 
