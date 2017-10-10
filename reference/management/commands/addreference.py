@@ -1,10 +1,15 @@
-from django.core.management.base import BaseCommand, CommandError
-from Bio import SeqIO
-import os,sys,shutil
-from django.conf import settings
+import os
+import shutil
 import subprocess
+
+from Bio import SeqIO
+from django.conf import settings
+from django.core.management.base import BaseCommand
+from django.core.management.base import CommandError
+
 from reference.models import ReferenceInfo
 from reference.models import ReferenceLine
+
 
 class Command(BaseCommand):
     help = 'Add a custom reference sequence to the minoTour database. ' \
@@ -16,9 +21,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             print("Processing Reference {}".format(options['reference']))
-            print (os.path.basename(options['reference']))
+            print(os.path.basename(options['reference']))
             REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
-            print (REFERENCELOCATION)
+            print(REFERENCELOCATION)
             srcname = options['reference']
             dstname = os.path.join(REFERENCELOCATION, os.path.basename(options['reference']))
             print (srcname)
@@ -40,22 +45,23 @@ class Command(BaseCommand):
             minimap2_index_path = os.path.basename(options['reference']) + ".mmi"
             #print (bwa_index_path)
             print (minimap2_index_path)
-            RefInfo, created1 = ReferenceInfo.objects.update_or_create(
+
+            refInfo, created1 = ReferenceInfo.objects.update_or_create(
                 reference_name=os.path.basename(options['reference']).split('.')[0],
                 filename=os.path.basename(options['reference']),
                 #bwa_index_file_location=bwa_index_path,
                 minimap2_index_file_location=minimap2_index_path,
                 totalrefleN=total_length
             )
-            RefInfo.save()
+            refInfo.save()
+
             for line in subfile:
-                RefLine,created2 = ReferenceLine.objects.update_or_create(
-                    reference=RefInfo,
+                refLine, created2 = ReferenceLine.objects.update_or_create(
+                    reference=refInfo,
                     line_name = line,
                     chromosome_length = subfile[line]
                 )
-                RefLine.save()
-
+                refLine.save()
 
         except Exception as e:
             raise CommandError(repr(e))

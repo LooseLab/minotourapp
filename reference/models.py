@@ -1,7 +1,6 @@
-from django.db import models
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 from django.conf import settings
+from django.db import models
+
 
 class ReferenceInfo(models.Model):
     reference_name = models.CharField(max_length=512)
@@ -14,6 +13,7 @@ class ReferenceInfo(models.Model):
 
     def __str__(self):
         return "{} {}".format(self.reference_name, self.filename)
+
 
 class ReferenceLine(models.Model):
     reference = models.ForeignKey(ReferenceInfo, on_delete=models.CASCADE, related_name='referencelines')

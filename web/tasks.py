@@ -1,42 +1,39 @@
 from __future__ import absolute_import, unicode_literals
-from celery import task
-from celery.utils.log import get_task_logger
 
-from communication.models import Message
-from reads.models import MinIONRun, FastqReadType
-from reads.models import JobMaster
-from reads.models import FastqRead
-from alignment.models import SamStore
-from reads.models import ChannelSummary
-from reads.models import HistogramSummary
-from reads.models import RunSummaryBarcode
-from reads.models import RunStatisticBarcode
-from reads.models import Job
-from minikraken.models import MiniKraken,ParsedKraken
-from reads.models import UserOptions
-from reads.models import Barcode
-from reference.models import ReferenceInfo
-from reference.models import ReferenceLine
-from alignment.models import PafStore
-from alignment.models import PafRoughCov
-from alignment.models import PafSummaryCov
-from datetime import datetime, timedelta
-from django.db.models import Q
+import json
+import os
 import subprocess
 import tempfile
-from django.core.cache import cache
-from django.contrib.auth.models import User
-from django.conf import settings
+from datetime import datetime, timedelta
+
 import pytz
-from twitter import *
-import os
 import redis
-import json
-
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from celery import task
+from celery.utils.log import get_task_logger
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.core.cache import cache
 from django.core.mail import send_mail
-
+from django.core.paginator import Paginator
+from django.db.models import Q
 from django_mailgun import MailgunAPIError
+from twitter import *
+
+from alignment.models import PafStore
+from alignment.models import PafSummaryCov
+from alignment.models import SamStore
+from communication.models import Message
+from minikraken.models import MiniKraken, ParsedKraken
+from reads.models import Barcode
+from reads.models import ChannelSummary
+from reads.models import FastqRead
+from reads.models import HistogramSummary
+from reads.models import JobMaster
+from reads.models import JobType
+from reads.models import MinIONRun, FastqReadType
+from reads.models import RunStatisticBarcode
+from reads.models import RunSummaryBarcode
+from reference.models import ReferenceInfo
 
 logger = get_task_logger(__name__)
 
@@ -45,126 +42,137 @@ def utcnow():
     return datetime.now(tz=pytz.utc)
 
 
+def findbin(x, bin_width=900):
+    return (x - x % bin_width) / bin_width
+
+
 @task()
 def run_monitor():
+
     logger.info('Running run_monitor celery task.')
-    # Do something...
-    print ("Rapid Monitor Called")
-    #minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=datetime.utcnow() - timedelta(days=1)) | Q(
-    #        RunStats__created_date__gte=datetime.now() - timedelta(days=1))).distinct()
+
+    print("Rapid Monitor Called")
+
     minion_runs = MinIONRun.objects.filter(active=True).distinct()
-    #minion_runs = MinIONRun.objects.filter(id=87).distinct()
-    #print(minion_runs)
-    #print(len(minion_runs))
+
     for minion_run in minion_runs:
-        #print ("Run Monitor jobs for {}".format(minion_run))
-        #print (minion_run.run_id)
-        #print (minion_run.owner)
-        #SendUserMessage.delay(minion_run.id,"a test","testing")
-        run_jobs = JobMaster.objects.filter(run_id=minion_run.id)
+
+        run_jobs = JobMaster.objects.filter(run=minion_run).filter(running=False)
+
         for run_job in run_jobs:
-            #print (type(run_job.job_name))
-            if str(run_job.job_name)=="Alignment" and run_job.running is False:
-                #print ("trying to run alignment")
-                run_alignment.delay(minion_run.id,run_job.id,run_job.reference,run_job.last_read)
-            if str(run_job.job_name)=="Minimap2" and run_job.running is False:
-                print ("trying to run alignment {} {} {} {}".format(minion_run.id,run_job.id,run_job.reference.id,run_job.last_read) )
-                run_minimap2.delay(minion_run.id,run_job.id,run_job.reference.id,run_job.last_read)
-            if str(run_job.job_name)=="Kraken" and run_job.running is False:
-                run_kraken.delay(minion_run.id,run_job.id,run_job.last_read)
-            if run_job.running is True:
-                #print ("{} is already running!".format(run_job.job_name) )
-                pass
+
+            if run_job.job_type.name == "Alignment":
+
+                run_alignment.delay(minion_run.id, run_job.id, run_job.reference, run_job.last_read)
+
+            if run_job.job_type.name == "Minimap2":
+
+                print("trying to run alignment {} {} {} {}".format(
+                    minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
+                )
+
+                run_minimap2.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
+
+            if run_job.job_type.name == "Kraken":
+                run_kraken.delay(minion_run.id, run_job.id, run_job.last_read)
+
 
 @task()
 def slow_monitor():
+
     logger.info('Running slow_monitor celery task.')
-    # Do something...
-    print ("Slow Monitor Called")
+
+    print("Slow Monitor Called")
+
     testset={}
     cachesiz={}
-    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=utcnow() - timedelta(days=1)) | Q(
-            RunStats__created_date__gte=utcnow() - timedelta(days=1))).distinct()
-    #minion_runs = MinIONRun.objects.all()
-    #print(minion_runs)
-    #print(len(minion_runs))
-    for minion_run in minion_runs:
-        #print ("checking jobs for {}".format(minion_run))
-        #print (minion_run.run_id)
-        cachesiz[str(minion_run.id)]=minion_run
-        run_jobs = JobMaster.objects.filter(run_id=minion_run.id)
-        for run_job in run_jobs:
-            #print('>>> run_jobs')
-            #print(run_job.job_name)
-            #print(run_job.running)
 
-            if str(run_job.job_name)=="ProcAlign" and run_job.running is False:
-                #print ("trying to process alignment")
+    minion_runs = MinIONRun.objects.filter(
+        Q(reads__created_date__gte=utcnow() - timedelta(days=1)) |
+        Q(RunStats__created_date__gte=utcnow() - timedelta(days=1))
+    ).distinct()
+
+    for minion_run in minion_runs:
+
+        cachesiz[str(minion_run.id)]=minion_run
+
+        run_jobs = JobMaster.objects.filter(run=minion_run)
+
+        for run_job in run_jobs:
+
+            if run_job.job_type.name == "ProcAlign" and run_job.running is False:
                 proc_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
-            if str(run_job.job_name)=="ChanCalc" and run_job.running is False:
-                #print ("ChannelCalc")
+
+            if run_job.job_type.name == "ChanCalc" and run_job.running is False:
                 processreads.delay(minion_run.id, run_job.id, run_job.last_read)
+
     try:
         testset = cache.get('a-unique-key', {})
+
     except:
         print('a-unique-key not found')
+
     print('a-unique-key is {}'.format(testset))
-    deleted,added = compare_two(testset,cachesiz)
+
+    deleted, added = compare_two(testset, cachesiz)
+
     processrun(deleted,added)
+
     cache.set('a-unique-key',cachesiz)
-    ### We need someway of removing things from the dictionary which aren't still active - otherwise things will persist for ever - so a compare to dictionaries.
+
+    # TODO: We need someway of removing things from the dictionary which aren't still active - otherwise things will
+    # persist for ever - so a compare to dictionaries.
+
 
 def processrun(deleted,added):
     for run in added:
         runinstance = MinIONRun.objects.get(pk=run)
-        jobinstance = Job.objects.get(jobname="ChanCalc")
-        runinstance.active=True
+        jobinstance = JobType.objects.get(name="ChanCalc")
+        runinstance.active = True
         runinstance.save()
-        #newjob = JobMaster(run_id=runinstance,job_name=jobinstance,last_read=0)
-        newjob,created = JobMaster.objects.get_or_create(run_id=runinstance, job_name=jobinstance)
+
+        newjob, created = JobMaster.objects.get_or_create(run=runinstance, job_type=jobinstance)
+
         if created is True:
             newjob.last_read=0
+
         newjob.save()
+
     for run in deleted:
         runinstance = MinIONRun.objects.get(pk=run)
-        runinstance.active=False
+        runinstance.active = False
         runinstance.save()
-        jobinstance = Job.objects.get(jobname="ChanCalc")
-        jobrecord=JobMaster.objects.filter(job_name=jobinstance,run_id=runinstance).update(complete=True)
+
+        jobinstance = JobType.objects.get(name="ChanCalc")
+        JobMaster.objects.filter(job_type=jobinstance, run=runinstance).update(complete=True)
+
 
 def compare_two(newset,cacheset):
-    # Do somehing ....
-    #print ("newset",newset.keys())
-    #print ("cached",cacheset.keys())
-    print ("deleted keys",newset.keys()-cacheset.keys())
+    print("deleted keys",newset.keys()-cacheset.keys())
+
     deleted = newset.keys()-cacheset.keys()
+
     print("added keys",cacheset.keys() - newset.keys())
+
     added = cacheset.keys() - newset.keys()
+
     return deleted,added
 
-@task()
-def SendUserMessage(runid,messagetype,messagestring):
-    print ("Message Sending Initiated")
-    print ("looking for {}".format(runid))
-    runinstance = MinIONRun.objects.get(id=runid)
-    print ("and now for {}".format(runinstance.owner))
-    UserObject = User.objects.get(username=runinstance.owner)
-    print (UserObject.extendedopts.tweet)
-    print (runinstance,UserObject)
-
 
 @task()
-def processreads(runid,id,last_read):
-    #print('>>>> Running processreads celery task.')
+def processreads(runid, id, last_read):
 
     JobMaster.objects.filter(pk=id).update(running=True)
-    fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:10000]
-    chanstore=dict()
 
-    histstore=dict()
+    fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:10000]
+
+    chanstore = dict()
+
+    histstore = dict()
+
     histstore['All reads'] = {}
 
-    barstore=set()
+    barstore = set()
 
     for fastq in fastqs:
         #print (fastq)
@@ -206,7 +214,6 @@ def processreads(runid,id,last_read):
         histstore['All reads'][fastq.type.name][bin_width]['count'] += 1
         histstore['All reads'][fastq.type.name][bin_width]['length'] += len(fastq.sequence)
 
-
         ### Adding in the current post save behaviour:
 
         ipn_obj = fastq
@@ -217,9 +224,11 @@ def processreads(runid,id,last_read):
 
         tm = ipn_obj.start_time
 
-        tm = tm - timedelta(minutes=(tm.minute % 1) - 1,
-                                     seconds=tm.second,
-                                     microseconds=tm.microsecond)
+        tm = tm - timedelta(
+            minutes=(tm.minute % 1) - 1,
+            seconds=tm.second,
+            microseconds=tm.microsecond
+        )
 
         obj1, created1 = RunSummaryBarcode.objects.update_or_create(
             run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode_all_reads
@@ -245,25 +254,15 @@ def processreads(runid,id,last_read):
 
         last_read = fastq.id
 
-    #print (tempstore)
     runinstance = MinIONRun.objects.get(pk=runid)
-    #for barcode in barstore:
-    #    result, created = Barcode.objects.get_or_create(run=runinstance, name=barcode)
 
     for chan in chanstore:
-        #print (chan)
         channel, created = ChannelSummary.objects.get_or_create(run_id=runinstance,channel_number=int(chan))
-        #print ('created',created)
-        #print (channel)
-        #print (tempstore[chan]['count'])
         channel.read_count+=chanstore[chan]['count']
         channel.read_length+=chanstore[chan]['length']
         channel.save()
 
-    #print('>>>> {}'.format(histstore))
-
     for barcodename in histstore.keys():
-        #print('>>>> {}'.format(barcodename))
 
         barcode = Barcode.objects.filter(run=runinstance, name=barcodename).first()
 
@@ -284,6 +283,7 @@ def processreads(runid,id,last_read):
                 histogram.save()
 
     JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
+
 
 def update_sum_stats(obj, ipn_obj):
 
@@ -329,10 +329,6 @@ def update_sum_stats(obj, ipn_obj):
     obj.save()
 
 
-
-def findbin(x,bin_width=900):
-    return ((x - x % bin_width) / bin_width)
-
 @task()
 def proc_alignment(runid,id,reference,last_read):
     JobMaster.objects.filter(pk=id).update(running=True)
@@ -368,6 +364,7 @@ def proc_alignment(runid,id,reference,last_read):
     """
     JobMaster.objects.filter(pk=id).update(running=False,last_read=last_read)
 
+
 @task()
 def test_task(string, reference):
     REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
@@ -381,8 +378,9 @@ def test_task(string, reference):
     for line in lines:
         print (line.id)
 
+
 @task()
-def run_minimap2(runid,id,reference,last_read):
+def run_minimap2(runid, id, reference, last_read):
     #print ("hello roberto {}".format(runid))
     JobMaster.objects.filter(pk=id).update(running=True)
     REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
@@ -552,6 +550,7 @@ def run_kraken(runid,id,last_read):
     krakrun.finish()
     JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
 
+
 class Kraken():
     def __init__(self):
         self.tmpfile = tempfile.NamedTemporaryFile(suffix=".fa")
@@ -649,6 +648,7 @@ def run_alignment(runid,id,reference,last_read):
                     last_read=fastq.id
                     #print (last_read)
     JobMaster.objects.filter(pk=id).update(running=False,last_read=last_read)
+
 
 @task
 def updateReadNamesOnRedis():
