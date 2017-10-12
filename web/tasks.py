@@ -74,7 +74,16 @@ def run_monitor():
                 run_minimap2.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
             if run_job.job_type.name == "Kraken":
+
                 run_kraken.delay(minion_run.id, run_job.id, run_job.last_read)
+
+            if run_job.job_type.name == "ProcAlign":
+
+                proc_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
+
+            if run_job.job_type.name == "ChanCalc":
+
+                processreads.delay(minion_run.id, run_job.id, run_job.last_read)
 
 
 @task()
@@ -85,31 +94,24 @@ def slow_monitor():
     print("Slow Monitor Called")
 
     testset={}
+
     cachesiz={}
 
-    minion_runs = MinIONRun.objects.filter(
-        Q(reads__created_date__gte=utcnow() - timedelta(days=1)) |
-        Q(RunStats__created_date__gte=utcnow() - timedelta(days=1))
-    ).distinct()
+    minion_runs = MinIONRun.objects.all()
+
+    timediff = utcnow() - timedelta(days=1)
 
     for minion_run in minion_runs:
 
-        cachesiz[str(minion_run.id)]=minion_run
+        if minion_run.last_entry() >= timediff or minion_run.last_read() >= timediff:
 
-        run_jobs = JobMaster.objects.filter(run=minion_run)
-
-        for run_job in run_jobs:
-
-            if run_job.job_type.name == "ProcAlign" and run_job.running is False:
-                proc_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
-
-            if run_job.job_type.name == "ChanCalc" and run_job.running is False:
-                processreads.delay(minion_run.id, run_job.id, run_job.last_read)
+            cachesiz[str(minion_run.id)]=minion_run
 
     try:
         testset = cache.get('a-unique-key', {})
 
     except:
+
         print('a-unique-key not found')
 
     print('a-unique-key is {}'.format(testset))
@@ -160,8 +162,9 @@ def compare_two(newset,cacheset):
 
 
 @task()
-def processreads(runid, id, last_read):
-
+def processreads(runid,id,last_read):
+    #print('>>>> Running processreads celery task.')
+    print ('running processreads with {} {} {}'.format(runid,id,last_read))
     JobMaster.objects.filter(pk=id).update(running=True)
 
     fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:10000]
@@ -690,7 +693,7 @@ def sendmessages():
 
     for new_message in new_messages:
 
-        print('Sending message: {}'.format(new_message))
+        #print('Sending message: {}'.format(new_message))
 
         message_sent = False
 
