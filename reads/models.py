@@ -9,6 +9,7 @@ from reference.models import ReferenceInfo
 from celery import task
 from celery.utils.log import get_task_logger
 from communication.utils import send_message
+import pytz
 
 class MinION(models.Model):
     minION_name = models.CharField(max_length=64)
@@ -185,7 +186,10 @@ class MinIONRun(models.Model):
         try:
             return self.RunStats.last().created_date
         except AttributeError:
-            return "undefined"
+            #return "undefined"
+            olddate = datetime.datetime(1, 1, 1, 1, 1, 1, 1, pytz.utc)
+            return olddate
+
 
     def start_time(self):
         try:
@@ -197,7 +201,9 @@ class MinIONRun(models.Model):
         try:
             return self.reads.last().created_date
         except AttributeError:
-            return "undefined"
+            #return "undefined"
+            olddate = datetime.datetime(1, 1, 1, 1, 1, 1, 1, pytz.utc)
+            return olddate
 
     def sample_name(self):
         try:
