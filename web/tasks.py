@@ -72,38 +72,29 @@ def run_monitor():
                 run_minimap2.delay(minion_run.id,run_job.id,run_job.reference.id,run_job.last_read)
             if str(run_job.job_name)=="Kraken" and run_job.running is False:
                 run_kraken.delay(minion_run.id,run_job.id,run_job.last_read)
-            if run_job.running is True:
-                #print ("{} is already running!".format(run_job.job_name) )
-                pass
-
-@task()
-def slow_monitor():
-    logger.info('Running slow_monitor celery task.')
-    # Do something...
-    print ("Slow Monitor Called")
-    testset={}
-    cachesiz={}
-    minion_runs = MinIONRun.objects.filter(Q(reads__created_date__gte=utcnow() - timedelta(days=1)) | Q(
-            RunStats__created_date__gte=utcnow() - timedelta(days=1))).distinct()
-    #minion_runs = MinIONRun.objects.all()
-    #print(minion_runs)
-    #print(len(minion_runs))
-    for minion_run in minion_runs:
-        #print ("checking jobs for {}".format(minion_run))
-        #print (minion_run.run_id)
-        cachesiz[str(minion_run.id)]=minion_run
-        run_jobs = JobMaster.objects.filter(run_id=minion_run.id)
-        for run_job in run_jobs:
-            #print('>>> run_jobs')
-            #print(run_job.job_name)
-            #print(run_job.running)
-
             if str(run_job.job_name)=="ProcAlign" and run_job.running is False:
                 #print ("trying to process alignment")
                 proc_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
             if str(run_job.job_name)=="ChanCalc" and run_job.running is False:
                 #print ("ChannelCalc")
                 processreads.delay(minion_run.id, run_job.id, run_job.last_read)
+            if run_job.running is True:
+                #print ("{} is already running!".format(run_job.job_name) )
+                pass
+
+@task()
+def slow_monitor():
+
+    logger.info('Running slow_monitor celery task.')
+    # Do something...
+    print ("Slow Monitor Called")
+    testset={}
+    cachesiz={}
+    minion_runs = MinIONRun.objects.all()
+    timediff = utcnow() - timedelta(days=1)
+    for minion_run in minion_runs:
+        if minion_run.last_entry() >= timediff or minion_run.last_read() >= timediff:
+            cachesiz[str(minion_run.id)]=minion_run
     try:
         testset = cache.get('a-unique-key', {})
     except:
@@ -144,21 +135,23 @@ def compare_two(newset,cacheset):
 
 @task()
 def SendUserMessage(runid,messagetype,messagestring):
-    print ("Message Sending Initiated")
-    print ("looking for {}".format(runid))
+    #print ("Message Sending Initiated")
+    #print ("looking for {}".format(runid))
     runinstance = MinIONRun.objects.get(id=runid)
-    print ("and now for {}".format(runinstance.owner))
+    #print ("and now for {}".format(runinstance.owner))
     UserObject = User.objects.get(username=runinstance.owner)
-    print (UserObject.extendedopts.tweet)
-    print (runinstance,UserObject)
+    #print (UserObject.extendedopts.tweet)
+    #print (runinstance,UserObject)
 
 
 @task()
 def processreads(runid,id,last_read):
     #print('>>>> Running processreads celery task.')
-
+    print ('running processreads with {} {} {}'.format(runid,id,last_read))
     JobMaster.objects.filter(pk=id).update(running=True)
+
     fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:10000]
+
     chanstore=dict()
 
     histstore=dict()
@@ -690,7 +683,7 @@ def sendmessages():
 
     for new_message in new_messages:
 
-        print('Sending message: {}'.format(new_message))
+        #print('Sending message: {}'.format(new_message))
 
         message_sent = False
 
