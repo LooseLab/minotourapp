@@ -343,7 +343,8 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
             'last_read',
             'last_entry',
             'jobstodo',
-            'barcodes'
+            'barcodes',
+            'to_delete',
         )
 
         read_only = (

@@ -687,7 +687,13 @@ def updateReadNamesOnRedis():
 
 
 @task
-def sendmessages():
+def delete_runs():
+
+    MinIONRun.objects.filter(to_delete=True).delete()
+
+
+@task
+def send_messages():
 
     new_messages = Message.objects.filter(delivered_date=None)
 

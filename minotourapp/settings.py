@@ -204,9 +204,13 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'web.tasks.slow_monitor',
         'schedule': 30.0,
     },
-    'send-email': {
-        'task': 'web.tasks.sendmessages',
+    'send-messages': {
+        'task': 'web.tasks.send_messages',
         'schedule': 10,
+    },
+    'delete-runs': {
+        'task': 'web.tasks.delete_runs',
+        'schedule': 60,
     },
 }
 

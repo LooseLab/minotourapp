@@ -176,6 +176,10 @@ class MinIONRun(models.Model):
         default=False
     )
 
+    to_delete = models.BooleanField(
+        default=False
+    )
+
     class Meta:
         verbose_name = 'MinION Run'
         verbose_name_plural = 'MinION Runs'

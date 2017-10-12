@@ -109,7 +109,7 @@ def run_list(request):
     """
     if request.method == 'GET':
         #print ("run list ", request.user)
-        queryset = MinIONRun.objects.filter(owner=request.user)
+        queryset = MinIONRun.objects.filter(owner=request.user).filter(to_delete=False)
         serializer = MinIONRunSerializer(queryset, many=True, context={'request': request})
         #for q in queryset:
         #    print ("run queryset",q.owner)
@@ -287,7 +287,7 @@ def minION_currentrun_list(request, pk):
         return Response(serializer.data)
 
 
-@api_view(['GET', 'PUT', 'DELETE'])
+@api_view(['GET', 'PUT'])
 def run_detail(request, pk):
     """
     Retrieve, update or delete a run instance.
