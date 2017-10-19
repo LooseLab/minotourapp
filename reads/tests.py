@@ -7,6 +7,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
 from .models import MinIONRun, FastqReadType, FastqRead
+from .models import Barcode
 
 
 class MinionRunTestCase(APITestCase):
@@ -14,7 +15,7 @@ class MinionRunTestCase(APITestCase):
         user_john = User.objects.create_user('john', 'john@test.com', 'passasdf')
         user_alex = User.objects.create_user('alex', 'alex@test.com', 'passasdf')
 
-        MinIONRun.objects.create(run_name='20170516_1630_john',
+        run1 = MinIONRun.objects.create(run_name='20170516_1630_john',
                                  run_id='hj78yy9o-217e-4335-9451-66a7288a9dd5',
                                  is_barcoded=False,
                                  owner=user_john)
@@ -33,11 +34,13 @@ class MinionRunTestCase(APITestCase):
         FastqReadType.objects.create(name='Complement')
         FastqReadType.objects.create(name='2d')
 
+        barcode1 = Barcode.objects.create(name='Barcode 1', run=run1)
+
         FastqRead.objects.create(run_id=MinIONRun.objects.get(run_name='20170516_1630_john'),
                                  read_id='d43c9b02-5d9f-4d37-9ed4-b718371d1f86',
                                  read=6632,
                                  channel=231,
-                                 barcode='barcode1',
+                                 barcode=barcode1,
                                  sequence='ACATTTGCCG',
                                  quality='$#%*&)''%#',
                                  is_pass=True,
@@ -48,7 +51,7 @@ class MinionRunTestCase(APITestCase):
                                  read_id='2e48e4a3-aaf7-4311-91fe-4bb2054e3bba',
                                  read=6316,
                                  channel=172,
-                                 barcode='barcode1',
+                                 barcode=barcode1,
                                  sequence='ACATTTGCCG',
                                  quality='$#%*&)''%#',
                                  is_pass=True,
@@ -59,7 +62,6 @@ class MinionRunTestCase(APITestCase):
                                  read_id='2e48e4a3-aaf7-4311-91fe-4bb2054e3bba',
                                  read=6316,
                                  channel=172,
-                                 barcode='barcode1',
                                  sequence='ACATTTGCCG',
                                  quality='$#%*&)''%#',
                                  is_pass=True,
@@ -70,7 +72,6 @@ class MinionRunTestCase(APITestCase):
                                  read_id='2e48e4a3-aaf7-4311-91fe-4bb2054e3bba',
                                  read=6316,
                                  channel=172,
-                                 barcode='barcode1',
                                  sequence='ACATTTGCCG',
                                  quality='$#%*&)''%#',
                                  is_pass=True,
