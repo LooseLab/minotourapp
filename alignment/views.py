@@ -1,7 +1,8 @@
+import json
+
+from django.http import HttpResponse
 from django.shortcuts import render
 from django.db.models import Count, Min, Sum, Avg
-
-# Create your views here.
 
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -18,22 +19,32 @@ from reference.models import ReferenceInfo
 from reference.models import ReferenceLine
 
 @api_view(['GET'])
-def paf_alignment_list(request, pk):#,bc,ch):
-    """
+def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id):
 
-    :param request:
-    :param pk:
-    :return:
-    """
-    if request.method == 'GET':
-        queryset = PafRoughCov.objects \
-            .filter(run__owner=request.user) \
-            .filter(run__id=pk)
-            #.filter(run__id=pk,barcode=bc,chromosome=ch)
+    queryset = PafRoughCov.objects \
+        .filter(run__owner=request.user) \
+        .filter(run__id=run_id) \
+        .filter(barcode__id=barcode_id) \
+        .filter(chromosome__id=chromosome_id) \
+        .filter(read_type__id=read_type_id) \
+        .order_by('p')
 
-        serializer = PafRoughCovSerializer(queryset, many=True, context={'request': request})
+    result_list = []
+    position_list = []
+    coverage_list = []
+    current_coverage_sum = 0
 
-        return Response(serializer.data)
+    for key, item in enumerate(queryset):
+
+        current_coverage_sum = current_coverage_sum + item.i
+
+        position_list.append(item.p)
+
+        coverage_list.append(current_coverage_sum)
+
+        result_list.append([item.p, current_coverage_sum])
+
+    return HttpResponse(json.dumps(result_list), content_type="application/json")
 
 @api_view(['GET'])
 def paf_alignment_summary(request, pk):#,bc,ch):

@@ -4,10 +4,9 @@ from alignment import views
 
 urlpatterns = [
     url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/pafcover/$',
+        r'^api/v1/runs/(?P<run_id>[0-9]+)/pafcover/(?P<barcode_id>[0-9]+)/(?P<read_type_id>[0-9]+)/(?P<chromosome_id>[0-9]+)/$',
         views.paf_alignment_list,
         name="paf_alignment_list"
-        #(?P<bc>[0-9]+)/(?P<ch>[0-9]+)/
     ),
     url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/pafsummary/$',

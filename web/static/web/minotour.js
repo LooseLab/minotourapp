@@ -423,10 +423,13 @@ function MinotourApp() {
     this.makeLiveChart = makeLiveChart;
     this.makeAreaPlot = makeAreaPlot;
     this.makeHeatmapChart = makeHeatmapChart;
+    this.makeStepLineChart = makeStepLineChart;
+
     this.lastread = 0;
     this.needtoupdatecharts = false;
 
     this.updatePoreChart = updatePoreChart;
+    this.updateStepLineChart = updateStepLineChart;
 
     //this.updateReadsPerPoreChart = updateReadsPerPoreChart;
 
@@ -638,6 +641,12 @@ function MinotourApp() {
             ""
         );
 
+        this.chartChromosomeCoverage = this.makeStepLineChart(
+            "chromosome-coverage",
+            "Chromosome Coverage",
+            "Coverage"
+        );
+
         this.LiveHistogram = this.makeLiveHistogram(
             'live-histogram',
             'Histogram of Read Lengths (Events)',
@@ -799,6 +808,9 @@ function MinotourApp() {
             }
         }
 
+        console.log('updating chromosome coverage chart');
+        this.updateStepLineChart(this.chartChromosomeCoverage, );
+        console.log('updated chromosome coverage chart');
 
     };
 

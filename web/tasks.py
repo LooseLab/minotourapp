@@ -63,27 +63,37 @@ def run_monitor():
 
             if run_job.job_type.name == "Alignment":
 
-                run_alignment.delay(minion_run.id, run_job.id, run_job.reference, run_job.last_read)
+                print("trying to run bwa alignment {} {} {} {}".format(
+                    minion_run.id,
+                    run_job.id,
+                    run_job.reference.id,
+                    run_job.last_read
+                ))
+
+                run_bwa_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
             if run_job.job_type.name == "Minimap2":
 
                 print("trying to run alignment {} {} {} {}".format(
-                    minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
-                )
+                    minion_run.id,
+                    run_job.id,
+                    run_job.reference.id,
+                    run_job.last_read
+                ))
 
-                run_minimap2.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
+                run_minimap2_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
-            if run_job.job_type.name == "Kraken":
+            #if run_job.job_type.name == "Kraken":
 
-                run_kraken.delay(minion_run.id, run_job.id, run_job.last_read)
+            #    run_kraken.delay(minion_run.id, run_job.id, run_job.last_read)
 
-            if run_job.job_type.name == "ProcAlign":
+            #if run_job.job_type.name == "ProcAlign":
 
-                proc_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
+            #    proc_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
-            if run_job.job_type.name == "ChanCalc":
+            #if run_job.job_type.name == "ChanCalc":
 
-                processreads.delay(minion_run.id, run_job.id, run_job.last_read)
+            #    processreads.delay(minion_run.id, run_job.id, run_job.last_read)
 
 
 @task()
@@ -383,7 +393,7 @@ def test_task(string, reference):
 
 
 @task()
-def run_minimap2(runid, id, reference, last_read):
+def run_minimap2_alignment(runid, id, reference, last_read):
     #print ("hello roberto {}".format(runid))
     JobMaster.objects.filter(pk=id).update(running=True)
     REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
@@ -601,56 +611,70 @@ class Kraken():
 
 
 @task()
-def run_alignment(runid,id,reference,last_read):
-    JobMaster.objects.filter(pk=id).update(running=True)
+def run_bwa_alignment(runid, job_id, referenceinfo_id, last_read):
+
+    print('---> Inside bwa alignment')
+
+    job = JobMaster.objects.get(pk=job_id)
+
+    if job.running is True:
+        print('Job is already running. No further action required.')
+        return
+
+    job.running = True
+    job.save()
+
+    print('---> Job was not running')
+
+    # JobMaster.objects.filter(pk=job_id).update(running=True)
+
     #print (runid,id,reference,last_read)
-    fastqs = FastqRead.objects.filter(run_id=runid,id__gt=int(last_read))[:1000]
-    for fastq in fastqs:
+    fastq_list = FastqRead.objects.filter(
+        run_id=runid,
+        id__gt=last_read
+    )[:1000]
+
+    referenceinfo = ReferenceInfo.objects.get(pk=referenceinfo_id)
+
+    for fastq in fastq_list:
         #print (fastq.sequence)
-        bwaindex = 'Human'
-        read = '>{} \r\n{}\r\n'.format(fastq,fastq.sequence)
+        bwaindex = referenceinfo.filename
+        read = '>{} \r\n{}\r\n'.format(fastq, fastq.sequence)
         cmd = 'bwa mem -x ont2d %s -' % (bwaindex)
         #print (cmd)
         #print (read)
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                stdin=subprocess.PIPE, shell=True)
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            shell=True
+        )
+
         (out, err) = proc.communicate(input=read.encode("utf-8"))
         status = proc.wait()
         sam = out.decode("utf-8")
-        #print (sam)
+
+        print('---> sam')
+
         samdata = sam.splitlines()
+
+        print(samdata)
+
         for line in samdata:
             if not line.startswith('@'):
                 line = line.strip('\n')
                 record = line.split('\t')
                 if record[2] != '*':
                     runinstance = MinIONRun.objects.get(pk=runid)
-                    #print (runinstance)
                     newsam = SamStore(run_id=runinstance, read_id=fastq)
                     newsam.samline = line
-                    #newsam.qname = record[0]
-                    #print (fastq.quality)
-                    #newsam.qualscores = fastq.quality ## Need to check if this is correct - not convinced!
-                    #newsam.flag = int(record[1])
-                    #newsam.rname = record[2]
-                    #newsam.refid = 1 ## Needs to be fixed going forwards
-                    #newsam.pos = int(record[3])
-                    #newsam.mapq = int(record[4])
-                    #newsam.cigar = record[5]
-                    #newsam.rnext = record[6]
-                    #newsam.pnext = record[7]
-                    #newsam.tlen = int(record[8])
-                    #newsam.seq = record[9]
-                    #newsam.qual = record[10]
-                    #newsam.nm = record[11]
-                    #newsam.md = record[12]
-                    #newsam.ass = record[13]
-                    #newsam.xs = record[14]
                     newsam.save()
                     last_read=fastq.id
-                    #print (last_read)
-    JobMaster.objects.filter(pk=id).update(running=False,last_read=last_read)
+
+    job.running = False
+    job.last_read = last_read
+    job.save()
 
 
 @task
