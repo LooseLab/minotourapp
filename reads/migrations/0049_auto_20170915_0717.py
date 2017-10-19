@@ -10,6 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('reads', '0048_auto_20170914_1020'),
+        ('reference', '0004_auto_20170915_0709'),
     ]
 
     operations = [

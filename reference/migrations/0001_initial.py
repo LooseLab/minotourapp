@@ -23,6 +23,7 @@ class Migration(migrations.Migration):
                 ('bwa_index_file_location', models.CharField(max_length=512, null=True)),
                 ('minimap2_index_file_location', models.CharField(max_length=512, null=True)),
                 ('totalrefleN', models.IntegerField()),
+                ('private', models.BooleanField(default=False)),
             ],
         ),
         migrations.CreateModel(
