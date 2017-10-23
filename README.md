@@ -152,8 +152,10 @@ for each command.
 
     python manage.py migrate;
 
-    python manage.py runserver 8100
+    python manage.py loaddata minimal.db;
+
+    python manage.py runserver 8100;
     ```
 
 * Time to test - if everything worked well, you should be able to access the web
-interface on http://localhost:8100.
+interface on http://localhost:8100. Login with user **demo** and password **asdf1234**.
