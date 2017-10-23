@@ -31,14 +31,28 @@ Flower (optional - but a useful Celery task monitor tool).
 In order to have a functional environment for development purposes, please
 follow the instruction below.
 
-* [Redis](https://redis.io/download) - Redis does not rely on the virtual
-environment, so it can be installed anywhere.
+* [Redis](https://redis.io/download) - Minotour uses **Redis** as a cache system
+for the web module and also for Celery. Follow the instructions and make sure
+that the **redis-server** executable is available in PATH environment variable.
 
 * [MySQL Community edition](https://dev.mysql.com/downloads/) - Minotour
 requires a MySQL server instance. It can run locally or in another
-server.
+server. Installing and configuring MySQL is not in the scope of this guideline, but here is official
+documentation [Link](https://dev.mysql.com/doc/mysql-getting-started/en/) and
+another good tutorial is [Link](https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-16-04).
 
-* Python 3 - Minotour modules use Python 3, so make sure it is available.
+* [Minimap2](https://github.com/lh3/minimap2) - Minotour uses **Minimap2** to run
+fast alignment, so you are not running alignments, just skip this step.
+Otherwise, follow the instructions and make sure that the **minimap2** executable
+is available in PATH environment variable.
+
+* [Bwa](https://github.com/lh3/bwa) - Minotour uses **bwa** to run
+alignment, so you are not running alignments, just skip this step.
+Otherwise, follow the instructions and make sure that the **bwa** executable
+is available in PATH environment variable.
+
+* [Python 3](https://www.python.org) - Minotour uses Python 3, so make sure it
+is available in your system.
 
 * Virtual environment - Create a virtual environment to isolate Minotour
 dependencies from other software installed on your computer.
@@ -78,17 +92,24 @@ git checkout develop;
 pip install -r requirements.txt;
 ```
 
+* Create Minotour data directory - currently, Minotour uses this folder to
+keep track of the genome references available.
+
+```bash
+mkdir -p ~/data/minotour;
+```
+
 * Setup environment variables - many Minotour config parameters are defined in
 environment, so that we do need to hardcode database users and password, or any
 other information that is environment dependent. You can type it every time or
-include in the ~/.bash_profile (please check if this is the correct file in
+include in the ~/.bash_profile or ~/.bash_rc (please check if this is the correct file in
 your environment).
 
 ```bash
-export MT_DB_PASS=""
+export MT_DB_PASS="<your must inform the root or other db user password>"
 export MT_DB_PORT="3363"
 export MT_DB_HOST="localhost"
-export MT_DB_USER="root"
+export MT_DB_USER="root or other db user"
 export MT_DB_NAME="minotourdb"
 export MT_REFERENCE_LOCATION="~/data/minotour"
 export MT_TWITCONSUMER_KEY=""
@@ -99,15 +120,21 @@ export MT_MAILGUN_ACCESS_KEY=""
 export MT_MAILGUN_SERVER_NAME=""
 ```
 
-* Now it is time to start the processes, so for each one, open a new terminal
-and activate the virtual environment and follow the steps below.
+* Now it is time to start the processes, and we suggest opening a new terminal
+for each command.
+
+** MySQL - make sure it is running (check the docs mentioned above).
+
+** Redis
+
+```bash
+redis-server &
+```
 
 ** Start Celery
 
 ```bash
-
 source ~/envs/minotour/bin/activate && cd ~/projects/minotourws/ && celery -A minotourapp worker -l info -B
-
 ```
 
 ** Start Flower
@@ -121,3 +148,6 @@ source ~/envs/minotour/bin/activate && cd ~/projects/minotourws/ && flow -A mino
 ```bash
 source ~/envs/minotour/bin/activate && cd ~/projects/minotourws/ && pyth manage.py runserver 8100
 ```
+
+* Time to test - if everything worked well, you should be able to access the web
+interface on http://localhost:8100.
