@@ -123,31 +123,37 @@ export MT_MAILGUN_SERVER_NAME=""
 * Now it is time to start the processes, and we suggest opening a new terminal
 for each command.
 
-** MySQL - make sure it is running (check the docs mentioned above).
+    * MySQL - make sure it is running (check the docs mentioned above).
 
-** Redis
+    * Redis
 
-```bash
-redis-server &
-```
+    ```bash
+    redis-server &
+    ```
 
-** Start Celery
+    * Start Celery
 
-```bash
-source ~/envs/minotour/bin/activate && cd ~/projects/minotourws/ && celery -A minotourapp worker -l info -B
-```
+    ```bash
+    source ~/envs/minotour/bin/activate && cd ~/projects/minotourws/ && celery -A minotourapp worker -l info -B
+    ```
 
-** Start Flower
+    * Start Flower
 
-```bash
-source ~/envs/minotour/bin/activate && cd ~/projects/minotourws/ && flow -A minotourapp --port=5555
-```
+    ```bash
+    source ~/envs/minotour/bin/activate && cd ~/projects/minotourws/ && flow -A minotourapp --port=5555
+    ```
 
-** Start Minotour
+    * Start Minotour
 
-```bash
-source ~/envs/minotour/bin/activate && cd ~/projects/minotourws/ && pyth manage.py runserver 8100
-```
+    ```bash
+    source ~/envs/minotour/bin/activate;
+
+    cd ~/projects/minotourws;
+
+    python manage.py migrate;
+
+    python manage.py runserver 8100
+    ```
 
 * Time to test - if everything worked well, you should be able to access the web
 interface on http://localhost:8100.
