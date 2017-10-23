@@ -1,20 +1,24 @@
 # Minotour
 
-minoTour webservice module
-
+## Quick start
 
 To run:
 
-1. To serve the site (all run from root of site and each command must be run in own terminal):
+* To serve the site (all run from root of site and each command must be run in own terminal):
 
+```bash
 python3 manage.py runserver port
+```
 
-2. For background tasks:
+* For background tasks:
 
+```bash
 redis-server /usr/local/etc/redis.conf
 
-
 celery -A minotourapp worker -l info -B
+
+flow -A minotourapp --port=5555
+```
 
 ## Developer environment
 
@@ -151,8 +155,6 @@ for each command.
     cd ~/projects/minotourws;
 
     python manage.py migrate;
-
-    python manage.py loaddata minimal.db;
 
     python manage.py runserver 8100;
     ```
