@@ -2,7 +2,10 @@
 from __future__ import unicode_literals
 
 from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import User
 from django.db import migrations
+
+from rest_framework.authtoken.models import Token
 
 def forwards_func(apps, schema_editor):
     # We get the model from the versioned app registry;
@@ -37,8 +40,6 @@ def forwards_func(apps, schema_editor):
         MinIONEventType(name="connected"),
     ])
 
-    User = apps.get_model("auth", "User")
-
     User.objects.using(db_alias).bulk_create([
         User(
             username="demo",
@@ -50,9 +51,13 @@ def forwards_func(apps, schema_editor):
     ])
 
     users = User.objects.filter(username="demo")
+
     for user in users:
         user.password = make_password('asdf1234')
         user.save()
+
+        Token.objects.get_or_create(user=user)
+
 
 def reverse_func(apps, schema_editor):
     # forwards_func() creates two Country instances,
@@ -81,8 +86,6 @@ def reverse_func(apps, schema_editor):
     MinIONEventType.objects.using(db_alias).filter(name="sequencing").delete()
     MinIONEventType.objects.using(db_alias).filter(name="unplugged").delete()
     MinIONEventType.objects.using(db_alias).filter(name="connected").delete()
-
-    User = apps.get_model("auth", "User")
 
     User.objects.using(db_alias).filter(username="demo").delete()
 
