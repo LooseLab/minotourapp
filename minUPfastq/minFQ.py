@@ -214,7 +214,7 @@ class Runcollection():
                     barcode_local = ""
 
                 if args.cust_barc=='oddeven':
-                    if int(self.readid[record.id]["ch"]) % 8 == 0:
+                    if int(self.readid[record.id]["ch"]) % 4 == 0:
                         barcode_local = barcode_local + 'even'
                     else:
                         barcode_local = barcode_local + 'odd'
@@ -336,6 +336,7 @@ class MyHandler(FileSystemEventHandler):
         except KeyboardInterrupt:
             print ("Seen a ctrl-c")
             t.stop()
+            raise
 
     def lencreates(self):
         return len(self.creates)
@@ -535,10 +536,12 @@ if __name__ == '__main__':
     try:
         while 1:
             time.sleep(1)
-    except KeyboardInterrupt:
-    #except (KeyboardInterrupt, SystemExit):
+    except (KeyboardInterrupt, SystemExit):
         print("catching a ctrl-c event")
         # my_client.stop()
         observer.stop()
         observer.join()
         # die_nicely(oper)
+        #sys.exit()
+    #except Exception as e:
+    ##    print(e)
