@@ -1317,7 +1317,8 @@ function MinotourApp() {
             totalyield = totalyield + parseInt(self.summary['All reads'][readtype]['yield']['data']);
             readcount = readcount + parseInt(self.summary['All reads'][readtype]['read_count']['data']);
         }
-        console.log(self.livedata.yield_history);
+        console.log("yieldhistory length");
+        console.log("test" + self.livedata.live_read_count);
         if (self.livedata.yield_history.length > 1) {
             self.livedata.scalingfactor = (totalyield / readcount) / (self.livedata.yield_history[self.livedata.yield_history.length - 1][1] / self.livedata.live_read_count);
         }
@@ -1377,7 +1378,8 @@ function MinotourApp() {
                 self.summary = summaries;
 
                 self.updateSummaryBasedCharts();
-                self.calculatereadtoeventscaling();
+                //console.log(self.livedata);
+
             }
         });
 
@@ -1536,9 +1538,9 @@ function MinotourApp() {
     };
 
     this.converttobases = function (data, seqspeed) {
-        if (self.livedata.scalingfactor > 0) {
-            //console.log("returning scaling factor");
-            return self.livedata.scalingfactor;
+        if (Number(self.livedata.scalingfactor) > Number(0)) {
+            //console.log("returning scaling factor" + self.livedata.scalingfactor);
+            scaling =  Number(self.livedata.scalingfactor);
         } else {
             switch (seqspeed) {
                 case "MegaCrazy Runs":
@@ -1554,13 +1556,13 @@ function MinotourApp() {
                     scaling = 1.0;
                     break;
             }
-            var scaleddata = [];
-            for (var i = 0; i < data.length; i++) {
-                scaleddata.push([data[i][0], data[i][1] * scaling]);
-            }
-            //console.log("returning estimated scaling factor");
-            return scaleddata;
         }
+        var scaleddata = [];
+        for (var i = 0; i < data.length; i++) {
+            scaleddata.push([data[i][0], data[i][1] * scaling]);
+        }
+            //console.log("returning estimated scaling factor");
+        return scaleddata;
     };
 
     this.projectdata = function (data) {
@@ -1637,6 +1639,17 @@ function MinotourApp() {
         return results;
     };
 
+    this.updateTextPredictions = function () {
+        var seqspeed = "450 b/s";
+        //console.log(self.livedata.live_read_count);
+        yield_history_latest = self.livedata.yield_history.slice(-1);
+        console.log("update text" + yield_history_latest);
+        document.getElementById("speedresult").innerHTML = Math.round(self.converttobases(yield_history_latest, seqspeed)[0][1]);
+        document.getElementById("averageresult").innerHTML = Math.round(self.converttobases(yield_history_latest, seqspeed)[0][1]/self.livedata.live_read_count);
+        document.getElementById("end24").innerHTML = 5 + 8;
+        document.getElementById("end48").innerHTML = 5 + 9;
+
+    }
 
     this.updateLiveYieldProjection = function () {
         var seqspeed = "450 b/s";
@@ -1755,7 +1768,7 @@ function MinotourApp() {
             if (data.length <1 ) {
                 document.getElementById("nav-seq-map").parentNode.classList.remove("active");
                 document.getElementById("nav-seq-map").style.display = "none";
-                document.getElementById("panel-tasks").style.display = "none";
+            //    document.getElementById("panel-tasks").style.display = "none";
             } else{
                 //document.getElementById("nav-seq-map").parentNode.classList.remove("active");
                 document.getElementById("nav-seq-map").style.display = "block";
@@ -1847,12 +1860,16 @@ function MinotourApp() {
 
                     }
                 }
+                self.calculatereadtoeventscaling();
+
                 if (self.needtoupdatecharts == true) {
                     self.updateLiveHistogram(data);
                     self.updateLiveYieldProjection();
                     self.updateLiveCumuYield();
                     self.updatePoreStats();
+                    self.updateTextPredictions();
                 }
+
 
             }
             //console.log(self.livedata);

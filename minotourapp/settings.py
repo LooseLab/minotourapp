@@ -198,7 +198,15 @@ CELERY_TIMEZONE = 'Europe/London'
 CELERY_BEAT_SCHEDULE = {
     'send-email': {
         'task': 'web.tasks.sendmessages',
-        'schedule': 10,
+        'schedule': 30,
+    },
+    'rapid-monitor': {
+        'task': 'web.tasks.run_monitor',
+        'schedule': 15.0,
+    },
+    'slow-monitor': {
+        'task': 'web.tasks.slow_monitor',
+        'schedule': 30.0,
     },
 }
 
