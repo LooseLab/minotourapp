@@ -1324,15 +1324,18 @@ function MinotourApp() {
     this.calculatereadtoeventscaling = function () {
         var totalyield = 0;
         var readcount = 0;
-        for (var readtype in self.summary["All reads"]) {
-            //console.log(self.summary['All reads'][readtype]);
-            totalyield = totalyield + parseInt(self.summary['All reads'][readtype]['yield']['data']);
-            readcount = readcount + parseInt(self.summary['All reads'][readtype]['read_count']['data']);
-        }
-        console.log("yieldhistory length");
-        console.log("test" + self.livedata.live_read_count);
-        if (self.livedata.yield_history.length > 1) {
-            self.livedata.scalingfactor = (totalyield / readcount) / (self.livedata.yield_history[self.livedata.yield_history.length - 1][1] / self.livedata.live_read_count);
+        if (self.summary !== null) {
+        //if ('All reads' in self.summary) {
+            for (var readtype in self.summary["All reads"]) {
+                //console.log(self.summary['All reads'][readtype]);
+                totalyield = totalyield + parseInt(self.summary['All reads'][readtype]['yield']['data']);
+                readcount = readcount + parseInt(self.summary['All reads'][readtype]['read_count']['data']);
+            }
+            console.log("yieldhistory length");
+            console.log("test" + self.livedata.live_read_count);
+            if (self.livedata.yield_history.length > 1) {
+                self.livedata.scalingfactor = (totalyield / readcount) / (self.livedata.yield_history[self.livedata.yield_history.length - 1][1] / self.livedata.live_read_count);
+            }
         }
     };
 
