@@ -13,11 +13,21 @@
 
         <!-- Main content -->
         <section class="content">
-
-            <div id="messages"></div>
-
+                        <!-- Main top nav bar -->
+            <div class="nav-tabs-custom">
+                <ul class="nav nav-tabs">
+                    <li class="active"><a id="nav-active-runs">Active runs</a></li>
+                    <li><a id='nav-all-runs'>All runs</a></li>
+                    <li><a id='nav-shared-with-me-runs'>Shared with me</a></li>
+                    <li><a id='nav-public-runs'>Public</a></li>
+                </ul>
+            </div>
             <div class="box">
                 <div class="box-body">
+            <div id="messages"></div>
+
+            <div id="panel-active-runs">
+
                     <h3>Active runs</h3>
                     <table id="active-runs" class="table table-bordered table-striped table-hover" cellspacing="0">
                         <thead>
@@ -48,10 +58,8 @@
                         </tfoot>
                     </table>
                 </div>
-            </div>
 
-            <div class="box">
-                <div class="box-body">
+            <div id="panel-live-data">
                     <h3>All runs</h3>
                     <table id="all-runs" class="table table-bordered table-striped table-hover" cellspacing="0">
                         <thead>
@@ -81,14 +89,12 @@
                         </tr>
                         </tfoot>
                     </table>
-
-
-                </div>
             </div>
-
+                </div></div>
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
-
+{% endblock %}
+{% block javascript %}
     <script>
         var table_active_runs;
         var table_all_runs;
@@ -194,5 +200,4 @@
         }
 
     </script>
-
 {% endblock %}

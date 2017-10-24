@@ -91,9 +91,9 @@ def run_monitor():
 
             #    proc_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
-            #if run_job.job_type.name == "ChanCalc":
+            if run_job.job_type.name == "ChanCalc":
 
-            #    processreads.delay(minion_run.id, run_job.id, run_job.last_read)
+                processreads.delay(minion_run.id, run_job.id, run_job.last_read)
 
 
 @task()
