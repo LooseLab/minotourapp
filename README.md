@@ -2,7 +2,7 @@
 
 ## Quick start
 
-To run:
+To run (we hope):
 
 * To serve the site (all run from root of site and each command must be run in own terminal):
 
