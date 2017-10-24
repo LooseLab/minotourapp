@@ -18,3 +18,5 @@ django_celery_beat
 twitter
 redis
 django_redis
+flower
+

@@ -196,10 +196,6 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Europe/London'
 CELERY_BEAT_SCHEDULE = {
-    'send-email': {
-        'task': 'web.tasks.sendmessages',
-        'schedule': 30,
-    },
     'rapid-monitor': {
         'task': 'web.tasks.run_monitor',
         'schedule': 15.0,
@@ -207,6 +203,14 @@ CELERY_BEAT_SCHEDULE = {
     'slow-monitor': {
         'task': 'web.tasks.slow_monitor',
         'schedule': 30.0,
+    },
+    'send-messages': {
+        'task': 'web.tasks.send_messages',
+        'schedule': 30,
+    },
+    'delete-runs': {
+        'task': 'web.tasks.delete_runs',
+        'schedule': 60,
     },
 }
 

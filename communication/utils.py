@@ -1,7 +1,7 @@
 from communication.models import Message
 
 
-def send_message(recipients, sender, title, message):
+def send_message(recipients, title, message, sender=None):
 
     for recipient in recipients:
 
@@ -12,7 +12,7 @@ def send_message(recipients, sender, title, message):
             content=message
         )
 
-def message(recipients,title,message):
+def message(recipients, title, message):
     for recipient in recipients:
 
         Message.objects.create(

@@ -59,9 +59,10 @@
     <script src="https://code.highcharts.com/5.0.9/modules/heatmap.js"></script>
     <script src="http://code.highcharts.com/5.0.9/modules/no-data-to-display.js"></script>
 
-
     <script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>
 
+    <script src="{% static 'web/cookie.js' %}"></script>
+    <script src="{% static 'web/ajax_setup.js' %}"></script>
     <script src="{% static 'web/minotour.js' %}"></script>
 
     <!-- Data tables -->
@@ -73,8 +74,6 @@
          fixed layout. -->
     <script src="{% static 'web/plugins/slimScroll/jquery.slimscroll.min.js' %}"></script>
     <script src="{% static 'web/plugins/fastclick/fastclick.min.js' %}"></script>
-
-    <script src="https://unpkg.com/vue"></script>
 </head>
 
 {% block body_tag %}

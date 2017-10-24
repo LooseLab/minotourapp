@@ -16,11 +16,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='referenceinfo',
-            name='private',
-            field=models.BooleanField(default=False),
-        ),
-        migrations.AddField(
-            model_name='referenceinfo',
             name='users',
             field=models.ManyToManyField(blank=True, to=settings.AUTH_USER_MODEL),
         ),

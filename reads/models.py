@@ -5,6 +5,7 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
+
 from reference.models import ReferenceInfo
 from celery import task
 from celery.utils.log import get_task_logger
@@ -172,6 +173,10 @@ class MinIONRun(models.Model):
     )
 
     active = models.BooleanField(
+        default=False
+    )
+
+    to_delete = models.BooleanField(
         default=False
     )
 
@@ -699,31 +704,6 @@ class MinIONmessages(models.Model):
             self.minION, self.minKNOW_message, self.minKNOW_severity, self.minKNOW_message_timestamp)
 
 
-##### Job Management System
-
-class Job(models.Model):
-    jobname = models.CharField(max_length=256)
-    private = models.BooleanField(default=True)
-
-    def __str__(self):
-        return "{}".format(self.jobname)
-
-class JobMaster(models.Model):
-    run_id = models.ForeignKey(MinIONRun, related_name='runjobs')
-    job_name = models.ForeignKey(Job, related_name='taskname')
-    #var1 = models.CharField(max_length=256,blank=True, null=True)
-    reference = models.ForeignKey(ReferenceInfo, related_name='referencejob', null=True, blank=True)
-    last_read = models.CharField(max_length=256,blank=True, null=True)
-    var3 = models.CharField(max_length=256,blank=True, null=True)
-    complete = models.BooleanField(default=False)
-    running = models.BooleanField(default=False)
-
-
-    def __str__(self):
-        return "{} {}".format(self.run_id,self.job_name)
-
-
-
 @receiver(post_save, sender=MinIONRun)
 def create_all_reads_barcode(sender, instance=None, created=False, **kwargs):
     if created:
@@ -822,3 +802,60 @@ def update_sum_stats(obj, ipn_obj):
 
     obj.read_count += 1
     obj.save()
+
+
+class JobType(models.Model):
+
+    name = models.CharField(
+        max_length=256
+    )
+
+    private = models.BooleanField(
+        default=True
+    )
+
+    def __str__(self):
+        return "{}".format(self.name)
+
+
+class JobMaster(models.Model):
+
+    run = models.ForeignKey(
+        MinIONRun,
+        related_name='runjobs'
+    )
+
+    job_type = models.ForeignKey(
+        JobType,
+        related_name='taskname'
+    )
+
+    reference = models.ForeignKey(
+        ReferenceInfo,
+        related_name='referencejob',
+        null=True,
+        blank=True
+    )
+
+    last_read = models.CharField(
+        max_length=256,
+        blank=True,
+        null=True
+    )
+
+    var3 = models.CharField(
+        max_length=256,
+        blank=True,
+        null=True
+    )
+
+    complete = models.BooleanField(
+        default=False
+    )
+
+    running = models.BooleanField(
+        default=False
+    )
+
+    def __str__(self):
+        return "{} {}".format(self.run, self.job_type)

@@ -2,17 +2,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
+from rest_framework.authtoken.models import Token
 
 from communication.models import Message
 from reads.models import MinIONRun
 from reads.models import UserOptions
-from django.db.models import Q
-from datetime import datetime, timedelta
-from django.utils import timezone
-from django.core.mail import send_mail
-
-from rest_framework.authtoken.models import Token
-
 from web.forms import UserOptionsForm
 
 
@@ -31,6 +25,7 @@ def log_in(request):
 @login_required
 def private_index(request):
     return render(request, 'web/private_index.html')
+
 
 @login_required
 def profile(request):
@@ -76,6 +71,7 @@ def profile(request):
         }
     )
 
+
 @login_required
 def external_links(request):
     return render(request, 'web/external_links.html')
@@ -90,23 +86,28 @@ def minup(request):
 def tutorial(request):
     return render(request, 'web/tutorial.html')
 
+
 @login_required
 def current_run(request):
     return render(request, 'web/current_run2.html')
+
 
 @login_required
 def previous_run(request):
     minion_runs = MinIONRun.objects.filter(owner=request.user)
     return render(request, 'web/previous_run.html', context={'minion_runs': minion_runs})
 
+
 @login_required
 def run_index(request, pk):
     minion_run = MinIONRun.objects.get(pk=pk)
     return render(request, 'web/run_index.html', context={'minion_run': minion_run})
 
+
 @login_required
 def remotecontrol(request):
     return render(request, 'web/remotecontrol.html')
+
 
 @login_required
 def prevremotecontrol(request):
