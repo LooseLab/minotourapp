@@ -8,8 +8,25 @@ python:
 services:
     - mysql
 
+before_install:
+    - export MT_DB_PASS=""
+    - export MT_DB_PORT="3363"
+    - export MT_DB_HOST="localhost"
+    - export MT_DB_USER="root"
+    - export MT_DB_NAME="minotourdb"
+    - export MT_REFERENCE_LOCATION="/tmp"
+    - export MT_TWITCONSUMER_KEY=""
+    - export MT_TWITTOKEN_SECRET=""
+    - export MT_TWITCONSUMER_SECRET=""
+    - export MT_TWITTOKEN=""
+    - export MT_MAILGUN_ACCESS_KEY=""
+    - export MT_MAILGUN_SERVER_NAME=""
+
 install:
-    - "pip install -r requirements.txt"
+    - pip install -r requirements.txt
+
+before_script:
+    - mysql -e 'CREATE DATABASE IF NOT EXISTS minotourdb;'
 
 script:
     - python manage.py test
