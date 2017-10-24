@@ -156,4 +156,8 @@ urlpatterns = [
         r'^api/v1/barcodes/(?P<pk>[0-9]+)/$',
         views.barcode_detail,
         name="barcode-detail"),
+    url(
+        r'^api/v1/tasks/$',
+        views.tasks_detail,
+        name="tasks-detail"),
 ]

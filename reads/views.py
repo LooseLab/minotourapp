@@ -28,6 +28,7 @@ from reads.models import RunStatistic
 from reads.models import RunStatisticBarcode
 from reads.models import RunSummary
 from reads.models import RunSummaryBarcode
+from reads.models import JobType
 from reads.serializers import BarcodeSerializer
 from reads.serializers import ChannelSummarySerializer
 from reads.serializers import FastqReadSerializer
@@ -47,6 +48,7 @@ from reads.serializers import MinIONStatusSerializer
 from reads.serializers import MinIONmessagesSerializer
 from reads.serializers import RunHistogramSummarySerializer
 from reads.serializers import RunSummarySerializer
+from reads.serializers import JobTypeSerializer
 
 from minotourapp import settings
 
@@ -787,3 +789,10 @@ def minION_liverun_list(request,pk):
     TODO describe function
     """
     return None
+
+@api_view(['GET'])
+def tasks_detail(request):
+    if request.method == 'GET':
+        queryset=JobType.objects.filter(private=False)
+        serializer = JobTypeSerializer(queryset,many=True, context={'request': request})
+        return Response(serializer.data)

@@ -41,3 +41,11 @@ def reference_line(request, pk):
         serializer = ReferenceLineSerializer(queryset, many=True, context={'request': request})
 
         return Response(serializer.data)
+
+@api_view(['GET'])
+def reference_all(request):
+    if request.method == 'GET':
+        queryset = ReferenceInfo.objects
+        serializer = ReferenceInfoSerializer(queryset, many=True, context={'request': request})
+
+        return Response(serializer.data)

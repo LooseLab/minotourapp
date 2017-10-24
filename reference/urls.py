@@ -4,6 +4,11 @@ from reference import views
 
 urlpatterns = [
     url(
+        r'^api/v1/reference/$',
+        views.reference_all,
+        name="referenceinfo"
+    ),
+    url(
         r'^api/v1/reference/(?P<pk>[0-9]+)/$',
         views.reference_list,
         name="referenceinfo-detail"

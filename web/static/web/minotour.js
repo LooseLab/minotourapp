@@ -702,6 +702,8 @@ function MinotourApp() {
         self.selectedBarcode = "All reads";
 
         this.requestData();
+        this.requestTasks(self.id); //really this only needs to run once!
+        this.requestReference(self.id);
 
         setInterval(function () {
             this.requestData();
@@ -1099,6 +1101,8 @@ function MinotourApp() {
 
     };
 
+
+
     this.updateHistogramBasesSequencedReadLengthChart = function () {
 
         var chart = self.chartHistogramBasesSequencedByReadLength;
@@ -1337,6 +1341,39 @@ function MinotourApp() {
                 self.livedata.scalingfactor = (totalyield / readcount) / (self.livedata.yield_history[self.livedata.yield_history.length - 1][1] / self.livedata.live_read_count);
             }
         }
+    };
+    this.requestReference = function(id){
+        var url = "/api/v1/reference/";
+        $.get(url, function (data){
+            var references = [];
+            for (var i=0; i < data.length; i++) {
+                //console.log(data[i]);
+                references.push(data[i]);
+            }
+            //console.log(references);
+            self.references=references;
+        });
+    };
+    this.requestTasks = function(id) {
+        var url = "/api/v1/tasks/";
+        $.get(url, function (data) {
+            console.log(data);
+            var tasks = [];
+            for (var i=0; i < data.length; i++){
+                tasks.push(data[i]);
+            }
+            self.tasks=tasks;
+            self.updateTasks(); //really this only needs to run once!
+        });
+    };
+    this.updateTasks = function() {
+        //console.log(self.tasks);
+        var tasksstring = {};
+        for (var i = 0; i < self.tasks.length; i++) {
+                console.log(self.tasks[i].toString());
+                tasksstring = tasksstring + self.tasks[i];
+        };
+        document.getElementById('tasks').innerHTML = tasksstring;
     };
 
     this.requestSummaryData = function (id) {
@@ -1891,6 +1928,7 @@ function MinotourApp() {
         })
     };
 
+
     this.requestData = function () {
 
         var url_run = '/api/v1/runs/' + self.id;
@@ -1918,6 +1956,7 @@ function MinotourApp() {
             self.requestRunDetails(self.id);
             self.requestLiveRunStats(self.id);
             self.requestPafData(self.id);
+
         });
 
 
