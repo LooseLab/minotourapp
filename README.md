@@ -127,14 +127,23 @@ export MT_MAILGUN_SERVER_NAME=""
 * Now it is time to start the processes, and we suggest opening a new terminal
 for each command.
 
-    * MySQL - make sure it is running (check the docs mentioned above).
+    * MySQL - make sure it is running **AND the database was created** (check the docs mentioned above).
 
     * Redis
 
     ```bash
     redis-server &
     ```
+    * Create tables
 
+    ```bash
+    source ~/envs/minotour/bin/activate;
+
+    cd ~/projects/minotourws;
+
+    python manage.py migrate;
+    ```
+    
     * Start Celery
 
     ```bash
@@ -144,7 +153,7 @@ for each command.
     * Start Flower
 
     ```bash
-    source ~/envs/minotour/bin/activate && cd ~/projects/minotourws/ && flow -A minotourapp --port=5555
+    source ~/envs/minotour/bin/activate && cd ~/projects/minotourws/ && flower -A minotourapp --port=5555
     ```
 
     * Start Minotour
@@ -153,8 +162,6 @@ for each command.
     source ~/envs/minotour/bin/activate;
 
     cd ~/projects/minotourws;
-
-    python manage.py migrate;
 
     python manage.py runserver 8100;
     ```
