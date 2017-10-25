@@ -194,6 +194,11 @@
 {#                        <i class="fa fa-angle-left pull-right"></i>#}
                     </a>
                 </li>
+                <li {% if url_name == 'minup' %}class="active"{% endif %}>
+                    <a href="{% url 'minup' %}">
+                        <i class="fa fa-cloud-upload fa-fw"></i><span> minUp Scripts</span>
+                    </a>
+                <li>
 
                 {% if user.is_superuser %}
                     <li id="admin" class="treeview">
@@ -234,7 +239,7 @@
                     <a href="{% url 'tutorial' %}">
                         <i class="fa fa-question-circle fa-fw"></i><span> Help</span>
                     </a>
-                <li>
+                </li>
                 <!-- /.nav-second-level -->
             </ul>
         {% endwith %}

@@ -14,190 +14,254 @@
         <!-- Main content -->
         <section class="content">
                         <!-- Main top nav bar -->
-            <div class="nav-tabs-custom">
-                <ul class="nav nav-tabs">
-                    <li class="active"><a id="nav-active-runs">Active runs</a></li>
-                    <li><a id='nav-all-runs'>All runs</a></li>
-                    <li><a id='nav-shared-with-me-runs'>Shared with me</a></li>
-                    <li><a id='nav-public-runs'>Public</a></li>
-                </ul>
-            </div>
-            <div class="box">
-                <div class="box-body">
-            <div id="messages"></div>
-
-            <div id="panel-active-runs">
-
-                    <h3>Active runs</h3>
-                    <table id="active-runs" class="table table-bordered table-striped table-hover" cellspacing="0">
-                        <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>Id</th>
-                            <th>Sample Name</th>
-                            <th>Flow Cell ID</th>
-                            <th>MinKNOW Version</th>
-                            <th>Is Barcoded</th>
-                            <th>Run Start Date</th>
-                            <th>Actions</th>
-                        </tr>
-                        </thead>
-                        <tfoot>
-                        <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>Id</th>
-                            <th>Sample Name</th>
-                            <th>Flow Cell ID</th>
-                            <th>MinKNOW Version</th>
-                            <th>Is Barcoded</th>
-                            <th>Run Start Date</th>
-                            <th>Actions</th>
-                        </tr>
-                        </tfoot>
-                    </table>
+                <div class="nav-tabs-custom">
+                    <ul class="nav nav-tabs nav-justified">
+                        <li class="active"><a href="#tab-active-runs" data-toggle="tab">Active runs</a></li>
+                        <li><a href="#tab-all-runs" data-toggle="tab">All runs</a></li>
+                        <li><a href="#tab-shared-with-me-runs" data-toggle="tab">Shared with me</a></li>
+                        <li><a href="#tab-public-runs" data-toggle="tab">Public runs</a></li>
+                    </ul>
                 </div>
+                <div id="messages"></div>
 
-            <div id="panel-live-data">
-                    <h3>All runs</h3>
-                    <table id="all-runs" class="table table-bordered table-striped table-hover" cellspacing="0">
-                        <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>Id</th>
-                            <th>Sample Name</th>
-                            <th>Flow Cell ID</th>
-                            <th>MinKNOW Version</th>
-                            <th>Is Barcoded</th>
-                            <th>Run Start Date</th>
-                            <th>Actions</th>
-                        </tr>
-                        </thead>
-                        <tfoot>
-                        <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>Id</th>
-                            <th>Sample Name</th>
-                            <th>Flow Cell ID</th>
-                            <th>MinKNOW Version</th>
-                            <th>Is Barcoded</th>
-                            <th>Run Start Date</th>
-                            <th>Actions</th>
-                        </tr>
-                        </tfoot>
-                    </table>
-            </div>
-                </div></div>
+
+                <div class="tab-content">
+                    <div class="tab-pane fade in active box" id="tab-active-runs">
+                        <div class="box-body">
+                            <table id="active-runs" class="table table-bordered table-striped table-hover" cellspacing="0">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Id</th>
+                                <th>Sample Name</th>
+                                <th>Flow Cell ID</th>
+                                <th>MinKNOW Version</th>
+                                <th>Is Barcoded</th>
+                                <th>Run Start Date</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tfoot>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Id</th>
+                                <th>Sample Name</th>
+                                <th>Flow Cell ID</th>
+                                <th>MinKNOW Version</th>
+                                <th>Is Barcoded</th>
+                                <th>Run Start Date</th>
+                                <th>Actions</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade box" id="tab-all-runs">
+                        <div class="box-body">
+                            <table id="all-runs" class="table table-bordered table-striped table-hover" cellspacing="0">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Id</th>
+                                <th>Sample Name</th>
+                                <th>Flow Cell ID</th>
+                                <th>MinKNOW Version</th>
+                                <th>Is Barcoded</th>
+                                <th>Run Start Date</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tfoot>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Id</th>
+                                <th>Sample Name</th>
+                                <th>Flow Cell ID</th>
+                                <th>MinKNOW Version</th>
+                                <th>Is Barcoded</th>
+                                <th>Run Start Date</th>
+                                <th>Actions</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade box" id="tab-shared-with-me-runs">
+                        <div class="box-body">
+                            <table id="shared-with-me-runs" class="table table-bordered table-striped table-hover" cellspacing="0">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Id</th>
+                                <th>Sample Name</th>
+                                <th>Flow Cell ID</th>
+                                <th>MinKNOW Version</th>
+                                <th>Is Barcoded</th>
+                                <th>Run Start Date</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tfoot>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Id</th>
+                                <th>Sample Name</th>
+                                <th>Flow Cell ID</th>
+                                <th>MinKNOW Version</th>
+                                <th>Is Barcoded</th>
+                                <th>Run Start Date</th>
+                                <th>Actions</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade box" id="tab-public-runs">
+                        <div class="box-body">
+                            <table id="public-runs" class="table table-bordered table-striped table-hover" cellspacing="0">
+                            <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Id</th>
+                                <th>Sample Name</th>
+                                <th>Flow Cell ID</th>
+                                <th>MinKNOW Version</th>
+                                <th>Is Barcoded</th>
+                                <th>Run Start Date</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tfoot>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Id</th>
+                                <th>Sample Name</th>
+                                <th>Flow Cell ID</th>
+                                <th>MinKNOW Version</th>
+                                <th>Is Barcoded</th>
+                                <th>Run Start Date</th>
+                                <th>Actions</th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                        </div>
+                    </div>
+                </div>
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 {% endblock %}
 {% block javascript %}
-    <script>
-        var table_active_runs;
-        var table_all_runs;
+<script>
+    var table_active_runs;
+    var table_all_runs;
 
-        $(document).ready(function () {
-            table_active_runs = $('#active-runs').DataTable({
-                'ajax': {
-                    'url': "{% url 'current-run-list' %}",
-                    'dataSrc': function(json){
-                        var data = [];
-                        var ien = json.length;
-                        for (var i = 0; i < ien; i++){
-                            data.push([json[i].id, json[i].run_name, json[i].run_id, json[i].sample_name,
-                                json[i].minKNOW_flow_cell_id, json[i].minKNOW_version, json[i].is_barcoded,
-                                new Date(json[i].start_time), json[i].id]);
-                        }
-                        return data;
+    $(document).ready(function () {
+        table_active_runs = $('#active-runs').DataTable({
+            'ajax': {
+                'url': "{% url 'current-run-list' %}",
+                'dataSrc': function(json){
+                    var data = [];
+                    var ien = json.length;
+                    for (var i = 0; i < ien; i++){
+                        data.push([json[i].id, json[i].run_name, json[i].run_id, json[i].sample_name,
+                            json[i].minKNOW_flow_cell_id, json[i].minKNOW_version, json[i].is_barcoded,
+                            new Date(json[i].start_time), json[i].id]);
+                    }
+                    return data;
+                }
+            },
+            'columnDefs': [
+                {
+                    'targets': 0,
+                    'data': 0,
+                    'render': function(data, type, full, meta){
+                        return '<a href="/web/private/runs/' + data + '/"> See details</a>';
                     }
                 },
-                'columnDefs': [
-                    {
-                        'targets': 0,
-                        'data': 0,
-                        'render': function(data, type, full, meta){
-                            return '<a href="/web/private/runs/' + data + '/"> See details</a>';
-                        }
-                    },
-                    {
-                        'targets': 8,
-                        'data': 0,
-                        'render': function(data, type, full, meta){
-                            return '<a href="#" onclick="delete_run(' + data + ')">Delete</a>';
-                        }
+                {
+                    'targets': 8,
+                    'data': 0,
+                    'render': function(data, type, full, meta){
+                        return '<a href="#" onclick="delete_run(' + data + ')">Delete</a>';
                     }
-                ]
-            });
-
-            table_all_runs = $('#all-runs').DataTable({
-                'ajax': {
-                    'url': "{% url 'run-list' %}",
-                    'dataSrc': function(json){
-                        var data = [];
-                        var ien = json.length;
-                        for (var i = 0; i < ien; i++){
-                            data.push([json[i].id, json[i].run_name, json[i].run_id, json[i].sample_name,
-                                json[i].minKNOW_flow_cell_id, json[i].minKNOW_version, json[i].is_barcoded,
-                                new Date(json[i].start_time), json[i].id]);
-                        }
-                        return data;
-                    }
-                },
-                'columnDefs': [
-                    {
-                        'targets': 0,
-                        'data': 0,
-                        'render': function(data, type, full, meta){
-                            return '<a href="/web/private/runs/' + data + '/"> See details</a>';
-                        }
-                    },
-                    {
-                        'targets': 8,
-                        'data': 0,
-                        'render': function(data, type, full, meta){
-                            return '<a href="#" onclick="delete_run(' + data + ')">Delete</a>';
-                        }
-                    }
-                ]
-            });
-
+                }
+            ]
         });
 
-        function delete_run(id) {
-            $.ajax({
-                url: '/api/v1/runs/' + id + '/',
-                type: 'GET',
-                success: function(data) {
-
-                    var csrftoken = Cookies.get('csrftoken');
-
-                    $.ajaxSetup({
-                        beforeSend: function (xhr, settings) {
-                            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                                xhr.setRequestHeader("X-CSRFToken", csrftoken);
-                            }
-                        }
-                    });
-
-                    $.ajax({
-                        url: '/api/v1/runs/' + id + '/',
-                        type: 'PUT',
-                        'data': {
-                            "run_id": data['run_id'],
-                            "run_name": data['run_name'],
-                            "to_delete": "True",
-                        },
-                        success: function(data2) {
-                            table_active_runs.ajax.reload();
-                            table_all_runs.ajax.reload();
-                        }
-                    });
+        table_all_runs = $('#all-runs').DataTable({
+            'ajax': {
+                'url': "{% url 'run-list' %}",
+                'dataSrc': function(json){
+                    var data = [];
+                    var ien = json.length;
+                    for (var i = 0; i < ien; i++){
+                        data.push([json[i].id, json[i].run_name, json[i].run_id, json[i].sample_name,
+                            json[i].minKNOW_flow_cell_id, json[i].minKNOW_version, json[i].is_barcoded,
+                            new Date(json[i].start_time), json[i].id]);
+                    }
+                    return data;
+                }
+            },
+            'columnDefs': [
+                {
+                    'targets': 0,
+                    'data': 0,
+                    'render': function(data, type, full, meta){
+                        return '<a href="/web/private/runs/' + data + '/"> See details</a>';
+                    }
                 },
-            });
-        }
+                {
+                    'targets': 8,
+                    'data': 0,
+                    'render': function(data, type, full, meta){
+                        return '<a href="#" onclick="delete_run(' + data + ')">Delete</a>';
+                    }
+                }
+            ]
+        });
 
-    </script>
+    });
+
+    function delete_run(id) {
+        $.ajax({
+            url: '/api/v1/runs/' + id + '/',
+            type: 'GET',
+            success: function(data) {
+
+                var csrftoken = Cookies.get('csrftoken');
+
+                $.ajaxSetup({
+                    beforeSend: function (xhr, settings) {
+                        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                        }
+                    }
+                });
+
+                $.ajax({
+                    url: '/api/v1/runs/' + id + '/',
+                    type: 'PUT',
+                    'data': {
+                        "run_id": data['run_id'],
+                        "run_name": data['run_name'],
+                        "to_delete": "True",
+                    },
+                    success: function(data2) {
+                        table_active_runs.ajax.reload();
+                        table_all_runs.ajax.reload();
+                    }
+                });
+            },
+        });
+    }
+
+</script>
 {% endblock %}
