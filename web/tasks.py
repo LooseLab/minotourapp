@@ -83,17 +83,17 @@ def run_monitor():
 
                 run_minimap2_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
-            #if run_job.job_type.name == "Kraken":
+            if run_job.job_type.name == "Kraken":
 
-            #    run_kraken.delay(minion_run.id, run_job.id, run_job.last_read)
+                run_kraken.delay(minion_run.id, run_job.id, run_job.last_read)
 
-            #if run_job.job_type.name == "ProcAlign":
+            if run_job.job_type.name == "ProcAlign":
 
-            #    proc_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
+                proc_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
-            #if run_job.job_type.name == "ChanCalc":
+            if run_job.job_type.name == "ChanCalc":
 
-            #    processreads.delay(minion_run.id, run_job.id, run_job.last_read)
+                processreads.delay(minion_run.id, run_job.id, run_job.last_read)
 
 
 @task()

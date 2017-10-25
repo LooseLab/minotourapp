@@ -1370,7 +1370,7 @@ function MinotourApp() {
         //console.log(self.tasks);
         var tasksstring = {};
         for (var i = 0; i < self.tasks.length; i++) {
-                console.log(self.tasks[i].toString());
+                console.log(self.tasks[i];
                 tasksstring = tasksstring + self.tasks[i];
         };
         document.getElementById('tasks').innerHTML = tasksstring;
