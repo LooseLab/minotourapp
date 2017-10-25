@@ -1,5 +1,11 @@
 # Minotour
 
+To do in this branch:
+- Remove links from web `urls.py` and `views.py` that have been removed from the side menu
+- Remove or repurpose `admin` dropdown menu
+- Fix expanding table in active runs
+
+---
 minoTour webservice module
 
 
