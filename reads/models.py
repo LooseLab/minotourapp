@@ -811,8 +811,14 @@ class JobType(models.Model):
     )
 
     description = models.TextField(
+        max_length=256,
         blank = True,
         null = True
+    )
+
+    long_description = models.TextField(
+        blank=True,
+        null=True
     )
 
     reference = models.BooleanField(
@@ -857,15 +863,14 @@ class JobMaster(models.Model):
         null=True
     )
 
-    var3 = models.CharField(
+    temp_file = models.CharField(
         max_length=256,
         blank=True,
         null=True
     )
 
     read_count = models.BigIntegerField(
-        blank=True,
-        null=True,
+        default=0
     )
 
     complete = models.BooleanField(

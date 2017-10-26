@@ -812,6 +812,7 @@ def tasks_detail_all(request,pk):
         obj.update({
             'name': jobtype.name,
             'description' : jobtype.description,
+            'long_description' : jobtype.long_description,
             'read_count': jobtype.readcount,
             'reference': jobtype.reference
         })
@@ -827,7 +828,7 @@ def tasks_detail_all(request,pk):
             obj2.update({
                 'reference': reference_name,
                 'last_read': jobmasterlist[0].last_read,
-                'var3': jobmasterlist[0].var3,
+                'temp_file': jobmasterlist[0].temp_file,
                 'complete': jobmasterlist[0].complete,
                 'running': jobmasterlist[0].running
             })
