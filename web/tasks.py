@@ -440,7 +440,7 @@ def run_minimap_assembly(runid, id, tmp, last_read):
     print("Added {} new fastqs".format(newfastqs))
 
     if newfastqs < 1000:
-        JobMaster.objects.filter(pk=id).update(running=False, var3=tmp)
+        JobMaster.objects.filter(pk=id).update(running=False, tempfile_name=tmp)
     else:
 
         totreads = subprocess.check_output('grep -c ">" ' + tmp, shell=True)

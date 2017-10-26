@@ -1557,21 +1557,35 @@ function MinotourApp() {
     this.requestGfaData = function (id) {
         var url = "/api/v1/runs/" + id + "/assembly";
 
-        var chart = this.ChartNumContigs;
-
         $.get(url, function(data){
-            console.log(data);
+            //console.log(data);
 
-            while (chart.series.length > 0) {
-                chart.series[0].remove();
+            var ncontigs_list = new Array();
+
+            for (var i = 0; i < data.length; i++){
+
+              var item = data[i];
+              ncontigs_list.push([item.nreads, item.ncontigs]);
+
             }
 
-            chart.addSeries({
-                name: "assembly_v1",
-                data: data
-            });
+            self.updateNumContigsChart(ncontigs_list);
 
         });
+    }
+
+    this.updateNumContigsChart = function (data) {
+      var chart = this.ChartNumContigs;
+
+      while (chart.series.length > 0) {
+          chart.series[0].remove();
+      }
+
+      chart.addSeries({
+          name: "assembly_v1",
+          data: data
+      });
+
     }
 
 

@@ -9,6 +9,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from assembly.models import GfaStore
+from assembly.serializers import GfaStoreSerializer
 
 
 @api_view(['GET'])
@@ -19,13 +20,17 @@ def gfa_output_list(request, run_id):
         .filter(run__id=run_id) \
         .order_by('nreads')
 
-    ncontigs_list = []
-    position_list = []
-    coverage_list = []
-    current_coverage_sum = 0
+    # ncontigs_list = []
+    # position_list = []
+    # coverage_list = []
+    # current_coverage_sum = 0
+    #
+    # for key, item in enumerate(queryset):
+    #
+    #     ncontigs_list.append([item.nreads, item.ncontigs])
 
-    for key, item in enumerate(queryset):
+    # return HttpResponse(json.dumps(ncontigs_list), content_type="application/json")
 
-        ncontigs_list.append([item.nreads, item.ncontigs])
+    serializer = GfaStoreSerializer(queryset, many=True, context={'request': request})
 
-    return HttpResponse(json.dumps(ncontigs_list), content_type="application/json")
+    return Response(serializer.data)
