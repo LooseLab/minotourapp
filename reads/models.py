@@ -863,6 +863,11 @@ class JobMaster(models.Model):
         null=True
     )
 
+    read_count = models.BigIntegerField(
+        blank=True,
+        null=True,
+    )
+
     complete = models.BooleanField(
         default=False
     )

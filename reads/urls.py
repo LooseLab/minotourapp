@@ -160,4 +160,8 @@ urlpatterns = [
         r'^api/v1/tasks/$',
         views.tasks_detail,
         name="tasks-detail"),
+    url(
+        r'^api/v1/runs/(?P<pk>[0-9]+)/tasks/$',
+        views.tasks_detail_all,
+        name="tasks-detail-all"),
 ]

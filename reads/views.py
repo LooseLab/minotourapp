@@ -29,6 +29,7 @@ from reads.models import RunStatisticBarcode
 from reads.models import RunSummary
 from reads.models import RunSummaryBarcode
 from reads.models import JobType
+from reads.models import JobMaster
 from reads.serializers import BarcodeSerializer
 from reads.serializers import ChannelSummarySerializer
 from reads.serializers import FastqReadSerializer
@@ -49,6 +50,8 @@ from reads.serializers import MinIONmessagesSerializer
 from reads.serializers import RunHistogramSummarySerializer
 from reads.serializers import RunSummarySerializer
 from reads.serializers import JobTypeSerializer
+
+
 
 from minotourapp import settings
 
@@ -796,3 +799,43 @@ def tasks_detail(request):
         queryset=JobType.objects.filter(private=False)
         serializer = JobTypeSerializer(queryset,many=True, context={'request': request})
         return Response(serializer.data)
+
+@api_view(['GET'])
+def tasks_detail_all(request,pk):
+    queryset=JobType.objects.filter(private=False)
+    minionrun=MinIONRun.objects.get(pk=pk)
+
+    result = []
+
+    for jobtype in queryset:
+        obj = {}
+        obj.update({
+            'name': jobtype.name,
+            'description' : jobtype.description,
+            'read_count': jobtype.readcount,
+            'reference': jobtype.reference
+        })
+
+        jobmasterlist = JobMaster.objects.filter(run=minionrun).filter(job_type=jobtype)
+
+        if len(jobmasterlist) > 0:
+            obj2 = {}
+            if jobmasterlist[0].reference:
+                reference_name = jobmasterlist[0].reference.reference_name
+            else:
+                reference_name = ''
+            obj2.update({
+                'reference': reference_name,
+                'last_read': jobmasterlist[0].last_read,
+                'var3': jobmasterlist[0].var3,
+                'complete': jobmasterlist[0].complete,
+                'running': jobmasterlist[0].running
+            })
+
+            obj.update({
+                'job_details': obj2
+            })
+
+        result.append(obj)
+
+    return HttpResponse(json.dumps(result), content_type="application/json")

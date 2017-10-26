@@ -1355,7 +1355,7 @@ function MinotourApp() {
         });
     };
     this.requestTasks = function(id) {
-        var url = "/api/v1/tasks/";
+        var url = "/api/v1/runs/"+id+"/tasks/";
         $.get(url, function (data) {
             console.log(data);
             var tasks = [];
@@ -1367,13 +1367,62 @@ function MinotourApp() {
         });
     };
     this.updateTasks = function() {
-        //console.log(self.tasks);
-        var tasksstring = {};
+        console.log(self.tasks);
+        var taskstring = "";
         for (var i = 0; i < self.tasks.length; i++) {
-                console.log(self.tasks[i];
-                tasksstring = tasksstring + self.tasks[i];
+                console.log(self.tasks[i]);
+                if (self.tasks[i].hasOwnProperty("job_details")){
+                    colour = 'bg-green';
+                    message = 'Reads processed:';
+                    percentage = 50;
+                    message2 = 'X% of uploaded reads are processed';
+                    icon = 'fa fa-refresh fa-spin fa-fw';
+                    running=true;
+                }else{
+                    colour = 'bg-light-blue';
+                    message = 'Task Not Running.';
+                    percentage = 0;
+                    message2 = "Click to start a "+self.tasks[i]["description"]+' task.';
+                    icon = 'fa fa-refresh fa-fw';
+                    running=false;
+                }
+                //tasksstring = tasksstring + self.tasks[i]["name"] + " " + self.tasks[i]["description"] + " ";
+                taskstring = taskstring + '<div class="col-md-4">';
+                taskstring = taskstring + '<button type="button" class="info-box '+colour+'" data-toggle="modal" data-target="#taskmodal'+i+'">';
+                taskstring = taskstring + '<div >';
+                taskstring = taskstring + '<span class="info-box-icon"><i class="'+icon+'"></i></span>';
+                taskstring = taskstring + '<div class="info-box-content">';
+                taskstring = taskstring + '<span class="info-box-text">'+self.tasks[i]["description"]+'</span>';
+
+                taskstring = taskstring + '<span class="info-box-number">'+message+'</span>';
+                taskstring = taskstring + '<div class="progress">';
+                taskstring = taskstring + '<div class="progress-bar" style="width: '+percentage+'%"></div>';
+                taskstring = taskstring + '</div>';
+                taskstring = taskstring + '<span class="progress-description">';
+                taskstring = taskstring + message2;
+                taskstring = taskstring + '</span>';
+                taskstring = taskstring + '</div>';
+                taskstring = taskstring + '</div>';
+                taskstring = taskstring + '</button>';
+                taskstring = taskstring + '<div id="taskmodal'+i+'" class="modal fade" role="dialog">';
+                taskstring = taskstring + '<div class="modal-dialog">';
+                taskstring = taskstring + '<div class="modal-content">';
+                taskstring = taskstring + '<div class="modal-header">';
+                taskstring = taskstring + '<button type="button" class="close" data-dismiss="modal">&times;</button>';
+                taskstring = taskstring + '<h4 class="modal-title">'+self.tasks[i]["description"]+'</h4>';
+                taskstring = taskstring + '</div>';
+                taskstring = taskstring + '<div class="modal-body">';
+                taskstring = taskstring + '<p>Some text in the modal.</p>';
+                taskstring = taskstring + '</div>';
+                taskstring = taskstring + '<div class="modal-footer">';
+                taskstring = taskstring + '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>';
+                taskstring = taskstring + '</div>';
+                taskstring = taskstring + '</div>';
+                taskstring = taskstring + '</div>';
+                taskstring = taskstring + '</div>';
+                taskstring = taskstring + '</div>';
         };
-        document.getElementById('tasks').innerHTML = tasksstring;
+        document.getElementById('tasks').innerHTML = taskstring;
     };
 
     this.requestSummaryData = function (id) {
