@@ -540,7 +540,7 @@ if __name__ == '__main__':
         print(": ctrl-c event")
         observer.stop()
         observer.join()
-        os._exit(0)
+        os._exit(1)
         # print("catching a ctrl-c event")
         # # my_client.stop()
         # die_nicely(oper)
