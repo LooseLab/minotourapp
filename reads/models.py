@@ -843,7 +843,7 @@ class JobMaster(models.Model):
         null=True
     )
 
-    var3 = models.CharField(
+    tempfile_name = models.CharField(
         max_length=256,
         blank=True,
         null=True

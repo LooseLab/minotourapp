@@ -128,7 +128,7 @@ def slow_monitor():
         for run_job in run_jobs:
             if run_job.job_type.name == "Assembly":
                 print("Running Assembly")
-                run_minimap_assembly.delay(minion_run.id, run_job.id, run_job.var3, run_job.last_read)
+                run_minimap_assembly.delay(minion_run.id, run_job.id, run_job.tempfile_name, run_job.last_read)
 
         if minion_run.last_entry() >= timediff or minion_run.last_read() >= timediff:
 
@@ -481,7 +481,7 @@ def run_minimap_assembly(runid, id, tmp, last_read):
         newgfa.save()
 
 
-        JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read, var3=tmp)
+        JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read, tempfile_name=tmp)
 
 
 @task()
