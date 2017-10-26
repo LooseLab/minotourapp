@@ -201,6 +201,13 @@
      fixed layout. -->
 <script src="{% static 'web/plugins/slimScroll/jquery.slimscroll.min.js' %}"></script>
 <script src="{% static 'web/plugins/fastclick/fastclick.min.js' %}"></script>
+<script>
+$(function() {
+    if (localStorage['MT_MenuState'] == "menu-collapsed") {
+        $("body").addClass('sidebar-collapse')
+    }
+});
+</script>
 {% block javascript %}
 {% endblock %}
 </body>

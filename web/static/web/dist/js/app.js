@@ -330,8 +330,12 @@ function _init() {
         if ($(window).width() > (screenSizes.sm - 1)) {
           if ($("body").hasClass('sidebar-collapse')) {
             $("body").removeClass('sidebar-collapse').trigger('expanded.pushMenu');
+            alert("open");
+            localStorage.setItem("MT_MenuState", "menu-open");
           } else {
             $("body").addClass('sidebar-collapse').trigger('collapsed.pushMenu');
+            localStorage.setItem("MT_MenuState", "menu-collapsed");
+            alert("collapsed");
           }
         }
         //Handle sidebar push menu for small screens
