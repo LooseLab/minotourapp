@@ -18,6 +18,7 @@ urlpatterns = [
     url(r'^web/', include('web.urls')),
     url(r'^', include('reads.urls')),
     url(r'^', include('alignment.urls')),
+    url(r'^', include('assembly.urls')),
     url(r'^', include('reference.urls')),
     url(r'^', include('communication.urls')),
     url(r'^', include('minikraken.urls')),

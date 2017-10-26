@@ -34,6 +34,7 @@ from reads.models import MinIONRun, FastqReadType
 from reads.models import RunStatisticBarcode
 from reads.models import RunSummaryBarcode
 from reference.models import ReferenceInfo
+from assembly.models import GfaStore
 
 logger = get_task_logger(__name__)
 
@@ -44,6 +45,14 @@ def utcnow():
 
 def findbin(x, bin_width=900):
     return (x - x % bin_width) / bin_width
+
+def getn50(lens):
+    h = sum(lens)/2
+    t = 0
+    for l in lens:
+        t += l
+        if t >= h:
+            return l
 
 
 @task()
@@ -83,17 +92,18 @@ def run_monitor():
 
                 run_minimap2_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
-            #if run_job.job_type.name == "Kraken":
+            if run_job.job_type.name == "Kraken":
 
-            #    run_kraken.delay(minion_run.id, run_job.id, run_job.last_read)
+                run_kraken.delay(minion_run.id, run_job.id, run_job.last_read)
 
-            #if run_job.job_type.name == "ProcAlign":
+            if run_job.job_type.name == "ProcAlign":
 
-            #    proc_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
+                proc_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
-            #if run_job.job_type.name == "ChanCalc":
+            if run_job.job_type.name == "ChanCalc":
 
-            #    processreads.delay(minion_run.id, run_job.id, run_job.last_read)
+                processreads.delay(minion_run.id, run_job.id, run_job.last_read)
+
 
 
 @task()
@@ -112,6 +122,13 @@ def slow_monitor():
     timediff = utcnow() - timedelta(days=1)
 
     for minion_run in minion_runs:
+
+        run_jobs = JobMaster.objects.filter(run=minion_run).filter(running=False)
+
+        for run_job in run_jobs:
+            if run_job.job_type.name == "Assembly":
+                print("Running Assembly")
+                run_minimap_assembly.delay(minion_run.id, run_job.id, run_job.var3, run_job.last_read)
 
         if minion_run.last_entry() >= timediff or minion_run.last_read() >= timediff:
 
@@ -390,6 +407,81 @@ def test_task(string, reference):
     lines = Reference.referencelines.all()
     for line in lines:
         print (line.id)
+
+
+@task()
+def run_minimap_assembly(runid, id, tmp, last_read):
+
+    JobMaster.objects.filter(pk=id).update(running=True)
+    print ("hello teri {}".format(runid))
+    print ("tempfile {}".format(tmp))
+    if tmp == None:
+        tmp = tempfile.NamedTemporaryFile(delete=False).name
+    print ("tempfile {}".format(tmp))
+
+    fastqs = FastqRead.objects.filter(run_id__id=runid, id__gt=int(last_read))
+    #print ("fastqs",fastqs)
+    #read = ''
+    #fastqdict=dict()
+    #fastqtypedict=dict()
+    outtemp = open(tmp, 'a')
+
+    newfastqs = 0
+
+    for fastq in fastqs:
+        newfastqs += 1
+        #read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
+        #fastqdict[fastq.read_id]=fastq
+        #fastqtypedict[fastq.read_id]=fastq.type
+        outtemp.write('>{}\n{}\n'.format(fastq.read_id, fastq.sequence))
+        last_read = fastq.id
+
+    outtemp.close()
+    print("Added {} new fastqs".format(newfastqs))
+
+    if newfastqs < 1000:
+        JobMaster.objects.filter(pk=id).update(running=False, var3=tmp)
+    else:
+
+        totreads = subprocess.check_output('grep -c ">" ' + tmp, shell=True)
+        totreads.rstrip()
+
+        cmd = 'minimap -Sw5 -L100 -m0 -t4 %s %s | miniasm -f %s - ' % (tmp, tmp, tmp)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, shell=True)
+        (out, err) = proc.communicate()
+        status = proc.wait()
+        gfa = out.decode("utf-8")
+
+        print ("output {}".format(gfa))
+
+        gfadata = gfa.splitlines()
+
+        runinstance = MinIONRun.objects.get(pk=runid)
+
+        seqlens = []
+        gfaall = ""
+
+        for line in gfadata:
+            gfaall += line
+            line = line.strip('\n')
+            record = line.split('\t')
+            if record[0] == 'S':
+                seqlens.append(len(record[2]))
+
+        newgfa = GfaStore(run=runinstance)
+        newgfa.nreads = totreads
+        newgfa.ncontigs = len(seqlens)#	int	Number of contigs
+        newgfa.maxlen = max(seqlens)  #	int	Maximum contig length
+        newgfa.minlen  = min(seqlens) #	int	Mininum contig length
+        newgfa.totlen = sum(seqlens)  #	int	Total contig length
+        newgfa.n50len = getn50(seqlens) #    int Contig N50
+        newgfa.meanlen = sum(seqlens)/len(seqlens) #   int Mean contig length
+        newgfa.gfaformat = gfaall  #   string  The whole GFA file
+        newgfa.save()
+
+
+        JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read, var3=tmp)
 
 
 @task()

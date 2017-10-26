@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'minikraken',
     'django_celery_beat',
     'communication',
+    'assembly',
 ]
 
 MIDDLEWARE = [
