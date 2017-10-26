@@ -383,7 +383,8 @@
                 </div>
 
                 <span id="mapping-data"></span>
-            </div><!-- End of Panel sequence mapping -->
+            </div>
+            <!-- End of Panel sequence mapping -->
 
             <!-- Panel tasks -->
 
@@ -431,13 +432,13 @@
             <!-- End of Panel tasks -->
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
-
-    <script src="{% static 'web/minotour.js' %}?{% now 'c' %}"></script>
+{% endblock %}
+{% block javascript %}
+{#    <script src="{% static 'web/minotour.js' %}?{% now 'c' %}"></script>#}
     <script>
         $(document).ready(function () {
             var app = new MinotourApp();
             app.init();
         });
     </script>
-
 {% endblock %}

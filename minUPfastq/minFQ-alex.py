@@ -214,7 +214,7 @@ class Runcollection():
                     barcode_local = ""
 
                 if args.cust_barc=='oddeven':
-                    if int(self.readid[record.id]["ch"]) % 4 == 0:
+                    if int(self.readid[record.id]["ch"]) % 8 == 0:
                         barcode_local = barcode_local + 'even'
                     else:
                         barcode_local = barcode_local + 'odd'
@@ -336,7 +336,6 @@ class MyHandler(FileSystemEventHandler):
         except KeyboardInterrupt:
             print ("Seen a ctrl-c")
             t.stop()
-            raise
 
     def lencreates(self):
         return len(self.creates)
@@ -519,7 +518,7 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-
+    
     args.full_host = "http://" + args.host_name + ":" + str(args.port_number) + "/"
 
     #GLobal creation of header (needs fixing)
@@ -541,7 +540,7 @@ if __name__ == '__main__':
         print(": ctrl-c event")
         observer.stop()
         observer.join()
-        os._exit(0)
+        os._exit(1)
         # print("catching a ctrl-c event")
         # # my_client.stop()
         # die_nicely(oper)

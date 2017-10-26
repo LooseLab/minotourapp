@@ -7,8 +7,8 @@
         <!-- Logo -->
         <a href="{% url 'private-index' %}" class="logo">
             <!-- mini logo for sidebar mini 50x50 pixels -->
-            <span class="logo-mini"><img style="max-width:20px;" src="{% static 'mT_images/minotaurlogo.png' %}"
-                                         alt="minoTour_logo"><small>1.0a</small></span>
+            <span class="logo-mini"><img style="max-width:20px;" src="{% static 'mT_images/minitour.png' %}"
+                                         alt="minoTour_logo"><small>v1</small></span>
             <!-- logo for regular state and mobile devices -->
             <span class="logo-lg"><img style="max-width:100px;" src="{% static 'mT_images/minotaurlogo.png' %}"
                                        alt="minoTour_logo">1.0a</span>
@@ -20,19 +20,15 @@
 
         <script src="{% static 'web/stepline_chart.js' %}?{% now 'c' %}"></script>
 
-        <script src="{% static 'web/minotour.js' %}?{% now 'c' %}"></script>
+{#        <script src="{% static 'web/minotour.js' %}?{% now 'c' %}"></script>#}
 
         <script src="{% static 'web/messages.js' %}?{% now 'c' %}"></script>
 
-        <script>
-            $(document).ready(function () {
-                var app2 = new MonitorAPP();
-                app2.init();
-            });
-        </script>
+
 
         <!-- Header Navbar -->
         <nav class="navbar navbar-static-top" role="navigation">
+            <!-- What is the purpose of API and APIPREV divs?? -->
             <div id='API'></div>
             <div id='APIPREV'></div>
             <!-- Sidebar toggle button-->
@@ -179,106 +175,30 @@
         <!-- sidebar: style can be found in sidebar.less -->
         <section class="sidebar">
 
-            <!-- Sidebar user panel (optional) -->
-            <div class="user-panel">
-                <div class="pull-left image">
-                    <img src="{% static 'mT_images/minitour.png' %}" class="img-circle" alt="User Image">
-                </div>
-                <div class="pull-left info">
-                    <p>{{ request.user.username }}</p>
-                    <!-- Status -->
-                    <a href="#"><i class="fa fa-circle text-success"></i> Online</a>
-                </div>
-            </div>
-
-            <!-- search form (Optional) -->
-            <!-- /.search form -->
-
+        {% with url_name=request.resolver_match.url_name %}
             <!-- Sidebar Menu -->
             <ul class="sidebar-menu">
-                <li id="overview">
+                <li id="overview" {% if url_name == 'private-index' %}class ="active"{% endif %}>
                     <a href="{% url 'private-index' %}">
                         <i class="fa fa-dashboard fa-fw"></i><span> Overview</span>
                     </a>
                 </li>
-                <li id="livecontrol">
+                <li id="livecontrol" {% if url_name == 'remotecontrol' %}class ="active"{% endif %}>
                     <a href="{% url 'remotecontrol' %}">
-                        <i class="fa fa-gamepad fa-fw"></i><span> Remote Control</span>
+                        <i class="fa fa-gamepad fa-fw"></i><span> MinKnow Control</span>
                     </a>
                 </li>
-                <li id="prevcontrol">
-                    <a href="{% url 'prevremotecontrol' %}">
-                        <i class="fa fa-gamepad fa-fw"></i><span> Remote Archive</span>
+                <li id="prevruns" {% if url_name == 'previous-runs' or url_name == 'run-index' %}class ="active"{% endif %}>
+                    <a href="{% url 'previous-runs' %}">
+                        <i class="fa fa-table fa-fw"></i>&nbsp;<span>Runs</span>
+{#                        <i class="fa fa-angle-left pull-right"></i>#}
                     </a>
                 </li>
-                <li id="prevruns" class="treeview">
-                    <a href="#">
-                        <i class="fa fa-table fa-fw"></i>&nbsp;<span>Runs</span><i
-                            class="fa fa-angle-left pull-right"></i>
+                <li {% if url_name == 'minup' %}class="active"{% endif %}>
+                    <a href="{% url 'minup' %}">
+                        <i class="fa fa-cloud-upload fa-fw"></i><span> minUp Scripts</span>
                     </a>
-                    <ul class="treeview-menu">
-                        <li>
-                            <a href="{% url 'previous-runs' %}" id="SR">
-                                <i class="fa fa-database fa-fw"></i><span> Change Run</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="previous_barcodes.php">
-                                <i class="fa fa-barcode"></i><span> Barcodes</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="previous_summary.php">
-                                <i class="fa fa-bar-chart-o fa-fw"></i><span> Data Summary</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="previous_assembly.php">
-                                <i class="fa fa-puzzle-piece"></i><span> Assembly</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="prev_barcode.php">
-                                <i class="fa fa-barcode"></i><span> Barcodes</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="previous_variants.php">
-                                <i class="fa fa-code-fork"></i><span> Nucleotide Variants</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="reads_table.php">
-                                <i class="fa fa-eye fa-fw"></i><span> Individual Read Data</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="previous_export.php">
-                                <i class="fa fa-file-text-o fa-fw"></i><span> Export Reads/Alignments</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="previous_XML.php">
-                                <i class="fa fa-info-circle"></i><span> ENA Submission Details</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="previous_report.php">
-                                <i class="fa fa-comments-o fa-fw"></i><span> Run Report</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="manage_data.php">
-                                <i class="fa fa-pencil-square-o"></i><span> Manage Data</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="previous_runs.php" id="SR">
-                                <i class="fa fa-database fa-fw"></i><span> Select Run</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
+                <li>
 
                 {% if user.is_superuser %}
                     <li id="admin" class="treeview">
@@ -315,24 +235,24 @@
                         </ul>
                     </li>
                 {% endif %}
-                <li>
+                <li  {% if url_name == 'tutorial' %}class ="active"{% endif %}>
                     <a href="{% url 'tutorial' %}">
-                        <i class="fa fa-question-circle fa-fw"></i><span> Tutorials</span>
-                    </a>
-                <li>
-                <li>
-                    <a href="{% url 'minup' %}">
-                        <i class="fa fa-cloud-upload fa-fw"></i><span> minUp Scripts</span>
-                    </a>
-                <li>
-                    <a href="{% url 'external-links' %}">
-                        <i class="fa fa-files-o fa-fw"></i><span> External Links</span>
+                        <i class="fa fa-question-circle fa-fw"></i><span> Help</span>
                     </a>
                 </li>
                 <!-- /.nav-second-level -->
             </ul>
+        {% endwith %}
             <!-- /.sidebar-menu -->
         </section>
         <!-- /.sidebar -->
     </aside>
+{% endblock %}
+{% block javascript %}
+        <script>
+            $(document).ready(function () {
+                var app2 = new MonitorAPP();
+                app2.init();
+            });
+        </script>
 {% endblock %}

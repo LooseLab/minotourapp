@@ -1748,7 +1748,7 @@ function MinotourApp() {
     this.requestRunDetails = function (id) {
         var url_RunDetails = '/api/v1/runs/' + id + '/rundetails/';
         $.get(url_RunDetails, function (data) {
-            //console.log(data);
+            console.log(data);
             self.livedata.minIONname = data[0].minION_name;
             self.livedata.asicid = data[0].minKNOW_asic_id;
             self.livedata.scriptid = data[0].minKNOW_current_script;
