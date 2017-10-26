@@ -121,6 +121,42 @@ function makeChart2(divName, chartTitle, yAxisTitle) {
     return chart;
 }
 
+function makeChart3(divName, chartTitle, yAxisTitle, xAxisTitle) {
+    var chart = Highcharts.chart(divName, {
+        chart: {
+            type: "spline",
+            marginRight: 10,
+            animation: false,
+            zoomType: "x"
+        },
+        title: {
+            text: chartTitle
+        },
+        xAxis: {
+            title: {
+                text: xAxisTitle
+            }
+        },
+        yAxis: {
+            title: {
+                text: yAxisTitle
+            },
+            plotLines: [{
+                value: 0,
+                width: 1,
+                color: "#808080"
+            }]
+        },
+        legend: {
+            enabled: false
+        },
+        exporting: {
+            enabled: false
+        }
+    });
+
+    return chart;
+}
 
 function makeLiveHistogram(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.chart(divName, {
@@ -372,6 +408,7 @@ function MinotourApp() {
     this.chartSequencingRate = null;
     this.chartHistogramReadLength = null;
     this.chartHistogramBasesSequencedByReadLength = null;
+    this.chartNumContigs = null;
 
     this.barcodes = null;
 
@@ -418,6 +455,7 @@ function MinotourApp() {
 
     this.makeChart = makeChart;
     this.makeChart2 = makeChart2;
+    this.makeChart3 = makeChart3;
     this.makeLiveHistogram = makeLiveHistogram;
     this.makeYieldProjection = makeYieldProjection;
     this.makeLiveChart = makeLiveChart;
@@ -449,6 +487,7 @@ function MinotourApp() {
         document.getElementById("panel-basecalled-data").style.display = "none";
         document.getElementById("panel-seq-id").style.display = "none";
         document.getElementById("panel-seq-map").style.display = "none";
+        document.getElementById("panel-seq-assembly").style.display = "none";
         document.getElementById("panel-tasks").style.display = "none";
 
 
@@ -463,6 +502,8 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-assembly").style.display = "none";
+            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
             document.getElementById("nav-tasks").parentNode.classList.remove("active");
 
@@ -480,6 +521,8 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-assembly").style.display = "none";
+            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
             document.getElementById("nav-tasks").parentNode.classList.remove("active");
         };
@@ -495,6 +538,8 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-assembly").style.display = "none";
+            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
             document.getElementById("nav-tasks").parentNode.classList.remove("active");
         };
@@ -510,6 +555,8 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.add("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-assembly").style.display = "none";
+            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
             document.getElementById("nav-tasks").parentNode.classList.remove("active");
         };
@@ -525,6 +572,25 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "block";
             document.getElementById("nav-seq-map").parentNode.classList.add("active");
+            document.getElementById("panel-seq-assembly").style.display = "none";
+            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
+            document.getElementById("panel-tasks").style.display = "none";
+            document.getElementById("nav-tasks").parentNode.classList.remove("active");
+        };
+
+        document.getElementById("nav-seq-assembly").onclick = function (e) {
+            document.getElementById("panel-basecalled-data").style.display = "none";
+            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
+            document.getElementById("panel-live-data").style.display = "none";
+            document.getElementById("nav-live-data").parentNode.classList.remove("active");
+            document.getElementById("panel-summary-data").style.display = "none";
+            document.getElementById("run-summary-data").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-id").style.display = "none";
+            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-map").style.display = "none";
+            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-assembly").style.display = "block";
+            document.getElementById("nav-seq-assembly").parentNode.classList.add("active");
             document.getElementById("panel-tasks").style.display = "none";
             document.getElementById("nav-tasks").parentNode.classList.remove("active");
         };
@@ -540,6 +606,8 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-assembly").style.display = "none";
+            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "block";
             document.getElementById("nav-tasks").parentNode.classList.add("active");
         };
@@ -573,6 +641,13 @@ function MinotourApp() {
             "per-chrom-avg",
             "Read Length By Chromosome".toUpperCase(),
             "Read Length By Chromosome".toUpperCase()
+        );
+
+        this.ChartNumContigs = this.makeChart3(
+            "num-contigs",
+            "Number of Contigs Assembled".toUpperCase(),
+            "Number of Contigs".toUpperCase(),
+            "Number of input Reads".toUpperCase()
         );
 
         this.chart_yield = this.makeChart(
@@ -1479,6 +1554,27 @@ function MinotourApp() {
         });
     }
 
+    this.requestGfaData = function (id) {
+        var url = "/api/v1/runs/" + id + "/assembly";
+
+        var chart = this.ChartNumContigs;
+
+        $.get(url, function(data){
+            console.log(data);
+
+            while (chart.series.length > 0) {
+                chart.series[0].remove();
+            }
+
+            chart.addSeries({
+                name: "assembly_v1",
+                data: data
+            });
+
+        });
+    }
+
+
     this.parseporehist = function (descriptions, counts) {
         var results = [];
         var colors = [];
@@ -1918,6 +2014,7 @@ function MinotourApp() {
             self.requestRunDetails(self.id);
             self.requestLiveRunStats(self.id);
             self.requestPafData(self.id);
+            self.requestGfaData(self.id);
         });
 
 
