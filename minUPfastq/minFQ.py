@@ -541,6 +541,7 @@ if __name__ == '__main__':
         # my_client.stop()
         observer.stop()
         observer.join()
+        os._exit(0)
         # die_nicely(oper)
         #sys.exit()
     #except Exception as e:

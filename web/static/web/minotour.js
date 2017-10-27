@@ -1412,7 +1412,17 @@ function MinotourApp() {
                 taskstring = taskstring + '<h4 class="modal-title">'+self.tasks[i]["description"]+'</h4>';
                 taskstring = taskstring + '</div>';
                 taskstring = taskstring + '<div class="modal-body">';
-                taskstring = taskstring + '<p>Some text in the modal.</p>';
+                taskstring = taskstring + '<p>'+self.tasks[i]["long_description"]+'</p>';
+                if (self.tasks[i]["reference"]==true){
+                    taskstring = taskstring + "<p>Select Reference:</p>"
+                     taskstring = taskstring + '<select>';
+                     //console.log(this.references);
+                     for (var j = 0; j < this.references.length; j++){
+                        taskstring = taskstring + '<option>'+this.references[j]["reference_name"]+'</option>';
+                     }
+
+                     taskstring = taskstring + '</select>';
+                }
                 taskstring = taskstring + '</div>';
                 taskstring = taskstring + '<div class="modal-footer">';
                 taskstring = taskstring + '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>';
