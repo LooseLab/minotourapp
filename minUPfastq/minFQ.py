@@ -21,15 +21,11 @@ import json
 
 def parsefastq(fastq, rundict):
     for record in SeqIO.parse(fastq, "fastq"):
-        # print(record.id)
-        # print(record.seq)
         descriptiondict = parsedescription(record.description)
         if descriptiondict["runid"] not in rundict:
             rundict[descriptiondict["runid"]] = Runcollection(args)
             rundict[descriptiondict["runid"]].add_run(descriptiondict)
         rundict[descriptiondict["runid"]].add_read(record, descriptiondict,fastq)
-        # print(record.format("qual"))
-        # print(len(record.seq))
 
 
 def parsedescription(description):
@@ -43,6 +39,7 @@ def parsedescription(description):
 
 
 class Runcollection():
+
     def __init__(self, args):
         self.args = args
         self.readid = dict()
@@ -57,12 +54,29 @@ class Runcollection():
         self.statsrecord=dict()
         self.barcodes = dict()
 
+    def get_readnames_by_run(self):
+        content = requests.get(self.runidlink + 'readnames', headers=header)
+
+        content_json = json.loads(content.text)
+
+        number_pages = content_json.get('number_pages')
+
+        for page in range(number_pages):
+
+            url = self.runidlink + 'readnames?page=%s'.format(page)
+
+            content = requests.get(url, headers=header)
+
+            print('requesting readnames page {} of {}'.format(page, number_pages))
+
+            for read in json.loads(content.text):
+                self.readnames.append(read)
+
     def add_run(self, descriptiondict):
         print("Seen a new run")
         # Test to see if the run exists
         r = requests.get(args.full_host+'api/v1/runs', headers=header)
-        print(r.text)
-        print (type(r.text))
+
         runid = descriptiondict["runid"]
         if runid not in r.text:
             print ('Need to create this run.')
@@ -75,29 +89,27 @@ class Runcollection():
                 is_barcoded = False
                 barcoded = "unclassified"
             createrun = requests.post(args.full_host+'api/v1/runs/', headers=header, json={"run_name": runname, "run_id": runid, "barcode": barcoded, "is_barcoded":is_barcoded})
-            print (createrun.text)
+
             if createrun.status_code != 201:
                 print (createrun.status_code)
                 print (createrun.text)
                 print ("Houston - we have a problem!")
             else:
-                print (json.loads(createrun.text)["url"])
                 self.runidlink = json.loads(createrun.text)["url"]
         else:
             print ('Run Exists.')
             for run in json.loads(r.text):
-                print (run)
                 if run["run_id"] == runid:
                     self.runidlink = run["url"]
-            #Now fetch a list of reads that already exist at that location
-            checkreads = requests.get(self.runidlink + 'readnames', headers=header)
-            for readid in json.loads(checkreads.text):
-                self.readnames.append(readid)
+
+            #
+            # Now fetch a list of reads that already exist at that location
+            #
+            self.get_readnames_by_run()
+
         readtypes=requests.get(args.full_host+'api/v1/readtypes', headers=header)
-        #print (readtypes.text)
+
         for readtype in json.loads(readtypes.text):
-            print ("READTYPE",readtype)
-            print (readtype["url"])
             self.readtypes[readtype["name"]]=readtype["url"]
 
         response = requests.get(
@@ -105,11 +117,7 @@ class Runcollection():
             headers=header
         )
 
-        print('<<<<<<')
-        print(response.text)
-
         for item in json.loads(response.text):
-            print(item)
             self.barcodes.update({
                 item['name']: item['url']
             })
@@ -121,7 +129,6 @@ class Runcollection():
         runlinkaddread = self.runidlink + "reads/"
         #typelink = args.full_host+'api/v1/readtypes/' + str(type) + "/"
         typelink = type
-        print (runlink,typelink)
         if readid not in self.readnames:
             payload = {
                 'run_id': runlink,
@@ -524,15 +531,14 @@ if __name__ == '__main__':
 
     #GLobal creation of header (needs fixing)
     global header
-    header = {'Authorization': 'Token '+args.api_key, 'Content-Type': 'application/json'}
-
-    print(args.watchdir)
+    header = {'Authorization': 'Token ' + args.api_key, 'Content-Type': 'application/json'}
 
     event_handler = MyHandler(args)
     observer = Observer()
     observer.schedule(event_handler, path=args.watchdir, recursive=True)
     observer.daemon = True
     observer.start()
+
     try:
         while 1:
             time.sleep(1)
