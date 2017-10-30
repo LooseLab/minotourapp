@@ -10,6 +10,7 @@ class ReferenceInfo(models.Model):
     totalrefleN=models.BigIntegerField()
     private=models.BooleanField(default=False)
     users=models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
+    transcripts=models.BooleanField(default=False)
 
     def __str__(self):
         return "{} {}".format(self.reference_name, self.filename)

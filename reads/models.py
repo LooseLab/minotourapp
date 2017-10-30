@@ -825,6 +825,10 @@ class JobType(models.Model):
         default=False,
     )
 
+    transcriptome = models.BooleanField(
+        default=False,
+    )
+
     readcount = models.BooleanField(
         default=False,
     )

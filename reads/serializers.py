@@ -290,7 +290,7 @@ class RunStatisticBarcodeSerializer(serializers.ModelSerializer):
 class JobTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = JobType
-        fields = ('name','description','reference','readcount',)
+        fields = ('name','description','reference','readcount','transcriptome')
 
 class JobSerializer(serializers.ModelSerializer):
     typename = serializers.ReadOnlyField(source="type.name")

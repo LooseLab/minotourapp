@@ -14,6 +14,7 @@ class ReferenceInfoSerializer(serializers.HyperlinkedModelSerializer):
             'minimap2_index_file_location',
             'totalrefleN',
             'private',
+            'transcripts',
             'users'
         )
         read_only = (

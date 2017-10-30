@@ -11,6 +11,10 @@ var NUMBER_SECONDS_IN_A_MINUTE = 60;
 
 var MINOTOUR_VERSION = 0.5;
 
+function csrfSafeMethod(method) {
+                            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+                        }
+
 function check_minotour_version() {
     $.getJSON("http://www.nottingham.ac.uk/~plzloose/minoTourhome/message.php?callback=?", function (result) {
 
@@ -326,6 +330,25 @@ function makeLiveChart(divName, chartTitle, yAxisTitle) {
     return chart;
 };
 
+function getCookie(name) {
+                var cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    var cookies = document.cookie.split(';');
+                    for (var i = 0; i < cookies.length; i++) {
+                        var cookie = jQuery.trim(cookies[i]);
+                        // Does this cookie string begin with the name we want?
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+
+
+
 function MonitorAPP() {
     var livedata = new Array();
     var self = this;
@@ -430,6 +453,50 @@ function MinotourApp() {
 
     this.updatePoreChart = updatePoreChart;
     this.updateStepLineChart = updateStepLineChart;
+
+    this.startTask = function (description,reference){
+    console.log(description + " " + reference);
+    var e = document.getElementById(description);
+    if (e != null) {
+        var strUser = e.options[e.selectedIndex].value;
+    }else{
+        var strUser = "null";
+    }
+    console.log(strUser);
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+            }
+        }
+    });
+    //var url_mask = "{% url 'set-task-detail-all' pk=12345 %}".replace(/12345/, reference.toString());
+    var url_mask = "/api/v1/runs/12345/settask/".replace(/12345/, reference.toString());;
+    $.ajax({
+        "type": "POST",
+        "dataType": "json",
+        "url": url_mask,
+        "data": {
+            "job": description,
+            "reference": strUser,
+        },
+        "beforeSend": function (xhr, settings) {
+            console.log("before send");
+            $.ajaxSettings.beforeSend(xhr, settings);
+        },
+        "success": function (result) {
+            console.log(result);
+            $(".modal.in").modal("hide");
+            self.requestTasks(reference);
+
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            console.log("Status: " + textStatus);
+            //alert("Error: " + errorThrown);
+        }
+
+    })
+};
 
     //this.updateReadsPerPoreChart = updateReadsPerPoreChart;
 
@@ -702,8 +769,9 @@ function MinotourApp() {
         self.selectedBarcode = "All reads";
 
         this.requestData();
-        this.requestTasks(self.id); //really this only needs to run once!
+
         this.requestReference(self.id);
+        this.requestTasks(self.id); //really this only needs to run once!
 
         setInterval(function () {
             this.requestData();
@@ -1363,11 +1431,12 @@ function MinotourApp() {
                 tasks.push(data[i]);
             }
             self.tasks=tasks;
-            self.updateTasks(); //really this only needs to run once!
+            self.updateTasks(id); //really this only needs to run once!
         });
     };
-    this.updateTasks = function() {
-        console.log(self.tasks);
+
+    this.updateTasks = function(id) {
+        console.log("####id is" + id);
         var taskstring = "";
         for (var i = 0; i < self.tasks.length; i++) {
                 console.log(self.tasks[i]);
@@ -1378,6 +1447,7 @@ function MinotourApp() {
                     message2 = 'X% of uploaded reads are processed';
                     icon = 'fa fa-refresh fa-spin fa-fw';
                     running=true;
+
                 }else{
                     colour = 'bg-light-blue';
                     message = 'Task Not Running.';
@@ -1415,16 +1485,18 @@ function MinotourApp() {
                 taskstring = taskstring + '<p>'+self.tasks[i]["long_description"]+'</p>';
                 if (self.tasks[i]["reference"]==true){
                     taskstring = taskstring + "<p>Select Reference:</p>"
-                     taskstring = taskstring + '<select>';
+                     taskstring = taskstring + '<select id="'+self.tasks[i]["name"]+'">';
                      //console.log(this.references);
                      for (var j = 0; j < this.references.length; j++){
-                        taskstring = taskstring + '<option>'+this.references[j]["reference_name"]+'</option>';
+                         if (this.references[j]['transcripts']==self.tasks[i]["transcriptome"]) {
+                             taskstring = taskstring + '<option>' + this.references[j]["reference_name"] + '</option>';
+                         }
                      }
-
                      taskstring = taskstring + '</select>';
                 }
                 taskstring = taskstring + '</div>';
                 taskstring = taskstring + '<div class="modal-footer">';
+                taskstring = taskstring + '<button type="button" class="btn btn-default" id="button'+self.tasks[i]["name"]+'">Go</button>';
                 taskstring = taskstring + '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>';
                 taskstring = taskstring + '</div>';
                 taskstring = taskstring + '</div>';
@@ -1433,7 +1505,19 @@ function MinotourApp() {
                 taskstring = taskstring + '</div>';
         };
         document.getElementById('tasks').innerHTML = taskstring;
+        for (var i = 0; i < self.tasks.length; i++) {
+            var buttonname = "#button" + self.tasks[i]["name"];
+            console.log("Button name to look for:" + buttonname);
+            $(buttonname).click(function (e) {
+                var idClicked = e.target.id;
+                console.log(idClicked);
+                self.startTask(idClicked.substring(6),id);
+            });
+        }
+
     };
+
+
 
     this.requestSummaryData = function (id) {
         /*

@@ -6,6 +6,8 @@ import subprocess
 import tempfile
 from datetime import datetime, timedelta
 
+from django.db.models import F
+
 import pytz
 import redis
 from celery import task
@@ -71,6 +73,16 @@ def run_monitor():
                 ))
 
                 run_bwa_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
+
+            if run_job.job_type.name == "Minimap2_trans":
+                print ("trying to run transcription alignemnt {} {} {} {}".format(
+                    minion_run.id,
+                    run_job.id,
+                    run_job.reference.id,
+                    run_job.last_read
+                ))
+
+                run_minimap2_transcriptome_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
             if run_job.job_type.name == "Minimap2":
 
@@ -394,7 +406,6 @@ def test_task(string, reference):
 
 @task()
 def run_minimap2_alignment(runid, id, reference, last_read):
-    #print ("hello roberto {}".format(runid))
     JobMaster.objects.filter(pk=id).update(running=True)
     REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
     Reference = ReferenceInfo.objects.get(pk=reference)
@@ -410,6 +421,8 @@ def run_minimap2_alignment(runid, id, reference, last_read):
     read = ''
     fastqdict=dict()
     fastqtypedict=dict()
+
+    #print (len(fastqs))
 
     for fastq in fastqs:
         read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
@@ -483,7 +496,7 @@ def run_minimap2_alignment(runid, id, reference, last_read):
                     summarycov.cumu_length += resultstore[ref][ch][bc][ty]['length']
                     summarycov.save()
     #print("!*!*!*!*!*!*!*!*!*!*! ------- running alignment")
-    JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
+    JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read, read_count=F('read_count')+len(fastqs))
 
 
 @task()
@@ -561,7 +574,7 @@ def run_kraken(runid,id,last_read):
                         #print (krak)
 
     krakrun.finish()
-    JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
+    JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read, read_count=F('read_count')+len(fastqs))
 
 
 class Kraken():
