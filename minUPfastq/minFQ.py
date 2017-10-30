@@ -21,7 +21,7 @@ from tqdm import tqdm
 
 
 def parsefastq(fastq, rundict):
-    print ('processing reads')
+    #print ('processing reads')
     for record in SeqIO.parse(fastq, "fastq"):
         descriptiondict = parsedescription(record.description)
         if descriptiondict["runid"] not in rundict:
@@ -79,13 +79,13 @@ class Runcollection():
         print ('Finished.')
 
     def add_run(self, descriptiondict):
-        print("Seen a new run")
+        #print("Seen a new run")
         # Test to see if the run exists
         r = requests.get(args.full_host+'api/v1/runs', headers=header)
 
         runid = descriptiondict["runid"]
         if runid not in r.text:
-            print ('Need to create this run.')
+            #print ('Need to create this run.')
             #We need to come up with a way of identifying the run name.
             runname = self.args.run_name
             if "barcode" in descriptiondict.keys():
@@ -103,7 +103,7 @@ class Runcollection():
             else:
                 self.runidlink = json.loads(createrun.text)["url"]
         else:
-            print ('Run Exists.')
+            #print ('Run Exists.')
             for run in json.loads(r.text):
                 if run["run_id"] == runid:
                     self.runidlink = run["url"]
@@ -376,11 +376,11 @@ class MyHandler(FileSystemEventHandler):
 
             countingtime = 0
             # print "running"
-            for fastqfile, createtime in sorted(self.creates.items(), key=lambda x: x[1]):
+            for fastqfile, createtime in tqdm(sorted(self.creates.items(), key=lambda x: x[1])):
                 delaytime = 0
                 if (int(
                         createtime) + delaytime < time.time()):  # file created 5 sec ago, so should be complete. For simulations we make the time longer.
-                    print(fastqfile)
+                    #print(fastqfile)
                     del self.creates[fastqfile]
                     parsefastq(fastqfile, self.rundict)
 
