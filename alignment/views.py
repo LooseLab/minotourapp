@@ -3,13 +3,15 @@ import json
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.db.models import Count, Min, Sum, Avg
+from django.conf import settings
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from alignment.models import PafRoughCov
-from alignment.models import PafSummaryCov
+from alignment.models import PafSummaryCov, PafSummaryCov_transcriptome
 from alignment.serializers import PafRoughCovSerializer
 from alignment.serializers import PafRoughCovChromSerializer
 from alignment.serializers import PafRoughCovChromSerializerCount
@@ -59,6 +61,28 @@ def paf_alignment_summary(request, pk):#,bc,ch):
             .filter(run__owner=request.user) \
             .filter(run__id=pk)
             #.filter(run__id=pk,barcode=bc,chromosome=ch)
+
+        serializer = PafSummaryCovSerializer(queryset, many=True, context={'request': request})
+
+        return Response(serializer.data)\
+
+@api_view(['GET'])
+def paf_alignment_transcriptome_summary(request, pk):#,bc,ch):
+    """
+
+    :param request:
+    :param pk:
+    :return:
+    """
+    if request.method == 'GET':
+        queryset = PafSummaryCov_transcriptome.objects \
+            .filter(run__owner=request.user) \
+            .filter(run__id=pk) \
+            .order_by('-read_count')[0:1000]
+            #.filter(run__id=pk,barcode=bc,chromosome=ch)
+
+
+        paginator = Paginator(queryset, settings.PAGINATION_PAGE_SIZE)
 
         serializer = PafSummaryCovSerializer(queryset, many=True, context={'request': request})
 
@@ -121,9 +145,9 @@ def paf_alignment_ch_list(request, pk,ch):#,bc,ch):
     :return:
     """
     if request.method == 'GET':
-        queryset = PafRoughCov.objects \
-            .filter(run__owner=request.user) \
-            .filter(run__id=pk).filter(chromosome__id=ch) \
+        queryset = PafRoughCov.objects\
+            .filter(run__owner=request.user)\
+            .filter(run__id=pk).filter(chromosome__id=ch)\
             .order_by('p')
             #.filter(run__id=pk,barcode=bc,chromosome=ch)
 

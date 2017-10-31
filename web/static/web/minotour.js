@@ -1425,7 +1425,7 @@ function MinotourApp() {
     this.requestTasks = function(id) {
         var url = "/api/v1/runs/"+id+"/tasks/";
         $.get(url, function (data) {
-            console.log(data);
+            //console.log(data);
             var tasks = [];
             for (var i=0; i < data.length; i++){
                 tasks.push(data[i]);
@@ -1435,6 +1435,29 @@ function MinotourApp() {
         });
     };
 
+    this.liveUpdateTasks = function(id){
+        var url = "/api/v1/runs/"+id+"/tasks/";
+        $.get(url, function (data) {
+            var tasks=[];
+            for (var i=0; i < data.length; i++){
+                tasks.push(data[i]);
+            }
+            self.tasks=tasks;
+            for (var i=0; i<self.tasks.length; i++){
+                if (self.tasks[i].hasOwnProperty("job_details")){
+                    message = 'Reads processed:' + self.tasks[i]["job_details"]["read_count"] + "/" + self.summary["All reads"]["Template"]["read_count"]["data"][0];
+                    percentage = Math.round((self.tasks[i]["job_details"]["read_count"]/self.summary["All reads"]["Template"]["read_count"]["data"][0] *100) * 100) / 100;
+                    message2 = percentage + '% of uploaded reads are processed';
+                    console.log(message);
+                    $('#'+self.tasks[i]["name"]+'-message').text(message);
+                    $('#'+self.tasks[i]["name"]+'-percentage').text(percentage);
+                    $('div#'+self.tasks[i]["name"]+'-percentage').width(percentage+'%');
+                    $('#'+self.tasks[i]["name"]+'-message2').text(message2);
+                }
+            }
+        })
+    };
+
     this.updateTasks = function(id) {
         console.log("####id is" + id);
         var taskstring = "";
@@ -1442,7 +1465,7 @@ function MinotourApp() {
                 console.log(self.tasks[i]);
                 if (self.tasks[i].hasOwnProperty("job_details")){
                     colour = 'bg-green';
-                    message = 'Reads processed:';
+                    message = 'Reads processed:' + self.tasks[i]["job_details"]["read_count"];
                     percentage = 50;
                     message2 = 'X% of uploaded reads are processed';
                     icon = 'fa fa-refresh fa-spin fa-fw';
@@ -1467,7 +1490,8 @@ function MinotourApp() {
                 console.log(idClicked);
                 self.startTask(idClicked.substring(6),id);
             });
-        }
+        };
+        this.liveUpdateTasks(id);
 
     };
 
@@ -2102,6 +2126,7 @@ function MinotourApp() {
             self.requestRunDetails(self.id);
             self.requestLiveRunStats(self.id);
             self.requestPafData(self.id);
+            self.liveUpdateTasks(self.id);
 
         });
 
