@@ -125,6 +125,40 @@ function makeChart2(divName, chartTitle, yAxisTitle) {
     return chart;
 }
 
+function makeChart3(divName, chartTitle, yAxisTitle, xAxisTitle) {
+    var chart = Highcharts.chart(divName, {
+        chart: {
+            type: "scatter",
+            marginRight: 10,
+            animation: false,
+            zoomType: "xy"
+        },
+        title: {
+            text: chartTitle
+        },
+        xAxis: {
+            //type: "datetime",
+            //tickPixelInterval: 150
+            title: {
+                text: xAxistTitle
+            }
+        },
+        yAxis: {
+            title: {
+                text: yAxisTitle
+            },
+        },
+        legend: {
+            enabled: true
+        },
+        exporting: {
+            enabled: false
+        }
+    });
+
+    return chart;
+}
+
 
 function makeLiveHistogram(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.chart(divName, {
@@ -391,6 +425,7 @@ function MinotourApp() {
     this.chart_average_read_length = null;
     this.chart_maximum_read_length = null;
     this.average_read_lengths_overtime = null;
+    this.xy_scat_length = null;
     this.chart_cumulative_number_reads_overtime = null;
     this.chartSequencingRate = null;
     this.chartHistogramReadLength = null;
@@ -441,6 +476,7 @@ function MinotourApp() {
 
     this.makeChart = makeChart;
     this.makeChart2 = makeChart2;
+    this.makeChart3 = makeChart3;
     this.makeLiveHistogram = makeLiveHistogram;
     this.makeYieldProjection = makeYieldProjection;
     this.makeLiveChart = makeLiveChart;
@@ -516,6 +552,7 @@ function MinotourApp() {
         document.getElementById("panel-basecalled-data").style.display = "none";
         document.getElementById("panel-seq-id").style.display = "none";
         document.getElementById("panel-seq-map").style.display = "none";
+        document.getElementById("panel-trans-map").style.display = "none";
         document.getElementById("panel-tasks").style.display = "none";
 
 
@@ -530,6 +567,8 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
             document.getElementById("nav-tasks").parentNode.classList.remove("active");
 
@@ -547,6 +586,8 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
             document.getElementById("nav-tasks").parentNode.classList.remove("active");
         };
@@ -562,6 +603,8 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
             document.getElementById("nav-tasks").parentNode.classList.remove("active");
         };
@@ -577,6 +620,8 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.add("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
             document.getElementById("nav-tasks").parentNode.classList.remove("active");
         };
@@ -592,6 +637,8 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "block";
             document.getElementById("nav-seq-map").parentNode.classList.add("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
             document.getElementById("nav-tasks").parentNode.classList.remove("active");
         };
@@ -607,8 +654,27 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "block";
             document.getElementById("nav-tasks").parentNode.classList.add("active");
+        };
+
+        document.getElementById("nav-seq-map-trans").onclick = function (e) {
+            document.getElementById("panel-basecalled-data").style.display = "none";
+            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
+            document.getElementById("panel-live-data").style.display = "none";
+            document.getElementById("nav-live-data").parentNode.classList.remove("active");
+            document.getElementById("panel-summary-data").style.display = "none";
+            document.getElementById("run-summary-data").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-id").style.display = "none";
+            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-map").style.display = "none";
+            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "block";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.add("active");
+            document.getElementById("panel-tasks").style.display = "none";
+            document.getElementById("nav-tasks").parentNode.classList.remove("active");
         };
 
 
@@ -659,6 +725,14 @@ function MinotourApp() {
             "maximum read length".toUpperCase(),
             "maximum read length".toUpperCase()
         );
+
+        this.xy_scat_length = this.makeChart3(
+            "xy_scat_len",
+            "Average Read Length Versus Transcript Length (top 100 Expressed)".toUpperCase(),
+            "Read Length".toUpperCase(),
+            "Transcript Lenght".toUpperCase()
+
+        )
 
         this.average_read_lengths_overtime = this.makeChart2(
             "average-read-lengths-overtime",
@@ -1983,6 +2057,26 @@ function MinotourApp() {
         })
     }
 
+    this.requestPafTransData = function (id) {
+        var paftransurl = '/api/v1/runs/' +id + '/pafsummarytrans/?page=1';
+        $.get(paftransurl, function(data) {
+            //console.log(data["data"]);
+            xy_scat=[];
+            top100=[];
+            for (var i = 0; i< data["data"].length; i++){
+                //console.log(data["data"][i]);
+                xy_scat.push([data["data"][i]["chrom_len"],data["data"][i]["avg_read_len"]]);
+                top100.push( [data["data"][i]["chrom_name"],data["data"][i]["read_count"]] );
+            }
+            //console.log(xy_scat);
+            self.trans = [];
+            self.trans["xy_scat"]=xy_scat;
+            self.trans["top100"]=top100;
+            //console.log(top100);
+
+        })
+    }
+
     this.requestPafData = function(id) {
         var pafurl = '/api/v1/runs/' + id + '/pafsummary/';
         $.get(pafurl, function (data){
@@ -2126,6 +2220,7 @@ function MinotourApp() {
             self.requestRunDetails(self.id);
             self.requestLiveRunStats(self.id);
             self.requestPafData(self.id);
+            self.requestPafTransData(self.id);
             self.liveUpdateTasks(self.id);
 
         });

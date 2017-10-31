@@ -886,4 +886,4 @@ class JobMaster(models.Model):
     )
 
     def __str__(self):
-        return "{} {}".format(self.run, self.job_type)
+        return "{} {} {}".format(self.run, self.job_type,self.run.id)

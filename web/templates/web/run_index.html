@@ -16,10 +16,11 @@
             <div class="nav-tabs-custom">
                 <ul class="nav nav-tabs">
                     <li class="active"><a id="run-summary-data">Run Summary</a></li>
-                    <li><a id='nav-live-data'>Live data</a></li>
-                    <li><a id='nav-basecalled-data'>Basecalled data</a></li>
+                    <li><a id='nav-live-data'>Live Event Data</a></li>
+                    <li><a id='nav-basecalled-data'>Basecalled Data</a></li>
                     <li><a id='nav-seq-id'>Sequence Identification</a></li>
-                    <li><a id='nav-seq-map'>Mapping</a></li>
+                    <li><a id='nav-seq-map'>Genome Mapping</a></li>
+                    <li><a id='nav-seq-map-trans'>Transcriptome Mapping</a></li>
                     <li><a id='nav-tasks'>Tasks</a></li>
                 </ul>
             </div>
@@ -371,6 +372,17 @@
                 <span id="mapping-data"></span>
             </div>
             <!-- End of Panel sequence mapping -->
+
+            <!-- Panel transcriptome mapping -->
+            <div id="panel-trans-map" class="row">
+                Transcriptome Mapping Content
+                <div class="row">
+                    <div id="xy_scat_len" class="col-md-12 highcharts" style="width:100%; height:400px;">
+                        <i class="fa fa-cog fa-spin fa-3x"></i>
+                        Calculating.
+                    </div>
+                </div>
+            </div>
 
             <!-- Panel tasks -->
             <div id="panel-tasks" class="row">

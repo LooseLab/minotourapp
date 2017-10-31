@@ -597,6 +597,9 @@ def read_detail(request, pk):
 def readname_list(request, pk):
     """
     TODO describe function
+    CUrrent API behaviour asssumes starting from page1.
+    Request for page 0 returns last page.
+    This could be a source of confusion and we should resolve.
     """
     if request.method == 'GET':
         queryset = FastqRead.objects.filter(run_id=pk).order_by('id')
