@@ -73,11 +73,6 @@ def profile(request):
 
 
 @login_required
-def external_links(request):
-    return render(request, 'web/external_links.html')
-
-
-@login_required
 def minup(request):
     return render(request, 'web/minup.html')
 
@@ -108,7 +103,3 @@ def run_index(request, pk):
 def remotecontrol(request):
     return render(request, 'web/remotecontrol.html')
 
-
-@login_required
-def prevremotecontrol(request):
-    return render(request, 'web/prevremotecontrol.html')
