@@ -89,6 +89,49 @@ function makeChart(divName, chartTitle, yAxisTitle) {
     return chart;
 }
 
+function makeChartlabels(divName, chartTitle, yAxisTitle) {
+    var chart = Highcharts.chart(divName, {
+        chart: {
+            type: "column",
+            animation: Highcharts.svg, // don"t animate in old IE
+            marginRight: 10,
+            zoomType: "x"
+        },
+        title: {
+            text: chartTitle
+        },
+        xAxis: {
+            type: 'category',
+            labels: {
+                rotation: -90,
+                style: {
+                    fontSize: '9px',
+                    fontFamily: 'Verdana, sans-serif'
+                }
+            }
+        },
+        yAxis: {
+            title: {
+                text: yAxisTitle
+            },
+            plotLines: [{
+                value: 0,
+                width: 1,
+                color: "#808080"
+            }]
+        },
+        legend: {
+            enabled: true
+        },
+        exporting: {
+            enabled: false
+        },
+        series: []
+    });
+
+    return chart;
+}
+
 function makeChart2(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.chart(divName, {
         chart: {
@@ -140,7 +183,7 @@ function makeChart3(divName, chartTitle, yAxisTitle, xAxisTitle) {
             //type: "datetime",
             //tickPixelInterval: 150
             title: {
-                text: xAxistTitle
+                text: xAxisTitle
             }
         },
         yAxis: {
@@ -426,6 +469,7 @@ function MinotourApp() {
     this.chart_maximum_read_length = null;
     this.average_read_lengths_overtime = null;
     this.xy_scat_length = null;
+    this.trans_top100 = null;
     this.chart_cumulative_number_reads_overtime = null;
     this.chartSequencingRate = null;
     this.chartHistogramReadLength = null;
@@ -477,6 +521,7 @@ function MinotourApp() {
     this.makeChart = makeChart;
     this.makeChart2 = makeChart2;
     this.makeChart3 = makeChart3;
+    this.makeChartlabels = makeChartlabels;
     this.makeLiveHistogram = makeLiveHistogram;
     this.makeYieldProjection = makeYieldProjection;
     this.makeLiveChart = makeLiveChart;
@@ -732,7 +777,13 @@ function MinotourApp() {
             "Read Length".toUpperCase(),
             "Transcript Lenght".toUpperCase()
 
-        )
+        );
+
+        this.trans_top100 = this.makeChartlabels(
+            "trans_top100",
+            "Top 100 Mapped Reads".toUpperCase(),
+            "Read Count".toUpperCase()
+        );
 
         this.average_read_lengths_overtime = this.makeChart2(
             "average-read-lengths-overtime",
@@ -772,13 +823,13 @@ function MinotourApp() {
 
         this.chartReadsPerPore = this.makeHeatmapChart(
             "reads-per-pore",
-            "Reads per pore".toUpperCase(),
+            "Reads per Channel".toUpperCase(),
             ""
         );
 
         this.chartBasesPerPore = this.makeHeatmapChart(
             "bases-per-pore",
-            "bases (kb) per pore".toUpperCase(),
+            "bases (kb) per Channel".toUpperCase(),
             ""
         );
 
@@ -1171,6 +1222,8 @@ function MinotourApp() {
 
     };
 
+
+
     this.updateSequencingSpeedChart = function () {
         var chart = self.chartSequencingSpeed;
         var selectedBarcode = self.selectedBarcode;
@@ -1533,7 +1586,7 @@ function MinotourApp() {
     };
 
     this.updateTasks = function(id) {
-        console.log("####id is" + id);
+        //console.log("####id is" + id);
         var taskstring = "";
         for (var i = 0; i < self.tasks.length; i++) {
                 console.log(self.tasks[i]);
@@ -1558,7 +1611,7 @@ function MinotourApp() {
         document.getElementById('tasks').innerHTML = taskstring;
         for (var i = 0; i < self.tasks.length; i++) {
             var buttonname = "#button" + self.tasks[i]["name"];
-            console.log("Button name to look for:" + buttonname);
+            //console.log("Button name to look for:" + buttonname);
             $(buttonname).click(function (e) {
                 var idClicked = e.target.id;
                 console.log(idClicked);
@@ -2057,6 +2110,95 @@ function MinotourApp() {
         })
     }
 
+
+    this.requestKraken = function (id) {
+        var parsedkraken = '/api/v1/runs/' + id + '/krakenparse/';
+        $.get(parsedkraken,function(data){
+            //console.log(data);
+            krakendata=[];
+            var list = $("#krakenSelectBarcode");
+            var list2 = $("#krakenSelectRead");
+            for (var i=0; i<data.length;i++){
+                var barcodename = data[i]["barcode_name"];
+                var readtype = data[i]["type_name"]
+                if (!(readtype in krakendata)) {
+                    krakendata[readtype]=[];
+                    if ( $("#krakenSelectRead option[value='" + data[i]["type_name"] + "']").val() === undefined) {
+                        list2.append(new Option(data[i]["type_name"],data[i]["type_name"]))
+                    }
+                }
+                if (!(barcodename in krakendata[readtype])) {
+                    krakendata[readtype][barcodename]=[];
+                    if ( $("#krakenSelectBarcode option[value='" + data[i]["barcode_name"] + "']").val() === undefined) {
+                        list.append(new Option(data[i]["barcode_name"], data[i]["barcode_name"]));
+                    }
+
+                }
+                //if (data[i]['percentage'] >= 0.05 && data[i]["parent"] != "Input") {
+                //if (data[i]['indentation']>8){
+                krakendata[readtype][barcodename].push([data[i]["parent"], data[i]["sci_name"], data[i]['percentage'],data[i]['indentation']])
+                //}
+            }
+            console.log(krakendata);
+            list.change(function(){
+                var selectedType=list2.find(":selected").text();
+                var selectedBarcode=list.find(":selected").text();
+                var minimum = $("#lowerboundselect").val();
+                console.log(minimum);
+                var slimmedkraken=[];
+                for (var i=0; i<krakendata[selectedType][selectedBarcode].length;i++){
+                    if (krakendata[selectedType][selectedBarcode][i][3] >= minimum) {
+                        slimmedkraken.push([krakendata[selectedType][selectedBarcode][i][0],krakendata[selectedType][selectedBarcode][i][1],krakendata[selectedType][selectedBarcode][i][2]]);
+                    }
+                };
+
+                console.log(selectedBarcode);
+                var chart=Highcharts.chart('kraken-sankey', {
+                    title: {
+                        text: 'Kraken ' + selectedType + ' ' + selectedBarcode
+                    },
+
+                     series: [{
+                        keys: ['from', 'to', 'weight'],
+                        data: slimmedkraken,
+                        //data: krakendata[selectedType][selectedBarcode],
+                        type: 'sankey',
+                         curveFactor: 0,
+                        name: 'Kraken Output'
+                    }]
+                });
+            });
+        })
+    };
+
+
+
+    this.updateTransData= function () {
+        var chart = self.xy_scat_length;
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        };
+        chart.addSeries({
+            name: "Top 100 Reads",
+            data: self.trans["xy_scat"]
+        });
+
+        var chart2 = self.trans_top100;
+
+        // Remove previous series
+        while (chart2.series.length > 0) {
+            chart2.series[0].remove();
+        };
+        console.log(self.trans["top100"]);
+        chart2.addSeries({
+            name: "Top 100 Reads",
+            data: self.trans["top100"]
+        });
+        chart2.reflow();
+
+    }
+
     this.requestPafTransData = function (id) {
         var paftransurl = '/api/v1/runs/' +id + '/pafsummarytrans/?page=1';
         $.get(paftransurl, function(data) {
@@ -2073,6 +2215,7 @@ function MinotourApp() {
             self.trans["xy_scat"]=xy_scat;
             self.trans["top100"]=top100;
             //console.log(top100);
+            self.updateTransData();
 
         })
     }
@@ -2222,6 +2365,8 @@ function MinotourApp() {
             self.requestPafData(self.id);
             self.requestPafTransData(self.id);
             self.liveUpdateTasks(self.id);
+            console.log("seriously - Im just trying to parse kraken");
+            self.requestKraken(self.id);
 
         });
 
