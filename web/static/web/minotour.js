@@ -428,7 +428,7 @@ function getCookie(name) {
 
 function MonitorAPP() {
     var livedata = new Array();
-    var self = this;
+
 
     this.init = function () {
         this.requestData();
@@ -460,6 +460,1006 @@ function MonitorAPP() {
         //self.requestSummaryByMinuteData(self.id);
         //self.requestSummaryData(self.id);
     };
+}
+
+function MinotourFlowCellApp() {
+
+    this.chart_reads_called = null;
+    this.chart_yield = null;
+    this.chart_average_read_length = null;
+    this.chart_maximum_read_length = null;
+    this.average_read_lengths_overtime = null;
+    this.xy_scat_length = null;
+    this.trans_top100 = null;
+    this.chart_cumulative_number_reads_overtime = null;
+    this.chartSequencingRate = null;
+    this.chartHistogramReadLength = null;
+    this.chartHistogramBasesSequencedByReadLength = null;
+
+    this.barcodes = null;
+
+    this.summaryByMinute = null;
+    this.summaryByMinute2 = null;
+
+    this.summary = null;
+
+    this.id = null;
+    this.selectedBarcode = null;
+
+    this.rundata = null;
+
+    this.livedatayield = new Array();
+    this.livedata = new Array();
+
+    this.livedata.voltage = new Array();
+    this.livedata.asictemp = new Array();
+    this.livedata.heatsinktemp = new Array();
+    this.livedata.strand = new Array();
+    this.livedata.good_single = new Array();
+    this.livedata.currpercentage = null;
+    this.livedata.currstrand = null;
+    this.livedata.percentage = new Array();
+    this.livedata.yield_history = new Array();
+    this.livedata.meanratio_history = new Array();
+    this.livedata.instrand_history = new Array();
+    this.livedata.openpore_history = new Array();
+    var myStringArray = ["above", "adapter", "below", "good_single", "strand", "inrange", "multiple", "pending_mux_change", "saturated", "unavailable", "unblocking", "unclassified", "unknown"];
+    var arrayLength = myStringArray.length;
+    this.livedata.pore_history = new Array();
+    for (var i = 0; i < arrayLength; i++) {
+        this.livedata.pore_history[myStringArray[i]] = new Array();
+    }
+    ;
+    this.livedata.minIONname = null;
+    this.livedata.colours_string = null;
+    this.livedata.scalingfactor = 0;
+
+    this.chart_per_chrom_cov = null;
+
+    this.coveragedata = new Array();
+    this.coveragedata.read_type = new Array();
+
+    this.makeChart = makeChart;
+    this.makeChart2 = makeChart2;
+    this.makeChart3 = makeChart3;
+    this.makeChartlabels = makeChartlabels;
+    this.makeLiveHistogram = makeLiveHistogram;
+    this.makeYieldProjection = makeYieldProjection;
+    this.makeLiveChart = makeLiveChart;
+    this.makeAreaPlot = makeAreaPlot;
+    this.makeHeatmapChart = makeHeatmapChart;
+    this.makeStepLineChart = makeStepLineChart;
+
+    this.lastread = 0;
+    this.needtoupdatecharts = false;
+
+    this.updatePoreChart = updatePoreChart;
+    this.updateStepLineChart = updateStepLineChart;
+
+    this.average_read_lengths_overtime = this.makeChart2(
+            "average-read-lengths-overtime",
+            "average read length over time".toUpperCase(),
+            "average read length".toUpperCase()
+    );
+
+    this.chart_cumulative_number_reads_overtime = this.makeChart2(
+            "cumulative-number-reads-overtime",
+            "cumulative reads".toUpperCase(),
+            "cumulative reads".toUpperCase()
+        );
+
+    this.chartSequencingRate = this.makeChart2(
+            "sequencing-rate",
+            "sequencing rate".toUpperCase(),
+            "bases/second".toUpperCase()
+        );
+
+    this.chartSequencingSpeed = this.makeChart2(
+            "sequencing-speed",
+            "sequencing speed".toUpperCase(),
+            "bases/channel/second".toUpperCase()
+        );
+
+    this.chart_reads_called = this.makeChart(
+        "reads-called",
+        "reads called".toUpperCase(),
+        "number of reads called".toUpperCase()
+    );
+
+    this.chart_yield = this.makeChart(
+        "yield",
+        "yield".toUpperCase(),
+        "yield".toUpperCase()
+    );
+
+    this.chart_average_read_length = this.makeChart(
+        "average-read-length",
+        "average read length".toUpperCase(),
+        "average read length".toUpperCase()
+    );
+
+    this.chart_maximum_read_length = this.makeChart(
+        "maximum-read-length",
+        "maximum read length".toUpperCase(),
+        "maximum read length".toUpperCase()
+    );
+
+    this.chartHistogramReadLength = this.makeChart2(
+            "histogram-read-lengths",
+            "Histogram of Read Lengths".toUpperCase(),
+            "Number of reads".toUpperCase()
+        );
+
+        this.chartHistogramBasesSequencedByReadLength = this.makeChart2(
+            "histogram-bases-sequenced-by-read-length",
+            "Histogram of Bases Sequenced by Read Length".toUpperCase(),
+            "Number of bases".toUpperCase()
+        );
+
+    this.chartReadsPerPore = this.makeHeatmapChart(
+            "reads-per-pore",
+            "Reads per Channel".toUpperCase(),
+            ""
+        );
+
+        this.chartBasesPerPore = this.makeHeatmapChart(
+            "bases-per-pore",
+            "bases (kb) per Channel".toUpperCase(),
+            ""
+        );
+
+
+    var self=this;
+
+    this.init = function () {
+        console.log("we're under way");
+        /*
+        * Add event listeners
+        */
+
+
+
+        document.getElementById("panel-live-data").style.display = "none";
+        document.getElementById("panel-summary-data").style.display = "block";
+        document.getElementById("panel-basecalled-data").style.display = "none";
+        document.getElementById("panel-seq-id").style.display = "none";
+        document.getElementById("panel-seq-map").style.display = "none";
+        document.getElementById("panel-trans-map").style.display = "none";
+        document.getElementById("panel-tasks").style.display = "none";
+
+
+        document.getElementById("run-summary-data").onclick = function (e) {
+            document.getElementById("panel-basecalled-data").style.display = "none";
+            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
+            document.getElementById("panel-live-data").style.display = "none";
+            document.getElementById("nav-live-data").parentNode.classList.remove("active");
+            document.getElementById("panel-summary-data").style.display = "block";
+            document.getElementById("run-summary-data").parentNode.classList.add("active");
+            document.getElementById("panel-seq-id").style.display = "none";
+            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-map").style.display = "none";
+            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
+            document.getElementById("panel-tasks").style.display = "none";
+            document.getElementById("nav-tasks").parentNode.classList.remove("active");
+
+
+        };
+
+        document.getElementById("nav-live-data").onclick = function (e) {
+            document.getElementById("panel-basecalled-data").style.display = "none";
+            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
+            document.getElementById("panel-live-data").style.display = "block";
+            document.getElementById("nav-live-data").parentNode.classList.add("active");
+            document.getElementById("panel-summary-data").style.display = "none";
+            document.getElementById("run-summary-data").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-id").style.display = "none";
+            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-map").style.display = "none";
+            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
+            document.getElementById("panel-tasks").style.display = "none";
+            document.getElementById("nav-tasks").parentNode.classList.remove("active");
+        };
+
+        document.getElementById("nav-basecalled-data").onclick = function (e) {
+            document.getElementById("panel-basecalled-data").style.display = "block";
+            document.getElementById("nav-basecalled-data").parentNode.classList.add("active");
+            document.getElementById("panel-live-data").style.display = "none";
+            document.getElementById("nav-live-data").parentNode.classList.remove("active");
+            document.getElementById("panel-summary-data").style.display = "none";
+            document.getElementById("run-summary-data").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-id").style.display = "none";
+            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-map").style.display = "none";
+            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
+            document.getElementById("panel-tasks").style.display = "none";
+            document.getElementById("nav-tasks").parentNode.classList.remove("active");
+        };
+
+        document.getElementById("nav-seq-id").onclick = function (e) {
+            document.getElementById("panel-basecalled-data").style.display = "none";
+            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
+            document.getElementById("panel-live-data").style.display = "none";
+            document.getElementById("nav-live-data").parentNode.classList.remove("active");
+            document.getElementById("panel-summary-data").style.display = "none";
+            document.getElementById("run-summary-data").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-id").style.display = "block";
+            document.getElementById("nav-seq-id").parentNode.classList.add("active");
+            document.getElementById("panel-seq-map").style.display = "none";
+            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
+            document.getElementById("panel-tasks").style.display = "none";
+            document.getElementById("nav-tasks").parentNode.classList.remove("active");
+        };
+
+        document.getElementById("nav-seq-map").onclick = function (e) {
+            document.getElementById("panel-basecalled-data").style.display = "none";
+            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
+            document.getElementById("panel-live-data").style.display = "none";
+            document.getElementById("nav-live-data").parentNode.classList.remove("active");
+            document.getElementById("panel-summary-data").style.display = "none";
+            document.getElementById("run-summary-data").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-id").style.display = "none";
+            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-map").style.display = "block";
+            document.getElementById("nav-seq-map").parentNode.classList.add("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
+            document.getElementById("panel-tasks").style.display = "none";
+            document.getElementById("nav-tasks").parentNode.classList.remove("active");
+        };
+
+        document.getElementById("nav-tasks").onclick = function (e) {
+            document.getElementById("panel-basecalled-data").style.display = "none";
+            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
+            document.getElementById("panel-live-data").style.display = "none";
+            document.getElementById("nav-live-data").parentNode.classList.remove("active");
+            document.getElementById("panel-summary-data").style.display = "none";
+            document.getElementById("run-summary-data").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-id").style.display = "none";
+            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-map").style.display = "none";
+            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
+            document.getElementById("panel-tasks").style.display = "block";
+            document.getElementById("nav-tasks").parentNode.classList.add("active");
+        };
+
+        document.getElementById("nav-seq-map-trans").onclick = function (e) {
+            document.getElementById("panel-basecalled-data").style.display = "none";
+            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
+            document.getElementById("panel-live-data").style.display = "none";
+            document.getElementById("nav-live-data").parentNode.classList.remove("active");
+            document.getElementById("panel-summary-data").style.display = "none";
+            document.getElementById("run-summary-data").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-id").style.display = "none";
+            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-map").style.display = "none";
+            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "block";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.add("active");
+            document.getElementById("panel-tasks").style.display = "none";
+            document.getElementById("nav-tasks").parentNode.classList.remove("active");
+        };
+
+        self.id = document.getElementById("flowcell-id").innerText;
+        self.selectedBarcode = "All reads";
+
+        this.requestData();
+
+        setInterval(function () {
+            this.requestData();
+        }.bind(this), 30000);
+
+    };
+
+    /*
+     * Updates the list of barcodes tab and attach
+     * click event to function updateChartsBasedOnBarcode
+     */
+    this.updateBarcodeNavTab = function () {
+        var ul = document.getElementById("nav-tabs-barcodes");
+
+        ul.innerHTML = "";
+
+        var sortedBarcodes = this.barcodes;
+
+        for (var i = 0; i < sortedBarcodes.length; i++) {
+            var li = document.createElement("li");
+            var a = document.createElement("a");
+            a.onclick = this.updateChartsBasedOnBarcode;
+            a.href = "#";
+            a.text = sortedBarcodes[i];
+
+            if (sortedBarcodes[i] === self.selectedBarcode) {
+                li.classList.add("active");
+            }
+
+            li.appendChild(a);
+            ul.appendChild(li);
+        }
+    };
+
+    this.requestSummaryByMinuteData = function (id) {
+        /*
+         * Request summary by minute data
+         */
+        var url = "/api/v1/flowcells/" + id + "/summarybarcodebyminute";
+
+        $.get(url, function (data) {
+
+            if (data.length > 0) {
+                var orderedData = data.sort(function (a, b) {
+                    return new Date(a.sample_time) - new Date(b.sample_time);
+                });
+
+                self.summaryByMinute = orderedData;
+
+                /*********/
+
+                var summaries = {};
+
+                for (var barcode of self.barcodes) {
+                    summaries[barcode] = {};
+                }
+
+                for (var i = 0; i < self.summaryByMinute.length; i++) {
+                    var item = self.summaryByMinute[i];
+
+                    if (summaries[item.barcodename][item.typename] === undefined) {
+                        summaries[item.barcodename][item.typename] = {
+                            "data": [],
+                            "sequencingRate": [],
+                            "sequencingSpeed": [],
+                        };
+                    }
+
+                    var sampleTime = new Date(item.sample_time);
+
+                    var singleData = {
+                        sampleTime: sampleTime,
+                        totalLength: item.total_length,
+                        readCount: item.read_count,
+                        maxLength: item.max_length,
+                        minLength: item.min_length,
+                    }
+
+                    summaries[item.barcodename][item.typename]["sequencingRate"].push({
+                        x: sampleTime,
+                        y: item.total_length / NUMBER_SECONDS_IN_A_MINUTE
+                    });
+
+                    summaries[item.barcodename][item.typename]["sequencingSpeed"].push({
+                        x: sampleTime,
+                        y: item.total_length / item.number_active_channels / NUMBER_SECONDS_IN_A_MINUTE
+                    });
+
+                }
+
+                self.summaryByMinute2 = summaries;
+
+                /*********/
+
+                // update chart - TODO split ajax call and update of self.summaryByMinute from the redrawing the charts
+                self.updateSummaryByMinuteBasedCharts();
+            }
+        });
+    };
+
+    this.updateSummaryByMinuteBasedCharts = function () {
+        self.updateAverageReadLengthOverTimeChart()
+        self.updateCumulativeNumberOfReadsOverTimeChart();
+        self.updateSequencingRateChart();
+        self.updateSequencingSpeedChart();
+    };
+
+    this.updateSequencingSpeedChart = function () {
+        var chart = self.chartSequencingSpeed;
+        var selectedBarcode = self.selectedBarcode;
+
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        for (var barcode of Object.keys(self.summaryByMinute2)) {
+
+            if (barcode === 'All reads' || barcode === self.selectedBarcode) {
+                for (var typeName of Object.keys(self.summaryByMinute2[barcode])) {
+
+                    chart.addSeries({
+                        name: barcode + " - " + typeName,
+                        data: self.summaryByMinute2[barcode][typeName]["sequencingSpeed"]
+                    });
+
+                }
+            }
+        }
+
+    };
+
+    this.updateSequencingRateChart = function () {
+        var chart = self.chartSequencingRate;
+        var selectedBarcode = self.selectedBarcode;
+
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        for (var barcode of Object.keys(self.summaryByMinute2)) {
+
+            if (barcode === 'All reads' || barcode === self.selectedBarcode) {
+                for (var typeName of Object.keys(self.summaryByMinute2[barcode])) {
+
+                    chart.addSeries({
+                        name: barcode + " - " + typeName,
+                        data: self.summaryByMinute2[barcode][typeName]["sequencingRate"]
+                    });
+
+                }
+            }
+        }
+
+    };
+
+    this.updateCumulativeNumberOfReadsOverTimeChart = function () {
+        var chart = self.chart_cumulative_number_reads_overtime;
+        var selectedBarcode = self.selectedBarcode;
+
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        if (selectedBarcode !== "All reads") {
+            var summaries = {};
+            summaries["All reads"] = {};
+            summaries[selectedBarcode] = {};
+
+        } else {
+            var summaries = {
+                "All reads": {}
+            };
+
+        }
+
+        for (var i = 0; i < self.summaryByMinute.length; i++) {
+
+            if (self.summaryByMinute[i].barcodename === "All reads") {
+                if (summaries["All reads"][self.summaryByMinute[i].typename] === undefined) {
+                    summaries["All reads"][self.summaryByMinute[i].typename] = {
+                        "lastCumulativeReadCount": 0,
+                        "data": []
+                    };
+                }
+
+                var cumulativeReadCount = self.summaryByMinute[i].read_count + summaries["All reads"][self.summaryByMinute[i].typename].lastCumulativeReadCount;
+                var sample_time = new Date(self.summaryByMinute[i].sample_time);
+
+                var point = {
+                    x: sample_time,
+                    y: cumulativeReadCount
+                }
+
+                summaries["All reads"][self.summaryByMinute[i].typename].lastCumulativeReadCount = cumulativeReadCount;
+                summaries["All reads"][self.summaryByMinute[i].typename].data.push(point);
+            }
+
+            if (self.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
+                if (summaries[selectedBarcode][self.summaryByMinute[i].typename] === undefined) {
+                    summaries[selectedBarcode][self.summaryByMinute[i].typename] = {
+                        "lastCumulativeReadCount": 0,
+                        "data": []
+                    };
+                }
+
+                var cumulativeReadCount = self.summaryByMinute[i].read_count + summaries[selectedBarcode][self.summaryByMinute[i].typename].lastCumulativeReadCount;
+                var sample_time = new Date(self.summaryByMinute[i].sample_time);
+
+                var point = {
+                    x: sample_time,
+                    y: cumulativeReadCount
+                }
+
+                summaries[selectedBarcode][self.summaryByMinute[i].typename].lastCumulativeReadCount = cumulativeReadCount;
+                summaries[selectedBarcode][self.summaryByMinute[i].typename].data.push(point);
+            }
+
+        }
+
+        for (var barcode in summaries) {
+            for (var readtype in summaries[barcode]) {
+                chart.addSeries({name: barcode + " - " + readtype, data: summaries[barcode][readtype]["data"]});
+            }
+        }
+    };
+
+    this.updateAverageReadLengthOverTimeChart = function () {
+
+        var chart = self.average_read_lengths_overtime;
+        var selectedBarcode = self.selectedBarcode;
+
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        if (selectedBarcode !== "All reads") {
+            var summaries = {};
+            summaries["All reads"] = {};
+            summaries[selectedBarcode] = {};
+
+        } else {
+            var summaries = {
+                "All reads": {}
+            };
+
+        }
+
+        for (var i = 0; i < self.summaryByMinute.length; i++) {
+
+            var average_read_length = self.summaryByMinute[i].total_length / self.summaryByMinute[i].read_count;
+            var sample_time = new Date(self.summaryByMinute[i].sample_time);
+
+            var point = {
+                x: sample_time,
+                y: average_read_length
+            }
+
+            if (self.summaryByMinute[i].barcodename === "All reads") {
+                if (summaries["All reads"][self.summaryByMinute[i].typename] === undefined) {
+                    summaries["All reads"][self.summaryByMinute[i].typename] = [];
+                }
+
+                summaries["All reads"][self.summaryByMinute[i].typename].push(point);
+            }
+
+            if (self.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
+                if (summaries[selectedBarcode][self.summaryByMinute[i].typename] === undefined) {
+                    summaries[selectedBarcode][self.summaryByMinute[i].typename] = [];
+                }
+
+                summaries[selectedBarcode][self.summaryByMinute[i].typename].push(point);
+            }
+
+        }
+
+        for (var barcode in summaries) {
+            for (var readtype in summaries[barcode]) {
+                chart.addSeries({name: barcode + " - " + readtype, data: summaries[barcode][readtype]});
+            }
+        }
+    };
+
+    this.requestSummaryData = function (id) {
+        /*
+         * Request summary by barcode data
+         */
+        var url = "/api/v1/flowcells/" + id + "/summarybarcode";
+
+        $.get(url, function (data) {
+            if (data.length > 0) {
+                var summary = {};
+                for (var i = 0; i < data.length; i++) {
+                    var item = data[i];
+
+                    if (summary[item.barcodename] === undefined) {
+                        summary[item.barcodename] = {};
+                    }
+
+                    if (summary[item.barcodename][item.typename] === undefined) {
+                        summary[item.barcodename][item.typename]={};
+                        summary[item.barcodename][item.typename]["read_count"]=0;
+                        summary[item.barcodename][item.typename]["yield"]=0;
+                        summary[item.barcodename][item.typename]["max_length"]=0;
+                    }
+                    summary[item.barcodename][item.typename]["read_count"]+=item.read_count;
+                    summary[item.barcodename][item.typename]["yield"]+=item.total_length;
+                    if (item.max_length > summary[item.barcodename][item.typename]["max_length"]){
+                        summary[item.barcodename][item.typename]["max_length"] = item.max_length;
+                    }
+
+
+                }
+                var summaries = {};
+                for (var barcodename in summary) {
+                    if (summaries[barcodename] === undefined) {
+                        summaries[barcodename] = {};
+                    }
+                    for (var typename in summary[barcodename]) {
+                        if (summaries[barcodename][typename] === undefined) {
+                            summaries[barcodename][typename] = {
+                                "read_count": null,
+                                "yield": null,
+                                "average_read_length": null,
+                                "max_length": null
+                            };
+
+                            summaries[barcodename][typename]["read_count"] = {
+                                "name": typename,
+                                "data": summary[barcodename][typename]["read_count"],//[summaries[item.barcodename][item.typename]["read_count"]["data"] + item.read_count],
+                                "animation": false
+                            };
+
+                            summaries[barcodename][typename]["yield"] = {
+                                "name": typename,
+                                "data": summary[barcodename][typename]["yield"],
+                                "animation": false
+                            };
+
+                            summaries[barcodename][typename]["average_read_length"] = {
+                                "name": typename,
+                                "data": summary[barcodename][typename]["yield"]/summary[barcodename][typename]["read_count"],
+                                "animation": false
+                            };
+
+                            summaries[barcodename][typename]["max_length"] = {
+                                "name": typename,
+                                "data": summary[barcodename][typename]["max_length"],
+                                "animation": false
+                            };
+
+                        }
+                    }
+
+                }
+
+                self.summary = summaries;
+
+                self.updateSummaryBasedCharts();
+                //console.log(self.livedata);
+
+            }
+        });
+
+    };
+
+    this.updateSummaryBasedCharts = function () {
+        var charts = {
+            "read_count": self.chart_reads_called,
+            "yield": self.chart_yield,
+            "average_read_length": self.chart_average_read_length,
+            "max_length": self.chart_maximum_read_length
+        };
+
+        for (var prop in charts) {
+            self.updateReadsColumnBasedChart(charts[prop], prop);
+        }
+    };
+
+    this.updateReadsColumnBasedChart = function (chart, field) {
+        var summaries = this.summary;
+
+        var series = [];
+
+        // Always include all reads
+        data = [];
+
+        for (var readtype of Object.keys(summaries["All reads"])) {
+            data.push(summaries["All reads"][readtype][field]["data"]);
+        }
+
+        serie = {
+            "name": "All reads",
+            "data": data
+        };
+
+        series.push(serie);
+
+        // Include specific barcode if selected
+        if (self.selectedBarcode !== "All reads") {
+
+            data = [];
+
+            for (var readtype of Object.keys(summaries[self.selectedBarcode])) {
+                data.push(summaries[self.selectedBarcode][readtype][field]["data"][0]);
+            }
+
+            serie = {
+                "name": self.selectedBarcode,
+                "data": data
+            };
+
+            series.push(serie);
+
+        }
+
+        chart.colorCounter = 2;
+        chart.symbolCounter = 0;
+
+        var chartSeriesLength = (chart.series ? chart.series.length : 0);
+
+        for (var i = 0; i < series.length; i++) {
+            if (i <= (chartSeriesLength - 1)) {
+                chart.series[i].setData(series[i].data);
+                chart.series[i].update({
+                    name: series[i].name
+                });
+            } else {
+                chart.addSeries(series[i]);
+            }
+        }
+
+        chartSeriesLength = (chart.series ? chart.series.length : 0);
+
+        while (chartSeriesLength > series.length) {
+            chart.series[(chartSeriesLength - 1)].remove();
+            chartSeriesLength = (chart.series ? chart.series.length : 0);
+        }
+    };
+
+    this.requestHistogramData = function (id) {
+        /*
+         * Request histogram data
+         */
+
+        var url = "/api/v1/flowcells/" + id + "/histogramsummary";
+
+        $.get(url, function (data) {
+            //console.log(data);
+            if (data.length > 0) {
+
+                var ordered_data = data.sort(function (a, b) {
+                    return a.bin_width - b.bin_width;
+                });
+
+                var summary = {};
+                //console.log(ordered_data);
+                for (var i = 0; i < ordered_data.length; i++) {
+
+                    var item = ordered_data[i];
+                    //console.log(item);
+                    if (summary[item.barcode_name] === undefined) {
+                        summary[item.barcode_name] = {};
+                    }
+
+                    if (summary[item.barcode_name][item.read_type_name] === undefined) {
+                        summary[item.barcode_name][item.read_type_name] = {};
+                    }
+
+                    if (summary[item.barcode_name][item.read_type_name][item.bin_width] === undefined) {
+                        summary[item.barcode_name][item.read_type_name][item.bin_width] = {};
+                        summary[item.barcode_name][item.read_type_name][item.bin_width]['read_count'] = 0;
+                        summary[item.barcode_name][item.read_type_name][item.bin_width]['read_length'] = 0;
+                    }
+                    summary[item.barcode_name][item.read_type_name][item.bin_width]['read_count']+=item.read_count;
+                    summary[item.barcode_name][item.read_type_name][item.bin_width]['read_length']+=item.read_length;
+                };
+                //console.log("summary");
+                //console.log(summary);
+                var summaries = {};
+                for (var barcode in summary) {
+
+                    for (var read_type in summary[barcode]){
+
+                        for (var bin_width in summary[barcode][read_type]){
+
+                            if (summaries[barcode] === undefined){
+                                summaries[barcode] = {};
+                            }
+                            if (summaries[barcode][read_type] === undefined) {
+                                summaries[barcode][read_type] = {
+                                    'bin_width': [],
+                                    'read_count': [],
+                                    'read_length': [],
+                                };
+                            }
+                            summaries[barcode][read_type]['read_count'].push(summary[barcode][read_type][bin_width]['read_count']);
+                            summaries[barcode][read_type]['read_length'].push(summary[barcode][read_type][bin_width]['read_length']);
+                            summaries[barcode][read_type]['bin_width'].push(parseInt(bin_width*900+900));
+                        }
+                    }
+                }
+
+
+                self.histogramSummary = summaries;
+                console.log(self.histogramSummary);
+                self.updateHistogramBasedCharts();
+
+            }
+        });
+    };
+
+    this.updateHistogramBasedCharts = function () {
+        self.updateHistogramReadLengthChart();
+        self.updateHistogramBasesSequencedReadLengthChart();
+    };
+
+    this.updateHistogramBasesSequencedReadLengthChart = function () {
+
+        var chart = self.chartHistogramBasesSequencedByReadLength;
+
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        //console.log('Inside function updateHistogramReadLengthChart.');
+        //console.log(Object.keys(self.histogramSummary));
+
+        for (var barcode_name of Object.keys(self.histogramSummary)) {
+
+            //console.log('barcode_name: '+ barcode_name + ', self.selectedBarcode: ' + self.selectedBarcode);
+            //console.log(barcode_name === self.selectedBarcode);
+
+            //if (barcode_name === 'All reads' || barcode_name === self.selectedBarcode) {
+            if (barcode_name === self.selectedBarcode) {
+
+                for (var typeName of Object.keys(self.histogramSummary[barcode_name])) {
+
+                    //console.log('typeName: ' + typeName);
+                    //console.log(self.histogramSummary[barcode_name][typeName]['bin_width']);
+                    //console.log(self.histogramSummary[barcode_name][typeName]["read_count"]);
+
+                    chart.update({
+                        chart: {
+                            type: 'column'
+                        },
+                        xAxis: {
+                            type: 'category',
+                            categories: self.histogramSummary[barcode_name][typeName]['bin_width']
+                        }
+                    });
+
+                    chart.addSeries({
+                        name: barcode_name + " - " + typeName,
+                        data: self.histogramSummary[barcode_name][typeName]["read_length"]
+                    });
+
+                }
+            }
+        }
+
+    };
+
+    this.updateHistogramReadLengthChart = function () {
+
+        var chart = self.chartHistogramReadLength;
+
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        //console.log('Inside function updateHistogramReadLengthChart.');
+        //console.log(Object.keys(self.histogramSummary));
+
+        for (var barcode_name of Object.keys(self.histogramSummary)) {
+
+            //console.log('barcode_name: '+ barcode_name + ', self.selectedBarcode: ' + self.selectedBarcode);
+            //console.log(barcode_name === self.selectedBarcode);
+
+            //if (barcode_name === 'All reads' || barcode_name === self.selectedBarcode) {
+            if (barcode_name === self.selectedBarcode) {
+
+                for (var typeName of Object.keys(self.histogramSummary[barcode_name])) {
+
+                    //console.log('typeName: ' + typeName);
+                    //console.log(self.histogramSummary[barcode_name][typeName]['bin_width']);
+                    //console.log(self.histogramSummary[barcode_name][typeName]["read_count"]);
+
+                    chart.update({
+                        chart: {
+                            type: 'column'
+                        },
+                        xAxis: {
+                            type: 'category',
+                            categories: self.histogramSummary[barcode_name][typeName]['bin_width']
+                        }
+                    });
+
+                    chart.addSeries({
+                        name: barcode_name + " - " + typeName,
+                        data: self.histogramSummary[barcode_name][typeName]["read_count"]
+                    });
+
+                }
+            }
+        }
+
+    };
+
+    this.requestChannelSummaryData = function (id) {
+        /*
+         * Request channel summary data
+         */
+
+        var url = "/api/v1/flowcells/" + id + "/channelsummary";
+
+        $.get(url, function (data) {
+
+            if (data.length > 0) {
+
+                var summaries = {};
+
+                for (var i = 0; i < data.length; i++) {
+
+                    var item = data[i];
+
+                    if (summaries[item.channel_number] === undefined){
+                        summaries[item.channel_number]={};
+                        summaries[item.channel_number]['read_count']=0;
+                        summaries[item.channel_number]['read_length']=0;
+                    }
+                    summaries[item.channel_number['read_count']]+=parseInt(item.read_count);
+                    summaries[item.channel_number['read_length']]+=parseInt((parseInt(item.read_length)/1000).toFixed(0));
+                    //summaries[item.channel_number] = {
+                    //    'read_count': item.read_count,
+                    //    'read_length': parseInt((parseInt(item.read_length)/1000).toFixed(0))
+                    //};
+
+                }
+
+                self.channelSummary = summaries;
+                console.log(self.channelSummary);
+                self.updateChannelBasedCharts();
+
+            }
+        });
+    };
+
+    this.updateChannelBasedCharts = function () {
+        self.updatePoreChart(self.chartReadsPerPore, self.channelSummary, 'read_count');
+        self.updatePoreChart(self.chartBasesPerPore, self.channelSummary, 'read_length');
+    }
+
+
+
+    this.requestData = function () {
+
+        var url_run = '/api/v1/flowcells/' + self.id;
+
+        $.get(url_run, function (data) {
+            console.log(data);
+
+            var barcodes = new Set();
+            for (var j = 0; j < data.length; j++) {
+                for (var i = 0; i < data[j].barcodes.length; i++) {
+                    barcodes.add(data[j].barcodes[i].name)
+                }
+            }
+            self.barcodes = Array.from(barcodes).sort();
+            console.log(self.barcodes);
+            self.rundata = data;
+            self.updateBarcodeNavTab();
+            self.requestSummaryByMinuteData(self.id);
+            self.requestSummaryData(self.id);
+            self.requestHistogramData(self.id);
+            self.requestChannelSummaryData(self.id);
+            /*
+            self.updatetext(self.rundata);
+            //console.log(self.rundata);
+
+
+            //self.getlivedata(self.rundata);
+
+
+
+
+            self.requestRunDetails(self.id);
+            self.requestLiveRunStats(self.id);
+            self.requestPafData(self.id);
+            self.requestPafTransData(self.id);
+            self.liveUpdateTasks(self.id);
+            console.log("seriously - Im just trying to parse kraken");
+            self.requestKraken(self.id);
+
+            */
+
+        });
+
+
+
+        console.log(self);
+
+    };
+
 }
 
 function MinotourApp() {
@@ -1447,7 +2447,7 @@ function MinotourApp() {
     this.updateHistogramBasedCharts = function () {
         self.updateHistogramReadLengthChart();
         self.updateHistogramBasesSequencedReadLengthChart();
-    }
+    };
 
     this.updateChannelBasedCharts = function () {
         self.updatePoreChart(self.chartReadsPerPore, self.channelSummary, 'read_count');
@@ -1773,7 +2773,7 @@ function MinotourApp() {
                 }
 
                 self.histogramSummary = summaries;
-
+                console.log(self.histogramSummary);
                 self.updateHistogramBasedCharts();
 
             }

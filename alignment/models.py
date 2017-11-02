@@ -20,7 +20,7 @@ from reference.models import ReferenceLine
 ##### This class replicates original minoTour design but perhaps it is better just to store the sam file as a single row? Lets try that
 """
 class SamStore(models.Model):
-    run = models.ForeignKey(MinIONRun, related_name='runalignments')
+    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='runalignments')
     read = models.ForeignKey(FastqRead, related_name='readalignment')
     flag = models.IntegerField()
     rname = models.CharField(max_length=512)
@@ -43,7 +43,7 @@ class SamStore(models.Model):
 """
 
 class PafStore(models.Model):
-    run = models.ForeignKey(MinIONRun, related_name='pafalignemnts')
+    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='pafalignemnts')
     read = models.ForeignKey(FastqRead, related_name='pafreadalignment')
     reference = models.ForeignKey(ReferenceInfo, related_name='pafstorereference')
     read_type = models.ForeignKey(FastqReadType, related_name='pafstoretype')
@@ -67,7 +67,7 @@ class PafStore(models.Model):
 
 
 class PafStore_transcriptome(models.Model):
-    run = models.ForeignKey(MinIONRun, related_name='pafalignemnts_transcriptome')
+    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='pafalignemnts_transcriptome')
     read = models.ForeignKey(FastqRead, related_name='pafreadalignment_transcriptome')
     reference = models.ForeignKey(ReferenceInfo, related_name='pafstorereference_transcriptome')
     read_type = models.ForeignKey(FastqReadType, related_name='pafstoretype_transcriptome')
@@ -98,7 +98,7 @@ class SamStore(models.Model):
         return "{} {}".format(self.run_id,self.read_id)
 
 class SamRoughCov(models.Model):
-    run = models.ForeignKey(MinIONRun, related_name='rc_runid')
+    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='rc_runid')
     read_type = models.ForeignKey(FastqReadType, related_name='rc_type')
     #reference = models.TextField() #should switch to a reference database
     reference = models.ForeignKey(ReferenceInfo, related_name='samreference')
@@ -111,7 +111,7 @@ class SamRoughCov(models.Model):
         return "{} {}".format(self.run,self.read_type)
 
 class PafRoughCov(models.Model):
-    run = models.ForeignKey(MinIONRun, related_name='prc_run')
+    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='prc_run')
     read_type = models.ForeignKey(FastqReadType, related_name='prc_type')
     barcode = models.ForeignKey(Barcode, related_name='prc_barcode', null=True)
     #reference = models.TextField() #should switch to a reference database
@@ -125,7 +125,7 @@ class PafRoughCov(models.Model):
         return "{} {}".format(self.run,self.p)
 
 class PafSummaryCov(models.Model):
-    run = models.ForeignKey(MinIONRun, related_name='paf_summary')
+    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='paf_summary')
     read_type = models.ForeignKey(FastqReadType, related_name='paf_summary_type')
     barcode = models.ForeignKey(Barcode, related_name='paf_summary_barcode', null=True)
     reference = models.ForeignKey(ReferenceInfo,related_name='paf_summary_reference')
@@ -187,7 +187,7 @@ class PafSummaryCov(models.Model):
 
 
 class PafRoughCov_transcriptome(models.Model):
-    run = models.ForeignKey(MinIONRun, related_name='prc_run_transcriptome')
+    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='prc_run_transcriptome')
     read_type = models.ForeignKey(FastqReadType, related_name='prc_type_transcriptome')
     barcode = models.ForeignKey(Barcode, related_name='prc_barcode_transcriptome', null=True)
     #reference = models.TextField() #should switch to a reference database
@@ -201,7 +201,7 @@ class PafRoughCov_transcriptome(models.Model):
         return "{} {}".format(self.run,self.p)
 
 class PafSummaryCov_transcriptome(models.Model):
-    run = models.ForeignKey(MinIONRun, related_name='paf_summary_transcriptome')
+    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='paf_summary_transcriptome')
     read_type = models.ForeignKey(FastqReadType, related_name='paf_summary_type_transcriptome')
     barcode = models.ForeignKey(Barcode, related_name='paf_summary_barcode_transcriptome', null=True)
     reference = models.ForeignKey(ReferenceInfo,related_name='paf_summary_reference_transcriptome')

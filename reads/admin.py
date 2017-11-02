@@ -20,6 +20,8 @@ from .models import ChannelSummary
 from .models import HistogramSummary
 from .models import UserOptions
 from .models import Barcode
+from .models import FlowCell
+from .models import FlowCellRun
 
 
 class MinionRunAdmin(admin.ModelAdmin):
@@ -58,4 +60,5 @@ admin.site.register(ChannelSummary)
 admin.site.register(HistogramSummary)
 admin.site.register(UserOptions)
 admin.site.register(Barcode)
-
+admin.site.register(FlowCell)
+admin.site.register(FlowCellRun)

@@ -194,6 +194,12 @@
 {#                        <i class="fa fa-angle-left pull-right"></i>#}
                     </a>
                 </li>
+                <li id="flowcells" {% if url_name == 'previous-flowcells' or url_name == 'flowcell-index' %}class ="active"{% endif %}>
+                    <a href="{% url 'previous-flowcells' %}">
+                        <i class="fa fa-table fa-fw"></i>&nbsp;<span>Flowcells</span>
+{#                        <i class="fa fa-angle-left pull-right"></i>#}
+                    </a>
+                </li>
                 <li {% if url_name == 'minup' %}class="active"{% endif %}>
                     <a href="{% url 'minup' %}">
                         <i class="fa fa-cloud-upload fa-fw"></i><span> minUp Scripts</span>
