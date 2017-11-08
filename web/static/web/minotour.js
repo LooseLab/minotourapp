@@ -535,6 +535,7 @@ function MinotourFlowCellApp() {
 
     this.updatePoreChart = updatePoreChart;
     this.updateStepLineChart = updateStepLineChart;
+    this.makeLiveHistogram = makeLiveHistogram;
 
     this.average_read_lengths_overtime = this.makeChart2(
             "average-read-lengths-overtime",
@@ -608,11 +609,68 @@ function MinotourFlowCellApp() {
             ""
         );
 
+    this.LiveHistogram = this.makeLiveHistogram(
+            'live-histogram',
+            'Histogram of Read Lengths (Events)',
+            'test'
+        );
+
+    this.LiveYield = this.makeYieldProjection(
+            'yield-projection',
+            'Yield Projection',
+            'Yield Projection'
+        );
+
+        this.LiveCumuYield = this.makeLiveChart(
+            'chart-yield',
+            'Yield Over Time',
+            'cumulative yield'
+        );
+
+        this.LiveInStrand = this.makeLiveChart(
+            'live-strand',
+            'in strand counts',
+            'number of pores in strand/single'
+        );
+
+        this.LiveOccupancy = this.makeLiveChart(
+            'live-occupancy',
+            '% Occupancy Over Time',
+            '% Occupancy'
+        );
+
+        this.LiveTemperature = this.makeLiveChart(
+            'live-temperature',
+            'Temperature Over Time',
+            '°Celcius'
+        );
+        this.LiveVoltage = this.makeLiveChart(
+            'live-voltage',
+            'Voltage Over Time',
+            'mV'
+        );
+        this.LivePoreState = this.makeLiveChart(
+            'live-porestate',
+            'Pore State Currents',
+            'Current pA'
+        );
+        this.LiveCurrentRatio = this.makeLiveChart(
+            'live-currentratio',
+            'Current Ratio In Strand/Open Pore',
+            'Current Ratio'
+        );
+
+        this.PoreShizzle = this.makeAreaPlot(
+            'poreshizzle',
+            'Pore States'.toUpperCase(),
+            'Pore States'.toUpperCase()
+        );
+
 
     var self=this;
 
     this.init = function () {
-        console.log("we're under way");
+        //console.log("we're under way");
         /*
         * Add event listeners
         */
@@ -765,6 +823,7 @@ function MinotourFlowCellApp() {
      * click event to function updateChartsBasedOnBarcode
      */
     this.updateBarcodeNavTab = function () {
+        console.log("updateBarcode Run");
         var ul = document.getElementById("nav-tabs-barcodes");
 
         ul.innerHTML = "";
@@ -774,7 +833,8 @@ function MinotourFlowCellApp() {
         for (var i = 0; i < sortedBarcodes.length; i++) {
             var li = document.createElement("li");
             var a = document.createElement("a");
-            a.onclick = this.updateChartsBasedOnBarcode;
+            a.onclick = self.updateChartsBasedOnBarcode;
+            //a.onclick = console.log("button click");
             a.href = "#";
             a.text = sortedBarcodes[i];
 
@@ -786,6 +846,17 @@ function MinotourFlowCellApp() {
             ul.appendChild(li);
         }
     };
+
+    /*
+     * Each click on a barcode tab fires this function
+     * that calls requestData and update all charts
+     */
+    this.updateChartsBasedOnBarcode = function (event) {
+        //console.log(event);
+        self.selectedBarcode = event.target.innerText;
+        self.requestData();
+    };
+
 
     this.requestSummaryByMinuteData = function (id) {
         /*
@@ -1370,6 +1441,7 @@ function MinotourFlowCellApp() {
          * Request channel summary data
          */
 
+
         var url = "/api/v1/flowcells/" + id + "/channelsummary";
 
         $.get(url, function (data) {
@@ -1377,6 +1449,8 @@ function MinotourFlowCellApp() {
             if (data.length > 0) {
 
                 var summaries = {};
+
+
 
                 for (var i = 0; i < data.length; i++) {
 
@@ -1387,17 +1461,15 @@ function MinotourFlowCellApp() {
                         summaries[item.channel_number]['read_count']=0;
                         summaries[item.channel_number]['read_length']=0;
                     }
-                    summaries[item.channel_number['read_count']]+=parseInt(item.read_count);
-                    summaries[item.channel_number['read_length']]+=parseInt((parseInt(item.read_length)/1000).toFixed(0));
-                    //summaries[item.channel_number] = {
-                    //    'read_count': item.read_count,
-                    //    'read_length': parseInt((parseInt(item.read_length)/1000).toFixed(0))
-                    //};
+                    summaries[item.channel_number]['read_count']+=parseInt(item.read_count);
+                    summaries[item.channel_number]['read_length']+=parseInt((parseInt(item.read_length)/1000).toFixed(0));
+                    //console.log(parseInt(item.read_count));
+
 
                 }
 
                 self.channelSummary = summaries;
-                console.log(self.channelSummary);
+                //console.log(self.channelSummary);
                 self.updateChannelBasedCharts();
 
             }
@@ -1407,7 +1479,445 @@ function MinotourFlowCellApp() {
     this.updateChannelBasedCharts = function () {
         self.updatePoreChart(self.chartReadsPerPore, self.channelSummary, 'read_count');
         self.updatePoreChart(self.chartBasesPerPore, self.channelSummary, 'read_length');
-    }
+    };
+
+    this.requestRunDetails = function (id) {
+        var url_RunDetails = '/api/v1/flowcells/' + id + '/rundetails/';
+        $.get(url_RunDetails, function (data) {
+            console.log(data);
+            // This needs to be better!
+            self.livedata.minIONname = data[0].minION_name;
+            self.livedata.asicid = data[0].minKNOW_asic_id;
+            self.livedata.scriptid = data[0].minKNOW_current_script;
+            self.livedata.colours_string = data[0].minKNOW_colours_string;
+            self.livedata.computer=data[0].minKNOW_computer;
+            //console.log(data[0]);
+            document.getElementById('ComputerName').innerHTML = data[0].minKNOW_computer;
+            document.getElementById('ScriptID').innerHTML = data[0].minKNOW_current_script;
+
+        })
+    };
+
+    this.requestLiveRunStats = function (id) {
+        //console.log('lastread ' + this.lastread);
+        var url_livestats = '/api/v1/flowcells/' + id + '/runstats/' + this.lastread;
+        $.get(url_livestats, function (data) {
+            //console.log(data);
+            if (data.length > 0) {
+                self.needtoupdatecharts = true;
+                self.lastread = data[data.length - 1].id;
+                self.lasttime = new Date(data[data.length - 1].sample_time)
+                //console.log(self.rundata.start_time);
+                //console.log(self.lasttime.toISOString());
+                self.requestMessages();
+                for (var i = 0; i < data.length; i++) {
+                    //console.log(data[i]);
+                    timestamp = new Date(data[i].sample_time).getTime();
+                    self.livedata.live_read_count = data[i].minKNOW_read_count;
+                    self.livedata.voltage.push([timestamp, data[i].voltage_value]);
+                    self.livedata.asictemp.push([timestamp, data[i].asic_temp]);
+                    self.livedata.heatsinktemp.push([timestamp, data[i].heat_sink_temp]);
+                    self.livedata.strand.push([timestamp, data[i].strand]);
+                    self.livedata.good_single.push([timestamp, data[i].good_single]);
+                    self.livedata.currpercentage = data[i].occupancy;
+                    self.livedata.currstrand = data[i].strand;
+                    self.livedata.percentage.push([timestamp, data[i].occupancy]);
+                    self.livedata.yield_history.push([timestamp, data[i].event_yield]);
+                    self.livedata.meanratio_history.push([timestamp, data[i].mean_ratio]);
+                    self.livedata.instrand_history.push([timestamp, data[i].in_strand]);
+                    self.livedata.openpore_history.push([timestamp, parseInt(data[i].open_pore)]);
+                    var myStringArray = ["above", "adapter", "below", "good_single", "strand", "inrange", "multiple", "pending_mux_change", "saturated", "unavailable", "unblocking", "unclassified", "unknown"];
+                    var arrayLength = myStringArray.length;
+                    //console.log(parseInt(data[i][myStringArray[4]]));
+                    for (var j = 0; j < arrayLength; j++) {
+                        if (isNaN(data[i][myStringArray[j]])) {
+                            self.livedata.pore_history[myStringArray[j]].push([timestamp, 0]);
+                            //console.log("found a NAN");
+                            //console.log(data[i][myStringArray[i]]);
+                        } else {
+                            self.livedata.pore_history[myStringArray[j]].push([timestamp, parseInt(data[i][myStringArray[j]])]);
+                        }
+
+                    }
+                }
+                self.calculatereadtoeventscaling();
+
+                if (self.needtoupdatecharts == true) {
+                    self.updateLiveHistogram(data);
+                    self.updateLiveYieldProjection();
+                    self.updateLiveCumuYield();
+                    self.updatePoreStats();
+                    //self.updateTextPredictions();
+                }
+
+
+            }
+            //console.log(self.livedata);
+        })
+    };
+    this.updatePoreStats = function () {
+        var returndata = self.parseporehist(this.livedata.colours_string, this.livedata.pore_history);
+        //console.log(returndata);
+        while (self.PoreShizzle.series.length > 0)
+            self.PoreShizzle.series[0].remove(true);
+        //self.PoreShizzle.addSeries(returndata[4]);
+        //console.log(returndata[4]);
+        for (var i = 0; i < returndata.length; i++) {
+            //console.log(returndata[i]);
+            self.PoreShizzle.addSeries(returndata[i]);
+        }
+    };
+
+    this.parseporehist = function (descriptions, counts) {
+        var results = [];
+        var colors = [];
+        var categories = [];
+        var datam = [];
+        var colorlookup = [];
+        descriptions = JSON.parse(descriptions);
+        //console.log(descriptions);
+        for (var thing in descriptions) {
+            if (descriptions.hasOwnProperty(thing)) {
+                if (descriptions[thing].hasOwnProperty("style")) {
+                    //console.log(descriptions[thing]["style"]["colour"]);
+                    colorlookup[descriptions[thing]["name"]] = descriptions[thing]["style"]["colour"];
+                }
+            }
+        }
+        for (var pore in counts) {
+            results.push({"name": pore, "color": "#" + colorlookup[pore], "data": counts[pore]})//,"color":"#121212"]});
+        }
+        return results
+    };
+
+    this.updateLiveCumuYield = function () {
+        //console.log(self.LiveCumuYield);
+        if (self.LiveCumuYield.series.length < 1) {
+            self.LiveCumuYield.addSeries({
+                data: self.livedata.yield_history
+            });
+            self.LiveCumuYield.series[0].update({name: "Events"}, false);
+        } else {
+            self.LiveCumuYield.series[0].setData(self.livedata.yield_history);
+            self.LiveCumuYield.series[0].update({name: "Events"}, false);
+        }
+        self.LiveCumuYield.redraw();
+        self.LiveCumuYield.reflow();
+        if (self.LiveOccupancy.series.length < 1) {
+            self.LiveOccupancy.addSeries({
+                data: self.livedata.percentage
+            });
+            self.LiveOccupancy.series[0].update({name: "% Occupancy"}, false);
+        } else {
+            self.LiveOccupancy.series[0].setData(self.livedata.percentage);
+            self.LiveOccupancy.series[0].update({name: "% Occupancy"}, false);
+        }
+        self.LiveOccupancy.redraw();
+        self.LiveOccupancy.reflow();
+        if (self.LiveInStrand.series.length < 2) {
+            self.LiveInStrand.addSeries({data: self.livedata.strand});
+            self.LiveInStrand.series[0].update({name: "In Strand"}, false);
+            self.LiveInStrand.addSeries({data: self.livedata.good_single});
+            self.LiveInStrand.series[1].update({name: "Single Pore"}, false);
+
+        } else {
+            self.LiveInStrand.series[0].setData(self.livedata.strand);
+            self.LiveInStrand.series[0].update({name: "In Strand"}, false);
+            self.LiveInStrand.series[1].setData(self.livedata.good_single);
+            self.LiveInStrand.series[1].update({name: "Single Pore"}, false);
+        }
+        self.LiveInStrand.redraw();
+        self.LiveInStrand.reflow();
+        if (self.LivePoreState.series.length < 1) {
+            self.LivePoreState.addSeries({data: self.livedata.instrand_history});
+            self.LivePoreState.addSeries({data: self.livedata.openpore_history});
+        } else {
+            self.LivePoreState.series[0].setData(self.livedata.instrand_history);
+            self.LivePoreState.series[1].setData(self.livedata.openpore_history);
+        }
+        self.LivePoreState.series[0].update({name: "In Strand"}, false);
+        self.LivePoreState.series[1].update({name: "Open Pore"}, false);
+        self.LivePoreState.redraw();
+        self.LivePoreState.reflow();
+        if (self.LiveCurrentRatio.series.length < 1) {
+            self.LiveCurrentRatio.addSeries({data: self.livedata.meanratio_history});
+        } else {
+            self.LiveCurrentRatio.series[0].setData(self.livedata.meanratio_history);
+        }
+        self.LiveCurrentRatio.series[0].update({name: "Current Ratio"}, false);
+        self.LiveCurrentRatio.redraw();
+        self.LiveCurrentRatio.reflow();
+        if (self.LiveTemperature.series.length < 1) {
+            self.LiveTemperature.addSeries({data: self.livedata.asictemp});
+            self.LiveTemperature.addSeries({data: self.livedata.heatsinktemp});
+        } else {
+            self.LiveTemperature.series[0].setData(self.livedata.asictemp);
+            self.LiveTemperature.series[1].setData(self.livedata.heatsinktemp);
+        }
+        self.LiveTemperature.series[0].update({name: "Asic Temp"}, false);
+        self.LiveTemperature.series[1].update({name: "HeatSink Temp"}, false);
+        self.LiveTemperature.redraw();
+        self.LiveTemperature.reflow();
+        if (self.LiveVoltage.series.length < 1) {
+            self.LiveVoltage.addSeries({data: self.livedata.voltage});
+        } else {
+            self.LiveVoltage.series[0].setData(self.livedata.voltage);
+        }
+        self.LiveVoltage.series[0].update({name: "Voltage"}, false);
+        self.LiveVoltage.redraw();
+        self.LiveVoltage.reflow();
+
+    };
+
+
+    this.projectdata = function (data) {
+        var results = [];
+        var holder = [];
+        var diffholder = 0;
+        var meanholder = 0;
+        if (data.length > 3000) {
+            data = data.slice(-3000);
+        }
+
+
+        for (var i = 1; i < data.length; i++) {
+            var diff = data[i][1] - data[i - 1][1];
+            holder.push(diff);
+            meanholder = meanholder + diff;
+        }
+        for (var i = 2; i < holder.length; i++) {
+            var ratio = holder[i] / holder[i - 1];
+            //if (ratio > 2){
+            //    ratio = 2;
+            //}
+            diffholder = diffholder + ratio;
+            //if (meanholder > 1) {
+            //    meanholder = 1;
+            //}
+        }
+        //console.log(diffholder/(holder.length - 1));
+        if (diffholder / (holder.length - 1) > 1) {
+            return [1, meanholder / (holder.length - 1 )];
+        } else if (diffholder / (holder.length - 1) < 0.999) {
+            return ([0.999, meanholder / (holder.length - 1 )]);
+        } else {
+            return ([diffholder / (holder.length - 1), meanholder / (holder.length - 1 )]);
+        }
+    };
+
+    this.projectresults = function (syntheticdata, scalingfactor, steps, difference, runstart) {
+        testdata = syntheticdata.slice(-2);
+        var lastval = testdata[1][1];
+        var lasttime = testdata[1][0];
+        var timingdiff = testdata[1][0] - testdata[0][0];
+        //var valdiff = testdata[1][1]-testdata[0][1];
+        var valdiff = difference;
+        var newresults = [];
+        var muxphase = 0
+        //console.log(lastval,timingdiff);
+        for (var i = 0; i < steps; i++) {
+            templastval = lastval;
+            lastval = lastval + (valdiff * scalingfactor);
+            valdiff = lastval - templastval;
+            lasttime = lasttime + timingdiff;
+            if (muxphase != Math.floor((lasttime - (runstart * 1000)) / 1000 / 28800)) {
+                difference = difference * 0.9;
+                valdiff = difference;
+                muxphase = Math.floor((lasttime - (runstart * 1000)) / 1000 / 28800);
+            }
+            //remainder = lasttime-(runstart*1000) - (lasttime-(runstart*1000) % (28800*1000))/(28800*1000);
+            //console.log(Math.floor((lasttime-(runstart*1000))/1000/28800));
+            newresults.push([lasttime, Math.ceil(lastval)]);
+        }
+        //console.log(newresults);
+        return newresults;
+    };
+
+    this.scaleyield = function (firstelement, data) {
+        var results = [];
+        for (var i = 0; i < data.length; i++) {
+            //console.log(data[i]);
+            //console.log((data[i][0]-firstelement[0])/1000);
+            //console.log((data[i][1]/1000000));
+            results.push((((data[i][0] - firstelement[0]) / 1000), Math.ceil((data[i][1] / 1000000))));
+        }
+        return results;
+    };
+
+
+    this.updateLiveYieldProjection = function () {
+        var seqspeed = "450 b/s";
+        //commented out below as it wasn't being used - not sure why - need to check
+        //var timeleft = self.geteighthours(self.livedatayield.slice(-1), self.rundata.start_time);
+        var firsthour = 120;
+        [scalingfactor, difference] = self.projectdata(self.livedata.yield_history);
+        [scalingfactor2, difference2] = self.projectdata(self.livedata.yield_history.slice(0, firsthour));
+        //synthericdata needs renaming!!!
+        var syntheticdata = self.livedata.yield_history;
+        //console.log(scalingfactor2);
+        //console.log(syntheticdata);
+        newarray = self.projectresults(syntheticdata, scalingfactor, 4000, difference, new Date(self.rundata.start_time).getTime());
+        //console.log(newarray);
+        newarray1 = self.projectresults(syntheticdata.slice(0, firsthour), scalingfactor2, 4000, difference2, new Date(self.rundata.start_time).getTime());
+        newarray2 = self.projectresults(syntheticdata.slice(0, firsthour), 1, 4000, difference2, new Date(self.rundata.start_time).getTime());
+        self.LiveYield.series[0].setData(self.converttobases(self.livedata.yield_history, seqspeed));
+        self.LiveYield.series[1].setData(self.converttobases(newarray, seqspeed));
+        self.LiveYield.series[2].setData(self.converttobases(newarray1, seqspeed));
+        self.LiveYield.series[3].setData(self.converttobases(newarray2, seqspeed));
+        self.LiveYield.redraw();
+        self.LiveYield.reflow()
+    };
+    this.converttobases = function (data, seqspeed) {
+        if (Number(self.livedata.scalingfactor) > Number(0)) {
+            //console.log("returning scaling factor" + self.livedata.scalingfactor);
+            scaling =  Number(self.livedata.scalingfactor);
+        } else {
+            switch (seqspeed) {
+                case "MegaCrazy Runs":
+                    scaling = 3.5;
+                    break;
+                case "450 b/s":
+                    scaling = 1.8;
+                    break;
+                case "250 b/s":
+                    scaling = 1.1;
+                    break;
+                case "70 b/s":
+                    scaling = 1.0;
+                    break;
+            }
+        }
+        var scaleddata = [];
+        for (var i = 0; i < data.length; i++) {
+            scaleddata.push([data[i][0], data[i][1] * scaling]);
+        }
+            //console.log("returning estimated scaling factor");
+        return scaleddata;
+    };
+
+    this.requestMessages = function () {
+        var url_sincemessages = self.rundata.minION + 'messagessince/' + self.rundata.start_time + '/' + self.lasttime.toISOString() + "/";
+        //console.log(url_sincemessages);
+        $.get(url_sincemessages, function (data) {
+            //console.log(data);
+            stringtowrite = '<table class="table table-condensed"><tr><th>Message</th><th>Time</th></tr>';
+            for (var i = 0; i < data.length; i++) {
+                //stringtowrite=stringtowrite+'<div class="alert alert-info" role="alert">'+data[i].minKNOW_message + ' <p>(<i>' + new Date(data[i].minKNOW_message_timestamp) + '</i>) '+'</div>'
+                stringtowrite = stringtowrite + '<tr><td>' + data[i].minKNOW_message + ' </td><td><i>' + new Date(data[i].minKNOW_message_timestamp) + '</i></td> ' + '</tr>'
+            }
+            stringtowrite = stringtowrite + '</table>';
+            document.getElementById('Messages').innerHTML = stringtowrite;
+        })
+    };
+
+    this.tohistogram = function (readeventcountweightedhist, readeventcountweightedhistbinwidth, totalyield) {
+        var results = [];
+        var categories = [];
+        //var counter = 0;
+        readeventcountweightedhist = readeventcountweightedhist.replace(/u(?=[^:]+')/g, "").replace(/'/g, "");
+        readeventcountweightedhist = JSON.parse(readeventcountweightedhist);
+        //console.log(readeventcountweightedhist);
+        var n50count = 0;
+        var n50index = 0;
+        var check = 0;
+        //console.log(readeventcountweightedhist);
+        for (i in readeventcountweightedhist) {
+            //if (readeventcountweightedhist[i] > 0){
+            //counter+=1;
+            //console.log(readeventcountweightedhistbinwidth);
+            //console.log(i);
+
+            //console.log(i*readeventcountweightedhistbinwidth, readeventcountweightedhist[i]);
+            n50count += parseInt(readeventcountweightedhist[i]);
+            if (n50count >= (parseInt(totalyield) / 2)) {
+                //console.log('n50',(i+1)*readeventcountweightedhistbinwidth, n50count);
+                check += 1;
+            }
+            //console.log(i);
+            //console.log(parseInt(i)+1);
+            var category = String((parseInt(i)) * readeventcountweightedhistbinwidth) + " - " + String((parseInt(i) + 1) * readeventcountweightedhistbinwidth) + " ev";
+            categories.push(category);
+            if (check == 1) {
+                n50index = i;
+                results.push({"name": category, "y": parseInt(readeventcountweightedhist[i]), "color": 'red'});
+                check += 1;
+            } else {
+                results.push({"name": category, "y": parseInt(readeventcountweightedhist[i]), "color": 'blue'});
+            }
+
+            //}
+        }
+        categories.push(">> max ev");
+        var missed = 0;
+        //var missed = totalyield - readeventcountweightedhist.reduce(add,0);
+        results.push({"name": ">> max ev", "y": missed});
+        //console.log(n50index);
+        return [results, categories, n50index];
+
+    };
+
+    this.updateLiveHistogram = function (data) {
+        returndata = self.tohistogram(data[data.length - 1].minKNOW_histogram_values, data[data.length - 1].minKNOW_histogram_bin_width, data[data.length - 1].event_yield);
+        self.LiveHistogram.series[0].setData(returndata[0]);
+        self.LiveHistogram.xAxis[0].setCategories(returndata[1]);
+        var N50 = parseInt(returndata[2]);
+        self.LiveHistogram.xAxis[0].removePlotBand('plot-band-1');
+        self.LiveHistogram.xAxis[0].addPlotBand({
+            from: N50 - 0.5,
+            to: N50 + 0.5,
+            color: '#FCFFC5',
+            id: 'plot-band-1',
+        });
+        self.LiveHistogram.xAxis[0].removePlotBand('plot-band-2');
+        self.LiveHistogram.xAxis[0].addPlotBand({
+            color: 'black',
+            width: 2,
+            dashStyle: 'longdashdot',
+            value: returndata[2],
+            label: {
+                text: 'Estimated Read N50',
+                align: 'left',
+                rotation: 0,
+                x: +10 // Amount of pixels the label will be repositioned according to the alignment.
+            },
+            id: 'plot-band-2',
+        });
+        self.LiveHistogram.xAxis[0].removePlotBand('plot-band-3');
+        self.LiveHistogram.xAxis[0].addPlotBand({
+            color: 'black',
+            width: 2,
+            dashStyle: 'longdashdot',
+            value: (Math.floor(this.totalyield / this.readcount / this.datain2)),
+            label: {
+                text: 'Estimated Read Average - ' + Math.round(this.totalyield / this.readcount / 1000 * 100) / 100 + ' K events',
+                align: 'left',
+                rotation: 0,
+                x: +10,
+                y: +30, // Amount of pixels the label will be repositioned according to the alignment.
+            },
+            id: 'plot-band-3',
+        });
+        self.LiveHistogram.reflow();
+    };
+
+
+    this.calculatereadtoeventscaling = function () {
+        var totalyield = 0;
+        var readcount = 0;
+        if (self.summary !== null) {
+        //if ('All reads' in self.summary) {
+            for (var readtype in self.summary["All reads"]) {
+                //console.log(self.summary['All reads'][readtype]);
+                totalyield = totalyield + parseInt(self.summary['All reads'][readtype]['yield']['data']);
+                readcount = readcount + parseInt(self.summary['All reads'][readtype]['read_count']['data']);
+            }
+            console.log("yieldhistory length");
+            console.log("test" + self.livedata.live_read_count);
+            if (self.livedata.yield_history.length > 1) {
+                self.livedata.scalingfactor = (totalyield / readcount) / (self.livedata.yield_history[self.livedata.yield_history.length - 1][1] / self.livedata.live_read_count);
+            }
+        }
+    };
 
 
 
@@ -1425,13 +1935,20 @@ function MinotourFlowCellApp() {
                 }
             }
             self.barcodes = Array.from(barcodes).sort();
+            console.log("printing barcodes");
             console.log(self.barcodes);
+
             self.rundata = data;
+            console.log("calling barcode update");
             self.updateBarcodeNavTab();
+            console.log("barcode update done");
             self.requestSummaryByMinuteData(self.id);
             self.requestSummaryData(self.id);
             self.requestHistogramData(self.id);
+
             self.requestChannelSummaryData(self.id);
+            self.requestRunDetails(self.id);
+            self.requestLiveRunStats(self.id);
             /*
             self.updatetext(self.rundata);
             //console.log(self.rundata);
@@ -1442,8 +1959,8 @@ function MinotourFlowCellApp() {
 
 
 
-            self.requestRunDetails(self.id);
-            self.requestLiveRunStats(self.id);
+
+
             self.requestPafData(self.id);
             self.requestPafTransData(self.id);
             self.liveUpdateTasks(self.id);
