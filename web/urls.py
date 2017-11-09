@@ -11,7 +11,9 @@ urlpatterns = [
     url(r'^private/profile/$', views.profile, name='profile'),
     url(r'^private/tutorial/$', views.tutorial, name='tutorial'),
     url(r'^private/previous-runs/$', views.previous_run, name='previous-runs'),
+    url(r'^private/previous-flowcells/$', views.previous_flowcell, name='previous-flowcells'),
     url(r'^private/current-runs/$', views.current_run, name='current-runs'),
     url(r'^private/runs/(?P<pk>[0-9]+)/$', views.run_index, name='run-index'),
+    url(r'^private/flowcells/(?P<pk>[0-9]+)/$', views.flowcell_index, name='flowcell-index'),
     url(r'^private/remote-control/$', views.remotecontrol, name='remotecontrol'),
 ]

@@ -168,4 +168,31 @@ urlpatterns = [
         r'^api/v1/runs/(?P<pk>[0-9]+)/settask/$',
         views.set_task_detail_all,
         name="set-task-detail-all"),
+    url(
+        r'^api/v1/flowcells/$',
+        views.flowcell_list,
+        name="flowcell-list"),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/$',
+        views.flowcell_detail,
+        name="flowcell-detail"),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcode/$',
+        views.flowcell_summary_barcode,
+        name="flowcellsummarybarcode-detail"),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute/$',
+        views.flowcell_summary_barcode_by_minute,
+        name="flowcellsummarybarcodebyminute-detail"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/histogramsummary/$',
+        views.flowcell_histogram_summary,
+        name="flowcellhistogramsummary-detail"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/channelsummary/$',
+        views.flowcell_channel_summary,
+        name="flowcellchannelsummary-list"
+    ),
 ]

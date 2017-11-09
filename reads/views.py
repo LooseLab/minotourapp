@@ -30,6 +30,8 @@ from reads.models import RunSummary
 from reads.models import RunSummaryBarcode
 from reads.models import JobType
 from reads.models import JobMaster
+from reads.models import FlowCell
+from reads.models import FlowCellRun
 from reference.models import ReferenceInfo
 from reads.serializers import BarcodeSerializer
 from reads.serializers import ChannelSummarySerializer
@@ -51,6 +53,8 @@ from reads.serializers import MinIONmessagesSerializer
 from reads.serializers import RunHistogramSummarySerializer
 from reads.serializers import RunSummarySerializer
 from reads.serializers import JobTypeSerializer
+from reads.serializers import FlowCellSerializer
+from reads.serializers import FlowCellRunSerializer
 
 
 
@@ -882,3 +886,94 @@ def tasks_detail_all(request,pk):
         result.append(obj)
 
     return HttpResponse(json.dumps(result), content_type="application/json")
+
+
+@api_view(['GET'])
+def flowcell_list(request):
+    queryset = FlowCell.objects.filter(owner=request.user)
+    serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
+    return Response(serializer.data)\
+
+
+@api_view(['GET'])
+def flowcell_detail(request,pk):
+    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    serializer = FlowCellRunSerializer(queryset, many=True, context={'request': request})
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def flowcell_summary_barcode(request,pk):
+    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    runset = list()
+    for run in queryset:
+        #print (run.run_id)
+        runset.append(run.run_id)
+    queryset = RunSummaryBarcode.objects \
+        .filter(run_id__owner=request.user) \
+        .filter(run_id__in=runset)
+
+    serializer = RunSummaryBarcodeSerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def flowcell_summary_barcode_by_minute(request, pk):
+    """
+        Return a list with summaries for a particular run grouped by minute.
+        """
+    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    runset = list()
+    for run in queryset:
+        # print (run.run_id)
+        runset.append(run.run_id)
+    queryset = RunStatisticBarcode.objects \
+        .filter(run_id__owner=request.user) \
+        .filter(run_id__in=runset)
+
+    serializer = RunStatisticBarcodeSerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
+
+
+    #alldata = MinIONRun.objects.filter(id__in=runset)
+
+    #serializer = MinIONRunSerializer(alldata,many=True, context={'request': request})
+    #return Response(serializer.data)
+
+
+@api_view(['GET'])
+def flowcell_histogram_summary(request, pk):
+    """
+    Return a list with histogram summaries for a particular run.
+    """
+    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    runset = list()
+    for run in queryset:
+        # print (run.run_id)
+        runset.append(run.run_id)
+    queryset = HistogramSummary.objects\
+        .filter(run_id__owner=request.user)\
+        .filter(run_id__in=runset)\
+        .order_by('read_type', 'bin_width')
+
+    serializer = RunHistogramSummarySerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def flowcell_channel_summary(request, pk):
+    """
+    Return a list with channel info for a particular run.
+    """
+    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    runset = list()
+    for run in queryset:
+        # print (run.run_id)
+        runset.append(run.run_id)
+    queryset = ChannelSummary.objects\
+        .filter(run_id__owner=request.user)\
+        .filter(run_id__in=runset)
+
+    serializer = ChannelSummarySerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)

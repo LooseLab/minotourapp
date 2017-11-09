@@ -22,6 +22,8 @@ from reads.models import RunSummaryBarcode
 from reads.models import RunStatistic
 from reads.models import RunStatisticBarcode
 from reads.models import UserOptions
+from reads.models import FlowCell
+from reads.models import FlowCellRun
 
 
 
@@ -381,3 +383,21 @@ class RunHistogramSummarySerializer(serializers.ModelSerializer):
             'read_count',
             'read_length'
         )
+
+
+class FlowCellSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = FlowCell
+        fields = ('url', 'id','name',)
+
+
+class FlowCellRunSerializer(serializers.HyperlinkedModelSerializer):
+
+    barcodes = BarcodeSerializer(
+        many=True,
+        read_only=True
+    )
+
+    class Meta:
+        model = FlowCellRun
+        fields = ('flowcell','id','run','name','barcodes')
