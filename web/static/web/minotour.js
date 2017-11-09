@@ -435,7 +435,19 @@ function MinotourApp() {
 
     //this.updateBasesPerPoreChart = updateBasesPerPoreChart;
 
+    this.requestMappedChromosomes = requestMappedChromosomes;
+
     var self = this;
+
+    this.get_selected_barcode_id = function () {
+        var selected_barcode_name = self.selectedBarcode;
+
+        for (var i = 0; i < self.barcodes_complete.length; i++) {
+            if (self.barcodes_complete[i].name === selected_barcode_name) {
+                return (self.barcodes_complete[i].id);
+            }
+        }
+    }
 
     this.init = function () {
         /*
@@ -647,6 +659,11 @@ function MinotourApp() {
             "Coverage"
         );
 
+        $('#chromosome-id-select').on('change', function() {
+            console.log('>>> selection changed');
+            self.updateStepLineChart(self.chartChromosomeCoverage, self.id, self.get_selected_barcode_id());
+        });
+
         this.LiveHistogram = this.makeLiveHistogram(
             'live-histogram',
             'Histogram of Read Lengths (Events)',
@@ -808,8 +825,10 @@ function MinotourApp() {
             }
         }
 
+
         console.log('updating chromosome coverage chart');
-        this.updateStepLineChart(this.chartChromosomeCoverage, );
+        //this.get_selected_barcode_id();
+        self.updateStepLineChart(self.chartChromosomeCoverage, self.id, self.get_selected_barcode_id());
         console.log('updated chromosome coverage chart');
 
     };
@@ -1761,10 +1780,14 @@ function MinotourApp() {
     }
 
     this.requestPafData = function(id) {
+
+        self.requestMappedChromosomes(id);
+
         var pafurl = '/api/v1/runs/' + id + '/pafsummary/';
+
         $.get(pafurl, function (data){
             //console.log(data);
-            if (data.length <1 ) {
+            if (data.length < 1) {
                 document.getElementById("nav-seq-map").parentNode.classList.remove("active");
                 document.getElementById("nav-seq-map").style.display = "none";
                 document.getElementById("panel-tasks").style.display = "none";
@@ -1879,12 +1902,16 @@ function MinotourApp() {
             //console.log(self.rundata);
 
             var barcodes = [];
+            var barcodes_complete = [];
 
             for (var i = 0; i < data.barcodes.length; i++) {
                 barcodes.push(data.barcodes[i].name)
+                barcodes_complete.push(data.barcodes[i]);
             }
 
             self.barcodes = barcodes.sort();
+            self.barcodes_complete = barcodes_complete;
+
             self.rundata = data;
             self.updatetext(self.rundata);
             //console.log(self.rundata);
