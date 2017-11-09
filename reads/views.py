@@ -56,7 +56,7 @@ from reads.serializers import JobTypeSerializer
 from reads.serializers import FlowCellSerializer
 from reads.serializers import FlowCellRunSerializer
 
-
+from reads.models import update_global_state,update_sum_stats
 
 from minotourapp import settings
 
@@ -595,6 +595,33 @@ def read_detail(request, pk):
     elif request.method == 'DELETE':
         read.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['PATCH'])
+def read_update(request,pk,readid):
+    if request.method == "PATCH":
+        print (request.data)
+        print (readid)
+        FastQRecord = FastqRead.objects.get(read_id=readid)
+        #FastQRecord = FastqRead.objects.filter(run_id=pk)
+        print (FastQRecord.type_id)
+        print (request.data["type"])
+        if (str(FastQRecord.type_id) != request.data["type"].split('/')[-2]):
+            serializer = FastqReadSerializer(FastQRecord, data=request.data, context={'request': request}, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                FastQRecord = FastqRead.objects.get(read_id=readid)
+                try:
+                    update_global_state(FastQRecord)
+                except Exception as e:
+                    print ("update global state failed", e)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            print('Serializer errors: {} '.format(serializer.errors))
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            print ('State not needed to change.')
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 
 @api_view(['GET'])

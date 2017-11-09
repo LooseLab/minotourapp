@@ -421,7 +421,7 @@ class FastqRead(models.Model):
     )
 
     read_id = models.CharField(
-        max_length=64
+        max_length=96
     )
 
     read = models.IntegerField(
@@ -716,7 +716,7 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
 
 
 #@receiver(post_save, sender=FastqRead)
-def update_global_state(instance, sender, **kwargs):
+def update_global_state(instance): ##, sender, **kwargs):
 #    print ("trying to run")
 #    update_global_state_task.delay(instance)
 
