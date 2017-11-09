@@ -14,6 +14,7 @@ from alignment.serializers import PafRoughCovSerializer
 from alignment.serializers import PafRoughCovChromSerializer
 from alignment.serializers import PafRoughCovChromSerializerCount
 from alignment.serializers import PafSummaryCovSerializer
+from reads.models import JobMaster
 
 from reference.models import ReferenceInfo
 from reference.models import ReferenceLine
@@ -23,7 +24,6 @@ def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id)
 
     queryset = PafRoughCov.objects \
         .filter(run__owner=request.user) \
-        .filter(run__id=run_id) \
         .filter(barcode__id=barcode_id) \
         .filter(chromosome__id=chromosome_id) \
         .filter(read_type__id=read_type_id) \
@@ -113,20 +113,35 @@ def paf_test(request, pk,bc,ch,ty,po,ln):
 
 
 @api_view(['GET'])
-def paf_alignment_ch_list(request, pk,ch):#,bc,ch):
-    """
+def paf_alignment_ch_list(request, pk, ch):
 
-    :param request:
-    :param pk:
-    :return:
-    """
     if request.method == 'GET':
+
         queryset = PafRoughCov.objects \
             .filter(run__owner=request.user) \
-            .filter(run__id=pk).filter(chromosome__id=ch) \
+            .filter(run__id=pk)\
+            .filter(chromosome__id=ch) \
             .order_by('p')
-            #.filter(run__id=pk,barcode=bc,chromosome=ch)
 
         serializer = PafRoughCovChromSerializer(queryset, many=True, context={'request': request})
 
         return Response(serializer.data)
+
+
+@api_view(['GET'])
+def references_used_by_run(request, run_id):
+
+    jobs = JobMaster.objects.filter(run_id=run_id).filter(job_type__name='Minimap2')
+
+    references = [job.reference for job in jobs]
+
+    reference_lines = ReferenceLine.objects.filter(reference__in=references)
+
+    result = [(reference_line.id, reference_line.reference.reference_name, reference_line.line_name) for reference_line in reference_lines]
+
+    #for job in jobs:
+    #    for reference_line in job.reference.referencelines:
+    #        print(reference_line.name)
+    #        names.append(reference_line.name)
+
+    return HttpResponse(json.dumps(result), content_type="application/json")

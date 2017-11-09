@@ -1,46 +1,14 @@
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.conf import settings
 
-from reads.models import MinIONRun
+from reads.models import Barcode
 from reads.models import FastqRead
 from reads.models import FastqReadType
-from reads.models import Barcode
-
+from reads.models import MinIONRun
 from reference.models import ReferenceInfo
 from reference.models import ReferenceLine
 
-
-
-# Create your models here.
-##### Alignment Management
-
-
-##### This class replicates original minoTour design but perhaps it is better just to store the sam file as a single row? Lets try that
-"""
-class SamStore(models.Model):
-    run = models.ForeignKey(MinIONRun, related_name='runalignments')
-    read = models.ForeignKey(FastqRead, related_name='readalignment')
-    flag = models.IntegerField()
-    rname = models.CharField(max_length=512)
-    pos = models.BigIntegerField()
-    mapq = models.IntegerField()
-    cigar = models.TextField()
-    rnext = models.CharField(max_length=512)
-    pnext = models.IntegerField()
-    tlen = models.IntegerField()
-    seq = models.TextField()
-    qual = models.TextField()
-    nm = models.CharField(max_length=512)
-    md = models.TextField()
-    ass = models.CharField(max_length=512)
-    xs = models.CharField(max_length=512)
-
-    def __str__(self):
-        return "{} {}".format(self.run_id,self.read_id)
-
-"""
 
 class PafStore(models.Model):
     run = models.ForeignKey(MinIONRun, related_name='pafalignemnts')
@@ -65,26 +33,58 @@ class PafStore(models.Model):
     def __str__(self):
         return"{} {}".format(self.run,self.qsn)
 
+
 class SamStore(models.Model):
-    run = models.ForeignKey(MinIONRun, related_name='runalignments')
-    read = models.ForeignKey(FastqRead, related_name='readalignment')
-    samline = models.TextField()
+    run = models.ForeignKey(
+        MinIONRun,
+        related_name='runalignments'
+    )
+
+    read = models.ForeignKey(
+        FastqRead,
+        related_name='readalignment'
+    )
+
+    samline = models.TextField(
+
+    )
 
     def __str__(self):
-        return "{} {}".format(self.run_id,self.read_id)
+        return "{} {}".format(self.run_id, self.read_id)
+
 
 class SamRoughCov(models.Model):
-    run = models.ForeignKey(MinIONRun, related_name='rc_runid')
-    read_type = models.ForeignKey(FastqReadType, related_name='rc_type')
-    #reference = models.TextField() #should switch to a reference database
-    reference = models.ForeignKey(ReferenceInfo, related_name='samreference')
-    #chromosome = models.TextField() #could be repeated of the reference name
-    chromosome = models.ForeignKey(ReferenceLine, related_name='samchromosome')
-    p = models.IntegerField() #position
-    i = models.IntegerField() #incdel
+    run = models.ForeignKey(
+        MinIONRun,
+        related_name='rc_runid'
+    )
+
+    read_type = models.ForeignKey(
+        FastqReadType,
+        related_name='rc_type'
+    )
+
+    reference = models.ForeignKey(
+        ReferenceInfo,
+        related_name='samreference'
+    )
+
+    chromosome = models.ForeignKey(
+        ReferenceLine,
+        related_name='samchromosome'
+    )
+
+    p = models.IntegerField(
+
+    ) #position
+
+    i = models.IntegerField(
+
+    ) #incdel
 
     def __str__(self):
         return "{} {}".format(self.run,self.read_type)
+
 
 class PafRoughCov(models.Model):
     run = models.ForeignKey(MinIONRun, related_name='prc_run')
@@ -99,6 +99,7 @@ class PafRoughCov(models.Model):
 
     def __str__(self):
         return "{} {}".format(self.run,self.p)
+
 
 class PafSummaryCov(models.Model):
     run = models.ForeignKey(MinIONRun, related_name='paf_summary')
@@ -160,6 +161,7 @@ class PafSummaryCov(models.Model):
 
     def __str__(self):
         return "{} {} {}".format(self.run,self.reference,self.chromosome)
+
 
 @receiver(post_save, sender=PafStore)
 def updatePafRoughCov(instance, sender, **kwargs):

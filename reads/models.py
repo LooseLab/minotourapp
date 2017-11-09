@@ -12,6 +12,7 @@ from celery.utils.log import get_task_logger
 from communication.utils import send_message
 import pytz
 
+
 class MinION(models.Model):
     minION_name = models.CharField(max_length=64)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='minIONs')
@@ -185,7 +186,7 @@ class MinIONRun(models.Model):
         verbose_name_plural = 'MinION Runs'
 
     def __str__(self):
-        return self.run_name
+        return "{} - {}".format(self.run_name, self.run_id)
 
     def last_entry(self):
         try:
@@ -859,3 +860,25 @@ class JobMaster(models.Model):
 
     def __str__(self):
         return "{} {}".format(self.run, self.job_type)
+
+
+"""
+class JobMasterParameter(models.Model):
+
+    job_master = models.ForeignKey(
+        JobMaster,
+        related_name='job_parameters'
+    )
+
+    parameter_key = models.CharField(
+        max_length=32
+    )
+
+    parameter_type = models.CharField(
+        max_length=128
+    )
+
+    parameter_value = models.CharField(
+        max_length=256
+    )
+"""

@@ -19,11 +19,24 @@ function makeStepLineChart(divName, chartTitle, yAxisTitle) {
 
 }
 
-function updateStepLineChart (chart) {
+function updateStepLineChart (chart, run_id, barcode_id) {
 
-    $.getJSON('http://localhost:8100/api/v1/runs/6/pafcover/29/1/1/', function(data) {
+    var select = document.getElementById('chromosome-id-select');
+    var selected_index = select.selectedIndex;
+    var selected_option = select[selected_index];
 
-        var selectedBarcode = self.selectedBarcode;
+    if (selected_option === undefined) {
+        console.log('No mapped chromosome selected.');
+        return;
+    }
+
+    //var run_id = self.id;
+    //var barcode_id = self.selectedBarcode;
+    var selected_option_value = selected_option.value;
+
+    var url = '/api/v1/runs/' + run_id + '/pafcover/' + barcode_id + '/1/' + selected_option_value + '/';
+
+    $.getJSON(url, function(data) {
 
         // Remove previous series
         while (chart.series.length > 0) {
@@ -37,19 +50,48 @@ function updateStepLineChart (chart) {
             step: true,
          });
 
-        // for (var barcode of Object.keys(self.summaryByMinute2)) {
-        //
-        //     if (barcode === 'All reads' || barcode === self.selectedBarcode) {
-        //         for (var typeName of Object.keys(self.summaryByMinute2[barcode])) {
-        //
-        //             chart.addSeries({
-        //                 name: barcode + " - " + typeName,
-        //                 data: self.summaryByMinute2[barcode][typeName]["sequencingRate"]
-        //             });
-        //
-        //         }
-        //     }
-        // }
+    });
+
+}
+
+function requestMappedChromosomes (run_id) {
+    /*
+     * Request the chromosomes that have reads mapped to using minimap2
+     * and update the select box on tab Mapping
+     *
+     */
+
+    var url = '/api/v1/runs/' + run_id + '/references';
+
+    $.getJSON(url, function(data) {
+
+        var select = document.getElementById('chromosome-id-select');
+        var selected_index = select.selectedIndex;
+        var selected_option = select[selected_index];
+
+        while (select.length > 0) {
+            select.remove(0);
+        }
+
+        for (var i = 0; i < data.length; i++) {
+            var option = document.createElement('option');
+
+            option.text = data[i][1] + ' - ' + data[i][2];
+            option.value = data[i][0];
+
+            if (selected_option === undefined) {
+
+            } else {
+
+                if (data[i][0] == selected_option.value) {
+                    option.selected = 'selected';
+                    console.log('selected option is ' + selected_option.value);
+                }
+
+            }
+
+            select.add(option);
+        }
 
     });
 
