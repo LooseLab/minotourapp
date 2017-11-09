@@ -11,16 +11,15 @@ import redis
 from celery import task
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import F
 from django_mailgun import MailgunAPIError
 from twitter import *
 
-from alignment.models import PafStore
-from alignment.models import PafSummaryCov
+from alignment.models import PafStore, PafStore_transcriptome
+from alignment.models import PafSummaryCov, PafSummaryCov_transcriptome
 from alignment.models import SamStore
 from communication.models import Message
 from minikraken.models import MiniKraken, ParsedKraken
@@ -57,7 +56,6 @@ def getn50(lens):
 
 @task()
 def run_monitor():
-
     logger.info('Running run_monitor celery task.')
 
     print("Rapid Monitor Called")
@@ -71,7 +69,6 @@ def run_monitor():
         for run_job in run_jobs:
 
             if run_job.job_type.name == "Alignment":
-
                 print("trying to run bwa alignment {} {} {} {}".format(
                     minion_run.id,
                     run_job.id,
@@ -81,8 +78,17 @@ def run_monitor():
 
                 run_bwa_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
-            if run_job.job_type.name == "Minimap2":
+            if run_job.job_type.name == "Minimap2_trans":
+                print("trying to run transcription alignemnt {} {} {} {}".format(
+                    minion_run.id,
+                    run_job.id,
+                    run_job.reference.id,
+                    run_job.last_read
+                ))
 
+                run_minimap2_transcriptome.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
+
+            if run_job.job_type.name == "Minimap2":
                 print("trying to run alignment {} {} {} {}".format(
                     minion_run.id,
                     run_job.id,
@@ -93,29 +99,24 @@ def run_monitor():
                 run_minimap2_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
             if run_job.job_type.name == "Kraken":
-
                 run_kraken.delay(minion_run.id, run_job.id, run_job.last_read)
 
             if run_job.job_type.name == "ProcAlign":
-
                 proc_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
             if run_job.job_type.name == "ChanCalc":
-
                 processreads.delay(minion_run.id, run_job.id, run_job.last_read)
-
 
 
 @task()
 def slow_monitor():
-
     logger.info('Running slow_monitor celery task.')
 
     print("Slow Monitor Called")
 
-    testset={}
+    testset = {}
 
-    cachesiz={}
+    cachesiz = {}
 
     minion_runs = MinIONRun.objects.all()
 
@@ -131,8 +132,7 @@ def slow_monitor():
                 run_minimap_assembly.delay(minion_run.id, run_job.id, run_job.tempfile_name, run_job.last_read)
 
         if minion_run.last_entry() >= timediff or minion_run.last_read() >= timediff:
-
-            cachesiz[str(minion_run.id)]=minion_run
+            cachesiz[str(minion_run.id)] = minion_run
 
     try:
         testset = cache.get('a-unique-key', {})
@@ -145,15 +145,15 @@ def slow_monitor():
 
     deleted, added = compare_two(testset, cachesiz)
 
-    processrun(deleted,added)
+    processrun(deleted, added)
 
-    cache.set('a-unique-key',cachesiz)
+    cache.set('a-unique-key', cachesiz)
 
     # TODO: We need someway of removing things from the dictionary which aren't still active - otherwise things will
     # persist for ever - so a compare to dictionaries.
 
 
-def processrun(deleted,added):
+def processrun(deleted, added):
     for run in added:
         runinstance = MinIONRun.objects.get(pk=run)
         jobinstance = JobType.objects.get(name="ChanCalc")
@@ -163,7 +163,7 @@ def processrun(deleted,added):
         newjob, created = JobMaster.objects.get_or_create(run=runinstance, job_type=jobinstance)
 
         if created is True:
-            newjob.last_read=0
+            newjob.last_read = 0
 
         newjob.save()
 
@@ -176,22 +176,22 @@ def processrun(deleted,added):
         JobMaster.objects.filter(job_type=jobinstance, run=runinstance).update(complete=True)
 
 
-def compare_two(newset,cacheset):
-    print("deleted keys",newset.keys()-cacheset.keys())
+def compare_two(newset, cacheset):
+    print("deleted keys", newset.keys() - cacheset.keys())
 
-    deleted = newset.keys()-cacheset.keys()
+    deleted = newset.keys() - cacheset.keys()
 
-    print("added keys",cacheset.keys() - newset.keys())
+    print("added keys", cacheset.keys() - newset.keys())
 
     added = cacheset.keys() - newset.keys()
 
-    return deleted,added
+    return deleted, added
 
 
 @task()
-def processreads(runid,id,last_read):
-    #print('>>>> Running processreads celery task.')
-    print ('running processreads with {} {} {}'.format(runid,id,last_read))
+def processreads(runid, id, last_read):
+    # print('>>>> Running processreads celery task.')
+    print('running processreads with {} {} {}'.format(runid, id, last_read))
     JobMaster.objects.filter(pk=id).update(running=True)
 
     fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:10000]
@@ -205,15 +205,15 @@ def processreads(runid,id,last_read):
     barstore = set()
 
     for fastq in fastqs:
-        #print (fastq)
+        # print (fastq)
         barstore.add(fastq.barcode)
-        #print('>>>> barcode: {}'.format(fastq.barcode))
+        # print('>>>> barcode: {}'.format(fastq.barcode))
         if fastq.channel not in chanstore.keys():
-            chanstore[fastq.channel]=dict()
-            chanstore[fastq.channel]['count']=0
-            chanstore[fastq.channel]['length']=0
-        chanstore[fastq.channel]['count']+=1
-        chanstore[fastq.channel]['length']+=len(fastq.sequence)
+            chanstore[fastq.channel] = dict()
+            chanstore[fastq.channel]['count'] = 0
+            chanstore[fastq.channel]['length'] = 0
+        chanstore[fastq.channel]['count'] += 1
+        chanstore[fastq.channel]['length'] += len(fastq.sequence)
 
         if fastq.barcode.name not in histstore.keys():
             histstore[fastq.barcode.name] = {}
@@ -287,9 +287,9 @@ def processreads(runid,id,last_read):
     runinstance = MinIONRun.objects.get(pk=runid)
 
     for chan in chanstore:
-        channel, created = ChannelSummary.objects.get_or_create(run_id=runinstance,channel_number=int(chan))
-        channel.read_count+=chanstore[chan]['count']
-        channel.read_length+=chanstore[chan]['length']
+        channel, created = ChannelSummary.objects.get_or_create(run_id=runinstance, channel_number=int(chan))
+        channel.read_count += chanstore[chan]['count']
+        channel.read_length += chanstore[chan]['length']
         channel.save()
 
     for barcodename in histstore.keys():
@@ -298,7 +298,7 @@ def processreads(runid,id,last_read):
 
         for read_type_name in histstore[barcodename].keys():
             read_type = FastqReadType.objects.get(name=read_type_name)
-            #print('>>>> {}'.format(read_type_name))
+            # print('>>>> {}'.format(read_type_name))
 
             for hist in histstore[barcodename][read_type_name].keys():
                 histogram, created = HistogramSummary.objects.get_or_create(
@@ -316,7 +316,6 @@ def processreads(runid,id,last_read):
 
 
 def update_sum_stats(obj, ipn_obj):
-
     if ipn_obj.is_pass:
 
         obj.pass_length += len(ipn_obj.sequence)
@@ -352,7 +351,7 @@ def update_sum_stats(obj, ipn_obj):
     channel = ipn_obj.channel
     channel_sequence = obj.channel_presence
     channel_sequence_list = list(channel_sequence)
-    channel_sequence_list[channel-1] = '1'
+    channel_sequence_list[channel - 1] = '1'
     obj.channel_presence = ''.join(channel_sequence_list)
 
     obj.read_count += 1
@@ -360,27 +359,30 @@ def update_sum_stats(obj, ipn_obj):
 
 
 @task()
-def proc_alignment(runid,id,reference,last_read):
+def proc_alignment(runid, id, reference, last_read):
     JobMaster.objects.filter(pk=id).update(running=True)
-    sams = SamStore.objects.filter(run_id=runid,id__gt=int(last_read))[:1000]
-    #fp = tempfile.TemporaryFile()
+    sams = SamStore.objects.filter(run_id=runid, id__gt=int(last_read))[:1000]
+    # fp = tempfile.TemporaryFile()
     fp = open('workfile', 'w')
     for sam in sams:
-        #print (sam.samline)
+        # print (sam.samline)
         fp.write(sam.samline)
         fp.write('\n')
-        last_read=sam.id
-    #print (fp.read())
+        last_read = sam.id
+    # print (fp.read())
     fp.close()
-    #subprocess.run(["samtools", "faidx", "references/hep_ref.fasta"])
-    subprocess.run(["samtools", "view", "-bt", "/Volumes/BigElements/human_ref/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa.fai", "workfile", "-o" ,"workfile.bam"])
-    #subprocess.run(["rm", "workfile"])
+    # subprocess.run(["samtools", "faidx", "references/hep_ref.fasta"])
+    subprocess.run(
+        ["samtools", "view", "-bt", "/Volumes/BigElements/human_ref/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa.fai",
+         "workfile", "-o", "workfile.bam"])
+    # subprocess.run(["rm", "workfile"])
     subprocess.run(["samtools", "sort", "workfile.bam", "-o", "sort_workfile.bam"])
-    #subprocess.run(["rm", "workfile.bam"])
+    # subprocess.run(["rm", "workfile.bam"])
     subprocess.run(["samtools", "index", "sort_workfile.bam"])
-    stdoutdata = subprocess.getoutput("pysamstats --type variation sort_workfile.bam  --fasta /Volumes/BigElements/human_ref/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa")
-    #print("stdoutdata:\r\n " + stdoutdata)
-    #subprocess.run(["rm sort_workfile.bam"])
+    stdoutdata = subprocess.getoutput(
+        "pysamstats --type variation sort_workfile.bam  --fasta /Volumes/BigElements/human_ref/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa")
+    # print("stdoutdata:\r\n " + stdoutdata)
+    # subprocess.run(["rm sort_workfile.bam"])
 
     """
     Then we need to:
@@ -392,21 +394,21 @@ def proc_alignment(runid,id,reference,last_read):
 
     After all that we just (!) parse the pysamstats lines into the existing reference table covering this information.
     """
-    JobMaster.objects.filter(pk=id).update(running=False,last_read=last_read)
+    JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
 
 
 @task()
 def test_task(string, reference):
     REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
-    print (reference)
+    print(reference)
     Reference = ReferenceInfo.objects.get(pk=reference)
-    print (type(Reference))
-    print (string, REFERENCELOCATION)
-    print (Reference)
-    print (Reference.minimap2_index_file_location)
+    print(type(Reference))
+    print(string, REFERENCELOCATION)
+    print(Reference)
+    print(Reference.minimap2_index_file_location)
     lines = Reference.referencelines.all()
     for line in lines:
-        print (line.id)
+        print(line.id)
 
 
 @task()
@@ -484,32 +486,33 @@ def run_minimap_assembly(runid, id, tmp, last_read):
         JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read, tempfile_name=tmp)
 
 
-@task()
-def run_minimap2_alignment(runid, id, reference, last_read):
-    #print ("hello roberto {}".format(runid))
+@task
+def run_minimap2_transcriptome(runid, id, reference, last_read):
     JobMaster.objects.filter(pk=id).update(running=True)
     REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
     Reference = ReferenceInfo.objects.get(pk=reference)
-    chromdict=dict()
+    chromdict = dict()
     chromosomes = Reference.referencelines.all()
     for chromosome in chromosomes:
-        chromdict[chromosome.line_name]=chromosome
+        chromdict[chromosome.line_name] = chromosome
     minimap2 = Reference.minimap2_index_file_location
     minimap2_ref = os.path.join(REFERENCELOCATION, minimap2)
-    #print ("runid:{} last_read:{}".format(runid,last_read))
+    # print ("runid:{} last_read:{}".format(runid,last_read))
     fastqs = FastqRead.objects.filter(run_id__id=runid, id__gt=int(last_read))[:1000]
-    #print ("fastqs",fastqs)
+    # print ("fastqs",fastqs)
     read = ''
-    fastqdict=dict()
-    fastqtypedict=dict()
+    fastqdict = dict()
+    fastqtypedict = dict()
+
+    # print (len(fastqs))
 
     for fastq in fastqs:
         read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
-        fastqdict[fastq.read_id]=fastq
-        fastqtypedict[fastq.read_id]=fastq.type
+        fastqdict[fastq.read_id] = fastq
+        fastqtypedict[fastq.read_id] = fastq.type
         last_read = fastq.id
-    #print (read)
-    cmd = 'minimap2 -x map-ont -t 8 -N 0 %s -' % (minimap2_ref)
+    # print (read)
+    cmd = 'minimap2 -x map-ont -t 8 --secondary=no %s -' % (minimap2_ref)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             stdin=subprocess.PIPE, shell=True)
@@ -520,51 +523,52 @@ def run_minimap2_alignment(runid, id, reference, last_read):
     pafdata = paf.splitlines()
     runinstance = MinIONRun.objects.get(pk=runid)
 
-    resultstore=dict()
+    resultstore = dict()
 
     for line in pafdata:
         line = line.strip('\n')
         record = line.split('\t')
-        #print(record)
-        #readid = FastqRead.objects.get(read_id=record[0])
-        readid=fastqdict[record[0]]
-        typeid=fastqtypedict[record[0]]
-        newpaf = PafStore(run=runinstance, read=readid, read_type=typeid)
+        # print(record)
+        # readid = FastqRead.objects.get(read_id=record[0])
+        readid = fastqdict[record[0]]
+        typeid = fastqtypedict[record[0]]
+        newpaf = PafStore_transcriptome(run=runinstance, read=readid, read_type=typeid)
         newpaf.reference = Reference
-        newpaf.qsn = record[0] #models.CharField(max_length=256)#1	string	Query sequence name
-        newpaf.qsl = int(record[1]) #models.IntegerField()#2	int	Query sequence length
-        newpaf.qs  = int(record[2]) #models.IntegerField()#3	int	Query start (0-based)
-        newpaf.qe = int(record[3]) #models.IntegerField()#4	int	Query end (0-based)
-        newpaf.rs = record[4] #models.CharField(max_length=1)#5	char	Relative strand: "+" or "-"
-        #newpaf.tsn = record[5] #models.CharField(max_length=256)#6	string	Target sequence name
-        newpaf.tsn = chromdict[record[5]] #models.CharField(max_length=256)#6	string	Target sequence name
-        newpaf.tsl = int(record[6]) #models.IntegerField()#7	int	Target sequence length
-        newpaf.ts = int(record[7]) #models.IntegerField()#8	int	Target start on original strand (0-based)
-        newpaf.te = int(record[8]) #models.IntegerField()#9	int	Target end on original strand (0-based)
-        newpaf.nrm = int(record[9]) #models.IntegerField()#10	int	Number of residue matches
-        newpaf.abl = int(record[10]) #models.IntegerField()#11	int	Alignment block length
-        newpaf.mq = int(record[11]) #models.IntegerField()#12	int	Mapping quality (0-255; 255 for missing)
+        newpaf.qsn = record[0]  # models.CharField(max_length=256)#1	string	Query sequence name
+        newpaf.qsl = int(record[1])  # models.IntegerField()#2	int	Query sequence length
+        newpaf.qs = int(record[2])  # models.IntegerField()#3	int	Query start (0-based)
+        newpaf.qe = int(record[3])  # models.IntegerField()#4	int	Query end (0-based)
+        newpaf.rs = record[4]  # models.CharField(max_length=1)#5	char	Relative strand: "+" or "-"
+        # newpaf.tsn = record[5] #models.CharField(max_length=256)#6	string	Target sequence name
+        newpaf.tsn = chromdict[record[5]]  # models.CharField(max_length=256)#6	string	Target sequence name
+        newpaf.tsl = int(record[6])  # models.IntegerField()#7	int	Target sequence length
+        newpaf.ts = int(record[7])  # models.IntegerField()#8	int	Target start on original strand (0-based)
+        newpaf.te = int(record[8])  # models.IntegerField()#9	int	Target end on original strand (0-based)
+        newpaf.nrm = int(record[9])  # models.IntegerField()#10	int	Number of residue matches
+        newpaf.abl = int(record[10])  # models.IntegerField()#11	int	Alignment block length
+        newpaf.mq = int(record[11])  # models.IntegerField()#12	int	Mapping quality (0-255; 255 for missing)
         newpaf.save()
         if Reference not in resultstore:
-            resultstore[Reference]=dict()
+            resultstore[Reference] = dict()
         if chromdict[record[5]] not in resultstore[Reference]:
-            resultstore[Reference][chromdict[record[5]]]=dict()
+            resultstore[Reference][chromdict[record[5]]] = dict()
         if readid.barcode not in resultstore[Reference][chromdict[record[5]]]:
-            resultstore[Reference][chromdict[record[5]]][readid.barcode]=dict()
+            resultstore[Reference][chromdict[record[5]]][readid.barcode] = dict()
         if typeid not in resultstore[Reference][chromdict[record[5]]][readid.barcode]:
-            resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]=dict()
+            resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid] = dict()
         if 'read' not in resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]:
-            resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['read']=set()
-            resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['length']=0
+            resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['read'] = set()
+            resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['length'] = 0
         resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['read'].add(record[0])
-        resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['length']+=int(record[3])-int(record[2])+1
+        resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['length'] += int(record[3]) - int(
+            record[2]) + 1
 
     for ref in resultstore:
         for ch in resultstore[ref]:
             for bc in resultstore[ref][ch]:
                 for ty in resultstore[ref][ch][bc]:
-                    #print (ref,ch,bc,ty,len(resultstore[ref][ch][bc][ty]['read']),resultstore[ref][ch][bc][ty]['length'])
-                    summarycov, created2 = PafSummaryCov.objects.update_or_create(
+                    # print (ref,ch,bc,ty,len(resultstore[ref][ch][bc][ty]['read']),resultstore[ref][ch][bc][ty]['length'])
+                    summarycov, created2 = PafSummaryCov_transcriptome.objects.update_or_create(
                         run=runinstance,
                         read_type=ty,
                         barcode=bc,
@@ -574,126 +578,235 @@ def run_minimap2_alignment(runid, id, reference, last_read):
                     summarycov.read_count += len(resultstore[ref][ch][bc][ty]['read'])
                     summarycov.cumu_length += resultstore[ref][ch][bc][ty]['length']
                     summarycov.save()
-    #print("!*!*!*!*!*!*!*!*!*!*! ------- running alignment")
-    JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
+    # print("!*!*!*!*!*!*!*!*!*!*! ------- running alignment")
+    JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read, read_count=F('read_count') + len(fastqs))
 
 
 @task()
-def run_kraken(runid,id,last_read):
+def run_minimap2_alignment(runid, job_master_id, reference, last_read):
+    try:
+        JobMaster.objects.filter(pk=job_master_id).update(running=True)
+        REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
+        Reference = ReferenceInfo.objects.get(pk=reference)
+        chromdict = dict()
+        chromosomes = Reference.referencelines.all()
+        for chromosome in chromosomes:
+            chromdict[chromosome.line_name] = chromosome
+        minimap2 = Reference.minimap2_index_file_location
+        minimap2_ref = os.path.join(REFERENCELOCATION, minimap2)
+        # print ("runid:{} last_read:{}".format(runid,last_read))
+        fastqs = FastqRead.objects.filter(run_id__id=runid, id__gt=int(last_read))[:1000]
+        # print ("fastqs",fastqs)
+        read = ''
+        fastqdict = dict()
+        fastqtypedict = dict()
+
+        # print (len(fastqs))
+
+        for fastq in fastqs:
+            read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
+            fastqdict[fastq.read_id] = fastq
+            fastqtypedict[fastq.read_id] = fastq.type
+            last_read = fastq.id
+        # print (read)
+        cmd = 'minimap2 -x map-ont -t 8 --secondary=no %s -' % (minimap2_ref)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                stdin=subprocess.PIPE, shell=True)
+        (out, err) = proc.communicate(input=read.encode("utf-8"))
+        status = proc.wait()
+        paf = out.decode("utf-8")
+
+        pafdata = paf.splitlines()
+        runinstance = MinIONRun.objects.get(pk=runid)
+
+        resultstore = dict()
+
+        for line in pafdata:
+            line = line.strip('\n')
+            record = line.split('\t')
+            # print(record)
+            # readid = FastqRead.objects.get(read_id=record[0])
+            readid = fastqdict[record[0]]
+            typeid = fastqtypedict[record[0]]
+            newpaf = PafStore(run=runinstance, read=readid, read_type=typeid)
+            newpaf.reference = Reference
+            newpaf.qsn = record[0]  # models.CharField(max_length=256)#1	string	Query sequence name
+            newpaf.qsl = int(record[1])  # models.IntegerField()#2	int	Query sequence length
+            newpaf.qs = int(record[2])  # models.IntegerField()#3	int	Query start (0-based)
+            newpaf.qe = int(record[3])  # models.IntegerField()#4	int	Query end (0-based)
+            newpaf.rs = record[4]  # models.CharField(max_length=1)#5	char	Relative strand: "+" or "-"
+            # newpaf.tsn = record[5] #models.CharField(max_length=256)#6	string	Target sequence name
+            newpaf.tsn = chromdict[record[5]]  # models.CharField(max_length=256)#6	string	Target sequence name
+            newpaf.tsl = int(record[6])  # models.IntegerField()#7	int	Target sequence length
+            newpaf.ts = int(record[7])  # models.IntegerField()#8	int	Target start on original strand (0-based)
+            newpaf.te = int(record[8])  # models.IntegerField()#9	int	Target end on original strand (0-based)
+            newpaf.nrm = int(record[9])  # models.IntegerField()#10	int	Number of residue matches
+            newpaf.abl = int(record[10])  # models.IntegerField()#11	int	Alignment block length
+            newpaf.mq = int(record[11])  # models.IntegerField()#12	int	Mapping quality (0-255; 255 for missing)
+            newpaf.save()
+            if Reference not in resultstore:
+                resultstore[Reference] = dict()
+            if chromdict[record[5]] not in resultstore[Reference]:
+                resultstore[Reference][chromdict[record[5]]] = dict()
+            if readid.barcode not in resultstore[Reference][chromdict[record[5]]]:
+                resultstore[Reference][chromdict[record[5]]][readid.barcode] = dict()
+            if typeid not in resultstore[Reference][chromdict[record[5]]][readid.barcode]:
+                resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid] = dict()
+            if 'read' not in resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]:
+                resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['read'] = set()
+                resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['length'] = 0
+            resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['read'].add(record[0])
+            resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['length'] += int(record[3]) - int(
+                record[2]) + 1
+
+        for ref in resultstore:
+            for ch in resultstore[ref]:
+                for bc in resultstore[ref][ch]:
+                    for ty in resultstore[ref][ch][bc]:
+                        # print (ref,ch,bc,ty,len(resultstore[ref][ch][bc][ty]['read']),resultstore[ref][ch][bc][ty]['length'])
+                        summarycov, created2 = PafSummaryCov.objects.update_or_create(
+                            run=runinstance,
+                            read_type=ty,
+                            barcode=bc,
+                            reference=ref,
+                            chromosome=ch,
+                        )
+                        summarycov.read_count += len(resultstore[ref][ch][bc][ty]['read'])
+                        summarycov.cumu_length += resultstore[ref][ch][bc][ty]['length']
+                        summarycov.save()
+
+    except Exception as exception:
+        print('An error occurred when running this task.')
+        print(exception)
+        JobMaster.objects.filter(pk=job_master_id).update(running=False)
+
+    else:
+        JobMaster.objects.filter(pk=job_master_id).update(running=False, last_read=last_read, read_count=F('read_count') + len(fastqs))
+
+
+@task()
+def run_kraken(runid, id, last_read):
     JobMaster.objects.filter(pk=id).update(running=True)
     fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:10000]
     krakrun = Kraken()
     # IMPORTANT - NEEDS FIXING FOR BARCODES AND READ TYPES
     if len(fastqs) > 0:
-        read=''
-        readdict=dict()
-        typedict=dict()
-        barcodedict=dict()
+        read = ''
+        readdict = dict()
+        typedict = dict()
+        barcodedict = dict()
         for fastq in fastqs:
-            read = '{}>{} \r\n{}\r\n'.format(read,fastq,fastq.sequence)
-            #print (fastq.id)
-            readdict[fastq.read_id]=fastq.id
-            last_read=fastq.id
+            read = '{}>{} \r\n{}\r\n'.format(read, fastq, fastq.sequence)
+            # print (fastq.id)
+            readdict[fastq.read_id] = fastq.id
+            last_read = fastq.id
         krakrun.write_seqs(read.encode("utf-8"))
         krakenoutput = krakrun.run().decode('utf-8').split('\n')
         runinstance = MinIONRun.objects.get(pk=runid)
         for line in krakenoutput:
             if len(line) > 0:
-                #print (line)
+                # print (line)
                 krakenbits = line.split("\t")
 
-
-                #print (readdict[krakenbits[1]],krakenbits[1])
+                # print (readdict[krakenbits[1]],krakenbits[1])
                 newkrak = MiniKraken(run_id=runid, read_id=int(readdict[krakenbits[1]]))
-                newkrak.krakenstatus=str(krakenbits[0])
-                newkrak.krakentaxid=int(krakenbits[2])
-                newkrak.krakenseqlen=int(krakenbits[3])
-                newkrak.krakenlca=str(krakenbits[4])
+                newkrak.krakenstatus = str(krakenbits[0])
+                newkrak.krakentaxid = int(krakenbits[2])
+                newkrak.krakenseqlen = int(krakenbits[3])
+                newkrak.krakenlca = str(krakenbits[4])
                 newkrak.save()
 
-        #To get the data about the run - specifically which barcodes it has:
+        # To get the data about the run - specifically which barcodes it has:
         Barcodes = Barcode.objects.filter(run_id=runid)
 
-        #To get the data about the run - specifcally read types:
+        # To get the data about the run - specifcally read types:
         Types = FastqReadType.objects.all()
 
         for Bar in Barcodes:
             for Type in Types:
-                #print (Bar,Type)
-                #MiniKrak = MiniKraken.objects.filter(run_id=runid).filter(barcode=Bar).filter(read_type=Type)
+                # print (Bar,Type)
+                # MiniKrak = MiniKraken.objects.filter(run_id=runid).filter(barcode=Bar).filter(read_type=Type)
                 MiniKrak = MiniKraken.objects.filter(run=runinstance).filter(read__barcode=Bar).filter(read__type=Type)
-                if len(MiniKrak)>0:
+                if len(MiniKrak) > 0:
                     kraken = ""
                     for krak in MiniKrak:
-                        kraken = ("{}{}\t{}\t{}\t{}\t{}\n".format(kraken, krak.krakenstatus, krak.read_id, krak.krakentaxid,
-                                                          krak.krakenseqlen, krak.krakenlca))
+                        kraken = (
+                        "{}{}\t{}\t{}\t{}\t{}\n".format(kraken, krak.krakenstatus, krak.read_id, krak.krakentaxid,
+                                                        krak.krakenseqlen, krak.krakenlca))
                     krakrun.write_kraken(kraken.encode("utf-8"))
                     output = krakrun.process().decode('utf-8').split('\n')
                     counter = 0
-                    rankdict=dict()
-                    rankdict[-1]='Input'
+                    rankdict = dict()
+                    rankdict[-1] = 'Input'
                     for line in output:
-                        if len(line)>0:
+                        if len(line) > 0:
                             linebits = line.split("\t")
-                            #print (linebits)
-                            #print (float(linebits[0].lstrip(' ')))
-                            parsekrak,created = ParsedKraken.objects.get_or_create(run_id=runid,NCBItaxid=linebits[4],type=Type,barcode=Bar)
+                            # print (linebits)
+                            # print (float(linebits[0].lstrip(' ')))
+                            parsekrak, created = ParsedKraken.objects.get_or_create(run_id=runid, NCBItaxid=linebits[4],
+                                                                                    type=Type, barcode=Bar)
                             parsekrak.percentage = float(linebits[0].lstrip(' '))
                             parsekrak.rootreads = int(linebits[1])
                             parsekrak.directreads = int(linebits[2])
                             parsekrak.rank = str(linebits[3])
                             parsekrak.sci_name = str(linebits[5].lstrip(' '))
-                            parsekrak.indentation = int((len(linebits[5]) - len(linebits[5].lstrip(' ')))/2)
+                            parsekrak.indentation = int((len(linebits[5]) - len(linebits[5].lstrip(' '))) / 2)
                             parsekrak.orderin = counter
-                            rankdict[int((len(linebits[5]) - len(linebits[5].lstrip(' ')))/2)]=str(linebits[5].lstrip(' '))
-                            parsekrak.parent = rankdict[int((len(linebits[5]) - len(linebits[5].lstrip(' ')))/2)-1]
+                            rankdict[int((len(linebits[5]) - len(linebits[5].lstrip(' '))) / 2)] = str(
+                                linebits[5].lstrip(' '))
+                            parsekrak.parent = rankdict[int((len(linebits[5]) - len(linebits[5].lstrip(' '))) / 2) - 1]
                             parsekrak.save()
                             counter += 1
-                    #for krak in MiniKrak:
-                        #print (krak)
+                            # for krak in MiniKrak:
+                            # print (krak)
 
     krakrun.finish()
-    JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
+    JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read, read_count=F('read_count') + len(fastqs))
 
 
 class Kraken():
     def __init__(self):
         self.tmpfile = tempfile.NamedTemporaryFile(suffix=".fa")
         self.krakenfile = tempfile.NamedTemporaryFile(suffix=".out")
-        #db
+        # db
 
     def write_seqs(self, seqs):
-        #self.tmpfile.write("\n".join(seqs))
+        # self.tmpfile.write("\n".join(seqs))
         self.tmpfile.write(seqs)
 
-
-    def write_kraken(self,kraken):
-        #print "printing the kraken"
-        #print "".join(kraken)
+    def write_kraken(self, kraken):
+        # print "printing the kraken"
+        # print "".join(kraken)
         self.krakenfile.write(kraken)
 
     def read_kraken(self):
         for line in self.krakenfile:
-            print (line)
+            print(line)
 
     def process(self):
-        print ('kraken-report --db /Volumes/SSD/kraken/minikraken_20141208 '+self.krakenfile.name)
-        p1 = subprocess.Popen('kraken-report --db /Volumes/SSD/kraken/minikraken_20141208 '+self.krakenfile.name, shell=True, stdout=subprocess.PIPE)
-        (out,err) =  p1.communicate()
+        print('kraken-report --db /Volumes/SSD/kraken/minikraken_20141208 ' + self.krakenfile.name)
+        p1 = subprocess.Popen('kraken-report --db /Volumes/SSD/kraken/minikraken_20141208 ' + self.krakenfile.name,
+                              shell=True, stdout=subprocess.PIPE)
+        (out, err) = p1.communicate()
         return out
 
     def process2(self):
-        print ('kraken-mpa-report --db /Volumes/SSD/kraken/minikraken_20141208 '+self.krakenfile.name)
-        p1 = subprocess.Popen('kraken-mpa-report --db /Volumes/SSD/kraken/minikraken_20141208 '+self.krakenfile.name, shell=True, stdout=subprocess.PIPE)
-        (out,err) =  p1.communicate()
+        print('kraken-mpa-report --db /Volumes/SSD/kraken/minikraken_20141208 ' + self.krakenfile.name)
+        p1 = subprocess.Popen('kraken-mpa-report --db /Volumes/SSD/kraken/minikraken_20141208 ' + self.krakenfile.name,
+                              shell=True, stdout=subprocess.PIPE)
+        (out, err) = p1.communicate()
         return out
 
     def run(self):
-        print ('kraken --quick --db /Volumes/SSD/kraken/minikraken_20141208 --fasta-input --preload  '+self.tmpfile.name) #+'  #| kraken-translate --db /Volumes/SSD/kraken/minikraken_20141208/ $_'
-        #p1 = subprocess.Popen('kraken --quick --db /Volumes/SSD/kraken/minikraken_20141208 --fasta-input --preload  '+self.tmpfile.name+'  | kraken-translate --db /Volumes/SSD/kraken/minikraken_20141208/ $_', shell=True, stdout=subprocess.PIPE)
-        p1 = subprocess.Popen('kraken --quick --db /Volumes/SSD/kraken/minikraken_20141208 --fasta-input --preload  '+self.tmpfile.name+'  ', shell=True, stdout=subprocess.PIPE)
-        #print 'minimap -Sw5 -L100 -t8 '+self.tmpfile.name+' '+self.tmpfile.name+' | miniasm -f '+self.tmpfile.name+' - | awk \'/^S/{print \">\"$2\"\\n\"$3}\' | fold '
-        #p1 = subprocess.Popen('minimap -Sw5 -L100 -t8 '+self.tmpfile.name+' '+self.tmpfile.name+' | miniasm -f '+self.tmpfile.name+' - | awk \'/^S/{print \">\"$2\"\\n\"$3}\' | fold ', shell=True, stdout=subprocess.PIPE)
+        print(
+            'kraken --quick --db /Volumes/SSD/kraken/minikraken_20141208 --fasta-input --preload  ' + self.tmpfile.name)  # +'  #| kraken-translate --db /Volumes/SSD/kraken/minikraken_20141208/ $_'
+        # p1 = subprocess.Popen('kraken --quick --db /Volumes/SSD/kraken/minikraken_20141208 --fasta-input --preload  '+self.tmpfile.name+'  | kraken-translate --db /Volumes/SSD/kraken/minikraken_20141208/ $_', shell=True, stdout=subprocess.PIPE)
+        p1 = subprocess.Popen(
+            'kraken --quick --db /Volumes/SSD/kraken/minikraken_20141208 --fasta-input --preload  ' + self.tmpfile.name + '  ',
+            shell=True, stdout=subprocess.PIPE)
+        # print 'minimap -Sw5 -L100 -t8 '+self.tmpfile.name+' '+self.tmpfile.name+' | miniasm -f '+self.tmpfile.name+' - | awk \'/^S/{print \">\"$2\"\\n\"$3}\' | fold '
+        # p1 = subprocess.Popen('minimap -Sw5 -L100 -t8 '+self.tmpfile.name+' '+self.tmpfile.name+' | miniasm -f '+self.tmpfile.name+' - | awk \'/^S/{print \">\"$2\"\\n\"$3}\' | fold ', shell=True, stdout=subprocess.PIPE)
         (out, err) = p1.communicate()
         return out
 
@@ -704,7 +817,6 @@ class Kraken():
 
 @task()
 def run_bwa_alignment(runid, job_id, referenceinfo_id, last_read):
-
     print('---> Inside bwa alignment')
 
     job = JobMaster.objects.get(pk=job_id)
@@ -720,7 +832,7 @@ def run_bwa_alignment(runid, job_id, referenceinfo_id, last_read):
 
     # JobMaster.objects.filter(pk=job_id).update(running=True)
 
-    #print (runid,id,reference,last_read)
+    # print (runid,id,reference,last_read)
     fastq_list = FastqRead.objects.filter(
         run_id=runid,
         id__gt=last_read
@@ -729,12 +841,12 @@ def run_bwa_alignment(runid, job_id, referenceinfo_id, last_read):
     referenceinfo = ReferenceInfo.objects.get(pk=referenceinfo_id)
 
     for fastq in fastq_list:
-        #print (fastq.sequence)
+        # print (fastq.sequence)
         bwaindex = referenceinfo.filename
         read = '>{} \r\n{}\r\n'.format(fastq, fastq.sequence)
         cmd = 'bwa mem -x ont2d %s -' % (bwaindex)
-        #print (cmd)
-        #print (read)
+        # print (cmd)
+        # print (read)
         proc = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
@@ -762,7 +874,7 @@ def run_bwa_alignment(runid, job_id, referenceinfo_id, last_read):
                     newsam = SamStore(run_id=runinstance, read_id=fastq)
                     newsam.samline = line
                     newsam.save()
-                    last_read=fastq.id
+                    last_read = fastq.id
 
     job.running = False
     job.last_read = last_read
@@ -771,13 +883,13 @@ def run_bwa_alignment(runid, job_id, referenceinfo_id, last_read):
 
 @task
 def updateReadNamesOnRedis():
-    print ('>>> running updateReadNamesOnRedis')
+    print('>>> running updateReadNamesOnRedis')
     r = redis.StrictRedis(host='localhost', port=6379, db=0)
 
     runs = MinIONRun.objects.all()
 
     for run in runs:
-        print ('>>> run: {}'.format(run.id))
+        print('>>> run: {}'.format(run.id))
 
         reads = FastqRead.objects.filter(run_id=run).order_by('id')
 
@@ -788,7 +900,7 @@ def updateReadNamesOnRedis():
         r.set(key, paginator.num_pages)
 
         for page in range(1, paginator.num_pages + 1):
-            print ('>>> run {}, page {} of {}'.format(run.id, page, paginator.num_pages))
+            print('>>> run {}, page {} of {}'.format(run.id, page, paginator.num_pages))
 
             key = 'run.{}.reads.page.{}'.format(run.id, page)
 
@@ -804,18 +916,16 @@ def updateReadNamesOnRedis():
 
 @task
 def delete_runs():
-
     MinIONRun.objects.filter(to_delete=True).delete()
 
 
 @task
 def send_messages():
-
     new_messages = Message.objects.filter(delivered_date=None)
 
     for new_message in new_messages:
 
-        #print('Sending message: {}'.format(new_message))
+        # print('Sending message: {}'.format(new_message))
 
         message_sent = False
 
@@ -845,8 +955,7 @@ def send_messages():
                 print(e)
 
         if new_message.recipient.extendedopts.tweet \
-            and new_message.recipient.extendedopts.twitterhandle != '':
-
+                and new_message.recipient.extendedopts.twitterhandle != '':
             TWITTOKEN = settings.TWITTOKEN
             TWITTOKEN_SECRET = settings.TWITTOKEN_SECRET
             TWITCONSUMER_KEY = settings.TWITCONSUMER_KEY
@@ -860,10 +969,10 @@ def send_messages():
                 user=new_message.recipient.extendedopts.twitterhandle,
                 text=new_message.title
             )
-            #status = '@{} {}'.format(new_message.recipient.extendedopts.twitterhandle,new_message.title)
-            #t.statuses.update(
+            # status = '@{} {}'.format(new_message.recipient.extendedopts.twitterhandle,new_message.title)
+            # t.statuses.update(
             #    status=status
-            #)
+            # )
 
             message_sent = True
 

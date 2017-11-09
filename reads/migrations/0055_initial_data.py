@@ -94,7 +94,10 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('reads', '0054_minionrun_to_delete'),
+        ('auth', '0008_alter_user_username_max_length'),
+        ('authtoken', '0002_auto_20160226_1747'),
     ]
+
 
     operations = [
         migrations.RunPython(forwards_func, reverse_func),

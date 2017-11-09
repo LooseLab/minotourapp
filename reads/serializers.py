@@ -6,6 +6,7 @@ from reads.models import FastqRead
 from reads.models import FastqReadType
 from reads.models import HistogramSummary
 from reads.models import JobMaster
+from reads.models import JobType
 from reads.models import MinION
 from reads.models import MinIONControl
 from reads.models import MinIONEvent
@@ -21,6 +22,8 @@ from reads.models import RunSummaryBarcode
 from reads.models import RunStatistic
 from reads.models import RunStatisticBarcode
 from reads.models import UserOptions
+from reads.models import FlowCell
+from reads.models import FlowCellRun
 
 
 
@@ -286,6 +289,10 @@ class RunStatisticBarcodeSerializer(serializers.ModelSerializer):
 
         read_only = ('id',)
 
+class JobTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JobType
+        fields = ('name','description','reference','readcount','transcriptome')
 
 class JobSerializer(serializers.ModelSerializer):
     typename = serializers.ReadOnlyField(source="type.name")
@@ -376,3 +383,21 @@ class RunHistogramSummarySerializer(serializers.ModelSerializer):
             'read_count',
             'read_length'
         )
+
+
+class FlowCellSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = FlowCell
+        fields = ('url', 'id','name',)
+
+
+class FlowCellRunSerializer(serializers.HyperlinkedModelSerializer):
+
+    barcodes = BarcodeSerializer(
+        many=True,
+        read_only=True
+    )
+
+    class Meta:
+        model = FlowCellRun
+        fields = ('flowcell','id','run','name','barcodes')

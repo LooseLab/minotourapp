@@ -1,5 +1,6 @@
 import datetime
 
+import pytz
 from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_save
@@ -7,10 +8,7 @@ from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
 from reference.models import ReferenceInfo
-from celery import task
-from celery.utils.log import get_task_logger
-from communication.utils import send_message
-import pytz
+
 
 class MinION(models.Model):
     minION_name = models.CharField(max_length=64)
@@ -185,7 +183,7 @@ class MinIONRun(models.Model):
         verbose_name_plural = 'MinION Runs'
 
     def __str__(self):
-        return self.run_name
+        return "{} - {}".format(self.run_name, self.run_id)
 
     def last_entry(self):
         try:
@@ -436,7 +434,7 @@ class FastqRead(models.Model):
 
     barcode = models.ForeignKey(
         Barcode,
-        on_delete=models.CASCADE,
+        #on_delete=models.CASCADE,
         related_name='reads',
         null=True
     )
@@ -810,9 +808,33 @@ class JobType(models.Model):
         max_length=256
     )
 
+    description = models.TextField(
+        max_length=256,
+        blank = True,
+        null = True
+    )
+
+    long_description = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    reference = models.BooleanField(
+        default=False,
+    )
+
+    transcriptome = models.BooleanField(
+        default=False,
+    )
+
+    readcount = models.BooleanField(
+        default=False,
+    )
     private = models.BooleanField(
         default=True
     )
+
+
 
     def __str__(self):
         return "{}".format(self.name)
@@ -822,6 +844,7 @@ class JobMaster(models.Model):
 
     run = models.ForeignKey(
         MinIONRun,
+        on_delete=models.CASCADE,
         related_name='runjobs'
     )
 
@@ -849,6 +872,10 @@ class JobMaster(models.Model):
         null=True
     )
 
+    read_count = models.BigIntegerField(
+        default=0
+    )
+
     complete = models.BooleanField(
         default=False
     )
@@ -858,4 +885,41 @@ class JobMaster(models.Model):
     )
 
     def __str__(self):
-        return "{} {}".format(self.run, self.job_type)
+        return "{} {} {}".format(self.run, self.job_type, self.run.id)
+
+
+class FlowCell(models.Model):
+    name = models.CharField(
+        max_length=256,
+        blank=True,
+        null=True,
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='flowcells'
+    )
+
+    def __str__(self):
+        return "{} {}".format(self.name, self.id)
+
+
+class FlowCellRun(models.Model):
+    flowcell = models.ForeignKey(
+        FlowCell,
+        related_name='flowcelldetails'
+    )
+
+    run = models.ForeignKey(
+        MinIONRun,
+        on_delete=models.CASCADE,
+        related_name='flowcellrun'
+    )
+
+    def name(self):
+        return self.flowcell.name
+
+    def barcodes(self):
+        return self.run.barcodes
+
+    def __str__(self):
+        return "{} {}".format(self.flowcell, self.run)

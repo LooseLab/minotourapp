@@ -11,7 +11,7 @@ from reads.models import Barcode
 
 
 class MiniKraken(models.Model):
-    run = models.ForeignKey(MinIONRun, related_name='minikrakrun')
+    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='minikrakrun')
     read = models.ForeignKey(FastqRead, related_name='minikrakread')
     #reference = models.ForeignKey(ReferenceInfo, related_name='minikrakreference')
     #read_type = models.ForeignKey(FastqReadType, related_name='minikraktype',blank=True,null=True)
@@ -26,7 +26,7 @@ class MiniKraken(models.Model):
 
 
 class ParsedKraken(models.Model):
-    run = models.ForeignKey(MinIONRun, related_name='parsedkrakrun')
+    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='parsedkrakrun')
     type = models.ForeignKey(FastqReadType, related_name='typekrakrun', blank=True,null=True)
     barcode = models.ForeignKey(Barcode,related_name='barcodekrakrun', blank=True,null=True)
     percentage = models.FloatField(null=True,blank=True)
@@ -39,6 +39,11 @@ class ParsedKraken(models.Model):
     indentation = models.IntegerField(null=True,blank=True)
     orderin = models.IntegerField(null=True,blank=True)
 
+    def barcode_name(self):
+        return self.barcode.name
+
+    def type_name(self):
+        return self.type.name
 
     def __str__(self):
         return "{},{}".format(self.run,self.NCBItaxid)

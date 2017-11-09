@@ -36,44 +36,6 @@
     <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
     <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
-
-    <!-- jQuery 2.2.3 -->
-    <script src="{% static 'web/plugins/jQuery/jquery-2.2.3.min.js' %}"></script>
-    <!--<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>-->
-
-    <!-- Bootstrap 3.3.6 -->
-    <script src="{% static 'web/bootstrap/js/bootstrap.min.js' %}"></script>
-
-    <!-- AdminLTE App -->
-    <script src="{% static 'web/dist/js/app.min.js' %}"></script>
-
-    <!-- Highcharts -->
-    <!--<script src="https://code.highcharts.com/highcharts.js"></script>-->
-    <script src="https://code.highcharts.com/stock/5.0.9/highstock.js"></script>
-
-    <script src="https://code.highcharts.com/5.0.9/highcharts-more.js"></script>
-    <script src="https://code.highcharts.com/5.0.9/modules/exporting.js"></script>
-
-    <script src="https://code.highcharts.com/5.0.9/modules/solid-gauge.src.js"></script>
-    <script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>
-    <script src="https://code.highcharts.com/5.0.9/modules/heatmap.js"></script>
-    <script src="http://code.highcharts.com/5.0.9/modules/no-data-to-display.js"></script>
-
-    <script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>
-
-    <script src="{% static 'web/cookie.js' %}"></script>
-    <script src="{% static 'web/ajax_setup.js' %}"></script>
-    <script src="{% static 'web/minotour.js' %}"></script>
-
-    <!-- Data tables -->
-    <script src="{% static 'web/datatables/js/jquery.dataTables.min.js' %}"></script>
-
-    <!-- Optionally, you can add Slimscroll and FastClick plugins.
-         Both of these plugins are recommended to enhance the
-         user experience. Slimscroll is required when using the
-         fixed layout. -->
-    <script src="{% static 'web/plugins/slimScroll/jquery.slimscroll.min.js' %}"></script>
-    <script src="{% static 'web/plugins/fastclick/fastclick.min.js' %}"></script>
 </head>
 
 {% block body_tag %}
@@ -123,7 +85,7 @@
             <img style="max-width:100px;" src="{% static 'mT_images/minotaurlogo.png' %}" alt="minoTour_logo">
         </div>
         <!-- Default to the left -->
-        <strong>Copyright &copy; Matt Loose 2017 <a href="www.nottingham.ac.uk">University of Nottingham</a>.</strong>
+        <strong>Copyright &copy; Loose Lab {% now 'Y' %} <a href="www.nottingham.ac.uk">University of Nottingham</a>.</strong>
         Contact @mattloose for more information.
     </footer>
 
@@ -205,9 +167,43 @@
     <div class="control-sidebar-bg"></div>
 </div>
 <!-- ./wrapper -->
-
+<!-- jQuery 2.2.3 -->
+<script src="{% static 'web/plugins/jQuery/jquery-2.2.3.min.js' %}"></script>
+<!-- <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script> -->
+<!-- Bootstrap 3.3.6 -->
+<script src="{% static 'web/bootstrap/js/bootstrap.min.js' %}"></script>
 <!-- AdminLTE App -->
 <script src="{% static 'web/dist/js/app.min.js' %}?dev=19"></script>
+<!-- Highcharts -->
+<!--<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/stock/5.0.9/highstock.js"></script>
+
+<script src="https://code.highcharts.com/5.0.9/highcharts-more.js"></script>
+<script src="https://code.highcharts.com/5.0.9/modules/exporting.js"></script>
+
+<script src="https://code.highcharts.com/5.0.9/modules/solid-gauge.src.js"></script>
+{#<script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>#}
+<script src="https://code.highcharts.com/5.0.9/modules/heatmap.js"></script>
+<script src="http://code.highcharts.com/5.0.9/modules/no-data-to-display.js"></script> -->
+
+<script src="https://code.highcharts.com/stock/highstock.js"></script>
+<script src="https://code.highcharts.com/modules/sankey.js"></script>
+<script src="https://code.highcharts.com/highcharts-more.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+
+<script src="https://code.highcharts.com/modules/solid-gauge.src.js"></script>
+<script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>
+<script src="https://code.highcharts.com/modules/heatmap.js"></script>
+<script src="http://code.highcharts.com/modules/no-data-to-display.js"></script>
+
+{#<script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>#}
+
+<script src="{% static 'web/cookie.js' %}"></script>
+<script src="{% static 'web/ajax_setup.js' %}"></script>
+<script src="{% static 'web/minotour.js' %}"></script>
+
+<!-- Data tables -->
+<script src="{% static 'web/datatables/js/jquery.dataTables.min.js' %}"></script>
 
 <!-- Optionally, you can add Slimscroll and FastClick plugins.
      Both of these plugins are recommended to enhance the
@@ -215,7 +211,14 @@
      fixed layout. -->
 <script src="{% static 'web/plugins/slimScroll/jquery.slimscroll.min.js' %}"></script>
 <script src="{% static 'web/plugins/fastclick/fastclick.min.js' %}"></script>
-
-
+<script>
+$(function() {
+    if (localStorage['MT_MenuState'] == "menu-collapsed") {
+        $("body").addClass('sidebar-collapse')
+    }
+});
+</script>
+{% block javascript %}
+{% endblock %}
 </body>
 </html>

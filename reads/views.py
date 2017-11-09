@@ -28,6 +28,11 @@ from reads.models import RunStatistic
 from reads.models import RunStatisticBarcode
 from reads.models import RunSummary
 from reads.models import RunSummaryBarcode
+from reads.models import JobType
+from reads.models import JobMaster
+from reads.models import FlowCell
+from reads.models import FlowCellRun
+from reference.models import ReferenceInfo
 from reads.serializers import BarcodeSerializer
 from reads.serializers import ChannelSummarySerializer
 from reads.serializers import FastqReadSerializer
@@ -47,6 +52,11 @@ from reads.serializers import MinIONStatusSerializer
 from reads.serializers import MinIONmessagesSerializer
 from reads.serializers import RunHistogramSummarySerializer
 from reads.serializers import RunSummarySerializer
+from reads.serializers import JobTypeSerializer
+from reads.serializers import FlowCellSerializer
+from reads.serializers import FlowCellRunSerializer
+
+
 
 from minotourapp import settings
 
@@ -591,6 +601,9 @@ def read_detail(request, pk):
 def readname_list(request, pk):
     """
     TODO describe function
+    CUrrent API behaviour asssumes starting from page1.
+    Request for page 0 returns last page.
+    This could be a source of confusion and we should resolve.
     """
     if request.method == 'GET':
         queryset = FastqRead.objects.filter(run_id=pk).order_by('id')
@@ -787,3 +800,180 @@ def minION_liverun_list(request,pk):
     TODO describe function
     """
     return None
+
+@api_view(['GET'])
+def tasks_detail(request):
+    if request.method == 'GET':
+        queryset=JobType.objects.filter(private=False)
+        serializer = JobTypeSerializer(queryset,many=True, context={'request': request})
+        return Response(serializer.data)
+
+
+@api_view(['POST'])
+def set_task_detail_all(request,pk):
+    """We need to check if a job type already exists - if so we are not going to add another."""
+    if request.method == 'POST':
+        jobtype=JobType.objects.get(name=request.data["job"])
+        print (jobtype)
+        reference=""
+        if request.data["reference"]!="null":
+            reference=ReferenceInfo.objects.get(reference_name=request.data["reference"])
+            print (reference)
+        minionrun=MinIONRun.objects.get(id=pk)
+        print (minionrun)
+        print(request.data)
+        print(jobtype,reference,minionrun)
+        jobmasters=JobMaster.objects.filter(run=minionrun).filter(job_type=jobtype)
+        print ("Jobmasters",jobmasters)
+        if len(jobmasters) > 0:
+            #return Response("Duplicate Job attempted. Not allowed.", status=status.HTTP_400_BAD_REQUEST)
+            return Response("Duplicate Job attempted. Not allowed.", status=status.HTTP_200_OK)
+        else:
+            newjob = JobMaster(run=minionrun, job_type=jobtype, last_read=0, read_count=0, complete=False, running=False)
+
+            print ("trying to make a job", newjob)
+
+            if request.data["reference"] != "null":
+            #if len(reference)>0:
+                newjob.reference = reference
+            try:
+                newjob.save()
+                print ("job created")
+            except Exception as e:
+                print (e)
+                print ("error")
+            return Response("Job Created.", status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+def tasks_detail_all(request,pk):
+    queryset=JobType.objects.filter(private=False)
+    minionrun=MinIONRun.objects.get(pk=pk)
+
+    result = []
+
+    for jobtype in queryset:
+        obj = {}
+        obj.update({
+            'name': jobtype.name,
+            'description' : jobtype.description,
+            'long_description' : jobtype.long_description,
+            'read_count': jobtype.readcount,
+            'reference': jobtype.reference,
+            'transcriptome': jobtype.transcriptome
+        })
+
+        jobmasterlist = JobMaster.objects.filter(run=minionrun).filter(job_type=jobtype)
+
+        if len(jobmasterlist) > 0:
+            obj2 = {}
+            if jobmasterlist[0].reference:
+                reference_name = jobmasterlist[0].reference.reference_name
+            else:
+                reference_name = ''
+            obj2.update({
+                'reference': reference_name,
+                'last_read': jobmasterlist[0].last_read,
+                'read_count': jobmasterlist[0].read_count,
+                'temp_file': jobmasterlist[0].temp_file,
+                'complete': jobmasterlist[0].complete,
+                'running': jobmasterlist[0].running
+            })
+
+            obj.update({
+                'job_details': obj2
+            })
+
+        result.append(obj)
+
+    return HttpResponse(json.dumps(result), content_type="application/json")
+
+
+@api_view(['GET'])
+def flowcell_list(request):
+    queryset = FlowCell.objects.filter(owner=request.user)
+    serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
+    return Response(serializer.data)\
+
+
+@api_view(['GET'])
+def flowcell_detail(request,pk):
+    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    serializer = FlowCellRunSerializer(queryset, many=True, context={'request': request})
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def flowcell_summary_barcode(request,pk):
+    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    runset = list()
+    for run in queryset:
+        #print (run.run_id)
+        runset.append(run.run_id)
+    queryset = RunSummaryBarcode.objects \
+        .filter(run_id__owner=request.user) \
+        .filter(run_id__in=runset)
+
+    serializer = RunSummaryBarcodeSerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def flowcell_summary_barcode_by_minute(request, pk):
+    """
+        Return a list with summaries for a particular run grouped by minute.
+        """
+    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    runset = list()
+    for run in queryset:
+        # print (run.run_id)
+        runset.append(run.run_id)
+    queryset = RunStatisticBarcode.objects \
+        .filter(run_id__owner=request.user) \
+        .filter(run_id__in=runset)
+
+    serializer = RunStatisticBarcodeSerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
+
+
+    #alldata = MinIONRun.objects.filter(id__in=runset)
+
+    #serializer = MinIONRunSerializer(alldata,many=True, context={'request': request})
+    #return Response(serializer.data)
+
+
+@api_view(['GET'])
+def flowcell_histogram_summary(request, pk):
+    """
+    Return a list with histogram summaries for a particular run.
+    """
+    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    runset = list()
+    for run in queryset:
+        # print (run.run_id)
+        runset.append(run.run_id)
+    queryset = HistogramSummary.objects\
+        .filter(run_id__owner=request.user)\
+        .filter(run_id__in=runset)\
+        .order_by('read_type', 'bin_width')
+
+    serializer = RunHistogramSummarySerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def flowcell_channel_summary(request, pk):
+    """
+    Return a list with channel info for a particular run.
+    """
+    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    runset = list()
+    for run in queryset:
+        # print (run.run_id)
+        runset.append(run.run_id)
+    queryset = ChannelSummary.objects\
+        .filter(run_id__owner=request.user)\
+        .filter(run_id__in=runset)
+
+    serializer = ChannelSummarySerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
