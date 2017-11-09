@@ -1,0 +1,1 @@
+[{"model": "reads.fastqreadtype", "pk": 1, "fields": {"name": "Template"}}, {"model": "reads.fastqreadtype", "pk": 2, "fields": {"name": "Complement"}}, {"model": "reads.fastqreadtype", "pk": 3, "fields": {"name": "2D"}}, {"model": "reads.fastqreadtype", "pk": 4, "fields": {"name": "1D^2"}}]

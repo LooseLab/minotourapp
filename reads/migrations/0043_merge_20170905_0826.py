@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('reads', '0042_merge_20170904_2024'),
-        ('reads', '0042_merge_20170904_1339'),
+        #('reads', '0042_merge_20170904_1339'),
     ]
 
     operations = [
