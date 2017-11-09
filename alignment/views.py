@@ -1,23 +1,21 @@
 import json
 
+from django.conf import settings
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.db.models import Sum
 from django.http import HttpResponse
-from django.shortcuts import render
-from django.db.models import Count, Min, Sum, Avg
-
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from alignment.models import PafRoughCov
-from alignment.models import PafSummaryCov
-from alignment.serializers import PafRoughCovSerializer
+from alignment.models import PafSummaryCov, PafSummaryCov_transcriptome
 from alignment.serializers import PafRoughCovChromSerializer
 from alignment.serializers import PafRoughCovChromSerializerCount
 from alignment.serializers import PafSummaryCovSerializer
 from reads.models import JobMaster
-
-from reference.models import ReferenceInfo
 from reference.models import ReferenceLine
+
 
 @api_view(['GET'])
 def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id):
@@ -62,7 +60,47 @@ def paf_alignment_summary(request, pk):#,bc,ch):
 
         serializer = PafSummaryCovSerializer(queryset, many=True, context={'request': request})
 
-        return Response(serializer.data)
+        return Response(serializer.data)\
+
+@api_view(['GET'])
+def paf_alignment_transcriptome_summary(request, pk):#,bc,ch):
+    """
+    CUrrent API behaviour asssumes starting from page1.
+    Request for page 0 returns last page.
+    This could be a source of confusion and we should resolve.
+    :param request:
+    :param pk:
+    :return:
+    """
+    if request.method == 'GET':
+        queryset = PafSummaryCov_transcriptome.objects \
+            .filter(run__owner=request.user) \
+            .filter(run__id=pk) \
+            .order_by('-read_count')
+            #.filter(run__id=pk,barcode=bc,chromosome=ch)
+
+
+        paginator = Paginator(queryset, settings.PAGINATION_PAGE_SIZE)
+
+        page = request.GET.get('page')
+
+        try:
+            result = paginator.page(page)
+        except PageNotAnInteger:
+            result = paginator.page(1)
+        except EmptyPage:
+            result = paginator.page(paginator.num_pages)
+
+        serializer = PafSummaryCovSerializer(result, many=True, context={'request': request})
+
+        result2 = {}
+        result2['number_pages'] = paginator.num_pages
+        result2['data'] = serializer.data
+        return HttpResponse(json.dumps(result2), content_type="application/json")
+
+        #serializer = PafSummaryCovSerializer(queryset, many=True, context={'request': request})
+
+        #return Response(serializer.data)
 
 @api_view(['GET'])
 def paf_test(request, pk,bc,ch,ty,po,ln):

@@ -11,6 +11,10 @@ var NUMBER_SECONDS_IN_A_MINUTE = 60;
 
 var MINOTOUR_VERSION = 0.5;
 
+function csrfSafeMethod(method) {
+                            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+                        }
+
 function check_minotour_version() {
     $.getJSON("http://www.nottingham.ac.uk/~plzloose/minoTourhome/message.php?callback=?", function (result) {
 
@@ -85,6 +89,49 @@ function makeChart(divName, chartTitle, yAxisTitle) {
     return chart;
 }
 
+function makeChartlabels(divName, chartTitle, yAxisTitle) {
+    var chart = Highcharts.chart(divName, {
+        chart: {
+            type: "column",
+            animation: Highcharts.svg, // don"t animate in old IE
+            marginRight: 10,
+            zoomType: "x"
+        },
+        title: {
+            text: chartTitle
+        },
+        xAxis: {
+            type: 'category',
+            labels: {
+                rotation: -90,
+                style: {
+                    fontSize: '9px',
+                    fontFamily: 'Verdana, sans-serif'
+                }
+            }
+        },
+        yAxis: {
+            title: {
+                text: yAxisTitle
+            },
+            plotLines: [{
+                value: 0,
+                width: 1,
+                color: "#808080"
+            }]
+        },
+        legend: {
+            enabled: true
+        },
+        exporting: {
+            enabled: false
+        },
+        series: []
+    });
+
+    return chart;
+}
+
 function makeChart2(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.chart(divName, {
         chart: {
@@ -109,6 +156,40 @@ function makeChart2(divName, chartTitle, yAxisTitle) {
                 width: 1,
                 color: "#808080"
             }]
+        },
+        legend: {
+            enabled: true
+        },
+        exporting: {
+            enabled: false
+        }
+    });
+
+    return chart;
+}
+
+function makeChart3(divName, chartTitle, yAxisTitle, xAxisTitle) {
+    var chart = Highcharts.chart(divName, {
+        chart: {
+            type: "scatter",
+            marginRight: 10,
+            animation: false,
+            zoomType: "xy"
+        },
+        title: {
+            text: chartTitle
+        },
+        xAxis: {
+            //type: "datetime",
+            //tickPixelInterval: 150
+            title: {
+                text: xAxisTitle
+            }
+        },
+        yAxis: {
+            title: {
+                text: yAxisTitle
+            },
         },
         legend: {
             enabled: true
@@ -326,6 +407,25 @@ function makeLiveChart(divName, chartTitle, yAxisTitle) {
     return chart;
 };
 
+function getCookie(name) {
+                var cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    var cookies = document.cookie.split(';');
+                    for (var i = 0; i < cookies.length; i++) {
+                        var cookie = jQuery.trim(cookies[i]);
+                        // Does this cookie string begin with the name we want?
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+
+
+
 function MonitorAPP() {
     var livedata = new Array();
     var self = this;
@@ -368,6 +468,8 @@ function MinotourApp() {
     this.chart_average_read_length = null;
     this.chart_maximum_read_length = null;
     this.average_read_lengths_overtime = null;
+    this.xy_scat_length = null;
+    this.trans_top100 = null;
     this.chart_cumulative_number_reads_overtime = null;
     this.chartSequencingRate = null;
     this.chartHistogramReadLength = null;
@@ -418,6 +520,8 @@ function MinotourApp() {
 
     this.makeChart = makeChart;
     this.makeChart2 = makeChart2;
+    this.makeChart3 = makeChart3;
+    this.makeChartlabels = makeChartlabels;
     this.makeLiveHistogram = makeLiveHistogram;
     this.makeYieldProjection = makeYieldProjection;
     this.makeLiveChart = makeLiveChart;
@@ -430,6 +534,50 @@ function MinotourApp() {
 
     this.updatePoreChart = updatePoreChart;
     this.updateStepLineChart = updateStepLineChart;
+
+    this.startTask = function (description,reference){
+    console.log(description + " " + reference);
+    var e = document.getElementById(description);
+    if (e != null) {
+        var strUser = e.options[e.selectedIndex].value;
+    }else{
+        var strUser = "null";
+    }
+    console.log(strUser);
+    $.ajaxSetup({
+        beforeSend: function (xhr, settings) {
+            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+            }
+        }
+    });
+    //var url_mask = "{% url 'set-task-detail-all' pk=12345 %}".replace(/12345/, reference.toString());
+    var url_mask = "/api/v1/runs/12345/settask/".replace(/12345/, reference.toString());;
+    $.ajax({
+        "type": "POST",
+        "dataType": "json",
+        "url": url_mask,
+        "data": {
+            "job": description,
+            "reference": strUser,
+        },
+        "beforeSend": function (xhr, settings) {
+            console.log("before send");
+            $.ajaxSettings.beforeSend(xhr, settings);
+        },
+        "success": function (result) {
+            console.log(result);
+            $(".modal.in").modal("hide");
+            self.requestTasks(reference);
+
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+            console.log("Status: " + textStatus);
+            //alert("Error: " + errorThrown);
+        }
+
+    })
+};
 
     //this.updateReadsPerPoreChart = updateReadsPerPoreChart;
 
@@ -461,6 +609,7 @@ function MinotourApp() {
         document.getElementById("panel-basecalled-data").style.display = "none";
         document.getElementById("panel-seq-id").style.display = "none";
         document.getElementById("panel-seq-map").style.display = "none";
+        document.getElementById("panel-trans-map").style.display = "none";
         document.getElementById("panel-tasks").style.display = "none";
 
 
@@ -475,6 +624,8 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
             document.getElementById("nav-tasks").parentNode.classList.remove("active");
 
@@ -492,6 +643,8 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
             document.getElementById("nav-tasks").parentNode.classList.remove("active");
         };
@@ -507,6 +660,8 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
             document.getElementById("nav-tasks").parentNode.classList.remove("active");
         };
@@ -522,6 +677,8 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.add("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
             document.getElementById("nav-tasks").parentNode.classList.remove("active");
         };
@@ -537,6 +694,8 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "block";
             document.getElementById("nav-seq-map").parentNode.classList.add("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
             document.getElementById("nav-tasks").parentNode.classList.remove("active");
         };
@@ -552,8 +711,27 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "none";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "block";
             document.getElementById("nav-tasks").parentNode.classList.add("active");
+        };
+
+        document.getElementById("nav-seq-map-trans").onclick = function (e) {
+            document.getElementById("panel-basecalled-data").style.display = "none";
+            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
+            document.getElementById("panel-live-data").style.display = "none";
+            document.getElementById("nav-live-data").parentNode.classList.remove("active");
+            document.getElementById("panel-summary-data").style.display = "none";
+            document.getElementById("run-summary-data").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-id").style.display = "none";
+            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
+            document.getElementById("panel-seq-map").style.display = "none";
+            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+            document.getElementById("panel-trans-map").style.display = "block";
+            document.getElementById("nav-seq-map-trans").parentNode.classList.add("active");
+            document.getElementById("panel-tasks").style.display = "none";
+            document.getElementById("nav-tasks").parentNode.classList.remove("active");
         };
 
 
@@ -605,6 +783,20 @@ function MinotourApp() {
             "maximum read length".toUpperCase()
         );
 
+        this.xy_scat_length = this.makeChart3(
+            "xy_scat_len",
+            "Average Read Length Versus Transcript Length (top 100 Expressed)".toUpperCase(),
+            "Read Length".toUpperCase(),
+            "Transcript Lenght".toUpperCase()
+
+        );
+
+        this.trans_top100 = this.makeChartlabels(
+            "trans_top100",
+            "Top 100 Mapped Reads".toUpperCase(),
+            "Read Count".toUpperCase()
+        );
+
         this.average_read_lengths_overtime = this.makeChart2(
             "average-read-lengths-overtime",
             "average read length over time".toUpperCase(),
@@ -643,13 +835,13 @@ function MinotourApp() {
 
         this.chartReadsPerPore = this.makeHeatmapChart(
             "reads-per-pore",
-            "Reads per pore".toUpperCase(),
+            "Reads per Channel".toUpperCase(),
             ""
         );
 
         this.chartBasesPerPore = this.makeHeatmapChart(
             "bases-per-pore",
-            "bases (kb) per pore".toUpperCase(),
+            "bases (kb) per Channel".toUpperCase(),
             ""
         );
 
@@ -719,6 +911,9 @@ function MinotourApp() {
         self.selectedBarcode = "All reads";
 
         this.requestData();
+
+        this.requestReference(self.id);
+        this.requestTasks(self.id); //really this only needs to run once!
 
         setInterval(function () {
             this.requestData();
@@ -1046,6 +1241,8 @@ function MinotourApp() {
 
     };
 
+
+
     this.updateSequencingSpeedChart = function () {
         var chart = self.chartSequencingSpeed;
         var selectedBarcode = self.selectedBarcode;
@@ -1117,6 +1314,8 @@ function MinotourApp() {
         }
 
     };
+
+
 
     this.updateHistogramBasesSequencedReadLengthChart = function () {
 
@@ -1357,6 +1556,141 @@ function MinotourApp() {
             }
         }
     };
+    this.requestReference = function(id){
+        var url = "/api/v1/reference/";
+        $.get(url, function (data){
+            var references = [];
+            for (var i=0; i < data.length; i++) {
+                //console.log(data[i]);
+                references.push(data[i]);
+            }
+            //console.log(references);
+            self.references=references;
+        });
+    };
+    this.requestTasks = function(id) {
+        var url = "/api/v1/runs/"+id+"/tasks/";
+        $.get(url, function (data) {
+            //console.log(data);
+            var tasks = [];
+            for (var i=0; i < data.length; i++){
+                tasks.push(data[i]);
+            }
+            self.tasks=tasks;
+            self.updateTasks(id); //really this only needs to run once!
+        });
+    };
+
+    this.liveUpdateTasks = function(id){
+        var url = "/api/v1/runs/"+id+"/tasks/";
+        $.get(url, function (data) {
+            var tasks=[];
+            for (var i=0; i < data.length; i++){
+                tasks.push(data[i]);
+            }
+            self.tasks=tasks;
+            for (var i=0; i<self.tasks.length; i++){
+                if (self.tasks[i].hasOwnProperty("job_details")){
+                    message = 'Reads processed:' + self.tasks[i]["job_details"]["read_count"] + "/" + self.summary["All reads"]["Template"]["read_count"]["data"][0];
+                    percentage = Math.round((self.tasks[i]["job_details"]["read_count"]/self.summary["All reads"]["Template"]["read_count"]["data"][0] *100) * 100) / 100;
+                    message2 = percentage + '% of uploaded reads are processed';
+                    console.log(message);
+                    $('#'+self.tasks[i]["name"]+'-message').text(message);
+                    $('#'+self.tasks[i]["name"]+'-percentage').text(percentage);
+                    $('div#'+self.tasks[i]["name"]+'-percentage').width(percentage+'%');
+                    $('#'+self.tasks[i]["name"]+'-message2').text(message2);
+                }
+            }
+        })
+    };
+
+    this.updateTasks = function(id) {
+        //console.log("####id is" + id);
+        var taskstring = "";
+        for (var i = 0; i < self.tasks.length; i++) {
+                console.log(self.tasks[i]);
+                if (self.tasks[i].hasOwnProperty("job_details")){
+                    colour = 'bg-green';
+                    message = 'Reads processed:' + self.tasks[i]["job_details"]["read_count"];
+                    percentage = 50;
+                    message2 = 'X% of uploaded reads are processed';
+                    icon = 'fa fa-refresh fa-spin fa-fw';
+                    running=true;
+
+                }else{
+                    colour = 'bg-light-blue';
+                    message = 'Task Not Running.';
+                    percentage = 0;
+                    message2 = "Click to start a "+self.tasks[i]["description"]+' task.';
+                    icon = 'fa fa-refresh fa-fw';
+                    running=false;
+                }
+                taskstring = this.drawtaskbutton(taskstring,colour,icon,self.tasks[i]["description"],message,percentage,message2,i,self.tasks[i]["long_description"],self.tasks[i]["reference"],self.tasks[i]["name"],self.tasks[i]["transcriptome"]);
+        };
+        document.getElementById('tasks').innerHTML = taskstring;
+        for (var i = 0; i < self.tasks.length; i++) {
+            var buttonname = "#button" + self.tasks[i]["name"];
+            //console.log("Button name to look for:" + buttonname);
+            $(buttonname).click(function (e) {
+                var idClicked = e.target.id;
+                console.log(idClicked);
+                self.startTask(idClicked.substring(6),id);
+            });
+        };
+        this.liveUpdateTasks(id);
+
+    };
+
+    this.drawtaskbutton = function(taskstring,colour,icon,description,message,percentage,message2,i,long_description,reference,name,transcriptome){
+        taskstring = taskstring + '<div class="col-md-4">';
+        taskstring = taskstring + '<button type="button" class="info-box ' + colour + '" data-toggle="modal" data-target="#taskmodal' + i + '">';
+        taskstring = taskstring + '<div >';
+        taskstring = taskstring + '<span class="info-box-icon"><i class="' + icon + '"></i></span>';
+        taskstring = taskstring + '<div class="info-box-content">';
+        taskstring = taskstring + '<span class="info-box-text">' + description + '</span>';
+
+        taskstring = taskstring + '<span class="info-box-number" id="'+name+'-message">' + message + '</span>';
+        taskstring = taskstring + '<div class="progress">';
+        taskstring = taskstring + '<div class="progress-bar" id="'+name+'-percentage" style="width: ' + percentage + '%"></div>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '<span class="progress-description" id="'+name+'-message2" >';
+        taskstring = taskstring + message2;
+        taskstring = taskstring + '</span>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</button>';
+        taskstring = taskstring + '<div id="taskmodal' + i + '" class="modal fade" role="dialog">';
+        taskstring = taskstring + '<div class="modal-dialog">';
+        taskstring = taskstring + '<div class="modal-content">';
+        taskstring = taskstring + '<div class="modal-header">';
+        taskstring = taskstring + '<button type="button" class="close" data-dismiss="modal">&times;</button>';
+        taskstring = taskstring + '<h4 class="modal-title">' + description + '</h4>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '<div class="modal-body">';
+        taskstring = taskstring + '<p>' + long_description + '</p>';
+        if (reference == true) {
+            taskstring = taskstring + "<p>Select Reference:</p>"
+            taskstring = taskstring + '<select id="' + name + '">';
+            //console.log(this.references);
+            for (var j = 0; j < this.references.length; j++) {
+                if (this.references[j]['transcripts'] == transcriptome) {
+                    taskstring = taskstring + '<option>' + this.references[j]["reference_name"] + '</option>';
+                }
+            }
+            taskstring = taskstring + '</select>';
+        }
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '<div class="modal-footer">';
+        taskstring = taskstring + '<button type="button" class="btn btn-default" id="button' + name + '">Go</button>';
+        taskstring = taskstring + '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</div>';
+
+        return taskstring;
+    }
 
     this.requestSummaryData = function (id) {
         /*
@@ -1795,6 +2129,116 @@ function MinotourApp() {
         })
     }
 
+
+    this.requestKraken = function (id) {
+        var parsedkraken = '/api/v1/runs/' + id + '/krakenparse/';
+        $.get(parsedkraken,function(data){
+            //console.log(data);
+            krakendata=[];
+            var list = $("#krakenSelectBarcode");
+            var list2 = $("#krakenSelectRead");
+            for (var i=0; i<data.length;i++){
+                var barcodename = data[i]["barcode_name"];
+                var readtype = data[i]["type_name"]
+                if (!(readtype in krakendata)) {
+                    krakendata[readtype]=[];
+                    if ( $("#krakenSelectRead option[value='" + data[i]["type_name"] + "']").val() === undefined) {
+                        list2.append(new Option(data[i]["type_name"],data[i]["type_name"]))
+                    }
+                }
+                if (!(barcodename in krakendata[readtype])) {
+                    krakendata[readtype][barcodename]=[];
+                    if ( $("#krakenSelectBarcode option[value='" + data[i]["barcode_name"] + "']").val() === undefined) {
+                        list.append(new Option(data[i]["barcode_name"], data[i]["barcode_name"]));
+                    }
+
+                }
+                //if (data[i]['percentage'] >= 0.05 && data[i]["parent"] != "Input") {
+                //if (data[i]['indentation']>8){
+                krakendata[readtype][barcodename].push([data[i]["parent"], data[i]["sci_name"], data[i]['percentage'],data[i]['indentation']])
+                //}
+            }
+            console.log(krakendata);
+            list.change(function(){
+                var selectedType=list2.find(":selected").text();
+                var selectedBarcode=list.find(":selected").text();
+                var minimum = $("#lowerboundselect").val();
+                console.log(minimum);
+                var slimmedkraken=[];
+                for (var i=0; i<krakendata[selectedType][selectedBarcode].length;i++){
+                    if (krakendata[selectedType][selectedBarcode][i][3] >= minimum) {
+                        slimmedkraken.push([krakendata[selectedType][selectedBarcode][i][0],krakendata[selectedType][selectedBarcode][i][1],krakendata[selectedType][selectedBarcode][i][2]]);
+                    }
+                };
+
+                console.log(selectedBarcode);
+                var chart=Highcharts.chart('kraken-sankey', {
+                    title: {
+                        text: 'Kraken ' + selectedType + ' ' + selectedBarcode
+                    },
+
+                     series: [{
+                        keys: ['from', 'to', 'weight'],
+                        data: slimmedkraken,
+                        //data: krakendata[selectedType][selectedBarcode],
+                        type: 'sankey',
+                         curveFactor: 0,
+                        name: 'Kraken Output'
+                    }]
+                });
+            });
+        })
+    };
+
+
+
+    this.updateTransData= function () {
+        var chart = self.xy_scat_length;
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        };
+        chart.addSeries({
+            name: "Top 100 Reads",
+            data: self.trans["xy_scat"]
+        });
+
+        var chart2 = self.trans_top100;
+
+        // Remove previous series
+        while (chart2.series.length > 0) {
+            chart2.series[0].remove();
+        };
+        console.log(self.trans["top100"]);
+        chart2.addSeries({
+            name: "Top 100 Reads",
+            data: self.trans["top100"]
+        });
+        chart2.reflow();
+
+    }
+
+    this.requestPafTransData = function (id) {
+        var paftransurl = '/api/v1/runs/' +id + '/pafsummarytrans/?page=1';
+        $.get(paftransurl, function(data) {
+            //console.log(data["data"]);
+            xy_scat=[];
+            top100=[];
+            for (var i = 0; i< data["data"].length; i++){
+                //console.log(data["data"][i]);
+                xy_scat.push([data["data"][i]["chrom_len"],data["data"][i]["avg_read_len"]]);
+                top100.push( [data["data"][i]["chrom_name"],data["data"][i]["read_count"]] );
+            }
+            //console.log(xy_scat);
+            self.trans = [];
+            self.trans["xy_scat"]=xy_scat;
+            self.trans["top100"]=top100;
+            //console.log(top100);
+            self.updateTransData();
+
+        })
+    }
+
     this.requestPafData = function(id) {
 
         self.requestMappedChromosomes(id);
@@ -1914,6 +2358,7 @@ function MinotourApp() {
         })
     };
 
+
     this.requestData = function () {
 
         var url_run = '/api/v1/runs/' + self.id;
@@ -1945,6 +2390,11 @@ function MinotourApp() {
             self.requestRunDetails(self.id);
             self.requestLiveRunStats(self.id);
             self.requestPafData(self.id);
+            self.requestPafTransData(self.id);
+            self.liveUpdateTasks(self.id);
+            console.log("seriously - Im just trying to parse kraken");
+            self.requestKraken(self.id);
+
         });
 
 

@@ -19,4 +19,6 @@ twitter
 redis
 django_redis
 flower
+tqdm
+
 

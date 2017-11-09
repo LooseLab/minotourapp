@@ -19,6 +19,11 @@ urlpatterns = [
         name="references_used_by_run"
     ),
     url(
+        r'^api/v1/runs/(?P<pk>[0-9]+)/pafsummarytrans/$',
+        views.paf_alignment_transcriptome_summary,
+        name="paf_alignment_transcriptome_summary"
+    ),
+    url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/pafcover/(?P<ch>[0-9]+)/$',
         views.paf_alignment_ch_list,
         name="paf_alignment_ch_list"
@@ -28,7 +33,4 @@ urlpatterns = [
         views.paf_test,
         name="paf_test"
     ),
-    #url(
-    #    r'^api/v1/runs/(?P<pk>[0-9]+)/pafcover/chromosome/$',
-    #)
 ]

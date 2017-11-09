@@ -16,10 +16,11 @@
             <div class="nav-tabs-custom">
                 <ul class="nav nav-tabs">
                     <li class="active"><a id="run-summary-data">Run Summary</a></li>
-                    <li><a id='nav-live-data'>Live data</a></li>
-                    <li><a id='nav-basecalled-data'>Basecalled data</a></li>
+                    <li><a id='nav-live-data'>Live Event Data</a></li>
+                    <li><a id='nav-basecalled-data'>Basecalled Data</a></li>
                     <li><a id='nav-seq-id'>Sequence Identification</a></li>
-                    <li><a id='nav-seq-map'>Mapping</a></li>
+                    <li><a id='nav-seq-map'>Genome Mapping</a></li>
+                    <li><a id='nav-seq-map-trans'>Transcriptome Mapping</a></li>
                     <li><a id='nav-tasks'>Tasks</a></li>
                 </ul>
             </div>
@@ -327,6 +328,24 @@
 
             <!-- Panel sequence identification -->
             <div id="panel-seq-id" class="row">
+                <div class="row">
+                <div class="col-md-12">
+                    Sequence Identification Content
+                    <div id="read_type_select"><select id="krakenSelectRead"></select></div>
+                    <div id="barcode_type_select"><select id="krakenSelectBarcode"></select></div>
+                    <div id="range_select"><input id="lowerboundselect" type="range" min="0" max="10"></input></div>
+                    <div id="kraken_barcode_select"></div>
+                </div>
+                    </div>
+
+                <div class="row">
+                    <div id="kraken-sankey"
+                         class="col-md-12 highcharts"
+                         style="width:100%; height:800px;">
+                        <i class="fa fa-cog fa-spin fa-3x"></i>
+                        Select a read type or barcode to generate a plot.
+                    </div>
+                </div>
             </div>
             <!-- End of Panel sequence identification -->
 
@@ -383,47 +402,27 @@
             </div>
             <!-- End of Panel sequence mapping -->
 
+            <!-- Panel transcriptome mapping -->
+            <div id="panel-trans-map" class="row">
+                Transcriptome Mapping Content
+                <div class="row">
+                    <div id="xy_scat_len" class="col-md-12 highcharts" style="width:100%; height:400px;">
+                        <i class="fa fa-cog fa-spin fa-3x"></i>
+                        Calculating.
+                    </div>
+                </div>
+                <div class="row">
+                    <div id="trans_top100" class="col-md-12 highcharts" style="width:100%; height:400px;">
+                        <i class="fa fa-cog fa-spin fa-3x"></i>
+                        Calculating.
+                    </div>
+                </div>
+            </div>
+
             <!-- Panel tasks -->
             <div id="panel-tasks" class="row">
-            <h2 class="panel-heading">Run analysis tasks on reads.</h2>
-
-                <div class="col-md-4">
-                    <div class="info-box bg-yellow">
-                        <span class="info-box-icon"><i class="ion ion-ios-pricetag-outline"></i></span>
-
-                        <div class="info-box-content">
-                            <span class="info-box-text">Reference Alignment</span>
-                            <span class="info-box-number">Read number: 5,200</span>
-
-                            <div class="progress">
-                                <div class="progress-bar" style="width: 50%"></div>
-                            </div>
-                            <span class="progress-description">
-                                    50% of uploaded reads mapped to reference: PlaceHolder.
-                            </span>
-                        </div>
-            <!-- /.info-box-content -->
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="info-box bg-green">
-                        <span class="info-box-icon"><i class="ion ion-ios-pricetag-outline"></i></span>
-
-                        <div class="info-box-content">
-                            <span class="info-box-text">Metagenomics Identification</span>
-                            <span class="info-box-number">Read number: 5,200</span>
-
-                            <div class="progress">
-                                <div class="progress-bar" style="width: 50%"></div>
-                            </div>
-                            <span class="progress-description">
-                                    50% of uploaded reads searched with: Kraken/Centrifuge.
-                            </span>
-                        </div>
-            <!-- /.info-box-content -->
-                    </div>
-                </div>
+                <h2 class="panel-heading">Run analysis tasks on reads.</h2>
+                <span id="tasks"></span>
             </div>
             <!-- End of Panel tasks -->
         </section><!-- /.content -->

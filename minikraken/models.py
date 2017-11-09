@@ -39,6 +39,11 @@ class ParsedKraken(models.Model):
     indentation = models.IntegerField(null=True,blank=True)
     orderin = models.IntegerField(null=True,blank=True)
 
+    def barcode_name(self):
+        return self.barcode.name
+
+    def type_name(self):
+        return self.type.name
 
     def __str__(self):
         return "{},{}".format(self.run,self.NCBItaxid)

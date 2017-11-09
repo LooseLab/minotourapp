@@ -6,6 +6,7 @@ from reads.models import FastqRead
 from reads.models import FastqReadType
 from reads.models import HistogramSummary
 from reads.models import JobMaster
+from reads.models import JobType
 from reads.models import MinION
 from reads.models import MinIONControl
 from reads.models import MinIONEvent
@@ -286,6 +287,10 @@ class RunStatisticBarcodeSerializer(serializers.ModelSerializer):
 
         read_only = ('id',)
 
+class JobTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JobType
+        fields = ('name','description','reference','readcount','transcriptome')
 
 class JobSerializer(serializers.ModelSerializer):
     typename = serializers.ReadOnlyField(source="type.name")

@@ -35,6 +35,10 @@ class ReferenceInfo(models.Model):
         blank=True
     )
 
+    transcripts = models.BooleanField(
+        default=False
+    )
+
     def __str__(self):
         return self.reference_name
 
