@@ -52,6 +52,7 @@ class Runcollection():
         self.readtypes=dict()
         self.statsrecord=dict()
         self.barcodes = dict()
+        self.runid = 0
 
     def get_readnames_by_run(self):
         content = requests.get(self.runidlink + 'readnames', headers=header)
@@ -72,7 +73,7 @@ class Runcollection():
                 self.readnames.append(read)
 
     def add_run(self, descriptiondict):
-        #print("Seen a new run")
+        print("Seen a new run")
         # Test to see if the run exists
         r = requests.get(args.full_host+'api/v1/runs', headers=header)
 
@@ -95,11 +96,14 @@ class Runcollection():
                 print ("Houston - we have a problem!")
             else:
                 self.runidlink = json.loads(createrun.text)["url"]
+                self.runid = json.loads(createrun.text)["id"]
         else:
             #print ('Run Exists.')
             for run in json.loads(r.text):
                 if run["run_id"] == runid:
+                    print (run)
                     self.runidlink = run["url"]
+                    self.runid = run["id"]
 
             #
             # Now fetch a list of reads that already exist at that location
@@ -172,6 +176,15 @@ class Runcollection():
             else:
                 print ("Record not changed.")
 
+    def update_read_type(self,read_id,type):
+        payload = {'type': type}
+        updateread = requests.patch(args.full_host+'api/v1/runs/' + str(self.runid) + "/reads/" + str(read_id) +'/', headers=header, json=payload)
+        print (updateread.text)
+
+    def check_1d2(self,readid):
+        if len(readid) > 64:
+            return True
+
     def check_pass(self,path):
         folders = os.path.split(path)
         #print folders[0]
@@ -189,6 +202,7 @@ class Runcollection():
             self.readid[record.id] = dict()
             for item in descriptiondict:
                 self.readid[record.id][item] = descriptiondict[item]
+
             # print self.readid[record.id]
             tm = dateutil.parser.parse(self.readid[record.id]["start_time"])
             # print tm
@@ -254,18 +268,40 @@ class Runcollection():
             else:
                 barcode_url = self.barcodes["No barcode"]
 
-            self.add_read_db(
-                self.runidlink,
-                record.id,
-                self.readid[record.id]["read"],
-                self.readid[record.id]["ch"],
-                barcode_url,
-                str(record.seq),
-                record.format('fastq').split('\n')[3],
-                passstatus,
-                self.readtypes["Template"],
-                self.readid[record.id]["start_time"]
-            )
+            if self.check_1d2(record.id):
+                print ("Seen a 1D^2 read. Exiting.")
+                print (record.id)
+                print (len(record.id))
+                firstread, secondread = record.id[:len(record.id) // 2], record.id[len(record.id) // 2:]
+                print (firstread,secondread)
+                self.update_read_type(secondread,self.readtypes["Complement"])
+                #So here we need to a) add the new 2D read as a 2D read - then update the read status of the second read.
+                self.add_read_db(
+                    self.runidlink,
+                    record.id,
+                    self.readid[record.id]["read"],
+                    self.readid[record.id]["ch"],
+                    barcode_url,
+                    str(record.seq),
+                    record.format('fastq').split('\n')[3],
+                    passstatus,
+                    self.readtypes["1D^2"],
+                    self.readid[record.id]["start_time"]
+                )
+
+            else:
+                self.add_read_db(
+                    self.runidlink,
+                    record.id,
+                    self.readid[record.id]["read"],
+                    self.readid[record.id]["ch"],
+                    barcode_url,
+                    str(record.seq),
+                    record.format('fastq').split('\n')[3],
+                    passstatus,
+                    self.readtypes["Template"],
+                    self.readid[record.id]["start_time"]
+                )
 
             self.readid[record.id]["len"] = len(record.seq)
             self.cumulength += len(record.seq)
@@ -354,21 +390,6 @@ class MyHandler(FileSystemEventHandler):
         everyten = 0
         while self.running:
             print("processfiles running")
-            # if not os.path.exists(os.path.join(args.watchdir,args.callingdir)):
-            #    os.mkdir(os.path.join(args.watchdir,args.callingdir))
-            # print "reads queued:", self.lencreates()
-            # print "reads being processed:", self.lenprocessed()
-            # print "reads finished:", self.finished
-            # print "trackingdict length:", len(self.tracking_dict)
-            # print "file_descriptor length:", len(self.file_descriptor)
-            # print "albacoremark length:", len(self.albacoremark)
-            # print "albacorerunner length:", len(self.albacorerunner)
-            # print "albacoredone length:", len(self.albacoredone)
-            # print "joblist length:",len(self.joblist)
-
-
-            countingtime = 0
-            # print "running"
             for fastqfile, createtime in tqdm(sorted(self.creates.items(), key=lambda x: x[1])):
                 delaytime = 0
                 if (int(
