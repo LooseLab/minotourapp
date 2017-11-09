@@ -590,7 +590,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read):
         JobMaster.objects.filter(pk=job_master_id).update(running=False)
 
     else:
-        JobMaster.objects.filter(pk=job_master_id).update(running=False, last_read=last_read)
+        JobMaster.objects.filter(pk=job_master_id).update(running=False, last_read=last_read, read_count=F('read_count') + len(fastqs))
 
 
 @task()

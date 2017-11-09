@@ -3,3 +3,4 @@
 node_modules
 celerybeat-schedule
 debug.log
+celerybeat-schedule.db
