@@ -19,12 +19,15 @@ from watchdog.observers.polling import PollingObserver as Observer
 
 def parsefastq(fastq, rundict):
     #print ('processing reads')
-    for record in SeqIO.parse(fastq, "fastq"):
+    for record in tqdm(SeqIO.parse(fastq, "fastq")):
         descriptiondict = parsedescription(record.description)
         if descriptiondict["runid"] not in rundict:
             rundict[descriptiondict["runid"]] = Runcollection(args)
             rundict[descriptiondict["runid"]].add_run(descriptiondict)
         rundict[descriptiondict["runid"]].add_read(record, descriptiondict,fastq)
+    for runs in rundict:
+        rundict[runs].commit_reads()
+
 
 
 def parsedescription(description):
@@ -52,6 +55,10 @@ class Runcollection():
         self.readtypes=dict()
         self.statsrecord=dict()
         self.barcodes = dict()
+        self.runid = 0
+        self.readstore = list()
+        self.flowcelllink = ""
+
 
     def get_readnames_by_run(self):
         content = requests.get(self.runidlink + 'readnames', headers=header)
@@ -60,20 +67,45 @@ class Runcollection():
 
         number_pages = content_json.get('number_pages')
 
-        print ('Requesting readnames already uploaded to databases.')
-
         for page in tqdm(range(number_pages)):
 
             url = self.runidlink + 'readnames?page=%s'.format(page)
 
             content = requests.get(url, headers=header)
-
-            for read in json.loads(content.text):
+            # We have to recover the data component and loop through that to get the read names.
+            for read in json.loads(content.text)["data"]:
+                #print (read)
                 self.readnames.append(read)
 
+    def create_flowcell(self, name):
+        print ("Creating a new flowcell")
+        #Test to see if the flowcell exists.
+        r = requests.get(args.full_host+'api/v1/flowcells', headers=header)
+        flowcellname=name
+        if flowcellname not in r.text:
+            #print ("we need to create this flowcell")
+            createflowcell = requests.post(args.full_host+'api/v1/flowcells/', headers=header, json={"name": flowcellname})
+            self.flowcelllink = json.loads(createflowcell.text)["url"]
+        else:
+            #print (json.loads(r.text))
+            for flowcell in json.loads(r.text):
+                #print (flowcell["name"])
+                #print (flowcell["url"])
+                if flowcell["name"] == flowcellname:
+                    self.flowcelllink = flowcell["url"]
+                    break
+
+    def create_flowcell_run(self):
+        print ("Adding run to flowcell")
+        createflowcellrun = requests.post(self.flowcelllink,headers=header,json={"flowcell": self.flowcelllink, "run": self.runidlink})
+
     def add_run(self, descriptiondict):
-        #print("Seen a new run")
+        print("Seen a new run")
         # Test to see if the run exists
+        """
+        Note we need to do this properly - too many runs and this
+        response will start to be a dramatic bottleneck.
+        """
         r = requests.get(args.full_host+'api/v1/runs', headers=header)
 
         runid = descriptiondict["runid"]
@@ -95,11 +127,17 @@ class Runcollection():
                 print ("Houston - we have a problem!")
             else:
                 self.runidlink = json.loads(createrun.text)["url"]
+                self.runid = json.loads(createrun.text)["id"]
+                if self.args.is_flowcell:
+                    self.create_flowcell(self.args.run_name)
+                    self.create_flowcell_run()
         else:
             #print ('Run Exists.')
             for run in json.loads(r.text):
                 if run["run_id"] == runid:
+                    print (run)
                     self.runidlink = run["url"]
+                    self.runid = run["id"]
 
             #
             # Now fetch a list of reads that already exist at that location
@@ -121,12 +159,14 @@ class Runcollection():
                 item['name']: item['url']
             })
 
-    def add_read_db(self,runid,readid,read,channel,barcode,sequence,quality,ispass,type,starttime):
-        #print(runid,readid,read,channel,barcode,sequence,quality,ispass,type,starttime)
-        #runlink = args.full_host+'api/v1/runs/' + str(self.runidlink) + "/"
-        runlink = self.runidlink
+    def commit_reads(self):
         runlinkaddread = self.runidlink + "reads/"
-        #typelink = args.full_host+'api/v1/readtypes/' + str(type) + "/"
+        createread = requests.post(runlinkaddread, headers=header, json=self.readstore)
+        self.readstore = list()
+
+
+    def add_read_db(self,runid,readid,read,channel,barcode,sequence,quality,ispass,type,starttime):
+        runlink = self.runidlink
         typelink = type
         if readid not in self.readnames:
             payload = {
@@ -141,9 +181,11 @@ class Runcollection():
                 'start_time': starttime,
                 'type': typelink
             }
-            createread = requests.post(runlinkaddread, headers=header, json=payload)
+            self.readstore.append(payload)
+            if len(self.readstore) >=200:
+                self.commit_reads()
         else:
-            print ("Read Seen")
+            pass
 
     def add_or_update_stats(self,sample_time,total_length,max_length,min_length,average_length,number_of_reads,number_of_channels,type):
         runlink = args.full_host+'api/v1/runs/' + str(self.runidlink) + "/"
@@ -151,15 +193,15 @@ class Runcollection():
         payload = {'run_id': runlink, 'sample_time':sample_time,'total_length':total_length,'max_length':max_length,'min_length':min_length,'average_length':average_length,'number_of_reads':number_of_reads,'number_of_channels':number_of_channels,'type':typelink}
         if sample_time not in self.statsrecord.keys():
             createstats=requests.post(args.full_host+'api/v1/statistics/', headers=header, json=payload)
-            print (json.loads(createstats.text)["id"])
+            #print (json.loads(createstats.text)["id"])
             self.statsrecord[sample_time]=dict()
             self.statsrecord[sample_time]["id"]=json.loads(createstats.text)["id"]
             self.statsrecord[sample_time]['payload']=payload
         else:
-            print ("Seen these stats before!")
+            #print ("Seen these stats before!")
             if self.statsrecord[sample_time]['payload'] != payload:
-                print ("Record changed - needs updating")
-                print(payload)
+                #print ("Record changed - needs updating")
+                #print(payload)
                 # payload['id']=self.statsrecord[sample_time]['id']
                 # print (payload)
                 deletestats = requests.delete(
@@ -168,9 +210,18 @@ class Runcollection():
                 createstats = requests.post(args.full_host+'api/v1/statistics/', headers=header, json=payload)
                 self.statsrecord[sample_time]["id"] = json.loads(createstats.text)["id"]
                 self.statsrecord[sample_time]['payload'] = payload
-                print(createstats.text)
+                #print(createstats.text)
             else:
                 print ("Record not changed.")
+
+    def update_read_type(self,read_id,type):
+        payload = {'type': type}
+        updateread = requests.patch(args.full_host+'api/v1/runs/' + str(self.runid) + "/reads/" + str(read_id) +'/', headers=header, json=payload)
+        #print (updateread.text)
+
+    def check_1d2(self,readid):
+        if len(readid) > 64:
+            return True
 
     def check_pass(self,path):
         folders = os.path.split(path)
@@ -189,6 +240,7 @@ class Runcollection():
             self.readid[record.id] = dict()
             for item in descriptiondict:
                 self.readid[record.id][item] = descriptiondict[item]
+
             # print self.readid[record.id]
             tm = dateutil.parser.parse(self.readid[record.id]["start_time"])
             # print tm
@@ -254,18 +306,40 @@ class Runcollection():
             else:
                 barcode_url = self.barcodes["No barcode"]
 
-            self.add_read_db(
-                self.runidlink,
-                record.id,
-                self.readid[record.id]["read"],
-                self.readid[record.id]["ch"],
-                barcode_url,
-                str(record.seq),
-                record.format('fastq').split('\n')[3],
-                passstatus,
-                self.readtypes["Template"],
-                self.readid[record.id]["start_time"]
-            )
+            if self.check_1d2(record.id):
+                #print ("Seen a 1D^2 read. Exiting.")
+                #print (record.id)
+                #print (len(record.id))
+                firstread, secondread = record.id[:len(record.id) // 2], record.id[len(record.id) // 2:]
+                #print (firstread,secondread)
+                self.update_read_type(secondread,self.readtypes["Complement"])
+                #So here we need to a) add the new 2D read as a 2D read - then update the read status of the second read.
+                self.add_read_db(
+                    self.runidlink,
+                    record.id,
+                    self.readid[record.id]["read"],
+                    self.readid[record.id]["ch"],
+                    barcode_url,
+                    str(record.seq),
+                    record.format('fastq').split('\n')[3],
+                    passstatus,
+                    self.readtypes["1D^2"],
+                    self.readid[record.id]["start_time"]
+                )
+
+            else:
+                self.add_read_db(
+                    self.runidlink,
+                    record.id,
+                    self.readid[record.id]["read"],
+                    self.readid[record.id]["ch"],
+                    barcode_url,
+                    str(record.seq),
+                    record.format('fastq').split('\n')[3],
+                    passstatus,
+                    self.readtypes["Template"],
+                    self.readid[record.id]["start_time"]
+                )
 
             self.readid[record.id]["len"] = len(record.seq)
             self.cumulength += len(record.seq)
@@ -354,21 +428,6 @@ class MyHandler(FileSystemEventHandler):
         everyten = 0
         while self.running:
             print("processfiles running")
-            # if not os.path.exists(os.path.join(args.watchdir,args.callingdir)):
-            #    os.mkdir(os.path.join(args.watchdir,args.callingdir))
-            # print "reads queued:", self.lencreates()
-            # print "reads being processed:", self.lenprocessed()
-            # print "reads finished:", self.finished
-            # print "trackingdict length:", len(self.tracking_dict)
-            # print "file_descriptor length:", len(self.file_descriptor)
-            # print "albacoremark length:", len(self.albacoremark)
-            # print "albacorerunner length:", len(self.albacorerunner)
-            # print "albacoredone length:", len(self.albacoredone)
-            # print "joblist length:",len(self.joblist)
-
-
-            countingtime = 0
-            # print "running"
             for fastqfile, createtime in tqdm(sorted(self.creates.items(), key=lambda x: x[1])):
                 delaytime = 0
                 if (int(
@@ -485,6 +544,14 @@ if __name__ == '__main__':
     )
 
     parser.add(
+        '-f',
+        '--is_flowcell',
+        action='store_true',
+        help='If you add this flag, all runs added here will be considered as a single flow cell with the name set by the name flag.',
+        dest='is_flowcell',
+    )
+
+    parser.add(
         '-k',
         '--key',
         type=str,
@@ -528,6 +595,8 @@ if __name__ == '__main__':
 
     args.full_host = "http://" + args.host_name + ":" + str(args.port_number) + "/"
 
+    if args.is_flowcell:
+        print ("Flowcell option is set.")
     #GLobal creation of header (needs fixing)
     global header
     header = {'Authorization': 'Token ' + args.api_key, 'Content-Type': 'application/json'}

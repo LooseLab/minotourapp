@@ -1,7 +1,7 @@
 from django.db import models
 from reads.models import MinIONRun
 
-
+"""
 # Create your models here.
 class RunTabs(models.Model):
     class Meta:
@@ -23,3 +23,5 @@ class RunID(models.Model):
 
     def __str__(self):
         return "{}".format(self.run_id)
+
+"""

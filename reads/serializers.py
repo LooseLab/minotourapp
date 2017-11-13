@@ -299,7 +299,7 @@ class JobSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = JobMaster
-        fields = ('run_id','job_name','var1','var2','var3','complete')
+        fields = ('run_id','job_type','reference','last_read','tempfile_name','read_count','complete','running')
 
 
 class BarcodeSerializer(serializers.HyperlinkedModelSerializer):
@@ -401,3 +401,8 @@ class FlowCellRunSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = FlowCellRun
         fields = ('flowcell','id','run','name','barcodes')
+        read_only = (
+            'id',
+            'name',
+            'barcodes'
+        )
