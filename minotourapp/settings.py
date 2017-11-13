@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'communication',
     'assembly',
-    'tabs',
+#    'tabs',
 ]
 
 MIDDLEWARE = [

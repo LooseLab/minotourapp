@@ -63,11 +63,10 @@ def run_monitor():
     minion_runs = MinIONRun.objects.filter(active=True).distinct()
 
     for minion_run in minion_runs:
-
+        print ("fond a run", minion_run)
         run_jobs = JobMaster.objects.filter(run=minion_run).filter(running=False)
 
         for run_job in run_jobs:
-
             if run_job.job_type.name == "Alignment":
                 print("trying to run bwa alignment {} {} {} {}".format(
                     minion_run.id,
@@ -126,10 +125,10 @@ def slow_monitor():
 
         run_jobs = JobMaster.objects.filter(run=minion_run).filter(running=False)
 
-        for run_job in run_jobs:
-            if run_job.job_type.name == "Assembly":
-                print("Running Assembly")
-                run_minimap_assembly.delay(minion_run.id, run_job.id, run_job.tempfile_name, run_job.last_read)
+        #for run_job in run_jobs:
+        #    if run_job.job_type.name == "Assembly":
+        #        print("Running Assembly")
+        #        run_minimap_assembly.delay(minion_run.id, run_job.id, run_job.tempfile_name, run_job.last_read)
 
         if minion_run.last_entry() >= timediff or minion_run.last_read() >= timediff:
             cachesiz[str(minion_run.id)] = minion_run
@@ -410,7 +409,7 @@ def test_task(string, reference):
     for line in lines:
         print(line.id)
 
-
+'''
 @task()
 def run_minimap_assembly(runid, id, tmp, last_read):
 
@@ -484,7 +483,7 @@ def run_minimap_assembly(runid, id, tmp, last_read):
 
 
         JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read, tempfile_name=tmp)
-
+'''
 
 @task
 def run_minimap2_transcriptome(runid, id, reference, last_read):

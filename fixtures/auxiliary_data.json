@@ -1,0 +1,156 @@
+[
+{
+  "model": "reads.fastqreadtype",
+  "pk": 1,
+  "fields": {
+    "name": "Template"
+  }
+},
+{
+  "model": "reads.fastqreadtype",
+  "pk": 2,
+  "fields": {
+    "name": "Complement"
+  }
+},
+{
+  "model": "reads.fastqreadtype",
+  "pk": 3,
+  "fields": {
+    "name": "2D"
+  }
+},
+{
+  "model": "reads.fastqreadtype",
+  "pk": 4,
+  "fields": {
+    "name": "1D^2"
+  }
+},
+{
+  "model": "reads.jobtype",
+  "pk": 1,
+  "fields": {
+    "name": "ChanCalc",
+    "description": null,
+    "long_description": null,
+    "reference": false,
+    "transcriptome": false,
+    "readcount": false,
+    "private": true
+  }
+},
+{
+  "model": "reads.jobtype",
+  "pk": 2,
+  "fields": {
+    "name": "ProcAlign",
+    "description": null,
+    "long_description": null,
+    "reference": false,
+    "transcriptome": false,
+    "readcount": false,
+    "private": true
+  }
+},
+{
+  "model": "reads.jobtype",
+  "pk": 3,
+  "fields": {
+    "name": "Alignment",
+    "description": null,
+    "long_description": null,
+    "reference": false,
+    "transcriptome": false,
+    "readcount": false,
+    "private": true
+  }
+},
+{
+  "model": "reads.jobtype",
+  "pk": 4,
+  "fields": {
+    "name": "Minimap2",
+    "description": null,
+    "long_description": null,
+    "reference": false,
+    "transcriptome": false,
+    "readcount": false,
+    "private": true
+  }
+},
+{
+  "model": "reads.jobtype",
+  "pk": 5,
+  "fields": {
+    "name": "Assembly",
+    "description": null,
+    "long_description": null,
+    "reference": false,
+    "transcriptome": false,
+    "readcount": false,
+    "private": true
+  }
+},
+{
+  "model": "reads.minioneventtype",
+  "pk": 1,
+  "fields": {
+    "name": "active"
+  }
+},
+{
+  "model": "reads.minioneventtype",
+  "pk": 2,
+  "fields": {
+    "name": "inactive"
+  }
+},
+{
+  "model": "reads.minioneventtype",
+  "pk": 3,
+  "fields": {
+    "name": "sequencing"
+  }
+},
+{
+  "model": "reads.minioneventtype",
+  "pk": 4,
+  "fields": {
+    "name": "unplugged"
+  }
+},
+{
+  "model": "reads.minioneventtype",
+  "pk": 5,
+  "fields": {
+    "name": "connected"
+  }
+},
+{
+  "model": "auth.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$36000$WIj4Szji5k7x$zfURkLXp9upsGfmRg08SQY+TKihIN+yIbTWNML7yefo=",
+    "last_login": "2017-11-09T16:35:09.989Z",
+    "is_superuser": true,
+    "username": "demo",
+    "first_name": "",
+    "last_name": "",
+    "email": "demo@minotour.org",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2017-11-09T16:33:53.266Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "authtoken.token",
+  "pk": "5f496fb0de724bd6cb19bdb61f6f37bdef4107bc",
+  "fields": {
+    "user": 1,
+    "created": "2017-11-09T16:33:53.461Z"
+  }
+}
+]

@@ -1422,8 +1422,8 @@ function MinotourFlowCellApp() {
                         summaries[item.channel_number]['read_count']=0;
                         summaries[item.channel_number]['read_length']=0;
                     }
-                    summaries[item.channel_number['read_count']]+=parseInt(item.read_count);
-                    summaries[item.channel_number['read_length']]+=parseInt((parseInt(item.read_length)/1000).toFixed(0));
+                    summaries[item.channel_number]['read_count']+=parseInt(item.read_count);
+                    summaries[item.channel_number]['read_length']+=parseInt((parseInt(item.read_length)/1000).toFixed(0));
                     //summaries[item.channel_number] = {
                     //    'read_count': item.read_count,
                     //    'read_length': parseInt((parseInt(item.read_length)/1000).toFixed(0))
@@ -1432,7 +1432,6 @@ function MinotourFlowCellApp() {
                 }
 
                 self.channelSummary = summaries;
-                console.log(self.channelSummary);
                 self.updateChannelBasedCharts();
 
             }
@@ -1440,6 +1439,8 @@ function MinotourFlowCellApp() {
     };
 
     this.updateChannelBasedCharts = function () {
+        console.log("!!!!! Passing to updateChannelBasedCharts !!!!");
+        console.log(self.channelSummary);
         self.updatePoreChart(self.chartReadsPerPore, self.channelSummary, 'read_count');
         self.updatePoreChart(self.chartBasesPerPore, self.channelSummary, 'read_length');
     }
@@ -2558,6 +2559,8 @@ function MinotourApp() {
     };
 
     this.updateChannelBasedCharts = function () {
+        console.log("!!!!! Passing run data to updateChannelBasedCharts !!!!");
+        console.log(self.channelSummary)
         self.updatePoreChart(self.chartReadsPerPore, self.channelSummary, 'read_count');
         self.updatePoreChart(self.chartBasesPerPore, self.channelSummary, 'read_length');
     }

@@ -8,7 +8,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('reads', '0034_minionrunstatus_minknow_computer'),
+        #('reads', '0034_minionrunstatus_minknow_computer'),
         ('reads', '0036_auto_20170827_0748'),
     ]
 
