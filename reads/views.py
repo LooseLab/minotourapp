@@ -545,7 +545,7 @@ def read_list(request, pk):
         return Response(serializer.data)
 
     elif request.method == 'POST':
-        serializer = FastqReadSerializer(data=request.data, context={'request': request})
+        serializer = FastqReadSerializer(data=request.data, many=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -574,7 +574,7 @@ def minION_detail(request, pk):
 @api_view(['GET', 'PUT', 'DELETE'])
 def read_detail(request, pk):
     """
-    Retrieve, update or delete a run instance.
+    Retrieve, update or delete a read instance.
     """
     try:
         read = FastqRead.objects.get(pk=pk)
@@ -620,7 +620,7 @@ def read_update(request,pk,readid):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
             print ('State not needed to change.')
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response("state not needed", status=status.HTTP_201_CREATED)
 
 
 
@@ -915,18 +915,33 @@ def tasks_detail_all(request,pk):
     return HttpResponse(json.dumps(result), content_type="application/json")
 
 
-@api_view(['GET'])
+@api_view(['GET','POST'])
 def flowcell_list(request):
-    queryset = FlowCell.objects.filter(owner=request.user)
-    serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
-    return Response(serializer.data)\
+    if request.method == 'GET':
+        queryset = FlowCell.objects.filter(owner=request.user)
+        serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        serializer = FlowCellSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save(owner=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET'])
+@api_view(['GET','POST'])
 def flowcell_detail(request,pk):
-    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
-    serializer = FlowCellRunSerializer(queryset, many=True, context={'request': request})
-    return Response(serializer.data)
+    if request.method == 'GET':
+        queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+        serializer = FlowCellRunSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        serializer = FlowCellRunSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 def flowcell_summary_barcode(request,pk):
