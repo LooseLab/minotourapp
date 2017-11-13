@@ -1833,10 +1833,24 @@ function MinotourApp() {
             "Read Length By Chromosome".toUpperCase()
         );
 
-        this.ChartNumContigs = this.makeChart3(
+        this.ChartNumContigs = this.makeChart4(
             "num-contigs",
             "Number of Contigs Assembled".toUpperCase(),
             "Number of Contigs".toUpperCase(),
+            "Number of input Reads".toUpperCase()
+        );
+
+        this.ChartN50Contigs = this.makeChart4(
+            "n50-contigs",
+            "Assembly N50".toUpperCase(),
+            "Assembly N50 (bp)".toUpperCase(),
+            "Number of input Reads".toUpperCase()
+        );
+
+        this.ChartSumContigs = this.makeChart4(
+            "sum-contigs",
+            "Total length of Assembly".toUpperCase(),
+            "Total length (bp)".toUpperCase(),
             "Number of input Reads".toUpperCase()
         );
 
@@ -2914,21 +2928,55 @@ function MinotourApp() {
             //console.log(data);
 
             var ncontigs_list = new Array();
+            var n50_list = new Array();
+            var sum_list = new Array();
 
             for (var i = 0; i < data.length; i++){
 
               var item = data[i];
               ncontigs_list.push([item.nreads, item.ncontigs]);
+              n50_list.push([item.nreads, item.n50len]);
+              sum_list.push([item.nreads, item.totlen]);
 
             }
 
             self.updateNumContigsChart(ncontigs_list);
+            self.updateN50ContigsChart(n50_list);
+            self.updateSumContigsChart(sum_list);
 
         });
     }
 
     this.updateNumContigsChart = function (data) {
       var chart = this.ChartNumContigs;
+
+      while (chart.series.length > 0) {
+          chart.series[0].remove();
+      }
+
+      chart.addSeries({
+          name: "assembly_v1",
+          data: data
+      });
+
+    }
+
+    this.updateN50ContigsChart = function (data) {
+      var chart = this.ChartN50Contigs;
+
+      while (chart.series.length > 0) {
+          chart.series[0].remove();
+      }
+
+      chart.addSeries({
+          name: "assembly_v1",
+          data: data
+      });
+
+    }
+
+    this.updateSumContigsChart = function (data) {
+      var chart = this.ChartSumContigs;
 
       while (chart.series.length > 0) {
           chart.series[0].remove();
