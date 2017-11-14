@@ -12,447 +12,467 @@
 
         <!-- Main content -->
         <section class="content">
-
             <!-- Main top nav bar -->
             <div class="nav-tabs-custom">
                 <ul class="nav nav-tabs">
-                    <li class="active"><a id="run-summary-data">Run Summary</a></li>
-                    <li><a id='nav-live-data'>Live Event Data</a></li>
-                    <li><a id='nav-basecalled-data'>Basecalled Data</a></li>
-                    <li><a id='nav-seq-id'>Sequence Identification</a></li>
-                    <li><a id='nav-seq-assembly'>Assembly</a></li>
-                    <li><a id='nav-seq-map'>Genome Mapping</a></li>
-                    <li><a id='nav-seq-map-trans'>Transcriptome Mapping</a></li>
-                    <li><a id='nav-tasks'>Tasks</a></li>
+                    <li class="active"><a href="#tab-summary-data" data-toggle="tab">Run Summary</a></li>
+{#                    <li><a style="display: none;" href="#panel-event-data" data-toggle="tab" id='nav-event-data'>Live data</a></li>#}
+{#                    <li><a style="display: none;" href="#panel-basecalled-data" data-toggle="tab" id='nav-basecalled-data'>Basecalled data</a></li>#}
+{#                    <li><a style="display: none;" href="#panel-sequence-id" data-toggle="tab" id='nav-sequence-id'>Sequence Identification</a></li>#}
+{#                    <li><a style="display: none;" href="#panel-sequence-map" data-toggle="tab" id='nav-sequence-map'>Mapping</a></li>#}
+                    <li id="tasks-li"><a href="#tab-tasks" data-toggle="tab">Tasks</a></li>
                 </ul>
             </div>
             <!-- end of Main top nav bar -->
-
-            <!-- Panel summary data -->
-            <div id="panel-summary-data" class="row">
-                <div class="col-md-4">
-                    <div class='panel panel-info'>
-                        <div class='panel-heading'>
-                            <h3 class='panel-title'>minKNOW real time data</h3>
-                        </div>
-                        <div class='panel-body'>
-                            <div class='table-responsive'>
-                                <table class='table table-condensed'>
-                                    <tr>
-                                        <th>Category
-                                        </td>
-                                        <th>Info
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td>Run Start Time</td>
-                                        <td><span id="RunStartTime"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>minKNOW computer name</td>
-                                        <td><span id="ComputerName"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>MinION Name</td>
-                                        <td><span id="MinIONName"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>ASIC ID</td>
-                                        <td><span id="asicid"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Current Script</td>
-                                        <td><span id="ScriptID"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Sample Name</td>
-                                        <td><span id="SampleName"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Run ID</td>
-                                        <td><span id="RunID"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>MinKNOW Version</td>
-                                        <td><span id="MinKNOWVersion"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Flow Cell ID</td>
-                                        <td><span id="FlowCellID"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Run Name</td>
-                                        <td><span id="RunName"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Sequencing Now</td>
-                                        <td><span id="CurrentlySequencing"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Barcoded</td>
-                                        <td><span id="Barcoded"></span></td>
-                                    </tr>
-                                </table>
+            <div class="tab-content">
+                <!-- Panel summary data -->
+                <div id="tab-summary-data" class="tab-pane fade in active">
+                    <div class="box-body">
+                    <div class="col-md-6">
+                        <div class='panel panel-info'>
+                            <div class='panel-heading'>
+                                <h3 class='panel-title'>minKNOW real time data</h3>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-8">
-                    <div class="panel panel-info">
-                        <div class="panel-heading">
-                            <h3 class="panel-title">
-                                <i class="fa fa-comments"></i> MinKNOW Messages
-                            </h3>
-                        </div>
-
-                        <div id="Messages">
-                            <div class="panel-body" style="max-height: 1;overflow-y: scroll;">
-                                Fetching Messages
-                                <div class="progress">
-                                    <div class="progress-bar progress-bar-striped active"
-                                         role="progressbar"
-                                         aria-valuenow="45" aria-valuemin="0"
-                                         aria-valuemax="100" style="width: 45%">
-                                        <span class="sr-only">45% Complete</span>
-                                    </div>
+                            <div class='panel-body'>
+                                <div class='table-responsive'>
+                                    <table class='table table-condensed'>
+                                        <tr>
+                                            <th>Category
+                                            </td>
+                                            <th>Info
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Run Start Time</td>
+                                            <td><span id="RunStartTime"></span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>minKNOW computer name</td>
+                                            <td><span id="ComputerName"></span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>MinION Name</td>
+                                            <td><span id="MinIONName"></span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>ASIC ID</td>
+                                            <td><span id="asicid"></span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Current Script</td>
+                                            <td><span id="ScriptID"></span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Sample Name</td>
+                                            <td><span id="SampleName"></span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Run ID</td>
+                                            <td><span id="RunID"></span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>MinKNOW Version</td>
+                                            <td><span id="MinKNOWVersion"></span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Flow Cell ID</td>
+                                            <td><span id="FlowCellID"></span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Run Name</td>
+                                            <td><span id="RunName"></span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Sequencing Now</td>
+                                            <td><span id="CurrentlySequencing"></span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Barcoded</td>
+                                            <td><span id="Barcoded"></span></td>
+                                        </tr>
+                                    </table>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="panel panel-info">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">
+                                    <i class="fa fa-comments"></i> MinKNOW Messages
+                                </h3>
+                            </div>
 
+                            <div id="Messages">
+                                <div class="panel-body" style="max-height: 1;overflow-y: scroll;">
+                                    Fetching Messages
+                                    <div class="progress">
+                                        <div class="progress-bar progress-bar-striped active"
+                                             role="progressbar"
+                                             aria-valuenow="45" aria-valuemin="0"
+                                             aria-valuemax="100" style="width: 45%">
+                                            <span class="sr-only">45% Complete</span>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    </div>
+                </div>
+                <!-- End of Panel summary data -->
+
+                <!-- Panel live data -->
+                <div id="tab-live-data" class="tab-pane fade">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4 class="panel-heading">We're going to estimate yield in bases
+                                here.</h4>
+                            <p style='text-align: center;'>If basecalling is occuring concurrently with the run and data
+                                uploaded to
+                                minoTour, the scaling from events to bases is dynamically
+                                calculated. If
+                                not, the scaling factor can be chosen in the drop down
+                                box.</p>
+                            <div class="col-md-2">
+                                <p> Set sequencing speed: </p>
+                                <select id="seqspeed">
+                                    <option selected="selected">450 b/s</option>
+                                    <option>250 b/s</option>
+                                    <option>70 b/s</option>
+                                </select>
+                            </div>
+                            <div>
+                                <div class="col-md-2">
+                                    <p>Estimated Current Yield (bases) <strong><span
+                                            id="speedresult"></span></strong></p>
+                                </div>
+                                <div class="col-md-2">
+                                    <p>Estimated Average Read Length (bases) <strong><span
+                                            id="averageresult"></span></strong></p>
+                                </div>
+                                <div class="col-md-2">
+                                    <p>Theoretical Predicted Yield at 24 hours (bases)
+                                        <strong><span
+                                                id="end24"></span></strong></p>
+                                </div>
+                                <div class="col-md-2">
+                                    <p> Theoretical Predicted Yield at 48 hours (bases)
+                                        <strong><span
+                                                id="end48"></span></strong></p>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                </div>
-            </div>
-            <!-- End of Panel summary data -->
+                    <div class="row">
+                        <div id="chart-yield" class="col-md-6 highcharts"
+                             style="height:400px; display:block;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+                        </div>
 
-            <!-- Panel live data -->
-            <div id='panel-live-data' class="row">
-                <div class="row">
+                        <div id="poreshizzle" class="col-md-5 highcharts"
+                             style="height:400px;display:block;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div id="live-histogram" class="col-md-12 highcharts-container"
+                             style="width:100%; height:400px;display:block;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div id="yield-projection" class="col-md-12 highcharts-container"
+                             style="width:100%; height:400px;display:block;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+                            Projections
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div id="live-strand" class="col-md-6 highcharts"
+                             style="width:50%; height:400px;display:block;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Strand
+                        </div>
+
+                        <div id="live-occupancy" class="col-md-6 highcharts"
+                             style="width:50%; height:400px;display:block;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Occupancy
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div id="live-porestate" class="col-md-6 highcharts"
+                             style="width:50%; height:400px;display:block;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+                            Projections
+                        </div>
+
+                        <div id="live-currentratio" class="col-md-6 highcharts"
+                             style="width:50%; height:400px;display:block;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+                            Projections
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div id="live-temperature" class="col-md-6 highcharts"
+                             style="width:50%; height:400px;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+                            Projections
+                        </div>
+
+                        <div id="live-voltage" class="col-md-6 highcharts"
+                             style="width:50%; height:400px;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+                            Projections
+                        </div>
+                    </div>
+                </div>
+                <!-- End of Panel live data -->
+
+                <!-- Panel basecalled data -->
+                <div id="tab-basecalled-data" class="tab-pane fade">
                     <div class="col-md-12">
-                        <h4 class="panel-heading">We're going to estimate yield in bases
-                            here.</h4>
-                        <p style='text-align: center;'>If basecalling is occuring concurrently with the run and data
-                            uploaded to
-                            minoTour, the scaling from events to bases is dynamically
-                            calculated. If
-                            not, the scaling factor can be chosen in the drop down
-                            box.</p>
-                        <div class="col-md-2">
-                            <p> Set sequencing speed: </p>
-                            <select id="seqspeed">
-                                <option selected="selected">450 b/s</option>
-                                <option>250 b/s</option>
-                                <option>70 b/s</option>
-                            </select>
-                        </div>
-                        <div>
-                            <div class="col-md-2">
-                                <p>Estimated Current Yield (bases) <strong><span
-                                        id="speedresult"></span></strong></p>
-                            </div>
-                            <div class="col-md-2">
-                                <p>Estimated Average Read Length (bases) <strong><span
-                                        id="averageresult"></span></strong></p>
-                            </div>
-                            <div class="col-md-2">
-                                <p>Theoretical Predicted Yield at 24 hours (bases)
-                                    <strong><span
-                                            id="end24"></span></strong></p>
-                            </div>
-                            <div class="col-md-2">
-                                <p> Theoretical Predicted Yield at 48 hours (bases)
-                                    <strong><span
-                                            id="end48"></span></strong></p>
-                            </div>
+                        <div class="nav-tabs-custom">
+                            <ul class="nav nav-tabs" id="nav-tabs-barcodes"></ul>
                         </div>
                     </div>
-                </div>
 
-                <div class="row">
-                    <div id="chart-yield" class="col-md-6 highcharts"
-                         style="height:400px; display:block;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+                    <div id="reads-called" class="col-md-6 highcharts-container"
+                         style="width:25%; height:400px;">
+                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
+                        Read Numbers
                     </div>
 
-                    <div id="poreshizzle" class="col-md-5 highcharts"
-                         style="height:400px;display:block;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div id="live-histogram" class="col-md-12 highcharts-container"
-                         style="width:100%; height:400px;display:block;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div id="yield-projection" class="col-md-12 highcharts-container"
-                         style="width:100%; height:400px;display:block;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
-                        Projections
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div id="live-strand" class="col-md-6 highcharts"
-                         style="width:50%; height:400px;display:block;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Strand
+                    <div id="yield" class="col-md-6 highcharts-container"
+                         style="width:25%; height:400px;">
+                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
+                        Read Numbers
                     </div>
 
-                    <div id="live-occupancy" class="col-md-6 highcharts"
-                         style="width:50%; height:400px;display:block;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Occupancy
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div id="live-porestate" class="col-md-6 highcharts"
-                         style="width:50%; height:400px;display:block;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
-                        Projections
+                    <div id="average-read-length"
+                         class="col-md-6 highcharts-container"
+                         style="width:25%; height:400px;">
+                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
+                        Read Numbers
                     </div>
 
-                    <div id="live-currentratio" class="col-md-6 highcharts"
-                         style="width:50%; height:400px;display:block;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
-                        Projections
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div id="live-temperature" class="col-md-6 highcharts"
-                         style="width:50%; height:400px;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
-                        Projections
+                    <div id="maximum-read-length"
+                         class="col-md-6 highcharts-container"
+                         style="width:25%; height:400px;">
+                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
+                        Read Numbers
                     </div>
 
-                    <div id="live-voltage" class="col-md-6 highcharts"
-                         style="width:50%; height:400px;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
-                        Projections
+                    <div id="average-read-lengths-overtime"
+                         class="col-md-12 highcharts-container"
+                         style="width:100%; height:400px;">
+                        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
                     </div>
-                </div>
-            </div><!-- End of Panel live data -->
 
-            <!-- Panel basecalled data -->
-            <div id='panel-basecalled-data' class="row">
-
-                <div class="col-md-12">
-                    <div class="nav-tabs-custom">
-                        <ul class="nav nav-tabs" id="nav-tabs-barcodes"></ul>
-                    </div>
-                </div>
-
-                <div id="reads-called" class="col-md-6 highcharts-container"
-                     style="width:25%; height:400px;">
-                    <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
-                    Read Numbers
-                </div>
-
-                <div id="yield" class="col-md-6 highcharts-container"
-                     style="width:25%; height:400px;">
-                    <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
-                    Read Numbers
-                </div>
-
-                <div id="average-read-length"
-                     class="col-md-6 highcharts-container"
-                     style="width:25%; height:400px;">
-                    <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
-                    Read Numbers
-                </div>
-
-                <div id="maximum-read-length"
-                     class="col-md-6 highcharts-container"
-                     style="width:25%; height:400px;">
-                    <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
-                    Read Numbers
-                </div>
-
-                <div id="average-read-lengths-overtime"
-                     class="col-md-12 highcharts-container"
-                     style="width:100%; height:400px;">
-                    <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
-                </div>
-
-                <div id="histogram-read-lengths"
-                     class="col-md-12 highcharts-container"
-                     style="width:100%; height:400px;">
-                    <i class="fa fa-cog fa-spin fa-3x"></i>
-                    Calculating histogram of read lengths
-                </div>
-
-                <div id="histogram-bases-sequenced-by-read-length"
-                     class="col-md-12 highcharts-container"
-                     style="width:100%; height:400px;">
-                    <i class="fa fa-cog fa-spin fa-3x"></i>
-                    Calculating bases sequenced by read length
-
-                </div>
-
-                <div id="cumulative-number-reads-overtime"
-                     class="col-md-12 highcharts-container"
-                     style="width:100%; height:400px;">
-                    <i class="fa fa-cog fa-spin fa-3x"></i>
-                    Calculating
-                </div>
-
-                <div id="sequencing-rate"
-                     class="col-md-12 highcharts-container"
-                     style="width:100%; height:400px;">
-                    <i class="fa fa-cog fa-spin fa-3x"></i>
-                    Calculating
-                </div>
-
-                <div id="sequencing-speed"
-                     class="col-md-12 highcharts-container"
-                     style="width:100%; height:400px;">
-                    <i class="fa fa-cog fa-spin fa-3x"></i>
-                    Calculating
-                </div>
-
-                <div id="reads-per-pore"
-                     class="col-md-6"
-                     style="height:600px;">
-                    <i class="fa fa-cog fa-spin fa-3x"></i>
-                    Calculating reads per pore
-                </div>
-
-                <div id="bases-per-pore"
-                     class="col-md-6"
-                     style="height:600px;">
-                    <i class="fa fa-cog fa-spin fa-3x"></i>
-                    Calculating reads per pore
-                </div>
-
-            </div>
-            <!-- End of Panel basecalled data -->
-
-            <!-- Panel sequence identification -->
-            <div id="panel-seq-id" class="row">
-                <div class="row">
-                    <div class="col-md-12">
-                        Sequence Identification Content
-                        <div id="read_type_select"><select id="krakenSelectRead"></select></div>
-                        <div id="barcode_type_select"><select id="krakenSelectBarcode"></select></div>
-                        <div id="range_select"><input id="lowerboundselect" type="range" min="0" max="10"></input></div>
-                        <div id="kraken_barcode_select"></div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div id="kraken-sankey"
-                         class="col-md-12 highcharts"
-                         style="width:100%; height:800px;">
+                    <div id="histogram-read-lengths"
+                         class="col-md-12 highcharts-container"
+                         style="width:100%; height:400px;">
                         <i class="fa fa-cog fa-spin fa-3x"></i>
-                        Select a read type or barcode to generate a plot.
+                        Calculating histogram of read lengths
                     </div>
-                </div>
-            </div>
-            <!-- End of Panel sequence identification -->
 
-            <!-- Panel sequence mapping -->
-            <div id="panel-seq-map" class="row">
-                <div class="row">
-                    <div id="per-chrom-cov"
-                         class="col-md-12 highcharts"
+                    <div id="histogram-bases-sequenced-by-read-length"
+                         class="col-md-12 highcharts-container"
+                         style="width:100%; height:400px;">
+                        <i class="fa fa-cog fa-spin fa-3x"></i>
+                        Calculating bases sequenced by read length
+
+                    </div>
+
+                    <div id="cumulative-number-reads-overtime"
+                         class="col-md-12 highcharts-container"
                          style="width:100%; height:400px;">
                         <i class="fa fa-cog fa-spin fa-3x"></i>
                         Calculating
                     </div>
-                </div>
 
-                <div class="row">
-                    <div id="per-chrom-cov-norm"
-                         class="col-md-12 highcharts"
+                    <div id="sequencing-rate"
+                         class="col-md-12 highcharts-container"
                          style="width:100%; height:400px;">
                         <i class="fa fa-cog fa-spin fa-3x"></i>
                         Calculating
                     </div>
-                </div>
 
-                <div class="row">
-                    <div id="per-chrom-avg"
-                         class="col-md-12 highcharts"
+                    <div id="sequencing-speed"
+                         class="col-md-12 highcharts-container"
                          style="width:100%; height:400px;">
                         <i class="fa fa-cog fa-spin fa-3x"></i>
                         Calculating
                     </div>
+
+                    <div id="reads-per-pore"
+                         class="col-md-6"
+                         style="height:600px;">
+                        <i class="fa fa-cog fa-spin fa-3x"></i>
+                        Calculating reads per pore
+                    </div>
+
+                    <div id="bases-per-pore"
+                         class="col-md-6"
+                         style="height:600px;">
+                        <i class="fa fa-cog fa-spin fa-3x"></i>
+                        Calculating reads per pore
+                    </div>
                 </div>
+                <!-- End of Panel basecalled data -->
 
-                <div class="row">
-                    <form class="form-horizontal">
-                        <div class="form-group">
-                            <label class="col-sm-2 control-label">Chromosome</label>
-
-                            <div class="col-sm-10 control-label" style="height: 100%; text-align: left;">
-                                <select id="chromosome-id-select"></select>
-                            </div>
+                <!-- Panel sequence identification -->
+                <div id="tab-seq-id" class="tab-pane fade">
+                    <div class="row">
+                        <div class="col-md-12">
+                            Sequence Identification Content
+                            <div id="read_type_select"><select id="krakenSelectRead"></select></div>
+                            <div id="barcode_type_select"><select id="krakenSelectBarcode"></select></div>
+                            <div id="range_select"><input id="lowerboundselect" type="range" min="0" max="10"></input></div>
+                            <div id="kraken_barcode_select"></div>
                         </div>
-                    </form>
-                </div>
-                <div class="row">
-                    <div id="chromosome-coverage"
-                         class="col-md-12 highcharts"
-                         style="width:100%; height:400px;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i>
-                        Calculating
+                    </div>
+
+                    <div class="row">
+                        <div id="kraken-sankey"
+                             class="col-md-12 highcharts"
+                             style="width:100%; height:800px;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i>
+                            Select a read type or barcode to generate a plot.
+                        </div>
                     </div>
                 </div>
+                <!-- End of Panel sequence identification -->
 
-                <span id="mapping-data"></span>
-            </div><!-- End of Panel sequence mapping -->
+                <!-- Panel sequence mapping -->
+                <div id="tab-seq-map" class="tab-pane fade">
+                    <div class="row">
+                        <div id="per-chrom-cov"
+                             class="col-md-12 highcharts"
+                             style="width:100%; height:400px;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i>
+                            Calculating
+                        </div>
+                    </div>
 
-            <!-- Panel sequence assembly -->
-            <div id="panel-seq-assembly" class="row">
-                <div class="row">
-                    <div id="num-contigs"
-                         class="col-md-12 highcharts"
-                         style="width:100%; height:400px;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i>
-                        Calculating
+                    <div class="row">
+                        <div id="per-chrom-cov-norm"
+                             class="col-md-12 highcharts"
+                             style="width:100%; height:400px;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i>
+                            Calculating
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div id="per-chrom-avg"
+                             class="col-md-12 highcharts"
+                             style="width:100%; height:400px;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i>
+                            Calculating
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <form class="form-horizontal">
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">Chromosome</label>
+
+                                <div class="col-sm-10 control-label" style="height: 100%; text-align: left;">
+                                    <select id="chromosome-id-select"></select>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="row">
+                        <div id="chromosome-coverage"
+                             class="col-md-12 highcharts"
+                             style="width:100%; height:400px;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i>
+                            Calculating
+                        </div>
+                    </div>
+
+                    <span id="mapping-data"></span>
+                </div>
+                <!-- End of Panel sequence mapping -->
+
+                <!-- Panel sequence assembly -->
+                <div id="tab-sequence-assembly" class="tab-pane fade">
+                    <div class="row">
+                        <div id="num-contigs"
+                             class="col-md-12 highcharts"
+                             style="width:100%; height:400px;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i>
+                            Calculating
+                        </div>
+                    </div>
+
+                    <span id="assembly-data"></span>
+                </div>
+                <!-- End of Panel sequence mapping -->
+
+                <!-- Panel transcriptome mapping -->
+                <div id="tab-trans-map" class="tab-pane fade">
+                    Transcriptome Mapping Content
+                    <div class="row">
+                        <div id="xy_scat_len" class="col-md-12 highcharts" style="width:100%; height:400px;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i>
+                            Calculating.
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div id="trans_top100" class="col-md-12 highcharts" style="width:100%; height:400px;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i>
+                            Calculating.
+                        </div>
                     </div>
                 </div>
+                <!-- End of Panel transcriptome mapping -->
 
-                <span id="assembly-data"></span>
-            </div><!-- End of Panel sequence mapping -->
-
-
-            <!-- Panel transcriptome mapping -->
-            <div id="panel-trans-map" class="row">
-                Transcriptome Mapping Content
-                <div class="row">
-                    <div id="xy_scat_len" class="col-md-12 highcharts" style="width:100%; height:400px;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i>
-                        Calculating.
-                    </div>
+                <!-- Panel tasks -->
+                <div id="tab-tasks" class="tab-pane fade">
+                    <h2 class="panel-heading">Run analysis tasks on reads.</h2>
+                    <span id="tasks"></span>
                 </div>
-                <div class="row">
-                    <div id="trans_top100" class="col-md-12 highcharts" style="width:100%; height:400px;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i>
-                        Calculating.
-                    </div>
-                </div>
+                <!-- End of Panel tasks -->
             </div>
-
-            <!-- Panel tasks -->
-            <div id="panel-tasks" class="row">
-                <h2 class="panel-heading">Run analysis tasks on reads.</h2>
-                <span id="tasks"></span>
-            </div>
-            <!-- End of Panel tasks -->
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 {% endblock %}
 {% block javascript %}
     {#    <script src="{% static 'web/minotour.js' %}?{% now 'c' %}"></script>#}
-    <script>
-        $(document).ready(function () {
-            var app = new MinotourApp();
-            app.init();
+<script>
+$(document).ready(function () {
+    var app = new MinotourApp();
+    app.init();
+    checkTabs();
 
+    function checkTabs() {
+        var run_id = document.getElementById("run-id").innerText;
+        var url = "/api/v1/tabs/" + run_id;
+        $.getJSON( url, function( data ) {
+            var items = [];
+            $.each(data, function (key, value) {
+                var obj = {tab_id: value[0], tab_title: value[1], tab_position: value[2]};
+                items.push(obj);
+            });
+            items.sort(function (a, b) {
+                return a.tab_position - b.tab_position;
+            });
+            $.each(items, function (key, value) {
+                var element = '<li><a href="#' + value.tab_id + '" data-toggle="tab">' + value.tab_title + '</a></li>';
+                $('#tasks-li').before(element);
+            });
         });
-    </script>
+    };
+});
+</script>
 {% endblock %}

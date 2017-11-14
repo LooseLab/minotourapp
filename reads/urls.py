@@ -201,4 +201,9 @@ urlpatterns = [
         views.flowcell_channel_summary,
         name="flowcellchannelsummary-list"
     ),
+    url(
+        r'^api/v1/tabs/(?P<pk>[0-9]+)/$',
+        views.tabs_details,
+        name="tabs-details"
+    ),
 ]

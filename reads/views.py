@@ -1019,3 +1019,10 @@ def flowcell_channel_summary(request, pk):
     serializer = ChannelSummarySerializer(queryset, many=True, context={'request': request})
 
     return Response(serializer.data)
+
+@api_view(['GET'])
+def tabs_details(request, pk):
+    """
+    Return tab_id, tab_title, and tab_position for a given run.
+    """
+    return Response(JobMaster.objects.filter(run_id=pk).values_list('job_type__tab_id', 'job_type__tab_title', 'job_type__tab_position'))
