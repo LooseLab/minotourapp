@@ -684,7 +684,7 @@ function MinotourFlowCellApp() {
             "Number of reads".toUpperCase()
         );
 
-        this.chartHistogramBasesSequencedByReadLength = this.makeChart2(
+    this.chartHistogramBasesSequencedByReadLength = this.makeChart2(
             "histogram-bases-sequenced-by-read-length",
             "Histogram of Bases Sequenced by Read Length".toUpperCase(),
             "Number of bases".toUpperCase()
@@ -1584,9 +1584,9 @@ function MinotourFlowCellApp() {
                 }
             }
             self.barcodes = Array.from(barcodes).sort();
-            console.log(self.barcodes);
-            console.log("This is the data we are logging.");
-            console.log(data);
+            //console.log(self.barcodes);
+            //console.log("This is the data we are logging.");
+            //console.log(data);
             self.rundata = data;
             self.updateBarcodeNavTab();
             self.requestSummaryByMinuteData(self.id);
@@ -1599,7 +1599,7 @@ function MinotourFlowCellApp() {
             //console.log(self.rundata);
 
 
-            //self.getlivedata(self.rundata);
+            self.getlivedata(self.rundata);
 
 
 
