@@ -238,6 +238,31 @@ function makeChart4(divName, chartTitle, yAxisTitle, xAxisTitle) {
     return chart;
 }
 
+function makeBoxPlot(divName, chartTitle, yAxisTitle) {
+    var chart = Highcharts.chart(divName, {
+        chart: {
+            type : 'boxplot'
+        },
+        title : {
+            text: chartTitle
+        },
+        legend : {
+            enabled : true
+        },
+        xAxis : {
+            type: 'category'
+        },
+        yAxis : {
+            title : {
+                text : yAxisTitle
+            },
+            min : 0
+        }
+    });
+
+    return chart;
+}
+
 function makeLiveHistogram(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.chart(divName, {
         chart: {
@@ -1560,6 +1585,7 @@ function MinotourApp() {
     this.makeChart2 = makeChart2;
     this.makeChart3 = makeChart3;
     this.makeChart4 = makeChart4;
+    this.makeBoxPlot = makeBoxPlot;
     this.makeChartlabels = makeChartlabels;
     this.makeLiveHistogram = makeLiveHistogram;
     this.makeYieldProjection = makeYieldProjection;
@@ -1855,6 +1881,12 @@ function MinotourApp() {
             "Total length of Assembly".toUpperCase(),
             "Total length".toUpperCase(),
             "Number of input Reads".toUpperCase()
+        );
+
+        this.ChartBoxPlotContigs = this.makeBoxPlot(
+            "contigs-boxplot",
+            "Contig Lengths per barcode".toUpperCase(),
+            "Contig Length".toUpperCase()
         );
 
         this.chart_yield = this.makeChart(
@@ -2972,6 +3004,7 @@ function MinotourApp() {
                 latest[item.barcode_name][item.type_name]['n50'] = item.n50len;
                 latest[item.barcode_name][item.type_name]['sum'] = item.totlen;
                 latest[item.barcode_name][item.type_name]['time'] = item.timecreated;
+                latest[item.barcode_name][item.type_name]['allcontigs'] = item.allcontigs;
 
               }
 
@@ -2983,6 +3016,7 @@ function MinotourApp() {
             self.updateAssemblyCharts(self.ChartSumContigs, 'sum');
 
             self.createAssemblyTable();
+            self.updateAssemblyBoxplot();
 
           }
 
@@ -3007,6 +3041,46 @@ function MinotourApp() {
           }
       }
 
+    }
+
+    this.updateAssemblyBoxplot = function(){
+        var chart = self.ChartBoxPlotContigs;
+
+        var barcats = [];
+        var byreadtype = {};
+
+        for (var barcode of Object.keys(self.assemblyLatest)) {
+
+            barcats.push(barcode);
+
+            for (var type of Object.keys(self.assemblyLatest[barcode])) {
+
+                if (byreadtype[type] === undefined){
+                    byreadtype[type] = [];
+                }
+                var contigsizelist = JSON.parse(self.assemblyLatest[barcode][type]['allcontigs']);
+                byreadtype[type].push(contigsizelist.sort(function (a, b) {  return a - b;  }));
+            }
+        }
+
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        chart.update({
+            xAxis: {
+                categories: barcats
+            }
+        });
+
+        for (var type of Object.keys(byreadtype)){
+
+          chart.addSeries({
+              name: type,
+              data: byreadtype[type]
+          });
+
+        }
     }
 
     this.createAssemblyTable = function () {

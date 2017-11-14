@@ -34,6 +34,7 @@ class GfaSummary(models.Model):
     totlen = models.IntegerField()  #	int	Total contig length
     n50len = models.IntegerField() #    int Contig N50
     meanlen = models.IntegerField() #   int Mean contig length
+    allcontigs = models.TextField() #   string array of contig lengths
     timecreated = models.DateTimeField(auto_now_add=True)
 
     def barcode_name(self):
@@ -43,4 +44,4 @@ class GfaSummary(models.Model):
         return self.readtype.name
 
     def __str__(self):
-        return"{} {}".format(self.run,self.nreads)
+        return"{} {} {}".format(self.run, self.barcode.name, self.nreads)

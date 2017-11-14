@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import tempfile
+import numpy as np
 from datetime import datetime, timedelta
 
 import pytz
@@ -122,20 +123,20 @@ def slow_monitor():
 
     timediff = utcnow() - timedelta(days=1)
 
-    minion_runs2 = MinIONRun.objects.filter(active=True).distinct()
+    active_runs = MinIONRun.objects.filter(active=True).distinct()
 
-    for minion_run in minion_runs2:
+    for minion_run in active_runs:
 
-        print("Found a run!")
+        print("Found an active run!")
 
         run_jobs = JobMaster.objects.filter(run=minion_run).filter(running=False)
 
         for run_job in run_jobs:
-            print("Job",run_job.job_type.name,"exists")
             if run_job.job_type.name == "Assembly":
                 print("Running Assembly")
                 run_minimap_assembly.delay(minion_run.id, run_job.id, run_job.tempfile_name, run_job.last_read, run_job.read_count)
 
+    for minion_run in minion_runs:
         if minion_run.last_entry() >= timediff or minion_run.last_read() >= timediff:
             cachesiz[str(minion_run.id)] = minion_run
 
@@ -510,12 +511,14 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count):
                 newgfa = GfaSummary(run=runinstance, barcode = bar, readtype = ty)
                 newgfa.nreads = totfq
                 if len(seqlens) > 0:
+                    nparray = np.array(seqlens)
                     newgfa.ncontigs = len(seqlens)#	int	Number of contigs
                     newgfa.maxlen = max(seqlens)  #	int	Maximum contig length
                     newgfa.minlen  = min(seqlens) #	int	Mininum contig length
                     newgfa.totlen = sum(seqlens)  #	int	Total contig length
                     newgfa.n50len = getn50(seqlens) #    int Contig N50
                     newgfa.meanlen = sum(seqlens)/len(seqlens) #   int Mean contig length
+                    newgfa.allcontigs = "[%d, %d, %d, %d, %d]" % (min(seqlens), np.percentile(nparray, 25), np.percentile(nparray, 50), np.percentile(nparray, 75), max(seqlens))
                 else:
                     newgfa.ncontigs = 0 #	int	Number of contigs
                     newgfa.maxlen = 0   #	int	Maximum contig length
@@ -523,6 +526,7 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count):
                     newgfa.totlen = 0   #	int	Total contig length
                     newgfa.n50len = 0   #   int Contig N50
                     newgfa.meanlen = 0  #   int Mean contig length
+                    newgfa.allcontigs = "[0,0,0,0,0]"
                 newgfa.save()
 
 
