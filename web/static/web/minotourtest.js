@@ -56,63 +56,6 @@ function check_user_runs() {
     });
 }
 
-function write_run_data(textinfo){
-    //console.log(textinfo);
-    var text = '';
-    text += "<div class='table-responsive table-bordered'>";
-    text += "<table class='table'>";
-    text += "<tr>";
-    text += "<th>Run</th>";
-    text += "<th>Run Start Time</th>";
-    text += "<th>MinKNOW Computer Name</th>";
-    text += "<th>MinION ID</th>";
-    text += "<th>ASIC ID</th>";
-    text += "<th>Current Script</th>";
-    text += "<th>minKNOW version</th>";
-    text += "<th>Name</th> ";
-    text += "<th>Sample Name</th>";
-    text += "<th>Run Name</th>";
-    text += "<th>FLow Cell ID</th>";
-    text += "<th>Sequencing</th>";
-    text += "<th>Barcoded</th>";
-
-
-    text += "</tr>";
-    $.each(textinfo, function(key,val){
-        text += "<tr>";
-        text += "<td>";
-        text += key;
-        text += textinfo[key];
-        text += "</td>";
-        text += "<td>"+textinfo[key]['starttime']+"</td>";
-        text += "<td>"+"</td>";
-        text += "<td>"+"</td>";
-        text += "<td>"+"</td>";
-        text += "<td>"+"</td>";
-        text += "<td>"+textinfo[key]['minKNOW_version']+"</td>";
-        text += "<td>"+textinfo[key]['name']+"</td>";
-        text += "<td>"+textinfo[key]['sample_name']+"</td>";
-        text += "<td>"+textinfo[key]['run_name']+"</td>";
-        text += "<td>"+textinfo[key]['flowcellid']+"</td>";
-        if (textinfo[key]['active'] == true) {
-            text+= '<td><i class="fa fa-check" aria-hidden="true"></i></td>';
-        } else {
-            text+= '<td><i class="fa fa-times" aria-hidden="true"></i></td>';
-        }
-        if (textinfo[key]['barcodes'].length > 2) {
-             text+= '<td><i class="fa fa-check" aria-hidden="true"></i></td>';
-        } else {
-             text+= '<td><i class="fa fa-times" aria-hidden="true"></i></td>';
-        }
-
-        text += "</tr>";
-    })
-    text += "</table></div>";
-    //console.log(text);
-    $("#target_for_data").html(text);
-    //$("#target_for_data").html(text);
-}
-
 
 function makeChart(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.chart(divName, {
@@ -225,7 +168,6 @@ function makeChart2(divName, chartTitle, yAxisTitle) {
     return chart;
 }
 
-
 function makeChart3(divName, chartTitle, yAxisTitle, xAxisTitle) {
     var chart = Highcharts.chart(divName, {
         chart: {
@@ -238,6 +180,8 @@ function makeChart3(divName, chartTitle, yAxisTitle, xAxisTitle) {
             text: chartTitle
         },
         xAxis: {
+            //type: "datetime",
+            //tickPixelInterval: 150
             title: {
                 text: xAxisTitle
             }
@@ -258,42 +202,6 @@ function makeChart3(divName, chartTitle, yAxisTitle, xAxisTitle) {
     return chart;
 }
 
-function makeChart4(divName, chartTitle, yAxisTitle, xAxisTitle) {
-    var chart = Highcharts.chart(divName, {
-        chart: {
-            type: "spline",
-            marginRight: 10,
-            animation: false,
-            zoomType: "x"
-        },
-        title: {
-            text: chartTitle
-        },
-        xAxis: {
-            title: {
-                text: xAxisTitle
-            }
-        },
-        yAxis: {
-            title: {
-                text: yAxisTitle
-            },
-            plotLines: [{
-                value: 0,
-                width: 1,
-                color: "#808080"
-            }]
-        },
-        legend: {
-            enabled: false
-        },
-        exporting: {
-            enabled: false
-        }
-    });
-
-    return chart;
-}
 
 function makeLiveHistogram(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.chart(divName, {
@@ -622,13 +530,12 @@ function MinotourFlowCellApp() {
     this.makeHeatmapChart = makeHeatmapChart;
     this.makeStepLineChart = makeStepLineChart;
 
-    this.write_run_data = write_run_data;
-
     this.lastread = 0;
     this.needtoupdatecharts = false;
 
     this.updatePoreChart = updatePoreChart;
     this.updateStepLineChart = updateStepLineChart;
+    this.makeLiveHistogram = makeLiveHistogram;
 
     this.average_read_lengths_overtime = this.makeChart2(
             "average-read-lengths-overtime",
@@ -684,7 +591,7 @@ function MinotourFlowCellApp() {
             "Number of reads".toUpperCase()
         );
 
-    this.chartHistogramBasesSequencedByReadLength = this.makeChart2(
+        this.chartHistogramBasesSequencedByReadLength = this.makeChart2(
             "histogram-bases-sequenced-by-read-length",
             "Histogram of Bases Sequenced by Read Length".toUpperCase(),
             "Number of bases".toUpperCase()
@@ -701,6 +608,7 @@ function MinotourFlowCellApp() {
             "bases (kb) per Channel".toUpperCase(),
             ""
         );
+
     this.LiveHistogram = this.makeLiveHistogram(
             'live-histogram',
             'Histogram of Read Lengths (Events)',
@@ -762,7 +670,7 @@ function MinotourFlowCellApp() {
     var self=this;
 
     this.init = function () {
-        console.log("we're under way");
+        //console.log("we're under way");
         /*
         * Add event listeners
         */
@@ -915,6 +823,7 @@ function MinotourFlowCellApp() {
      * click event to function updateChartsBasedOnBarcode
      */
     this.updateBarcodeNavTab = function () {
+        console.log("updateBarcode Run");
         var ul = document.getElementById("nav-tabs-barcodes");
 
         ul.innerHTML = "";
@@ -924,7 +833,8 @@ function MinotourFlowCellApp() {
         for (var i = 0; i < sortedBarcodes.length; i++) {
             var li = document.createElement("li");
             var a = document.createElement("a");
-            a.onclick = this.updateChartsBasedOnBarcode;
+            a.onclick = self.updateChartsBasedOnBarcode;
+            //a.onclick = console.log("button click");
             a.href = "#";
             a.text = sortedBarcodes[i];
 
@@ -936,6 +846,17 @@ function MinotourFlowCellApp() {
             ul.appendChild(li);
         }
     };
+
+    /*
+     * Each click on a barcode tab fires this function
+     * that calls requestData and update all charts
+     */
+    this.updateChartsBasedOnBarcode = function (event) {
+        //console.log(event);
+        self.selectedBarcode = event.target.innerText;
+        self.requestData();
+    };
+
 
     this.requestSummaryByMinuteData = function (id) {
         /*
@@ -1520,6 +1441,7 @@ function MinotourFlowCellApp() {
          * Request channel summary data
          */
 
+
         var url = "/api/v1/flowcells/" + id + "/channelsummary";
 
         $.get(url, function (data) {
@@ -1527,6 +1449,8 @@ function MinotourFlowCellApp() {
             if (data.length > 0) {
 
                 var summaries = {};
+
+
 
                 for (var i = 0; i < data.length; i++) {
 
@@ -1539,14 +1463,13 @@ function MinotourFlowCellApp() {
                     }
                     summaries[item.channel_number]['read_count']+=parseInt(item.read_count);
                     summaries[item.channel_number]['read_length']+=parseInt((parseInt(item.read_length)/1000).toFixed(0));
-                    //summaries[item.channel_number] = {
-                    //    'read_count': item.read_count,
-                    //    'read_length': parseInt((parseInt(item.read_length)/1000).toFixed(0))
-                    //};
+                    //console.log(parseInt(item.read_count));
+
 
                 }
 
                 self.channelSummary = summaries;
+                //console.log(self.channelSummary);
                 self.updateChannelBasedCharts();
 
             }
@@ -1554,68 +1477,20 @@ function MinotourFlowCellApp() {
     };
 
     this.updateChannelBasedCharts = function () {
-        console.log("!!!!! Passing to updateChannelBasedCharts !!!!");
-        console.log(self.channelSummary);
         self.updatePoreChart(self.chartReadsPerPore, self.channelSummary, 'read_count');
         self.updatePoreChart(self.chartBasesPerPore, self.channelSummary, 'read_length');
-    };
-
-    this.updatetext = function (livedata) {
-        datadump = new Array();
-        for (var i = 0; i < livedata.length; i++) {
-            //console.log(livedata);
-            datadump[i]=new Array;
-            datadump[i].minIONname=self.livedata.minIONname;
-            datadump[i].asicid=self.livedata.asicid;
-            datadump[i].minKNOW_version=livedata[i].minKNOW_version;
-            datadump[i].run_id=livedata[i].run_id;
-            datadump[i].run_name=livedata[i].run_name;
-            datadump[i].sample_name=livedata[i].sample_name;
-            datadump[i].name=livedata[i].name;
-            console.log("SAMPLE_NAME "+ livedata[i].name);
-            var starttime = new Date(livedata[i].start_time);
-            datadump[i].starttime=starttime;
-            datadump[i].flowcellid=livedata[i].minKNOW_flow_cell_id;
-            datadump[i].active=livedata[i].active;
-            datadump[i].barcodes=livedata[i].barcodes;
-
-            document.getElementById('MinIONName').innerHTML = self.livedata.minIONname;
-            document.getElementById('asicid').innerHTML = self.livedata.asicid;
-            document.getElementById('MinKNOWVersion').innerHTML = livedata[i].minKNOW_version;
-            document.getElementById('RunID').innerHTML = livedata[i].run_id;
-            document.getElementById('RunName').innerHTML = livedata[i].run_name;
-            document.getElementById('SampleName').innerHTML = livedata[i].sample_name;
-
-
-            //document.getElementById('ComputerName').innerHTML = livedata[i].minKNOW_computer;
-            var starttime = new Date(livedata[i].start_time);
-            document.getElementById('RunStartTime').innerHTML = starttime;
-            document.getElementById('FlowCellID').innerHTML = livedata[i].minKNOW_flow_cell_id;
-            if (livedata[i].active == true) {
-                document.getElementById('CurrentlySequencing').innerHTML = '<i class="fa fa-check" aria-hidden="true"></i>';
-            } else {
-                document.getElementById('CurrentlySequencing').innerHTML = '<i class="fa fa-times" aria-hidden="true"></i>';
-            }
-            if (livedata[i].barcodes.length > 2) {
-                document.getElementById('Barcoded').innerHTML = '<i class="fa fa-check" aria-hidden="true"></i>';
-            } else {
-                document.getElementById('Barcoded').innerHTML = '<i class="fa fa-times" aria-hidden="true"></i>';
-            }
-        }
-
-        self.write_run_data(datadump);
-
     };
 
     this.requestRunDetails = function (id) {
         var url_RunDetails = '/api/v1/flowcells/' + id + '/rundetails/';
         $.get(url_RunDetails, function (data) {
             console.log(data);
+            // This needs to be better!
             self.livedata.minIONname = data[0].minION_name;
             self.livedata.asicid = data[0].minKNOW_asic_id;
             self.livedata.scriptid = data[0].minKNOW_current_script;
             self.livedata.colours_string = data[0].minKNOW_colours_string;
-            //self.livedata.computer=data[0].minKNOW_computer;
+            self.livedata.computer=data[0].minKNOW_computer;
             //console.log(data[0]);
             document.getElementById('ComputerName').innerHTML = data[0].minKNOW_computer;
             document.getElementById('ScriptID').innerHTML = data[0].minKNOW_current_script;
@@ -1627,9 +1502,7 @@ function MinotourFlowCellApp() {
         //console.log('lastread ' + this.lastread);
         var url_livestats = '/api/v1/flowcells/' + id + '/runstats/' + this.lastread;
         $.get(url_livestats, function (data) {
-            console.log("slartibartfast");
-            console.log(data);
-
+            //console.log(data);
             if (data.length > 0) {
                 self.needtoupdatecharts = true;
                 self.lastread = data[data.length - 1].id;
@@ -2048,7 +1921,6 @@ function MinotourFlowCellApp() {
 
 
 
-
     this.requestData = function () {
 
         var url_run = '/api/v1/flowcells/' + self.id;
@@ -2063,33 +1935,33 @@ function MinotourFlowCellApp() {
                 }
             }
             self.barcodes = Array.from(barcodes).sort();
-            //console.log(self.barcodes);
-            //console.log("This is the data we are logging.");
-            //console.log(data);
+            console.log("printing barcodes");
+            console.log(self.barcodes);
+
             self.rundata = data;
+            console.log("calling barcode update");
             self.updateBarcodeNavTab();
+            console.log("barcode update done");
             self.requestSummaryByMinuteData(self.id);
             self.requestSummaryData(self.id);
             self.requestHistogramData(self.id);
+
             self.requestChannelSummaryData(self.id);
             self.requestRunDetails(self.id);
             self.requestLiveRunStats(self.id);
 
-            self.updatetext(self.rundata);
-
-
             /*
-
+            self.updatetext(self.rundata);
             //console.log(self.rundata);
 
 
-            self.getlivedata(self.rundata);
+            //self.getlivedata(self.rundata);
 
 
 
 
-            self.requestRunDetails(self.id);
-            self.requestLiveRunStats(self.id);
+
+
             self.requestPafData(self.id);
             self.requestPafTransData(self.id);
             self.liveUpdateTasks(self.id);
@@ -2120,7 +1992,6 @@ function MinotourApp() {
     this.chartSequencingRate = null;
     this.chartHistogramReadLength = null;
     this.chartHistogramBasesSequencedByReadLength = null;
-    this.chartNumContigs = null;
 
     this.barcodes = null;
 
@@ -2230,19 +2101,7 @@ function MinotourApp() {
 
     //this.updateBasesPerPoreChart = updateBasesPerPoreChart;
 
-    this.requestMappedChromosomes = requestMappedChromosomes;
-
     var self = this;
-
-    this.get_selected_barcode_id = function () {
-        var selected_barcode_name = self.selectedBarcode;
-
-        for (var i = 0; i < self.barcodes_complete.length; i++) {
-            if (self.barcodes_complete[i].name === selected_barcode_name) {
-                return (self.barcodes_complete[i].id);
-            }
-        }
-    }
 
     this.init = function () {
         /*
@@ -2256,7 +2115,6 @@ function MinotourApp() {
         document.getElementById("panel-basecalled-data").style.display = "none";
         document.getElementById("panel-seq-id").style.display = "none";
         document.getElementById("panel-seq-map").style.display = "none";
-        document.getElementById("panel-seq-assembly").style.display = "none";
         document.getElementById("panel-trans-map").style.display = "none";
         document.getElementById("panel-tasks").style.display = "none";
 
@@ -2272,8 +2130,6 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-assembly").style.display = "none";
-            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
             document.getElementById("panel-trans-map").style.display = "none";
             document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
@@ -2293,8 +2149,6 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-assembly").style.display = "none";
-            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
             document.getElementById("panel-trans-map").style.display = "none";
             document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
@@ -2312,8 +2166,6 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-assembly").style.display = "none";
-            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
             document.getElementById("panel-trans-map").style.display = "none";
             document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
@@ -2331,8 +2183,6 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.add("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-assembly").style.display = "none";
-            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
             document.getElementById("panel-trans-map").style.display = "none";
             document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
@@ -2350,25 +2200,6 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "block";
             document.getElementById("nav-seq-map").parentNode.classList.add("active");
-            document.getElementById("panel-seq-assembly").style.display = "none";
-            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
-            document.getElementById("panel-tasks").style.display = "none";
-            document.getElementById("nav-tasks").parentNode.classList.remove("active");
-        };
-
-        document.getElementById("nav-seq-assembly").onclick = function (e) {
-            document.getElementById("panel-basecalled-data").style.display = "none";
-            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
-            document.getElementById("panel-live-data").style.display = "none";
-            document.getElementById("nav-live-data").parentNode.classList.remove("active");
-            document.getElementById("panel-summary-data").style.display = "none";
-            document.getElementById("run-summary-data").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-id").style.display = "none";
-            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-map").style.display = "none";
-            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-assembly").style.display = "block";
-            document.getElementById("nav-seq-assembly").parentNode.classList.add("active");
             document.getElementById("panel-trans-map").style.display = "none";
             document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "none";
@@ -2386,8 +2217,6 @@ function MinotourApp() {
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-assembly").style.display = "none";
-            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
             document.getElementById("panel-trans-map").style.display = "none";
             document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
             document.getElementById("panel-tasks").style.display = "block";
@@ -2404,8 +2233,6 @@ function MinotourApp() {
             document.getElementById("panel-seq-id").style.display = "none";
             document.getElementById("nav-seq-id").parentNode.classList.remove("active");
             document.getElementById("panel-seq-map").style.display = "none";
-            document.getElementById("panel-seq-assembly").style.display = "none";
-            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
             document.getElementById("nav-seq-map").parentNode.classList.remove("active");
             document.getElementById("panel-trans-map").style.display = "block";
             document.getElementById("nav-seq-map-trans").parentNode.classList.add("active");
@@ -2442,13 +2269,6 @@ function MinotourApp() {
             "per-chrom-avg",
             "Read Length By Chromosome".toUpperCase(),
             "Read Length By Chromosome".toUpperCase()
-        );
-
-        this.ChartNumContigs = this.makeChart3(
-            "num-contigs",
-            "Number of Contigs Assembled".toUpperCase(),
-            "Number of Contigs".toUpperCase(),
-            "Number of input Reads".toUpperCase()
         );
 
         this.chart_yield = this.makeChart(
@@ -2536,11 +2356,6 @@ function MinotourApp() {
             "Chromosome Coverage",
             "Coverage"
         );
-
-        $('#chromosome-id-select').on('change', function() {
-            console.log('>>> selection changed');
-            self.updateStepLineChart(self.chartChromosomeCoverage, self.id, self.get_selected_barcode_id());
-        });
 
         this.LiveHistogram = this.makeLiveHistogram(
             'live-histogram',
@@ -2706,10 +2521,8 @@ function MinotourApp() {
             }
         }
 
-
         console.log('updating chromosome coverage chart');
-        //this.get_selected_barcode_id();
-        self.updateStepLineChart(self.chartChromosomeCoverage, self.id, self.get_selected_barcode_id());
+        this.updateStepLineChart(this.chartChromosomeCoverage, );
         console.log('updated chromosome coverage chart');
 
     };
@@ -3155,8 +2968,6 @@ function MinotourApp() {
     };
 
     this.updateChannelBasedCharts = function () {
-        console.log("!!!!! Passing run data to updateChannelBasedCharts !!!!");
-        console.log(self.channelSummary)
         self.updatePoreChart(self.chartReadsPerPore, self.channelSummary, 'read_count');
         self.updatePoreChart(self.chartBasesPerPore, self.channelSummary, 'read_length');
     }
@@ -3519,41 +3330,6 @@ function MinotourApp() {
             }
         });
     }
-
-    this.requestGfaData = function (id) {
-        var url = "/api/v1/runs/" + id + "/assembly";
-
-        $.get(url, function(data){
-            //console.log(data);
-
-            var ncontigs_list = new Array();
-
-            for (var i = 0; i < data.length; i++){
-
-              var item = data[i];
-              ncontigs_list.push([item.nreads, item.ncontigs]);
-
-            }
-
-            self.updateNumContigsChart(ncontigs_list);
-
-        });
-    }
-
-    this.updateNumContigsChart = function (data) {
-      var chart = this.ChartNumContigs;
-
-      while (chart.series.length > 0) {
-          chart.series[0].remove();
-      }
-
-      chart.addSeries({
-          name: "assembly_v1",
-          data: data
-      });
-
-    }
-
 
     this.parseporehist = function (descriptions, counts) {
         var results = [];
@@ -3963,14 +3739,10 @@ function MinotourApp() {
     }
 
     this.requestPafData = function(id) {
-
-        self.requestMappedChromosomes(id);
-
         var pafurl = '/api/v1/runs/' + id + '/pafsummary/';
-
         $.get(pafurl, function (data){
             //console.log(data);
-            if (data.length < 1) {
+            if (data.length <1 ) {
                 document.getElementById("nav-seq-map").parentNode.classList.remove("active");
                 document.getElementById("nav-seq-map").style.display = "none";
             //    document.getElementById("panel-tasks").style.display = "none";
@@ -4090,16 +3862,12 @@ function MinotourApp() {
             //console.log(self.rundata);
 
             var barcodes = [];
-            var barcodes_complete = [];
 
             for (var i = 0; i < data.barcodes.length; i++) {
                 barcodes.push(data.barcodes[i].name)
-                barcodes_complete.push(data.barcodes[i]);
             }
 
             self.barcodes = barcodes.sort();
-            self.barcodes_complete = barcodes_complete;
-
             self.rundata = data;
             self.updatetext(self.rundata);
             //console.log(self.rundata);
@@ -4113,12 +3881,14 @@ function MinotourApp() {
             self.requestRunDetails(self.id);
             self.requestLiveRunStats(self.id);
             self.requestPafData(self.id);
-            self.requestGfaData(self.id);
             self.requestPafTransData(self.id);
             self.liveUpdateTasks(self.id);
             console.log("seriously - Im just trying to parse kraken");
             self.requestKraken(self.id);
+
         });
+
+
 
         console.log(self);
 
