@@ -557,6 +557,7 @@ function MinotourFlowCellApp() {
     this.makeChart = makeChart;
     this.makeChart2 = makeChart2;
     this.makeChart3 = makeChart3;
+    this.makeChart4 = makeChart4;
     this.makeChartlabels = makeChartlabels;
     this.makeLiveHistogram = makeLiveHistogram;
     this.makeYieldProjection = makeYieldProjection;
@@ -1558,6 +1559,7 @@ function MinotourApp() {
     this.makeChart = makeChart;
     this.makeChart2 = makeChart2;
     this.makeChart3 = makeChart3;
+    this.makeChart4 = makeChart4;
     this.makeChartlabels = makeChartlabels;
     this.makeLiveHistogram = makeLiveHistogram;
     this.makeYieldProjection = makeYieldProjection;
