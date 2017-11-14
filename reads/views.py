@@ -1019,3 +1019,16 @@ def flowcell_channel_summary(request, pk):
     serializer = ChannelSummarySerializer(queryset, many=True, context={'request': request})
 
     return Response(serializer.data)
+
+@api_view(['GET'])
+def flowcell_run_status_list(request, pk):
+    if request.method == 'GET':
+        queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+        runset = list()
+        for run in queryset:
+            # print (run.run_id)
+            runset.append(run.run_id)
+        queryset = MinIONRunStatus.objects.filter(run_id__in=runset)
+        print (queryset)
+        serializer = MinIONRunStatusSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)

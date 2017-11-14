@@ -400,9 +400,11 @@ class FlowCellRunSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = FlowCellRun
-        fields = ('flowcell','id','run','name','barcodes')
+        fields = ('flowcell','id','run_name','run','name','barcodes','last_entry','start_time','last_read','sample_name','minKNOW_flow_cell_id','minKNOW_version','active')
         read_only = (
             'id',
+            'run_name',
             'name',
-            'barcodes'
+            'barcodes',
+            'last_entry','start_time','last_read','sample_name','minKNOW_flow_cell_id','minKNOW_version','active'
         )

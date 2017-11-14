@@ -56,6 +56,63 @@ function check_user_runs() {
     });
 }
 
+function write_run_data(textinfo){
+    //console.log(textinfo);
+    var text = '';
+    text += "<div class='table-responsive table-bordered'>";
+    text += "<table class='table'>";
+    text += "<tr>";
+    text += "<th>Run</th>";
+    text += "<th>Run Start Time</th>";
+    text += "<th>MinKNOW Computer Name</th>";
+    text += "<th>MinION ID</th>";
+    text += "<th>ASIC ID</th>";
+    text += "<th>Current Script</th>";
+    text += "<th>minKNOW version</th>";
+    text += "<th>Name</th> ";
+    text += "<th>Sample Name</th>";
+    text += "<th>Run Name</th>";
+    text += "<th>FLow Cell ID</th>";
+    text += "<th>Sequencing</th>";
+    text += "<th>Barcoded</th>";
+
+
+    text += "</tr>";
+    $.each(textinfo, function(key,val){
+        text += "<tr>";
+        text += "<td>";
+        text += key;
+        text += textinfo[key];
+        text += "</td>";
+        text += "<td>"+textinfo[key]['starttime']+"</td>";
+        text += "<td>"+"</td>";
+        text += "<td>"+"</td>";
+        text += "<td>"+"</td>";
+        text += "<td>"+"</td>";
+        text += "<td>"+textinfo[key]['minKNOW_version']+"</td>";
+        text += "<td>"+textinfo[key]['name']+"</td>";
+        text += "<td>"+textinfo[key]['sample_name']+"</td>";
+        text += "<td>"+textinfo[key]['run_name']+"</td>";
+        text += "<td>"+textinfo[key]['flowcellid']+"</td>";
+        if (textinfo[key]['active'] == true) {
+            text+= '<td><i class="fa fa-check" aria-hidden="true"></i></td>';
+        } else {
+            text+= '<td><i class="fa fa-times" aria-hidden="true"></i></td>';
+        }
+        if (textinfo[key]['barcodes'].length > 2) {
+             text+= '<td><i class="fa fa-check" aria-hidden="true"></i></td>';
+        } else {
+             text+= '<td><i class="fa fa-times" aria-hidden="true"></i></td>';
+        }
+
+        text += "</tr>";
+    })
+    text += "</table></div>";
+    //console.log(text);
+    $("#target_for_data").html(text);
+    //$("#target_for_data").html(text);
+}
+
 
 function makeChart(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.chart(divName, {
@@ -564,6 +621,8 @@ function MinotourFlowCellApp() {
     this.makeAreaPlot = makeAreaPlot;
     this.makeHeatmapChart = makeHeatmapChart;
     this.makeStepLineChart = makeStepLineChart;
+
+    this.write_run_data = write_run_data;
 
     this.lastread = 0;
     this.needtoupdatecharts = false;
@@ -1443,7 +1502,71 @@ function MinotourFlowCellApp() {
         console.log(self.channelSummary);
         self.updatePoreChart(self.chartReadsPerPore, self.channelSummary, 'read_count');
         self.updatePoreChart(self.chartBasesPerPore, self.channelSummary, 'read_length');
+    };
+
+    this.updatetext = function (livedata) {
+        datadump = new Array();
+        for (var i = 0; i < livedata.length; i++) {
+            //console.log(livedata);
+            datadump[i]=new Array;
+            datadump[i].minIONname=self.livedata.minIONname;
+            datadump[i].asicid=self.livedata.asicid;
+            datadump[i].minKNOW_version=livedata[i].minKNOW_version;
+            datadump[i].run_id=livedata[i].run_id;
+            datadump[i].run_name=livedata[i].run_name;
+            datadump[i].sample_name=livedata[i].sample_name;
+            datadump[i].name=livedata[i].name;
+            console.log("SAMPLE_NAME "+ livedata[i].name);
+            var starttime = new Date(livedata[i].start_time);
+            datadump[i].starttime=starttime;
+            datadump[i].flowcellid=livedata[i].minKNOW_flow_cell_id;
+            datadump[i].active=livedata[i].active;
+            datadump[i].barcodes=livedata[i].barcodes;
+
+            document.getElementById('MinIONName').innerHTML = self.livedata.minIONname;
+            document.getElementById('asicid').innerHTML = self.livedata.asicid;
+            document.getElementById('MinKNOWVersion').innerHTML = livedata[i].minKNOW_version;
+            document.getElementById('RunID').innerHTML = livedata[i].run_id;
+            document.getElementById('RunName').innerHTML = livedata[i].run_name;
+            document.getElementById('SampleName').innerHTML = livedata[i].sample_name;
+
+
+            //document.getElementById('ComputerName').innerHTML = livedata[i].minKNOW_computer;
+            var starttime = new Date(livedata[i].start_time);
+            document.getElementById('RunStartTime').innerHTML = starttime;
+            document.getElementById('FlowCellID').innerHTML = livedata[i].minKNOW_flow_cell_id;
+            if (livedata[i].active == true) {
+                document.getElementById('CurrentlySequencing').innerHTML = '<i class="fa fa-check" aria-hidden="true"></i>';
+            } else {
+                document.getElementById('CurrentlySequencing').innerHTML = '<i class="fa fa-times" aria-hidden="true"></i>';
+            }
+            if (livedata[i].barcodes.length > 2) {
+                document.getElementById('Barcoded').innerHTML = '<i class="fa fa-check" aria-hidden="true"></i>';
+            } else {
+                document.getElementById('Barcoded').innerHTML = '<i class="fa fa-times" aria-hidden="true"></i>';
+            }
+        }
+
+        self.write_run_data(datadump);
+
+    };
+
+    this.requestRunDetails = function (id) {
+        var url_RunDetails = '/api/v1/flowcells/' + id + '/rundetails/';
+        $.get(url_RunDetails, function (data) {
+            console.log(data);
+            self.livedata.minIONname = data[0].minION_name;
+            self.livedata.asicid = data[0].minKNOW_asic_id;
+            self.livedata.scriptid = data[0].minKNOW_current_script;
+            self.livedata.colours_string = data[0].minKNOW_colours_string;
+            //self.livedata.computer=data[0].minKNOW_computer;
+            //console.log(data[0]);
+            document.getElementById('ComputerName').innerHTML = data[0].minKNOW_computer;
+            document.getElementById('ScriptID').innerHTML = data[0].minKNOW_current_script;
+
+        })
     }
+
 
 
 
@@ -1462,14 +1585,17 @@ function MinotourFlowCellApp() {
             }
             self.barcodes = Array.from(barcodes).sort();
             console.log(self.barcodes);
+            console.log("This is the data we are logging.");
+            console.log(data);
             self.rundata = data;
             self.updateBarcodeNavTab();
             self.requestSummaryByMinuteData(self.id);
             self.requestSummaryData(self.id);
             self.requestHistogramData(self.id);
             self.requestChannelSummaryData(self.id);
-            /*
             self.updatetext(self.rundata);
+            /*
+
             //console.log(self.rundata);
 
 
