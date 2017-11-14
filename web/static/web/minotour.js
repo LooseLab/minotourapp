@@ -228,7 +228,7 @@ function makeChart4(divName, chartTitle, yAxisTitle, xAxisTitle) {
             }]
         },
         legend: {
-            enabled: false
+            enabled: true
         },
         exporting: {
             enabled: false
@@ -1846,14 +1846,14 @@ function MinotourApp() {
         this.ChartN50Contigs = this.makeChart4(
             "n50-contigs",
             "Assembly N50".toUpperCase(),
-            "Assembly N50 (bp)".toUpperCase(),
+            "Assembly N50".toUpperCase(),
             "Number of input Reads".toUpperCase()
         );
 
         this.ChartSumContigs = this.makeChart4(
             "sum-contigs",
             "Total length of Assembly".toUpperCase(),
-            "Total length (bp)".toUpperCase(),
+            "Total length".toUpperCase(),
             "Number of input Reads".toUpperCase()
         );
 
@@ -2932,66 +2932,103 @@ function MinotourApp() {
         $.get(url, function(data){
             //console.log(data);
 
-            var ncontigs_list = new Array();
-            var n50_list = new Array();
-            var sum_list = new Array();
+            if (data.length > 0) {
 
-            for (var i = 0; i < data.length; i++){
+              var summaries = {}
+              var latest = {}
 
-              var item = data[i];
-              ncontigs_list.push([item.nreads, item.ncontigs]);
-              n50_list.push([item.nreads, item.n50len]);
-              sum_list.push([item.nreads, item.totlen]);
+              for (var i = 0; i < data.length; i++){
+                var item = data[i];
 
-            }
+                if (summaries[item.barcode_name] === undefined) {
+                    summaries[item.barcode_name] = {};
+                }
 
-            self.updateNumContigsChart(ncontigs_list);
-            self.updateN50ContigsChart(n50_list);
-            self.updateSumContigsChart(sum_list);
+                if (latest[item.barcode_name] === undefined){
+                    latest[item.barcode_name] = {};
+                }
+
+                if (summaries[item.barcode_name][item.type_name] === undefined) {
+                    summaries[item.barcode_name][item.type_name] = {
+                        'ncontigs': [],
+                        'n50': [],
+                        'sum': []
+                    };
+                }
+
+                if (latest[item.barcode_name][item.type_name] === undefined) {
+                    latest[item.barcode_name][item.type_name] = {};
+                }
+
+                summaries[item.barcode_name][item.type_name]['ncontigs'].push([item.nreads,item.ncontigs]);
+                summaries[item.barcode_name][item.type_name]['n50'].push([item.nreads,item.n50len]);
+                summaries[item.barcode_name][item.type_name]['sum'].push([item.nreads,item.totlen]);
+
+                latest[item.barcode_name][item.type_name]['nreads'] = item.nreads;
+                latest[item.barcode_name][item.type_name]['ncontigs'] = item.ncontigs;
+                latest[item.barcode_name][item.type_name]['min'] = item.minlen;
+                latest[item.barcode_name][item.type_name]['max'] = item.maxlen;
+                latest[item.barcode_name][item.type_name]['mean'] = item.meanlen;
+                latest[item.barcode_name][item.type_name]['n50'] = item.n50len;
+                latest[item.barcode_name][item.type_name]['sum'] = item.totlen;
+                latest[item.barcode_name][item.type_name]['time'] = item.timecreated;
+
+              }
+
+            self.assemblySummary = summaries;
+            self.assemblyLatest = latest;
+
+            self.updateAssemblyCharts(self.ChartNumContigs, 'ncontigs');
+            self.updateAssemblyCharts(self.ChartN50Contigs, 'n50');
+            self.updateAssemblyCharts(self.ChartSumContigs, 'sum');
+
+            self.createAssemblyTable();
+
+          }
 
         });
     }
 
-    this.updateNumContigsChart = function (data) {
-      var chart = this.ChartNumContigs;
+    this.updateAssemblyCharts = function(chart, field){
 
       while (chart.series.length > 0) {
           chart.series[0].remove();
       }
 
-      chart.addSeries({
-          name: "assembly_v1",
-          data: data
-      });
+      for (var barcode of Object.keys(self.assemblySummary)) {
+
+          for (var type of Object.keys(self.assemblySummary[barcode])) {
+
+              chart.addSeries({
+                  name: barcode + " - " + type,
+                  data: self.assemblySummary[barcode][type][field]
+              });
+
+          }
+      }
 
     }
 
-    this.updateN50ContigsChart = function (data) {
-      var chart = this.ChartN50Contigs;
-
-      while (chart.series.length > 0) {
-          chart.series[0].remove();
-      }
-
-      chart.addSeries({
-          name: "assembly_v1",
-          data: data
-      });
-
-    }
-
-    this.updateSumContigsChart = function (data) {
-      var chart = this.ChartSumContigs;
-
-      while (chart.series.length > 0) {
-          chart.series[0].remove();
-      }
-
-      chart.addSeries({
-          name: "assembly_v1",
-          data: data
-      });
-
+    this.createAssemblyTable = function () {
+        stringtowrite = '<table class="table table-condensed"><tr><th>Barcode</th><th>ReadType</th><th>Input Reads</th><th>Contigs</th><th>Min</th><th>Max</th><th>N50</th><th>Mean</th><th>Total</th><th>Time</th></tr>';
+        for (var barcode of Object.keys(self.assemblyLatest)) {
+            for (var type of Object.keys(self.assemblyLatest[barcode])) {
+                stringtowrite = stringtowrite + '<tr>';
+                stringtowrite = stringtowrite + '<td>' + barcode + ' </td>';
+                stringtowrite = stringtowrite + '<td>' + type + ' </td>';
+                stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['nreads'] + ' </td>';
+                stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['ncontigs'] + ' </td>';
+                stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['min'] + ' </td>';
+                stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['max'] + ' </td>';
+                stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['n50'] + ' </td>';
+                stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['mean'] + ' </td>';
+                stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['sum'] + ' </td>';
+                stringtowrite = stringtowrite + '<td><i>' + new Date(self.assemblyLatest[barcode][type]['time']) + '</i></td> ';
+                stringtowrite = stringtowrite + '</tr>';
+            }
+        }
+        stringtowrite = stringtowrite + '</table>';
+        document.getElementById('AssemblyTable').innerHTML = stringtowrite;
     }
 
 

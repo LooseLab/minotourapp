@@ -477,7 +477,7 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count):
                 totfq = subprocess.check_output('grep -c ">" '+tmpfilename, shell=True)
                 totfq.rstrip()
 
-                cmd = 'minimap -Sw5 -L100 -m0 -t4 %s %s | miniasm -f %s - ' % (tmp, tmp, tmp)
+                cmd = 'minimap -Sw5 -L100 -m0 -t4 %s %s | miniasm -f %s - ' % (tmpfilename, tmpfilename, tmpfilename)
                 proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, shell=True)
                 (out, err) = proc.communicate()

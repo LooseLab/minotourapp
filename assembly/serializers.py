@@ -13,8 +13,10 @@ class GfaSummarySerializer(serializers.HyperlinkedModelSerializer):
             'nreads',
             'ncontigs',
             'maxlen',
+            'minlen',
             'totlen',
             'n50len',
+            'meanlen',
             'timecreated'
         )
         read_only = (
