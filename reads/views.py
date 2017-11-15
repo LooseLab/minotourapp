@@ -1025,4 +1025,23 @@ def tabs_details(request, pk):
     """
     Return tab_id, tab_title, and tab_position for a given run.
     """
-    return Response(JobMaster.objects.filter(run_id=pk).values_list('job_type__tab_id', 'job_type__tab_title', 'job_type__tab_position'))
+    dict = {
+        "ChanCalc": {
+            "id": "tab-basecalled-data",
+            "title": "Basecalled Data",
+            "position": 1
+        },
+        "Assembly": {
+            "id": "tab-sequence-assembly",
+            "title": "Assembly",
+            "position": 5
+        }
+    }
+    tabs = list()
+    for master in JobMaster.objects.filter(run_id=pk).values_list('job_type__name', flat=True):
+        if master in dict.keys():
+            tabs.append(dict[master])
+        else:
+            print("RunID" + pk + "has JobType" + master + "but there is no corresponding tab defined in reads/views.py")
+
+    return Response(tabs)

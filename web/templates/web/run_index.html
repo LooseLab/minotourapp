@@ -458,11 +458,10 @@ $(document).ready(function () {
         $.getJSON( url, function( data ) {
             var items = [];
             $.each(data, function (key, value) {
-                var obj = {tab_id: value[0], tab_title: value[1], tab_position: value[2]};
-                items.push(obj);
+                items.push(value);
             });
             items.sort(function (a, b) {
-                return a.tab_position - b.tab_position;
+                return a.position - b.position;
             });
             $.each(items, function (key, value) {
                 /**
@@ -470,8 +469,8 @@ $(document).ready(function () {
                 if( !$(element).length ) returns true when the element is not present
                 This is used to prevent duplicate tabs being produced whenever a check is done for new tabs
                 **/
-                if( !$('#nav-' + value.tab_id).length ) {
-                    var element = '<li><a href="#' + value.tab_id + '"id="nav-' + value.tab_id + '" data-toggle="tab">' + value.tab_title + '</a></li>';
+                if( !$('#nav-' + value.id).length ) {
+                    var element = '<li><a href="#' + value.id + '"id="nav-' + value.id + '" data-toggle="tab">' + value.title + '</a></li>';
                     $('#tasks-li').before(element);
                 }
             });
