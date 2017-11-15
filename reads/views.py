@@ -1043,7 +1043,7 @@ def tabs_details(request, pk):
         },
         "Minimap2": {
             "id": "tab-sequence-mapping",
-            "title": "Sequence Mapping",
+            "title": "Genome Mapping",
             "position": 4
         },
         "Assembly": {
