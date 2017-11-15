@@ -1042,6 +1042,6 @@ def tabs_details(request, pk):
         if master in dict.keys():
             tabs.append(dict[master])
         else:
-            print("RunID" + pk + "has JobType" + master + "but there is no corresponding tab defined in reads/views.py")
+            print("RunID '" + pk + "' has JobType '" + master + "' but there is no corresponding tab defined in reads/views.py")
 
     return Response(tabs)
