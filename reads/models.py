@@ -819,23 +819,6 @@ class JobType(models.Model):
         null=True
     )
 
-    tab_id = models.CharField(
-        max_length=256,
-        blank=True,
-        null=True
-    )
-
-    tab_title = models.CharField(
-        max_length=256,
-        blank=True,
-        null=True
-    )
-
-    tab_position = models.IntegerField(
-        blank=True,
-        null=True
-    )
-
     reference = models.BooleanField(
         default=False,
     )
