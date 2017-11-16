@@ -1058,10 +1058,16 @@ def tabs_details(request, pk):
         }
     }
     tabs = list()
+    # Find live event data
+    if MinIONRunStatus.objects.filter(run_id=pk):
+        tabs.append(dict['LiveEvent'])
+
+    # Find other tasks
     for master in JobMaster.objects.filter(run_id=pk).values_list('job_type__name', flat=True):
         if master in dict.keys():
             tabs.append(dict[master])
         else:
             print("RunID '" + pk + "' has JobType '" + master + "' but there is no corresponding tab defined in reads/views.py")
+
 
     return Response(tabs)
