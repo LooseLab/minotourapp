@@ -918,8 +918,54 @@ class FlowCellRun(models.Model):
     def name(self):
         return self.flowcell.name
 
+    def run_name(self):
+        return self.run.run_name
+
     def barcodes(self):
         return self.run.barcodes
 
     def __str__(self):
         return "{} {}".format(self.flowcell, self.run)
+
+    def last_entry(self):
+        try:
+            return self.RunStats.last().created_date
+        except AttributeError:
+            #return "undefined"
+            olddate = datetime.datetime(1, 1, 1, 1, 1, 1, 1, pytz.utc)
+            return olddate
+
+    def start_time(self):
+        try:
+            return self.RunDetails.last().minKNOW_start_time
+        except AttributeError:
+            return "undefined"
+
+    def last_read(self):
+        try:
+            return self.reads.last().created_date
+        except AttributeError:
+            #return "undefined"
+            olddate = datetime.datetime(1, 1, 1, 1, 1, 1, 1, pytz.utc)
+            return olddate
+
+    def sample_name(self):
+        try:
+            return self.run.minKNOW_sample_name()
+        except AttributeError:
+            return "undefined"
+
+    def minKNOW_flow_cell_id(self):
+        try:
+            return self.run.minKNOW_flow_cell_id()
+        except AttributeError:
+            return "undefined"
+
+    def minKNOW_version(self):
+        try:
+            return self.run.minKNOW_version()
+        except AttributeError:
+            return "undefined"
+
+    def active(self):
+        return self.run.active

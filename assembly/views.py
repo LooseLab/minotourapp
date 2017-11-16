@@ -8,14 +8,14 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from assembly.models import GfaStore
-from assembly.serializers import GfaStoreSerializer
+from assembly.models import GfaSummary
+from assembly.serializers import GfaSummarySerializer
 
 
 @api_view(['GET'])
 def gfa_output_list(request, run_id):
 
-    queryset = GfaStore.objects \
+    queryset = GfaSummary.objects \
         .filter(run__owner=request.user) \
         .filter(run__id=run_id) \
         .order_by('nreads')
@@ -31,6 +31,6 @@ def gfa_output_list(request, run_id):
 
     # return HttpResponse(json.dumps(ncontigs_list), content_type="application/json")
 
-    serializer = GfaStoreSerializer(queryset, many=True, context={'request': request})
+    serializer = GfaSummarySerializer(queryset, many=True, context={'request': request})
 
     return Response(serializer.data)

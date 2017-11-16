@@ -1020,6 +1020,73 @@ def flowcell_channel_summary(request, pk):
 
     return Response(serializer.data)
 
+def flowcell_run_status_list(request, pk):
+    if request.method == 'GET':
+        queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+        runset = list()
+        for run in queryset:
+            # print (run.run_id)
+            runset.append(run.run_id)
+        queryset = MinIONRunStatus.objects.filter(run_id__in=runset)
+        #print (queryset)
+        serializer = MinIONRunStatusSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+
+@api_view(['GET'])
+def flowcell_run_stats_list(request,pk):
+    """
+    TODO describe function
+    """
+    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    runset = list()
+    for run in queryset:
+        # print (run.run_id)
+        runset.append(run.run_id)
+
+    try:
+        crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=runset)
+        #minIONrunstats = MinIONRunStats.objects.all()
+        #print (len(crazyminIONrunstats))
+
+    except MinIONRunStats.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        #print (crazyminIONrunstats)
+        #for item in crazyminIONrunstats:
+        #    print (item.minION, item.run_id, item.sample_time, item.event_yield)
+
+        serializer = MinIONRunStatsSerializer(crazyminIONrunstats, many=True , context={'request': request})
+
+        return Response(serializer.data)
+
+@api_view(['GET'])
+def flowcell_run_stats_latest(request,pk,checkid):
+    """
+    TODO describe function
+    """
+    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    runset = list()
+    for run in queryset:
+        # print (run.run_id)
+        runset.append(run.run_id)
+    try:
+        crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=runset, id__gt=checkid)[:1000]
+        #minIONrunstats = MinIONRunStats.objects.all()
+        #print (crazyminIONrunstats)
+
+    except MinIONRunStats.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        #print (crazyminIONrunstats)
+        #for item in crazyminIONrunstats:
+        #    print (item.minION, item.run_id, item.sample_time, item.event_yield)
+
+        serializer = MinIONRunStatsSerializer(crazyminIONrunstats, many=True , context={'request': request})
+
+        return Response(serializer.data)
+
 @api_view(['GET'])
 def tabs_details(request, pk):
     """
@@ -1068,6 +1135,5 @@ def tabs_details(request, pk):
             tabs.append(dict[master])
         else:
             print("RunID '" + pk + "' has JobType '" + master + "' but there is no corresponding tab defined in reads/views.py")
-
 
     return Response(tabs)
