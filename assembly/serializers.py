@@ -1,19 +1,24 @@
 from rest_framework import serializers
 
-from assembly.models import GfaStore
+from assembly.models import GfaSummary
 
-class GfaStoreSerializer(serializers.HyperlinkedModelSerializer):
+class GfaSummarySerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = GfaStore
+        model = GfaSummary
         fields = (
             'id',
             'run',
-            #'barcode',
+            'barcode_name',
+            'type_name',
             'nreads',
             'ncontigs',
             'maxlen',
+            'minlen',
             'totlen',
-            'n50len'
+            'n50len',
+            'meanlen',
+            'allcontigs',
+            'timecreated'
         )
         read_only = (
             'id',
