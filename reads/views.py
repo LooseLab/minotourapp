@@ -901,7 +901,7 @@ def tasks_detail_all(request,pk):
                 'reference': reference_name,
                 'last_read': jobmasterlist[0].last_read,
                 'read_count': jobmasterlist[0].read_count,
-                'temp_file': jobmasterlist[0].temp_file,
+                'temp_file': jobmasterlist[0].tempfile_name,
                 'complete': jobmasterlist[0].complete,
                 'running': jobmasterlist[0].running
             })
