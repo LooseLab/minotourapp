@@ -951,19 +951,19 @@ class FlowCellRun(models.Model):
 
     def sample_name(self):
         try:
-            return self.RunDetails.last().minKNOW_sample_name
+            return self.run.minKNOW_sample_name()
         except AttributeError:
             return "undefined"
 
     def minKNOW_flow_cell_id(self):
         try:
-            return self.RunDetails.last().minKNOW_flow_cell_id
+            return self.run.minKNOW_flow_cell_id()
         except AttributeError:
             return "undefined"
 
     def minKNOW_version(self):
         try:
-            return self.RunDetails.last().minKNOW_version
+            return self.run.minKNOW_version()
         except AttributeError:
             return "undefined"
 
