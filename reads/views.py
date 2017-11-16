@@ -1029,7 +1029,7 @@ def flowcell_run_status_list(request, pk):
             # print (run.run_id)
             runset.append(run.run_id)
         queryset = MinIONRunStatus.objects.filter(run_id__in=runset)
-        print (queryset)
+        #print (queryset)
         serializer = MinIONRunStatusSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
