@@ -2067,6 +2067,8 @@ function MinotourFlowCellApp() {
             //console.log("This is the data we are logging.");
             //console.log(data);
             self.rundata = data;
+            console.log("rundata");
+            console.log (self.rundata);
             self.updateBarcodeNavTab();
             self.requestSummaryByMinuteData(self.id);
             self.requestSummaryData(self.id);
