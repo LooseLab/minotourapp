@@ -1125,6 +1125,10 @@ def tabs_details(request, pk):
         }
     }
     tabs = list()
+    # Find live event data
+    if MinIONRunStatus.objects.filter(run_id=pk):
+        tabs.append(dict['LiveEvent'])
+
     for master in JobMaster.objects.filter(run_id=pk).values_list('job_type__name', flat=True):
         if master in dict.keys():
             tabs.append(dict[master])
