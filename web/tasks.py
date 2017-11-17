@@ -427,7 +427,7 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count):
         tmp = tempfile.NamedTemporaryFile(delete=False).name
     print ("tempfile {}".format(tmp))
 
-    fastqs = FastqRead.objects.filter(run_id__id=runid, id__gt=int(last_read))
+    fastqs = FastqRead.objects.filter(run_id__id=runid, id__gt=int(last_read))[:1000]
     #print ("fastqs",fastqs)
     #read = ''
     #fastqdict=dict()

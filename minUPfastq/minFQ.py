@@ -235,8 +235,15 @@ class Runcollection():
 
     def add_read(self, record, descriptiondict,fastq):
         passstatus=(self.check_pass(fastq))
+        #print ("looking for {}".format(record.id) )
+        #print ("in")
+        #print (self.readnames[0])
+        #if record.id in self.readnames:
+        #    print ("found the read")
 
-        if record.id not in self.readid:
+        #if record.id not in self.readid:
+        if record.id not in self.readnames:
+        #    print ("think read not found")
             self.readid[record.id] = dict()
             for item in descriptiondict:
                 self.readid[record.id][item] = descriptiondict[item]
@@ -348,6 +355,9 @@ class Runcollection():
             self.timeid[tm]["count"] += 1
             self.readlengths.append(len(record.seq))
             self.timeid[tm]["readlengths"].append(len(record.seq))
+        #else:
+        #    print ("already seen read")
+        #    os._exit(1)
             # print(record.id)
             # print(record.seq)
             # print(record.description)
