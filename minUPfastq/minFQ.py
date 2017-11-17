@@ -69,8 +69,8 @@ class Runcollection():
 
         for page in tqdm(range(number_pages)):
 
-            url = self.runidlink + 'readnames?page=%s'.format(page)
-
+            url = self.runidlink + 'readnames?page={}'.format(page)
+            #print ("getting {}".format(url))
             content = requests.get(url, headers=header)
             # We have to recover the data component and loop through that to get the read names.
             for read in json.loads(content.text)["data"]:
