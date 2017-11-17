@@ -216,5 +216,9 @@ urlpatterns = [
         views.flowcell_run_stats_latest,
         name="flowcellrunstats_latest"
     ),
-
+    url(
+        r'^api/v1/tabs/(?P<pk>[0-9]+)/$',
+        views.tabs_details,
+        name="tabs-details"
+    ),
 ]

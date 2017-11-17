@@ -1020,7 +1020,6 @@ def flowcell_channel_summary(request, pk):
 
     return Response(serializer.data)
 
-@api_view(['GET'])
 def flowcell_run_status_list(request, pk):
     if request.method == 'GET':
         queryset = FlowCellRun.objects.filter(flowcell_id=pk)
@@ -1088,3 +1087,52 @@ def flowcell_run_stats_latest(request,pk,checkid):
 
         return Response(serializer.data)
 
+@api_view(['GET'])
+def tabs_details(request, pk):
+    """
+    Return tab_id, tab_title, and tab_position for a given run.
+    """
+    dict = {
+        "LiveEvent": {
+            "id": "tab-live-event-data",
+            "title": "Live Event Data",
+            "position": 1
+        },
+        "ChanCalc": {
+            "id": "tab-basecalled-data",
+            "title": "Basecalled Data",
+            "position": 2
+        },
+        "Kraken": {
+            "id": "tab-sequence-id",
+            "title": "Sequence Identification",
+            "position": 3
+        },
+        "Minimap2": {
+            "id": "tab-sequence-mapping",
+            "title": "Sequence Mapping",
+            "position": 4
+        },
+        "Assembly": {
+            "id": "tab-sequence-assembly",
+            "title": "Assembly",
+            "position": 5
+        },
+        "Minimap2_trans": {
+            "id": "tab-transcriptome-mapping",
+            "title": "Transcriptome Mapping",
+            "position": 6
+        }
+    }
+    tabs = list()
+    # Find live event data
+    if MinIONRunStatus.objects.filter(run_id=pk):
+        tabs.append(dict['LiveEvent'])
+
+    for master in JobMaster.objects.filter(run_id=pk).values_list('job_type__name', flat=True):
+        if master in dict.keys():
+            tabs.append(dict[master])
+        else:
+            print("RunID '" + pk + "' has JobType '" + master + "' but there is no corresponding tab defined in reads/views.py")
+
+    return Response(tabs)

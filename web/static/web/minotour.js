@@ -792,9 +792,6 @@ function MinotourFlowCellApp() {
         /*
         * Add event listeners
         */
-
-
-
         document.getElementById("panel-live-data").style.display = "none";
         document.getElementById("panel-summary-data").style.display = "block";
         document.getElementById("panel-basecalled-data").style.display = "none";
@@ -2275,176 +2272,6 @@ function MinotourApp() {
     }
 
     this.init = function () {
-        /*
-        * Add event listeners
-        */
-
-
-
-        document.getElementById("panel-live-data").style.display = "none";
-        document.getElementById("panel-summary-data").style.display = "block";
-        document.getElementById("panel-basecalled-data").style.display = "none";
-        document.getElementById("panel-seq-id").style.display = "none";
-        document.getElementById("panel-seq-map").style.display = "none";
-        document.getElementById("panel-seq-assembly").style.display = "none";
-        document.getElementById("panel-trans-map").style.display = "none";
-        document.getElementById("panel-tasks").style.display = "none";
-
-
-        document.getElementById("run-summary-data").onclick = function (e) {
-            document.getElementById("panel-basecalled-data").style.display = "none";
-            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
-            document.getElementById("panel-live-data").style.display = "none";
-            document.getElementById("nav-live-data").parentNode.classList.remove("active");
-            document.getElementById("panel-summary-data").style.display = "block";
-            document.getElementById("run-summary-data").parentNode.classList.add("active");
-            document.getElementById("panel-seq-id").style.display = "none";
-            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-map").style.display = "none";
-            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-assembly").style.display = "none";
-            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
-            document.getElementById("panel-trans-map").style.display = "none";
-            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
-            document.getElementById("panel-tasks").style.display = "none";
-            document.getElementById("nav-tasks").parentNode.classList.remove("active");
-
-
-        };
-
-        document.getElementById("nav-live-data").onclick = function (e) {
-            document.getElementById("panel-basecalled-data").style.display = "none";
-            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
-            document.getElementById("panel-live-data").style.display = "block";
-            document.getElementById("nav-live-data").parentNode.classList.add("active");
-            document.getElementById("panel-summary-data").style.display = "none";
-            document.getElementById("run-summary-data").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-id").style.display = "none";
-            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-map").style.display = "none";
-            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-assembly").style.display = "none";
-            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
-            document.getElementById("panel-trans-map").style.display = "none";
-            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
-            document.getElementById("panel-tasks").style.display = "none";
-            document.getElementById("nav-tasks").parentNode.classList.remove("active");
-        };
-
-        document.getElementById("nav-basecalled-data").onclick = function (e) {
-            document.getElementById("panel-basecalled-data").style.display = "block";
-            document.getElementById("nav-basecalled-data").parentNode.classList.add("active");
-            document.getElementById("panel-live-data").style.display = "none";
-            document.getElementById("nav-live-data").parentNode.classList.remove("active");
-            document.getElementById("panel-summary-data").style.display = "none";
-            document.getElementById("run-summary-data").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-id").style.display = "none";
-            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-map").style.display = "none";
-            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-assembly").style.display = "none";
-            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
-            document.getElementById("panel-trans-map").style.display = "none";
-            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
-            document.getElementById("panel-tasks").style.display = "none";
-            document.getElementById("nav-tasks").parentNode.classList.remove("active");
-        };
-
-        document.getElementById("nav-seq-id").onclick = function (e) {
-            document.getElementById("panel-basecalled-data").style.display = "none";
-            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
-            document.getElementById("panel-live-data").style.display = "none";
-            document.getElementById("nav-live-data").parentNode.classList.remove("active");
-            document.getElementById("panel-summary-data").style.display = "none";
-            document.getElementById("run-summary-data").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-id").style.display = "block";
-            document.getElementById("nav-seq-id").parentNode.classList.add("active");
-            document.getElementById("panel-seq-map").style.display = "none";
-            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-assembly").style.display = "none";
-            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
-            document.getElementById("panel-trans-map").style.display = "none";
-            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
-            document.getElementById("panel-tasks").style.display = "none";
-            document.getElementById("nav-tasks").parentNode.classList.remove("active");
-        };
-
-        document.getElementById("nav-seq-map").onclick = function (e) {
-            document.getElementById("panel-basecalled-data").style.display = "none";
-            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
-            document.getElementById("panel-live-data").style.display = "none";
-            document.getElementById("nav-live-data").parentNode.classList.remove("active");
-            document.getElementById("panel-summary-data").style.display = "none";
-            document.getElementById("run-summary-data").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-id").style.display = "none";
-            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-map").style.display = "block";
-            document.getElementById("nav-seq-map").parentNode.classList.add("active");
-            document.getElementById("panel-seq-assembly").style.display = "none";
-            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
-            document.getElementById("panel-tasks").style.display = "none";
-            document.getElementById("nav-tasks").parentNode.classList.remove("active");
-        };
-
-        document.getElementById("nav-seq-assembly").onclick = function (e) {
-            document.getElementById("panel-basecalled-data").style.display = "none";
-            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
-            document.getElementById("panel-live-data").style.display = "none";
-            document.getElementById("nav-live-data").parentNode.classList.remove("active");
-            document.getElementById("panel-summary-data").style.display = "none";
-            document.getElementById("run-summary-data").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-id").style.display = "none";
-            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-map").style.display = "none";
-            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-assembly").style.display = "block";
-            document.getElementById("nav-seq-assembly").parentNode.classList.add("active");
-            document.getElementById("panel-trans-map").style.display = "none";
-            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
-            document.getElementById("panel-tasks").style.display = "none";
-            document.getElementById("nav-tasks").parentNode.classList.remove("active");
-        };
-
-        document.getElementById("nav-tasks").onclick = function (e) {
-            document.getElementById("panel-basecalled-data").style.display = "none";
-            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
-            document.getElementById("panel-live-data").style.display = "none";
-            document.getElementById("nav-live-data").parentNode.classList.remove("active");
-            document.getElementById("panel-summary-data").style.display = "none";
-            document.getElementById("run-summary-data").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-id").style.display = "none";
-            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-map").style.display = "none";
-            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-assembly").style.display = "none";
-            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
-            document.getElementById("panel-trans-map").style.display = "none";
-            document.getElementById("nav-seq-map-trans").parentNode.classList.remove("active");
-            document.getElementById("panel-tasks").style.display = "block";
-            document.getElementById("nav-tasks").parentNode.classList.add("active");
-        };
-
-        document.getElementById("nav-seq-map-trans").onclick = function (e) {
-            document.getElementById("panel-basecalled-data").style.display = "none";
-            document.getElementById("nav-basecalled-data").parentNode.classList.remove("active");
-            document.getElementById("panel-live-data").style.display = "none";
-            document.getElementById("nav-live-data").parentNode.classList.remove("active");
-            document.getElementById("panel-summary-data").style.display = "none";
-            document.getElementById("run-summary-data").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-id").style.display = "none";
-            document.getElementById("nav-seq-id").parentNode.classList.remove("active");
-            document.getElementById("panel-seq-map").style.display = "none";
-            document.getElementById("panel-seq-assembly").style.display = "none";
-            document.getElementById("nav-seq-assembly").parentNode.classList.remove("active");
-            document.getElementById("nav-seq-map").parentNode.classList.remove("active");
-            document.getElementById("panel-trans-map").style.display = "block";
-            document.getElementById("nav-seq-map-trans").parentNode.classList.add("active");
-            document.getElementById("panel-tasks").style.display = "none";
-            document.getElementById("nav-tasks").parentNode.classList.remove("active");
-        };
-
-
-
         this.PoreShizzle = this.makeAreaPlot(
             'poreshizzle',
             'Pore States'.toUpperCase(),
@@ -4134,12 +3961,12 @@ function MinotourApp() {
         $.get(pafurl, function (data){
             //console.log(data);
             if (data.length < 1) {
-                document.getElementById("nav-seq-map").parentNode.classList.remove("active");
-                document.getElementById("nav-seq-map").style.display = "none";
+                // document.getElementById("nav-seq-map").parentNode.classList.remove("active");
+                // document.getElementById("nav-seq-map").style.display = "none";
             //    document.getElementById("panel-tasks").style.display = "none";
             } else{
                 //document.getElementById("nav-seq-map").parentNode.classList.remove("active");
-                document.getElementById("nav-seq-map").style.display = "block";
+                // document.getElementById("nav-seq-map").style.display = "block";
                 //document.getElementById("panel-tasks").style.display = "none";
                 //document.getElementById('mapping-data').innerHTML = JSON.stringify(data);
                 //console.log('hello');
