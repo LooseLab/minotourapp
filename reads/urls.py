@@ -201,4 +201,24 @@ urlpatterns = [
         views.flowcell_channel_summary,
         name="flowcellchannelsummary-list"
     ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/rundetails/$',
+        views.flowcell_run_status_list,
+        name="flowcellrunstatus_list"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/runstats/$',
+        views.flowcell_run_stats_list,
+        name="flowcellrunstats_list"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/runstats/(?P<checkid>[0-9]+)/$',
+        views.flowcell_run_stats_latest,
+        name="flowcellrunstats_latest"
+    ),
+    url(
+        r'^api/v1/tabs/(?P<pk>[0-9]+)/$',
+        views.tabs_details,
+        name="tabs-details"
+    ),
 ]

@@ -901,7 +901,7 @@ def tasks_detail_all(request,pk):
                 'reference': reference_name,
                 'last_read': jobmasterlist[0].last_read,
                 'read_count': jobmasterlist[0].read_count,
-                'temp_file': jobmasterlist[0].temp_file,
+                'temp_file': jobmasterlist[0].tempfile_name,
                 'complete': jobmasterlist[0].complete,
                 'running': jobmasterlist[0].running
             })
@@ -1019,3 +1019,122 @@ def flowcell_channel_summary(request, pk):
     serializer = ChannelSummarySerializer(queryset, many=True, context={'request': request})
 
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+def flowcell_run_status_list(request, pk):
+    if request.method == 'GET':
+        queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+        runset = list()
+        for run in queryset:
+            # print (run.run_id)
+            runset.append(run.run_id)
+        queryset = MinIONRunStatus.objects.filter(run_id__in=runset)
+        #print (queryset)
+        serializer = MinIONRunStatusSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+
+@api_view(['GET'])
+def flowcell_run_stats_list(request,pk):
+    """
+    TODO describe function
+    """
+    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    runset = list()
+    for run in queryset:
+        # print (run.run_id)
+        runset.append(run.run_id)
+
+    try:
+        crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=runset)
+        #minIONrunstats = MinIONRunStats.objects.all()
+        #print (len(crazyminIONrunstats))
+
+    except MinIONRunStats.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        #print (crazyminIONrunstats)
+        #for item in crazyminIONrunstats:
+        #    print (item.minION, item.run_id, item.sample_time, item.event_yield)
+
+        serializer = MinIONRunStatsSerializer(crazyminIONrunstats, many=True , context={'request': request})
+
+        return Response(serializer.data)
+
+@api_view(['GET'])
+def flowcell_run_stats_latest(request,pk,checkid):
+    """
+    TODO describe function
+    """
+    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    runset = list()
+    for run in queryset:
+        # print (run.run_id)
+        runset.append(run.run_id)
+    try:
+        crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=runset, id__gt=checkid)[:1000]
+        #minIONrunstats = MinIONRunStats.objects.all()
+        #print (crazyminIONrunstats)
+
+    except MinIONRunStats.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        #print (crazyminIONrunstats)
+        #for item in crazyminIONrunstats:
+        #    print (item.minION, item.run_id, item.sample_time, item.event_yield)
+
+        serializer = MinIONRunStatsSerializer(crazyminIONrunstats, many=True , context={'request': request})
+
+        return Response(serializer.data)
+
+@api_view(['GET'])
+def tabs_details(request, pk):
+    """
+    Return tab_id, tab_title, and tab_position for a given run.
+    """
+    dict = {
+        "LiveEvent": {
+            "id": "tab-live-event-data",
+            "title": "Live Event Data",
+            "position": 1
+        },
+        "ChanCalc": {
+            "id": "tab-basecalled-data",
+            "title": "Basecalled Data",
+            "position": 2
+        },
+        "Kraken": {
+            "id": "tab-sequence-id",
+            "title": "Sequence Identification",
+            "position": 3
+        },
+        "Minimap2": {
+            "id": "tab-sequence-mapping",
+            "title": "Sequence Mapping",
+            "position": 4
+        },
+        "Assembly": {
+            "id": "tab-sequence-assembly",
+            "title": "Assembly",
+            "position": 5
+        },
+        "Minimap2_trans": {
+            "id": "tab-transcriptome-mapping",
+            "title": "Transcriptome Mapping",
+            "position": 6
+        }
+    }
+    tabs = list()
+    # Find live event data
+    if MinIONRunStatus.objects.filter(run_id=pk):
+        tabs.append(dict['LiveEvent'])
+
+    for master in JobMaster.objects.filter(run_id=pk).values_list('job_type__name', flat=True):
+        if master in dict.keys():
+            tabs.append(dict[master])
+        else:
+            print("RunID '" + pk + "' has JobType '" + master + "' but there is no corresponding tab defined in reads/views.py")
+
+    return Response(tabs)

@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import tempfile
+import numpy as np
 from datetime import datetime, timedelta
 
 import pytz
@@ -34,6 +35,7 @@ from reads.models import RunStatisticBarcode
 from reads.models import RunSummaryBarcode
 from reference.models import ReferenceInfo
 from assembly.models import GfaStore
+from assembly.models import GfaSummary
 
 logger = get_task_logger(__name__)
 
@@ -121,15 +123,20 @@ def slow_monitor():
 
     timediff = utcnow() - timedelta(days=1)
 
-    for minion_run in minion_runs:
+    active_runs = MinIONRun.objects.filter(active=True).distinct()
+
+    for minion_run in active_runs:
+
+        print("Found an active run!")
 
         run_jobs = JobMaster.objects.filter(run=minion_run).filter(running=False)
 
-        #for run_job in run_jobs:
-        #    if run_job.job_type.name == "Assembly":
-        #        print("Running Assembly")
-        #        run_minimap_assembly.delay(minion_run.id, run_job.id, run_job.tempfile_name, run_job.last_read)
+        for run_job in run_jobs:
+            if run_job.job_type.name == "Assembly":
+                print("Running Assembly")
+                run_minimap_assembly.delay(minion_run.id, run_job.id, run_job.tempfile_name, run_job.last_read, run_job.read_count)
 
+    for minion_run in minion_runs:
         if minion_run.last_entry() >= timediff or minion_run.last_read() >= timediff:
             cachesiz[str(minion_run.id)] = minion_run
 
@@ -409,9 +416,9 @@ def test_task(string, reference):
     for line in lines:
         print(line.id)
 
-'''
+
 @task()
-def run_minimap_assembly(runid, id, tmp, last_read):
+def run_minimap_assembly(runid, id, tmp, last_read, read_count):
 
     JobMaster.objects.filter(pk=id).update(running=True)
     print ("hello teri {}".format(runid))
@@ -420,70 +427,111 @@ def run_minimap_assembly(runid, id, tmp, last_read):
         tmp = tempfile.NamedTemporaryFile(delete=False).name
     print ("tempfile {}".format(tmp))
 
-    fastqs = FastqRead.objects.filter(run_id__id=runid, id__gt=int(last_read))
+    fastqs = FastqRead.objects.filter(run_id__id=runid, id__gt=int(last_read))[:10000]
     #print ("fastqs",fastqs)
     #read = ''
     #fastqdict=dict()
     #fastqtypedict=dict()
-    outtemp = open(tmp, 'a')
+    #outtemp = open(tmp, 'a')
+
+    fastqdict=dict()
 
     newfastqs = 0
 
     for fastq in fastqs:
+        if fastq.barcode not in fastqdict:
+            fastqdict[fastq.barcode] = dict()
+        if fastq.type not in fastqdict[fastq.barcode]:
+            fastqdict[fastq.barcode][fastq.type] = []
+
+        fastqdict[fastq.barcode][fastq.type].append([fastq.read_id, fastq.sequence])
         newfastqs += 1
         #read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
         #fastqdict[fastq.read_id]=fastq
         #fastqtypedict[fastq.read_id]=fastq.type
-        outtemp.write('>{}\n{}\n'.format(fastq.read_id, fastq.sequence))
+        #outtemp.write('>{}\n{}\n'.format(fastq.read_id, fastq.sequence))
         last_read = fastq.id
 
-    outtemp.close()
+    #outtemp.close()
     print("Added {} new fastqs".format(newfastqs))
 
     if newfastqs < 1000:
         JobMaster.objects.filter(pk=id).update(running=False, tempfile_name=tmp)
     else:
 
-        totreads = subprocess.check_output('grep -c ">" ' + tmp, shell=True)
-        totreads.rstrip()
+        totreads = read_count + newfastqs
 
-        cmd = 'minimap -Sw5 -L100 -m0 -t4 %s %s | miniasm -f %s - ' % (tmp, tmp, tmp)
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+        for bar in fastqdict:
+            print(bar.name)
+
+            for ty in fastqdict[bar]:
+                print(ty.name)
+
+                tmpfilename = tmp+bar.name+ty.name
+                tmpfilename = tmpfilename.replace(" ","_")
+
+                outtemp = open(tmpfilename, 'a')
+                for fq in fastqdict[bar][ty]:
+                    outtemp.write('>{}\n{}\n'.format(fq[0],fq[1]))
+                outtemp.close()
+
+                totfq = subprocess.check_output('grep -c ">" '+tmpfilename, shell=True)
+                totfq.rstrip()
+
+                cmd = 'minimap -Sw5 -L100 -m0 -t4 %s %s | miniasm -f %s - ' % (tmpfilename, tmpfilename, tmpfilename)
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, shell=True)
-        (out, err) = proc.communicate()
-        status = proc.wait()
-        gfa = out.decode("utf-8")
+                (out, err) = proc.communicate()
+                status = proc.wait()
+                gfa = out.decode("utf-8")
 
-        print ("output {}".format(gfa))
+                #print ("output {}".format(gfa))
 
-        gfadata = gfa.splitlines()
+                gfadata = gfa.splitlines()
 
-        runinstance = MinIONRun.objects.get(pk=runid)
+                runinstance = MinIONRun.objects.get(pk=runid)
 
-        seqlens = []
-        gfaall = ""
+                seqlens = []
+                gfaall = ""
 
-        for line in gfadata:
-            gfaall += line
-            line = line.strip('\n')
-            record = line.split('\t')
-            if record[0] == 'S':
-                seqlens.append(len(record[2]))
+                for line in gfadata:
+                    gfaall += line
+                    line = line.strip('\n')
+                    record = line.split('\t')
+                    if record[0] == 'S':
+                        seqlens.append(len(record[2]))
 
-        newgfa = GfaStore(run=runinstance)
-        newgfa.nreads = totreads
-        newgfa.ncontigs = len(seqlens)#	int	Number of contigs
-        newgfa.maxlen = max(seqlens)  #	int	Maximum contig length
-        newgfa.minlen  = min(seqlens) #	int	Mininum contig length
-        newgfa.totlen = sum(seqlens)  #	int	Total contig length
-        newgfa.n50len = getn50(seqlens) #    int Contig N50
-        newgfa.meanlen = sum(seqlens)/len(seqlens) #   int Mean contig length
-        newgfa.gfaformat = gfaall  #   string  The whole GFA file
-        newgfa.save()
+                newgfastore = GfaStore(run=runinstance, barcode = bar, readtype = ty)
+                newgfastore.nreads = totfq
+                newgfastore.gfaformat = gfaall  #   string  The whole GFA file
+                newgfastore.save()
+
+                #### SAVE 0 IF ASSSEMBLY FAILS
+
+                newgfa = GfaSummary(run=runinstance, barcode = bar, readtype = ty)
+                newgfa.nreads = totfq
+                if len(seqlens) > 0:
+                    nparray = np.array(seqlens)
+                    newgfa.ncontigs = len(seqlens)#	int	Number of contigs
+                    newgfa.maxlen = max(seqlens)  #	int	Maximum contig length
+                    newgfa.minlen  = min(seqlens) #	int	Mininum contig length
+                    newgfa.totlen = sum(seqlens)  #	int	Total contig length
+                    newgfa.n50len = getn50(seqlens) #    int Contig N50
+                    newgfa.meanlen = sum(seqlens)/len(seqlens) #   int Mean contig length
+                    newgfa.allcontigs = "[%d, %d, %d, %d, %d]" % (min(seqlens), np.percentile(nparray, 25), np.percentile(nparray, 50), np.percentile(nparray, 75), max(seqlens))
+                else:
+                    newgfa.ncontigs = 0 #	int	Number of contigs
+                    newgfa.maxlen = 0   #	int	Maximum contig length
+                    newgfa.minlen  = 0  #	int	Mininum contig length
+                    newgfa.totlen = 0   #	int	Total contig length
+                    newgfa.n50len = 0   #   int Contig N50
+                    newgfa.meanlen = 0  #   int Mean contig length
+                    newgfa.allcontigs = "[0,0,0,0,0]"
+                newgfa.save()
 
 
-        JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read, tempfile_name=tmp)
-'''
+        JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read, tempfile_name=tmp, read_count=totreads)
+
 
 @task
 def run_minimap2_transcriptome(runid, id, reference, last_read):

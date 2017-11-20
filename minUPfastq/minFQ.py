@@ -69,8 +69,8 @@ class Runcollection():
 
         for page in tqdm(range(number_pages)):
 
-            url = self.runidlink + 'readnames?page=%s'.format(page)
-
+            url = self.runidlink + 'readnames?page={}'.format(page)
+            #print ("getting {}".format(url))
             content = requests.get(url, headers=header)
             # We have to recover the data component and loop through that to get the read names.
             for read in json.loads(content.text)["data"]:
@@ -235,77 +235,84 @@ class Runcollection():
 
     def add_read(self, record, descriptiondict,fastq):
         passstatus=(self.check_pass(fastq))
+        #print ("looking for {}".format(record.id) )
+        #print ("in")
+        #print (self.readnames[0])
+        #if record.id in self.readnames:
+        #    print ("found the read")
 
-        if record.id not in self.readid:
-            self.readid[record.id] = dict()
-            for item in descriptiondict:
-                self.readid[record.id][item] = descriptiondict[item]
+        #if record.id not in self.readid:
+        #if record.id not in self.readnames:
+        #    print ("think read not found")
+        self.readid[record.id] = dict()
+        for item in descriptiondict:
+            self.readid[record.id][item] = descriptiondict[item]
 
-            # print self.readid[record.id]
-            tm = dateutil.parser.parse(self.readid[record.id]["start_time"])
-            # print tm
-            tm = tm - datetime.timedelta(minutes=(tm.minute % 1) - 1,
-                                         seconds=tm.second,
-                                         microseconds=tm.microsecond)
-            # print tm
-            if tm not in self.timeid.keys():
-                self.timeid[tm] = dict()
-                self.timeid[tm]["cumulength"] = 0
-                self.timeid[tm]["count"] = 0
-                self.timeid[tm]["readlengths"] = list()
-                self.timeid[tm]["chandict"] = list()
+        # print self.readid[record.id]
+        tm = dateutil.parser.parse(self.readid[record.id]["start_time"])
+        # print tm
+        tm = tm - datetime.timedelta(minutes=(tm.minute % 1) - 1,
+                                     seconds=tm.second,
+                                     microseconds=tm.microsecond)
+        # print tm
+        if tm not in self.timeid.keys():
+            self.timeid[tm] = dict()
+            self.timeid[tm]["cumulength"] = 0
+            self.timeid[tm]["count"] = 0
+            self.timeid[tm]["readlengths"] = list()
+            self.timeid[tm]["chandict"] = list()
 
-            # This is illustrating how to access the sequence but will be a memory problem
-            # self.readid[record.id]["seq"]=record.seq
-            # self.readid[record.id]["qual"]=record.format("qual")
-            if self.readid[record.id]["ch"] not in self.chandict:
-                self.chandict.append(self.readid[record.id]["ch"])
+        # This is illustrating how to access the sequence but will be a memory problem
+        # self.readid[record.id]["seq"]=record.seq
+        # self.readid[record.id]["qual"]=record.format("qual")
+        if self.readid[record.id]["ch"] not in self.chandict:
+            self.chandict.append(self.readid[record.id]["ch"])
 
-            if self.readid[record.id]["ch"] not in self.timeid[tm]["chandict"]:
-                self.timeid[tm]["chandict"].append(self.readid[record.id]["ch"])
+        if self.readid[record.id]["ch"] not in self.timeid[tm]["chandict"]:
+            self.timeid[tm]["chandict"].append(self.readid[record.id]["ch"])
 
-            if "barcode" in self.readid[record.id].keys() or args.cust_barc=='oddeven':
+        if "barcode" in self.readid[record.id].keys() or args.cust_barc=='oddeven':
 
-                if "barcode" in self.readid[record.id]:
-                    barcode_local = self.readid[record.id]["barcode"]
-                else:
-                    barcode_local = ""
-
-                if args.cust_barc=='oddeven':
-                    if int(self.readid[record.id]["ch"]) % 4 == 0:
-                        barcode_local = barcode_local + 'even'
-                    else:
-                        barcode_local = barcode_local + 'odd'
-
-                if barcode_local not in self.barcodes.keys():
-
-                    print(">> Found new barcode {} for run {}.".format(barcode_local, self.runidlink))
-
-                    request_body = {
-                        'name': barcode_local,
-                        'run': str(self.runidlink)
-                    }
-
-                    response = requests.post(
-                        str(self.runidlink) + "barcodes/",
-                        headers=header,
-                        json=request_body
-                    )
-
-                    if response.status_code == 201:
-                        item = json.loads(response.text)
-
-                        self.barcodes.update({
-                            item['name']: item['url']
-                        })
-
-                        print(">> Barcode {} for run {} created with success.".format(item['url'], self.runidlink))
-
-                barcode_url = self.barcodes[barcode_local]
-
+            if "barcode" in self.readid[record.id]:
+                barcode_local = self.readid[record.id]["barcode"]
             else:
-                barcode_url = self.barcodes["No barcode"]
+                barcode_local = ""
 
+            if args.cust_barc=='oddeven':
+                if int(self.readid[record.id]["ch"]) % 4 == 0:
+                    barcode_local = barcode_local + 'even'
+                else:
+                    barcode_local = barcode_local + 'odd'
+
+            if barcode_local not in self.barcodes.keys():
+
+                print(">> Found new barcode {} for run {}.".format(barcode_local, self.runidlink))
+
+                request_body = {
+                    'name': barcode_local,
+                    'run': str(self.runidlink)
+                }
+
+                response = requests.post(
+                    str(self.runidlink) + "barcodes/",
+                    headers=header,
+                    json=request_body
+                )
+
+                if response.status_code == 201:
+                    item = json.loads(response.text)
+
+                    self.barcodes.update({
+                        item['name']: item['url']
+                    })
+
+                    print(">> Barcode {} for run {} created with success.".format(item['url'], self.runidlink))
+
+            barcode_url = self.barcodes[barcode_local]
+
+        else:
+            barcode_url = self.barcodes["No barcode"]
+        if record.id not in self.readnames:
             if self.check_1d2(record.id):
                 #print ("Seen a 1D^2 read. Exiting.")
                 #print (record.id)
@@ -341,13 +348,16 @@ class Runcollection():
                     self.readid[record.id]["start_time"]
                 )
 
-            self.readid[record.id]["len"] = len(record.seq)
-            self.cumulength += len(record.seq)
-            self.timeid[tm]["cumulength"] += len(record.seq)
-            self.readcount += 1
-            self.timeid[tm]["count"] += 1
-            self.readlengths.append(len(record.seq))
-            self.timeid[tm]["readlengths"].append(len(record.seq))
+        self.readid[record.id]["len"] = len(record.seq)
+        self.cumulength += len(record.seq)
+        self.timeid[tm]["cumulength"] += len(record.seq)
+        self.readcount += 1
+        self.timeid[tm]["count"] += 1
+        self.readlengths.append(len(record.seq))
+        self.timeid[tm]["readlengths"].append(len(record.seq))
+        #else:
+        #    print ("already seen read")
+        #    os._exit(1)
             # print(record.id)
             # print(record.seq)
             # print(record.description)
