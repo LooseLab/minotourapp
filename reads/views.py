@@ -1020,6 +1020,8 @@ def flowcell_channel_summary(request, pk):
 
     return Response(serializer.data)
 
+
+@api_view(['GET'])
 def flowcell_run_status_list(request, pk):
     if request.method == 'GET':
         queryset = FlowCellRun.objects.filter(flowcell_id=pk)

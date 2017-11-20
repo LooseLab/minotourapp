@@ -57,7 +57,8 @@ function check_user_runs() {
 }
 
 function write_run_data(textinfo){
-    //console.log(textinfo);
+    console.log("textshiz");
+    console.log(textinfo);
     var text = '';
     text += "<div class='table-responsive table-bordered'>";
     text += "<table class='table'>";
@@ -69,7 +70,7 @@ function write_run_data(textinfo){
     text += "<th>ASIC ID</th>";
     text += "<th>Current Script</th>";
     text += "<th>minKNOW version</th>";
-    text += "<th>Name</th> ";
+    text += "<th>FlowCell Name</th> ";
     text += "<th>Sample Name</th>";
     text += "<th>Run Name</th>";
     text += "<th>FLow Cell ID</th>";
@@ -84,14 +85,17 @@ function write_run_data(textinfo){
         text += key;
         text += textinfo[key];
         text += "</td>";
-        text += "<td>"+textinfo[key]['starttime']+"</td>";
-        text += "<td>"+"</td>";
-        text += "<td>"+"</td>";
-        text += "<td>"+"</td>";
-        text += "<td>"+"</td>";
-        text += "<td>"+textinfo[key]['minKNOW_version']+"</td>";
-        text += "<td>"+textinfo[key]['name']+"</td>";
-        text += "<td>"+textinfo[key]['sample_name']+"</td>";
+
+
+            text += "<td>"+textinfo[key]['starttime']+"</td>";
+            text += "<td>"+textinfo[key]["computer_name"]+"</td>";
+            text += "<td>"+textinfo[key]["minIONname"]+"</td>";
+            text += "<td>"+textinfo[key]["minKNOW_asic_id"]+"</td>";
+            text += "<td>"+textinfo[key]["minKNOW_current_script"]+"</td>";
+            text += "<td>"+textinfo[key]["minKNOW_version"]+"</td>";
+            text += "<td>"+textinfo[key]['name']+"</td>";
+            text += "<td>"+textinfo[key]["sample_name"]+"</td>";
+
         text += "<td>"+textinfo[key]['run_name']+"</td>";
         text += "<td>"+textinfo[key]['flowcellid']+"</td>";
         if (textinfo[key]['active'] == true) {
@@ -1583,49 +1587,43 @@ function MinotourFlowCellApp() {
         self.updatePoreChart(self.chartBasesPerPore, self.channelSummary, 'read_length');
     };
 
-    this.updatetext = function (livedata) {
+    this.updatetext = function () {
         datadump = new Array();
-        for (var i = 0; i < livedata.length; i++) {
-            //console.log(livedata);
-            datadump[i]=new Array;
-            datadump[i].minIONname=self.livedata.minIONname;
-            datadump[i].asicid=self.livedata.asicid;
-            datadump[i].minKNOW_version=livedata[i].minKNOW_version;
-            datadump[i].run_id=livedata[i].run_id;
-            datadump[i].run_name=livedata[i].run_name;
-            datadump[i].sample_name=livedata[i].sample_name;
-            datadump[i].name=livedata[i].name;
-            console.log("SAMPLE_NAME "+ livedata[i].name);
-            var starttime = new Date(livedata[i].start_time);
-            datadump[i].starttime=starttime;
-            datadump[i].flowcellid=livedata[i].minKNOW_flow_cell_id;
-            datadump[i].active=livedata[i].active;
-            datadump[i].barcodes=livedata[i].barcodes;
+        //console.log('rundetails');
+        //console.log(self.rundetails);
+        if (self.rundetails != undefined ) {
+            console.log(self.rundetails);
+            //for (var i = 0; i < self.rundetails.length; i++) {
 
-            document.getElementById('MinIONName').innerHTML = self.livedata.minIONname;
-            document.getElementById('asicid').innerHTML = self.livedata.asicid;
-            document.getElementById('MinKNOWVersion').innerHTML = livedata[i].minKNOW_version;
-            document.getElementById('RunID').innerHTML = livedata[i].run_id;
-            document.getElementById('RunName').innerHTML = livedata[i].run_name;
-            document.getElementById('SampleName').innerHTML = livedata[i].sample_name;
+            for (var i in self.rundetails) {
+                // skip loop if the property is from prototype
+                if (!self.rundetails.hasOwnProperty(i)) continue;
+                //console.log("look at this");
+                //console.log(self.rundetails[i]);
+                datadump[i]=new Array;
+                datadump[i].minIONname=self.rundetails[i]['minION_name'];
+                datadump[i].minKNOW_asic_id=self.rundetails[i]['minKNOW_asic_id'];
+                datadump[i].minKNOW_version=self.rundetails[i]['minKNOW_version'];
+                datadump[i].run_id=self.rundetails[i]['minKNOW_hash_run_id'];
+                datadump[i].run_name=self.rundetails[i]['minKNOW_run_name'];
+                datadump[i].sample_name=self.rundetails[i]['minKNOW_sample_name'];
+                datadump[i].computer_name=self.rundetails[i]['minKNOW_computer'];
+                datadump[i].minKNOW_current_script=self.rundetails[i]['minKNOW_current_script'];
+                datadump[i].name=self.rundata[i]['name'];
+
+                var starttime = new Date(self.rundetails[i]['minKNOW_start_time']);
+                datadump[i].starttime=starttime;
+                datadump[i].flowcellid=self.rundetails[i]['minKNOW_flow_cell_id'];
+                datadump[i].active=self.rundata[i].active;
+                datadump[i].barcodes=self.rundata[i].barcodes;
 
 
-            //document.getElementById('ComputerName').innerHTML = livedata[i].minKNOW_computer;
-            var starttime = new Date(livedata[i].start_time);
-            document.getElementById('RunStartTime').innerHTML = starttime;
-            document.getElementById('FlowCellID').innerHTML = livedata[i].minKNOW_flow_cell_id;
-            if (livedata[i].active == true) {
-                document.getElementById('CurrentlySequencing').innerHTML = '<i class="fa fa-check" aria-hidden="true"></i>';
-            } else {
-                document.getElementById('CurrentlySequencing').innerHTML = '<i class="fa fa-times" aria-hidden="true"></i>';
-            }
-            if (livedata[i].barcodes.length > 2) {
-                document.getElementById('Barcoded').innerHTML = '<i class="fa fa-check" aria-hidden="true"></i>';
-            } else {
-                document.getElementById('Barcoded').innerHTML = '<i class="fa fa-times" aria-hidden="true"></i>';
+
+                //datadump[i].rundetails=self.rundetails[i];
             }
         }
-
+        //console.log("datadump");
+        //console.log(datadump);
         self.write_run_data(datadump);
 
     };
@@ -1633,17 +1631,21 @@ function MinotourFlowCellApp() {
     this.requestRunDetails = function (id) {
         var url_RunDetails = '/api/v1/flowcells/' + id + '/rundetails/';
         $.get(url_RunDetails, function (data) {
+            console.log("rundetails");
             console.log(data);
+            self.rundetails=data;
             self.livedata.minIONname = data[0].minION_name;
             self.livedata.asicid = data[0].minKNOW_asic_id;
             self.livedata.scriptid = data[0].minKNOW_current_script;
             self.livedata.colours_string = data[0].minKNOW_colours_string;
             //self.livedata.computer=data[0].minKNOW_computer;
             //console.log(data[0]);
-            document.getElementById('ComputerName').innerHTML = data[0].minKNOW_computer;
-            document.getElementById('ScriptID').innerHTML = data[0].minKNOW_current_script;
+            //document.getElementById('ComputerName').innerHTML = data[0].minKNOW_computer;
+            //document.getElementById('ScriptID').innerHTML = data[0].minKNOW_current_script;
+            self.updatetext();
 
         })
+
     };
 
     this.requestLiveRunStats = function (id) {
@@ -1946,7 +1948,7 @@ function MinotourFlowCellApp() {
     };
 
     this.requestMessages = function () {
-        var url_sincemessages = self.rundata.minION + 'messagessince/' + self.rundata.start_time + '/' + self.lasttime.toISOString() + "/";
+            var url_sincemessages = self.rundata.minION + 'messagessince/' + self.rundata.start_time + '/' + self.lasttime.toISOString() + "/";
         //console.log(url_sincemessages);
         $.get(url_sincemessages, function (data) {
             //console.log(data);
@@ -2100,7 +2102,7 @@ function MinotourFlowCellApp() {
             self.requestRunDetails(self.id);
             self.requestLiveRunStats(self.id);
 
-            self.updatetext(self.rundata);
+            //self.updatetext();
 
 
             /*
