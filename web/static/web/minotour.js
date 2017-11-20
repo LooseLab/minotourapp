@@ -1948,7 +1948,8 @@ function MinotourFlowCellApp() {
     };
 
     this.requestMessages = function () {
-            var url_sincemessages = self.rundata.minION + 'messagessince/' + self.rundata.start_time + '/' + self.lasttime.toISOString() + "/";
+        //
+            var url_sincemessages = self.rundetails[0]["minION"] + 'messagessince/' + self.rundetails[0]["minKNOW_start_time"] + '/' + self.lasttime.toISOString() + "/";
         //console.log(url_sincemessages);
         $.get(url_sincemessages, function (data) {
             //console.log(data);
