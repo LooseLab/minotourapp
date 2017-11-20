@@ -169,17 +169,24 @@ def paf_alignment_ch_list(request, pk, ch):
 @api_view(['GET'])
 def references_used_by_run(request, run_id):
 
-    jobs = JobMaster.objects.filter(run_id=run_id).filter(job_type__name='Minimap2')
+    #jobs = JobMaster.objects.filter(run_id=run_id).filter(job_type__name='Minimap2')
 
-    references = [job.reference for job in jobs]
+    #references = [job.reference for job in jobs]
 
-    reference_lines = ReferenceLine.objects.filter(reference__in=references)
+    #reference_lines = ReferenceLine.objects.filter(reference__in=references)
 
-    result = [(reference_line.id, reference_line.reference.reference_name, reference_line.line_name) for reference_line in reference_lines]
+    #result = [(reference_line.id, reference_line.reference.reference_name, reference_line.line_name) for reference_line in reference_lines]
 
     #for job in jobs:
     #    for reference_line in job.reference.referencelines:
     #        print(reference_line.name)
     #        names.append(reference_line.name)
 
-    return HttpResponse(json.dumps(result), content_type="application/json")
+    references = PafRoughCov.objects.\
+        filter(run_id=run_id).\
+        values('chromosome__id', 'barcode', 'barcode__name', 'reference', 'reference__reference_name', 'chromosome__line_name').distinct()
+
+    print(references[0].keys())
+
+    result = [{'chromosome__id': r['chromosome__id'], 'chromosome__name': r['chromosome__line_name'],'barcode': r['barcode'], 'barcode__name': r['barcode__name'], 'reference': r['reference'], 'reference_name': r['reference__reference_name']} for r in references]
+    return HttpResponse(json.dumps(list(result)), content_type="application/json")

@@ -76,8 +76,8 @@ function requestMappedChromosomes (run_id) {
         for (var i = 0; i < data.length; i++) {
             var option = document.createElement('option');
 
-            option.text = data[i][1] + ' - ' + data[i][2];
-            option.value = data[i][0];
+            option.text = data[i]['barcode__name'] + ' - ' + data[i]['reference_name'] + ' - ' + data[i]['chromosome__name'];
+            option.value = data[i]['chromosome_id'];
 
             if (selected_option === undefined) {
 
