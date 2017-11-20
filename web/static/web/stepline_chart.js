@@ -19,11 +19,18 @@ function makeStepLineChart(divName, chartTitle, yAxisTitle) {
 
 }
 
-function updateStepLineChart (chart, run_id, barcode_id) {
+function updateStepLineChart (chart) {
 
     var select = document.getElementById('chromosome-id-select');
     var selected_index = select.selectedIndex;
     var selected_option = select[selected_index];
+
+    var value_combination = selected_option.value.split('_');
+    var run_id = value_combination[0];
+    var barcode_id = value_combination[1];
+    var read_type_id = value_combination[2];
+    var reference_id = value_combination[3];
+    var chromosome_id = value_combination[4];
 
     if (selected_option === undefined) {
         console.log('No mapped chromosome selected.');
@@ -34,7 +41,7 @@ function updateStepLineChart (chart, run_id, barcode_id) {
     //var barcode_id = self.selectedBarcode;
     var selected_option_value = selected_option.value;
 
-    var url = '/api/v1/runs/' + run_id + '/pafcover/' + barcode_id + '/1/' + selected_option_value + '/';
+    var url = '/api/v1/runs/' + run_id + '/pafcover/' + barcode_id + '/' + read_type_id + '/' + chromosome_id + '/';
 
     $.getJSON(url, function(data) {
 
@@ -76,16 +83,17 @@ function requestMappedChromosomes (run_id) {
         for (var i = 0; i < data.length; i++) {
             var option = document.createElement('option');
 
-            option.text = data[i]['barcode__name'] + ' - ' + data[i]['reference_name'] + ' - ' + data[i]['chromosome__name'];
-            option.value = data[i]['chromosome_id'];
+            var value_combination = data[i]['run_id'] + '_' + data[i]['barcode_id'] + '_' + data[i]['read_type_id'] + '_' + data[i]['reference_id'] + '_' + data[i]['chromosome_id'];
+
+            option.text = data[i]['barcode_name'] + ' - ' + data[i]['read_type_name'] + ' - ' + data[i]['reference_name'] + ' - ' + data[i]['chromosome_name'];
+            option.value = value_combination;
 
             if (selected_option === undefined) {
 
             } else {
 
-                if (data[i][0] == selected_option.value) {
+                if (value_combination == selected_option.value) {
                     option.selected = 'selected';
-                    console.log('selected option is ' + selected_option.value);
                 }
 
             }

@@ -2417,8 +2417,7 @@ function MinotourApp() {
         );
 
         $('#chromosome-id-select').on('change', function() {
-            console.log('>>> selection changed');
-            self.updateStepLineChart(self.chartChromosomeCoverage, self.id, self.get_selected_barcode_id());
+            self.updateStepLineChart(self.chartChromosomeCoverage);
         });
 
         this.LiveHistogram = this.makeLiveHistogram(
