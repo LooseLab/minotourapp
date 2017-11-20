@@ -25,6 +25,10 @@ function updateStepLineChart (chart) {
     var selected_index = select.selectedIndex;
     var selected_option = select[selected_index];
 
+    var resolution = document.getElementById('resolution-id-select');
+    var resolution_index = resolution.selectedIndex;
+    var resolution_option = resolution[resolution_index];
+
     var value_combination = selected_option.value.split('_');
     var run_id = value_combination[0];
     var barcode_id = value_combination[1];
@@ -41,7 +45,7 @@ function updateStepLineChart (chart) {
     //var barcode_id = self.selectedBarcode;
     var selected_option_value = selected_option.value;
 
-    var url = '/api/v1/runs/' + run_id + '/pafcover/' + barcode_id + '/' + read_type_id + '/' + chromosome_id + '/';
+    var url = '/api/v1/runs/' + run_id + '/pafcover/' + barcode_id + '/' + read_type_id + '/' + chromosome_id + '/' + resolution_option.value + '/';
 
     $.getJSON(url, function(data) {
 
@@ -50,12 +54,29 @@ function updateStepLineChart (chart) {
             chart.series[0].remove();
         }
 
+        var orderedDataOriginal = data['data_original'].sort(function (a, b) {
+            return a[0] - b[0];
+        });
+
+        var orderedDataSimplified = data['data_simplified'].sort(function (a, b) {
+            return a[0] - b[0];
+        });
+
+        // console.log(orderedData);
+
         chart.addSeries({
             // name: barcode + " - " + typeName,
-            name: 'Test',
-            data: data,
+            name: 'Original',
+            data: orderedDataOriginal,
             step: true,
          });
+
+         chart.addSeries({
+             // name: barcode + " - " + typeName,
+             name: 'Simplified',
+             data: orderedDataSimplified,
+             step: true,
+          });
 
     });
 

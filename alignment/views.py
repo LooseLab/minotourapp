@@ -18,7 +18,7 @@ from reference.models import ReferenceLine
 
 
 @api_view(['GET'])
-def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id):
+def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id, resolution):
 
     queryset = PafRoughCov.objects \
         .filter(run__owner=request.user) \
@@ -32,7 +32,32 @@ def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id)
     coverage_list = []
     current_coverage_sum = 0
 
+    result_per_bin = {}
+    # is_a_new_bin = True
+    # current_bin_start_point = None
+
     for key, item in enumerate(queryset):
+
+        if len(result_per_bin.keys()) >= 30:
+            break # never return more than 30 bins
+
+        if key == 0:
+            # bins = {}
+            # current_bin_start_point = item.p
+            serie_start_point = item.p
+
+        #print('{} {} {} {} {}'.format(key, item.p, serie_start_point, int(resolution), int((item.p - serie_start_point) / int(resolution))))
+        #print((item.p - serie_start_point) / int(resolution))
+        #print(int((item.p - serie_start_point) / int(resolution)))
+        bin_index = int((item.p - serie_start_point) / int(resolution))
+
+        # print('bin_index: {}'.format(bin_index))
+
+        # if is_a_new_bin:
+        #     temp_result_list = []
+        #     temp_position_list = []
+        #     temp_coverage_list = []
+        #     temp_current_coverage_sum = 0
 
         current_coverage_sum = current_coverage_sum + item.i
 
@@ -42,7 +67,29 @@ def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id)
 
         result_list.append([item.p, current_coverage_sum])
 
-    return HttpResponse(json.dumps(result_list), content_type="application/json")
+        bin_start = serie_start_point + (bin_index * int(resolution))
+
+        if bin_start in result_per_bin.keys():
+            if result_per_bin[bin_start] < current_coverage_sum:
+                result_per_bin[bin_start] = current_coverage_sum
+                print('novo valor {} {} {}'.format(current_coverage_sum, item.p, item.i))
+        else:
+            result_per_bin[bin_start] = current_coverage_sum
+            print('novo bin')
+            print(result_per_bin[bin_start])
+
+    result_per_bin[queryset.last().p] = current_coverage_sum
+
+    result_list2 = []
+    for p in result_per_bin.keys():
+        result_list2.append([p, result_per_bin[p]])
+
+    result = {}
+    result['data_original'] = result_list
+    result['data_simplified'] = result_list2
+
+    #return HttpResponse(json.dumps(result_list), content_type="application/json")
+    return HttpResponse(json.dumps(result), content_type="application/json")
 
 @api_view(['GET'])
 def paf_alignment_summary(request, pk):#,bc,ch):

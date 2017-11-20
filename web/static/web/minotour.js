@@ -2420,6 +2420,10 @@ function MinotourApp() {
             self.updateStepLineChart(self.chartChromosomeCoverage);
         });
 
+        $('#resolution-id-select').on('change', function() {
+            self.updateStepLineChart(self.chartChromosomeCoverage);
+        });
+
         this.LiveHistogram = this.makeLiveHistogram(
             'live-histogram',
             'Histogram of Read Lengths (Events)',
