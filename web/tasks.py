@@ -37,6 +37,8 @@ from reference.models import ReferenceInfo
 from assembly.models import GfaStore
 from assembly.models import GfaSummary
 
+from communication.utils import *
+
 logger = get_task_logger(__name__)
 
 
@@ -172,6 +174,7 @@ def processrun(deleted, added):
             newjob.last_read = 0
 
         newjob.save()
+        send_message([runinstance.owner],"New Active Run","Minotour has seen a new run start on your account. This is called {}.".format(runinstance.run_name))
 
     for run in deleted:
         runinstance = MinIONRun.objects.get(pk=run)
@@ -180,6 +183,9 @@ def processrun(deleted, added):
 
         jobinstance = JobType.objects.get(name="ChanCalc")
         JobMaster.objects.filter(job_type=jobinstance, run=runinstance).update(complete=True)
+        send_message([runinstance.owner], "Run Finished",
+                     "Minotour has seen a run finish on your account. This was called {}.".format(
+                         runinstance.run_name))
 
 
 def compare_two(newset, cacheset):

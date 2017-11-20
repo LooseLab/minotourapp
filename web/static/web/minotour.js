@@ -56,6 +56,58 @@ function check_user_runs() {
     });
 }
 
+
+function drawtaskbutton(taskstring,colour,icon,description,message,percentage,message2,i,long_description,reference,name,transcriptome){
+        taskstring = taskstring + '<div class="col-md-4">';
+        taskstring = taskstring + '<button type="button" class="info-box ' + colour + '" data-toggle="modal" data-target="#taskmodal' + i + '">';
+        taskstring = taskstring + '<div >';
+        taskstring = taskstring + '<span class="info-box-icon"><i class="' + icon + '"></i></span>';
+        taskstring = taskstring + '<div class="info-box-content">';
+        taskstring = taskstring + '<span class="info-box-text">' + description + '</span>';
+
+        taskstring = taskstring + '<span class="info-box-number" id="'+name+'-message">' + message + '</span>';
+        taskstring = taskstring + '<div class="progress">';
+        taskstring = taskstring + '<div class="progress-bar" id="'+name+'-percentage" style="width: ' + percentage + '%"></div>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '<span class="progress-description" id="'+name+'-message2" >';
+        taskstring = taskstring + message2;
+        taskstring = taskstring + '</span>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</button>';
+        taskstring = taskstring + '<div id="taskmodal' + i + '" class="modal fade" role="dialog">';
+        taskstring = taskstring + '<div class="modal-dialog">';
+        taskstring = taskstring + '<div class="modal-content">';
+        taskstring = taskstring + '<div class="modal-header">';
+        taskstring = taskstring + '<button type="button" class="close" data-dismiss="modal">&times;</button>';
+        taskstring = taskstring + '<h4 class="modal-title">' + description + '</h4>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '<div class="modal-body">';
+        taskstring = taskstring + '<p>' + long_description + '</p>';
+        if (reference == true) {
+            taskstring = taskstring + "<p>Select Reference:</p>"
+            taskstring = taskstring + '<select id="' + name + '">';
+            //console.log(this.references);
+            for (var j = 0; j < this.references.length; j++) {
+                if (this.references[j]['transcripts'] == transcriptome) {
+                    taskstring = taskstring + '<option>' + this.references[j]["reference_name"] + '</option>';
+                }
+            }
+            taskstring = taskstring + '</select>';
+        }
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '<div class="modal-footer">';
+        taskstring = taskstring + '<button type="button" class="btn btn-default" id="button' + name + '">Go</button>';
+        taskstring = taskstring + '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</div>';
+
+        return taskstring;
+    };
+
 function write_run_data(textinfo){
     console.log("textshiz");
     console.log(textinfo);
@@ -87,8 +139,8 @@ function write_run_data(textinfo){
         text += "</td>";
 
 
-            text += "<td>"+textinfo[key]['starttime']+"</td>";
-            text += "<td>"+textinfo[key]["computer_name"]+"</td>";
+        text += "<td>"+textinfo[key]['starttime']+"</td>";
+        text += "<td>"+textinfo[key]["computer_name"]+"</td>";
             text += "<td>"+textinfo[key]["minIONname"]+"</td>";
             text += "<td>"+textinfo[key]["minKNOW_asic_id"]+"</td>";
             text += "<td>"+textinfo[key]["minKNOW_current_script"]+"</td>";
@@ -938,6 +990,16 @@ function MinotourFlowCellApp() {
     };
 
     /*
+     * Each click on a barcode tab fires this function
+     * that calls requestData and update all charts
+     */
+    this.updateChartsBasedOnBarcode = function (event) {
+        self.selectedBarcode = event.target.innerText;
+        self.requestData();
+    };
+
+
+    /*
      * Updates the list of barcodes tab and attach
      * click event to function updateChartsBasedOnBarcode
      */
@@ -946,12 +1008,12 @@ function MinotourFlowCellApp() {
 
         ul.innerHTML = "";
 
-        var sortedBarcodes = this.barcodes;
+        var sortedBarcodes = self.barcodes;
 
         for (var i = 0; i < sortedBarcodes.length; i++) {
             var li = document.createElement("li");
             var a = document.createElement("a");
-            a.onclick = this.updateChartsBasedOnBarcode;
+            a.onclick = self.updateChartsBasedOnBarcode;
             a.href = "#";
             a.text = sortedBarcodes[i];
 
@@ -1260,25 +1322,25 @@ function MinotourFlowCellApp() {
 
                             summaries[barcodename][typename]["read_count"] = {
                                 "name": typename,
-                                "data": summary[barcodename][typename]["read_count"],//[summaries[item.barcodename][item.typename]["read_count"]["data"] + item.read_count],
+                                "data": [summary[barcodename][typename]["read_count"]],//[summaries[item.barcodename][item.typename]["read_count"]["data"] + item.read_count],
                                 "animation": false
                             };
 
                             summaries[barcodename][typename]["yield"] = {
                                 "name": typename,
-                                "data": summary[barcodename][typename]["yield"],
+                                "data": [summary[barcodename][typename]["yield"]],
                                 "animation": false
                             };
 
                             summaries[barcodename][typename]["average_read_length"] = {
                                 "name": typename,
-                                "data": summary[barcodename][typename]["yield"]/summary[barcodename][typename]["read_count"],
+                                "data": [summary[barcodename][typename]["yield"]/summary[barcodename][typename]["read_count"]],
                                 "animation": false
                             };
 
                             summaries[barcodename][typename]["max_length"] = {
                                 "name": typename,
-                                "data": summary[barcodename][typename]["max_length"],
+                                "data": [summary[barcodename][typename]["max_length"]],
                                 "animation": false
                             };
 
@@ -1311,7 +1373,7 @@ function MinotourFlowCellApp() {
     };
 
     this.updateReadsColumnBasedChart = function (chart, field) {
-        var summaries = this.summary;
+        var summaries = self.summary;
 
         var series = [];
 
@@ -1319,7 +1381,7 @@ function MinotourFlowCellApp() {
         data = [];
 
         for (var readtype of Object.keys(summaries["All reads"])) {
-            data.push(summaries["All reads"][readtype][field]["data"]);
+            data.push(summaries["All reads"][readtype][field]["data"][0]);
         }
 
         serie = {
@@ -1333,8 +1395,10 @@ function MinotourFlowCellApp() {
         if (self.selectedBarcode !== "All reads") {
 
             data = [];
-
+            //console.log(summaries[self.selectedBarcode]);
             for (var readtype of Object.keys(summaries[self.selectedBarcode])) {
+                //console.log(readtype);
+                //console.log("are we here?");
                 data.push(summaries[self.selectedBarcode][readtype][field]["data"][0]);
             }
 
@@ -1342,6 +1406,8 @@ function MinotourFlowCellApp() {
                 "name": self.selectedBarcode,
                 "data": data
             };
+            
+            //console.log(serie);
 
             series.push(serie);
 
@@ -1591,7 +1657,7 @@ function MinotourFlowCellApp() {
         datadump = new Array();
         //console.log('rundetails');
         //console.log(self.rundetails);
-        if (self.rundetails != undefined ) {
+        if (self.rundetails != undefined  && self.rundetails.length> 0) {
             console.log(self.rundetails);
             //for (var i = 0; i < self.rundetails.length; i++) {
 
@@ -1621,6 +1687,26 @@ function MinotourFlowCellApp() {
 
                 //datadump[i].rundetails=self.rundetails[i];
             }
+        }else{
+            for (var i in self.rundata){
+                datadump[i]=new Array;
+                datadump[i].minIONname=self.rundata[i]['minION_name'];
+                datadump[i].minKNOW_asic_id=self.rundata[i]['minKNOW_asic_id'];
+                datadump[i].minKNOW_version=self.rundata[i]['minKNOW_version'];
+                datadump[i].run_id=self.rundata[i]['minKNOW_hash_run_id'];
+                datadump[i].run_name=self.rundata[i]['run_name'];
+                datadump[i].sample_name=self.rundata[i]['minKNOW_sample_name'];
+                datadump[i].computer_name=self.rundata[i]['minKNOW_computer'];
+                datadump[i].minKNOW_current_script=self.rundata[i]['minKNOW_current_script'];
+                datadump[i].name=self.rundata[i]['name'];
+
+                var starttime = new Date(self.rundata[i]['minKNOW_start_time']);
+                datadump[i].starttime=starttime;
+                datadump[i].flowcellid=self.rundata[i]['minKNOW_flow_cell_id'];
+                datadump[i].active=self.rundata[i].active;
+                datadump[i].barcodes=self.rundata[i].barcodes;
+
+            }
         }
         //console.log("datadump");
         //console.log(datadump);
@@ -1634,10 +1720,12 @@ function MinotourFlowCellApp() {
             console.log("rundetails");
             console.log(data);
             self.rundetails=data;
-            self.livedata.minIONname = data[0].minION_name;
-            self.livedata.asicid = data[0].minKNOW_asic_id;
-            self.livedata.scriptid = data[0].minKNOW_current_script;
-            self.livedata.colours_string = data[0].minKNOW_colours_string;
+            //self.livedata.minIONname = data[0].minION_name;
+            //self.livedata.asicid = data[0].minKNOW_asic_id;
+            //self.livedata.scriptid = data[0].minKNOW_current_script;
+            if (data[0] != undefined) {
+                self.livedata.colours_string = data[0].minKNOW_colours_string;
+            }
             //self.livedata.computer=data[0].minKNOW_computer;
             //console.log(data[0]);
             //document.getElementById('ComputerName').innerHTML = data[0].minKNOW_computer;
@@ -2109,15 +2197,6 @@ function MinotourFlowCellApp() {
             /*
 
             //console.log(self.rundata);
-
-
-            self.getlivedata(self.rundata);
-
-
-
-
-            self.requestRunDetails(self.id);
-            self.requestLiveRunStats(self.id);
             self.requestPafData(self.id);
             self.requestPafTransData(self.id);
             self.liveUpdateTasks(self.id);
@@ -2212,49 +2291,51 @@ function MinotourApp() {
     this.updatePoreChart = updatePoreChart;
     this.updateStepLineChart = updateStepLineChart;
 
+    this.drawtaskbutton = drawtaskbutton;
+
     this.startTask = function (description,reference){
-    console.log(description + " " + reference);
-    var e = document.getElementById(description);
-    if (e != null) {
-        var strUser = e.options[e.selectedIndex].value;
-    }else{
-        var strUser = "null";
-    }
-    console.log(strUser);
-    $.ajaxSetup({
-        beforeSend: function (xhr, settings) {
-            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+        console.log(description + " " + reference);
+        var e = document.getElementById(description);
+        if (e != null) {
+            var strUser = e.options[e.selectedIndex].value;
+        }else{
+            var strUser = "null";
+        }
+        console.log(strUser);
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                }
             }
-        }
-    });
-    //var url_mask = "{% url 'set-task-detail-all' pk=12345 %}".replace(/12345/, reference.toString());
-    var url_mask = "/api/v1/runs/12345/settask/".replace(/12345/, reference.toString());;
-    $.ajax({
-        "type": "POST",
-        "dataType": "json",
-        "url": url_mask,
-        "data": {
-            "job": description,
-            "reference": strUser,
-        },
-        "beforeSend": function (xhr, settings) {
-            console.log("before send");
-            $.ajaxSettings.beforeSend(xhr, settings);
-        },
-        "success": function (result) {
-            console.log(result);
-            $(".modal.in").modal("hide");
-            self.requestTasks(reference);
+        });
+        //var url_mask = "{% url 'set-task-detail-all' pk=12345 %}".replace(/12345/, reference.toString());
+        var url_mask = "/api/v1/runs/12345/settask/".replace(/12345/, reference.toString());;
+        $.ajax({
+            "type": "POST",
+            "dataType": "json",
+            "url": url_mask,
+            "data": {
+                "job": description,
+                "reference": strUser,
+            },
+            "beforeSend": function (xhr, settings) {
+                console.log("before send");
+                $.ajaxSettings.beforeSend(xhr, settings);
+            },
+            "success": function (result) {
+                console.log(result);
+                $(".modal.in").modal("hide");
+                self.requestTasks(reference);
 
-        },
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-            console.log("Status: " + textStatus);
-            //alert("Error: " + errorThrown);
-        }
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                console.log("Status: " + textStatus);
+                //alert("Error: " + errorThrown);
+            }
 
-    })
-};
+        })
+    };
 
     //this.updateReadsPerPoreChart = updateReadsPerPoreChart;
 
@@ -2619,6 +2700,7 @@ function MinotourApp() {
             data = [];
 
             for (var readtype of Object.keys(summaries[self.selectedBarcode])) {
+                console.log(summaries[self.selectedBarcode]);
                 data.push(summaries[self.selectedBarcode][readtype][field]["data"][0]);
             }
 
@@ -3162,7 +3244,7 @@ function MinotourApp() {
                     message = 'Reads processed:' + self.tasks[i]["job_details"]["read_count"] + "/" + self.summary["All reads"]["Template"]["read_count"]["data"][0];
                     percentage = Math.round((self.tasks[i]["job_details"]["read_count"]/self.summary["All reads"]["Template"]["read_count"]["data"][0] *100) * 100) / 100;
                     message2 = percentage + '% of uploaded reads are processed';
-                    console.log(message);
+                    //console.log(message);
                     $('#'+self.tasks[i]["name"]+'-message').text(message);
                     $('#'+self.tasks[i]["name"]+'-percentage').text(percentage);
                     $('div#'+self.tasks[i]["name"]+'-percentage').width(percentage+'%');
@@ -3209,56 +3291,7 @@ function MinotourApp() {
 
     };
 
-    this.drawtaskbutton = function(taskstring,colour,icon,description,message,percentage,message2,i,long_description,reference,name,transcriptome){
-        taskstring = taskstring + '<div class="col-md-4">';
-        taskstring = taskstring + '<button type="button" class="info-box ' + colour + '" data-toggle="modal" data-target="#taskmodal' + i + '">';
-        taskstring = taskstring + '<div >';
-        taskstring = taskstring + '<span class="info-box-icon"><i class="' + icon + '"></i></span>';
-        taskstring = taskstring + '<div class="info-box-content">';
-        taskstring = taskstring + '<span class="info-box-text">' + description + '</span>';
 
-        taskstring = taskstring + '<span class="info-box-number" id="'+name+'-message">' + message + '</span>';
-        taskstring = taskstring + '<div class="progress">';
-        taskstring = taskstring + '<div class="progress-bar" id="'+name+'-percentage" style="width: ' + percentage + '%"></div>';
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '<span class="progress-description" id="'+name+'-message2" >';
-        taskstring = taskstring + message2;
-        taskstring = taskstring + '</span>';
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '</button>';
-        taskstring = taskstring + '<div id="taskmodal' + i + '" class="modal fade" role="dialog">';
-        taskstring = taskstring + '<div class="modal-dialog">';
-        taskstring = taskstring + '<div class="modal-content">';
-        taskstring = taskstring + '<div class="modal-header">';
-        taskstring = taskstring + '<button type="button" class="close" data-dismiss="modal">&times;</button>';
-        taskstring = taskstring + '<h4 class="modal-title">' + description + '</h4>';
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '<div class="modal-body">';
-        taskstring = taskstring + '<p>' + long_description + '</p>';
-        if (reference == true) {
-            taskstring = taskstring + "<p>Select Reference:</p>"
-            taskstring = taskstring + '<select id="' + name + '">';
-            //console.log(this.references);
-            for (var j = 0; j < this.references.length; j++) {
-                if (this.references[j]['transcripts'] == transcriptome) {
-                    taskstring = taskstring + '<option>' + this.references[j]["reference_name"] + '</option>';
-                }
-            }
-            taskstring = taskstring + '</select>';
-        }
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '<div class="modal-footer">';
-        taskstring = taskstring + '<button type="button" class="btn btn-default" id="button' + name + '">Go</button>';
-        taskstring = taskstring + '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>';
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '</div>';
-
-        return taskstring;
-    }
 
     this.requestSummaryData = function (id) {
         /*
@@ -4109,7 +4142,6 @@ function MinotourApp() {
             self.requestGfaData(self.id);
             self.requestPafTransData(self.id);
             self.liveUpdateTasks(self.id);
-            console.log("seriously - Im just trying to parse kraken");
             self.requestKraken(self.id);
         });
 
