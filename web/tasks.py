@@ -24,7 +24,7 @@ from alignment.models import PafSummaryCov, PafSummaryCov_transcriptome
 from alignment.models import SamStore
 from communication.models import Message
 from minikraken.models import MiniKraken, ParsedKraken
-from reads.models import Barcode
+from reads.models import Barcode, FlowCellRun
 from reads.models import ChannelSummary
 from reads.models import FastqRead
 from reads.models import HistogramSummary
@@ -64,10 +64,28 @@ def run_monitor():
 
     print("Rapid Monitor Called")
 
+    flowcell_runs = FlowCellRun.objects.filter(run__active=True).distinct()
+    print ("!!!!!!!!!!!!!!! FLOWCELL RUNS !!!!!!!!!!!!!!!!!!!!")
+    print (flowcell_runs)
+    flowcells=set()
+    #So - loop through flowcell_runs and create a job in each sub run.
+
+    for flowcell_run in flowcell_runs:
+        print ("found a flowcell", flowcell_run)
+        flowcells.add(flowcell_run.flowcell)
+
+    for flowcell in flowcells:
+        flowcell_jobs = JobMaster.objects.filter(flowcell=flowcell).filter(running=False)
+        for flowcell_job in flowcell_jobs:
+            print (flowcell_job.job_type.name)
+            if flowcell_job.job_type.name == "Kraken":
+                run_kraken.delay(flowcell.id,flowcell_job.id,flowcell_job.last_read,"flowcell")
+
+
     minion_runs = MinIONRun.objects.filter(active=True).distinct()
 
     for minion_run in minion_runs:
-        print ("fond a run", minion_run)
+        print ("found a run", minion_run)
         run_jobs = JobMaster.objects.filter(run=minion_run).filter(running=False)
 
         for run_job in run_jobs:
@@ -102,7 +120,7 @@ def run_monitor():
                 run_minimap2_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
             if run_job.job_type.name == "Kraken":
-                run_kraken.delay(minion_run.id, run_job.id, run_job.last_read)
+                run_kraken.delay(minion_run.id, run_job.id, run_job.last_read, "run")
 
             if run_job.job_type.name == "ProcAlign":
                 proc_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
@@ -739,9 +757,18 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read):
 
 
 @task()
-def run_kraken(runid, id, last_read):
+def run_kraken(runid, id, last_read, inputtype):
     JobMaster.objects.filter(pk=id).update(running=True)
-    fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:10000]
+    runidset=set()
+    if inputtype == "flowcell":
+        flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
+        for flowcell_run in flowcell_runs:
+            runidset.add(flowcell_run.id)
+        #we need to get the runids that make up this run
+    else:
+        runidset.add(runid)
+
+    fastqs = FastqRead.objects.filter(run_id__in=runidset).filter(id__gt=int(last_read))[:10000]
     krakrun = Kraken()
     # IMPORTANT - NEEDS FIXING FOR BARCODES AND READ TYPES
     if len(fastqs) > 0:
@@ -756,14 +783,20 @@ def run_kraken(runid, id, last_read):
             last_read = fastq.id
         krakrun.write_seqs(read.encode("utf-8"))
         krakenoutput = krakrun.run().decode('utf-8').split('\n')
-        runinstance = MinIONRun.objects.get(pk=runid)
+        if inputtype == "run":
+            runinstance = MinIONRun.objects.get(pk=runid)
+        elif inputtype == "flowcell":
+            runinstance = FlowCell.objects.get(pk=runid)
         for line in krakenoutput:
             if len(line) > 0:
                 # print (line)
                 krakenbits = line.split("\t")
 
                 # print (readdict[krakenbits[1]],krakenbits[1])
-                newkrak = MiniKraken(run_id=runid, read_id=int(readdict[krakenbits[1]]))
+                if inputtype == "run":
+                    newkrak = MiniKraken(run_id=runid, read_id=int(readdict[krakenbits[1]]))
+                elif inputtype == "flowcell":
+                    newkrak = MiniKraken(flowcell_id=runid, read_id=int(readdict[krakenbits[1]]))
                 newkrak.krakenstatus = str(krakenbits[0])
                 newkrak.krakentaxid = int(krakenbits[2])
                 newkrak.krakenseqlen = int(krakenbits[3])
@@ -771,10 +804,14 @@ def run_kraken(runid, id, last_read):
                 newkrak.save()
 
         # To get the data about the run - specifically which barcodes it has:
-        Barcodes = Barcode.objects.filter(run_id=runid)
+        Barcodes = Barcode.objects.filter(run_id__in=runidset)
 
         # To get the data about the run - specifcally read types:
         Types = FastqReadType.objects.all()
+
+        ####Up to this point should work with either flowcell or run concept.
+        ####after this we have to resolve how to collapse barcode types - which is complex
+        ####as the system creates multiple barcodes for the same barcode.
 
         for Bar in Barcodes:
             for Type in Types:

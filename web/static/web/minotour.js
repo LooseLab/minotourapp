@@ -712,6 +712,52 @@ function MinotourFlowCellApp() {
     this.updatePoreChart = updatePoreChart;
     this.updateStepLineChart = updateStepLineChart;
 
+    this.drawtaskbutton = drawtaskbutton;
+
+    this.startTask = function (description,reference){
+        console.log(description + " " + reference);
+        var e = document.getElementById(description);
+        if (e != null) {
+            var strUser = e.options[e.selectedIndex].value;
+        }else{
+            var strUser = "null";
+        }
+        console.log(strUser);
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                }
+            }
+        });
+        //var url_mask = "{% url 'set-task-detail-all' pk=12345 %}".replace(/12345/, reference.toString());
+        var url_mask = "/api/v1/flowcells/12345/settask/".replace(/12345/, reference.toString());;
+        $.ajax({
+            "type": "POST",
+            "dataType": "json",
+            "url": url_mask,
+            "data": {
+                "job": description,
+                "reference": strUser,
+            },
+            "beforeSend": function (xhr, settings) {
+                console.log("before send");
+                $.ajaxSettings.beforeSend(xhr, settings);
+            },
+            "success": function (result) {
+                console.log(result);
+                $(".modal.in").modal("hide");
+                self.requestTasks(reference);
+
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                console.log("Status: " + textStatus);
+                //alert("Error: " + errorThrown);
+            }
+
+        })
+    };
+
     this.average_read_lengths_overtime = this.makeChart2(
             "average-read-lengths-overtime",
             "average read length over time".toUpperCase(),
@@ -982,6 +1028,9 @@ function MinotourFlowCellApp() {
         self.selectedBarcode = "All reads";
 
         this.requestData();
+
+        this.requestReference(self.id);
+        this.requestTasks(self.id);
 
         setInterval(function () {
             this.requestData();
@@ -2160,6 +2209,91 @@ function MinotourFlowCellApp() {
         }
     };
 
+    this.requestReference = function(id){
+        var url = "/api/v1/reference/";
+        $.get(url, function (data){
+            var references = [];
+            for (var i=0; i < data.length; i++) {
+                //console.log(data[i]);
+                references.push(data[i]);
+            }
+            //console.log(references);
+            self.references=references;
+        });
+    };
+    this.requestTasks = function(id) {
+        var url = "/api/v1/flowcells/"+id+"/tasks/";
+        $.get(url, function (data) {
+            //console.log(data);
+            var tasks = [];
+            for (var i=0; i < data.length; i++){
+                tasks.push(data[i]);
+            }
+            self.tasks=tasks;
+            self.updateTasks(id); //really this only needs to run once!
+        });
+    };
+
+    this.liveUpdateTasks = function(id){
+        var url = "/api/v1/flowcells/"+id+"/tasks/";
+        $.get(url, function (data) {
+            var tasks=[];
+            for (var i=0; i < data.length; i++){
+                tasks.push(data[i]);
+            }
+            self.tasks=tasks;
+            for (var i=0; i<self.tasks.length; i++){
+                if (self.tasks[i].hasOwnProperty("job_details")){
+                    message = 'Reads processed:' + self.tasks[i]["job_details"]["read_count"] + "/" + self.summary["All reads"]["Template"]["read_count"]["data"][0];
+                    percentage = Math.round((self.tasks[i]["job_details"]["read_count"]/self.summary["All reads"]["Template"]["read_count"]["data"][0] *100) * 100) / 100;
+                    message2 = percentage + '% of uploaded reads are processed';
+                    //console.log(message);
+                    $('#'+self.tasks[i]["name"]+'-message').text(message);
+                    $('#'+self.tasks[i]["name"]+'-percentage').text(percentage);
+                    $('div#'+self.tasks[i]["name"]+'-percentage').width(percentage+'%');
+                    $('#'+self.tasks[i]["name"]+'-message2').text(message2);
+                }
+            }
+        })
+    };
+
+    this.updateTasks = function(id) {
+        //console.log("####id is" + id);
+        var taskstring = "";
+        for (var i = 0; i < self.tasks.length; i++) {
+                console.log(self.tasks[i]);
+                if (self.tasks[i].hasOwnProperty("job_details")){
+                    colour = 'bg-green';
+                    message = 'Reads processed:' + self.tasks[i]["job_details"]["read_count"];
+                    percentage = 50;
+                    message2 = 'X% of uploaded reads are processed';
+                    icon = 'fa fa-refresh fa-spin fa-fw';
+                    running=true;
+
+                }else{
+                    colour = 'bg-light-blue';
+                    message = 'Task Not Running.';
+                    percentage = 0;
+                    message2 = "Click to start a "+self.tasks[i]["description"]+' task.';
+                    icon = 'fa fa-refresh fa-fw';
+                    running=false;
+                }
+                taskstring = this.drawtaskbutton(taskstring,colour,icon,self.tasks[i]["description"],message,percentage,message2,i,self.tasks[i]["long_description"],self.tasks[i]["reference"],self.tasks[i]["name"],self.tasks[i]["transcriptome"]);
+        };
+        document.getElementById('tasks').innerHTML = taskstring;
+        for (var i = 0; i < self.tasks.length; i++) {
+            var buttonname = "#button" + self.tasks[i]["name"];
+            //console.log("Button name to look for:" + buttonname);
+            $(buttonname).click(function (e) {
+                var idClicked = e.target.id;
+                console.log(idClicked);
+                self.startTask(idClicked.substring(6),id);
+            });
+        };
+        self.liveUpdateTasks(id);
+
+    };
+
 
 
 
@@ -2190,7 +2324,7 @@ function MinotourFlowCellApp() {
             self.requestChannelSummaryData(self.id);
             self.requestRunDetails(self.id);
             self.requestLiveRunStats(self.id);
-
+            self.liveUpdateTasks(self.id);
             //self.updatetext();
 
 
@@ -2199,7 +2333,7 @@ function MinotourFlowCellApp() {
             //console.log(self.rundata);
             self.requestPafData(self.id);
             self.requestPafTransData(self.id);
-            self.liveUpdateTasks(self.id);
+
             console.log("seriously - Im just trying to parse kraken");
             self.requestKraken(self.id);
 
