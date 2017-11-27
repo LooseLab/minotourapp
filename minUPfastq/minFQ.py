@@ -78,16 +78,20 @@ class Runcollection():
                 self.readnames.append(read)
 
     def create_flowcell(self, name):
-        print ("Creating a new flowcell")
+        #print ("Creating a new flowcell")
         #Test to see if the flowcell exists.
         r = requests.get(args.full_host+'api/v1/flowcells', headers=header)
+        print (r.text)
+        print (name)
         flowcellname=name
-        if flowcellname not in r.text:
+        flowcelllist = json.loads(r.text)
+        if flowcellname not in [x["name"] for x in flowcelllist]:
             #print ("we need to create this flowcell")
             createflowcell = requests.post(args.full_host+'api/v1/flowcells/', headers=header, json={"name": flowcellname})
             self.flowcelllink = json.loads(createflowcell.text)["url"]
         else:
             #print (json.loads(r.text))
+            #print ("looking for existing flowcell")
             for flowcell in json.loads(r.text):
                 #print (flowcell["name"])
                 #print (flowcell["url"])
@@ -97,6 +101,7 @@ class Runcollection():
 
     def create_flowcell_run(self):
         print ("Adding run to flowcell")
+        print (self.flowcelllink)
         createflowcellrun = requests.post(self.flowcelllink,headers=header,json={"flowcell": self.flowcelllink, "run": self.runidlink})
 
     def add_run(self, descriptiondict):
@@ -126,6 +131,7 @@ class Runcollection():
                 print (createrun.text)
                 print ("Houston - we have a problem!")
             else:
+                #print ("!!!!!!!!!!!!!!!!!!!!!!!! HELLO ROBERTO")
                 self.runidlink = json.loads(createrun.text)["url"]
                 self.runid = json.loads(createrun.text)["id"]
                 if self.args.is_flowcell:
@@ -182,7 +188,7 @@ class Runcollection():
                 'type': typelink
             }
             self.readstore.append(payload)
-            if len(self.readstore) >=200:
+            if len(self.readstore) >=4000:
                 self.commit_reads()
         else:
             pass
@@ -307,6 +313,9 @@ class Runcollection():
                     })
 
                     print(">> Barcode {} for run {} created with success.".format(item['url'], self.runidlink))
+                else:
+                    print (response.status_code)
+                    sys.exit()
 
             barcode_url = self.barcodes[barcode_local]
 

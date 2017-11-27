@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 #from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-from reads.models import Barcode, ChannelSummary
+from reads.models import Barcode, ChannelSummary, BarcodeGroup
 from reads.models import FastqRead
 from reads.models import FastqReadType
 from reads.models import HistogramSummary
@@ -791,13 +791,34 @@ def barcode_list(request, pk):
 
 
     elif request.method == 'POST':
-        serializer = BarcodeSerializer(data=request.data, context={'request': request})
+        print (request)
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        #run=request.POST["run"]
+        barcodename=request.data["name"]
+        print (request.data)
+        print(barcodename)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        minionrun = MinIONRun.objects.get(pk=pk)
+
+        flowcellruns = minionrun.flowcellrun
+
+        print (flowcellruns)
+
+
+
+        #Can we great the barcodegroup instance here?
+
+        barcodegroup,created = BarcodeGroup.objects.get_or_create(flowcell=minionrun.flowcellrun.first().flowcell, name=barcodename)
+
+        barcode,created2 = Barcode.objects.get_or_create(run=minionrun,barcodegroup=barcodegroup,name=barcodename)
+
+        serializer = BarcodeSerializer(barcode, context={'request': request})
+
+        #if serializer.is_valid():
+        #if created2:
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        #return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -873,12 +894,13 @@ def set_task_detail_all(request,pk):
 
 @api_view(['GET'])
 def tasks_detail_all(request,pk):
-    queryset=JobType.objects.filter(private=False)
+    queryset=JobType.objects.filter(private=False).filter(type_name__type_name__in=['run',])
     minionrun=MinIONRun.objects.get(pk=pk)
 
     result = []
-
+    #print (queryset)
     for jobtype in queryset:
+        #print (jobtype.type_name.all())
         obj = {}
         obj.update({
             'name': jobtype.name,
@@ -1088,6 +1110,93 @@ def flowcell_run_stats_latest(request,pk,checkid):
         serializer = MinIONRunStatsSerializer(crazyminIONrunstats, many=True , context={'request': request})
 
         return Response(serializer.data)
+
+@api_view(['POST'])
+def flowcellset_task_detail_all(request,pk):
+    """We need to check if a job type already exists - if so we are not going to add another."""
+    if request.method == 'POST':
+        jobtype=JobType.objects.get(name=request.data["job"])
+        print (jobtype)
+        reference=""
+        if request.data["reference"]!="null":
+            reference=ReferenceInfo.objects.get(reference_name=request.data["reference"])
+            print (reference)
+        flowcellitem=FlowCell.objects.get(id=pk)
+        print (flowcellitem)
+        print(request.data)
+        print(jobtype,reference,flowcellitem)
+        jobmasters=JobMaster.objects.filter(flowcell=flowcellitem).filter(job_type=jobtype)
+        print ("Jobmasters",jobmasters)
+        if len(jobmasters) > 0:
+            #return Response("Duplicate Job attempted. Not allowed.", status=status.HTTP_400_BAD_REQUEST)
+            return Response("Duplicate Job attempted. Not allowed.", status=status.HTTP_200_OK)
+        else:
+            newjob = JobMaster(flowcell=flowcellitem, job_type=jobtype, last_read=0, read_count=0, complete=False, running=False)
+
+            print ("trying to make a job", newjob)
+
+            if request.data["reference"] != "null":
+            #if len(reference)>0:
+                newjob.reference = reference
+            try:
+                newjob.save()
+                print ("job created")
+            except Exception as e:
+                print (e)
+                print ("error")
+            return Response("Job Created.", status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def flowcell_tasks_detail_all(request,pk):
+    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    runset = list()
+    for run in queryset:
+        # print (run.run_id)
+        runset.append(run.run_id)
+
+    queryset=JobType.objects.filter(private=False).filter(type_name__type_name__in=['flowcell',])
+    minionruns=MinIONRun.objects.filter(run_id__in=runset)
+
+    result = []
+    #print (queryset)
+    for jobtype in queryset:
+        #print (jobtype.type_name.all())
+        obj = {}
+        obj.update({
+            'name': jobtype.name,
+            'description' : jobtype.description,
+            'long_description' : jobtype.long_description,
+            'read_count': jobtype.readcount,
+            'reference': jobtype.reference,
+            'transcriptome': jobtype.transcriptome
+        })
+
+        jobmasterlist = JobMaster.objects.filter(run_id__in=runset).filter(job_type=jobtype)
+
+        if len(jobmasterlist) > 0:
+            obj2 = {}
+            if jobmasterlist[0].reference:
+                reference_name = jobmasterlist[0].reference.reference_name
+            else:
+                reference_name = ''
+            obj2.update({
+                'reference': reference_name,
+                'last_read': jobmasterlist[0].last_read,
+                'read_count': jobmasterlist[0].read_count,
+                'temp_file': jobmasterlist[0].tempfile_name,
+                'complete': jobmasterlist[0].complete,
+                'running': jobmasterlist[0].running
+            })
+
+            obj.update({
+                'job_details': obj2
+            })
+
+        result.append(obj)
+
+    return HttpResponse(json.dumps(result), content_type="application/json")
+
 
 @api_view(['GET'])
 def tabs_details(request, pk):

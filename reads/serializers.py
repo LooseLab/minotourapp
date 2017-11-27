@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from reads.models import Barcode
+from reads.models import Barcode, BarcodeGroup
 from reads.models import ChannelSummary
 from reads.models import FastqRead
 from reads.models import FastqReadType
@@ -24,6 +24,7 @@ from reads.models import RunStatisticBarcode
 from reads.models import UserOptions
 from reads.models import FlowCell
 from reads.models import FlowCellRun
+from reads.models import GroupRunType
 
 
 
@@ -289,10 +290,20 @@ class RunStatisticBarcodeSerializer(serializers.ModelSerializer):
 
         read_only = ('id',)
 
+class GroupRunTypeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = GroupRunType
+        fields = ('type_name',)
+
+
+
 class JobTypeSerializer(serializers.ModelSerializer):
+    type_name = GroupRunTypeSerializer(read_only=True, many=True)
+
     class Meta:
         model = JobType
-        fields = ('name','description','reference','readcount','transcriptome')
+        fields = ('name','description','reference','readcount','transcriptome','type_name',)
 
 class JobSerializer(serializers.ModelSerializer):
     typename = serializers.ReadOnlyField(source="type.name")
@@ -304,6 +315,10 @@ class JobSerializer(serializers.ModelSerializer):
 
 class BarcodeSerializer(serializers.HyperlinkedModelSerializer):
 
+    barcodegroupname = serializers.ReadOnlyField(
+        source="barcodegroup.name"
+    )
+
     class Meta:
 
         model = Barcode
@@ -312,12 +327,31 @@ class BarcodeSerializer(serializers.HyperlinkedModelSerializer):
             'url',
             'id',
             'name',
+            'barcodegroupname',
             'run',
         )
 
         read_only = (
             'url',
             'id'
+        )
+
+class BarcodeGroupSerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+
+        model = BarcodeGroup
+
+        fields = (
+            'id',
+            'name',
+            'flowcell',
+            'url'
+        )
+
+        read_only = (
+            'id',
+            'url'
         )
 
 
@@ -332,6 +366,7 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
         many=True,
         read_only=True
     )
+
 
     class Meta:
         model = MinIONRun

@@ -13,5 +13,5 @@ class MiniKrakenSerializer(serializers.HyperlinkedModelSerializer):
 class ParsedKrakenSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ParsedKraken
-        fields = ('run','type_name','barcode_name','percentage','rootreads', 'directreads','rank','NCBItaxid', 'parent', 'sci_name', 'indentation', 'orderin')
+        fields = ('run','flowcell','type_name','barcode_name','percentage','rootreads', 'directreads','rank','NCBItaxid', 'parent', 'sci_name', 'indentation', 'orderin')
 

@@ -117,6 +117,7 @@ function write_run_data(textinfo){
     text += "<tr>";
     text += "<th>Run</th>";
     text += "<th>Run Start Time</th>";
+    text += "<th>Last Read Seen</th>";
     text += "<th>MinKNOW Computer Name</th>";
     text += "<th>MinION ID</th>";
     text += "<th>ASIC ID</th>";
@@ -140,6 +141,7 @@ function write_run_data(textinfo){
 
 
         text += "<td>"+textinfo[key]['starttime']+"</td>";
+        text += "<td>"+textinfo[key]['lastread']+"</td>";
         text += "<td>"+textinfo[key]["computer_name"]+"</td>";
             text += "<td>"+textinfo[key]["minIONname"]+"</td>";
             text += "<td>"+textinfo[key]["minKNOW_asic_id"]+"</td>";
@@ -253,6 +255,9 @@ function makeChart2(divName, chartTitle, yAxisTitle) {
             animation: false,
             zoomType: "x"
         },
+        boost: {
+            useGPUTranslations: true
+        },
         title: {
             text: chartTitle
         },
@@ -321,6 +326,9 @@ function makeChart4(divName, chartTitle, yAxisTitle, xAxisTitle) {
             marginRight: 10,
             animation: false,
             zoomType: "x"
+        },
+        boost: {
+            useGPUTranslations: true
         },
         title: {
             text: chartTitle
@@ -463,6 +471,9 @@ function makeYieldProjection(divName, chartTitle, yAxisTitle) {
             zoomType: 'x',
             height: 350,
         },
+        boost: {
+            useGPUTranslations: true
+        },
         title: {
             text: chartTitle,
         },
@@ -514,8 +525,10 @@ function makeLiveChart(divName, chartTitle, yAxisTitle) {
         chart: {
             type: 'spline',
             zoomType: 'xy'
-        }
-        ,
+        },
+        boost: {
+            useGPUTranslations: true
+        },
         rangeSelector: {
             enabled: true,
             buttons:
@@ -1171,6 +1184,27 @@ function MinotourFlowCellApp() {
             }
         }
 
+        for (var i in self.rundata){
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
+            var name = self.rundata[i]['id']
+            //chart.xAxis[0].addPlotBand({
+            //    from: starttime,
+            //    to: endtime,
+            //    color: '#FCFFC5',
+            //    id: name
+            //});
+            chart.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
+        }
+
     };
 
     this.updateSequencingRateChart = function () {
@@ -1194,6 +1228,27 @@ function MinotourFlowCellApp() {
 
                 }
             }
+        }
+
+        for (var i in self.rundata){
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
+            var name = self.rundata[i]['id']
+            //chart.xAxis[0].addPlotBand({
+            //    from: starttime,
+            //    to: endtime,
+            //    color: '#FCFFC5',
+            //    id: name
+            //});
+            chart.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
         }
 
     };
@@ -1267,6 +1322,28 @@ function MinotourFlowCellApp() {
                 chart.addSeries({name: barcode + " - " + readtype, data: summaries[barcode][readtype]["data"]});
             }
         }
+
+        for (var i in self.rundata){
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
+            var name = self.rundata[i]['id']
+            //chart.xAxis[0].addPlotBand({
+            //    from: starttime,
+            //    to: endtime,
+            //    color: '#FCFFC5',
+            //    id: name
+            //});
+            chart.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
+        }
+
     };
 
     this.updateAverageReadLengthOverTimeChart = function () {
@@ -1322,6 +1399,27 @@ function MinotourFlowCellApp() {
             for (var readtype in summaries[barcode]) {
                 chart.addSeries({name: barcode + " - " + readtype, data: summaries[barcode][readtype]});
             }
+        }
+
+        for (var i in self.rundata){
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
+            var name = self.rundata[i]['id']
+            //chart.xAxis[0].addPlotBand({
+            //    from: starttime,
+            //    to: endtime,
+            //    color: '#FCFFC5',
+            //    id: name
+            //});
+            chart.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
         }
     };
 
@@ -1747,10 +1845,10 @@ function MinotourFlowCellApp() {
                 datadump[i].sample_name=self.rundata[i]['minKNOW_sample_name'];
                 datadump[i].computer_name=self.rundata[i]['minKNOW_computer'];
                 datadump[i].minKNOW_current_script=self.rundata[i]['minKNOW_current_script'];
-                datadump[i].name=self.rundata[i]['name'];
-
-                var starttime = new Date(self.rundata[i]['minKNOW_start_time']);
+                var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
+                var lastread =  new Date(Date.parse(self.rundata[i]['last_read']));
                 datadump[i].starttime=starttime;
+                datadump[i].lastread=lastread;
                 datadump[i].flowcellid=self.rundata[i]['minKNOW_flow_cell_id'];
                 datadump[i].active=self.rundata[i].active;
                 datadump[i].barcodes=self.rundata[i].barcodes;
@@ -2294,6 +2392,67 @@ function MinotourFlowCellApp() {
 
     };
 
+    this.requestKraken = function (id) {
+        var parsedkraken = '/api/v1/flowcells/' + id + '/krakenparse/';
+        $.get(parsedkraken,function(data){
+            console.log(data);
+            krakendata=[];
+            var list = $("#krakenSelectBarcode");
+            var list2 = $("#krakenSelectRead");
+            for (var i=0; i<data.length;i++){
+                var barcodename = data[i]["barcode_name"];
+                var readtype = data[i]["type_name"]
+                if (!(readtype in krakendata)) {
+                    krakendata[readtype]=[];
+                    if ( $("#krakenSelectRead option[value='" + data[i]["type_name"] + "']").val() === undefined) {
+                        list2.append(new Option(data[i]["type_name"],data[i]["type_name"]))
+                    }
+                }
+                if (!(barcodename in krakendata[readtype])) {
+                    krakendata[readtype][barcodename]=[];
+                    if ( $("#krakenSelectBarcode option[value='" + data[i]["barcode_name"] + "']").val() === undefined) {
+                        list.append(new Option(data[i]["barcode_name"], data[i]["barcode_name"]));
+                    }
+
+                }
+                //if (data[i]['percentage'] >= 0.05 && data[i]["parent"] != "Input") {
+                //if (data[i]['indentation']>8){
+                krakendata[readtype][barcodename].push([data[i]["parent"], data[i]["sci_name"], data[i]['percentage'],data[i]['indentation']])
+                //}
+            }
+            //console.log(krakendata);
+            list.change(function(){
+                var selectedType=list2.find(":selected").text();
+                var selectedBarcode=list.find(":selected").text();
+                var minimum = $("#lowerboundselect").val();
+                //console.log(minimum);
+                var slimmedkraken=[];
+                for (var i=0; i<krakendata[selectedType][selectedBarcode].length;i++){
+                    if (krakendata[selectedType][selectedBarcode][i][3] >= minimum) {
+                        slimmedkraken.push([krakendata[selectedType][selectedBarcode][i][0],krakendata[selectedType][selectedBarcode][i][1],krakendata[selectedType][selectedBarcode][i][2]]);
+                    }
+                };
+
+                //console.log(selectedBarcode);
+                var chart=Highcharts.chart('kraken-sankey', {
+                    title: {
+                        text: 'Kraken ' + selectedType + ' ' + selectedBarcode
+                    },
+
+                     series: [{
+                        keys: ['from', 'to', 'weight'],
+                        data: slimmedkraken,
+                        //data: krakendata[selectedType][selectedBarcode],
+                        type: 'sankey',
+                         curveFactor: 0,
+                        name: 'Kraken Output'
+                    }]
+                });
+            });
+        })
+    };
+
+
 
 
 
@@ -2325,6 +2484,7 @@ function MinotourFlowCellApp() {
             self.requestRunDetails(self.id);
             self.requestLiveRunStats(self.id);
             self.liveUpdateTasks(self.id);
+            self.requestKraken(self.id);
             //self.updatetext();
 
 
@@ -2335,7 +2495,7 @@ function MinotourFlowCellApp() {
             self.requestPafTransData(self.id);
 
             console.log("seriously - Im just trying to parse kraken");
-            self.requestKraken(self.id);
+
 
             */
 
