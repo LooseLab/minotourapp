@@ -241,26 +241,15 @@ class Runcollection():
 
     def add_read(self, record, descriptiondict,fastq):
         passstatus=(self.check_pass(fastq))
-        #print ("looking for {}".format(record.id) )
-        #print ("in")
-        #print (self.readnames[0])
-        #if record.id in self.readnames:
-        #    print ("found the read")
 
-        #if record.id not in self.readid:
-        #if record.id not in self.readnames:
-        #    print ("think read not found")
         self.readid[record.id] = dict()
         for item in descriptiondict:
             self.readid[record.id][item] = descriptiondict[item]
 
-        # print self.readid[record.id]
         tm = dateutil.parser.parse(self.readid[record.id]["start_time"])
-        # print tm
         tm = tm - datetime.timedelta(minutes=(tm.minute % 1) - 1,
                                      seconds=tm.second,
                                      microseconds=tm.microsecond)
-        # print tm
         if tm not in self.timeid.keys():
             self.timeid[tm] = dict()
             self.timeid[tm]["cumulength"] = 0

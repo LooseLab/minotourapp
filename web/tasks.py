@@ -232,11 +232,11 @@ def compare_two(newset, cacheset):
 
 @task()
 def processreads(runid, id, last_read):
-    # print('>>>> Running processreads celery task.')
+    print('>>>> Running processreads celery task.')
     print('running processreads with {} {} {}'.format(runid, id, last_read))
     JobMaster.objects.filter(pk=id).update(running=True)
 
-    fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:10000]
+    fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:4000]
 
     chanstore = dict()
 
@@ -258,7 +258,7 @@ def processreads(runid, id, last_read):
             chanstore[fastq.channel]['count'] = 0
             chanstore[fastq.channel]['length'] = 0
         chanstore[fastq.channel]['count'] += 1
-        chanstore[fastq.channel]['length'] += len(fastq.sequence)
+        chanstore[fastq.channel]['length'] += fastq.sequence_length
 
         if fastq.barcode.name not in histstore.keys():
             histstore[fastq.barcode.name] = {}
@@ -269,7 +269,7 @@ def processreads(runid, id, last_read):
         if fastq.type.name not in histstore['All reads'].keys():
             histstore['All reads'][fastq.type.name] = {}
 
-        bin_width = findbin(len(fastq.sequence))
+        bin_width = findbin(fastq.sequence_length)
 
         if bin_width not in histstore[fastq.barcode.name][fastq.type.name].keys():
             histstore[fastq.barcode.name][fastq.type.name][bin_width] = {}
@@ -284,10 +284,10 @@ def processreads(runid, id, last_read):
             histstore['All reads'][fastq.type.name][bin_width]['length'] = 0
 
         histstore[fastq.barcode.name][fastq.type.name][bin_width]['count'] += 1
-        histstore[fastq.barcode.name][fastq.type.name][bin_width]['length'] += len(fastq.sequence)
+        histstore[fastq.barcode.name][fastq.type.name][bin_width]['length'] += fastq.sequence_length
 
         histstore['All reads'][fastq.type.name][bin_width]['count'] += 1
-        histstore['All reads'][fastq.type.name][bin_width]['length'] += len(fastq.sequence)
+        histstore['All reads'][fastq.type.name][bin_width]['length'] += fastq.sequence_length
 
         ### Adding in the current post save behaviour:
         ### This is really inefficient - we are hitting the database too often.
@@ -318,6 +318,32 @@ def processreads(runid, id, last_read):
             sumstore[ipn_obj.run_id][ipn_obj.type] = dict()
             sumstoresum[ipn_obj.run_id][ipn_obj.type] = dict()
 
+
+        if barcode_all_reads not in sumstoresum[ipn_obj.run_id][ipn_obj.type].keys():
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads] = dict()
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["channels"] = '0' * 512
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["pass_length"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["pass_max_length"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["pass_min_length"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["pass_count"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["total_length"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["max_length"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["min_length"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["read_count"] = 0
+
+        if barcode not in sumstoresum[ipn_obj.run_id][ipn_obj.type].keys():
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode] = dict()
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["channels"] = '0' * 512
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["pass_length"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["pass_max_length"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["pass_min_length"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["pass_count"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["total_length"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["max_length"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["min_length"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["read_count"] = 0
+
+
         if tm not in sumstore[ipn_obj.run_id][ipn_obj.type].keys():
             sumstore[ipn_obj.run_id][ipn_obj.type][tm]=dict()
 
@@ -332,16 +358,6 @@ def processreads(runid, id, last_read):
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["max_length"] = 0
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["min_length"] = 0
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["read_count"] = 0
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads] = dict()
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["channels"] = '0' * 512
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["pass_length"] = 0
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["pass_max_length"] = 0
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["pass_min_length"] = 0
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["pass_count"] = 0
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["total_length"] = 0
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["max_length"] = 0
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["min_length"] = 0
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["read_count"] = 0
 
         if barcode not in sumstore[ipn_obj.run_id][ipn_obj.type][tm].keys():
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode] = dict()
@@ -354,16 +370,7 @@ def processreads(runid, id, last_read):
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["max_length"] = 0
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["min_length"] = 0
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["read_count"] = 0
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode] = dict()
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["channels"] = '0' * 512
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["pass_length"] = 0
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["pass_max_length"] = 0
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["pass_min_length"] = 0
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["pass_count"] = 0
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["total_length"] = 0
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["max_length"] = 0
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["min_length"] = 0
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["read_count"] = 0
+
 
 
         sumstore = update_local_dict(sumstore,ipn_obj,tm,barcode_all_reads)
@@ -403,8 +410,8 @@ def processreads(runid, id, last_read):
 
     runinstance = MinIONRun.objects.get(pk=runid)
 
-    #print (sumstore)
-    #print (sumstoresum)
+    print ("!!!!!!!!! SUMSTORE ¢¢¢¢", len(sumstore))
+    print ("!!!!!!!!! SUMSTORESUM ¢¢¢¢", len(sumstoresum))
 
     for run in sumstore:
         for type_ in sumstore[run]:
@@ -444,8 +451,15 @@ def processreads(runid, id, last_read):
                     # the string to 1. afterwards, we can calculate the number of active
                     # channels in a particular minute.
                     #
-                    obj.channel_presence = sumstore[run][type_][tm][barcode]["channels"]
-                    
+
+                    channel = sumstore[run][type_][tm][barcode]["channels"]
+                    channel_sequence = obj.channel_presence
+                    channel_sequence_list = list(channel_sequence)
+                    for i, val in enumerate(channel):
+                        if int(val) == 1:
+                            channel_sequence_list[i] = '1'
+                    obj.channel_presence = ''.join(channel_sequence_list)
+
                     obj.read_count += sumstore[run][type_][tm][barcode]["read_count"]
                     obj.save()
 
@@ -486,7 +500,14 @@ def processreads(runid, id, last_read):
                 # the string to 1. afterwards, we can calculate the number of active
                 # channels in a particular minute.
                 #
-                obj.channel_presence = sumstoresum[run][type_][barcode]["channels"]
+
+                channel = sumstoresum[run][type_][barcode]["channels"]
+                channel_sequence = obj.channel_presence
+                channel_sequence_list = list(channel_sequence)
+                for i,val in enumerate(channel):
+                    if int(val)==1:
+                        channel_sequence_list[i]='1'
+                obj.channel_presence = ''.join(channel_sequence_list)
 
                 obj.read_count += sumstoresum[run][type_][barcode]["read_count"]
                 obj.save()
@@ -518,6 +539,7 @@ def processreads(runid, id, last_read):
                 histogram.save()
 
     JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
+    print ("Finished this thang!")
 
 
 def update_local_dict(sumstore,ipn_obj,tm,barcode_to_do):
@@ -529,29 +551,29 @@ def update_local_dict(sumstore,ipn_obj,tm,barcode_to_do):
 
     if ipn_obj.is_pass:
 
-        sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_length"] += len(ipn_obj.sequence)
+        sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_length"] += ipn_obj.sequence_length
 
-        if len(ipn_obj.sequence) > sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_max_length"]:
-            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_max_length"] = len(ipn_obj.sequence)
+        if ipn_obj.sequence_length > sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_max_length"]:
+            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_max_length"] = ipn_obj.sequence_length
 
         if sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_min_length"] == 0:
-            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_min_length"] = len(ipn_obj.sequence)
+            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_min_length"] = ipn_obj.sequence_length
 
-        if len(ipn_obj.sequence) < sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_min_length"]:
-            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_min_length"] = len(ipn_obj.sequence)
+        if ipn_obj.sequence_length < sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_min_length"]:
+            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_min_length"] = ipn_obj.sequence_length
 
         sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_count"] += 1
 
-    sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["total_length"] += len(ipn_obj.sequence)
+    sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["total_length"] += ipn_obj.sequence_length
 
-    if len(ipn_obj.sequence) > sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["max_length"]:
-        sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["max_length"] = len(ipn_obj.sequence)
+    if ipn_obj.sequence_length > sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["max_length"]:
+        sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["max_length"] = ipn_obj.sequence_length
 
     if sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["min_length"] == 0:
-        sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["min_length"] = len(ipn_obj.sequence)
+        sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["min_length"] = ipn_obj.sequence_length
 
-    if len(ipn_obj.sequence) < sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["min_length"]:
-        sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["min_length"] = len(ipn_obj.sequence)
+    if ipn_obj.sequence_length < sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["min_length"]:
+        sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["min_length"] = ipn_obj.sequence_length
 
     sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["read_count"] += 1
 
@@ -567,29 +589,29 @@ def update_local_dict_sum(sumstore, ipn_obj, barcode_to_do):
 
     if ipn_obj.is_pass:
 
-        sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_length"] += len(ipn_obj.sequence)
+        sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_length"] += ipn_obj.sequence_length
 
-        if len(ipn_obj.sequence) > sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_max_length"]:
-            sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_max_length"] = len(ipn_obj.sequence)
+        if ipn_obj.sequence_length > sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_max_length"]:
+            sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_max_length"] = ipn_obj.sequence_length
 
         if sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_min_length"] == 0:
-            sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_min_length"] = len(ipn_obj.sequence)
+            sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_min_length"] = ipn_obj.sequence_length
 
-        if len(ipn_obj.sequence) < sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_min_length"]:
-            sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_min_length"] = len(ipn_obj.sequence)
+        if ipn_obj.sequence_length < sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_min_length"]:
+            sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_min_length"] = ipn_obj.sequence_length
 
         sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_count"] += 1
 
-    sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["total_length"] += len(ipn_obj.sequence)
+    sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["total_length"] += ipn_obj.sequence_length
 
-    if len(ipn_obj.sequence) > sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["max_length"]:
-        sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["max_length"] = len(ipn_obj.sequence)
+    if ipn_obj.sequence_length > sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["max_length"]:
+        sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["max_length"] = ipn_obj.sequence_length
 
     if sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["min_length"] == 0:
-        sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["min_length"] = len(ipn_obj.sequence)
+        sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["min_length"] = ipn_obj.sequence_length
 
-    if len(ipn_obj.sequence) < sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["min_length"]:
-        sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["min_length"] = len(ipn_obj.sequence)
+    if ipn_obj.sequence_length < sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["min_length"]:
+        sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["min_length"] = ipn_obj.sequence_length
 
     sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["read_count"] += 1
 
@@ -598,29 +620,29 @@ def update_local_dict_sum(sumstore, ipn_obj, barcode_to_do):
 def update_sum_stats(obj, ipn_obj):
     if ipn_obj.is_pass:
 
-        obj.pass_length += len(ipn_obj.sequence)
+        obj.pass_length += ipn_obj.sequence_length
 
-        if len(ipn_obj.sequence) > obj.pass_max_length:
-            obj.pass_max_length = len(ipn_obj.sequence)
+        if ipn_obj.sequence_length > obj.pass_max_length:
+            obj.pass_max_length = ipn_obj.sequence_length
 
         if obj.pass_min_length == 0:
-            obj.pass_min_length = len(ipn_obj.sequence)
+            obj.pass_min_length = ipn_obj.sequence_length
 
-        if len(ipn_obj.sequence) < obj.pass_min_length:
-            obj.pass_min_length = len(ipn_obj.sequence)
+        if ipn_obj.sequence_length < obj.pass_min_length:
+            obj.pass_min_length = ipn_obj.sequence_length
 
         obj.pass_count += 1
 
-    obj.total_length += len(ipn_obj.sequence)
+    obj.total_length += ipn_obj.sequence_length
 
-    if len(ipn_obj.sequence) > obj.max_length:
-        obj.max_length = len(ipn_obj.sequence)
+    if ipn_obj.sequence_length > obj.max_length:
+        obj.max_length = ipn_obj.sequence_length
 
     if obj.min_length == 0:
-        obj.min_length = len(ipn_obj.sequence)
+        obj.min_length = ipn_obj.sequence_length
 
-    if len(ipn_obj.sequence) < obj.min_length:
-        obj.min_length = len(ipn_obj.sequence)
+    if ipn_obj.sequence_length < obj.min_length:
+        obj.min_length = ipn_obj.sequence_length
 
     #
     # channel_presence is a 512 characters length string containing 0
@@ -718,12 +740,12 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count):
         if fastq.type not in fastqdict[fastq.barcode]:
             fastqdict[fastq.barcode][fastq.type] = []
 
-        fastqdict[fastq.barcode][fastq.type].append([fastq.read_id, fastq.sequence])
+        fastqdict[fastq.barcode][fastq.type].append([fastq.read_id, fastq.extra.sequence])
         newfastqs += 1
-        #read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
+        #read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.extra.sequence)
         #fastqdict[fastq.read_id]=fastq
         #fastqtypedict[fastq.read_id]=fastq.type
-        #outtemp.write('>{}\n{}\n'.format(fastq.read_id, fastq.sequence))
+        #outtemp.write('>{}\n{}\n'.format(fastq.read_id, fastq.extra.sequence))
         last_read = fastq.id
 
     #outtemp.close()
@@ -828,7 +850,7 @@ def run_minimap2_transcriptome(runid, id, reference, last_read):
     # print (len(fastqs))
 
     for fastq in fastqs:
-        read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
+        read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.extra.sequence)
         fastqdict[fastq.read_id] = fastq
         fastqtypedict[fastq.read_id] = fastq.type
         last_read = fastq.id
@@ -937,7 +959,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
         # print (len(fastqs))
 
         for fastq in fastqs:
-            read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
+            read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.extra.sequence)
             fastqdict[fastq.read_id] = fastq
             fastqtypedict[fastq.read_id] = fastq.type
             last_read = fastq.id
@@ -1054,7 +1076,7 @@ def run_kraken(runid, id, last_read, inputtype):
         typedict = dict()
         barcodedict = dict()
         for fastq in fastqs:
-            read = '{}>{} \r\n{}\r\n'.format(read, fastq, fastq.sequence)
+            read = '{}>{} \r\n{}\r\n'.format(read, fastq, fastq.extra.sequence)
             # print (fastq.id)
             readdict[fastq.read_id] = fastq.id
             last_read = fastq.id
@@ -1213,9 +1235,9 @@ def run_bwa_alignment(runid, job_id, referenceinfo_id, last_read):
     referenceinfo = ReferenceInfo.objects.get(pk=referenceinfo_id)
 
     for fastq in fastq_list:
-        # print (fastq.sequence)
+        # print (fastq.extra.sequence)
         bwaindex = referenceinfo.filename
-        read = '>{} \r\n{}\r\n'.format(fastq, fastq.sequence)
+        read = '>{} \r\n{}\r\n'.format(fastq, fastq.extra.sequence)
         cmd = 'bwa mem -x ont2d %s -' % (bwaindex)
         # print (cmd)
         # print (read)

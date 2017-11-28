@@ -476,12 +476,16 @@ class FastqRead(models.Model):
         null=True
     )
 
-    sequence = models.TextField(
-
+    sequence_length = models.BigIntegerField(
+        null=True,
+        blank=True
     )
 
-    quality = models.TextField(
-
+    quality_average = models.DecimalField(
+        decimal_places=2,
+        max_digits=5,
+        null=True,
+        blank=True
     )
 
     is_pass = models.BooleanField(
@@ -511,6 +515,25 @@ class FastqRead(models.Model):
     def __str__(self):
         return self.read_id
 
+
+
+class FastqReadExtra(models.Model):
+    fastqread = models.OneToOneField(
+        FastqRead,
+        on_delete=models.CASCADE,
+        related_name='extra'
+    )
+
+    sequence = models.TextField(
+
+    )
+
+    quality = models.TextField(
+
+    )
+
+    def __str__(self):
+        return self.fastqread
 
 class RunSummary(models.Model):
     run_id = models.ForeignKey(MinIONRun,on_delete=models.CASCADE, related_name='runsummaries')
