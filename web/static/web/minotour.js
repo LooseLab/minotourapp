@@ -2417,11 +2417,23 @@ function MinotourApp() {
         );
 
         $('#chromosome-id-select').on('change', function() {
-            self.updateStepLineChart(self.chartChromosomeCoverage);
+            self.updateStepLineChart(self.chartChromosomeCoverage, 0, 0);
         });
 
-        $('#resolution-id-select').on('change', function() {
-            self.updateStepLineChart(self.chartChromosomeCoverage);
+        $('#chromosome-coverage-left').on('click', function() {
+            var min = self.chartChromosomeCoverage.xAxis[0].min;
+            var max = self.chartChromosomeCoverage.xAxis[0].max;
+            var delta = (max - min) / 2;
+
+            self.updateStepLineChart(self.chartChromosomeCoverage, Math.round(min - delta, 0), Math.round(max - delta));
+        });
+
+        $('#chromosome-coverage-right').on('click', function() {
+            var min = self.chartChromosomeCoverage.xAxis[0].min;
+            var max = self.chartChromosomeCoverage.xAxis[0].max;
+            var delta = (max - min) / 2;
+
+            self.updateStepLineChart(self.chartChromosomeCoverage, Math.round(min + delta), Math.round(max + delta));
         });
 
         this.LiveHistogram = this.makeLiveHistogram(
@@ -2587,13 +2599,6 @@ function MinotourApp() {
                 chart.addSeries(series[i]);
             }
         }
-
-
-        console.log('updating chromosome coverage chart');
-        //this.get_selected_barcode_id();
-        self.updateStepLineChart(self.chartChromosomeCoverage, self.id, self.get_selected_barcode_id());
-        console.log('updated chromosome coverage chart');
-
     };
 
     this.updateReadsColumnBasedChart = function (chart, field) {

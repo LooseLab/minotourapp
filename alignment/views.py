@@ -17,8 +17,14 @@ from reads.models import JobMaster
 from reference.models import ReferenceLine
 
 
+def find_bin(start, size_of_each_bin, value):
+    return int((value - start) / size_of_each_bin)
+
+
 @api_view(['GET'])
-def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id, resolution):
+def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id, start, end):
+
+    NUMBER_OF_BINS = 20
 
     queryset = PafRoughCov.objects \
         .filter(run__owner=request.user) \
@@ -27,37 +33,45 @@ def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id,
         .filter(read_type__id=read_type_id) \
         .order_by('p')
 
+    start = int(start)
+    end = int(end)
+
+    if start != 0 and end != 0:
+        # start = int(start - start * 0.1)
+        # end = int(end + end * 0.1)
+        number_of_bases_in_a_bin = int((end - start) / NUMBER_OF_BINS)
+    else:
+        start = queryset.first().p
+        end = queryset.last().p
+        number_of_bases_in_a_bin = int((end - start) / NUMBER_OF_BINS)
+
+    # print('number of bases in a bin: {} {} {}'.format(number_of_bases_in_a_bin, start, end))
+
+    result_bins = {}
+
+    for i in range(NUMBER_OF_BINS + 1):
+        result_bins[i] = {
+            'number_of_points': 0,
+            'sum_coverage': 0,
+            'p': start + (i * number_of_bases_in_a_bin)
+        }
+
     result_list = []
     position_list = []
     coverage_list = []
     current_coverage_sum = 0
 
     result_per_bin = {}
+    result_per_bin2 = {}
     # is_a_new_bin = True
     # current_bin_start_point = None
 
     for key, item in enumerate(queryset):
 
-        if len(result_per_bin.keys()) >= 30:
-            break # never return more than 30 bins
-
         if key == 0:
             # bins = {}
             # current_bin_start_point = item.p
             serie_start_point = item.p
-
-        #print('{} {} {} {} {}'.format(key, item.p, serie_start_point, int(resolution), int((item.p - serie_start_point) / int(resolution))))
-        #print((item.p - serie_start_point) / int(resolution))
-        #print(int((item.p - serie_start_point) / int(resolution)))
-        bin_index = int((item.p - serie_start_point) / int(resolution))
-
-        # print('bin_index: {}'.format(bin_index))
-
-        # if is_a_new_bin:
-        #     temp_result_list = []
-        #     temp_position_list = []
-        #     temp_coverage_list = []
-        #     temp_current_coverage_sum = 0
 
         current_coverage_sum = current_coverage_sum + item.i
 
@@ -67,26 +81,38 @@ def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id,
 
         result_list.append([item.p, current_coverage_sum])
 
-        bin_start = serie_start_point + (bin_index * int(resolution))
+        if item.p > end:
+            break # do not process after the end of the screen TODO filter query?
 
-        if bin_start in result_per_bin.keys():
-            if result_per_bin[bin_start] < current_coverage_sum:
-                result_per_bin[bin_start] = current_coverage_sum
-                print('novo valor {} {} {}'.format(current_coverage_sum, item.p, item.i))
-        else:
-            result_per_bin[bin_start] = current_coverage_sum
-            print('novo bin')
-            print(result_per_bin[bin_start])
+        if item.p >= start:
+            bin_index2 = find_bin(start, number_of_bases_in_a_bin, item.p)
+
+            # print('bin index 2: {} {}'.format(bin_index2, current_coverage_sum))
+
+            result_bins[bin_index2]['number_of_points'] =+ 1
+            result_bins[bin_index2]['sum_coverage'] =+ current_coverage_sum
+            # print(result_bins[bin_index2])
 
     result_per_bin[queryset.last().p] = current_coverage_sum
+    result_per_bin2[queryset.last().p] = current_coverage_sum
 
     result_list2 = []
-    for p in result_per_bin.keys():
-        result_list2.append([p, result_per_bin[p]])
+    for i in range(NUMBER_OF_BINS):
+
+        p = result_bins[i]['p']
+
+        if result_bins[i]['number_of_points'] >= 1:
+            coverage = result_bins[i]['sum_coverage'] / result_bins[i]['number_of_points']
+
+        else:
+            coverage = 0
+
+        result_list2.append([p, coverage])
 
     result = {}
-    result['data_original'] = result_list
+#    result['data_original'] = result_list
     result['data_simplified'] = result_list2
+
 
     #return HttpResponse(json.dumps(result_list), content_type="application/json")
     return HttpResponse(json.dumps(result), content_type="application/json")

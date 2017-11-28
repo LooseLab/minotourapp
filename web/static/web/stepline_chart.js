@@ -3,7 +3,36 @@ function makeStepLineChart(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.chart(divName, {
 
         chart: {
-            zoomType: 'x'
+            zoomType: 'x',
+            panning: true,
+            panKey: 'shift',
+            events: {
+                selection: function(event) {
+                    var text, label;
+                    if (event.xAxis) {
+                        text = 'min: ' + Highcharts.numberFormat(event.xAxis[0].min, 2) + ', max: ' + Highcharts.numberFormat(event.xAxis[0].max, 2);
+                        self.updateStepLineChart(this, Math.round(event.xAxis[0].min, 0), Math.round(event.xAxis[0].max, 0));
+                    } else {
+                        text = 'Selection reset';
+                        self.updateStepLineChart(this, 0, 0);
+                    }
+                    label = this.renderer.label(text, 100, 120)
+                        .attr({
+                            fill: Highcharts.getOptions().colors[0],
+                            padding: 10,
+                            r: 5,
+                            zIndex: 8
+                        })
+                        .css({
+                            color: '#FFFFFF'
+                        })
+                        .add();
+
+                    setTimeout(function () {
+                        label.fadeOut();
+                    }, 1000);
+                }
+            }
         },
 
         rangeSelector: {
@@ -19,15 +48,16 @@ function makeStepLineChart(divName, chartTitle, yAxisTitle) {
 
 }
 
-function updateStepLineChart (chart) {
+function updateStepLineChart (chart, start = 0, end = 0) {
 
     var select = document.getElementById('chromosome-id-select');
     var selected_index = select.selectedIndex;
     var selected_option = select[selected_index];
 
-    var resolution = document.getElementById('resolution-id-select');
-    var resolution_index = resolution.selectedIndex;
-    var resolution_option = resolution[resolution_index];
+    if (selected_option === undefined) {
+        console.log('No mapped chromosome selected.');
+        return;
+    }
 
     var value_combination = selected_option.value.split('_');
     var run_id = value_combination[0];
@@ -36,16 +66,11 @@ function updateStepLineChart (chart) {
     var reference_id = value_combination[3];
     var chromosome_id = value_combination[4];
 
-    if (selected_option === undefined) {
-        console.log('No mapped chromosome selected.');
-        return;
-    }
-
     //var run_id = self.id;
     //var barcode_id = self.selectedBarcode;
     var selected_option_value = selected_option.value;
 
-    var url = '/api/v1/runs/' + run_id + '/pafcover/' + barcode_id + '/' + read_type_id + '/' + chromosome_id + '/' + resolution_option.value + '/';
+    var url = '/api/v1/runs/' + run_id + '/pafcover/' + barcode_id + '/' + read_type_id + '/' + chromosome_id + '/' + start + '/' + end + '/';
 
     $.getJSON(url, function(data) {
 
@@ -54,9 +79,9 @@ function updateStepLineChart (chart) {
             chart.series[0].remove();
         }
 
-        var orderedDataOriginal = data['data_original'].sort(function (a, b) {
-            return a[0] - b[0];
-        });
+        // var orderedDataOriginal = data['data_original'].sort(function (a, b) {
+        //     return a[0] - b[0];
+        // });
 
         var orderedDataSimplified = data['data_simplified'].sort(function (a, b) {
             return a[0] - b[0];
@@ -64,12 +89,12 @@ function updateStepLineChart (chart) {
 
         // console.log(orderedData);
 
-        chart.addSeries({
-            // name: barcode + " - " + typeName,
-            name: 'Original',
-            data: orderedDataOriginal,
-            step: true,
-         });
+        // chart.addSeries({
+        //     // name: barcode + " - " + typeName,
+        //     name: 'Original',
+        //     data: orderedDataOriginal,
+        //     step: true,
+        //  });
 
          chart.addSeries({
              // name: barcode + " - " + typeName,
@@ -77,6 +102,10 @@ function updateStepLineChart (chart) {
              data: orderedDataSimplified,
              step: true,
           });
+
+          var start = orderedDataSimplified[0][0];
+          var end = orderedDataSimplified[len(orderedDataSimplified)][0];
+          chart.xAxis[0].setExtremes(start, end, true);
 
     });
 
