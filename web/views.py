@@ -115,3 +115,7 @@ def flowcell_index(request, pk):
 def remotecontrol(request):
     return render(request, 'web/remotecontrol.html')
 
+@login_required
+def sandbox(request):
+    return render(request, 'web/sandbox.html')
+

@@ -2204,6 +2204,7 @@ function MinotourApp() {
     this.makeAreaPlot = makeAreaPlot;
     this.makeHeatmapChart = makeHeatmapChart;
     this.makeStepLineChart = makeStepLineChart;
+    this.afterSetExtremes = afterSetExtremes;
 
     this.lastread = 0;
     this.needtoupdatecharts = false;
@@ -2420,21 +2421,21 @@ function MinotourApp() {
             self.updateStepLineChart(self.chartChromosomeCoverage, 0, 0);
         });
 
-        $('#chromosome-coverage-left').on('click', function() {
-            var min = self.chartChromosomeCoverage.xAxis[0].min;
-            var max = self.chartChromosomeCoverage.xAxis[0].max;
-            var delta = (max - min) / 2;
-
-            self.updateStepLineChart(self.chartChromosomeCoverage, Math.round(min - delta, 0), Math.round(max - delta));
-        });
-
-        $('#chromosome-coverage-right').on('click', function() {
-            var min = self.chartChromosomeCoverage.xAxis[0].min;
-            var max = self.chartChromosomeCoverage.xAxis[0].max;
-            var delta = (max - min) / 2;
-
-            self.updateStepLineChart(self.chartChromosomeCoverage, Math.round(min + delta), Math.round(max + delta));
-        });
+        // $('#chromosome-coverage-left').on('click', function() {
+        //     var min = self.chartChromosomeCoverage.xAxis[0].min;
+        //     var max = self.chartChromosomeCoverage.xAxis[0].max;
+        //     var delta = (max - min) / 2;
+        //
+        //     self.updateStepLineChart(self.chartChromosomeCoverage, Math.round(min - delta, 0), Math.round(max - delta));
+        // });
+        //
+        // $('#chromosome-coverage-right').on('click', function() {
+        //     var min = self.chartChromosomeCoverage.xAxis[0].min;
+        //     var max = self.chartChromosomeCoverage.xAxis[0].max;
+        //     var delta = (max - min) / 2;
+        //
+        //     self.updateStepLineChart(self.chartChromosomeCoverage, Math.round(min + delta), Math.round(max + delta));
+        // });
 
         this.LiveHistogram = this.makeLiveHistogram(
             'live-histogram',
