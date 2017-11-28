@@ -196,7 +196,7 @@ function makeChart(divName, chartTitle, yAxisTitle) {
             enabled: true
         },
         exporting: {
-            enabled: false
+            enabled: true
         },
         series: []
     });
@@ -239,7 +239,7 @@ function makeChartlabels(divName, chartTitle, yAxisTitle) {
             enabled: true
         },
         exporting: {
-            enabled: false
+            enabled: true
         },
         series: []
     });
@@ -279,7 +279,9 @@ function makeChart2(divName, chartTitle, yAxisTitle) {
             enabled: true
         },
         exporting: {
-            enabled: false
+            enabled: true,
+            sourceWidth: 1200,
+            sourceHeight: 400,
         }
     });
 
@@ -312,7 +314,7 @@ function makeChart3(divName, chartTitle, yAxisTitle, xAxisTitle) {
             enabled: true
         },
         exporting: {
-            enabled: false
+            enabled: true
         }
     });
 
@@ -352,7 +354,7 @@ function makeChart4(divName, chartTitle, yAxisTitle, xAxisTitle) {
             enabled: true
         },
         exporting: {
-            enabled: false
+            enabled: true
         }
     });
 
