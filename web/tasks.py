@@ -330,6 +330,8 @@ def processreads(runid, id, last_read):
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["max_length"] = 0
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["min_length"] = 0
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["read_count"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["quality_sum"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["pass_quality_sum"] = 0
 
         if barcode not in sumstoresum[ipn_obj.run_id][ipn_obj.type].keys():
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode] = dict()
@@ -342,6 +344,8 @@ def processreads(runid, id, last_read):
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["max_length"] = 0
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["min_length"] = 0
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["read_count"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["quality_sum"] = 0
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["pass_quality_sum"] = 0
 
 
         if tm not in sumstore[ipn_obj.run_id][ipn_obj.type].keys():
@@ -358,6 +362,8 @@ def processreads(runid, id, last_read):
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["max_length"] = 0
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["min_length"] = 0
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["read_count"] = 0
+            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["quality_sum"] = 0
+            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["pass_quality_sum"] = 0
 
         if barcode not in sumstore[ipn_obj.run_id][ipn_obj.type][tm].keys():
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode] = dict()
@@ -370,6 +376,8 @@ def processreads(runid, id, last_read):
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["max_length"] = 0
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["min_length"] = 0
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["read_count"] = 0
+            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["quality_sum"] = 0
+            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["pass_quality_sum"] = 0
 
 
 
@@ -422,6 +430,7 @@ def processreads(runid, id, last_read):
                     )
                     #update_sum_stats(obj1, sumstore[run][type_][tm][barcode])
                     obj.pass_length += sumstore[run][type_][tm][barcode]["pass_length"]
+                    obj.pass_quality_sum += sumstore[run][type_][tm][barcode]["pass_quality_sum"]
 
                     if sumstore[run][type_][tm][barcode]["pass_max_length"] > obj.pass_max_length:
                         obj.pass_max_length = sumstore[run][type_][tm][barcode]["pass_max_length"]
@@ -435,6 +444,7 @@ def processreads(runid, id, last_read):
                     obj.pass_count += sumstore[run][type_][tm][barcode]["pass_count"]
 
                     obj.total_length += sumstore[run][type_][tm][barcode]["total_length"]
+                    obj.quality_sum += sumstore[run][type_][tm][barcode]["quality_sum"]
 
                     if sumstore[run][type_][tm][barcode]["max_length"] > obj.max_length:
                         obj.max_length = sumstore[run][type_][tm][barcode]["max_length"]
@@ -471,6 +481,7 @@ def processreads(runid, id, last_read):
                 )
                 # update_sum_stats(obj1, sumstoresum[run][type_][barcode])
                 obj.pass_length += sumstoresum[run][type_][barcode]["pass_length"]
+                obj.pass_quality_sum += sumstoresum[run][type_][barcode]["pass_quality_sum"]
 
                 if sumstoresum[run][type_][barcode]["pass_max_length"] > obj.pass_max_length:
                     obj.pass_max_length = sumstoresum[run][type_][barcode]["pass_max_length"]
@@ -484,6 +495,7 @@ def processreads(runid, id, last_read):
                 obj.pass_count += sumstoresum[run][type_][barcode]["pass_count"]
 
                 obj.total_length += sumstoresum[run][type_][barcode]["total_length"]
+                obj.quality_sum += sumstoresum[run][type_][barcode]["quality_sum"]
 
                 if sumstoresum[run][type_][barcode]["max_length"] > obj.max_length:
                     obj.max_length = sumstoresum[run][type_][barcode]["max_length"]
@@ -551,7 +563,9 @@ def update_local_dict(sumstore,ipn_obj,tm,barcode_to_do):
 
     if ipn_obj.is_pass:
 
+
         sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_length"] += ipn_obj.sequence_length
+        sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_quality_sum"] += ipn_obj.quality_average
 
         if ipn_obj.sequence_length > sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_max_length"]:
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_max_length"] = ipn_obj.sequence_length
@@ -565,6 +579,8 @@ def update_local_dict(sumstore,ipn_obj,tm,barcode_to_do):
         sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_count"] += 1
 
     sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["total_length"] += ipn_obj.sequence_length
+
+    sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["quality_sum"] += ipn_obj.quality_average
 
     if ipn_obj.sequence_length > sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["max_length"]:
         sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["max_length"] = ipn_obj.sequence_length
@@ -590,6 +606,7 @@ def update_local_dict_sum(sumstore, ipn_obj, barcode_to_do):
     if ipn_obj.is_pass:
 
         sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_length"] += ipn_obj.sequence_length
+        sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_quality_sum"] += ipn_obj.quality_average
 
         if ipn_obj.sequence_length > sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_max_length"]:
             sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_max_length"] = ipn_obj.sequence_length
@@ -603,7 +620,7 @@ def update_local_dict_sum(sumstore, ipn_obj, barcode_to_do):
         sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_count"] += 1
 
     sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["total_length"] += ipn_obj.sequence_length
-
+    sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["quality_sum"] += ipn_obj.quality_average
     if ipn_obj.sequence_length > sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["max_length"]:
         sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["max_length"] = ipn_obj.sequence_length
 

@@ -779,6 +779,12 @@ function MinotourFlowCellApp() {
             "average read length".toUpperCase()
     );
 
+    this.average_quality_overtime = this.makeChart2(
+            "average-quality-overtime",
+            "average quality over time".toUpperCase(),
+            "average read quality score".toUpperCase()
+    );
+
     this.chart_cumulative_number_reads_overtime = this.makeChart2(
             "cumulative-number-reads-overtime",
             "cumulative reads".toUpperCase(),
@@ -1157,7 +1163,8 @@ function MinotourFlowCellApp() {
     };
 
     this.updateSummaryByMinuteBasedCharts = function () {
-        self.updateAverageReadLengthOverTimeChart()
+        self.updateAverageReadLengthOverTimeChart();
+        self.updateAverageQualityOverTimeChart();
         self.updateCumulativeNumberOfReadsOverTimeChart();
         self.updateSequencingRateChart();
         self.updateSequencingSpeedChart();
@@ -1279,13 +1286,24 @@ function MinotourFlowCellApp() {
 
             if (self.summaryByMinute[i].barcodename === "All reads") {
                 if (summaries["All reads"][self.summaryByMinute[i].typename] === undefined) {
-                    summaries["All reads"][self.summaryByMinute[i].typename] = {
+                    summaries["All reads"][self.summaryByMinute[i].typename] = {};
+                    summaries["All reads"][self.summaryByMinute[i].typename]['all'] = {
+                        "lastCumulativeReadCount": 0,
+                        "data": []
+                    };
+                    summaries["All reads"][self.summaryByMinute[i].typename]['pass'] = {
+                        "lastCumulativeReadCount": 0,
+                        "data": []
+                    };
+                    summaries["All reads"][self.summaryByMinute[i].typename]['fail'] = {
                         "lastCumulativeReadCount": 0,
                         "data": []
                     };
                 }
 
-                var cumulativeReadCount = self.summaryByMinute[i].read_count + summaries["All reads"][self.summaryByMinute[i].typename].lastCumulativeReadCount;
+                var cumulativeReadCount = self.summaryByMinute[i].read_count + summaries["All reads"][self.summaryByMinute[i].typename]['all'].lastCumulativeReadCount;
+                var passcumulativeReadCount = self.summaryByMinute[i].pass_count + summaries["All reads"][self.summaryByMinute[i].typename]['pass'].lastCumulativeReadCount;
+                var failcumulativeReadCount = self.summaryByMinute[i].read_count - self.summaryByMinute[i].pass_count + summaries["All reads"][self.summaryByMinute[i].typename]['fail'].lastCumulativeReadCount;
                 var sample_time = new Date(self.summaryByMinute[i].sample_time);
 
                 var point = {
@@ -1293,8 +1311,22 @@ function MinotourFlowCellApp() {
                     y: cumulativeReadCount
                 }
 
-                summaries["All reads"][self.summaryByMinute[i].typename].lastCumulativeReadCount = cumulativeReadCount;
-                summaries["All reads"][self.summaryByMinute[i].typename].data.push(point);
+                var passpoint = {
+                    x: sample_time,
+                    y: passcumulativeReadCount
+                }
+
+                var failpoint = {
+                    x: sample_time,
+                    y: failcumulativeReadCount
+                }
+                summaries["All reads"][self.summaryByMinute[i].typename]['all'].lastCumulativeReadCount = cumulativeReadCount;
+                summaries["All reads"][self.summaryByMinute[i].typename]['all'].data.push(point);
+                summaries["All reads"][self.summaryByMinute[i].typename]['pass'].lastCumulativeReadCount = passcumulativeReadCount;
+                summaries["All reads"][self.summaryByMinute[i].typename]['pass'].data.push(passpoint);
+                summaries["All reads"][self.summaryByMinute[i].typename]['fail'].lastCumulativeReadCount = failcumulativeReadCount;
+                summaries["All reads"][self.summaryByMinute[i].typename]['fail'].data.push(failpoint);
+
             }
 
             if (self.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
@@ -1321,7 +1353,9 @@ function MinotourFlowCellApp() {
 
         for (var barcode in summaries) {
             for (var readtype in summaries[barcode]) {
-                chart.addSeries({name: barcode + " - " + readtype, data: summaries[barcode][readtype]["data"]});
+                for (var qual in summaries[barcode][readtype]) {
+                    chart.addSeries({name: barcode + " - " + readtype + " - " + qual, data: summaries[barcode][readtype][qual]["data"]});
+                }
             }
         }
 
@@ -1346,6 +1380,110 @@ function MinotourFlowCellApp() {
             })
         }
 
+    };
+
+    this.updateAverageQualityOverTimeChart = function () {
+
+        var chart = self.average_quality_overtime;
+        var selectedBarcode = self.selectedBarcode;
+
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        if (selectedBarcode !== "All reads") {
+            var summaries = {};
+            summaries["All reads"] = {};
+            summaries[selectedBarcode] = {};
+
+        } else {
+            var summaries = {
+                "All reads": {}
+            };
+
+        }
+
+        for (var i = 0; i < self.summaryByMinute.length; i++) {
+
+            var average_quality = self.summaryByMinute[i].quality_sum / self.summaryByMinute[i].read_count;
+            var pass_average_quality = self.summaryByMinute[i].pass_quality_sum / self.summaryByMinute[i].pass_count;
+            var fail_average_quality = (self.summaryByMinute[i].quality_sum - self.summaryByMinute[i].pass_quality_sum) / (self.summaryByMinute[i].read_count - self.summaryByMinute[i].pass_count);
+
+            var sample_time = new Date(self.summaryByMinute[i].sample_time);
+
+            var point = {
+                x: sample_time,
+                y: average_quality
+            };
+
+            var pass_point = {
+                x: sample_time,
+                y: pass_average_quality
+            };
+
+            var fail_point = {
+                x: sample_time,
+                y: fail_average_quality
+            };
+
+            if (self.summaryByMinute[i].barcodename === "All reads") {
+                if (summaries["All reads"][self.summaryByMinute[i].typename] === undefined) {
+                    summaries["All reads"][self.summaryByMinute[i].typename] = [];
+                    summaries["All reads"][self.summaryByMinute[i].typename]['all'] = [];
+                    summaries["All reads"][self.summaryByMinute[i].typename]['pass'] = [];
+                    summaries["All reads"][self.summaryByMinute[i].typename]['fail'] = [];
+                }
+
+                summaries["All reads"][self.summaryByMinute[i].typename]['all'].push(point);
+                summaries["All reads"][self.summaryByMinute[i].typename]['pass'].push(pass_point);
+                summaries["All reads"][self.summaryByMinute[i].typename]['fail'].push(fail_point);
+            }
+
+            if (self.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
+                if (summaries[selectedBarcode][self.summaryByMinute[i].typename] === undefined) {
+                    summaries[selectedBarcode][self.summaryByMinute[i].typename] = [];
+                    summaries[selectedBarcode][self.summaryByMinute[i].typename]['all'] = [];
+                    summaries[selectedBarcode][self.summaryByMinute[i].typename]['pass'] = [];
+                    summaries[selectedBarcode][self.summaryByMinute[i].typename]['fail'] = [];
+
+
+                }
+
+                summaries[selectedBarcode][self.summaryByMinute[i].typename]['all'].push(point);
+                summaries[selectedBarcode][self.summaryByMinute[i].typename]['pass'].push(pass_point);
+                summaries[selectedBarcode][self.summaryByMinute[i].typename]['fail'].push(fail_point);
+            }
+
+        }
+
+        for (var barcode in summaries) {
+            for (var readtype in summaries[barcode]) {
+                for (var qual in summaries[barcode][readtype]) {
+                    chart.addSeries({name: barcode + " - " + readtype + " - " + qual, data: summaries[barcode][readtype][qual]});
+                }
+            }
+        }
+
+        for (var i in self.rundata){
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
+            var name = self.rundata[i]['id']
+            //chart.xAxis[0].addPlotBand({
+            //    from: starttime,
+            //    to: endtime,
+            //    color: '#FCFFC5',
+            //    id: name
+            //});
+            chart.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
+        }
     };
 
     this.updateAverageReadLengthOverTimeChart = function () {
@@ -1444,13 +1582,22 @@ function MinotourFlowCellApp() {
                     if (summary[item.barcodename][item.typename] === undefined) {
                         summary[item.barcodename][item.typename]={};
                         summary[item.barcodename][item.typename]["read_count"]=0;
+                        summary[item.barcodename][item.typename]["pass_count"]=0;
                         summary[item.barcodename][item.typename]["yield"]=0;
+                        summary[item.barcodename][item.typename]["pass_yield"]=0;
                         summary[item.barcodename][item.typename]["max_length"]=0;
+                        summary[item.barcodename][item.typename]["pass_max_length"]=0;
+
                     }
                     summary[item.barcodename][item.typename]["read_count"]+=item.read_count;
+                    summary[item.barcodename][item.typename]["pass_count"]+=item.pass_count;
                     summary[item.barcodename][item.typename]["yield"]+=item.total_length;
+                    summary[item.barcodename][item.typename]["pass_yield"]+=item.pass_length;
                     if (item.max_length > summary[item.barcodename][item.typename]["max_length"]){
                         summary[item.barcodename][item.typename]["max_length"] = item.max_length;
+                    }
+                    if (item.pass_max_length > summary[item.barcodename][item.typename]["pass_max_length"]){
+                        summary[item.barcodename][item.typename]["pass_max_length"] = item.pass_max_length;
                     }
 
 
@@ -1468,29 +1615,73 @@ function MinotourFlowCellApp() {
                                 "average_read_length": null,
                                 "max_length": null
                             };
-
-                            summaries[barcodename][typename]["read_count"] = {
+                            
+                            summaries[barcodename][typename]["read_count"]={};
+                            summaries[barcodename][typename]["read_count"]['all'] = {
                                 "name": typename,
                                 "data": [summary[barcodename][typename]["read_count"]],//[summaries[item.barcodename][item.typename]["read_count"]["data"] + item.read_count],
                                 "animation": false
                             };
+                            summaries[barcodename][typename]["read_count"]['pass'] = {
+                                "name": typename,
+                                "data": [summary[barcodename][typename]["pass_count"]],//[summaries[item.barcodename][item.typename]["read_count"]["data"] + item.read_count],
+                                "animation": false
+                            };
+                            summaries[barcodename][typename]["read_count"]['fail'] = {
+                                "name": typename,
+                                "data": [(summary[barcodename][typename]["read_count"]-summary[barcodename][typename]["pass_count"])],//[summaries[item.barcodename][item.typename]["read_count"]["data"] + item.read_count],
+                                "animation": false
+                            };
 
-                            summaries[barcodename][typename]["yield"] = {
+                            summaries[barcodename][typename]["yield"]={};
+                            summaries[barcodename][typename]["yield"]['all'] = {
                                 "name": typename,
                                 "data": [summary[barcodename][typename]["yield"]],
                                 "animation": false
                             };
+                            summaries[barcodename][typename]["yield"]['pass'] = {
+                                "name": typename,
+                                "data": [summary[barcodename][typename]["pass_yield"]],
+                                "animation": false
+                            };
+                            summaries[barcodename][typename]["yield"]['fail'] = {
+                                "name": typename,
+                                "data": [(summary[barcodename][typename]["yield"]-summary[barcodename][typename]["pass_yield"])],
+                                "animation": false
+                            };
 
-                            summaries[barcodename][typename]["average_read_length"] = {
+                            summaries[barcodename][typename]["average_read_length"]={};
+                            summaries[barcodename][typename]["average_read_length"]['all'] = {
                                 "name": typename,
                                 "data": [summary[barcodename][typename]["yield"]/summary[barcodename][typename]["read_count"]],
                                 "animation": false
                             };
+                            summaries[barcodename][typename]["average_read_length"]['pass'] = {
+                                "name": typename,
+                                "data": [summary[barcodename][typename]["pass_yield"]/summary[barcodename][typename]["pass_count"]],
+                                "animation": false
+                            };
+                            summaries[barcodename][typename]["average_read_length"]['fail'] = {
+                                "name": typename,
+                                "data": [(summary[barcodename][typename]["yield"]-summary[barcodename][typename]["pass_yield"])/(summary[barcodename][typename]["read_count"]-summary[barcodename][typename]["pass_count"])],
+                                "animation": false
+                            };
 
-                            summaries[barcodename][typename]["max_length"] = {
+                            summaries[barcodename][typename]["max_length"]={};
+                            summaries[barcodename][typename]["max_length"]['all'] = {
                                 "name": typename,
                                 "data": [summary[barcodename][typename]["max_length"]],
                                 "animation": false
+                            };
+                            summaries[barcodename][typename]["max_length"]['pass'] = {
+                                                            "name": typename,
+                                                            "data": [summary[barcodename][typename]["pass_max_length"]],
+                                                            "animation": false
+                                                        };
+                            summaries[barcodename][typename]["max_length"]['fail'] = {
+                                                            "name": typename,
+                                                            "data": [summary[barcodename][typename]["max_length"]],
+                                                            "animation": false
                             };
 
                         }
@@ -1525,12 +1716,14 @@ function MinotourFlowCellApp() {
         var summaries = self.summary;
 
         var series = [];
-
+        console.log("This is it");
+        console.log(summaries);
         // Always include all reads
         data = [];
 
+
         for (var readtype of Object.keys(summaries["All reads"])) {
-            data.push(summaries["All reads"][readtype][field]["data"][0]);
+            data.push(summaries["All reads"][readtype][field]['all']["data"][0]);
         }
 
         serie = {
@@ -1540,6 +1733,33 @@ function MinotourFlowCellApp() {
 
         series.push(serie);
 
+        data = [];
+        for (var readtype of Object.keys(summaries["All reads"])) {
+            data.push(summaries["All reads"][readtype][field]['pass']["data"][0]);
+        }
+
+        serie = {
+            "name": "All pass reads",
+            "data": data
+        };
+
+        series.push(serie);
+
+        if (field != "max_length") {
+
+            data = [];
+
+            for (var readtype of Object.keys(summaries["All reads"])) {
+                data.push(summaries["All reads"][readtype][field]['fail']["data"][0]);
+            }
+
+            serie = {
+                "name": "All fail reads",
+                "data": data
+            };
+
+            series.push(serie);
+        }
         // Include specific barcode if selected
         if (self.selectedBarcode !== "All reads") {
 
@@ -1548,7 +1768,7 @@ function MinotourFlowCellApp() {
             for (var readtype of Object.keys(summaries[self.selectedBarcode])) {
                 //console.log(readtype);
                 //console.log("are we here?");
-                data.push(summaries[self.selectedBarcode][readtype][field]["data"][0]);
+                data.push(summaries[self.selectedBarcode][readtype][field]['all']["data"][0]);
             }
 
             serie = {
