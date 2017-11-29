@@ -161,7 +161,7 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
 
     def create(self, validated_data):
         #print('>>>> inside create function of Fastqread serializer...')
-        print(validated_data['quality'])
+        #print(validated_data['quality'])
         qualitystring = validated_data['quality']
         qualmean = np.mean(np.array(list((ord(val) - 33) for val in qualitystring)))
         #print (qualmean)
@@ -171,7 +171,7 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
             channel = validated_data['channel'],
             barcode = validated_data['barcode'],
             sequence_length = len(validated_data['sequence']),
-            quality_average = 0,
+            quality_average = qualmean,
             is_pass = validated_data['is_pass'],
             start_time = validated_data['start_time'],
             run_id = validated_data['run_id'],
@@ -182,7 +182,7 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
         #print(fastqread)
 
         #print('>>>> save')
-        #print(fastqread.save())
+        fastqread.save()
 
         fastqread_extra = FastqReadExtra(
             fastqread = fastqread,
@@ -339,6 +339,8 @@ class RunStatisticBarcodeSerializer(serializers.ModelSerializer):
             'read_count',
             'type',
             'typename',
+            'quality_sum',
+            'pass_quality_sum',
             'max_length',
             'min_length',
             'pass_length',

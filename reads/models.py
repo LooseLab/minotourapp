@@ -540,8 +540,18 @@ class RunSummary(models.Model):
     total_length = models.BigIntegerField(default=0)
     read_count = models.IntegerField(default=0)
     type = models.ForeignKey(FastqReadType)
+    quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
+    )
     max_length = models.IntegerField(default=0)
     min_length = models.IntegerField(default=0)
+    pass_quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
+    )
     pass_length = models.BigIntegerField(default=0)
     pass_max_length = models.IntegerField(default=0)
     pass_min_length = models.IntegerField(default=0)
@@ -566,6 +576,12 @@ class RunSummaryBarcode(models.Model):
         default=0
     )
 
+    quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
+    )
+
     read_count = models.IntegerField(
         default=0
     )
@@ -579,6 +595,12 @@ class RunSummaryBarcode(models.Model):
         on_delete=models.CASCADE,
         related_name='runsummaries',
         null=True
+    )
+
+    pass_quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
     )
 
     pass_length = models.BigIntegerField(
@@ -653,9 +675,19 @@ class RunStatistic(models.Model):
     run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
     sample_time = models.DateTimeField()
     total_length = models.BigIntegerField(default=0)
+    quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
+    )
     max_length = models.IntegerField(default=0)
     min_length = models.IntegerField(default=0)
     read_count = models.IntegerField(default=0)
+    pass_quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
+    )
     pass_length = models.BigIntegerField(default=0)
     pass_max_length = models.IntegerField(default=0)
     pass_min_length = models.IntegerField(default=0)
@@ -710,6 +742,16 @@ class RunStatisticBarcode(models.Model):
     )
 
     pass_count = models.IntegerField(
+        default=0
+    )
+    quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
+    )
+    pass_quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
         default=0
     )
 
