@@ -58,6 +58,7 @@ class Runcollection():
         self.runid = 0
         self.readstore = list()
         self.flowcelllink = ""
+        self.batchsize=2000
 
 
     def get_readnames_by_run(self):
@@ -188,7 +189,7 @@ class Runcollection():
                 'type': typelink
             }
             self.readstore.append(payload)
-            if len(self.readstore) >=4000:
+            if len(self.readstore) >=self.batchsize:
                 self.commit_reads()
         else:
             pass
