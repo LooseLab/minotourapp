@@ -236,7 +236,7 @@ def processreads(runid, id, last_read):
     print('running processreads with {} {} {}'.format(runid, id, last_read))
     JobMaster.objects.filter(pk=id).update(running=True)
 
-    fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:4000]
+    fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:2000]
 
     chanstore = dict()
 
