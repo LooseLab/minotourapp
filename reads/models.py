@@ -10,6 +10,20 @@ from rest_framework.authtoken.models import Token
 from reference.models import ReferenceInfo
 
 
+class FlowCell(models.Model):
+    name = models.CharField(
+        max_length=256,
+        blank=True,
+        null=True,
+    )
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='flowcells'
+    )
+
+    def __str__(self):
+        return "{} {}".format(self.name, self.id)
+
 class MinION(models.Model):
     minION_name = models.CharField(max_length=64)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='minIONs')
@@ -234,11 +248,32 @@ class MinIONRun(models.Model):
     #    return barcodes
 
 
+class BarcodeGroup(models.Model):
+    flowcell = models.ForeignKey(
+        FlowCell,
+        related_name='flowcellbarcode'
+    )
+
+    name = models.CharField(
+        max_length=32
+    )
+
+    def __str__(self):
+        return "{} {}".format(self.flowcell,self.name)
+
+
 class Barcode(models.Model):
     run = models.ForeignKey(
         MinIONRun,
         on_delete=models.CASCADE,
         related_name = 'barcodes'
+    )
+
+    barcodegroup = models.ForeignKey(
+        BarcodeGroup,
+        on_delete=models.CASCADE,
+        null=True,blank=True,
+        related_name = 'barcodegroup'
     )
 
     name = models.CharField(
@@ -247,6 +282,8 @@ class Barcode(models.Model):
 
     def __str__(self):
         return "{} {} {}".format(self.run, self.run.run_id, self.name)
+
+
 
 
 class MinIONStatus(models.Model):
@@ -439,12 +476,16 @@ class FastqRead(models.Model):
         null=True
     )
 
-    sequence = models.TextField(
-
+    sequence_length = models.BigIntegerField(
+        null=True,
+        blank=True
     )
 
-    quality = models.TextField(
-
+    quality_average = models.DecimalField(
+        decimal_places=2,
+        max_digits=5,
+        null=True,
+        blank=True
     )
 
     is_pass = models.BooleanField(
@@ -475,13 +516,42 @@ class FastqRead(models.Model):
         return self.read_id
 
 
+
+class FastqReadExtra(models.Model):
+    fastqread = models.OneToOneField(
+        FastqRead,
+        on_delete=models.CASCADE,
+        related_name='extra'
+    )
+
+    sequence = models.TextField(
+
+    )
+
+    quality = models.TextField(
+
+    )
+
+    def __str__(self):
+        return self.fastqread
+
 class RunSummary(models.Model):
     run_id = models.ForeignKey(MinIONRun,on_delete=models.CASCADE, related_name='runsummaries')
     total_length = models.BigIntegerField(default=0)
     read_count = models.IntegerField(default=0)
     type = models.ForeignKey(FastqReadType)
+    quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
+    )
     max_length = models.IntegerField(default=0)
     min_length = models.IntegerField(default=0)
+    pass_quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
+    )
     pass_length = models.BigIntegerField(default=0)
     pass_max_length = models.IntegerField(default=0)
     pass_min_length = models.IntegerField(default=0)
@@ -506,6 +576,12 @@ class RunSummaryBarcode(models.Model):
         default=0
     )
 
+    quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
+    )
+
     read_count = models.IntegerField(
         default=0
     )
@@ -519,6 +595,12 @@ class RunSummaryBarcode(models.Model):
         on_delete=models.CASCADE,
         related_name='runsummaries',
         null=True
+    )
+
+    pass_quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
     )
 
     pass_length = models.BigIntegerField(
@@ -593,9 +675,19 @@ class RunStatistic(models.Model):
     run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
     sample_time = models.DateTimeField()
     total_length = models.BigIntegerField(default=0)
+    quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
+    )
     max_length = models.IntegerField(default=0)
     min_length = models.IntegerField(default=0)
     read_count = models.IntegerField(default=0)
+    pass_quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
+    )
     pass_length = models.BigIntegerField(default=0)
     pass_max_length = models.IntegerField(default=0)
     pass_min_length = models.IntegerField(default=0)
@@ -613,7 +705,8 @@ class RunStatistic(models.Model):
 class RunStatisticBarcode(models.Model):
     run_id = models.ForeignKey(
         MinIONRun,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='runstatbarc',
     )
 
     sample_time = models.DateTimeField(
@@ -649,6 +742,16 @@ class RunStatisticBarcode(models.Model):
     )
 
     pass_count = models.IntegerField(
+        default=0
+    )
+    quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
+    )
+    pass_quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
         default=0
     )
 
@@ -702,11 +805,23 @@ class MinIONmessages(models.Model):
             self.minION, self.minKNOW_message, self.minKNOW_severity, self.minKNOW_message_timestamp)
 
 
-@receiver(post_save, sender=MinIONRun)
+
+
+#@receiver(post_save, sender=MinIONRun)
 def create_all_reads_barcode(sender, instance=None, created=False, **kwargs):
     if created:
-        Barcode.objects.create(run=instance, name='All reads')
-        Barcode.objects.create(run=instance, name='No barcode')
+        #barcodegroup, created = BarcodeGroup.objects.get_or_create(flowcell=instance.flowcellrun.first().flowcell,
+        #                                                           name='All reads')
+
+        Barcode.objects.get_or_create(run=instance, name='All reads')
+
+
+        #barcodegroup, created = BarcodeGroup.objects.get_or_create(flowcell=instance.flowcellrun.first().flowcell,
+        #                                                           name='No barcode')
+
+        Barcode.objects.get_or_create(run=instance, name='No barcode')
+
+
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -802,6 +917,17 @@ def update_sum_stats(obj, ipn_obj):
     obj.save()
 
 
+
+class GroupRunType(models.Model):
+
+    type_name = models.CharField(
+        max_length=256
+    )
+
+    def __str__(self):
+        return "{}".format(self.type_name)
+
+
 class JobType(models.Model):
 
     name = models.CharField(
@@ -834,10 +960,13 @@ class JobType(models.Model):
         default=True
     )
 
+    type_name = models.ManyToManyField(GroupRunType)
 
 
     def __str__(self):
         return "{}".format(self.name)
+
+
 
 
 class JobMaster(models.Model):
@@ -845,7 +974,17 @@ class JobMaster(models.Model):
     run = models.ForeignKey(
         MinIONRun,
         on_delete=models.CASCADE,
-        related_name='runjobs'
+        related_name='runjobs',
+        null=True,
+        blank=True
+    )
+
+    flowcell = models.ForeignKey(
+        FlowCell,
+        on_delete=models.CASCADE,
+        related_name='flowcelljobs',
+        null=True,
+        blank=True
     )
 
     job_type = models.ForeignKey(
@@ -885,22 +1024,14 @@ class JobMaster(models.Model):
     )
 
     def __str__(self):
-        return "{} {} {}".format(self.run, self.job_type, self.run.id)
+        if self.run is not None:
+            return "{} {} {}".format(self.run, self.job_type, self.run.id)
+        else:
+            return "{} {} {}".format(self.flowcell, self.job_type, self.flowcell.id)
 
 
-class FlowCell(models.Model):
-    name = models.CharField(
-        max_length=256,
-        blank=True,
-        null=True,
-    )
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='flowcells'
-    )
 
-    def __str__(self):
-        return "{} {}".format(self.name, self.id)
+
 
 
 class FlowCellRun(models.Model):
@@ -929,7 +1060,8 @@ class FlowCellRun(models.Model):
 
     def last_entry(self):
         try:
-            return self.RunStats.last().created_date
+            return self.run.runstatbarc.last().sample_time
+            #return self.RunStats.last().created_date
         except AttributeError:
             #return "undefined"
             olddate = datetime.datetime(1, 1, 1, 1, 1, 1, 1, pytz.utc)
@@ -937,13 +1069,15 @@ class FlowCellRun(models.Model):
 
     def start_time(self):
         try:
-            return self.RunDetails.last().minKNOW_start_time
+            return self.run.runstatbarc.first().sample_time
+            #return self.RunDetails.last().minKNOW_start_time
         except AttributeError:
             return "undefined"
 
     def last_read(self):
         try:
-            return self.reads.last().created_date
+            return self.run.runstatbarc.last().sample_time
+            #return self.reads.last().created_date
         except AttributeError:
             #return "undefined"
             olddate = datetime.datetime(1, 1, 1, 1, 1, 1, 1, pytz.utc)
@@ -969,3 +1103,18 @@ class FlowCellRun(models.Model):
 
     def active(self):
         return self.run.active
+
+
+
+@receiver(post_save, sender=FlowCellRun)
+def create_all_reads_barcode_flowcellrun(sender, instance=None, created=False, **kwargs):
+    if created:
+        barcodegroup, created = BarcodeGroup.objects.get_or_create(flowcell=instance.flowcell,
+                                                                   name='All reads')
+
+        Barcode.objects.update_or_create(run=instance.run, name='All reads', barcodegroup=barcodegroup)
+
+        barcodegroup, created = BarcodeGroup.objects.get_or_create(flowcell=instance.flowcell,
+                                                                   name='No barcode')
+
+        Barcode.objects.update_or_create(run=instance.run, name='No barcode', barcodegroup=barcodegroup)

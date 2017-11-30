@@ -38,6 +38,18 @@ function check_minotour_version() {
     });
 }
 
+function dynamicSort(property) {
+    var sortOrder = 1;
+    if(property[0] === "-") {
+        sortOrder = -1;
+        property = property.substr(1);
+    }
+    return function (a,b) {
+        var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
+        return result * sortOrder;
+    }
+}
+
 function check_user_runs() {
     var url = "/api/v1/runs/";
 
@@ -56,6 +68,58 @@ function check_user_runs() {
     });
 }
 
+
+function drawtaskbutton(taskstring,colour,icon,description,message,percentage,message2,i,long_description,reference,name,transcriptome){
+        taskstring = taskstring + '<div class="col-md-4">';
+        taskstring = taskstring + '<button type="button" class="info-box ' + colour + '" data-toggle="modal" data-target="#taskmodal' + i + '">';
+        taskstring = taskstring + '<div >';
+        taskstring = taskstring + '<span class="info-box-icon"><i class="' + icon + '"></i></span>';
+        taskstring = taskstring + '<div class="info-box-content">';
+        taskstring = taskstring + '<span class="info-box-text">' + description + '</span>';
+
+        taskstring = taskstring + '<span class="info-box-number" id="'+name+'-message">' + message + '</span>';
+        taskstring = taskstring + '<div class="progress">';
+        taskstring = taskstring + '<div class="progress-bar" id="'+name+'-percentage" style="width: ' + percentage + '%"></div>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '<span class="progress-description" id="'+name+'-message2" >';
+        taskstring = taskstring + message2;
+        taskstring = taskstring + '</span>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</button>';
+        taskstring = taskstring + '<div id="taskmodal' + i + '" class="modal fade" role="dialog">';
+        taskstring = taskstring + '<div class="modal-dialog">';
+        taskstring = taskstring + '<div class="modal-content">';
+        taskstring = taskstring + '<div class="modal-header">';
+        taskstring = taskstring + '<button type="button" class="close" data-dismiss="modal">&times;</button>';
+        taskstring = taskstring + '<h4 class="modal-title">' + description + '</h4>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '<div class="modal-body">';
+        taskstring = taskstring + '<p>' + long_description + '</p>';
+        if (reference == true) {
+            taskstring = taskstring + "<p>Select Reference:</p>"
+            taskstring = taskstring + '<select id="' + name + '">';
+            //console.log(this.references);
+            for (var j = 0; j < this.references.length; j++) {
+                if (this.references[j]['transcripts'] == transcriptome) {
+                    taskstring = taskstring + '<option>' + this.references[j]["reference_name"] + '</option>';
+                }
+            }
+            taskstring = taskstring + '</select>';
+        }
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '<div class="modal-footer">';
+        taskstring = taskstring + '<button type="button" class="btn btn-default" id="button' + name + '">Go</button>';
+        taskstring = taskstring + '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</div>';
+        taskstring = taskstring + '</div>';
+
+        return taskstring;
+    };
+
 function write_run_data(textinfo){
     console.log("textshiz");
     console.log(textinfo);
@@ -65,6 +129,7 @@ function write_run_data(textinfo){
     text += "<tr>";
     text += "<th>Run</th>";
     text += "<th>Run Start Time</th>";
+    text += "<th>Last Read Seen</th>";
     text += "<th>MinKNOW Computer Name</th>";
     text += "<th>MinION ID</th>";
     text += "<th>ASIC ID</th>";
@@ -87,8 +152,9 @@ function write_run_data(textinfo){
         text += "</td>";
 
 
-            text += "<td>"+textinfo[key]['starttime']+"</td>";
-            text += "<td>"+textinfo[key]["computer_name"]+"</td>";
+        text += "<td>"+textinfo[key]['starttime']+"</td>";
+        text += "<td>"+textinfo[key]['lastread']+"</td>";
+        text += "<td>"+textinfo[key]["computer_name"]+"</td>";
             text += "<td>"+textinfo[key]["minIONname"]+"</td>";
             text += "<td>"+textinfo[key]["minKNOW_asic_id"]+"</td>";
             text += "<td>"+textinfo[key]["minKNOW_current_script"]+"</td>";
@@ -142,7 +208,7 @@ function makeChart(divName, chartTitle, yAxisTitle) {
             enabled: true
         },
         exporting: {
-            enabled: false
+            enabled: true
         },
         series: []
     });
@@ -185,7 +251,7 @@ function makeChartlabels(divName, chartTitle, yAxisTitle) {
             enabled: true
         },
         exporting: {
-            enabled: false
+            enabled: true
         },
         series: []
     });
@@ -200,6 +266,9 @@ function makeChart2(divName, chartTitle, yAxisTitle) {
             marginRight: 10,
             animation: false,
             zoomType: "x"
+        },
+        boost: {
+            useGPUTranslations: true
         },
         title: {
             text: chartTitle
@@ -222,7 +291,9 @@ function makeChart2(divName, chartTitle, yAxisTitle) {
             enabled: true
         },
         exporting: {
-            enabled: false
+            enabled: true,
+            sourceWidth: 1200,
+            sourceHeight: 400,
         }
     });
 
@@ -255,7 +326,7 @@ function makeChart3(divName, chartTitle, yAxisTitle, xAxisTitle) {
             enabled: true
         },
         exporting: {
-            enabled: false
+            enabled: true
         }
     });
 
@@ -269,6 +340,9 @@ function makeChart4(divName, chartTitle, yAxisTitle, xAxisTitle) {
             marginRight: 10,
             animation: false,
             zoomType: "x"
+        },
+        boost: {
+            useGPUTranslations: true
         },
         title: {
             text: chartTitle
@@ -292,7 +366,7 @@ function makeChart4(divName, chartTitle, yAxisTitle, xAxisTitle) {
             enabled: true
         },
         exporting: {
-            enabled: false
+            enabled: true
         }
     });
 
@@ -411,6 +485,9 @@ function makeYieldProjection(divName, chartTitle, yAxisTitle) {
             zoomType: 'x',
             height: 350,
         },
+        boost: {
+            useGPUTranslations: true
+        },
         title: {
             text: chartTitle,
         },
@@ -462,8 +539,10 @@ function makeLiveChart(divName, chartTitle, yAxisTitle) {
         chart: {
             type: 'spline',
             zoomType: 'xy'
-        }
-        ,
+        },
+        boost: {
+            useGPUTranslations: true
+        },
         rangeSelector: {
             enabled: true,
             buttons:
@@ -660,10 +739,62 @@ function MinotourFlowCellApp() {
     this.updatePoreChart = updatePoreChart;
     this.updateStepLineChart = updateStepLineChart;
 
+    this.drawtaskbutton = drawtaskbutton;
+
+    this.startTask = function (description,reference){
+        console.log(description + " " + reference);
+        var e = document.getElementById(description);
+        if (e != null) {
+            var strUser = e.options[e.selectedIndex].value;
+        }else{
+            var strUser = "null";
+        }
+        console.log(strUser);
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                }
+            }
+        });
+        //var url_mask = "{% url 'set-task-detail-all' pk=12345 %}".replace(/12345/, reference.toString());
+        var url_mask = "/api/v1/flowcells/12345/settask/".replace(/12345/, reference.toString());;
+        $.ajax({
+            "type": "POST",
+            "dataType": "json",
+            "url": url_mask,
+            "data": {
+                "job": description,
+                "reference": strUser,
+            },
+            "beforeSend": function (xhr, settings) {
+                console.log("before send");
+                $.ajaxSettings.beforeSend(xhr, settings);
+            },
+            "success": function (result) {
+                console.log(result);
+                $(".modal.in").modal("hide");
+                self.requestTasks(reference);
+
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                console.log("Status: " + textStatus);
+                //alert("Error: " + errorThrown);
+            }
+
+        })
+    };
+
     this.average_read_lengths_overtime = this.makeChart2(
             "average-read-lengths-overtime",
             "average read length over time".toUpperCase(),
             "average read length".toUpperCase()
+    );
+
+    this.average_quality_overtime = this.makeChart2(
+            "average-quality-overtime",
+            "average quality over time".toUpperCase(),
+            "average read quality score".toUpperCase()
     );
 
     this.chart_cumulative_number_reads_overtime = this.makeChart2(
@@ -931,11 +1062,24 @@ function MinotourFlowCellApp() {
 
         this.requestData();
 
+        this.requestReference(self.id);
+        this.requestTasks(self.id);
+
         setInterval(function () {
             this.requestData();
         }.bind(this), 30000);
 
     };
+
+    /*
+     * Each click on a barcode tab fires this function
+     * that calls requestData and update all charts
+     */
+    this.updateChartsBasedOnBarcode = function (event) {
+        self.selectedBarcode = event.target.innerText;
+        self.requestData();
+    };
+
 
     /*
      * Updates the list of barcodes tab and attach
@@ -946,12 +1090,12 @@ function MinotourFlowCellApp() {
 
         ul.innerHTML = "";
 
-        var sortedBarcodes = this.barcodes;
+        var sortedBarcodes = self.barcodes;
 
         for (var i = 0; i < sortedBarcodes.length; i++) {
             var li = document.createElement("li");
             var a = document.createElement("a");
-            a.onclick = this.updateChartsBasedOnBarcode;
+            a.onclick = self.updateChartsBasedOnBarcode;
             a.href = "#";
             a.text = sortedBarcodes[i];
 
@@ -1031,7 +1175,8 @@ function MinotourFlowCellApp() {
     };
 
     this.updateSummaryByMinuteBasedCharts = function () {
-        self.updateAverageReadLengthOverTimeChart()
+        self.updateAverageReadLengthOverTimeChart();
+        self.updateAverageQualityOverTimeChart();
         self.updateCumulativeNumberOfReadsOverTimeChart();
         self.updateSequencingRateChart();
         self.updateSequencingSpeedChart();
@@ -1060,6 +1205,27 @@ function MinotourFlowCellApp() {
             }
         }
 
+        for (var i in self.rundata){
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
+            var name = self.rundata[i]['id']
+            //chart.xAxis[0].addPlotBand({
+            //    from: starttime,
+            //    to: endtime,
+            //    color: '#FCFFC5',
+            //    id: name
+            //});
+            chart.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
+        }
+
     };
 
     this.updateSequencingRateChart = function () {
@@ -1083,6 +1249,27 @@ function MinotourFlowCellApp() {
 
                 }
             }
+        }
+
+        for (var i in self.rundata){
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
+            var name = self.rundata[i]['id']
+            //chart.xAxis[0].addPlotBand({
+            //    from: starttime,
+            //    to: endtime,
+            //    color: '#FCFFC5',
+            //    id: name
+            //});
+            chart.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
         }
 
     };
@@ -1111,22 +1298,47 @@ function MinotourFlowCellApp() {
 
             if (self.summaryByMinute[i].barcodename === "All reads") {
                 if (summaries["All reads"][self.summaryByMinute[i].typename] === undefined) {
-                    summaries["All reads"][self.summaryByMinute[i].typename] = {
+                    summaries["All reads"][self.summaryByMinute[i].typename] = {};
+                    summaries["All reads"][self.summaryByMinute[i].typename]['all'] = {
+                        "lastCumulativeReadCount": 0,
+                        "data": []
+                    };
+                    summaries["All reads"][self.summaryByMinute[i].typename]['pass'] = {
+                        "lastCumulativeReadCount": 0,
+                        "data": []
+                    };
+                    summaries["All reads"][self.summaryByMinute[i].typename]['fail'] = {
                         "lastCumulativeReadCount": 0,
                         "data": []
                     };
                 }
 
-                var cumulativeReadCount = self.summaryByMinute[i].read_count + summaries["All reads"][self.summaryByMinute[i].typename].lastCumulativeReadCount;
-                var sample_time = new Date(self.summaryByMinute[i].sample_time);
+                var cumulativeReadCount = self.summaryByMinute[i].read_count + summaries["All reads"][self.summaryByMinute[i].typename]['all'].lastCumulativeReadCount;
+                var passcumulativeReadCount = self.summaryByMinute[i].pass_count + summaries["All reads"][self.summaryByMinute[i].typename]['pass'].lastCumulativeReadCount;
+                var failcumulativeReadCount = self.summaryByMinute[i].read_count - self.summaryByMinute[i].pass_count + summaries["All reads"][self.summaryByMinute[i].typename]['fail'].lastCumulativeReadCount;
+                var sample_time = new Date(self.summaryByMinute[i].sample_time);// - self.flowcellstart;
 
                 var point = {
                     x: sample_time,
                     y: cumulativeReadCount
                 }
 
-                summaries["All reads"][self.summaryByMinute[i].typename].lastCumulativeReadCount = cumulativeReadCount;
-                summaries["All reads"][self.summaryByMinute[i].typename].data.push(point);
+                var passpoint = {
+                    x: sample_time,
+                    y: passcumulativeReadCount
+                }
+
+                var failpoint = {
+                    x: sample_time,
+                    y: failcumulativeReadCount
+                }
+                summaries["All reads"][self.summaryByMinute[i].typename]['all'].lastCumulativeReadCount = cumulativeReadCount;
+                summaries["All reads"][self.summaryByMinute[i].typename]['all'].data.push(point);
+                summaries["All reads"][self.summaryByMinute[i].typename]['pass'].lastCumulativeReadCount = passcumulativeReadCount;
+                summaries["All reads"][self.summaryByMinute[i].typename]['pass'].data.push(passpoint);
+                summaries["All reads"][self.summaryByMinute[i].typename]['fail'].lastCumulativeReadCount = failcumulativeReadCount;
+                summaries["All reads"][self.summaryByMinute[i].typename]['fail'].data.push(failpoint);
+
             }
 
             if (self.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
@@ -1153,8 +1365,136 @@ function MinotourFlowCellApp() {
 
         for (var barcode in summaries) {
             for (var readtype in summaries[barcode]) {
-                chart.addSeries({name: barcode + " - " + readtype, data: summaries[barcode][readtype]["data"]});
+                for (var qual in summaries[barcode][readtype]) {
+                    chart.addSeries({name: barcode + " - " + readtype + " - " + qual, data: summaries[barcode][readtype][qual]["data"]});
+                }
             }
+        }
+
+        for (var i in self.rundata){
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));// - self.flowcellstart;
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));//- self.flowcellstart;
+            var name = self.rundata[i]['id']
+            //chart.xAxis[0].addPlotBand({
+            //    from: starttime,
+            //    to: endtime,
+            //    color: '#FCFFC5',
+            //    id: name
+            //});
+            chart.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
+        }
+
+    };
+
+    this.updateAverageQualityOverTimeChart = function () {
+
+        var chart = self.average_quality_overtime;
+        var selectedBarcode = self.selectedBarcode;
+
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        if (selectedBarcode !== "All reads") {
+            var summaries = {};
+            summaries["All reads"] = {};
+            summaries[selectedBarcode] = {};
+
+        } else {
+            var summaries = {
+                "All reads": {}
+            };
+
+        }
+
+        for (var i = 0; i < self.summaryByMinute.length; i++) {
+
+            var average_quality = self.summaryByMinute[i].quality_sum / self.summaryByMinute[i].read_count;
+            var pass_average_quality = self.summaryByMinute[i].pass_quality_sum / self.summaryByMinute[i].pass_count;
+            var fail_average_quality = (self.summaryByMinute[i].quality_sum - self.summaryByMinute[i].pass_quality_sum) / (self.summaryByMinute[i].read_count - self.summaryByMinute[i].pass_count);
+
+            var sample_time = new Date(self.summaryByMinute[i].sample_time);
+
+            var point = {
+                x: sample_time,
+                y: average_quality
+            };
+
+            var pass_point = {
+                x: sample_time,
+                y: pass_average_quality
+            };
+
+            var fail_point = {
+                x: sample_time,
+                y: fail_average_quality
+            };
+
+            if (self.summaryByMinute[i].barcodename === "All reads") {
+                if (summaries["All reads"][self.summaryByMinute[i].typename] === undefined) {
+                    summaries["All reads"][self.summaryByMinute[i].typename] = [];
+                    summaries["All reads"][self.summaryByMinute[i].typename]['all'] = [];
+                    summaries["All reads"][self.summaryByMinute[i].typename]['pass'] = [];
+                    summaries["All reads"][self.summaryByMinute[i].typename]['fail'] = [];
+                }
+
+                summaries["All reads"][self.summaryByMinute[i].typename]['all'].push(point);
+                summaries["All reads"][self.summaryByMinute[i].typename]['pass'].push(pass_point);
+                summaries["All reads"][self.summaryByMinute[i].typename]['fail'].push(fail_point);
+            }
+
+            if (self.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
+                if (summaries[selectedBarcode][self.summaryByMinute[i].typename] === undefined) {
+                    summaries[selectedBarcode][self.summaryByMinute[i].typename] = [];
+                    summaries[selectedBarcode][self.summaryByMinute[i].typename]['all'] = [];
+                    summaries[selectedBarcode][self.summaryByMinute[i].typename]['pass'] = [];
+                    summaries[selectedBarcode][self.summaryByMinute[i].typename]['fail'] = [];
+
+
+                }
+
+                summaries[selectedBarcode][self.summaryByMinute[i].typename]['all'].push(point);
+                summaries[selectedBarcode][self.summaryByMinute[i].typename]['pass'].push(pass_point);
+                summaries[selectedBarcode][self.summaryByMinute[i].typename]['fail'].push(fail_point);
+            }
+
+        }
+
+        for (var barcode in summaries) {
+            for (var readtype in summaries[barcode]) {
+                for (var qual in summaries[barcode][readtype]) {
+                    chart.addSeries({name: barcode + " - " + readtype + " - " + qual, data: summaries[barcode][readtype][qual]});
+                }
+            }
+        }
+
+        for (var i in self.rundata){
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
+            var name = self.rundata[i]['id']
+            //chart.xAxis[0].addPlotBand({
+            //    from: starttime,
+            //    to: endtime,
+            //    color: '#FCFFC5',
+            //    id: name
+            //});
+            chart.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
         }
     };
 
@@ -1212,6 +1552,27 @@ function MinotourFlowCellApp() {
                 chart.addSeries({name: barcode + " - " + readtype, data: summaries[barcode][readtype]});
             }
         }
+
+        for (var i in self.rundata){
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
+            var name = self.rundata[i]['id']
+            //chart.xAxis[0].addPlotBand({
+            //    from: starttime,
+            //    to: endtime,
+            //    color: '#FCFFC5',
+            //    id: name
+            //});
+            chart.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
+        }
     };
 
     this.requestSummaryData = function (id) {
@@ -1233,13 +1594,22 @@ function MinotourFlowCellApp() {
                     if (summary[item.barcodename][item.typename] === undefined) {
                         summary[item.barcodename][item.typename]={};
                         summary[item.barcodename][item.typename]["read_count"]=0;
+                        summary[item.barcodename][item.typename]["pass_count"]=0;
                         summary[item.barcodename][item.typename]["yield"]=0;
+                        summary[item.barcodename][item.typename]["pass_yield"]=0;
                         summary[item.barcodename][item.typename]["max_length"]=0;
+                        summary[item.barcodename][item.typename]["pass_max_length"]=0;
+
                     }
                     summary[item.barcodename][item.typename]["read_count"]+=item.read_count;
+                    summary[item.barcodename][item.typename]["pass_count"]+=item.pass_count;
                     summary[item.barcodename][item.typename]["yield"]+=item.total_length;
+                    summary[item.barcodename][item.typename]["pass_yield"]+=item.pass_length;
                     if (item.max_length > summary[item.barcodename][item.typename]["max_length"]){
                         summary[item.barcodename][item.typename]["max_length"] = item.max_length;
+                    }
+                    if (item.pass_max_length > summary[item.barcodename][item.typename]["pass_max_length"]){
+                        summary[item.barcodename][item.typename]["pass_max_length"] = item.pass_max_length;
                     }
 
 
@@ -1257,29 +1627,73 @@ function MinotourFlowCellApp() {
                                 "average_read_length": null,
                                 "max_length": null
                             };
-
-                            summaries[barcodename][typename]["read_count"] = {
+                            
+                            summaries[barcodename][typename]["read_count"]={};
+                            summaries[barcodename][typename]["read_count"]['all'] = {
                                 "name": typename,
-                                "data": summary[barcodename][typename]["read_count"],//[summaries[item.barcodename][item.typename]["read_count"]["data"] + item.read_count],
+                                "data": [summary[barcodename][typename]["read_count"]],//[summaries[item.barcodename][item.typename]["read_count"]["data"] + item.read_count],
+                                "animation": false
+                            };
+                            summaries[barcodename][typename]["read_count"]['pass'] = {
+                                "name": typename,
+                                "data": [summary[barcodename][typename]["pass_count"]],//[summaries[item.barcodename][item.typename]["read_count"]["data"] + item.read_count],
+                                "animation": false
+                            };
+                            summaries[barcodename][typename]["read_count"]['fail'] = {
+                                "name": typename,
+                                "data": [(summary[barcodename][typename]["read_count"]-summary[barcodename][typename]["pass_count"])],//[summaries[item.barcodename][item.typename]["read_count"]["data"] + item.read_count],
                                 "animation": false
                             };
 
-                            summaries[barcodename][typename]["yield"] = {
+                            summaries[barcodename][typename]["yield"]={};
+                            summaries[barcodename][typename]["yield"]['all'] = {
                                 "name": typename,
-                                "data": summary[barcodename][typename]["yield"],
+                                "data": [summary[barcodename][typename]["yield"]],
+                                "animation": false
+                            };
+                            summaries[barcodename][typename]["yield"]['pass'] = {
+                                "name": typename,
+                                "data": [summary[barcodename][typename]["pass_yield"]],
+                                "animation": false
+                            };
+                            summaries[barcodename][typename]["yield"]['fail'] = {
+                                "name": typename,
+                                "data": [(summary[barcodename][typename]["yield"]-summary[barcodename][typename]["pass_yield"])],
                                 "animation": false
                             };
 
-                            summaries[barcodename][typename]["average_read_length"] = {
+                            summaries[barcodename][typename]["average_read_length"]={};
+                            summaries[barcodename][typename]["average_read_length"]['all'] = {
                                 "name": typename,
-                                "data": summary[barcodename][typename]["yield"]/summary[barcodename][typename]["read_count"],
+                                "data": [summary[barcodename][typename]["yield"]/summary[barcodename][typename]["read_count"]],
+                                "animation": false
+                            };
+                            summaries[barcodename][typename]["average_read_length"]['pass'] = {
+                                "name": typename,
+                                "data": [summary[barcodename][typename]["pass_yield"]/summary[barcodename][typename]["pass_count"]],
+                                "animation": false
+                            };
+                            summaries[barcodename][typename]["average_read_length"]['fail'] = {
+                                "name": typename,
+                                "data": [(summary[barcodename][typename]["yield"]-summary[barcodename][typename]["pass_yield"])/(summary[barcodename][typename]["read_count"]-summary[barcodename][typename]["pass_count"])],
                                 "animation": false
                             };
 
-                            summaries[barcodename][typename]["max_length"] = {
+                            summaries[barcodename][typename]["max_length"]={};
+                            summaries[barcodename][typename]["max_length"]['all'] = {
                                 "name": typename,
-                                "data": summary[barcodename][typename]["max_length"],
+                                "data": [summary[barcodename][typename]["max_length"]],
                                 "animation": false
+                            };
+                            summaries[barcodename][typename]["max_length"]['pass'] = {
+                                                            "name": typename,
+                                                            "data": [summary[barcodename][typename]["pass_max_length"]],
+                                                            "animation": false
+                                                        };
+                            summaries[barcodename][typename]["max_length"]['fail'] = {
+                                                            "name": typename,
+                                                            "data": [summary[barcodename][typename]["max_length"]],
+                                                            "animation": false
                             };
 
                         }
@@ -1311,15 +1725,17 @@ function MinotourFlowCellApp() {
     };
 
     this.updateReadsColumnBasedChart = function (chart, field) {
-        var summaries = this.summary;
+        var summaries = self.summary;
 
         var series = [];
-
+        console.log("This is it");
+        console.log(summaries);
         // Always include all reads
         data = [];
 
+
         for (var readtype of Object.keys(summaries["All reads"])) {
-            data.push(summaries["All reads"][readtype][field]["data"]);
+            data.push(summaries["All reads"][readtype][field]['all']["data"][0]);
         }
 
         serie = {
@@ -1329,19 +1745,50 @@ function MinotourFlowCellApp() {
 
         series.push(serie);
 
+        data = [];
+        for (var readtype of Object.keys(summaries["All reads"])) {
+            data.push(summaries["All reads"][readtype][field]['pass']["data"][0]);
+        }
+
+        serie = {
+            "name": "All pass reads",
+            "data": data
+        };
+
+        series.push(serie);
+
+        if (field != "max_length") {
+
+            data = [];
+
+            for (var readtype of Object.keys(summaries["All reads"])) {
+                data.push(summaries["All reads"][readtype][field]['fail']["data"][0]);
+            }
+
+            serie = {
+                "name": "All fail reads",
+                "data": data
+            };
+
+            series.push(serie);
+        }
         // Include specific barcode if selected
         if (self.selectedBarcode !== "All reads") {
 
             data = [];
-
+            //console.log(summaries[self.selectedBarcode]);
             for (var readtype of Object.keys(summaries[self.selectedBarcode])) {
-                data.push(summaries[self.selectedBarcode][readtype][field]["data"][0]);
+                //console.log(readtype);
+                //console.log("are we here?");
+                data.push(summaries[self.selectedBarcode][readtype][field]['all']["data"][0]);
             }
 
             serie = {
                 "name": self.selectedBarcode,
                 "data": data
             };
+            
+            //console.log(serie);
 
             series.push(serie);
 
@@ -1591,7 +2038,7 @@ function MinotourFlowCellApp() {
         datadump = new Array();
         //console.log('rundetails');
         //console.log(self.rundetails);
-        if (self.rundetails != undefined ) {
+        if (self.rundetails != undefined  && self.rundetails.length> 0) {
             console.log(self.rundetails);
             //for (var i = 0; i < self.rundetails.length; i++) {
 
@@ -1621,10 +2068,32 @@ function MinotourFlowCellApp() {
 
                 //datadump[i].rundetails=self.rundetails[i];
             }
+        }else{
+            for (var i in self.rundata){
+                datadump[i]=new Array;
+                datadump[i].minIONname=self.rundata[i]['minION_name'];
+                datadump[i].minKNOW_asic_id=self.rundata[i]['minKNOW_asic_id'];
+                datadump[i].minKNOW_version=self.rundata[i]['minKNOW_version'];
+                datadump[i].run_id=self.rundata[i]['minKNOW_hash_run_id'];
+                datadump[i].run_name=self.rundata[i]['run_name'];
+                datadump[i].sample_name=self.rundata[i]['minKNOW_sample_name'];
+                datadump[i].computer_name=self.rundata[i]['minKNOW_computer'];
+                datadump[i].minKNOW_current_script=self.rundata[i]['minKNOW_current_script'];
+                var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
+                var lastread =  new Date(Date.parse(self.rundata[i]['last_read']));
+                datadump[i].starttime=starttime;
+                datadump[i].lastread=lastread;
+                datadump[i].flowcellid=self.rundata[i]['minKNOW_flow_cell_id'];
+                datadump[i].active=self.rundata[i].active;
+                datadump[i].barcodes=self.rundata[i].barcodes;
+
+            }
         }
         //console.log("datadump");
         //console.log(datadump);
-        self.write_run_data(datadump);
+        var sorteddatadump = datadump.sort(dynamicSort("starttime"));
+        self.flowcellstart = sorteddatadump[0].starttime;
+        self.write_run_data(sorteddatadump);
 
     };
 
@@ -1634,10 +2103,12 @@ function MinotourFlowCellApp() {
             console.log("rundetails");
             console.log(data);
             self.rundetails=data;
-            self.livedata.minIONname = data[0].minION_name;
-            self.livedata.asicid = data[0].minKNOW_asic_id;
-            self.livedata.scriptid = data[0].minKNOW_current_script;
-            self.livedata.colours_string = data[0].minKNOW_colours_string;
+            //self.livedata.minIONname = data[0].minION_name;
+            //self.livedata.asicid = data[0].minKNOW_asic_id;
+            //self.livedata.scriptid = data[0].minKNOW_current_script;
+            if (data[0] != undefined) {
+                self.livedata.colours_string = data[0].minKNOW_colours_string;
+            }
             //self.livedata.computer=data[0].minKNOW_computer;
             //console.log(data[0]);
             //document.getElementById('ComputerName').innerHTML = data[0].minKNOW_computer;
@@ -1948,7 +2419,8 @@ function MinotourFlowCellApp() {
     };
 
     this.requestMessages = function () {
-            var url_sincemessages = self.rundata.minION + 'messagessince/' + self.rundata.start_time + '/' + self.lasttime.toISOString() + "/";
+        //
+            var url_sincemessages = self.rundetails[0]["minION"] + 'messagessince/' + self.rundetails[0]["minKNOW_start_time"] + '/' + self.lasttime.toISOString() + "/";
         //console.log(url_sincemessages);
         $.get(url_sincemessages, function (data) {
             //console.log(data);
@@ -2071,6 +2543,152 @@ function MinotourFlowCellApp() {
         }
     };
 
+    this.requestReference = function(id){
+        var url = "/api/v1/reference/";
+        $.get(url, function (data){
+            var references = [];
+            for (var i=0; i < data.length; i++) {
+                //console.log(data[i]);
+                references.push(data[i]);
+            }
+            //console.log(references);
+            self.references=references;
+        });
+    };
+    this.requestTasks = function(id) {
+        var url = "/api/v1/flowcells/"+id+"/tasks/";
+        $.get(url, function (data) {
+            //console.log(data);
+            var tasks = [];
+            for (var i=0; i < data.length; i++){
+                tasks.push(data[i]);
+            }
+            self.tasks=tasks;
+            self.updateTasks(id); //really this only needs to run once!
+        });
+    };
+
+    this.liveUpdateTasks = function(id){
+        var url = "/api/v1/flowcells/"+id+"/tasks/";
+        $.get(url, function (data) {
+            var tasks=[];
+            for (var i=0; i < data.length; i++){
+                tasks.push(data[i]);
+            }
+            self.tasks=tasks;
+            for (var i=0; i<self.tasks.length; i++){
+                if (self.tasks[i].hasOwnProperty("job_details")){
+                    message = 'Reads processed:' + self.tasks[i]["job_details"]["read_count"] + "/" + self.summary["All reads"]["Template"]["read_count"]["data"][0];
+                    percentage = Math.round((self.tasks[i]["job_details"]["read_count"]/self.summary["All reads"]["Template"]["read_count"]["data"][0] *100) * 100) / 100;
+                    message2 = percentage + '% of uploaded reads are processed';
+                    //console.log(message);
+                    $('#'+self.tasks[i]["name"]+'-message').text(message);
+                    $('#'+self.tasks[i]["name"]+'-percentage').text(percentage);
+                    $('div#'+self.tasks[i]["name"]+'-percentage').width(percentage+'%');
+                    $('#'+self.tasks[i]["name"]+'-message2').text(message2);
+                }
+            }
+        })
+    };
+
+    this.updateTasks = function(id) {
+        //console.log("####id is" + id);
+        var taskstring = "";
+        for (var i = 0; i < self.tasks.length; i++) {
+                console.log(self.tasks[i]);
+                if (self.tasks[i].hasOwnProperty("job_details")){
+                    colour = 'bg-green';
+                    message = 'Reads processed:' + self.tasks[i]["job_details"]["read_count"];
+                    percentage = 50;
+                    message2 = 'X% of uploaded reads are processed';
+                    icon = 'fa fa-refresh fa-spin fa-fw';
+                    running=true;
+
+                }else{
+                    colour = 'white';
+                    message = 'Task Not Running.';
+                    percentage = 0;
+                    message2 = "Click to start a "+self.tasks[i]["description"]+' task.';
+                    icon = 'fa fa-refresh fa-fw';
+                    running=false;
+                }
+                taskstring = this.drawtaskbutton(taskstring,colour,icon,self.tasks[i]["description"],message,percentage,message2,i,self.tasks[i]["long_description"],self.tasks[i]["reference"],self.tasks[i]["name"],self.tasks[i]["transcriptome"]);
+        };
+        document.getElementById('tasks').innerHTML = taskstring;
+        for (var i = 0; i < self.tasks.length; i++) {
+            var buttonname = "#button" + self.tasks[i]["name"];
+            //console.log("Button name to look for:" + buttonname);
+            $(buttonname).click(function (e) {
+                var idClicked = e.target.id;
+                console.log(idClicked);
+                self.startTask(idClicked.substring(6),id);
+            });
+        };
+        self.liveUpdateTasks(id);
+
+    };
+
+    this.requestKraken = function (id) {
+        var parsedkraken = '/api/v1/flowcells/' + id + '/krakenparse/';
+        $.get(parsedkraken,function(data){
+            console.log(data);
+            krakendata=[];
+            var list = $("#krakenSelectBarcode");
+            var list2 = $("#krakenSelectRead");
+            for (var i=0; i<data.length;i++){
+                var barcodename = data[i]["barcode_name"];
+                var readtype = data[i]["type_name"]
+                if (!(readtype in krakendata)) {
+                    krakendata[readtype]=[];
+                    if ( $("#krakenSelectRead option[value='" + data[i]["type_name"] + "']").val() === undefined) {
+                        list2.append(new Option(data[i]["type_name"],data[i]["type_name"]))
+                    }
+                }
+                if (!(barcodename in krakendata[readtype])) {
+                    krakendata[readtype][barcodename]=[];
+                    if ( $("#krakenSelectBarcode option[value='" + data[i]["barcode_name"] + "']").val() === undefined) {
+                        list.append(new Option(data[i]["barcode_name"], data[i]["barcode_name"]));
+                    }
+
+                }
+                //if (data[i]['percentage'] >= 0.05 && data[i]["parent"] != "Input") {
+                //if (data[i]['indentation']>8){
+                krakendata[readtype][barcodename].push([data[i]["parent"], data[i]["sci_name"], data[i]['percentage'],data[i]['indentation']])
+                //}
+            }
+            //console.log(krakendata);
+            list.change(function(){
+                var selectedType=list2.find(":selected").text();
+                var selectedBarcode=list.find(":selected").text();
+                var minimum = $("#lowerboundselect").val();
+                //console.log(minimum);
+                var slimmedkraken=[];
+                for (var i=0; i<krakendata[selectedType][selectedBarcode].length;i++){
+                    if (krakendata[selectedType][selectedBarcode][i][3] >= minimum) {
+                        slimmedkraken.push([krakendata[selectedType][selectedBarcode][i][0],krakendata[selectedType][selectedBarcode][i][1],krakendata[selectedType][selectedBarcode][i][2]]);
+                    }
+                };
+
+                //console.log(selectedBarcode);
+                var chart=Highcharts.chart('kraken-sankey', {
+                    title: {
+                        text: 'Kraken ' + selectedType + ' ' + selectedBarcode
+                    },
+
+                     series: [{
+                        keys: ['from', 'to', 'weight'],
+                        data: slimmedkraken,
+                        //data: krakendata[selectedType][selectedBarcode],
+                        type: 'sankey',
+                         curveFactor: 0,
+                        name: 'Kraken Output'
+                    }]
+                });
+            });
+        })
+    };
+
+
 
 
 
@@ -2101,27 +2719,19 @@ function MinotourFlowCellApp() {
             self.requestChannelSummaryData(self.id);
             self.requestRunDetails(self.id);
             self.requestLiveRunStats(self.id);
-
+            self.liveUpdateTasks(self.id);
+            self.requestKraken(self.id);
             //self.updatetext();
 
 
             /*
 
             //console.log(self.rundata);
-
-
-            self.getlivedata(self.rundata);
-
-
-
-
-            self.requestRunDetails(self.id);
-            self.requestLiveRunStats(self.id);
             self.requestPafData(self.id);
             self.requestPafTransData(self.id);
-            self.liveUpdateTasks(self.id);
+
             console.log("seriously - Im just trying to parse kraken");
-            self.requestKraken(self.id);
+
 
             */
 
@@ -2211,49 +2821,51 @@ function MinotourApp() {
     this.updatePoreChart = updatePoreChart;
     this.updateStepLineChart = updateStepLineChart;
 
+    this.drawtaskbutton = drawtaskbutton;
+
     this.startTask = function (description,reference){
-    console.log(description + " " + reference);
-    var e = document.getElementById(description);
-    if (e != null) {
-        var strUser = e.options[e.selectedIndex].value;
-    }else{
-        var strUser = "null";
-    }
-    console.log(strUser);
-    $.ajaxSetup({
-        beforeSend: function (xhr, settings) {
-            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+        console.log(description + " " + reference);
+        var e = document.getElementById(description);
+        if (e != null) {
+            var strUser = e.options[e.selectedIndex].value;
+        }else{
+            var strUser = "null";
+        }
+        console.log(strUser);
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                }
             }
-        }
-    });
-    //var url_mask = "{% url 'set-task-detail-all' pk=12345 %}".replace(/12345/, reference.toString());
-    var url_mask = "/api/v1/runs/12345/settask/".replace(/12345/, reference.toString());;
-    $.ajax({
-        "type": "POST",
-        "dataType": "json",
-        "url": url_mask,
-        "data": {
-            "job": description,
-            "reference": strUser,
-        },
-        "beforeSend": function (xhr, settings) {
-            console.log("before send");
-            $.ajaxSettings.beforeSend(xhr, settings);
-        },
-        "success": function (result) {
-            console.log(result);
-            $(".modal.in").modal("hide");
-            self.requestTasks(reference);
+        });
+        //var url_mask = "{% url 'set-task-detail-all' pk=12345 %}".replace(/12345/, reference.toString());
+        var url_mask = "/api/v1/runs/12345/settask/".replace(/12345/, reference.toString());;
+        $.ajax({
+            "type": "POST",
+            "dataType": "json",
+            "url": url_mask,
+            "data": {
+                "job": description,
+                "reference": strUser,
+            },
+            "beforeSend": function (xhr, settings) {
+                console.log("before send");
+                $.ajaxSettings.beforeSend(xhr, settings);
+            },
+            "success": function (result) {
+                console.log(result);
+                $(".modal.in").modal("hide");
+                self.requestTasks(reference);
 
-        },
-        error: function (XMLHttpRequest, textStatus, errorThrown) {
-            console.log("Status: " + textStatus);
-            //alert("Error: " + errorThrown);
-        }
+            },
+            error: function (XMLHttpRequest, textStatus, errorThrown) {
+                console.log("Status: " + textStatus);
+                //alert("Error: " + errorThrown);
+            }
 
-    })
-};
+        })
+    };
 
     //this.updateReadsPerPoreChart = updateReadsPerPoreChart;
 
@@ -2626,6 +3238,7 @@ function MinotourApp() {
             data = [];
 
             for (var readtype of Object.keys(summaries[self.selectedBarcode])) {
+                console.log(summaries[self.selectedBarcode]);
                 data.push(summaries[self.selectedBarcode][readtype][field]["data"][0]);
             }
 
@@ -3169,7 +3782,7 @@ function MinotourApp() {
                     message = 'Reads processed:' + self.tasks[i]["job_details"]["read_count"] + "/" + self.summary["All reads"]["Template"]["read_count"]["data"][0];
                     percentage = Math.round((self.tasks[i]["job_details"]["read_count"]/self.summary["All reads"]["Template"]["read_count"]["data"][0] *100) * 100) / 100;
                     message2 = percentage + '% of uploaded reads are processed';
-                    console.log(message);
+                    //console.log(message);
                     $('#'+self.tasks[i]["name"]+'-message').text(message);
                     $('#'+self.tasks[i]["name"]+'-percentage').text(percentage);
                     $('div#'+self.tasks[i]["name"]+'-percentage').width(percentage+'%');
@@ -3216,56 +3829,7 @@ function MinotourApp() {
 
     };
 
-    this.drawtaskbutton = function(taskstring,colour,icon,description,message,percentage,message2,i,long_description,reference,name,transcriptome){
-        taskstring = taskstring + '<div class="col-md-4">';
-        taskstring = taskstring + '<button type="button" class="info-box ' + colour + '" data-toggle="modal" data-target="#taskmodal' + i + '">';
-        taskstring = taskstring + '<div >';
-        taskstring = taskstring + '<span class="info-box-icon"><i class="' + icon + '"></i></span>';
-        taskstring = taskstring + '<div class="info-box-content">';
-        taskstring = taskstring + '<span class="info-box-text">' + description + '</span>';
 
-        taskstring = taskstring + '<span class="info-box-number" id="'+name+'-message">' + message + '</span>';
-        taskstring = taskstring + '<div class="progress">';
-        taskstring = taskstring + '<div class="progress-bar" id="'+name+'-percentage" style="width: ' + percentage + '%"></div>';
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '<span class="progress-description" id="'+name+'-message2" >';
-        taskstring = taskstring + message2;
-        taskstring = taskstring + '</span>';
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '</button>';
-        taskstring = taskstring + '<div id="taskmodal' + i + '" class="modal fade" role="dialog">';
-        taskstring = taskstring + '<div class="modal-dialog">';
-        taskstring = taskstring + '<div class="modal-content">';
-        taskstring = taskstring + '<div class="modal-header">';
-        taskstring = taskstring + '<button type="button" class="close" data-dismiss="modal">&times;</button>';
-        taskstring = taskstring + '<h4 class="modal-title">' + description + '</h4>';
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '<div class="modal-body">';
-        taskstring = taskstring + '<p>' + long_description + '</p>';
-        if (reference == true) {
-            taskstring = taskstring + "<p>Select Reference:</p>"
-            taskstring = taskstring + '<select id="' + name + '">';
-            //console.log(this.references);
-            for (var j = 0; j < this.references.length; j++) {
-                if (this.references[j]['transcripts'] == transcriptome) {
-                    taskstring = taskstring + '<option>' + this.references[j]["reference_name"] + '</option>';
-                }
-            }
-            taskstring = taskstring + '</select>';
-        }
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '<div class="modal-footer">';
-        taskstring = taskstring + '<button type="button" class="btn btn-default" id="button' + name + '">Go</button>';
-        taskstring = taskstring + '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>';
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '</div>';
-        taskstring = taskstring + '</div>';
-
-        return taskstring;
-    }
 
     this.requestSummaryData = function (id) {
         /*
@@ -4116,7 +4680,6 @@ function MinotourApp() {
             self.requestGfaData(self.id);
             self.requestPafTransData(self.id);
             self.liveUpdateTasks(self.id);
-            console.log("seriously - Im just trying to parse kraken");
             self.requestKraken(self.id);
         });
 

@@ -217,6 +217,14 @@ urlpatterns = [
         name="flowcellrunstats_latest"
     ),
     url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/tasks/$',
+        views.flowcell_tasks_detail_all,
+        name="flowcelltasks-detail-all"),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/settask/$',
+        views.flowcellset_task_detail_all,
+        name="flowcellset-task-detail-all"),
+    url(
         r'^api/v1/tabs/(?P<pk>[0-9]+)/$',
         views.tabs_details,
         name="tabs-details"

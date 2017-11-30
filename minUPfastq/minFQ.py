@@ -58,6 +58,7 @@ class Runcollection():
         self.runid = 0
         self.readstore = list()
         self.flowcelllink = ""
+        self.batchsize=2000
 
 
     def get_readnames_by_run(self):
@@ -78,16 +79,20 @@ class Runcollection():
                 self.readnames.append(read)
 
     def create_flowcell(self, name):
-        print ("Creating a new flowcell")
+        #print ("Creating a new flowcell")
         #Test to see if the flowcell exists.
         r = requests.get(args.full_host+'api/v1/flowcells', headers=header)
+        print (r.text)
+        print (name)
         flowcellname=name
-        if flowcellname not in r.text:
+        flowcelllist = json.loads(r.text)
+        if flowcellname not in [x["name"] for x in flowcelllist]:
             #print ("we need to create this flowcell")
             createflowcell = requests.post(args.full_host+'api/v1/flowcells/', headers=header, json={"name": flowcellname})
             self.flowcelllink = json.loads(createflowcell.text)["url"]
         else:
             #print (json.loads(r.text))
+            #print ("looking for existing flowcell")
             for flowcell in json.loads(r.text):
                 #print (flowcell["name"])
                 #print (flowcell["url"])
@@ -97,6 +102,7 @@ class Runcollection():
 
     def create_flowcell_run(self):
         print ("Adding run to flowcell")
+        print (self.flowcelllink)
         createflowcellrun = requests.post(self.flowcelllink,headers=header,json={"flowcell": self.flowcelllink, "run": self.runidlink})
 
     def add_run(self, descriptiondict):
@@ -126,6 +132,7 @@ class Runcollection():
                 print (createrun.text)
                 print ("Houston - we have a problem!")
             else:
+                #print ("!!!!!!!!!!!!!!!!!!!!!!!! HELLO ROBERTO")
                 self.runidlink = json.loads(createrun.text)["url"]
                 self.runid = json.loads(createrun.text)["id"]
                 if self.args.is_flowcell:
@@ -182,7 +189,7 @@ class Runcollection():
                 'type': typelink
             }
             self.readstore.append(payload)
-            if len(self.readstore) >=200:
+            if len(self.readstore) >=self.batchsize:
                 self.commit_reads()
         else:
             pass
@@ -235,26 +242,15 @@ class Runcollection():
 
     def add_read(self, record, descriptiondict,fastq):
         passstatus=(self.check_pass(fastq))
-        #print ("looking for {}".format(record.id) )
-        #print ("in")
-        #print (self.readnames[0])
-        #if record.id in self.readnames:
-        #    print ("found the read")
 
-        #if record.id not in self.readid:
-        #if record.id not in self.readnames:
-        #    print ("think read not found")
         self.readid[record.id] = dict()
         for item in descriptiondict:
             self.readid[record.id][item] = descriptiondict[item]
 
-        # print self.readid[record.id]
         tm = dateutil.parser.parse(self.readid[record.id]["start_time"])
-        # print tm
         tm = tm - datetime.timedelta(minutes=(tm.minute % 1) - 1,
                                      seconds=tm.second,
                                      microseconds=tm.microsecond)
-        # print tm
         if tm not in self.timeid.keys():
             self.timeid[tm] = dict()
             self.timeid[tm]["cumulength"] = 0
@@ -307,6 +303,9 @@ class Runcollection():
                     })
 
                     print(">> Barcode {} for run {} created with success.".format(item['url'], self.runidlink))
+                else:
+                    print (response.status_code)
+                    sys.exit()
 
             barcode_url = self.barcodes[barcode_local]
 
