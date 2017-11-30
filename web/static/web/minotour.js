@@ -38,6 +38,18 @@ function check_minotour_version() {
     });
 }
 
+function dynamicSort(property) {
+    var sortOrder = 1;
+    if(property[0] === "-") {
+        sortOrder = -1;
+        property = property.substr(1);
+    }
+    return function (a,b) {
+        var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
+        return result * sortOrder;
+    }
+}
+
 function check_user_runs() {
     var url = "/api/v1/runs/";
 
@@ -1304,7 +1316,7 @@ function MinotourFlowCellApp() {
                 var cumulativeReadCount = self.summaryByMinute[i].read_count + summaries["All reads"][self.summaryByMinute[i].typename]['all'].lastCumulativeReadCount;
                 var passcumulativeReadCount = self.summaryByMinute[i].pass_count + summaries["All reads"][self.summaryByMinute[i].typename]['pass'].lastCumulativeReadCount;
                 var failcumulativeReadCount = self.summaryByMinute[i].read_count - self.summaryByMinute[i].pass_count + summaries["All reads"][self.summaryByMinute[i].typename]['fail'].lastCumulativeReadCount;
-                var sample_time = new Date(self.summaryByMinute[i].sample_time);
+                var sample_time = new Date(self.summaryByMinute[i].sample_time);// - self.flowcellstart;
 
                 var point = {
                     x: sample_time,
@@ -1360,8 +1372,8 @@ function MinotourFlowCellApp() {
         }
 
         for (var i in self.rundata){
-            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
-            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));// - self.flowcellstart;
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));//- self.flowcellstart;
             var name = self.rundata[i]['id']
             //chart.xAxis[0].addPlotBand({
             //    from: starttime,
@@ -2079,7 +2091,9 @@ function MinotourFlowCellApp() {
         }
         //console.log("datadump");
         //console.log(datadump);
-        self.write_run_data(datadump);
+        var sorteddatadump = datadump.sort(dynamicSort("starttime"));
+        self.flowcellstart = sorteddatadump[0].starttime;
+        self.write_run_data(sorteddatadump);
 
     };
 
@@ -2591,7 +2605,7 @@ function MinotourFlowCellApp() {
                     running=true;
 
                 }else{
-                    colour = 'bg-light-blue';
+                    colour = 'white';
                     message = 'Task Not Running.';
                     percentage = 0;
                     message2 = "Click to start a "+self.tasks[i]["description"]+' task.';
