@@ -4,4 +4,4 @@ node_modules
 celerybeat-schedule
 debug.log
 celerybeat-schedule.db
-*/migrations/*.py
+*/migrations/0*.py
