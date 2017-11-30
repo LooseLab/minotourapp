@@ -1,6 +1,7 @@
 from rest_framework import serializers
+import numpy as np
 
-from reads.models import Barcode
+from reads.models import Barcode, BarcodeGroup, FastqReadExtra
 from reads.models import ChannelSummary
 from reads.models import FastqRead
 from reads.models import FastqReadType
@@ -24,6 +25,7 @@ from reads.models import RunStatisticBarcode
 from reads.models import UserOptions
 from reads.models import FlowCell
 from reads.models import FlowCellRun
+from reads.models import GroupRunType
 
 
 
@@ -125,10 +127,73 @@ class MinIONEventTypeSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
+# class FastqReadSerializer(serializers.Serializer):
+
+    sequence = serializers.CharField()
+    quality = serializers.CharField()
+
     class Meta:
         model = FastqRead
-        fields = ('url', 'read_id', 'read', 'channel', 'barcode', 'sequence', 'quality', 'is_pass',
+        fields = ('url', 'read_id', 'read', 'channel', 'barcode', 'sequence_length', 'quality_average', 'sequence', 'quality', 'is_pass',
                   'start_time', 'run_id', 'type','created_date')
+
+    # read_id = serializers.CharField(
+    #     max_length=96
+    # )
+    #
+    # read = serializers.IntegerField()
+    #
+    # channel = serializers.IntegerField()
+    #
+    # barcode = serializers.CharField()
+    #
+    # sequence = serializers.CharField()
+    #
+    # quality = serializers.CharField()
+    #
+    # is_pass = serializers.BooleanField()
+    #
+    # start_time = serializers.DateTimeField()
+    #
+    # run_id = serializers.CharField()
+    #
+    # type = serializers.CharField()
+
+    def create(self, validated_data):
+        #print('>>>> inside create function of Fastqread serializer...')
+        #print(validated_data['quality'])
+        qualitystring = validated_data['quality']
+        qualmean = np.mean(np.array(list((ord(val) - 33) for val in qualitystring)))
+        #print (qualmean)
+        fastqread = FastqRead(
+            read_id = validated_data['read_id'],
+            read = validated_data['read'],
+            channel = validated_data['channel'],
+            barcode = validated_data['barcode'],
+            sequence_length = len(validated_data['sequence']),
+            quality_average = qualmean,
+            is_pass = validated_data['is_pass'],
+            start_time = validated_data['start_time'],
+            run_id = validated_data['run_id'],
+            type = validated_data['type']
+        )
+
+        #print('>>>> fastqread')
+        #print(fastqread)
+
+        #print('>>>> save')
+        fastqread.save()
+
+        fastqread_extra = FastqReadExtra(
+            fastqread = fastqread,
+            sequence = validated_data['sequence'],
+            quality = validated_data['quality']
+        )
+
+        fastqread_extra.save()
+
+        return fastqread
+
 
 
 class FastqReadNameSerializer(serializers.HyperlinkedModelSerializer):
@@ -274,6 +339,8 @@ class RunStatisticBarcodeSerializer(serializers.ModelSerializer):
             'read_count',
             'type',
             'typename',
+            'quality_sum',
+            'pass_quality_sum',
             'max_length',
             'min_length',
             'pass_length',
@@ -289,10 +356,20 @@ class RunStatisticBarcodeSerializer(serializers.ModelSerializer):
 
         read_only = ('id',)
 
+class GroupRunTypeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = GroupRunType
+        fields = ('type_name',)
+
+
+
 class JobTypeSerializer(serializers.ModelSerializer):
+    type_name = GroupRunTypeSerializer(read_only=True, many=True)
+
     class Meta:
         model = JobType
-        fields = ('name','description','reference','readcount','transcriptome')
+        fields = ('name','description','reference','readcount','transcriptome','type_name',)
 
 class JobSerializer(serializers.ModelSerializer):
     typename = serializers.ReadOnlyField(source="type.name")
@@ -304,6 +381,10 @@ class JobSerializer(serializers.ModelSerializer):
 
 class BarcodeSerializer(serializers.HyperlinkedModelSerializer):
 
+    barcodegroupname = serializers.ReadOnlyField(
+        source="barcodegroup.name"
+    )
+
     class Meta:
 
         model = Barcode
@@ -312,12 +393,31 @@ class BarcodeSerializer(serializers.HyperlinkedModelSerializer):
             'url',
             'id',
             'name',
+            'barcodegroupname',
             'run',
         )
 
         read_only = (
             'url',
             'id'
+        )
+
+class BarcodeGroupSerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+
+        model = BarcodeGroup
+
+        fields = (
+            'id',
+            'name',
+            'flowcell',
+            'url'
+        )
+
+        read_only = (
+            'id',
+            'url'
         )
 
 
@@ -332,6 +432,7 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
         many=True,
         read_only=True
     )
+
 
     class Meta:
         model = MinIONRun

@@ -6,12 +6,14 @@ from reads.models import Barcode
 from reads.models import FastqRead
 from reads.models import FastqReadType
 from reads.models import MinIONRun
+from reads.models import FlowCell
 from reference.models import ReferenceInfo
 from reference.models import ReferenceLine
 
 
 class PafStore(models.Model):
-    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='pafalignemnts')
+    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='pafalignemnts', null=True, blank=True)
+    flowcell = models.ForeignKey(FlowCell, on_delete=models.CASCADE, related_name='flowcellpafalignemnts', null=True,blank=True)
     read = models.ForeignKey(FastqRead, related_name='pafreadalignment')
     reference = models.ForeignKey(ReferenceInfo, related_name='pafstorereference')
     read_type = models.ForeignKey(FastqReadType, related_name='pafstoretype')
@@ -110,7 +112,10 @@ class SamRoughCov(models.Model):
 
 
 class PafRoughCov(models.Model):
-    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='prc_run')
+    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='prc_run', null=True,
+                                 blank=True)
+    flowcell = models.ForeignKey(FlowCell, on_delete=models.CASCADE, related_name='flowcell_prc_run', null=True,
+                                 blank=True)
     read_type = models.ForeignKey(FastqReadType, related_name='prc_type')
     barcode = models.ForeignKey(Barcode, related_name='prc_barcode', null=True)
     #reference = models.TextField() #should switch to a reference database
@@ -125,7 +130,8 @@ class PafRoughCov(models.Model):
 
 
 class PafSummaryCov(models.Model):
-    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='paf_summary')
+    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='paf_summary', null=True,blank=True)
+    flowcell = models.ForeignKey(FlowCell, on_delete=models.CASCADE, related_name='flowcell_paf_summary', null=True,blank=True)
     read_type = models.ForeignKey(FastqReadType, related_name='paf_summary_type')
     barcode = models.ForeignKey(Barcode, related_name='paf_summary_barcode', null=True)
     reference = models.ForeignKey(ReferenceInfo,related_name='paf_summary_reference')
@@ -265,26 +271,48 @@ class PafSummaryCov_transcriptome(models.Model):
 @receiver(post_save, sender=PafStore)
 def updatePafRoughCov(instance, sender, **kwargs):
     pafline = instance
-    pafstart, created1 = PafRoughCov.objects.update_or_create(
-        run=pafline.run,
-        read_type=pafline.read.type,
-        barcode=pafline.read.barcode,
-        reference=pafline.reference,
-        chromosome=pafline.tsn,
-        p=pafline.ts #position
-    )
-    pafstart.i+=1
-    pafstart.save()
-    pafend, created2 = PafRoughCov.objects.update_or_create(
-        run=pafline.run,
-        read_type=pafline.read.type,
-        barcode=pafline.read.barcode,
-        reference=pafline.reference,
-        chromosome=pafline.tsn,
-        p=(pafline.te)+1 #position
-    )
-    pafend.i -= 1
-    pafend.save()\
+    if pafline.run is not None:
+        pafstart, created1 = PafRoughCov.objects.update_or_create(
+            run=pafline.run,
+            read_type=pafline.read.type,
+            barcode=pafline.read.barcode,
+            reference=pafline.reference,
+            chromosome=pafline.tsn,
+            p=pafline.ts #position
+        )
+        pafstart.i+=1
+        pafstart.save()
+        pafend, created2 = PafRoughCov.objects.update_or_create(
+            run=pafline.run,
+            read_type=pafline.read.type,
+            barcode=pafline.read.barcode,
+            reference=pafline.reference,
+            chromosome=pafline.tsn,
+            p=(pafline.te)+1 #position
+        )
+        pafend.i -= 1
+        pafend.save()
+    else:
+        pafstart, created1 = PafRoughCov.objects.update_or_create(
+            flowcell=pafline.flowcell,
+            read_type=pafline.read.type,
+            barcode=pafline.read.barcode,
+            reference=pafline.reference,
+            chromosome=pafline.tsn,
+            p=pafline.ts  # position
+        )
+        pafstart.i += 1
+        pafstart.save()
+        pafend, created2 = PafRoughCov.objects.update_or_create(
+            flowcell=pafline.flowcell,
+            read_type=pafline.read.type,
+            barcode=pafline.read.barcode,
+            reference=pafline.reference,
+            chromosome=pafline.tsn,
+            p=(pafline.te) + 1  # position
+        )
+        pafend.i -= 1
+        pafend.save()
 
 
 @receiver(post_save, sender=PafStore_transcriptome)

@@ -6,12 +6,14 @@ from rest_framework.authtoken.models import Token
 from reads.models import MinIONRun
 from reads.models import FastqRead
 from reads.models import FastqReadType
-from reads.models import Barcode
+from reads.models import BarcodeGroup
+from reads.models import FlowCell
 
 
 
 class MiniKraken(models.Model):
-    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='minikrakrun')
+    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='minikrakrun',blank=True,null=True)
+    flowcell = models.ForeignKey(FlowCell, on_delete=models.CASCADE, related_name='minikrakflowcell',blank=True,null=True)
     read = models.ForeignKey(FastqRead, related_name='minikrakread')
     #reference = models.ForeignKey(ReferenceInfo, related_name='minikrakreference')
     #read_type = models.ForeignKey(FastqReadType, related_name='minikraktype',blank=True,null=True)
@@ -26,9 +28,10 @@ class MiniKraken(models.Model):
 
 
 class ParsedKraken(models.Model):
-    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='parsedkrakrun')
+    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='parsedkrakrun', blank=True,null=True)
+    flowcell = models.ForeignKey(FlowCell, on_delete=models.CASCADE, related_name='parsedkrakflowcell', blank=True,null=True)
     type = models.ForeignKey(FastqReadType, related_name='typekrakrun', blank=True,null=True)
-    barcode = models.ForeignKey(Barcode,related_name='barcodekrakrun', blank=True,null=True)
+    barcode = models.ForeignKey(BarcodeGroup,related_name='barcodekrakrun', blank=True,null=True)
     percentage = models.FloatField(null=True,blank=True)
     rootreads = models.IntegerField(null=True,blank=True)
     directreads = models.IntegerField(null=True,blank=True)
@@ -46,5 +49,9 @@ class ParsedKraken(models.Model):
         return self.type.name
 
     def __str__(self):
-        return "{},{}".format(self.run,self.NCBItaxid)
+        if self.run is not None:
+            return "{} {}".format(self.run, self.NCBItaxid)
+        else:
+            #return "{} {}".format(self.flowcell, self.NCBItaxid)
+            return "{} {}".format(self.flowcell_id, self.NCBItaxid)
 
