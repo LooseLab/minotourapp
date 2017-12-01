@@ -785,6 +785,18 @@ function MinotourFlowCellApp() {
         })
     };
 
+    this.chart_per_chrom_cov = this.makeChart(
+            "per-chrom-cov",
+            "Chromosome Coverage".toUpperCase(),
+            "Chromosome Coverage".toUpperCase()
+        );
+
+        this.chart_per_chrom_avg = this.makeChart(
+            "per-chrom-avg",
+            "Read Length By Chromosome".toUpperCase(),
+            "Read Length By Chromosome".toUpperCase()
+        );
+
     this.average_read_lengths_overtime = this.makeChart2(
             "average-read-lengths-overtime",
             "average read length over time".toUpperCase(),
@@ -2688,6 +2700,85 @@ function MinotourFlowCellApp() {
         })
     };
 
+    this.requestMappedChromosomes = requestMappedChromosomes;
+
+    this.updateCoverageBasedCharts = function(chart,field) {
+        var summarycoverage = this.summarycoverage;
+        var series = [];
+        var categories=[];
+        for (var barcode of Object.keys(summarycoverage)) {
+//            console.log(summarycoverage[barcode]);
+            data = [];
+            for (var readtype of Object.keys(summarycoverage[barcode])) {
+
+                for (var chromosome of Object.keys(summarycoverage[barcode][readtype])) {
+                    categories.push(chromosome);
+//                    console.log(summarycoverage[barcode][readtype][chromosome]['coverage']["data"]);
+                    data.push(summarycoverage[barcode][readtype][chromosome][field]["data"]);
+                }
+            }
+            serie = {
+                "name": barcode + ' ' + readtype,
+                "data": data
+            };
+            series.push(serie);
+        };
+        chart.xAxis[0].setCategories(categories);
+        var chartSeriesLength = (chart.series ? chart.series.length : 0);
+        for (var i = 0; i < series.length; i++) {
+            if (i <= (chartSeriesLength - 1)) {
+                chart.series[i].setData(series[i].data);
+                chart.series[i].update({
+                    name: series[i].name
+                });
+            } else {
+                chart.addSeries(series[i]);
+            }
+        }
+    };
+
+
+    this.requestPafData = function(id) {
+
+        self.requestMappedChromosomes(id);
+
+        var pafurl = '/api/v1/flowcells/' + id + '/pafsummary/';
+
+        $.get(pafurl, function (data){
+            console.log("PAF DATA");
+            console.log(data);
+            if (data.length < 1) {
+            } else{
+                summarycoverage={};
+                for (var i = 0; i < data.length; i++) {
+                    console.log(data[i]);
+                    if (summarycoverage[data[i].barcode_name]===undefined) {
+                        summarycoverage[data[i].barcode_name] = {};
+                    }
+                    if (summarycoverage[data[i].barcode_name][data[i].read_type_name]===undefined) {
+                        summarycoverage[data[i].barcode_name][data[i].read_type_name] = {};
+                    }
+                    if (summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].chrom_name]===undefined) {
+                       summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].chrom_name] = {};
+                    }
+                    summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].chrom_name]["coverage"] = {
+                        "name": "coverage",
+                        "data": [data[i].chrom_cover],
+                        "animation": false
+                    };
+                    summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].chrom_name]["ave_read_len"] = {
+                        "name": "Average Read Length",
+                        "data": [data[i].avg_read_len],
+                        "animation": false
+                    };
+                }
+                self.summarycoverage = summarycoverage;
+                self.updateCoverageBasedCharts(self.chart_per_chrom_cov,"coverage");
+                self.updateCoverageBasedCharts(self.chart_per_chrom_avg,"ave_read_len");
+            }
+
+        })
+    }
 
 
 
@@ -2721,13 +2812,14 @@ function MinotourFlowCellApp() {
             self.requestLiveRunStats(self.id);
             self.liveUpdateTasks(self.id);
             self.requestKraken(self.id);
+            self.requestPafData(self.id);
             //self.updatetext();
 
 
             /*
 
             //console.log(self.rundata);
-            self.requestPafData(self.id);
+
             self.requestPafTransData(self.id);
 
             console.log("seriously - Im just trying to parse kraken");

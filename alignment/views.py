@@ -136,6 +136,24 @@ def paf_alignment_summary(request, pk):#,bc,ch):
         return Response(serializer.data)\
 
 @api_view(['GET'])
+def flowcellpaf_alignment_summary(request, pk):#,bc,ch):
+    """
+
+    :param request:
+    :param pk:
+    :return:
+    """
+    if request.method == 'GET':
+        queryset = PafSummaryCov.objects \
+            .filter(flowcell_id=pk)
+            #.filter(run__id=pk,barcode=bc,chromosome=ch)
+
+        serializer = PafSummaryCovSerializer(queryset, many=True, context={'request': request})
+
+        return Response(serializer.data)\
+
+
+@api_view(['GET'])
 def paf_alignment_transcriptome_summary(request, pk):#,bc,ch):
     """
     CUrrent API behaviour asssumes starting from page1.

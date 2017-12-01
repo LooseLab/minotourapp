@@ -996,6 +996,8 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
 
         resultstore = dict()
 
+        ### OK - we need to fix this for getting the group barcodes and not the individual barcodes.
+
         for line in pafdata:
             line = line.strip('\n')
             record = line.split('\t')
@@ -1027,15 +1029,15 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
                 resultstore[Reference] = dict()
             if chromdict[record[5]] not in resultstore[Reference]:
                 resultstore[Reference][chromdict[record[5]]] = dict()
-            if readid.barcode not in resultstore[Reference][chromdict[record[5]]]:
-                resultstore[Reference][chromdict[record[5]]][readid.barcode] = dict()
-            if typeid not in resultstore[Reference][chromdict[record[5]]][readid.barcode]:
-                resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid] = dict()
-            if 'read' not in resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]:
-                resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['read'] = set()
-                resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['length'] = 0
-            resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['read'].add(record[0])
-            resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['length'] += int(record[3]) - int(
+            if readid.barcode.barcodegroup not in resultstore[Reference][chromdict[record[5]]]:
+                resultstore[Reference][chromdict[record[5]]][readid.barcode.barcodegroup] = dict()
+            if typeid not in resultstore[Reference][chromdict[record[5]]][readid.barcode.barcodegroup]:
+                resultstore[Reference][chromdict[record[5]]][readid.barcode.barcodegroup][typeid] = dict()
+            if 'read' not in resultstore[Reference][chromdict[record[5]]][readid.barcode.barcodegroup][typeid]:
+                resultstore[Reference][chromdict[record[5]]][readid.barcode.barcodegroup][typeid]['read'] = set()
+                resultstore[Reference][chromdict[record[5]]][readid.barcode.barcodegroup][typeid]['length'] = 0
+            resultstore[Reference][chromdict[record[5]]][readid.barcode.barcodegroup][typeid]['read'].add(record[0])
+            resultstore[Reference][chromdict[record[5]]][readid.barcode.barcodegroup][typeid]['length'] += int(record[3]) - int(
                 record[2]) + 1
 
         for ref in resultstore:
@@ -1055,7 +1057,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
                             summarycov, created2 = PafSummaryCov.objects.update_or_create(
                                 flowcell=realflowcell,
                                 read_type=ty,
-                                barcode=bc,
+                                barcodegroup=bc,
                                 reference=ref,
                                 chromosome=ch,
                             )

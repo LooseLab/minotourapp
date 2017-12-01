@@ -3,6 +3,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from reads.models import Barcode
+from reads.models import BarcodeGroup
 from reads.models import FastqRead
 from reads.models import FastqReadType
 from reads.models import MinIONRun
@@ -134,6 +135,7 @@ class PafSummaryCov(models.Model):
     flowcell = models.ForeignKey(FlowCell, on_delete=models.CASCADE, related_name='flowcell_paf_summary', null=True,blank=True)
     read_type = models.ForeignKey(FastqReadType, related_name='paf_summary_type')
     barcode = models.ForeignKey(Barcode, related_name='paf_summary_barcode', null=True)
+    barcodegroup = models.ForeignKey(BarcodeGroup, related_name='paf_summary_barcodegroup', null=True)
     reference = models.ForeignKey(ReferenceInfo,related_name='paf_summary_reference')
     chromosome = models.ForeignKey(ReferenceLine, related_name='paf_summary_chromosome')
     read_count = models.BigIntegerField(default=0)

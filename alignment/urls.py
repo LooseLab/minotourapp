@@ -14,6 +14,11 @@ urlpatterns = [
         name="paf_alignment_summary"
     ),
     url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/pafsummary/$',
+        views.flowcellpaf_alignment_summary,
+        name="flowcellpaf_alignment_summary"
+    ),
+    url(
         r'^api/v1/runs/(?P<run_id>[0-9]+)/references/$',
         views.references_used_by_run,
         name="references_used_by_run"
