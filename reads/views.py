@@ -834,6 +834,18 @@ def barcode_detail(request, pk):
     return Response(serializer.data)
 
 
+@api_view(['GET'])
+def barcodegroup_detail(request, pk):
+    """
+    Return the details of a particular barcode.
+    """
+    queryset = BarcodeGroup.objects.get(pk=pk)
+
+    serializer = BarcodeGroupSerializer(queryset, many=False, context={'request': request})
+
+    return Response(serializer.data)
+
+
 def UTC_time_to_epoch(timestamp):
     """
     TODO describe function

@@ -119,6 +119,7 @@ class PafRoughCov(models.Model):
                                  blank=True)
     read_type = models.ForeignKey(FastqReadType, related_name='prc_type')
     barcode = models.ForeignKey(Barcode, related_name='prc_barcode', null=True)
+    #barcodegroup = models.ForeignKey(BarcodeGroup, related_name='prc_barcodegroup', null=True)
     #reference = models.TextField() #should switch to a reference database
     reference = models.ForeignKey(ReferenceInfo, related_name='pafreference')
     #chromosome = models.TextField() #could be repeat of the reference name

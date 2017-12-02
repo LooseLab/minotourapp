@@ -1,5 +1,6 @@
 function makeStepLineChart(divName, chartTitle, yAxisTitle) {
-
+    console.log("stepline chart running");
+    console.log(divName,chartTitle,yAxisTitle);
     var chart = Highcharts.chart(divName, {
 
         chart: {
@@ -44,11 +45,14 @@ function makeStepLineChart(divName, chartTitle, yAxisTitle) {
         },
     });
 
+    console.log("finished this step");
+
     return chart;
 
 }
 
 function updateStepLineChart (chart, start = 0, end = 0) {
+    console.log("updateStepLineChart running");
 
     var select = document.getElementById('chromosome-id-select');
     var selected_index = select.selectedIndex;
@@ -70,8 +74,9 @@ function updateStepLineChart (chart, start = 0, end = 0) {
     //var barcode_id = self.selectedBarcode;
     var selected_option_value = selected_option.value;
 
-    var url = '/api/v1/runs/' + run_id + '/pafcover/' + barcode_id + '/' + read_type_id + '/' + chromosome_id + '/' + start + '/' + end + '/';
-
+    var url = '/api/v1/flowcells/' + run_id + '/pafcover/' + barcode_id + '/' + read_type_id + '/' + chromosome_id + '/' + start + '/' + end + '/';
+    console.log("I'm looking for this sunshine!");
+    console.log(url);
     $.getJSON(url, function(data) {
 
         // Remove previous series
@@ -118,7 +123,10 @@ function requestMappedChromosomes (run_id) {
      *
      */
 
-    var url = '/api/v1/runs/' + run_id + '/references';
+    console.log('request mapped chromsomeoms runnings');
+
+    //var url = '/api/v1/runs/' + run_id + '/references';
+    var url = '/api/v1/flowcells/' + run_id + '/references';
 
     $.getJSON(url, function(data) {
 

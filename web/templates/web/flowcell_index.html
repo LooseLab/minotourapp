@@ -307,6 +307,28 @@
             <!-- Panel sequence mapping -->
             <div id="panel-seq-map" class="row">
                 <div class="row">
+                        <form class="form-horizontal">
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">Chromosome</label>
+
+                                <div class="col-sm-10 control-label" style="height: 100%; text-align: left;">
+                                    <select id="chromosome-id-select"></select>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <span id="chromosome-coverage-left">left</span>
+                    <span id="chromosome-coverage-right">right</span>
+
+                <div class="row">
+                    <div id="chromosome-coverage"
+                         class="col-md-12 highcharts"
+                         style="width:100%; height:400px;">
+                        <i class="fa fa-cog fa-spin fa-3x"></i>
+                        Calculating
+                    </div>
+                </div>
+                <div class="row">
                     <div id="per-chrom-cov"
                          class="col-md-12 highcharts"
                          style="width:100%; height:400px;">
@@ -324,14 +346,7 @@
                     </div>
                 </div>
 
-                <div class="row">
-                    <div id="chromosome-coverage"
-                         class="col-md-12 highcharts"
-                         style="width:100%; height:400px;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i>
-                        Calculating
-                    </div>
-                </div>
+
 
                 <span id="mapping-data"></span>
             </div>
