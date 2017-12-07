@@ -813,6 +813,12 @@ function MinotourFlowCellApp() {
         "cumulative reads".toUpperCase()
     );
 
+    this.chart_cumulative_yield_overtime = this.makeChart2(
+        "cumulative-yield-overtime",
+        "cumulative bases".toUpperCase(),
+        "cumulative bases".toUpperCase()
+    );
+
     this.chartSequencingRate = this.makeChart2(
         "sequencing-rate",
         "sequencing rate".toUpperCase(),
@@ -1215,6 +1221,7 @@ function MinotourFlowCellApp() {
         self.updateAverageReadLengthOverTimeChart();
         self.updateAverageQualityOverTimeChart();
         self.updateCumulativeNumberOfReadsOverTimeChart();
+        self.updateCumulativeYieldOverTimeChart();
         self.updateSequencingRateChart();
         self.updateSequencingSpeedChart();
     };
@@ -1291,6 +1298,129 @@ function MinotourFlowCellApp() {
         for (var i in self.rundata) {
             var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
             var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
+            var name = self.rundata[i]['id']
+            //chart.xAxis[0].addPlotBand({
+            //    from: starttime,
+            //    to: endtime,
+            //    color: '#FCFFC5',
+            //    id: name
+            //});
+            chart.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
+        }
+
+    };
+
+    this.updateCumulativeYieldOverTimeChart = function () {
+        var chart = self.chart_cumulative_yield_overtime;
+        var selectedBarcode = self.selectedBarcode;
+
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        if (selectedBarcode !== "All reads") {
+            var summaries = {};
+            summaries["All reads"] = {};
+            summaries[selectedBarcode] = {};
+
+        } else {
+            var summaries = {
+                "All reads": {}
+            };
+
+        }
+
+        for (var i = 0; i < self.summaryByMinute.length; i++) {
+
+            if (self.summaryByMinute[i].barcodename === "All reads") {
+                if (summaries["All reads"][self.summaryByMinute[i].typename] === undefined) {
+                    summaries["All reads"][self.summaryByMinute[i].typename] = {};
+                    summaries["All reads"][self.summaryByMinute[i].typename]['all'] = {
+                        "lastCumulativeReadCount": 0,
+                        "data": []
+                    };
+                    summaries["All reads"][self.summaryByMinute[i].typename]['pass'] = {
+                        "lastCumulativeReadCount": 0,
+                        "data": []
+                    };
+                    summaries["All reads"][self.summaryByMinute[i].typename]['fail'] = {
+                        "lastCumulativeReadCount": 0,
+                        "data": []
+                    };
+                }
+
+                var cumulativeReadCount = self.summaryByMinute[i].total_length + summaries["All reads"][self.summaryByMinute[i].typename]['all'].lastCumulativeReadCount;
+                var passcumulativeReadCount = self.summaryByMinute[i].pass_length + summaries["All reads"][self.summaryByMinute[i].typename]['pass'].lastCumulativeReadCount;
+                var failcumulativeReadCount = self.summaryByMinute[i].total_length - self.summaryByMinute[i].pass_length + summaries["All reads"][self.summaryByMinute[i].typename]['fail'].lastCumulativeReadCount;
+                var sample_time = new Date(self.summaryByMinute[i].sample_time);// - self.flowcellstart;
+
+                var point = {
+                    x: sample_time,
+                    y: cumulativeReadCount
+                }
+
+                var passpoint = {
+                    x: sample_time,
+                    y: passcumulativeReadCount
+                }
+
+                var failpoint = {
+                    x: sample_time,
+                    y: failcumulativeReadCount
+                }
+                summaries["All reads"][self.summaryByMinute[i].typename]['all'].lastCumulativeReadCount = cumulativeReadCount;
+                summaries["All reads"][self.summaryByMinute[i].typename]['all'].data.push(point);
+                summaries["All reads"][self.summaryByMinute[i].typename]['pass'].lastCumulativeReadCount = passcumulativeReadCount;
+                summaries["All reads"][self.summaryByMinute[i].typename]['pass'].data.push(passpoint);
+                summaries["All reads"][self.summaryByMinute[i].typename]['fail'].lastCumulativeReadCount = failcumulativeReadCount;
+                summaries["All reads"][self.summaryByMinute[i].typename]['fail'].data.push(failpoint);
+
+            }
+
+            if (self.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
+                if (summaries[selectedBarcode][self.summaryByMinute[i].typename] === undefined) {
+                    summaries[selectedBarcode][self.summaryByMinute[i].typename] = {
+                        "lastCumulativeReadCount": 0,
+                        "data": []
+                    };
+                }
+
+                var cumulativeReadCount = self.summaryByMinute[i].read_count + summaries[selectedBarcode][self.summaryByMinute[i].typename].lastCumulativeReadCount;
+                var sample_time = new Date(self.summaryByMinute[i].sample_time);
+
+                var point = {
+                    x: sample_time,
+                    y: cumulativeReadCount
+                }
+
+                summaries[selectedBarcode][self.summaryByMinute[i].typename].lastCumulativeReadCount = cumulativeReadCount;
+                summaries[selectedBarcode][self.summaryByMinute[i].typename].data.push(point);
+            }
+
+        }
+
+        for (var barcode in summaries) {
+            for (var readtype in summaries[barcode]) {
+                for (var qual in summaries[barcode][readtype]) {
+                    chart.addSeries({
+                        name: barcode + " - " + readtype + " - " + qual,
+                        data: summaries[barcode][readtype][qual]["data"]
+                    });
+                }
+            }
+        }
+
+        for (var i in self.rundata) {
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));// - self.flowcellstart;
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));//- self.flowcellstart;
             var name = self.rundata[i]['id']
             //chart.xAxis[0].addPlotBand({
             //    from: starttime,

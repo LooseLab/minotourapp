@@ -105,11 +105,11 @@ function updateStepLineChart (chart, start = 0, end = 0) {
              // name: barcode + " - " + typeName,
              name: 'Simplified',
              data: orderedDataSimplified,
-             step: true,
+             step: 'right',
           });
 
           var start = orderedDataSimplified[0][0];
-          var end = orderedDataSimplified[len(orderedDataSimplified)][0];
+          var end = orderedDataSimplified[(orderedDataSimplified).length][0];
           chart.xAxis[0].setExtremes(start, end, true);
 
     });
@@ -137,11 +137,15 @@ function requestMappedChromosomes (run_id) {
         while (select.length > 0) {
             select.remove(0);
         }
+        var option = document.createElement('option');
+        option.text = "select barcode and chromosome option";
+        option.value = '-1';
+        select.add(option);
 
         for (var i = 0; i < data.length; i++) {
             var option = document.createElement('option');
 
-            var value_combination = data[i]['run_id'] + '_' + data[i]['barcode_id'] + '_' + data[i]['read_type_id'] + '_' + data[i]['reference_id'] + '_' + data[i]['chromosome_id'];
+            var value_combination = data[i]['flowcell_id'] + '_' + data[i]['barcode_id'] + '_' + data[i]['read_type_id'] + '_' + data[i]['reference_id'] + '_' + data[i]['chromosome_id'];
 
             option.text = data[i]['barcode_name'] + ' - ' + data[i]['read_type_name'] + ' - ' + data[i]['reference_name'] + ' - ' + data[i]['chromosome_name'];
             option.value = value_combination;

@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 import numpy as np
 from datetime import datetime, timedelta
+import time
 
 import pytz
 import redis
@@ -20,7 +21,9 @@ from django.db.models import F
 from django_mailgun import MailgunAPIError
 from twitter import *
 
-from alignment.models import PafStore, PafStore_transcriptome
+
+
+from alignment.models import PafStore, PafStore_transcriptome, PafRoughCov
 from alignment.models import PafSummaryCov, PafSummaryCov_transcriptome
 from alignment.models import SamStore
 from communication.models import Message
@@ -858,7 +861,7 @@ def run_minimap2_transcriptome(runid, id, reference, last_read):
     minimap2 = Reference.minimap2_index_file_location
     minimap2_ref = os.path.join(REFERENCELOCATION, minimap2)
     # print ("runid:{} last_read:{}".format(runid,last_read))
-    fastqs = FastqRead.objects.filter(run_id__id=runid, id__gt=int(last_read))[:1000]
+    fastqs = FastqRead.objects.filter(run_id__id=runid, id__gt=int(last_read))[:5000]
     # print ("fastqs",fastqs)
     read = ''
     fastqdict = dict()
@@ -946,6 +949,7 @@ def run_minimap2_transcriptome(runid, id, reference, last_read):
 def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype):
     try:
     #if True:
+        starttime = time.time()
         JobMaster.objects.filter(pk=job_master_id).update(running=True)
         REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
         Reference = ReferenceInfo.objects.get(pk=reference)
@@ -961,17 +965,20 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
             realflowcell = FlowCell.objects.get(pk=runid)
             flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
             for flowcell_run in flowcell_runs:
-                runidset.add(flowcell_run.id)
+                runidset.add(flowcell_run.run_id)
+                print (flowcell_run.run_id)
                 # we need to get the runids that make up this run
         else:
             runidset.add(runid)
 
 
-        fastqs = FastqRead.objects.filter(run_id__id__in=runidset, id__gt=int(last_read))[:1000]
+        fastqs = FastqRead.objects.filter(run_id__id__in=runidset, id__gt=int(last_read))[:2000]
         # print ("fastqs",fastqs)
         read = ''
         fastqdict = dict()
         fastqtypedict = dict()
+        fastqbarcodegroup = dict()
+        fastqbarcode=dict()
 
         # print (len(fastqs))
 
@@ -979,9 +986,16 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
             read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.extra.sequence)
             fastqdict[fastq.read_id] = fastq
             fastqtypedict[fastq.read_id] = fastq.type
+            fastqbarcodegroup[fastq.read_id] = fastq.barcode.barcodegroup
+            fastqbarcode[fastq.read_id] = fastq.barcode
             last_read = fastq.id
         # print (read)
-        cmd = 'minimap2 -x map-ont -t 4 --secondary=no %s -' % (minimap2_ref)
+
+        gotreadstime = time.time()
+
+        print ('!!!!!!!It took {} to fetch the reads.!!!!!!!!!'.format((gotreadstime-starttime)))
+
+        cmd = 'minimap2 -x map-ont -t 8 --secondary=no %s -' % (minimap2_ref)
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 stdin=subprocess.PIPE, shell=True)
@@ -991,12 +1005,20 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
         #print (paf)
         pafdata = paf.splitlines()
 
+
+        doneminimaps = time.time()
+        print('!!!!!!!It took {} to run minimap.!!!!!!!!!'.format((doneminimaps-gotreadstime)))
+
+
         if inputtype =="run":
             runinstance = MinIONRun.objects.get(pk=runid)
 
         resultstore = dict()
 
         ### OK - we need to fix this for getting the group barcodes and not the individual barcodes.
+
+        bulk_paf=[]
+        bulk_paf_rough = []
 
         for line in pafdata:
             line = line.strip('\n')
@@ -1008,6 +1030,8 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
             run = fastqdict[record[0]].run_id
             if inputtype == "flowcell":
                 newpaf = PafStore(flowcell=realflowcell, read=readid, read_type=typeid)
+                newpafstart = PafRoughCov(flowcell=realflowcell,read_type=typeid,barcode=fastqbarcode[record[0]],barcodegroup=fastqbarcodegroup[record[0]])
+                newpafend = PafRoughCov(flowcell=realflowcell,read_type=typeid,barcode=fastqbarcode[record[0]],barcodegroup=fastqbarcodegroup[record[0]])
             elif inputtype == "run":
                 newpaf = PafStore(run=run, read=readid, read_type=typeid)
             newpaf.reference = Reference
@@ -1024,21 +1048,41 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
             newpaf.nrm = int(record[9])  # models.IntegerField()#10	int	Number of residue matches
             newpaf.abl = int(record[10])  # models.IntegerField()#11	int	Alignment block length
             newpaf.mq = int(record[11])  # models.IntegerField()#12	int	Mapping quality (0-255; 255 for missing)
-            newpaf.save()
+
+            newpafstart.reference=Reference
+            newpafend.reference=Reference
+            newpafstart.chromosome=chromdict[record[5]]
+            newpafend.chromosome=chromdict[record[5]]
+            newpafstart.p=int(record[7])
+            newpafend.p=int(record[8])
+            newpafstart.i=1
+            newpafend.i=-1
+
+            bulk_paf_rough.append(newpafstart)
+            bulk_paf_rough.append(newpafend)
+            #newpaf.save()
+            bulk_paf.append(newpaf)
             if Reference not in resultstore:
                 resultstore[Reference] = dict()
             if chromdict[record[5]] not in resultstore[Reference]:
                 resultstore[Reference][chromdict[record[5]]] = dict()
-            if readid.barcode.barcodegroup not in resultstore[Reference][chromdict[record[5]]]:
-                resultstore[Reference][chromdict[record[5]]][readid.barcode.barcodegroup] = dict()
-            if typeid not in resultstore[Reference][chromdict[record[5]]][readid.barcode.barcodegroup]:
-                resultstore[Reference][chromdict[record[5]]][readid.barcode.barcodegroup][typeid] = dict()
-            if 'read' not in resultstore[Reference][chromdict[record[5]]][readid.barcode.barcodegroup][typeid]:
-                resultstore[Reference][chromdict[record[5]]][readid.barcode.barcodegroup][typeid]['read'] = set()
-                resultstore[Reference][chromdict[record[5]]][readid.barcode.barcodegroup][typeid]['length'] = 0
-            resultstore[Reference][chromdict[record[5]]][readid.barcode.barcodegroup][typeid]['read'].add(record[0])
-            resultstore[Reference][chromdict[record[5]]][readid.barcode.barcodegroup][typeid]['length'] += int(record[3]) - int(
+            #readidbarcodegroup = readid.barcode.barcodegroup
+            readidbarcodegroup = fastqbarcodegroup[record[0]]
+            if readidbarcodegroup not in resultstore[Reference][chromdict[record[5]]]:
+                resultstore[Reference][chromdict[record[5]]][readidbarcodegroup] = dict()
+            if typeid not in resultstore[Reference][chromdict[record[5]]][readidbarcodegroup]:
+                resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid] = dict()
+            if 'read' not in resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid]:
+                resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid]['read'] = set()
+                resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid]['length'] = 0
+            resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid]['read'].add(record[0])
+            resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid]['length'] += int(record[3]) - int(
                 record[2]) + 1
+        PafStore.objects.bulk_create(bulk_paf)
+        PafRoughCov.objects.bulk_create(bulk_paf_rough)
+        donepafproc = time.time()
+
+        print('!!!!!!!It took {} to parse the paf.!!!!!!!!!'.format((donepafproc-doneminimaps)))
 
         for ref in resultstore:
             for ch in resultstore[ref]:
@@ -1064,6 +1108,10 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
                         summarycov.read_count += len(resultstore[ref][ch][bc][ty]['read'])
                         summarycov.cumu_length += resultstore[ref][ch][bc][ty]['length']
                         summarycov.save()
+
+
+        jobdone = time.time()
+        print('!!!!!!!It took {} to process the resultstore.!!!!!!!!!'.format((jobdone - donepafproc)))
 
     except Exception as exception:
         print('An error occurred when running this task.')
