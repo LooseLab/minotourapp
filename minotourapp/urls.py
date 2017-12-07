@@ -6,7 +6,8 @@ from rest_framework.authtoken import views as tok_views
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [
-    url(r'^login/$', auth_views.LoginView.as_view(template_name="registration/login.html"), name="login"),
+    url(r'^login/$', auth_views.LoginView.as_view(template_name="registration/login.html"), name="login",
+        kwargs={'redirect_authenticated_user': True}),
     url(r'^logout/$', auth_views.LogoutView.as_view(), name="logout"),
     url(r'^change-password/$', auth_views.PasswordChangeView.as_view(template_name="registration/password_change.html"), name="password_change"),
     url(r'^change-password-done/$', auth_views.PasswordChangeDoneView.as_view(template_name="registration/password_change_done.html"), name="password_change_done"),
@@ -18,9 +19,11 @@ urlpatterns = [
     url(r'^web/', include('web.urls')),
     url(r'^', include('reads.urls')),
     url(r'^', include('alignment.urls')),
+    url(r'^', include('assembly.urls')),
     url(r'^', include('reference.urls')),
     url(r'^', include('communication.urls')),
     url(r'^', include('minikraken.urls')),
+#    url(r'^', include('tabs.urls')),
     url(r'^$', auth_views.LoginView.as_view(template_name="registration/login.html")),
     url(r'^api-token-auth/', tok_views.obtain_auth_token),
 #    url('^inbox/notifications/', include(notifications.urls, namespace='notifications')),

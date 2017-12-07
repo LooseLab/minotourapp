@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'minikraken',
     'django_celery_beat',
     'communication',
+    'assembly',
+#    'tabs',
 ]
 
 MIDDLEWARE = [
@@ -95,6 +97,7 @@ CACHES = {
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -105,7 +108,21 @@ DATABASES = {
         'NAME': get_env_variable("MT_DB_NAME"),
     }
 }
+'''
 
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'USER': get_env_variable("MT_DB_USER"),
+        'PASSWORD': get_env_variable("MT_DB_PASS"),
+        'HOST': get_env_variable("MT_DB_HOST"),
+        'PORT': '',
+        'NAME': get_env_variable("MT_DB_NAME"),
+    }
+}
+
+'''
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators

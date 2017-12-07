@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<form>
+    <select id="chromosome-id-select"></select>
+</form>
+<div id="container" style="height: 400px; min-width: 310px"></div>
+
+
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<script src="https://code.highcharts.com/stock/highstock.js"></script>
+<script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+<script>
+
+    function requestMappedChromosomes(run_id) {
+        /*
+         * Request the chromosomes that have reads mapped to using minimap2
+         * and update the select box on tab Mapping
+         *
+         */
+
+        var url = '/api/v1/runs/' + run_id + '/references';
+
+        $.getJSON(url, function (data) {
+
+            var select = document.getElementById('chromosome-id-select');
+            var selected_index = select.selectedIndex;
+            var selected_option = select[selected_index];
+
+            while (select.length > 0) {
+                select.remove(0);
+            }
+
+            for (var i = 0; i < data.length; i++) {
+                var option = document.createElement('option');
+
+                var value_combination = data[i]['run_id'] + '_' + data[i]['barcode_id'] + '_' + data[i]['read_type_id'] + '_' + data[i]['reference_id'] + '_' + data[i]['chromosome_id'];
+
+                option.text = data[i]['barcode_name'] + ' - ' + data[i]['read_type_name'] + ' - ' + data[i]['reference_name'] + ' - ' + data[i]['chromosome_name'];
+                option.value = value_combination;
+
+                if (selected_option === undefined) {
+
+                } else {
+
+                    if (value_combination == selected_option.value) {
+                        option.selected = 'selected';
+                    }
+
+                }
+
+                select.add(option);
+            }
+
+        });
+
+    }
+
+    requestMappedChromosomes(7);
+
+    /**
+     * Load new data depending on the selected min and max
+     */
+    function afterSetExtremes(e) {
+
+        var chart = Highcharts.charts[0];
+
+        chart.showLoading('Loading data from server...');
+        $.getJSON('https://www.highcharts.com/samples/data/from-sql.php?start=' + Math.round(e.min) +
+            '&end=' + Math.round(e.max) + '&callback=?', function (data) {
+
+            chart.series[0].setData(data);
+            chart.hideLoading();
+        });
+    }
+
+    // See source code from the JSONP handler at https://github.com/highcharts/highcharts/blob/master/samples/data/from-sql.php
+    $.getJSON('https://www.highcharts.com/samples/data/from-sql.php?callback=?', function (data) {
+
+        // Add a null value for the end date
+        data = [].concat(data, [[Date.UTC(2011, 9, 14, 19, 59), null, null, null, null]]);
+
+        // create the chart
+        Highcharts.stockChart('container', {
+            chart: {
+                type: 'candlestick',
+                zoomType: 'x'
+            },
+
+            navigator: {
+                adaptToUpdatedData: false,
+                series: {
+                    data: data
+                },
+                title: {
+                    text: 'AAPL history by the minute from 1998 to 2011'
+                },
+
+                scrollbar: {
+                    liveRedraw: false
+                },
+
+            },
+
+            subtitle: {
+                text: 'Displaying 1.7 million data points in Highcharts Stock by async server loading'
+            },
+
+            rangeSelector: {
+                buttons: [{
+                    type: 'hour',
+                    count: 1,
+                    text: '1h'
+                }, {
+                    type: 'day',
+                    count: 1,
+                    text: '1d'
+                }, {
+                    type: 'month',
+                    count: 1,
+                    text: '1m'
+                }, {
+                    type: 'year',
+                    count: 1,
+                    text: '1y'
+                }, {
+                    type: 'all',
+                    text: 'All'
+                }],
+                inputEnabled: false, // it supports only days
+                selected: 4 // all
+            },
+
+            xAxis: {
+                events: {
+                    afterSetExtremes: afterSetExtremes
+                },
+                minRange: 3600 * 1000 // one hour
+            },
+
+            yAxis: {
+                floor: 0
+            },
+
+            series: [{
+                data: data,
+                dataGrouping: {
+                    enabled: false
+                }
+            }]
+        });
+    });
+</script>
+
+
+</body>
+</html>

@@ -4,7 +4,7 @@ import os,sys
 import json
 import requests
 import datetime
-from urlparse import urlparse
+from urllib.parse import urlparse
 import numpy as np
 import time
 from ws4py.client.threadedclient import WebSocketClient
@@ -21,7 +21,7 @@ class MinControlAPI():
     """
 
     def __init__(self, minion):
-        print ("MinControlAPI")
+        #print ("MinControlAPI")
         self.minion = minion
         self.create_minion(self.minion)
         self.minionidlink=self.identify_minion(self.minion)
@@ -30,17 +30,19 @@ class MinControlAPI():
         self.minstatexist=False
         self.current_run_id=""
         self.computer=""
+        self.runid = 0
+        self.flowcelllink = ""
 
     def header (self):
         return ({'Authorization': 'Token ' + args.api_key, 'Content-Type': 'application/json'})
 
     def check_jobs (self,minION):
-        print ("checking jobs")
+        #print ("checking jobs")
         r = requests.get(self.minionidlink + 'control/', headers=self.header())
-        print (r.text)
+        #print (r.text)
         jobs = json.loads(r.text)
         for job in jobs:
-            print (job['job'])
+            #print (job['job'])
             if job["job"] == "testmessage":
                 send_message_port("minoTour is checking communication status with " + str(self.minion) + ".",
                                   minIONdict[self.minion]["port"])
@@ -106,6 +108,29 @@ class MinControlAPI():
             else:
                 print(json.loads(createminION.text))
 
+    def create_flowcell(self, name):
+        print ("Creating a new flowcell")
+        #Test to see if the flowcell exists.
+        r = requests.get(args.full_host+'api/v1/flowcells', headers=header)
+        flowcellname=name
+        if flowcellname not in r.text:
+            #print ("we need to create this flowcell")
+            createflowcell = requests.post(args.full_host+'api/v1/flowcells/', headers=header, json={"name": flowcellname})
+            self.flowcelllink = json.loads(createflowcell.text)["url"]
+        else:
+            #print (json.loads(r.text))
+            for flowcell in json.loads(r.text):
+                #print (flowcell["name"])
+                #print (flowcell["url"])
+                if flowcell["name"] == flowcellname:
+                    self.flowcelllink = flowcell["url"]
+                    break
+
+    def create_flowcell_run(self):
+        print ("Adding run to flowcell")
+        createflowcellrun = requests.post(self.flowcelllink,headers=header,json={"flowcell": self.flowcelllink, "run": self.runidlink})
+
+
     def create_run(self, runid):
         print("Seen a new run")
         # Test to see if the run exists
@@ -131,6 +156,9 @@ class MinControlAPI():
             else:
                 print (json.loads(createrun.text)["url"])
                 self.runidlink = json.loads(createrun.text)["url"]
+                self.runid = json.loads(createrun.text)["id"]
+                self.create_flowcell(self.status_summary['flow_cell_id'])
+                self.create_flowcell_run()
         else:
             print ('Run Exists.')
             for run in json.loads(r.text):
@@ -448,9 +476,9 @@ def startstop(command,minION):
             if not line: break
             #print line
     elif OPER == "linux":
-        print "!!!!!!!!!!!!!! Sorry cannot handle linux yet."
+        print ("!!!!!!!!!!!!!! Sorry cannot handle linux yet.")
     else:
-        print "!!!!!!!!!!!!!! Sorry - cannot recognise your operating system."
+        print ("!!!!!!!!!!!!!! Sorry - cannot recognise your operating system.")
 
 def send_message_port(message,port):
     message_to_send = \
@@ -459,8 +487,8 @@ def send_message_port(message,port):
     results=""
     try:
         results = execute_command_as_string(message_to_send, ipadd, port)
-    except Exception, err:
-        print "message send fail", err
+    except Exception as err:
+        print ("message send fail", err)
     return results
 
 def startrun(script,port):
@@ -469,13 +497,13 @@ def startrun(script,port):
         startruncustom = \
             '{"id":1, "method":"start_script","params":{"name":"' \
             + script + '"}}'
-        print startruncustom,ipadd,port
+        print (startruncustom,ipadd,port)
         startresult = \
             execute_command_as_string(startruncustom,
                 ipadd, port)
         startrunmessage = 'minoTour sent a remote run start command.'
         startresultmessage = send_message_port(startrunmessage,port)
-    except Exception, err:
+    except Exception as err:
         print >> sys.stderr, err
 
 def stoprun_message(port,message):
@@ -487,14 +515,14 @@ def stoprun_message(port,message):
                 port)
         stoprunmessage = 'minoTour sent a remote run stop command for %s.' % (message)
         stopresultmessage = send_message_port(stoprunmessage,port)
-    except Exception, err:
+    except Exception as err:
         print >> sys.stderr, err
 
 def send_custom_message(port,message):
     try:
         custommessage = "minoTour: %s" % (message)
         custommessageresult=send_message_port(custommessage,port)
-    except Exception,err:
+    except Exception as err:
         print >> sys.stderr, err
 
 def stoprun(port):
@@ -506,7 +534,7 @@ def stoprun(port):
                 port)
         stoprunmessage = 'minoTour sent a remote run stop command.'
         stopresultmessage = send_message_port(stoprunmessage,port)
-    except Exception, err:
+    except Exception as err:
         print >> sys.stderr, err
 
 
@@ -518,7 +546,7 @@ def renameflowcell(name,port):
             execute_command_as_string(set_flowcell_id,ipadd,port)
         startresultmessage = \
             send_message_port('minoTour renamed the flowcell to ' + name,port)
-    except Exception, err:
+    except Exception as err:
         print >> sys.stderr, err
 
 def renamerun(name,port):
@@ -532,7 +560,7 @@ def renamerun(name,port):
         startresultmessage = \
             send_message_port('minoTour renamed the run to '
                 + name,port)
-    except Exception, err:
+    except Exception as err:
         print >> sys.stderr, err
 
 
@@ -1014,8 +1042,8 @@ def process_channel_information():
                     minIONdict[minion]["simplechanstats"]={}
                 try:
                     minIONdict[minion]["simplesummary"]=statesummarydict[minion]
-                except Exception, err:
-                    print "line 1081",err
+                except Exception as err:
+                    print ("line 1081",err)
                     pass
 
 def get_state_summary(minion):
@@ -1026,7 +1054,7 @@ def get_state_summary(minion):
                 state_dict[value["state"]] += 1
             else:
                 state_dict[value["state"]] = 1
-        except Exception, err:
+        except Exception as err:
             print
             "line 956", err
             pass
