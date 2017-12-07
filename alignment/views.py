@@ -22,6 +22,11 @@ def find_bin(start, size_of_each_bin, value):
 
 
 @api_view(['GET'])
+def rough_coverage_complete_chromosome(request, run_id, barcode_id, read_type_id, chromosome_id):
+    return paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id, 0, 0)
+
+
+@api_view(['GET'])
 def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id, start, end):
 
     NUMBER_OF_BINS = 20
@@ -115,7 +120,7 @@ def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id,
 
 
     #return HttpResponse(json.dumps(result_list), content_type="application/json")
-    return HttpResponse(json.dumps(result), content_type="application/json")
+    return HttpResponse(json.dumps(result_list2), content_type="application/json")
 
 @api_view(['GET'])
 def paf_alignment_summary(request, pk):#,bc,ch):
