@@ -10,8 +10,8 @@
     run <input type="text" id="run-id"/>
     <select id="chromosome-id-select"></select>
 </form>
-<div id="container" style="height: 400px; min-width: 310px"></div>
 <div id="container2"></div>
+<div id="container" style="height: 400px; min-width: 310px"></div>
 
 <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 <script src="https://code.highcharts.com/stock/highstock.js"></script>
@@ -76,7 +76,6 @@
         //const valor = document.getElementById("chromosome-id-select").value;
         //requestMappedChromosomes(valor);
         //console.log(valor);
-        initialiseChart();
         initialiseChart3();
     });
 
@@ -116,213 +115,7 @@
         });
     }
 
-    function initialiseChart() {
-        var select = document.getElementById('chromosome-id-select');
-        var selected_index = select.selectedIndex;
-        var selected_option = select[selected_index];
 
-        if (selected_option === undefined) {
-            console.log('No mapped chromosome selected.');
-            return;
-        }
-
-        var value_combination = selected_option.value.split('_');
-        var run_id = value_combination[0];
-        var barcode_id = value_combination[1];
-        var read_type_id = value_combination[2];
-        var reference_id = value_combination[3];
-        var chromosome_id = value_combination[4];
-
-        var url = '/api/v1/runs/' + run_id + '/pafcover/' + barcode_id + '/' + read_type_id + '/' + chromosome_id + '/';
-
-        // See source code from the JSONP handler at https://github.com/highcharts/highcharts/blob/master/samples/data/from-sql.php
-        $.getJSON(url, function (data) {
-
-            // Add a null value for the end date
-            // data = [].concat(data, [[Date.UTC(2011, 9, 14, 19, 59), null, null, null, null]]);
-
-            // create the chart
-            Highcharts.stockChart('container', {
-                chart: {
-                    zoomType: 'x',
-                    step: true,
-                },
-
-                navigator: {
-                    adaptToUpdatedData: false,
-                    series: {
-                        data: data
-                    },
-                    /*title: {
-                        text: 'AAPL history by the minute from 1998 to 2011'
-                    },*/
-
-                    scrollbar: {
-                        liveRedraw: false
-                    },
-                    xAxis: {
-                        events: {
-                            afterSetExtremes: afterSetExtremes
-                        },
-                        labels: {
-                            formatter: function () {
-                                return this.value;
-                            }
-                        }
-                        // minRange: 3600 * 1000 // one hour
-                    },
-
-                },
-
-                /*subtitle: {
-                    text: 'Displaying 1.7 million data points in Highcharts Stock by async server loading'
-                },
-
-                rangeSelector: {
-                    buttons: [{
-                        type: 'hour',
-                        count: 1,
-                        text: '1h'
-                    }, {
-                        type: 'day',
-                        count: 1,
-                        text: '1d'
-                    }, {
-                        type: 'month',
-                        count: 1,
-                        text: '1m'
-                    }, {
-                        type: 'year',
-                        count: 1,
-                        text: '1y'
-                    }, {
-                        type: 'all',
-                        text: 'All'
-                    }],
-                    inputEnabled: false, // it supports only days
-                    selected: 4 // all
-                },*/
-
-                xAxis: {
-                    events: {
-                        afterSetExtremes: afterSetExtremes
-                    },
-                    labels: {
-                        formatter: function () {
-                            return this.value;
-                        }
-                    }
-                    // minRange: 3600 * 1000 // one hour
-                },
-                yAxis: {
-                    floor: 0
-                },
-
-                series: [{
-                    data: data,
-                    dataGrouping: {
-                        enabled: false
-                    }
-                }]
-            });
-        });
-    }
-
-    function initialiseChart2() {
-        var select = document.getElementById('chromosome-id-select');
-        var selected_index = select.selectedIndex;
-        var selected_option = select[selected_index];
-
-        if (selected_option === undefined) {
-            console.log('No mapped chromosome selected.');
-            return;
-        }
-
-        var value_combination = selected_option.value.split('_');
-        var run_id = value_combination[0];
-        var barcode_id = value_combination[1];
-        var read_type_id = value_combination[2];
-        var reference_id = value_combination[3];
-        var chromosome_id = value_combination[4];
-
-
-        // See source code from the JSONP handler at https://github.com/highcharts/highcharts/blob/master/samples/data/from-sql.php
-        $.getJSON('https://www.highcharts.com/samples/data/from-sql.php?callback=?', function (data) {
-
-            // Add a null value for the end date
-            data = [].concat(data, [[Date.UTC(2011, 9, 14, 19, 59), null, null, null, null]]);
-
-            // create the chart
-            Highcharts.stockChart('container', {
-                chart: {
-                    type: 'candlestick',
-                    zoomType: 'x'
-                },
-
-                navigator: {
-                    adaptToUpdatedData: false,
-                    series: {
-                        data: data
-                    },
-                    title: {
-                        text: 'AAPL history by the minute from 1998 to 2011'
-                    },
-
-                    scrollbar: {
-                        liveRedraw: false
-                    },
-
-                },
-
-                subtitle: {
-                    text: 'Displaying 1.7 million data points in Highcharts Stock by async server loading'
-                },
-
-                rangeSelector: {
-                    buttons: [{
-                        type: 'hour',
-                        count: 1,
-                        text: '1h'
-                    }, {
-                        type: 'day',
-                        count: 1,
-                        text: '1d'
-                    }, {
-                        type: 'month',
-                        count: 1,
-                        text: '1m'
-                    }, {
-                        type: 'year',
-                        count: 1,
-                        text: '1y'
-                    }, {
-                        type: 'all',
-                        text: 'All'
-                    }],
-                    inputEnabled: false, // it supports only days
-                    selected: 4 // all
-                },
-
-                xAxis: {
-                    events: {
-                        afterSetExtremes: afterSetExtremes
-                    },
-                    minRange: 3600 * 1000 // one hour
-                },
-
-                yAxis: {
-                    floor: 0
-                },
-
-                series: [{
-                    data: data,
-                    dataGrouping: {
-                        enabled: false
-                    }
-                }]
-            });
-        });
-    }
 
 
     function initialiseChart3() {
@@ -356,10 +149,18 @@
                     detailStart = data[0][0];
 
                 $.each(masterChart.series[0].data, function () {
+                    console.log('x: ' + this.x);
+                    console.log('y: ' + this.y);
                     if (this.x >= detailStart) {
                         detailData.push(this.y);
                     }
                 });
+
+                console.log('--->');
+                console.log(data);
+                console.log(detailStart);
+                console.log(detailData);
+                console.log('<---');
 
                 // create a detail chart referenced by a global variable
                 detailChart = Highcharts.chart('detail-container', {
@@ -378,10 +179,7 @@
                         enabled: false
                     },
                     title: {
-                        text: 'Historical USD to EUR Exchange Rate'
-                    },
-                    subtitle: {
-                        text: 'Select an area by dragging across the lower chart'
+                        text: null
                     },
                     xAxis: {
                         type: 'line'
@@ -409,7 +207,7 @@
                         }
                     },
                     series: [{
-                        name: 'USD to EUR',
+                        name: null,
                         pointStart: detailStart,
                         data: detailData,
                         step: true
@@ -511,7 +309,7 @@
                     plotOptions: {
                         series: {
                             fillColor: {
-                                linearGradient: [0, 0, 0, 70],
+                                // linearGradient: [0, 0, 0, 70],
                                 stops: [
                                     [0, Highcharts.getOptions().colors[0]],
                                     [1, 'rgba(255,255,255,0)']
@@ -533,7 +331,7 @@
 
                     series: [{
                         type: 'area',
-                        name: 'USD to EUR',
+                        name: null,
                         pointStart: data[0][0],
                         data: data,
                         step: true
@@ -568,6 +366,102 @@
             createMaster();
         });
 
+    }
+
+    function initialiseChart2() {
+        var select = document.getElementById('chromosome-id-select');
+        var selected_index = select.selectedIndex;
+        var selected_option = select[selected_index];
+
+        if (selected_option === undefined) {
+            console.log('No mapped chromosome selected.');
+            return;
+        }
+
+        var value_combination = selected_option.value.split('_');
+        var run_id = value_combination[0];
+        var barcode_id = value_combination[1];
+        var read_type_id = value_combination[2];
+        var reference_id = value_combination[3];
+        var chromosome_id = value_combination[4];
+
+
+        // See source code from the JSONP handler at https://github.com/highcharts/highcharts/blob/master/samples/data/from-sql.php
+        $.getJSON('https://www.highcharts.com/samples/data/from-sql.php?callback=?', function (data) {
+
+            // Add a null value for the end date
+            data = [].concat(data, [[Date.UTC(2011, 9, 14, 19, 59), null, null, null, null]]);
+
+            // create the chart
+            Highcharts.stockChart('container', {
+                chart: {
+                    type: 'candlestick',
+                    zoomType: 'x'
+                },
+
+                navigator: {
+                    adaptToUpdatedData: false,
+                    series: {
+                        data: data
+                    },
+                    title: {
+                        text: 'AAPL history by the minute from 1998 to 2011'
+                    },
+
+                    scrollbar: {
+                        liveRedraw: false
+                    },
+
+                },
+
+                subtitle: {
+                    text: 'Displaying 1.7 million data points in Highcharts Stock by async server loading'
+                },
+
+                rangeSelector: {
+                    buttons: [{
+                        type: 'hour',
+                        count: 1,
+                        text: '1h'
+                    }, {
+                        type: 'day',
+                        count: 1,
+                        text: '1d'
+                    }, {
+                        type: 'month',
+                        count: 1,
+                        text: '1m'
+                    }, {
+                        type: 'year',
+                        count: 1,
+                        text: '1y'
+                    }, {
+                        type: 'all',
+                        text: 'All'
+                    }],
+                    inputEnabled: false, // it supports only days
+                    selected: 4 // all
+                },
+
+                xAxis: {
+                    events: {
+                        afterSetExtremes: afterSetExtremes
+                    },
+                    minRange: 3600 * 1000 // one hour
+                },
+
+                yAxis: {
+                    floor: 0
+                },
+
+                series: [{
+                    data: data,
+                    dataGrouping: {
+                        enabled: false
+                    }
+                }]
+            });
+        });
     }
 
 </script>
