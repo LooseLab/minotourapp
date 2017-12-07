@@ -9,7 +9,7 @@ urlpatterns = [
         name="paf_alignment_list"
     ),
     url(
-        r'^api/v1/flowcells/(?P<run_id>[0-9]+)/pafcover/(?P<barcode_id>[0-9]+)/(?P<read_type_id>[0-9]+)/(?P<chromosome_id>[0-9]+)/(?P<start>-?[0-9]+)/(?P<end>[0-9]+)/$',
+        r'^api/v1/flowcells/(?P<run_id>[0-9]+)/pafcover/(?P<barcodegroup_id>[0-9]+)/(?P<read_type_id>[0-9]+)/(?P<chromosome_id>[0-9]+)/(?P<start>-?[0-9]+)/(?P<end>[0-9]+)/$',
         views.flowcellpaf_alignment_list,
         name="flowcellpaf_alignment_list"
     ),

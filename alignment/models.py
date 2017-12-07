@@ -119,7 +119,7 @@ class PafRoughCov(models.Model):
                                  blank=True)
     read_type = models.ForeignKey(FastqReadType, related_name='prc_type')
     barcode = models.ForeignKey(Barcode, related_name='prc_barcode', null=True)
-    #barcodegroup = models.ForeignKey(BarcodeGroup, related_name='prc_barcodegroup', null=True)
+    barcodegroup = models.ForeignKey(BarcodeGroup, related_name='prc_barcodegroup', null=True)
     #reference = models.TextField() #should switch to a reference database
     reference = models.ForeignKey(ReferenceInfo, related_name='pafreference')
     #chromosome = models.TextField() #could be repeat of the reference name
@@ -199,6 +199,7 @@ class PafRoughCov_transcriptome(models.Model):
     run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='prc_run_transcriptome')
     read_type = models.ForeignKey(FastqReadType, related_name='prc_type_transcriptome')
     barcode = models.ForeignKey(Barcode, related_name='prc_barcode_transcriptome', null=True)
+    barcodegroup = models.ForeignKey(BarcodeGroup, related_name='prc_barcodegroup_transcriptome', null=True)
     #reference = models.TextField() #should switch to a reference database
     reference = models.ForeignKey(ReferenceInfo, related_name='pafreference_transcriptome')
     #chromosome = models.TextField() #could be repeat of the reference name
@@ -213,6 +214,7 @@ class PafSummaryCov_transcriptome(models.Model):
     run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='paf_summary_transcriptome')
     read_type = models.ForeignKey(FastqReadType, related_name='paf_summary_type_transcriptome')
     barcode = models.ForeignKey(Barcode, related_name='paf_summary_barcode_transcriptome', null=True)
+    barcodegroup = models.ForeignKey(BarcodeGroup, related_name='paf_summary_barcodegroup_transcriptome', null=True)
     reference = models.ForeignKey(ReferenceInfo,related_name='paf_summary_reference_transcriptome')
     chromosome = models.ForeignKey(ReferenceLine, related_name='paf_summary_chromosome_transcriptome')
     read_count = models.BigIntegerField(default=0)
@@ -279,6 +281,7 @@ def updatePafRoughCov(instance, sender, **kwargs):
             run=pafline.run,
             read_type=pafline.read.type,
             barcode=pafline.read.barcode,
+            barcodegroup=pafline.read.barcode.barcodegroup,
             reference=pafline.reference,
             chromosome=pafline.tsn,
             p=pafline.ts #position
@@ -289,6 +292,7 @@ def updatePafRoughCov(instance, sender, **kwargs):
             run=pafline.run,
             read_type=pafline.read.type,
             barcode=pafline.read.barcode,
+            barcodegroup=pafline.read.barcode.barcodegroup,
             reference=pafline.reference,
             chromosome=pafline.tsn,
             p=(pafline.te)+1 #position
@@ -300,6 +304,7 @@ def updatePafRoughCov(instance, sender, **kwargs):
             flowcell=pafline.flowcell,
             read_type=pafline.read.type,
             barcode=pafline.read.barcode,
+            barcodegroup=pafline.read.barcode.barcodegroup,
             reference=pafline.reference,
             chromosome=pafline.tsn,
             p=pafline.ts  # position
@@ -310,6 +315,7 @@ def updatePafRoughCov(instance, sender, **kwargs):
             flowcell=pafline.flowcell,
             read_type=pafline.read.type,
             barcode=pafline.read.barcode,
+            barcodegroup=pafline.read.barcode.barcodegroup,
             reference=pafline.reference,
             chromosome=pafline.tsn,
             p=(pafline.te) + 1  # position
@@ -325,6 +331,7 @@ def updatePafRoughCov_transcriptome(instance, sender, **kwargs):
         run=pafline.run,
         read_type=pafline.read.type,
         barcode=pafline.read.barcode,
+        barcodegroup=pafline.read.barcode.barcodegroup,
         reference=pafline.reference,
         chromosome=pafline.tsn,
         p=pafline.ts #position
@@ -335,6 +342,7 @@ def updatePafRoughCov_transcriptome(instance, sender, **kwargs):
         run=pafline.run,
         read_type=pafline.read.type,
         barcode=pafline.read.barcode,
+        barcodegroup=pafline.read.barcode.barcodegroup,
         reference=pafline.reference,
         chromosome=pafline.tsn,
         p=(pafline.te)+1 #position

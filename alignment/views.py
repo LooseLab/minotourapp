@@ -119,14 +119,16 @@ def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id,
 
 
 @api_view(['GET'])
-def flowcellpaf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id, start, end):
+def flowcellpaf_alignment_list(request, run_id, barcodegroup_id, read_type_id, chromosome_id, start, end):
 
-    NUMBER_OF_BINS = 20
+    NUMBER_OF_BINS = 200
+
+
 
     queryset = PafRoughCov.objects \
-        .filter(run__owner=request.user) \
+        .filter(flowcell__owner=request.user) \
         .filter(flowcell_id=run_id)\
-        .filter(barcode__id=barcode_id) \
+        .filter(barcodegroup__id=barcodegroup_id) \
         .filter(chromosome__id=chromosome_id) \
         .filter(read_type__id=read_type_id) \
         .order_by('p')
