@@ -161,7 +161,7 @@ class UserOptions(models.Model):
 
 class MinIONRun(models.Model):
     run_name = models.CharField(
-        max_length=64
+        max_length=256
     )
 
     run_id = models.CharField(

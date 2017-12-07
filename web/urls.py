@@ -16,5 +16,5 @@ urlpatterns = [
     url(r'^private/runs/(?P<pk>[0-9]+)/$', views.run_index, name='run-index'),
     url(r'^private/flowcells/(?P<pk>[0-9]+)/$', views.flowcell_index, name='flowcell-index'),
     url(r'^private/remote-control/$', views.remotecontrol, name='remotecontrol'),
-    url(r'^private/sandbox/$', views.sandbox, name='remotecontrol'),
+    url(r'^private/sandbox/$', views.sandbox, name='sandbox'),
 ]
