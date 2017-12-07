@@ -172,7 +172,8 @@ def activeminion_list(request):
     List of all minIONs by user, or create a new minION.
     """
     if request.method == 'GET':
-        queryset = MinION.objects.filter(owner=request.user).exclude(events__event__name='unplugged')
+        #queryset = MinION.objects.filter(owner=request.user)
+        queryset = [obj for obj in MinION.objects.filter(owner=request.user) if obj.status() != "unplugged"]
         serializer = MinIONSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 

@@ -598,7 +598,7 @@ class HelpTheMinion(WebSocketClient):
                         #APIHelp.create_minion(thing[1:8])
                         #APIHelp.update_minion_status(thing[1:8],'UNKNOWN','connected')
                     #print ("minION ID:", thing[1:8])
-                    minIONports =  list(map(lambda x:x-192+8000,filter(lambda x:x>190,map(ord,thing))))
+                    minIONports = list(map(lambda x:x-192+8000,filter(lambda x:x>190,map(ord,thing))))
                     if len(minIONports) > 0:
                         minIONdict[thing[1:8]]["state"]="active"
                         port = minIONports[0]
@@ -739,7 +739,6 @@ class DummyClient(WebSocketClient):
                 except Exception as err:
                     print ("Problem",err)
                     print ("Probably already popped")
-
 
 
 def execute_command_as_string(data, host=None, port=None):
@@ -1530,4 +1529,7 @@ if __name__ == '__main__':
 
     except (KeyboardInterrupt, Exception) as err:
         print ("ctrl-c detected at top level", err)
+        print ("Disconnecting MinIONs from minoTour control.")
+        for minION in minIONclassdict:
+            minIONdict[minION]["APIHelp"].update_minion_status(minION, 'UNKNOWN', 'unplugged')
         print ("bye bye")
