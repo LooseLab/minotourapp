@@ -5,6 +5,7 @@ import platform  # MS
 import sys
 import threading
 import time
+import gzip
 
 # import MySQLdb #note problem installing on python 3
 import configargparse
@@ -19,12 +20,22 @@ from watchdog.observers.polling import PollingObserver as Observer
 
 def parsefastq(fastq, rundict):
     #print ('processing reads')
-    for record in tqdm(SeqIO.parse(fastq, "fastq")):
-        descriptiondict = parsedescription(record.description)
-        if descriptiondict["runid"] not in rundict:
-            rundict[descriptiondict["runid"]] = Runcollection(args)
-            rundict[descriptiondict["runid"]].add_run(descriptiondict)
-        rundict[descriptiondict["runid"]].add_read(record, descriptiondict,fastq)
+    if fastq.endswith(".gz"):
+        #we have a potentiall gzipped file so:
+        with gzip.open(fastq, "rt") as handle:
+            for record in tqdm(SeqIO.parse(handle, "fastq")):
+                descriptiondict = parsedescription(record.description)
+                if descriptiondict["runid"] not in rundict:
+                    rundict[descriptiondict["runid"]] = Runcollection(args)
+                    rundict[descriptiondict["runid"]].add_run(descriptiondict)
+                rundict[descriptiondict["runid"]].add_read(record, descriptiondict, fastq)
+    else:
+        for record in tqdm(SeqIO.parse(fastq, "fastq")):
+            descriptiondict = parsedescription(record.description)
+            if descriptiondict["runid"] not in rundict:
+                rundict[descriptiondict["runid"]] = Runcollection(args)
+                rundict[descriptiondict["runid"]].add_run(descriptiondict)
+            rundict[descriptiondict["runid"]].add_read(record, descriptiondict,fastq)
     for runs in rundict:
         rundict[runs].commit_reads()
 
@@ -394,7 +405,7 @@ def file_dict_of_folder_simple(path):
                 #print(counter)
                 # if (("downloads" in path )):
                 # if ("muxscan" not in f and args.callingdir not in path and f.endswith(".fast5") ):
-                if (f.endswith(".fastq")):
+                if (f.endswith(".fastq") or f.endswith(".fastq.gz")):
                     file_list_dict[os.path.join(path, f)] = os.stat(os.path.join(path, f)).st_mtime
                     # try:
                     #    file_descriptor = update_file_descriptor(os.path.join(path, f),file_descriptor)
@@ -460,7 +471,7 @@ class MyHandler(FileSystemEventHandler):
     def on_created(self, event):
         """Watchdog counts a new file in a folder it is watching as a new file"""
         """This will add a file which is added to the watchfolder to the creates and the info file."""
-        if (event.src_path.endswith(".fastq")):
+        if (event.src_path.endswith(".fastq") or event.src_path.endswith(".fastq.gz")):
             # print "seen a file", event.src_path
             self.creates[event.src_path] = time.time()
             # elif ("albacore" in event.src_path and args.callingdir not in event.src_path and args.finishdir not in event.src_path and event.src_path.endswith(".fast5")):
@@ -470,7 +481,7 @@ class MyHandler(FileSystemEventHandler):
             # self.total[event.src_path] = time.time()
 
     def on_modified(self, event):
-        if (event.src_path.endswith(".fastq")):
+        if (event.src_path.endswith(".fastq") or event.src_path.endswith(".fastq.gz")):
             # print "seen a file", event.src_path
             self.creates[event.src_path] = time.time()
 
@@ -478,7 +489,7 @@ class MyHandler(FileSystemEventHandler):
         """Watchdog considers a file which is moved within its domain to be a move"""
         """When a file is moved, we just want to update its location in the master dictionary."""
         # print "On Moved Called"
-        if (event.dest_path.endswith(".fastq")):
+        if (event.dest_path.endswith(".fastq") or event.dest_path.endswith(".fastq.gz")):
             print("seen a fastq file move")
             # print getfilename(event.src_path), event.src_path,event.dest_path
             # try:
