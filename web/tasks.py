@@ -324,7 +324,7 @@ def processreads(runid, id, last_read):
 
         if barcode_all_reads not in sumstoresum[ipn_obj.run_id][ipn_obj.type].keys():
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads] = dict()
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["channels"] = '0' * 512
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["channels"] = '0' * 3000
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["pass_length"] = 0
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["pass_max_length"] = 0
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["pass_min_length"] = 0
@@ -338,7 +338,7 @@ def processreads(runid, id, last_read):
 
         if barcode not in sumstoresum[ipn_obj.run_id][ipn_obj.type].keys():
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode] = dict()
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["channels"] = '0' * 512
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["channels"] = '0' * 3000
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["pass_length"] = 0
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["pass_max_length"] = 0
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["pass_min_length"] = 0
@@ -356,7 +356,7 @@ def processreads(runid, id, last_read):
 
         if barcode_all_reads not in sumstore[ipn_obj.run_id][ipn_obj.type][tm].keys():
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads] = dict()
-            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["channels"] = '0' * 512
+            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["channels"] = '0' * 3000
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["pass_length"] = 0
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["pass_max_length"] = 0
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["pass_min_length"] = 0
@@ -370,7 +370,7 @@ def processreads(runid, id, last_read):
 
         if barcode not in sumstore[ipn_obj.run_id][ipn_obj.type][tm].keys():
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode] = dict()
-            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["channels"] = '0' * 512
+            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["channels"] = '0' * 3000
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["pass_length"] = 0
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["pass_max_length"] = 0
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["pass_min_length"] = 0
@@ -562,8 +562,8 @@ def update_local_dict(sumstore,ipn_obj,tm,barcode_to_do):
     channel_sequence = sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["channels"]
     channel_sequence_list = list(channel_sequence)
     ##Temporary fix to enable promethION data upload
-    if channel <= 512:
-        channel_sequence_list[channel - 1] = '1'
+    #if channel <= 512:
+    channel_sequence_list[channel - 1] = '1'
     sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["channels"] = ''.join(channel_sequence_list)
 
     if ipn_obj.is_pass:
@@ -606,8 +606,8 @@ def update_local_dict_sum(sumstore, ipn_obj, barcode_to_do):
     channel_sequence = sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["channels"]
     channel_sequence_list = list(channel_sequence)
     ##Temporary fix to enable promethION data upload
-    if channel <= 512:
-        channel_sequence_list[channel - 1] = '1'
+    #if channel <= 512:
+    channel_sequence_list[channel - 1] = '1'
     sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["channels"] = ''.join(channel_sequence_list)
 
     if ipn_obj.is_pass:

@@ -21,6 +21,11 @@ class FlowCell(models.Model):
         related_name='flowcells'
     )
 
+    size = models.IntegerField(
+        blank=True,
+        null=True,
+    )
+
     def __str__(self):
         return "{} {}".format(self.name, self.id)
 
@@ -628,8 +633,8 @@ class RunSummaryBarcode(models.Model):
     )
 
     channel_presence = models.CharField(
-        max_length=512,
-        default='0' * 512
+        max_length=3000,
+        default='0' * 3000
     )
 
     class Meta:
@@ -767,8 +772,8 @@ class RunStatisticBarcode(models.Model):
     )
 
     channel_presence = models.CharField(
-        max_length=512,
-        default='0' * 512
+        max_length=3000,
+        default='0' * 3000
     )
 
     class Meta:
