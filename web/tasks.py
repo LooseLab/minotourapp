@@ -561,7 +561,9 @@ def update_local_dict(sumstore,ipn_obj,tm,barcode_to_do):
     channel = ipn_obj.channel
     channel_sequence = sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["channels"]
     channel_sequence_list = list(channel_sequence)
-    channel_sequence_list[channel - 1] = '1'
+    ##Temporary fix to enable promethION data upload
+    if channel <= 512:
+        channel_sequence_list[channel - 1] = '1'
     sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["channels"] = ''.join(channel_sequence_list)
 
     if ipn_obj.is_pass:
@@ -603,7 +605,9 @@ def update_local_dict_sum(sumstore, ipn_obj, barcode_to_do):
     channel = ipn_obj.channel
     channel_sequence = sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["channels"]
     channel_sequence_list = list(channel_sequence)
-    channel_sequence_list[channel - 1] = '1'
+    ##Temporary fix to enable promethION data upload
+    if channel <= 512:
+        channel_sequence_list[channel - 1] = '1'
     sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["channels"] = ''.join(channel_sequence_list)
 
     if ipn_obj.is_pass:
