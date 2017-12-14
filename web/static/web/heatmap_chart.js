@@ -127,45 +127,36 @@ function updatePoreChart (chart, summary, parameter) {
         chart.series[0].remove();
     }
 
-    var data = {};
-
-    for (var i = 1; i <= 512; i++) {
-        var column = parseInt(flowcell_lookuptable[i][1]);
-        var row = parseInt(flowcell_lookuptable[i][0]);
-
-        data[i] = [column, row, 0];
-    }
-
-    console.log('Number of values: ' + Object.keys(summary).length);
-
-    for (var channel_number of Object.keys(summary)) {
-
-        var column = parseInt(flowcell_lookuptable[channel_number][1]);
-        var row = parseInt(flowcell_lookuptable[channel_number][0]);
-
-        if (row === 26 && column === 9) {
-            console.log('>>>>>>>>');
-            console.log(row, column, summary[channel_number][parameter], parameter);
-
-            data[channel_number] = [column, row, summary[channel_number][parameter]];
-        }
-        //console.log(row, column, summary[channel_number][parameter], parameter);
-
-        data[channel_number] = [column, row, summary[channel_number][parameter]];
-    }
-
-    chart.addSeries({
-        name: parameter,
-        data: Object.values(data),
-        borderWidth: 1,
-        dataLabels: {
-            "enabled": true,
-            "color": "black",
-            "style": {
-                "textShadow": "none"
+    var data = summary;
+    var size = Object.keys(data).length;
+    console.log(size);
+    if (size > 512) {
+        chart.addSeries({
+            name: parameter,
+            data: Object.values(data),
+            borderWidth: 0.5,
+            dataLabels: {
+                "enabled": false,
+                "color": "black",
+                "style": {
+                    "textShadow": "none"
+                }
             }
-        }
-    });
+        });
+    }else{
+        chart.addSeries({
+            name: parameter,
+            data: Object.values(data),
+            borderWidth: 1,
+            dataLabels: {
+                "enabled": true,
+                "color": "black",
+                "style": {
+                    "textShadow": "none"
+                }
+            }
+        });
+    }
 
     console.log('>>> finishing processing ' + parameter);
 
@@ -189,12 +180,15 @@ function updateReadsPerPoreChart (chart, summary) {
     }
 
     for (var channel_number of Object.keys(summary)) {
+        if (channel_number<=512) { //hacky fix for promethion
 
-        var column = channel_number % 16;
-        var row = (channel_number - column) / 16;
+            var column = channel_number % 16;
+            var row = (channel_number - column) / 16;
 
-        data[channel_number] = [column, row, summary[channel_number].read_count];
+            data[channel_number] = [column, row, summary[channel_number].read_count];
+        }
     }
+
 
     chart.addSeries({
         name: 'read_count',

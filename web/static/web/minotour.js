@@ -2167,36 +2167,16 @@ function MinotourFlowCellApp() {
         /*
          * Request channel summary data
          */
-
-        var url = "/api/v1/flowcells/" + id + "/channelsummary";
-
+        var url = "/api/v1/flowcells/" + id + "/channelsummary_readcount";
         $.get(url, function (data) {
-
             if (data.length > 0) {
-
-                var summaries = {};
-
-                for (var i = 0; i < data.length; i++) {
-
-                    var item = data[i];
-
-                    if (summaries[item.channel_number] === undefined) {
-                        summaries[item.channel_number] = {};
-                        summaries[item.channel_number]['read_count'] = 0;
-                        summaries[item.channel_number]['read_length'] = 0;
-                    }
-                    summaries[item.channel_number]['read_count'] += parseInt(item.read_count);
-                    summaries[item.channel_number]['read_length'] += parseInt((parseInt(item.read_length) / 1000).toFixed(0));
-                    //summaries[item.channel_number] = {
-                    //    'read_count': item.read_count,
-                    //    'read_length': parseInt((parseInt(item.read_length)/1000).toFixed(0))
-                    //};
-
-                }
-
-                self.channelSummary = summaries;
-                self.updateChannelBasedCharts();
-
+                self.updatePoreChart(self.chartReadsPerPore, data, 'read_count');
+            }
+        });
+        var url = "/api/v1/flowcells/" + id + "/channelsummary_readkb";
+        $.get(url, function (data) {
+            if (data.length > 0) {
+                self.updatePoreChart(self.chartBasesPerPore, data, 'read_length');
             }
         });
     };
