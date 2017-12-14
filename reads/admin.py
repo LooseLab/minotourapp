@@ -27,7 +27,7 @@ from .models import GroupRunType
 
 
 class MinionRunAdmin(admin.ModelAdmin):
-    list_display = ('start_time', 'active','sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','minION', 'id', 'last_read', 'last_entry')
+    list_display = ('start_time', 'active','sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','max_channel','flowcell_type', 'minION', 'id', 'last_read', 'last_entry')
 
 
 class RunStatisticsBarcodeAdmin(admin.ModelAdmin):

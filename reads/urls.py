@@ -206,6 +206,16 @@ urlpatterns = [
         name="flowcellchannelsummary-list"
     ),
     url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/channelsummary_readcount/$',
+        views.flowcell_channel_summary_readcount,
+        name="flowcellchannelsummary-list-readcount"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/channelsummary_readkb/$',
+        views.flowcell_channel_summary_readkb,
+        name="flowcellchannelsummary-list-readkb"
+    ),
+    url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/rundetails/$',
         views.flowcell_run_status_list,
         name="flowcellrunstatus_list"
