@@ -136,7 +136,12 @@ class Runcollection():
             else:
                 is_barcoded = False
                 barcoded = "unclassified"
-            createrun = requests.post(args.full_host+'api/v1/runs/', headers=header, json={"run_name": runname, "run_id": runid, "barcode": barcoded, "is_barcoded":is_barcoded})
+
+            if args.skip_sequence:
+                has_fastq = False
+            else:
+                has_fastq = True
+            createrun = requests.post(args.full_host+'api/v1/runs/', headers=header, json={"run_name": runname, "run_id": runid, "barcode": barcoded, "is_barcoded":is_barcoded, "has_fastq":has_fastq})
 
             if createrun.status_code != 201:
                 print (createrun.status_code)
@@ -187,18 +192,42 @@ class Runcollection():
         runlink = self.runidlink
         typelink = type
         if readid not in self.readnames:
-            payload = {
-                'run_id': runlink,
-                'read_id': readid,
-                'read': read,
-                "channel": channel,
-                'barcode': barcode,
-                'sequence': sequence,
-                'quality': quality,
-                'is_pass': ispass,
-                'start_time': starttime,
-                'type': typelink
-            }
+            sequence_length = len(sequence)
+            quality_average = np.around([np.mean(np.array(list((ord(val) - 33) for val in quality)))],decimals=2)[0]
+
+            if args.skip_sequence:
+                payload = {
+                    'run_id': runlink,
+                    'read_id': readid,
+                    'read': read,
+                    "channel": channel,
+                    'barcode': barcode,
+                    'sequence': '',
+                    'quality': '',
+                    'sequence_length': sequence_length,
+                    'quality_average': quality_average,
+                    'is_pass': ispass,
+                    'start_time': starttime,
+                    'type': typelink
+                }
+            else:
+                payload = {
+                    'run_id': runlink,
+                    'read_id': readid,
+                    'read': read,
+                    "channel": channel,
+                    'barcode': barcode,
+                    'sequence': sequence,
+                    'quality': quality,
+                    'sequence_length': sequence_length,
+                    'quality_average': quality_average,
+                    'is_pass': ispass,
+                    'start_time': starttime,
+                    'type': typelink
+                }
+
+            #print (args.skip_sequence)
+            #print (payload)
             self.readstore.append(payload)
             if len(self.readstore) >=self.batchsize:
                 self.commit_reads()
@@ -609,6 +638,15 @@ if __name__ == '__main__':
         default=None,
         help='Optionally split reads based on odd/even channel description. Not a standard option.',
         dest='cust_barc'
+    )
+
+    parser.add(
+        '-s',
+        '--skip_sequence',
+        action='store_true',
+        required=False,
+        help='If selected only read metrics, not sequence, will be uploaded to the databse.',
+        dest='skip_sequence'
     )
 
     args = parser.parse_args()
