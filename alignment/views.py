@@ -29,6 +29,36 @@ def rough_coverage_complete_chromosome(request, run_id, barcode_id, read_type_id
 @api_view(['GET'])
 def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id, start, end):
 
+    queryset = PafRoughCov.objects \
+        .filter(run__owner=request.user) \
+        .filter(barcode__id=barcode_id) \
+        .filter(chromosome__id=chromosome_id) \
+        .filter(read_type__id=read_type_id) \
+        .order_by('p')
+
+    start = int(start)
+    end = int(end)
+
+    if start == 0 and end == 0:
+        start = queryset.first().p
+        end = queryset.last().p
+
+    result_list = []
+    current_coverage_sum = 0
+
+    for key, item in enumerate(queryset):
+
+        current_coverage_sum = current_coverage_sum + item.i
+
+        if start < item.p < end:
+            result_list.append([item.p, current_coverage_sum])
+
+    return HttpResponse(json.dumps(result_list), content_type="application/json")
+
+
+@api_view(['GET'])
+def paf_alignment_list_old(request, run_id, barcode_id, read_type_id, chromosome_id, start, end):
+
     NUMBER_OF_BINS = 20
 
     queryset = PafRoughCov.objects \
@@ -122,6 +152,7 @@ def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id,
     #return HttpResponse(json.dumps(result_list), content_type="application/json")
     return HttpResponse(json.dumps(result_list2), content_type="application/json")
 
+
 @api_view(['GET'])
 def paf_alignment_summary(request, pk):#,bc,ch):
     """
@@ -139,6 +170,7 @@ def paf_alignment_summary(request, pk):#,bc,ch):
         serializer = PafSummaryCovSerializer(queryset, many=True, context={'request': request})
 
         return Response(serializer.data)\
+
 
 @api_view(['GET'])
 def paf_alignment_transcriptome_summary(request, pk):#,bc,ch):
@@ -179,6 +211,7 @@ def paf_alignment_transcriptome_summary(request, pk):#,bc,ch):
         #serializer = PafSummaryCovSerializer(queryset, many=True, context={'request': request})
 
         #return Response(serializer.data)
+
 
 @api_view(['GET'])
 def paf_test(request, pk,bc,ch,ty,po,ln):

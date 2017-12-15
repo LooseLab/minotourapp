@@ -81,6 +81,8 @@
 
 
     function afterSetExtremes(e) {
+        console.log('inside aftersetextremes...');
+
         var select = document.getElementById('chromosome-id-select');
         var selected_index = select.selectedIndex;
         var selected_option = select[selected_index];
@@ -103,7 +105,7 @@
          * Load new data depending on the selected min and max
          */
 
-        var chart = Highcharts.charts[0];
+        var chart = Highcharts.charts[1];
 
         chart.showLoading('Loading data from server...');
 
@@ -114,8 +116,6 @@
             chart.hideLoading();
         });
     }
-
-
 
 
     function initialiseChart3() {
@@ -145,14 +145,14 @@
             function createDetail(masterChart) {
 
                 // prepare the detail chart
-                var detailData = [],
-                    detailStart = data[0][0];
+                var detailData = [];
+                var detailStart = data[0][0];
 
                 $.each(masterChart.series[0].data, function () {
-                    console.log('x: ' + this.x);
-                    console.log('y: ' + this.y);
+                    //console.log('x: ' + this.x);
+                    //console.log('y: ' + this.y);
                     if (this.x >= detailStart) {
-                        detailData.push(this.y);
+                        detailData.push([this.x, this.y]);
                     }
                 });
 
@@ -182,7 +182,10 @@
                         text: null
                     },
                     xAxis: {
-                        type: 'line'
+                        type: 'line',
+                        events: {
+                            afterSetExtremes: afterSetExtremes
+                        }
                     },
                     yAxis: {
                         title: {
@@ -222,6 +225,9 @@
 
             // create the master chart
             function createMaster() {
+                console.log('inside master');
+                console.log('data[0]:' + data[0]);
+                console.log('data[0][0]:' + data[0][0]);
                 Highcharts.chart('master-container', {
                     chart: {
                         reflow: false,
@@ -236,11 +242,13 @@
                             // listen to the selection event on the master chart to update the
                             // extremes of the detail chart
                             selection: function (event) {
-                                var extremesObject = event.xAxis[0],
-                                    min = extremesObject.min,
-                                    max = extremesObject.max,
-                                    detailData = [],
-                                    xAxis = this.xAxis[0];
+                                event.preventDefault();
+
+                                var extremesObject = event.xAxis[0];
+                                var min = extremesObject.min;
+                                var max = extremesObject.max;
+                                var detailData = [];
+                                var xAxis = this.xAxis[0];
 
                                 // reverse engineer the last part of the data
                                 $.each(this.series[0].data, function () {
@@ -269,7 +277,7 @@
 
                                 detailChart.series[0].setData(detailData);
 
-                                return false;
+                                /*return false;*/
                             }
                         }
                     },
@@ -366,102 +374,6 @@
             createMaster();
         });
 
-    }
-
-    function initialiseChart2() {
-        var select = document.getElementById('chromosome-id-select');
-        var selected_index = select.selectedIndex;
-        var selected_option = select[selected_index];
-
-        if (selected_option === undefined) {
-            console.log('No mapped chromosome selected.');
-            return;
-        }
-
-        var value_combination = selected_option.value.split('_');
-        var run_id = value_combination[0];
-        var barcode_id = value_combination[1];
-        var read_type_id = value_combination[2];
-        var reference_id = value_combination[3];
-        var chromosome_id = value_combination[4];
-
-
-        // See source code from the JSONP handler at https://github.com/highcharts/highcharts/blob/master/samples/data/from-sql.php
-        $.getJSON('https://www.highcharts.com/samples/data/from-sql.php?callback=?', function (data) {
-
-            // Add a null value for the end date
-            data = [].concat(data, [[Date.UTC(2011, 9, 14, 19, 59), null, null, null, null]]);
-
-            // create the chart
-            Highcharts.stockChart('container', {
-                chart: {
-                    type: 'candlestick',
-                    zoomType: 'x'
-                },
-
-                navigator: {
-                    adaptToUpdatedData: false,
-                    series: {
-                        data: data
-                    },
-                    title: {
-                        text: 'AAPL history by the minute from 1998 to 2011'
-                    },
-
-                    scrollbar: {
-                        liveRedraw: false
-                    },
-
-                },
-
-                subtitle: {
-                    text: 'Displaying 1.7 million data points in Highcharts Stock by async server loading'
-                },
-
-                rangeSelector: {
-                    buttons: [{
-                        type: 'hour',
-                        count: 1,
-                        text: '1h'
-                    }, {
-                        type: 'day',
-                        count: 1,
-                        text: '1d'
-                    }, {
-                        type: 'month',
-                        count: 1,
-                        text: '1m'
-                    }, {
-                        type: 'year',
-                        count: 1,
-                        text: '1y'
-                    }, {
-                        type: 'all',
-                        text: 'All'
-                    }],
-                    inputEnabled: false, // it supports only days
-                    selected: 4 // all
-                },
-
-                xAxis: {
-                    events: {
-                        afterSetExtremes: afterSetExtremes
-                    },
-                    minRange: 3600 * 1000 // one hour
-                },
-
-                yAxis: {
-                    floor: 0
-                },
-
-                series: [{
-                    data: data,
-                    dataGrouping: {
-                        enabled: false
-                    }
-                }]
-            });
-        });
     }
 
 </script>
