@@ -40,11 +40,19 @@
                                 <div>
 
                                   <!-- Nav tabs -->
-                                  <ul class="nav nav-tabs" role="tablist" id="newtabslist">
+                                  <ul class="nav nav-tabs" role="tablist" id="tabslist">
+                                    <li role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">Home</a></li>
+                                    <li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Profile</a></li>
+                                    <li role="presentation"><a href="#messages" aria-controls="messages" role="tab" data-toggle="tab">Messages</a></li>
+                                    <li role="presentation"><a href="#settings" aria-controls="settings" role="tab" data-toggle="tab">Settings</a></li>
                                   </ul>
 
                                   <!-- Tab panes -->
-                                  <div class="tab-content" id="newtabscontent">
+                                  <div class="tab-content">
+                                    <div role="tabpanel" class="tab-pane active" id="home">...</div>
+                                    <div role="tabpanel" class="tab-pane" id="profile">...</div>
+                                    <div role="tabpanel" class="tab-pane" id="messages">...</div>
+                                    <div role="tabpanel" class="tab-pane" id="settings">...</div>
                                   </div>
 
                                 </div>
@@ -247,11 +255,7 @@
                                                 </div>
                                             </div>
                                             <div v-else>
-                                                <div class="row">
-                                                    <div class="col-md-7">
-                                                        <p>This minION is not currently running.</p>
-                                                    </div>
-                                                </div>
+
                                             </div>
 
                                                 <div class="col-md-4">
@@ -625,71 +629,6 @@
     <script>
 
         $(document).ready(function () {
-            //var minionsthings = {
-            //        minions: []
-            //    };
-
-            var seenminions=new Array();
-
-            function getObjectDiff(obj1, obj2) {
-                const diff = Object.keys(obj1).reduce((result, key) => {
-                    if (!obj2.hasOwnProperty(key)) {
-                        result.push(key);
-                    } else if (_.isEqual(obj1[key], obj2[key])) {
-                        const resultKeyIndex = result.indexOf(key);
-                        result.splice(resultKeyIndex, 1);
-                    }
-                    return result;
-                }, Object.keys(obj2));
-
-                return diff;
-            }
-
-            function deltaarray(listOriginal, listNew, uniqueProp) {
-                console.log("hello");
-                console.log(listOriginal);
-                console.log(listNew);
-                var delta = {
-                    added: [],
-                    removed: [],
-                    common: []
-                };
-                var _deltaMap = {};
-                var _objHolder = {};
-                listOriginal.forEach(function (item) {
-                    _objHolder[uniqueProp && getItemValue(item, uniqueProp) || item] = item;
-                    _deltaMap[uniqueProp && getItemValue(item, uniqueProp) || item] = 'remove';
-                });
-                listNew.forEach(function (item) {
-                    _objHolder[uniqueProp && getItemValue(item, uniqueProp) || item] = item;
-                    var d = _deltaMap[uniqueProp && getItemValue(item, uniqueProp) || item];
-                    if (Boolean(d) && d == 'remove') {
-                        _deltaMap[uniqueProp && getItemValue(item, uniqueProp) || item] = 'noChange';
-                    } else {
-                        _deltaMap[uniqueProp && getItemValue(item, uniqueProp) || item] = 'added';
-                    }
-                });
-                Object.keys(_deltaMap).forEach(function (id) {
-                    if (_deltaMap[id] == 'remove') delta.removed.push(_objHolder[id]);
-                    else if (_deltaMap[id] == 'added') delta.added.push(_objHolder[id]);
-                    else if (_deltaMap[id] == 'noChange') delta.common.push(_objHolder[id]);
-                });
-                return delta;
-            }
-
-            function getItemValue(item, uniqueProp) {
-                if (typeof uniqueProp==='string'){
-                    return item[uniqueProp];
-                }
-                else if	(typeof uniqueProp==='function')
-                {
-                    return uniqueProp(item);
-                }
-                throw 'Property selector should either be a property name or selector function.';
-            }
-
-
-
             function add(a, b) {
                 return a + b;
             }
@@ -908,7 +847,6 @@
             var tabslist = document.getElementById('tabslist');
             console.log(master_minion_list);
             function start() {
-                var newminions=new Array();
                 console.log('running start');
                 $.get("{% url 'activeminION_list' %}", function (data) {
                     //$( ".result" ).html( data
@@ -919,7 +857,6 @@
                     console.log(data);
                     for (var i = 0; i < ien; i++) {
                         var minIONname = data[i].minION_name;
-                        newminions.push(minIONname);
                         if ($.inArray(data[i].minION_name, master_minion_list) == -1) {
                             minionsthings.minions.push({
                                 scripts: '',
@@ -998,7 +935,9 @@
                                             minionsthings.minions[obj].scripts = scriptstuff;
                                         }
                                     }
+
                                 }
+
                             })
                         } else {
                             //console.log(data[i].minION_name);
@@ -1020,6 +959,7 @@
                                     minionsthings.minions[obj].livedata.disk_space.result.recommend_alert = data[i].warnings;
                                 }
                             }
+
                         }
                         //}
                         //console.log(master_minion_list);
@@ -1077,6 +1017,7 @@
                                         }
                                     }
                                 }
+
                             });
                             $.get("/api/v1/runs/" + data[i].last_run + "/rundetails/", function (data4) {
                                 for (obj in minionsthings.minions) {
@@ -1088,6 +1029,7 @@
                                             minionsthings.minions[obj].colour_stats = JSON.parse("[" + data4.slice(-1)[0].minKNOW_colours_string.replace("u'", "'") + "]");
                                         }
                                     }
+
                                 }
                             });
                             $.get(data[i].url + 'recentmessages', function (data5) {
@@ -1102,73 +1044,14 @@
                                         }
                                     }
                                 }
+
                             })
                         }
                     }
-                var minionchanges = deltaarray(seenminions,newminions,null);
-                console.log("added");
-                console.log(minionchanges.added);
-                console.log("remove");
-                console.log(minionchanges.removed);
-                console.log("common");
-                console.log(minionchanges.common);
-
-                //Process through the minIONs and update the UI as needed.
-                    for (var minion in minionchanges.added)
-                    {
-                        //Find the minION in the minionsthings object
-                        var mindex;
-                        for (obj in minionsthings.minions) {
-                            if (minionsthings.minions[obj].name === minionchanges.added[minion]){
-                                mindex = obj;
-                            }
-                        }
-                        var ul = document.getElementById("newtabslist");
-                        var li = document.createElement("li");
-                        li.setAttribute("id", minionchanges.added[minion]);
-                        li.setAttribute("role", "presentation");
-                        var a = document.createElement('a'),
-                            text = document.createTextNode(minionsthings.minions[mindex].status + ":" + minionchanges.added[minion] + "-" + minionsthings.minions[mindex].livedata.machine_id.result);
-                        a.setAttribute("href",'#div'+minionchanges.added[minion]);
-                        a.setAttribute("role",'tab');
-                        a.setAttribute("data-toggle",'tab');
-                        a.appendChild(text);
-                        //<li role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">Profile</a></li>
-                        li.appendChild(a);
-                        ul.appendChild(li);
-
-                        var divcontent = document.getElementById("newtabscontent");
-                        var div = document.createElement("div");
-                        div.setAttribute("id", 'div'+minionchanges.added[minion]);
-                        div.setAttribute("role","tabpanel");
-                        div.setAttribute("class","tab-pane");
-                        text = document.createTextNode(minionchanges.added[minion]);
-                        div.appendChild(text);
-                        divcontent.appendChild(div);
-                        var divpanel = document.createElement("div");
-                        divpanel.setAttribute("class", "panel panel-warning");
-                        var divheader = document.createElement("div");
-                        divheader.setAttribute("class", "panel-heading");
-                        var divheadtext = document.createElement("h3");
-                        divheadtext.setAttribute("class","panel-title");
-                        text = document.createTextNode("minKNOW Control options")
-                        divheadtext.appendChild(text);
-                        divheader.append(divheadtext);
-                        divpanel.appendChild(divheader);
-
-                        divcontent.appendChild(div);
-                    }
-
-                    for (var minion in minionchanges.removed){
-                        var elem = document.getElementById(minionchanges.removed[minion]);
-                        elem.parentNode.removeChild(elem);
-                        var elem = document.getElementById('div'+minionchanges.removed[minion]);
-                        elem.parentNode.removeChild(elem);
-                    }
-                seenminions = newminions.slice();
-
-                    
+                    console.log(minionsthings);
                 });
+
+
             }
 
             start();

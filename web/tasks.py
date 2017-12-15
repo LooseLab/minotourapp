@@ -6,6 +6,7 @@ import subprocess
 import tempfile
 import numpy as np
 from datetime import datetime, timedelta
+import time
 
 import pytz
 import redis
@@ -20,7 +21,9 @@ from django.db.models import F
 from django_mailgun import MailgunAPIError
 from twitter import *
 
-from alignment.models import PafStore, PafStore_transcriptome
+
+
+from alignment.models import PafStore, PafStore_transcriptome, PafRoughCov
 from alignment.models import PafSummaryCov, PafSummaryCov_transcriptome
 from alignment.models import SamStore
 from communication.models import Message
@@ -322,7 +325,7 @@ def processreads(runid, id, last_read):
 
         if barcode_all_reads not in sumstoresum[ipn_obj.run_id][ipn_obj.type].keys():
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads] = dict()
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["channels"] = '0' * 512
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["channels"] = '0' * 3000
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["pass_length"] = 0
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["pass_max_length"] = 0
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode_all_reads]["pass_min_length"] = 0
@@ -336,7 +339,7 @@ def processreads(runid, id, last_read):
 
         if barcode not in sumstoresum[ipn_obj.run_id][ipn_obj.type].keys():
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode] = dict()
-            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["channels"] = '0' * 512
+            sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["channels"] = '0' * 3000
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["pass_length"] = 0
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["pass_max_length"] = 0
             sumstoresum[ipn_obj.run_id][ipn_obj.type][barcode]["pass_min_length"] = 0
@@ -354,7 +357,7 @@ def processreads(runid, id, last_read):
 
         if barcode_all_reads not in sumstore[ipn_obj.run_id][ipn_obj.type][tm].keys():
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads] = dict()
-            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["channels"] = '0' * 512
+            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["channels"] = '0' * 3000
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["pass_length"] = 0
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["pass_max_length"] = 0
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["pass_min_length"] = 0
@@ -368,7 +371,7 @@ def processreads(runid, id, last_read):
 
         if barcode not in sumstore[ipn_obj.run_id][ipn_obj.type][tm].keys():
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode] = dict()
-            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["channels"] = '0' * 512
+            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["channels"] = '0' * 3000
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["pass_length"] = 0
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["pass_max_length"] = 0
             sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["pass_min_length"] = 0
@@ -559,6 +562,8 @@ def update_local_dict(sumstore,ipn_obj,tm,barcode_to_do):
     channel = ipn_obj.channel
     channel_sequence = sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["channels"]
     channel_sequence_list = list(channel_sequence)
+    ##Temporary fix to enable promethION data upload
+    #if channel <= 512:
     channel_sequence_list[channel - 1] = '1'
     sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["channels"] = ''.join(channel_sequence_list)
 
@@ -601,6 +606,8 @@ def update_local_dict_sum(sumstore, ipn_obj, barcode_to_do):
     channel = ipn_obj.channel
     channel_sequence = sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["channels"]
     channel_sequence_list = list(channel_sequence)
+    ##Temporary fix to enable promethION data upload
+    #if channel <= 512:
     channel_sequence_list[channel - 1] = '1'
     sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["channels"] = ''.join(channel_sequence_list)
 
@@ -959,6 +966,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
 
     try:
     #if True:
+        starttime = time.time()
         JobMaster.objects.filter(pk=job_master_id).update(running=True)
         REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
         Reference = ReferenceInfo.objects.get(pk=reference)
@@ -974,17 +982,21 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
             realflowcell = FlowCell.objects.get(pk=runid)
             flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
             for flowcell_run in flowcell_runs:
-                runidset.add(flowcell_run.id)
+                runidset.add(flowcell_run.run_id)
+                print (flowcell_run.run_id)
                 # we need to get the runids that make up this run
         else:
             runidset.add(runid)
 
-        fastqs = FastqRead.objects.filter(run_id__id__in=runidset, id__gt=int(last_read))[:1000]
+
+        fastqs = FastqRead.objects.filter(run_id__id__in=runidset, id__gt=int(last_read))[:2000]
 
         # logger.debug("fastqs",fastqs)
         read = ''
         fastqdict = dict()
         fastqtypedict = dict()
+        fastqbarcodegroup = dict()
+        fastqbarcode=dict()
 
         # logger.debug(len(fastqs))
 
@@ -992,9 +1004,13 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
             read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.extra.sequence)
             fastqdict[fastq.read_id] = fastq
             fastqtypedict[fastq.read_id] = fastq.type
+            fastqbarcodegroup[fastq.read_id] = fastq.barcode.barcodegroup
+            fastqbarcode[fastq.read_id] = fastq.barcode
             last_read = fastq.id
+
         # logger.debug(read)
         cmd = 'minimap2 -x map-ont -t 4 --secondary=no %s -' % (minimap2_ref)
+
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 stdin=subprocess.PIPE, shell=True)
@@ -1004,10 +1020,20 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
         #logger.debug(paf)
         pafdata = paf.splitlines()
 
+
+        doneminimaps = time.time()
+        print('!!!!!!!It took {} to run minimap.!!!!!!!!!'.format((doneminimaps-gotreadstime)))
+
+
         if inputtype =="run":
             runinstance = MinIONRun.objects.get(pk=runid)
 
         resultstore = dict()
+
+        ### OK - we need to fix this for getting the group barcodes and not the individual barcodes.
+
+        bulk_paf=[]
+        bulk_paf_rough = []
 
         for line in pafdata:
             line = line.strip('\n')
@@ -1019,6 +1045,8 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
             run = fastqdict[record[0]].run_id
             if inputtype == "flowcell":
                 newpaf = PafStore(flowcell=realflowcell, read=readid, read_type=typeid)
+                newpafstart = PafRoughCov(flowcell=realflowcell,read_type=typeid,barcode=fastqbarcode[record[0]],barcodegroup=fastqbarcodegroup[record[0]])
+                newpafend = PafRoughCov(flowcell=realflowcell,read_type=typeid,barcode=fastqbarcode[record[0]],barcodegroup=fastqbarcodegroup[record[0]])
             elif inputtype == "run":
                 newpaf = PafStore(run=run, read=readid, read_type=typeid)
             newpaf.reference = Reference
@@ -1039,24 +1067,43 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
             newpaf.nrm = int(record[9])  # models.IntegerField()#10	int	Number of residue matches
             newpaf.abl = int(record[10])  # models.IntegerField()#11	int	Alignment block length
             newpaf.mq = int(record[11])  # models.IntegerField()#12	int	Mapping quality (0-255; 255 for missing)
-            newpaf.save()
 
-            logger.info("---> After parsing paf record")
+
+            newpafstart.reference=Reference
+            newpafend.reference=Reference
+            newpafstart.chromosome=chromdict[record[5]]
+            newpafend.chromosome=chromdict[record[5]]
+            newpafstart.p=int(record[7])
+            newpafend.p=int(record[8])
+            newpafstart.i=1
+            newpafend.i=-1
+
+            bulk_paf_rough.append(newpafstart)
+            bulk_paf_rough.append(newpafend)
+            #newpaf.save()
+            bulk_paf.append(newpaf)
 
             if Reference not in resultstore:
                 resultstore[Reference] = dict()
             if chromdict[record[5]] not in resultstore[Reference]:
                 resultstore[Reference][chromdict[record[5]]] = dict()
-            if readid.barcode not in resultstore[Reference][chromdict[record[5]]]:
-                resultstore[Reference][chromdict[record[5]]][readid.barcode] = dict()
-            if typeid not in resultstore[Reference][chromdict[record[5]]][readid.barcode]:
-                resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid] = dict()
-            if 'read' not in resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]:
-                resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['read'] = set()
-                resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['length'] = 0
-            resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['read'].add(record[0])
-            resultstore[Reference][chromdict[record[5]]][readid.barcode][typeid]['length'] += int(record[3]) - int(
+            #readidbarcodegroup = readid.barcode.barcodegroup
+            readidbarcodegroup = fastqbarcodegroup[record[0]]
+            if readidbarcodegroup not in resultstore[Reference][chromdict[record[5]]]:
+                resultstore[Reference][chromdict[record[5]]][readidbarcodegroup] = dict()
+            if typeid not in resultstore[Reference][chromdict[record[5]]][readidbarcodegroup]:
+                resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid] = dict()
+            if 'read' not in resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid]:
+                resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid]['read'] = set()
+                resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid]['length'] = 0
+            resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid]['read'].add(record[0])
+            resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid]['length'] += int(record[3]) - int(
                 record[2]) + 1
+        PafStore.objects.bulk_create(bulk_paf)
+        PafRoughCov.objects.bulk_create(bulk_paf_rough)
+        donepafproc = time.time()
+
+        print('!!!!!!!It took {} to parse the paf.!!!!!!!!!'.format((donepafproc-doneminimaps)))
 
         for ref in resultstore:
             for ch in resultstore[ref]:
@@ -1075,13 +1122,17 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
                             summarycov, created2 = PafSummaryCov.objects.update_or_create(
                                 flowcell=realflowcell,
                                 read_type=ty,
-                                barcode=bc,
+                                barcodegroup=bc,
                                 reference=ref,
                                 chromosome=ch,
                             )
                         summarycov.read_count += len(resultstore[ref][ch][bc][ty]['read'])
                         summarycov.cumu_length += resultstore[ref][ch][bc][ty]['length']
                         summarycov.save()
+
+
+        jobdone = time.time()
+        print('!!!!!!!It took {} to process the resultstore.!!!!!!!!!'.format((jobdone - donepafproc)))
 
     except Exception as exception:
         print('An error occurred when running this task.')

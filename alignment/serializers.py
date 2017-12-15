@@ -3,6 +3,7 @@ from rest_framework import serializers
 from alignment.models import PafStore
 from alignment.models import PafRoughCov
 from alignment.models import PafSummaryCov
+from reads.models import BarcodeGroup
 
 from reference.models import ReferenceLine
 from reference.models import ReferenceInfo
@@ -37,6 +38,7 @@ class PafSummaryCovSerializer(serializers.HyperlinkedModelSerializer):
             'run',
             'read_type',
             'barcode',
+            'barcodegroup',
             'reference',
             'ref_name',
             'ref_len',

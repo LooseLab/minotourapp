@@ -21,6 +21,11 @@ class FlowCell(models.Model):
         related_name='flowcells'
     )
 
+    size = models.IntegerField(
+        blank=True,
+        null=True,
+    )
+
     def __str__(self):
         return "{} {}".format(self.name, self.id)
 
@@ -172,6 +177,10 @@ class MinIONRun(models.Model):
         default=False
     )
 
+    has_fastq = models.BooleanField(
+        default=True
+    )
+
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name='runs'
@@ -237,6 +246,26 @@ class MinIONRun(models.Model):
     def minKNOW_version(self):
         try:
             return self.RunDetails.last().minKNOW_version
+        except AttributeError:
+            return "undefined"
+
+    def max_channel(self):
+        try:
+            return self.runchansum.order_by('channel_number').last().channel_number
+        except AttributeError:
+            return "undefined"
+
+    def flowcell_type(self):
+        try:
+            max_channel = self.max_channel()
+            if max_channel != 'undefined':
+                if int(max_channel) <= 128:
+                    return 128
+                elif 128 < int(max_channel) <= 512:
+                    return 512
+                elif 512 < int(max_channel) <=3000:
+                    return 3000
+            return 512
         except AttributeError:
             return "undefined"
 
@@ -525,11 +554,13 @@ class FastqReadExtra(models.Model):
     )
 
     sequence = models.TextField(
-
+        blank=True,
+        null=True
     )
 
     quality = models.TextField(
-
+        blank=True,
+        null=True,
     )
 
     def __str__(self):
@@ -628,8 +659,8 @@ class RunSummaryBarcode(models.Model):
     )
 
     channel_presence = models.CharField(
-        max_length=512,
-        default='0' * 512
+        max_length=3000,
+        default='0' * 3000
     )
 
     class Meta:
@@ -662,7 +693,7 @@ class HistogramSummary(models.Model):
 
 
 class ChannelSummary(models.Model):
-    run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
+    run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='runchansum')
     channel_number = models.IntegerField()
     read_count = models.BigIntegerField(default=0)
     read_length = models.BigIntegerField(default=0)
@@ -767,8 +798,8 @@ class RunStatisticBarcode(models.Model):
     )
 
     channel_presence = models.CharField(
-        max_length=512,
-        default='0' * 512
+        max_length=3000,
+        default='0' * 3000
     )
 
     class Meta:
