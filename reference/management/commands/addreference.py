@@ -33,8 +33,12 @@ class Command(BaseCommand):
             srcname = options['reference']
             dstname = os.path.join(REFERENCELOCATION, os.path.basename(options['reference']))
 
-            print('origin: {}'.format(srcname))
-            print('destination: {}'.format(dstname))
+            if srcname.startswith('~') or  dstname.startswith('~'):
+                print('Path to reference file and env variable MT_REFERENCE_LOCATION must be absolute.')
+                exit()
+
+            #print('origin: {}'.format(srcname))
+            #print('destination: {}'.format(dstname))
 
             try:
                 shutil.copy(srcname, dstname)

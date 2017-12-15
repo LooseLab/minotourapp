@@ -9,6 +9,11 @@ urlpatterns = [
         name="paf_alignment_list"
     ),
     url(
+        r'^api/v1/runs/(?P<run_id>[0-9]+)/pafcover/(?P<barcode_id>[0-9]+)/(?P<read_type_id>[0-9]+)/(?P<chromosome_id>[0-9]+)/$',
+        views.rough_coverage_complete_chromosome,
+        name="rough_coverage_complete_chromosome"
+    ),
+    url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/pafsummary/$',
         views.paf_alignment_summary,
         name="paf_alignment_summary"
