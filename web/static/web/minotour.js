@@ -2181,13 +2181,6 @@ function MinotourFlowCellApp() {
         });
     };
 
-    this.updateChannelBasedCharts = function () {
-        console.log("!!!!! Passing to updateChannelBasedCharts !!!!");
-        console.log(self.channelSummary);
-        self.updatePoreChart(self.chartReadsPerPore, self.channelSummary, 'read_count');
-        self.updatePoreChart(self.chartBasesPerPore, self.channelSummary, 'read_length');
-    };
-
     this.updatetext = function () {
         datadump = new Array();
         //console.log('rundetails');
