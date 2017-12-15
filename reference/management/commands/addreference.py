@@ -1,5 +1,7 @@
 import os
 import shutil
+from shutil import SameFileError
+
 import subprocess
 
 from Bio import SeqIO
@@ -12,6 +14,7 @@ from reference.models import ReferenceLine
 
 
 class Command(BaseCommand):
+
     help = 'Add a custom reference sequence to the minoTour database. ' \
            'Pass the full path to the reference file.'
 
@@ -21,14 +24,30 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             print("Processing Reference {}".format(options['reference']))
-            print(os.path.basename(options['reference']))
+
+            #print(os.path.basename(options['reference']))
             REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
-            print(REFERENCELOCATION)
+
+            #print(REFERENCELOCATION)
+
             srcname = options['reference']
             dstname = os.path.join(REFERENCELOCATION, os.path.basename(options['reference']))
-            print (srcname)
-            print (dstname)
-            shutil.copy(srcname,dstname)
+
+            if srcname.startswith('~') or  dstname.startswith('~'):
+                print('Path to reference file and env variable MT_REFERENCE_LOCATION must be absolute.')
+                exit()
+
+            #print('origin: {}'.format(srcname))
+            #print('destination: {}'.format(dstname))
+
+            try:
+                shutil.copy(srcname, dstname)
+
+            except SameFileError as error:
+                print('Error trying to copy reference file to Minotour data folder.')
+                print(error)
+                exit()
+
             total_length=0
             subfile=dict()
             for record in SeqIO.parse(dstname, "fasta"):

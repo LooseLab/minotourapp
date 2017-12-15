@@ -2,3 +2,6 @@
 **pyc
 node_modules
 celerybeat-schedule
+debug.log
+celerybeat-schedule.db
+*/migrations/0*.py

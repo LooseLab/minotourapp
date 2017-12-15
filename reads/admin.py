@@ -20,12 +20,14 @@ from .models import ChannelSummary
 from .models import HistogramSummary
 from .models import UserOptions
 from .models import Barcode
+from .models import BarcodeGroup
 from .models import FlowCell
 from .models import FlowCellRun
+from .models import GroupRunType
 
 
 class MinionRunAdmin(admin.ModelAdmin):
-    list_display = ('start_time', 'active','sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','minION', 'id', 'last_read', 'last_entry')
+    list_display = ('start_time', 'active','sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','max_channel','flowcell_type', 'minION', 'id', 'last_read', 'last_entry')
 
 
 class RunStatisticsBarcodeAdmin(admin.ModelAdmin):
@@ -60,5 +62,7 @@ admin.site.register(ChannelSummary)
 admin.site.register(HistogramSummary)
 admin.site.register(UserOptions)
 admin.site.register(Barcode)
+admin.site.register(BarcodeGroup)
 admin.site.register(FlowCell)
 admin.site.register(FlowCellRun)
+admin.site.register(GroupRunType)

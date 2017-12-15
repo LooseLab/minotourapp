@@ -28,71 +28,19 @@
 
             <!-- Panel summary data -->
             <div id="panel-summary-data" class="row">
-                <div class="col-md-4">
+                <div class="col-md-12">
                     <div class='panel panel-info'>
                         <div class='panel-heading'>
                             <h3 class='panel-title'>minKNOW real time data</h3>
                         </div>
                         <div class='panel-body'>
-                            <div class='table-responsive'>
-                                <table class='table table-condensed'>
-                                    <tr>
-                                        <th>Category</td>
-                                        <th>Info</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Run Start Time</td>
-                                        <td><span id="RunStartTime"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>minKNOW computer name</td>
-                                        <td><span id="ComputerName"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>MinION Name</td>
-                                        <td><span id="MinIONName"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>ASIC ID</td>
-                                        <td><span id="asicid"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Current Script</td>
-                                        <td><span id="ScriptID"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Sample Name</td>
-                                        <td><span id="SampleName"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Run ID</td>
-                                        <td><span id="RunID"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>MinKNOW Version</td>
-                                        <td><span id="MinKNOWVersion"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Flow Cell ID</td>
-                                        <td><span id="FlowCellID"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Run Name</td>
-                                        <td><span id="RunName"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Sequencing Now</td>
-                                        <td><span id="CurrentlySequencing"></span></td>
-                                    </tr>
-                                    <tr>
-                                        <td>Barcoded</td>
-                                        <td><span id="Barcoded"></span></td>
-                                    </tr>
-                                </table>
-                            </div>
+
+                            <div id="target_for_data">Loading Flowcell Data.</div>
+                            <i>Please note: <b>'Known Issue'</b> Fields for this table are only completely populated if MinKNOW has been monitored with mincontrol. If not, then many fields will be missing.</i>
                         </div>
                     </div>
                 </div>
+
                 <div class="col-md-8">
                     <div class="panel panel-info">
                         <div class="panel-heading">
@@ -267,10 +215,18 @@
                     Read Numbers
                 </div>
 
-                <div id="average-read-lengths-overtime"
+                <div id="cumulative-yield-overtime"
                      class="col-md-12 highcharts-container"
                      style="width:100%; height:400px;">
-                    <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
+                    <i class="fa fa-cog fa-spin fa-3x"></i>
+                    Calculating
+                </div>
+
+                <div id="cumulative-number-reads-overtime"
+                     class="col-md-12 highcharts-container"
+                     style="width:100%; height:400px;">
+                    <i class="fa fa-cog fa-spin fa-3x"></i>
+                    Calculating
                 </div>
 
                 <div id="histogram-read-lengths"
@@ -288,11 +244,17 @@
 
                 </div>
 
-                <div id="cumulative-number-reads-overtime"
+                <div id="average-quality-overtime"
                      class="col-md-12 highcharts-container"
                      style="width:100%; height:400px;">
-                    <i class="fa fa-cog fa-spin fa-3x"></i>
-                    Calculating
+                    <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
+                </div>
+
+
+                <div id="average-read-lengths-overtime"
+                     class="col-md-12 highcharts-container"
+                     style="width:100%; height:400px;">
+                    <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
                 </div>
 
                 <div id="sequencing-rate"
@@ -310,14 +272,14 @@
                 </div>
 
                 <div id="reads-per-pore"
-                     class="col-md-6"
+                     class="col-md-12"
                      style="height:600px;">
                     <i class="fa fa-cog fa-spin fa-3x"></i>
                     Calculating reads per pore
                 </div>
 
                 <div id="bases-per-pore"
-                     class="col-md-6"
+                     class="col-md-12"
                      style="height:600px;">
                     <i class="fa fa-cog fa-spin fa-3x"></i>
                     Calculating reads per pore
@@ -352,16 +314,29 @@
             <!-- Panel sequence mapping -->
             <div id="panel-seq-map" class="row">
                 <div class="row">
-                    <div id="per-chrom-cov"
+                        <form class="form-horizontal">
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">Chromosome</label>
+
+                                <div class="col-sm-10 control-label" style="height: 100%; text-align: left;">
+                                    <select id="chromosome-id-select"></select>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <span id="chromosome-coverage-left">left</span>
+                    <span id="chromosome-coverage-right">right</span>
+
+                <div class="row">
+                    <div id="chromosome-coverage"
                          class="col-md-12 highcharts"
                          style="width:100%; height:400px;">
                         <i class="fa fa-cog fa-spin fa-3x"></i>
                         Calculating
                     </div>
                 </div>
-
                 <div class="row">
-                    <div id="per-chrom-cov-norm"
+                    <div id="per-chrom-cov"
                          class="col-md-12 highcharts"
                          style="width:100%; height:400px;">
                         <i class="fa fa-cog fa-spin fa-3x"></i>
@@ -378,14 +353,7 @@
                     </div>
                 </div>
 
-                <div class="row">
-                    <div id="chromosome-coverage"
-                         class="col-md-12 highcharts"
-                         style="width:100%; height:400px;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i>
-                        Calculating
-                    </div>
-                </div>
+
 
                 <span id="mapping-data"></span>
             </div>

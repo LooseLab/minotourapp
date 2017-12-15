@@ -48,6 +48,9 @@ INSTALLED_APPS = [
     'minikraken',
     'django_celery_beat',
     'communication',
+    'assembly',
+    'samples'
+#    'tabs',
 ]
 
 MIDDLEWARE = [
@@ -65,7 +68,7 @@ ROOT_URLCONF = 'minotourapp.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['templates/',],
+        'DIRS': [os.path.join(BASE_DIR, 'templates/')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -95,6 +98,7 @@ CACHES = {
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -105,7 +109,21 @@ DATABASES = {
         'NAME': get_env_variable("MT_DB_NAME"),
     }
 }
+'''
 
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'USER': get_env_variable("MT_DB_USER"),
+        'PASSWORD': get_env_variable("MT_DB_PASS"),
+        'HOST': get_env_variable("MT_DB_HOST"),
+        'PORT': '',
+        'NAME': get_env_variable("MT_DB_NAME"),
+    }
+}
+
+'''
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
@@ -144,6 +162,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, '../minotour_static/')
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -172,7 +191,7 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': 'debug.log',
+            'filename': os.path.join(BASE_DIR, 'minotour.log'),
         },
     },
     'loggers': {

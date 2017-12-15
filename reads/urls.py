@@ -23,6 +23,12 @@ urlpatterns = [
         name="fastqread-list"
     ),
     url(
+        #r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<page>[0-9]+)/$',
+        r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<readid>[\w\-]+)/$',
+        views.read_update,
+        name="fastqread-update"
+    ),
+    url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/readnames/$',
         views.readname_list,
         name="fastqreadnames-list"
@@ -157,6 +163,10 @@ urlpatterns = [
         views.barcode_detail,
         name="barcode-detail"),
     url(
+        r'^api/v1/barcodegroupss/(?P<pk>[0-9]+)/$',
+        views.barcodegroup_detail,
+        name="barcodegroup-detail"),
+    url(
         r'^api/v1/tasks/$',
         views.tasks_detail,
         name="tasks-detail"),
@@ -196,6 +206,16 @@ urlpatterns = [
         name="flowcellchannelsummary-list"
     ),
     url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/channelsummary_readcount/$',
+        views.flowcell_channel_summary_readcount,
+        name="flowcellchannelsummary-list-readcount"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/channelsummary_readkb/$',
+        views.flowcell_channel_summary_readkb,
+        name="flowcellchannelsummary-list-readkb"
+    ),
+    url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/rundetails/$',
         views.flowcell_run_status_list,
         name="flowcellrunstatus_list"
@@ -209,5 +229,18 @@ urlpatterns = [
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/runstats/(?P<checkid>[0-9]+)/$',
         views.flowcell_run_stats_latest,
         name="flowcellrunstats_latest"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/tasks/$',
+        views.flowcell_tasks_detail_all,
+        name="flowcelltasks-detail-all"),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/settask/$',
+        views.flowcellset_task_detail_all,
+        name="flowcellset-task-detail-all"),
+    url(
+        r'^api/v1/tabs/(?P<pk>[0-9]+)/$',
+        views.tabs_details,
+        name="tabs-details"
     ),
 ]
