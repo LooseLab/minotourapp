@@ -665,7 +665,8 @@ function MinotourFlowCellApp() {
     this.chart_yield = null;
     this.chart_average_read_length = null;
     this.chart_maximum_read_length = null;
-    this.average_read_lengths_overtime = null;
+    //this.average_read_lengths_overtime = null;
+    this.average_read_lengths_overtime_new = null;
     this.xy_scat_length = null;
     this.trans_top100 = null;
     this.chart_cumulative_number_reads_overtime = null;
@@ -795,38 +796,64 @@ function MinotourFlowCellApp() {
         "Read Length By Chromosome".toUpperCase()
     );
 
-    this.average_read_lengths_overtime = this.makeChart2(
+    /*this.average_read_lengths_overtime = this.makeChart2(
         "average-read-lengths-overtime",
+        "average read length over time".toUpperCase(),
+        "average read length".toUpperCase()
+    );*/
+
+    this.average_read_lengths_overtime_new = this.makeChart2(
+        "average-read-lengths-overtime-new",
         "average read length over time".toUpperCase(),
         "average read length".toUpperCase()
     );
 
-    this.average_quality_overtime = this.makeChart2(
+    /*this.average_quality_overtime = this.makeChart2(
         "average-quality-overtime",
+        "average quality over time".toUpperCase(),
+        "average read quality score".toUpperCase()
+    );*/
+
+    this.average_quality_overtime_new = this.makeChart2(
+        "average-quality-overtime-new",
         "average quality over time".toUpperCase(),
         "average read quality score".toUpperCase()
     );
 
-    this.chart_cumulative_number_reads_overtime = this.makeChart2(
+    /*this.chart_cumulative_number_reads_overtime = this.makeChart2(
         "cumulative-number-reads-overtime",
+        "cumulative reads".toUpperCase(),
+        "cumulative reads".toUpperCase()
+    );*/
+
+    this.chart_cumulative_number_reads_overtime_new = this.makeChart2(
+        "cumulative-number-reads-overtime-new",
         "cumulative reads".toUpperCase(),
         "cumulative reads".toUpperCase()
     );
 
+    /*
     this.chart_cumulative_yield_overtime = this.makeChart2(
         "cumulative-yield-overtime",
         "cumulative bases".toUpperCase(),
         "cumulative bases".toUpperCase()
     );
+    */
 
-    this.chartSequencingRate = this.makeChart2(
-        "sequencing-rate",
+    this.chart_cumulative_yield_overtime_new = this.makeChart2(
+        "cumulative-yield-overtime-new",
+        "cumulative bases".toUpperCase(),
+        "cumulative bases".toUpperCase()
+    );
+
+    this.chartSequencingRate_new = this.makeChart2(
+        "sequencing-rate-new",
         "sequencing rate".toUpperCase(),
         "bases/second".toUpperCase()
     );
 
-    this.chartSequencingSpeed = this.makeChart2(
-        "sequencing-speed",
+    this.chartSequencingSpeed_new = this.makeChart2(
+        "sequencing-speed-new",
         "sequencing speed".toUpperCase(),
         "bases/channel/second".toUpperCase()
     );
@@ -1151,6 +1178,246 @@ function MinotourFlowCellApp() {
         }
     };
 
+    this.requestCumuBases = function (id){
+        var url = "/api/v1/flowcells/" + id + "/summarybarcodebyminute_bases";
+        $.get(url,function (data){
+            self.cumulativereadsbybarcode=data;
+            self.updateCumuBaseChart();
+        })
+
+    };
+
+    this.requestSpeed = function (id){
+        var url = "/api/v1/flowcells/" + id + "/summarybarcodebyminute_speed";
+        $.get(url,function (data){
+            self.speedreadsbybarcode=data;
+            self.updateSpeedBaseChart();
+        })
+
+    };
+
+    this.requestQualTime = function (id){
+        var url = "/api/v1/flowcells/" + id + "/summarybarcodebyminute_quality";
+        $.get(url,function (data){
+            self.qualityovertime=data;
+            self.updateQualChart();
+        })
+    };
+
+    this.requestLengthTime = function (id){
+        var url = "/api/v1/flowcells/" + id + "/summarybarcodebyminute_length";
+        $.get(url,function (data){
+            self.lengthovertime=data;
+            self.updateLengthChart();
+        })
+    };
+
+    this.updateLengthChart = function () {
+        var chart = self.average_read_lengths_overtime_new;
+        var selectedBarcode = self.selectedBarcode;
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+        for (var typeName of Object.keys(self.lengthovertime[selectedBarcode])) {
+            for (var status of Object.keys(self.lengthovertime[selectedBarcode][typeName])) {
+                chart.addSeries({
+                    name: selectedBarcode + " - " + typeName + " - " + status,
+                    data: self.lengthovertime[selectedBarcode][typeName][status]
+                });
+            }
+        }
+        for (var i in self.rundata) {
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
+            var name = self.rundata[i]['id']
+            //chart.xAxis[0].addPlotBand({
+            //    from: starttime,
+            //    to: endtime,
+            //    color: '#FCFFC5',
+            //    id: name
+            //});
+            chart.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
+        }
+    };
+
+    this.updateQualChart = function () {
+        var chart = self.average_quality_overtime_new;
+        var selectedBarcode = self.selectedBarcode;
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+        for (var typeName of Object.keys(self.qualityovertime[selectedBarcode])) {
+            for (var status of Object.keys(self.qualityovertime[selectedBarcode][typeName])) {
+                chart.addSeries({
+                    name: selectedBarcode + " - " + typeName + " - " + status,
+                    data: self.qualityovertime[selectedBarcode][typeName][status]
+                });
+            }
+        }
+        for (var i in self.rundata) {
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
+            var name = self.rundata[i]['id']
+            //chart.xAxis[0].addPlotBand({
+            //    from: starttime,
+            //    to: endtime,
+            //    color: '#FCFFC5',
+            //    id: name
+            //});
+            chart.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
+        }
+    };
+
+    this.updateSpeedBaseChart = function () {
+        var chart = self.chartSequencingRate_new;
+        var chart2 = self.chartSequencingSpeed_new;
+        var selectedBarcode = self.selectedBarcode;
+
+
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        // Remove previous series
+        while (chart2.series.length > 0) {
+            chart2.series[0].remove();
+        }
+
+        for (var typeName of Object.keys(self.speedreadsbybarcode[selectedBarcode]["speed"])) {
+            for (var status of Object.keys(self.speedreadsbybarcode[selectedBarcode]["speed"][typeName])) {
+                chart2.addSeries({
+                    name: selectedBarcode + " - " + typeName + " - " + status,
+                    data: self.speedreadsbybarcode[selectedBarcode]["speed"][typeName][status]
+                });
+            }
+        }
+
+        for (var typeName of Object.keys(self.speedreadsbybarcode[selectedBarcode]["rate"])) {
+            for (var status of Object.keys(self.speedreadsbybarcode[selectedBarcode]["rate"][typeName])) {
+                chart.addSeries({
+                    name: selectedBarcode + " - " + typeName + " - " + status,
+                    data: self.speedreadsbybarcode[selectedBarcode]["rate"][typeName][status]
+                });
+            }
+        }
+
+        for (var i in self.rundata) {
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
+            var name = self.rundata[i]['id']
+            //chart.xAxis[0].addPlotBand({
+            //    from: starttime,
+            //    to: endtime,
+            //    color: '#FCFFC5',
+            //    id: name
+            //});
+            chart.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
+            chart2.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
+        }
+    };
+
+
+    this.updateCumuBaseChart = function () {
+        var chart = self.chart_cumulative_yield_overtime_new;
+        var chart2 = self.chart_cumulative_number_reads_overtime_new;
+        var selectedBarcode = self.selectedBarcode;
+
+
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+
+        // Remove previous series
+        while (chart2.series.length > 0) {
+            chart2.series[0].remove();
+        }
+
+        for (var typeName of Object.keys(self.cumulativereadsbybarcode[selectedBarcode]["bases"])) {
+            for (var status of Object.keys(self.cumulativereadsbybarcode[selectedBarcode]["bases"][typeName])) {
+                chart.addSeries({
+                    name: selectedBarcode + " - " + typeName + " - " + status,
+                    data: self.cumulativereadsbybarcode[selectedBarcode]["bases"][typeName][status]
+                });
+            }
+        }
+
+        for (var typeName of Object.keys(self.cumulativereadsbybarcode[selectedBarcode]["reads"])) {
+            for (var status of Object.keys(self.cumulativereadsbybarcode[selectedBarcode]["reads"][typeName])) {
+                chart2.addSeries({
+                    name: selectedBarcode + " - " + typeName + " - " + status,
+                    data: self.cumulativereadsbybarcode[selectedBarcode]["reads"][typeName][status]
+                });
+            }
+        }
+
+        for (var i in self.rundata) {
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
+            var name = self.rundata[i]['id']
+            //chart.xAxis[0].addPlotBand({
+            //    from: starttime,
+            //    to: endtime,
+            //    color: '#FCFFC5',
+            //    id: name
+            //});
+            chart.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
+            chart2.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
+        }
+    };
+
+
     this.requestSummaryByMinuteData = function (id) {
         /*
          * Request summary by minute data
@@ -1218,12 +1485,12 @@ function MinotourFlowCellApp() {
     };
 
     this.updateSummaryByMinuteBasedCharts = function () {
-        self.updateAverageReadLengthOverTimeChart();
-        self.updateAverageQualityOverTimeChart();
-        self.updateCumulativeNumberOfReadsOverTimeChart();
-        self.updateCumulativeYieldOverTimeChart();
-        self.updateSequencingRateChart();
-        self.updateSequencingSpeedChart();
+        //self.updateAverageReadLengthOverTimeChart();
+        //self.updateAverageQualityOverTimeChart();
+        //self.updateCumulativeNumberOfReadsOverTimeChart();
+        //self.updateCumulativeYieldOverTimeChart();
+        //self.updateSequencingRateChart();
+        //self.updateSequencingSpeedChart();
     };
 
     this.updateSequencingSpeedChart = function () {
@@ -2940,7 +3207,7 @@ function MinotourFlowCellApp() {
             console.log("rundata");
             console.log(self.rundata);
             self.updateBarcodeNavTab();
-            self.requestSummaryByMinuteData(self.id);
+            //self.requestSummaryByMinuteData(self.id);
             self.requestSummaryData(self.id);
             self.requestHistogramData(self.id);
             self.requestChannelSummaryData(self.id);
@@ -2949,6 +3216,10 @@ function MinotourFlowCellApp() {
             self.liveUpdateTasks(self.id);
             self.requestKraken(self.id);
             self.requestPafData(self.id);
+            self.requestCumuBases(self.id);
+            self.requestQualTime(self.id);
+            self.requestLengthTime(self.id);
+            self.requestSpeed(self.id);
             //self.updatetext();
 
 

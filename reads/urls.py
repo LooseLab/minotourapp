@@ -196,6 +196,26 @@ urlpatterns = [
         name="flowcellsummarybarcodebyminute-detail"
     ),
     url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute_bases/$',
+        views.flowcell_summary_barcode_by_minute_bases,
+        name="flowcellsummarybarcodebyminute-detail_bases"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute_quality/$',
+        views.flowcell_summary_barcode_by_minute_quality,
+        name="flowcellsummarybarcodebyminute-detail_quality"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute_length/$',
+        views.flowcell_summary_barcode_by_minute_length,
+        name="flowcellsummarybarcodebyminute-detail_length"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute_speed/$',
+        views.flowcell_summary_barcode_by_minute_speed,
+        name="flowcellsummarybarcodebyminute-detail_speed"
+    ),
+    url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/histogramsummary/$',
         views.flowcell_histogram_summary,
         name="flowcellhistogramsummary-detail"

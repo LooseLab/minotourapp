@@ -1022,7 +1022,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
 
 
         doneminimaps = time.time()
-        print('!!!!!!!It took {} to run minimap.!!!!!!!!!'.format((doneminimaps-gotreadstime)))
+        #print('!!!!!!!It took {} to run minimap.!!!!!!!!!'.format((doneminimaps-gotreadstime)))
 
 
         if inputtype =="run":

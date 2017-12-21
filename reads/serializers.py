@@ -144,8 +144,8 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
 
 
     def create(self, validated_data):
-        print('>>>> inside create function of Fastqread serializer...')
-        print (validated_data)
+        #print('>>>> inside create function of Fastqread serializer...')
+        #print (validated_data)
         #print(validated_data['quality'])
         #
         #qualmean = np.mean(np.array(list((ord(val) - 33) for val in qualitystring)))
