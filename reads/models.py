@@ -29,6 +29,7 @@ class FlowCell(models.Model):
     def __str__(self):
         return "{} {}".format(self.name, self.id)
 
+
 class MinION(models.Model):
     minION_name = models.CharField(max_length=64)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='minIONs')
