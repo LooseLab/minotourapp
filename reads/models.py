@@ -26,6 +26,7 @@ class FlowCell(models.Model):
         null=True,
     )
 
+
     def __str__(self):
         return "{} {}".format(self.name, self.id)
 
@@ -207,6 +208,18 @@ class MinIONRun(models.Model):
 
     def __str__(self):
         return "{} - {}".format(self.run_name, self.run_id)
+
+    def flowcell_name(self):
+        try:
+            return self.flowcellrun.last().flowcell.name
+        except AttributeError:
+            return "undefined"
+
+    def flowcell(self):
+        try:
+            return self.flowcellrun.last().flowcell.id
+        except AttributeError:
+            return "undefined"
 
     def last_entry(self):
         try:
