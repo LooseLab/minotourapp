@@ -14,8 +14,10 @@
 <div id="container" style="height: 400px; min-width: 310px"></div>
 
 <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-<script src="https://code.highcharts.com/stock/highstock.js"></script>
-<script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<!-- <script src="https://code.highcharts.com/stock/highstock.js"></script> -->
+<!-- <script src="https://code.highcharts.com/stock/modules/exporting.js"></script> -->
 <script>
 
     function requestMappedChromosomes(run_id) {
@@ -102,8 +104,16 @@
         var url = '/api/v1/runs/' + run_id + '/pafcover/' + barcode_id + '/' + read_type_id + '/' + chromosome_id + '/' + Math.round(e.min) + '/' + Math.round(e.max) + '/';
 
         /**
-         * Load new data depending on the selected min and max
-         */
+        * Load new data depending on the selected min and max
+        */
+
+        console.log(e);
+        console.log(e.min);
+        console.log(e.max);
+
+        if (e.userMin === undefined || e.userMax === undefined) {
+            console.log('e.min or e.max is null');
+        }
 
         var chart = Highcharts.charts[1];
 
@@ -116,7 +126,6 @@
             chart.hideLoading();
         });
     }
-
 
     function initialiseChart3() {
 
@@ -140,6 +149,49 @@
 
         $.getJSON(url, function (data) {
             var detailChart;
+
+            function afterSelection(event) {
+                event.preventDefault();
+
+                // console.log(event);
+                console.log(event.target.renderTo.id)
+                return;
+
+                var extremesObject = event.xAxis[0];
+                var min = extremesObject.min;
+                var max = extremesObject.max;
+                var detailData = [];
+                var xAxis = this.xAxis[0];
+
+                // reverse engineer the last part of the data
+                $.each(this.series[0].data, function () {
+                    if (this.x > min && this.x < max) {
+                        detailData.push([this.x, this.y]);
+                    }
+                });
+
+                // move the plot bands to reflect the new detail span
+                xAxis.removePlotBand('mask-before');
+                xAxis.addPlotBand({
+                    id: 'mask-before',
+                    from: data[0][0],
+                    to: min,
+                    color: 'rgba(0, 0, 0, 0.2)'
+                });
+
+                xAxis.removePlotBand('mask-after');
+                xAxis.addPlotBand({
+                    id: 'mask-after',
+                    from: max,
+                    to: data[data.length - 1][0],
+                    color: 'rgba(0, 0, 0, 0.2)'
+                });
+
+
+                detailChart.series[0].setData(detailData);
+
+                /*return false;*/
+            }
 
             // create the detail chart
             function createDetail(masterChart) {
@@ -174,6 +226,9 @@
                         },
                         step: true,
                         zoomType: 'x',
+                        events: {
+                            selection: afterSelection
+                        }
                     },
                     credits: {
                         enabled: false
@@ -183,9 +238,9 @@
                     },
                     xAxis: {
                         type: 'line',
-                        events: {
-                            afterSetExtremes: afterSetExtremes
-                        }
+                        // events: {
+                        //     afterSetExtremes: afterSetExtremes
+                        // }
                     },
                     yAxis: {
                         title: {
@@ -241,44 +296,7 @@
 
                             // listen to the selection event on the master chart to update the
                             // extremes of the detail chart
-                            selection: function (event) {
-                                event.preventDefault();
-
-                                var extremesObject = event.xAxis[0];
-                                var min = extremesObject.min;
-                                var max = extremesObject.max;
-                                var detailData = [];
-                                var xAxis = this.xAxis[0];
-
-                                // reverse engineer the last part of the data
-                                $.each(this.series[0].data, function () {
-                                    if (this.x > min && this.x < max) {
-                                        detailData.push([this.x, this.y]);
-                                    }
-                                });
-
-                                // move the plot bands to reflect the new detail span
-                                xAxis.removePlotBand('mask-before');
-                                xAxis.addPlotBand({
-                                    id: 'mask-before',
-                                    from: data[0][0],
-                                    to: min,
-                                    color: 'rgba(0, 0, 0, 0.2)'
-                                });
-
-                                xAxis.removePlotBand('mask-after');
-                                xAxis.addPlotBand({
-                                    id: 'mask-after',
-                                    from: max,
-                                    to: data[data.length - 1][0],
-                                    color: 'rgba(0, 0, 0, 0.2)'
-                                });
-
-
-                                detailChart.series[0].setData(detailData);
-
-                                /*return false;*/
-                            }
+                            selection: afterSelection
                         }
                     },
                     title: {

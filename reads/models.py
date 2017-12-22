@@ -21,8 +21,19 @@ class FlowCell(models.Model):
         related_name='flowcells'
     )
 
+    def has_barcode(self):
+        flowcellruns = self.flowcelldetails
+
+        for flowcellrun in flowcellruns.all():
+            run = flowcellrun.run
+            if run.is_barcoded:
+                return True
+
+        return False
+
     def __str__(self):
         return "{} {}".format(self.name, self.id)
+
 
 class MinION(models.Model):
     minION_name = models.CharField(max_length=64)
