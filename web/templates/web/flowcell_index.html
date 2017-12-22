@@ -215,7 +215,14 @@
                     Read Numbers
                 </div>
 
-                <div id="cumulative-number-reads-overtime"
+                <div id="cumulative-yield-overtime-new"
+                     class="col-md-12 highcharts-container"
+                     style="width:100%; height:400px;">
+                    <i class="fa fa-cog fa-spin fa-3x"></i>
+                    Calculating
+                </div>
+
+                <div id="cumulative-number-reads-overtime-new"
                      class="col-md-12 highcharts-container"
                      style="width:100%; height:400px;">
                     <i class="fa fa-cog fa-spin fa-3x"></i>
@@ -236,20 +243,33 @@
                     Calculating bases sequenced by read length
 
                 </div>
-
+                <!--
                 <div id="average-quality-overtime"
                      class="col-md-12 highcharts-container"
                      style="width:100%; height:400px;">
                     <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
                 </div>
-
-
-                <div id="average-read-lengths-overtime"
+                -->
+                <div id="average-quality-overtime-new"
                      class="col-md-12 highcharts-container"
                      style="width:100%; height:400px;">
                     <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
                 </div>
 
+                <!--
+                <div id="average-read-lengths-overtime"
+                     class="col-md-12 highcharts-container"
+                     style="width:100%; height:400px;">
+                    <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
+                </div>
+                -->
+                <div id="average-read-lengths-overtime-new"
+                     class="col-md-12 highcharts-container"
+                     style="width:100%; height:400px;">
+                    <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Average Read Lengths Over Time
+                </div>
+
+                <!--
                 <div id="sequencing-rate"
                      class="col-md-12 highcharts-container"
                      style="width:100%; height:400px;">
@@ -263,16 +283,30 @@
                     <i class="fa fa-cog fa-spin fa-3x"></i>
                     Calculating
                 </div>
+                -->
+                <div id="sequencing-rate-new"
+                     class="col-md-12 highcharts-container"
+                     style="width:100%; height:400px;">
+                    <i class="fa fa-cog fa-spin fa-3x"></i>
+                    Calculating
+                </div>
+
+                <div id="sequencing-speed-new"
+                     class="col-md-12 highcharts-container"
+                     style="width:100%; height:400px;">
+                    <i class="fa fa-cog fa-spin fa-3x"></i>
+                    Calculating
+                </div>
 
                 <div id="reads-per-pore"
-                     class="col-md-6"
+                     class="col-md-12"
                      style="height:600px;">
                     <i class="fa fa-cog fa-spin fa-3x"></i>
                     Calculating reads per pore
                 </div>
 
                 <div id="bases-per-pore"
-                     class="col-md-6"
+                     class="col-md-12"
                      style="height:600px;">
                     <i class="fa fa-cog fa-spin fa-3x"></i>
                     Calculating reads per pore
@@ -307,16 +341,29 @@
             <!-- Panel sequence mapping -->
             <div id="panel-seq-map" class="row">
                 <div class="row">
-                    <div id="per-chrom-cov"
+                        <form class="form-horizontal">
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">Chromosome</label>
+
+                                <div class="col-sm-10 control-label" style="height: 100%; text-align: left;">
+                                    <select id="chromosome-id-select"></select>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <span id="chromosome-coverage-left">left</span>
+                    <span id="chromosome-coverage-right">right</span>
+
+                <div class="row">
+                    <div id="chromosome-coverage"
                          class="col-md-12 highcharts"
                          style="width:100%; height:400px;">
                         <i class="fa fa-cog fa-spin fa-3x"></i>
                         Calculating
                     </div>
                 </div>
-
                 <div class="row">
-                    <div id="per-chrom-cov-norm"
+                    <div id="per-chrom-cov"
                          class="col-md-12 highcharts"
                          style="width:100%; height:400px;">
                         <i class="fa fa-cog fa-spin fa-3x"></i>
@@ -333,14 +380,7 @@
                     </div>
                 </div>
 
-                <div class="row">
-                    <div id="chromosome-coverage"
-                         class="col-md-12 highcharts"
-                         style="width:100%; height:400px;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i>
-                        Calculating
-                    </div>
-                </div>
+
 
                 <span id="mapping-data"></span>
             </div>
@@ -377,6 +417,7 @@
     <script>
         $(document).ready(function () {
             var app = new MinotourFlowCellApp();
+            console.log("minotour flow cell app runing");
             app.init();
 
     });

@@ -163,6 +163,10 @@ urlpatterns = [
         views.barcode_detail,
         name="barcode-detail"),
     url(
+        r'^api/v1/barcodegroupss/(?P<pk>[0-9]+)/$',
+        views.barcodegroup_detail,
+        name="barcodegroup-detail"),
+    url(
         r'^api/v1/tasks/$',
         views.tasks_detail,
         name="tasks-detail"),
@@ -192,6 +196,26 @@ urlpatterns = [
         name="flowcellsummarybarcodebyminute-detail"
     ),
     url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute_bases/$',
+        views.flowcell_summary_barcode_by_minute_bases,
+        name="flowcellsummarybarcodebyminute-detail_bases"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute_quality/$',
+        views.flowcell_summary_barcode_by_minute_quality,
+        name="flowcellsummarybarcodebyminute-detail_quality"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute_length/$',
+        views.flowcell_summary_barcode_by_minute_length,
+        name="flowcellsummarybarcodebyminute-detail_length"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute_speed/$',
+        views.flowcell_summary_barcode_by_minute_speed,
+        name="flowcellsummarybarcodebyminute-detail_speed"
+    ),
+    url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/histogramsummary/$',
         views.flowcell_histogram_summary,
         name="flowcellhistogramsummary-detail"
@@ -200,6 +224,16 @@ urlpatterns = [
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/channelsummary/$',
         views.flowcell_channel_summary,
         name="flowcellchannelsummary-list"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/channelsummary_readcount/$',
+        views.flowcell_channel_summary_readcount,
+        name="flowcellchannelsummary-list-readcount"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/channelsummary_readkb/$',
+        views.flowcell_channel_summary_readkb,
+        name="flowcellchannelsummary-list-readkb"
     ),
     url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/rundetails/$',

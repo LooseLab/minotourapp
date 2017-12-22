@@ -40,7 +40,9 @@ function afterSetExtremes(e) {
 
 function makeStepLineChart(divName, chartTitle, yAxisTitle) {
 
+
     var chart = Highcharts.stockChart(divName, {
+
 
         chart: {
             zoomType: 'x',
@@ -100,11 +102,14 @@ function makeStepLineChart(divName, chartTitle, yAxisTitle) {
         },
     });
 
+    console.log("finished this step");
+
     return chart;
 
 }
 
 function updateStepLineChart (chart, start = 0, end = 0) {
+    console.log("updateStepLineChart running");
 
     var select = document.getElementById('chromosome-id-select');
     var selected_index = select.selectedIndex;
@@ -126,8 +131,9 @@ function updateStepLineChart (chart, start = 0, end = 0) {
     //var barcode_id = self.selectedBarcode;
     var selected_option_value = selected_option.value;
 
-    var url = '/api/v1/runs/' + run_id + '/pafcover/' + barcode_id + '/' + read_type_id + '/' + chromosome_id + '/' + start + '/' + end + '/';
-
+    var url = '/api/v1/flowcells/' + run_id + '/pafcover/' + barcode_id + '/' + read_type_id + '/' + chromosome_id + '/' + start + '/' + end + '/';
+    console.log("I'm looking for this sunshine!");
+    console.log(url);
     $.getJSON(url, function(data) {
 
         // Remove previous series
@@ -152,6 +158,7 @@ function updateStepLineChart (chart, start = 0, end = 0) {
         //     step: true,
         //  });
 
+
         chart.addSeries({
             // name: barcode + " - " + typeName,
             name: 'Simplified',
@@ -161,6 +168,7 @@ function updateStepLineChart (chart, start = 0, end = 0) {
 
         console.log('---> orderedDataSimplified...');
         console.log(orderedDataSimplified);
+
 
         if (orderedDataSimplified !== undefined) {
             var start = orderedDataSimplified[0][0];
@@ -178,7 +186,10 @@ function requestMappedChromosomes (run_id) {
      *
      */
 
-    var url = '/api/v1/runs/' + run_id + '/references';
+    console.log('request mapped chromsomeoms runnings');
+
+    //var url = '/api/v1/runs/' + run_id + '/references';
+    var url = '/api/v1/flowcells/' + run_id + '/references';
 
     $.getJSON(url, function(data) {
 
@@ -189,11 +200,15 @@ function requestMappedChromosomes (run_id) {
         while (select.length > 0) {
             select.remove(0);
         }
+        var option = document.createElement('option');
+        option.text = "select barcode and chromosome option";
+        option.value = '-1';
+        select.add(option);
 
         for (var i = 0; i < data.length; i++) {
             var option = document.createElement('option');
 
-            var value_combination = data[i]['run_id'] + '_' + data[i]['barcode_id'] + '_' + data[i]['read_type_id'] + '_' + data[i]['reference_id'] + '_' + data[i]['chromosome_id'];
+            var value_combination = data[i]['flowcell_id'] + '_' + data[i]['barcode_id'] + '_' + data[i]['read_type_id'] + '_' + data[i]['reference_id'] + '_' + data[i]['chromosome_id'];
 
             option.text = data[i]['barcode_name'] + ' - ' + data[i]['read_type_name'] + ' - ' + data[i]['reference_name'] + ' - ' + data[i]['chromosome_name'];
             option.value = value_combination;

@@ -129,49 +129,36 @@ class MinIONEventTypeSerializer(serializers.HyperlinkedModelSerializer):
 class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
 # class FastqReadSerializer(serializers.Serializer):
 
-    sequence = serializers.CharField()
-    quality = serializers.CharField()
+    sequence = serializers.CharField(allow_blank=True)
+    quality = serializers.CharField(allow_blank=True)
+
+    #sequence = serializers.ReadOnlyField(source="extra.sequence")
+    #quality = serializers.ReadOnlyField(source="extra.quality")
+
 
     class Meta:
         model = FastqRead
         fields = ('url', 'read_id', 'read', 'channel', 'barcode', 'sequence_length', 'quality_average', 'sequence', 'quality', 'is_pass',
                   'start_time', 'run_id', 'type','created_date')
 
-    # read_id = serializers.CharField(
-    #     max_length=96
-    # )
-    #
-    # read = serializers.IntegerField()
-    #
-    # channel = serializers.IntegerField()
-    #
-    # barcode = serializers.CharField()
-    #
-    # sequence = serializers.CharField()
-    #
-    # quality = serializers.CharField()
-    #
-    # is_pass = serializers.BooleanField()
-    #
-    # start_time = serializers.DateTimeField()
-    #
-    # run_id = serializers.CharField()
-    #
-    # type = serializers.CharField()
+
 
     def create(self, validated_data):
         #print('>>>> inside create function of Fastqread serializer...')
+        #print (validated_data)
         #print(validated_data['quality'])
-        qualitystring = validated_data['quality']
-        qualmean = np.mean(np.array(list((ord(val) - 33) for val in qualitystring)))
+        #
+        #qualmean = np.mean(np.array(list((ord(val) - 33) for val in qualitystring)))
         #print (qualmean)
         fastqread = FastqRead(
             read_id = validated_data['read_id'],
             read = validated_data['read'],
             channel = validated_data['channel'],
             barcode = validated_data['barcode'],
-            sequence_length = len(validated_data['sequence']),
-            quality_average = qualmean,
+            #sequence_length = len(validated_data['sequence']),
+            sequence_length = validated_data['sequence_length'],
+            #quality_average = qualmean,
+            quality_average=validated_data['quality_average'],
             is_pass = validated_data['is_pass'],
             start_time = validated_data['start_time'],
             run_id = validated_data['run_id'],
@@ -183,14 +170,14 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
 
         #print('>>>> save')
         fastqread.save()
+        if fastqread.run_id.has_fastq:
+            fastqread_extra = FastqReadExtra(
+                fastqread = fastqread,
+                sequence = validated_data['sequence'],
+                quality = validated_data['quality']
+            )
 
-        fastqread_extra = FastqReadExtra(
-            fastqread = fastqread,
-            sequence = validated_data['sequence'],
-            quality = validated_data['quality']
-        )
-
-        fastqread_extra.save()
+            fastqread_extra.save()
 
         return fastqread
 
@@ -446,10 +433,13 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
             'run_name',
             'run_id',
             'is_barcoded',
+            'has_fastq',
             'minION',
             'id',
             'last_read',
             'last_entry',
+            'max_channel',
+            'flowcell_type',
             'jobstodo',
             'barcodes',
             'to_delete',

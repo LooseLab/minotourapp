@@ -18,7 +18,6 @@ def sine(frequency, length, rate):
 def play_tone(stream, frequency=440, length=1, rate=128000):
     chunks = []
     chunks.append(sine(frequency*4, length, rate))
-
     chunk = numpy.concatenate(chunks) * 0.25
     #print chunk
     asign = numpy.sign(chunk)
@@ -65,7 +64,7 @@ class ThreadingExample(object):
             #print('Doing something imporant in the background')
 	    if len(self.datadict) > 0:
 	        for bit in self.datadict.pop(0):
-		    play_tone(self.stream,frequency=bit,length=0.002)
+		    play_tone(self.stream,frequency=bit,length=0.01)
 
             time.sleep(self.interval)
 

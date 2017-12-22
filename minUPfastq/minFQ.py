@@ -5,6 +5,7 @@ import platform  # MS
 import sys
 import threading
 import time
+import gzip
 
 # import MySQLdb #note problem installing on python 3
 import configargparse
@@ -16,15 +17,30 @@ from tqdm import tqdm
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
 
+from concurrent.futures import ThreadPoolExecutor
+from requests_futures.sessions import FuturesSession
+
+session = FuturesSession(executor=ThreadPoolExecutor(max_workers=10))
+
 
 def parsefastq(fastq, rundict):
     #print ('processing reads')
-    for record in tqdm(SeqIO.parse(fastq, "fastq")):
-        descriptiondict = parsedescription(record.description)
-        if descriptiondict["runid"] not in rundict:
-            rundict[descriptiondict["runid"]] = Runcollection(args)
-            rundict[descriptiondict["runid"]].add_run(descriptiondict)
-        rundict[descriptiondict["runid"]].add_read(record, descriptiondict,fastq)
+    if fastq.endswith(".gz"):
+        #we have a potentiall gzipped file so:
+        with gzip.open(fastq, "rt") as handle:
+            for record in tqdm(SeqIO.parse(handle, "fastq")):
+                descriptiondict = parsedescription(record.description)
+                if descriptiondict["runid"] not in rundict:
+                    rundict[descriptiondict["runid"]] = Runcollection(args)
+                    rundict[descriptiondict["runid"]].add_run(descriptiondict)
+                rundict[descriptiondict["runid"]].add_read(record, descriptiondict, fastq)
+    else:
+        for record in tqdm(SeqIO.parse(fastq, "fastq")):
+            descriptiondict = parsedescription(record.description)
+            if descriptiondict["runid"] not in rundict:
+                rundict[descriptiondict["runid"]] = Runcollection(args)
+                rundict[descriptiondict["runid"]].add_run(descriptiondict)
+            rundict[descriptiondict["runid"]].add_read(record, descriptiondict,fastq)
     for runs in rundict:
         rundict[runs].commit_reads()
 
@@ -125,7 +141,12 @@ class Runcollection():
             else:
                 is_barcoded = False
                 barcoded = "unclassified"
-            createrun = requests.post(args.full_host+'api/v1/runs/', headers=header, json={"run_name": runname, "run_id": runid, "barcode": barcoded, "is_barcoded":is_barcoded})
+
+            if args.skip_sequence:
+                has_fastq = False
+            else:
+                has_fastq = True
+            createrun = requests.post(args.full_host+'api/v1/runs/', headers=header, json={"run_name": runname, "run_id": runid, "barcode": barcoded, "is_barcoded":is_barcoded, "has_fastq":has_fastq})
 
             if createrun.status_code != 201:
                 print (createrun.status_code)
@@ -168,7 +189,8 @@ class Runcollection():
 
     def commit_reads(self):
         runlinkaddread = self.runidlink + "reads/"
-        createread = requests.post(runlinkaddread, headers=header, json=self.readstore)
+        createread = session.post(runlinkaddread, headers=header, json=self.readstore)
+        #createread = requests.post(runlinkaddread, headers=header, json=self.readstore)
         self.readstore = list()
 
 
@@ -176,18 +198,42 @@ class Runcollection():
         runlink = self.runidlink
         typelink = type
         if readid not in self.readnames:
-            payload = {
-                'run_id': runlink,
-                'read_id': readid,
-                'read': read,
-                "channel": channel,
-                'barcode': barcode,
-                'sequence': sequence,
-                'quality': quality,
-                'is_pass': ispass,
-                'start_time': starttime,
-                'type': typelink
-            }
+            sequence_length = len(sequence)
+            quality_average = np.around([np.mean(np.array(list((ord(val) - 33) for val in quality)))],decimals=2)[0]
+
+            if args.skip_sequence:
+                payload = {
+                    'run_id': runlink,
+                    'read_id': readid,
+                    'read': read,
+                    "channel": channel,
+                    'barcode': barcode,
+                    'sequence': '',
+                    'quality': '',
+                    'sequence_length': sequence_length,
+                    'quality_average': quality_average,
+                    'is_pass': ispass,
+                    'start_time': starttime,
+                    'type': typelink
+                }
+            else:
+                payload = {
+                    'run_id': runlink,
+                    'read_id': readid,
+                    'read': read,
+                    "channel": channel,
+                    'barcode': barcode,
+                    'sequence': sequence,
+                    'quality': quality,
+                    'sequence_length': sequence_length,
+                    'quality_average': quality_average,
+                    'is_pass': ispass,
+                    'start_time': starttime,
+                    'type': typelink
+                }
+
+            #print (args.skip_sequence)
+            #print (payload)
             self.readstore.append(payload)
             if len(self.readstore) >=self.batchsize:
                 self.commit_reads()
@@ -242,11 +288,9 @@ class Runcollection():
 
     def add_read(self, record, descriptiondict,fastq):
         passstatus=(self.check_pass(fastq))
-
         self.readid[record.id] = dict()
         for item in descriptiondict:
             self.readid[record.id][item] = descriptiondict[item]
-
         tm = dateutil.parser.parse(self.readid[record.id]["start_time"])
         tm = tm - datetime.timedelta(minutes=(tm.minute % 1) - 1,
                                      seconds=tm.second,
@@ -257,69 +301,50 @@ class Runcollection():
             self.timeid[tm]["count"] = 0
             self.timeid[tm]["readlengths"] = list()
             self.timeid[tm]["chandict"] = list()
-
         # This is illustrating how to access the sequence but will be a memory problem
         # self.readid[record.id]["seq"]=record.seq
         # self.readid[record.id]["qual"]=record.format("qual")
         if self.readid[record.id]["ch"] not in self.chandict:
             self.chandict.append(self.readid[record.id]["ch"])
-
         if self.readid[record.id]["ch"] not in self.timeid[tm]["chandict"]:
             self.timeid[tm]["chandict"].append(self.readid[record.id]["ch"])
-
         if "barcode" in self.readid[record.id].keys() or args.cust_barc=='oddeven':
-
             if "barcode" in self.readid[record.id]:
                 barcode_local = self.readid[record.id]["barcode"]
             else:
                 barcode_local = ""
-
             if args.cust_barc=='oddeven':
                 if int(self.readid[record.id]["ch"]) % 4 == 0:
                     barcode_local = barcode_local + 'even'
                 else:
                     barcode_local = barcode_local + 'odd'
-
             if barcode_local not in self.barcodes.keys():
-
                 print(">> Found new barcode {} for run {}.".format(barcode_local, self.runidlink))
-
                 request_body = {
                     'name': barcode_local,
                     'run': str(self.runidlink)
                 }
-
                 response = requests.post(
                     str(self.runidlink) + "barcodes/",
                     headers=header,
                     json=request_body
                 )
-
                 if response.status_code == 201:
                     item = json.loads(response.text)
-
                     self.barcodes.update({
                         item['name']: item['url']
                     })
-
                     print(">> Barcode {} for run {} created with success.".format(item['url'], self.runidlink))
                 else:
                     print (response.status_code)
                     sys.exit()
-
             barcode_url = self.barcodes[barcode_local]
-
         else:
             barcode_url = self.barcodes["No barcode"]
         if record.id not in self.readnames:
             if self.check_1d2(record.id):
-                #print ("Seen a 1D^2 read. Exiting.")
-                #print (record.id)
-                #print (len(record.id))
                 firstread, secondread = record.id[:len(record.id) // 2], record.id[len(record.id) // 2:]
-                #print (firstread,secondread)
                 self.update_read_type(secondread,self.readtypes["Complement"])
-                #So here we need to a) add the new 2D read as a 2D read - then update the read status of the second read.
                 self.add_read_db(
                     self.runidlink,
                     record.id,
@@ -332,7 +357,6 @@ class Runcollection():
                     self.readtypes["1D^2"],
                     self.readid[record.id]["start_time"]
                 )
-
             else:
                 self.add_read_db(
                     self.runidlink,
@@ -346,7 +370,6 @@ class Runcollection():
                     self.readtypes["Template"],
                     self.readid[record.id]["start_time"]
                 )
-
         self.readid[record.id]["len"] = len(record.seq)
         self.cumulength += len(record.seq)
         self.timeid[tm]["cumulength"] += len(record.seq)
@@ -354,14 +377,6 @@ class Runcollection():
         self.timeid[tm]["count"] += 1
         self.readlengths.append(len(record.seq))
         self.timeid[tm]["readlengths"].append(len(record.seq))
-        #else:
-        #    print ("already seen read")
-        #    os._exit(1)
-            # print(record.id)
-            # print(record.seq)
-            # print(record.description)
-            # print(record.format("qual"))
-            # print(len(record.seq))
 
     def read_count(self):
         return len(self.readid)
@@ -394,7 +409,7 @@ def file_dict_of_folder_simple(path):
                 #print(counter)
                 # if (("downloads" in path )):
                 # if ("muxscan" not in f and args.callingdir not in path and f.endswith(".fast5") ):
-                if (f.endswith(".fastq")):
+                if (f.endswith(".fastq") or f.endswith(".fastq.gz")):
                     file_list_dict[os.path.join(path, f)] = os.stat(os.path.join(path, f)).st_mtime
                     # try:
                     #    file_descriptor = update_file_descriptor(os.path.join(path, f),file_descriptor)
@@ -436,7 +451,8 @@ class MyHandler(FileSystemEventHandler):
     def processfiles(self):
         everyten = 0
         while self.running:
-            print("processfiles running")
+            starttime = time.time()
+            print("processfiles running {}".format(starttime))
             for fastqfile, createtime in tqdm(sorted(self.creates.items(), key=lambda x: x[1])):
                 delaytime = 0
                 if (int(
@@ -444,23 +460,27 @@ class MyHandler(FileSystemEventHandler):
                     #print(fastqfile)
                     del self.creates[fastqfile]
                     parsefastq(fastqfile, self.rundict)
-
+            print ("processed in {}".format(time.time()-starttime))
+            readsuploaded=0
             for runid in self.rundict:
                 print("RunID", runid)
                 print("Read Number:", self.rundict[runid].readcount, "Total Length:", self.rundict[runid].cumulength,
                       "Average Length", self.rundict[runid].cumulength / self.rundict[runid].readcount, "Chan Count",
                       len(self.rundict[runid].chandict))
+                readsuploaded+=self.rundict[runid].readcount
                 (mean, median, std, maxval, minval) = self.rundict[runid].mean_median_std_max_min()
                 print("mean", mean, "median", median, "std", std, "max", maxval, "min", minval)
                 # print self.rundict[runid].timeid
                 #self.rundict[runid].parse1minwin()
+                #os._exit(0)
+            print ("Uploaded {} reads in total.".format(readsuploaded))
 
             time.sleep(5)
 
     def on_created(self, event):
         """Watchdog counts a new file in a folder it is watching as a new file"""
         """This will add a file which is added to the watchfolder to the creates and the info file."""
-        if (event.src_path.endswith(".fastq")):
+        if (event.src_path.endswith(".fastq") or event.src_path.endswith(".fastq.gz")):
             # print "seen a file", event.src_path
             self.creates[event.src_path] = time.time()
             # elif ("albacore" in event.src_path and args.callingdir not in event.src_path and args.finishdir not in event.src_path and event.src_path.endswith(".fast5")):
@@ -470,7 +490,7 @@ class MyHandler(FileSystemEventHandler):
             # self.total[event.src_path] = time.time()
 
     def on_modified(self, event):
-        if (event.src_path.endswith(".fastq")):
+        if (event.src_path.endswith(".fastq") or event.src_path.endswith(".fastq.gz")):
             # print "seen a file", event.src_path
             self.creates[event.src_path] = time.time()
 
@@ -478,7 +498,7 @@ class MyHandler(FileSystemEventHandler):
         """Watchdog considers a file which is moved within its domain to be a move"""
         """When a file is moved, we just want to update its location in the master dictionary."""
         # print "On Moved Called"
-        if (event.dest_path.endswith(".fastq")):
+        if (event.dest_path.endswith(".fastq") or event.dest_path.endswith(".fastq.gz")):
             print("seen a fastq file move")
             # print getfilename(event.src_path), event.src_path,event.dest_path
             # try:
@@ -599,6 +619,16 @@ if __name__ == '__main__':
         help='Optionally split reads based on odd/even channel description. Not a standard option.',
         dest='cust_barc'
     )
+
+    parser.add(
+        '-s',
+        '--skip_sequence',
+        action='store_true',
+        required=False,
+        help='If selected only read metrics, not sequence, will be uploaded to the databse.',
+        dest='skip_sequence'
+    )
+
 
     args = parser.parse_args()
 
