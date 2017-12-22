@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 """
 
 import os
+import tempfile
 from celery.schedules import crontab
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -49,8 +50,6 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'communication',
     'assembly',
-    'samples'
-#    'tabs',
 ]
 
 MIDDLEWARE = [
@@ -191,7 +190,7 @@ LOGGING = {
         'file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'minotour.log'),
+            'filename': os.path.join(tempfile.gettempdir(), 'minotour.log'),
         },
     },
     'loggers': {
