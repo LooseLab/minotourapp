@@ -483,7 +483,7 @@ $(document).ready(function () {
     setInterval(checkTabs, 10000);
 
     function checkTabs() {
-        var run_id = document.getElementById("run-id").innerText;
+        var run_id = {{ minion_run.id }};
         var url = "/api/v1/tabs/" + run_id;
         $.getJSON( url, function( data ) {
             var items = [];

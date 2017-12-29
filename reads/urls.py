@@ -243,4 +243,9 @@ urlpatterns = [
         views.tabs_details,
         name="tabs-details"
     ),
+    url(
+        r'^api/v1/flowcells/tabs/(?P<pk>[0-9]+)/$',
+        views.flowcell_tabs_details,
+        name="tabs-details"
+    ),
 ]
