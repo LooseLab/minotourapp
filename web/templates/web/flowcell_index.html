@@ -393,7 +393,6 @@ $(document).ready(function () {
     setInterval(checkTabs, 10000);
 
     function checkTabs() {
-        console.log("checkTabs");
         var run_id = {{ flowcells.id }};
         var url = "/api/v1/flowcells/tabs/" + run_id;
         $.getJSON( url, function( data ) {
@@ -415,7 +414,6 @@ $(document).ready(function () {
                     $('#tasks-li').before(element);
                 }
             });
-            console.log(items)
         });
     };
 });
