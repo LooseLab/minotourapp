@@ -2278,7 +2278,7 @@ function MinotourFlowCellApp() {
                 for (var i = 0; i < ordered_data.length; i++) {
 
                     var item = ordered_data[i];
-                    //console.log(item);
+                    console.log(item);
                     if (summary[item.barcode_name] === undefined) {
                         summary[item.barcode_name] = {};
                     }
@@ -2287,44 +2287,84 @@ function MinotourFlowCellApp() {
                         summary[item.barcode_name][item.read_type_name] = {};
                     }
 
-                    if (summary[item.barcode_name][item.read_type_name][item.bin_width] === undefined) {
-                        summary[item.barcode_name][item.read_type_name][item.bin_width] = {};
-                        summary[item.barcode_name][item.read_type_name][item.bin_width]['read_count'] = 0;
-                        summary[item.barcode_name][item.read_type_name][item.bin_width]['read_length'] = 0;
+                    if (summary[item.barcode_name][item.read_type_name][parseInt(item.bin_width)] === undefined) {
+                        summary[item.barcode_name][item.read_type_name][parseInt(item.bin_width)] = {};
+                        summary[item.barcode_name][item.read_type_name][parseInt(item.bin_width)]['read_count'] = 0;
+                        summary[item.barcode_name][item.read_type_name][parseInt(item.bin_width)]['read_length'] = 0;
                     }
-                    summary[item.barcode_name][item.read_type_name][item.bin_width]['read_count'] += item.read_count;
-                    summary[item.barcode_name][item.read_type_name][item.bin_width]['read_length'] += item.read_length;
+                    summary[item.barcode_name][item.read_type_name][parseInt(item.bin_width)]['read_count'] += item.read_count;
+                    summary[item.barcode_name][item.read_type_name][parseInt(item.bin_width)]['read_length'] += item.read_length;
                 }
                 ;
                 //console.log("summary");
                 //console.log(summary);
                 var summaries = {};
+
                 for (var barcode in summary) {
 
                     for (var read_type in summary[barcode]) {
+                        var lastbinwidth = 0;
 
-                        for (var bin_width in summary[barcode][read_type]) {
-
-                            if (summaries[barcode] === undefined) {
+                        //Here we make the empty arrays
+                        if (summaries[barcode] === undefined) {
                                 summaries[barcode] = {};
                             }
-                            if (summaries[barcode][read_type] === undefined) {
+                        if (summaries[barcode][read_type] === undefined) {
                                 summaries[barcode][read_type] = {
                                     'bin_width': [],
                                     'read_count': [],
                                     'read_length': [],
                                 };
                             }
-                            summaries[barcode][read_type]['read_count'].push(summary[barcode][read_type][bin_width]['read_count']);
-                            summaries[barcode][read_type]['read_length'].push(summary[barcode][read_type][bin_width]['read_length']);
-                            summaries[barcode][read_type]['bin_width'].push(parseInt(bin_width * 900 + 900));
+
+                        var maxbinwidth = 0;
+
+                        for (var tmp_bin_width of Object.keys(summary[barcode][read_type])) {
+                            if (parseInt(tmp_bin_width) > maxbinwidth) {
+                                maxbinwidth = parseInt(tmp_bin_width);
+                            }
+                        }
+
+                        //var maxbinwidth = Math.max(Object.keys(summary[barcode][read_type]))
+
+                        //var maxbinwidth = summary[barcode][read_type]
+                        for (var i=0;i <= maxbinwidth; i++){
+                            summaries[barcode][read_type]['bin_width'].push(parseInt(i * 900 + 900));
+                            summaries[barcode][read_type]['read_count'].push(0);
+                            summaries[barcode][read_type]['read_length'].push(0);
+                        }
+                        console.log('keys: ' + Object.keys(summary[barcode][read_type]));
+                        console.log('maxbinwidth: ' + maxbinwidth);
+                        console.log("empty summaries");
+                        console.log(summaries);
+                        for (var bin_width in summary[barcode][read_type]) {
+
+
+
+                            /*Fix to fill in missing values in histogram.
+                            console.log("current bin width: " + )
+                            while (bin_width > (lastbinwidth+1)){
+                                lastbinwidth++;
+                                summaries[barcode][read_type]['read_count'].push(0);
+                                summaries[barcode][read_type]['read_length'].push(0);
+                                summaries[barcode][read_type]['bin_width'].push(parseInt(lastbinwidth * 900 + 900));
+                            }
+                            */
+
+                            //summaries[barcode][read_type]['read_count'].push(summary[barcode][read_type][bin_width]['read_count']);
+                            summaries[barcode][read_type]['read_count'][bin_width]=summary[barcode][read_type][bin_width]['read_count'];
+                            summaries[barcode][read_type]['read_length'][bin_width]=summary[barcode][read_type][bin_width]['read_length'];
+                            summaries[barcode][read_type]['bin_width'][bin_width]=parseInt(bin_width * 900 + 900);
+                            //summaries[barcode][read_type]['read_length'].push(summary[barcode][read_type][bin_width]['read_length']);
+                            //summaries[barcode][read_type]['bin_width'].push(parseInt(bin_width * 900 + 900));
+
                         }
                     }
                 }
 
 
                 self.histogramSummary = summaries;
-                console.log(self.histogramSummary);
+                //console.log(self.histogramSummary);
                 self.updateHistogramBasedCharts();
 
             }
