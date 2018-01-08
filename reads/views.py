@@ -1484,10 +1484,16 @@ def flowcell_tabs_details(request, pk):
     }
     tabs = list()
     # Where is live event data for flowcells stored?
-    if MinIONRunStatus.objects.filter(flowcell=pk):
-        tabs.append(dict['LiveEvent'])
+    #if MinIONRunStatus.objects.filter(flowcell=pk):
+    #    tabs.append(dict['LiveEvent'])
 
-    for master in JobMaster.objects.filter(flowcell=pk).values_list('job_type__name', flat=True):
+    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    runset = list()
+    for run in queryset:
+        # print (run.run_id)
+        runset.append(run.run_id)
+
+    for master in JobMaster.objects.filter(run_id__in=runset).values_list('job_type__name', flat=True):
         if master in dict.keys():
             tabs.append(dict[master])
         else:
