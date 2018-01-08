@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'communication',
     'assembly',
     #'samples'
+#    'flowcell-tabs',
 #    'tabs',
 ]
 
