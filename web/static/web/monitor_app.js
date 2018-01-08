@@ -2302,7 +2302,7 @@ function MinotourFlowCellApp() {
                 running = true;
 
             } else {
-                colour = 'white';
+                colour = 'bg-light-blue';
                 message = 'Task Not Running.';
                 percentage = 0;
                 message2 = "Click to start a " + self.tasks[i]["description"] + ' task.';
@@ -2455,7 +2455,7 @@ function MinotourFlowCellApp() {
                         "data": [data[i].chrom_cover],
                         "animation": false
                     };
-                    summarycoverage[data[i].barcode_group_name][data[i].read_type_name][data[i].chrom_name]["ave_read_len"] = {
+                    summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].chrom_name]["ave_read_len"] = {
                         "name": "Average Read Length",
                         "data": [data[i].avg_read_len],
                         "animation": false

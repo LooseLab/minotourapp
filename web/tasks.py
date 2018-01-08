@@ -161,6 +161,8 @@ def slow_monitor():
 
     active_runs = MinIONRun.objects.filter(active=True).distinct()
 
+    ## We need an active flowcell measure.
+
     for minion_run in active_runs:
 
         print("Found an active run!")
