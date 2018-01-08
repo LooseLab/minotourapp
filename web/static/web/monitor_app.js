@@ -115,14 +115,14 @@ function MinotourFlowCellApp() {
     this.drawtaskbutton = drawtaskbutton;
 
     this.startTask = function (description, reference) {
-        console.log(description + " " + reference);
+        //console.log(description + " " + reference);
         var e = document.getElementById(description);
         if (e != null) {
             var strUser = e.options[e.selectedIndex].value;
         } else {
             var strUser = "null";
         }
-        console.log(strUser);
+        //console.log(strUser);
         $.ajaxSetup({
             beforeSend: function (xhr, settings) {
                 if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
@@ -142,17 +142,17 @@ function MinotourFlowCellApp() {
                 "reference": strUser,
             },
             "beforeSend": function (xhr, settings) {
-                console.log("before send");
+                //console.log("before send");
                 $.ajaxSettings.beforeSend(xhr, settings);
             },
             "success": function (result) {
-                console.log(result);
+                //console.log(result);
                 $(".modal.in").modal("hide");
                 self.requestTasks(reference);
 
             },
             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                console.log("Status: " + textStatus);
+                //console.log("Status: " + textStatus);
                 //alert("Error: " + errorThrown);
             }
 
@@ -288,7 +288,6 @@ function MinotourFlowCellApp() {
     );
 
     $('#chromosome-id-select').on('change', function () {
-        console.log('yo dogface');
         self.updateStepLineChart(self.chartChromosomeCoverage, 0, 0);
     });
 
@@ -368,9 +367,6 @@ function MinotourFlowCellApp() {
     var self = this;
 
     this.init = function () {
-        console.log("we're under way");
-
-
         self.id = document.getElementById("flowcell-id").innerText;
         self.selectedBarcode = "All reads";
 
@@ -1412,8 +1408,7 @@ function MinotourFlowCellApp() {
         var summaries = self.summary;
 
         var series = [];
-        console.log("This is it");
-        console.log(summaries);
+        //console.log(summaries);
         // Always include all reads
         data = [];
 
@@ -1522,7 +1517,7 @@ function MinotourFlowCellApp() {
                 for (var i = 0; i < ordered_data.length; i++) {
 
                     var item = ordered_data[i];
-                    console.log(item);
+                    //console.log(item);
                     if (summary[item.barcode_name] === undefined) {
                         summary[item.barcode_name] = {};
                     }
@@ -1577,30 +1572,10 @@ function MinotourFlowCellApp() {
                             summaries[barcode][read_type]['read_count'].push(0);
                             summaries[barcode][read_type]['read_length'].push(0);
                         }
-                        console.log('keys: ' + Object.keys(summary[barcode][read_type]));
-                        console.log('maxbinwidth: ' + maxbinwidth);
-                        console.log("empty summaries");
-                        console.log(summaries);
                         for (var bin_width in summary[barcode][read_type]) {
-
-
-
-                            /*Fix to fill in missing values in histogram.
-                            console.log("current bin width: " + )
-                            while (bin_width > (lastbinwidth+1)){
-                                lastbinwidth++;
-                                summaries[barcode][read_type]['read_count'].push(0);
-                                summaries[barcode][read_type]['read_length'].push(0);
-                                summaries[barcode][read_type]['bin_width'].push(parseInt(lastbinwidth * 900 + 900));
-                            }
-                            */
-
-                            //summaries[barcode][read_type]['read_count'].push(summary[barcode][read_type][bin_width]['read_count']);
                             summaries[barcode][read_type]['read_count'][bin_width]=summary[barcode][read_type][bin_width]['read_count'];
                             summaries[barcode][read_type]['read_length'][bin_width]=summary[barcode][read_type][bin_width]['read_length'];
                             summaries[barcode][read_type]['bin_width'][bin_width]=parseInt(bin_width * 900 + 900);
-                            //summaries[barcode][read_type]['read_length'].push(summary[barcode][read_type][bin_width]['read_length']);
-                            //summaries[barcode][read_type]['bin_width'].push(parseInt(bin_width * 900 + 900));
 
                         }
                     }
@@ -1608,7 +1583,6 @@ function MinotourFlowCellApp() {
 
 
                 self.histogramSummary = summaries;
-                //console.log(self.histogramSummary);
                 self.updateHistogramBasedCharts();
 
             }
@@ -1737,7 +1711,7 @@ function MinotourFlowCellApp() {
         //console.log('rundetails');
         //console.log(self.rundetails);
         if (self.rundetails != undefined && self.rundetails.length > 0) {
-            console.log(self.rundetails);
+            //console.log(self.rundetails);
             //for (var i = 0; i < self.rundetails.length; i++) {
 
             for (var i in self.rundetails) {
@@ -1797,8 +1771,8 @@ function MinotourFlowCellApp() {
     this.requestRunDetails = function (id) {
         var url_RunDetails = '/api/v1/flowcells/' + id + '/rundetails/';
         $.get(url_RunDetails, function (data) {
-            console.log("rundetails");
-            console.log(data);
+            //console.log("rundetails");
+            //console.log(data);
             self.rundetails = data;
             //self.livedata.minIONname = data[0].minION_name;
             //self.livedata.asicid = data[0].minKNOW_asic_id;
@@ -1820,8 +1794,6 @@ function MinotourFlowCellApp() {
         //console.log('lastread ' + this.lastread);
         var url_livestats = '/api/v1/flowcells/' + id + '/runstats/' + this.lastread;
         $.get(url_livestats, function (data) {
-            console.log("slartibartfast");
-            console.log(data);
 
             if (data.length > 0) {
                 self.needtoupdatecharts = true;
@@ -2232,8 +2204,8 @@ function MinotourFlowCellApp() {
                 totalyield = totalyield + parseInt(self.summary['All reads'][readtype]['yield']['data']);
                 readcount = readcount + parseInt(self.summary['All reads'][readtype]['read_count']['data']);
             }
-            console.log("yieldhistory length");
-            console.log("test" + self.livedata.live_read_count);
+            //console.log("yieldhistory length");
+            //console.log("test" + self.livedata.live_read_count);
             if (self.livedata.yield_history.length > 1) {
                 self.livedata.scalingfactor = (totalyield / readcount) / (self.livedata.yield_history[self.livedata.yield_history.length - 1][1] / self.livedata.live_read_count);
             }
@@ -2292,7 +2264,7 @@ function MinotourFlowCellApp() {
         //console.log("####id is" + id);
         var taskstring = "";
         for (var i = 0; i < self.tasks.length; i++) {
-            console.log(self.tasks[i]);
+            //console.log(self.tasks[i]);
             if (self.tasks[i].hasOwnProperty("job_details")) {
                 colour = 'bg-green';
                 message = 'Reads processed:' + self.tasks[i]["job_details"]["read_count"];
@@ -2318,7 +2290,7 @@ function MinotourFlowCellApp() {
             //console.log("Button name to look for:" + buttonname);
             $(buttonname).click(function (e) {
                 var idClicked = e.target.id;
-                console.log(idClicked);
+                //console.log(idClicked);
                 self.startTask(idClicked.substring(6), id);
             });
         }
@@ -2330,7 +2302,7 @@ function MinotourFlowCellApp() {
     this.requestKraken = function (id) {
         var parsedkraken = '/api/v1/flowcells/' + id + '/krakenparse/';
         $.get(parsedkraken, function (data) {
-            console.log(data);
+            //console.log(data);
             krakendata = [];
             var list = $("#krakenSelectBarcode");
             var list2 = $("#krakenSelectRead");
@@ -2434,13 +2406,13 @@ function MinotourFlowCellApp() {
         var pafurl = '/api/v1/flowcells/' + id + '/pafsummary/';
 
         $.get(pafurl, function (data) {
-            console.log("PAF DATA");
-            console.log(data);
+            //console.log("PAF DATA");
+            //console.log(data);
             if (data.length < 1) {
             } else {
                 summarycoverage = {};
                 for (var i = 0; i < data.length; i++) {
-                    console.log(data[i]);
+                    //console.log(data[i]);
                     if (summarycoverage[data[i].barcode_group_name] === undefined) {
                         summarycoverage[data[i].barcode_group_name] = {};
                     }
@@ -2475,7 +2447,7 @@ function MinotourFlowCellApp() {
         var url_run = '/api/v1/flowcells/' + self.id;
 
         $.get(url_run, function (data) {
-            console.log(data);
+            //console.log(data);
 
             var barcodes = new Set();
             for (var j = 0; j < data.length; j++) {
@@ -2488,8 +2460,8 @@ function MinotourFlowCellApp() {
             //console.log("This is the data we are logging.");
             //console.log(data);
             self.rundata = data;
-            console.log("rundata");
-            console.log(self.rundata);
+            //console.log("rundata");
+            //console.log(self.rundata);
             self.updateBarcodeNavTab();
             //self.requestSummaryByMinuteData(self.id);
             self.requestSummaryData(self.id);

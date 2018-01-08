@@ -280,8 +280,8 @@
                         <i class="fa fa-cog fa-spin fa-3x"></i>
                         Calculating reads per pore
                     </div>
-
                 </div>
+
                 <!-- End of Panel basecalled data -->
 
                 <!-- Panel sequence identification -->
@@ -455,6 +455,16 @@ $(document).ready(function () {
     console.log("minotour flow cell app runing");
     app.init();
 
+
+    redraw();
+    setInterval(redraw,10000);
+
+    function redraw(){
+        for (var chart in Highcharts.charts) {
+            Highcharts.charts[chart].reflow();
+            //console.log(chart);
+        }
+    }
 
 
     setInterval(checkTabs, 10000);
