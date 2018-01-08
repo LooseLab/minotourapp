@@ -951,16 +951,19 @@ def tasks_detail_all(request,pk):
 
     return HttpResponse(json.dumps(result), content_type="application/json")
 
+@api_view(['GET'])
+def flowcell_list_active(request):
+    if request.method == 'GET':
+        queryset = FlowCell.objects.distinct().filter(owner=request.user).filter(flowcelldetails__run__active=True)
+        serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
+
+
 
 @api_view(['GET','POST'])
 def flowcell_list(request):
     if request.method == 'GET':
-        #flowcell_runs = FlowCellRun.objects.filter(owner=request.user).filter(run__active=True).distinct()
-        #flowcells = set()
-        #for flowcell_run in flowcell_runs:
-            #logger.debug("found a flowcell", flowcell_run)
-        #    flowcells.add(flowcell_run.flowcell)
-        queryset = FlowCell.objects.filter(owner=request.user)
+        queryset = FlowCell.objects.distinct().filter(owner=request.user)
         serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
