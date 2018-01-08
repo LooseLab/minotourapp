@@ -551,7 +551,7 @@ class FastqReadExtra(models.Model):
     fastqread = models.OneToOneField(
         FastqRead,
         on_delete=models.CASCADE,
-        related_name='extra'
+        related_name='fastqreadextra'
     )
 
     sequence = models.TextField(

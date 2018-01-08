@@ -30,7 +30,7 @@ from communication.models import Message
 from minikraken.models import MiniKraken, ParsedKraken
 from reads.models import Barcode, FlowCellRun, FlowCell
 from reads.models import ChannelSummary
-from reads.models import FastqRead
+from reads.models import FastqRead, FastqReadExtra
 from reads.models import HistogramSummary
 from reads.models import JobMaster
 from reads.models import JobType
@@ -765,12 +765,12 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count):
         if fastq.type not in fastqdict[fastq.barcode]:
             fastqdict[fastq.barcode][fastq.type] = []
 
-        fastqdict[fastq.barcode][fastq.type].append([fastq.read_id, fastq.extra.sequence])
+        fastqdict[fastq.barcode][fastq.type].append([fastq.read_id, fastq.fastqreadextra.sequence])
         newfastqs += 1
-        #read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.extra.sequence)
+        #read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.fastqreadextra.sequence)
         #fastqdict[fastq.read_id]=fastq
         #fastqtypedict[fastq.read_id]=fastq.type
-        #outtemp.write('>{}\n{}\n'.format(fastq.read_id, fastq.extra.sequence))
+        #outtemp.write('>{}\n{}\n'.format(fastq.read_id, fastq.fastqreadextra.sequence))
         last_read = fastq.id
 
     #outtemp.close()
@@ -875,7 +875,7 @@ def run_minimap2_transcriptome(runid, id, reference, last_read):
     # logger.debug(len(fastqs))
 
     for fastq in fastqs:
-        read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.extra.sequence)
+        read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.fastqreadextra.sequence)
         fastqdict[fastq.read_id] = fastq
         fastqtypedict[fastq.read_id] = fastq.type
         last_read = fastq.id
@@ -1001,7 +1001,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
         # logger.debug(len(fastqs))
 
         for fastq in fastqs:
-            read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.extra.sequence)
+            read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.fastqreadextra.sequence)
             fastqdict[fastq.read_id] = fastq
             fastqtypedict[fastq.read_id] = fastq.type
             fastqbarcodegroup[fastq.read_id] = fastq.barcode.barcodegroup
@@ -1150,13 +1150,16 @@ def run_kraken(runid, id, last_read, inputtype):
     if inputtype == "flowcell":
         flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
         for flowcell_run in flowcell_runs:
-            runidset.add(flowcell_run.id)
+            runidset.add(flowcell_run.run_id)
         #we need to get the runids that make up this run
     else:
         runidset.add(runid)
 
     fastqs = FastqRead.objects.filter(run_id__in=runidset).filter(id__gt=int(last_read))[:5000]
     krakrun = Kraken()
+
+    print (runid, id, last_read, inputtype)
+
     # IMPORTANT - NEEDS FIXING FOR BARCODES AND READ TYPES
     if len(fastqs) > 0:
         read = ''
@@ -1164,7 +1167,7 @@ def run_kraken(runid, id, last_read, inputtype):
         typedict = dict()
         barcodedict = dict()
         for fastq in fastqs:
-            read = '{}>{} \r\n{}\r\n'.format(read, fastq, fastq.extra.sequence)
+            read = '{}>{} \r\n{}\r\n'.format(read, fastq, fastq.fastqreadextra.sequence)
             # logger.debug(fastq.id)
             readdict[fastq.read_id] = fastq.id
             last_read = fastq.id
@@ -1323,9 +1326,9 @@ def run_bwa_alignment(runid, job_id, referenceinfo_id, last_read):
     referenceinfo = ReferenceInfo.objects.get(pk=referenceinfo_id)
 
     for fastq in fastq_list:
-        # logger.debug(fastq.extra.sequence)
+        # logger.debug(fastq.fastqreadextra.sequence)
         bwaindex = referenceinfo.filename
-        read = '>{} \r\n{}\r\n'.format(fastq, fastq.extra.sequence)
+        read = '>{} \r\n{}\r\n'.format(fastq, fastq.fastqreadextra.sequence)
         cmd = 'bwa mem -x ont2d %s -' % (bwaindex)
         # logger.debug(cmd)
         # logger.debug(read)
