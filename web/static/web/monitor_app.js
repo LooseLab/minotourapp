@@ -2441,21 +2441,21 @@ function MinotourFlowCellApp() {
                 summarycoverage = {};
                 for (var i = 0; i < data.length; i++) {
                     console.log(data[i]);
-                    if (summarycoverage[data[i].barcode_name] === undefined) {
-                        summarycoverage[data[i].barcode_name] = {};
+                    if (summarycoverage[data[i].barcode_group_name] === undefined) {
+                        summarycoverage[data[i].barcode_group_name] = {};
                     }
-                    if (summarycoverage[data[i].barcode_name][data[i].read_type_name] === undefined) {
-                        summarycoverage[data[i].barcode_name][data[i].read_type_name] = {};
+                    if (summarycoverage[data[i].barcode_group_name][data[i].read_type_name] === undefined) {
+                        summarycoverage[data[i].barcode_group_name][data[i].read_type_name] = {};
                     }
-                    if (summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].chrom_name] === undefined) {
-                        summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].chrom_name] = {};
+                    if (summarycoverage[data[i].barcode_group_name][data[i].read_type_name][data[i].chrom_name] === undefined) {
+                        summarycoverage[data[i].barcode_group_name][data[i].read_type_name][data[i].chrom_name] = {};
                     }
-                    summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].chrom_name]["coverage"] = {
+                    summarycoverage[data[i].barcode_group_name][data[i].read_type_name][data[i].chrom_name]["coverage"] = {
                         "name": "coverage",
                         "data": [data[i].chrom_cover],
                         "animation": false
                     };
-                    summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].chrom_name]["ave_read_len"] = {
+                    summarycoverage[data[i].barcode_group_name][data[i].read_type_name][data[i].chrom_name]["ave_read_len"] = {
                         "name": "Average Read Length",
                         "data": [data[i].avg_read_len],
                         "animation": false

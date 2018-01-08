@@ -50,7 +50,8 @@ class PafSummaryCovSerializer(serializers.HyperlinkedModelSerializer):
             'chrom_cover',
             'avg_read_len',
             'read_type_name',
-            'barcode_name'
+            'barcode_name',
+            'barcode_group_name'
         )
         read_only = (
             'id',

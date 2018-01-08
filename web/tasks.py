@@ -964,8 +964,8 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
     if last_read is None:
         last_read = 0
 
-    try:
-    #if True:
+    #try:
+    if True:
         starttime = time.time()
         JobMaster.objects.filter(pk=job_master_id).update(running=True)
         REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
@@ -983,7 +983,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
             flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
             for flowcell_run in flowcell_runs:
                 runidset.add(flowcell_run.run_id)
-                print (flowcell_run.run_id)
+                #print (flowcell_run.run_id)
                 # we need to get the runids that make up this run
         else:
             runidset.add(runid)
@@ -1134,10 +1134,10 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
         jobdone = time.time()
         print('!!!!!!!It took {} to process the resultstore.!!!!!!!!!'.format((jobdone - donepafproc)))
 
-    except Exception as exception:
-        print('An error occurred when running this task.')
-        print(exception)
-        JobMaster.objects.filter(pk=job_master_id).update(running=False)
+    #except Exception as exception:
+    #    print('An error occurred when running this task.')
+    #    print(exception)
+    #    JobMaster.objects.filter(pk=job_master_id).update(running=False)
     
     else:
         JobMaster.objects.filter(pk=job_master_id).update(running=False, last_read=last_read, read_count=F('read_count') + len(fastqs))
