@@ -13,7 +13,7 @@
         <section class="content">
 
             <!-- Main top nav bar -->
-            <div class="nav-tabs-custom">
+            <div class="nav-tabs-custom" id="maintabbar">
                 <ul class="nav nav-tabs">
                     <li class="active"><a href="#tab-summary-data" data-toggle="tab">Run Summary</a></li>
                     <li id="tasks-li"><a href="#tab-tasks" data-toggle="tab">Tasks</a></li>
@@ -457,15 +457,21 @@ $(document).ready(function () {
 
 
     redraw();
-    setInterval(redraw,10000);
+    setInterval(redraw,3000);
 
     function redraw(){
         for (var chart in Highcharts.charts) {
+            //console.log('calling redraw');
             Highcharts.charts[chart].reflow();
             //console.log(chart);
         }
     }
 
+
+    $( "#maintabbar" ).on("click","li", function(event) {
+       setTimeout(redraw(), 1000);
+        //console.log('testing');
+    });
 
     setInterval(checkTabs, 10000);
 
