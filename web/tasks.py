@@ -1272,7 +1272,7 @@ class Kraken():
         self.tmpfile = tempfile.NamedTemporaryFile(suffix=".fa")
         self.krakenfile = tempfile.NamedTemporaryFile(suffix=".out")
         self.REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
-        self.krakenlocation = os.path.join(REFERENCELOCATION, 'minikraken_20141208')
+        self.krakenlocation = os.path.join(self.REFERENCELOCATION, 'minikraken_20141208')
 
     def write_seqs(self, seqs):
         # self.tmpfile.write("\n".join(seqs))
