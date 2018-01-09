@@ -21,6 +21,8 @@ from django.db.models import F
 from django_mailgun import MailgunAPIError
 from twitter import *
 
+from datetime import datetime, timedelta
+
 
 
 from alignment.models import PafStore, PafStore_transcriptome, PafRoughCov
@@ -163,6 +165,25 @@ def slow_monitor():
 
     ## We need an active flowcell measure.
 
+    flowcell_runs = FlowCellRun.objects.filter(run__active=True).distinct()
+
+    flowcells = set()
+    # So - loop through flowcell_runs and create a job in each sub run.
+
+    for flowcell_run in flowcell_runs:
+        logger.debug("found a flowcell", flowcell_run)
+        flowcells.add(flowcell_run.flowcell)
+
+
+    for flowcell in flowcells:
+        flowcell_jobs = JobMaster.objects.filter(flowcell=flowcell).filter(running=False)
+        for flowcell_job in flowcell_jobs:
+            logger.debug(flowcell_job.job_type.name)
+            if flowcell_job.job_type.name == "Assembly":
+                inputtype = "flowcell"
+                run_minimap_assembly.delay(flowcell.id, flowcell_job.id, flowcell_job.tempfile_name, flowcell_job.last_read,
+                                           flowcell_job.read_count, inputtype)
+
     for minion_run in active_runs:
 
         print("Found an active run!")
@@ -172,7 +193,8 @@ def slow_monitor():
         for run_job in run_jobs:
             if run_job.job_type.name == "Assembly":
                 print("Running Assembly")
-                run_minimap_assembly.delay(minion_run.id, run_job.id, run_job.tempfile_name, run_job.last_read, run_job.read_count)
+                inputtype="run"
+                run_minimap_assembly.delay(minion_run.id, run_job.id, run_job.tempfile_name, run_job.last_read, run_job.read_count,inputtype)
 
     for minion_run in minion_runs:
         if minion_run.last_entry() >= timediff or minion_run.last_read() >= timediff:
@@ -741,33 +763,60 @@ def test_task(string, reference):
 
 
 @task()
-def run_minimap_assembly(runid, id, tmp, last_read, read_count):
+def clean_up_assembly_files(runid,id,tmp):
+    """
+    This task will automatically delete a temporary file at some given time period after creation.
+    :param runid:
+    :param id:
+    :param tmp:
+    :return:
+    """
+    os.remove(tmp)
+    JobMaster.objects.filter(pk=id).update(tempfile_name="")
+
+
+
+
+@task()
+def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
 
     JobMaster.objects.filter(pk=id).update(running=True)
-    logger.debug("hello teri {}".format(runid))
-    logger.debug("tempfile {}".format(tmp))
+
+    if last_read is None:
+        last_read = 0
+
     if tmp == None:
         tmp = tempfile.NamedTemporaryFile(delete=False).name
+        later = datetime.utcnow() + timedelta(days=1)
+        clean_up_assembly_files.apply_async((runid,id,tmp), eta=later)
+
+
     logger.debug("tempfile {}".format(tmp))
 
-    fastqs = FastqRead.objects.filter(run_id__id=runid, id__gt=int(last_read))[:10000]
-    #logger.debug("fastqs",fastqs)
-    #read = ''
-    #fastqdict=dict()
-    #fastqtypedict=dict()
-    #outtemp = open(tmp, 'a')
+    runidset = set()
+    if inputtype == "flowcell":
+        realflowcell = FlowCell.objects.get(pk=runid)
+        flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
+        for flowcell_run in flowcell_runs:
+            runidset.add(flowcell_run.run_id)
+            # print (flowcell_run.run_id)
+            # we need to get the runids that make up this run
+    else:
+        runidset.add(runid)
+
+    fastqs = FastqRead.objects.filter(run_id__id__in=runidset, id__gt=int(last_read))[:10000]
 
     fastqdict=dict()
 
     newfastqs = 0
 
     for fastq in fastqs:
-        if fastq.barcode not in fastqdict:
-            fastqdict[fastq.barcode] = dict()
-        if fastq.type not in fastqdict[fastq.barcode]:
-            fastqdict[fastq.barcode][fastq.type] = []
+        if fastq.barcode.barcodegroup not in fastqdict:
+            fastqdict[fastq.barcode.barcodegroup] = dict()
+        if fastq.type not in fastqdict[fastq.barcode.barcodegroup]:
+            fastqdict[fastq.barcode.barcodegroup][fastq.type] = []
 
-        fastqdict[fastq.barcode][fastq.type].append([fastq.read_id, fastq.fastqreadextra.sequence])
+        fastqdict[fastq.barcode.barcodegroup][fastq.type].append([fastq.read_id, fastq.fastqreadextra.sequence])
         newfastqs += 1
         #read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.fastqreadextra.sequence)
         #fastqdict[fastq.read_id]=fastq
@@ -812,7 +861,10 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count):
 
                 gfadata = gfa.splitlines()
 
-                runinstance = MinIONRun.objects.get(pk=runid)
+                if inputtype == "flowcell":
+                    instance = FlowCell.objects.get(pk=runid)
+                else:
+                    instance = MinIONRun.objects.get(pk=runid)
 
                 seqlens = []
                 gfaall = ""
@@ -824,14 +876,19 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count):
                     if record[0] == 'S':
                         seqlens.append(len(record[2]))
 
-                newgfastore = GfaStore(run=runinstance, barcode = bar, readtype = ty)
+                if inputtype == "flowcell":
+                    newgfastore = GfaStore(flowcell=instance, barcodegroup=bar, readtype=ty)
+                else:
+                    newgfastore = GfaStore(run=instance, barcodegroup = bar, readtype = ty)
                 newgfastore.nreads = totfq
                 newgfastore.gfaformat = gfaall  #   string  The whole GFA file
                 newgfastore.save()
 
                 #### SAVE 0 IF ASSSEMBLY FAILS
-
-                newgfa = GfaSummary(run=runinstance, barcode = bar, readtype = ty)
+                if inputtype == "flowcell":
+                    newgfa = GfaSummary(flowcell=instance, barcodegroup = bar, readtype = ty)
+                else:
+                    newgfa = GfaSummary(run=instance, barcodegroup = bar, readtype = ty)
                 newgfa.nreads = totfq
                 if len(seqlens) > 0:
                     nparray = np.array(seqlens)
