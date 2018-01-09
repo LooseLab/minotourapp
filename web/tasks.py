@@ -1148,6 +1148,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
 @task()
 def run_kraken(runid, id, last_read, inputtype):
     JobMaster.objects.filter(pk=id).update(running=True)
+
     runidset=set()
     if inputtype == "flowcell":
         flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
@@ -1261,9 +1262,17 @@ def run_kraken(runid, id, last_read, inputtype):
 
 
 class Kraken():
+    """
+    This class assumes that kraken is available in the command line. That isn't likely to be the case.
+    Should we specify a folder that contain utilities needed by minoTour?
+    We also need a folder that contains the reference databases.
+    In a sense we have this with the reference collections. Lets use that!
+    """
     def __init__(self):
         self.tmpfile = tempfile.NamedTemporaryFile(suffix=".fa")
         self.krakenfile = tempfile.NamedTemporaryFile(suffix=".out")
+        self.REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
+        self.krakenlocation = os.path.join(REFERENCELOCATION, 'minikraken_20141208')
 
     def write_seqs(self, seqs):
         # self.tmpfile.write("\n".join(seqs))
@@ -1279,21 +1288,21 @@ class Kraken():
             print(line)
 
     def process(self):
-        print('kraken-report --db /Volumes/SSD/kraken/minikraken_20141208 ' + self.krakenfile.name)
-        p1 = subprocess.Popen('kraken-report --db /Volumes/SSD/kraken/minikraken_20141208 ' + self.krakenfile.name,
+        print('kraken-report --db '+ self.krakenlocation + ' ' + self.krakenfile.name)
+        p1 = subprocess.Popen('kraken-report --db '+ self.krakenlocation + ' ' + self.krakenfile.name,
                               shell=True, stdout=subprocess.PIPE)
         (out, err) = p1.communicate()
         return out
 
     def process2(self):
-        print('kraken-mpa-report --db /Volumes/SSD/kraken/minikraken_20141208 ' + self.krakenfile.name)
-        p1 = subprocess.Popen('kraken-mpa-report --db /Volumes/SSD/kraken/minikraken_20141208 ' + self.krakenfile.name,shell=True, stdout=subprocess.PIPE)
+        print('kraken-mpa-report --db '+ self.krakenlocation + ' ' + self.krakenfile.name)
+        p1 = subprocess.Popen('kraken-mpa-report --db '+ self.krakenlocation + ' ' + self.krakenfile.name,shell=True, stdout=subprocess.PIPE)
         (out, err) = p1.communicate()
         return out
 
     def run(self):
-        print('kraken --quick --db /Volumes/SSD/kraken/minikraken_20141208 --fasta-input --preload  ' + self.tmpfile.name)  # +'  #| kraken-translate --db /Volumes/SSD/kraken/minikraken_20141208/ $_'
-        p1 = subprocess.Popen('kraken --quick --db /Volumes/SSD/kraken/minikraken_20141208 --fasta-input --preload  ' + self.tmpfile.name + '  ',shell=True, stdout=subprocess.PIPE)
+        print('kraken --quick --db '+ self.krakenlocation + '  --fasta-input --preload  ' + self.tmpfile.name)  # +'  #| kraken-translate --db /Volumes/SSD/kraken/minikraken_20141208/ $_'
+        p1 = subprocess.Popen('kraken --quick --db '+ self.krakenlocation + ' --fasta-input --preload  ' + self.tmpfile.name + '  ',shell=True, stdout=subprocess.PIPE)
         (out, err) = p1.communicate()
         return out
 

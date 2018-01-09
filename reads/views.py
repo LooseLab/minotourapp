@@ -1575,7 +1575,7 @@ def flowcell_tasks_detail_all(request,pk):
             'transcriptome': jobtype.transcriptome
         })
 
-        jobmasterlist = JobMaster.objects.filter(run_id__in=runset).filter(job_type=jobtype)
+        jobmasterlist = JobMaster.objects.filter(Q(run_id__in=runset) | Q(flowcell_id=pk)).filter(job_type=jobtype)
 
         if len(jobmasterlist) > 0:
             obj2 = {}
@@ -1592,9 +1592,11 @@ def flowcell_tasks_detail_all(request,pk):
                 'running': jobmasterlist[0].running
             })
 
-            obj.update({
-                'job_details': obj2
-            })
+            if len(obj2) > 0:
+
+                obj.update({
+                    'job_details': obj2
+                })
 
         result.append(obj)
 
