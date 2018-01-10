@@ -7,6 +7,7 @@ import tempfile
 import numpy as np
 from datetime import datetime, timedelta
 import time
+import zipfile
 
 import pytz
 import redis
@@ -761,6 +762,111 @@ def test_task(string, reference):
     for line in lines:
         print(line.id)
 
+@task()
+def export_reads(runid,id,tmp,last_read,inputtype):
+    """
+    Function to write out fastq data to known temporary file, compress it,
+    and enable it for export. File will be set to self destruct after 7 days or
+    1 day after downloading.
+    Function should check to see if the file already exists somewhere.
+    Also should split data out by barcode and - preferably read type.
+    :param runid:
+    :param id:
+    :param tmp:
+    :param last_read:
+    :param inputtype:
+    :return:
+    """
+    JobMaster.objects.filter(pk=id).update(running=True)
+    runidset = get_runidset(runid,inputtype)
+    barcodeset,barcoded=get_barcodes(runidset)
+    # fetch all the reads from the run
+    fastqs = FastqRead.objects.filter(run_id__id__in=runidset)
+    dirpath = tempfile.mkdtemp()
+    filedict={}
+    if barcoded==True:
+        for barcode in barcodeset:
+            filehandle = os.path.join(dirpath,barcode+"_pass"+".fastq")
+            filedict.setdefault(filehandle, open(filehandle, 'w'))
+            filehandle = os.path.join(dirpath,barcode+"_fail"+".fastq")
+            filedict.setdefault(filehandle, open(filehandle, 'w'))
+            #files_dict[filename].write("test")
+    else:
+        filehandle = os.path.join(dirpath,"AllReads_pass.fastq")
+        filedict.setdefault(filehandle, open(filehandle, 'w'))
+        filehandle = os.path.join(dirpath,"AllReads_fail.fastq")
+        filedict.setdefault(filehandle, open(filehandle, 'w'))
+
+    if barcoded==True:
+        for fastq in fastqs:
+            if fastq.is_pass:
+                filehandle = os.path.join(dirpath,fastq.barcode.name+"_pass"+".fastq")
+            else:
+                filehandle = os.path.join(dirpath, fastq.barcode.name + "_fail" + ".fastq")
+            filedict[filehandle].write(format_read(fastq))
+    else:
+        for fastq in fastqs:
+            if fastq.is_pass:
+                filehandle = os.path.join(dirpath,"AllReads_pass"+".fastq")
+            else:
+                filehandle = os.path.join(dirpath, "AllReads_fail" + ".fastq")
+            filedict[filehandle].write(format_read(fastq))
+    archive_zip = zipfile.ZipFile(os.path.join(dirpath,'archive.zip'), 'w')
+    for folder, subfolders, files in os.walk(dirpath):
+        for file in files:
+            if file.endswith('.fastq'):
+                archive_zip.write(os.path.join(folder, file),
+                                  os.path.relpath(os.path.join(folder, file), dirpath),
+                                  compress_type=zipfile.ZIP_DEFLATED)
+                try:
+                    os.remove(os.path.join(folder, file))
+                except OSError:
+                    pass
+    archive_zip.close()
+    JobMaster.objects.filter(pk=id).update(tempfile_name=dirpath,complete=1)
+    #delete_file(id)
+    #send_message()
+    JobMaster.objects.filter(pk=id).update(running=False)
+
+
+def get_barcodes(runidset):
+    """
+    Given a set of runs, returns all the barcodes within them.
+    :param runidset:
+    :return:
+    """
+    barcodeset = set()
+    barcodes = Barcode.objects.filter(run_id__in=runidset)
+    for barcode in barcodes:
+        if barcode.name != "All reads" and barcode.name != "No barcode":
+            barcodeset.add(barcode.name)
+    barcoded=False
+    if len(barcodeset)>0:
+        barcoded=True
+    return (barcodeset,barcoded)
+
+
+def format_read(fastq):
+    """
+    This function takes a fastq database object and returns a formatted string for writing
+    to a file
+    :param fastq: fastq object from the database
+    :return: string formatted version of fastq sequence to write to a file.
+    """
+    lineheader = ">"+str(fastq)
+    if len(fastq.run_id.run_id) > 0:
+        lineheader = lineheader + " runid={}".format(fastq.run_id.run_id)
+    if len(str(fastq.read)) > 0:
+        lineheader = lineheader + " read={}".format(fastq.read)
+    if len(str(fastq.channel)) > 0:
+        lineheader = lineheader + " channel={}".format(fastq.channel)
+    ##This output format needs checking
+    if len(str(fastq.start_time)) > 0:
+        lineheader = lineheader + " start_time={}".format(fastq.start_time.replace(tzinfo=datetime.timezone.utc).isoformat())
+    if fastq.barcode.name != "No barcode":
+        lineheader = lineheader + " barcode={}".format(fastq.barcode.name)
+    return ("{}\n{}\n+\n{}\n".format(lineheader,fastq.fastqreadextra.sequence,fastq.fastqreadextra.quality))
+
 
 @task()
 def clean_up_assembly_files(runid,id,tmp):
@@ -775,6 +881,18 @@ def clean_up_assembly_files(runid,id,tmp):
     JobMaster.objects.filter(pk=id).update(tempfile_name="")
 
 
+def get_runidset(runid,inputtype):
+    runidset = set()
+    if inputtype == "flowcell":
+        realflowcell = FlowCell.objects.get(pk=runid)
+        flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
+        for flowcell_run in flowcell_runs:
+            runidset.add(flowcell_run.run_id)
+            # print (flowcell_run.run_id)
+            # we need to get the runids that make up this run
+    else:
+        runidset.add(runid)
+    return (runidset)
 
 
 @task()
