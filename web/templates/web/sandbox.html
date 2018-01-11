@@ -3,6 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <style>
+        .principal {
+            width: 100%;
+            height: 600px;
+        }
+
+        .detail_chart {
+            width: 95%;
+            height: 200px;
+        }
+        .master_chart {
+            width: 95%;
+            height: 70px;
+        }
+    </style>
 </head>
 <body>
 
@@ -10,8 +25,16 @@
     run <input type="text" id="run-id"/>
     <select id="chromosome-id-select"></select>
 </form>
-<div id="container2"></div>
-<div id="container" style="height: 400px; min-width: 310px"></div>
+
+<div id="teste_div" class="principal">
+    <div id="teste_div_detail" class="detail_chart"></div>
+    <div id="teste_div_master" class="master_chart"></div>
+</div>
+
+<div id="container2">container2</div>
+<div id="container" style="height: 400px; min-width: 310px">container</div>
+
+
 
 <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 <script src="https://code.highcharts.com/highcharts.js"></script>
@@ -393,6 +416,347 @@
         });
 
     }
+
+    function afterSelection(event) {
+        event.preventDefault();
+
+        // console.log(event);
+        console.log(event.target.renderTo.id)
+        return;
+
+        var extremesObject = event.xAxis[0];
+        var min = extremesObject.min;
+        var max = extremesObject.max;
+        var detailData = [];
+        var xAxis = this.xAxis[0];
+
+        // reverse engineer the last part of the data
+        $.each(this.series[0].data, function () {
+            if (this.x > min && this.x < max) {
+                detailData.push([this.x, this.y]);
+            }
+        });
+
+        // move the plot bands to reflect the new detail span
+        xAxis.removePlotBand('mask-before');
+        xAxis.addPlotBand({
+            id: 'mask-before',
+            from: data[0][0],
+            to: min,
+            color: 'rgba(0, 0, 0, 0.2)'
+        });
+
+        xAxis.removePlotBand('mask-after');
+        xAxis.addPlotBand({
+            id: 'mask-after',
+            from: max,
+            to: data[data.length - 1][0],
+            color: 'rgba(0, 0, 0, 0.2)'
+        });
+
+
+        detailChart.series[0].setData(detailData);
+
+        /*return false;*/
+    }
+
+    // create the detail chart
+    function createDetail(masterChart) {
+
+        // prepare the detail chart
+        var detailData = [];
+        var detailStart = data[0][0];
+
+        $.each(masterChart.series[0].data, function () {
+            //console.log('x: ' + this.x);
+            //console.log('y: ' + this.y);
+            if (this.x >= detailStart) {
+                detailData.push([this.x, this.y]);
+            }
+        });
+
+        console.log('--->');
+        console.log(data);
+        console.log(detailStart);
+        console.log(detailData);
+        console.log('<---');
+
+        // create a detail chart referenced by a global variable
+        detailChart = Highcharts.chart('detail-container', {
+            chart: {
+                marginBottom: 120,
+                reflow: false,
+                marginLeft: 50,
+                marginRight: 20,
+                style: {
+                    position: 'absolute'
+                },
+                step: true,
+                zoomType: 'x',
+                events: {
+                    selection: afterSelection
+                }
+            },
+            credits: {
+                enabled: false
+            },
+            title: {
+                text: null
+            },
+            xAxis: {
+                type: 'line',
+                // events: {
+                //     afterSetExtremes: afterSetExtremes
+                // }
+            },
+            yAxis: {
+                title: {
+                    text: null
+                },
+                maxZoom: 0.1
+            },
+            legend: {
+                enabled: false
+            },
+            plotOptions: {
+                series: {
+                    marker: {
+                        enabled: false,
+                        states: {
+                            hover: {
+                                enabled: true,
+                                radius: 3
+                            }
+                        }
+                    }
+                }
+            },
+            series: [{
+                name: null,
+                pointStart: detailStart,
+                data: detailData,
+                step: true
+            }],
+
+            exporting: {
+                enabled: false
+            }
+
+        }); // return chart
+    }
+
+    function create_url() {
+
+        return "http://localhost:8000/api/v1/runs/2/pafcover/15/1/3/";
+    }
+
+    function load_chart_data(url, master, detail) {
+
+        console.log('before getjson');
+
+        $.getJSON(url, function (data) {
+
+            console.log('length of master: ' + master.series[0].data.length);
+            console.log('length of detail: ' + detail.series[0].data.length);
+
+            console.log('inside geojson');
+            console.log(data);
+
+            if (master.series[0].data.length === 0) {
+                master.series[0].setData(data);
+            }
+
+            detail.series[0].setData(data);
+
+            return data;
+
+        });
+
+        console.log('after getjson');
+
+    }
+
+    function create_detail_chart(detail_div) {
+
+        var chart = Highcharts.chart({
+            chart: {
+                renderTo: detail_div,
+                reflow: false,
+                marginLeft: 50,
+                marginRight: 20,
+                style: {
+                    position: 'absolute'
+                },
+                step: true,
+                zoomType: 'x',
+                events: {
+                //    selection: afterSelection
+                }
+            },
+            credits: {
+                enabled: false
+            },
+            title: {
+                text: null
+            },
+            xAxis: {
+                type: 'line',
+                // events: {
+                //     afterSetExtremes: afterSetExtremes
+                // }
+            },
+            yAxis: {
+                title: {
+                    text: null
+                },
+                maxZoom: 0.1
+            },
+            legend: {
+                enabled: false
+            },
+            plotOptions: {
+                series: {
+                    marker: {
+                        enabled: false,
+                        states: {
+                            hover: {
+                                enabled: true,
+                                radius: 3
+                            }
+                        }
+                    }
+                }
+            },
+            series: [{
+                name: null,
+                //pointStart: detailStart,
+                data: [],
+                step: true
+            }],
+
+            exporting: {
+                enabled: false
+            }
+
+        });
+
+        return chart;
+
+    }
+
+    function create_master_chart(master_div) {
+
+        var chart = new Highcharts.chart({
+            chart: {
+                renderTo: master_div,
+                reflow: false,
+                //borderWidth: 0,
+                backgroundColor: null,
+                marginLeft: 50,
+                marginRight: 20,
+                marginTop: -30,
+                zoomType: 'x',
+                step: true,
+                //events: {
+
+                    // listen to the selection event on the master chart to update the
+                    // extremes of the detail chart
+                    //selection: afterSelection
+                //}
+            },
+            title: {
+                text: null
+            },
+            xAxis: {
+                type: 'line',
+                showLastTickLabel: true,
+                plotBands: [{
+                    id: 'mask-before',
+                    //from: data[0][0],
+                    //to: data[data.length - 1][0],
+                    color: 'rgba(0, 0, 0, 0.2)'
+                }],
+                title: {
+                    text: null
+                }
+            },
+            yAxis: {
+                title: {
+                    text: null
+                },
+                visible: false
+            },
+            legend: {
+                enabled: false
+            },
+            credits: {
+                enabled: false
+            },
+            plotOptions: {
+                series: {
+                    fillColor: {
+                        // linearGradient: [0, 0, 0, 70],
+                        stops: [
+                            [0, Highcharts.getOptions().colors[0]],
+                            [1, 'rgba(255,255,255,0)']
+                        ]
+                    },
+                    lineWidth: 1,
+                    marker: {
+                        enabled: false
+                    },
+                    shadow: false,
+                    states: {
+                        hover: {
+                            lineWidth: 1
+                        }
+                    },
+                    enableMouseTracking: false
+                }
+            },
+
+            series: [{
+                type: 'area',
+                name: null,
+                //pointStart: data[0][0],
+                data: [],
+                step: true
+            }],
+
+            exporting: {
+                enabled: false
+            }
+
+        });
+
+        return chart;
+
+    }
+
+    function create_master_detail_chart(div_name, url) {
+
+        var div_main_name = div_name;
+        var div_master_name = div_main_name + "_master";
+        var div_detail_name = div_main_name + "_detail";
+
+        var detail_container = document.getElementById(div_detail_name);
+        var master_container = document.getElementById(div_master_name);
+        var main_container = document.getElementById(div_main_name);
+
+        var master_chart = create_master_chart(master_container);
+        var detail_chart = create_detail_chart(detail_container);
+
+        var url = create_url();
+
+        load_chart_data(url, master_chart, detail_chart);
+
+        console.log('done');
+    }
+
+    $( document ).ready(function() {
+        create_master_detail_chart('teste_div');
+    });
+
 
 </script>
 
