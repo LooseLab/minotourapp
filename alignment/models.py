@@ -148,6 +148,12 @@ class PafSummaryCov(models.Model):
         except AttributeError:
             return "undefined"
 
+    def barcode_group_name(self):
+        try:
+            return self.barcodegroup.name
+        except AttributeError:
+            return "undefined"
+
     def read_type_name(self):
         try:
             return self.read_type.name

@@ -183,6 +183,10 @@ urlpatterns = [
         views.flowcell_list,
         name="flowcell-list"),
     url(
+        r'^api/v1/activeflowcells/$',
+        views.flowcell_list_active,
+        name="flowcell-list-active"),
+    url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/$',
         views.flowcell_detail,
         name="flowcell-detail"),
@@ -261,6 +265,11 @@ urlpatterns = [
     url(
         r'^api/v1/tabs/(?P<pk>[0-9]+)/$',
         views.tabs_details,
+        name="tabs-details"
+    ),
+    url(
+        r'^api/v1/flowcells/tabs/(?P<pk>[0-9]+)/$',
+        views.flowcell_tabs_details,
         name="tabs-details"
     ),
 ]
