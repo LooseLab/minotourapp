@@ -29,12 +29,33 @@ def rough_coverage_complete_chromosome(request, run_id, barcode_id, read_type_id
 @api_view(['GET'])
 def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id, start, end):
 
-    queryset = PafRoughCov.objects \
-        .filter(run__owner=request.user) \
-        .filter(barcode__id=barcode_id) \
-        .filter(chromosome__id=chromosome_id) \
-        .filter(read_type__id=read_type_id) \
-        .order_by('p')
+    min_extreme = request.GET.get('min', '')
+    max_extreme = request.GET.get('max', '')
+
+    if min_extreme != '' and max_extreme != '':
+
+        print('Running query with min and max {} {}'.format(min_extreme, max_extreme))
+
+        queryset = PafRoughCov.objects \
+            .filter(run__owner=request.user) \
+            .filter(barcode__id=barcode_id) \
+            .filter(chromosome__id=chromosome_id) \
+            .filter(read_type__id=read_type_id) \
+            .filter(p__gte=min_extreme) \
+            .filter(p__lte=max_extreme) \
+            .order_by('p')
+
+
+    else:
+
+        print('Running query without min and max')
+
+        queryset = PafRoughCov.objects \
+            .filter(run__owner=request.user) \
+            .filter(barcode__id=barcode_id) \
+            .filter(chromosome__id=chromosome_id) \
+            .filter(read_type__id=read_type_id) \
+            .order_by('p')
 
     start = int(start)
     end = int(end)
