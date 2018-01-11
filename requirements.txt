@@ -21,4 +21,5 @@ django_redis
 flower
 tqdm
 requests_futures
+scipy
 

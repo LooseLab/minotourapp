@@ -16,6 +16,8 @@ from alignment.serializers import PafSummaryCovSerializer
 from reads.models import JobMaster
 from reference.models import ReferenceLine
 
+import scipy.stats
+
 
 def find_bin(start, size_of_each_bin, value):
     return int((value - start) / size_of_each_bin)
@@ -45,7 +47,6 @@ def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id,
             .filter(p__lte=max_extreme) \
             .order_by('p')
 
-
     else:
 
         print('Running query without min and max')
@@ -56,6 +57,19 @@ def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id,
             .filter(chromosome__id=chromosome_id) \
             .filter(read_type__id=read_type_id) \
             .order_by('p')
+
+        positions = []
+        incdels = []
+
+        for item in queryset:
+            positions.append(item.p)
+            incdels.append(item.i)
+
+        print(positions)
+        print(incdels)
+
+    solution = scipy.stats.binned_statistic(positions, incdels, 'mean', 20)
+    print(solution)
 
     start = int(start)
     end = int(end)
