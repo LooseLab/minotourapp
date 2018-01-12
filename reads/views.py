@@ -1608,7 +1608,7 @@ def tabs_details(request, pk):
     """
     Return tab_id, tab_title, and tab_position for a given run.
     """
-    dict = {
+    run_tabs_dict = {
         "LiveEvent": {
             "id": "tab-live-event-data",
             "title": "Live Event Data",
@@ -1643,11 +1643,11 @@ def tabs_details(request, pk):
     tabs = list()
     # Find live event data
     if MinIONRunStatus.objects.filter(run_id=pk):
-        tabs.append(dict['LiveEvent'])
+        tabs.append(run_tabs_dict['LiveEvent'])
 
     for master in JobMaster.objects.filter(run_id=pk).values_list('job_type__name', flat=True):
-        if master in dict.keys():
-            tabs.append(dict[master])
+        if master in run_tabs_dict.keys():
+            tabs.append(run_tabs_dict[master])
         else:
             print("RunID '" + pk + "' has JobType '" + master + "' but there is no corresponding tab defined in reads/views.py")
 
@@ -1659,7 +1659,7 @@ def flowcell_tabs_details(request, pk):
     """
     Return tab_id, tab_title, and tab_position for a given flowcell.
     """
-    dict = {
+    flowcell_tabs_dict = {
         "LiveEvent": {
             "id": "tab-live-event-data",
             "title": "Live Event Data",
@@ -1692,21 +1692,24 @@ def flowcell_tabs_details(request, pk):
         }
     }
     tabs = list()
+    tabs_send = list()
     queryset = FlowCellRun.objects.filter(flowcell_id=pk)
     runset = list()
+
     for run in queryset:
-        # print (run.run_id)
         runset.append(run.run_id)
 
-    # Where is live event data for flowcells stored?
     if MinIONRunStatus.objects.filter(run_id__in=runset):
         tabs.append(dict['LiveEvent'])
 
     for master in JobMaster.objects.filter(Q(run_id__in=runset) | Q(flowcell_id=pk)).values_list('job_type__name', flat=True):
-        if master in dict.keys():
-            tabs.append(dict[master])
+        if master in flowcell_tabs_dict.keys():
+            tabs.append(flowcell_tabs_dict[master])
         else:
-            print("RunID '" + pk + "' has JobType '" + master + "' but there is no corresponding tab defined in reads/views.py")
+            print("Flowcell '" + pk + "' has JobType '" + master + "' but there is no corresponding tab defined in reads/views.py")
 
-    return Response(tabs)
+    for tab in tabs:
+        if tab not in tabs_send:
+            tabs_send.append(tab)
 
+    return Response(tabs_send)
