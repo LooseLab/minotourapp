@@ -8,6 +8,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import time
 import zipfile
+import shutil
 
 import pytz
 import redis
@@ -153,6 +154,14 @@ def slow_monitor():
     logger.info('Running slow_monitor celery task.')
 
     print("Slow Monitor Called")
+
+    # Check for uncompleted read export tasks.
+    exportreadjob = JobType.objects.get(name="ExportReads")
+    jobmastercollection = JobMaster.objects.filter(job_type=exportreadjob).filter(complete=False).filter(running=False)
+    for jobmaster in jobmastercollection:
+        #runid,id,tmp,last_read,inputtype
+        export_reads.delay(jobmaster.flowcell_id,jobmaster.id,jobmaster.tempfile_name,jobmaster.last_read,"flowcell")
+
 
     testset = {}
 
@@ -824,9 +833,24 @@ def export_reads(runid,id,tmp,last_read,inputtype):
                     pass
     archive_zip.close()
     JobMaster.objects.filter(pk=id).update(tempfile_name=dirpath,complete=1)
-    #delete_file(id)
-    #send_message()
+    later = datetime.utcnow() + timedelta(minutes=5)
+    delete_folder.apply_async((id), eta=later)
+    send_message([JobMaster.objects.filter(pk=id).flowcell.owner], "Read Export Complete",
+                 "Your reads have been exported and can be found here: {}.".format(dirpath))
     JobMaster.objects.filter(pk=id).update(running=False)
+
+@task
+def delete_folder(id):
+    """
+    This task will delete a specific folder based on the tempfile_name in a specific job.
+    It will then delete the jobmaster.
+    :param id:
+    :return:
+    """
+    jobtoprocess = JobMaster.objects.get(pk=id)
+    dirpath = jobtoprocess.tempfile_name
+    shutil.rmtree(dirpath)
+    jobtoprocess.delete()
 
 
 def get_barcodes(runidset):
@@ -862,7 +886,7 @@ def format_read(fastq):
         lineheader = lineheader + " channel={}".format(fastq.channel)
     ##This output format needs checking
     if len(str(fastq.start_time)) > 0:
-        lineheader = lineheader + " start_time={}".format(fastq.start_time.replace(tzinfo=datetime.timezone.utc).isoformat())
+        lineheader = lineheader + " start_time={}".format(fastq.start_time.replace(tzinfo=pytz.UTC).isoformat())
     if fastq.barcode.name != "No barcode":
         lineheader = lineheader + " barcode={}".format(fastq.barcode.name)
     return ("{}\n{}\n+\n{}\n".format(lineheader,fastq.fastqreadextra.sequence,fastq.fastqreadextra.quality))

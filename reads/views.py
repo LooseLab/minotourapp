@@ -1689,6 +1689,11 @@ def flowcell_tabs_details(request, pk):
             "id": "tab-transcriptome-mapping",
             "title": "Transcriptome Mapping",
             "position": 6
+        },
+        "ExportReads": {
+            "id": "tab-export-reads",
+            "title": "Download Read Data",
+            "position": 7
         }
     }
     tabs = list()
