@@ -1705,7 +1705,7 @@ def flowcell_tabs_details(request, pk):
         runset.append(run.run_id)
 
     if MinIONRunStatus.objects.filter(run_id__in=runset):
-        tabs.append(dict['LiveEvent'])
+        tabs.append(flowcell_tabs_dict['LiveEvent'])
 
     for master in JobMaster.objects.filter(Q(run_id__in=runset) | Q(flowcell_id=pk)).values_list('job_type__name', flat=True):
         if master in flowcell_tabs_dict.keys():
