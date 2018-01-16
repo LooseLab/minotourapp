@@ -17,6 +17,34 @@ from reads.models import JobMaster
 from reference.models import ReferenceLine
 
 import scipy.stats
+import numpy as np
+
+
+class NumpyEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+
+        if isinstance(obj, np.integer):
+            return int(obj)
+
+        elif isinstance(obj, np.floating):
+            return float(obj)
+
+        else:
+            return super(MyEncoder, self).default(obj)
+
+
+def get_incdel_at_position(run_id, barcode_id, read_type_id, chromosome_id, position):
+
+    queryset = PafRoughCov.objects \
+        .filter(run__id=run_id) \
+        .filter(barcode__id=barcode_id) \
+        .filter(chromosome__id=chromosome_id) \
+        .filter(read_type__id=read_type_id) \
+        .filter(p__lte=position) \
+        .aggregate(incdel=Sum('i'))
+
+    return queryset['incdel']
 
 
 def find_bin(start, size_of_each_bin, value):
@@ -38,6 +66,12 @@ def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id,
 
         print('Running query with min and max {} {}'.format(min_extreme, max_extreme))
 
+        min_extreme = int(min_extreme)
+        max_extreme = int(max_extreme)
+
+        if min_extreme < 0:
+            min_extreme = 0
+
         queryset = PafRoughCov.objects \
             .filter(run__owner=request.user) \
             .filter(barcode__id=barcode_id) \
@@ -46,6 +80,8 @@ def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id,
             .filter(p__gte=min_extreme) \
             .filter(p__lte=max_extreme) \
             .order_by('p')
+
+        current_incdel = get_incdel_at_position(run_id, barcode_id, read_type_id, chromosome_id, min_extreme)
 
     else:
 
@@ -58,37 +94,157 @@ def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id,
             .filter(read_type__id=read_type_id) \
             .order_by('p')
 
-        positions = []
-        incdels = []
+        min_extreme = 0
+        max_extreme = queryset[0].chromosome.chromosome_length
 
-        for item in queryset:
-            positions.append(item.p)
-            incdels.append(item.i)
+        current_incdel = 0
 
-        print(positions)
-        print(incdels)
+    reference_size = max_extreme - min_extreme
 
-    solution = scipy.stats.binned_statistic(positions, incdels, 'mean', 20)
-    print(solution)
+    number_of_bins = 200
 
-    start = int(start)
-    end = int(end)
+    bin_width = reference_size / number_of_bins
 
-    if start == 0 and end == 0:
-        start = queryset.first().p
-        end = queryset.last().p
+    #
+    # the size of bin_edges is the number of bins + 1
+    #
+    bin_edges = np.array([min_extreme + bin_width * i for i in range(number_of_bins + 1)])
+
+    positions = []
+    incdels = []
+
+    for item in queryset:
+        positions.append(item.p)
+        incdels.append(item.i)
+
+    # print(positions)
+    # print(incdels)
+
+    # q = np.array([
+    #     [3, 10, 15, 23, 70, 99],  # positions
+    #     [1, 1, -1, 7, -1, -3]  # incdels
+    # ])
+
+    q = np.array([
+        positions,
+        incdels
+    ])
+
+    #
+    # this array indicates the bin of each element in the array q[0] (positions)
+    # it has the same length of q[0]
+    #
+    bin_number = np.array([int((x - min_extreme) / bin_width) for x in q[0]])
+    # print(bin_number)
+
+    #
+    # keep track of current incdel value
+    #
+    #current_incdel = 0
+
+    bin_results = {}
+
+    #
+    # for each bin
+    #
+    for b in range(number_of_bins):
+        positions = q[0][bin_number == b]
+        incdels = q[1][bin_number == b]
+
+        begin_bin = min_extreme + (bin_width * b)
+        end_bin = min_extreme + (bin_width * (b + 1))
+
+        #
+        # contribution is the amount o value that each individual in a bin_number
+        # adds to the average and it is the individual's incdel * individual's length
+        #
+        current_contribution = 0.0
+
+
+        number_of_individuals = sum(bin_number == b)
+
+        last_individual_index = number_of_individuals - 1
+
+        for i in range(number_of_individuals):
+
+            #
+            # calculate the contribution of the last individual of previous bin
+            # to the current bin. it happens when a length of an individual crosses
+            # the limit of a bin (very very common)
+            #
+            if i == 0:
+                length = positions[0] - begin_bin
+
+                current_contribution = current_contribution + current_incdel * length
+
+                # print(
+                # 'bin: {}, i: -, position: {}, incdel: -, current_incdel: {}, length: {}, contribution: {}'.format(b,
+                #                                                                                                   begin_bin,
+                #                                                                                                   current_incdel,
+                #                                                                                                   length,
+                #                                                                                                   current_incdel * length))
+
+            #
+            # if it is the last individual, length is calculated from its position to
+            # the end of the bin
+            #
+            if i == last_individual_index:
+                length = end_bin - positions[i]
+            #
+            # if it is not the last individual, just calculates its distance until the next
+            #
+            else:
+                length = positions[i + 1] - positions[i]
+
+            #
+            # increment incdel
+            #
+            current_incdel = current_incdel + incdels[i]
+
+            #
+            # increment contribution: incdel * length
+            #
+            current_contribution = current_contribution + current_incdel * length
+
+            # print(
+            # 'bin: {}, i: {}, position: {}, incdel: {}, current_incdel: {}, length: {}, contribution: {}'.format(b, i,
+            #                                                                                                     positions[
+            #                                                                                                         i],
+            #                                                                                                     incdels[
+            #                                                                                                         i],
+            #                                                                                                     current_incdel,
+            #                                                                                                     length,
+            #                                                                                                     current_incdel * length))
+
+        #
+        # if there are individuals, bin average is the sum of the contributions divided by bin width
+        #
+        if number_of_individuals > 0:
+            bin_average = current_contribution / bin_width
+            # print('bin average: {}, number of individuals: {}, current contribution: {}'.format(bin_average, number_of_individuals, current_contribution))
+
+        #
+        # if bin is empty, then bin average is the value of current incdel (last individual) divided by bin width
+        #
+        else:
+            bin_average = current_incdel
+            # print('bin average: {}'.format(bin_average))
+
+
+        bin_results[b] = bin_average
+
+        # print('bin: {}, average: {:.2f}'.format(b, bin_average))
+
+    # print('bin_width: {}'.format(bin_width))
+    # print('bin averages: ')
+    # print(bin_results)
 
     result_list = []
-    current_coverage_sum = 0
 
-    for key, item in enumerate(queryset):
+    for key in bin_results.keys():
+        result_list.append((min_extreme + (key * bin_width), bin_results[key]))
 
-        current_coverage_sum = current_coverage_sum + item.i
-
-        if start < item.p < end:
-            result_list.append([item.p, current_coverage_sum])
-
-    return HttpResponse(json.dumps(result_list), content_type="application/json")
+    return HttpResponse(json.dumps(result_list, cls=NumpyEncoder), content_type="application/json")
 
 
 @api_view(['GET'])

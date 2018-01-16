@@ -536,14 +536,17 @@
         return "http://localhost:8000/api/v1/runs/2/pafcover/15/1/3/";
     }
 
-    function load_chart_data(url) {
+    function load_chart_data(url, div_main_name) {
 
         console.log('before getjson');
 
+        console.log(url);
+
         $.getJSON(url, function (data) {
+            console.log(data);
 
             console.log('length of master: ' + master_chart.series[0].data.length);
-            console.log('length of detail: ' + detail_chart.series[0].data.length);
+            //console.log('length of detail: ' + detail_chart.series[0].data.length);
 
             console.log('inside geojson');
             console.log(data);
@@ -552,8 +555,22 @@
                 master_chart.series[0].setData(data);
             }
 
-            detail_chart.series[0].setData(data);
+            min_extreme = data[0][0];
+            max_extreme = data[19][0];
+            // min_extreme = data[0][0] + (data[19][0] - data[0][0])/2;
+            // max_extreme = data[19][0] - (data[19][0] - data[0][0])/2;
 
+            if (detail_chart) {
+                detail_chart.destroy();
+            }
+
+            detail_chart = create_detail_chart(div_main_name);
+
+            //detail_chart.xAxis[0].setExtremes(min_extreme, max_extreme);
+            detail_chart.series[0].setData(data);
+            //detail_chart.series[0].pointStart = data[0][0]
+
+            //detail_chart.redraw();
             return data;
 
         });
@@ -562,11 +579,17 @@
 
     }
 
-    function create_detail_chart(detail_div) {
+    function create_detail_chart(div_main_name) {
+
+        var div_detail_name = 'teste_div_detail';
+        //var div_detail_name = div_main_name + "_detail";
+        console.log("detail div name: " + div_detail_name);
+
+        var detail_container = document.getElementById(div_detail_name);
 
         var chart = Highcharts.chart({
             chart: {
-                renderTo: detail_div,
+                renderTo: detail_container,
                 reflow: false,
                 marginLeft: 50,
                 marginRight: 20,
@@ -720,18 +743,18 @@
 
         var div_main_name = div_name;
         var div_master_name = div_main_name + "_master";
-        var div_detail_name = div_main_name + "_detail";
+        // var div_detail_name = div_main_name + "_detail";
 
-        var detail_container = document.getElementById(div_detail_name);
+        // var detail_container = document.getElementById(div_detail_name);
         var master_container = document.getElementById(div_master_name);
         var main_container = document.getElementById(div_main_name);
 
         master_chart = create_master_chart(master_container);
-        detail_chart = create_detail_chart(detail_container);
+        //detail_chart = create_detail_chart(detail_container);
 
         var url = create_url();
 
-        load_chart_data(url);
+        load_chart_data(url, div_main_name);
 
         console.log('done');
     }

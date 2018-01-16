@@ -60,7 +60,9 @@ class PafStore_transcriptome(models.Model):
     def __str__(self):
         return"{} {}".format(self.run,self.qsn)
 
+
 class SamStore(models.Model):
+
     run = models.ForeignKey(
         MinIONRun,
         related_name='runalignments'
@@ -80,6 +82,7 @@ class SamStore(models.Model):
 
 
 class SamRoughCov(models.Model):
+
     run = models.ForeignKey(
         MinIONRun,
         related_name='rc_runid'
@@ -113,19 +116,57 @@ class SamRoughCov(models.Model):
 
 
 class PafRoughCov(models.Model):
-    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='prc_run', null=True,
-                                 blank=True)
-    flowcell = models.ForeignKey(FlowCell, on_delete=models.CASCADE, related_name='flowcell_prc_run', null=True,
-                                 blank=True)
-    read_type = models.ForeignKey(FastqReadType, related_name='prc_type')
-    barcode = models.ForeignKey(Barcode, related_name='prc_barcode', null=True)
-    barcodegroup = models.ForeignKey(BarcodeGroup, related_name='prc_barcodegroup', null=True)
-    #reference = models.TextField() #should switch to a reference database
-    reference = models.ForeignKey(ReferenceInfo, related_name='pafreference')
-    #chromosome = models.TextField() #could be repeat of the reference name
-    chromosome = models.ForeignKey(ReferenceLine, related_name='pafchromosome')
-    p = models.IntegerField() #position
-    i = models.IntegerField(default=0) #incdel
+
+    run = models.ForeignKey(
+        MinIONRun,
+        on_delete=models.CASCADE,
+        related_name='prc_run',
+        null=True,
+        blank=True
+    )
+
+    flowcell = models.ForeignKey(
+        FlowCell,
+        on_delete=models.CASCADE,
+        related_name='flowcell_prc_run',
+        null=True,
+        blank=True
+    )
+
+    read_type = models.ForeignKey(
+        FastqReadType,
+        related_name='prc_type'
+    )
+
+    barcode = models.ForeignKey(
+        Barcode,
+        related_name='prc_barcode',
+        null=True
+    )
+
+    barcodegroup = models.ForeignKey(
+        BarcodeGroup,
+        related_name='prc_barcodegroup',
+        null=True
+    )
+
+    reference = models.ForeignKey(
+        ReferenceInfo,
+        related_name='pafreference'
+    )
+
+    chromosome = models.ForeignKey(
+        ReferenceLine,
+        related_name='pafchromosome'
+    )
+
+    p = models.IntegerField(
+
+    ) #position
+
+    i = models.IntegerField(
+        default=0
+    ) #incdel
 
     def __str__(self):
         return "{} {}".format(self.run,self.p)
