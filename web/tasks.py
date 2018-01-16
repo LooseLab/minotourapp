@@ -8,6 +8,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import time
 import zipfile
+import shutil
 
 import pytz
 import redis
@@ -154,6 +155,14 @@ def slow_monitor():
 
     print("Slow Monitor Called")
 
+    # Check for uncompleted read export tasks.
+    exportreadjob = JobType.objects.get(name="ExportReads")
+    jobmastercollection = JobMaster.objects.filter(job_type=exportreadjob).filter(complete=False).filter(running=False)
+    for jobmaster in jobmastercollection:
+        #runid,id,tmp,last_read,inputtype
+        export_reads.delay(jobmaster.flowcell_id,jobmaster.id,jobmaster.tempfile_name,jobmaster.last_read,"flowcell")
+
+
     testset = {}
 
     cachesiz = {}
@@ -236,15 +245,18 @@ def processrun(deleted, added):
         send_message([runinstance.owner],"New Active Run","Minotour has seen a new run start on your account. This is called {}.".format(runinstance.run_name))
 
     for run in deleted:
-        runinstance = MinIONRun.objects.get(pk=run)
-        runinstance.active = False
-        runinstance.save()
+        try:
+            runinstance = MinIONRun.objects.get(pk=run)
+            runinstance.active = False
+            runinstance.save()
 
-        jobinstance = JobType.objects.get(name="ChanCalc")
-        JobMaster.objects.filter(job_type=jobinstance, run=runinstance).update(complete=True)
-        send_message([runinstance.owner], "Run Finished",
-                     "Minotour has seen a run finish on your account. This was called {}.".format(
-                         runinstance.run_name))
+            jobinstance = JobType.objects.get(name="ChanCalc")
+            JobMaster.objects.filter(job_type=jobinstance, run=runinstance).update(complete=True)
+            send_message([runinstance.owner], "Run Finished",
+                         "Minotour has seen a run finish on your account. This was called {}.".format(
+                             runinstance.run_name))
+        except Exception as exception:
+            print (exception)
 
 
 def compare_two(newset, cacheset):
@@ -824,9 +836,24 @@ def export_reads(runid,id,tmp,last_read,inputtype):
                     pass
     archive_zip.close()
     JobMaster.objects.filter(pk=id).update(tempfile_name=dirpath,complete=1)
-    #delete_file(id)
-    #send_message()
+    later = datetime.utcnow() + timedelta(minutes=5)
+    delete_folder.apply_async((id), eta=later)
+    send_message([JobMaster.objects.filter(pk=id).flowcell.owner], "Read Export Complete",
+                 "Your reads have been exported and can be found here: {}.".format(dirpath))
     JobMaster.objects.filter(pk=id).update(running=False)
+
+@task
+def delete_folder(id):
+    """
+    This task will delete a specific folder based on the tempfile_name in a specific job.
+    It will then delete the jobmaster.
+    :param id:
+    :return:
+    """
+    jobtoprocess = JobMaster.objects.get(pk=id)
+    dirpath = jobtoprocess.tempfile_name
+    shutil.rmtree(dirpath)
+    jobtoprocess.delete()
 
 
 def get_barcodes(runidset):
@@ -862,7 +889,7 @@ def format_read(fastq):
         lineheader = lineheader + " channel={}".format(fastq.channel)
     ##This output format needs checking
     if len(str(fastq.start_time)) > 0:
-        lineheader = lineheader + " start_time={}".format(fastq.start_time.replace(tzinfo=datetime.timezone.utc).isoformat())
+        lineheader = lineheader + " start_time={}".format(fastq.start_time.replace(tzinfo=pytz.UTC).isoformat())
     if fastq.barcode.name != "No barcode":
         lineheader = lineheader + " barcode={}".format(fastq.barcode.name)
     return ("{}\n{}\n+\n{}\n".format(lineheader,fastq.fastqreadextra.sequence,fastq.fastqreadextra.quality))
@@ -1166,7 +1193,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
             runidset.add(runid)
 
 
-        fastqs = FastqRead.objects.filter(run_id__id__in=runidset, id__gt=int(last_read))[:2000]
+        fastqs = FastqRead.objects.filter(run_id__id__in=runidset, id__gt=int(last_read))[:1000]
 
         # logger.debug("fastqs",fastqs)
         read = ''
@@ -1228,8 +1255,8 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
                 newpaf = PafStore(run=run, read=readid, read_type=typeid)
             newpaf.reference = Reference
 
-            logger.info("---> Before parsing paf record")
-            logger.info(record)
+            #logger.info("---> Before parsing paf record")
+            #logger.info(record)
 
             newpaf.qsn = record[0]  # models.CharField(max_length=256)#1	string	Query sequence name
             newpaf.qsl = int(record[1])  # models.IntegerField()#2	int	Query sequence length
@@ -1280,7 +1307,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
         PafRoughCov.objects.bulk_create(bulk_paf_rough)
         donepafproc = time.time()
 
-        print('!!!!!!!It took {} to parse the paf.!!!!!!!!!'.format((donepafproc-doneminimaps)))
+        #print('!!!!!!!It took {} to parse the paf.!!!!!!!!!'.format((donepafproc-doneminimaps)))
 
         for ref in resultstore:
             for ch in resultstore[ref]:
@@ -1309,7 +1336,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
 
 
         jobdone = time.time()
-        print('!!!!!!!It took {} to process the resultstore.!!!!!!!!!'.format((jobdone - donepafproc)))
+        #print('!!!!!!!It took {} to process the resultstore.!!!!!!!!!'.format((jobdone - donepafproc)))
 
     #except Exception as exception:
     #    print('An error occurred when running this task.')

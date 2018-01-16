@@ -4,6 +4,7 @@ File Routines for handling fastq files and monitoring locations. Built on watchd
 import os,sys
 import threading
 import time
+import gzip
 
 from tqdm import tqdm
 from apifunc import Runcollection
