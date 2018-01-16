@@ -245,15 +245,18 @@ def processrun(deleted, added):
         send_message([runinstance.owner],"New Active Run","Minotour has seen a new run start on your account. This is called {}.".format(runinstance.run_name))
 
     for run in deleted:
-        runinstance = MinIONRun.objects.get(pk=run)
-        runinstance.active = False
-        runinstance.save()
+        try:
+            runinstance = MinIONRun.objects.get(pk=run)
+            runinstance.active = False
+            runinstance.save()
 
-        jobinstance = JobType.objects.get(name="ChanCalc")
-        JobMaster.objects.filter(job_type=jobinstance, run=runinstance).update(complete=True)
-        send_message([runinstance.owner], "Run Finished",
-                     "Minotour has seen a run finish on your account. This was called {}.".format(
-                         runinstance.run_name))
+            jobinstance = JobType.objects.get(name="ChanCalc")
+            JobMaster.objects.filter(job_type=jobinstance, run=runinstance).update(complete=True)
+            send_message([runinstance.owner], "Run Finished",
+                         "Minotour has seen a run finish on your account. This was called {}.".format(
+                             runinstance.run_name))
+        except Exception as exception:
+            print (exception)
 
 
 def compare_two(newset, cacheset):
@@ -1190,7 +1193,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
             runidset.add(runid)
 
 
-        fastqs = FastqRead.objects.filter(run_id__id__in=runidset, id__gt=int(last_read))[:2000]
+        fastqs = FastqRead.objects.filter(run_id__id__in=runidset, id__gt=int(last_read))[:1000]
 
         # logger.debug("fastqs",fastqs)
         read = ''
@@ -1252,8 +1255,8 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
                 newpaf = PafStore(run=run, read=readid, read_type=typeid)
             newpaf.reference = Reference
 
-            logger.info("---> Before parsing paf record")
-            logger.info(record)
+            #logger.info("---> Before parsing paf record")
+            #logger.info(record)
 
             newpaf.qsn = record[0]  # models.CharField(max_length=256)#1	string	Query sequence name
             newpaf.qsl = int(record[1])  # models.IntegerField()#2	int	Query sequence length
@@ -1304,7 +1307,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
         PafRoughCov.objects.bulk_create(bulk_paf_rough)
         donepafproc = time.time()
 
-        print('!!!!!!!It took {} to parse the paf.!!!!!!!!!'.format((donepafproc-doneminimaps)))
+        #print('!!!!!!!It took {} to parse the paf.!!!!!!!!!'.format((donepafproc-doneminimaps)))
 
         for ref in resultstore:
             for ch in resultstore[ref]:
@@ -1333,7 +1336,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
 
 
         jobdone = time.time()
-        print('!!!!!!!It took {} to process the resultstore.!!!!!!!!!'.format((jobdone - donepafproc)))
+        #print('!!!!!!!It took {} to process the resultstore.!!!!!!!!!'.format((jobdone - donepafproc)))
 
     #except Exception as exception:
     #    print('An error occurred when running this task.')
