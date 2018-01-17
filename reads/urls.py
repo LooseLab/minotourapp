@@ -179,9 +179,13 @@ urlpatterns = [
         views.set_task_detail_all,
         name="set-task-detail-all"),
     url(
-        r'^api/v1/flowcells/$',
+        r'^api/v1/activeflowcells/$',
         views.flowcell_list,
         name="flowcell-list"),
+    url(
+        r'^api/v1/flowcells/$',
+        views.flowcell_active_list,
+        name="flowcell-active-list"),
     url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/$',
         views.flowcell_detail,

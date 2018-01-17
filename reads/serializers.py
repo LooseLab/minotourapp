@@ -425,6 +425,8 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
         model = MinIONRun
         fields = (
             'url',
+            'flowcell_name',
+            'flowcell',
             'start_time',
             'active',
             'sample_name',
@@ -447,6 +449,8 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
 
         read_only = (
             'id',
+            'flowcell_name',
+            'flowcell',
             'start_time',
             'sample_name',
             'minKNOW_version',

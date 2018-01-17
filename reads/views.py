@@ -951,12 +951,30 @@ def tasks_detail_all(request,pk):
 
     return HttpResponse(json.dumps(result), content_type="application/json")
 
+@api_view(['GET'])
+def flowcell_active_list(request):
+    if request.method == 'GET':
+        #queryset = FlowCell.objects.filter(owner=request.user)
+        #serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
+        #return Response(serializer.data)
+        queryset = MinIONRun.objects.filter(owner=request.user).filter(active=True).distinct()
+        serializer = MinIONRunSerializer(queryset, many=True,context={'request':request})
+        return Response(serializer.data)
+
+
 
 @api_view(['GET','POST'])
 def flowcell_list(request):
+    #if request.method == 'GET':
+    #    queryset = FlowCell.objects.filter(owner=request.user)
+    #    serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
+    #    return Response(serializer.data)
     if request.method == 'GET':
-        queryset = FlowCell.objects.filter(owner=request.user)
-        serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
+        #queryset = FlowCell.objects.filter(owner=request.user)
+        #serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
+        #return Response(serializer.data)
+        queryset = MinIONRun.objects.filter(owner=request.user).distinct()
+        serializer = MinIONRunSerializer(queryset, many=True,context={'request':request})
         return Response(serializer.data)
 
     elif request.method == 'POST':
