@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'communication',
     'assembly',
-    'samples'
+#    'samples'
 #    'tabs',
 ]
 
@@ -206,9 +206,9 @@ LOGGING = {
 CELERY_IMPORTS = ('web.tasks')
 # For RabbitMQ
 #CELERY_BROKER_URL = 'amqp://'
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
 #CELERY_RESULT_BACKEND = 'amqp://'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
 # Celery Data Format
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
