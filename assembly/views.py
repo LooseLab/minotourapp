@@ -10,6 +10,7 @@ from rest_framework.response import Response
 
 from assembly.models import GfaSummary
 from assembly.serializers import GfaSummarySerializer
+from assembly.serializers import FlowcellGfaSummarySerializer
 
 
 @api_view(['GET'])
@@ -32,5 +33,21 @@ def gfa_output_list(request, run_id):
     # return HttpResponse(json.dumps(ncontigs_list), content_type="application/json")
 
     serializer = GfaSummarySerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def flowcell_gfa_output_list(request, run_id):
+
+    queryset = GfaSummary.objects \
+        .filter(flowcell__id=run_id) \
+        .order_by('nreads')
+
+    serializer = FlowcellGfaSummarySerializer(queryset, many=True, context={'request': request})
+    print (serializer.data)
+    print (run_id)
+    print (request.user)
+    print (queryset)
 
     return Response(serializer.data)

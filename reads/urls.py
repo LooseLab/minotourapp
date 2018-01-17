@@ -179,9 +179,13 @@ urlpatterns = [
         views.set_task_detail_all,
         name="set-task-detail-all"),
     url(
-        r'^api/v1/flowcells/$',
+        r'^api/v1/activeflowcells/$',
         views.flowcell_list,
         name="flowcell-list"),
+    url(
+        r'^api/v1/activeflowcells/$',
+        views.flowcell_list_active,
+        name="flowcell-list-active"),
     url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/$',
         views.flowcell_detail,
@@ -194,6 +198,26 @@ urlpatterns = [
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute/$',
         views.flowcell_summary_barcode_by_minute,
         name="flowcellsummarybarcodebyminute-detail"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute_bases/$',
+        views.flowcell_summary_barcode_by_minute_bases,
+        name="flowcellsummarybarcodebyminute-detail_bases"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute_quality/$',
+        views.flowcell_summary_barcode_by_minute_quality,
+        name="flowcellsummarybarcodebyminute-detail_quality"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute_length/$',
+        views.flowcell_summary_barcode_by_minute_length,
+        name="flowcellsummarybarcodebyminute-detail_length"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute_speed/$',
+        views.flowcell_summary_barcode_by_minute_speed,
+        name="flowcellsummarybarcodebyminute-detail_speed"
     ),
     url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/histogramsummary/$',
@@ -241,6 +265,11 @@ urlpatterns = [
     url(
         r'^api/v1/tabs/(?P<pk>[0-9]+)/$',
         views.tabs_details,
+        name="tabs-details"
+    ),
+    url(
+        r'^api/v1/flowcells/tabs/(?P<pk>[0-9]+)/$',
+        views.flowcell_tabs_details,
         name="tabs-details"
     ),
 ]

@@ -26,8 +26,10 @@ class FlowCell(models.Model):
         null=True,
     )
 
+
     def __str__(self):
         return "{} {}".format(self.name, self.id)
+
 
 class MinION(models.Model):
     minION_name = models.CharField(max_length=64)
@@ -207,6 +209,18 @@ class MinIONRun(models.Model):
 
     def __str__(self):
         return "{} - {}".format(self.run_name, self.run_id)
+
+    def flowcell_name(self):
+        try:
+            return self.flowcellrun.last().flowcell.name
+        except AttributeError:
+            return "undefined"
+
+    def flowcell(self):
+        try:
+            return self.flowcellrun.last().flowcell.id
+        except AttributeError:
+            return "undefined"
 
     def last_entry(self):
         try:
@@ -550,7 +564,7 @@ class FastqReadExtra(models.Model):
     fastqread = models.OneToOneField(
         FastqRead,
         on_delete=models.CASCADE,
-        related_name='extra'
+        related_name='fastqreadextra'
     )
 
     sequence = models.TextField(
@@ -1136,16 +1150,34 @@ class FlowCellRun(models.Model):
         return self.run.active
 
 
+@receiver(post_save, sender=MinIONRun)
+def create_all_reads_barcode_MinIONrun(sender, instance=None, created=False, **kwargs):
+    # There is somehow a problem here such that we end up with multiple instances of these barcodes.
+    if created:
+        #print("are we here?")
+        Barcode.objects.update_or_create(run=instance, name='All reads')#,defaults={'barcodegroup': null})
+        Barcode.objects.update_or_create(run=instance, name='No barcode')#,defaults={'barcodegroup': null})
+
 
 @receiver(post_save, sender=FlowCellRun)
 def create_all_reads_barcode_flowcellrun(sender, instance=None, created=False, **kwargs):
     if created:
+        #print ("we must be here surely?")
         barcodegroup, created = BarcodeGroup.objects.get_or_create(flowcell=instance.flowcell,
                                                                    name='All reads')
 
-        Barcode.objects.update_or_create(run=instance.run, name='All reads', barcodegroup=barcodegroup)
+        #Barcode.objects.update_or_create(run=instance.run, name='All reads', barcodegroup=barcodegroup)
+        barcode,created = Barcode.objects.get_or_create(run=instance.run, name='All reads')
+        #print ("hello")
+        #print (barcode.run,barcode.name)
+        barcode.barcodegroup=barcodegroup
+
+        barcode.save()
 
         barcodegroup, created = BarcodeGroup.objects.get_or_create(flowcell=instance.flowcell,
                                                                    name='No barcode')
 
-        Barcode.objects.update_or_create(run=instance.run, name='No barcode', barcodegroup=barcodegroup)
+        #Barcode.objects.update_or_create(run=instance.run, name='No barcode', barcodegroup=barcodegroup)
+        barcode,created = Barcode.objects.get_or_create(run=instance.run, name='No barcode')
+        barcode.barcodegroup=barcodegroup
+        barcode.save()

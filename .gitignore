@@ -8,3 +8,4 @@ celerybeat-schedule.db
 envs.sh
 *.log
 *.out
+minotour.log

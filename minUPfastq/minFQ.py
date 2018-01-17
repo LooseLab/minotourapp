@@ -17,6 +17,11 @@ from tqdm import tqdm
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
 
+from concurrent.futures import ThreadPoolExecutor
+from requests_futures.sessions import FuturesSession
+
+session = FuturesSession(executor=ThreadPoolExecutor(max_workers=10))
+
 
 def parsefastq(fastq, rundict):
     #print ('processing reads')
@@ -184,7 +189,8 @@ class Runcollection():
 
     def commit_reads(self):
         runlinkaddread = self.runidlink + "reads/"
-        createread = requests.post(runlinkaddread, headers=header, json=self.readstore)
+        createread = session.post(runlinkaddread, headers=header, json=self.readstore)
+        #createread = requests.post(runlinkaddread, headers=header, json=self.readstore)
         self.readstore = list()
 
 
@@ -445,7 +451,8 @@ class MyHandler(FileSystemEventHandler):
     def processfiles(self):
         everyten = 0
         while self.running:
-            print("processfiles running")
+            starttime = time.time()
+            print("processfiles running {}".format(starttime))
             for fastqfile, createtime in tqdm(sorted(self.creates.items(), key=lambda x: x[1])):
                 delaytime = 0
                 if (int(
@@ -453,17 +460,20 @@ class MyHandler(FileSystemEventHandler):
                     #print(fastqfile)
                     del self.creates[fastqfile]
                     parsefastq(fastqfile, self.rundict)
-
+            print ("processed in {}".format(time.time()-starttime))
+            readsuploaded=0
             for runid in self.rundict:
                 print("RunID", runid)
                 print("Read Number:", self.rundict[runid].readcount, "Total Length:", self.rundict[runid].cumulength,
                       "Average Length", self.rundict[runid].cumulength / self.rundict[runid].readcount, "Chan Count",
                       len(self.rundict[runid].chandict))
+                readsuploaded+=self.rundict[runid].readcount
                 (mean, median, std, maxval, minval) = self.rundict[runid].mean_median_std_max_min()
                 print("mean", mean, "median", median, "std", std, "max", maxval, "min", minval)
                 # print self.rundict[runid].timeid
                 #self.rundict[runid].parse1minwin()
                 #os._exit(0)
+            print ("Uploaded {} reads in total.".format(readsuploaded))
 
             time.sleep(5)
 

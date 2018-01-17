@@ -144,8 +144,8 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
 
 
     def create(self, validated_data):
-        print('>>>> inside create function of Fastqread serializer...')
-        print (validated_data)
+        #print('>>>> inside create function of Fastqread serializer...')
+        #print (validated_data)
         #print(validated_data['quality'])
         #
         #qualmean = np.mean(np.array(list((ord(val) - 33) for val in qualitystring)))
@@ -425,6 +425,8 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
         model = MinIONRun
         fields = (
             'url',
+            'flowcell_name',
+            'flowcell',
             'start_time',
             'active',
             'sample_name',
@@ -447,6 +449,8 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
 
         read_only = (
             'id',
+            'flowcell_name',
+            'flowcell',
             'start_time',
             'sample_name',
             'minKNOW_version',
