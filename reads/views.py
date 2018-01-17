@@ -963,7 +963,7 @@ def flowcell_list_active(request):
 @api_view(['GET','POST'])
 def flowcell_list(request):
     if request.method == 'GET':
-        queryset = FlowCell.objects.distinct().filter(owner=request.user).filter(flowcelldetails__run__active=True)
+        queryset = FlowCell.objects.distinct().filter(owner=request.user)
         serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
