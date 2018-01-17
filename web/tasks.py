@@ -7,6 +7,8 @@ import tempfile
 import numpy as np
 from datetime import datetime, timedelta
 import time
+import zipfile
+import shutil
 
 import pytz
 import redis
@@ -21,6 +23,8 @@ from django.db.models import F
 from django_mailgun import MailgunAPIError
 from twitter import *
 
+from datetime import datetime, timedelta
+
 
 
 from alignment.models import PafStore, PafStore_transcriptome, PafRoughCov
@@ -30,7 +34,7 @@ from communication.models import Message
 from minikraken.models import MiniKraken, ParsedKraken
 from reads.models import Barcode, FlowCellRun, FlowCell
 from reads.models import ChannelSummary
-from reads.models import FastqRead
+from reads.models import FastqRead, FastqReadExtra
 from reads.models import HistogramSummary
 from reads.models import JobMaster
 from reads.models import JobType
@@ -151,6 +155,14 @@ def slow_monitor():
 
     print("Slow Monitor Called")
 
+    # Check for uncompleted read export tasks.
+    exportreadjob = JobType.objects.get(name="ExportReads")
+    jobmastercollection = JobMaster.objects.filter(job_type=exportreadjob).filter(complete=False).filter(running=False)
+    for jobmaster in jobmastercollection:
+        #runid,id,tmp,last_read,inputtype
+        export_reads.delay(jobmaster.flowcell_id,jobmaster.id,jobmaster.tempfile_name,jobmaster.last_read,"flowcell")
+
+
     testset = {}
 
     cachesiz = {}
@@ -161,6 +173,27 @@ def slow_monitor():
 
     active_runs = MinIONRun.objects.filter(active=True).distinct()
 
+    ## We need an active flowcell measure.
+
+    flowcell_runs = FlowCellRun.objects.filter(run__active=True).distinct()
+
+    flowcells = set()
+    # So - loop through flowcell_runs and create a job in each sub run.
+
+    for flowcell_run in flowcell_runs:
+        logger.debug("found a flowcell", flowcell_run)
+        flowcells.add(flowcell_run.flowcell)
+
+
+    for flowcell in flowcells:
+        flowcell_jobs = JobMaster.objects.filter(flowcell=flowcell).filter(running=False)
+        for flowcell_job in flowcell_jobs:
+            logger.debug(flowcell_job.job_type.name)
+            if flowcell_job.job_type.name == "Assembly":
+                inputtype = "flowcell"
+                run_minimap_assembly.delay(flowcell.id, flowcell_job.id, flowcell_job.tempfile_name, flowcell_job.last_read,
+                                           flowcell_job.read_count, inputtype)
+
     for minion_run in active_runs:
 
         print("Found an active run!")
@@ -170,7 +203,8 @@ def slow_monitor():
         for run_job in run_jobs:
             if run_job.job_type.name == "Assembly":
                 print("Running Assembly")
-                run_minimap_assembly.delay(minion_run.id, run_job.id, run_job.tempfile_name, run_job.last_read, run_job.read_count)
+                inputtype="run"
+                run_minimap_assembly.delay(minion_run.id, run_job.id, run_job.tempfile_name, run_job.last_read, run_job.read_count,inputtype)
 
     for minion_run in minion_runs:
         if minion_run.last_entry() >= timediff or minion_run.last_read() >= timediff:
@@ -211,15 +245,18 @@ def processrun(deleted, added):
         send_message([runinstance.owner],"New Active Run","Minotour has seen a new run start on your account. This is called {}.".format(runinstance.run_name))
 
     for run in deleted:
-        runinstance = MinIONRun.objects.get(pk=run)
-        runinstance.active = False
-        runinstance.save()
+        try:
+            runinstance = MinIONRun.objects.get(pk=run)
+            runinstance.active = False
+            runinstance.save()
 
-        jobinstance = JobType.objects.get(name="ChanCalc")
-        JobMaster.objects.filter(job_type=jobinstance, run=runinstance).update(complete=True)
-        send_message([runinstance.owner], "Run Finished",
-                     "Minotour has seen a run finish on your account. This was called {}.".format(
-                         runinstance.run_name))
+            jobinstance = JobType.objects.get(name="ChanCalc")
+            JobMaster.objects.filter(job_type=jobinstance, run=runinstance).update(complete=True)
+            send_message([runinstance.owner], "Run Finished",
+                         "Minotour has seen a run finish on your account. This was called {}.".format(
+                             runinstance.run_name))
+        except Exception as exception:
+            print (exception)
 
 
 def compare_two(newset, cacheset):
@@ -737,40 +774,199 @@ def test_task(string, reference):
     for line in lines:
         print(line.id)
 
+@task()
+def export_reads(runid,id,tmp,last_read,inputtype):
+    """
+    Function to write out fastq data to known temporary file, compress it,
+    and enable it for export. File will be set to self destruct after 7 days or
+    1 day after downloading.
+    Function should check to see if the file already exists somewhere.
+    Also should split data out by barcode and - preferably read type.
+    :param runid:
+    :param id:
+    :param tmp:
+    :param last_read:
+    :param inputtype:
+    :return:
+    """
+    JobMaster.objects.filter(pk=id).update(running=True)
+    runidset = get_runidset(runid,inputtype)
+    barcodeset,barcoded=get_barcodes(runidset)
+    # fetch all the reads from the run
+    fastqs = FastqRead.objects.filter(run_id__id__in=runidset)
+    dirpath = tempfile.mkdtemp()
+    filedict={}
+    if barcoded==True:
+        for barcode in barcodeset:
+            filehandle = os.path.join(dirpath,barcode+"_pass"+".fastq")
+            filedict.setdefault(filehandle, open(filehandle, 'w'))
+            filehandle = os.path.join(dirpath,barcode+"_fail"+".fastq")
+            filedict.setdefault(filehandle, open(filehandle, 'w'))
+            #files_dict[filename].write("test")
+    else:
+        filehandle = os.path.join(dirpath,"AllReads_pass.fastq")
+        filedict.setdefault(filehandle, open(filehandle, 'w'))
+        filehandle = os.path.join(dirpath,"AllReads_fail.fastq")
+        filedict.setdefault(filehandle, open(filehandle, 'w'))
+
+    if barcoded==True:
+        for fastq in fastqs:
+            if fastq.is_pass:
+                filehandle = os.path.join(dirpath,fastq.barcode.name+"_pass"+".fastq")
+            else:
+                filehandle = os.path.join(dirpath, fastq.barcode.name + "_fail" + ".fastq")
+            filedict[filehandle].write(format_read(fastq))
+    else:
+        for fastq in fastqs:
+            if fastq.is_pass:
+                filehandle = os.path.join(dirpath,"AllReads_pass"+".fastq")
+            else:
+                filehandle = os.path.join(dirpath, "AllReads_fail" + ".fastq")
+            filedict[filehandle].write(format_read(fastq))
+    archive_zip = zipfile.ZipFile(os.path.join(dirpath,'archive.zip'), 'w')
+    for folder, subfolders, files in os.walk(dirpath):
+        for file in files:
+            if file.endswith('.fastq'):
+                archive_zip.write(os.path.join(folder, file),
+                                  os.path.relpath(os.path.join(folder, file), dirpath),
+                                  compress_type=zipfile.ZIP_DEFLATED)
+                try:
+                    os.remove(os.path.join(folder, file))
+                except OSError:
+                    pass
+    archive_zip.close()
+    JobMaster.objects.filter(pk=id).update(tempfile_name=dirpath,complete=1)
+    later = datetime.utcnow() + timedelta(minutes=5)
+    delete_folder.apply_async((id), eta=later)
+    send_message([JobMaster.objects.filter(pk=id).flowcell.owner], "Read Export Complete",
+                 "Your reads have been exported and can be found here: {}.".format(dirpath))
+    JobMaster.objects.filter(pk=id).update(running=False)
+
+@task
+def delete_folder(id):
+    """
+    This task will delete a specific folder based on the tempfile_name in a specific job.
+    It will then delete the jobmaster.
+    :param id:
+    :return:
+    """
+    jobtoprocess = JobMaster.objects.get(pk=id)
+    dirpath = jobtoprocess.tempfile_name
+    shutil.rmtree(dirpath)
+    jobtoprocess.delete()
+
+
+def get_barcodes(runidset):
+    """
+    Given a set of runs, returns all the barcodes within them.
+    :param runidset:
+    :return:
+    """
+    barcodeset = set()
+    barcodes = Barcode.objects.filter(run_id__in=runidset)
+    for barcode in barcodes:
+        if barcode.name != "All reads" and barcode.name != "No barcode":
+            barcodeset.add(barcode.name)
+    barcoded=False
+    if len(barcodeset)>0:
+        barcoded=True
+    return (barcodeset,barcoded)
+
+
+def format_read(fastq):
+    """
+    This function takes a fastq database object and returns a formatted string for writing
+    to a file
+    :param fastq: fastq object from the database
+    :return: string formatted version of fastq sequence to write to a file.
+    """
+    lineheader = ">"+str(fastq)
+    if len(fastq.run_id.run_id) > 0:
+        lineheader = lineheader + " runid={}".format(fastq.run_id.run_id)
+    if len(str(fastq.read)) > 0:
+        lineheader = lineheader + " read={}".format(fastq.read)
+    if len(str(fastq.channel)) > 0:
+        lineheader = lineheader + " channel={}".format(fastq.channel)
+    ##This output format needs checking
+    if len(str(fastq.start_time)) > 0:
+        lineheader = lineheader + " start_time={}".format(fastq.start_time.replace(tzinfo=pytz.UTC).isoformat())
+    if fastq.barcode.name != "No barcode":
+        lineheader = lineheader + " barcode={}".format(fastq.barcode.name)
+    return ("{}\n{}\n+\n{}\n".format(lineheader,fastq.fastqreadextra.sequence,fastq.fastqreadextra.quality))
+
 
 @task()
-def run_minimap_assembly(runid, id, tmp, last_read, read_count):
+def clean_up_assembly_files(runid,id,tmp):
+    """
+    This task will automatically delete a temporary file at some given time period after creation.
+    :param runid:
+    :param id:
+    :param tmp:
+    :return:
+    """
+    os.remove(tmp)
+    JobMaster.objects.filter(pk=id).update(tempfile_name="")
+
+
+def get_runidset(runid,inputtype):
+    runidset = set()
+    if inputtype == "flowcell":
+        realflowcell = FlowCell.objects.get(pk=runid)
+        flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
+        for flowcell_run in flowcell_runs:
+            runidset.add(flowcell_run.run_id)
+            # print (flowcell_run.run_id)
+            # we need to get the runids that make up this run
+    else:
+        runidset.add(runid)
+    return (runidset)
+
+
+@task()
+def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
 
     JobMaster.objects.filter(pk=id).update(running=True)
-    logger.debug("hello teri {}".format(runid))
-    logger.debug("tempfile {}".format(tmp))
+
+    if last_read is None:
+        last_read = 0
+
     if tmp == None:
         tmp = tempfile.NamedTemporaryFile(delete=False).name
+        later = datetime.utcnow() + timedelta(days=1)
+        clean_up_assembly_files.apply_async((runid,id,tmp), eta=later)
+
+
     logger.debug("tempfile {}".format(tmp))
 
-    fastqs = FastqRead.objects.filter(run_id__id=runid, id__gt=int(last_read))[:10000]
-    #logger.debug("fastqs",fastqs)
-    #read = ''
-    #fastqdict=dict()
-    #fastqtypedict=dict()
-    #outtemp = open(tmp, 'a')
+    runidset = set()
+    if inputtype == "flowcell":
+        realflowcell = FlowCell.objects.get(pk=runid)
+        flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
+        for flowcell_run in flowcell_runs:
+            runidset.add(flowcell_run.run_id)
+            # print (flowcell_run.run_id)
+            # we need to get the runids that make up this run
+    else:
+        runidset.add(runid)
+
+    fastqs = FastqRead.objects.filter(run_id__id__in=runidset, id__gt=int(last_read))[:10000]
 
     fastqdict=dict()
 
     newfastqs = 0
 
     for fastq in fastqs:
-        if fastq.barcode not in fastqdict:
-            fastqdict[fastq.barcode] = dict()
-        if fastq.type not in fastqdict[fastq.barcode]:
-            fastqdict[fastq.barcode][fastq.type] = []
+        if fastq.barcode.barcodegroup not in fastqdict:
+            fastqdict[fastq.barcode.barcodegroup] = dict()
+        if fastq.type not in fastqdict[fastq.barcode.barcodegroup]:
+            fastqdict[fastq.barcode.barcodegroup][fastq.type] = []
 
-        fastqdict[fastq.barcode][fastq.type].append([fastq.read_id, fastq.extra.sequence])
+        fastqdict[fastq.barcode.barcodegroup][fastq.type].append([fastq.read_id, fastq.fastqreadextra.sequence])
         newfastqs += 1
-        #read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.extra.sequence)
+        #read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.fastqreadextra.sequence)
         #fastqdict[fastq.read_id]=fastq
         #fastqtypedict[fastq.read_id]=fastq.type
-        #outtemp.write('>{}\n{}\n'.format(fastq.read_id, fastq.extra.sequence))
+        #outtemp.write('>{}\n{}\n'.format(fastq.read_id, fastq.fastqreadextra.sequence))
         last_read = fastq.id
 
     #outtemp.close()
@@ -810,7 +1006,10 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count):
 
                 gfadata = gfa.splitlines()
 
-                runinstance = MinIONRun.objects.get(pk=runid)
+                if inputtype == "flowcell":
+                    instance = FlowCell.objects.get(pk=runid)
+                else:
+                    instance = MinIONRun.objects.get(pk=runid)
 
                 seqlens = []
                 gfaall = ""
@@ -822,14 +1021,19 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count):
                     if record[0] == 'S':
                         seqlens.append(len(record[2]))
 
-                newgfastore = GfaStore(run=runinstance, barcode = bar, readtype = ty)
+                if inputtype == "flowcell":
+                    newgfastore = GfaStore(flowcell=instance, barcodegroup=bar, readtype=ty)
+                else:
+                    newgfastore = GfaStore(run=instance, barcodegroup = bar, readtype = ty)
                 newgfastore.nreads = totfq
                 newgfastore.gfaformat = gfaall  #   string  The whole GFA file
                 newgfastore.save()
 
                 #### SAVE 0 IF ASSSEMBLY FAILS
-
-                newgfa = GfaSummary(run=runinstance, barcode = bar, readtype = ty)
+                if inputtype == "flowcell":
+                    newgfa = GfaSummary(flowcell=instance, barcodegroup = bar, readtype = ty)
+                else:
+                    newgfa = GfaSummary(run=instance, barcodegroup = bar, readtype = ty)
                 newgfa.nreads = totfq
                 if len(seqlens) > 0:
                     nparray = np.array(seqlens)
@@ -875,7 +1079,7 @@ def run_minimap2_transcriptome(runid, id, reference, last_read):
     # logger.debug(len(fastqs))
 
     for fastq in fastqs:
-        read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.extra.sequence)
+        read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.fastqreadextra.sequence)
         fastqdict[fastq.read_id] = fastq
         fastqtypedict[fastq.read_id] = fastq.type
         last_read = fastq.id
@@ -964,8 +1168,8 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
     if last_read is None:
         last_read = 0
 
-    try:
-    #if True:
+    #try:
+    if True:
         starttime = time.time()
         JobMaster.objects.filter(pk=job_master_id).update(running=True)
         REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
@@ -983,13 +1187,13 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
             flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
             for flowcell_run in flowcell_runs:
                 runidset.add(flowcell_run.run_id)
-                print (flowcell_run.run_id)
+                #print (flowcell_run.run_id)
                 # we need to get the runids that make up this run
         else:
             runidset.add(runid)
 
 
-        fastqs = FastqRead.objects.filter(run_id__id__in=runidset, id__gt=int(last_read))[:2000]
+        fastqs = FastqRead.objects.filter(run_id__id__in=runidset, id__gt=int(last_read))[:1000]
 
         # logger.debug("fastqs",fastqs)
         read = ''
@@ -1001,7 +1205,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
         # logger.debug(len(fastqs))
 
         for fastq in fastqs:
-            read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.extra.sequence)
+            read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.fastqreadextra.sequence)
             fastqdict[fastq.read_id] = fastq
             fastqtypedict[fastq.read_id] = fastq.type
             fastqbarcodegroup[fastq.read_id] = fastq.barcode.barcodegroup
@@ -1051,8 +1255,8 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
                 newpaf = PafStore(run=run, read=readid, read_type=typeid)
             newpaf.reference = Reference
 
-            logger.info("---> Before parsing paf record")
-            logger.info(record)
+            #logger.info("---> Before parsing paf record")
+            #logger.info(record)
 
             newpaf.qsn = record[0]  # models.CharField(max_length=256)#1	string	Query sequence name
             newpaf.qsl = int(record[1])  # models.IntegerField()#2	int	Query sequence length
@@ -1103,7 +1307,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
         PafRoughCov.objects.bulk_create(bulk_paf_rough)
         donepafproc = time.time()
 
-        print('!!!!!!!It took {} to parse the paf.!!!!!!!!!'.format((donepafproc-doneminimaps)))
+        #print('!!!!!!!It took {} to parse the paf.!!!!!!!!!'.format((donepafproc-doneminimaps)))
 
         for ref in resultstore:
             for ch in resultstore[ref]:
@@ -1132,12 +1336,12 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
 
 
         jobdone = time.time()
-        print('!!!!!!!It took {} to process the resultstore.!!!!!!!!!'.format((jobdone - donepafproc)))
+        #print('!!!!!!!It took {} to process the resultstore.!!!!!!!!!'.format((jobdone - donepafproc)))
 
-    except Exception as exception:
-        print('An error occurred when running this task.')
-        print(exception)
-        JobMaster.objects.filter(pk=job_master_id).update(running=False)
+    #except Exception as exception:
+    #    print('An error occurred when running this task.')
+    #    print(exception)
+    #    JobMaster.objects.filter(pk=job_master_id).update(running=False)
     
     else:
         JobMaster.objects.filter(pk=job_master_id).update(running=False, last_read=last_read, read_count=F('read_count') + len(fastqs))
@@ -1146,17 +1350,21 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
 @task()
 def run_kraken(runid, id, last_read, inputtype):
     JobMaster.objects.filter(pk=id).update(running=True)
+
     runidset=set()
     if inputtype == "flowcell":
         flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
         for flowcell_run in flowcell_runs:
-            runidset.add(flowcell_run.id)
+            runidset.add(flowcell_run.run_id)
         #we need to get the runids that make up this run
     else:
         runidset.add(runid)
 
     fastqs = FastqRead.objects.filter(run_id__in=runidset).filter(id__gt=int(last_read))[:5000]
     krakrun = Kraken()
+
+    print (runid, id, last_read, inputtype)
+
     # IMPORTANT - NEEDS FIXING FOR BARCODES AND READ TYPES
     if len(fastqs) > 0:
         read = ''
@@ -1164,7 +1372,7 @@ def run_kraken(runid, id, last_read, inputtype):
         typedict = dict()
         barcodedict = dict()
         for fastq in fastqs:
-            read = '{}>{} \r\n{}\r\n'.format(read, fastq, fastq.extra.sequence)
+            read = '{}>{} \r\n{}\r\n'.format(read, fastq, fastq.fastqreadextra.sequence)
             # logger.debug(fastq.id)
             readdict[fastq.read_id] = fastq.id
             last_read = fastq.id
@@ -1256,9 +1464,17 @@ def run_kraken(runid, id, last_read, inputtype):
 
 
 class Kraken():
+    """
+    This class assumes that kraken is available in the command line. That isn't likely to be the case.
+    Should we specify a folder that contain utilities needed by minoTour?
+    We also need a folder that contains the reference databases.
+    In a sense we have this with the reference collections. Lets use that!
+    """
     def __init__(self):
         self.tmpfile = tempfile.NamedTemporaryFile(suffix=".fa")
         self.krakenfile = tempfile.NamedTemporaryFile(suffix=".out")
+        self.REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
+        self.krakenlocation = os.path.join(self.REFERENCELOCATION, 'minikraken_20141208')
 
     def write_seqs(self, seqs):
         # self.tmpfile.write("\n".join(seqs))
@@ -1274,21 +1490,21 @@ class Kraken():
             print(line)
 
     def process(self):
-        print('kraken-report --db /Volumes/SSD/kraken/minikraken_20141208 ' + self.krakenfile.name)
-        p1 = subprocess.Popen('kraken-report --db /Volumes/SSD/kraken/minikraken_20141208 ' + self.krakenfile.name,
+        print('kraken-report --db '+ self.krakenlocation + ' ' + self.krakenfile.name)
+        p1 = subprocess.Popen('kraken-report --db '+ self.krakenlocation + ' ' + self.krakenfile.name,
                               shell=True, stdout=subprocess.PIPE)
         (out, err) = p1.communicate()
         return out
 
     def process2(self):
-        print('kraken-mpa-report --db /Volumes/SSD/kraken/minikraken_20141208 ' + self.krakenfile.name)
-        p1 = subprocess.Popen('kraken-mpa-report --db /Volumes/SSD/kraken/minikraken_20141208 ' + self.krakenfile.name,shell=True, stdout=subprocess.PIPE)
+        print('kraken-mpa-report --db '+ self.krakenlocation + ' ' + self.krakenfile.name)
+        p1 = subprocess.Popen('kraken-mpa-report --db '+ self.krakenlocation + ' ' + self.krakenfile.name,shell=True, stdout=subprocess.PIPE)
         (out, err) = p1.communicate()
         return out
 
     def run(self):
-        print('kraken --quick --db /Volumes/SSD/kraken/minikraken_20141208 --fasta-input --preload  ' + self.tmpfile.name)  # +'  #| kraken-translate --db /Volumes/SSD/kraken/minikraken_20141208/ $_'
-        p1 = subprocess.Popen('kraken --quick --db /Volumes/SSD/kraken/minikraken_20141208 --fasta-input --preload  ' + self.tmpfile.name + '  ',shell=True, stdout=subprocess.PIPE)
+        print('kraken --quick --db '+ self.krakenlocation + '  --fasta-input --preload  ' + self.tmpfile.name)  # +'  #| kraken-translate --db /Volumes/SSD/kraken/minikraken_20141208/ $_'
+        p1 = subprocess.Popen('kraken --quick --db '+ self.krakenlocation + ' --fasta-input --preload  ' + self.tmpfile.name + '  ',shell=True, stdout=subprocess.PIPE)
         (out, err) = p1.communicate()
         return out
 
@@ -1323,9 +1539,9 @@ def run_bwa_alignment(runid, job_id, referenceinfo_id, last_read):
     referenceinfo = ReferenceInfo.objects.get(pk=referenceinfo_id)
 
     for fastq in fastq_list:
-        # logger.debug(fastq.extra.sequence)
+        # logger.debug(fastq.fastqreadextra.sequence)
         bwaindex = referenceinfo.filename
-        read = '>{} \r\n{}\r\n'.format(fastq, fastq.extra.sequence)
+        read = '>{} \r\n{}\r\n'.format(fastq, fastq.fastqreadextra.sequence)
         cmd = 'bwa mem -x ont2d %s -' % (bwaindex)
         # logger.debug(cmd)
         # logger.debug(read)
