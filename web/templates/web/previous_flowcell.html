@@ -79,10 +79,9 @@
                 'url': "{% url 'flowcell-list-active' %}",
                 'dataSrc': function(json){
                     var data = [];
-                    //console.log(json);
                     var ien = json.length;
                     for (var i = 0; i < ien; i++){
-                        data.push([json[i].flowcell, json[i].flowcell_name, json[i].flowcell]);
+                        data.push([json[i].id, json[i].name, json[i].id]);
                     }
                     return data;
                 }
