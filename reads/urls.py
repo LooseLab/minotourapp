@@ -179,7 +179,7 @@ urlpatterns = [
         views.set_task_detail_all,
         name="set-task-detail-all"),
     url(
-        r'^api/v1/activeflowcells/$',
+        r'^api/v1/flowcells/$',
         views.flowcell_list,
         name="flowcell-list"),
     url(
