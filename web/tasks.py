@@ -354,7 +354,7 @@ def processreads(runid, id, last_read):
         if ipn_obj.run_id not in sumstore.keys():
             sumstore[ipn_obj.run_id]=dict()
             sumstoresum[ipn_obj.run_id]=dict()
-            
+
         if ipn_obj.type not in sumstore[ipn_obj.run_id].keys():
             sumstore[ipn_obj.run_id][ipn_obj.type] = dict()
             sumstoresum[ipn_obj.run_id][ipn_obj.type] = dict()
@@ -489,13 +489,13 @@ def processreads(runid, id, last_read):
 
                     if sumstore[run][type_][tm][barcode]["max_length"] > obj.max_length:
                         obj.max_length = sumstore[run][type_][tm][barcode]["max_length"]
-    
+
                     if obj.min_length == 0:
                         obj.min_length = sumstore[run][type_][tm][barcode]["min_length"]
-    
+
                     if sumstore[run][type_][tm][barcode]["min_length"] < obj.min_length:
                         obj.min_length = sumstore[run][type_][tm][barcode]["min_length"]
-    
+
                     #
                     # channel_presence is a 512 characters length string containing 0
                     # for each channel (id between 1 - 512) seen, we set the position on
@@ -1168,8 +1168,8 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
     if last_read is None:
         last_read = 0
 
-    #try:
-    if True:
+    try:
+    #if True:
         starttime = time.time()
         JobMaster.objects.filter(pk=job_master_id).update(running=True)
         REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
@@ -1338,13 +1338,13 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
         jobdone = time.time()
         #print('!!!!!!!It took {} to process the resultstore.!!!!!!!!!'.format((jobdone - donepafproc)))
 
-    #except Exception as exception:
-    #    print('An error occurred when running this task.')
-    #    print(exception)
-    #    JobMaster.objects.filter(pk=job_master_id).update(running=False)
-    
-    else:
-        JobMaster.objects.filter(pk=job_master_id).update(running=False, last_read=last_read, read_count=F('read_count') + len(fastqs))
+    except Exception as exception:
+        print('An error occurred when running this task.')
+        print(exception)
+        JobMaster.objects.filter(pk=job_master_id).update(running=False)
+
+    #else:
+    JobMaster.objects.filter(pk=job_master_id).update(running=False, last_read=last_read, read_count=F('read_count') + len(fastqs))
 
 
 @task()
