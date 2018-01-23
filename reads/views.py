@@ -1070,6 +1070,48 @@ def flowcell_summary_barcode_by_minute_quality(request,pk):
                 resultset[barcode.name][readtype.name]['fail']=fqs.tolist()
     return HttpResponse(json.dumps(resultset, cls=DjangoJSONEncoder), content_type="application/json")
 
+
+@api_view(['GET'])
+def flowcell_summary_barcode_by_minute_maxlength(request,pk):
+    """
+    Return a prepared summary for max read length over time grouped by minute.
+    :param request:
+    :param pk:
+    :return:
+    """
+    barcodeset = BarcodeGroup.objects.filter(flowcell=pk)
+    barcodedict = dict()
+    resultset = dict()
+    readtypes = FastqReadType.objects.all()
+    for barcode in barcodeset:
+        barcodedict[barcode.name] = barcode.id
+        for readtype in readtypes:
+            queryset = RunStatisticBarcode.objects.filter(barcode__barcodegroup=barcode.id).filter(
+                type=readtype).order_by('sample_time')
+            if len(queryset) > 0:
+                stvlqs = queryset.values_list('sample_time', flat=True)
+                maxlqs = queryset.values_list('max_length', flat=True)
+                stcats = np.unique(stvlqs)
+                maxarr=[]
+                unixtime = [x.timestamp() * 1000 for x in stcats]
+                prevtim = 0
+                for maxlen, stime in zip(maxlqs, stvlqs):
+                    #print (stime,prevtim)
+                    if stime != prevtim:
+                      maxarr.append(maxlen)
+                    else:
+                        #print ("got one")
+                        if maxlen > maxarr[-1]:
+                            maxarr[-1]=maxlen
+                    prevtim = stime
+                #print (len(maxarr),len(unixtime))
+                qs = np.column_stack((unixtime, np.array(maxarr)))
+                resultset[barcode.name] = dict()
+                resultset[barcode.name][readtype.name] = dict()
+                resultset[barcode.name][readtype.name]['all'] = qs.tolist()
+    return HttpResponse(json.dumps(resultset, cls=DjangoJSONEncoder), content_type="application/json")
+
+
 @api_view(['GET'])
 def flowcell_summary_barcode_by_minute_length(request,pk):
     """

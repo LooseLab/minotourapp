@@ -42,6 +42,7 @@ function MinotourFlowCellApp() {
     this.chart_maximum_read_length = null;
     //this.average_read_lengths_overtime = null;
     this.average_read_lengths_overtime_new = null;
+    this.max_read_lengths_overtime_new = null;
     this.xy_scat_length = null;
     this.trans_top100 = null;
     this.chart_cumulative_number_reads_overtime = null;
@@ -182,6 +183,11 @@ function MinotourFlowCellApp() {
         "average-read-lengths-overtime-new",
         "average read length over time".toUpperCase(),
         "average read length".toUpperCase()
+    );
+    this.max_read_lengths_overtime_new = this.makeChart2(
+        "max-read-lengths-overtime-new",
+        "max read length over time".toUpperCase(),
+        "max read length".toUpperCase()
     );
 
     /*this.average_quality_overtime = this.makeChart2(
@@ -480,6 +486,14 @@ function MinotourFlowCellApp() {
         })
     };
 
+    this.requestMaxLengthTime = function (id){
+        var url = "/api/v1/flowcells/" + id + "/summarybarcodebyminute_maxlength";
+        $.get(url,function (data){
+            self.maxlengthovertime=data;
+            self.updateMaxLengthChart();
+        })
+    };
+
     this.updateLengthChart = function () {
         var chart = self.average_read_lengths_overtime_new;
         var selectedBarcode = self.selectedBarcode;
@@ -492,6 +506,43 @@ function MinotourFlowCellApp() {
                 chart.addSeries({
                     name: selectedBarcode + " - " + typeName + " - " + status,
                     data: self.lengthovertime[selectedBarcode][typeName][status]
+                });
+            }
+        }
+        for (var i in self.rundata) {
+            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
+            var name = self.rundata[i]['id']
+            //chart.xAxis[0].addPlotBand({
+            //    from: starttime,
+            //    to: endtime,
+            //    color: '#FCFFC5',
+            //    id: name
+            //});
+            chart.xAxis[0].addPlotLine({
+                value: starttime,
+                color: 'black',
+                dashStyle: 'dot',
+                width: 2,
+                //label: {
+                //    text: name
+                //}
+            })
+        }
+    };
+
+    this.updateMaxLengthChart = function () {
+        var chart = self.max_read_lengths_overtime_new;
+        var selectedBarcode = self.selectedBarcode;
+        // Remove previous series
+        while (chart.series.length > 0) {
+            chart.series[0].remove();
+        }
+        for (var typeName of Object.keys(self.maxlengthovertime[selectedBarcode])) {
+            for (var status of Object.keys(self.maxlengthovertime[selectedBarcode][typeName])) {
+                chart.addSeries({
+                    name: selectedBarcode + " - " + typeName + " - " + status,
+                    data: self.maxlengthovertime[selectedBarcode][typeName][status]
                 });
             }
         }
@@ -1419,6 +1470,8 @@ function MinotourFlowCellApp() {
 
     };
 
+
+
     this.updateSummaryBasedCharts = function () {
         var charts = {
             "read_count": self.chart_reads_called,
@@ -1435,6 +1488,7 @@ function MinotourFlowCellApp() {
     this.updateReadsColumnBasedChart = function (chart, field) {
         var summaries = self.summary;
 
+        //console.log(summaries["All reads"]['Template']["max_length"]["all"]["data"][0]);
         var series = [];
         //console.log(summaries);
         // Always include all reads
@@ -1442,6 +1496,7 @@ function MinotourFlowCellApp() {
 
 
         for (var readtype of Object.keys(summaries["All reads"])) {
+            //console.log(readtype);
             data.push(summaries["All reads"][readtype][field]['all']["data"][0]);
         }
 
@@ -2624,7 +2679,13 @@ function MinotourFlowCellApp() {
         var url_run = '/api/v1/flowcells/' + self.id;
 
         $.get(url_run, function (data) {
-            //console.log(data);
+            console.log(self.summary);
+            if (self.summary !== null){
+               if (self.summary["All reads"]['Template']["max_length"]["all"]["data"][0] >= 1000000 && self.millionaire != true) {
+                    $('#eastermodal').modal('show');
+                    self.millionaire = true;
+                }
+            }
 
             var barcodes = new Set();
             for (var j = 0; j < data.length; j++) {
@@ -2652,6 +2713,7 @@ function MinotourFlowCellApp() {
             self.requestCumuBases(self.id);
             self.requestQualTime(self.id);
             self.requestLengthTime(self.id);
+            self.requestMaxLengthTime(self.id);
             self.requestSpeed(self.id);
             self.requestGfaData(self.id);
             //self.updatetext();
@@ -2676,3 +2738,8 @@ function MinotourFlowCellApp() {
     };
 
 }
+
+
+
+
+

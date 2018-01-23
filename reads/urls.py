@@ -215,6 +215,11 @@ urlpatterns = [
         name="flowcellsummarybarcodebyminute-detail_length"
     ),
     url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute_maxlength/$',
+        views.flowcell_summary_barcode_by_minute_maxlength,
+        name="flowcellsummarybarcodebyminute-detail_maxlength"
+    ),
+    url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute_speed/$',
         views.flowcell_summary_barcode_by_minute_speed,
         name="flowcellsummarybarcodebyminute-detail_speed"
