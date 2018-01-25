@@ -19,6 +19,7 @@ from reference.models import ReferenceLine
 import scipy.stats
 import numpy as np
 
+from . import util
 
 class NumpyEncoder(json.JSONEncoder):
 
@@ -34,15 +35,25 @@ class NumpyEncoder(json.JSONEncoder):
             return super(MyEncoder, self).default(obj)
 
 
-def get_incdel_at_position(run_id, barcode_id, read_type_id, chromosome_id, position):
+def get_incdel_at_position(run_or_flowcell_id, barcode_or_barcodegroup_id, read_type_id, chromosome_id, position, is_flowcell):
 
-    queryset = PafRoughCov.objects \
-        .filter(run__id=run_id) \
-        .filter(barcode__id=barcode_id) \
-        .filter(chromosome__id=chromosome_id) \
-        .filter(read_type__id=read_type_id) \
-        .filter(p__lte=position) \
-        .aggregate(incdel=Sum('i'))
+    if is_flowcell:
+        queryset = PafRoughCov.objects \
+            .filter(flowcell__id=run_or_flowcell_id) \
+            .filter(barcodegroup__id=barcode_or_barcodegroup_id) \
+            .filter(chromosome__id=chromosome_id) \
+            .filter(read_type__id=read_type_id) \
+            .filter(p__lte=position) \
+            .aggregate(incdel=Sum('i'))
+
+    else:
+        queryset = PafRoughCov.objects \
+            .filter(run__id=run_id) \
+            .filter(barcode__id=barcode_id) \
+            .filter(chromosome__id=chromosome_id) \
+            .filter(read_type__id=read_type_id) \
+            .filter(p__lte=position) \
+            .aggregate(incdel=Sum('i'))
 
     return queryset['incdel']
 
@@ -52,7 +63,7 @@ def find_bin(start, size_of_each_bin, value):
 
 
 @api_view(['GET'])
-def rough_coverage_complete_chromosome(request, run_id, barcode_id, read_type_id, chromosome_id):
+def rough_coverage_complete_chromosome_run(request, run_id, barcode_id, read_type_id, chromosome_id):
     return paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id, 0, 0)
 
 
@@ -81,7 +92,7 @@ def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id,
             .filter(p__lte=max_extreme) \
             .order_by('p')
 
-        current_incdel = get_incdel_at_position(run_id, barcode_id, read_type_id, chromosome_id, min_extreme)
+        current_incdel = get_incdel_at_position(run_id, barcode_id, read_type_id, chromosome_id, min_extreme, False)
 
     else:
 
@@ -117,127 +128,7 @@ def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id,
         positions.append(item.p)
         incdels.append(item.i)
 
-    # print(positions)
-    # print(incdels)
-
-    # q = np.array([
-    #     [3, 10, 15, 23, 70, 99],  # positions
-    #     [1, 1, -1, 7, -1, -3]  # incdels
-    # ])
-
-    q = np.array([
-        positions,
-        incdels
-    ])
-
-    #
-    # this array indicates the bin of each element in the array q[0] (positions)
-    # it has the same length of q[0]
-    #
-    bin_number = np.array([int((x - min_extreme) / bin_width) for x in q[0]])
-    # print(bin_number)
-
-    #
-    # keep track of current incdel value
-    #
-    #current_incdel = 0
-
-    bin_results = {}
-
-    #
-    # for each bin
-    #
-    for b in range(number_of_bins):
-        positions = q[0][bin_number == b]
-        incdels = q[1][bin_number == b]
-
-        begin_bin = min_extreme + (bin_width * b)
-        end_bin = min_extreme + (bin_width * (b + 1))
-
-        #
-        # contribution is the amount o value that each individual in a bin_number
-        # adds to the average and it is the individual's incdel * individual's length
-        #
-        current_contribution = 0.0
-
-
-        number_of_individuals = sum(bin_number == b)
-
-        last_individual_index = number_of_individuals - 1
-
-        for i in range(number_of_individuals):
-
-            #
-            # calculate the contribution of the last individual of previous bin
-            # to the current bin. it happens when a length of an individual crosses
-            # the limit of a bin (very very common)
-            #
-            if i == 0:
-                length = positions[0] - begin_bin
-
-                current_contribution = current_contribution + current_incdel * length
-
-                # print(
-                # 'bin: {}, i: -, position: {}, incdel: -, current_incdel: {}, length: {}, contribution: {}'.format(b,
-                #                                                                                                   begin_bin,
-                #                                                                                                   current_incdel,
-                #                                                                                                   length,
-                #                                                                                                   current_incdel * length))
-
-            #
-            # if it is the last individual, length is calculated from its position to
-            # the end of the bin
-            #
-            if i == last_individual_index:
-                length = end_bin - positions[i]
-            #
-            # if it is not the last individual, just calculates its distance until the next
-            #
-            else:
-                length = positions[i + 1] - positions[i]
-
-            #
-            # increment incdel
-            #
-            current_incdel = current_incdel + incdels[i]
-
-            #
-            # increment contribution: incdel * length
-            #
-            current_contribution = current_contribution + current_incdel * length
-
-            # print(
-            # 'bin: {}, i: {}, position: {}, incdel: {}, current_incdel: {}, length: {}, contribution: {}'.format(b, i,
-            #                                                                                                     positions[
-            #                                                                                                         i],
-            #                                                                                                     incdels[
-            #                                                                                                         i],
-            #                                                                                                     current_incdel,
-            #                                                                                                     length,
-            #                                                                                                     current_incdel * length))
-
-        #
-        # if there are individuals, bin average is the sum of the contributions divided by bin width
-        #
-        if number_of_individuals > 0:
-            bin_average = current_contribution / bin_width
-            # print('bin average: {}, number of individuals: {}, current contribution: {}'.format(bin_average, number_of_individuals, current_contribution))
-
-        #
-        # if bin is empty, then bin average is the value of current incdel (last individual) divided by bin width
-        #
-        else:
-            bin_average = current_incdel
-            # print('bin average: {}'.format(bin_average))
-
-
-        bin_results[b] = bin_average
-
-        # print('bin: {}, average: {:.2f}'.format(b, bin_average))
-
-    # print('bin_width: {}'.format(bin_width))
-    # print('bin averages: ')
-    # print(bin_results)
+    bin_results = util.calculate_coverage(positions, incdels, current_incdel, reference_size, number_of_bins, bin_width, bin_edges, min_extreme, max_extreme)
 
     result_list = []
 
@@ -248,202 +139,79 @@ def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id,
 
 
 @api_view(['GET'])
-def paf_alignment_list_old(request, run_id, barcode_id, read_type_id, chromosome_id, start, end):
-
-    NUMBER_OF_BINS = 20
-
-    queryset = PafRoughCov.objects \
-        .filter(run__owner=request.user) \
-        .filter(barcode__id=barcode_id) \
-        .filter(chromosome__id=chromosome_id) \
-        .filter(read_type__id=read_type_id) \
-        .order_by('p')
-
-    start = int(start)
-    end = int(end)
-
-    if start != 0 and end != 0:
-        # start = int(start - start * 0.1)
-        # end = int(end + end * 0.1)
-        number_of_bases_in_a_bin = int((end - start) / NUMBER_OF_BINS)
-    else:
-        start = queryset.first().p
-        end = queryset.last().p
-        number_of_bases_in_a_bin = int((end - start) / NUMBER_OF_BINS)
-
-    # print('number of bases in a bin: {} {} {}'.format(number_of_bases_in_a_bin, start, end))
-
-    result_bins = {}
-
-    for i in range(NUMBER_OF_BINS + 1):
-        result_bins[i] = {
-            'number_of_points': 0,
-            'sum_coverage': 0,
-            'p': start + (i * number_of_bases_in_a_bin)
-        }
-
-    result_list = []
-    position_list = []
-    coverage_list = []
-    current_coverage_sum = 0
-
-    result_per_bin = {}
-    result_per_bin2 = {}
-    # is_a_new_bin = True
-    # current_bin_start_point = None
-
-    for key, item in enumerate(queryset):
-
-        if key == 0:
-            # bins = {}
-            # current_bin_start_point = item.p
-            serie_start_point = item.p
-
-        current_coverage_sum = current_coverage_sum + item.i
-
-        position_list.append(item.p)
-
-        coverage_list.append(current_coverage_sum)
-
-        result_list.append([item.p, current_coverage_sum])
-
-        if item.p > end:
-            break # do not process after the end of the screen TODO filter query?
-
-        if item.p >= start:
-            bin_index2 = find_bin(start, number_of_bases_in_a_bin, item.p)
-
-            # print('bin index 2: {} {}'.format(bin_index2, current_coverage_sum))
-
-            result_bins[bin_index2]['number_of_points'] =+ 1
-            result_bins[bin_index2]['sum_coverage'] =+ current_coverage_sum
-            # print(result_bins[bin_index2])
-
-    result_per_bin[queryset.last().p] = current_coverage_sum
-    result_per_bin2[queryset.last().p] = current_coverage_sum
-
-    result_list2 = []
-    for i in range(NUMBER_OF_BINS):
-
-        p = result_bins[i]['p']
-
-        if result_bins[i]['number_of_points'] >= 1:
-            coverage = result_bins[i]['sum_coverage'] / result_bins[i]['number_of_points']
-
-        else:
-            coverage = 0
-
-        result_list2.append([p, coverage])
-
-    result = {}
-#    result['data_original'] = result_list
-    result['data_simplified'] = result_list2
-
-
-    #return HttpResponse(json.dumps(result_list), content_type="application/json")
-    return HttpResponse(json.dumps(result_list2), content_type="application/json")
-
+def rough_coverage_complete_chromosome_flowcell(request, flowcell_id, barcodegroup_id, read_type_id, chromosome_id):
+    return flowcell_paf_alignment_list(request, flowcell_id, barcodegroup_id, read_type_id, chromosome_id, 0, 0)
 
 
 @api_view(['GET'])
-def flowcellpaf_alignment_list(request, run_id, barcodegroup_id, read_type_id, chromosome_id, start, end):
+def flowcell_paf_alignment_list(request, flowcell_id, barcodegroup_id, read_type_id, chromosome_id, start, end):
 
-    NUMBER_OF_BINS = 200
+    min_extreme = request.GET.get('min', '')
+    max_extreme = request.GET.get('max', '')
 
+    if min_extreme != '' and max_extreme != '':
 
+        print('Running query with min and max {} {}'.format(min_extreme, max_extreme))
 
-    queryset = PafRoughCov.objects \
-        .filter(flowcell__owner=request.user) \
-        .filter(flowcell_id=run_id)\
-        .filter(barcodegroup__id=barcodegroup_id) \
-        .filter(chromosome__id=chromosome_id) \
-        .filter(read_type__id=read_type_id) \
-        .order_by('p')
+        min_extreme = int(min_extreme)
+        max_extreme = int(max_extreme)
 
-    start = int(start)
-    end = int(end)
+        if min_extreme < 0:
+            min_extreme = 0
 
-    if start != 0 and end != 0:
-        # start = int(start - start * 0.1)
-        # end = int(end + end * 0.1)
-        number_of_bases_in_a_bin = int((end - start) / NUMBER_OF_BINS)
+        queryset = PafRoughCov.objects \
+            .filter(flowcell__owner=request.user) \
+            .filter(barcodegroup__id=barcodegroup_id) \
+            .filter(chromosome__id=chromosome_id) \
+            .filter(read_type__id=read_type_id) \
+            .filter(p__gte=min_extreme) \
+            .filter(p__lte=max_extreme) \
+            .order_by('p')
+
+        current_incdel = get_incdel_at_position(flowcell_id, barcodegroup_id, read_type_id, chromosome_id, min_extreme, True)
+
     else:
-        start = queryset.first().p
-        end = queryset.last().p
-        number_of_bases_in_a_bin = int((end - start) / NUMBER_OF_BINS)
 
-    # print('number of bases in a bin: {} {} {}'.format(number_of_bases_in_a_bin, start, end))
+        print('Running query without min and max')
 
-    result_bins = {}
+        queryset = PafRoughCov.objects \
+            .filter(flowcell__owner=request.user) \
+            .filter(barcodegroup__id=barcodegroup_id) \
+            .filter(chromosome__id=chromosome_id) \
+            .filter(read_type__id=read_type_id) \
+            .order_by('p')
 
-    for i in range(NUMBER_OF_BINS + 1):
-        result_bins[i] = {
-            'number_of_points': 0,
-            'sum_coverage': 0,
-            'p': start + (i * number_of_bases_in_a_bin)
-        }
+        min_extreme = 0
+        max_extreme = queryset[0].chromosome.chromosome_length
+
+        current_incdel = 0
+
+    reference_size = max_extreme - min_extreme
+
+    number_of_bins = 200
+
+    bin_width = reference_size / number_of_bins
+
+    #
+    # the size of bin_edges is the number of bins + 1
+    #
+    bin_edges = np.array([min_extreme + bin_width * i for i in range(number_of_bins + 1)])
+
+    positions = []
+    incdels = []
+
+    for item in queryset:
+        positions.append(item.p)
+        incdels.append(item.i)
+
+    bin_results = util.calculate_coverage(positions, incdels, current_incdel, reference_size, number_of_bins, bin_width, bin_edges, min_extreme, max_extreme)
 
     result_list = []
-    position_list = []
-    coverage_list = []
-    current_coverage_sum = 0
 
-    result_per_bin = {}
-    result_per_bin2 = {}
-    # is_a_new_bin = True
-    # current_bin_start_point = None
+    for key in bin_results.keys():
+        result_list.append((min_extreme + (key * bin_width), bin_results[key]))
 
-    for key, item in enumerate(queryset):
-
-        if key == 0:
-            # bins = {}
-            # current_bin_start_point = item.p
-            serie_start_point = item.p
-
-        current_coverage_sum = current_coverage_sum + item.i
-
-        position_list.append(item.p)
-
-        coverage_list.append(current_coverage_sum)
-
-        result_list.append([item.p, current_coverage_sum])
-
-        if item.p > end:
-            break # do not process after the end of the screen TODO filter query?
-
-        if item.p >= start:
-            bin_index2 = find_bin(start, number_of_bases_in_a_bin, item.p)
-
-            # print('bin index 2: {} {}'.format(bin_index2, current_coverage_sum))
-
-            result_bins[bin_index2]['number_of_points'] =+ 1
-            result_bins[bin_index2]['sum_coverage'] =+ current_coverage_sum
-            # print(result_bins[bin_index2])
-
-    result_per_bin[queryset.last().p] = current_coverage_sum
-    result_per_bin2[queryset.last().p] = current_coverage_sum
-
-    result_list2 = []
-    for i in range(NUMBER_OF_BINS):
-
-        p = result_bins[i]['p']
-
-        if result_bins[i]['number_of_points'] >= 1:
-            coverage = result_bins[i]['sum_coverage'] / result_bins[i]['number_of_points']
-
-        else:
-            coverage = 0
-
-        result_list2.append([p, coverage])
-
-    result = {}
-#    result['data_original'] = result_list
-    result['data_simplified'] = result_list2
-
-
-    #return HttpResponse(json.dumps(result_list), content_type="application/json")
-    return HttpResponse(json.dumps(result), content_type="application/json")
-
+    return HttpResponse(json.dumps(result_list, cls=NumpyEncoder), content_type="application/json")
 
 
 @api_view(['GET'])
