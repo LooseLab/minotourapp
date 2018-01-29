@@ -310,18 +310,23 @@
                 <!-- Panel sequence mapping -->
                 <div id="tab-sequence-mapping" class="tab-pane fade">
                     <div class="row">
-                            <form class="form-horizontal">
-                                <div class="form-group">
-                                    <label class="col-sm-2 control-label">Chromosome</label>
+                        <form class="form-horizontal">
+                            <div class="form-group">
+                                <label class="col-sm-2 control-label">Chromosome</label>
 
-                                    <div class="col-sm-10 control-label" style="height: 100%; text-align: left;">
-                                        <select id="chromosome-id-select"></select>
-                                    </div>
+                                <div class="col-sm-10 control-label" style="height: 100%; text-align: left;">
+                                    <select id="chromosome-id-select"></select>
                                 </div>
-                            </form>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="row">
+                        <div id="coverage_div" class="principal">
+                            <div id="coverage_div_detail" class="detail_chart"></div>
+                            <div id="coverage_div_master" class="master_chart"></div>
                         </div>
-                        <span id="chromosome-coverage-left">left</span>
-                        <span id="chromosome-coverage-right">right</span>
+                    </div>
 
                     <div class="row">
                         <div id="chromosome-coverage"
@@ -352,6 +357,7 @@
 
 
                     <span id="mapping-data"></span>
+
                 </div>
                 <!-- End of Panel sequence mapping -->
 

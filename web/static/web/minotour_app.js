@@ -283,7 +283,8 @@ function MinotourApp() {
         );
 
         $('#chromosome-id-select').on('change', function () {
-            self.updateStepLineChart(self.chartChromosomeCoverage, 0, 0);
+            //self.updateStepLineChart(self.chartChromosomeCoverage, 0, 0);
+            create_master_detail_chart('coverage_div');
         });
 
 

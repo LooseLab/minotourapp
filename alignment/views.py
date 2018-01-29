@@ -200,6 +200,7 @@ def flowcell_paf_alignment_list(request, flowcell_id, barcodegroup_id, read_type
     positions = []
     incdels = []
 
+    print("queryset length: {}".format(len(queryset)))
     for item in queryset:
         positions.append(item.p)
         incdels.append(item.i)
