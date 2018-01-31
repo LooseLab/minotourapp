@@ -25,10 +25,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = '@z+2b+7hj5w6zce6!6puz$s!&amy)j@10#qlzuh9w^p#0zwzvm'
+# SECRET_KEY = os.environ.get('MT_SECRET_KEY', '@z+2b+7hj5w6zce6!6puz$s!&amy)j@10#qlzuh9w^p#0zwzvm')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-
+# DEBUG = bool(os.environ.get('MT_DJANGO_DEBUG', True))
 ALLOWED_HOSTS = ['*', ]
 
 # Application definition
@@ -82,7 +83,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'minotourapp.wsgi.application'
 
-
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -92,11 +92,6 @@ CACHES = {
         }
     }
 }
-
-
-# Database
-# https://docs.djangoproject.com/en/1.11/ref/settings/#databases
-
 
 DATABASES = {
     'default': {
@@ -108,21 +103,6 @@ DATABASES = {
         'NAME': get_env_variable("MT_DB_NAME"),
     }
 }
-'''
-
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'USER': get_env_variable("MT_DB_USER"),
-        'PASSWORD': get_env_variable("MT_DB_PASS"),
-        'HOST': get_env_variable("MT_DB_HOST"),
-        'PORT': '',
-        'NAME': get_env_variable("MT_DB_NAME"),
-    }
-}
-
-'''
 
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
@@ -156,7 +136,6 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
@@ -179,7 +158,8 @@ LOGIN_URL='/login'
 LOGIN_REDIRECT_URL='/web/private/index'
 LOGOUT_REDIRECT_URL=LOGIN_URL
 
-EMAIL_BACKEND = 'django_mailgun.MailgunBackend'
+# EMAIL_BACKEND = 'django_mailgun.MailgunBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 MAILGUN_ACCESS_KEY = get_env_variable("MT_MAILGUN_ACCESS_KEY")
 MAILGUN_SERVER_NAME = get_env_variable("MT_MAILGUN_SERVER_NAME")
 
@@ -232,13 +212,11 @@ CELERY_BEAT_SCHEDULE = {
     },
 }
 
-
 # For sending twitter messages
 TWITTOKEN = get_env_variable("MT_TWITTOKEN")
 TWITTOKEN_SECRET=get_env_variable("MT_TWITTOKEN_SECRET")
 TWITCONSUMER_KEY=get_env_variable("MT_TWITCONSUMER_KEY")
 TWITCONSUMER_SECRET=get_env_variable("MT_TWITCONSUMER_SECRET")
-
 
 # Variables for storing additonal files
 # References
