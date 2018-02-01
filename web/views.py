@@ -1,7 +1,9 @@
+from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
+from django.shortcuts import redirect
 from rest_framework.authtoken.models import Token
 
 from communication.models import Message
@@ -9,6 +11,7 @@ from reads.models import MinIONRun
 from reads.models import UserOptions
 from reads.models import FlowCell
 from web.forms import UserOptionsForm
+from web.forms import SignUpForm
 
 
 def index(request):
@@ -21,6 +24,23 @@ def current(request):
 
 def log_in(request):
     return render(request, 'web/log_in.html')
+
+
+def signup(request):
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('username')
+            raw_password = form.cleaned_data.get('password1')
+            user = authenticate(username=username, password=raw_password)
+            login(request, user)
+            return redirect('private-index')
+
+    else:
+        form = SignUpForm()
+
+    return render(request, 'web/signup.html', {'form': form})
 
 
 @login_required
@@ -118,4 +138,3 @@ def remotecontrol(request):
 @login_required
 def sandbox(request):
     return render(request, 'web/sandbox.html')
-
