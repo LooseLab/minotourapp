@@ -171,13 +171,13 @@
                     </a>
                 </li>
                 <li id="prevruns" {% if url_name == 'previous-runs' or url_name == 'run-index' %}class ="active"{% endif %}>
-                    <a href="{% url 'previous-runs' %}">
+                    <a href="{% url 'runs' %}">
                         <i class="fa fa-table fa-fw"></i>&nbsp;<span>Runs</span>
 {#                        <i class="fa fa-angle-left pull-right"></i>#}
                     </a>
                 </li>
                 <li id="flowcells" {% if url_name == 'previous-flowcells' or url_name == 'flowcell-index' %}class ="active"{% endif %}>
-                    <a href="{% url 'previous-flowcells' %}">
+                    <a href="{% url 'flowcells' %}">
                         <i class="fa fa-table fa-fw"></i>&nbsp;<span>Flowcells</span>
 {#                        <i class="fa fa-angle-left pull-right"></i>#}
                     </a>

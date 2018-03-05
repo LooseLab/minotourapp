@@ -14,14 +14,6 @@ from web.forms import UserOptionsForm
 from web.forms import SignUpForm
 
 
-def index(request):
-    return render(request, 'web/index.html')
-
-
-def current(request):
-    return render(request, 'web/current_run.html')
-
-
 def log_in(request):
     return render(request, 'web/log_in.html')
 
@@ -104,20 +96,15 @@ def tutorial(request):
 
 
 @login_required
-def current_run(request):
-    return render(request, 'web/current_run2.html')
-
-
-@login_required
-def previous_run(request):
+def runs(request):
     minion_runs = MinIONRun.objects.filter(owner=request.user)
-    return render(request, 'web/previous_run.html', context={'minion_runs': minion_runs})\
+    return render(request, 'web/runs.html', context={'minion_runs': minion_runs})
 
 
 @login_required
-def previous_flowcell(request):
+def flowcells(request):
     flowcells = FlowCell.objects.filter(owner=request.user)
-    return render(request, 'web/previous_flowcell.html', context={'flowcells': flowcells})
+    return render(request, 'web/flowcells.html', context={'flowcells': flowcells})
 
 
 @login_required
@@ -133,7 +120,7 @@ def flowcell_index(request, pk):
 
 @login_required
 def remotecontrol(request):
-    return render(request, 'web/remotecontrolold.html')
+    return render(request, 'web/remotecontrol.html')
 
 @login_required
 def sandbox(request):
