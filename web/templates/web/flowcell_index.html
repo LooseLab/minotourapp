@@ -21,7 +21,7 @@
             <!-- end of Main top nav bar -->
             <div class="tab-content">
                 <!-- Panel summary data -->
-                <div id="tab-summary-data" class="tab-pane fade in active">
+                <div class="row">
                     <div class="col-md-12">
                         <div class='panel panel-info'>
                             <div class='panel-heading'>
@@ -29,13 +29,18 @@
                             </div>
                             <div class='panel-body'>
 
+                                {% include 'web/flowcell_runs.html' %}
+
                                 <div id="target_for_data">Loading Flowcell Data.</div>
-                                <i>Please note: <b>'Known Issue'</b> Fields for this table are only completely populated if MinKNOW has been monitored with mincontrol. If not, then many fields will be missing.</i>
+                                <i>Please note: <b>'Known Issue'</b> Fields for this table are only completely populated
+                                    if MinKNOW has been monitored with mincontrol. If not, then many fields will be
+                                    missing.</i>
                             </div>
                         </div>
                     </div>
-
-                    <div class="col-md-8">
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
                         <div class="panel panel-info">
                             <div class="panel-heading">
                                 <h3 class="panel-title">
@@ -58,7 +63,6 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 </div>
                 <!-- End of Panel summary data -->
@@ -292,14 +296,15 @@
                 <!-- Panel sequence identification -->
                 <div id="tab-sequence-id" class="tab-pane fade">
                     <div class="row">
-                    <div class="col-md-12">
-                        Sequence Identification Content
-                        <div id="read_type_select"><select id="krakenSelectRead"></select></div>
-                        <div id="barcode_type_select"><select id="krakenSelectBarcode"></select></div>
-                        <div id="range_select"><input id="lowerboundselect" type="range" min="0" max="10"></input></div>
-                        <div id="kraken_barcode_select"></div>
-                    </div>
+                        <div class="col-md-12">
+                            Sequence Identification Content
+                            <div id="read_type_select"><select id="krakenSelectRead"></select></div>
+                            <div id="barcode_type_select"><select id="krakenSelectBarcode"></select></div>
+                            <div id="range_select"><input id="lowerboundselect" type="range" min="0" max="10"></input>
+                            </div>
+                            <div id="kraken_barcode_select"></div>
                         </div>
+                    </div>
 
                     <div class="row">
                         <div id="kraken-sankey"
@@ -360,7 +365,6 @@
                     </div>
 
 
-
                     <span id="mapping-data"></span>
 
                 </div>
@@ -369,63 +373,63 @@
                 <!-- Panel sequence assembly -->
                 <div id="tab-sequence-assembly" class="tab-pane fade">
 
-                <div class="row">
-                    <div id="num-contigs"
-                         class="col-md-12 highcharts"
-                         style="width:100%; height:400px;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i>
-                        Calculating
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div id="n50-contigs"
-                         class="col-md-12 highcharts"
-                         style="width:100%; height:400px;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i>
-                        Calculating
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div id="sum-contigs"
-                         class="col-md-12 highcharts"
-                         style="width:100%; height:400px;">
-                        <i class="fa fa-cog fa-spin fa-3x"></i>
-                        Calculating
-                    </div>
-                </div>
-
-                <div class="col-md-12">
-                    <div class="panel panel-info">
-                        <div class="panel-heading">
-                            <h3 class="panel-title">Latest Assembly Stats </h3>
-                        </div>
-
-                        <div id="AssemblyTable">
-                            <div class="panel-body" style="max-height: 1;overflow-y: scroll;">
-                                Fetching Data
-                                <div class="progress">
-                                    <div class="progress-bar progress-bar-striped active"
-                                         role="progressbar"
-                                         aria-valuenow="45" aria-valuemin="0"
-                                         aria-valuemax="100" style="width: 45%">
-                                        <span class="sr-only">45% Complete</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="contigs-boxplot"
+                    <div class="row">
+                        <div id="num-contigs"
                              class="col-md-12 highcharts"
                              style="width:100%; height:400px;">
                             <i class="fa fa-cog fa-spin fa-3x"></i>
                             Calculating
                         </div>
                     </div>
-                </div>
 
-                <span id="assembly-data"></span>
+                    <div class="row">
+                        <div id="n50-contigs"
+                             class="col-md-12 highcharts"
+                             style="width:100%; height:400px;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i>
+                            Calculating
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div id="sum-contigs"
+                             class="col-md-12 highcharts"
+                             style="width:100%; height:400px;">
+                            <i class="fa fa-cog fa-spin fa-3x"></i>
+                            Calculating
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <div class="panel panel-info">
+                            <div class="panel-heading">
+                                <h3 class="panel-title">Latest Assembly Stats </h3>
+                            </div>
+
+                            <div id="AssemblyTable">
+                                <div class="panel-body" style="max-height: 1;overflow-y: scroll;">
+                                    Fetching Data
+                                    <div class="progress">
+                                        <div class="progress-bar progress-bar-striped active"
+                                             role="progressbar"
+                                             aria-valuenow="45" aria-valuemin="0"
+                                             aria-valuemax="100" style="width: 45%">
+                                            <span class="sr-only">45% Complete</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="contigs-boxplot"
+                                 class="col-md-12 highcharts"
+                                 style="width:100%; height:400px;">
+                                <i class="fa fa-cog fa-spin fa-3x"></i>
+                                Calculating
+                            </div>
+                        </div>
+                    </div>
+
+                    <span id="assembly-data"></span>
                 </div>
 
                 <!-- Panel transcriptome mapping -->
@@ -459,86 +463,96 @@
                     <span id="downloads"></span>
                 </div>
                 <!-- End of Panel export reads -->
+
+                <div id="tab-runs" class="tab-pane">
+
+                    {% include "web/runs.html" %}
+
+                </div>
             </div>
             <!-- Modal -->
-            <div class="modal fade" id="eastermodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-              <div class="modal-dialog">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                    <h4 class="modal-title" id="myModalLabel">Congrats! You have hit a million base pair read!</h4>
-                  </div>
-                  <div class="modal-body">
-                      <h3>Welcome to the #1MbReadClub. If this is your first time - nice job....</h3>
-                      <!---<p><iframe src="https://giphy.com/embed/ZFGtOflRCro88" width="480" height="198" frameBorder="0" class="giphy-embed" allowFullScreen></iframe></p>-->
-                      <h4>Just remember though... length is vanity - mapping is sanity!</h4>
-                  </div>
-                  <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                  </div>
+            <div class="modal fade" id="eastermodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                    aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title" id="myModalLabel">Congrats! You have hit a million base pair
+                                read!</h4>
+                        </div>
+                        <div class="modal-body">
+                            <h3>Welcome to the #1MbReadClub. If this is your first time - nice job....</h3>
+                            <!---<p><iframe src="https://giphy.com/embed/ZFGtOflRCro88" width="480" height="198" frameBorder="0" class="giphy-embed" allowFullScreen></iframe></p>-->
+                            <h4>Just remember though... length is vanity - mapping is sanity!</h4>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
                 </div>
-              </div>
             </div>
 
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 {% endblock %}
+
 {% block javascript %}
-{#    <script src="{% static 'web/minotour.js' %}?{% now 'c' %}"></script>#}
-<script>
-$(document).ready(function () {
-    checkTabs();
-    var app = new MinotourFlowCellApp();
-    console.log("minotour flow cell app runing");
-    app.init();
+    {#    <script src="{% static 'web/minotour.js' %}?{% now 'c' %}"></script>#}
+    <script>
+        $(document).ready(function () {
+            checkTabs();
+            var app = new MinotourFlowCellApp();
+            console.log("minotour flow cell app runing");
+            app.init();
 
 
-    redraw();
-    setInterval(redraw,3000);
+            redraw();
+            setInterval(redraw, 3000);
 
-    function redraw(){
-        for (var chart in Highcharts.charts) {
-            //console.log('calling redraw');
-            Highcharts.charts[chart].reflow();
-            //console.log(chart);
-        }
-    }
-
-
-    $( "#maintabbar" ).on("click","li", function(event) {
-       setTimeout(redraw(), 1000);
-        //console.log('testing');
-    });
-
-    setInterval(checkTabs, 10000);
-
-
-    function checkTabs() {
-        var run_id = {{ flowcells.id }};
-        var url = "/api/v1/flowcells/tabs/" + run_id;
-        $.getJSON( url, function( data ) {
-            var items = [];
-            $.each(data, function (key, value) {
-                items.push(value);
-            });
-            items.sort(function (a, b) {
-                return a.position - b.position;
-            });
-            $.each(items, function (key, value) {
-                /**
-                if( $(element).length ) returns true when the element is present
-                if( !$(element).length ) returns true when the element is not present
-                This is used to prevent duplicate tabs being produced whenever a check is done for new tabs
-                **/
-
-                if( !$('#nav-' + value.id).length ) {
-                    var element = '<li><a href="#' + value.id + '"id="nav-' + value.id + '" data-toggle="tab">' + value.title + '</a></li>';
-                    $('#tasks-li').before(element);
+            function redraw() {
+                for (var chart in Highcharts.charts) {
+                    //console.log('calling redraw');
+                    Highcharts.charts[chart].reflow();
+                    //console.log(chart);
                 }
-            });
-        });
-    };
+            }
 
-});
-</script>
+
+            $("#maintabbar").on("click", "li", function (event) {
+                setTimeout(redraw(), 1000);
+                //console.log('testing');
+            });
+
+            setInterval(checkTabs, 10000);
+
+
+            function checkTabs() {
+                var run_id = {{ flowcells.id }};
+                var url = "/api/v1/flowcells/tabs/" + run_id;
+                $.getJSON(url, function (data) {
+                    var items = [];
+                    $.each(data, function (key, value) {
+                        items.push(value);
+                    });
+                    items.sort(function (a, b) {
+                        return a.position - b.position;
+                    });
+                    $.each(items, function (key, value) {
+                        /**
+                         if( $(element).length ) returns true when the element is present
+                         if( !$(element).length ) returns true when the element is not present
+                         This is used to prevent duplicate tabs being produced whenever a check is done for new tabs
+                         **/
+
+                        if (!$('#nav-' + value.id).length) {
+                            var element = '<li><a href="#' + value.id + '"id="nav-' + value.id + '" data-toggle="tab">' + value.title + '</a></li>';
+                            $('#tasks-li').before(element);
+                        }
+                    });
+                });
+            };
+
+        });
+    </script>
 {% endblock %}

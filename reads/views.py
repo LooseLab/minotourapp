@@ -1740,6 +1740,11 @@ def flowcell_tabs_details(request, pk):
             "id": "tab-export-reads",
             "title": "Download Read Data",
             "position": 7
+        },
+        "Runs": {
+            "id": "tab-runs",
+            "title": "Runs",
+            "position": 8
         }
     }
     tabs = list()
@@ -1762,5 +1767,7 @@ def flowcell_tabs_details(request, pk):
     for tab in tabs:
         if tab not in tabs_send:
             tabs_send.append(tab)
+
+    tabs_send.append(flowcell_tabs_dict['Runs']) # always add a tab for runs
 
     return Response(tabs_send)

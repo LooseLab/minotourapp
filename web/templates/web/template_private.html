@@ -20,8 +20,6 @@
 
         <script src="{% static 'web/stepline_chart.js' %}?{% now 'c' %}"></script>
 
-{#        <script src="{% static 'web/minotour.js' %}?{% now 'c' %}"></script>#}
-
         <script src="{% static 'web/messages.js' %}?{% now 'c' %}"></script>
 
         <script src="{% static 'web/master_detail_chart.js' %}?{% now 'c' %}"></script>
@@ -122,16 +120,9 @@
                         <i class="fa fa-gamepad fa-fw"></i><span> MinKnow Control</span>
                     </a>
                 </li>
-                <li id="prevruns" {% if url_name == 'previous-runs' or url_name == 'run-index' %}class ="active"{% endif %}>
-                    <a href="{% url 'runs' %}">
-                        <i class="fa fa-table fa-fw"></i>&nbsp;<span>Runs</span>
-{#                        <i class="fa fa-angle-left pull-right"></i>#}
-                    </a>
-                </li>
                 <li id="flowcells" {% if url_name == 'previous-flowcells' or url_name == 'flowcell-index' %}class ="active"{% endif %}>
                     <a href="{% url 'flowcells' %}">
                         <i class="fa fa-table fa-fw"></i>&nbsp;<span>Flowcells</span>
-{#                        <i class="fa fa-angle-left pull-right"></i>#}
                     </a>
                 </li>
                 <li {% if url_name == 'minup' %}class="active"{% endif %}>
