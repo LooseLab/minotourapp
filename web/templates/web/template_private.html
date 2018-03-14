@@ -4,12 +4,9 @@
 {% block header %}
     <header class="main-header">
 
-        <!-- Logo -->
         <a href="{% url 'private-index' %}" class="logo">
-            <!-- mini logo for sidebar mini 50x50 pixels -->
             <span class="logo-mini"><img style="max-width:20px;" src="{% static 'mT_images/minitour.png' %}"
                                          alt="minoTour_logo"><small>v1</small></span>
-            <!-- logo for regular state and mobile devices -->
             <span class="logo-lg"><img style="max-width:100px;" src="{% static 'mT_images/minotaurlogo.png' %}"
                                        alt="minoTour_logo">1.0a</span>
         </a>
@@ -179,11 +176,6 @@
         <!-- /.sidebar -->
     </aside>
 {% endblock %}
+
 {% block javascript %}
-        <script>
-            $(document).ready(function () {
-                var app2 = new MonitorAPP();
-                app2.init();
-            });
-        </script>
 {% endblock %}

@@ -1,300 +1,221 @@
-function MonitorAPP() {
-    var livedata = new Array();
+//function FlowcellPageApp() {
+var FlowcellPageApp = {
 
+    constructor () {
 
-    this.init = function () {
-        this.requestData();
+    },
 
-        setInterval(function () {
-            this.requestData();
-        }.bind(this), 30000);
-    };
+    init: function () {
 
-    this.updatecounters = function (live) {
-        //var thing = document.getElementById("livenum");
-        //thing.innerHTML = live;
-        //var thing2 = document.getElementById("livenumruns");
-        //thing2.innerHTML = "You have " + live + " live runs.";
-    };
+        this.chart_reads_called = null;
+        this.chart_yield = null;
+        this.chart_average_read_length = null;
+        this.chart_maximum_read_length = null;
+        //this.average_read_lengths_overtime = null;
+        this.average_read_lengths_overtime_new = null;
+        this.max_read_lengths_overtime_new = null;
+        this.xy_scat_length = null;
+        this.trans_top100 = null;
+        this.chart_cumulative_number_reads_overtime = null;
+        this.chartSequencingRate = null;
 
-    this.requestData = function () {
-        var url_run = "/api/v1/currentruns/";
+        this.barcodes = null;
 
-        $.get(url_run, function (data) {
-            //console.log(data);
-            self.livedata = data;
-            self.updatecounters(self.livedata.length);
-            //self.barcodes = data.barcodes.sort();
-            //self.updateBarcodeNavTab();
-        }.bind(this));
+        this.summaryByMinute = null;
+        this.summaryByMinute2 = null;
 
-        //self.updatecounters(self.livedata.length + "/" + "0");
-        //self.requestSummaryByMinuteData(self.id);
-        //self.requestSummaryData(self.id);
-    };
-}
+        this.summary = null;
 
-function MinotourFlowCellApp() {
+        this.id = null;
+        this.selectedBarcode = null;
 
-    this.chart_reads_called = null;
-    this.chart_yield = null;
-    this.chart_average_read_length = null;
-    this.chart_maximum_read_length = null;
-    //this.average_read_lengths_overtime = null;
-    this.average_read_lengths_overtime_new = null;
-    this.max_read_lengths_overtime_new = null;
-    this.xy_scat_length = null;
-    this.trans_top100 = null;
-    this.chart_cumulative_number_reads_overtime = null;
-    this.chartSequencingRate = null;
-    this.chartHistogramReadLength = null;
-    this.chartHistogramBasesSequencedByReadLength = null;
+        this.rundata = null;
 
-    this.barcodes = null;
+        this.livedatayield = new Array();
+        this.livedata = new Array();
 
-    this.summaryByMinute = null;
-    this.summaryByMinute2 = null;
+        this.livedata.voltage = new Array();
+        this.livedata.asictemp = new Array();
+        this.livedata.heatsinktemp = new Array();
+        this.livedata.strand = new Array();
+        this.livedata.good_single = new Array();
+        this.livedata.currpercentage = null;
+        this.livedata.currstrand = null;
+        this.livedata.percentage = new Array();
+        this.livedata.yield_history = new Array();
+        this.livedata.meanratio_history = new Array();
+        this.livedata.instrand_history = new Array();
+        this.livedata.openpore_history = new Array();
 
-    this.summary = null;
+        var myStringArray = ["above", "adapter", "below", "good_single", "strand", "inrange", "multiple", "pending_mux_change", "saturated", "unavailable", "unblocking", "unclassified", "unknown"];
+        var arrayLength = myStringArray.length;
 
-    this.id = null;
-    this.selectedBarcode = null;
+        this.livedata.pore_history = new Array();
 
-    this.rundata = null;
+        for (var i = 0; i < arrayLength; i++) {
+            this.livedata.pore_history[myStringArray[i]] = new Array();
+        };
 
-    this.livedatayield = new Array();
-    this.livedata = new Array();
+        this.livedata.minIONname = null;
+        this.livedata.colours_string = null;
+        this.livedata.scalingfactor = 0;
 
-    this.livedata.voltage = new Array();
-    this.livedata.asictemp = new Array();
-    this.livedata.heatsinktemp = new Array();
-    this.livedata.strand = new Array();
-    this.livedata.good_single = new Array();
-    this.livedata.currpercentage = null;
-    this.livedata.currstrand = null;
-    this.livedata.percentage = new Array();
-    this.livedata.yield_history = new Array();
-    this.livedata.meanratio_history = new Array();
-    this.livedata.instrand_history = new Array();
-    this.livedata.openpore_history = new Array();
-    var myStringArray = ["above", "adapter", "below", "good_single", "strand", "inrange", "multiple", "pending_mux_change", "saturated", "unavailable", "unblocking", "unclassified", "unknown"];
-    var arrayLength = myStringArray.length;
-    this.livedata.pore_history = new Array();
-    for (var i = 0; i < arrayLength; i++) {
-        this.livedata.pore_history[myStringArray[i]] = new Array();
-    }
-    ;
-    this.livedata.minIONname = null;
-    this.livedata.colours_string = null;
-    this.livedata.scalingfactor = 0;
+        this.chart_per_chrom_cov = null;
 
-    this.chart_per_chrom_cov = null;
+        this.coveragedata = new Array();
+        this.coveragedata.read_type = new Array();
 
-    this.coveragedata = new Array();
-    this.coveragedata.read_type = new Array();
+        this.makeChart = makeChart;
+        this.makeChart2 = makeChart2;
+        this.makeChart3 = makeChart3;
+        this.makeChart4 = makeChart4;
+        this.makeBoxPlot = makeBoxPlot;
+        this.makeChartlabels = makeChartlabels;
+        this.makeLiveHistogram = makeLiveHistogram;
+        this.makeYieldProjection = makeYieldProjection;
+        this.makeLiveChart = makeLiveChart;
+        this.makeAreaPlot = makeAreaPlot;
+        this.makeHeatmapChart = makeHeatmapChart;
+        this.makeStepLineChart = makeStepLineChart;
 
-    this.makeChart = makeChart;
-    this.makeChart2 = makeChart2;
-    this.makeChart3 = makeChart3;
-    this.makeChart4 = makeChart4;
-    this.makeBoxPlot = makeBoxPlot;
-    this.makeChartlabels = makeChartlabels;
-    this.makeLiveHistogram = makeLiveHistogram;
-    this.makeYieldProjection = makeYieldProjection;
-    this.makeLiveChart = makeLiveChart;
-    this.makeAreaPlot = makeAreaPlot;
-    this.makeHeatmapChart = makeHeatmapChart;
-    this.makeStepLineChart = makeStepLineChart;
+        this.write_run_data = write_run_data;
 
-    this.write_run_data = write_run_data;
+        this.lastread = 0;
+        this.needtoupdatecharts = false;
 
-    this.lastread = 0;
-    this.needtoupdatecharts = false;
+        this.updatePoreChart = updatePoreChart;
+        this.updateStepLineChart = updateStepLineChart;
 
-    this.updatePoreChart = updatePoreChart;
-    this.updateStepLineChart = updateStepLineChart;
+        this.drawtaskbutton = drawtaskbutton;
 
-    this.drawtaskbutton = drawtaskbutton;
+        this.updateBarcodeNavTab = updateBarcodeNavTab;
 
-    this.startTask = function (description, reference) {
-        //console.log(description + " " + reference);
-        var e = document.getElementById(description);
-        if (e != null) {
-            var strUser = e.options[e.selectedIndex].value;
-        } else {
-            var strUser = "null";
-        }
-        //console.log(strUser);
-        $.ajaxSetup({
-            beforeSend: function (xhr, settings) {
-                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                    xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+        this.requestHistogramData = requestHistogramData;
+
+        this.requestQualTime = requestQualTime;
+
+        this.requestLengthTime = requestLengthTime;
+
+        this.requestMaxLengthTime = requestMaxLengthTime;
+
+        this.requestSpeed = requestSpeed;
+
+        this.updateAssemblyCharts = updateAssemblyCharts;
+
+        this.updateAssemblyBoxplot = updateAssemblyBoxplot;
+
+        this.createAssemblyTable = createAssemblyTable;
+
+        this.requestGfaData = requestGfaData;
+
+        this.updatetext = updatetext;
+
+        this.updateCumuBaseChart = updateCumuBaseChart;
+
+        this.requestCumuBases = requestCumuBases;
+
+        this.requestPafData = requestPafData;
+
+        this.requestKraken = requestKraken;
+
+        this.liveUpdateTasks = liveUpdateTasks;
+
+        this.requestRunDetails = requestRunDetails;
+
+        this.requestLiveRunStats = requestLiveRunStats;
+
+        this.requestSummaryData = requestSummaryData;
+
+        this.requestData = requestData;
+
+        this.startTask = function (description, reference) {
+            //console.log(description + " " + reference);
+            var e = document.getElementById(description);
+            if (e != null) {
+                var strUser = e.options[e.selectedIndex].value;
+            } else {
+                var strUser = "null";
+            }
+            //console.log(strUser);
+            $.ajaxSetup({
+                beforeSend: function (xhr, settings) {
+                    if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                    }
                 }
-            }
-        });
-        //var url_mask = "{% url 'set-task-detail-all' pk=12345 %}".replace(/12345/, reference.toString());
-        var url_mask = "/api/v1/flowcells/12345/settask/".replace(/12345/, reference.toString());
-        ;
-        $.ajax({
-            "type": "POST",
-            "dataType": "json",
-            "url": url_mask,
-            "data": {
-                "job": description,
-                "reference": strUser,
-            },
-            "beforeSend": function (xhr, settings) {
-                //console.log("before send");
-                $.ajaxSettings.beforeSend(xhr, settings);
-            },
-            "success": function (result) {
-                //console.log(result);
-                $(".modal.in").modal("hide");
-                self.requestTasks(reference);
+            });
+            //var url_mask = "{% url 'set-task-detail-all' pk=12345 %}".replace(/12345/, reference.toString());
+            var url_mask = "/api/v1/flowcells/12345/settask/".replace(/12345/, reference.toString());
+            ;
+            $.ajax({
+                "type": "POST",
+                "dataType": "json",
+                "url": url_mask,
+                "data": {
+                    "job": description,
+                    "reference": strUser,
+                },
+                "beforeSend": function (xhr, settings) {
+                    //console.log("before send");
+                    $.ajaxSettings.beforeSend(xhr, settings);
+                },
+                "success": function (result) {
+                    //console.log(result);
+                    $(".modal.in").modal("hide");
+                    this.requestTasks(reference);
 
-            },
-            error: function (XMLHttpRequest, textStatus, errorThrown) {
-                //console.log("Status: " + textStatus);
-                //alert("Error: " + errorThrown);
-            }
+                },
+                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                    //console.log("Status: " + textStatus);
+                    //alert("Error: " + errorThrown);
+                }
 
-        })
-    };
+            })
+        };
 
-    this.chart_per_chrom_cov = this.makeChart(
-        "per-chrom-cov",
-        "Chromosome Coverage".toUpperCase(),
-        "Chromosome Coverage".toUpperCase()
-    );
+        this.chart_per_chrom_cov = this.makeChart(
+            "per-chrom-cov",
+            "Chromosome Coverage".toUpperCase(),
+            "Chromosome Coverage".toUpperCase()
+        );
 
-    this.chart_per_chrom_avg = this.makeChart(
-        "per-chrom-avg",
-        "Read Length By Chromosome".toUpperCase(),
-        "Read Length By Chromosome".toUpperCase()
-    );
+        this.chart_per_chrom_avg = this.makeChart(
+            "per-chrom-avg",
+            "Read Length By Chromosome".toUpperCase(),
+            "Read Length By Chromosome".toUpperCase()
+        );
 
-    /*this.average_read_lengths_overtime = this.makeChart2(
-        "average-read-lengths-overtime",
-        "average read length over time".toUpperCase(),
-        "average read length".toUpperCase()
-    );*/
+        this.chart_reads_called = this.makeChart(
+            "reads-called",
+            "reads called".toUpperCase(),
+            "number of reads called".toUpperCase()
+        );
 
-    this.average_read_lengths_overtime_new = this.makeChart2(
-        "average-read-lengths-overtime-new",
-        "average read length over time".toUpperCase(),
-        "average read length".toUpperCase()
-    );
-    this.max_read_lengths_overtime_new = this.makeChart2(
-        "max-read-lengths-overtime-new",
-        "max read length over time".toUpperCase(),
-        "max read length".toUpperCase()
-    );
+        this.chart_yield = this.makeChart(
+            "yield",
+            "yield".toUpperCase(),
+            "yield".toUpperCase()
+        );
 
-    /*this.average_quality_overtime = this.makeChart2(
-        "average-quality-overtime",
-        "average quality over time".toUpperCase(),
-        "average read quality score".toUpperCase()
-    );*/
+        this.chart_average_read_length = this.makeChart(
+            "average-read-length",
+            "average read length".toUpperCase(),
+            "average read length".toUpperCase()
+        );
 
-    this.average_quality_overtime_new = this.makeChart2(
-        "average-quality-overtime-new",
-        "average quality over time".toUpperCase(),
-        "average read quality score".toUpperCase()
-    );
+        this.chart_maximum_read_length = this.makeChart(
+            "maximum-read-length",
+            "maximum read length".toUpperCase(),
+            "maximum read length".toUpperCase()
+        );
 
-    /*this.chart_cumulative_number_reads_overtime = this.makeChart2(
-        "cumulative-number-reads-overtime",
-        "cumulative reads".toUpperCase(),
-        "cumulative reads".toUpperCase()
-    );*/
+        this.chartChromosomeCoverage = this.makeStepLineChart(
+            "chromosome-coverage",
+            "Chromosome Coverage",
+            "Coverage"
+        );
 
-    this.chart_cumulative_number_reads_overtime_new = this.makeChart2(
-        "cumulative-number-reads-overtime-new",
-        "cumulative reads".toUpperCase(),
-        "cumulative reads".toUpperCase()
-    );
-
-    /*
-    this.chart_cumulative_yield_overtime = this.makeChart2(
-        "cumulative-yield-overtime",
-        "cumulative bases".toUpperCase(),
-        "cumulative bases".toUpperCase()
-    );
-    */
-
-    this.chart_cumulative_yield_overtime_new = this.makeChart2(
-        "cumulative-yield-overtime-new",
-        "cumulative bases".toUpperCase(),
-        "cumulative bases".toUpperCase()
-    );
-
-    this.chartSequencingRate_new = this.makeChart2(
-        "sequencing-rate-new",
-        "sequencing rate".toUpperCase(),
-        "bases/second".toUpperCase()
-    );
-
-    this.chartSequencingSpeed_new = this.makeChart2(
-        "sequencing-speed-new",
-        "sequencing speed".toUpperCase(),
-        "bases/channel/second".toUpperCase()
-    );
-
-    this.chart_reads_called = this.makeChart(
-        "reads-called",
-        "reads called".toUpperCase(),
-        "number of reads called".toUpperCase()
-    );
-
-    this.chart_yield = this.makeChart(
-        "yield",
-        "yield".toUpperCase(),
-        "yield".toUpperCase()
-    );
-
-    this.chart_average_read_length = this.makeChart(
-        "average-read-length",
-        "average read length".toUpperCase(),
-        "average read length".toUpperCase()
-    );
-
-    this.chart_maximum_read_length = this.makeChart(
-        "maximum-read-length",
-        "maximum read length".toUpperCase(),
-        "maximum read length".toUpperCase()
-    );
-
-    this.chartHistogramReadLength = this.makeChart2(
-        "histogram-read-lengths",
-        "Histogram of Read Lengths".toUpperCase(),
-        "Number of reads".toUpperCase()
-    );
-
-    this.chartHistogramBasesSequencedByReadLength = this.makeChart2(
-        "histogram-bases-sequenced-by-read-length",
-        "Histogram of Bases Sequenced by Read Length".toUpperCase(),
-        "Number of bases".toUpperCase()
-    );
-
-    this.chartReadsPerPore = this.makeHeatmapChart(
-        "reads-per-pore",
-        "Reads per Channel".toUpperCase(),
-        ""
-    );
-
-    this.chartBasesPerPore = this.makeHeatmapChart(
-        "bases-per-pore",
-        "bases (kb) per Channel".toUpperCase(),
-        ""
-    );
-
-    this.chartChromosomeCoverage = this.makeStepLineChart(
-        "chromosome-coverage",
-        "Chromosome Coverage",
-        "Coverage"
-    );
-
-    this.ChartNumContigs = this.makeChart4(
+        this.ChartNumContigs = this.makeChart4(
             "num-contigs",
             "Number of Contigs Assembled".toUpperCase(),
             "Number of Contigs".toUpperCase(),
@@ -321,423 +242,124 @@ function MinotourFlowCellApp() {
             "Contig Length".toUpperCase()
         );
 
-    $('#chromosome-id-select').on('change', function () {
-        self.updateStepLineChart(self.chartChromosomeCoverage, 0, 0);
-    });
+        $('#chromosome-id-select').on('change', function () {
+            this.updateStepLineChart(this.chartChromosomeCoverage, 0, 0);
+        });
 
-    $('#chromosome-coverage-left').on('click', function () {
-        var min = self.chartChromosomeCoverage.xAxis[0].min;
-        var max = self.chartChromosomeCoverage.xAxis[0].max;
-        var delta = (max - min) / 2;
+        $('#chromosome-coverage-left').on('click', function () {
+            var min = this.chartChromosomeCoverage.xAxis[0].min;
+            var max = this.chartChromosomeCoverage.xAxis[0].max;
+            var delta = (max - min) / 2;
 
-        self.updateStepLineChart(self.chartChromosomeCoverage, Math.round(min - delta, 0), Math.round(max - delta));
-    });
+            this.updateStepLineChart(this.chartChromosomeCoverage, Math.round(min - delta, 0), Math.round(max - delta));
+        });
 
-    $('#chromosome-coverage-right').on('click', function () {
-        var min = self.chartChromosomeCoverage.xAxis[0].min;
-        var max = self.chartChromosomeCoverage.xAxis[0].max;
-        var delta = (max - min) / 2;
+        $('#chromosome-coverage-right').on('click', function () {
+            var min = this.chartChromosomeCoverage.xAxis[0].min;
+            var max = this.chartChromosomeCoverage.xAxis[0].max;
+            var delta = (max - min) / 2;
 
-        self.updateStepLineChart(self.chartChromosomeCoverage, Math.round(min + delta), Math.round(max + delta));
-    });
-    this.LiveHistogram = this.makeLiveHistogram(
-        'live-histogram',
-        'Histogram of Read Lengths (Events)',
-        'test'
-    );
+            this.updateStepLineChart(this.chartChromosomeCoverage, Math.round(min + delta), Math.round(max + delta));
+        });
+        this.LiveHistogram = this.makeLiveHistogram(
+            'live-histogram',
+            'Histogram of Read Lengths (Events)',
+            'test'
+        );
 
-    this.LiveYield = this.makeYieldProjection(
-        'yield-projection',
-        'Yield Projection',
-        'Yield Projection'
-    );
+        this.LiveYield = this.makeYieldProjection(
+            'yield-projection',
+            'Yield Projection',
+            'Yield Projection'
+        );
 
-    this.LiveCumuYield = this.makeLiveChart(
-        'chart-yield',
-        'Yield Over Time',
-        'cumulative yield'
-    );
+        this.LiveCumuYield = this.makeLiveChart(
+            'chart-yield',
+            'Yield Over Time',
+            'cumulative yield'
+        );
 
-    this.LiveInStrand = this.makeLiveChart(
-        'live-strand',
-        'in strand counts',
-        'number of pores in strand/single'
-    );
+        this.LiveInStrand = this.makeLiveChart(
+            'live-strand',
+            'in strand counts',
+            'number of pores in strand/single'
+        );
 
-    this.LiveOccupancy = this.makeLiveChart(
-        'live-occupancy',
-        '% Occupancy Over Time',
-        '% Occupancy'
-    );
+        this.LiveOccupancy = this.makeLiveChart(
+            'live-occupancy',
+            '% Occupancy Over Time',
+            '% Occupancy'
+        );
 
-    this.LiveTemperature = this.makeLiveChart(
-        'live-temperature',
-        'Temperature Over Time',
-        '°Celcius'
-    );
-    this.LiveVoltage = this.makeLiveChart(
-        'live-voltage',
-        'Voltage Over Time',
-        'mV'
-    );
-    this.LivePoreState = this.makeLiveChart(
-        'live-porestate',
-        'Pore State Currents',
-        'Current pA'
-    );
-    this.LiveCurrentRatio = this.makeLiveChart(
-        'live-currentratio',
-        'Current Ratio In Strand/Open Pore',
-        'Current Ratio'
-    );
+        this.LiveTemperature = this.makeLiveChart(
+            'live-temperature',
+            'Temperature Over Time',
+            '°Celcius'
+        );
+        this.LiveVoltage = this.makeLiveChart(
+            'live-voltage',
+            'Voltage Over Time',
+            'mV'
+        );
+        this.LivePoreState = this.makeLiveChart(
+            'live-porestate',
+            'Pore State Currents',
+            'Current pA'
+        );
+        this.LiveCurrentRatio = this.makeLiveChart(
+            'live-currentratio',
+            'Current Ratio In Strand/Open Pore',
+            'Current Ratio'
+        );
 
-    this.PoreShizzle = this.makeAreaPlot(
-        'poreshizzle',
-        'Pore States'.toUpperCase(),
-        'Pore States'.toUpperCase()
-    );
+        this.PoreShizzle = this.makeAreaPlot(
+            'poreshizzle',
+            'Pore States'.toUpperCase(),
+            'Pore States'.toUpperCase()
+        );
 
+        console.log(">>> initializing monitorapp, requesting data");
 
-    var self = this;
+        var inputFlowcellId = document.querySelector("#flowcell-id");
+        this.flowcellId = inputFlowcellId.value;
 
-    this.init = function () {
-        self.id = document.getElementById("flowcell-id").innerText;
-        self.selectedBarcode = "All reads";
+        this.selectedBarcode = "All reads";
 
         this.requestData();
 
-        this.requestReference(self.id);
-        this.requestTasks(self.id);
+        //this.requestReference(this.id);
 
-        setInterval(function () {
-            this.requestData();
-        }.bind(this), 30000);
+        //this.requestTasks(this.id);
 
-    };
+        //setInterval(function () {
+        //    this.requestData(this.id);
+        //}.bind(this), 30000);
+
+    }, // end of init
+
+    //self: this;
+
+    getSelectedBarcode: function () {
+
+        if (!this.selectedBarcode) {
+            return "All reads";
+        } else {
+            return this.selectedBarcode;
+        }
+
+    },
+
 
     /*
      * Each click on a barcode tab fires this function
      * that calls requestData and update all charts
      */
-    this.updateChartsBasedOnBarcode = function (event) {
+    updateChartsBasedOnBarcode: function (event) {
         self.selectedBarcode = event.target.innerText;
-        self.requestData();
-    };
+        self.requestData(self.id);
+    },
 
-
-    /*
-     * Updates the list of barcodes tab and attach
-     * click event to function updateChartsBasedOnBarcode
-     */
-    this.updateBarcodeNavTab = function () {
-        var ul = document.getElementById("nav-tabs-barcodes");
-
-        ul.innerHTML = "";
-
-        var sortedBarcodes = self.barcodes;
-
-        for (var i = 0; i < sortedBarcodes.length; i++) {
-            var li = document.createElement("li");
-            var a = document.createElement("a");
-            a.onclick = self.updateChartsBasedOnBarcode;
-            a.href = "#";
-            a.text = sortedBarcodes[i];
-
-            if (sortedBarcodes[i] === self.selectedBarcode) {
-                li.classList.add("active");
-            }
-
-            li.appendChild(a);
-            ul.appendChild(li);
-        }
-    };
-
-    this.requestCumuBases = function (id){
-        var url = "/api/v1/flowcells/" + id + "/summarybarcodebyminute_bases";
-        $.get(url,function (data){
-            self.cumulativereadsbybarcode=data;
-            self.updateCumuBaseChart();
-        })
-
-    };
-
-    this.requestSpeed = function (id){
-        var url = "/api/v1/flowcells/" + id + "/summarybarcodebyminute_speed";
-        $.get(url,function (data){
-            self.speedreadsbybarcode=data;
-            self.updateSpeedBaseChart();
-        })
-
-    };
-
-    this.requestQualTime = function (id){
-        var url = "/api/v1/flowcells/" + id + "/summarybarcodebyminute_quality";
-        $.get(url,function (data){
-            self.qualityovertime=data;
-            self.updateQualChart();
-        })
-    };
-
-    this.requestLengthTime = function (id){
-        var url = "/api/v1/flowcells/" + id + "/summarybarcodebyminute_length";
-        $.get(url,function (data){
-            self.lengthovertime=data;
-            self.updateLengthChart();
-        })
-    };
-
-    this.requestMaxLengthTime = function (id){
-        var url = "/api/v1/flowcells/" + id + "/summarybarcodebyminute_maxlength";
-        $.get(url,function (data){
-            self.maxlengthovertime=data;
-            self.updateMaxLengthChart();
-        })
-    };
-
-    this.updateLengthChart = function () {
-        var chart = self.average_read_lengths_overtime_new;
-        var selectedBarcode = self.selectedBarcode;
-        // Remove previous series
-        while (chart.series.length > 0) {
-            chart.series[0].remove();
-        }
-        for (var typeName of Object.keys(self.lengthovertime[selectedBarcode])) {
-            for (var status of Object.keys(self.lengthovertime[selectedBarcode][typeName])) {
-                chart.addSeries({
-                    name: selectedBarcode + " - " + typeName + " - " + status,
-                    data: self.lengthovertime[selectedBarcode][typeName][status]
-                });
-            }
-        }
-        for (var i in self.rundata) {
-            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
-            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
-            var name = self.rundata[i]['id']
-            //chart.xAxis[0].addPlotBand({
-            //    from: starttime,
-            //    to: endtime,
-            //    color: '#FCFFC5',
-            //    id: name
-            //});
-            chart.xAxis[0].addPlotLine({
-                value: starttime,
-                color: 'black',
-                dashStyle: 'dot',
-                width: 2,
-                //label: {
-                //    text: name
-                //}
-            })
-        }
-    };
-
-    this.updateMaxLengthChart = function () {
-        var chart = self.max_read_lengths_overtime_new;
-        var selectedBarcode = self.selectedBarcode;
-        // Remove previous series
-        while (chart.series.length > 0) {
-            chart.series[0].remove();
-        }
-        for (var typeName of Object.keys(self.maxlengthovertime[selectedBarcode])) {
-            for (var status of Object.keys(self.maxlengthovertime[selectedBarcode][typeName])) {
-                chart.addSeries({
-                    name: selectedBarcode + " - " + typeName + " - " + status,
-                    data: self.maxlengthovertime[selectedBarcode][typeName][status]
-                });
-            }
-        }
-        for (var i in self.rundata) {
-            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
-            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
-            var name = self.rundata[i]['id']
-            //chart.xAxis[0].addPlotBand({
-            //    from: starttime,
-            //    to: endtime,
-            //    color: '#FCFFC5',
-            //    id: name
-            //});
-            chart.xAxis[0].addPlotLine({
-                value: starttime,
-                color: 'black',
-                dashStyle: 'dot',
-                width: 2,
-                //label: {
-                //    text: name
-                //}
-            })
-        }
-    };
-
-    this.updateQualChart = function () {
-        var chart = self.average_quality_overtime_new;
-        var selectedBarcode = self.selectedBarcode;
-        // Remove previous series
-        while (chart.series.length > 0) {
-            chart.series[0].remove();
-        }
-        for (var typeName of Object.keys(self.qualityovertime[selectedBarcode])) {
-            for (var status of Object.keys(self.qualityovertime[selectedBarcode][typeName])) {
-                chart.addSeries({
-                    name: selectedBarcode + " - " + typeName + " - " + status,
-                    data: self.qualityovertime[selectedBarcode][typeName][status]
-                });
-            }
-        }
-        for (var i in self.rundata) {
-            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
-            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
-            var name = self.rundata[i]['id']
-            //chart.xAxis[0].addPlotBand({
-            //    from: starttime,
-            //    to: endtime,
-            //    color: '#FCFFC5',
-            //    id: name
-            //});
-            chart.xAxis[0].addPlotLine({
-                value: starttime,
-                color: 'black',
-                dashStyle: 'dot',
-                width: 2,
-                //label: {
-                //    text: name
-                //}
-            })
-        }
-    };
-
-    this.updateSpeedBaseChart = function () {
-        var chart = self.chartSequencingRate_new;
-        var chart2 = self.chartSequencingSpeed_new;
-        var selectedBarcode = self.selectedBarcode;
-
-
-        // Remove previous series
-        while (chart.series.length > 0) {
-            chart.series[0].remove();
-        }
-
-        // Remove previous series
-        while (chart2.series.length > 0) {
-            chart2.series[0].remove();
-        }
-
-        for (var typeName of Object.keys(self.speedreadsbybarcode[selectedBarcode]["speed"])) {
-            for (var status of Object.keys(self.speedreadsbybarcode[selectedBarcode]["speed"][typeName])) {
-                chart2.addSeries({
-                    name: selectedBarcode + " - " + typeName + " - " + status,
-                    data: self.speedreadsbybarcode[selectedBarcode]["speed"][typeName][status]
-                });
-            }
-        }
-
-        for (var typeName of Object.keys(self.speedreadsbybarcode[selectedBarcode]["rate"])) {
-            for (var status of Object.keys(self.speedreadsbybarcode[selectedBarcode]["rate"][typeName])) {
-                chart.addSeries({
-                    name: selectedBarcode + " - " + typeName + " - " + status,
-                    data: self.speedreadsbybarcode[selectedBarcode]["rate"][typeName][status]
-                });
-            }
-        }
-
-        for (var i in self.rundata) {
-            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
-            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
-            var name = self.rundata[i]['id']
-            //chart.xAxis[0].addPlotBand({
-            //    from: starttime,
-            //    to: endtime,
-            //    color: '#FCFFC5',
-            //    id: name
-            //});
-            chart.xAxis[0].addPlotLine({
-                value: starttime,
-                color: 'black',
-                dashStyle: 'dot',
-                width: 2,
-                //label: {
-                //    text: name
-                //}
-            })
-            chart2.xAxis[0].addPlotLine({
-                value: starttime,
-                color: 'black',
-                dashStyle: 'dot',
-                width: 2,
-                //label: {
-                //    text: name
-                //}
-            })
-        }
-    };
-
-
-    this.updateCumuBaseChart = function () {
-        var chart = self.chart_cumulative_yield_overtime_new;
-        var chart2 = self.chart_cumulative_number_reads_overtime_new;
-        var selectedBarcode = self.selectedBarcode;
-
-
-        // Remove previous series
-        while (chart.series.length > 0) {
-            chart.series[0].remove();
-        }
-
-        // Remove previous series
-        while (chart2.series.length > 0) {
-            chart2.series[0].remove();
-        }
-
-        for (var typeName of Object.keys(self.cumulativereadsbybarcode[selectedBarcode]["bases"])) {
-            for (var status of Object.keys(self.cumulativereadsbybarcode[selectedBarcode]["bases"][typeName])) {
-                chart.addSeries({
-                    name: selectedBarcode + " - " + typeName + " - " + status,
-                    data: self.cumulativereadsbybarcode[selectedBarcode]["bases"][typeName][status]
-                });
-            }
-        }
-
-        for (var typeName of Object.keys(self.cumulativereadsbybarcode[selectedBarcode]["reads"])) {
-            for (var status of Object.keys(self.cumulativereadsbybarcode[selectedBarcode]["reads"][typeName])) {
-                chart2.addSeries({
-                    name: selectedBarcode + " - " + typeName + " - " + status,
-                    data: self.cumulativereadsbybarcode[selectedBarcode]["reads"][typeName][status]
-                });
-            }
-        }
-
-        for (var i in self.rundata) {
-            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
-            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
-            var name = self.rundata[i]['id']
-            //chart.xAxis[0].addPlotBand({
-            //    from: starttime,
-            //    to: endtime,
-            //    color: '#FCFFC5',
-            //    id: name
-            //});
-            chart.xAxis[0].addPlotLine({
-                value: starttime,
-                color: 'black',
-                dashStyle: 'dot',
-                width: 2,
-                //label: {
-                //    text: name
-                //}
-            })
-            chart2.xAxis[0].addPlotLine({
-                value: starttime,
-                color: 'black',
-                dashStyle: 'dot',
-                width: 2,
-                //label: {
-                //    text: name
-                //}
-            })
-        }
-    };
-
-
-    this.requestSummaryByMinuteData = function (id) {
+    requestSummaryByMinuteData: function (id) {
         /*
          * Request summary by minute data
          */
@@ -801,18 +423,18 @@ function MinotourFlowCellApp() {
                 self.updateSummaryByMinuteBasedCharts();
             }
         });
-    };
+    },
 
-    this.updateSummaryByMinuteBasedCharts = function () {
+    updateSummaryByMinuteBasedCharts: function () {
         //self.updateAverageReadLengthOverTimeChart();
         //self.updateAverageQualityOverTimeChart();
         //self.updateCumulativeNumberOfReadsOverTimeChart();
         //self.updateCumulativeYieldOverTimeChart();
         //self.updateSequencingRateChart();
         //self.updateSequencingSpeedChart();
-    };
+    },
 
-    this.updateSequencingSpeedChart = function () {
+    updateSequencingSpeedChart: function () {
         var chart = self.chartSequencingSpeed;
         var selectedBarcode = self.selectedBarcode;
 
@@ -856,9 +478,9 @@ function MinotourFlowCellApp() {
             })
         }
 
-    };
+    },
 
-    this.updateSequencingRateChart = function () {
+    updateSequencingRateChart: function () {
         var chart = self.chartSequencingRate;
         var selectedBarcode = self.selectedBarcode;
 
@@ -902,9 +524,9 @@ function MinotourFlowCellApp() {
             })
         }
 
-    };
+    },
 
-    this.updateCumulativeYieldOverTimeChart = function () {
+    updateCumulativeYieldOverTimeChart: function () {
         var chart = self.chart_cumulative_yield_overtime;
         var selectedBarcode = self.selectedBarcode;
 
@@ -1025,9 +647,9 @@ function MinotourFlowCellApp() {
             })
         }
 
-    };
+    },
 
-    this.updateCumulativeNumberOfReadsOverTimeChart = function () {
+    updateCumulativeNumberOfReadsOverTimeChart: function () {
         var chart = self.chart_cumulative_number_reads_overtime;
         var selectedBarcode = self.selectedBarcode;
 
@@ -1148,9 +770,9 @@ function MinotourFlowCellApp() {
             })
         }
 
-    };
+    },
 
-    this.updateAverageQualityOverTimeChart = function () {
+    updateAverageQualityOverTimeChart: function () {
 
         var chart = self.average_quality_overtime;
         var selectedBarcode = self.selectedBarcode;
@@ -1255,9 +877,9 @@ function MinotourFlowCellApp() {
                 //}
             })
         }
-    };
+    },
 
-    this.updateAverageReadLengthOverTimeChart = function () {
+    updateAverageReadLengthOverTimeChart: function () {
 
         var chart = self.average_read_lengths_overtime;
         var selectedBarcode = self.selectedBarcode;
@@ -1332,147 +954,10 @@ function MinotourFlowCellApp() {
                 //}
             })
         }
-    };
+    },
 
-    this.requestSummaryData = function (id) {
-        /*
-         * Request summary by barcode data
-         */
-        var url = "/api/v1/flowcells/" + id + "/summarybarcode";
+    updateSummaryBasedCharts: function (summaries) {
 
-        $.get(url, function (data) {
-            if (data.length > 0) {
-                var summary = {};
-                for (var i = 0; i < data.length; i++) {
-                    var item = data[i];
-
-                    if (summary[item.barcodename] === undefined) {
-                        summary[item.barcodename] = {};
-                    }
-
-                    if (summary[item.barcodename][item.typename] === undefined) {
-                        summary[item.barcodename][item.typename] = {};
-                        summary[item.barcodename][item.typename]["read_count"] = 0;
-                        summary[item.barcodename][item.typename]["pass_count"] = 0;
-                        summary[item.barcodename][item.typename]["yield"] = 0;
-                        summary[item.barcodename][item.typename]["pass_yield"] = 0;
-                        summary[item.barcodename][item.typename]["max_length"] = 0;
-                        summary[item.barcodename][item.typename]["pass_max_length"] = 0;
-
-                    }
-                    summary[item.barcodename][item.typename]["read_count"] += item.read_count;
-                    summary[item.barcodename][item.typename]["pass_count"] += item.pass_count;
-                    summary[item.barcodename][item.typename]["yield"] += item.total_length;
-                    summary[item.barcodename][item.typename]["pass_yield"] += item.pass_length;
-                    if (item.max_length > summary[item.barcodename][item.typename]["max_length"]) {
-                        summary[item.barcodename][item.typename]["max_length"] = item.max_length;
-                    }
-                    if (item.pass_max_length > summary[item.barcodename][item.typename]["pass_max_length"]) {
-                        summary[item.barcodename][item.typename]["pass_max_length"] = item.pass_max_length;
-                    }
-
-
-                }
-                var summaries = {};
-                for (var barcodename in summary) {
-                    if (summaries[barcodename] === undefined) {
-                        summaries[barcodename] = {};
-                    }
-                    for (var typename in summary[barcodename]) {
-                        if (summaries[barcodename][typename] === undefined) {
-                            summaries[barcodename][typename] = {
-                                "read_count": null,
-                                "yield": null,
-                                "average_read_length": null,
-                                "max_length": null
-                            };
-
-                            summaries[barcodename][typename]["read_count"] = {};
-                            summaries[barcodename][typename]["read_count"]['all'] = {
-                                "name": typename,
-                                "data": [summary[barcodename][typename]["read_count"]],//[summaries[item.barcodename][item.typename]["read_count"]["data"] + item.read_count],
-                                "animation": false
-                            };
-                            summaries[barcodename][typename]["read_count"]['pass'] = {
-                                "name": typename,
-                                "data": [summary[barcodename][typename]["pass_count"]],//[summaries[item.barcodename][item.typename]["read_count"]["data"] + item.read_count],
-                                "animation": false
-                            };
-                            summaries[barcodename][typename]["read_count"]['fail'] = {
-                                "name": typename,
-                                "data": [(summary[barcodename][typename]["read_count"] - summary[barcodename][typename]["pass_count"])],//[summaries[item.barcodename][item.typename]["read_count"]["data"] + item.read_count],
-                                "animation": false
-                            };
-
-                            summaries[barcodename][typename]["yield"] = {};
-                            summaries[barcodename][typename]["yield"]['all'] = {
-                                "name": typename,
-                                "data": [summary[barcodename][typename]["yield"]],
-                                "animation": false
-                            };
-                            summaries[barcodename][typename]["yield"]['pass'] = {
-                                "name": typename,
-                                "data": [summary[barcodename][typename]["pass_yield"]],
-                                "animation": false
-                            };
-                            summaries[barcodename][typename]["yield"]['fail'] = {
-                                "name": typename,
-                                "data": [(summary[barcodename][typename]["yield"] - summary[barcodename][typename]["pass_yield"])],
-                                "animation": false
-                            };
-
-                            summaries[barcodename][typename]["average_read_length"] = {};
-                            summaries[barcodename][typename]["average_read_length"]['all'] = {
-                                "name": typename,
-                                "data": [summary[barcodename][typename]["yield"] / summary[barcodename][typename]["read_count"]],
-                                "animation": false
-                            };
-                            summaries[barcodename][typename]["average_read_length"]['pass'] = {
-                                "name": typename,
-                                "data": [summary[barcodename][typename]["pass_yield"] / summary[barcodename][typename]["pass_count"]],
-                                "animation": false
-                            };
-                            summaries[barcodename][typename]["average_read_length"]['fail'] = {
-                                "name": typename,
-                                "data": [(summary[barcodename][typename]["yield"] - summary[barcodename][typename]["pass_yield"]) / (summary[barcodename][typename]["read_count"] - summary[barcodename][typename]["pass_count"])],
-                                "animation": false
-                            };
-
-                            summaries[barcodename][typename]["max_length"] = {};
-                            summaries[barcodename][typename]["max_length"]['all'] = {
-                                "name": typename,
-                                "data": [summary[barcodename][typename]["max_length"]],
-                                "animation": false
-                            };
-                            summaries[barcodename][typename]["max_length"]['pass'] = {
-                                "name": typename,
-                                "data": [summary[barcodename][typename]["pass_max_length"]],
-                                "animation": false
-                            };
-                            summaries[barcodename][typename]["max_length"]['fail'] = {
-                                "name": typename,
-                                "data": [summary[barcodename][typename]["max_length"]],
-                                "animation": false
-                            };
-
-                        }
-                    }
-
-                }
-
-                self.summary = summaries;
-
-                self.updateSummaryBasedCharts();
-                //console.log(self.livedata);
-
-            }
-        });
-
-    };
-
-
-
-    this.updateSummaryBasedCharts = function () {
         var charts = {
             "read_count": self.chart_reads_called,
             "yield": self.chart_yield,
@@ -1481,22 +966,22 @@ function MinotourFlowCellApp() {
         };
 
         for (var prop in charts) {
-            self.updateReadsColumnBasedChart(charts[prop], prop);
+            self.updateReadsColumnBasedChart(charts[prop], prop, summaries);
         }
-    };
 
-    this.updateReadsColumnBasedChart = function (chart, field) {
-        var summaries = self.summary;
+    },
 
-        //console.log(summaries["All reads"]['Template']["max_length"]["all"]["data"][0]);
+    updateReadsColumnBasedChart: function (chart, field, summaries) {
+
+        console.log('> self.summary');
+        console.log(summaries);
+        console.log('< self.summary');
+
         var series = [];
-        //console.log(summaries);
-        // Always include all reads
+
         data = [];
 
-
         for (var readtype of Object.keys(summaries["All reads"])) {
-            //console.log(readtype);
             data.push(summaries["All reads"][readtype][field]['all']["data"][0]);
         }
 
@@ -1508,6 +993,7 @@ function MinotourFlowCellApp() {
         series.push(serie);
 
         data = [];
+
         for (var readtype of Object.keys(summaries["All reads"])) {
             data.push(summaries["All reads"][readtype][field]['pass']["data"][0]);
         }
@@ -1534,19 +1020,20 @@ function MinotourFlowCellApp() {
 
             series.push(serie);
         }
+
         // Include specific barcode if selected
-        if (self.selectedBarcode !== "All reads") {
+        if (self.getSelectedBarcode() !== "All reads") {
 
             data = [];
             //console.log(summaries[self.selectedBarcode]);
-            for (var readtype of Object.keys(summaries[self.selectedBarcode])) {
+            for (var readtype of Object.keys(summaries[self.getSelectedBarcode()])) {
                 //console.log(readtype);
                 //console.log("are we here?");
-                data.push(summaries[self.selectedBarcode][readtype][field]['all']["data"][0]);
+                data.push(summaries[self.getSelectedBarcode()][readtype][field]['all']["data"][0]);
             }
 
             serie = {
-                "name": self.selectedBarcode,
+                "name": self.getSelectedBarcode(),
                 "data": data
             };
 
@@ -1578,359 +1065,9 @@ function MinotourFlowCellApp() {
             chart.series[(chartSeriesLength - 1)].remove();
             chartSeriesLength = (chart.series ? chart.series.length : 0);
         }
-    };
+    },
 
-    this.requestHistogramData = function (id) {
-        /*
-         * Request histogram data
-         */
-
-        var url = "/api/v1/flowcells/" + id + "/histogramsummary";
-
-        $.get(url, function (data) {
-            //console.log(data);
-            if (data.length > 0) {
-
-                var ordered_data = data.sort(function (a, b) {
-                    return a.bin_width - b.bin_width;
-                });
-
-                var summary = {};
-                //console.log(ordered_data);
-                for (var i = 0; i < ordered_data.length; i++) {
-
-                    var item = ordered_data[i];
-                    //console.log(item);
-                    if (summary[item.barcode_name] === undefined) {
-                        summary[item.barcode_name] = {};
-                    }
-
-                    if (summary[item.barcode_name][item.read_type_name] === undefined) {
-                        summary[item.barcode_name][item.read_type_name] = {};
-                    }
-
-                    if (summary[item.barcode_name][item.read_type_name][parseInt(item.bin_width)] === undefined) {
-                        summary[item.barcode_name][item.read_type_name][parseInt(item.bin_width)] = {};
-                        summary[item.barcode_name][item.read_type_name][parseInt(item.bin_width)]['read_count'] = 0;
-                        summary[item.barcode_name][item.read_type_name][parseInt(item.bin_width)]['read_length'] = 0;
-                    }
-                    summary[item.barcode_name][item.read_type_name][parseInt(item.bin_width)]['read_count'] += item.read_count;
-                    summary[item.barcode_name][item.read_type_name][parseInt(item.bin_width)]['read_length'] += item.read_length;
-                }
-                ;
-                //console.log("summary");
-                //console.log(summary);
-                var summaries = {};
-
-                for (var barcode in summary) {
-
-                    for (var read_type in summary[barcode]) {
-                        var lastbinwidth = 0;
-
-                        //Here we make the empty arrays
-                        if (summaries[barcode] === undefined) {
-                                summaries[barcode] = {};
-                            }
-                        if (summaries[barcode][read_type] === undefined) {
-                                summaries[barcode][read_type] = {
-                                    'bin_width': [],
-                                    'read_count': [],
-                                    'read_length': [],
-                                };
-                            }
-
-                        var maxbinwidth = 0;
-
-                        for (var tmp_bin_width of Object.keys(summary[barcode][read_type])) {
-                            if (parseInt(tmp_bin_width) > maxbinwidth) {
-                                maxbinwidth = parseInt(tmp_bin_width);
-                            }
-                        }
-
-                        //var maxbinwidth = Math.max(Object.keys(summary[barcode][read_type]))
-
-                        //var maxbinwidth = summary[barcode][read_type]
-                        for (var i=0;i <= maxbinwidth; i++){
-                            summaries[barcode][read_type]['bin_width'].push(parseInt(i * 900 + 900));
-                            summaries[barcode][read_type]['read_count'].push(0);
-                            summaries[barcode][read_type]['read_length'].push(0);
-                        }
-                        for (var bin_width in summary[barcode][read_type]) {
-                            summaries[barcode][read_type]['read_count'][bin_width]=summary[barcode][read_type][bin_width]['read_count'];
-                            summaries[barcode][read_type]['read_length'][bin_width]=summary[barcode][read_type][bin_width]['read_length'];
-                            summaries[barcode][read_type]['bin_width'][bin_width]=parseInt(bin_width * 900 + 900);
-
-                        }
-                    }
-                }
-
-
-                self.histogramSummary = summaries;
-                self.updateHistogramBasedCharts();
-
-            }
-        });
-    };
-
-    this.updateHistogramBasedCharts = function () {
-        self.updateHistogramReadLengthChart();
-        self.updateHistogramBasesSequencedReadLengthChart();
-    };
-
-    this.updateHistogramBasesSequencedReadLengthChart = function () {
-
-        var chart = self.chartHistogramBasesSequencedByReadLength;
-
-        // Remove previous series
-        while (chart.series.length > 0) {
-            chart.series[0].remove();
-        }
-
-        //console.log('Inside function updateHistogramReadLengthChart.');
-        //console.log(Object.keys(self.histogramSummary));
-
-        for (var barcode_name of Object.keys(self.histogramSummary)) {
-
-            //console.log('barcode_name: '+ barcode_name + ', self.selectedBarcode: ' + self.selectedBarcode);
-            //console.log(barcode_name === self.selectedBarcode);
-
-            //if (barcode_name === 'All reads' || barcode_name === self.selectedBarcode) {
-            if (barcode_name === self.selectedBarcode) {
-
-                for (var typeName of Object.keys(self.histogramSummary[barcode_name])) {
-
-                    //console.log('typeName: ' + typeName);
-                    //console.log(self.histogramSummary[barcode_name][typeName]['bin_width']);
-                    //console.log(self.histogramSummary[barcode_name][typeName]["read_count"]);
-
-                    chart.update({
-                        chart: {
-                            type: 'column'
-                        },
-                        xAxis: {
-                            type: 'category',
-                            categories: self.histogramSummary[barcode_name][typeName]['bin_width']
-                        }
-                    });
-
-                    chart.addSeries({
-                        name: barcode_name + " - " + typeName,
-                        data: self.histogramSummary[barcode_name][typeName]["read_length"]
-                    });
-
-                }
-            }
-        }
-
-    };
-
-    this.updateHistogramReadLengthChart = function () {
-
-        var chart = self.chartHistogramReadLength;
-
-        // Remove previous series
-        while (chart.series.length > 0) {
-            chart.series[0].remove();
-        }
-
-        //console.log('Inside function updateHistogramReadLengthChart.');
-        //console.log(Object.keys(self.histogramSummary));
-
-        for (var barcode_name of Object.keys(self.histogramSummary)) {
-
-            //console.log('barcode_name: '+ barcode_name + ', self.selectedBarcode: ' + self.selectedBarcode);
-            //console.log(barcode_name === self.selectedBarcode);
-
-            //if (barcode_name === 'All reads' || barcode_name === self.selectedBarcode) {
-            if (barcode_name === self.selectedBarcode) {
-
-                for (var typeName of Object.keys(self.histogramSummary[barcode_name])) {
-
-                    //console.log('typeName: ' + typeName);
-                    //console.log(self.histogramSummary[barcode_name][typeName]['bin_width']);
-                    //console.log(self.histogramSummary[barcode_name][typeName]["read_count"]);
-
-                    chart.update({
-                        chart: {
-                            type: 'column'
-                        },
-                        xAxis: {
-                            type: 'category',
-                            categories: self.histogramSummary[barcode_name][typeName]['bin_width']
-                        }
-                    });
-
-                    chart.addSeries({
-                        name: barcode_name + " - " + typeName,
-                        data: self.histogramSummary[barcode_name][typeName]["read_count"]
-                    });
-
-                }
-            }
-        }
-
-    };
-
-    this.requestChannelSummaryData = function (id) {
-        /*
-         * Request channel summary data
-         */
-        var url = "/api/v1/flowcells/" + id + "/channelsummary_readcount";
-        $.get(url, function (data) {
-            if (data.length > 0) {
-                self.updatePoreChart(self.chartReadsPerPore, data, 'read_count');
-            }
-        });
-        var url = "/api/v1/flowcells/" + id + "/channelsummary_readkb";
-        $.get(url, function (data) {
-            if (data.length > 0) {
-                self.updatePoreChart(self.chartBasesPerPore, data, 'read_length');
-            }
-        });
-    };
-
-    this.updatetext = function () {
-        datadump = new Array();
-        //console.log('rundetails');
-        //console.log(self.rundetails);
-        if (self.rundetails != undefined && self.rundetails.length > 0) {
-            //console.log(self.rundetails);
-            //for (var i = 0; i < self.rundetails.length; i++) {
-
-            for (var i in self.rundetails) {
-                // skip loop if the property is from prototype
-                if (!self.rundetails.hasOwnProperty(i)) continue;
-                //console.log("look at this");
-                //console.log(self.rundetails[i]);
-                datadump[i] = new Array;
-                datadump[i].minIONname = self.rundetails[i]['minION_name'];
-                datadump[i].minKNOW_asic_id = self.rundetails[i]['minKNOW_asic_id'];
-                datadump[i].minKNOW_version = self.rundetails[i]['minKNOW_version'];
-                datadump[i].run_id = self.rundetails[i]['minKNOW_hash_run_id'];
-                datadump[i].run_name = self.rundetails[i]['minKNOW_run_name'];
-                datadump[i].sample_name = self.rundetails[i]['minKNOW_sample_name'];
-                datadump[i].computer_name = self.rundetails[i]['minKNOW_computer'];
-                datadump[i].minKNOW_current_script = self.rundetails[i]['minKNOW_current_script'];
-                datadump[i].name = self.rundata[i]['name'];
-
-                var starttime = new Date(self.rundetails[i]['minKNOW_start_time']);
-                datadump[i].starttime = starttime;
-                datadump[i].flowcellid = self.rundetails[i]['minKNOW_flow_cell_id'];
-                datadump[i].active = self.rundata[i].active;
-                datadump[i].barcodes = self.rundata[i].barcodes;
-
-
-                //datadump[i].rundetails=self.rundetails[i];
-            }
-        } else {
-            for (var i in self.rundata) {
-                datadump[i] = new Array;
-                datadump[i].minIONname = self.rundata[i]['minION_name'];
-                datadump[i].minKNOW_asic_id = self.rundata[i]['minKNOW_asic_id'];
-                datadump[i].minKNOW_version = self.rundata[i]['minKNOW_version'];
-                datadump[i].run_id = self.rundata[i]['minKNOW_hash_run_id'];
-                datadump[i].run_name = self.rundata[i]['run_name'];
-                datadump[i].sample_name = self.rundata[i]['minKNOW_sample_name'];
-                datadump[i].computer_name = self.rundata[i]['minKNOW_computer'];
-                datadump[i].minKNOW_current_script = self.rundata[i]['minKNOW_current_script'];
-                var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
-                var lastread = new Date(Date.parse(self.rundata[i]['last_read']));
-                datadump[i].starttime = starttime;
-                datadump[i].lastread = lastread;
-                datadump[i].flowcellid = self.rundata[i]['minKNOW_flow_cell_id'];
-                datadump[i].active = self.rundata[i].active;
-                datadump[i].barcodes = self.rundata[i].barcodes;
-
-            }
-        }
-        //console.log("datadump");
-        //console.log(datadump);
-        var sorteddatadump = datadump.sort(dynamicSort("starttime"));
-        self.flowcellstart = sorteddatadump[0].starttime;
-        self.write_run_data(sorteddatadump);
-
-    };
-
-    this.requestRunDetails = function (id) {
-        var url_RunDetails = '/api/v1/flowcells/' + id + '/rundetails/';
-        $.get(url_RunDetails, function (data) {
-            //console.log("rundetails");
-            //console.log(data);
-            self.rundetails = data;
-            //self.livedata.minIONname = data[0].minION_name;
-            //self.livedata.asicid = data[0].minKNOW_asic_id;
-            //self.livedata.scriptid = data[0].minKNOW_current_script;
-            if (data[0] != undefined) {
-                self.livedata.colours_string = data[0].minKNOW_colours_string;
-            }
-            //self.livedata.computer=data[0].minKNOW_computer;
-            //console.log(data[0]);
-            //document.getElementById('ComputerName').innerHTML = data[0].minKNOW_computer;
-            //document.getElementById('ScriptID').innerHTML = data[0].minKNOW_current_script;
-            self.updatetext();
-
-        })
-
-    };
-
-    this.requestLiveRunStats = function (id) {
-        //console.log('lastread ' + this.lastread);
-        var url_livestats = '/api/v1/flowcells/' + id + '/runstats/' + this.lastread;
-        $.get(url_livestats, function (data) {
-
-            if (data.length > 0) {
-                self.needtoupdatecharts = true;
-                self.lastread = data[data.length - 1].id;
-                self.lasttime = new Date(data[data.length - 1].sample_time)
-                //console.log(self.rundata.start_time);
-                //console.log(self.lasttime.toISOString());
-                self.requestMessages();
-                for (var i = 0; i < data.length; i++) {
-                    //console.log(data[i]);
-                    timestamp = new Date(data[i].sample_time).getTime();
-                    self.livedata.live_read_count = data[i].minKNOW_read_count;
-                    self.livedata.voltage.push([timestamp, data[i].voltage_value]);
-                    self.livedata.asictemp.push([timestamp, data[i].asic_temp]);
-                    self.livedata.heatsinktemp.push([timestamp, data[i].heat_sink_temp]);
-                    self.livedata.strand.push([timestamp, data[i].strand]);
-                    self.livedata.good_single.push([timestamp, data[i].good_single]);
-                    self.livedata.currpercentage = data[i].occupancy;
-                    self.livedata.currstrand = data[i].strand;
-                    self.livedata.percentage.push([timestamp, data[i].occupancy]);
-                    self.livedata.yield_history.push([timestamp, data[i].event_yield]);
-                    self.livedata.meanratio_history.push([timestamp, data[i].mean_ratio]);
-                    self.livedata.instrand_history.push([timestamp, data[i].in_strand]);
-                    self.livedata.openpore_history.push([timestamp, parseInt(data[i].open_pore)]);
-                    var myStringArray = ["above", "adapter", "below", "good_single", "strand", "inrange", "multiple", "pending_mux_change", "saturated", "unavailable", "unblocking", "unclassified", "unknown"];
-                    var arrayLength = myStringArray.length;
-                    //console.log(parseInt(data[i][myStringArray[4]]));
-                    for (var j = 0; j < arrayLength; j++) {
-                        if (isNaN(data[i][myStringArray[j]])) {
-                            self.livedata.pore_history[myStringArray[j]].push([timestamp, 0]);
-                            //console.log("found a NAN");
-                            //console.log(data[i][myStringArray[i]]);
-                        } else {
-                            self.livedata.pore_history[myStringArray[j]].push([timestamp, parseInt(data[i][myStringArray[j]])]);
-                        }
-
-                    }
-                }
-                self.calculatereadtoeventscaling();
-
-                if (self.needtoupdatecharts == true) {
-                    self.updateLiveHistogram(data);
-                    self.updateLiveYieldProjection();
-                    self.updateLiveCumuYield();
-                    self.updatePoreStats();
-                    //self.updateTextPredictions();
-                }
-
-
-            }
-            //console.log(self.livedata);
-        })
-    };
-    this.updatePoreStats = function () {
+    updatePoreStats: function () {
         var returndata = self.parseporehist(this.livedata.colours_string, this.livedata.pore_history);
         //console.log(returndata);
         while (self.PoreShizzle.series.length > 0)
@@ -1941,9 +1078,9 @@ function MinotourFlowCellApp() {
             //console.log(returndata[i]);
             self.PoreShizzle.addSeries(returndata[i]);
         }
-    };
+    },
 
-    this.parseporehist = function (descriptions, counts) {
+    parseporehist: function (descriptions, counts) {
         var results = [];
         var colors = [];
         var categories = [];
@@ -1963,9 +1100,9 @@ function MinotourFlowCellApp() {
             results.push({"name": pore, "color": "#" + colorlookup[pore], "data": counts[pore]})//,"color":"#121212"]});
         }
         return results
-    };
+    },
 
-    this.updateLiveCumuYield = function () {
+    updateLiveCumuYield: function () {
         //console.log(self.LiveCumuYield);
         if (self.LiveCumuYield.series.length < 1) {
             self.LiveCumuYield.addSeries({
@@ -2042,10 +1179,10 @@ function MinotourFlowCellApp() {
         self.LiveVoltage.redraw();
         self.LiveVoltage.reflow();
 
-    };
+    },
 
 
-    this.projectdata = function (data) {
+    projectdata: function (data) {
         var results = [];
         var holder = [];
         var diffholder = 0;
@@ -2072,15 +1209,15 @@ function MinotourFlowCellApp() {
         }
         //console.log(diffholder/(holder.length - 1));
         if (diffholder / (holder.length - 1) > 1) {
-            return [1, meanholder / (holder.length - 1 )];
+            return [1, meanholder / (holder.length - 1)];
         } else if (diffholder / (holder.length - 1) < 0.999) {
-            return ([0.999, meanholder / (holder.length - 1 )]);
+            return ([0.999, meanholder / (holder.length - 1)]);
         } else {
-            return ([diffholder / (holder.length - 1), meanholder / (holder.length - 1 )]);
+            return ([diffholder / (holder.length - 1), meanholder / (holder.length - 1)]);
         }
-    };
+    },
 
-    this.projectresults = function (syntheticdata, scalingfactor, steps, difference, runstart) {
+    projectresults: function (syntheticdata, scalingfactor, steps, difference, runstart) {
         testdata = syntheticdata.slice(-2);
         var lastval = testdata[1][1];
         var lasttime = testdata[1][0];
@@ -2106,9 +1243,9 @@ function MinotourFlowCellApp() {
         }
         //console.log(newresults);
         return newresults;
-    };
+    },
 
-    this.scaleyield = function (firstelement, data) {
+    scaleyield: function (firstelement, data) {
         var results = [];
         for (var i = 0; i < data.length; i++) {
             //console.log(data[i]);
@@ -2117,10 +1254,10 @@ function MinotourFlowCellApp() {
             results.push((((data[i][0] - firstelement[0]) / 1000), Math.ceil((data[i][1] / 1000000))));
         }
         return results;
-    };
+    },
 
 
-    this.updateLiveYieldProjection = function () {
+    updateLiveYieldProjection: function () {
         var seqspeed = "450 b/s";
         //commented out below as it wasn't being used - not sure why - need to check
         //var timeleft = self.geteighthours(self.livedatayield.slice(-1), self.rundata.start_time);
@@ -2141,8 +1278,9 @@ function MinotourFlowCellApp() {
         self.LiveYield.series[3].setData(self.converttobases(newarray2, seqspeed));
         self.LiveYield.redraw();
         self.LiveYield.reflow()
-    };
-    this.converttobases = function (data, seqspeed) {
+    },
+
+    converttobases: function (data, seqspeed) {
         if (Number(self.livedata.scalingfactor) > Number(0)) {
             //console.log("returning scaling factor" + self.livedata.scalingfactor);
             scaling = Number(self.livedata.scalingfactor);
@@ -2168,14 +1306,21 @@ function MinotourFlowCellApp() {
         }
         //console.log("returning estimated scaling factor");
         return scaleddata;
-    };
+    },
 
-    this.requestMessages = function () {
-        //
+    requestMessages: function () {
+
+        console.log(">>> antes do rundetails");
+        if (!self.rundetails) {
+            return;
+        }
+
         var url_sincemessages = self.rundetails[0]["minION"] + 'messagessince/' + self.rundetails[0]["minKNOW_start_time"] + '/' + self.lasttime.toISOString() + "/";
-        //console.log(url_sincemessages);
+
+        console.log(url_sincemessages);
+
         $.get(url_sincemessages, function (data) {
-            //console.log(data);
+            console.log(data);
             stringtowrite = '<table class="table table-condensed"><tr><th>Message</th><th>Time</th></tr>';
             for (var i = 0; i < data.length; i++) {
                 //stringtowrite=stringtowrite+'<div class="alert alert-info" role="alert">'+data[i].minKNOW_message + ' <p>(<i>' + new Date(data[i].minKNOW_message_timestamp) + '</i>) '+'</div>'
@@ -2184,9 +1329,9 @@ function MinotourFlowCellApp() {
             stringtowrite = stringtowrite + '</table>';
             document.getElementById('Messages').innerHTML = stringtowrite;
         })
-    };
+    },
 
-    this.tohistogram = function (readeventcountweightedhist, readeventcountweightedhistbinwidth, totalyield) {
+    tohistogram: function (readeventcountweightedhist, readeventcountweightedhistbinwidth, totalyield) {
         var results = [];
         var categories = [];
         //var counter = 0;
@@ -2230,9 +1375,9 @@ function MinotourFlowCellApp() {
         //console.log(n50index);
         return [results, categories, n50index];
 
-    };
+    },
 
-    this.updateLiveHistogram = function (data) {
+    updateLiveHistogram: function (data) {
         returndata = self.tohistogram(data[data.length - 1].minKNOW_histogram_values, data[data.length - 1].minKNOW_histogram_bin_width, data[data.length - 1].event_yield);
         self.LiveHistogram.series[0].setData(returndata[0]);
         self.LiveHistogram.xAxis[0].setCategories(returndata[1]);
@@ -2274,10 +1419,10 @@ function MinotourFlowCellApp() {
             id: 'plot-band-3',
         });
         self.LiveHistogram.reflow();
-    };
+    },
 
 
-    this.calculatereadtoeventscaling = function () {
+    calculatereadtoeventscaling: function () {
         var totalyield = 0;
         var readcount = 0;
         if (self.summary !== null) {
@@ -2293,9 +1438,9 @@ function MinotourFlowCellApp() {
                 self.livedata.scalingfactor = (totalyield / readcount) / (self.livedata.yield_history[self.livedata.yield_history.length - 1][1] / self.livedata.live_read_count);
             }
         }
-    };
+    },
 
-    this.requestReference = function (id) {
+    requestReference: function (id) {
         var url = "/api/v1/reference/";
         $.get(url, function (data) {
             var references = [];
@@ -2306,8 +1451,9 @@ function MinotourFlowCellApp() {
             //console.log(references);
             self.references = references;
         });
-    };
-    this.requestTasks = function (id) {
+    },
+
+    requestTasks: function (id) {
         var url = "/api/v1/flowcells/" + id + "/tasks/";
         $.get(url, function (data) {
             //console.log(data);
@@ -2318,32 +1464,10 @@ function MinotourFlowCellApp() {
             self.tasks = tasks;
             self.updateTasks(id); //really this only needs to run once!
         });
-    };
+    },
 
-    this.liveUpdateTasks = function (id) {
-        var url = "/api/v1/flowcells/" + id + "/tasks/";
-        $.get(url, function (data) {
-            var tasks = [];
-            for (var i = 0; i < data.length; i++) {
-                tasks.push(data[i]);
-            }
-            self.tasks = tasks;
-            for (var i = 0; i < self.tasks.length; i++) {
-                if (self.tasks[i].hasOwnProperty("job_details")) {
-                    message = 'Reads processed:' + self.tasks[i]["job_details"]["read_count"] + "/" + self.summary["All reads"]["Template"]["read_count"]["all"]["data"][0];
-                    percentage = Math.round((self.tasks[i]["job_details"]["read_count"] / self.summary["All reads"]["Template"]["read_count"]["all"]["data"][0] * 100) * 100) / 100;
-                    message2 = percentage + '% of uploaded reads are processed';
-                    //console.log(message);
-                    $('#' + self.tasks[i]["name"] + '-message').text(message);
-                    $('#' + self.tasks[i]["name"] + '-percentage').text(percentage);
-                    $('div#' + self.tasks[i]["name"] + '-percentage').width(percentage + '%');
-                    $('#' + self.tasks[i]["name"] + '-message2').text(message2);
-                }
-            }
-        })
-    };
 
-    this.updateTasks = function (id) {
+    updateTasks: function (id) {
         //console.log("####id is" + id);
         var taskstring = "";
         for (var i = 0; i < self.tasks.length; i++) {
@@ -2380,83 +1504,23 @@ function MinotourFlowCellApp() {
         ;
         self.liveUpdateTasks(id);
 
-    };
+    },
 
-    this.requestKraken = function (id) {
-        var parsedkraken = '/api/v1/flowcells/' + id + '/krakenparse/';
-        $.get(parsedkraken, function (data) {
-            //console.log(data);
-            krakendata = [];
-            var list = $("#krakenSelectBarcode");
-            var list2 = $("#krakenSelectRead");
-            for (var i = 0; i < data.length; i++) {
-                var barcodename = data[i]["barcode_name"];
-                var readtype = data[i]["type_name"]
-                if (!(readtype in krakendata)) {
-                    krakendata[readtype] = [];
-                    if ($("#krakenSelectRead option[value='" + data[i]["type_name"] + "']").val() === undefined) {
-                        list2.append(new Option(data[i]["type_name"], data[i]["type_name"]))
-                    }
-                }
-                if (!(barcodename in krakendata[readtype])) {
-                    krakendata[readtype][barcodename] = [];
-                    if ($("#krakenSelectBarcode option[value='" + data[i]["barcode_name"] + "']").val() === undefined) {
-                        list.append(new Option(data[i]["barcode_name"], data[i]["barcode_name"]));
-                    }
 
-                }
-                //if (data[i]['percentage'] >= 0.05 && data[i]["parent"] != "Input") {
-                //if (data[i]['indentation']>8){
-                krakendata[readtype][barcodename].push([data[i]["parent"], data[i]["sci_name"], data[i]['percentage'], data[i]['indentation']])
-                //}
-            }
-            //console.log(krakendata);
-            list.change(function () {
-                var selectedType = list2.find(":selected").text();
-                var selectedBarcode = list.find(":selected").text();
-                var minimum = $("#lowerboundselect").val();
-                //console.log(minimum);
-                var slimmedkraken = [];
-                for (var i = 0; i < krakendata[selectedType][selectedBarcode].length; i++) {
-                    if (krakendata[selectedType][selectedBarcode][i][3] >= minimum) {
-                        slimmedkraken.push([krakendata[selectedType][selectedBarcode][i][0], krakendata[selectedType][selectedBarcode][i][1], krakendata[selectedType][selectedBarcode][i][2]]);
-                    }
-                }
-                ;
+    //this.requestMappedChromosomes = requestMappedChromosomes;
 
-                //console.log(selectedBarcode);
-                var chart = Highcharts.chart('kraken-sankey', {
-                    title: {
-                        text: 'Kraken ' + selectedType + ' ' + selectedBarcode
-                    },
-
-                    series: [{
-                        keys: ['from', 'to', 'weight'],
-                        data: slimmedkraken,
-                        //data: krakendata[selectedType][selectedBarcode],
-                        type: 'sankey',
-                        curveFactor: 0,
-                        name: 'Kraken Output'
-                    }]
-                });
-            });
-        })
-    };
-
-    this.requestMappedChromosomes = requestMappedChromosomes;
-
-    this.updateCoverageBasedCharts = function (chart, field) {
+    updateCoverageBasedCharts: function (chart, field) {
         var summarycoverage = this.summarycoverage;
         var series = [];
         var categories = [];
         for (var barcode of Object.keys(summarycoverage)) {
-//            console.log(summarycoverage[barcode]);
+    //            console.log(summarycoverage[barcode]);
             data = [];
             for (var readtype of Object.keys(summarycoverage[barcode])) {
 
                 for (var chromosome of Object.keys(summarycoverage[barcode][readtype])) {
                     categories.push(chromosome);
-//                    console.log(summarycoverage[barcode][readtype][chromosome]['coverage']["data"]);
+    //                    console.log(summarycoverage[barcode][readtype][chromosome]['coverage']["data"]);
                     data.push(summarycoverage[barcode][readtype][chromosome][field]["data"]);
                 }
             }
@@ -2479,267 +1543,6 @@ function MinotourFlowCellApp() {
                 chart.addSeries(series[i]);
             }
         }
-    };
-
-
-    this.requestPafData = function (id) {
-
-        self.requestMappedChromosomes(id);
-
-        var pafurl = '/api/v1/flowcells/' + id + '/pafsummary/';
-
-        $.get(pafurl, function (data) {
-            //console.log("PAF DATA");
-            //console.log(data);
-            if (data.length < 1) {
-            } else {
-                summarycoverage = {};
-                for (var i = 0; i < data.length; i++) {
-                    //console.log(data[i]);
-                    if (summarycoverage[data[i].barcode_group_name] === undefined) {
-                        summarycoverage[data[i].barcode_group_name] = {};
-                    }
-                    if (summarycoverage[data[i].barcode_group_name][data[i].read_type_name] === undefined) {
-                        summarycoverage[data[i].barcode_group_name][data[i].read_type_name] = {};
-                    }
-                    if (summarycoverage[data[i].barcode_group_name][data[i].read_type_name][data[i].chrom_name] === undefined) {
-                        summarycoverage[data[i].barcode_group_name][data[i].read_type_name][data[i].chrom_name] = {};
-                    }
-                    summarycoverage[data[i].barcode_group_name][data[i].read_type_name][data[i].chrom_name]["coverage"] = {
-                        "name": "coverage",
-                        "data": [data[i].chrom_cover],
-                        "animation": false
-                    };
-                    summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].chrom_name]["ave_read_len"] = {
-                        "name": "Average Read Length",
-                        "data": [data[i].avg_read_len],
-                        "animation": false
-                    };
-                }
-                self.summarycoverage = summarycoverage;
-                self.updateCoverageBasedCharts(self.chart_per_chrom_cov, "coverage");
-                self.updateCoverageBasedCharts(self.chart_per_chrom_avg, "ave_read_len");
-            }
-
-        })
     }
-
-    this.requestGfaData = function (id) {
-        var url = "/api/v1/flowcells/" + id + "/assembly";
-
-        $.get(url, function (data) {
-            //console.log(data);
-
-            if (data.length > 0) {
-
-                var summaries = {}
-                var latest = {}
-
-                for (var i = 0; i < data.length; i++) {
-                    var item = data[i];
-
-                    if (summaries[item.barcode_name] === undefined) {
-                        summaries[item.barcode_name] = {};
-                    }
-
-                    if (latest[item.barcode_name] === undefined) {
-                        latest[item.barcode_name] = {};
-                    }
-
-                    if (summaries[item.barcode_name][item.type_name] === undefined) {
-                        summaries[item.barcode_name][item.type_name] = {
-                            'ncontigs': [],
-                            'n50': [],
-                            'sum': []
-                        };
-                    }
-
-                    if (latest[item.barcode_name][item.type_name] === undefined) {
-                        latest[item.barcode_name][item.type_name] = {};
-                    }
-
-                    summaries[item.barcode_name][item.type_name]['ncontigs'].push([item.nreads, item.ncontigs]);
-                    summaries[item.barcode_name][item.type_name]['n50'].push([item.nreads, item.n50len]);
-                    summaries[item.barcode_name][item.type_name]['sum'].push([item.nreads, item.totlen]);
-
-                    latest[item.barcode_name][item.type_name]['nreads'] = item.nreads;
-                    latest[item.barcode_name][item.type_name]['ncontigs'] = item.ncontigs;
-                    latest[item.barcode_name][item.type_name]['min'] = item.minlen;
-                    latest[item.barcode_name][item.type_name]['max'] = item.maxlen;
-                    latest[item.barcode_name][item.type_name]['mean'] = item.meanlen;
-                    latest[item.barcode_name][item.type_name]['n50'] = item.n50len;
-                    latest[item.barcode_name][item.type_name]['sum'] = item.totlen;
-                    latest[item.barcode_name][item.type_name]['time'] = item.timecreated;
-                    latest[item.barcode_name][item.type_name]['allcontigs'] = item.allcontigs;
-
-                }
-
-                self.assemblySummary = summaries;
-                self.assemblyLatest = latest;
-
-                self.updateAssemblyCharts(self.ChartNumContigs, 'ncontigs');
-                self.updateAssemblyCharts(self.ChartN50Contigs, 'n50');
-                self.updateAssemblyCharts(self.ChartSumContigs, 'sum');
-
-                self.createAssemblyTable();
-                self.updateAssemblyBoxplot();
-
-            }
-
-        });
-    }
-
-    this.updateAssemblyCharts = function (chart, field) {
-
-        while (chart.series.length > 0) {
-            chart.series[0].remove();
-        }
-
-        for (var barcode of Object.keys(self.assemblySummary)) {
-
-            for (var type of Object.keys(self.assemblySummary[barcode])) {
-
-                chart.addSeries({
-                    name: barcode + " - " + type,
-                    data: self.assemblySummary[barcode][type][field]
-                });
-
-            }
-        }
-
-    }
-
-    this.updateAssemblyBoxplot = function () {
-        var chart = self.ChartBoxPlotContigs;
-
-        var barcats = [];
-        var byreadtype = {};
-
-        for (var barcode of Object.keys(self.assemblyLatest)) {
-
-            barcats.push(barcode);
-
-            for (var type of Object.keys(self.assemblyLatest[barcode])) {
-
-                if (byreadtype[type] === undefined) {
-                    byreadtype[type] = [];
-                }
-                var contigsizelist = JSON.parse(self.assemblyLatest[barcode][type]['allcontigs']);
-                byreadtype[type].push(contigsizelist.sort(function (a, b) {
-                    return a - b;
-                }));
-            }
-        }
-
-        while (chart.series.length > 0) {
-            chart.series[0].remove();
-        }
-
-        chart.update({
-            xAxis: {
-                categories: barcats
-            }
-        });
-
-        for (var type of Object.keys(byreadtype)) {
-
-            chart.addSeries({
-                name: type,
-                data: byreadtype[type]
-            });
-
-        }
-    }
-
-    this.createAssemblyTable = function () {
-        stringtowrite = '<table class="table table-condensed"><tr><th>Barcode</th><th>ReadType</th><th>Input Reads</th><th>Contigs</th><th>Min</th><th>Max</th><th>N50</th><th>Mean</th><th>Total</th><th>Time</th></tr>';
-        for (var barcode of Object.keys(self.assemblyLatest)) {
-            for (var type of Object.keys(self.assemblyLatest[barcode])) {
-                stringtowrite = stringtowrite + '<tr>';
-                stringtowrite = stringtowrite + '<td>' + barcode + ' </td>';
-                stringtowrite = stringtowrite + '<td>' + type + ' </td>';
-                stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['nreads'] + ' </td>';
-                stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['ncontigs'] + ' </td>';
-                stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['min'] + ' </td>';
-                stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['max'] + ' </td>';
-                stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['n50'] + ' </td>';
-                stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['mean'] + ' </td>';
-                stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['sum'] + ' </td>';
-                stringtowrite = stringtowrite + '<td><i>' + new Date(self.assemblyLatest[barcode][type]['time']) + '</i></td> ';
-                stringtowrite = stringtowrite + '</tr>';
-            }
-        }
-        stringtowrite = stringtowrite + '</table>';
-        document.getElementById('AssemblyTable').innerHTML = stringtowrite;
-    }
-
-
-    this.requestData = function () {
-
-        var url_run = '/api/v1/flowcells/' + self.id;
-
-        $.get(url_run, function (data) {
-            console.log(self.summary);
-            if (self.summary !== null){
-               if (self.summary["All reads"]['Template']["max_length"]["all"]["data"][0] >= 1000000 && self.millionaire != true) {
-                    $('#eastermodal').modal('show');
-                    self.millionaire = true;
-                }
-            }
-
-            var barcodes = new Set();
-            for (var j = 0; j < data.length; j++) {
-                for (var i = 0; i < data[j].barcodes.length; i++) {
-                    barcodes.add(data[j].barcodes[i].name)
-                }
-            }
-            self.barcodes = Array.from(barcodes).sort();
-            //console.log(self.barcodes);
-            //console.log("This is the data we are logging.");
-            //console.log(data);
-            self.rundata = data;
-            //console.log("rundata");
-            //console.log(self.rundata);
-            self.updateBarcodeNavTab();
-            //self.requestSummaryByMinuteData(self.id);
-            self.requestSummaryData(self.id);
-            self.requestHistogramData(self.id);
-            self.requestChannelSummaryData(self.id);
-            self.requestRunDetails(self.id);
-            self.requestLiveRunStats(self.id);
-            self.liveUpdateTasks(self.id);
-            self.requestKraken(self.id);
-            self.requestPafData(self.id);
-            self.requestCumuBases(self.id);
-            self.requestQualTime(self.id);
-            self.requestLengthTime(self.id);
-            self.requestMaxLengthTime(self.id);
-            self.requestSpeed(self.id);
-            self.requestGfaData(self.id);
-            //self.updatetext();
-
-
-            /*
-
-             //console.log(self.rundata);
-
-             self.requestPafTransData(self.id);
-
-             console.log("seriously - Im just trying to parse kraken");
-
-
-             */
-
-        });
-
-
-        console.log(self);
-
-    };
 
 }
-
-
-
-
-
