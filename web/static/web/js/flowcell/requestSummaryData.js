@@ -4,9 +4,64 @@ function requestSummaryData (id) {
      */
     var url = "/api/v1/flowcells/" + id + "/summarybarcode";
 
-    $.get(url, function (data) {
+    var selectedBarcode = this.getSelectedBarcode();
+
+    /*
+     * Initialise charts used to display summary data
+     */
+    if (!this.chart_reads_called) {
+
+        this.chart_reads_called = this.makeChart(
+            "reads-called",
+            "reads called".toUpperCase(),
+            "number of reads called".toUpperCase()
+        );
+
+    }
+
+    if (!this.chart_yield) {
+
+        this.chart_yield = this.makeChart(
+            "yield",
+            "yield".toUpperCase(),
+            "yield".toUpperCase()
+        );
+
+    }
+
+    if (!this.chart_average_read_length) {
+
+        this.chart_average_read_length = this.makeChart(
+            "average-read-length",
+            "average read length".toUpperCase(),
+            "average read length".toUpperCase()
+        );
+
+    }
+
+    if (!this.chart_maximum_read_length) {
+
+        this.chart_maximum_read_length = this.makeChart(
+            "maximum-read-length",
+            "maximum read length".toUpperCase(),
+            "maximum read length".toUpperCase()
+        );
+
+    }
+
+    let charts = summaryBasedCharts = {
+        "read_count": this.chart_reads_called,
+        "yield": this.chart_yield,
+        "average_read_length": this.chart_average_read_length,
+        "max_length": this.chart_maximum_read_length
+    };
+
+    $.get(url, (function (data) {
+
         if (data.length > 0) {
+
             var summary = {};
+
             for (var i = 0; i < data.length; i++) {
                 var item = data[i];
 
@@ -37,6 +92,7 @@ function requestSummaryData (id) {
 
 
             }
+
             var summaries = {};
             for (var barcodename in summary) {
                 if (summaries[barcodename] === undefined) {
@@ -124,10 +180,12 @@ function requestSummaryData (id) {
 
             }
 
-            self.updateSummaryBasedCharts(summaries);
+            this.summary = summaries;
+
+            updateSummaryBasedCharts(summaries, selectedBarcode, charts);
 
         }
 
-    });
+    }).bind(this));
 
 };

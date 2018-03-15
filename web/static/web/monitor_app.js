@@ -1,3 +1,105 @@
+function updateReadsColumnBasedChart (chart, field, summaries, selectedBarcode) {
+
+    var series = [];
+
+    data = [];
+
+    for (var readtype of Object.keys(summaries["All reads"])) {
+        data.push(summaries["All reads"][readtype][field]['all']["data"][0]);
+    }
+
+    serie = {
+        "name": "All reads",
+        "data": data
+    };
+
+    series.push(serie);
+
+    data = [];
+
+    for (var readtype of Object.keys(summaries["All reads"])) {
+        data.push(summaries["All reads"][readtype][field]['pass']["data"][0]);
+    }
+
+    serie = {
+        "name": "All pass reads",
+        "data": data
+    };
+
+    series.push(serie);
+
+    if (field != "max_length") {
+
+        data = [];
+
+        for (var readtype of Object.keys(summaries["All reads"])) {
+            data.push(summaries["All reads"][readtype][field]['fail']["data"][0]);
+        }
+
+        serie = {
+            "name": "All fail reads",
+            "data": data
+        };
+
+        series.push(serie);
+    }
+
+    // Include specific barcode if selected
+    if (selectedBarcode !== "All reads") {
+
+        data = [];
+        //console.log(summaries[self.selectedBarcode]);
+        for (var readtype of Object.keys(summaries[selectedBarcode])) {
+            //console.log(readtype);
+            //console.log("are we here?");
+            data.push(summaries[selectedBarcode][readtype][field]['all']["data"][0]);
+        }
+
+        serie = {
+            "name": selectedBarcode,
+            "data": data
+        };
+
+        //console.log(serie);
+
+        series.push(serie);
+
+    }
+
+    chart.colorCounter = 2;
+    chart.symbolCounter = 0;
+
+    var chartSeriesLength = (chart.series ? chart.series.length : 0);
+
+    for (var i = 0; i < series.length; i++) {
+        if (i <= (chartSeriesLength - 1)) {
+            chart.series[i].setData(series[i].data);
+            chart.series[i].update({
+                name: series[i].name
+            });
+        } else {
+            chart.addSeries(series[i]);
+        }
+    }
+
+    chartSeriesLength = (chart.series ? chart.series.length : 0);
+
+    while (chartSeriesLength > series.length) {
+        chart.series[(chartSeriesLength - 1)].remove();
+        chartSeriesLength = (chart.series ? chart.series.length : 0);
+    }
+}
+
+function updateSummaryBasedCharts (summaries, selectedBarcode, charts) {
+
+    for (var prop in charts) {
+
+        updateReadsColumnBasedChart(charts[prop], prop, summaries, selectedBarcode);
+
+    }
+
+}
+
 //function FlowcellPageApp() {
 var FlowcellPageApp = {
 
@@ -87,6 +189,8 @@ var FlowcellPageApp = {
         this.updateStepLineChart = updateStepLineChart;
 
         this.drawtaskbutton = drawtaskbutton;
+
+        this.requestChannelSummaryData = requestChannelSummaryData;
 
         this.updateBarcodeNavTab = updateBarcodeNavTab;
 
@@ -183,30 +287,6 @@ var FlowcellPageApp = {
             "per-chrom-avg",
             "Read Length By Chromosome".toUpperCase(),
             "Read Length By Chromosome".toUpperCase()
-        );
-
-        this.chart_reads_called = this.makeChart(
-            "reads-called",
-            "reads called".toUpperCase(),
-            "number of reads called".toUpperCase()
-        );
-
-        this.chart_yield = this.makeChart(
-            "yield",
-            "yield".toUpperCase(),
-            "yield".toUpperCase()
-        );
-
-        this.chart_average_read_length = this.makeChart(
-            "average-read-length",
-            "average read length".toUpperCase(),
-            "average read length".toUpperCase()
-        );
-
-        this.chart_maximum_read_length = this.makeChart(
-            "maximum-read-length",
-            "maximum read length".toUpperCase(),
-            "maximum read length".toUpperCase()
         );
 
         this.chartChromosomeCoverage = this.makeStepLineChart(
@@ -321,6 +401,7 @@ var FlowcellPageApp = {
         console.log(">>> initializing monitorapp, requesting data");
 
         var inputFlowcellId = document.querySelector("#flowcell-id");
+
         this.flowcellId = inputFlowcellId.value;
 
         this.selectedBarcode = "All reads";
@@ -956,116 +1037,6 @@ var FlowcellPageApp = {
         }
     },
 
-    updateSummaryBasedCharts: function (summaries) {
-
-        var charts = {
-            "read_count": self.chart_reads_called,
-            "yield": self.chart_yield,
-            "average_read_length": self.chart_average_read_length,
-            "max_length": self.chart_maximum_read_length
-        };
-
-        for (var prop in charts) {
-            self.updateReadsColumnBasedChart(charts[prop], prop, summaries);
-        }
-
-    },
-
-    updateReadsColumnBasedChart: function (chart, field, summaries) {
-
-        console.log('> self.summary');
-        console.log(summaries);
-        console.log('< self.summary');
-
-        var series = [];
-
-        data = [];
-
-        for (var readtype of Object.keys(summaries["All reads"])) {
-            data.push(summaries["All reads"][readtype][field]['all']["data"][0]);
-        }
-
-        serie = {
-            "name": "All reads",
-            "data": data
-        };
-
-        series.push(serie);
-
-        data = [];
-
-        for (var readtype of Object.keys(summaries["All reads"])) {
-            data.push(summaries["All reads"][readtype][field]['pass']["data"][0]);
-        }
-
-        serie = {
-            "name": "All pass reads",
-            "data": data
-        };
-
-        series.push(serie);
-
-        if (field != "max_length") {
-
-            data = [];
-
-            for (var readtype of Object.keys(summaries["All reads"])) {
-                data.push(summaries["All reads"][readtype][field]['fail']["data"][0]);
-            }
-
-            serie = {
-                "name": "All fail reads",
-                "data": data
-            };
-
-            series.push(serie);
-        }
-
-        // Include specific barcode if selected
-        if (self.getSelectedBarcode() !== "All reads") {
-
-            data = [];
-            //console.log(summaries[self.selectedBarcode]);
-            for (var readtype of Object.keys(summaries[self.getSelectedBarcode()])) {
-                //console.log(readtype);
-                //console.log("are we here?");
-                data.push(summaries[self.getSelectedBarcode()][readtype][field]['all']["data"][0]);
-            }
-
-            serie = {
-                "name": self.getSelectedBarcode(),
-                "data": data
-            };
-
-            //console.log(serie);
-
-            series.push(serie);
-
-        }
-
-        chart.colorCounter = 2;
-        chart.symbolCounter = 0;
-
-        var chartSeriesLength = (chart.series ? chart.series.length : 0);
-
-        for (var i = 0; i < series.length; i++) {
-            if (i <= (chartSeriesLength - 1)) {
-                chart.series[i].setData(series[i].data);
-                chart.series[i].update({
-                    name: series[i].name
-                });
-            } else {
-                chart.addSeries(series[i]);
-            }
-        }
-
-        chartSeriesLength = (chart.series ? chart.series.length : 0);
-
-        while (chartSeriesLength > series.length) {
-            chart.series[(chartSeriesLength - 1)].remove();
-            chartSeriesLength = (chart.series ? chart.series.length : 0);
-        }
-    },
 
     updatePoreStats: function () {
         var returndata = self.parseporehist(this.livedata.colours_string, this.livedata.pore_history);

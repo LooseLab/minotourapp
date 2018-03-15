@@ -1,27 +1,27 @@
-function updatetext() {
+function updatetext(data) {
 
     datadump = new Array();
 
-    if (self.rundetails != undefined && self.rundetails.length > 0) {
+    if (self.rundetails != undefined && data.length > 0) {
 
-        for (var i in self.rundetails) {
+        for (var i in data) {
 
-            if (!self.rundetails.hasOwnProperty(i)) continue;
+            if (!data.hasOwnProperty(i)) continue;
 
             datadump[i] = new Array;
-            datadump[i].minIONname = self.rundetails[i]['minION_name'];
-            datadump[i].minKNOW_asic_id = self.rundetails[i]['minKNOW_asic_id'];
-            datadump[i].minKNOW_version = self.rundetails[i]['minKNOW_version'];
-            datadump[i].run_id = self.rundetails[i]['minKNOW_hash_run_id'];
-            datadump[i].run_name = self.rundetails[i]['minKNOW_run_name'];
-            datadump[i].sample_name = self.rundetails[i]['minKNOW_sample_name'];
-            datadump[i].computer_name = self.rundetails[i]['minKNOW_computer'];
-            datadump[i].minKNOW_current_script = self.rundetails[i]['minKNOW_current_script'];
+            datadump[i].minIONname = data[i]['minION_name'];
+            datadump[i].minKNOW_asic_id = data[i]['minKNOW_asic_id'];
+            datadump[i].minKNOW_version = data[i]['minKNOW_version'];
+            datadump[i].run_id = data[i]['minKNOW_hash_run_id'];
+            datadump[i].run_name = data[i]['minKNOW_run_name'];
+            datadump[i].sample_name = data[i]['minKNOW_sample_name'];
+            datadump[i].computer_name = data[i]['minKNOW_computer'];
+            datadump[i].minKNOW_current_script = data[i]['minKNOW_current_script'];
             datadump[i].name = self.rundata[i]['name'];
 
-            var starttime = new Date(self.rundetails[i]['minKNOW_start_time']);
+            var starttime = new Date(data[i]['minKNOW_start_time']);
             datadump[i].starttime = starttime;
-            datadump[i].flowcellid = self.rundetails[i]['minKNOW_flow_cell_id'];
+            datadump[i].flowcellid = data[i]['minKNOW_flow_cell_id'];
             datadump[i].active = self.rundata[i].active;
             datadump[i].barcodes = self.rundata[i].barcodes;
 
@@ -60,17 +60,16 @@ function updatetext() {
 
 function requestRunDetails(id) {
 
-    var url_RunDetails = '/api/v1/flowcells/' + id + '/rundetails/';
+    var url = '/api/v1/flowcells/' + id + '/rundetails/';
 
-    $.get(url_RunDetails, function (data) {
+    $.get(url, function (data) {
 
-        self.rundetails = data;
+        if (data && data.length > 0) {
 
-        if (data[0] != undefined) {
             self.livedata.colours_string = data[0].minKNOW_colours_string;
-        }
+            self.updatetext(data);
 
-        self.updatetext();
+        }
 
     })
 
