@@ -1,10 +1,10 @@
 numpy
 wheel
 watchdog
-Django==1.11.4
+Django==1.11.11
 django-filter
 django-mailgun 
-djangorestframework==3.6.2 
+djangorestframework
 httpie 
 Markdown 
 mysqlclient 

@@ -5,9 +5,9 @@
     <header class="main-header">
 
         <a href="{% url 'private-index' %}" class="logo">
-            <span class="logo-mini"><img style="max-width:20px;" src="{% static 'mT_images/minitour.png' %}"
+            <span class="logo-mini"><img style="max-width:20px;" src="{% static 'web/img/minitour.png' %}"
                                          alt="minoTour_logo"><small>v1</small></span>
-            <span class="logo-lg"><img style="max-width:100px;" src="{% static 'mT_images/minotaurlogo.png' %}"
+            <span class="logo-lg"><img style="max-width:100px;" src="{% static 'web/img/minotourlogo.png' %}"
                                        alt="minoTour_logo">1.0a</span>
         </a>
 
@@ -59,14 +59,14 @@
                             <!-- Menu Toggle Button -->
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                                 <!-- The user image in the navbar-->
-                                <img src="{% static 'mT_images/minitour.png' %}" class="user-image" alt="User Image">
+                                <img src="{% static 'web/img/minitour.png' %}" class="user-image" alt="User Image">
                                 <!-- hidden-xs hides the username on small devices so only the image appears. -->
                                 <span class="hidden-xs">{{ request.user }}</span>
                             </a>
                             <ul class="dropdown-menu">
                                 <!-- The user image in the menu -->
                                 <li class="user-header">
-                                    <img src="{% static 'mT_images/minitour.png' %}" class="img-circle"
+                                    <img src="{% static 'web/img/minitour.png' %}" class="img-circle"
                                          alt="User Image">
                                     <p>
                                         {{ request.user }}

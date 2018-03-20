@@ -14,10 +14,6 @@ from web.forms import UserOptionsForm
 from web.forms import SignUpForm
 
 
-def log_in(request):
-    return render(request, 'web/log_in.html')
-
-
 def signup(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
