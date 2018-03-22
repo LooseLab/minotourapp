@@ -12,10 +12,12 @@ class MessageSerializer(serializers.ModelSerializer):
 
         model = Message
         fields = (
-            'id',
+            'uuidstr',
             'recipient_email',
             'sender_email',
             'title',
+            'is_read',
+            'created_date',
         )
 
 

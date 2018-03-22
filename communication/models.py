@@ -1,9 +1,15 @@
+from django.conf import settings
 from django.db import models
 
-from django.conf import settings
+import uuid
 
 
 class Message(models.Model):
+
+    uuid = models.UUIDField(
+        default = uuid.uuid4,
+        editable = False
+    )
 
     recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -39,6 +45,12 @@ class Message(models.Model):
         blank=True,
     )
 
+    is_read = models.BooleanField(
+        default = False,
+    )
+
     def __str__(self):
         return self.title
 
+    def uuidstr(self):
+        return str(self.uuid)
