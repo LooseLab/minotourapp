@@ -6,7 +6,7 @@ function requestSpeed(id) {
 
     var selectedBarcode = this.getSelectedBarcode();
 
-    $.get(url, function (data) {
+    $.get(url, (function (data) {
 
 
 
@@ -78,6 +78,6 @@ function requestSpeed(id) {
             })
         }
 
-    })
+    }).bind(this));
 
 };
