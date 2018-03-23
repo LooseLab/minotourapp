@@ -1,23 +1,27 @@
 import json
+import numpy as np
 from datetime import datetime, timedelta
-from django.utils import timezone
 from dateutil import parser
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+# from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
 from django.http import HttpResponse
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-#from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.core.serializers.json import DjangoJSONEncoder
 
-import numpy as np
-
+from minotourapp import settings
 from reads.models import Barcode, ChannelSummary, BarcodeGroup
 from reads.models import FastqRead
 from reads.models import FastqReadExtra
 from reads.models import FastqReadType
+from reads.models import FlowCell
+from reads.models import FlowCellRun
 from reads.models import HistogramSummary
+from reads.models import JobMaster
+from reads.models import JobType
 from reads.models import MinION
 from reads.models import MinIONControl
 from reads.models import MinIONEvent
@@ -28,22 +32,16 @@ from reads.models import MinIONRunStatus
 from reads.models import MinIONScripts
 from reads.models import MinIONStatus
 from reads.models import MinIONmessages
-from reads.models import RunStatistic
 from reads.models import RunStatisticBarcode
-from reads.models import RunSummary
 from reads.models import RunSummaryBarcode
-from reads.models import JobType
-from reads.models import JobMaster
-from reads.models import FlowCell
-from reads.models import FlowCellRun
-from reference.models import ReferenceInfo
+from reads.models import update_global_state, update_sum_stats
 from reads.serializers import BarcodeSerializer, BarcodeGroupSerializer
 from reads.serializers import ChannelSummarySerializer
 from reads.serializers import FastqReadSerializer
-from reads.serializers import RunSummaryBarcodeSerializer
-from reads.serializers import RunStatisticBarcodeSerializer
-from reads.serializers import RunStatisticSerializer
 from reads.serializers import FastqReadTypeSerializer
+from reads.serializers import FlowCellRunSerializer
+from reads.serializers import FlowCellSerializer
+from reads.serializers import JobTypeSerializer
 from reads.serializers import MinIONControlSerializer
 from reads.serializers import MinIONEventSerializer
 from reads.serializers import MinIONEventTypeSerializer
@@ -55,14 +53,10 @@ from reads.serializers import MinIONSerializer
 from reads.serializers import MinIONStatusSerializer
 from reads.serializers import MinIONmessagesSerializer
 from reads.serializers import RunHistogramSummarySerializer
-from reads.serializers import RunSummarySerializer
-from reads.serializers import JobTypeSerializer
-from reads.serializers import FlowCellSerializer
-from reads.serializers import FlowCellRunSerializer
+from reads.serializers import RunStatisticBarcodeSerializer
+from reads.serializers import RunSummaryBarcodeSerializer
+from reference.models import ReferenceInfo
 
-from reads.models import update_global_state,update_sum_stats
-
-from minotourapp import settings
 
 @api_view(['GET'])
 def read_type_list(request):
@@ -686,20 +680,6 @@ def cumulative_read_count(request, pk):
 
 
 @api_view(['GET'])
-def run_summary(request, pk):
-    """
-    Return a list with summaries for each read type of a given run.
-    """
-    queryset = RunSummary.objects\
-        .filter(run_id__owner=request.user)\
-        .filter(run_id=pk)
-
-    serializer = RunSummarySerializer(queryset, many=True, context={'request': request})
-
-    return Response(serializer.data)
-
-
-@api_view(['GET'])
 def run_summary_barcode(request, pk):
     """
     Return a list with summaries for each read type of a given run.
@@ -709,28 +689,6 @@ def run_summary_barcode(request, pk):
         .filter(run_id=pk)
 
     serializer = RunSummaryBarcodeSerializer(queryset, many=True, context={'request': request})
-
-    return Response(serializer.data)
-
-
-@api_view(['GET'])
-def run_summary_by_minute(request, pk, last=''):
-    """
-    Return a list with summaries for a particular run grouped by minute.
-    """
-
-    if last == '':
-        queryset = RunStatistic.objects\
-            .filter(run_id__owner=request.user)\
-            .filter(run_id=pk)
-
-    else:
-        queryset = RunStatistic.objects\
-            .filter(run_id__owner=request.user)\
-            .filter(run_id=pk)\
-            .filter(sample_time__gt=last)
-
-    serializer = RunStatisticSerializer(queryset, many=True, context={'request': request})
 
     return Response(serializer.data)
 

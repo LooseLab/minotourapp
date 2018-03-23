@@ -54,21 +54,6 @@ urlpatterns = [
         name="minIONrunstats_latest"
     ),
     url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/summary/$',
-        views.run_summary,
-        name="runsummary-detail"
-    ),
-    url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/summarybyminute/$',
-        views.run_summary_by_minute,
-        name="runsummarybyminute-detail"
-    ),
-    url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/summarybyminute/(?P<last>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)/$',
-        views.run_summary_by_minute,
-        name="runsummarybyminute-detail2"
-    ),
-    url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/summarybarcode/$',
         views.run_summary_barcode,
         name="runsummarybarcode-detail"

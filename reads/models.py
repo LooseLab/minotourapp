@@ -1,5 +1,4 @@
 import datetime
-
 import pytz
 from django.conf import settings
 from django.db import models
@@ -11,11 +10,13 @@ from reference.models import ReferenceInfo
 
 
 class FlowCell(models.Model):
+
     name = models.CharField(
         max_length=256,
         blank=True,
         null=True,
     )
+
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name='flowcells'
@@ -26,14 +27,20 @@ class FlowCell(models.Model):
         null=True,
     )
 
-
     def __str__(self):
         return "{} {}".format(self.name, self.id)
 
 
 class MinION(models.Model):
-    minION_name = models.CharField(max_length=64)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='minIONs')
+
+    minION_name = models.CharField(
+        max_length=64
+    )
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='minIONs'
+    )
 
     class Meta:
         verbose_name = 'MinION'
@@ -52,7 +59,7 @@ class MinION(models.Model):
     def last_run(self):
         try:
             return self.minionrun.last().id
-            #return reverse('minIONrunstats_list', args=[self.minionrun.last().id])
+            # return reverse('minIONrunstats_list', args=[self.minionrun.last().id])
         except AttributeError:
             last_run = "undefined"
         return last_run
@@ -142,11 +149,12 @@ class MinIONControl(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='controlcontrol')
     job = models.CharField(max_length=256, blank=False, null=False)
     custom = models.CharField(max_length=256, blank=True, null=True)
-    #setdate = models.DateTimeField(blank=False,null=False)
-    #completedate = models.DateTimeField(blank=True,null=True)
+    # setdate = models.DateTimeField(blank=False,null=False)
+    # completedate = models.DateTimeField(blank=True,null=True)
     complete = models.BooleanField(default=False)
     created_date = models.DateTimeField(auto_now_add=True)
-    modified_date = models.DateTimeField(auto_now=True)  # These last two fields added to enable auto cleanup of event status for a minION incase of disconnect of client.
+    modified_date = models.DateTimeField(
+        auto_now=True)  # These last two fields added to enable auto cleanup of event status for a minION incase of disconnect of client.
 
     class Meta:
         verbose_name = 'MinION Control'
@@ -167,6 +175,7 @@ class UserOptions(models.Model):
 
 
 class MinIONRun(models.Model):
+
     run_name = models.CharField(
         max_length=256
     )
@@ -226,10 +235,9 @@ class MinIONRun(models.Model):
         try:
             return self.RunStats.last().created_date
         except AttributeError:
-            #return "undefined"
+            # return "undefined"
             olddate = datetime.datetime(1, 1, 1, 1, 1, 1, 1, pytz.utc)
             return olddate
-
 
     def start_time(self):
         try:
@@ -241,7 +249,7 @@ class MinIONRun(models.Model):
         try:
             return self.reads.last().created_date
         except AttributeError:
-            #return "undefined"
+            # return "undefined"
             olddate = datetime.datetime(1, 1, 1, 1, 1, 1, 1, pytz.utc)
             return olddate
 
@@ -277,21 +285,15 @@ class MinIONRun(models.Model):
                     return 128
                 elif 128 < int(max_channel) <= 512:
                     return 512
-                elif 512 < int(max_channel) <=3000:
+                elif 512 < int(max_channel) <= 3000:
                     return 3000
             return 512
         except AttributeError:
             return "undefined"
 
-    #def barcodes(self):
-    #    barcodes = []
-    #    for item in Barcode.objects.filter(run=self):
-    #        barcodes.append(item.name)
-    #
-    #    return barcodes
-
 
 class BarcodeGroup(models.Model):
+
     flowcell = models.ForeignKey(
         FlowCell,
         related_name='flowcellbarcode'
@@ -302,21 +304,21 @@ class BarcodeGroup(models.Model):
     )
 
     def __str__(self):
-        return "{} {}".format(self.flowcell,self.name)
+        return "{} {}".format(self.flowcell, self.name)
 
 
 class Barcode(models.Model):
     run = models.ForeignKey(
         MinIONRun,
         on_delete=models.CASCADE,
-        related_name = 'barcodes'
+        related_name='barcodes'
     )
 
     barcodegroup = models.ForeignKey(
         BarcodeGroup,
         on_delete=models.CASCADE,
-        null=True,blank=True,
-        related_name = 'barcodegroup'
+        null=True, blank=True,
+        related_name='barcodegroup'
     )
 
     name = models.CharField(
@@ -327,25 +329,23 @@ class Barcode(models.Model):
         return "{} {} {}".format(self.run, self.run.run_id, self.name)
 
 
-
-
 class MinIONStatus(models.Model):
     minION = models.OneToOneField(MinION, related_name='currentdetails')
     minKNOW_status = models.CharField(max_length=64)
     minKNOW_current_script = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_sample_name = models.CharField(max_length=256,blank=True, null=True)
+    minKNOW_sample_name = models.CharField(max_length=256, blank=True, null=True)
     minKNOW_exp_script_purpose = models.CharField(max_length=256, blank=True, null=True)
     minKNOW_flow_cell_id = models.CharField(max_length=64, blank=True, null=True)
-    minKNOW_run_name = models.CharField(max_length=256,blank=True, null=True)
+    minKNOW_run_name = models.CharField(max_length=256, blank=True, null=True)
     minKNOW_hash_run_id = models.CharField(max_length=256, blank=True, null=True)
     minKNOW_script_run_id = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_real_sample_rate = models.IntegerField(blank=True,null=True)
-    #minKNOW_voltage_offset = models.IntegerField(blank=True, null=True)
-    #minKNOW_yield = models.IntegerField(blank=True, null=True)
+    minKNOW_real_sample_rate = models.IntegerField(blank=True, null=True)
+    # minKNOW_voltage_offset = models.IntegerField(blank=True, null=True)
+    # minKNOW_yield = models.IntegerField(blank=True, null=True)
     minKNOW_asic_id = models.CharField(max_length=256, blank=True, null=True)
     minKNOW_total_drive_space = models.FloatField(blank=True, null=True)
     minKNOW_disk_space_till_shutdown = models.FloatField(blank=True, null=True)
-    minKNOW_disk_available = models.FloatField(blank=True,null=True)
+    minKNOW_disk_available = models.FloatField(blank=True, null=True)
     minKNOW_warnings = models.BooleanField(default=False)
 
     class Meta:
@@ -353,20 +353,20 @@ class MinIONStatus(models.Model):
         verbose_name_plural = 'MinION Status'
 
     def __str__(self):
-        return "{} {}".format(self.minION,self.minKNOW_status)
+        return "{} {}".format(self.minION, self.minKNOW_status)
 
 
 class MinIONRunStats(models.Model):
-    minION = models.ForeignKey(MinION, related_name = 'currentrunstats')
+    minION = models.ForeignKey(MinION, related_name='currentrunstats')
     run_id = models.ForeignKey(MinIONRun, related_name='RunStats')
     sample_time = models.DateTimeField()
     event_yield = models.BigIntegerField(default=0)
     asic_temp = models.FloatField(default=0)
-    heat_sink_temp= models.FloatField(default=0)
-    voltage_value= models.FloatField(default=0)
-    mean_ratio= models.FloatField(default=0)
-    open_pore= models.FloatField(default=0)
-    in_strand= models.FloatField(default=0)
+    heat_sink_temp = models.FloatField(default=0)
+    voltage_value = models.FloatField(default=0)
+    mean_ratio = models.FloatField(default=0)
+    open_pore = models.FloatField(default=0)
+    in_strand = models.FloatField(default=0)
     multiple = models.IntegerField(default=0)
     unavailable = models.IntegerField(default=0)
     unknown = models.IntegerField(default=0)
@@ -390,8 +390,7 @@ class MinIONRunStats(models.Model):
         verbose_name_plural = 'MinION Run Stats'
 
     def __str__(self):
-        return "{} {} {}".format(self.minION,self.run_id,self.sample_time)
-
+        return "{} {} {}".format(self.minION, self.run_id, self.sample_time)
 
     ## This is something to look at for optimisation
     def occupancy(self):
@@ -404,39 +403,41 @@ class MinIONRunStats(models.Model):
 
 class MinIONRunStatus(models.Model):
     minION = models.ForeignKey(MinION, related_name='currentrundetails')
-    #minKNOW_status = models.CharField(max_length=64)
+    # minKNOW_status = models.CharField(max_length=64)
     minKNOW_current_script = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_sample_name = models.CharField(max_length=256,blank=True, null=True)
+    minKNOW_sample_name = models.CharField(max_length=256, blank=True, null=True)
     minKNOW_exp_script_purpose = models.CharField(max_length=256, blank=True, null=True)
     minKNOW_flow_cell_id = models.CharField(max_length=64, blank=True, null=True)
     minKNOW_version = models.CharField(max_length=64, blank=True, null=True)
-    minKNOW_run_name = models.CharField(max_length=256,blank=True, null=True)
-    run_id = models.ForeignKey(MinIONRun , related_name='RunDetails')
+    minKNOW_run_name = models.CharField(max_length=256, blank=True, null=True)
+    run_id = models.ForeignKey(MinIONRun, related_name='RunDetails')
     minKNOW_hash_run_id = models.CharField(max_length=256, blank=True, null=True)
     minKNOW_script_run_id = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_real_sample_rate = models.IntegerField(blank=True,null=True)
-    #minKNOW_voltage_offset = models.IntegerField(blank=True, null=True)
-    #minKNOW_yield = models.IntegerField(blank=True, null=True)
+    minKNOW_real_sample_rate = models.IntegerField(blank=True, null=True)
+    # minKNOW_voltage_offset = models.IntegerField(blank=True, null=True)
+    # minKNOW_yield = models.IntegerField(blank=True, null=True)
     minKNOW_asic_id = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_start_time = models.DateTimeField(blank=True,null=True)
-    minKNOW_colours_string = models.TextField(blank=True,null=True)
-    minKNOW_computer = models.TextField(max_length=128,blank=True,null=True)
-    #minKNOW_total_drive_space = models.FloatField(blank=True, null=True)
-    #minKNOW_disk_space_till_shutdown = models.FloatField(blank=True, null=True)
-    #minKNOW_warnings = models.BooleanField(default=False)
+    minKNOW_start_time = models.DateTimeField(blank=True, null=True)
+    minKNOW_colours_string = models.TextField(blank=True, null=True)
+    minKNOW_computer = models.TextField(max_length=128, blank=True, null=True)
+
+    # minKNOW_total_drive_space = models.FloatField(blank=True, null=True)
+    # minKNOW_disk_space_till_shutdown = models.FloatField(blank=True, null=True)
+    # minKNOW_warnings = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'MinION Run Status'
         verbose_name_plural = 'MinION Run Status'
 
     def __str__(self):
-        return "{} {} {}".format(self.minION,self.minKNOW_current_script, self.run_id)
+        return "{} {} {}".format(self.minION, self.minKNOW_current_script, self.run_id)
 
     def minION_name(self):
         return self.minION.minION_name
 
 
 class MinIONEventType(models.Model):
+
     name = models.CharField(max_length=64)
 
     class Meta:
@@ -448,12 +449,14 @@ class MinIONEventType(models.Model):
 
 
 class MinIONEvent(models.Model):
+
     computer_name = models.CharField(max_length=256)
     minION = models.ForeignKey(MinION, related_name='events')
     event = models.ForeignKey(MinIONEventType)
-    datetime =models.DateTimeField()
+    datetime = models.DateTimeField()
     created_date = models.DateTimeField(auto_now_add=True)
-    modified_date = models.DateTimeField(auto_now=True)  #These last two fields added to enable auto cleanup of event status for a minION incase of disconnect of client.
+    modified_date = models.DateTimeField(
+        auto_now=True)  # These last two fields added to enable auto cleanup of event status for a minION incase of disconnect of client.
 
     class Meta:
         verbose_name = 'MinION Event'
@@ -481,6 +484,7 @@ class MinIONScripts(models.Model):
 
 
 class FastqReadType(models.Model):
+
     name = models.CharField(
         max_length=16
     )
@@ -514,7 +518,7 @@ class FastqRead(models.Model):
 
     barcode = models.ForeignKey(
         Barcode,
-        #on_delete=models.CASCADE,
+        # on_delete=models.CASCADE,
         related_name='reads',
         null=True
     )
@@ -533,7 +537,7 @@ class FastqRead(models.Model):
 
     is_pass = models.BooleanField(
 
-    ) # pass = true, fail = false
+    )  # pass = true, fail = false
 
     type = models.ForeignKey(
         FastqReadType
@@ -559,8 +563,8 @@ class FastqRead(models.Model):
         return self.read_id
 
 
-
 class FastqReadExtra(models.Model):
+
     fastqread = models.OneToOneField(
         FastqRead,
         on_delete=models.CASCADE,
@@ -580,55 +584,12 @@ class FastqReadExtra(models.Model):
     def __str__(self):
         return self.fastqread
 
-class RunSummary(models.Model):
-    run_id = models.ForeignKey(MinIONRun,on_delete=models.CASCADE, related_name='runsummaries')
-    total_length = models.BigIntegerField(default=0)
-    read_count = models.IntegerField(default=0)
-    type = models.ForeignKey(FastqReadType)
-    quality_sum = models.DecimalField(
-        decimal_places=2,
-        max_digits=12,
-        default=0
-    )
-    max_length = models.IntegerField(default=0)
-    min_length = models.IntegerField(default=0)
-    pass_quality_sum = models.DecimalField(
-        decimal_places=2,
-        max_digits=12,
-        default=0
-    )
-    pass_length = models.BigIntegerField(default=0)
-    pass_max_length = models.IntegerField(default=0)
-    pass_min_length = models.IntegerField(default=0)
-    pass_count = models.IntegerField(default=0)
-
-    class Meta:
-        verbose_name = 'Run Summary'
-        verbose_name_plural = 'Run Summaries'
-
-    def __str__(self):
-        return "{} {} {} {}".format(self.run_id, self.total_length, self.read_count, self.type)
-
 
 class RunSummaryBarcode(models.Model):
     run_id = models.ForeignKey(
         MinIONRun,
         on_delete=models.CASCADE,
         related_name='runsummariesbarcodes'
-    )
-
-    total_length = models.BigIntegerField(
-        default=0
-    )
-
-    quality_sum = models.DecimalField(
-        decimal_places=2,
-        max_digits=12,
-        default=0
-    )
-
-    read_count = models.IntegerField(
-        default=0
     )
 
     type = models.ForeignKey(
@@ -642,25 +603,21 @@ class RunSummaryBarcode(models.Model):
         null=True
     )
 
-    pass_quality_sum = models.DecimalField(
+    is_pass = models.BooleanField(
+        default=True
+    )  # pass = true, fail = false
+
+    quality_sum = models.DecimalField(
         decimal_places=2,
         max_digits=12,
         default=0
     )
 
-    pass_length = models.BigIntegerField(
+    read_count = models.IntegerField(
         default=0
     )
 
-    pass_max_length = models.IntegerField(
-        default=0
-    )
-
-    pass_min_length = models.IntegerField(
-        default=0
-    )
-
-    pass_count = models.IntegerField(
+    total_length = models.BigIntegerField(
         default=0
     )
 
@@ -703,7 +660,7 @@ class HistogramSummary(models.Model):
     read_length = models.BigIntegerField(default=0)
 
     def __str__(self):
-        return "{} {} {}".format(self.run_id,self.read_type,self.bin_width)
+        return "{} {} {}".format(self.run_id, self.read_type, self.bin_width)
 
 
 class ChannelSummary(models.Model):
@@ -713,38 +670,7 @@ class ChannelSummary(models.Model):
     read_length = models.BigIntegerField(default=0)
 
     def __str__(self):
-        return "{} {} {}".format(self.run_id,self.channel_number,self.read_count)
-
-
-class RunStatistic(models.Model):
-    run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
-    sample_time = models.DateTimeField()
-    total_length = models.BigIntegerField(default=0)
-    quality_sum = models.DecimalField(
-        decimal_places=2,
-        max_digits=12,
-        default=0
-    )
-    max_length = models.IntegerField(default=0)
-    min_length = models.IntegerField(default=0)
-    read_count = models.IntegerField(default=0)
-    pass_quality_sum = models.DecimalField(
-        decimal_places=2,
-        max_digits=12,
-        default=0
-    )
-    pass_length = models.BigIntegerField(default=0)
-    pass_max_length = models.IntegerField(default=0)
-    pass_min_length = models.IntegerField(default=0)
-    pass_count = models.IntegerField(default=0)
-    type = models.ForeignKey(FastqReadType)
-
-    class Meta:
-        verbose_name = 'Run Statistics'
-        verbose_name_plural = 'Run Statistics'
-
-    def __str__(self):
-        return "{} {} {}".format(self.run_id, self.sample_time, self.type)
+        return "{} {} {}".format(self.run_id, self.channel_number, self.read_count)
 
 
 class RunStatisticBarcode(models.Model):
@@ -850,23 +776,18 @@ class MinIONmessages(models.Model):
             self.minION, self.minKNOW_message, self.minKNOW_severity, self.minKNOW_message_timestamp)
 
 
-
-
-#@receiver(post_save, sender=MinIONRun)
+# @receiver(post_save, sender=MinIONRun)
 def create_all_reads_barcode(sender, instance=None, created=False, **kwargs):
     if created:
-        #barcodegroup, created = BarcodeGroup.objects.get_or_create(flowcell=instance.flowcellrun.first().flowcell,
+        # barcodegroup, created = BarcodeGroup.objects.get_or_create(flowcell=instance.flowcellrun.first().flowcell,
         #                                                           name='All reads')
 
         Barcode.objects.get_or_create(run=instance, name='All reads')
 
-
-        #barcodegroup, created = BarcodeGroup.objects.get_or_create(flowcell=instance.flowcellrun.first().flowcell,
+        # barcodegroup, created = BarcodeGroup.objects.get_or_create(flowcell=instance.flowcellrun.first().flowcell,
         #                                                           name='No barcode')
 
         Barcode.objects.get_or_create(run=instance, name='No barcode')
-
-
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -875,14 +796,14 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
         Token.objects.create(user=instance)
 
 
-#@receiver(post_save, sender=FastqRead)
-def update_global_state(instance): ##, sender, **kwargs):
-#    print ("trying to run")
-#    update_global_state_task.delay(instance)
+# @receiver(post_save, sender=FastqRead)
+def update_global_state(instance):  ##, sender, **kwargs):
+    #    print ("trying to run")
+    #    update_global_state_task.delay(instance)
 
-#@task()
-#def update_global_state_task(instance):
-#    print ("update task running")
+    # @task()
+    # def update_global_state_task(instance):
+    #    print ("update task running")
     ipn_obj = instance
 
     barcode = ipn_obj.barcode
@@ -907,7 +828,7 @@ def update_global_state(instance): ##, sender, **kwargs):
     update_sum_stats(obj3, ipn_obj)
 
     if barcode is not None and barcode.name != '':
-        obj2,created2 = RunSummaryBarcode.objects.update_or_create(
+        obj2, created2 = RunSummaryBarcode.objects.update_or_create(
             run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode
         )
         update_sum_stats(obj2, ipn_obj)
@@ -919,7 +840,6 @@ def update_global_state(instance): ##, sender, **kwargs):
 
 
 def update_sum_stats(obj, ipn_obj):
-
     if ipn_obj.is_pass:
 
         obj.pass_length += len(ipn_obj.sequence)
@@ -962,9 +882,7 @@ def update_sum_stats(obj, ipn_obj):
     obj.save()
 
 
-
 class GroupRunType(models.Model):
-
     type_name = models.CharField(
         max_length=256
     )
@@ -974,15 +892,14 @@ class GroupRunType(models.Model):
 
 
 class JobType(models.Model):
-
     name = models.CharField(
         max_length=256
     )
 
     description = models.TextField(
         max_length=256,
-        blank = True,
-        null = True
+        blank=True,
+        null=True
     )
 
     long_description = models.TextField(
@@ -1007,15 +924,11 @@ class JobType(models.Model):
 
     type_name = models.ManyToManyField(GroupRunType)
 
-
     def __str__(self):
         return "{}".format(self.name)
 
 
-
-
 class JobMaster(models.Model):
-
     run = models.ForeignKey(
         MinIONRun,
         on_delete=models.CASCADE,
@@ -1075,10 +988,6 @@ class JobMaster(models.Model):
             return "{} {} {}".format(self.flowcell, self.job_type, self.flowcell.id)
 
 
-
-
-
-
 class FlowCellRun(models.Model):
     flowcell = models.ForeignKey(
         FlowCell,
@@ -1106,25 +1015,25 @@ class FlowCellRun(models.Model):
     def last_entry(self):
         try:
             return self.run.runstatbarc.last().sample_time
-            #return self.RunStats.last().created_date
+            # return self.RunStats.last().created_date
         except AttributeError:
-            #return "undefined"
+            # return "undefined"
             olddate = datetime.datetime(1, 1, 1, 1, 1, 1, 1, pytz.utc)
             return olddate
 
     def start_time(self):
         try:
             return self.run.runstatbarc.first().sample_time
-            #return self.RunDetails.last().minKNOW_start_time
+            # return self.RunDetails.last().minKNOW_start_time
         except AttributeError:
             return "undefined"
 
     def last_read(self):
         try:
             return self.run.runstatbarc.last().sample_time
-            #return self.reads.last().created_date
+            # return self.reads.last().created_date
         except AttributeError:
-            #return "undefined"
+            # return "undefined"
             olddate = datetime.datetime(1, 1, 1, 1, 1, 1, 1, pytz.utc)
             return olddate
 
@@ -1154,30 +1063,30 @@ class FlowCellRun(models.Model):
 def create_all_reads_barcode_MinIONrun(sender, instance=None, created=False, **kwargs):
     # There is somehow a problem here such that we end up with multiple instances of these barcodes.
     if created:
-        #print("are we here?")
-        Barcode.objects.update_or_create(run=instance, name='All reads')#,defaults={'barcodegroup': null})
-        Barcode.objects.update_or_create(run=instance, name='No barcode')#,defaults={'barcodegroup': null})
+        # print("are we here?")
+        Barcode.objects.update_or_create(run=instance, name='All reads')  # ,defaults={'barcodegroup': null})
+        Barcode.objects.update_or_create(run=instance, name='No barcode')  # ,defaults={'barcodegroup': null})
 
 
 @receiver(post_save, sender=FlowCellRun)
 def create_all_reads_barcode_flowcellrun(sender, instance=None, created=False, **kwargs):
     if created:
-        #print ("we must be here surely?")
+        # print ("we must be here surely?")
         barcodegroup, created = BarcodeGroup.objects.get_or_create(flowcell=instance.flowcell,
                                                                    name='All reads')
 
-        #Barcode.objects.update_or_create(run=instance.run, name='All reads', barcodegroup=barcodegroup)
-        barcode,created = Barcode.objects.get_or_create(run=instance.run, name='All reads')
-        #print ("hello")
-        #print (barcode.run,barcode.name)
-        barcode.barcodegroup=barcodegroup
+        # Barcode.objects.update_or_create(run=instance.run, name='All reads', barcodegroup=barcodegroup)
+        barcode, created = Barcode.objects.get_or_create(run=instance.run, name='All reads')
+        # print ("hello")
+        # print (barcode.run,barcode.name)
+        barcode.barcodegroup = barcodegroup
 
         barcode.save()
 
         barcodegroup, created = BarcodeGroup.objects.get_or_create(flowcell=instance.flowcell,
                                                                    name='No barcode')
 
-        #Barcode.objects.update_or_create(run=instance.run, name='No barcode', barcodegroup=barcodegroup)
-        barcode,created = Barcode.objects.get_or_create(run=instance.run, name='No barcode')
-        barcode.barcodegroup=barcodegroup
+        # Barcode.objects.update_or_create(run=instance.run, name='No barcode', barcodegroup=barcodegroup)
+        barcode, created = Barcode.objects.get_or_create(run=instance.run, name='No barcode')
+        barcode.barcodegroup = barcodegroup
         barcode.save()
