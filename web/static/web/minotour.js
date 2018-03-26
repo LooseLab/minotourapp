@@ -39,7 +39,6 @@ function check_minotour_version() {
 }
 
 
-
 function check_user_runs() {
     var url = "/api/v1/runs/";
 
@@ -86,17 +85,21 @@ function drawtaskbutton(taskstring, colour, icon, description, message, percenta
     taskstring = taskstring + '</div>';
     taskstring = taskstring + '<div class="modal-body">';
     taskstring = taskstring + '<p>' + long_description + '</p>';
+
     if (reference == true) {
         taskstring = taskstring + "<p>Select Reference:</p>"
         taskstring = taskstring + '<select id="' + name + '">';
         //console.log(this.references);
-        for (var j = 0; j < this.references.length; j++) {
-            if (this.references[j]['transcripts'] == transcriptome) {
-                taskstring = taskstring + '<option>' + this.references[j]["reference_name"] + '</option>';
+        if (this.references) {
+            for (var j = 0; j < this.references.length; j++) {
+                if (this.references[j]['transcripts'] == transcriptome) {
+                    taskstring = taskstring + '<option>' + this.references[j]["reference_name"] + '</option>';
+                }
             }
         }
         taskstring = taskstring + '</select>';
     }
+
     taskstring = taskstring + '</div>';
     taskstring = taskstring + '<div class="modal-footer">';
     taskstring = taskstring + '<button type="button" class="btn btn-default" id="button' + name + '">Go</button>';

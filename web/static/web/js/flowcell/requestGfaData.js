@@ -82,10 +82,7 @@ function createAssemblyTable() {
     document.getElementById('AssemblyTable').innerHTML = stringtowrite;
 }
 
-function requestGfaData(id) {
-    var url = "/api/v1/flowcells/" + id + "/assembly";
-
-    $.get(url, function (data) {
+function requestGfaDataCallback(data) {
 
         if (data.length > 0) {
 
@@ -131,18 +128,27 @@ function requestGfaData(id) {
 
             }
 
-            self.assemblySummary = summaries;
-            self.assemblyLatest = latest;
+            this.assemblySummary = summaries;
+            this.assemblyLatest = latest;
 
-            self.updateAssemblyCharts(self.ChartNumContigs, 'ncontigs');
-            self.updateAssemblyCharts(self.ChartN50Contigs, 'n50');
-            self.updateAssemblyCharts(self.ChartSumContigs, 'sum');
+            this.updateAssemblyCharts(this.ChartNumContigs, 'ncontigs');
+            this.updateAssemblyCharts(this.ChartN50Contigs, 'n50');
+            this.updateAssemblyCharts(this.ChartSumContigs, 'sum');
 
-            self.createAssemblyTable();
-            self.updateAssemblyBoxplot();
+            this.createAssemblyTable();
+            this.updateAssemblyBoxplot();
 
         }
 
-    });
+}
+
+function requestGfaData(id) {
+
+    var url = "/api/v1/flowcells/" + id + "/assembly";
+
+    requestGfaDataCallback = requestGfaDataCallback.bind(this);
+
+    $.get(url, requestGfaDataCallback);
+
 }
 

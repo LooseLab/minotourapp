@@ -180,8 +180,6 @@ function requestSummaryData (id) {
 
             }
 
-            this.summary = summaries;
-
             updateSummaryBasedCharts(summaries, selectedBarcode, charts);
 
         }

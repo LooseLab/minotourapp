@@ -48,7 +48,7 @@ function updateReadsColumnBasedChart (chart, field, summaries, selectedBarcode) 
     if (selectedBarcode !== "All reads") {
 
         data = [];
-        //console.log(summaries[self.selectedBarcode]);
+        //console.log(summaries[this.selectedBarcode]);
         for (var readtype of Object.keys(summaries[selectedBarcode])) {
             //console.log(readtype);
             //console.log("are we here?");
@@ -214,8 +214,6 @@ var FlowcellPageApp = {
 
         this.updatetext = updatetext;
 
-        this.updateCumuBaseChart = updateCumuBaseChart;
-
         this.requestCumuBases = requestCumuBases;
 
         this.requestPafData = requestPafData;
@@ -223,6 +221,8 @@ var FlowcellPageApp = {
         this.requestKraken = requestKraken;
 
         this.liveUpdateTasks = liveUpdateTasks;
+
+        this.updateTasks = updateTasks.bind(this);
 
         this.requestRunDetails = requestRunDetails;
 
@@ -276,18 +276,6 @@ var FlowcellPageApp = {
 
             })
         };
-
-        this.chart_per_chrom_cov = this.makeChart(
-            "per-chrom-cov",
-            "Chromosome Coverage".toUpperCase(),
-            "Chromosome Coverage".toUpperCase()
-        );
-
-        this.chart_per_chrom_avg = this.makeChart(
-            "per-chrom-avg",
-            "Read Length By Chromosome".toUpperCase(),
-            "Read Length By Chromosome".toUpperCase()
-        );
 
         this.chartChromosomeCoverage = this.makeStepLineChart(
             "chromosome-coverage",
@@ -408,17 +396,15 @@ var FlowcellPageApp = {
 
         this.requestData();
 
-        //this.requestReference(this.id);
+        this.requestReference(this.flowcellId);
 
-        //this.requestTasks(this.id);
+        this.requestTasks(this.flowcellId);
 
-        //setInterval(function () {
-        //    this.requestData(this.id);
-        //}.bind(this), 30000);
+        setInterval(function () {
+            this.requestData(this.id);
+        }.bind(this), 30000);
 
     }, // end of init
-
-    //self: this;
 
     getSelectedBarcode: function () {
 
@@ -436,8 +422,8 @@ var FlowcellPageApp = {
      * that calls requestData and update all charts
      */
     updateChartsBasedOnBarcode: function (event) {
-        self.selectedBarcode = event.target.innerText;
-        self.requestData(self.id);
+        this.selectedBarcode = event.target.innerText;
+        this.requestData(this.id);
     },
 
     requestSummaryByMinuteData: function (id) {
@@ -453,18 +439,18 @@ var FlowcellPageApp = {
                     return new Date(a.sample_time) - new Date(b.sample_time);
                 });
 
-                self.summaryByMinute = orderedData;
+                this.summaryByMinute = orderedData;
 
                 /*********/
 
                 var summaries = {};
 
-                for (var barcode of self.barcodes) {
+                for (var barcode of this.barcodes) {
                     summaries[barcode] = {};
                 }
 
-                for (var i = 0; i < self.summaryByMinute.length; i++) {
-                    var item = self.summaryByMinute[i];
+                for (var i = 0; i < this.summaryByMinute.length; i++) {
+                    var item = this.summaryByMinute[i];
 
                     if (summaries[item.barcodename][item.typename] === undefined) {
                         summaries[item.barcodename][item.typename] = {
@@ -496,52 +482,52 @@ var FlowcellPageApp = {
 
                 }
 
-                self.summaryByMinute2 = summaries;
+                this.summaryByMinute2 = summaries;
 
                 /*********/
 
-                // update chart - TODO split ajax call and update of self.summaryByMinute from the redrawing the charts
-                self.updateSummaryByMinuteBasedCharts();
+                // update chart - TODO split ajax call and update of this.summaryByMinute from the redrawing the charts
+                this.updateSummaryByMinuteBasedCharts();
             }
         });
     },
 
     updateSummaryByMinuteBasedCharts: function () {
-        //self.updateAverageReadLengthOverTimeChart();
-        //self.updateAverageQualityOverTimeChart();
-        //self.updateCumulativeNumberOfReadsOverTimeChart();
-        //self.updateCumulativeYieldOverTimeChart();
-        //self.updateSequencingRateChart();
-        //self.updateSequencingSpeedChart();
+        //this.updateAverageReadLengthOverTimeChart();
+        //this.updateAverageQualityOverTimeChart();
+        //this.updateCumulativeNumberOfReadsOverTimeChart();
+        //this.updateCumulativeYieldOverTimeChart();
+        //this.updateSequencingRateChart();
+        //this.updateSequencingSpeedChart();
     },
 
     updateSequencingSpeedChart: function () {
-        var chart = self.chartSequencingSpeed;
-        var selectedBarcode = self.selectedBarcode;
+        var chart = this.chartSequencingSpeed;
+        var selectedBarcode = this.selectedBarcode;
 
         // Remove previous series
         while (chart.series.length > 0) {
             chart.series[0].remove();
         }
 
-        for (var barcode of Object.keys(self.summaryByMinute2)) {
+        for (var barcode of Object.keys(this.summaryByMinute2)) {
 
-            if (barcode === 'All reads' || barcode === self.selectedBarcode) {
-                for (var typeName of Object.keys(self.summaryByMinute2[barcode])) {
+            if (barcode === 'All reads' || barcode === this.selectedBarcode) {
+                for (var typeName of Object.keys(this.summaryByMinute2[barcode])) {
 
                     chart.addSeries({
                         name: barcode + " - " + typeName,
-                        data: self.summaryByMinute2[barcode][typeName]["sequencingSpeed"]
+                        data: this.summaryByMinute2[barcode][typeName]["sequencingSpeed"]
                     });
 
                 }
             }
         }
 
-        for (var i in self.rundata) {
-            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
-            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
-            var name = self.rundata[i]['id']
+        for (var i in this.rundata) {
+            var starttime = new Date(Date.parse(this.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(this.rundata[i]['last_read']));
+            var name = this.rundata[i]['id']
             //chart.xAxis[0].addPlotBand({
             //    from: starttime,
             //    to: endtime,
@@ -562,32 +548,32 @@ var FlowcellPageApp = {
     },
 
     updateSequencingRateChart: function () {
-        var chart = self.chartSequencingRate;
-        var selectedBarcode = self.selectedBarcode;
+        var chart = this.chartSequencingRate;
+        var selectedBarcode = this.selectedBarcode;
 
         // Remove previous series
         while (chart.series.length > 0) {
             chart.series[0].remove();
         }
 
-        for (var barcode of Object.keys(self.summaryByMinute2)) {
+        for (var barcode of Object.keys(this.summaryByMinute2)) {
 
-            if (barcode === 'All reads' || barcode === self.selectedBarcode) {
-                for (var typeName of Object.keys(self.summaryByMinute2[barcode])) {
+            if (barcode === 'All reads' || barcode === this.selectedBarcode) {
+                for (var typeName of Object.keys(this.summaryByMinute2[barcode])) {
 
                     chart.addSeries({
                         name: barcode + " - " + typeName,
-                        data: self.summaryByMinute2[barcode][typeName]["sequencingRate"]
+                        data: this.summaryByMinute2[barcode][typeName]["sequencingRate"]
                     });
 
                 }
             }
         }
 
-        for (var i in self.rundata) {
-            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
-            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
-            var name = self.rundata[i]['id']
+        for (var i in this.rundata) {
+            var starttime = new Date(Date.parse(this.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(this.rundata[i]['last_read']));
+            var name = this.rundata[i]['id']
             //chart.xAxis[0].addPlotBand({
             //    from: starttime,
             //    to: endtime,
@@ -608,8 +594,8 @@ var FlowcellPageApp = {
     },
 
     updateCumulativeYieldOverTimeChart: function () {
-        var chart = self.chart_cumulative_yield_overtime;
-        var selectedBarcode = self.selectedBarcode;
+        var chart = this.chart_cumulative_yield_overtime;
+        var selectedBarcode = this.selectedBarcode;
 
         while (chart.series.length > 0) {
             chart.series[0].remove();
@@ -627,29 +613,29 @@ var FlowcellPageApp = {
 
         }
 
-        for (var i = 0; i < self.summaryByMinute.length; i++) {
+        for (var i = 0; i < this.summaryByMinute.length; i++) {
 
-            if (self.summaryByMinute[i].barcodename === "All reads") {
-                if (summaries["All reads"][self.summaryByMinute[i].typename] === undefined) {
-                    summaries["All reads"][self.summaryByMinute[i].typename] = {};
-                    summaries["All reads"][self.summaryByMinute[i].typename]['all'] = {
+            if (this.summaryByMinute[i].barcodename === "All reads") {
+                if (summaries["All reads"][this.summaryByMinute[i].typename] === undefined) {
+                    summaries["All reads"][this.summaryByMinute[i].typename] = {};
+                    summaries["All reads"][this.summaryByMinute[i].typename]['all'] = {
                         "lastCumulativeReadCount": 0,
                         "data": []
                     };
-                    summaries["All reads"][self.summaryByMinute[i].typename]['pass'] = {
+                    summaries["All reads"][this.summaryByMinute[i].typename]['pass'] = {
                         "lastCumulativeReadCount": 0,
                         "data": []
                     };
-                    summaries["All reads"][self.summaryByMinute[i].typename]['fail'] = {
+                    summaries["All reads"][this.summaryByMinute[i].typename]['fail'] = {
                         "lastCumulativeReadCount": 0,
                         "data": []
                     };
                 }
 
-                var cumulativeReadCount = self.summaryByMinute[i].total_length + summaries["All reads"][self.summaryByMinute[i].typename]['all'].lastCumulativeReadCount;
-                var passcumulativeReadCount = self.summaryByMinute[i].pass_length + summaries["All reads"][self.summaryByMinute[i].typename]['pass'].lastCumulativeReadCount;
-                var failcumulativeReadCount = self.summaryByMinute[i].total_length - self.summaryByMinute[i].pass_length + summaries["All reads"][self.summaryByMinute[i].typename]['fail'].lastCumulativeReadCount;
-                var sample_time = new Date(self.summaryByMinute[i].sample_time);// - self.flowcellstart;
+                var cumulativeReadCount = this.summaryByMinute[i].total_length + summaries["All reads"][this.summaryByMinute[i].typename]['all'].lastCumulativeReadCount;
+                var passcumulativeReadCount = this.summaryByMinute[i].pass_length + summaries["All reads"][this.summaryByMinute[i].typename]['pass'].lastCumulativeReadCount;
+                var failcumulativeReadCount = this.summaryByMinute[i].total_length - this.summaryByMinute[i].pass_length + summaries["All reads"][this.summaryByMinute[i].typename]['fail'].lastCumulativeReadCount;
+                var sample_time = new Date(this.summaryByMinute[i].sample_time);// - this.flowcellstart;
 
                 var point = {
                     x: sample_time,
@@ -665,33 +651,33 @@ var FlowcellPageApp = {
                     x: sample_time,
                     y: failcumulativeReadCount
                 }
-                summaries["All reads"][self.summaryByMinute[i].typename]['all'].lastCumulativeReadCount = cumulativeReadCount;
-                summaries["All reads"][self.summaryByMinute[i].typename]['all'].data.push(point);
-                summaries["All reads"][self.summaryByMinute[i].typename]['pass'].lastCumulativeReadCount = passcumulativeReadCount;
-                summaries["All reads"][self.summaryByMinute[i].typename]['pass'].data.push(passpoint);
-                summaries["All reads"][self.summaryByMinute[i].typename]['fail'].lastCumulativeReadCount = failcumulativeReadCount;
-                summaries["All reads"][self.summaryByMinute[i].typename]['fail'].data.push(failpoint);
+                summaries["All reads"][this.summaryByMinute[i].typename]['all'].lastCumulativeReadCount = cumulativeReadCount;
+                summaries["All reads"][this.summaryByMinute[i].typename]['all'].data.push(point);
+                summaries["All reads"][this.summaryByMinute[i].typename]['pass'].lastCumulativeReadCount = passcumulativeReadCount;
+                summaries["All reads"][this.summaryByMinute[i].typename]['pass'].data.push(passpoint);
+                summaries["All reads"][this.summaryByMinute[i].typename]['fail'].lastCumulativeReadCount = failcumulativeReadCount;
+                summaries["All reads"][this.summaryByMinute[i].typename]['fail'].data.push(failpoint);
 
             }
 
-            if (self.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
-                if (summaries[selectedBarcode][self.summaryByMinute[i].typename] === undefined) {
-                    summaries[selectedBarcode][self.summaryByMinute[i].typename] = {
+            if (this.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
+                if (summaries[selectedBarcode][this.summaryByMinute[i].typename] === undefined) {
+                    summaries[selectedBarcode][this.summaryByMinute[i].typename] = {
                         "lastCumulativeReadCount": 0,
                         "data": []
                     };
                 }
 
-                var cumulativeReadCount = self.summaryByMinute[i].read_count + summaries[selectedBarcode][self.summaryByMinute[i].typename].lastCumulativeReadCount;
-                var sample_time = new Date(self.summaryByMinute[i].sample_time);
+                var cumulativeReadCount = this.summaryByMinute[i].read_count + summaries[selectedBarcode][this.summaryByMinute[i].typename].lastCumulativeReadCount;
+                var sample_time = new Date(this.summaryByMinute[i].sample_time);
 
                 var point = {
                     x: sample_time,
                     y: cumulativeReadCount
                 }
 
-                summaries[selectedBarcode][self.summaryByMinute[i].typename].lastCumulativeReadCount = cumulativeReadCount;
-                summaries[selectedBarcode][self.summaryByMinute[i].typename].data.push(point);
+                summaries[selectedBarcode][this.summaryByMinute[i].typename].lastCumulativeReadCount = cumulativeReadCount;
+                summaries[selectedBarcode][this.summaryByMinute[i].typename].data.push(point);
             }
 
         }
@@ -707,10 +693,10 @@ var FlowcellPageApp = {
             }
         }
 
-        for (var i in self.rundata) {
-            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));// - self.flowcellstart;
-            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));//- self.flowcellstart;
-            var name = self.rundata[i]['id']
+        for (var i in this.rundata) {
+            var starttime = new Date(Date.parse(this.rundata[i]['start_time']));// - this.flowcellstart;
+            var endtime = new Date(Date.parse(this.rundata[i]['last_read']));//- this.flowcellstart;
+            var name = this.rundata[i]['id']
             //chart.xAxis[0].addPlotBand({
             //    from: starttime,
             //    to: endtime,
@@ -731,8 +717,8 @@ var FlowcellPageApp = {
     },
 
     updateCumulativeNumberOfReadsOverTimeChart: function () {
-        var chart = self.chart_cumulative_number_reads_overtime;
-        var selectedBarcode = self.selectedBarcode;
+        var chart = this.chart_cumulative_number_reads_overtime;
+        var selectedBarcode = this.selectedBarcode;
 
         while (chart.series.length > 0) {
             chart.series[0].remove();
@@ -750,29 +736,29 @@ var FlowcellPageApp = {
 
         }
 
-        for (var i = 0; i < self.summaryByMinute.length; i++) {
+        for (var i = 0; i < this.summaryByMinute.length; i++) {
 
-            if (self.summaryByMinute[i].barcodename === "All reads") {
-                if (summaries["All reads"][self.summaryByMinute[i].typename] === undefined) {
-                    summaries["All reads"][self.summaryByMinute[i].typename] = {};
-                    summaries["All reads"][self.summaryByMinute[i].typename]['all'] = {
+            if (this.summaryByMinute[i].barcodename === "All reads") {
+                if (summaries["All reads"][this.summaryByMinute[i].typename] === undefined) {
+                    summaries["All reads"][this.summaryByMinute[i].typename] = {};
+                    summaries["All reads"][this.summaryByMinute[i].typename]['all'] = {
                         "lastCumulativeReadCount": 0,
                         "data": []
                     };
-                    summaries["All reads"][self.summaryByMinute[i].typename]['pass'] = {
+                    summaries["All reads"][this.summaryByMinute[i].typename]['pass'] = {
                         "lastCumulativeReadCount": 0,
                         "data": []
                     };
-                    summaries["All reads"][self.summaryByMinute[i].typename]['fail'] = {
+                    summaries["All reads"][this.summaryByMinute[i].typename]['fail'] = {
                         "lastCumulativeReadCount": 0,
                         "data": []
                     };
                 }
 
-                var cumulativeReadCount = self.summaryByMinute[i].read_count + summaries["All reads"][self.summaryByMinute[i].typename]['all'].lastCumulativeReadCount;
-                var passcumulativeReadCount = self.summaryByMinute[i].pass_count + summaries["All reads"][self.summaryByMinute[i].typename]['pass'].lastCumulativeReadCount;
-                var failcumulativeReadCount = self.summaryByMinute[i].read_count - self.summaryByMinute[i].pass_count + summaries["All reads"][self.summaryByMinute[i].typename]['fail'].lastCumulativeReadCount;
-                var sample_time = new Date(self.summaryByMinute[i].sample_time);// - self.flowcellstart;
+                var cumulativeReadCount = this.summaryByMinute[i].read_count + summaries["All reads"][this.summaryByMinute[i].typename]['all'].lastCumulativeReadCount;
+                var passcumulativeReadCount = this.summaryByMinute[i].pass_count + summaries["All reads"][this.summaryByMinute[i].typename]['pass'].lastCumulativeReadCount;
+                var failcumulativeReadCount = this.summaryByMinute[i].read_count - this.summaryByMinute[i].pass_count + summaries["All reads"][this.summaryByMinute[i].typename]['fail'].lastCumulativeReadCount;
+                var sample_time = new Date(this.summaryByMinute[i].sample_time);// - this.flowcellstart;
 
                 var point = {
                     x: sample_time,
@@ -788,33 +774,33 @@ var FlowcellPageApp = {
                     x: sample_time,
                     y: failcumulativeReadCount
                 }
-                summaries["All reads"][self.summaryByMinute[i].typename]['all'].lastCumulativeReadCount = cumulativeReadCount;
-                summaries["All reads"][self.summaryByMinute[i].typename]['all'].data.push(point);
-                summaries["All reads"][self.summaryByMinute[i].typename]['pass'].lastCumulativeReadCount = passcumulativeReadCount;
-                summaries["All reads"][self.summaryByMinute[i].typename]['pass'].data.push(passpoint);
-                summaries["All reads"][self.summaryByMinute[i].typename]['fail'].lastCumulativeReadCount = failcumulativeReadCount;
-                summaries["All reads"][self.summaryByMinute[i].typename]['fail'].data.push(failpoint);
+                summaries["All reads"][this.summaryByMinute[i].typename]['all'].lastCumulativeReadCount = cumulativeReadCount;
+                summaries["All reads"][this.summaryByMinute[i].typename]['all'].data.push(point);
+                summaries["All reads"][this.summaryByMinute[i].typename]['pass'].lastCumulativeReadCount = passcumulativeReadCount;
+                summaries["All reads"][this.summaryByMinute[i].typename]['pass'].data.push(passpoint);
+                summaries["All reads"][this.summaryByMinute[i].typename]['fail'].lastCumulativeReadCount = failcumulativeReadCount;
+                summaries["All reads"][this.summaryByMinute[i].typename]['fail'].data.push(failpoint);
 
             }
 
-            if (self.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
-                if (summaries[selectedBarcode][self.summaryByMinute[i].typename] === undefined) {
-                    summaries[selectedBarcode][self.summaryByMinute[i].typename] = {
+            if (this.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
+                if (summaries[selectedBarcode][this.summaryByMinute[i].typename] === undefined) {
+                    summaries[selectedBarcode][this.summaryByMinute[i].typename] = {
                         "lastCumulativeReadCount": 0,
                         "data": []
                     };
                 }
 
-                var cumulativeReadCount = self.summaryByMinute[i].read_count + summaries[selectedBarcode][self.summaryByMinute[i].typename].lastCumulativeReadCount;
-                var sample_time = new Date(self.summaryByMinute[i].sample_time);
+                var cumulativeReadCount = this.summaryByMinute[i].read_count + summaries[selectedBarcode][this.summaryByMinute[i].typename].lastCumulativeReadCount;
+                var sample_time = new Date(this.summaryByMinute[i].sample_time);
 
                 var point = {
                     x: sample_time,
                     y: cumulativeReadCount
                 }
 
-                summaries[selectedBarcode][self.summaryByMinute[i].typename].lastCumulativeReadCount = cumulativeReadCount;
-                summaries[selectedBarcode][self.summaryByMinute[i].typename].data.push(point);
+                summaries[selectedBarcode][this.summaryByMinute[i].typename].lastCumulativeReadCount = cumulativeReadCount;
+                summaries[selectedBarcode][this.summaryByMinute[i].typename].data.push(point);
             }
 
         }
@@ -830,10 +816,10 @@ var FlowcellPageApp = {
             }
         }
 
-        for (var i in self.rundata) {
-            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));// - self.flowcellstart;
-            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));//- self.flowcellstart;
-            var name = self.rundata[i]['id']
+        for (var i in this.rundata) {
+            var starttime = new Date(Date.parse(this.rundata[i]['start_time']));// - this.flowcellstart;
+            var endtime = new Date(Date.parse(this.rundata[i]['last_read']));//- this.flowcellstart;
+            var name = this.rundata[i]['id']
             //chart.xAxis[0].addPlotBand({
             //    from: starttime,
             //    to: endtime,
@@ -855,8 +841,8 @@ var FlowcellPageApp = {
 
     updateAverageQualityOverTimeChart: function () {
 
-        var chart = self.average_quality_overtime;
-        var selectedBarcode = self.selectedBarcode;
+        var chart = this.average_quality_overtime;
+        var selectedBarcode = this.selectedBarcode;
 
         while (chart.series.length > 0) {
             chart.series[0].remove();
@@ -874,13 +860,13 @@ var FlowcellPageApp = {
 
         }
 
-        for (var i = 0; i < self.summaryByMinute.length; i++) {
+        for (var i = 0; i < this.summaryByMinute.length; i++) {
 
-            var average_quality = self.summaryByMinute[i].quality_sum / self.summaryByMinute[i].read_count;
-            var pass_average_quality = self.summaryByMinute[i].pass_quality_sum / self.summaryByMinute[i].pass_count;
-            var fail_average_quality = (self.summaryByMinute[i].quality_sum - self.summaryByMinute[i].pass_quality_sum) / (self.summaryByMinute[i].read_count - self.summaryByMinute[i].pass_count);
+            var average_quality = this.summaryByMinute[i].quality_sum / this.summaryByMinute[i].read_count;
+            var pass_average_quality = this.summaryByMinute[i].pass_quality_sum / this.summaryByMinute[i].pass_count;
+            var fail_average_quality = (this.summaryByMinute[i].quality_sum - this.summaryByMinute[i].pass_quality_sum) / (this.summaryByMinute[i].read_count - this.summaryByMinute[i].pass_count);
 
-            var sample_time = new Date(self.summaryByMinute[i].sample_time);
+            var sample_time = new Date(this.summaryByMinute[i].sample_time);
 
             var point = {
                 x: sample_time,
@@ -897,32 +883,32 @@ var FlowcellPageApp = {
                 y: fail_average_quality
             };
 
-            if (self.summaryByMinute[i].barcodename === "All reads") {
-                if (summaries["All reads"][self.summaryByMinute[i].typename] === undefined) {
-                    summaries["All reads"][self.summaryByMinute[i].typename] = [];
-                    summaries["All reads"][self.summaryByMinute[i].typename]['all'] = [];
-                    summaries["All reads"][self.summaryByMinute[i].typename]['pass'] = [];
-                    summaries["All reads"][self.summaryByMinute[i].typename]['fail'] = [];
+            if (this.summaryByMinute[i].barcodename === "All reads") {
+                if (summaries["All reads"][this.summaryByMinute[i].typename] === undefined) {
+                    summaries["All reads"][this.summaryByMinute[i].typename] = [];
+                    summaries["All reads"][this.summaryByMinute[i].typename]['all'] = [];
+                    summaries["All reads"][this.summaryByMinute[i].typename]['pass'] = [];
+                    summaries["All reads"][this.summaryByMinute[i].typename]['fail'] = [];
                 }
 
-                summaries["All reads"][self.summaryByMinute[i].typename]['all'].push(point);
-                summaries["All reads"][self.summaryByMinute[i].typename]['pass'].push(pass_point);
-                summaries["All reads"][self.summaryByMinute[i].typename]['fail'].push(fail_point);
+                summaries["All reads"][this.summaryByMinute[i].typename]['all'].push(point);
+                summaries["All reads"][this.summaryByMinute[i].typename]['pass'].push(pass_point);
+                summaries["All reads"][this.summaryByMinute[i].typename]['fail'].push(fail_point);
             }
 
-            if (self.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
-                if (summaries[selectedBarcode][self.summaryByMinute[i].typename] === undefined) {
-                    summaries[selectedBarcode][self.summaryByMinute[i].typename] = [];
-                    summaries[selectedBarcode][self.summaryByMinute[i].typename]['all'] = [];
-                    summaries[selectedBarcode][self.summaryByMinute[i].typename]['pass'] = [];
-                    summaries[selectedBarcode][self.summaryByMinute[i].typename]['fail'] = [];
+            if (this.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
+                if (summaries[selectedBarcode][this.summaryByMinute[i].typename] === undefined) {
+                    summaries[selectedBarcode][this.summaryByMinute[i].typename] = [];
+                    summaries[selectedBarcode][this.summaryByMinute[i].typename]['all'] = [];
+                    summaries[selectedBarcode][this.summaryByMinute[i].typename]['pass'] = [];
+                    summaries[selectedBarcode][this.summaryByMinute[i].typename]['fail'] = [];
 
 
                 }
 
-                summaries[selectedBarcode][self.summaryByMinute[i].typename]['all'].push(point);
-                summaries[selectedBarcode][self.summaryByMinute[i].typename]['pass'].push(pass_point);
-                summaries[selectedBarcode][self.summaryByMinute[i].typename]['fail'].push(fail_point);
+                summaries[selectedBarcode][this.summaryByMinute[i].typename]['all'].push(point);
+                summaries[selectedBarcode][this.summaryByMinute[i].typename]['pass'].push(pass_point);
+                summaries[selectedBarcode][this.summaryByMinute[i].typename]['fail'].push(fail_point);
             }
 
         }
@@ -938,10 +924,10 @@ var FlowcellPageApp = {
             }
         }
 
-        for (var i in self.rundata) {
-            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
-            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
-            var name = self.rundata[i]['id']
+        for (var i in this.rundata) {
+            var starttime = new Date(Date.parse(this.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(this.rundata[i]['last_read']));
+            var name = this.rundata[i]['id']
             //chart.xAxis[0].addPlotBand({
             //    from: starttime,
             //    to: endtime,
@@ -962,8 +948,8 @@ var FlowcellPageApp = {
 
     updateAverageReadLengthOverTimeChart: function () {
 
-        var chart = self.average_read_lengths_overtime;
-        var selectedBarcode = self.selectedBarcode;
+        var chart = this.average_read_lengths_overtime;
+        var selectedBarcode = this.selectedBarcode;
 
         while (chart.series.length > 0) {
             chart.series[0].remove();
@@ -981,30 +967,30 @@ var FlowcellPageApp = {
 
         }
 
-        for (var i = 0; i < self.summaryByMinute.length; i++) {
+        for (var i = 0; i < this.summaryByMinute.length; i++) {
 
-            var average_read_length = self.summaryByMinute[i].total_length / self.summaryByMinute[i].read_count;
-            var sample_time = new Date(self.summaryByMinute[i].sample_time);
+            var average_read_length = this.summaryByMinute[i].total_length / this.summaryByMinute[i].read_count;
+            var sample_time = new Date(this.summaryByMinute[i].sample_time);
 
             var point = {
                 x: sample_time,
                 y: average_read_length
             }
 
-            if (self.summaryByMinute[i].barcodename === "All reads") {
-                if (summaries["All reads"][self.summaryByMinute[i].typename] === undefined) {
-                    summaries["All reads"][self.summaryByMinute[i].typename] = [];
+            if (this.summaryByMinute[i].barcodename === "All reads") {
+                if (summaries["All reads"][this.summaryByMinute[i].typename] === undefined) {
+                    summaries["All reads"][this.summaryByMinute[i].typename] = [];
                 }
 
-                summaries["All reads"][self.summaryByMinute[i].typename].push(point);
+                summaries["All reads"][this.summaryByMinute[i].typename].push(point);
             }
 
-            if (self.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
-                if (summaries[selectedBarcode][self.summaryByMinute[i].typename] === undefined) {
-                    summaries[selectedBarcode][self.summaryByMinute[i].typename] = [];
+            if (this.summaryByMinute[i].barcodename === selectedBarcode && selectedBarcode !== "All reads") {
+                if (summaries[selectedBarcode][this.summaryByMinute[i].typename] === undefined) {
+                    summaries[selectedBarcode][this.summaryByMinute[i].typename] = [];
                 }
 
-                summaries[selectedBarcode][self.summaryByMinute[i].typename].push(point);
+                summaries[selectedBarcode][this.summaryByMinute[i].typename].push(point);
             }
 
         }
@@ -1015,10 +1001,10 @@ var FlowcellPageApp = {
             }
         }
 
-        for (var i in self.rundata) {
-            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
-            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
-            var name = self.rundata[i]['id']
+        for (var i in this.rundata) {
+            var starttime = new Date(Date.parse(this.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(this.rundata[i]['last_read']));
+            var name = this.rundata[i]['id']
             //chart.xAxis[0].addPlotBand({
             //    from: starttime,
             //    to: endtime,
@@ -1039,15 +1025,15 @@ var FlowcellPageApp = {
 
 
     updatePoreStats: function () {
-        var returndata = self.parseporehist(this.livedata.colours_string, this.livedata.pore_history);
+        var returndata = this.parseporehist(this.livedata.colours_string, this.livedata.pore_history);
         //console.log(returndata);
-        while (self.PoreShizzle.series.length > 0)
-            self.PoreShizzle.series[0].remove(true);
-        //self.PoreShizzle.addSeries(returndata[4]);
+        while (this.PoreShizzle.series.length > 0)
+            this.PoreShizzle.series[0].remove(true);
+        //this.PoreShizzle.addSeries(returndata[4]);
         //console.log(returndata[4]);
         for (var i = 0; i < returndata.length; i++) {
             //console.log(returndata[i]);
-            self.PoreShizzle.addSeries(returndata[i]);
+            this.PoreShizzle.addSeries(returndata[i]);
         }
     },
 
@@ -1074,81 +1060,81 @@ var FlowcellPageApp = {
     },
 
     updateLiveCumuYield: function () {
-        //console.log(self.LiveCumuYield);
-        if (self.LiveCumuYield.series.length < 1) {
-            self.LiveCumuYield.addSeries({
-                data: self.livedata.yield_history
+        //console.log(this.LiveCumuYield);
+        if (this.LiveCumuYield.series.length < 1) {
+            this.LiveCumuYield.addSeries({
+                data: this.livedata.yield_history
             });
-            self.LiveCumuYield.series[0].update({name: "Events"}, false);
+            this.LiveCumuYield.series[0].update({name: "Events"}, false);
         } else {
-            self.LiveCumuYield.series[0].setData(self.livedata.yield_history);
-            self.LiveCumuYield.series[0].update({name: "Events"}, false);
+            this.LiveCumuYield.series[0].setData(this.livedata.yield_history);
+            this.LiveCumuYield.series[0].update({name: "Events"}, false);
         }
-        self.LiveCumuYield.redraw();
-        self.LiveCumuYield.reflow();
-        if (self.LiveOccupancy.series.length < 1) {
-            self.LiveOccupancy.addSeries({
-                data: self.livedata.percentage
+        this.LiveCumuYield.redraw();
+        this.LiveCumuYield.reflow();
+        if (this.LiveOccupancy.series.length < 1) {
+            this.LiveOccupancy.addSeries({
+                data: this.livedata.percentage
             });
-            self.LiveOccupancy.series[0].update({name: "% Occupancy"}, false);
+            this.LiveOccupancy.series[0].update({name: "% Occupancy"}, false);
         } else {
-            self.LiveOccupancy.series[0].setData(self.livedata.percentage);
-            self.LiveOccupancy.series[0].update({name: "% Occupancy"}, false);
+            this.LiveOccupancy.series[0].setData(this.livedata.percentage);
+            this.LiveOccupancy.series[0].update({name: "% Occupancy"}, false);
         }
-        self.LiveOccupancy.redraw();
-        self.LiveOccupancy.reflow();
-        if (self.LiveInStrand.series.length < 2) {
-            self.LiveInStrand.addSeries({data: self.livedata.strand});
-            self.LiveInStrand.series[0].update({name: "In Strand"}, false);
-            self.LiveInStrand.addSeries({data: self.livedata.good_single});
-            self.LiveInStrand.series[1].update({name: "Single Pore"}, false);
+        this.LiveOccupancy.redraw();
+        this.LiveOccupancy.reflow();
+        if (this.LiveInStrand.series.length < 2) {
+            this.LiveInStrand.addSeries({data: this.livedata.strand});
+            this.LiveInStrand.series[0].update({name: "In Strand"}, false);
+            this.LiveInStrand.addSeries({data: this.livedata.good_single});
+            this.LiveInStrand.series[1].update({name: "Single Pore"}, false);
 
         } else {
-            self.LiveInStrand.series[0].setData(self.livedata.strand);
-            self.LiveInStrand.series[0].update({name: "In Strand"}, false);
-            self.LiveInStrand.series[1].setData(self.livedata.good_single);
-            self.LiveInStrand.series[1].update({name: "Single Pore"}, false);
+            this.LiveInStrand.series[0].setData(this.livedata.strand);
+            this.LiveInStrand.series[0].update({name: "In Strand"}, false);
+            this.LiveInStrand.series[1].setData(this.livedata.good_single);
+            this.LiveInStrand.series[1].update({name: "Single Pore"}, false);
         }
-        self.LiveInStrand.redraw();
-        self.LiveInStrand.reflow();
-        if (self.LivePoreState.series.length < 1) {
-            self.LivePoreState.addSeries({data: self.livedata.instrand_history});
-            self.LivePoreState.addSeries({data: self.livedata.openpore_history});
+        this.LiveInStrand.redraw();
+        this.LiveInStrand.reflow();
+        if (this.LivePoreState.series.length < 1) {
+            this.LivePoreState.addSeries({data: this.livedata.instrand_history});
+            this.LivePoreState.addSeries({data: this.livedata.openpore_history});
         } else {
-            self.LivePoreState.series[0].setData(self.livedata.instrand_history);
-            self.LivePoreState.series[1].setData(self.livedata.openpore_history);
+            this.LivePoreState.series[0].setData(this.livedata.instrand_history);
+            this.LivePoreState.series[1].setData(this.livedata.openpore_history);
         }
-        self.LivePoreState.series[0].update({name: "In Strand"}, false);
-        self.LivePoreState.series[1].update({name: "Open Pore"}, false);
-        self.LivePoreState.redraw();
-        self.LivePoreState.reflow();
-        if (self.LiveCurrentRatio.series.length < 1) {
-            self.LiveCurrentRatio.addSeries({data: self.livedata.meanratio_history});
+        this.LivePoreState.series[0].update({name: "In Strand"}, false);
+        this.LivePoreState.series[1].update({name: "Open Pore"}, false);
+        this.LivePoreState.redraw();
+        this.LivePoreState.reflow();
+        if (this.LiveCurrentRatio.series.length < 1) {
+            this.LiveCurrentRatio.addSeries({data: this.livedata.meanratio_history});
         } else {
-            self.LiveCurrentRatio.series[0].setData(self.livedata.meanratio_history);
+            this.LiveCurrentRatio.series[0].setData(this.livedata.meanratio_history);
         }
-        self.LiveCurrentRatio.series[0].update({name: "Current Ratio"}, false);
-        self.LiveCurrentRatio.redraw();
-        self.LiveCurrentRatio.reflow();
-        if (self.LiveTemperature.series.length < 1) {
-            self.LiveTemperature.addSeries({data: self.livedata.asictemp});
-            self.LiveTemperature.addSeries({data: self.livedata.heatsinktemp});
+        this.LiveCurrentRatio.series[0].update({name: "Current Ratio"}, false);
+        this.LiveCurrentRatio.redraw();
+        this.LiveCurrentRatio.reflow();
+        if (this.LiveTemperature.series.length < 1) {
+            this.LiveTemperature.addSeries({data: this.livedata.asictemp});
+            this.LiveTemperature.addSeries({data: this.livedata.heatsinktemp});
         } else {
-            self.LiveTemperature.series[0].setData(self.livedata.asictemp);
-            self.LiveTemperature.series[1].setData(self.livedata.heatsinktemp);
+            this.LiveTemperature.series[0].setData(this.livedata.asictemp);
+            this.LiveTemperature.series[1].setData(this.livedata.heatsinktemp);
         }
-        self.LiveTemperature.series[0].update({name: "Asic Temp"}, false);
-        self.LiveTemperature.series[1].update({name: "HeatSink Temp"}, false);
-        self.LiveTemperature.redraw();
-        self.LiveTemperature.reflow();
-        if (self.LiveVoltage.series.length < 1) {
-            self.LiveVoltage.addSeries({data: self.livedata.voltage});
+        this.LiveTemperature.series[0].update({name: "Asic Temp"}, false);
+        this.LiveTemperature.series[1].update({name: "HeatSink Temp"}, false);
+        this.LiveTemperature.redraw();
+        this.LiveTemperature.reflow();
+        if (this.LiveVoltage.series.length < 1) {
+            this.LiveVoltage.addSeries({data: this.livedata.voltage});
         } else {
-            self.LiveVoltage.series[0].setData(self.livedata.voltage);
+            this.LiveVoltage.series[0].setData(this.livedata.voltage);
         }
-        self.LiveVoltage.series[0].update({name: "Voltage"}, false);
-        self.LiveVoltage.redraw();
-        self.LiveVoltage.reflow();
+        this.LiveVoltage.series[0].update({name: "Voltage"}, false);
+        this.LiveVoltage.redraw();
+        this.LiveVoltage.reflow();
 
     },
 
@@ -1231,30 +1217,30 @@ var FlowcellPageApp = {
     updateLiveYieldProjection: function () {
         var seqspeed = "450 b/s";
         //commented out below as it wasn't being used - not sure why - need to check
-        //var timeleft = self.geteighthours(self.livedatayield.slice(-1), self.rundata.start_time);
+        //var timeleft = this.geteighthours(this.livedatayield.slice(-1), this.rundata.start_time);
         var firsthour = 120;
-        [scalingfactor, difference] = self.projectdata(self.livedata.yield_history);
-        [scalingfactor2, difference2] = self.projectdata(self.livedata.yield_history.slice(0, firsthour));
+        [scalingfactor, difference] = this.projectdata(this.livedata.yield_history);
+        [scalingfactor2, difference2] = this.projectdata(this.livedata.yield_history.slice(0, firsthour));
         //synthericdata needs renaming!!!
-        var syntheticdata = self.livedata.yield_history;
+        var syntheticdata = this.livedata.yield_history;
         //console.log(scalingfactor2);
         //console.log(syntheticdata);
-        newarray = self.projectresults(syntheticdata, scalingfactor, 4000, difference, new Date(self.rundata.start_time).getTime());
+        newarray = this.projectresults(syntheticdata, scalingfactor, 4000, difference, new Date(this.rundata.start_time).getTime());
         //console.log(newarray);
-        newarray1 = self.projectresults(syntheticdata.slice(0, firsthour), scalingfactor2, 4000, difference2, new Date(self.rundata.start_time).getTime());
-        newarray2 = self.projectresults(syntheticdata.slice(0, firsthour), 1, 4000, difference2, new Date(self.rundata.start_time).getTime());
-        self.LiveYield.series[0].setData(self.converttobases(self.livedata.yield_history, seqspeed));
-        self.LiveYield.series[1].setData(self.converttobases(newarray, seqspeed));
-        self.LiveYield.series[2].setData(self.converttobases(newarray1, seqspeed));
-        self.LiveYield.series[3].setData(self.converttobases(newarray2, seqspeed));
-        self.LiveYield.redraw();
-        self.LiveYield.reflow()
+        newarray1 = this.projectresults(syntheticdata.slice(0, firsthour), scalingfactor2, 4000, difference2, new Date(this.rundata.start_time).getTime());
+        newarray2 = this.projectresults(syntheticdata.slice(0, firsthour), 1, 4000, difference2, new Date(this.rundata.start_time).getTime());
+        this.LiveYield.series[0].setData(this.converttobases(this.livedata.yield_history, seqspeed));
+        this.LiveYield.series[1].setData(this.converttobases(newarray, seqspeed));
+        this.LiveYield.series[2].setData(this.converttobases(newarray1, seqspeed));
+        this.LiveYield.series[3].setData(this.converttobases(newarray2, seqspeed));
+        this.LiveYield.redraw();
+        this.LiveYield.reflow()
     },
 
     converttobases: function (data, seqspeed) {
-        if (Number(self.livedata.scalingfactor) > Number(0)) {
-            //console.log("returning scaling factor" + self.livedata.scalingfactor);
-            scaling = Number(self.livedata.scalingfactor);
+        if (Number(this.livedata.scalingfactor) > Number(0)) {
+            //console.log("returning scaling factor" + this.livedata.scalingfactor);
+            scaling = Number(this.livedata.scalingfactor);
         } else {
             switch (seqspeed) {
                 case "MegaCrazy Runs":
@@ -1282,11 +1268,11 @@ var FlowcellPageApp = {
     requestMessages: function () {
 
         console.log(">>> antes do rundetails");
-        if (!self.rundetails) {
+        if (!this.rundetails) {
             return;
         }
 
-        var url_sincemessages = self.rundetails[0]["minION"] + 'messagessince/' + self.rundetails[0]["minKNOW_start_time"] + '/' + self.lasttime.toISOString() + "/";
+        var url_sincemessages = this.rundetails[0]["minION"] + 'messagessince/' + this.rundetails[0]["minKNOW_start_time"] + '/' + this.lasttime.toISOString() + "/";
 
         console.log(url_sincemessages);
 
@@ -1349,19 +1335,19 @@ var FlowcellPageApp = {
     },
 
     updateLiveHistogram: function (data) {
-        returndata = self.tohistogram(data[data.length - 1].minKNOW_histogram_values, data[data.length - 1].minKNOW_histogram_bin_width, data[data.length - 1].event_yield);
-        self.LiveHistogram.series[0].setData(returndata[0]);
-        self.LiveHistogram.xAxis[0].setCategories(returndata[1]);
+        returndata = this.tohistogram(data[data.length - 1].minKNOW_histogram_values, data[data.length - 1].minKNOW_histogram_bin_width, data[data.length - 1].event_yield);
+        this.LiveHistogram.series[0].setData(returndata[0]);
+        this.LiveHistogram.xAxis[0].setCategories(returndata[1]);
         var N50 = parseInt(returndata[2]);
-        self.LiveHistogram.xAxis[0].removePlotBand('plot-band-1');
-        self.LiveHistogram.xAxis[0].addPlotBand({
+        this.LiveHistogram.xAxis[0].removePlotBand('plot-band-1');
+        this.LiveHistogram.xAxis[0].addPlotBand({
             from: N50 - 0.5,
             to: N50 + 0.5,
             color: '#FCFFC5',
             id: 'plot-band-1',
         });
-        self.LiveHistogram.xAxis[0].removePlotBand('plot-band-2');
-        self.LiveHistogram.xAxis[0].addPlotBand({
+        this.LiveHistogram.xAxis[0].removePlotBand('plot-band-2');
+        this.LiveHistogram.xAxis[0].addPlotBand({
             color: 'black',
             width: 2,
             dashStyle: 'longdashdot',
@@ -1374,8 +1360,8 @@ var FlowcellPageApp = {
             },
             id: 'plot-band-2',
         });
-        self.LiveHistogram.xAxis[0].removePlotBand('plot-band-3');
-        self.LiveHistogram.xAxis[0].addPlotBand({
+        this.LiveHistogram.xAxis[0].removePlotBand('plot-band-3');
+        this.LiveHistogram.xAxis[0].addPlotBand({
             color: 'black',
             width: 2,
             dashStyle: 'longdashdot',
@@ -1389,24 +1375,24 @@ var FlowcellPageApp = {
             },
             id: 'plot-band-3',
         });
-        self.LiveHistogram.reflow();
+        this.LiveHistogram.reflow();
     },
 
 
     calculatereadtoeventscaling: function () {
         var totalyield = 0;
         var readcount = 0;
-        if (self.summary !== null) {
-            //if ('All reads' in self.summary) {
-            for (var readtype in self.summary["All reads"]) {
-                //console.log(self.summary['All reads'][readtype]);
-                totalyield = totalyield + parseInt(self.summary['All reads'][readtype]['yield']['data']);
-                readcount = readcount + parseInt(self.summary['All reads'][readtype]['read_count']['data']);
+        if (this.summary !== null) {
+            //if ('All reads' in this.summary) {
+            for (var readtype in this.summary["All reads"]) {
+                //console.log(this.summary['All reads'][readtype]);
+                totalyield = totalyield + parseInt(this.summary['All reads'][readtype]['yield']['data']);
+                readcount = readcount + parseInt(this.summary['All reads'][readtype]['read_count']['data']);
             }
             //console.log("yieldhistory length");
-            //console.log("test" + self.livedata.live_read_count);
-            if (self.livedata.yield_history.length > 1) {
-                self.livedata.scalingfactor = (totalyield / readcount) / (self.livedata.yield_history[self.livedata.yield_history.length - 1][1] / self.livedata.live_read_count);
+            //console.log("test" + this.livedata.live_read_count);
+            if (this.livedata.yield_history.length > 1) {
+                this.livedata.scalingfactor = (totalyield / readcount) / (this.livedata.yield_history[this.livedata.yield_history.length - 1][1] / this.livedata.live_read_count);
             }
         }
     },
@@ -1420,63 +1406,25 @@ var FlowcellPageApp = {
                 references.push(data[i]);
             }
             //console.log(references);
-            self.references = references;
+            this.references = references;
         });
     },
 
     requestTasks: function (id) {
+
         var url = "/api/v1/flowcells/" + id + "/tasks/";
-        $.get(url, function (data) {
+
+        $.get(url, (function (data) {
             //console.log(data);
             var tasks = [];
             for (var i = 0; i < data.length; i++) {
                 tasks.push(data[i]);
             }
-            self.tasks = tasks;
-            self.updateTasks(id); //really this only needs to run once!
-        });
-    },
-
-
-    updateTasks: function (id) {
-        //console.log("####id is" + id);
-        var taskstring = "";
-        for (var i = 0; i < self.tasks.length; i++) {
-            //console.log(self.tasks[i]);
-            if (self.tasks[i].hasOwnProperty("job_details")) {
-                colour = 'bg-green';
-                message = 'Reads processed:' + self.tasks[i]["job_details"]["read_count"];
-                percentage = 50;
-                message2 = 'X% of uploaded reads are processed';
-                icon = 'fa fa-refresh fa-spin fa-fw';
-                running = true;
-
-            } else {
-                colour = 'bg-light-blue';
-                message = 'Task Not Running.';
-                percentage = 0;
-                message2 = "Click to start a " + self.tasks[i]["description"] + ' task.';
-                icon = 'fa fa-refresh fa-fw';
-                running = false;
-            }
-            taskstring = this.drawtaskbutton(taskstring, colour, icon, self.tasks[i]["description"], message, percentage, message2, i, self.tasks[i]["long_description"], self.tasks[i]["reference"], self.tasks[i]["name"], self.tasks[i]["transcriptome"]);
-        }
-        ;
-        document.getElementById('tasks').innerHTML = taskstring;
-        for (var i = 0; i < self.tasks.length; i++) {
-            var buttonname = "#button" + self.tasks[i]["name"];
-            //console.log("Button name to look for:" + buttonname);
-            $(buttonname).click(function (e) {
-                var idClicked = e.target.id;
-                //console.log(idClicked);
-                self.startTask(idClicked.substring(6), id);
-            });
-        }
-        ;
-        self.liveUpdateTasks(id);
+            this.tasks = tasks;
+            this.updateTasks(id); //really this only needs to run once!
+        }).bind(this));
 
     },
-
 
     //this.requestMappedChromosomes = requestMappedChromosomes;
 

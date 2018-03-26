@@ -1,4 +1,3 @@
-
 function requestData() {
 
     var flowcellId = this.flowcellId;
@@ -7,12 +6,12 @@ function requestData() {
 
     $.get(url_run, (function (data) {
 
-        /*if (self.summary !== null) {
-            if (self.summary["All reads"]['Template']["max_length"]["all"]["data"][0] >= 1000000 && self.millionaire != true) {
+        if (this.summary !== null) {
+            if (this.summary["All reads"]['Template']["max_length"]["all"]["data"][0] >= 1000000 && this.millionaire != true) {
                 $('#eastermodal').modal('show');
-                self.millionaire = true;
+                this.millionaire = true;
             }
-        }*/
+        }
 
         var barcodes = new Set();
 
@@ -25,29 +24,21 @@ function requestData() {
         this.barcodes = Array.from(barcodes).sort();
         this.rundata = data;
         this.updateBarcodeNavTab();
-
-        console.log('>> summary');
-        console.log(this.summary);
-
         this.requestSummaryData(flowcellId);
-
-        console.log(this.summary);
-        console.log('<< summary');
-
         this.requestHistogramData(flowcellId);
         this.requestChannelSummaryData(flowcellId);
         this.requestRunDetails(flowcellId);
         this.requestLiveRunStats(flowcellId);
         this.liveUpdateTasks(flowcellId);
-        //self.requestKraken(flowcell_id);
-        //self.requestPafData(flowcell_id);
-        //self.requestCumuBases(flowcell_id);
-        //self.requestQualTime(flowcell_id);
-        //self.requestLengthTime(flowcell_id);
-        //self.requestMaxLengthTime(flowcell_id);
+        this.requestKraken(flowcellId);
+        this.requestPafData(flowcellId);
+        this.requestCumuBases(flowcellId);
+        this.requestQualTime(flowcellId);
+        this.requestLengthTime(flowcellId);
+        this.requestMaxLengthTime(flowcellId);
         this.requestSpeed(flowcellId);
-        //self.requestGfaData(flowcell_id);
-        //self.requestMessages();
+        this.requestGfaData(flowcellId);
+        this.requestMessages();
 
     }).bind(this));
 

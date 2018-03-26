@@ -1,13 +1,8 @@
+function requestLengthTimeCallback (data) {
 
-function requestLengthTime(id) {
+        if (!this.average_read_lengths_overtime_new) {
 
-    var url = "/api/v1/flowcells/" + id + "/summarybarcodebyminute_length";
-
-    $.get(url, function (data) {
-
-        if (!self.average_read_lengths_overtime_new) {
-
-            self.average_read_lengths_overtime_new = self.makeChart2(
+            this.average_read_lengths_overtime_new = this.makeChart2(
                 "average-read-lengths-overtime-new",
                 "average read length over time".toUpperCase(),
                 "average read length".toUpperCase()
@@ -15,9 +10,9 @@ function requestLengthTime(id) {
 
         }
 
-        var chart = self.average_read_lengths_overtime_new;
+        var chart = this.average_read_lengths_overtime_new;
 
-        var selectedBarcode = self.getSelectedBarcode();
+        var selectedBarcode = this.getSelectedBarcode();
 
         if (chart) {
 
@@ -38,11 +33,11 @@ function requestLengthTime(id) {
 
         }
 
-        for (var i in self.rundata) {
+        for (var i in this.rundata) {
 
-            var starttime = new Date(Date.parse(self.rundata[i]['start_time']));
-            var endtime = new Date(Date.parse(self.rundata[i]['last_read']));
-            var name = self.rundata[i]['id']
+            var starttime = new Date(Date.parse(this.rundata[i]['start_time']));
+            var endtime = new Date(Date.parse(this.rundata[i]['last_read']));
+            var name = this.rundata[i]['id']
 
             chart.xAxis[0].addPlotLine({
                 value: starttime,
@@ -53,7 +48,16 @@ function requestLengthTime(id) {
 
         }
 
-    })
+
+}
+
+function requestLengthTime(id) {
+
+    var url = "/api/v1/flowcells/" + id + "/summarybarcodebyminute_length";
+
+    requestLengthTimeCallback = requestLengthTimeCallback.bind(this);
+
+    $.get(url, requestLengthTimeCallback);
 
 };
 

@@ -5,7 +5,27 @@ function requestPafData(id) {
 
     var pafurl = '/api/v1/flowcells/' + id + '/pafsummary/';
 
-    $.get(pafurl, function (data) {
+    if (!this.chart_per_chrom_cov) {
+
+        this.chart_per_chrom_cov = this.makeChart(
+            "per-chrom-cov",
+            "Chromosome Coverage".toUpperCase(),
+            "Chromosome Coverage".toUpperCase()
+        );
+
+    }
+
+    if (!this.chart_per_chrom_avg) {
+
+        this.chart_per_chrom_avg = this.makeChart(
+            "per-chrom-avg",
+            "Read Length By Chromosome".toUpperCase(),
+            "Read Length By Chromosome".toUpperCase()
+        );
+
+    }
+
+    $.get(pafurl, (function (data) {
 
         if (data.length > 0) {
 
@@ -39,12 +59,12 @@ function requestPafData(id) {
 
             }
 
-            self.summarycoverage = summarycoverage;
-            self.updateCoverageBasedCharts(self.chart_per_chrom_cov, "coverage");
-            self.updateCoverageBasedCharts(self.chart_per_chrom_avg, "ave_read_len");
+            this.summarycoverage = summarycoverage;
+            this.updateCoverageBasedCharts(this.chart_per_chrom_cov, "coverage");
+            this.updateCoverageBasedCharts(this.chart_per_chrom_avg, "ave_read_len");
 
         }
 
-    })
+    }).bind(this));
 
 }
