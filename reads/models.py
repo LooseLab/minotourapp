@@ -212,6 +212,12 @@ class MinIONRun(models.Model):
         default=False
     )
 
+    run_group = models.ManyToManyField(
+
+        'RunGroup',
+        blank = True,
+    )
+
     class Meta:
         verbose_name = 'MinION Run'
         verbose_name_plural = 'MinION Runs'
@@ -586,6 +592,7 @@ class FastqReadExtra(models.Model):
 
 
 class RunSummaryBarcode(models.Model):
+
     run_id = models.ForeignKey(
         MinIONRun,
         on_delete=models.CASCADE,
@@ -652,32 +659,88 @@ class RunSummaryBarcode(models.Model):
 
 
 class HistogramSummary(models.Model):
-    run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE)
-    barcode = models.ForeignKey(Barcode, on_delete=models.CASCADE)
-    read_type = models.ForeignKey(FastqReadType)
-    bin_width = models.BigIntegerField()
-    read_count = models.BigIntegerField(default=0)
-    read_length = models.BigIntegerField(default=0)
+
+    BIN_WIDTH = 900
+
+    run_id = models.ForeignKey(
+        MinIONRun,
+        on_delete=models.CASCADE
+    )
+
+    barcode = models.ForeignKey(
+        Barcode,
+        on_delete=models.CASCADE
+    )
+
+    read_type = models.ForeignKey(
+        FastqReadType
+    )
+
+    is_pass = models.BooleanField(
+        default=True
+    )
+
+    bin_index = models.BigIntegerField(
+
+    )
+
+    read_count = models.BigIntegerField(
+        default=0
+    )
+
+    read_length = models.BigIntegerField(
+        default=0
+    )
 
     def __str__(self):
         return "{} {} {}".format(self.run_id, self.read_type, self.bin_width)
 
 
 class ChannelSummary(models.Model):
-    run_id = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='runchansum')
-    channel_number = models.IntegerField()
-    read_count = models.BigIntegerField(default=0)
-    read_length = models.BigIntegerField(default=0)
+
+    run = models.ForeignKey(
+        MinIONRun,
+        on_delete=models.CASCADE,
+        related_name='runchansum'
+    )
+
+    channel = models.IntegerField(
+
+    )
+
+    read_count = models.BigIntegerField(
+        default=0
+    )
+
+    read_length = models.BigIntegerField(
+        default=0
+    )
 
     def __str__(self):
         return "{} {} {}".format(self.run_id, self.channel_number, self.read_count)
 
 
 class RunStatisticBarcode(models.Model):
+
     run_id = models.ForeignKey(
         MinIONRun,
         on_delete=models.CASCADE,
         related_name='runstatbarc',
+    )
+
+    type = models.ForeignKey(
+        FastqReadType
+    )
+
+    barcode = models.ForeignKey(
+        Barcode,
+        on_delete=models.CASCADE,
+        related_name='runstatistics',
+        null=True
+    )
+
+    is_pass = models.BooleanField(
+        default=True
     )
 
     sample_time = models.DateTimeField(
@@ -700,41 +763,10 @@ class RunStatisticBarcode(models.Model):
         default=0
     )
 
-    pass_length = models.BigIntegerField(
-        default=0
-    )
-
-    pass_max_length = models.IntegerField(
-        default=0
-    )
-
-    pass_min_length = models.IntegerField(
-        default=0
-    )
-
-    pass_count = models.IntegerField(
-        default=0
-    )
     quality_sum = models.DecimalField(
         decimal_places=2,
         max_digits=12,
         default=0
-    )
-    pass_quality_sum = models.DecimalField(
-        decimal_places=2,
-        max_digits=12,
-        default=0
-    )
-
-    type = models.ForeignKey(
-        FastqReadType
-    )
-
-    barcode = models.ForeignKey(
-        Barcode,
-        on_delete=models.CASCADE,
-        related_name='runstatistics',
-        null=True
     )
 
     channel_presence = models.CharField(
@@ -882,13 +914,30 @@ def update_sum_stats(obj, ipn_obj):
     obj.save()
 
 
-class GroupRunType(models.Model):
-    type_name = models.CharField(
-        max_length=256
+class RunGroup(models.Model):
+
+    MINION = 'MINION'
+    GRIDION = 'GRIDION'
+    PROMETHION = 'PROMETHION'
+
+    NANOPORE_DEVICES = (
+
+        (MINION, 'MinION'),
+        (GRIDION, 'GridION'),
+        (PROMETHION, 'PromethION')
     )
 
-    def __str__(self):
-        return "{}".format(self.type_name)
+    name = models.CharField(
+
+        max_length = 32
+    )
+
+    device = models.CharField(
+
+        max_length = 10,
+        choices = NANOPORE_DEVICES,
+        default = MINION
+    )
 
 
 class JobType(models.Model):
@@ -922,7 +971,7 @@ class JobType(models.Model):
         default=True
     )
 
-    type_name = models.ManyToManyField(GroupRunType)
+    #type_name = models.ManyToManyField(GroupRunType)
 
     def __str__(self):
         return "{}".format(self.name)

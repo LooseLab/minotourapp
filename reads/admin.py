@@ -23,7 +23,6 @@ from .models import Barcode
 from .models import BarcodeGroup
 from .models import FlowCell
 from .models import FlowCellRun
-from .models import GroupRunType
 
 
 class MinionRunAdmin(admin.ModelAdmin):
@@ -65,4 +64,3 @@ admin.site.register(Barcode)
 admin.site.register(BarcodeGroup)
 admin.site.register(FlowCell)
 admin.site.register(FlowCellRun)
-admin.site.register(GroupRunType)

@@ -22,4 +22,6 @@ flower
 tqdm
 requests_futures
 scipy
-
+django_extensions
+pandas
+postgresql_psycopg2

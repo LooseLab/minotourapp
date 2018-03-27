@@ -1,21 +1,20 @@
 from __future__ import absolute_import, unicode_literals
 
 import json
-import numpy as np
 import os
-import pandas as pd
-import pytz
-import redis
 import shutil
 import subprocess
 import tempfile
 import time
 import zipfile
+from datetime import datetime, timedelta
+
+import numpy as np
+import pandas as pd
+import pytz
+import redis
 from celery import task
-from celery.signals import celeryd_init
 from celery.utils.log import get_task_logger
-from datetime import datetime, timedelta
-from datetime import datetime, timedelta
 from django.conf import settings
 from django.core.cache import cache
 from django.core.mail import send_mail
@@ -29,19 +28,17 @@ from alignment.models import PafSummaryCov, PafSummaryCov_transcriptome
 from alignment.models import SamStore
 from assembly.models import GfaStore
 from assembly.models import GfaSummary
-from communication.models import Message
 from communication.utils import *
 from minikraken.models import MiniKraken, ParsedKraken
 from reads.models import Barcode, FlowCellRun, FlowCell
 from reads.models import ChannelSummary
-from reads.models import FastqRead, FastqReadExtra
+from reads.models import FastqRead
 from reads.models import HistogramSummary
 from reads.models import JobMaster
 from reads.models import JobType
 from reads.models import MinIONRun, FastqReadType
 from reads.models import RunStatisticBarcode
-from reads.models import RunSummaryBarcode
-from reads.services import save_runsummarybarcode
+from reads.services import save_runsummarybarcode, save_runstatisticbarcode, save_histogramsummary, save_channelsummary
 from reference.models import ReferenceInfo
 
 logger = get_task_logger(__name__)
@@ -270,354 +267,51 @@ def compare_two(newset, cacheset):
 
 @task()
 def processreads(runid, id, last_read):
+
     print('>>>> Running processreads celery task.')
     print('running processreads with {} {} {}'.format(runid, id, last_read))
+
     JobMaster.objects.filter(pk=id).update(running=True)
 
     fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:2000]
 
     if len(fastqs) > 0:
-        #
-        # Calculate statistics for RunSummaryBarcode
-        #
+
         fastq_df = pd.DataFrame.from_records(fastqs.values())
 
+        #
+        # Calculates statistics for RunSummaryBarcode
+        #
         fastq_df_result = fastq_df.groupby(['barcode_id', 'type_id', 'is_pass']).agg(
             {'sequence_length': ['min', 'max', 'sum', 'count'], 'quality_average': ['sum'], 'channel': ['unique']})
 
         fastq_df_result.reset_index().apply(lambda row: save_runsummarybarcode(runid, row), axis=1)
 
-        chanstore = dict()
+        #
+        # Calculates statistics for RunStatisticsBarcode
+        #
+        fastq_df_result = fastq_df.groupby(['start_time', 'barcode_id', 'type_id', 'is_pass']).agg(
+            {'sequence_length': ['min', 'max', 'sum', 'count'], 'quality_average': ['sum']})
 
-        histstore = dict()
+        fastq_df_result.reset_index().apply(lambda row: save_runstatisticbarcode(runid, row), axis=1)
 
-        histstore['All reads'] = {}
+        #
+        # Calculates statistics for HistogramSummary
+        #
+        fastq_df['bin_index'] = (fastq_df['sequence_length'] - fastq_df['sequence_length'] % HistogramSummary.BIN_WIDTH) / HistogramSummary.BIN_WIDTH
 
-        sumstore = dict()
+        fastq_df_result = fastq_df.groupby(['barcode_id', 'type_id', 'is_pass', 'bin_index']).agg({'sequence_length': ['sum', 'count']})
 
-        barstore = set()
+        fastq_df_result.reset_index().apply(lambda row: save_histogramsummary(runid, row), axis=1)
 
+        #
+        # Calculates statistics for ChannelSummary
+        #
+        fastq_df_result = fastq_df.groupby(['channel']).agg({'sequence_length': ['sum', 'count']})
 
-
-        for fastq in fastqs:
-            # logger.debug(fastq)
-            barstore.add(fastq.barcode)
-            # print('>>>> barcode: {}'.format(fastq.barcode))
-            if fastq.channel not in chanstore.keys():
-                chanstore[fastq.channel] = dict()
-                chanstore[fastq.channel]['count'] = 0
-                chanstore[fastq.channel]['length'] = 0
-            chanstore[fastq.channel]['count'] += 1
-            chanstore[fastq.channel]['length'] += fastq.sequence_length
-
-            if fastq.barcode.name not in histstore.keys():
-                histstore[fastq.barcode.name] = {}
-
-            if fastq.type.name not in histstore[fastq.barcode.name].keys():
-                histstore[fastq.barcode.name][fastq.type.name] = {}
-
-            if fastq.type.name not in histstore['All reads'].keys():
-                histstore['All reads'][fastq.type.name] = {}
-
-            bin_width = findbin(fastq.sequence_length)
-
-            if bin_width not in histstore[fastq.barcode.name][fastq.type.name].keys():
-                histstore[fastq.barcode.name][fastq.type.name][bin_width] = {}
-
-                histstore[fastq.barcode.name][fastq.type.name][bin_width]['count'] = 0
-                histstore[fastq.barcode.name][fastq.type.name][bin_width]['length'] = 0
-
-            if bin_width not in histstore['All reads'][fastq.type.name].keys():
-                histstore['All reads'][fastq.type.name][bin_width] = {}
-
-                histstore['All reads'][fastq.type.name][bin_width]['count'] = 0
-                histstore['All reads'][fastq.type.name][bin_width]['length'] = 0
-
-            histstore[fastq.barcode.name][fastq.type.name][bin_width]['count'] += 1
-            histstore[fastq.barcode.name][fastq.type.name][bin_width]['length'] += fastq.sequence_length
-
-            histstore['All reads'][fastq.type.name][bin_width]['count'] += 1
-            histstore['All reads'][fastq.type.name][bin_width]['length'] += fastq.sequence_length
-
-            ### Adding in the current post save behaviour:
-            ### This is really inefficient - we are hitting the database too often.
-            ### We need to store the relevant data in a single dictionary and then process it in to the database.
-            ### Key elements are the time and the barcode?
-
-            ipn_obj = fastq
-
-            barcode = ipn_obj.barcode
-
-            barcode_all_reads = ipn_obj.run_id.barcodes.filter(name='All reads').first()
-
-            tm = ipn_obj.start_time
-
-            tm = tm - timedelta(
-                minutes=(tm.minute % 1) - 1,
-                seconds=tm.second,
-                microseconds=tm.microsecond
-            )
-
-            ### At this point we know the read time (tm) we know the barcode and we have the object.
-
-
-
-            if ipn_obj.run_id not in sumstore.keys():
-                sumstore[ipn_obj.run_id]=dict()
-
-            if ipn_obj.type not in sumstore[ipn_obj.run_id].keys():
-                sumstore[ipn_obj.run_id][ipn_obj.type] = dict()
-
-            if tm not in sumstore[ipn_obj.run_id][ipn_obj.type].keys():
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm]=dict()
-
-            if barcode_all_reads not in sumstore[ipn_obj.run_id][ipn_obj.type][tm].keys():
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads] = dict()
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["channels"] = '0' * 3000
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["pass_length"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["pass_max_length"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["pass_min_length"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["pass_count"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["total_length"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["max_length"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["min_length"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["read_count"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["quality_sum"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_all_reads]["pass_quality_sum"] = 0
-
-            if barcode not in sumstore[ipn_obj.run_id][ipn_obj.type][tm].keys():
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode] = dict()
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["channels"] = '0' * 3000
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["pass_length"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["pass_max_length"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["pass_min_length"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["pass_count"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["total_length"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["max_length"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["min_length"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["read_count"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["quality_sum"] = 0
-                sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode]["pass_quality_sum"] = 0
-
-            sumstore = update_local_dict(sumstore,ipn_obj,tm,barcode_all_reads)
-
-            if barcode is not None and barcode.name != '':
-                sumstore = update_local_dict(sumstore, ipn_obj, tm, barcode)
-
-            last_read = fastq.id
-
-        runinstance = MinIONRun.objects.get(pk=runid)
-
-        logger.debug("!!!!!!!!! SUMSTORE ¢¢¢¢", len(sumstore))
-
-        for run in sumstore:
-            for type_ in sumstore[run]:
-                for tm in sumstore[run][type_]:
-                    for barcode in sumstore[run][type_][tm]:
-                        obj, created1 = RunStatisticBarcode.objects.update_or_create(
-                            run_id=run, type=type_, barcode=barcode, sample_time=tm
-                        )
-                        #update_sum_stats(obj1, sumstore[run][type_][tm][barcode])
-                        obj.pass_length += sumstore[run][type_][tm][barcode]["pass_length"]
-                        obj.pass_quality_sum += sumstore[run][type_][tm][barcode]["pass_quality_sum"]
-
-                        if sumstore[run][type_][tm][barcode]["pass_max_length"] > obj.pass_max_length:
-                            obj.pass_max_length = sumstore[run][type_][tm][barcode]["pass_max_length"]
-
-                        if obj.pass_min_length == 0:
-                            obj.pass_min_length = sumstore[run][type_][tm][barcode]["pass_min_length"]
-
-                        if sumstore[run][type_][tm][barcode]["pass_min_length"] < obj.pass_min_length:
-                            obj.pass_min_length = sumstore[run][type_][tm][barcode]["pass_min_length"]
-
-                        obj.pass_count += sumstore[run][type_][tm][barcode]["pass_count"]
-
-                        obj.total_length += sumstore[run][type_][tm][barcode]["total_length"]
-                        obj.quality_sum += sumstore[run][type_][tm][barcode]["quality_sum"]
-
-                        if sumstore[run][type_][tm][barcode]["max_length"] > obj.max_length:
-                            obj.max_length = sumstore[run][type_][tm][barcode]["max_length"]
-
-                        if obj.min_length == 0:
-                            obj.min_length = sumstore[run][type_][tm][barcode]["min_length"]
-
-                        if sumstore[run][type_][tm][barcode]["min_length"] < obj.min_length:
-                            obj.min_length = sumstore[run][type_][tm][barcode]["min_length"]
-
-                        #
-                        # channel_presence is a 512 characters length string containing 0
-                        # for each channel (id between 1 - 512) seen, we set the position on
-                        # the string to 1. afterwards, we can calculate the number of active
-                        # channels in a particular minute.
-                        #
-
-                        channel = sumstore[run][type_][tm][barcode]["channels"]
-                        channel_sequence = obj.channel_presence
-                        channel_sequence_list = list(channel_sequence)
-                        for i, val in enumerate(channel):
-                            if int(val) == 1:
-                                channel_sequence_list[i] = '1'
-                        obj.channel_presence = ''.join(channel_sequence_list)
-
-                        obj.read_count += sumstore[run][type_][tm][barcode]["read_count"]
-                        obj.save()
-
-
-        for chan in chanstore:
-            channel, created = ChannelSummary.objects.get_or_create(run_id=runinstance, channel_number=int(chan))
-            channel.read_count += chanstore[chan]['count']
-            channel.read_length += chanstore[chan]['length']
-            channel.save()
-
-        for barcodename in histstore.keys():
-
-            barcode = Barcode.objects.filter(run=runinstance, name=barcodename).first()
-
-            for read_type_name in histstore[barcodename].keys():
-                read_type = FastqReadType.objects.get(name=read_type_name)
-                # print('>>>> {}'.format(read_type_name))
-
-                for hist in histstore[barcodename][read_type_name].keys():
-                    histogram, created = HistogramSummary.objects.get_or_create(
-                        run_id=runinstance,
-                        bin_width=int(hist),
-                        read_type=read_type,
-                        barcode=barcode
-                    )
-
-                    histogram.read_count += histstore[barcodename][read_type_name][hist]["count"]
-                    histogram.read_length += histstore[barcodename][read_type_name][hist]["length"]
-                    histogram.save()
+        fastq_df_result.reset_index().apply(lambda row: save_channelsummary(runid, row), axis=1)
 
     JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
-    logger.debug("Finished this thang!")
-
-
-def update_local_dict(sumstore,ipn_obj,tm,barcode_to_do):
-    channel = ipn_obj.channel
-    channel_sequence = sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["channels"]
-    channel_sequence_list = list(channel_sequence)
-    ##Temporary fix to enable promethION data upload
-    #if channel <= 512:
-    channel_sequence_list[channel - 1] = '1'
-    sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["channels"] = ''.join(channel_sequence_list)
-
-    if ipn_obj.is_pass:
-
-
-        sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_length"] += ipn_obj.sequence_length
-        sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_quality_sum"] += ipn_obj.quality_average
-
-        if ipn_obj.sequence_length > sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_max_length"]:
-            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_max_length"] = ipn_obj.sequence_length
-
-        if sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_min_length"] == 0:
-            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_min_length"] = ipn_obj.sequence_length
-
-        if ipn_obj.sequence_length < sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_min_length"]:
-            sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_min_length"] = ipn_obj.sequence_length
-
-        sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["pass_count"] += 1
-
-    sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["total_length"] += ipn_obj.sequence_length
-
-    sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["quality_sum"] += ipn_obj.quality_average
-
-    if ipn_obj.sequence_length > sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["max_length"]:
-        sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["max_length"] = ipn_obj.sequence_length
-
-    if sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["min_length"] == 0:
-        sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["min_length"] = ipn_obj.sequence_length
-
-    if ipn_obj.sequence_length < sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["min_length"]:
-        sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["min_length"] = ipn_obj.sequence_length
-
-    sumstore[ipn_obj.run_id][ipn_obj.type][tm][barcode_to_do]["read_count"] += 1
-
-    return sumstore
-
-
-def update_local_dict_sum(sumstore, ipn_obj, barcode_to_do):
-    channel = ipn_obj.channel
-    channel_sequence = sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["channels"]
-    channel_sequence_list = list(channel_sequence)
-    ##Temporary fix to enable promethION data upload
-    #if channel <= 512:
-    channel_sequence_list[channel - 1] = '1'
-    sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["channels"] = ''.join(channel_sequence_list)
-
-    if ipn_obj.is_pass:
-
-        sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_length"] += ipn_obj.sequence_length
-        sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_quality_sum"] += ipn_obj.quality_average
-
-        if ipn_obj.sequence_length > sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_max_length"]:
-            sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_max_length"] = ipn_obj.sequence_length
-
-        if sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_min_length"] == 0:
-            sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_min_length"] = ipn_obj.sequence_length
-
-        if ipn_obj.sequence_length < sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_min_length"]:
-            sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_min_length"] = ipn_obj.sequence_length
-
-        sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["pass_count"] += 1
-
-    sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["total_length"] += ipn_obj.sequence_length
-    sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["quality_sum"] += ipn_obj.quality_average
-    if ipn_obj.sequence_length > sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["max_length"]:
-        sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["max_length"] = ipn_obj.sequence_length
-
-    if sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["min_length"] == 0:
-        sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["min_length"] = ipn_obj.sequence_length
-
-    if ipn_obj.sequence_length < sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["min_length"]:
-        sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["min_length"] = ipn_obj.sequence_length
-
-    sumstore[ipn_obj.run_id][ipn_obj.type][barcode_to_do]["read_count"] += 1
-
-    return sumstore
-
-def update_sum_stats(obj, ipn_obj):
-    if ipn_obj.is_pass:
-
-        obj.pass_length += ipn_obj.sequence_length
-
-        if ipn_obj.sequence_length > obj.pass_max_length:
-            obj.pass_max_length = ipn_obj.sequence_length
-
-        if obj.pass_min_length == 0:
-            obj.pass_min_length = ipn_obj.sequence_length
-
-        if ipn_obj.sequence_length < obj.pass_min_length:
-            obj.pass_min_length = ipn_obj.sequence_length
-
-        obj.pass_count += 1
-
-    obj.total_length += ipn_obj.sequence_length
-
-    if ipn_obj.sequence_length > obj.max_length:
-        obj.max_length = ipn_obj.sequence_length
-
-    if obj.min_length == 0:
-        obj.min_length = ipn_obj.sequence_length
-
-    if ipn_obj.sequence_length < obj.min_length:
-        obj.min_length = ipn_obj.sequence_length
-
-    #
-    # channel_presence is a 512 characters length string containing 0
-    # for each channel (id between 1 - 512) seen, we set the position on
-    # the string to 1. afterwards, we can calculate the number of active
-    # channels in a particular minute.
-    #
-    channel = ipn_obj.channel
-    channel_sequence = obj.channel_presence
-    channel_sequence_list = list(channel_sequence)
-    channel_sequence_list[channel - 1] = '1'
-    obj.channel_presence = ''.join(channel_sequence_list)
-
-    obj.read_count += 1
-    obj.save()
 
 
 @task()

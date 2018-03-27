@@ -8,7 +8,6 @@ from reads.models import FastqRead
 from reads.models import FastqReadType
 from reads.models import FlowCell
 from reads.models import FlowCellRun
-from reads.models import GroupRunType
 from reads.models import HistogramSummary
 from reads.models import JobMaster
 from reads.models import JobType
@@ -41,10 +40,13 @@ class UserOptionsSerializer(serializers.ModelSerializer):
 
 
 class ChannelSummarySerializer(serializers.ModelSerializer):
+
     class Meta:
+
         model = ChannelSummary
+
         fields = (
-            'channel_number',
+            'channel',
             'read_count',
             'read_length',
         )
@@ -324,14 +326,8 @@ class RunStatisticBarcodeSerializer(serializers.ModelSerializer):
         read_only = ('id',)
 
 
-class GroupRunTypeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = GroupRunType
-        fields = ('type_name',)
-
-
 class JobTypeSerializer(serializers.ModelSerializer):
-    type_name = GroupRunTypeSerializer(read_only=True, many=True)
+    # type_name = GroupRunTypeSerializer(read_only=True, many=True)
 
     class Meta:
         model = JobType
