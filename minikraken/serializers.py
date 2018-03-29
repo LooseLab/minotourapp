@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
-from minikraken.models import MiniKraken
-from minikraken.models import ParsedKraken
+from minikraken.models import MiniKraken, ParsedKraken
 
 
 class MiniKrakenSerializer(serializers.HyperlinkedModelSerializer):
@@ -14,4 +13,3 @@ class ParsedKrakenSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ParsedKraken
         fields = ('run','flowcell','type_name','barcode_name','percentage','rootreads', 'directreads','rank','NCBItaxid', 'parent', 'sci_name', 'indentation', 'orderin')
-

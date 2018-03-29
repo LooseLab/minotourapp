@@ -14,7 +14,7 @@ urlpatterns = [
     url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/$',
         views.run_detail,
-        name="minionrun-detail"
+        name="run-detail"
     ),
     url(
         #r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<page>[0-9]+)/$',
@@ -22,12 +22,12 @@ urlpatterns = [
         views.read_list,
         name="fastqread-list"
     ),
-    url(
-        #r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<page>[0-9]+)/$',
-        r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<readid>[\w\-]+)/$',
-        views.read_update,
-        name="fastqread-update"
-    ),
+#    url(
+#        #r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<page>[0-9]+)/$',
+#        r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<readid>[\w\-]+)/$',
+#        views.read_update,
+#        name="fastqread-update"
+#    ),
     url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/readnames/$',
         views.readname_list,

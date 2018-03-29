@@ -23,23 +23,19 @@ from django.db.models import F
 from django_mailgun import MailgunAPIError
 from twitter import *
 
-from alignment.models import PafStore, PafStore_transcriptome, PafRoughCov
-from alignment.models import PafSummaryCov, PafSummaryCov_transcriptome
-from alignment.models import SamStore
-from assembly.models import GfaStore
-from assembly.models import GfaSummary
+from alignment.models import (PafRoughCov, PafStore, PafStore_transcriptome,
+                              PafSummaryCov, PafSummaryCov_transcriptome,
+                              SamStore)
+from assembly.models import GfaStore, GfaSummary
 from communication.utils import *
+from devices.models import Flowcell
+from jobs.models import JobMaster, JobType
 from minikraken.models import MiniKraken, ParsedKraken
-from reads.models import Barcode, FlowCellRun, FlowCell
-from reads.models import ChannelSummary
-from reads.models import FastqRead
-from reads.models import HistogramSummary
-from reads.models import JobMaster
-from reads.models import JobType
-from reads.models import MinIONRun, FastqReadType
-from reads.models import RunStatisticBarcode
-from reads.services import save_runsummarybarcode, save_runstatisticbarcode, save_histogramsummary, save_channelsummary
+from reads.models import Barcode, FastqRead, FastqReadType, FlowCellRun, Run
+from reads.services import (save_channelsummary, save_histogramsummary,
+                            save_runstatisticbarcode, save_runsummarybarcode)
 from reference.models import ReferenceInfo
+from stats.models import ChannelSummary, HistogramSummary, RunStatisticBarcode
 
 logger = get_task_logger(__name__)
 
@@ -96,7 +92,7 @@ def run_monitor():
 
 
 
-    minion_runs = MinIONRun.objects.filter(active=True).distinct()
+    minion_runs = Run.objects.filter(active=True).distinct()
 
     for minion_run in minion_runs:
         logger.debug("found a run", minion_run)
@@ -161,11 +157,11 @@ def slow_monitor():
 
     cachesiz = {}
 
-    minion_runs = MinIONRun.objects.all()
+    minion_runs = Run.objects.all()
 
     timediff = utcnow() - timedelta(days=1)
 
-    active_runs = MinIONRun.objects.filter(active=True).distinct()
+    active_runs = Run.objects.filter(active=True).distinct()
 
     ## We need an active flowcell measure.
 
@@ -225,7 +221,7 @@ def slow_monitor():
 
 def processrun(deleted, added):
     for run in added:
-        runinstance = MinIONRun.objects.get(pk=run)
+        runinstance = Run.objects.get(pk=run)
         jobinstance = JobType.objects.get(name="ChanCalc")
         runinstance.active = True
         runinstance.save()
@@ -240,7 +236,7 @@ def processrun(deleted, added):
 
     for run in deleted:
         try:
-            runinstance = MinIONRun.objects.get(pk=run)
+            runinstance = Run.objects.get(pk=run)
             runinstance.active = False
             runinstance.save()
 
@@ -503,7 +499,7 @@ def clean_up_assembly_files(runid,id,tmp):
 def get_runidset(runid,inputtype):
     runidset = set()
     if inputtype == "flowcell":
-        realflowcell = FlowCell.objects.get(pk=runid)
+        realflowcell = Flowcell.objects.get(pk=runid)
         flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
         for flowcell_run in flowcell_runs:
             runidset.add(flowcell_run.run_id)
@@ -532,7 +528,7 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
 
     runidset = set()
     if inputtype == "flowcell":
-        realflowcell = FlowCell.objects.get(pk=runid)
+        realflowcell = Flowcell.objects.get(pk=runid)
         flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
         for flowcell_run in flowcell_runs:
             runidset.add(flowcell_run.run_id)
@@ -599,9 +595,9 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
                 gfadata = gfa.splitlines()
 
                 if inputtype == "flowcell":
-                    instance = FlowCell.objects.get(pk=runid)
+                    instance = Flowcell.objects.get(pk=runid)
                 else:
-                    instance = MinIONRun.objects.get(pk=runid)
+                    instance = Run.objects.get(pk=runid)
 
                 seqlens = []
                 gfaall = ""
@@ -685,7 +681,7 @@ def run_minimap2_transcriptome(runid, id, reference, last_read):
     paf = out.decode("utf-8")
 
     pafdata = paf.splitlines()
-    runinstance = MinIONRun.objects.get(pk=runid)
+    runinstance = Run.objects.get(pk=runid)
 
     resultstore = dict()
 
@@ -775,7 +771,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
 
         runidset = set()
         if inputtype == "flowcell":
-            realflowcell = FlowCell.objects.get(pk=runid)
+            realflowcell = Flowcell.objects.get(pk=runid)
             flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
             for flowcell_run in flowcell_runs:
                 runidset.add(flowcell_run.run_id)
@@ -822,7 +818,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
 
 
         if inputtype =="run":
-            runinstance = MinIONRun.objects.get(pk=runid)
+            runinstance = Run.objects.get(pk=runid)
 
         resultstore = dict()
 
@@ -971,9 +967,9 @@ def run_kraken(runid, id, last_read, inputtype):
         krakrun.write_seqs(read.encode("utf-8"))
         krakenoutput = krakrun.run().decode('utf-8').split('\n')
         if inputtype == "run":
-            runinstance = MinIONRun.objects.get(pk=runid)
+            runinstance = Run.objects.get(pk=runid)
         elif inputtype == "flowcell":
-            runinstance = FlowCell.objects.get(pk=runid)
+            runinstance = Flowcell.objects.get(pk=runid)
         for line in krakenoutput:
             if len(line) > 0:
                 # logger.debug(line)
@@ -1160,7 +1156,7 @@ def run_bwa_alignment(runid, job_id, referenceinfo_id, last_read):
                 line = line.strip('\n')
                 record = line.split('\t')
                 if record[2] != '*':
-                    runinstance = MinIONRun.objects.get(pk=runid)
+                    runinstance = Run.objects.get(pk=runid)
                     newsam = SamStore(run_id=runinstance, read_id=fastq)
                     newsam.samline = line
                     newsam.save()
@@ -1176,7 +1172,7 @@ def updateReadNamesOnRedis():
     print('>>> running updateReadNamesOnRedis')
     r = redis.StrictRedis(host='localhost', port=6379, db=0)
 
-    runs = MinIONRun.objects.all()
+    runs = Run.objects.all()
 
     for run in runs:
         print('>>> run: {}'.format(run.id))
@@ -1206,7 +1202,7 @@ def updateReadNamesOnRedis():
 
 @task
 def delete_runs():
-    MinIONRun.objects.filter(to_delete=True).delete()
+    Run.objects.filter(to_delete=True).delete()
 
 
 @task

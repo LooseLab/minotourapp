@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 import tempfile
+
 from celery.schedules import crontab
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -52,6 +53,9 @@ INSTALLED_APPS = [
     'communication',
     'assembly',
     'django_extensions',
+    'devices',
+    'jobs',
+    'stats',
 ]
 
 MIDDLEWARE = [
@@ -96,7 +100,7 @@ CACHES = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'USER': get_env_variable("MT_DB_USER"),
         'PASSWORD': get_env_variable("MT_DB_PASS"),
         'HOST': get_env_variable("MT_DB_HOST"),
@@ -229,4 +233,3 @@ MINIMAP2 = get_env_variable("MT_MINIMAP2")
 BWA = get_env_variable("MT_BWA")
 
 USE_X_FORWARDED_HOST = True
-

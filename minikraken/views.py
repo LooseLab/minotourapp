@@ -2,13 +2,13 @@ from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
+from minikraken.models import MiniKraken, ParsedKraken
+from minikraken.serializers import MiniKrakenSerializer, ParsedKrakenSerializer
+
 # Create your views here.
 
-from minikraken.models import MiniKraken
-from minikraken.models import ParsedKraken
 
-from minikraken.serializers import MiniKrakenSerializer
-from minikraken.serializers import ParsedKrakenSerializer
 
 
 @api_view(['GET'])
@@ -88,4 +88,3 @@ def flowcellkraken_parse_list(request, pk):#,bc,ch):
         serializer = ParsedKrakenSerializer(queryset, many=True, context={'request': request})
 
         return Response(serializer.data)
-

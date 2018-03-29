@@ -25,3 +25,4 @@ scipy
 django_extensions
 pandas
 postgresql_psycopg2
+isort

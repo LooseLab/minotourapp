@@ -1,8 +1,9 @@
 import json
+from datetime import timedelta
+
 import numpy as np
-from datetime import datetime, timedelta
 from dateutil import parser
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 # from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
@@ -12,50 +13,30 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from devices.models import Flowcell, MinION
+from jobs.models import JobMaster, JobType
 from minotourapp import settings
-from reads.models import Barcode, ChannelSummary, BarcodeGroup
-from reads.models import FastqRead
-from reads.models import FastqReadExtra
-from reads.models import FastqReadType
-from reads.models import FlowCell
-from reads.models import FlowCellRun
-from reads.models import HistogramSummary
-from reads.models import JobMaster
-from reads.models import JobType
-from reads.models import MinION
-from reads.models import MinIONControl
-from reads.models import MinIONEvent
-from reads.models import MinIONEventType
-from reads.models import MinIONRun
-from reads.models import MinIONRunStats
-from reads.models import MinIONRunStatus
-from reads.models import MinIONScripts
-from reads.models import MinIONStatus
-from reads.models import MinIONmessages
-from reads.models import RunStatisticBarcode
-from reads.models import RunSummaryBarcode
-from reads.models import update_global_state, update_sum_stats
-from reads.serializers import BarcodeSerializer, BarcodeGroupSerializer
-from reads.serializers import ChannelSummarySerializer
-from reads.serializers import FastqReadSerializer
-from reads.serializers import FastqReadTypeSerializer
-from reads.serializers import FlowCellRunSerializer
-from reads.serializers import FlowCellSerializer
-from reads.serializers import JobTypeSerializer
-from reads.serializers import MinIONControlSerializer
-from reads.serializers import MinIONEventSerializer
-from reads.serializers import MinIONEventTypeSerializer
-from reads.serializers import MinIONRunSerializer
-from reads.serializers import MinIONRunStatsSerializer
-from reads.serializers import MinIONRunStatusSerializer
-from reads.serializers import MinIONScriptsSerializer
-from reads.serializers import MinIONSerializer
-from reads.serializers import MinIONStatusSerializer
-from reads.serializers import MinIONmessagesSerializer
-from reads.serializers import RunHistogramSummarySerializer
-from reads.serializers import RunStatisticBarcodeSerializer
-from reads.serializers import RunSummaryBarcodeSerializer
+from reads.models import (Barcode, BarcodeGroup, FastqRead, FastqReadType,
+                          FlowCellRun, MinIONControl, MinIONEvent,
+                          MinIONEventType, MinIONmessages, MinIONRunStats,
+                          MinIONRunStatus, MinIONScripts, MinIONStatus, Run)
+from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
+                               ChannelSummarySerializer, FastqReadSerializer,
+                               FastqReadTypeSerializer, FlowCellRunSerializer,
+                               FlowCellSerializer, JobTypeSerializer,
+                               MinIONControlSerializer, MinIONEventSerializer,
+                               MinIONEventTypeSerializer,
+                               MinIONmessagesSerializer,
+                               MinIONRunStatsSerializer,
+                               MinIONRunStatusSerializer,
+                               MinIONScriptsSerializer, MinIONSerializer,
+                               MinIONStatusSerializer,
+                               RunHistogramSummarySerializer, RunSerializer,
+                               RunStatisticBarcodeSerializer,
+                               RunSummaryBarcodeSerializer)
 from reference.models import ReferenceInfo
+from stats.models import (ChannelSummary, HistogramSummary,
+                          RunStatisticBarcode, RunSummaryBarcode)
 
 
 @api_view(['GET'])
@@ -117,19 +98,27 @@ def run_list(request):
     """
     if request.method == 'GET':
         #print ("run list ", request.user)
-        queryset = MinIONRun.objects.filter(owner=request.user).filter(to_delete=False)
-        serializer = MinIONRunSerializer(queryset, many=True, context={'request': request})
+        queryset = Run.objects.filter(owner=request.user).filter(to_delete=False)
+        serializer = RunSerializer(queryset, many=True, context={'request': request})
         #for q in queryset:
         #    print ("run queryset",q.owner)
         return Response(serializer.data)
 
     elif request.method == 'POST':
-        serializer = MinIONRunSerializer(data=request.data, context={'request': request})
+
+        serializer = RunSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
         if serializer.is_valid():
+
             serializer.save(owner=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 @api_view(['GET'])
 def current_run_list(request):
@@ -139,10 +128,10 @@ def current_run_list(request):
     if request.method == 'GET':
         #queryset = MinIONRun.objects.filter(owner=request.user).filter(Q(reads__created_date__gte = datetime.now()-timedelta(days=1))  | Q(RunStats__created_date__gte = datetime.now()-timedelta(days=1) )).distinct()
         #print ("current_run:",request.user)
-        queryset = MinIONRun.objects.filter(owner=request.user).filter(active=True).distinct()
+        queryset = Run.objects.filter(owner=request.user).filter(active=True).distinct()
         #for q in queryset:
         #    print ("current queryset:", q.owner)
-        serializer = MinIONRunSerializer(queryset, many=True, context={'request': request})
+        serializer = RunSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -302,20 +291,20 @@ def run_detail(request, pk):
     Retrieve, update or delete a run instance.
     """
     try:
-        run = MinIONRun.objects.get(pk=pk)
+        run = Run.objects.get(pk=pk)
 
         if run.owner != request.user:
             return Response(status=status.HTTP_401_UNAUTHORIZED)
 
-    except MinIONRun.DoesNotExist:
+    except Run.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
-        serializer = MinIONRunSerializer(run, context={'request': request})
+        serializer = RunSerializer(run, context={'request': request})
         return Response(serializer.data)
 
     elif request.method == 'PUT':
-        serializer = MinIONRunSerializer(run, data=request.data, context={'request': request})
+        serializer = RunSerializer(run, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -594,6 +583,7 @@ def read_detail(request, pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+"""
 @api_view(['PATCH'])
 def read_update(request,pk,readid):
     if request.method == "PATCH":
@@ -618,7 +608,7 @@ def read_update(request,pk,readid):
         else:
             print ('State not needed to change.')
             return Response("state not needed", status=status.HTTP_201_CREATED)
-
+"""
 
 
 @api_view(['GET'])
@@ -759,7 +749,7 @@ def barcode_list(request, pk):
         print (request.data)
         print(barcodename)
 
-        minionrun = MinIONRun.objects.get(pk=pk)
+        minionrun = Run.objects.get(pk=pk)
 
         flowcellruns = minionrun.flowcellrun
 
@@ -840,7 +830,7 @@ def set_task_detail_all(request,pk):
         if request.data["reference"]!="null":
             reference=ReferenceInfo.objects.get(reference_name=request.data["reference"])
             print (reference)
-        minionrun=MinIONRun.objects.get(id=pk)
+        minionrun=Run.objects.get(id=pk)
         print (minionrun)
         print(request.data)
         print(jobtype,reference,minionrun)
@@ -868,7 +858,7 @@ def set_task_detail_all(request,pk):
 @api_view(['GET'])
 def tasks_detail_all(request,pk):
     queryset=JobType.objects.filter(private=False).filter(type_name__type_name__in=['run',])
-    minionrun=MinIONRun.objects.get(pk=pk)
+    minionrun=Run.objects.get(pk=pk)
 
     result = []
     #print (queryset)
@@ -912,7 +902,7 @@ def tasks_detail_all(request,pk):
 @api_view(['GET'])
 def flowcell_list_active(request):
     if request.method == 'GET':
-        queryset = FlowCell.objects.distinct().filter(owner=request.user).filter(flowcelldetails__run__active=True)
+        queryset = Flowcell.objects.distinct().filter(owner=request.user).filter(flowcelldetails__run__active=True)
         serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -925,7 +915,7 @@ def flowcell_list(request):
     #    serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
     #    return Response(serializer.data)
     if request.method == 'GET':
-        queryset = FlowCell.objects.distinct().filter(owner=request.user)
+        queryset = Flowcell.objects.distinct().filter(owner=request.user)
         serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -939,15 +929,20 @@ def flowcell_list(request):
 
 @api_view(['GET','POST'])
 def flowcell_detail(request,pk):
+
     if request.method == 'GET':
+
         queryset = FlowCellRun.objects.filter(flowcell_id=pk)
         serializer = FlowCellRunSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
     elif request.method == 'POST':
+
         serializer = FlowCellRunSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
+
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
@@ -1528,7 +1523,7 @@ def flowcellset_task_detail_all(request,pk):
         if request.data["reference"]!="null":
             reference=ReferenceInfo.objects.get(reference_name=request.data["reference"])
             print (reference)
-        flowcellitem=FlowCell.objects.get(id=pk)
+        flowcellitem=Flowcell.objects.get(id=pk)
         print (flowcellitem)
         print(request.data)
         print(jobtype,reference,flowcellitem)
@@ -1563,7 +1558,7 @@ def flowcell_tasks_detail_all(request,pk):
         runset.append(run.run_id)
 
     queryset=JobType.objects.filter(private=False).filter(type_name__type_name__in=['flowcell',])
-    minionruns=MinIONRun.objects.filter(run_id__in=runset)
+    minionruns=Run.objects.filter(run_id__in=runset)
 
     result = []
     #print (queryset)

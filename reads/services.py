@@ -1,4 +1,9 @@
-from .models import RunSummaryBarcode, RunStatisticBarcode, HistogramSummary, ChannelSummary
+import datetime
+import hashlib
+
+from django.contrib.auth.models import User
+
+from devices.models import Flowcell
 
 
 def update_flowcelldetails(flowcell_id):
@@ -140,3 +145,15 @@ def save_channelsummary(run_id, row):
     runChannelSummary.save()
 
 
+def create_flowcell(owner_id, name=""):
+
+    if name == "":
+
+        text = '{}'.format(datetime.datetime.now())
+        h = hashlib.md5()
+        h.update(text.encode('utf-8'))
+        name = "flowcell-{}".format(h.hexdigest())[0:15]
+
+    owner = User.objects.get(pk=owner_id)
+
+    return Flowcell.objects.create(name=name, owner=owner)

@@ -1,4 +1,5 @@
 import datetime
+
 import pytz
 from django.conf import settings
 from django.db import models
@@ -6,142 +7,45 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
-from reference.models import ReferenceInfo
+from devices.models import Flowcell, MinION
+from reads.services import create_flowcell
 
 
-class FlowCell(models.Model):
+class RunGroup(models.Model):
+
+    MINION = 'MINION'
+    GRIDION = 'GRIDION'
+    PROMETHION = 'PROMETHION'
+
+    NANOPORE_DEVICES = (
+
+        (MINION, 'MinION'),
+        (GRIDION, 'GridION'),
+        (PROMETHION, 'PromethION')
+    )
 
     name = models.CharField(
-        max_length=256,
-        blank=True,
-        null=True,
+
+        max_length = 32
     )
 
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='flowcells'
+    device = models.CharField(
+
+        max_length = 10,
+        choices = NANOPORE_DEVICES,
+        default = MINION
     )
 
-    size = models.IntegerField(
-        blank=True,
-        null=True,
+    barcodes = models.ManyToManyField(
+
+        'Barcode'
     )
 
-    def __str__(self):
-        return "{} {}".format(self.name, self.id)
+    runs = models.ManyToManyField(
 
-
-class MinION(models.Model):
-
-    minION_name = models.CharField(
-        max_length=64
+        'Run'
     )
 
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='minIONs'
-    )
-
-    class Meta:
-        verbose_name = 'MinION'
-        verbose_name_plural = 'MinIONs'
-
-    def __str__(self):
-        return self.minION_name
-
-    def status(self):
-        try:
-            status = self.events.order_by('datetime').last().event.name
-        except AttributeError:
-            status = "undefined"
-        return status
-
-    def last_run(self):
-        try:
-            return self.minionrun.last().id
-            # return reverse('minIONrunstats_list', args=[self.minionrun.last().id])
-        except AttributeError:
-            last_run = "undefined"
-        return last_run
-
-    def computer(self):
-        try:
-            computer = self.events.order_by('datetime').last().computer_name
-        except AttributeError:
-            computer = "undefined"
-        return computer
-
-    def sample_name(self):
-        try:
-            return self.currentdetails.minKNOW_sample_name
-        except AttributeError:
-            return "undefined"
-
-    def minKNOW_version(self):
-        try:
-            return self.currentrundetails.minKNOW_version
-        except AttributeError:
-            return "undefined"
-
-    def flow_cell_id(self):
-        try:
-            return self.currentdetails.minKNOW_flow_cell_id
-        except AttributeError:
-            return "undefined"
-
-    def run_status(self):
-        try:
-            return self.currentdetails.minKNOW_status
-        except AttributeError:
-            return "undefined"
-
-    def run_name(self):
-        try:
-            return self.currentdetails.minKNOW_run_name
-        except AttributeError:
-            return "undefined"
-
-    def total_drive_space(self):
-        try:
-            return self.currentdetails.minKNOW_total_drive_space
-        except AttributeError:
-            return "undefined"
-
-    def space_till_shutdown(self):
-        try:
-            return self.currentdetails.minKNOW_disk_space_till_shutdown
-        except AttributeError:
-            return "undefined"
-
-    def space_available(self):
-        try:
-            return self.currentdetails.minKNOW_disk_available
-        except AttributeError:
-            return "undefined"
-
-    def warnings(self):
-        try:
-            return self.currentdetails.minKNOW_warnings
-        except AttributeError:
-            return "undefined"
-
-    def currentscript(self):
-        try:
-            return self.currentdetails.minKNOW_current_script
-        except AttributeError:
-            return "undefined"
-
-    def event_yield(self):
-        try:
-            return self.currentrunstats.order_by('sample_time').last().event_yield
-        except AttributeError:
-            return 0
-
-    def voltage_value(self):
-        try:
-            return self.currentrunstats.order_by('sample_time').last().voltage_value
-        except AttributeError:
-            return 0
 
 
 class MinIONControl(models.Model):
@@ -174,13 +78,41 @@ class UserOptions(models.Model):
         return "{}".format(str(self.owner))
 
 
-class MinIONRun(models.Model):
+class Run(models.Model):
 
-    run_name = models.CharField(
+    minion = models.ForeignKey(
+
+        MinION,
+        blank=True,
+        null=True,
+        related_name='runs'
+    )
+
+    flowcell = models.ForeignKey(
+
+        Flowcell,
+        related_name = 'runs',
+        null = True,
+        blank = True,
+    )
+
+    owner = models.ForeignKey(
+
+        settings.AUTH_USER_MODEL,
+        related_name='runs'
+    )
+
+    run_group = models.ManyToManyField(
+
+        RunGroup,
+        blank = True,
+    )
+
+    name = models.CharField(
         max_length=256
     )
 
-    run_id = models.CharField(
+    runid = models.CharField(
         max_length=64
     )
 
@@ -192,18 +124,6 @@ class MinIONRun(models.Model):
         default=True
     )
 
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='runs'
-    )
-
-    minION = models.ForeignKey(
-        MinION,
-        blank=True,
-        null=True,
-        related_name='minionrun'
-    )
-
     active = models.BooleanField(
         default=False
     )
@@ -212,28 +132,24 @@ class MinIONRun(models.Model):
         default=False
     )
 
-    run_group = models.ManyToManyField(
-
-        'RunGroup',
-        blank = True,
-    )
-
     class Meta:
-        verbose_name = 'MinION Run'
-        verbose_name_plural = 'MinION Runs'
+        verbose_name = 'Run'
+        verbose_name_plural = 'Runs'
+
+    def save(self, *args, **kwargs):
+
+        if self.flowcell is None:
+            self.flowcell = create_flowcell(self.owner.id)
+
+        super(Run, self).save(*args, **kwargs)
+
 
     def __str__(self):
-        return "{} - {}".format(self.run_name, self.run_id)
+        return "{} - {}".format(self.name, self.runid)
 
     def flowcell_name(self):
         try:
             return self.flowcellrun.last().flowcell.name
-        except AttributeError:
-            return "undefined"
-
-    def flowcell(self):
-        try:
-            return self.flowcellrun.last().flowcell.id
         except AttributeError:
             return "undefined"
 
@@ -279,7 +195,7 @@ class MinIONRun(models.Model):
 
     def max_channel(self):
         try:
-            return self.runchansum.order_by('channel_number').last().channel_number
+            return self.runchansum.order_by('channel').last().channel_number
         except AttributeError:
             return "undefined"
 
@@ -301,7 +217,7 @@ class MinIONRun(models.Model):
 class BarcodeGroup(models.Model):
 
     flowcell = models.ForeignKey(
-        FlowCell,
+        Flowcell,
         related_name='flowcellbarcode'
     )
 
@@ -315,7 +231,7 @@ class BarcodeGroup(models.Model):
 
 class Barcode(models.Model):
     run = models.ForeignKey(
-        MinIONRun,
+        Run,
         on_delete=models.CASCADE,
         related_name='barcodes'
     )
@@ -364,7 +280,7 @@ class MinIONStatus(models.Model):
 
 class MinIONRunStats(models.Model):
     minION = models.ForeignKey(MinION, related_name='currentrunstats')
-    run_id = models.ForeignKey(MinIONRun, related_name='RunStats')
+    run_id = models.ForeignKey(Run, related_name='RunStats')
     sample_time = models.DateTimeField()
     event_yield = models.BigIntegerField(default=0)
     asic_temp = models.FloatField(default=0)
@@ -416,7 +332,7 @@ class MinIONRunStatus(models.Model):
     minKNOW_flow_cell_id = models.CharField(max_length=64, blank=True, null=True)
     minKNOW_version = models.CharField(max_length=64, blank=True, null=True)
     minKNOW_run_name = models.CharField(max_length=256, blank=True, null=True)
-    run_id = models.ForeignKey(MinIONRun, related_name='RunDetails')
+    run_id = models.ForeignKey(Run, related_name='RunDetails')
     minKNOW_hash_run_id = models.CharField(max_length=256, blank=True, null=True)
     minKNOW_script_run_id = models.CharField(max_length=256, blank=True, null=True)
     minKNOW_real_sample_rate = models.IntegerField(blank=True, null=True)
@@ -505,7 +421,7 @@ class FastqReadType(models.Model):
 
 class FastqRead(models.Model):
     run_id = models.ForeignKey(
-        MinIONRun,
+        Run,
         on_delete=models.CASCADE,
         related_name='reads'
     )
@@ -591,208 +507,9 @@ class FastqReadExtra(models.Model):
         return self.fastqread
 
 
-class RunSummaryBarcode(models.Model):
-
-    run_id = models.ForeignKey(
-        MinIONRun,
-        on_delete=models.CASCADE,
-        related_name='runsummariesbarcodes'
-    )
-
-    type = models.ForeignKey(
-        FastqReadType
-    )
-
-    barcode = models.ForeignKey(
-        Barcode,
-        on_delete=models.CASCADE,
-        related_name='runsummaries',
-        null=True
-    )
-
-    is_pass = models.BooleanField(
-        default=True
-    )  # pass = true, fail = false
-
-    quality_sum = models.DecimalField(
-        decimal_places=2,
-        max_digits=12,
-        default=0
-    )
-
-    read_count = models.IntegerField(
-        default=0
-    )
-
-    total_length = models.BigIntegerField(
-        default=0
-    )
-
-    max_length = models.IntegerField(
-        default=0
-    )
-
-    min_length = models.IntegerField(
-        default=0
-    )
-
-    channel_presence = models.CharField(
-        max_length=3000,
-        default='0' * 3000
-    )
-
-    class Meta:
-        verbose_name = 'Run Summary Barcode'
-        verbose_name_plural = 'Run Summary Barcodes'
-
-    def __str__(self):
-        return "{} {} {} {} {}".format(
-            self.run_id,
-            self.total_length,
-            self.read_count,
-            self.type,
-            self.barcode
-        )
-
-    def number_active_channels(self):
-        return len(self.channel_presence.replace('0', ''))
-
-
-class HistogramSummary(models.Model):
-
-    BIN_WIDTH = 900
-
-    run_id = models.ForeignKey(
-        MinIONRun,
-        on_delete=models.CASCADE
-    )
-
-    barcode = models.ForeignKey(
-        Barcode,
-        on_delete=models.CASCADE
-    )
-
-    read_type = models.ForeignKey(
-        FastqReadType
-    )
-
-    is_pass = models.BooleanField(
-        default=True
-    )
-
-    bin_index = models.BigIntegerField(
-
-    )
-
-    read_count = models.BigIntegerField(
-        default=0
-    )
-
-    read_length = models.BigIntegerField(
-        default=0
-    )
-
-    def __str__(self):
-        return "{} {} {}".format(self.run_id, self.read_type, self.bin_width)
-
-
-class ChannelSummary(models.Model):
-
-    run = models.ForeignKey(
-        MinIONRun,
-        on_delete=models.CASCADE,
-        related_name='runchansum'
-    )
-
-    channel = models.IntegerField(
-
-    )
-
-    read_count = models.BigIntegerField(
-        default=0
-    )
-
-    read_length = models.BigIntegerField(
-        default=0
-    )
-
-    def __str__(self):
-        return "{} {} {}".format(self.run_id, self.channel_number, self.read_count)
-
-
-class RunStatisticBarcode(models.Model):
-
-    run_id = models.ForeignKey(
-        MinIONRun,
-        on_delete=models.CASCADE,
-        related_name='runstatbarc',
-    )
-
-    type = models.ForeignKey(
-        FastqReadType
-    )
-
-    barcode = models.ForeignKey(
-        Barcode,
-        on_delete=models.CASCADE,
-        related_name='runstatistics',
-        null=True
-    )
-
-    is_pass = models.BooleanField(
-        default=True
-    )
-
-    sample_time = models.DateTimeField(
-
-    )
-
-    total_length = models.BigIntegerField(
-        default=0
-    )
-
-    read_count = models.IntegerField(
-        default=0
-    )
-
-    max_length = models.IntegerField(
-        default=0
-    )
-
-    min_length = models.IntegerField(
-        default=0
-    )
-
-    quality_sum = models.DecimalField(
-        decimal_places=2,
-        max_digits=12,
-        default=0
-    )
-
-    channel_presence = models.CharField(
-        max_length=3000,
-        default='0' * 3000
-    )
-
-    class Meta:
-        verbose_name = 'Run Statistics Barcode'
-        verbose_name_plural = 'Run Statistics Barcodes'
-
-    def __str__(self):
-        return "{} {} {} {}".format(
-            self.run_id,
-            self.sample_time,
-            self.type,
-            self.barcode
-        )
-
-    def number_active_channels(self):
-        return len(self.channel_presence.replace('0', ''))
-
-
 class MinIONmessages(models.Model):
     minION = models.ForeignKey(MinION, related_name='messages')
-    run_id = models.ForeignKey(MinIONRun, related_name='runmessages', blank=True, null=True)
+    run_id = models.ForeignKey(Run, related_name='runmessages', blank=True, null=True)
     minKNOW_message = models.CharField(max_length=256)
     minKNOW_identifier = models.CharField(max_length=256)
     minKNOW_severity = models.CharField(max_length=64)
@@ -828,223 +545,14 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
         Token.objects.create(user=instance)
 
 
-# @receiver(post_save, sender=FastqRead)
-def update_global_state(instance):  ##, sender, **kwargs):
-    #    print ("trying to run")
-    #    update_global_state_task.delay(instance)
-
-    # @task()
-    # def update_global_state_task(instance):
-    #    print ("update task running")
-    ipn_obj = instance
-
-    barcode = ipn_obj.barcode
-
-    barcode_all_reads = ipn_obj.run_id.barcodes.filter(name='All reads').first()
-
-    tm = ipn_obj.start_time
-
-    tm = tm - datetime.timedelta(minutes=(tm.minute % 1) - 1,
-                                 seconds=tm.second,
-                                 microseconds=tm.microsecond)
-
-    obj1, created1 = RunSummaryBarcode.objects.update_or_create(
-        run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode_all_reads
-    )
-    update_sum_stats(obj1, ipn_obj)
-
-    # all reads and barcodes are saved on RunStatisticBarcode
-    obj3, created3 = RunStatisticBarcode.objects.update_or_create(
-        run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode_all_reads, sample_time=tm
-    )
-    update_sum_stats(obj3, ipn_obj)
-
-    if barcode is not None and barcode.name != '':
-        obj2, created2 = RunSummaryBarcode.objects.update_or_create(
-            run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode
-        )
-        update_sum_stats(obj2, ipn_obj)
-
-        obj3, created3 = RunStatisticBarcode.objects.update_or_create(
-            run_id=ipn_obj.run_id, type=ipn_obj.type, barcode=barcode, sample_time=tm
-        )
-        update_sum_stats(obj3, ipn_obj)
-
-
-def update_sum_stats(obj, ipn_obj):
-    if ipn_obj.is_pass:
-
-        obj.pass_length += len(ipn_obj.sequence)
-
-        if len(ipn_obj.sequence) > obj.pass_max_length:
-            obj.pass_max_length = len(ipn_obj.sequence)
-
-        if obj.pass_min_length == 0:
-            obj.pass_min_length = len(ipn_obj.sequence)
-
-        if len(ipn_obj.sequence) < obj.pass_min_length:
-            obj.pass_min_length = len(ipn_obj.sequence)
-
-        obj.pass_count += 1
-
-    obj.total_length += len(ipn_obj.sequence)
-
-    if len(ipn_obj.sequence) > obj.max_length:
-        obj.max_length = len(ipn_obj.sequence)
-
-    if obj.min_length == 0:
-        obj.min_length = len(ipn_obj.sequence)
-
-    if len(ipn_obj.sequence) < obj.min_length:
-        obj.min_length = len(ipn_obj.sequence)
-
-    #
-    # channel_presence is a 512 characters length string containing 0
-    # for each channel (id between 1 - 512) seen, we set the position on
-    # the string to 1. afterwards, we can calculate the number of active
-    # channels in a particular minute.
-    #
-    channel = ipn_obj.channel
-    channel_sequence = obj.channel_presence
-    channel_sequence_list = list(channel_sequence)
-    channel_sequence_list[channel] = '1'
-    obj.channel_presence = ''.join(channel_sequence_list)
-
-    obj.read_count += 1
-    obj.save()
-
-
-class RunGroup(models.Model):
-
-    MINION = 'MINION'
-    GRIDION = 'GRIDION'
-    PROMETHION = 'PROMETHION'
-
-    NANOPORE_DEVICES = (
-
-        (MINION, 'MinION'),
-        (GRIDION, 'GridION'),
-        (PROMETHION, 'PromethION')
-    )
-
-    name = models.CharField(
-
-        max_length = 32
-    )
-
-    device = models.CharField(
-
-        max_length = 10,
-        choices = NANOPORE_DEVICES,
-        default = MINION
-    )
-
-
-class JobType(models.Model):
-    name = models.CharField(
-        max_length=256
-    )
-
-    description = models.TextField(
-        max_length=256,
-        blank=True,
-        null=True
-    )
-
-    long_description = models.TextField(
-        blank=True,
-        null=True
-    )
-
-    reference = models.BooleanField(
-        default=False,
-    )
-
-    transcriptome = models.BooleanField(
-        default=False,
-    )
-
-    readcount = models.BooleanField(
-        default=False,
-    )
-    private = models.BooleanField(
-        default=True
-    )
-
-    #type_name = models.ManyToManyField(GroupRunType)
-
-    def __str__(self):
-        return "{}".format(self.name)
-
-
-class JobMaster(models.Model):
-    run = models.ForeignKey(
-        MinIONRun,
-        on_delete=models.CASCADE,
-        related_name='runjobs',
-        null=True,
-        blank=True
-    )
-
-    flowcell = models.ForeignKey(
-        FlowCell,
-        on_delete=models.CASCADE,
-        related_name='flowcelljobs',
-        null=True,
-        blank=True
-    )
-
-    job_type = models.ForeignKey(
-        JobType,
-        related_name='taskname'
-    )
-
-    reference = models.ForeignKey(
-        ReferenceInfo,
-        related_name='referencejob',
-        null=True,
-        blank=True
-    )
-
-    last_read = models.CharField(
-        max_length=256,
-        blank=True,
-        null=True
-    )
-
-    tempfile_name = models.CharField(
-        max_length=256,
-        blank=True,
-        null=True
-    )
-
-    read_count = models.BigIntegerField(
-        default=0
-    )
-
-    complete = models.BooleanField(
-        default=False
-    )
-
-    running = models.BooleanField(
-        default=False
-    )
-
-    def __str__(self):
-        if self.run is not None:
-            return "{} {} {}".format(self.run, self.job_type, self.run.id)
-        else:
-            return "{} {} {}".format(self.flowcell, self.job_type, self.flowcell.id)
-
-
 class FlowCellRun(models.Model):
     flowcell = models.ForeignKey(
-        FlowCell,
+        Flowcell,
         related_name='flowcelldetails'
     )
 
     run = models.ForeignKey(
-        MinIONRun,
+        Run,
         on_delete=models.CASCADE,
         related_name='flowcellrun'
     )
@@ -1108,7 +616,7 @@ class FlowCellRun(models.Model):
         return self.run.active
 
 
-@receiver(post_save, sender=MinIONRun)
+@receiver(post_save, sender=Run)
 def create_all_reads_barcode_MinIONrun(sender, instance=None, created=False, **kwargs):
     # There is somehow a problem here such that we end up with multiple instances of these barcodes.
     if created:

@@ -1,5 +1,6 @@
 from django.db import models
-from reads.models import MinIONRun
+
+from reads.models import Run
 
 """
 # Create your models here.

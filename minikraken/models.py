@@ -1,19 +1,15 @@
 from django.db import models
-
 # Create your models here.
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
-from reads.models import MinIONRun
-from reads.models import FastqRead
-from reads.models import FastqReadType
-from reads.models import BarcodeGroup
-from reads.models import FlowCell
 
+from devices.models import Flowcell
+from reads.models import BarcodeGroup, FastqRead, FastqReadType, Run
 
 
 class MiniKraken(models.Model):
-    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='minikrakrun',blank=True,null=True)
-    flowcell = models.ForeignKey(FlowCell, on_delete=models.CASCADE, related_name='minikrakflowcell',blank=True,null=True)
+    run = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='minikrakrun', blank=True, null=True)
+    flowcell = models.ForeignKey(Flowcell, on_delete=models.CASCADE, related_name='minikrakflowcell', blank=True, null=True)
     read = models.ForeignKey(FastqRead, related_name='minikrakread')
     #reference = models.ForeignKey(ReferenceInfo, related_name='minikrakreference')
     #read_type = models.ForeignKey(FastqReadType, related_name='minikraktype',blank=True,null=True)
@@ -28,8 +24,8 @@ class MiniKraken(models.Model):
 
 
 class ParsedKraken(models.Model):
-    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='parsedkrakrun', blank=True,null=True)
-    flowcell = models.ForeignKey(FlowCell, on_delete=models.CASCADE, related_name='parsedkrakflowcell', blank=True,null=True)
+    run = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='parsedkrakrun', blank=True, null=True)
+    flowcell = models.ForeignKey(Flowcell, on_delete=models.CASCADE, related_name='parsedkrakflowcell', blank=True, null=True)
     type = models.ForeignKey(FastqReadType, related_name='typekrakrun', blank=True,null=True)
     barcode = models.ForeignKey(BarcodeGroup,related_name='barcodekrakrun', blank=True,null=True)
     percentage = models.FloatField(null=True,blank=True)
@@ -54,4 +50,3 @@ class ParsedKraken(models.Model):
         else:
             #return "{} {}".format(self.flowcell, self.NCBItaxid)
             return "{} {}".format(self.flowcell_id, self.NCBItaxid)
-

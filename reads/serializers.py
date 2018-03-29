@@ -1,29 +1,17 @@
-import numpy as np
 from datetime import datetime
+
+import numpy as np
 from rest_framework import serializers
 
-from reads.models import Barcode, BarcodeGroup, FastqReadExtra
-from reads.models import ChannelSummary
-from reads.models import FastqRead
-from reads.models import FastqReadType
-from reads.models import FlowCell
-from reads.models import FlowCellRun
-from reads.models import HistogramSummary
-from reads.models import JobMaster
-from reads.models import JobType
-from reads.models import MinION
-from reads.models import MinIONControl
-from reads.models import MinIONEvent
-from reads.models import MinIONEventType
-from reads.models import MinIONRun
-from reads.models import MinIONRunStats
-from reads.models import MinIONRunStatus
-from reads.models import MinIONScripts
-from reads.models import MinIONStatus
-from reads.models import MinIONmessages
-from reads.models import RunStatisticBarcode
-from reads.models import RunSummaryBarcode
-from reads.models import UserOptions
+from devices.models import Flowcell, MinION
+from jobs.models import JobMaster, JobType
+from reads.models import (Barcode, BarcodeGroup, FastqRead, FastqReadExtra,
+                          FastqReadType, FlowCellRun, MinIONControl,
+                          MinIONEvent, MinIONEventType, MinIONmessages,
+                          MinIONRunStats, MinIONRunStatus, MinIONScripts,
+                          MinIONStatus, Run, UserOptions)
+from stats.models import (ChannelSummary, HistogramSummary,
+                          RunStatisticBarcode, RunSummaryBarcode)
 
 
 class UserOptionsSerializer(serializers.ModelSerializer):
@@ -380,8 +368,8 @@ class BarcodeGroupSerializer(serializers.HyperlinkedModelSerializer):
             'url'
         )
 
+class RunSerializer(serializers.HyperlinkedModelSerializer):
 
-class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
     jobstodo = JobSerializer(
         many=True,
         read_only=True,
@@ -393,7 +381,7 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
     )
 
     class Meta:
-        model = MinIONRun
+        model = Run
         fields = (
             'url',
             'flowcell_name',
@@ -403,11 +391,11 @@ class MinIONRunSerializer(serializers.HyperlinkedModelSerializer):
             'sample_name',
             'minKNOW_version',
             'minKNOW_flow_cell_id',
-            'run_name',
-            'run_id',
+            'name',
+            'runid',
             'is_barcoded',
             'has_fastq',
-            'minION',
+            'minion',
             'id',
             'last_read',
             'last_entry',
@@ -451,7 +439,7 @@ class RunHistogramSummarySerializer(serializers.ModelSerializer):
 
 class FlowCellSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = FlowCell
+        model = Flowcell
         fields = ('url', 'id', 'name',)
 
 

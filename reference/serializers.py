@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from reference.models import ReferenceInfo
-from reference.models import ReferenceLine
+from reference.models import ReferenceInfo, ReferenceLine
+
 
 class ReferenceInfoSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -34,4 +34,3 @@ class ReferenceLineSerializer(serializers.HyperlinkedModelSerializer):
         read_only = (
             'id',
         )
-

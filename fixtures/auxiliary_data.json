@@ -28,34 +28,6 @@
   }
 },
 {
-  "model": "reads.groupruntype",
-  "pk": 1,
-  "fields": {
-    "type_name": "run"
-  }
-},
-{
-  "model": "reads.groupruntype",
-  "pk": 2,
-  "fields": {
-    "type_name": "flowcell"
-  }
-},
-{
-  "model": "reads.groupruntype",
-  "pk": 3,
-  "fields": {
-    "type_name": "experiment"
-  }
-},
-{
-  "model": "reads.groupruntype",
-  "pk": 4,
-  "fields": {
-    "type_name": "sample"
-  }
-},
-{
   "model": "reads.jobtype",
   "pk": 1,
   "fields": {
@@ -66,7 +38,6 @@
     "transcriptome": false,
     "readcount": false,
     "private": true,
-    "type_name": []
   }
 },
 {
@@ -80,7 +51,6 @@
     "transcriptome": false,
     "readcount": false,
     "private": true,
-    "type_name": []
   }
 },
 {
@@ -94,11 +64,6 @@
     "transcriptome": false,
     "readcount": false,
     "private": true,
-    "type_name": [
-      2,
-      3,
-      4
-    ]
   }
 },
 {
@@ -112,11 +77,6 @@
     "transcriptome": false,
     "readcount": true,
     "private": false,
-    "type_name": [
-      2,
-      3,
-      4
-    ]
   }
 },
 {
@@ -130,11 +90,6 @@
     "transcriptome": false,
     "readcount": true,
     "private": false,
-    "type_name": [
-      2,
-      3,
-      4
-    ]
   }
 },
 {
@@ -148,11 +103,6 @@
     "transcriptome": false,
     "readcount": true,
     "private": false,
-    "type_name": [
-      2,
-      3,
-      4
-    ]
   }
 },
 {
@@ -166,11 +116,6 @@
     "transcriptome": true,
     "readcount": true,
     "private": false,
-    "type_name": [
-      2,
-      3,
-      4
-    ]
   }
 },
 {
@@ -184,12 +129,6 @@
     "transcriptome": false,
     "readcount": false,
     "private": false,
-    "type_name": [
-      1,
-      2,
-      3,
-      4
-    ]
   }
 },
 {
@@ -203,12 +142,6 @@
     "transcriptome": false,
     "readcount": false,
     "private": false,
-    "type_name": [
-      1,
-      2,
-      3,
-      4
-    ]
   }
 },
 {

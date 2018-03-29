@@ -36,4 +36,3 @@ class MessageSerializerComplete(serializers.ModelSerializer):
             'title',
             'content',
         )
-

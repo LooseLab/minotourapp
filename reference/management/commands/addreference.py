@@ -1,16 +1,13 @@
 import os
 import shutil
-from shutil import SameFileError
-
 import subprocess
+from shutil import SameFileError
 
 from Bio import SeqIO
 from django.conf import settings
-from django.core.management.base import BaseCommand
-from django.core.management.base import CommandError
+from django.core.management.base import BaseCommand, CommandError
 
-from reference.models import ReferenceInfo
-from reference.models import ReferenceLine
+from reference.models import ReferenceInfo, ReferenceLine
 
 
 class Command(BaseCommand):

@@ -1,7 +1,7 @@
+import uuid
+
 from django.conf import settings
 from django.db import models
-
-import uuid
 
 
 class Message(models.Model):
