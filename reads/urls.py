@@ -262,4 +262,14 @@ urlpatterns = [
         views.flowcell_tabs_details,
         name="tabs-details"
     ),
+    url(
+        r'^api/v1/grouprun/$',
+        views.grouprun_list,
+        name="grouprun-list"
+    ),
+    url(
+        r'^api/v1/grouprun/(?P<pk>[0-9]+)/$',
+        views.grouprun_detail,
+        name="grouprun-detail"
+    ),
 ]

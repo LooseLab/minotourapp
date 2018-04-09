@@ -19,7 +19,7 @@ from minotourapp import settings
 from reads.models import (Barcode, BarcodeGroup, FastqRead, FastqReadType,
                           FlowCellRun, MinIONControl, MinIONEvent,
                           MinIONEventType, MinIONmessages, MinIONRunStats,
-                          MinIONRunStatus, MinIONScripts, MinIONStatus, Run)
+                          MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun)
 from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
                                ChannelSummarySerializer, FastqReadSerializer,
                                FastqReadTypeSerializer, FlowCellRunSerializer,
@@ -34,7 +34,7 @@ from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
                                RunHistogramSummarySerializer, RunSerializer,
                                RunStatisticBarcodeSerializer,
                                RunSummaryBarcodeSerializer, ChannelSummary, HistogramSummary,
-                               RunStatisticBarcode, RunSummaryBarcode)
+                               RunStatisticBarcode, RunSummaryBarcode, GroupRunSerializer)
 from reference.models import ReferenceInfo
 
 
@@ -1725,3 +1725,47 @@ def flowcell_tabs_details(request, pk):
     tabs_send.append(flowcell_tabs_dict['Runs']) # always add a tab for runs
 
     return Response(tabs_send)
+
+
+@api_view(['GET','POST'])
+def grouprun_list(request):
+
+    if request.method == 'GET':
+
+        queryset = GroupRun.objects.distinct().filter(owner=request.user)
+
+        serializer = GroupRunSerializer(queryset, many=True, context={'request': request})
+
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+
+        serializer = GroupRunSerializer(data=request.data, context={'request': request})
+
+        print(request)
+
+        if serializer.is_valid():
+
+            print('is_valid')
+
+            serializer.save(owner=request.user)
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def grouprun_detail(request, pk):
+
+    try:
+
+        grouprun = GroupRun.objects.get(pk=pk)
+
+    except GroupRun.DoesNotExist:
+
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    serializer = GroupRunSerializer(grouprun, context={'request': request})
+
+    return Response(serializer.data)

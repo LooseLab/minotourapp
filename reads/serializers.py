@@ -9,7 +9,7 @@ from reads.models import (Barcode, BarcodeGroup, FastqRead, FastqReadExtra,
                           MinIONEvent, MinIONEventType, MinIONmessages,
                           MinIONRunStats, MinIONRunStatus, MinIONScripts,
                           MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
-                          RunStatisticBarcode, RunSummaryBarcode)
+                          RunStatisticBarcode, RunSummaryBarcode, GroupRun)
 
 
 class UserOptionsSerializer(serializers.ModelSerializer):
@@ -130,7 +130,7 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
         fields = (
         'url', 'read_id', 'read', 'channel', 'barcode', 'sequence_length', 'quality_average', 'sequence', 'quality',
         'is_pass',
-        'start_time', 'run_id', 'type', 'created_date')
+        'start_time', 'run', 'type', 'created_date')
 
     def create(self, validated_data):
 
@@ -152,7 +152,7 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
             quality_average=validated_data['quality_average'],
             is_pass=validated_data['is_pass'],
             start_time=start_time_truncated,
-            run_id=validated_data['run_id'],
+            run_id=validated_data['run'],
             type=validated_data['type']
         )
 
@@ -459,3 +459,32 @@ class FlowCellRunSerializer(serializers.HyperlinkedModelSerializer):
             'barcodes',
             'last_entry', 'start_time', 'last_read', 'sample_name', 'minKNOW_flow_cell_id', 'minKNOW_version', 'active'
         )
+
+
+class GroupRunSerializer(serializers.HyperlinkedModelSerializer):
+
+    runs = serializers.HyperlinkedRelatedField(
+        many=True,
+        view_name='run-detail',
+        queryset=Run.objects.all() # we should include a filter here
+    )
+
+    class Meta:
+
+        model = GroupRun
+        fields = ('url', 'name', 'device', 'runs')
+
+
+class GroupRunSerializer2(GroupRunSerializer):
+
+    runs = serializers.HyperlinkedRelatedField(
+        many=True,
+        view_name='run-detail',
+        queryset=Run.objects.all() # we should include a filter here
+    )
+
+    class Meta:
+
+        model = GroupRun
+        fields = ('url', 'name', 'device', 'runs')
+

@@ -26,7 +26,7 @@ def create_flowcell(owner_id, name=""):
     return Flowcell.objects.create(name=name, owner=owner)
 
 
-class RunGroup(models.Model):
+class GroupRun(models.Model):
 
     MINION = 'MINION'
     GRIDION = 'GRIDION'
@@ -37,6 +37,11 @@ class RunGroup(models.Model):
         (MINION, 'MinION'),
         (GRIDION, 'GridION'),
         (PROMETHION, 'PromethION')
+    )
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='groupruns'
     )
 
     name = models.CharField(
@@ -51,10 +56,10 @@ class RunGroup(models.Model):
         default = MINION
     )
 
-    barcodes = models.ManyToManyField(
-
-        'Barcode'
-    )
+    # barcodes = models.ManyToManyField(
+    #
+    #     'Barcode'
+    # )
 
 
 class MinIONControl(models.Model):
@@ -111,10 +116,11 @@ class Run(models.Model):
         related_name='runs'
     )
 
-    run_group = models.ManyToManyField(
+    groupruns = models.ManyToManyField(
 
-        RunGroup,
+        GroupRun,
         blank = True,
+        related_name='runs',
     )
 
     name = models.CharField(
