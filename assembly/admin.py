@@ -1,7 +1,6 @@
 from django.contrib import admin
 
-from .models import GfaStore
-from .models import GfaSummary
+from .models import GfaStore, GfaSummary
 
 #Register your models here.
 

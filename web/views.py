@@ -1,21 +1,14 @@
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render
-from django.shortcuts import redirect
+from django.shortcuts import redirect, render
 from rest_framework.authtoken.models import Token
 
 from communication.models import Message
-from reads.models import MinIONRun
-from reads.models import UserOptions
-from reads.models import FlowCell
-from web.forms import UserOptionsForm
-from web.forms import SignUpForm
-
-
-def log_in(request):
-    return render(request, 'web/log_in.html')
+from devices.models import Flowcell
+from reads.models import Run, UserOptions
+from web.forms import SignUpForm, UserOptionsForm
 
 
 def signup(request):
@@ -97,24 +90,24 @@ def tutorial(request):
 
 @login_required
 def runs(request):
-    minion_runs = MinIONRun.objects.filter(owner=request.user)
+    minion_runs = Run.objects.filter(owner=request.user)
     return render(request, 'web/runs.html', context={'minion_runs': minion_runs})
 
 
 @login_required
 def flowcells(request):
-    flowcells = FlowCell.objects.filter(owner=request.user)
+    flowcells = Flowcell.objects.filter(owner=request.user)
     return render(request, 'web/flowcells.html', context={'flowcells': flowcells})
 
 
 @login_required
 def run_index(request, pk):
-    minion_run = MinIONRun.objects.get(pk=pk)
+    minion_run = Run.objects.get(pk=pk)
     return render(request, 'web/run_index.html', context={'minion_run': minion_run})
 
 @login_required
 def flowcell_index(request, pk):
-    flowcells = FlowCell.objects.get(pk=pk)
+    flowcells = Flowcell.objects.get(pk=pk)
     return render(request, 'web/flowcell_index.html', context={'flowcells': flowcells})
 
 

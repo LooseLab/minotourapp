@@ -1,25 +1,25 @@
 import json
 
+import numpy as np
+import scipy.stats
 from django.conf import settings
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Sum
 from django.http import HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from alignment.models import PafRoughCov
-from alignment.models import PafSummaryCov, PafSummaryCov_transcriptome
-from alignment.serializers import PafRoughCovChromSerializer
-from alignment.serializers import PafRoughCovChromSerializerCount
-from alignment.serializers import PafSummaryCovSerializer
-from reads.models import JobMaster
+from alignment.models import (PafRoughCov, PafSummaryCov,
+                              PafSummaryCov_transcriptome)
+from alignment.serializers import (PafRoughCovChromSerializer,
+                                   PafRoughCovChromSerializerCount,
+                                   PafSummaryCovSerializer)
+from jobs.models import JobMaster
 from reference.models import ReferenceLine
 
-import scipy.stats
-import numpy as np
-
 from . import util
+
 
 class NumpyEncoder(json.JSONEncoder):
 

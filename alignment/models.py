@@ -2,19 +2,14 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from reads.models import Barcode
-from reads.models import BarcodeGroup
-from reads.models import FastqRead
-from reads.models import FastqReadType
-from reads.models import MinIONRun
-from reads.models import FlowCell
-from reference.models import ReferenceInfo
-from reference.models import ReferenceLine
+from devices.models import Flowcell
+from reads.models import Barcode, BarcodeGroup, FastqRead, FastqReadType, Run
+from reference.models import ReferenceInfo, ReferenceLine
 
 
 class PafStore(models.Model):
-    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='pafalignemnts', null=True, blank=True)
-    flowcell = models.ForeignKey(FlowCell, on_delete=models.CASCADE, related_name='flowcellpafalignemnts', null=True,blank=True)
+    run = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='pafalignemnts', null=True, blank=True)
+    flowcell = models.ForeignKey(Flowcell, on_delete=models.CASCADE, related_name='flowcellpafalignemnts', null=True, blank=True)
     read = models.ForeignKey(FastqRead, related_name='pafreadalignment')
     reference = models.ForeignKey(ReferenceInfo, related_name='pafstorereference')
     read_type = models.ForeignKey(FastqReadType, related_name='pafstoretype')
@@ -38,7 +33,7 @@ class PafStore(models.Model):
 
 
 class PafStore_transcriptome(models.Model):
-    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='pafalignemnts_transcriptome')
+    run = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='pafalignemnts_transcriptome')
     read = models.ForeignKey(FastqRead, related_name='pafreadalignment_transcriptome')
     reference = models.ForeignKey(ReferenceInfo, related_name='pafstorereference_transcriptome')
     read_type = models.ForeignKey(FastqReadType, related_name='pafstoretype_transcriptome')
@@ -64,7 +59,7 @@ class PafStore_transcriptome(models.Model):
 class SamStore(models.Model):
 
     run = models.ForeignKey(
-        MinIONRun,
+        Run,
         related_name='runalignments'
     )
 
@@ -84,7 +79,7 @@ class SamStore(models.Model):
 class SamRoughCov(models.Model):
 
     run = models.ForeignKey(
-        MinIONRun,
+        Run,
         related_name='rc_runid'
     )
 
@@ -118,7 +113,7 @@ class SamRoughCov(models.Model):
 class PafRoughCov(models.Model):
 
     run = models.ForeignKey(
-        MinIONRun,
+        Run,
         on_delete=models.CASCADE,
         related_name='prc_run',
         null=True,
@@ -126,7 +121,7 @@ class PafRoughCov(models.Model):
     )
 
     flowcell = models.ForeignKey(
-        FlowCell,
+        Flowcell,
         on_delete=models.CASCADE,
         related_name='flowcell_prc_run',
         null=True,
@@ -173,8 +168,8 @@ class PafRoughCov(models.Model):
 
 
 class PafSummaryCov(models.Model):
-    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='paf_summary', null=True,blank=True)
-    flowcell = models.ForeignKey(FlowCell, on_delete=models.CASCADE, related_name='flowcell_paf_summary', null=True,blank=True)
+    run = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='paf_summary', null=True, blank=True)
+    flowcell = models.ForeignKey(Flowcell, on_delete=models.CASCADE, related_name='flowcell_paf_summary', null=True, blank=True)
     read_type = models.ForeignKey(FastqReadType, related_name='paf_summary_type')
     barcode = models.ForeignKey(Barcode, related_name='paf_summary_barcode', null=True)
     barcodegroup = models.ForeignKey(BarcodeGroup, related_name='paf_summary_barcodegroup', null=True)
@@ -243,7 +238,7 @@ class PafSummaryCov(models.Model):
 
 
 class PafRoughCov_transcriptome(models.Model):
-    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='prc_run_transcriptome')
+    run = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='prc_run_transcriptome')
     read_type = models.ForeignKey(FastqReadType, related_name='prc_type_transcriptome')
     barcode = models.ForeignKey(Barcode, related_name='prc_barcode_transcriptome', null=True)
     barcodegroup = models.ForeignKey(BarcodeGroup, related_name='prc_barcodegroup_transcriptome', null=True)
@@ -258,7 +253,7 @@ class PafRoughCov_transcriptome(models.Model):
         return "{} {}".format(self.run,self.p)
 
 class PafSummaryCov_transcriptome(models.Model):
-    run = models.ForeignKey(MinIONRun, on_delete=models.CASCADE, related_name='paf_summary_transcriptome')
+    run = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='paf_summary_transcriptome')
     read_type = models.ForeignKey(FastqReadType, related_name='paf_summary_type_transcriptome')
     barcode = models.ForeignKey(Barcode, related_name='paf_summary_barcode_transcriptome', null=True)
     barcodegroup = models.ForeignKey(BarcodeGroup, related_name='paf_summary_barcodegroup_transcriptome', null=True)

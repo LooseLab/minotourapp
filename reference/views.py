@@ -1,15 +1,15 @@
 from django.shortcuts import render
-
-# Create your views here.
-
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from reference.models import ReferenceInfo
-from reference.models import ReferenceLine
-from reference.serializers import ReferenceInfoSerializer
-from reference.serializers import ReferenceLineSerializer
+from reference.models import ReferenceInfo, ReferenceLine
+from reference.serializers import (ReferenceInfoSerializer,
+                                   ReferenceLineSerializer)
+
+# Create your views here.
+
+
 
 @api_view(['GET'])
 def reference_list(request, pk):#,bc,ch):

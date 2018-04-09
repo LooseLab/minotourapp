@@ -14,7 +14,7 @@ urlpatterns = [
     url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/$',
         views.run_detail,
-        name="minionrun-detail"
+        name="run-detail"
     ),
     url(
         #r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<page>[0-9]+)/$',
@@ -22,12 +22,12 @@ urlpatterns = [
         views.read_list,
         name="fastqread-list"
     ),
-    url(
-        #r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<page>[0-9]+)/$',
-        r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<readid>[\w\-]+)/$',
-        views.read_update,
-        name="fastqread-update"
-    ),
+#    url(
+#        #r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<page>[0-9]+)/$',
+#        r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<readid>[\w\-]+)/$',
+#        views.read_update,
+#        name="fastqread-update"
+#    ),
     url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/readnames/$',
         views.readname_list,
@@ -52,21 +52,6 @@ urlpatterns = [
         r'^api/v1/runs/(?P<pk>[0-9]+)/runstats/(?P<checkid>[0-9]+)/$',
         views.minION_run_stats_latest,
         name="minIONrunstats_latest"
-    ),
-    url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/summary/$',
-        views.run_summary,
-        name="runsummary-detail"
-    ),
-    url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/summarybyminute/$',
-        views.run_summary_by_minute,
-        name="runsummarybyminute-detail"
-    ),
-    url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/summarybyminute/(?P<last>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)/$',
-        views.run_summary_by_minute,
-        name="runsummarybyminute-detail2"
     ),
     url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/summarybarcode/$',

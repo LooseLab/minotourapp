@@ -1,10 +1,8 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import SamStore
-from .models import PafStore
-from .models import PafRoughCov
-from .models import PafSummaryCov
+from .models import PafRoughCov, PafStore, PafSummaryCov, SamStore
+
 
 class SamStoreAdmin(admin.ModelAdmin):
     list_display = ('run_id',)

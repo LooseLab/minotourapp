@@ -1,16 +1,15 @@
 import json
 
+from django.db.models import Avg, Count, Min, Sum
 from django.http import HttpResponse
 from django.shortcuts import render
-from django.db.models import Count, Min, Sum, Avg
-
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from assembly.models import GfaSummary
-from assembly.serializers import GfaSummarySerializer
-from assembly.serializers import FlowcellGfaSummarySerializer
+from assembly.serializers import (FlowcellGfaSummarySerializer,
+                                  GfaSummarySerializer)
 
 
 @api_view(['GET'])

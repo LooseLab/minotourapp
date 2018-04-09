@@ -1,33 +1,13 @@
 from django.contrib import admin
 
-from .models import FastqRead
-from .models import RunSummaryBarcode
-from .models import RunStatisticBarcode
-from .models import FastqReadType
-from .models import MinION
-from .models import MinIONControl
-from .models import MinIONEvent
-from .models import MinIONEventType
-from .models import MinIONRun
-from .models import MinIONRunStats
-from .models import MinIONRunStatus
-from .models import MinIONScripts
-from .models import MinIONStatus
-from .models import MinIONmessages
-from .models import JobMaster
-from .models import JobType
-from .models import ChannelSummary
-from .models import HistogramSummary
-from .models import UserOptions
-from .models import Barcode
-from .models import BarcodeGroup
-from .models import FlowCell
-from .models import FlowCellRun
-from .models import GroupRunType
+from jobs.models import JobMaster, JobType
+from stats.models import (ChannelSummary, HistogramSummary,
+                          RunStatisticBarcode, RunSummaryBarcode)
 
-
-class MinionRunAdmin(admin.ModelAdmin):
-    list_display = ('flowcell_name','has_fastq','start_time', 'active','sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','max_channel','flowcell_type', 'minION', 'id', 'last_read', 'last_entry')
+from .models import (Barcode, BarcodeGroup, FastqRead, FastqReadType,
+                     FlowCellRun, MinIONControl, MinIONEvent, MinIONEventType,
+                     MinIONmessages, MinIONRunStats, MinIONRunStatus,
+                     MinIONScripts, MinIONStatus, Run, UserOptions)
 
 
 class RunStatisticsBarcodeAdmin(admin.ModelAdmin):
@@ -44,8 +24,7 @@ class RunSummaryBarcodeAdmin(admin.ModelAdmin):
 
 admin.site.register(FastqRead)
 admin.site.register(FastqReadType)
-admin.site.register(MinIONRun, MinionRunAdmin)
-admin.site.register(MinION)
+admin.site.register(Run)
 admin.site.register(MinIONEventType)
 admin.site.register(MinIONEvent)
 admin.site.register(MinIONScripts)
@@ -63,6 +42,4 @@ admin.site.register(HistogramSummary)
 admin.site.register(UserOptions)
 admin.site.register(Barcode)
 admin.site.register(BarcodeGroup)
-admin.site.register(FlowCell)
 admin.site.register(FlowCellRun)
-admin.site.register(GroupRunType)

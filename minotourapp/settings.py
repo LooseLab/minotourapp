@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 import tempfile
+
 from celery.schedules import crontab
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -51,6 +52,10 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'communication',
     'assembly',
+    'django_extensions',
+    'devices',
+    'jobs',
+    'stats',
 ]
 
 MIDDLEWARE = [
@@ -95,7 +100,7 @@ CACHES = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'USER': get_env_variable("MT_DB_USER"),
         'PASSWORD': get_env_variable("MT_DB_PASS"),
         'HOST': get_env_variable("MT_DB_HOST"),
@@ -163,7 +168,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 MAILGUN_ACCESS_KEY = get_env_variable("MT_MAILGUN_ACCESS_KEY")
 MAILGUN_SERVER_NAME = get_env_variable("MT_MAILGUN_SERVER_NAME")
 
-LOGGING = {
+"""LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
@@ -180,7 +185,7 @@ LOGGING = {
             'propagate': True,
         },
     },
-}
+}"""
 
 CELERY_IMPORTS = ('web.tasks')
 # For RabbitMQ
@@ -228,4 +233,3 @@ MINIMAP2 = get_env_variable("MT_MINIMAP2")
 BWA = get_env_variable("MT_BWA")
 
 USE_X_FORWARDED_HOST = True
-
