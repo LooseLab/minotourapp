@@ -168,7 +168,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 MAILGUN_ACCESS_KEY = get_env_variable("MT_MAILGUN_ACCESS_KEY")
 MAILGUN_SERVER_NAME = get_env_variable("MT_MAILGUN_SERVER_NAME")
 
-LOGGING = {
+"""LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
@@ -185,7 +185,7 @@ LOGGING = {
             'propagate': True,
         },
     },
-}
+}"""
 
 CELERY_IMPORTS = ('web.tasks')
 # For RabbitMQ

@@ -41,12 +41,6 @@ class RunGroup(models.Model):
         'Barcode'
     )
 
-    runs = models.ManyToManyField(
-
-        'Run'
-    )
-
-
 
 class MinIONControl(models.Model):
     minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minioncontrol')
@@ -109,30 +103,37 @@ class Run(models.Model):
     )
 
     name = models.CharField(
+
         max_length=256
     )
 
     runid = models.CharField(
+
         max_length=64
     )
 
     is_barcoded = models.BooleanField(
+
         default=False
     )
 
     has_fastq = models.BooleanField(
+
         default=True
     )
 
     active = models.BooleanField(
+
         default=False
     )
 
     to_delete = models.BooleanField(
+
         default=False
     )
 
     class Meta:
+
         verbose_name = 'Run'
         verbose_name_plural = 'Runs'
 
@@ -145,15 +146,18 @@ class Run(models.Model):
 
 
     def __str__(self):
+
         return "{} - {}".format(self.name, self.runid)
 
     def flowcell_name(self):
+
         try:
             return self.flowcellrun.last().flowcell.name
         except AttributeError:
             return "undefined"
 
     def last_entry(self):
+
         try:
             return self.RunStats.last().created_date
         except AttributeError:
