@@ -1,3 +1,6 @@
 from django.contrib import admin
 
-# Register your models here.
+from jobs.models import JobType, JobMaster
+
+admin.site.register(JobMaster)
+admin.site.register(JobType)

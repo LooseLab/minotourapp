@@ -1,13 +1,10 @@
 from django.contrib import admin
 
-from jobs.models import JobMaster, JobType
-from stats.models import (ChannelSummary, HistogramSummary,
-                          RunStatisticBarcode, RunSummaryBarcode)
-
 from .models import (Barcode, BarcodeGroup, FastqRead, FastqReadType,
                      FlowCellRun, MinIONControl, MinIONEvent, MinIONEventType,
                      MinIONmessages, MinIONRunStats, MinIONRunStatus,
-                     MinIONScripts, MinIONStatus, Run, UserOptions)
+                     MinIONScripts, MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
+                     RunStatisticBarcode, RunSummaryBarcode)
 
 
 class RunStatisticsBarcodeAdmin(admin.ModelAdmin):
@@ -35,8 +32,6 @@ admin.site.register(MinIONmessages)
 admin.site.register(MinIONControl)
 admin.site.register(RunStatisticBarcode, RunStatisticsBarcodeAdmin)
 admin.site.register(RunSummaryBarcode, RunSummaryBarcodeAdmin)
-admin.site.register(JobMaster)
-admin.site.register(JobType)
 admin.site.register(ChannelSummary)
 admin.site.register(HistogramSummary)
 admin.site.register(UserOptions)

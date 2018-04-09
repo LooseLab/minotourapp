@@ -1,14 +1,29 @@
 import datetime
+import hashlib
 
 import pytz
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
 from devices.models import Flowcell, MinION
-from reads.services import create_flowcell
+
+
+def create_flowcell(owner_id, name=""):
+
+    if name == "":
+
+        text = '{}'.format(datetime.datetime.now())
+        h = hashlib.md5()
+        h.update(text.encode('utf-8'))
+        name = "flowcell-{}".format(h.hexdigest())[0:15]
+
+    owner = User.objects.get(pk=owner_id)
+
+    return Flowcell.objects.create(name=name, owner=owner)
 
 
 class RunGroup(models.Model):
@@ -199,7 +214,7 @@ class Run(models.Model):
 
     def max_channel(self):
         try:
-            return self.runchansum.order_by('channel').last().channel_number
+            return self.runchansum.order_by('channel').last().channel
         except AttributeError:
             return "undefined"
 
@@ -252,7 +267,7 @@ class Barcode(models.Model):
     )
 
     def __str__(self):
-        return "{} {} {}".format(self.run, self.run.run_id, self.name)
+        return "{} {} {}".format(self.run, self.run.runid, self.name)
 
 
 class MinIONStatus(models.Model):
@@ -424,7 +439,8 @@ class FastqReadType(models.Model):
 
 
 class FastqRead(models.Model):
-    run_id = models.ForeignKey(
+
+    run = models.ForeignKey(
         Run,
         on_delete=models.CASCADE,
         related_name='reads'
@@ -651,3 +667,210 @@ def create_all_reads_barcode_flowcellrun(sender, instance=None, created=False, *
         barcode, created = Barcode.objects.get_or_create(run=instance.run, name='No barcode')
         barcode.barcodegroup = barcodegroup
         barcode.save()
+
+
+class RunStatisticBarcode(models.Model):
+
+    run = models.ForeignKey(
+        Run,
+        on_delete=models.CASCADE,
+        related_name='runstatbarc',
+    )
+
+    type = models.ForeignKey(
+        FastqReadType
+    )
+
+    barcode = models.ForeignKey(
+        Barcode,
+        on_delete=models.CASCADE,
+        related_name='runstatistics',
+        null=True
+    )
+
+    is_pass = models.BooleanField(
+        default=True
+    )
+
+    sample_time = models.DateTimeField(
+
+    )
+
+    total_length = models.BigIntegerField(
+        default=0
+    )
+
+    read_count = models.IntegerField(
+        default=0
+    )
+
+    max_length = models.IntegerField(
+        default=0
+    )
+
+    min_length = models.IntegerField(
+        default=0
+    )
+
+    quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
+    )
+
+    channel_presence = models.CharField(
+        max_length=3000,
+        default='0' * 3000
+    )
+
+    class Meta:
+        verbose_name = 'Run Statistics Barcode'
+        verbose_name_plural = 'Run Statistics Barcodes'
+        db_table = 'run_statistics_barcode'
+
+    def __str__(self):
+        return "{} {} {} {}".format(
+            self.run,
+            self.sample_time,
+            self.type,
+            self.barcode
+        )
+
+    def number_active_channels(self):
+        return len(self.channel_presence.replace('0', ''))
+
+
+class ChannelSummary(models.Model):
+
+    run = models.ForeignKey(
+        Run,
+        on_delete=models.CASCADE,
+        related_name='runchansum'
+    )
+
+    channel = models.IntegerField(
+
+    )
+
+    read_count = models.BigIntegerField(
+        default=0
+    )
+
+    read_length = models.BigIntegerField(
+        default=0
+    )
+
+    class Meta:
+        db_table = 'channel_summary'
+
+    def __str__(self):
+        return "{} {} {}".format(self.run, self.channel, self.read_count)
+
+
+class HistogramSummary(models.Model):
+
+    BIN_WIDTH = 900
+
+    run = models.ForeignKey(
+        Run,
+        on_delete=models.CASCADE
+    )
+
+    barcode = models.ForeignKey(
+        Barcode,
+        on_delete=models.CASCADE
+    )
+
+    read_type = models.ForeignKey(
+        FastqReadType
+    )
+
+    is_pass = models.BooleanField(
+        default=True
+    )
+
+    bin_index = models.BigIntegerField(
+
+    )
+
+    read_count = models.BigIntegerField(
+        default=0
+    )
+
+    read_length = models.BigIntegerField(
+        default=0
+    )
+
+    class Meta:
+        db_table = 'histogram_summary'
+
+    def __str__(self):
+        return "{} {} {}".format(self.run, self.read_type, self.bin_index)
+
+
+class RunSummaryBarcode(models.Model):
+
+    run = models.ForeignKey(
+        Run,
+        on_delete=models.CASCADE,
+        related_name='runsummariesbarcodes'
+    )
+
+    type = models.ForeignKey(
+        FastqReadType
+    )
+
+    barcode = models.ForeignKey(
+        Barcode,
+        on_delete=models.CASCADE,
+        related_name='runsummaries',
+        null=True
+    )
+
+    is_pass = models.BooleanField(
+        default=True
+    )  # pass = true, fail = false
+
+    quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
+    )
+
+    read_count = models.IntegerField(
+        default=0
+    )
+
+    total_length = models.BigIntegerField(
+        default=0
+    )
+
+    max_length = models.IntegerField(
+        default=0
+    )
+
+    min_length = models.IntegerField(
+        default=0
+    )
+
+    channel_presence = models.CharField(
+        max_length=3000,
+        default='0' * 3000
+    )
+
+    class Meta:
+        verbose_name = 'Run Summary Barcode'
+        verbose_name_plural = 'Run Summary Barcodes'
+        db_table = 'run_summary_barcode'
+
+    def __str__(self):
+        return "{} {} {} {} {}".format(
+            self.run,
+            self.total_length,
+            self.read_count,
+            self.type,
+            self.barcode
+        )
+
+    def number_active_channels(self):
+        return len(self.channel_presence.replace('0', ''))

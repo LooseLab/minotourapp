@@ -1,6 +1,5 @@
 from datetime import datetime
 
-import numpy as np
 from rest_framework import serializers
 
 from devices.models import Flowcell, MinION
@@ -9,8 +8,7 @@ from reads.models import (Barcode, BarcodeGroup, FastqRead, FastqReadExtra,
                           FastqReadType, FlowCellRun, MinIONControl,
                           MinIONEvent, MinIONEventType, MinIONmessages,
                           MinIONRunStats, MinIONRunStatus, MinIONScripts,
-                          MinIONStatus, Run, UserOptions)
-from stats.models import (ChannelSummary, HistogramSummary,
+                          MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
                           RunStatisticBarcode, RunSummaryBarcode)
 
 
@@ -431,7 +429,7 @@ class RunHistogramSummarySerializer(serializers.ModelSerializer):
         fields = (
             'barcode_name',
             'read_type_name',
-            'bin_width',
+            'bin_index',
             'read_count',
             'read_length'
         )

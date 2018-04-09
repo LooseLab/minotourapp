@@ -33,10 +33,9 @@ from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
                                MinIONStatusSerializer,
                                RunHistogramSummarySerializer, RunSerializer,
                                RunStatisticBarcodeSerializer,
-                               RunSummaryBarcodeSerializer)
+                               RunSummaryBarcodeSerializer, ChannelSummary, HistogramSummary,
+                               RunStatisticBarcode, RunSummaryBarcode)
 from reference.models import ReferenceInfo
-from stats.models import (ChannelSummary, HistogramSummary,
-                          RunStatisticBarcode, RunSummaryBarcode)
 
 
 @api_view(['GET'])
@@ -1231,7 +1230,7 @@ def flowcell_histogram_summary(request, pk):
     queryset = HistogramSummary.objects\
         .filter(run_id__owner=request.user)\
         .filter(run_id__in=runset)\
-        .order_by('read_type', 'bin_width')
+        .order_by('read_type', 'bin_index')
 
     serializer = RunHistogramSummarySerializer(queryset, many=True, context={'request': request})
 
@@ -1297,13 +1296,15 @@ def flowcell_channel_summary_readcount(request, pk):
         .filter(run_id__owner=request.user)\
         .filter(run_id__in=runset)
     chan_events=dict()
-    query_value_list=queryset.values_list('channel_number',flat=True)
+
+    query_value_list=queryset.values_list('channel',flat=True)
+
     for query in queryset:
-        if query.channel_number not in chan_events.keys():
-            chan_events[query.channel_number]=dict()
-            chan_events[query.channel_number]["read_count"]=query.read_count
+        if query.channel not in chan_events.keys():
+            chan_events[query.channel]=dict()
+            chan_events[query.channel]["read_count"]=query.read_count
         else:
-            chan_events[query.channel_number]["read_count"] += query.read_count
+            chan_events[query.channel]["read_count"] += query.read_count
     datatoreturn=list()
     for i in range(flowcell_type):
         if (i+1) in chan_events:
@@ -1331,13 +1332,13 @@ def flowcell_channel_summary_readkb(request, pk):
         .filter(run_id__owner=request.user)\
         .filter(run_id__in=runset)
     chan_events=dict()
-    query_value_list=queryset.values_list('channel_number',flat=True)
+    query_value_list=queryset.values_list('channel',flat=True)
     for query in queryset:
-        if query.channel_number not in chan_events.keys():
-            chan_events[query.channel_number]=dict()
-            chan_events[query.channel_number]["read_length"]=round(query.read_length/1000)
+        if query.channel not in chan_events.keys():
+            chan_events[query.channel]=dict()
+            chan_events[query.channel]["read_length"]=round(query.read_length/1000)
         else:
-            chan_events[query.channel_number]["read_length"] += round(query.read_length / 1000)
+            chan_events[query.channel]["read_length"] += round(query.read_length / 1000)
     datatoreturn=list()
     for i in range(flowcell_type):
         if (i+1) in chan_events:

@@ -23,19 +23,17 @@ from django.db.models import F
 from django_mailgun import MailgunAPIError
 from twitter import *
 
-from alignment.models import (PafRoughCov, PafStore, PafStore_transcriptome,
-                              PafSummaryCov, PafSummaryCov_transcriptome,
-                              SamStore)
+from alignment.models import PafRoughCov, PafStore, PafStore_transcriptome, PafSummaryCov, PafSummaryCov_transcriptome, \
+    SamStore
 from assembly.models import GfaStore, GfaSummary
 from communication.utils import *
 from devices.models import Flowcell
 from jobs.models import JobMaster, JobType
 from minikraken.models import MiniKraken, ParsedKraken
-from reads.models import Barcode, FastqRead, FastqReadType, FlowCellRun, Run
+from reads.models import Barcode, FastqRead, FastqReadType, FlowCellRun, Run, HistogramSummary
 from reads.services import (save_channelsummary, save_histogramsummary,
                             save_runstatisticbarcode, save_runsummarybarcode)
 from reference.models import ReferenceInfo
-from stats.models import ChannelSummary, HistogramSummary, RunStatisticBarcode
 
 logger = get_task_logger(__name__)
 
@@ -232,7 +230,7 @@ def processrun(deleted, added):
             newjob.last_read = 0
 
         newjob.save()
-        send_message([runinstance.owner],"New Active Run","Minotour has seen a new run start on your account. This is called {}.".format(runinstance.run_name))
+        send_message([runinstance.owner],"New Active Run","Minotour has seen a new run start on your account. This is called {}.".format(runinstance.name))
 
     for run in deleted:
         try:
