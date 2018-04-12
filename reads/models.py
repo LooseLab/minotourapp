@@ -158,12 +158,12 @@ class Run(models.Model):
         verbose_name = 'Run'
         verbose_name_plural = 'Runs'
 
-    def save(self, *args, **kwargs):
+    """def save(self, *args, **kwargs):
 
         if self.flowcell is None:
             self.flowcell = create_flowcell(self.owner.id)
 
-        super(Run, self).save(*args, **kwargs)
+        super(Run, self).save(*args, **kwargs)"""
 
 
     def __str__(self):
@@ -255,6 +255,7 @@ class BarcodeGroup(models.Model):
 
 
 class Barcode(models.Model):
+
     run = models.ForeignKey(
         Run,
         on_delete=models.CASCADE,
