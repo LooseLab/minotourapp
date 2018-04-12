@@ -99,7 +99,7 @@ CACHES = {
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': get_env_variable("MT_DB_ENGINE"),
         'USER': get_env_variable("MT_DB_USER"),
         'PASSWORD': get_env_variable("MT_DB_PASS"),
         'HOST': get_env_variable("MT_DB_HOST"),
