@@ -165,11 +165,12 @@ urlpatterns = [
         name="set-task-detail-all"),
     url(
         r'^api/v1/flowcells/$',
-        views.flowcell_list,
+        views.grouprun_list,
         name="flowcell-list"),
     url(
         r'^api/v1/activeflowcells/$',
-        views.flowcell_list_active,
+        #views.flowcell_list_active,
+        views.grouprun_list,
         name="flowcell-list-active"),
     url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/$',

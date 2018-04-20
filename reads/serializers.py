@@ -472,7 +472,7 @@ class GroupRunSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
 
         model = GroupRun
-        fields = ('url', 'name', 'device', 'runs')
+        fields = ('id', 'url', 'name', 'device', 'runs')
 
 
 class GroupRunSerializer2(GroupRunSerializer):
