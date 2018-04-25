@@ -61,6 +61,9 @@ class GroupRun(models.Model):
     #     'Barcode'
     # )
 
+    def __str__(self):
+        return self.name
+
 
 class MinIONControl(models.Model):
     minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minioncontrol')

@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from .models import (Barcode, BarcodeGroup, FastqRead, FastqReadType,
-                     FlowCellRun, MinIONControl, MinIONEvent, MinIONEventType,
+                     MinIONControl, MinIONEvent, MinIONEventType,
                      MinIONmessages, MinIONRunStats, MinIONRunStatus,
                      MinIONScripts, MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
                      RunStatisticBarcode, RunSummaryBarcode, GroupRun)

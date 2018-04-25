@@ -32,16 +32,10 @@
                             <tr>
                                 <th>#</th>
                                 <th>Name</th>
-                                <th>Actions</th>
+                                <th>Device</th>
+                                <th>Qt Runs</th>
                             </tr>
                             </thead>
-                            <tfoot>
-                            <tr>
-                                <th>#</th>
-                                <th>Name</th>
-                                <th>Actions</th>
-                            </tr>
-                            </tfoot>
                         </table>
                         </div>
                     </div>
@@ -52,16 +46,10 @@
                             <tr>
                                 <th>#</th>
                                 <th>Name</th>
-                                <th>Actions</th>
+                                <th>Device</th>
+                                <th>Qt Runs</th>
                             </tr>
                             </thead>
-                            <tfoot>
-                            <tr>
-                                <th>#</th>
-                                <th>Name</th>
-                                <th>Actions</th>
-                            </tr>
-                            </tfoot>
                         </table>
                         </div>
                     </div>
@@ -82,7 +70,7 @@
                     var data = [];
                     var ien = json.length;
                     for (var i = 0; i < ien; i++){
-                        data.push([json[i].id, json[i].name, json[i].id]);
+                        data.push([json[i].id, json[i].name, json[i].device, json[i].runs.length, json[i].id]);
                     }
                     return data;
                 }
@@ -95,13 +83,6 @@
                         return '<a href="/web/private/flowcells/' + data + '/"> See details</a>';
                     }
                 },
-                {
-                    'targets': 2,
-                    'data': 0,
-                    'render': function(data, type, full, meta){
-                        return '<a href="#">Delete</a>';
-                    }
-                }
             ]
         });
 
@@ -113,7 +94,7 @@
                     //console.log(json);
                     var ien = json.length;
                     for (var i = 0; i < ien; i++){
-                        data.push([json[i].id, json[i].name, json[i].id]);
+                        data.push([json[i].id, json[i].name, json[i].device, json[i].runs.length, json[i].id]);
                     }
                     return data;
                 }
@@ -126,13 +107,13 @@
                         return '<a href="/web/private/flowcells/' + data + '/"> See details</a>';
                     }
                 },
-                {
-                    'targets': 2,
+                /*{
+                    'targets': 3,
                     'data': 0,
                     'render': function(data, type, full, meta){
                         return '<a href="#">Delete</a>';
                     }
-                }
+                }*/
             ]
         });
 

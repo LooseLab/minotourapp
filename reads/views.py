@@ -289,14 +289,22 @@ def run_detail(request, pk):
     """
     Retrieve, update or delete a run instance.
     """
-    try:
-        run = Run.objects.get(pk=pk)
 
-        if run.owner != request.user:
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+    search_criteria = request.GET.get('search_criteria', None)
 
-    except Run.DoesNotExist:
+    if search_criteria == 'runid':
+
+        run_list = Run.objects.filter(owner=request.user).filter(runid=pk)
+
+    else:
+
+        run_list = Run.objects.filter(owner=request.user).filter(id=pk)
+
+    if len(run_list) != 1:
+
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+    run = run_list[0]
 
     if request.method == 'GET':
         serializer = RunSerializer(run, context={'request': request})
@@ -900,6 +908,7 @@ def tasks_detail_all(request,pk):
 
 @api_view(['GET'])
 def flowcell_list_active(request):
+
     if request.method == 'GET':
         queryset = Flowcell.objects.distinct().filter(owner=request.user).filter(flowcelldetails__run__active=True)
         serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
@@ -914,7 +923,7 @@ def flowcell_list(request):
     #    serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
     #    return Response(serializer.data)
     if request.method == 'GET':
-        queryset = Flowcell.objects.distinct().filter(owner=request.user)
+        queryset = GroupRun.objects.distinct().filter(owner=request.user)
         serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 

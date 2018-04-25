@@ -4,13 +4,6 @@
 {% block header %}
     <header class="main-header">
 
-        <a href="{% url 'private-index' %}" class="logo">
-            <span class="logo-mini"><img style="max-width:20px;" src="{% static 'web/img/minitour.png' %}"
-                                         alt="minoTour_logo"><small>v1</small></span>
-            <span class="logo-lg"><img style="max-width:100px;" src="{% static 'web/img/minotourlogo.png' %}"
-                                       alt="minoTour_logo">1.0a</span>
-        </a>
-
         <script src="{% static 'web/flowcell_lookuptable.js' %}?{% now 'c' %}"></script>
 
         <script src="{% static 'web/heatmap_chart.js' %}?{% now 'c' %}"></script>
@@ -22,143 +15,104 @@
         <script src="{% static 'web/master_detail_chart.js' %}?{% now 'c' %}"></script>
 
         <!-- Header Navbar -->
-        <nav class="navbar navbar-static-top" role="navigation">
-            <!-- What is the purpose of API and APIPREV divs?? -->
-            <div id='API'></div>
-            <div id='APIPREV'></div>
-            <!-- Sidebar toggle button-->
-            <a href="#" class="sidebar-toggle" data-toggle="offcanvas" role="button">
-                <span class="sr-only">Toggle navigation</span>
-            </a>
-            <!-- Navbar Right Menu -->
-            <div id="sumdat">
-                <div class="navbar-custom-menu">
+        <nav class="navbar navbar-static-top">
+            <div class="container">
+                <div class="navbar-header">
+                    <a href="{% url 'private-index' %}" class="navbar-brand">
+                        <emph>Minotour</emph>
+                    </a>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                            data-target="#navbar-collapse">
+                        <i class="fa fa-bars"></i>
+                    </button>
+                </div>
+
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse pull-left" id="navbar-collapse">
                     <ul class="nav navbar-nav">
-                        <!-- Messages: style can be found in dropdown.less-->
-                        <li id="all-messages" class="dropdown messages-menu">
-                        </li><!-- /.messages-menu -->
-                        <!-- User Account Menu -->
-                        <li class="dropdown user user-menu">
-                            <!-- Menu Toggle Button -->
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                <!-- The user image in the navbar-->
-                                <img src="{% static 'web/img/minitour.png' %}" class="user-image" alt="User Image">
-                                <!-- hidden-xs hides the username on small devices so only the image appears. -->
-                                <span class="hidden-xs">{{ request.user }}</span>
-                            </a>
-                            <ul class="dropdown-menu">
-                                <!-- The user image in the menu -->
-                                <li class="user-header">
-                                    <img src="{% static 'web/img/minitour.png' %}" class="img-circle"
-                                         alt="User Image">
-                                    <p>
-                                        {{ request.user }}
-                                        <small>Manage your user account here.</small>
-                                    </p>
-                                </li>
-                                <!-- Menu Body -->
-                                <li class="user-body">
-                                    <div class="col-xs-4 text-center">
-                                        <a href="{% url 'password_change' %}">Change Password</a>
-                                    </div>
-                                    <div class="col-xs-4 text-center">
-                                        <a href="{% url 'profile' %}">Profile</a>
-                                    </div>
-                                </li>
-                                <!-- Menu Footer-->
-                                <li class="user-footer">
-                                    <div class="pull-right">
-                                        <a href="{% url 'logout' %}" class="btn btn-default btn-flat">Sign out</a>
-                                    </div>
-                                </li>
-                            </ul>
+                        <li class="active"><a href="{% url 'private-index' %}"><i
+                                class="fa fa-dashboard fa-fw"></i><span> Overview</span></a>
                         </li>
+                        <li><a href="{% url 'remotecontrol' %}"><i
+                                class="fa fa-gamepad fa-fw"></i><span> MinKnow Control</span></a></li>
+                        <li><a href="{% url 'flowcells' %}"><i
+                                class="fa fa-table fa-fw"></i>&nbsp;<span>Flowcells</span></a></li>
+                        <li><a href="{% url 'minup' %}"><i
+                                class="fa fa-cloud-upload fa-fw"></i><span> minUp Scripts</span></a>
+                        </li>
+                        <li><a href="{% url 'tutorial' %}"><i class="fa fa-question-circle fa-fw"></i><span> Help</span></a>
+                        </li>
+                        <!--<li class="dropdown">
+                              <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dropdown <span class="caret"></span></a>
+                              <ul class="dropdown-menu" role="menu">
+                                <li><a href="#">Action</a></li>
+                                <li><a href="#">Another action</a></li>
+                                <li><a href="#">Something else here</a></li>
+                                <li class="divider"></li>
+                                <li><a href="#">Separated link</a></li>
+                                <li class="divider"></li>
+                                <li><a href="#">One more separated link</a></li>
+                              </ul>
+                            </li>-->
                     </ul>
+                    <!--<form class="navbar-form navbar-left" role="search">
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="navbar-search-input" placeholder="Search">
+                        </div>
+                    </form>-->
+                </div>
+
+                <!-- Navbar Right Menu -->
+                <div id="sumdat">
+                    <div class="navbar-custom-menu">
+                        <ul class="nav navbar-nav">
+                            <!-- Messages: style can be found in dropdown.less-->
+                            <li id="all-messages" class="dropdown messages-menu">
+                            </li><!-- /.messages-menu -->
+                            <!-- User Account Menu -->
+                            <li class="dropdown user user-menu">
+                                <!-- Menu Toggle Button -->
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                    <!-- The user image in the navbar-->
+                                    <img src="{% static 'web/img/minitour.png' %}" class="user-image" alt="User Image">
+                                    <!-- hidden-xs hides the username on small devices so only the image appears. -->
+                                    <span class="hidden-xs">{{ request.user }}</span>
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <!-- The user image in the menu -->
+                                    <li class="user-header">
+                                        <img src="{% static 'web/img/minitour.png' %}" class="img-circle"
+                                             alt="User Image">
+                                        <p>
+                                            {{ request.user }}
+                                            <small>Manage your user account here.</small>
+                                        </p>
+                                    </li>
+                                    <!-- Menu Body -->
+                                    <li class="user-body">
+                                        <div class="col-xs-4 text-center">
+                                            <a href="{% url 'password_change' %}">Change Password</a>
+                                        </div>
+                                        <div class="col-xs-4 text-center">
+                                            <a href="{% url 'profile' %}">Profile</a>
+                                        </div>
+                                    </li>
+                                    <!-- Menu Footer-->
+                                    <li class="user-footer">
+                                        <div class="pull-right">
+                                            <a href="{% url 'logout' %}" class="btn btn-default btn-flat">Sign out</a>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
 {% endblock %}
 
-{% block sidebar %}
-    <!-- Left side column. contains the logo and sidebar -->
-    <aside class="main-sidebar">
-
-        <!-- sidebar: style can be found in sidebar.less -->
-        <section class="sidebar">
-
-        {% with url_name=request.resolver_match.url_name %}
-            <!-- Sidebar Menu -->
-            <ul class="sidebar-menu">
-                <li id="overview" {% if url_name == 'private-index' %}class ="active"{% endif %}>
-                    <a href="{% url 'private-index' %}">
-                        <i class="fa fa-dashboard fa-fw"></i><span> Overview</span>
-                    </a>
-                </li>
-                <li id="livecontrol" {% if url_name == 'remotecontrol' %}class ="active"{% endif %}>
-                    <a href="{% url 'remotecontrol' %}">
-                        <i class="fa fa-gamepad fa-fw"></i><span> MinKnow Control</span>
-                    </a>
-                </li>
-                <li id="flowcells" {% if url_name == 'previous-flowcells' or url_name == 'flowcell-index' %}class ="active"{% endif %}>
-                    <a href="{% url 'flowcells' %}">
-                        <i class="fa fa-table fa-fw"></i>&nbsp;<span>Flowcells</span>
-                    </a>
-                </li>
-                <li {% if url_name == 'minup' %}class="active"{% endif %}>
-                    <a href="{% url 'minup' %}">
-                        <i class="fa fa-cloud-upload fa-fw"></i><span> minUp Scripts</span>
-                    </a>
-                <li>
-
-                {% if user.is_superuser %}
-                    <li id="admin" class="treeview">
-                        <a href="#">
-                            <i class="fa fa-edit fa-fw"></i>&nbsp;<span>Admin</span><i
-                                class="fa fa-angle-left pull-right"></i>
-                        </a>
-                        <ul class="treeview-menu">
-                            <li>
-                                <a href="enable.php">
-                                    <i class="fa fa-child fa-fw"></i><span> Enable User Upload</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="admin.php">
-                                    <i class="fa fa-database fa-fw"></i><span> Database Allocation</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="admin_manage.php">
-                                    <i class="fa fa-database fa-fw"></i><span> Database Management</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="admin_users.php">
-                                    <i class="fa fa-users fa-fw"></i><span> Set Administrators</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a href="cache_manage.php">
-                                    <i class="fa fa-database fa-fw"></i><span> Cache Administration</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                {% endif %}
-                <li  {% if url_name == 'tutorial' %}class ="active"{% endif %}>
-                    <a href="{% url 'tutorial' %}">
-                        <i class="fa fa-question-circle fa-fw"></i><span> Help</span>
-                    </a>
-                </li>
-                <!-- /.nav-second-level -->
-            </ul>
-        {% endwith %}
-            <!-- /.sidebar-menu -->
-        </section>
-        <!-- /.sidebar -->
-    </aside>
-{% endblock %}
 
 {% block javascript %}
     let messageController = new MessageController();

@@ -7,7 +7,7 @@ from rest_framework.authtoken.models import Token
 
 from communication.models import Message
 from devices.models import Flowcell
-from reads.models import Run, UserOptions
+from reads.models import Run, UserOptions, GroupRun
 from web.forms import SignUpForm, UserOptionsForm
 
 
@@ -107,7 +107,7 @@ def run_index(request, pk):
 
 @login_required
 def flowcell_index(request, pk):
-    flowcells = Flowcell.objects.get(pk=pk)
+    flowcells = GroupRun.objects.get(pk=pk)
     return render(request, 'web/flowcell_index.html', context={'flowcells': flowcells})
 
 
