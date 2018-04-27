@@ -34,7 +34,7 @@ from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
                                RunHistogramSummarySerializer, RunSerializer,
                                RunStatisticBarcodeSerializer,
                                RunSummaryBarcodeSerializer, ChannelSummary, HistogramSummary,
-                               RunStatisticBarcode, RunSummaryBarcode, GroupRunSerializer)
+                               RunStatisticBarcode, RunSummaryBarcode, GroupRunSerializer, GroupRunMembershipSerializer)
 from reference.models import ReferenceInfo
 
 
@@ -1736,7 +1736,7 @@ def flowcell_tabs_details(request, pk):
     return Response(tabs_send)
 
 
-@api_view(['GET','POST'])
+@api_view(['GET', 'POST'])
 def grouprun_list(request):
 
     if request.method == 'GET':
@@ -1765,16 +1765,58 @@ def grouprun_list(request):
 
 
 @api_view(['GET'])
-def grouprun_detail(request, pk):
+def grouprun_detail(request, value):
 
-    try:
+    search_criteria = request.GET.get('search_criteria', 'name')
 
-        grouprun = GroupRun.objects.get(pk=pk)
+    if search_criteria != 'id':
 
-    except GroupRun.DoesNotExist:
+        grouprun_list = GroupRun.objects.filter(owner=request.user).filter(id=value)
+
+    else:
+
+        grouprun_list = GroupRun.objects.filter(owner=request.user).filter(name=value)
+
+    if len(grouprun_list) != 1:
 
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+    grouprun = grouprun_list[0]
 
     serializer = GroupRunSerializer(grouprun, context={'request': request})
 
     return Response(serializer.data)
+
+@api_view(['GET', 'POST'])
+def grouprun_membership_list(request):
+
+    if request.method == 'GET':
+
+        grouprun_id = request.GET.get('grouprun_id')
+
+        queryset = GroupRun.objects.filter(id=grouprun_id).filter(owner=request.user)
+
+        if len(queryset) == 1:
+            serializer = RunSerializer(queryset.first().runs, many=True, context={'request': request})
+
+            return Response(serializer.data)
+
+    elif request.method == 'POST':
+
+        print('>>> post')
+        print(request.data)
+        grouprun_id = request.data['grouprun_id']
+        run_id = request.data['run_id']
+        print('grouprun_id: {}'.format(grouprun_id))
+        print('run_id: {}'.format(run_id))
+        print('<<< post')
+
+        grouprun = GroupRun.objects.get(pk=grouprun_id)
+        run = Run.objects.get(pk=run_id)
+
+        run.groupruns.add(grouprun)
+        run.save()
+
+        serializer = RunSerializer(run, context={'request': request})
+
+        return Response(serializer.data)

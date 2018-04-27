@@ -269,8 +269,18 @@ urlpatterns = [
         name="grouprun-list"
     ),
     url(
+        r'^api/v1/grouprun/(?P<value>[0-9A-Za-z ]+)/$',
+        views.grouprun_detail,
+        name="grouprun-detail-generic"
+    ),
+    url(
         r'^api/v1/grouprun/(?P<pk>[0-9]+)/$',
         views.grouprun_detail,
         name="grouprun-detail"
+    ),
+    url(
+        r'^api/v1/grouprun-membership/$',
+        views.grouprun_membership_list,
+        name="grouprun-membership-list"
     ),
 ]

@@ -466,7 +466,7 @@ class GroupRunSerializer(serializers.HyperlinkedModelSerializer):
     runs = serializers.HyperlinkedRelatedField(
         many=True,
         view_name='run-detail',
-        queryset=Run.objects.all() # we should include a filter here
+        read_only=True
     )
 
     class Meta:
@@ -475,16 +475,33 @@ class GroupRunSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('id', 'url', 'name', 'device', 'runs')
 
 
-class GroupRunSerializer2(GroupRunSerializer):
+class GroupRunMembershipSerializer(serializers.Serializer):
 
-    runs = serializers.HyperlinkedRelatedField(
-        many=True,
-        view_name='run-detail',
-        queryset=Run.objects.all() # we should include a filter here
-    )
+    grouprun_id = serializers.IntegerField()
+    run_id = serializers.IntegerField()
 
-    class Meta:
+    # grouprun = serializers.HyperlinkedRelatedField(
+    #     view_name='grouprun-detail',
+    #     queryset=GroupRun.objects.all()  # we should include a filter here
+    # )
 
-        model = GroupRun
-        fields = ('url', 'name', 'device', 'runs')
+    # class Meta:
+    #
+    #     model = Run
+    #     fields = ('url', 'grouprun')
 
+    def create(self, validated_data):
+
+        print('>>> validated_data')
+        print(validated_data)
+        print('<<< validated_data')
+        #self.run.groupruns.add(self.grouprun)
+
+        return GroupRun.objects.all()[0]
+
+
+
+    # class Meta:
+    #
+    #     fields = ('grouprun', 'run')
+    #
