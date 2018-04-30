@@ -317,10 +317,6 @@ def run_detail(request, pk):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    elif request.method == 'DELETE':
-        run.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
 
 @api_view(['GET', 'POST'])
 def minION_events_list(request, pk):
