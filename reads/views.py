@@ -292,13 +292,18 @@ def run_detail(request, pk):
 
     search_criteria = request.GET.get('search_criteria', None)
 
-    if search_criteria == 'runid':
+    print('search_criteria: {}'.format(search_criteria))
+
+    run_list = Run.objects.filter(owner=request.user).filter(runid=pk)
+
+    """if search_criteria == 'runid':
 
         run_list = Run.objects.filter(owner=request.user).filter(runid=pk)
 
     else:
 
         run_list = Run.objects.filter(owner=request.user).filter(id=pk)
+    """
 
     if len(run_list) != 1:
 
@@ -514,32 +519,23 @@ def minION_scripts_detail(request, pk, nk):
 
 @api_view(['GET', 'POST'])
 def read_list(request, pk):
-    """
-    List of all runs by user, or create a new run.
-    """
+
     if request.method == 'GET':
+
         querysets = FastqRead.objects.filter(run_id=pk)
-        #paginator = Paginator(querysets, 25)  # Show 25 contacts per page
-        #page = page
-        #print (paginator.count,paginator.num_pages)
-        #try:
-        #    queryset = paginator.page(page)
-        #except PageNotAnInteger:
-            # If page is not an integer, deliver first page.
-        #    queryset = paginator.page(1)
-        #except EmptyPage:
-            # If page is out of range (e.g. 9999), deliver last page of results.
-        #    queryset = paginator.page(paginator.num_pages)
 
         serializer = FastqReadSerializer(querysets, many=True, context={'request': request})
+
         return Response(serializer.data)
 
     elif request.method == 'POST':
+
         serializer = FastqReadSerializer(data=request.data, many=True, context={'request': request})
+
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        #return Response('', status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -1747,11 +1743,7 @@ def grouprun_list(request):
 
         serializer = GroupRunSerializer(data=request.data, context={'request': request})
 
-        print(request)
-
         if serializer.is_valid():
-
-            print('is_valid')
 
             serializer.save(owner=request.user)
 
@@ -1783,6 +1775,7 @@ def grouprun_detail(request, value):
 
     return Response(serializer.data)
 
+
 @api_view(['GET', 'POST'])
 def grouprun_membership_list(request):
 
@@ -1799,13 +1792,8 @@ def grouprun_membership_list(request):
 
     elif request.method == 'POST':
 
-        print('>>> post')
-        print(request.data)
         grouprun_id = request.data['grouprun_id']
         run_id = request.data['run_id']
-        print('grouprun_id: {}'.format(grouprun_id))
-        print('run_id: {}'.format(run_id))
-        print('<<< post')
 
         grouprun = GroupRun.objects.get(pk=grouprun_id)
         run = Run.objects.get(pk=run_id)
@@ -1815,4 +1803,52 @@ def grouprun_membership_list(request):
 
         serializer = RunSerializer(run, context={'request': request})
 
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET', 'POST'])
+def read_list_new(request):
+
+    search_criteria = request.GET.get('search_criteria', 'name')
+
+    search_value = request.GET.get('search_value', 'name')
+
+    if request.method == 'GET':
+
+        if search_criteria != 'run':
+
+            qs = FastqRead.objects.filter(run__id=search_value)
+
+        elif search_criteria == 'grouprun':
+
+            qs = FastqRead.objects.filter(run__id=search_value)
+
+        serializer = FastqReadSerializer(qs, many=True, context={'request': request})
+
         return Response(serializer.data)
+
+    elif request.method == 'POST':
+
+        serializer = FastqReadSerializer(data=request.data, many=True, context={'request': request})
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            return Response({}, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+def barcode_list_new(request):
+
+    serializer = BarcodeSerializer(data=request.data, context={'request': request})
+
+    if serializer.is_valid():
+
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+

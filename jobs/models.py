@@ -1,6 +1,5 @@
 from django.db import models
 
-# Create your models here.
 from devices.models import Flowcell
 from reads.models import Run
 from reference.models import ReferenceInfo
@@ -52,6 +51,7 @@ class JobType(models.Model):
 
 
 class JobMaster(models.Model):
+
     run = models.ForeignKey(
         Run,
         on_delete=models.CASCADE,

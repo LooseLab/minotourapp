@@ -12,22 +12,20 @@ urlpatterns = [
         views.current_run_list,
         name="current-run-list"),
     url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/$',
+        r'^api/v1/runs/(?P<pk>[0-9a-z-]+)/$',
         views.run_detail,
         name="run-detail"
     ),
     url(
-        #r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<page>[0-9]+)/$',
         r'^api/v1/runs/(?P<pk>[0-9]+)/reads/$',
         views.read_list,
         name="fastqread-list"
     ),
-#    url(
-#        #r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<page>[0-9]+)/$',
-#        r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<readid>[\w\-]+)/$',
-#        views.read_update,
-#        name="fastqread-update"
-#    ),
+    url(
+        r'^api/v1/read/$',
+        views.read_list_new,
+        name="fastqread-list-new"
+    ),
     url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/readnames/$',
         views.readname_list,
@@ -282,5 +280,10 @@ urlpatterns = [
         r'^api/v1/grouprun-membership/$',
         views.grouprun_membership_list,
         name="grouprun-membership-list"
+    ),
+    url(
+        r'^api/v1/barcode/$',
+        views.barcode_list_new,
+        name="barcode-list-new"
     ),
 ]

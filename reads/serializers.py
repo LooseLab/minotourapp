@@ -117,20 +117,28 @@ class MinIONEventTypeSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
-    # class FastqReadSerializer(serializers.Serializer):
 
     sequence = serializers.CharField(allow_blank=True)
     quality = serializers.CharField(allow_blank=True)
 
-    # sequence = serializers.ReadOnlyField(source="extra.sequence")
-    # quality = serializers.ReadOnlyField(source="extra.quality")
-
     class Meta:
         model = FastqRead
         fields = (
-        'url', 'read_id', 'read', 'channel', 'barcode', 'sequence_length', 'quality_average', 'sequence', 'quality',
-        'is_pass',
-        'start_time', 'run', 'type', 'created_date')
+            'url',
+            'read_id',
+            'read',
+            'channel',
+            'barcode',
+            'sequence_length',
+            'quality_average',
+            'sequence',
+            'quality',
+            'is_pass',
+            'start_time',
+            'run',
+            'type',
+            'created_date'
+        )
 
     def create(self, validated_data):
 
@@ -138,30 +146,26 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
         # The next two lines of code truncate the datetime information.
         # The RunStatisticsBarcode aggregates the date on minute level.
         #
-        start_time = validated_data['start_time']
-        start_time_truncated = datetime(start_time.year, start_time.month, start_time.day, start_time.hour, start_time.minute)
+        #start_time = validated_data['start_time']
+        #start_time_truncated = datetime(start_time.year, start_time.month, start_time.day, start_time.hour, start_time.minute)
 
         fastqread = FastqRead(
             read_id=validated_data['read_id'],
             read=validated_data['read'],
             channel=validated_data['channel'],
             barcode=validated_data['barcode'],
-            # sequence_length = len(validated_data['sequence']),
             sequence_length=validated_data['sequence_length'],
-            # quality_average = qualmean,
             quality_average=validated_data['quality_average'],
             is_pass=validated_data['is_pass'],
-            start_time=start_time_truncated,
-            run_id=validated_data['run'],
+            start_time=validated_data['start_time'],
+            run=validated_data['run'],
             type=validated_data['type']
         )
 
-        # print('>>>> fastqread')
-        # print(fastqread)
-
-        # print('>>>> save')
         fastqread.save()
-        if fastqread.run_id.has_fastq:
+
+        if fastqread.run.has_fastq:
+
             fastqread_extra = FastqReadExtra(
                 fastqread=fastqread,
                 sequence=validated_data['sequence'],
@@ -329,6 +333,7 @@ class JobSerializer(serializers.ModelSerializer):
 
 
 class BarcodeSerializer(serializers.HyperlinkedModelSerializer):
+
     barcodegroupname = serializers.ReadOnlyField(
         source="barcodegroup.name"
     )
