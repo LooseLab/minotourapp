@@ -2,14 +2,14 @@
 A collection of classes used to interrogate MinKNOW
 """
 
-import requests
-import json
 import datetime
+import json
+import os
+import sys
 import time
-import sys,os
 from urllib.parse import urlparse
 
-
+import requests
 from ws4py.client.threadedclient import WebSocketClient
 
 from channelmaps import chanlookup

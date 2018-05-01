@@ -30,7 +30,7 @@ from communication.utils import *
 from devices.models import Flowcell
 from jobs.models import JobMaster, JobType
 from minikraken.models import MiniKraken, ParsedKraken
-from reads.models import Barcode, FastqRead, FastqReadType, FlowCellRun, Run, HistogramSummary
+from reads.models import Barcode, FastqRead, FastqReadType, FlowCellRun, Run, HistogramSummary, GroupRun
 from reads.services import (save_channelsummary, save_histogramsummary,
                             save_runstatisticbarcode, save_runsummarybarcode)
 from reference.models import ReferenceInfo
@@ -61,34 +61,34 @@ def run_monitor():
     logger.info('Running run_monitor celery task.')
     logger.info('--------------------------------')
 
-    flowcell_runs = FlowCellRun.objects.filter(run__active=True).distinct()
-    logger.debug("!!!!!!!!!!!!!!! FLOWCELL RUNS !!!!!!!!!!!!!!!!!!!!")
-    logger.debug(flowcell_runs)
-    flowcells=set()
-    #So - loop through flowcell_runs and create a job in each sub run.
+    grouprun_list = GroupRun.objects.all() # TODO filter only the activies
 
-    for flowcell_run in flowcell_runs:
-        logger.debug("found a flowcell", flowcell_run)
-        flowcells.add(flowcell_run.flowcell)
+    for grouprun in grouprun_list:
 
-    for flowcell in flowcells:
-        flowcell_jobs = JobMaster.objects.filter(flowcell=flowcell).filter(running=False)
-        for flowcell_job in flowcell_jobs:
-            logger.debug(flowcell_job.job_type.name)
-            if flowcell_job.job_type.name == "Kraken":
-                run_kraken.delay(flowcell.id,flowcell_job.id,flowcell_job.last_read,"flowcell")
+        grouprun_job_list = JobMaster.objects.filter(grouprun=grouprun).filter(running=False)
 
-            if flowcell_job.job_type.name == "Minimap2":
+        for grouprun_job in grouprun_job_list:
+
+            if grouprun_job.job_type.name == "Kraken":
+
+                run_kraken.delay(grouprun.id, grouprun_job.id, grouprun_job.last_read, "flowcell")
+
+            if grouprun_job.job_type.name == "Minimap2":
+
                 print("trying to run alignment for flowcell {} {} {} {}".format(
-                    flowcell.id,
-                    flowcell_job.id,
-                    flowcell_job.reference.id,
-                    flowcell_job.last_read
+                    grouprun.id,
+                    grouprun_job.id,
+                    grouprun_job.reference.id,
+                    grouprun_job.last_read
                 ))
 
-                run_minimap2_alignment.delay(flowcell.id, flowcell_job.id, flowcell_job.reference.id, flowcell_job.last_read, "flowcell")
-
-
+                run_minimap2_alignment.delay(
+                    grouprun.id,
+                    grouprun_job.id,
+                    grouprun_job.reference.id,
+                    grouprun_job.last_read,
+                    "flowcell"
+                )
 
     minion_runs = Run.objects.filter(active=True).distinct()
 
@@ -139,6 +139,7 @@ def run_monitor():
 
 @task()
 def slow_monitor():
+
     logger.info('Running slow_monitor celery task.')
 
     print("Slow Monitor Called")
@@ -757,29 +758,26 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
     try:
     #if True:
         starttime = time.time()
+
         JobMaster.objects.filter(pk=job_master_id).update(running=True)
+
         REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
+
         Reference = ReferenceInfo.objects.get(pk=reference)
+
         chromdict = dict()
+
         chromosomes = Reference.referencelines.all()
+
         for chromosome in chromosomes:
+
             chromdict[chromosome.line_name] = chromosome
+
         minimap2 = Reference.minimap2_index_file_location
+
         minimap2_ref = os.path.join(REFERENCELOCATION, minimap2)
 
-        runidset = set()
-        if inputtype == "flowcell":
-            realflowcell = Flowcell.objects.get(pk=runid)
-            flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
-            for flowcell_run in flowcell_runs:
-                runidset.add(flowcell_run.run_id)
-                #print (flowcell_run.run_id)
-                # we need to get the runids that make up this run
-        else:
-            runidset.add(runid)
-
-
-        fastqs = FastqRead.objects.filter(run_id__id__in=runidset, id__gt=int(last_read))[:1000]
+        fastqs = FastqRead.objects.filter(run__groupruns=runid, id__gt=int(last_read))[:1000]
 
         # logger.debug("fastqs",fastqs)
         read = ''
@@ -818,6 +816,8 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
         if inputtype =="run":
             runinstance = Run.objects.get(pk=runid)
 
+        grouprun = GroupRun.objects.get(pk=runid)
+
         resultstore = dict()
 
         ### OK - we need to fix this for getting the group barcodes and not the individual barcodes.
@@ -834,9 +834,9 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
             typeid = fastqtypedict[record[0]]
             run = fastqdict[record[0]].run_id
             if inputtype == "flowcell":
-                newpaf = PafStore(flowcell=realflowcell, read=readid, read_type=typeid)
-                newpafstart = PafRoughCov(flowcell=realflowcell,read_type=typeid,barcode=fastqbarcode[record[0]],barcodegroup=fastqbarcodegroup[record[0]])
-                newpafend = PafRoughCov(flowcell=realflowcell,read_type=typeid,barcode=fastqbarcode[record[0]],barcodegroup=fastqbarcodegroup[record[0]])
+                newpaf = PafStore(grouprun=grouprun, read=readid, read_type=typeid)
+                newpafstart = PafRoughCov(grouprun=grouprun,read_type=typeid,barcode=fastqbarcode[record[0]],barcodegroup=fastqbarcodegroup[record[0]])
+                newpafend = PafRoughCov(grouprun=grouprun,read_type=typeid,barcode=fastqbarcode[record[0]],barcodegroup=fastqbarcodegroup[record[0]])
             elif inputtype == "run":
                 newpaf = PafStore(run=run, read=readid, read_type=typeid)
             newpaf.reference = Reference
@@ -910,7 +910,7 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
                             )
                         elif inputtype == "flowcell":
                             summarycov, created2 = PafSummaryCov.objects.update_or_create(
-                                flowcell=realflowcell,
+                                flowcell=grouprun,
                                 read_type=ty,
                                 barcodegroup=bc,
                                 reference=ref,

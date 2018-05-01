@@ -1,6 +1,9 @@
-import numpy as np
-import sounddevice as sd
 import math
+
+import numpy as np
+
+import sounddevice as sd
+
 
 def playArray(pts, time):
 

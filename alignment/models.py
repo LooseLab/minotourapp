@@ -3,30 +3,100 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from devices.models import Flowcell
-from reads.models import Barcode, BarcodeGroup, FastqRead, FastqReadType, Run
+from reads.models import Barcode, BarcodeGroup, FastqRead, FastqReadType, Run, GroupRun
 from reference.models import ReferenceInfo, ReferenceLine
 
 
 class PafStore(models.Model):
-    run = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='pafalignemnts', null=True, blank=True)
-    flowcell = models.ForeignKey(Flowcell, on_delete=models.CASCADE, related_name='flowcellpafalignemnts', null=True, blank=True)
-    read = models.ForeignKey(FastqRead, related_name='pafreadalignment')
-    reference = models.ForeignKey(ReferenceInfo, related_name='pafstorereference')
-    read_type = models.ForeignKey(FastqReadType, related_name='pafstoretype')
+    run = models.ForeignKey(
+        Run,
+        on_delete=models.CASCADE,
+        related_name='pafalignemnts',
+        null=True,
+        blank=True
+    )
+
+    flowcell = models.ForeignKey(
+        Flowcell,
+        on_delete=models.CASCADE,
+        related_name='flowcellpafalignemnts',
+        null=True,
+        blank=True
+    )
+
+    grouprun = models.ForeignKey(
+        GroupRun,
+        on_delete=models.CASCADE,
+        related_name='pafstores',
+        null=True,
+        blank=True
+    )
+
+    read = models.ForeignKey(
+        FastqRead,
+        related_name='pafreadalignment'
+    )
+
+    reference = models.ForeignKey(
+        ReferenceInfo,
+        related_name='pafstorereference'
+    )
+
+    read_type = models.ForeignKey(
+        FastqReadType,
+        related_name='pafstoretype'
+    )
+
     #PAF File Format:
-    qsn = models.CharField(max_length=256)#1	string	Query sequence name
-    qsl = models.IntegerField()#2	int	Query sequence length
-    qs  = models.IntegerField()#3	int	Query start (0-based)
-    qe = models.IntegerField()#4	int	Query end (0-based)
-    rs = models.CharField(max_length=1)#5	char	Relative strand: "+" or "-"
+    qsn = models.CharField(
+        max_length=256
+    )#1	string	Query sequence name
+
+    qsl = models.IntegerField(
+
+    )#2	int	Query sequence length
+
+    qs  = models.IntegerField(
+
+    )#3	int	Query start (0-based)
+
+    qe = models.IntegerField(
+
+    )#4	int	Query end (0-based)
+
+    rs = models.CharField(
+        max_length=1
+    )#5	char	Relative strand: "+" or "-"
     #tsn = models.CharField(max_length=256)#6	string	Target sequence name
-    tsn = models.ForeignKey(ReferenceLine, related_name='pafstorechromosome')#6	string	Target sequence name
-    tsl = models.IntegerField()#7	int	Target sequence length
-    ts = models.IntegerField()#8	int	Target start on original strand (0-based)
-    te = models.IntegerField()#9	int	Target end on original strand (0-based)
-    nrm = models.IntegerField()#10	int	Number of residue matches
-    abl = models.IntegerField()#11	int	Alignment block length
-    mq = models.IntegerField()#12	int	Mapping quality (0-255; 255 for missing)
+
+    tsn = models.ForeignKey(
+        ReferenceLine,
+        related_name='pafstorechromosome'
+    )#6	string	Target sequence name
+
+    tsl = models.IntegerField(
+
+    )#7	int	Target sequence length
+
+    ts = models.IntegerField(
+
+    )#8	int	Target start on original strand (0-based)
+
+    te = models.IntegerField(
+
+    )#9	int	Target end on original strand (0-based)
+
+    nrm = models.IntegerField(
+
+    )#10	int	Number of residue matches
+
+    abl = models.IntegerField(
+
+    )#11	int	Alignment block length
+
+    mq = models.IntegerField(
+
+    )#12	int	Mapping quality (0-255; 255 for missing)
 
     def __str__(self):
         return"{} {}".format(self.run,self.qsn)
@@ -124,6 +194,14 @@ class PafRoughCov(models.Model):
         Flowcell,
         on_delete=models.CASCADE,
         related_name='flowcell_prc_run',
+        null=True,
+        blank=True
+    )
+
+    grouprun = models.ForeignKey(
+        GroupRun,
+        on_delete=models.CASCADE,
+        related_name='pafroughcovs',
         null=True,
         blank=True
     )

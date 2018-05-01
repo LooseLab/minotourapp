@@ -1,16 +1,16 @@
 import os
 import platform
 import sys
-import time
 import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 
-from FastqUtils import FastqHandler
-from controlutils import HelpTheMinion
 import configargparse
+from requests_futures.sessions import FuturesSession
 from watchdog.observers.polling import PollingObserver as Observer
 
-from concurrent.futures import ThreadPoolExecutor
-from requests_futures.sessions import FuturesSession
+from controlutils import HelpTheMinion
+from FastqUtils import FastqHandler
 
 session = FuturesSession(executor=ThreadPoolExecutor(max_workers=10))
 
@@ -200,4 +200,3 @@ if __name__ == '__main__':
             observer.stop()
             observer.join()
         os._exit(0)
-

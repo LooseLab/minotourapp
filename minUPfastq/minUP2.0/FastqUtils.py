@@ -1,15 +1,17 @@
 """
 File Routines for handling fastq files and monitoring locations. Built on watchdog.
 """
-import os,sys
+import gzip
+import os
+import sys
 import threading
 import time
-import gzip
 
-from tqdm import tqdm
-from apifunc import Runcollection
 from Bio import SeqIO
+from tqdm import tqdm
 from watchdog.events import FileSystemEventHandler
+
+from apifunc import Runcollection
 
 
 def parsefastq(fastq, rundict, args, header):

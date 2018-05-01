@@ -1,5 +1,7 @@
 import math
+
 import numpy
+
 import pyaudio
 
 

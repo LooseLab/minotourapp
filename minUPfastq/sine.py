@@ -1,12 +1,15 @@
 import math
-import numpy
-import pyaudio
-from random import randint
-from minknow.engine_client import EngineClient
-import minknow.data_reader as data_reader
+import sys
 import threading
 import time
-import sys
+from random import randint
+
+import numpy
+
+import minknow.data_reader as data_reader
+import pyaudio
+from minknow.engine_client import EngineClient
+
 _e = EngineClient()
 
 def sine(frequency, length, rate):

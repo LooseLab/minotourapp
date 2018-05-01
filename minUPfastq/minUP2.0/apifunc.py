@@ -2,15 +2,16 @@
 A class to handle the collection of run statistics and information from fastq files and upload to minotour.
 """
 import datetime
-import dateutil.parser
-import requests
-import os,sys
 import json
-from tqdm import tqdm
-import numpy as np
-
+import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
+
+import dateutil.parser
+import numpy as np
+import requests
 from requests_futures.sessions import FuturesSession
+from tqdm import tqdm
 
 session = FuturesSession(executor=ThreadPoolExecutor(max_workers=10))
 

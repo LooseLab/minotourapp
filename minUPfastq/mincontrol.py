@@ -1,34 +1,32 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-import sys
-import os
-import re
-import time
+import copy
 import errno
-from socket import error as socket_error
-import urllib2
-import threading
+import hashlib
 import json
 import multiprocessing
-import copy
+import os
 import platform
-import hashlib
-import MySQLdb
+import re
+import sys
+import threading
+import time
+import urllib2
+from socket import error as socket_error
+
 import configargparse
-from ws4py.client.threadedclient import WebSocketClient
-from thrift import Thrift
-from thrift.transport import TTransport
-from thrift.protocol import TCompactProtocol
-from dictdiffer import diff, patch, swap, revert
+import MySQLdb
 import numpy as np
+from ws4py.client.threadedclient import WebSocketClient
 
+from autobahn.twisted.websocket import (WebSocketClientFactory,
+                                        WebSocketClientProtocol)
+from dictdiffer import diff, patch, revert, swap
+from thrift import Thrift
+from thrift.protocol import TCompactProtocol
+from thrift.transport import TTransport
 from twisted.internet.protocol import ReconnectingClientFactory
-
-from autobahn.twisted.websocket import WebSocketClientProtocol, \
-    WebSocketClientFactory
-
-
 
 lock = threading.Lock()
 

@@ -1,7 +1,7 @@
 from django.db import models
 
 from devices.models import Flowcell
-from reads.models import Run
+from reads.models import Run, GroupRun
 from reference.models import ReferenceInfo
 
 
@@ -64,6 +64,14 @@ class JobMaster(models.Model):
         Flowcell,
         on_delete=models.CASCADE,
         related_name='flowcelljobs',
+        null=True,
+        blank=True
+    )
+
+    grouprun = models.ForeignKey(
+        GroupRun,
+        on_delete=models.CASCADE,
+        related_name='jobs',
         null=True,
         blank=True
     )

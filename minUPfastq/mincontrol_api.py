@@ -1,14 +1,15 @@
-import platform
-import configargparse
-import os,sys
-import json
-import requests
 import datetime
-from urllib.parse import urlparse
-import numpy as np
+import json
+import os
+import platform
+import sys
 import time
-from ws4py.client.threadedclient import WebSocketClient
+from urllib.parse import urlparse
 
+import configargparse
+import numpy as np
+import requests
+from ws4py.client.threadedclient import WebSocketClient
 
 ###API shizzle
 

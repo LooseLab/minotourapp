@@ -906,8 +906,6 @@ def flowcell_list_active(request):
         serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
-
-
 @api_view(['GET','POST'])
 def flowcell_list(request):
     #if request.method == 'GET':
@@ -928,19 +926,24 @@ def flowcell_list(request):
 
 
 @api_view(['GET','POST'])
-def flowcell_detail(request,pk):
+def flowcell_detail(request, pk):
 
     if request.method == 'GET':
 
-        queryset = FlowCellRun.objects.filter(flowcell_id=pk)
-        serializer = FlowCellRunSerializer(queryset, many=True, context={'request': request})
+        queryset = GroupRun.objects.get(pk=pk)
+
+        serializer = GroupRunSerializer(queryset, context={'request': request})
+
         return Response(serializer.data)
+
     elif request.method == 'POST':
 
-        serializer = FlowCellRunSerializer(data=request.data, context={'request': request})
+        serializer = GroupRunSerializer(data=request.data, context={'request': request})
+
         if serializer.is_valid():
 
             serializer.save()
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -1553,19 +1556,15 @@ def flowcellset_task_detail_all(request,pk):
 
 @api_view(['GET'])
 def flowcell_tasks_detail_all(request,pk):
-    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
-    runset = list()
-    for run in queryset:
-        # print (run.run_id)
-        runset.append(run.run_id)
 
-    queryset=JobType.objects.filter(private=False).filter(type_name__type_name__in=['flowcell',])
-    minionruns=Run.objects.filter(run_id__in=runset)
+    run_list = Run.objects.filter(groupruns=pk)
+
+    queryset = JobType.objects.filter(private=False)
 
     result = []
-    #print (queryset)
+
     for jobtype in queryset:
-        #print (jobtype.type_name.all())
+
         obj = {}
         obj.update({
             'name': jobtype.name,
@@ -1576,7 +1575,7 @@ def flowcell_tasks_detail_all(request,pk):
             'transcriptome': jobtype.transcriptome
         })
 
-        jobmasterlist = JobMaster.objects.filter(Q(run_id__in=runset) | Q(flowcell_id=pk)).filter(job_type=jobtype)
+        jobmasterlist = JobMaster.objects.filter(Q(run_id__in=run_list) | Q(flowcell_id=pk)).filter(job_type=jobtype)
 
         if len(jobmasterlist) > 0:
             obj2 = {}
@@ -1702,25 +1701,37 @@ def flowcell_tabs_details(request, pk):
             "position": 8
         }
     }
+
     tabs = list()
+
     tabs_send = list()
-    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
-    runset = list()
 
-    for run in queryset:
-        runset.append(run.run_id)
+    run_list = Run.objects.filter(groupruns=pk)
+    #queryset = GroupRun.objects.get(pk=pk)
 
-    if MinIONRunStatus.objects.filter(run_id__in=runset):
+    #runset = list()
+
+    #for run in queryset:
+    #    runset.append(run.run_id)
+
+    if MinIONRunStatus.objects.filter(run_id__in=run_list):
+
         tabs.append(flowcell_tabs_dict['LiveEvent'])
 
-    for master in JobMaster.objects.filter(Q(run_id__in=runset) | Q(flowcell_id=pk)).filter(last_read__gt=0).values_list('job_type__name', flat=True):
+    for master in JobMaster.objects.filter(Q(run_id__in=run_list) | Q(flowcell_id=pk)).filter(last_read__gt=0).values_list('job_type__name', flat=True):
+
         if master in flowcell_tabs_dict.keys():
+
             tabs.append(flowcell_tabs_dict[master])
+
         else:
+
             print("Flowcell '" + pk + "' has JobType '" + master + "' but there is no corresponding tab defined in reads/views.py")
 
     for tab in tabs:
+
         if tab not in tabs_send:
+
             tabs_send.append(tab)
 
     tabs_send.append(flowcell_tabs_dict['Runs']) # always add a tab for runs
@@ -1753,17 +1764,21 @@ def grouprun_list(request):
 
 
 @api_view(['GET'])
-def grouprun_detail(request, value):
+def grouprun_detail(request, pk):
 
-    search_criteria = request.GET.get('search_criteria', 'name')
+    search_criteria = request.GET.get('search_criteria', 'id')
 
-    if search_criteria != 'id':
+    if search_criteria == 'id':
 
-        grouprun_list = GroupRun.objects.filter(owner=request.user).filter(id=value)
+        grouprun_list = GroupRun.objects.filter(owner=request.user).filter(id=pk)
+
+    elif search_criteria == 'name':
+
+        grouprun_list = GroupRun.objects.filter(owner=request.user).filter(name=pk)
 
     else:
 
-        grouprun_list = GroupRun.objects.filter(owner=request.user).filter(name=value)
+        grouprun_list = GroupRun.objects.none()
 
     if len(grouprun_list) != 1:
 

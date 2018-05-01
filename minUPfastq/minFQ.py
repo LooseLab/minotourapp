@@ -1,11 +1,12 @@
 import datetime
+import gzip
 import json
 import os
 import platform  # MS
 import sys
 import threading
 import time
-import gzip
+from concurrent.futures import ThreadPoolExecutor
 
 # import MySQLdb #note problem installing on python 3
 import configargparse
@@ -13,12 +14,10 @@ import dateutil.parser
 import numpy as np
 import requests
 from Bio import SeqIO
+from requests_futures.sessions import FuturesSession
 from tqdm import tqdm
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers.polling import PollingObserver as Observer
-
-from concurrent.futures import ThreadPoolExecutor
-from requests_futures.sessions import FuturesSession
 
 session = FuturesSession(executor=ThreadPoolExecutor(max_workers=10))
 

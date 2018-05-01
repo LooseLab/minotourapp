@@ -10,3 +10,5 @@ envs.sh
 *.out
 minotour.log
 .env
+minUPfastq/*
+minUPfastq
