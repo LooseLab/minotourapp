@@ -1,4 +1,4 @@
-from reads.models import RunSummaryBarcode, RunStatisticBarcode, HistogramSummary, ChannelSummary
+from reads.models import RunSummaryBarcode, RunStatisticBarcode, HistogramSummary, ChannelSummary, Run, GroupBarcode
 
 
 def save_runsummarybarcode(run_id, row):
@@ -14,7 +14,7 @@ def save_runsummarybarcode(run_id, row):
     channels = row['channel']['unique']
 
     runSummaryBarcode, created = RunSummaryBarcode.objects.get_or_create(
-        run_id_id = run_id,
+        run_id = run_id,
         barcode_id = barcode_id,
         type_id = type_id,
         is_pass = is_pass)
@@ -50,7 +50,7 @@ def save_runstatisticbarcode(run_id, row):
     read_count = row['sequence_length']['count']
 
     runStatisticBarcode, created = RunStatisticBarcode.objects.get_or_create(
-        run_id_id = run_id,
+        run_id = run_id,
         sample_time = start_time,
         barcode_id = barcode_id,
         type_id = type_id,
@@ -79,7 +79,7 @@ def save_histogramsummary(run_id, row):
     read_count = row['sequence_length']['count']
 
     runHistogramSummary, created = HistogramSummary.objects.get_or_create(
-        run_id_id = run_id,
+        run_id = run_id,
         barcode_id = barcode_id,
         read_type_id = read_type_id,
         is_pass = is_pass,
@@ -105,3 +105,4 @@ def save_channelsummary(run_id, row):
     runChannelSummary.read_count += read_count
 
     runChannelSummary.save()
+

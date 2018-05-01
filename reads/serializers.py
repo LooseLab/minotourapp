@@ -249,6 +249,7 @@ class MinIONRunStatusSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class RunSummaryBarcodeSerializer(serializers.HyperlinkedModelSerializer):
+
     typename = serializers.ReadOnlyField(
         source="type.name"
     )
@@ -268,14 +269,12 @@ class RunSummaryBarcodeSerializer(serializers.HyperlinkedModelSerializer):
             'typename',
             'max_length',
             'min_length',
-            'pass_length',
-            'pass_max_length',
-            'pass_min_length',
-            'pass_count',
+            'is_pass',
             'id',
             'barcode',
             'barcodename',
-            'number_active_channels'
+            'channel_presence'
+            # 'number_active_channels'
         )
 
         read_only = ('id',)
@@ -468,9 +467,8 @@ class FlowCellRunSerializer(serializers.HyperlinkedModelSerializer):
 
 class GroupRunSerializer(serializers.HyperlinkedModelSerializer):
 
-    runs = serializers.HyperlinkedRelatedField(
+    runs = RunSerializer(
         many=True,
-        view_name='run-detail',
         read_only=True
     )
 

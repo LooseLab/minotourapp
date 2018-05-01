@@ -69,9 +69,9 @@ def run_monitor():
 
         for grouprun_job in grouprun_job_list:
 
-            if grouprun_job.job_type.name == "Kraken":
-
-                run_kraken.delay(grouprun.id, grouprun_job.id, grouprun_job.last_read, "flowcell")
+            # if grouprun_job.job_type.name == "Kraken":
+            #
+            #     run_kraken.delay(grouprun.id, grouprun_job.id, grouprun_job.last_read, "flowcell")
 
             if grouprun_job.job_type.name == "Minimap2":
 
@@ -90,34 +90,39 @@ def run_monitor():
                     "flowcell"
                 )
 
-    minion_runs = Run.objects.filter(active=True).distinct()
+    minion_runs = Run.objects.all() # filter(active=True)
 
     for minion_run in minion_runs:
+
         logger.debug("found a run", minion_run)
+
         run_jobs = JobMaster.objects.filter(run=minion_run).filter(running=False)
 
         for run_job in run_jobs:
-            if run_job.job_type.name == "Alignment":
-                print("trying to run bwa alignment {} {} {} {}".format(
-                    minion_run.id,
-                    run_job.id,
-                    run_job.reference.id,
-                    run_job.last_read
-                ))
 
-                run_bwa_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
+            # if run_job.job_type.name == "Alignment":
+            #
+            #     print("trying to run bwa alignment {} {} {} {}".format(
+            #         minion_run.id,
+            #         run_job.id,
+            #         run_job.reference.id,
+            #         run_job.last_read
+            #     ))
+            #
+            #     run_bwa_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
-            if run_job.job_type.name == "Minimap2_trans":
-                print("trying to run transcription alignemnt {} {} {} {}".format(
-                    minion_run.id,
-                    run_job.id,
-                    run_job.reference.id,
-                    run_job.last_read
-                ))
-
-                run_minimap2_transcriptome.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
+            # if run_job.job_type.name == "Minimap2_trans":
+            #     print("trying to run transcription alignemnt {} {} {} {}".format(
+            #         minion_run.id,
+            #         run_job.id,
+            #         run_job.reference.id,
+            #         run_job.last_read
+            #     ))
+            #
+            #     run_minimap2_transcriptome.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
             if run_job.job_type.name == "Minimap2":
+
                 print("trying to run alignment {} {} {} {}".format(
                     minion_run.id,
                     run_job.id,
@@ -128,12 +133,15 @@ def run_monitor():
                 run_minimap2_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read, "run")
 
             if run_job.job_type.name == "Kraken":
+
                 run_kraken.delay(minion_run.id, run_job.id, run_job.last_read, "run")
 
             if run_job.job_type.name == "ProcAlign":
+
                 proc_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
 
             if run_job.job_type.name == "ChanCalc":
+
                 processreads.delay(minion_run.id, run_job.id, run_job.last_read)
 
 
@@ -268,8 +276,9 @@ def processreads(runid, id, last_read):
 
     JobMaster.objects.filter(pk=id).update(running=True)
 
-    fastqs = FastqRead.objects.filter(run_id=runid, id__gt=int(last_read))[:2000]
+    fastqs = FastqRead.objects.filter(run_id=runid).filter(id__gt=int(last_read))[:2000]
 
+    print('found {} reads'.format(len(fastqs)))
     if len(fastqs) > 0:
 
         fastq_df = pd.DataFrame.from_records(fastqs.values())
@@ -277,8 +286,7 @@ def processreads(runid, id, last_read):
         #
         # Calculates statistics for RunSummaryBarcode
         #
-        fastq_df_result = fastq_df.groupby(['barcode_id', 'type_id', 'is_pass']).agg(
-            {'sequence_length': ['min', 'max', 'sum', 'count'], 'quality_average': ['sum'], 'channel': ['unique']})
+        fastq_df_result = fastq_df.groupby(['barcode_id', 'type_id', 'is_pass']).agg({'sequence_length': ['min', 'max', 'sum', 'count'], 'quality_average': ['sum'], 'channel': ['unique']})
 
         fastq_df_result.reset_index().apply(lambda row: save_runsummarybarcode(runid, row), axis=1)
 
@@ -306,11 +314,14 @@ def processreads(runid, id, last_read):
 
         fastq_df_result.reset_index().apply(lambda row: save_channelsummary(runid, row), axis=1)
 
+        last_read = fastqs[len(fastqs) - 1].read
+
     JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
 
 
 @task()
 def proc_alignment(runid, id, reference, last_read):
+
     JobMaster.objects.filter(pk=id).update(running=True)
     sams = SamStore.objects.filter(run_id=runid, id__gt=int(last_read))[:1000]
     # fp = tempfile.TemporaryFile()

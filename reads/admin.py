@@ -1,10 +1,10 @@
 from django.contrib import admin
 
-from .models import (Barcode, BarcodeGroup, FastqRead, FastqReadType,
+from .models import (Barcode, FastqRead, FastqReadType,
                      MinIONControl, MinIONEvent, MinIONEventType,
                      MinIONmessages, MinIONRunStats, MinIONRunStatus,
                      MinIONScripts, MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
-                     RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowCellRun)
+                     RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowCellRun, GroupBarcode)
 
 
 class RunStatisticsBarcodeAdmin(admin.ModelAdmin):
@@ -36,6 +36,6 @@ admin.site.register(ChannelSummary)
 admin.site.register(HistogramSummary)
 admin.site.register(UserOptions)
 admin.site.register(Barcode)
-admin.site.register(BarcodeGroup)
+admin.site.register(GroupBarcode)
 admin.site.register(FlowCellRun)
 admin.site.register(GroupRun)

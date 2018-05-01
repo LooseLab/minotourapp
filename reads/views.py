@@ -36,6 +36,7 @@ from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
                                RunSummaryBarcodeSerializer, ChannelSummary, HistogramSummary,
                                RunStatisticBarcode, RunSummaryBarcode, GroupRunSerializer, GroupRunMembershipSerializer)
 from reference.models import ReferenceInfo
+import pandas as pd
 
 
 @api_view(['GET'])
@@ -290,20 +291,19 @@ def run_detail(request, pk):
     Retrieve, update or delete a run instance.
     """
 
-    search_criteria = request.GET.get('search_criteria', None)
+    search_criteria = request.GET.get('search_criteria', 'id')
 
-    print('search_criteria: {}'.format(search_criteria))
-
-    run_list = Run.objects.filter(owner=request.user).filter(runid=pk)
-
-    """if search_criteria == 'runid':
+    if search_criteria == 'runid':
 
         run_list = Run.objects.filter(owner=request.user).filter(runid=pk)
 
-    else:
+    elif search_criteria == 'id':
 
         run_list = Run.objects.filter(owner=request.user).filter(id=pk)
-    """
+
+    else:
+
+        run_list = Run.objects.none()
 
     if len(run_list) != 1:
 
@@ -948,20 +948,23 @@ def flowcell_detail(request, pk):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['GET'])
-def flowcell_summary_barcode(request,pk):
-    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
-    runset = list()
-    for run in queryset:
-        #print (run.run_id)
-        runset.append(run.run_id)
+def flowcell_summary_barcode(request, pk):
+
+    grouprun = GroupRun.objects.get(pk=pk)
+
     queryset = RunSummaryBarcode.objects \
         .filter(run_id__owner=request.user) \
-        .filter(run_id__in=runset)
+        .filter(run__groupruns=grouprun)
+
+    # queryset_df = pd.DataFrame.from_records(queryset.values())
+    # print(queryset_df)
 
     serializer = RunSummaryBarcodeSerializer(queryset, many=True, context={'request': request})
 
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 def flowcell_summary_barcode_by_minute(request, pk):
@@ -1718,7 +1721,7 @@ def flowcell_tabs_details(request, pk):
 
         tabs.append(flowcell_tabs_dict['LiveEvent'])
 
-    for master in JobMaster.objects.filter(Q(run_id__in=run_list) | Q(flowcell_id=pk)).filter(last_read__gt=0).values_list('job_type__name', flat=True):
+    for master in JobMaster.objects.filter(Q(run_id__in=run_list) | Q(grouprun_id=pk)).filter(last_read__gt=0).values_list('job_type__name', flat=True):
 
         if master in flowcell_tabs_dict.keys():
 
