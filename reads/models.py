@@ -178,7 +178,6 @@ class Run(models.Model):
 
         super(Run, self).save(*args, **kwargs)"""
 
-
     def __str__(self):
 
         return "{} - {}".format(self.name, self.runid)
@@ -186,7 +185,8 @@ class Run(models.Model):
     def flowcell_name(self):
 
         try:
-            return self.flowcellrun.last().flowcell.name
+            return self.flowcell.name
+
         except AttributeError:
             return "undefined"
 

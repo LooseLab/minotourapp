@@ -383,7 +383,9 @@ class RunSerializer(serializers.HyperlinkedModelSerializer):
     )
 
     class Meta:
+
         model = Run
+
         fields = (
             'url',
             'flowcell_name',
@@ -441,11 +443,12 @@ class RunHistogramSummarySerializer(serializers.ModelSerializer):
 
 class FlowCellSerializer(serializers.HyperlinkedModelSerializer):
 
-    barcodes = BarcodeSerializer(many=True, read_only=False)
+    barcodes = BarcodeSerializer(many=True, read_only=False, required=False)
+    runs = RunSerializer(many=True, read_only=False, required=False)
 
     class Meta:
         model = Flowcell
-        fields = ('url', 'id', 'name', 'runs', 'barcodes')
+        fields = ('url', 'name', 'runs', 'barcodes')
 
 
 class FlowCellRunSerializer(serializers.HyperlinkedModelSerializer):

@@ -931,15 +931,43 @@ def flowcell_list(request):
 def flowcell_detail(request, pk):
 
     if request.method == 'GET':
-        queryset = Flowcell.objects.get(pk=pk)
-        serializer = FlowCellSerializer(queryset, context={'request': request})
+
+        print('inside flowcell detail get')
+
+        search_criteria = request.GET.get('search_criteria', 'id')
+
+        if search_criteria == 'id':
+
+            flowcell_list = Flowcell.objects.filter(owner=request.user).filter(id=pk)
+
+        elif search_criteria == 'name':
+
+            flowcell_list = Flowcell.objects.filter(owner=request.user).filter(name=pk)
+
+        else:
+
+            flowcell_list = Flowcell.objects.none()
+
+        if len(flowcell_list) != 1:
+
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        flowcell = flowcell_list[0]
+
+        serializer = FlowCellSerializer(flowcell, context={'request': request})
+
         return Response(serializer.data)
 
     elif request.method == 'POST':
+
         serializer = FlowCellSerializer(data=request.data, context={'request': request})
+
         if serializer.is_valid():
+
             serializer.save()
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

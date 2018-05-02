@@ -2,6 +2,7 @@ from django.conf.urls import url
 
 from reads import views
 
+
 urlpatterns = [
     url(
         r'^api/v1/runs/$',
@@ -170,7 +171,7 @@ urlpatterns = [
         views.flowcell_list_active,
         name="flowcell-list-active"),
     url(
-        r'^api/v1/flowcells/(?P<pk>[0-9]+)/$',
+        r'^api/v1/flowcells/(?P<pk>[0-9a-z-]+)/$',
         views.flowcell_detail,
         name="flowcell-detail"),
     url(
