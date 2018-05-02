@@ -1890,3 +1890,16 @@ def barcode_list_new(request):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+def version(request):
+
+    version = {
+        'server': '1.0',
+        'clients': [
+            '1.0'
+        ],
+        'minknow': [
+            '1.11.5',
+        ]
+    }
+
+    return HttpResponse(json.dumps(version), content_type="application/json")

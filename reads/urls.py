@@ -280,4 +280,9 @@ urlpatterns = [
         views.barcode_list_new,
         name="barcode-list-new"
     ),
+    url(
+        r'^api/v1/version/$',
+        views.version,
+        name='version'
+    ),
 ]
