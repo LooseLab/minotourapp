@@ -1,3 +1,6 @@
 from django.contrib import admin
 
-# Register your models here.
+from devices.models import Flowcell, MinION
+
+admin.site.register(Flowcell)
+admin.site.register(MinION)

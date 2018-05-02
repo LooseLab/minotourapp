@@ -22,5 +22,4 @@ function liveUpdateTasks(id) {
         }
 
     }).bind(this));
-
 };

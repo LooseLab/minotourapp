@@ -233,13 +233,13 @@ def processrun(deleted, added):
         runinstance.active = True
         runinstance.save()
 
-        newjob, created = JobMaster.objects.get_or_create(run=runinstance, job_type=jobinstance)
+        newjob, created = JobMaster.objects.get_or_create(run=runinstance, job_type=jobinstance, flowcell=runinstance.flowcell)
 
         if created is True:
             newjob.last_read = 0
 
         newjob.save()
-        send_message([runinstance.owner],"New Active Run","Minotour has seen a new run start on your account. This is called {}.".format(runinstance.name))
+        send_message([runinstance.owner], "New Active Run", "Minotour has seen a new run start on your account. This is called {}.".format(runinstance.name))
 
     for run in deleted:
         try:
@@ -274,6 +274,16 @@ def processreads(runid, id, last_read):
     print('>>>> Running processreads celery task.')
     print('running processreads with {} {} {}'.format(runid, id, last_read))
 
+    run = Run.objects.get(pk=runid)
+
+    barcode_allreads = None
+
+    for barcode in run.barcodes.all():
+
+        if barcode.name == 'All reads':
+
+            barcode_allreads = barcode
+
     JobMaster.objects.filter(pk=id).update(running=True)
 
     fastqs = FastqRead.objects.filter(run_id=runid).filter(id__gt=int(last_read))[:2000]
@@ -281,7 +291,12 @@ def processreads(runid, id, last_read):
     print('found {} reads'.format(len(fastqs)))
     if len(fastqs) > 0:
 
-        fastq_df = pd.DataFrame.from_records(fastqs.values())
+        fastq_df_barcode = pd.DataFrame.from_records(fastqs.values())
+
+        fastq_df_allreads = fastq_df_barcode.copy()
+        fastq_df_allreads['barcode_id'] = barcode_allreads.id
+
+        fastq_df = fastq_df_barcode.append(fastq_df_allreads)
 
         #
         # Calculates statistics for RunSummaryBarcode

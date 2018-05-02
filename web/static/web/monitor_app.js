@@ -394,15 +394,11 @@ var FlowcellPageApp = {
 
         this.selectedBarcode = "All reads";
 
-        this.requestData();
-
-        this.requestReference(this.flowcellId);
-
-        this.requestTasks(this.flowcellId);
+        this.requestData(this.flowcellId);
 
         setInterval(function () {
-            this.requestData(this.id);
-        }.bind(this), 30000);
+            this.requestData(this.flowcellId);
+        }.bind(this), 5000);
 
     }, // end of init
 
@@ -422,8 +418,12 @@ var FlowcellPageApp = {
      * that calls requestData and update all charts
      */
     updateChartsBasedOnBarcode: function (event) {
-        this.selectedBarcode = event.target.innerText;
-        this.requestData(this.id);
+
+        var selected_barcode = event.target.innerText;
+        console.log('clicked on ' + selected_barcode);
+        set_selected_barcode(selected_barcode);
+
+        this.requestData(this.flowcellId);
     },
 
     requestSummaryByMinuteData: function (id) {

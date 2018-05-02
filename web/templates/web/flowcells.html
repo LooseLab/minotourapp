@@ -63,14 +63,16 @@
     var table_all_runs;
 
     $(document).ready(function () {
+
         table_active_runs = $('#active-runs').DataTable({
             'ajax': {
                 'url': "{% url 'flowcell-list-active' %}",
                 'dataSrc': function(json){
+
                     var data = [];
-                    var ien = json.length;
-                    for (var i = 0; i < ien; i++){
-                        data.push([json[i].id, json[i].name, json[i].device, json[i].runs.length, json[i].id]);
+
+                    for (var i = 0; i < json.length; i++){
+                        data.push([json[i].id, json[i].name, json[i].name, json[i].runs.length, json[i].id]);
                     }
                     return data;
                 }
@@ -94,7 +96,7 @@
                     //console.log(json);
                     var ien = json.length;
                     for (var i = 0; i < ien; i++){
-                        data.push([json[i].id, json[i].name, json[i].device, json[i].runs.length, json[i].id]);
+                        data.push([json[i].id, json[i].name, json[i].name, json[i].runs.length, json[i].id]);
                     }
                     return data;
                 }

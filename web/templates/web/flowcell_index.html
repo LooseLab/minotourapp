@@ -5,19 +5,21 @@
     <div class="content-wrapper" style="background-color: white;">
 
         <section class="content-header">
-            <h1>GroupRun - <span>{{ flowcells }}</span> (<span>{{ flowcells.id }}</span>)</h1>
+            <h1>Flowcell <span>{{ flowcell }}</span> (<span>{{ flowcell.id }}</span>)</h1>
         </section>
 
         <form>
-            <input id="flowcell-id" type="text" value="{{ flowcells.id }}" style="visibility: hidden;"/>
+            <input id="flowcell-id" type="text" value="{{ flowcell.id }}" style="visibility: hidden;"/>
+            <input id="flowcell-selected-tab" type="text" value="Summary" style="visibility: hidden;"/>
+            <input id="flowcell-selected-barcode" type="text" value="All reads" style="visibility: hidden;"/>
         </form>
 
         <section class="content">
 
             <div class="nav-tabs-custom" id="maintabbar">
                 <ul class="nav nav-tabs">
-                    <li class="active"><a href="#tab-summary-data" data-toggle="tab">Summary</a></li>
-                    <li id="tasks-li"><a href="#tab-tasks" data-toggle="tab">Tasks</a></li>
+                    <li class="active"><a class="flowcell-tab" href="#tab-summary-data" data-toggle="tab">Summary</a></li>
+                    <li id="tasks-li"><a class="flowcell-tab" href="#tab-tasks" data-toggle="tab">Tasks</a></li>
                 </ul>
             </div>
 
@@ -59,6 +61,7 @@
                 </div>
 
                 <div id="tab-runs" class="tab-pane fade">
+
                 </div>
             </div>
             <!-- Modal -->
@@ -118,9 +121,8 @@
 
             setInterval(checkTabs, 10000);
 
-
             function checkTabs() {
-                var run_id = {{ flowcells.id }};
+                var run_id = {{ flowcell.id }};
                 var url = "/api/v1/flowcells/tabs/" + run_id;
                 $.getJSON(url, function (data) {
                     var items = [];
@@ -138,10 +140,22 @@
                          **/
 
                         if (!$('#nav-' + value.id).length) {
-                            var element = '<li><a href="#' + value.id + '"id="nav-' + value.id + '" data-toggle="tab">' + value.title + '</a></li>';
+                            var element = '<li><a href="#' + value.id + '"id="nav-' + value.id + '" class="flowcell-tab" data-toggle="tab">' + value.title + '</a></li>';
                             $('#tasks-li').before(element);
                         }
                     });
+
+                    var flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
+
+                    var tabs = document.querySelectorAll('.flowcell-tab');
+
+                    for (var i = 0; i < tabs.length; i++) {
+
+                        tabs[i].addEventListener('click', function (event) {
+
+                            flowcell_selected_tab_input.value = event.target.innerHTML;
+                        });
+                    }
                 });
             };
 

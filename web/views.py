@@ -105,15 +105,18 @@ def run_index(request, pk):
     minion_run = Run.objects.get(pk=pk)
     return render(request, 'web/run_index.html', context={'minion_run': minion_run})
 
+
 @login_required
 def flowcell_index(request, pk):
-    flowcells = GroupRun.objects.get(pk=pk)
-    return render(request, 'web/flowcell_index.html', context={'flowcells': flowcells})
+
+    flowcell = Flowcell.objects.get(pk=pk)
+    return render(request, 'web/flowcell_index.html', context={'flowcell': flowcell})
 
 
 @login_required
 def remotecontrol(request):
     return render(request, 'web/remotecontrol.html')
+
 
 @login_required
 def sandbox(request):

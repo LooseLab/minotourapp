@@ -27,7 +27,7 @@ function requestCumuBasesCallBack(data) {
 
     var chart2 = this.chart_cumulative_number_reads_overtime_new;
 
-    var selectedBarcode = this.getSelectedBarcode();
+    var selected_barcode = get_selected_barcode();
 
     if (chart) {
 
@@ -45,20 +45,22 @@ function requestCumuBasesCallBack(data) {
 
     }
 
-    for (var typeName of Object.keys(data[selectedBarcode]["bases"])) {
-        for (var status of Object.keys(data[selectedBarcode]["bases"][typeName])) {
+    for (var typeName of Object.keys(data[selected_barcode]["bases"])) {
+
+        for (var status of Object.keys(data[selected_barcode]["bases"][typeName])) {
+
             chart.addSeries({
-                name: selectedBarcode + " - " + typeName + " - " + status,
-                data: data[selectedBarcode]["bases"][typeName][status]
+                name: selected_barcode + " - " + typeName + " - " + status,
+                data: data[selected_barcode]["bases"][typeName][status]
             });
         }
     }
 
-    for (var typeName of Object.keys(data[selectedBarcode]["reads"])) {
-        for (var status of Object.keys(data[selectedBarcode]["reads"][typeName])) {
+    for (var typeName of Object.keys(data[selected_barcode]["reads"])) {
+        for (var status of Object.keys(data[selected_barcode]["reads"][typeName])) {
             chart2.addSeries({
-                name: selectedBarcode + " - " + typeName + " - " + status,
-                data: data[selectedBarcode]["reads"][typeName][status]
+                name: selected_barcode + " - " + typeName + " - " + status,
+                data: data[selected_barcode]["reads"][typeName][status]
             });
         }
     }

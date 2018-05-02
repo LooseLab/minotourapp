@@ -20,6 +20,18 @@ class Flowcell(models.Model):
         null=True,
     )
 
+    def barcodes(self):
+
+        barcode_set = set()
+
+        for run in self.runs.all():
+
+            for barcode in run.barcodes.all():
+
+                barcode_set.add(barcode)
+
+        return barcode_set
+
     def __str__(self):
         return "{} {}".format(self.name, self.id)
 

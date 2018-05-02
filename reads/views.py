@@ -854,10 +854,12 @@ def set_task_detail_all(request,pk):
                 print ("error")
             return Response("Job Created.", status=status.HTTP_200_OK)
 
+
 @api_view(['GET'])
-def tasks_detail_all(request,pk):
-    queryset=JobType.objects.filter(private=False).filter(type_name__type_name__in=['run',])
-    minionrun=Run.objects.get(pk=pk)
+def tasks_detail_all(request, pk):
+
+    queryset = JobType.objects.filter(private=False).filter(type_name__type_name__in=['run',])
+    minionrun = Run.objects.get(pk=pk)
 
     result = []
     #print (queryset)
@@ -898,24 +900,24 @@ def tasks_detail_all(request,pk):
 
     return HttpResponse(json.dumps(result), content_type="application/json")
 
+
 @api_view(['GET'])
 def flowcell_list_active(request):
 
     if request.method == 'GET':
-        queryset = Flowcell.objects.distinct().filter(owner=request.user).filter(flowcelldetails__run__active=True)
+        # queryset = Flowcell.objects.distinct().filter(owner=request.user).filter(flowcelldetails__run__active=True)
+        queryset = Flowcell.objects.distinct().filter(owner=request.user)
         serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
+
 @api_view(['GET','POST'])
 def flowcell_list(request):
-    #if request.method == 'GET':
-    #    queryset = FlowCell.objects.filter(owner=request.user)
-    #    serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
-    #    return Response(serializer.data)
+
     if request.method == 'GET':
-        queryset = GroupRun.objects.distinct().filter(owner=request.user)
-        serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
-        return Response(serializer.data)
+       queryset = Flowcell.objects.filter(owner=request.user)
+       serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
+       return Response(serializer.data)
 
     elif request.method == 'POST':
         serializer = FlowCellSerializer(data=request.data, context={'request': request})
@@ -925,45 +927,38 @@ def flowcell_list(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET','POST'])
+@api_view(['GET', 'POST'])
 def flowcell_detail(request, pk):
 
     if request.method == 'GET':
-
-        queryset = GroupRun.objects.get(pk=pk)
-
-        serializer = GroupRunSerializer(queryset, context={'request': request})
-
+        queryset = Flowcell.objects.get(pk=pk)
+        serializer = FlowCellSerializer(queryset, context={'request': request})
         return Response(serializer.data)
 
     elif request.method == 'POST':
-
-        serializer = GroupRunSerializer(data=request.data, context={'request': request})
-
+        serializer = FlowCellSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-
             serializer.save()
-
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
 def flowcell_summary_barcode(request, pk):
 
-    grouprun = GroupRun.objects.get(pk=pk)
+    flowcell = Flowcell.objects.get(pk=pk)
 
-    queryset = RunSummaryBarcode.objects \
-        .filter(run_id__owner=request.user) \
-        .filter(run__groupruns=grouprun)
+    qs = RunSummaryBarcode.objects \
+        .filter(run__flowcell=flowcell) \
+        .filter(run_id__owner=request.user)
 
-    # queryset_df = pd.DataFrame.from_records(queryset.values())
-    # print(queryset_df)
+    df = pd.DataFrame.from_records(qs.values('barcode__name', 'type__name', 'is_pass', 'read_count', 'total_length', 'max_length'))
 
-    serializer = RunSummaryBarcodeSerializer(queryset, many=True, context={'request': request})
+    gb = df.groupby(['barcode__name', 'type__name', 'is_pass']).agg({'read_count': ['sum'], 'total_length': ['sum', 'max']})
 
-    return Response(serializer.data)
+    payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], row['type__name'][0], row['is_pass'][0], row['read_count']['sum'], row['total_length']['sum'], row['total_length']['sum'] / row['read_count']['sum'], row['total_length']['max']), axis=1)
+
+    return Response(payload)
 
 
 @api_view(['GET'])
@@ -1119,49 +1114,64 @@ def flowcell_summary_barcode_by_minute_length(request,pk):
 @api_view(['GET'])
 def flowcell_summary_barcode_by_minute_bases(request, pk):
     """
-        Return a list with summaries for a particular run grouped by minute.
-        """
-    barcodeset = BarcodeGroup.objects.filter(flowcell=pk)
+    Return a list with summaries for a particular run grouped by minute.
+    """
+
+    flowcell = Flowcell.objects.get(pk=pk)
+
+    run_list = Run.objects.filter(flowcell=flowcell)
+
+    barcode_set = set()
+
+    for run in run_list:
+
+        for barcode in run.barcodes.all():
+
+            barcode_set.add(barcode)
+
+    # barcodeset = BarcodeGroup.objects.filter(flowcell=pk)
     barcodedict=dict()
     resultset=dict()
+
     readtypes = FastqReadType.objects.all()
-    for barcode in barcodeset:
+
+    for barcode in barcode_set:
         barcodedict[barcode.name] = barcode.id
         for readtype in readtypes:
-            queryset = RunStatisticBarcode.objects.filter(barcode__barcodegroup=barcode.id).filter(type=readtype).order_by('sample_time')
+            queryset = RunStatisticBarcode.objects.filter(barcode=barcode).filter(type=readtype).order_by('sample_time')
             if len(queryset) > 0:
                 stvlqs = queryset.values_list('sample_time', flat=True)
                 rcvlqs = queryset.values_list('read_count', flat=True)
                 bvlqs = queryset.values_list('total_length', flat=True)
-                prcvlqs = queryset.values_list('pass_count', flat=True)
-                pbvlqs = queryset.values_list('pass_length', flat=True)
+                # prcvlqs = queryset.values_list('pass_count', flat=True)
+                # pbvlqs = queryset.values_list('pass_length', flat=True)
                 stcats = np.unique(stvlqs)
                 unixtime = [x.timestamp() * 1000 for x in stcats]
                 rc_sum = np.bincount(np.searchsorted(stcats, stvlqs), rcvlqs)
-                prc_sum = np.bincount(np.searchsorted(stcats, stvlqs), prcvlqs)
+                # prc_sum = np.bincount(np.searchsorted(stcats, stvlqs), prcvlqs)
                 bc_sum = np.bincount(np.searchsorted(stcats, stvlqs), bvlqs)
-                pbc_sum = np.bincount(np.searchsorted(stcats, stvlqs), pbvlqs)
-                fbc_sum = bc_sum - pbc_sum
-                frc_sum = rc_sum - prc_sum
+                # pbc_sum = np.bincount(np.searchsorted(stcats, stvlqs), pbvlqs)
+                # fbc_sum = bc_sum - pbc_sum
+                # frc_sum = rc_sum - prc_sum
                 rc = np.column_stack((unixtime, np.cumsum(rc_sum)))
-                prc = np.column_stack((unixtime, np.cumsum(prc_sum)))
-                frc = np.column_stack((unixtime, np.cumsum(frc_sum)))
+                # prc = np.column_stack((unixtime, np.cumsum(prc_sum)))
+                # frc = np.column_stack((unixtime, np.cumsum(frc_sum)))
                 bc = np.column_stack((unixtime,np.cumsum(bc_sum)))
-                pbc = np.column_stack((unixtime,np.cumsum(pbc_sum)))
-                fbc = np.column_stack((unixtime,np.cumsum(fbc_sum)))
+                # pbc = np.column_stack((unixtime,np.cumsum(pbc_sum)))
+                # fbc = np.column_stack((unixtime,np.cumsum(fbc_sum)))
                 resultset[barcode.name]=dict()
                 if "reads" not in resultset[barcode.name]:
                     resultset[barcode.name]["reads"]=dict()
                 resultset[barcode.name]["reads"][readtype.name]=dict()
                 resultset[barcode.name]["reads"][readtype.name]['all']=rc.tolist()
-                resultset[barcode.name]["reads"][readtype.name]['pass']=prc.tolist()
-                resultset[barcode.name]["reads"][readtype.name]['fail']=frc.tolist()
+                # resultset[barcode.name]["reads"][readtype.name]['pass']=prc.tolist()
+                # resultset[barcode.name]["reads"][readtype.name]['fail']=frc.tolist()
                 if "bases" not in resultset[barcode.name]:
                     resultset[barcode.name]["bases"]=dict()
                 resultset[barcode.name]["bases"][readtype.name]=dict()
                 resultset[barcode.name]["bases"][readtype.name]['all']=bc.tolist()
-                resultset[barcode.name]["bases"][readtype.name]['pass']=pbc.tolist()
-                resultset[barcode.name]["bases"][readtype.name]['fail']=fbc.tolist()
+                # resultset[barcode.name]["bases"][readtype.name]['pass']=pbc.tolist()
+                # resultset[barcode.name]["bases"][readtype.name]['fail']=fbc.tolist()
 
     return HttpResponse(json.dumps(resultset, cls=DjangoJSONEncoder), content_type="application/json")
 
@@ -1229,19 +1239,22 @@ def flowcell_histogram_summary(request, pk):
     """
     Return a list with histogram summaries for a particular run.
     """
-    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
-    runset = list()
-    for run in queryset:
-        # print (run.run_id)
-        runset.append(run.run_id)
-    queryset = HistogramSummary.objects\
-        .filter(run_id__owner=request.user)\
-        .filter(run_id__in=runset)\
+    flowcell = Flowcell.objects.get(pk=pk)
+
+    run_list = flowcell.runs.all()
+
+    qs = HistogramSummary.objects\
+        .filter(run__in=run_list)\
+        .filter(run__owner=request.user)\
         .order_by('read_type', 'bin_index')
 
-    serializer = RunHistogramSummarySerializer(queryset, many=True, context={'request': request})
+    df = pd.DataFrame.from_records(qs.values('barcode__name', 'read_type__name', 'is_pass', 'read_count', 'read_length', 'bin_index'))
 
-    return Response(serializer.data)
+    gb = df.groupby(['barcode__name', 'read_type__name', 'is_pass', 'bin_index']).agg({'read_count': ['sum'], 'read_length': ['sum']})
+
+    payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], row['read_type__name'][0], row['is_pass'][0], row['bin_index'][0] * 900 + 900, row['read_count']['sum'], row['read_length']['sum']), axis=1)
+
+    return Response(payload)
 
 @api_view(['GET'])
 def flowcell_channel_summary(request, pk):
@@ -1558,9 +1571,11 @@ def flowcellset_task_detail_all(request,pk):
 
 
 @api_view(['GET'])
-def flowcell_tasks_detail_all(request,pk):
+def flowcell_tasks_detail_all(request, pk):
 
-    run_list = Run.objects.filter(groupruns=pk)
+    flowcell = Flowcell.objects.get(pk=pk)
+
+    run_list = Run.objects.filter(flowcell=flowcell)
 
     queryset = JobType.objects.filter(private=False)
 
@@ -1571,14 +1586,14 @@ def flowcell_tasks_detail_all(request,pk):
         obj = {}
         obj.update({
             'name': jobtype.name,
-            'description' : jobtype.description,
-            'long_description' : jobtype.long_description,
+            'description': jobtype.description,
+            'long_description': jobtype.long_description,
             'read_count': jobtype.readcount,
             'reference': jobtype.reference,
             'transcriptome': jobtype.transcriptome
         })
 
-        jobmasterlist = JobMaster.objects.filter(Q(run_id__in=run_list) | Q(flowcell_id=pk)).filter(job_type=jobtype)
+        jobmasterlist = JobMaster.objects.filter(Q(run__in=run_list) | Q(flowcell=flowcell)).filter(job_type=jobtype)
 
         if len(jobmasterlist) > 0:
             obj2 = {}
@@ -1709,19 +1724,14 @@ def flowcell_tabs_details(request, pk):
 
     tabs_send = list()
 
-    run_list = Run.objects.filter(groupruns=pk)
-    #queryset = GroupRun.objects.get(pk=pk)
-
-    #runset = list()
-
-    #for run in queryset:
-    #    runset.append(run.run_id)
+    flowcell = Flowcell.objects.get(pk=pk)
+    run_list = Run.objects.filter(flowcell=flowcell)
 
     if MinIONRunStatus.objects.filter(run_id__in=run_list):
 
         tabs.append(flowcell_tabs_dict['LiveEvent'])
 
-    for master in JobMaster.objects.filter(Q(run_id__in=run_list) | Q(grouprun_id=pk)).filter(last_read__gt=0).values_list('job_type__name', flat=True):
+    for master in JobMaster.objects.filter(Q(run__in=run_list) | Q(flowcell=flowcell)).filter(last_read__gt=0).values_list('job_type__name', flat=True):
 
         if master in flowcell_tabs_dict.keys():
 
@@ -1857,16 +1867,26 @@ def read_list_new(request):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['POST'])
+@api_view(['POST', 'GET'])
 def barcode_list_new(request):
 
-    serializer = BarcodeSerializer(data=request.data, context={'request': request})
+    if request.method == 'GET':
 
-    if serializer.is_valid():
+        barcode_list = Barcode.objects.all()
 
-        serializer.save()
+        serializer = BarcodeSerializer(barcode_list, many=True, context={'request': request})
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data)
 
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == 'POST':
+
+        serializer = BarcodeSerializer(data=request.data, context={'request': request})
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
