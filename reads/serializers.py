@@ -448,7 +448,7 @@ class FlowCellSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Flowcell
-        fields = ('url', 'name', 'runs', 'barcodes')
+        fields = ('url', 'name', 'runs', 'barcodes', 'id')
 
 
 class FlowCellRunSerializer(serializers.HyperlinkedModelSerializer):

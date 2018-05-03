@@ -119,8 +119,6 @@ class Run(models.Model):
 
         Flowcell,
         related_name='runs',
-        null=True,
-        blank=True,
     )
 
     owner = models.ForeignKey(

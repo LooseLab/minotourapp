@@ -1895,6 +1895,7 @@ def read_list_new(request):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['POST', 'GET'])
 def barcode_list_new(request):
 
@@ -1917,6 +1918,7 @@ def barcode_list_new(request):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 def version(request):
 
