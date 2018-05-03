@@ -12,7 +12,7 @@ function requestQualTimeCallback(data) {
 
     var chart = this.average_quality_overtime_new;
 
-    var selectedBarcode = this.getSelectedBarcode();
+    var selected_barcode = get_selected_barcode();
 
     if (chart) {
 
@@ -22,11 +22,11 @@ function requestQualTimeCallback(data) {
 
     }
 
-    for (var typeName of Object.keys(data[selectedBarcode])) {
-        for (var status of Object.keys(data[selectedBarcode][typeName])) {
+    for (var typeName of Object.keys(data[selected_barcode])) {
+        for (var status of Object.keys(data[selected_barcode][typeName])) {
             chart.addSeries({
-                name: selectedBarcode + " - " + typeName + " - " + status,
-                data: data[selectedBarcode][typeName][status]
+                name: selected_barcode + " - " + typeName + " - " + status,
+                data: data[selected_barcode][typeName][status]
             });
         }
     }

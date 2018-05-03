@@ -42,6 +42,10 @@ function requestData(flowcell_id) {
             this.requestSummaryData(flowcellId);
             this.requestCumuBases(flowcellId);
             this.requestHistogramData(flowcellId);
+            this.requestQualTime(flowcellId);
+            this.requestLengthTime(flowcellId);
+            this.requestMaxLengthTime(flowcellId);
+            this.requestSpeed(flowcellId);
 
         } else {
 
@@ -52,10 +56,6 @@ function requestData(flowcell_id) {
             this.requestLiveRunStats(flowcellId);
             this.requestKraken(flowcellId);
             this.requestPafData(flowcellId);
-            this.requestQualTime(flowcellId);
-            this.requestLengthTime(flowcellId);
-            this.requestMaxLengthTime(flowcellId);
-            this.requestSpeed(flowcellId);
             this.requestGfaData(flowcellId);
             this.requestMessages();
             this.requestReference(this.flowcellId);
