@@ -737,6 +737,10 @@ class RunStatisticBarcode(models.Model):
         default='0' * 3000
     )
 
+    channel_count = models.IntegerField(
+        default=0
+    )
+
     class Meta:
         verbose_name = 'Run Statistics Barcode'
         verbose_name_plural = 'Run Statistics Barcodes'
@@ -870,6 +874,10 @@ class RunSummaryBarcode(models.Model):
     channel_presence = models.CharField(
         max_length=3000,
         default='0' * 3000
+    )
+
+    channel_count = models.IntegerField(
+        default=0
     )
 
     class Meta:

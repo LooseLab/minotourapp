@@ -30,10 +30,13 @@ def save_runsummarybarcode(run_id, row):
         runSummaryBarcode.min_length = sequence_length_min
 
     channel_list = list(runSummaryBarcode.channel_presence)
+
     for c in channels:
+
         channel_list[c - 1] = '1'
 
     runSummaryBarcode.channel_presence = ''.join(channel_list)
+    runSummaryBarcode.channel_count = len(channels)
     runSummaryBarcode.save()
 
 
@@ -48,6 +51,7 @@ def save_runstatisticbarcode(run_id, row):
     sequence_length_min = row['sequence_length']['min']
     quality_average_sum = row['quality_average']['sum']
     read_count = row['sequence_length']['count']
+    channels = row['channel']['unique']
 
     runStatisticBarcode, created = RunStatisticBarcode.objects.get_or_create(
         run_id = run_id,
@@ -65,6 +69,15 @@ def save_runstatisticbarcode(run_id, row):
 
     if runStatisticBarcode.min_length < sequence_length_min:
         runStatisticBarcode.min_length = sequence_length_min
+
+    channel_list = list(runStatisticBarcode.channel_presence)
+
+    for c in channels:
+
+        channel_list[c - 1] = '1'
+
+        runStatisticBarcode.channel_presence = ''.join(channel_list)
+        runStatisticBarcode.channel_count = len(channels)
 
     runStatisticBarcode.save()
 

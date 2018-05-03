@@ -1282,6 +1282,75 @@ def flowcell_summary_barcode_by_minute_speed(request, pk):
             groupbarcode_set.add(barcode.groupbarcodes.all()[0]) # it assumes that a barcode belongs to only one groupbarcode
 
     result_dict = {
+        'speed': {
+
+        }
+    }
+
+    for groupbarcode in groupbarcode_set:
+
+        result_dict['speed'][barcode.name] = dict()
+
+        for readtype in readtype_list:
+
+            result_dict['speed'][barcode.name][readtype.name] = dict()
+
+            for is_pass in [True, False]:
+
+                queryset = RunStatisticBarcode.objects\
+                    .filter(barcode__in=groupbarcode.barcodes.all())\
+                    .filter(type=readtype)\
+                    .filter(is_pass=is_pass)\
+                    .order_by('sample_time')
+
+                if len(queryset) > 0:
+
+                    stvlqs = queryset.values_list('sample_time', flat=True)
+                    cpvlqs = queryset.values_list('channel_presence', flat=True)
+                    bvlqs = queryset.values_list('total_length', flat=True)
+                    stcats = np.unique(stvlqs)
+                    channel_count = [np.count_nonzero(list(map(int,x))) for x in cpvlqs]
+                    ## To increase speed, consider moving this to task and storing specific count of channels in RunStatisticBarcode
+                    unixtime = [x.timestamp() * 1000 for x in stcats]
+
+                    cc_sum = np.bincount(np.searchsorted(stcats,stvlqs), channel_count)
+                    bc_sum = np.bincount(np.searchsorted(stcats, stvlqs), bvlqs)
+
+                    sr = np.column_stack((unixtime, bc_sum/cc_sum/60))
+
+                    # if "speed" not in result_dict[barcode.name]:
+                    #
+                    #     result_dict[barcode.name]["speed"]=dict()
+
+                    result_dict["speed"][barcode.name][readtype.name][is_pass]=sr.tolist()
+
+    return HttpResponse(json.dumps(result_dict, cls=DjangoJSONEncoder), content_type="application/json")
+
+
+@api_view(['GET'])
+def flowcell_summary_barcode_by_minute_rate(request, pk):
+    """
+    Return a list with summaries for a particular run grouped by minute.
+    """
+
+    """
+    Return a prepared set of summaries for reads quality over time grouped by minute.
+    """
+    flowcell = Flowcell.objects.get(pk=pk)
+
+    run_list = flowcell.runs.all()
+
+    readtype_list = FastqReadType.objects.all()
+
+    groupbarcode_set = set()
+
+    for run in run_list:
+
+        for barcode in run.barcodes.all():
+
+            groupbarcode_set.add(barcode.groupbarcodes.all()[0]) # it assumes that a barcode belongs to only one groupbarcode
+
+    result_dict = {
         'rate': {
 
         },

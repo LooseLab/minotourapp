@@ -54,6 +54,33 @@ def getn50(lens):
             return l
 
 
+# def group_channel_presence(series):
+#
+#     num_rows = len(series)
+#
+#     if len(series) <= 0:
+#         return None
+#
+#     num_columns = len(series[0])
+#
+#     new_serie = list('0' * num_columns)
+#
+#     for i in range(num_rows):
+#
+#         row = list(series[i])
+#
+#         for j in range(num_columns):
+#
+#             if row[j] == '1':
+#                 new_serie[j] = '1'
+#
+#                 continue
+#
+#     return ''.join(new_serie)
+#
+#     # positions = [pos for pos, char in enumerate(serie) if char == '1']
+
+
 @task()
 def run_monitor():
 
@@ -289,6 +316,7 @@ def processreads(runid, id, last_read):
     fastqs = FastqRead.objects.filter(run_id=runid).filter(id__gt=int(last_read))[:2000]
 
     print('found {} reads'.format(len(fastqs)))
+
     if len(fastqs) > 0:
 
         fastq_df_barcode = pd.DataFrame.from_records(fastqs.values())
@@ -309,7 +337,7 @@ def processreads(runid, id, last_read):
         # Calculates statistics for RunStatisticsBarcode
         #
         fastq_df_result = fastq_df.groupby(['start_time', 'barcode_id', 'type_id', 'is_pass']).agg(
-            {'sequence_length': ['min', 'max', 'sum', 'count'], 'quality_average': ['sum']})
+            {'sequence_length': ['min', 'max', 'sum', 'count'], 'quality_average': ['sum'], 'channel': ['unique']})
 
         fastq_df_result.reset_index().apply(lambda row: save_runstatisticbarcode(runid, row), axis=1)
 
