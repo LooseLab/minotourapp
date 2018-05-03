@@ -16,8 +16,7 @@ class Flowcell(models.Model):
     )
 
     size = models.IntegerField(
-        blank=True,
-        null=True,
+        default=512
     )
 
     def barcodes(self):
