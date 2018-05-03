@@ -1480,75 +1480,85 @@ def flowcell_run_status_list(request,pk):
         return Response(serializer.data)
 
 
-
 @api_view(['GET'])
 def flowcell_channel_summary_readcount(request, pk):
+
     """
     Return a list with channel info for a particular run.
     """
-    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
-    runset = list()
-    flowcell_type = 0
-    for run in queryset:
-        runset.append(run.run_id)
-        if run.run.flowcell_type() > flowcell_type:
-            flowcell_type = run.run.flowcell_type()
-    queryset = ChannelSummary.objects\
-        .filter(run_id__owner=request.user)\
-        .filter(run_id__in=runset)
-    chan_events=dict()
 
-    query_value_list=queryset.values_list('channel',flat=True)
+    flowcell = Flowcell.objects.get(pk=pk)
 
-    for query in queryset:
-        if query.channel not in chan_events.keys():
-            chan_events[query.channel]=dict()
-            chan_events[query.channel]["read_count"]=query.read_count
-        else:
-            chan_events[query.channel]["read_count"] += query.read_count
-    datatoreturn=list()
-    for i in range(flowcell_type):
-        if (i+1) in chan_events:
-            coordinate = get_coords((i+1),flowcell_type)
-            datatoreturn.append((coordinate[0],coordinate[1],chan_events[i + 1]['read_count']))
-        else:
-            coordinate = get_coords((i+1),flowcell_type)
-            datatoreturn.append((coordinate[0], coordinate[1], 0))
-    return HttpResponse(json.dumps(datatoreturn),content_type="application/json")
+    run_list = flowcell.runs.all()
+
+    flowcell_type = 512
+
+    qs = ChannelSummary.objects\
+        .filter(run__owner=request.user)\
+        .filter(run__in=run_list)
+
+    df = pd.DataFrame.from_records(qs.values('channel', 'read_count'))
+
+    result = df.groupby(['channel']).agg({'read_count': ['sum']})
+
+    result_mapped_to_flowcell = []
+
+    for i in range(1, flowcell_type + 1):
+
+        try:
+
+            channel_count = int(result.loc[i][0])
+
+        except KeyError:
+
+            channel_count = 0
+
+        coordinate = get_coords(i, flowcell_type)
+
+        result_mapped_to_flowcell.append([coordinate[0], coordinate[1], channel_count])
+
+    return HttpResponse(json.dumps(result_mapped_to_flowcell, cls=DjangoJSONEncoder), content_type="application/json")
 
 
 @api_view(['GET'])
 def flowcell_channel_summary_readkb(request, pk):
+
     """
     Return a list with channel info for a particular run.
     """
-    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
-    runset = list()
-    flowcell_type = 0
-    for run in queryset:
-        runset.append(run.run_id)
-        if run.run.flowcell_type() > flowcell_type:
-            flowcell_type = run.run.flowcell_type()
-    queryset = ChannelSummary.objects\
-        .filter(run_id__owner=request.user)\
-        .filter(run_id__in=runset)
-    chan_events=dict()
-    query_value_list=queryset.values_list('channel',flat=True)
-    for query in queryset:
-        if query.channel not in chan_events.keys():
-            chan_events[query.channel]=dict()
-            chan_events[query.channel]["read_length"]=round(query.read_length/1000)
-        else:
-            chan_events[query.channel]["read_length"] += round(query.read_length / 1000)
-    datatoreturn=list()
-    for i in range(flowcell_type):
-        if (i+1) in chan_events:
-            coordinate = get_coords((i+1),flowcell_type)
-            datatoreturn.append((coordinate[0],coordinate[1],chan_events[i + 1]['read_length']))
-        else:
-            coordinate = get_coords((i+1),flowcell_type)
-            datatoreturn.append((coordinate[0], coordinate[1], 0))
-    return HttpResponse(json.dumps(datatoreturn),content_type="application/json")
+
+    flowcell = Flowcell.objects.get(pk=pk)
+
+    run_list = flowcell.runs.all()
+
+    flowcell_type = flowcell.size
+
+    qs = ChannelSummary.objects\
+        .filter(run__owner=request.user)\
+        .filter(run__in=run_list)
+
+    df = pd.DataFrame.from_records(qs.values('channel', 'read_length'))
+
+    result = df.groupby(['channel']).agg({'read_length': ['sum']})
+
+    result_mapped_to_flowcell = []
+
+    for i in range(1, flowcell_type + 1):
+
+        try:
+
+            channel_count = int(result.loc[i][0])
+
+        except KeyError:
+
+            channel_count = 0
+
+        coordinate = get_coords(i, flowcell_type)
+
+        result_mapped_to_flowcell.append([coordinate[0], coordinate[1], channel_count])
+
+    return HttpResponse(json.dumps(result_mapped_to_flowcell), content_type="application/json")
+
 
 def get_coords(channel,flowcellsize):
     #if flowcellsize==3000:
@@ -1564,8 +1574,6 @@ def get_coords(channel,flowcellsize):
         return (channel//8, channel%8)
     else:
         return minION_flowcell_layout(channel)
-
-
 
 
 def minION_flowcell_layout(channel):

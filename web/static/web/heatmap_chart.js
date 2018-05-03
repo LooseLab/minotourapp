@@ -120,8 +120,6 @@ function makeHeatmapChart(divName, chartTitle, yAxisTitle) {
 
 function updatePoreChart (chart, summary, parameter) {
 
-    console.log('>>> started processing ' + parameter);
-
     // Remove previous series
     while (chart.series.length > 0) {
         chart.series[0].remove();
@@ -129,7 +127,7 @@ function updatePoreChart (chart, summary, parameter) {
 
     var data = summary;
     var size = Object.keys(data).length;
-    console.log(size);
+
     if (size > 512) {
         chart.addSeries({
             name: parameter,
@@ -157,9 +155,6 @@ function updatePoreChart (chart, summary, parameter) {
             }
         });
     }
-
-    console.log('>>> finishing processing ' + parameter);
-
 
 }
 

@@ -46,12 +46,12 @@ function requestData(flowcell_id) {
             this.requestLengthTime(flowcellId);
             this.requestMaxLengthTime(flowcellId);
             this.requestSpeed(flowcellId);
+            this.requestChannelSummaryData(flowcellId);
 
         } else {
 
             this.rundata = data;
             this.requestHistogramData(flowcellId);
-            this.requestChannelSummaryData(flowcellId);
             this.requestRunDetails(flowcellId);
             this.requestLiveRunStats(flowcellId);
             this.requestKraken(flowcellId);

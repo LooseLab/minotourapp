@@ -2,10 +2,6 @@ function requestSpeedCallback(data) {
 
     var selected_barcode = get_selected_barcode();
 
-    console.log('dentro do get');
-
-    console.log(data);
-
     if (!this.chartSequencingRate_new) {
         this.chartSequencingRate_new = this.makeChart2(
             "sequencing-rate-new",
@@ -83,11 +79,7 @@ function requestSpeed(id) {
 
     requestSpeedCallback = requestSpeedCallback.bind(this);
 
-    console.log('requestSpeed');
-    console.log(url);
-
-
-    $.ajax({url: url, success: requestSpeedCallback, timeout: 10000});
+    $.get(url, requestSpeedCallback);
 
 };
 
