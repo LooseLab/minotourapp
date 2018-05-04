@@ -1,4 +1,4 @@
-from reads.models import RunSummaryBarcode, RunStatisticBarcode, HistogramSummary, ChannelSummary, Run, GroupBarcode
+from reads.models import RunSummaryBarcode, RunStatisticBarcode, HistogramSummary, ChannelSummary
 
 
 def save_runsummarybarcode(run_id, row):

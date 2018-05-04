@@ -315,12 +315,12 @@ class RunStatisticBarcodeSerializer(serializers.ModelSerializer):
         read_only = ('id',)
 
 
-class JobTypeSerializer(serializers.ModelSerializer):
-    # type_name = GroupRunTypeSerializer(read_only=True, many=True)
+class JobTypeSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
+
         model = JobType
-        fields = ('name', 'description', 'reference', 'readcount', 'transcriptome', 'type_name',)
+        fields = ('id', 'url', 'name', 'description', 'long_description', 'reference', 'transcriptome', 'readcount', 'private')
 
 
 class JobSerializer(serializers.ModelSerializer):

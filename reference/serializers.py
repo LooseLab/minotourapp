@@ -4,18 +4,17 @@ from reference.models import ReferenceInfo, ReferenceLine
 
 
 class ReferenceInfoSerializer(serializers.HyperlinkedModelSerializer):
+
     class Meta:
+
         model = ReferenceInfo
+
         fields = (
-            #'id',
+            'id',
+            'url',
             'reference_name',
-            'filename',
-            'bwa_index_file_location',
-            'minimap2_index_file_location',
             'totalrefleN',
             'private',
-            'transcripts',
-            'users'
         )
         read_only = (
             'id',

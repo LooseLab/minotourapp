@@ -188,8 +188,6 @@ var FlowcellPageApp = {
         this.updatePoreChart = updatePoreChart;
         this.updateStepLineChart = updateStepLineChart;
 
-        this.drawtaskbutton = drawtaskbutton;
-
         this.requestChannelSummaryData = requestChannelSummaryData;
 
         this.updateBarcodeNavTab = updateBarcodeNavTab;
@@ -224,6 +222,8 @@ var FlowcellPageApp = {
 
         this.updateTasks = updateTasks.bind(this);
 
+        this.requestTasks = requestTasks.bind(this);
+
         this.requestRunDetails = requestRunDetails;
 
         this.requestLiveRunStats = requestLiveRunStats;
@@ -231,51 +231,6 @@ var FlowcellPageApp = {
         this.requestSummaryData = requestSummaryData;
 
         this.requestData = requestData;
-
-        this.startTask = function (description, reference) {
-            //console.log(description + " " + reference);
-            var e = document.getElementById(description);
-            if (e != null) {
-                var strUser = e.options[e.selectedIndex].value;
-            } else {
-                var strUser = "null";
-            }
-            //console.log(strUser);
-            $.ajaxSetup({
-                beforeSend: function (xhr, settings) {
-                    if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
-                    }
-                }
-            });
-            //var url_mask = "{% url 'set-task-detail-all' pk=12345 %}".replace(/12345/, reference.toString());
-            var url_mask = "/api/v1/flowcells/12345/settask/".replace(/12345/, reference.toString());
-            ;
-            $.ajax({
-                "type": "POST",
-                "dataType": "json",
-                "url": url_mask,
-                "data": {
-                    "job": description,
-                    "reference": strUser,
-                },
-                "beforeSend": function (xhr, settings) {
-                    //console.log("before send");
-                    $.ajaxSettings.beforeSend(xhr, settings);
-                },
-                "success": function (result) {
-                    //console.log(result);
-                    $(".modal.in").modal("hide");
-                    this.requestTasks(reference);
-
-                },
-                error: function (XMLHttpRequest, textStatus, errorThrown) {
-                    //console.log("Status: " + textStatus);
-                    //alert("Error: " + errorThrown);
-                }
-
-            })
-        };
 
         this.chartChromosomeCoverage = this.makeStepLineChart(
             "chromosome-coverage",
@@ -1410,21 +1365,6 @@ var FlowcellPageApp = {
         });
     },
 
-    requestTasks: function (id) {
-
-        var url = "/api/v1/flowcells/" + id + "/tasks/";
-
-        $.get(url, (function (data) {
-            //console.log(data);
-            var tasks = [];
-            for (var i = 0; i < data.length; i++) {
-                tasks.push(data[i]);
-            }
-            this.tasks = tasks;
-            this.updateTasks(id); //really this only needs to run once!
-        }).bind(this));
-
-    },
 
     //this.requestMappedChromosomes = requestMappedChromosomes;
 

@@ -1,5 +1,6 @@
 from django.conf.urls import url
 
+from jobs import views as jobs_views
 from reads import views
 
 
@@ -285,5 +286,15 @@ urlpatterns = [
         r'^api/v1/version/$',
         views.version,
         name='version'
+    ),
+    url(
+        r'^api/v1/jobtype/$',
+        jobs_views.job_type_list,
+        name='jobtype-list'
+    ),
+    url(
+        r'^api/v1/jobtype/(?P<pk>[0-9A-Za-z-]+)/$',
+        jobs_views.job_type_detail,
+        name='jobtype-detail'
     ),
 ]

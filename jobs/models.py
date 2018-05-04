@@ -44,9 +44,8 @@ class JobType(models.Model):
         default=True
     )
 
-    #type_name = models.ManyToManyField(GroupRunType)
-
     def __str__(self):
+
         return "{}".format(self.name)
 
 

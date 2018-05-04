@@ -58,61 +58,6 @@ function check_user_runs() {
 }
 
 
-function drawtaskbutton(taskstring, colour, icon, description, message, percentage, message2, i, long_description, reference, name, transcriptome) {
-    taskstring = taskstring + '<div class="col-md-4">';
-    taskstring = taskstring + '<button type="button" class="info-box ' + colour + '" data-toggle="modal" data-target="#taskmodal' + i + '">';
-    taskstring = taskstring + '<div >';
-    taskstring = taskstring + '<span class="info-box-icon"><i class="' + icon + '"></i></span>';
-    taskstring = taskstring + '<div class="info-box-content">';
-    taskstring = taskstring + '<span class="info-box-text">' + description + '</span>';
-
-    taskstring = taskstring + '<span class="info-box-number" id="' + name + '-message">' + message + '</span>';
-    taskstring = taskstring + '<div class="progress">';
-    taskstring = taskstring + '<div class="progress-bar" id="' + name + '-percentage" style="width: ' + percentage + '%"></div>';
-    taskstring = taskstring + '</div>';
-    taskstring = taskstring + '<span class="progress-description" id="' + name + '-message2" >';
-    taskstring = taskstring + message2;
-    taskstring = taskstring + '</span>';
-    taskstring = taskstring + '</div>';
-    taskstring = taskstring + '</div>';
-    taskstring = taskstring + '</button>';
-    taskstring = taskstring + '<div id="taskmodal' + i + '" class="modal fade" role="dialog">';
-    taskstring = taskstring + '<div class="modal-dialog">';
-    taskstring = taskstring + '<div class="modal-content">';
-    taskstring = taskstring + '<div class="modal-header">';
-    taskstring = taskstring + '<button type="button" class="close" data-dismiss="modal">&times;</button>';
-    taskstring = taskstring + '<h4 class="modal-title">' + description + '</h4>';
-    taskstring = taskstring + '</div>';
-    taskstring = taskstring + '<div class="modal-body">';
-    taskstring = taskstring + '<p>' + long_description + '</p>';
-
-    if (reference == true) {
-        taskstring = taskstring + "<p>Select Reference:</p>"
-        taskstring = taskstring + '<select id="' + name + '">';
-        //console.log(this.references);
-        if (this.references) {
-            for (var j = 0; j < this.references.length; j++) {
-                if (this.references[j]['transcripts'] == transcriptome) {
-                    taskstring = taskstring + '<option>' + this.references[j]["reference_name"] + '</option>';
-                }
-            }
-        }
-        taskstring = taskstring + '</select>';
-    }
-
-    taskstring = taskstring + '</div>';
-    taskstring = taskstring + '<div class="modal-footer">';
-    taskstring = taskstring + '<button type="button" class="btn btn-default" id="button' + name + '">Go</button>';
-    taskstring = taskstring + '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>';
-    taskstring = taskstring + '</div>';
-    taskstring = taskstring + '</div>';
-    taskstring = taskstring + '</div>';
-    taskstring = taskstring + '</div>';
-    taskstring = taskstring + '</div>';
-
-    return taskstring;
-};
-
 function write_run_data(textinfo) {
     console.log("textshiz");
     console.log(textinfo);

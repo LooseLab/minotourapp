@@ -2,9 +2,9 @@ import json
 from datetime import timedelta
 
 import numpy as np
+import pandas as pd
 from dateutil import parser
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
-# from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Q
 from django.http import HttpResponse
@@ -22,8 +22,7 @@ from reads.models import (Barcode, BarcodeGroup, FastqRead, FastqReadType,
                           MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun)
 from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
                                ChannelSummarySerializer, FastqReadSerializer,
-                               FastqReadTypeSerializer, FlowCellRunSerializer,
-                               FlowCellSerializer, JobTypeSerializer,
+                               FastqReadTypeSerializer, FlowCellSerializer, JobTypeSerializer,
                                MinIONControlSerializer, MinIONEventSerializer,
                                MinIONEventTypeSerializer,
                                MinIONmessagesSerializer,
@@ -34,9 +33,8 @@ from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
                                RunHistogramSummarySerializer, RunSerializer,
                                RunStatisticBarcodeSerializer,
                                RunSummaryBarcodeSerializer, ChannelSummary, HistogramSummary,
-                               RunStatisticBarcode, RunSummaryBarcode, GroupRunSerializer, GroupRunMembershipSerializer)
+                               RunStatisticBarcode, RunSummaryBarcode, GroupRunSerializer)
 from reference.models import ReferenceInfo
-import pandas as pd
 
 
 @api_view(['GET'])
