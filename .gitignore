@@ -12,3 +12,4 @@ minotour.log
 .env
 minUPfastq/*
 minUPfastq
+logfile
