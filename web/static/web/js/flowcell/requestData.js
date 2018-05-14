@@ -47,21 +47,21 @@ function requestData(flowcell_id) {
             this.requestMaxLengthTime(flowcellId);
             this.requestSpeed(flowcellId);
             this.requestChannelSummaryData(flowcellId);
+            this.requestReference(flowcellId);
+
+        } else if (flowcell_selected_tab_input.value == 'Live Event Data') {
+
+            this.requestLiveRunStats(flowcellId);
+            this.rundata = data;
 
         } else {
 
-            this.rundata = data;
-            this.requestHistogramData(flowcellId);
             this.requestRunDetails(flowcellId);
-            this.requestLiveRunStats(flowcellId);
             this.requestKraken(flowcellId);
             this.requestPafData(flowcellId);
             this.requestGfaData(flowcellId);
             this.requestMessages();
-            this.requestReference(this.flowcellId);
 
-
-            
         }
     }).bind(this));
 };

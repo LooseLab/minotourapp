@@ -1694,17 +1694,19 @@ def flowcell_run_stats_list(request,pk):
 
 
 @api_view(['GET'])
-def flowcell_run_stats_latest(request,pk,checkid):
+def flowcell_run_stats_latest(request, pk, checkid):
     """
     TODO describe function
     """
-    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
-    runset = list()
-    for run in queryset:
-        # print (run.run_id)
-        runset.append(run.run_id)
+    flowcell = Flowcell.objects.get(pk=pk)
+    # queryset = FlowCellRun.objects.filter(flowcell_id=pk)
+    # runset = list()
+    # for run in queryset:
+    #     # print (run.run_id)
+    #     runset.append(run.run_id)
+
     try:
-        crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=runset, id__gt=checkid)[:1000]
+        crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all(), id__gt=checkid)[:1000]
         #minIONrunstats = MinIONRunStats.objects.all()
         #print (crazyminIONrunstats)
 

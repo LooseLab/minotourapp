@@ -172,7 +172,7 @@ urlpatterns = [
         views.flowcell_list_active,
         name="flowcell-list-active"),
     url(
-        r'^api/v1/flowcells/(?P<pk>[0-9a-z-]+)/$',
+        r'^api/v1/flowcells/(?P<pk>[0-9A-Za-z-]+)/$',
         views.flowcell_detail,
         name="flowcell-detail"),
     url(
