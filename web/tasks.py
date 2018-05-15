@@ -357,7 +357,8 @@ def processreads(runid, id, last_read):
 
         fastq_df_result.reset_index().apply(lambda row: save_channelsummary(runid, row), axis=1)
 
-        last_read = fastqs[len(fastqs) - 1].read
+        last_read = fastqs[len(fastqs) - 1].id
+        print (last_read)
 
     JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
 
