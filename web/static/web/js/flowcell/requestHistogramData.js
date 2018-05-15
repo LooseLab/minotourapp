@@ -5,9 +5,10 @@ function requestHistogramData(id) {
 
     var url = "/api/v1/flowcells/" + id + "/histogramsummary/";
 
-    $.get(url, function (data) {
+    $.get(url, function (dataObj) {
 
-        // console.log(data);
+        var indexes = dataObj['indexes'];
+        var data = dataObj['data'];
 
         if (data.length > 0) {
 
@@ -23,6 +24,13 @@ function requestHistogramData(id) {
                 }
             });
 
+            data_barcode.sort(function(a, b) {
+                return a[2] - b[2];
+            });
+
+            indexes.sort(function(a, b) {
+                return a - b;
+            });
 
             /*
              * chart
@@ -50,14 +58,20 @@ function requestHistogramData(id) {
                 },
                 xAxis: {
                     type: 'category',
-                    categories: data_barcode.map(x => x[3])
+                    categories: data_barcode.map(x => x[2])
                 }
             });
 
-            chart.addSeries({
-                name: data_barcode[0][0] + " - " + data_barcode[0][1] + " - " + data_barcode[0][2],
-                data: data_barcode.map(x => x[5])
-            });
+            for (var i = 0; i < indexes.length; i++) {
+
+                if (!indexes[i].startsWith("No barcode")) {
+
+                    chart.addSeries({
+                        name: indexes[i],
+                        data: data_barcode.filter(x => x[1] == indexes[i]).map(x => x[4])
+                    });
+                }
+            }
 
 
             /*
@@ -86,14 +100,20 @@ function requestHistogramData(id) {
                 },
                 xAxis: {
                     type: 'category',
-                    categories: data_barcode.map(x => x[3])
+                    categories: data_barcode.map(x => x[2])
                 }
             });
 
-            chart.addSeries({
-                name: data_barcode[0][0] + " - " + data_barcode[0][1] + " - " + data_barcode[0][2],
-                data: data_barcode.map(x => x[4])
-            });
+            for (var i = 0; i < indexes.length; i++) {
+
+                if (!indexes[i].startsWith("No barcode")) {
+
+                    chart.addSeries({
+                        name: indexes[i],
+                        data: data_barcode.filter(x => x[1] == indexes[i]).map(x => x[3])
+                    });
+                }
+            }
         }
     });
 }
