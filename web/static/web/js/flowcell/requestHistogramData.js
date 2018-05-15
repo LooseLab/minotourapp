@@ -53,6 +53,11 @@ function requestHistogramData(id) {
             }
 
             chart.update({
+                plotOptions: {
+                    column: {
+                        stacking: 'normal'
+                    }
+                },
                 chart: {
                     type: 'column'
                 },
@@ -95,6 +100,11 @@ function requestHistogramData(id) {
             }
 
             chart.update({
+                plotOptions: {
+                    column: {
+                        stacking: 'normal'
+                    }
+                },
                 chart: {
                     type: 'column'
                 },
