@@ -1,3 +1,67 @@
+function write_run_data(textinfo) {
+    console.log("textshiz");
+    console.log(textinfo);
+    var text = '';
+    text += "<div class='table-responsive table-bordered'>";
+    text += "<table class='table'>";
+    text += "<tr>";
+    text += "<th>Run</th>";
+    text += "<th>Run Start Time</th>";
+    text += "<th>Last Read Seen</th>";
+    text += "<th>MinKNOW Computer Name</th>";
+    text += "<th>MinION ID</th>";
+    text += "<th>ASIC ID</th>";
+    text += "<th>Current Script</th>";
+    text += "<th>minKNOW version</th>";
+    text += "<th>FlowCell Name</th> ";
+    text += "<th>Sample Name</th>";
+    text += "<th>Run Name</th>";
+    text += "<th>FLow Cell ID</th>";
+    text += "<th>Sequencing</th>";
+    text += "<th>Barcoded</th>";
+
+
+    text += "</tr>";
+    $.each(textinfo, function (key, val) {
+        text += "<tr>";
+        text += "<td>";
+        text += key;
+        text += textinfo[key];
+        text += "</td>";
+
+
+        text += "<td>" + textinfo[key]['starttime'] + "</td>";
+        text += "<td>" + textinfo[key]['lastread'] + "</td>";
+        text += "<td>" + textinfo[key]["computer_name"] + "</td>";
+        text += "<td>" + textinfo[key]["minIONname"] + "</td>";
+        text += "<td>" + textinfo[key]["minKNOW_asic_id"] + "</td>";
+        text += "<td>" + textinfo[key]["minKNOW_current_script"] + "</td>";
+        text += "<td>" + textinfo[key]["minKNOW_version"] + "</td>";
+        text += "<td>" + textinfo[key]['name'] + "</td>";
+        text += "<td>" + textinfo[key]["sample_name"] + "</td>";
+
+        text += "<td>" + textinfo[key]['run_name'] + "</td>";
+        text += "<td>" + textinfo[key]['flowcellid'] + "</td>";
+        if (textinfo[key]['active'] == true) {
+            text += '<td><i class="fa fa-check" aria-hidden="true"></i></td>';
+        } else {
+            text += '<td><i class="fa fa-times" aria-hidden="true"></i></td>';
+        }
+        if (textinfo[key]['barcodes'].length > 2) {
+            text += '<td><i class="fa fa-check" aria-hidden="true"></i></td>';
+        } else {
+            text += '<td><i class="fa fa-times" aria-hidden="true"></i></td>';
+        }
+
+        text += "</tr>";
+    })
+    text += "</table></div>";
+    //console.log(text);
+    $("#minknow-realtime-data-div").html(text);
+    //$("#target_for_data").html(text);
+}
+
+
 function updatetext(data) {
     console.log(data);
     console.log(this.rundetails);
@@ -56,9 +120,10 @@ function updatetext(data) {
 
     var sorteddatadump = datadump.sort(dynamicSort("starttime"));
     this.flowcellstart = sorteddatadump[0].starttime;
-    this.write_run_data(sorteddatadump);
+    write_run_data(sorteddatadump);
 
 };
+
 
 function requestRunDetails(id) {
 
@@ -69,10 +134,13 @@ function requestRunDetails(id) {
         if (data && data.length > 0) {
 
             this.livedata.colours_string = data[0].minKNOW_colours_string;
-            this.updatetext(data);
+            updatetext(data);
 
+        } else {
+
+            var message = "No information available.";
+            var div = document.querySelector("#minknow-realtime-data-div");
+            div.innerHTML = message;
         }
-
     }).bind(this))
-
-};
+}
