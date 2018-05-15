@@ -27,6 +27,7 @@ function requestData(flowcell_id) {
 
             this.rundata = data;
             this.requestRunDetails(flowcellId);
+            requestMinknowMessages(flowcellId);
 
         } else if (flowcell_selected_tab_input.value == 'Tasks') {
 
@@ -63,8 +64,6 @@ function requestData(flowcell_id) {
             this.requestKraken(flowcellId);
             this.requestPafData(flowcellId);
             this.requestGfaData(flowcellId);
-            this.requestMessages();
-
         }
     }).bind(this));
 };
