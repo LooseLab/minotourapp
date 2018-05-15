@@ -1431,9 +1431,11 @@ def flowcell_histogram_summary(request, pk):
 
     gb = df.groupby(['barcode__name', 'read_type__name', 'is_pass', 'bin_index']).agg({'read_count': ['sum'], 'read_length': ['sum']})
 
-    payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], row['read_type__name'][0], row['is_pass'][0], row['bin_index'][0] * 900 + 900, row['read_count']['sum'], row['read_length']['sum']), axis=1)
+    payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], '{} {} {}'.format(row['barcode__name'][0], row['read_type__name'][0], 'Pass' if row['is_pass'][0] == True else 'Fail'), row['bin_index'][0] * 900 + 900, row['read_count']['sum'], row['read_length']['sum']), axis=1)
 
-    return Response(payload)
+    indexes  = gb.reset_index().apply(lambda row: '{} {} {}'.format(row['barcode__name'][0], row['read_type__name'][0], 'Pass' if row['is_pass'][0] == True else 'Fail'), axis=1)
+
+    return Response({'data': payload, 'indexes': set(indexes)})
 
 @api_view(['GET'])
 def flowcell_channel_summary(request, pk):
