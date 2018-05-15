@@ -180,8 +180,6 @@ var FlowcellPageApp = {
         this.makeHeatmapChart = makeHeatmapChart;
         this.makeStepLineChart = makeStepLineChart;
 
-        this.write_run_data = write_run_data;
-
         this.lastread = 0;
         this.needtoupdatecharts = false;
 
@@ -209,8 +207,6 @@ var FlowcellPageApp = {
         this.createAssemblyTable = createAssemblyTable;
 
         this.requestGfaData = requestGfaData;
-
-        this.updatetext = updatetext.bind(this);
 
         this.requestCumuBases = requestCumuBases;
 

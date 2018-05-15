@@ -24,8 +24,10 @@ function requestData(flowcell_id) {
         var flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
 
         if (flowcell_selected_tab_input.value == 'Summary') {
+
             this.rundata = data;
             this.requestRunDetails(flowcellId);
+
         } else if (flowcell_selected_tab_input.value == 'Tasks') {
 
             this.requestTasks(flowcellId);
@@ -51,14 +53,13 @@ function requestData(flowcell_id) {
             this.requestReference(flowcellId);
 
         } else if (flowcell_selected_tab_input.value == 'Live Event Data') {
+
             this.rundata = data;
             this.requestRunDetails(flowcellId);
             this.requestLiveRunStats(flowcellId);
 
-
         } else {
 
-            this.requestRunDetails(flowcellId);
             this.requestKraken(flowcellId);
             this.requestPafData(flowcellId);
             this.requestGfaData(flowcellId);
