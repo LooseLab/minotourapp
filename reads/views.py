@@ -1653,12 +1653,8 @@ def minION_flowcell_layout(channel):
 @api_view(['GET'])
 def flowcell_run_status_list(request, pk):
     if request.method == 'GET':
-        queryset = FlowCellRun.objects.filter(flowcell_id=pk)
-        runset = list()
-        for run in queryset:
-            # print (run.run_id)
-            runset.append(run.run_id)
-        queryset = MinIONRunStatus.objects.filter(run_id__in=runset)
+        flowcell = Flowcell.objects.get(pk=pk)
+        queryset = MinIONRunStatus.objects.filter(run_id__in=flowcell.runs.all())
         #print (queryset)
         serializer = MinIONRunStatusSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)

@@ -210,7 +210,7 @@ var FlowcellPageApp = {
 
         this.requestGfaData = requestGfaData;
 
-        this.updatetext = updatetext;
+        this.updatetext = updatetext.bind(this);
 
         this.requestCumuBases = requestCumuBases;
 
@@ -224,7 +224,7 @@ var FlowcellPageApp = {
 
         this.requestTasks = requestTasks.bind(this);
 
-        this.requestRunDetails = requestRunDetails;
+        this.requestRunDetails = requestRunDetails.bind(this);
 
         this.requestLiveRunStats = requestLiveRunStats;
 
