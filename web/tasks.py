@@ -296,10 +296,10 @@ def compare_two(newset, cacheset):
 
 
 @task()
-def processreads(runid, id, last_read):
+def processreads(runid, job_master_id, last_read):
 
     print('>>>> Running processreads celery task.')
-    print('running processreads with {} {} {}'.format(runid, id, last_read))
+    print('running processreads with {} {} {}'.format(runid, job_master_id, last_read))
 
     run = Run.objects.get(pk=runid)
 
@@ -311,7 +311,9 @@ def processreads(runid, id, last_read):
 
             barcode_allreads = barcode
 
-    JobMaster.objects.filter(pk=id).update(running=True)
+    job_master = JobMaster.objects.get(pk=job_master_id)
+    job_master.running = True
+    job_master.save()
 
     fastqs = FastqRead.objects.filter(run_id=runid).filter(id__gt=int(last_read))[:2000]
 
@@ -357,10 +359,12 @@ def processreads(runid, id, last_read):
 
         fastq_df_result.reset_index().apply(lambda row: save_channelsummary(runid, row), axis=1)
 
-        last_read = fastqs[len(fastqs) - 1].id
-        print (last_read)
+        last_read = fastq_df_barcode['id'].max()
 
-    JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
+    job_master = JobMaster.objects.get(pk=job_master_id)
+    job_master.running = False
+    job_master.last_read = last_read
+    job_master.save()
 
 
 @task()
