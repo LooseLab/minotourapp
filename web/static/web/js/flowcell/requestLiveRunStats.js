@@ -5,6 +5,14 @@ function requestLiveRunStats(id) {
     $.get(url_livestats, (function (data) {
 
         if (data.length > 0) {
+
+            data.sort(function(a, b){
+                var a_date = new Date(a.sample_time);
+                var b_date = new Date(b.sample_time);
+
+                return a_date - b_date;
+            });
+
             this.needtoupdatecharts = true;
             this.lastread = data[data.length - 1].id;
             this.lasttime = new Date(data[data.length - 1].sample_time)

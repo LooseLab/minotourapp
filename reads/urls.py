@@ -96,7 +96,7 @@ urlpatterns = [
         views.activeminion_list,
         name="activeminION_list"),
     url(
-        r'^api/v1/minions/(?P<pk>[0-9]+)/$',
+        r'^api/v1/minions/(?P<pk>[0-9A-Za-z-_]+)/$',
         views.minION_detail,
         name="minion-detail"),
     url(
@@ -113,15 +113,15 @@ urlpatterns = [
         name="minIONcontrol-update"),
     url(
         r'^api/v1/minions/(?P<pk>[0-9]+)/messages/$',
-        views.minION_messages_list,
+        views.minion_messages_list,
         name="minIONmessages-list"),
     url(
         r'^api/v1/minions/(?P<pk>[0-9]+)/recentmessages/$',
-        views.recentminION_messages_list,
+        views.recentminion_messages_list,
         name="recentmessages-list"),
     url(
         r'^api/v1/minions/(?P<pk>[0-9]+)/messagessince/(?P<starttime>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)/(?P<endtime>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z)/$',
-        views.sinceminION_messages_list,
+        views.sinceminion_messages_list,
         name="sincemessages-list"),
     url(
         r'^api/v1/minions/(?P<pk>[0-9]+)/status/$',
@@ -261,6 +261,11 @@ urlpatterns = [
         r'^api/v1/flowcells/tabs/(?P<pk>[0-9]+)/$',
         views.flowcell_tabs_details,
         name="tabs-details"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/minknow-messages/$',
+        views.minknow_message_list_by_flowcell,
+        name="minknow-message-list-by-flowcell"
     ),
     url(
         r'^api/v1/grouprun/$',

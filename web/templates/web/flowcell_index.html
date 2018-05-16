@@ -5,7 +5,7 @@
     <div class="content-wrapper" style="background-color: white;">
 
         <section class="content-header">
-            <h1>Flowcell <span>{{ flowcell }}</span> (<span>{{ flowcell.id }}</span>)</h1>
+            <h1>Flowcell: <span>{{ flowcell.name }}</span></h1>
         </section>
 
         <form>
@@ -101,7 +101,7 @@
             console.log("minotour flow cell app runing");
             app.init();
 
-
+            /*
             redraw();
             setInterval(redraw, 3000);
 
@@ -112,12 +112,13 @@
                     //console.log(chart);
                 }
             }
+            */
 
 
-            $("#maintabbar").on("click", "li", function (event) {
-                setTimeout(redraw(), 1000);
-                //console.log('testing');
-            });
+            //$("#maintabbar").on("click", "li", function (event) {
+            //    setTimeout(redraw(), 1000);
+            //    //console.log('testing');
+            //});
 
             setInterval(checkTabs, 10000);
 

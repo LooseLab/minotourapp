@@ -75,10 +75,12 @@ class MinIONRunStatsSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class MinIONSerializer(serializers.HyperlinkedModelSerializer):
+
     class Meta:
+
         model = MinION
         fields = (
-        'url', 'space_available', 'minKNOW_version', 'minION_name', 'status', 'computer', 'sample_name', 'run_status',
+        'url', 'name', 'minION_name', 'space_available', 'minKNOW_version', 'status', 'computer', 'sample_name', 'run_status',
         'flow_cell_id', 'run_name', 'total_drive_space', 'space_till_shutdown', 'warnings', 'last_run', 'currentscript',
         'event_yield', 'voltage_value',)
         read_only = (
@@ -408,6 +410,7 @@ class RunSerializer(serializers.HyperlinkedModelSerializer):
             'jobstodo',
             'barcodes',
             'to_delete',
+            'minion',
         )
 
         read_only = (

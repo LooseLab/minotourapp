@@ -164,10 +164,8 @@ def activeminion_list(request):
 
 
 @api_view(['GET', 'POST'])
-def minION_messages_list(request, pk):
-    """
-    TODO describe function
-    """
+def minion_messages_list(request, pk):
+
     if request.method == 'GET':
         queryset = MinIONmessages.objects.filter(minION=pk)
         serializer = MinIONmessagesSerializer(queryset, many=True, context={'request': request})
@@ -180,8 +178,9 @@ def minION_messages_list(request, pk):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 @api_view(['GET'],)
-def sinceminION_messages_list(request, pk,starttime,endtime):
+def sinceminion_messages_list(request, pk, starttime,endtime):
     if request.method == 'GET':
         #print (starttime)
         correctedstart = parser.parse(starttime) - timedelta(minutes=180)
@@ -192,15 +191,34 @@ def sinceminION_messages_list(request, pk,starttime,endtime):
         serializer = MinIONmessagesSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
+
 @api_view(['GET'],)
-def recentminION_messages_list(request, pk):
-    """
-    TODO describe function
-    """
+def recentminion_messages_list(request, pk):
+
     if request.method == 'GET':
         queryset = MinIONmessages.objects.filter(minION=pk).filter(minKNOW_message_timestamp__gte= timezone.now() - timedelta(hours=24))
         serializer = MinIONmessagesSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
+
+
+@api_view(['GET'])
+def minknow_message_list_by_flowcell(request, pk):
+
+    flowcell = Flowcell.objects.get(pk=pk)
+
+    minion_list = []
+
+    for run in flowcell.runs.all():
+
+        if run.minion:
+
+            minion_list.append(run.minion)
+
+    messages = MinIONmessages.objects.filter(minION__in=minion_list)
+
+    serializer = MinIONmessagesSerializer(messages, many=True, context={'request': request})
+
+    return Response(serializer.data)
 
 
 @api_view(['GET','POST'],)
@@ -539,19 +557,42 @@ def read_list(request, pk):
 
 @api_view(['GET'])
 def minION_detail(request, pk):
-    """
-    TODO describe function
-    """
-    try:
-        # print (pk)
-        # print (MinIONEvent.objects.all())
-        minion = MinION.objects.get(pk=pk)
-    except MinION.DoesNotExist:
+    # """
+    # TODO describe function
+    # """
+    # try:
+    #     # print (pk)
+    #     # print (MinIONEvent.objects.all())
+    #     minion = MinION.objects.get(pk=pk)
+    # except MinION.DoesNotExist:
+    #     return Response(status=status.HTTP_404_NOT_FOUND)
+    #
+    # if request.method == 'GET':
+    #     serializer = MinIONSerializer(minion, context={'request': request})
+    #     return Response(serializer.data)
+
+    search_criteria = request.GET.get('search_criteria', 'id')
+
+    if search_criteria == 'id':
+
+        minion_list = MinION.objects.filter(owner=request.user).filter(id=pk)
+
+    elif search_criteria == 'name':
+
+        minion_list = MinION.objects.filter(owner=request.user).filter(name=pk)
+
+    else:
+
+        minion_list = MinION.objects.none()
+
+    if len(minion_list) != 1:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    if request.method == 'GET':
-        serializer = MinIONSerializer(minion, context={'request': request})
-        return Response(serializer.data)
+    minion = minion_list[0]
+
+    serializer = MinIONSerializer(minion, context={'request': request})
+
+    return Response(serializer.data)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
@@ -980,9 +1021,9 @@ def flowcell_summary_barcode(request, pk):
 
     df = pd.DataFrame.from_records(qs.values('barcode__name', 'type__name', 'is_pass', 'read_count', 'total_length', 'max_length'))
 
-    gb = df.groupby(['barcode__name', 'type__name', 'is_pass']).agg({'read_count': ['sum'], 'total_length': ['sum', 'max']})
+    gb = df.groupby(['barcode__name', 'type__name', 'is_pass']).agg({'read_count': ['sum'], 'total_length': ['sum'], 'max_length': ['max']})
 
-    payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], row['type__name'][0], row['is_pass'][0], row['read_count']['sum'], row['total_length']['sum'], row['total_length']['sum'] / row['read_count']['sum'], row['total_length']['max']), axis=1)
+    payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], row['type__name'][0], row['is_pass'][0], row['read_count']['sum'], row['total_length']['sum'], row['total_length']['sum'] / row['read_count']['sum'], row['max_length']['max']), axis=1)
 
     return Response(payload)
 
@@ -1433,7 +1474,7 @@ def flowcell_histogram_summary(request, pk):
 
     payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], '{} {} {}'.format(row['barcode__name'][0], row['read_type__name'][0], 'Pass' if row['is_pass'][0] == True else 'Fail'), row['bin_index'][0] * 900 + 900, row['read_count']['sum'], row['read_length']['sum']), axis=1)
 
-    indexes  = gb.reset_index().apply(lambda row: '{} {} {}'.format(row['barcode__name'][0], row['read_type__name'][0], 'Pass' if row['is_pass'][0] == True else 'Fail'), axis=1)
+    indexes = gb.reset_index().apply(lambda row: '{} {} {}'.format(row['barcode__name'][0], row['read_type__name'][0], 'Pass' if row['is_pass'][0] == True else 'Fail'), axis=1)
 
     return Response({'data': payload, 'indexes': set(indexes)})
 

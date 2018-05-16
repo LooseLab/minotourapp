@@ -41,7 +41,13 @@ class MinION(models.Model):
         max_length=64
     )
 
+    name = models.CharField(
+
+        max_length=64
+    )
+
     owner = models.ForeignKey(
+
         settings.AUTH_USER_MODEL,
         related_name='minIONs'
     )
