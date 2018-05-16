@@ -172,7 +172,7 @@ urlpatterns = [
         views.flowcell_list_active,
         name="flowcell-list-active"),
     url(
-        r'^api/v1/flowcells/(?P<pk>[0-9A-Za-z-]+)/$',
+        r'^api/v1/flowcells/(?P<pk>[0-9A-Za-z-_]+)/$',
         views.flowcell_detail,
         name="flowcell-detail"),
     url(
@@ -268,7 +268,7 @@ urlpatterns = [
         name="grouprun-list"
     ),
     url(
-        r'^api/v1/grouprun/(?P<pk>[0-9A-Za-z-]+)/$',
+        r'^api/v1/grouprun/(?P<pk>[0-9A-Za-z-_]+)/$',
         views.grouprun_detail,
         name="grouprun-detail"
     ),
