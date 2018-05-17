@@ -53,7 +53,7 @@ function requestLiveRunStats(id) {
 
             if (this.needtoupdatecharts == true) {
                 this.updateLiveHistogram(data);
-                this.updateLiveYieldProjection();
+                //this.updateLiveYieldProjection();
                 this.updateLiveCumuYield();
                 this.updatePoreStats();
                 //this.updateTextPredictions();

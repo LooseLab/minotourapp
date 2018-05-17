@@ -57,11 +57,18 @@ function write_run_data(textinfo) {
 
 
 function updatetext(data) {
+//<<<<<<< Updated upstream
 
-    //this.rundetails = data;
+//    //this.rundetails = data;
     datadump = new Array();
 
     if (data.length > 0) {
+//=======
+//    this.rundetails = data;
+//    datadump = new Array();
+//    console.log(this.rundetails);
+//    if (this.rundetails != undefined && data.length > 0) {
+//>>>>>>> Stashed changes
 
         for (var i in data) {
 

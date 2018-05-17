@@ -36,6 +36,19 @@ from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
                                RunStatisticBarcode, RunSummaryBarcode, GroupRunSerializer)
 from reference.models import ReferenceInfo
 
+import math
+
+def humanbases(n):
+    #return (n)
+    millnames = ['', ' Kb', ' Mb', ' Gb', ' Tb']
+    n = float(n)
+    millidx = max(0,min(len(millnames)-1,
+                        int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
+
+    return '{:.3f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
+
+
+
 
 @api_view(['GET'])
 def read_type_list(request):
@@ -1020,11 +1033,24 @@ def flowcell_summary_barcode(request, pk):
         .filter(run_id__owner=request.user)
 
     df = pd.DataFrame.from_records(qs.values('barcode__name', 'type__name', 'is_pass', 'read_count', 'total_length', 'max_length'))
+#<<<<<<< Updated upstream
 
     gb = df.groupby(['barcode__name', 'type__name', 'is_pass']).agg({'read_count': ['sum'], 'total_length': ['sum'], 'max_length': ['max']})
 
     payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], row['type__name'][0], row['is_pass'][0], row['read_count']['sum'], row['total_length']['sum'], row['total_length']['sum'] / row['read_count']['sum'], row['max_length']['max']), axis=1)
 
+#=======
+##    df['is_pass'] = df['is_pass'].map({True: "Pass", False: "Fail"})
+#    print (df)
+#    gb = df.groupby(['barcode__name', 'type__name', 'is_pass']).agg({'read_count': ['sum'], 'total_length': ['sum'], 'max_length': ['max']})
+#    print (gb)
+#    gb2 = df.groupby(['barcode__name','type__name']).agg({'read_count': ['sum'], 'total_length': ['sum', 'max']})
+#    gb2['is_pass'] = 'All'
+#    gb3 = gb.append(gb2)
+#    print (gb3)
+#    payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], row['type__name'][0], row['is_pass'][0], row['read_count']['sum'], humanbases(int(row['total_length']['sum'])), humanbases(round(row['total_length']['sum'] / row['read_count']['sum'])), humanbases(row['max_length']['max'])), axis=1)
+#    print (payload)
+#>>>>>>> Stashed changes
     return Response(payload)
 
 
@@ -1464,19 +1490,27 @@ def flowcell_histogram_summary(request, pk):
     run_list = flowcell.runs.all()
 
     qs = HistogramSummary.objects\
-        .filter(run__in=run_list)\
-        .filter(run__owner=request.user)\
-        .order_by('read_type', 'bin_index')
+       .filter(run__in=run_list)\
+       .filter(run__owner=request.user)\
+       .order_by('read_type', 'bin_index')
 
     df = pd.DataFrame.from_records(qs.values('barcode__name', 'read_type__name', 'is_pass', 'read_count', 'read_length', 'bin_index'))
 
     gb = df.groupby(['barcode__name', 'read_type__name', 'is_pass', 'bin_index']).agg({'read_count': ['sum'], 'read_length': ['sum']})
+    new_index = list(range(0, gb.index.values.max()[3] + 1))
+    gb2 = gb.unstack(['barcode__name'])
+    gb3 = gb2.unstack(['read_type__name'])
+    gb4 = gb3.unstack(['is_pass'])
+    gb = gb4.reindex(new_index, fill_value=0).stack(['is_pass', 'read_type__name', 'barcode__name']).reorder_levels(
+        ['barcode__name', 'read_type__name', 'is_pass', 'bin_index']).sortlevel(level=0)
 
     payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], '{} {} {}'.format(row['barcode__name'][0], row['read_type__name'][0], 'Pass' if row['is_pass'][0] == True else 'Fail'), row['bin_index'][0] * 900 + 900, row['read_count']['sum'], row['read_length']['sum']), axis=1)
 
     indexes = gb.reset_index().apply(lambda row: '{} {} {}'.format(row['barcode__name'][0], row['read_type__name'][0], 'Pass' if row['is_pass'][0] == True else 'Fail'), axis=1)
 
-    return Response({'data': payload, 'indexes': set(indexes)})
+    #categories = list(range(0,100000))
+
+    return Response({'data': payload, 'indexes': set(indexes)}) #, 'categories': categories})
 
 @api_view(['GET'])
 def flowcell_channel_summary(request, pk):

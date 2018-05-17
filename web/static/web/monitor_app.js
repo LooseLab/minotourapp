@@ -286,11 +286,11 @@ var FlowcellPageApp = {
             'test'
         );
 
-        this.LiveYield = this.makeYieldProjection(
+        /*this.LiveYield = this.makeYieldProjection(
             'yield-projection',
             'Yield Projection',
             'Yield Projection'
-        );
+        );*/
 
         this.LiveCumuYield = this.makeLiveChart(
             'chart-yield',

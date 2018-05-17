@@ -9,6 +9,7 @@ function requestHistogramData(id) {
 
         var indexes = dataObj['indexes'];
         var data = dataObj['data'];
+        var categories = dataObj['categories'];
 
         if (data.length > 0) {
 
@@ -27,6 +28,8 @@ function requestHistogramData(id) {
             data_barcode.sort(function(a, b) {
                 return a[2] - b[2];
             });
+
+            //console.log(data_barcode[-1]);
 
             indexes.sort(function(a, b) {
                 return a - b;
@@ -51,6 +54,8 @@ function requestHistogramData(id) {
                     chart.series[0].remove();
                 }
             }
+
+            //console.log(data_barcode.map(x => x[2]));
 
             chart.update({
                 plotOptions: {
