@@ -17,6 +17,8 @@ function requestHistogramData(id) {
 
             var data_barcode = []
 
+            var categories = []
+
             data.forEach(function(row) {
 
                 if (row[0] == selected_barcode) {
@@ -29,6 +31,14 @@ function requestHistogramData(id) {
                 return a[2] - b[2];
             });
 
+            data_barcode.forEach(function(row) {
+                if (row[1].endsWith("Pass")){
+                    //console.log(row);
+                    categories.push(row);
+                }
+
+
+            })
             //console.log(data_barcode[-1]);
 
             indexes.sort(function(a, b) {
@@ -55,7 +65,7 @@ function requestHistogramData(id) {
                 }
             }
 
-            //console.log(data_barcode.map(x => x[2]));
+            //console.log(data_barcode);
 
             chart.update({
                 plotOptions: {
@@ -68,7 +78,7 @@ function requestHistogramData(id) {
                 },
                 xAxis: {
                     type: 'category',
-                    categories: data_barcode.map(x => x[2])
+                    categories: categories.map(x => x[2])
                 }
             });
 
@@ -115,7 +125,7 @@ function requestHistogramData(id) {
                 },
                 xAxis: {
                     type: 'category',
-                    categories: data_barcode.map(x => x[2])
+                    categories: categories.map(x => x[2])
                 }
             });
 
