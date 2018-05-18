@@ -32,8 +32,12 @@
                             <tr>
                                 <th>#</th>
                                 <th>Name</th>
-                                <th>Device</th>
-                                <th>Qt Runs</th>
+                                <th>Start Time</th>
+                                <th>Number of Runs</th>
+                                <th>Computer's Name</th>
+                                <th>MinION's name</th>
+                                <th>MinKnow's Version</th>
+                                <th>Sample's Name</th>
                             </tr>
                             </thead>
                         </table>
@@ -46,8 +50,12 @@
                             <tr>
                                 <th>#</th>
                                 <th>Name</th>
-                                <th>Device</th>
-                                <th>Qt Runs</th>
+                                <th>Start Time</th>
+                                <th>Number of Runs</th>
+                                <th>Computer's Name</th>
+                                <th>MinION's name</th>
+                                <th>MinKnow's Version</th>
+                                <th>Sample's Name</th>
                             </tr>
                             </thead>
                         </table>
@@ -72,7 +80,16 @@
                     var data = [];
 
                     for (var i = 0; i < json.length; i++){
-                        data.push([json[i].id, json[i].name, json[i].name, json[i].runs.length, json[i].id]);
+                        data.push([
+                            json[i].id,
+                            json[i].name,
+                            json[i].runs[0].start_time,
+                            json[i].runs.length,
+                            json[i].runs[0].name,
+                            json[i].runs[0].minion_name,
+                            json[i].runs[0].minKNOW_version,
+                            json[i].runs[0].sample_name,
+                        ]);
                     }
                     return data;
                 }
@@ -95,8 +112,17 @@
                     var data = [];
                     //console.log(json);
                     var ien = json.length;
-                    for (var i = 0; i < ien; i++){
-                        data.push([json[i].id, json[i].name, json[i].name, json[i].runs.length, json[i].id]);
+                    for (var i = 0; i < json.length; i++){
+                        data.push([
+                            json[i].id,
+                            json[i].name,
+                            json[i].runs[0].start_time,
+                            json[i].runs.length,
+                            json[i].runs[0].name,
+                            json[i].runs[0].minion_name,
+                            json[i].runs[0].minKNOW_version,
+                            json[i].runs[0].sample_name,
+                        ]);
                     }
                     return data;
                 }

@@ -384,6 +384,8 @@ class RunSerializer(serializers.HyperlinkedModelSerializer):
         read_only=True
     )
 
+    minion_name = serializers.ReadOnlyField(source="minion.name")
+
     class Meta:
 
         model = Run
@@ -402,6 +404,7 @@ class RunSerializer(serializers.HyperlinkedModelSerializer):
             'is_barcoded',
             'has_fastq',
             'minion',
+            'minion_name',
             'id',
             'last_read',
             'last_entry',
