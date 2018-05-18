@@ -83,9 +83,13 @@
 
                     for (var i = 0; i < json.length; i++){
 
-                        var start_time = new Date(json[i].runs[0].start_time);
+                        if (json[i].runs[0].start_time) {
+                            var start_time = new Date(json[i].runs[0].start_time);
+                            var start_time_human_format = start_time.getDate() + "-" + months[start_time.getMonth()] + "-" + start_time.getFullYear() + " " + start_time.getHours() + ":" + start_time.getMinutes();
+                        } else {
+                            var start_time_human_format = "";
+                        }
 
-                        var start_time_human_format = start_time.getDate() + "-" + months[start_time.getMonth()] + "-" + start_time.getFullYear() + " " + start_time.getHours() + ":" + start_time.getMinutes();
                         data.push([
                             json[i].id,
                             json[i].name,
@@ -118,9 +122,14 @@
                     var data = [];
 
                     for (var i = 0; i < json.length; i++){
-                        var start_time = new Date(json[i].runs[0].start_time);
 
-                        var start_time_human_format = start_time.getDate() + "-" + months[start_time.getMonth()] + "-" + start_time.getFullYear() + " " + start_time.getHours() + ":" + start_time.getMinutes();
+                        if (json[i].runs[0].start_time) {
+                            var start_time = new Date(json[i].runs[0].start_time);
+                            var start_time_human_format = start_time.getDate() + "-" + months[start_time.getMonth()] + "-" + start_time.getFullYear() + " " + start_time.getHours() + ":" + start_time.getMinutes();
+                        } else {
+                            var start_time_human_format = "";
+                        }
+
                         data.push([
                             json[i].id,
                             json[i].name,

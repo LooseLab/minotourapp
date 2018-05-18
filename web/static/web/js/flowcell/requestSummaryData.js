@@ -1,4 +1,4 @@
-function requestSummaryData (id) {
+function requestSummaryData(id) {
     /*
      * Request summary by barcode data
      */
@@ -14,18 +14,32 @@ function requestSummaryData (id) {
 
             basecalled_summary_table.innerHTML = "";
 
-            data.forEach(function(row) {
+            data.forEach(function (row) {
 
-                var tr = '<tr>';
+                console.log(row);
 
-                row.forEach(function(column){
+                if (row[0] != "No barcode") {
 
-                    tr += '<td>' + column + '</td>';
-                });
+                    var tr = '<tr>';
 
-                basecalled_summary_table.innerHTML += tr;
+                    row.forEach(function (column, index) {
+
+                        if (index == 3 || index == 4 || index == 5 || index == 6) {
+                            var text_align = "right";
+                        } else {
+                            var text_align = "left";
+                        }
+
+                        if (index == 6) {
+                            column = Math.round(column);
+                        }
+
+                        tr += '<td align="' + text_align + '">' + column + '</td>';
+                    });
+
+                    basecalled_summary_table.innerHTML += tr;
+                }
             });
         }
-
     }).bind(this));
 };

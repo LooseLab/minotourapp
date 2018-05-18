@@ -1030,14 +1030,17 @@ def flowcell_summary_barcode(request, pk):
 
     qs = RunSummaryBarcode.objects \
         .filter(run__flowcell=flowcell) \
+        .exclude(barcode__name='No barcode') \
         .filter(run_id__owner=request.user)
 
     df = pd.DataFrame.from_records(qs.values('barcode__name', 'type__name', 'is_pass', 'read_count', 'total_length', 'max_length'))
 #<<<<<<< Updated upstream
 
+    df['is_pass'] = df['is_pass'].map({True: "Pass", False: "Fail"})
+
     gb = df.groupby(['barcode__name', 'type__name', 'is_pass']).agg({'read_count': ['sum'], 'total_length': ['sum'], 'max_length': ['max']})
 
-    payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], row['type__name'][0], row['is_pass'][0], row['read_count']['sum'], row['total_length']['sum'], row['total_length']['sum'] / row['read_count']['sum'], row['max_length']['max']), axis=1)
+    payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], row['type__name'][0], row['is_pass'][0], row['read_count']['sum'], row['total_length']['sum'], int(row['total_length']['sum'] / row['read_count']['sum']), row['max_length']['max']), axis=1)
 
 #=======
 ##    df['is_pass'] = df['is_pass'].map({True: "Pass", False: "Fail"})
@@ -1085,28 +1088,28 @@ def flowcell_summary_barcode_by_minute_quality(request, pk):
 
     readtype_list = FastqReadType.objects.all()
 
-    groupbarcode_set = set()
+    barcode_name_set = set()
 
     for run in run_list:
 
         for barcode in run.barcodes.all():
 
-            groupbarcode_set.add(barcode.groupbarcodes.all()[0]) # it assumes that a barcode belongs to only one groupbarcode
+            barcode_name_set.add(barcode.name)
 
     result_dict = dict()
 
-    for groupbarcode in groupbarcode_set:
+    for barcode_name in barcode_name_set:
 
-        result_dict[barcode.name] = dict()
+        result_dict[barcode_name] = dict()
 
         for readtype in readtype_list:
 
-            result_dict[barcode.name][readtype.name] = dict()
+            result_dict[barcode_name][readtype.name] = dict()
 
             for is_pass in [True, False]:
 
                 queryset = RunStatisticBarcode.objects\
-                    .filter(barcode__in=groupbarcode.barcodes.all())\
+                    .filter(barcode__name=barcode_name)\
                     .filter(type=readtype)\
                     .filter(is_pass=is_pass)\
                     .order_by('sample_time')
@@ -1124,17 +1127,15 @@ def flowcell_summary_barcode_by_minute_quality(request, pk):
                     rc_sum = np.bincount(np.searchsorted(stcats, stvlqs), rcvlqs)
                     avgqs = qs_sum/rc_sum
 
-                    qs = np.column_stack((unixtime,avgqs))
+                    qs = np.column_stack((unixtime, avgqs))
 
-                    result_dict[barcode.name][readtype.name][is_pass] = qs.tolist()
-                    #result_dict[barcode.name][readtype.name]['pass']=pqs.tolist()
-                    #result_dict[barcode.name][readtype.name]['fail']=fqs.tolist()
+                    result_dict[barcode_name][readtype.name][is_pass] = qs.tolist()
 
     return HttpResponse(json.dumps(result_dict, cls=DjangoJSONEncoder), content_type="application/json")
 
 
 @api_view(['GET'])
-def flowcell_summary_barcode_by_minute_maxlength(request,pk):
+def flowcell_summary_barcode_by_minute_maxlength(request, pk):
     """
     Return a prepared summary for max read length over time grouped by minute.
     """
@@ -1145,28 +1146,28 @@ def flowcell_summary_barcode_by_minute_maxlength(request,pk):
 
     readtype_list = FastqReadType.objects.all()
 
-    groupbarcode_set = set()
+    barcode_name_set = set()
 
     for run in run_list:
 
         for barcode in run.barcodes.all():
 
-            groupbarcode_set.add(barcode.groupbarcodes.all()[0]) # it assumes that a barcode belongs to only one groupbarcode
+            barcode_name_set.add(barcode.name)
 
     result_dict = dict()
 
-    for groupbarcode in groupbarcode_set:
+    for barcode_name in barcode_name_set:
 
-        result_dict[barcode.name] = dict()
+        result_dict[barcode_name] = dict()
 
         for readtype in readtype_list:
 
-            result_dict[barcode.name][readtype.name] = dict()
+            result_dict[barcode_name][readtype.name] = dict()
 
             for is_pass in [True, False]:
 
                 queryset = RunStatisticBarcode.objects\
-                    .filter(barcode__in=groupbarcode.barcodes.all())\
+                    .filter(barcode__name=barcode_name)\
                     .filter(type=readtype)\
                     .filter(is_pass=is_pass)\
                     .order_by('sample_time')
@@ -1196,13 +1197,13 @@ def flowcell_summary_barcode_by_minute_maxlength(request,pk):
 
                     qs = np.column_stack((unixtime, np.array(maxarr)))
 
-                    result_dict[barcode.name][readtype.name][is_pass] = qs.tolist()
+                    result_dict[barcode_name][readtype.name][is_pass] = qs.tolist()
 
     return HttpResponse(json.dumps(result_dict, cls=DjangoJSONEncoder), content_type="application/json")
 
 
 @api_view(['GET'])
-def flowcell_summary_barcode_by_minute_length(request,pk):
+def flowcell_summary_barcode_by_minute_length(request, pk):
     """
     Return a prepared set of summaries for reads quality over time grouped by minute.
     """
@@ -1212,28 +1213,28 @@ def flowcell_summary_barcode_by_minute_length(request,pk):
 
     readtype_list = FastqReadType.objects.all()
 
-    groupbarcode_set = set()
+    barcode_name_set = set()
 
     for run in run_list:
 
         for barcode in run.barcodes.all():
 
-            groupbarcode_set.add(barcode.groupbarcodes.all()[0]) # it assumes that a barcode belongs to only one groupbarcode
+            barcode_name_set.add(barcode.name) # it assumes that a barcode belongs to only one groupbarcode
 
     result_dict = dict()
 
-    for groupbarcode in groupbarcode_set:
+    for barcode_name in barcode_name_set:
 
-        result_dict[barcode.name] = dict()
+        result_dict[barcode_name] = dict()
 
         for readtype in readtype_list:
 
-            result_dict[barcode.name][readtype.name] = dict()
+            result_dict[barcode_name][readtype.name] = dict()
 
             for is_pass in [True, False]:
 
                 queryset = RunStatisticBarcode.objects\
-                    .filter(barcode__in=groupbarcode.barcodes.all())\
+                    .filter(barcode__name=barcode_name)\
                     .filter(type=readtype)\
                     .filter(is_pass=is_pass)\
                     .order_by('sample_time')
@@ -1251,9 +1252,9 @@ def flowcell_summary_barcode_by_minute_length(request,pk):
                     rc_sum = np.bincount(np.searchsorted(stcats, stvlqs), rcvlqs)
                     avgqs = qs_sum/rc_sum
 
-                    qs = np.column_stack((unixtime,avgqs))
+                    qs = np.column_stack((unixtime, avgqs))
 
-                    result_dict[barcode.name][readtype.name][is_pass] = qs.tolist()
+                    result_dict[barcode_name][readtype.name][is_pass] = qs.tolist()
 
     return HttpResponse(json.dumps(result_dict, cls=DjangoJSONEncoder), content_type="application/json")
 
@@ -1338,13 +1339,12 @@ def flowcell_summary_barcode_by_minute_speed(request, pk):
 
     readtype_list = FastqReadType.objects.all()
 
-    groupbarcode_set = set()
+    barcode_name_set = set()
 
     for run in run_list:
 
         for barcode in run.barcodes.all():
-
-            groupbarcode_set.add(barcode.groupbarcodes.all()[0]) # it assumes that a barcode belongs to only one groupbarcode
+            barcode_name_set.add(barcode.name)
 
     result_dict = {
         'rate': {
@@ -1355,20 +1355,20 @@ def flowcell_summary_barcode_by_minute_speed(request, pk):
         }
     }
 
-    for groupbarcode in groupbarcode_set:
+    for barcode_name in barcode_name_set:
 
-        result_dict['rate'][barcode.name] = dict()
-        result_dict['speed'][barcode.name] = dict()
+        result_dict['rate'][barcode_name] = dict()
+        result_dict['speed'][barcode_name] = dict()
 
         for readtype in readtype_list:
 
-            result_dict['rate'][barcode.name][readtype.name] = dict()
-            result_dict['speed'][barcode.name][readtype.name] = dict()
+            result_dict['rate'][barcode_name][readtype.name] = dict()
+            result_dict['speed'][barcode_name][readtype.name] = dict()
 
             for is_pass in [True, False]:
 
                 queryset = RunStatisticBarcode.objects\
-                    .filter(barcode__in=groupbarcode.barcodes.all())\
+                    .filter(barcode__name=barcode_name)\
                     .filter(type=readtype)\
                     .filter(is_pass=is_pass)\
                     .order_by('sample_time')
@@ -1393,8 +1393,8 @@ def flowcell_summary_barcode_by_minute_speed(request, pk):
                     #
                     #     result_dict[barcode.name]["speed"]=dict()
 
-                    result_dict["rate"][barcode.name][readtype.name][is_pass] = ss.tolist()
-                    result_dict["speed"][barcode.name][readtype.name][is_pass] = sr.tolist()
+                    result_dict["rate"][barcode_name][readtype.name][is_pass] = ss.tolist()
+                    result_dict["speed"][barcode_name][readtype.name][is_pass] = sr.tolist()
 
     return HttpResponse(json.dumps(result_dict, cls=DjangoJSONEncoder), content_type="application/json")
 
