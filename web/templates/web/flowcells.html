@@ -34,10 +34,10 @@
                                 <th>Name</th>
                                 <th>Start Time</th>
                                 <th>Number of Runs</th>
-                                <th>Computer's Name</th>
-                                <th>MinION's name</th>
-                                <th>MinKnow's Version</th>
-                                <th>Sample's Name</th>
+                                <th>Computer Name</th>
+                                <th>MinION name</th>
+                                <th>MinKNOW Version</th>
+                                <th>Sample Name</th>
                             </tr>
                             </thead>
                         </table>
@@ -52,10 +52,10 @@
                                 <th>Name</th>
                                 <th>Start Time</th>
                                 <th>Number of Runs</th>
-                                <th>Computer's Name</th>
-                                <th>MinION's name</th>
-                                <th>MinKnow's Version</th>
-                                <th>Sample's Name</th>
+                                <th>Computer Name</th>
+                                <th>MinION name</th>
+                                <th>MinKNOW Version</th>
+                                <th>Sample Name</th>
                             </tr>
                             </thead>
                         </table>
@@ -70,6 +70,8 @@
     var table_active_runs;
     var table_all_runs;
 
+    var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
     $(document).ready(function () {
 
         table_active_runs = $('#active-runs').DataTable({
@@ -80,12 +82,16 @@
                     var data = [];
 
                     for (var i = 0; i < json.length; i++){
+
+                        var start_time = new Date(json[i].runs[0].start_time);
+
+                        var start_time_human_format = start_time.getDate() + "-" + months[start_time.getMonth()] + "-" + start_time.getFullYear() + " " + start_time.getHours() + ":" + start_time.getMinutes();
                         data.push([
                             json[i].id,
                             json[i].name,
-                            json[i].runs[0].start_time,
+                            start_time_human_format,
                             json[i].runs.length,
-                            json[i].runs[0].name,
+                            json[i].runs[0].computer_name,
                             json[i].runs[0].minion_name,
                             json[i].runs[0].minKNOW_version,
                             json[i].runs[0].sample_name,
@@ -110,15 +116,17 @@
                 'url': "{% url 'flowcell-list' %}",
                 'dataSrc': function(json){
                     var data = [];
-                    //console.log(json);
-                    var ien = json.length;
+
                     for (var i = 0; i < json.length; i++){
+                        var start_time = new Date(json[i].runs[0].start_time);
+
+                        var start_time_human_format = start_time.getDate() + "-" + months[start_time.getMonth()] + "-" + start_time.getFullYear() + " " + start_time.getHours() + ":" + start_time.getMinutes();
                         data.push([
                             json[i].id,
                             json[i].name,
-                            json[i].runs[0].start_time,
+                            start_time_human_format,
                             json[i].runs.length,
-                            json[i].runs[0].name,
+                            json[i].runs[0].computer_name,
                             json[i].runs[0].minion_name,
                             json[i].runs[0].minKNOW_version,
                             json[i].runs[0].sample_name,

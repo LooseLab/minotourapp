@@ -956,11 +956,11 @@ def tasks_detail_all(request, pk):
 @api_view(['GET'])
 def flowcell_list_active(request):
 
-    if request.method == 'GET':
-        # queryset = Flowcell.objects.distinct().filter(owner=request.user).filter(flowcelldetails__run__active=True)
-        queryset = Flowcell.objects.distinct().filter(owner=request.user)
-        serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
-        return Response(serializer.data)
+    queryset = Flowcell.objects.distinct().filter(owner=request.user)
+
+    serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
 
 
 @api_view(['GET','POST'])

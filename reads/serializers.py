@@ -414,6 +414,7 @@ class RunSerializer(serializers.HyperlinkedModelSerializer):
             'barcodes',
             'to_delete',
             'minion',
+            'computer_name',
         )
 
         read_only = (
@@ -427,7 +428,8 @@ class RunSerializer(serializers.HyperlinkedModelSerializer):
             'last_read',
             'last_entry',
             'jobstodo',
-            'barcodes'
+            'barcodes',
+            'computer_name',
         )
 
 

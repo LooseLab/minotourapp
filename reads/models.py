@@ -249,6 +249,16 @@ class Run(models.Model):
         except AttributeError:
             return "undefined"
 
+    def computer_name(self):
+
+        if self.minion and self.minion.currentrundetails:
+
+            return self.minion.currentrundetails.last().minKNOW_computer
+
+        else:
+
+            return None
+
 
 class BarcodeGroup(models.Model):
 
