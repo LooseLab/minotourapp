@@ -1109,6 +1109,7 @@ def flowcell_summary_barcode_by_minute_quality(request, pk):
             for is_pass in [True, False]:
 
                 queryset = RunStatisticBarcode.objects\
+                    .filter(run__flowcell=flowcell)\
                     .filter(barcode__name=barcode_name)\
                     .filter(type=readtype)\
                     .filter(is_pass=is_pass)\
@@ -1167,6 +1168,7 @@ def flowcell_summary_barcode_by_minute_maxlength(request, pk):
             for is_pass in [True, False]:
 
                 queryset = RunStatisticBarcode.objects\
+                    .filter(run__flowcell=flowcell)\
                     .filter(barcode__name=barcode_name)\
                     .filter(type=readtype)\
                     .filter(is_pass=is_pass)\
@@ -1234,6 +1236,7 @@ def flowcell_summary_barcode_by_minute_length(request, pk):
             for is_pass in [True, False]:
 
                 queryset = RunStatisticBarcode.objects\
+                    .filter(run__flowcell=flowcell)\
                     .filter(barcode__name=barcode_name)\
                     .filter(type=readtype)\
                     .filter(is_pass=is_pass)\
@@ -1286,7 +1289,11 @@ def flowcell_summary_barcode_by_minute_bases(request, pk):
     for barcode in barcode_set:
         barcodedict[barcode.name] = barcode.id
         for readtype in readtypes:
-            queryset = RunStatisticBarcode.objects.filter(barcode=barcode).filter(type=readtype).order_by('sample_time')
+            queryset = RunStatisticBarcode.objects \
+                .filter(run__flowcell=flowcell) \
+                .filter(barcode=barcode)\
+                .filter(type=readtype)\
+                .order_by('sample_time')
             if len(queryset) > 0:
                 stvlqs = queryset.values_list('sample_time', flat=True)
                 rcvlqs = queryset.values_list('read_count', flat=True)
@@ -1368,6 +1375,7 @@ def flowcell_summary_barcode_by_minute_speed(request, pk):
             for is_pass in [True, False]:
 
                 queryset = RunStatisticBarcode.objects\
+                    .filter(run__flowcell=flowcell)\
                     .filter(barcode__name=barcode_name)\
                     .filter(type=readtype)\
                     .filter(is_pass=is_pass)\
