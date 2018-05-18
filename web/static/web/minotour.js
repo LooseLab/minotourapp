@@ -310,6 +310,7 @@ function makeAreaPlot(divName, chartTitle, yAxisTitle) {
             type: 'area',
             //type: 'spline',
             height: 350,
+            marginRight: 200,
         },
         title: {
             text: chartTitle,
@@ -328,7 +329,12 @@ function makeAreaPlot(divName, chartTitle, yAxisTitle) {
             }
         },
         legend: {
-            enabled: true
+            enabled: true,
+            align: 'right',
+            verticalAlign: 'top',
+            layout: 'vertical',
+            x: 0,
+            y: 50
         },
         plotOptions: {
             area: {

@@ -20,6 +20,7 @@ function requestHistogramData(id) {
             var categories = []
 
             data.forEach(function(row) {
+                //console.log(row[0]);
 
                 if (row[0] == selected_barcode) {
 

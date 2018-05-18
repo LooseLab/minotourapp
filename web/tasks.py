@@ -1335,7 +1335,7 @@ def update_run_start_time():
 
     for run in runs:
 
-        if run.RunDetails:
+        if len(run.RunDetails.all()):
 
             run.start_time = run.RunDetails.last().minKNOW_start_time
             origin = 'Live data'
@@ -1343,7 +1343,7 @@ def update_run_start_time():
         else:
 
             fastq = FastqRead.objects.filter(run=run).order_by('start_time').first()
-            run.start_time = fastq.start_time()
+            run.start_time = fastq.start_time
 
             origin = 'Basecalled data'
 
