@@ -1323,3 +1323,29 @@ def send_messages():
             print('inside message_sent')
             new_message.delivered_date = utcnow()
             new_message.save()
+
+@task
+def update_run_start_time():
+    """
+    This method update the field start_time of run based on the live data or
+    the header of the first fastq read
+    """
+
+    runs = Run.objects.all()
+
+    for run in runs:
+
+        if run.RunDetails:
+
+            run.start_time = run.RunDetails.last().minKNOW_start_time
+            origin = 'Live data'
+
+        else:
+
+            fastq = FastqRead.objects.filter(run=run).order_by('start_time').first()
+            run.start_time = fastq.start_time()
+
+            origin = 'Basecalled data'
+
+        run.save()
+        print('Updating start_time for run {} from {}'.format(run.runid, origin))

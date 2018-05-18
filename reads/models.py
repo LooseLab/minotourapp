@@ -164,6 +164,12 @@ class Run(models.Model):
         default=False
     )
 
+    start_time = models.DateTimeField(
+
+        blank=True,
+        null=True
+    )
+
     class Meta:
 
         verbose_name = 'Run'
@@ -197,11 +203,11 @@ class Run(models.Model):
             olddate = datetime.datetime(1, 1, 1, 1, 1, 1, 1, pytz.utc)
             return olddate
 
-    def start_time(self):
-        try:
-            return self.RunDetails.last().minKNOW_start_time
-        except AttributeError:
-            return "undefined"
+    # def start_time(self):
+    #     try:
+    #         return self.RunDetails.last().minKNOW_start_time
+    #     except AttributeError:
+    #         return "undefined"
 
     def last_read(self):
         try:
