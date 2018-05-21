@@ -335,6 +335,8 @@ def processreads(runid, job_master_id, last_read):
 
         fastq_df_result.reset_index().apply(lambda row: save_runsummarybarcode(runid, row), axis=1)
 
+
+        fastq_df['start_time']=fastq_df['start_time'].values.astype('<M8[m]')
         #
         # Calculates statistics for RunStatisticsBarcode
         #
