@@ -1,0 +1,49 @@
+version: '3'
+
+services:
+    db:
+        image: mysql
+        environment:
+            MYSQL_ROOT_PASSWORD: test
+        volumes:
+            - ./mysql-data:/var/lib/mysql
+        ports:
+            - "3307:3306"
+        networks:
+            - production-network
+
+    redis:
+        image: redis
+        volumes:
+            - ./redis-data:/data
+        ports:
+            - "6379:6379"
+        networks:
+            - production-network
+
+    minotour:
+        build:
+            dockerfile: ./minotourapp.dockerfile
+            context: .
+        image: roberto/minotourapp
+        container_name: minotourapp
+        volumes:
+            - .:/opt/minotourapp
+        ports:
+            - "8000:8000"
+        networks:
+            - production-network
+
+#  web:
+#    build: .
+#    command: python3 manage.py runserver 0.0.0.0:8000
+#    volumes:
+#      - .:/code
+#    ports:
+#      - "8000:8000"
+#    depends_on:
+#      - db
+
+networks:
+    production-network:
+        driver: bridge
