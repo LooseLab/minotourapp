@@ -1989,6 +1989,11 @@ def flowcell_tabs_details(request, pk):
             "id": "tab-runs",
             "title": "Runs",
             "position": 8
+        },
+        "Metagenomics": {
+            "id": "tab-metagenomics",
+            "title": "Metagenomics",
+            "position": 9
         }
     }
 
@@ -2019,7 +2024,8 @@ def flowcell_tabs_details(request, pk):
 
             tabs_send.append(tab)
 
-    tabs_send.append(flowcell_tabs_dict['Runs']) # always add a tab for runs
+    tabs_send.append(flowcell_tabs_dict['Runs'])  # always add a tab for runs
+    tabs_send.append(flowcell_tabs_dict['Metagenomics'])  # always add a tab for runs
 
     return Response(tabs_send)
 

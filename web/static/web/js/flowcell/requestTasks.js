@@ -195,12 +195,11 @@ function updateTasks(tasks) {
 
 function requestTasks(id) {
 
-    // var url = "/api/v1/flowcells/" + id + "/tasks/";
-    //
-    // $.get(url, (function (data) {
-    //
-    //     updateTasks(data); //really this only needs to run once!
-    // }).bind(this));
+    var url = "/api/v1/flowcells/" + id + "/tasks/";
+
+    $.get(url, (function (data) {
+        updateTasks(data); //really this only needs to run once!
+    }).bind(this));
 }
 
 function loadTasksForm () {
