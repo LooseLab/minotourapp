@@ -26,6 +26,9 @@ function requestLengthTimeCallback (data) {
 
     }
 
+    var rundata = data['runs'];
+    var data = data['data'];
+    
     for (var typeName of Object.keys(data[selected_barcode])) {
 
         for (var status of Object.keys(data[selected_barcode][typeName])) {
@@ -37,12 +40,10 @@ function requestLengthTimeCallback (data) {
 
     }
 
-    for (var i in this.rundata) {
-
-        var starttime = new Date(Date.parse(this.rundata[i]['start_time']));
-        var endtime = new Date(Date.parse(this.rundata[i]['last_read']));
-        var name = this.rundata[i]['id']
-
+    for (var i in rundata) {
+        var starttime = new Date(Date.parse(rundata[i]['start_time']));
+        var endtime = new Date(Date.parse(rundata[i]['last_read']));
+        var name = rundata[i]['id']
         chart.xAxis[0].addPlotLine({
             value: starttime,
             color: 'black',

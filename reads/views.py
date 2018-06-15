@@ -1,3 +1,4 @@
+import datetime
 import json
 from datetime import timedelta
 
@@ -37,6 +38,10 @@ from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
 from reference.models import ReferenceInfo
 
 import math
+
+from django.core.cache import cache
+
+
 
 def humanbases(n):
     #return (n)
@@ -1132,7 +1137,33 @@ def flowcell_summary_barcode_by_minute_quality(request, pk):
 
                     result_dict[barcode_name][readtype.name][is_pass] = qs.tolist()
 
-    return HttpResponse(json.dumps(result_dict, cls=DjangoJSONEncoder), content_type="application/json")
+    run_data = []
+
+    for run in run_list:
+        run_dict = {
+            'id': run.id,
+            'name': run.name,
+            'runid': run.runid,
+            'start_time': run.start_time,
+            'last_read': run.last_read(),
+        }
+
+        run_data.append(run_dict)
+
+    res = {
+        'runs': run_data,
+        'data': result_dict,
+        'date_created': datetime.datetime.now()
+    }
+
+    #cache.set('teste', 'ola mundo', timeout=None)
+    #cache.set('teste2', json.dumps(res, cls=DjangoJSONEncoder), timeout=None)
+
+    #res2 = cache.get("teste2")
+    #res3 = json.loads(res2)
+
+    # return HttpResponse(json.dumps(result_dict, cls=DjangoJSONEncoder), content_type="application/json")
+    return HttpResponse(json.dumps(res, cls=DjangoJSONEncoder), content_type="application/json")
 
 
 @api_view(['GET'])
@@ -1201,7 +1232,26 @@ def flowcell_summary_barcode_by_minute_maxlength(request, pk):
 
                     result_dict[barcode_name][readtype.name][is_pass] = qs.tolist()
 
-    return HttpResponse(json.dumps(result_dict, cls=DjangoJSONEncoder), content_type="application/json")
+    run_data = []
+
+    for run in run_list:
+        run_dict = {
+            'id': run.id,
+            'name': run.name,
+            'runid': run.runid,
+            'start_time': run.start_time,
+            'last_read': run.last_read(),
+        }
+
+        run_data.append(run_dict)
+
+    res = {
+        'runs': run_data,
+        'data': result_dict,
+        'date_created': datetime.datetime.now()
+    }
+
+    return HttpResponse(json.dumps(res, cls=DjangoJSONEncoder), content_type="application/json")
 
 
 @api_view(['GET'])
@@ -1259,7 +1309,26 @@ def flowcell_summary_barcode_by_minute_length(request, pk):
 
                     result_dict[barcode_name][readtype.name][is_pass] = qs.tolist()
 
-    return HttpResponse(json.dumps(result_dict, cls=DjangoJSONEncoder), content_type="application/json")
+    run_data = []
+
+    for run in run_list:
+        run_dict = {
+            'id': run.id,
+            'name': run.name,
+            'runid': run.runid,
+            'start_time': run.start_time,
+            'last_read': run.last_read(),
+        }
+
+        run_data.append(run_dict)
+
+    res = {
+        'runs': run_data,
+        'data': result_dict,
+        'date_created': datetime.datetime.now()
+    }
+
+    return HttpResponse(json.dumps(res, cls=DjangoJSONEncoder), content_type="application/json")
 
 
 @api_view(['GET'])
@@ -1333,13 +1402,7 @@ def flowcell_summary_barcode_by_minute_bases(request, pk):
 
 @api_view(['GET'])
 def flowcell_summary_barcode_by_minute_speed(request, pk):
-    """
-    Return a list with summaries for a particular run grouped by minute.
-    """
 
-    """
-    Return a prepared set of summaries for reads quality over time grouped by minute.
-    """
     flowcell = Flowcell.objects.get(pk=pk)
 
     run_list = flowcell.runs.all()
@@ -1404,9 +1467,29 @@ def flowcell_summary_barcode_by_minute_speed(request, pk):
                     result_dict["rate"][barcode_name][readtype.name][is_pass] = ss.tolist()
                     result_dict["speed"][barcode_name][readtype.name][is_pass] = sr.tolist()
 
-    return HttpResponse(json.dumps(result_dict, cls=DjangoJSONEncoder), content_type="application/json")
+    run_data = []
+
+    for run in run_list:
+        run_dict = {
+            'id': run.id,
+            'name': run.name,
+            'runid': run.runid,
+            'start_time': run.start_time,
+            'last_read': run.last_read(),
+        }
+
+        run_data.append(run_dict)
+
+    res = {
+        'runs': run_data,
+        'data': result_dict,
+        'date_created': datetime.datetime.now()
+    }
+
+    return HttpResponse(json.dumps(res, cls=DjangoJSONEncoder), content_type="application/json")
 
 
+# TODO remove - data is now shared in the def flowcell_summary_barcode_by_minute_speed
 @api_view(['GET'])
 def flowcell_summary_barcode_by_minute_rate(request, pk):
     """

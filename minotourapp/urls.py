@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from rest_framework.authtoken import views as tok_views
 
+
 urlpatterns = [
     url(r'^login/$', auth_views.LoginView.as_view(template_name="registration/login.html"), name="login",
         kwargs={'redirect_authenticated_user': True}),
