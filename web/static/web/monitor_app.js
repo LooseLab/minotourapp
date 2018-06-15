@@ -335,8 +335,6 @@ var FlowcellPageApp = {
             "Pore States".toUpperCase()
         );
 
-        console.log(">>> initializing monitorapp, requesting data");
-
         var inputFlowcellId = document.querySelector("#flowcell-id");
 
         this.flowcellId = inputFlowcellId.value;
@@ -344,11 +342,6 @@ var FlowcellPageApp = {
         this.selectedBarcode = "All reads";
 
         this.requestData(this.flowcellId);
-
-        setInterval(function () {
-            this.requestData(this.flowcellId);
-        }.bind(this), 5000);
-
     }, // end of init
 
     getSelectedBarcode: function () {

@@ -97,75 +97,17 @@
 
 {% block javascript %}
     <script>
-        $(document).ready(function () {
-            checkTabs();
-            var app = FlowcellPageApp;
-            window.app = app;
 
-            console.log("minotour flow cell app runing");
-            app.init();
+        console.log("Initialising FlowcellPageApp.");
 
-            /*
-            redraw();
-            setInterval(redraw, 3000);
+        var app = FlowcellPageApp;
 
-            function redraw() {
-                for (var chart in Highcharts.charts) {
-                    //console.log('calling redraw');
-                    Highcharts.charts[chart].reflow();
-                    //console.log(chart);
-                }
-            }
-            */
+        window.app = app;
 
+        app.init();
 
-            //$("#maintabbar").on("click", "li", function (event) {
-            //    setTimeout(redraw(), 1000);
-            //    //console.log('testing');
-            //});
+        checkTabs({{ flowcell.id }});
 
-            setInterval(checkTabs, 10000);
-
-            function checkTabs() {
-                var run_id = {{ flowcell.id }};
-                var url = "/api/v1/flowcells/tabs/" + run_id;
-                $.getJSON(url, function (data) {
-                    var items = [];
-                    $.each(data, function (key, value) {
-                        items.push(value);
-                    });
-                    items.sort(function (a, b) {
-                        return a.position - b.position;
-                    });
-                    $.each(items, function (key, value) {
-                        /**
-                         if( $(element).length ) returns true when the element is present
-                         if( !$(element).length ) returns true when the element is not present
-                         This is used to prevent duplicate tabs being produced whenever a check is done for new tabs
-                         **/
-
-                        if (!$('#nav-' + value.id).length) {
-                            var element = '<li><a href="#' + value.id + '"id="nav-' + value.id + '" class="flowcell-tab" data-toggle="tab">' + value.title + '</a></li>';
-                            $('#tasks-li').before(element);
-                        }
-                    });
-
-                    var flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
-
-                    var tabs = document.querySelectorAll('.flowcell-tab');
-
-                    for (var i = 0; i < tabs.length; i++) {
-
-                        tabs[i].addEventListener('click', function (event) {
-
-                            flowcell_selected_tab_input.value = event.target.innerHTML;
-                        });
-                    }
-                });
-            };
-
-            loadTasksForm();
-
-        });
+        //loadTasksForm();
     </script>
 {% endblock %}
