@@ -347,7 +347,7 @@ var FlowcellPageApp = {
 
         this.requestData(this.flowcellId);
 
-        setInterval(function () {
+        setTimeout(function () {
             this.requestData(this.flowcellId);
         }.bind(this), 5000);
 
