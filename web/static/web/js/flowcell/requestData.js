@@ -1,5 +1,7 @@
 function requestData(flowcell_id) {
 
+    console.log('Running requestData for flowcell ' + flowcell_id);
+
     var selected_barcode = get_selected_barcode();
 
     var flowcellId = flowcell_id;
@@ -8,12 +10,12 @@ function requestData(flowcell_id) {
 
     $.get(url_run, (function (data) {
 
-        if (this.summary !== null) {
-            if (this.summary["All reads"]['Template']["max_length"]["all"]["data"][0] >= 1000000 && this.millionaire != true) {
-                $('#eastermodal').modal('show');
-                this.millionaire = true;
-            }
-        }
+        // if (this.summary !== null) {
+        //     if (this.summary["All reads"]['Template']["max_length"]["all"]["data"][0] >= 1000000 && this.millionaire != true) {
+        //         $('#eastermodal').modal('show');
+        //         this.millionaire = true;
+        //     }
+        // }
 
         var barcodes = new Set();
 
@@ -66,4 +68,6 @@ function requestData(flowcell_id) {
             this.requestGfaData(flowcellId);
         }
     }).bind(this));
+
+    setTimeout(requestData.bind(this, flowcell_id), 5000);
 };
