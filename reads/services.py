@@ -1,4 +1,4 @@
-from reads.models import RunSummaryBarcode, RunStatisticBarcode, HistogramSummary, ChannelSummary
+from reads.models import RunSummaryBarcode, RunStatisticBarcode, HistogramSummary, ChannelSummary, FlowcellStatisticBarcode
 
 
 def save_runsummarybarcode(run_id, row):
@@ -80,6 +80,48 @@ def save_runstatisticbarcode(run_id, row):
         runStatisticBarcode.channel_count = len(channels)
 
     runStatisticBarcode.save()
+
+
+def save_flowcellstatisticbarcode(flowcell_id, row):
+
+    start_time = row['start_time'][0]
+    barcode_name = row['barcode__name'][0]
+    type_name = row['type__name'][0]
+    status = row['is_pass'][0]
+    sequence_length_sum = row['sequence_length']['sum']
+    sequence_length_max = row['sequence_length']['max']
+    sequence_length_min = row['sequence_length']['min']
+    quality_average_sum = row['quality_average']['sum']
+    read_count = row['sequence_length']['count']
+    channels = row['channel']['unique']
+
+    flowcellStatisticBarcode, created = FlowcellStatisticBarcode.objects.get_or_create(
+        flowcell_id=flowcell_id,
+        sample_time=start_time,
+        barcode_name=barcode_name,
+        read_type_name=type_name,
+        status=status)
+
+    flowcellStatisticBarcode.total_length += sequence_length_sum
+    flowcellStatisticBarcode.quality_sum += quality_average_sum
+    flowcellStatisticBarcode.read_count += read_count
+
+    if flowcellStatisticBarcode.max_length < sequence_length_max:
+        flowcellStatisticBarcode.max_length = sequence_length_max
+
+    if flowcellStatisticBarcode.min_length < sequence_length_min:
+        flowcellStatisticBarcode.min_length = sequence_length_min
+
+    channel_list = list(flowcellStatisticBarcode.channel_presence)
+
+    for c in channels:
+
+        channel_list[c - 1] = '1'
+
+        flowcellStatisticBarcode.channel_presence = ''.join(channel_list)
+        flowcellStatisticBarcode.channel_count = len(channels)
+
+    flowcellStatisticBarcode.save()
 
 
 def save_histogramsummary(run_id, row):
