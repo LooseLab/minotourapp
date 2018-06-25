@@ -136,11 +136,11 @@ urlpatterns = [
         views.minION_scripts_detail,
         name="minIONscripts-detail"),
     url(
-        r'^api/v1/events/$',
+        r'^api/v1/minioneventtypes/$',
         views.events_type_list,
         name="eventstype-list"),
     url(
-        r'^api/v1/events/(?P<pk>[0-9]+)/$',
+        r'^api/v1/minioneventtypes/(?P<pk>[0-9]+)/$',
         views.events_type_detail,
         name="minioneventtype-detail"),
     url(

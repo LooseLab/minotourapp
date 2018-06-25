@@ -214,6 +214,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'web.tasks.delete_runs',
         'schedule': 60,
     },
+    'update_run_start_time': {
+        'task': 'web.tasks.update_run_start_time',
+        'schedule': 10,
+    }
 }
 
 # For sending twitter messages

@@ -386,7 +386,7 @@ def minION_scripts_list(request, pk):
         return Response(serializer.data)
 
     elif request.method == 'POST':
-        serializer = MinIONScriptsSerializer(data=request.data, context={'request': request})
+        serializer = MinIONScriptsSerializer(data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -513,7 +513,7 @@ def minION_run_status_list(request,pk):
         serializer = MinIONRunStatusSerializer(minIONrunstat, many=True, context={'request': request})
         return Response(serializer.data)
 
-    elif request.method == 'PUT':
+    elif request.method == 'POST':
         serializer = MinIONRunStatusSerializer(minIONrunstat, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()

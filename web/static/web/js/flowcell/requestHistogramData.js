@@ -19,6 +19,8 @@ function requestHistogramData(id) {
 
             var categories = []
 
+            var category_labels = []
+
             data.forEach(function(row) {
                 //console.log(row[0]);
 
@@ -26,6 +28,14 @@ function requestHistogramData(id) {
 
                     data_barcode.push(row);
                 }
+            });
+
+            indexes.forEach(function(row) {
+                if (row[0] == selected_barcode) {
+                    //console.log(row);
+                    category_labels.push(row);
+                }
+
             });
 
             data_barcode.sort(function(a, b) {
@@ -41,7 +51,7 @@ function requestHistogramData(id) {
 
             })
             //console.log(data_barcode[-1]);
-
+            //console.log(categories.map(x => x[2]));
             indexes.sort(function(a, b) {
                 return a - b;
             });

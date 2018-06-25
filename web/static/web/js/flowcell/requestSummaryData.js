@@ -16,7 +16,7 @@ function requestSummaryData(id) {
 
             data.forEach(function (row) {
 
-                console.log(row);
+                //console.log(row);
 
                 if (row[0] != "No barcode") {
 

@@ -345,7 +345,7 @@ var FlowcellPageApp = {
 
         setTimeout(function () {
             this.requestData(this.flowcellId);
-        }.bind(this), 5000);
+        }.bind(this), 30000);
 
     }, // end of init
 
@@ -971,13 +971,20 @@ var FlowcellPageApp = {
     updatePoreStats: function () {
         var returndata = this.parseporehist(this.livedata.colours_string, this.livedata.pore_history);
         //console.log(returndata);
+        //returndata.sort(a,b){
+
+        //}
         while (this.PoreShizzle.series.length > 0)
             this.PoreShizzle.series[0].remove(true);
         //this.PoreShizzle.addSeries(returndata[4]);
         //console.log(returndata[4]);
         for (var i = 0; i < returndata.length; i++) {
-            //console.log(returndata[i]);
-            this.PoreShizzle.addSeries(returndata[i]);
+            console.log(returndata[i]);
+            var seriesdata = returndata[i];
+            //seriesdata['data'].sort(function (a, b){
+            //    return a[0] - b[0];
+            //});
+            this.PoreShizzle.addSeries(seriesdata);
         }
     },
 
@@ -987,13 +994,18 @@ var FlowcellPageApp = {
         var categories = [];
         var datam = [];
         var colorlookup = [];
-        descriptions = JSON.parse(descriptions);
         //console.log(descriptions);
-        for (var thing in descriptions) {
-            if (descriptions.hasOwnProperty(thing)) {
-                if (descriptions[thing].hasOwnProperty("style")) {
-                    //console.log(descriptions[thing]["style"]["colour"]);
-                    colorlookup[descriptions[thing]["name"]] = descriptions[thing]["style"]["colour"];
+        descriptions = JSON.parse(descriptions);
+        for (var thing in descriptions["groups"]) {
+            //console.log(thing);
+            if (descriptions["groups"].hasOwnProperty(thing)) {
+                if (descriptions["groups"][thing].hasOwnProperty("style")) {
+                    //console.log(descriptions["groups"][thing]["states"]);
+                    for (var state in descriptions["groups"][thing]["states"]){
+                        //console.log(descriptions["groups"][thing]["states"][state]["name"]);
+                        colorlookup[descriptions["groups"][thing]["states"][state]["name"]]=descriptions["groups"][thing]["states"][state]["style"]["colour"];
+                    }
+                    //colorlookup[descriptions["groups"][thing]["name"]] = descriptions["groups"][thing]["style"]["colour"];
                 }
             }
         }
