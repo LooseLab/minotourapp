@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from .models import (Barcode, FastqRead, FastqReadType,
                      MinIONControl, MinIONEvent, MinIONEventType,
-                     MinIONmessages, MinIONRunStats, MinIONRunStatus,
+                     MinionMessage, MinIONRunStats, MinIONRunStatus,
                      MinIONScripts, MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
                      RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowCellRun, GroupBarcode)
 
@@ -28,7 +28,7 @@ admin.site.register(MinIONScripts)
 admin.site.register(MinIONStatus)
 admin.site.register(MinIONRunStatus)
 admin.site.register(MinIONRunStats)
-admin.site.register(MinIONmessages)
+admin.site.register(MinionMessage)
 admin.site.register(MinIONControl)
 admin.site.register(RunStatisticBarcode, RunStatisticsBarcodeAdmin)
 admin.site.register(RunSummaryBarcode, RunSummaryBarcodeAdmin)
