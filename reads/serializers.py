@@ -6,7 +6,7 @@ from devices.models import Flowcell, MinION
 from jobs.models import JobMaster, JobType
 from reads.models import (Barcode, BarcodeGroup, FastqRead, FastqReadExtra,
                           FastqReadType, FlowCellRun, MinIONControl,
-                          MinIONEvent, MinIONEventType, MinIONmessages,
+                          MinIONEvent, MinIONEventType, MinionMessage,
                           MinIONRunStats, MinIONRunStatus, MinIONScripts,
                           MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
                           RunStatisticBarcode, RunSummaryBarcode, GroupRun)
@@ -96,11 +96,11 @@ class FastqReadTypeSerializer(serializers.HyperlinkedModelSerializer):
         read_only = ('id',)
 
 
-class MinIONmessagesSerializer(serializers.HyperlinkedModelSerializer):
+class MinionMessageSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = MinIONmessages
+        model = MinionMessage
         fields = (
-        'minION', 'run_id', 'minKNOW_message', 'minKNOW_severity', 'minKNOW_message_timestamp', 'minKNOW_identifier',)
+        'minion', 'run', 'message', 'severity', 'timestamp', 'identifier',)
         read_only = ('id',)
 
 

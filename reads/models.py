@@ -590,22 +590,44 @@ class FastqReadExtra(models.Model):
         return self.fastqread
 
 
-class MinIONmessages(models.Model):
-    minION = models.ForeignKey(MinION, related_name='messages')
-    run_id = models.ForeignKey(Run, related_name='runmessages', blank=True, null=True)
-    minKNOW_message = models.CharField(max_length=256)
-    minKNOW_identifier = models.CharField(max_length=256)
-    minKNOW_severity = models.CharField(max_length=64)
-    minKNOW_message_timestamp = models.DateTimeField()
+class MinionMessage(models.Model):
+
+    minion = models.ForeignKey(
+        MinION,
+        related_name='messages'
+    )
+
+    run = models.ForeignKey(
+        Run,
+        related_name='runmessages',
+        blank=True,
+        null=True
+    )
+
+    message = models.CharField(
+        max_length=256
+    )
+
+    identifier = models.CharField(
+        max_length=256
+    )
+
+    severity = models.CharField(
+        max_length=64
+    )
+
+    timestamp = models.DateTimeField(
+
+    )
 
     class Meta:
-        unique_together = (("minION", "run_id", "minKNOW_message_timestamp"))
-        verbose_name = 'MinION Message'
-        verbose_name_plural = 'MinION Messages'
+        unique_together = ("minion", "run", "timestamp")
+        verbose_name = 'Minion message'
+        verbose_name_plural = 'MinIon messages'
 
     def __str__(self):
         return "{} {} {} {}".format(
-            self.minION, self.minKNOW_message, self.minKNOW_severity, self.minKNOW_message_timestamp)
+            self.minion, self.message, self.severity, self.timestamp)
 
 
 # @receiver(post_save, sender=MinIONRun)
@@ -701,14 +723,27 @@ class FlowCellRun(models.Model):
 
 class RunStatisticBarcode(models.Model):
 
+    flowcell = models.ForeignKey(
+        Flowcell,
+        on_delete=models.CASCADE,
+        related_name='statistics',
+        null=True
+    )
+
     run = models.ForeignKey(
         Run,
         on_delete=models.CASCADE,
         related_name='runstatbarc',
+        null=True
     )
 
     type = models.ForeignKey(
         FastqReadType
+    )
+
+    barcode_name = models.CharField(
+
+        max_length=32
     )
 
     barcode = models.ForeignKey(

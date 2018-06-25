@@ -1,6 +1,9 @@
 import datetime
 import json
 from datetime import timedelta
+import dateutil.parser
+
+from django.db.models import Sum, Max
 
 import numpy as np
 import pandas as pd
@@ -19,14 +22,14 @@ from jobs.models import JobMaster, JobType
 from minotourapp import settings
 from reads.models import (Barcode, BarcodeGroup, FastqRead, FastqReadType,
                           FlowCellRun, MinIONControl, MinIONEvent,
-                          MinIONEventType, MinIONmessages, MinIONRunStats,
+                          MinIONEventType, MinionMessage, MinIONRunStats,
                           MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun)
 from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
                                ChannelSummarySerializer, FastqReadSerializer,
                                FastqReadTypeSerializer, FlowCellSerializer, JobTypeSerializer,
                                MinIONControlSerializer, MinIONEventSerializer,
                                MinIONEventTypeSerializer,
-                               MinIONmessagesSerializer,
+                               MinionMessageSerializer,
                                MinIONRunStatsSerializer,
                                MinIONRunStatusSerializer,
                                MinIONScriptsSerializer, MinIONSerializer,
@@ -185,12 +188,12 @@ def activeminion_list(request):
 def minion_messages_list(request, pk):
 
     if request.method == 'GET':
-        queryset = MinIONmessages.objects.filter(minION=pk)
-        serializer = MinIONmessagesSerializer(queryset, many=True, context={'request': request})
+        queryset = MinionMessage.objects.filter(minION=pk)
+        serializer = MinionMessageSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
     elif request.method == 'POST':
-        serializer = MinIONmessagesSerializer(data=request.data, context={'request': request})
+        serializer = MinionMessageSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -204,9 +207,9 @@ def sinceminion_messages_list(request, pk, starttime,endtime):
         correctedstart = parser.parse(starttime) - timedelta(minutes=180)
         correctedend = parser.parse(endtime) + timedelta(minutes=180)
         #print (correctedstart.isoformat().replace('+00:00', 'Z'))
-        queryset = MinIONmessages.objects.filter(minION=pk).filter(
+        queryset = MinionMessage.objects.filter(minION=pk).filter(
         minKNOW_message_timestamp__gte=correctedstart.isoformat().replace('+00:00', 'Z')).filter(minKNOW_message_timestamp__lte=correctedend.isoformat().replace('+00:00', 'Z'))
-        serializer = MinIONmessagesSerializer(queryset, many=True, context={'request': request})
+        serializer = MinionMessageSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -214,13 +217,28 @@ def sinceminion_messages_list(request, pk, starttime,endtime):
 def recentminion_messages_list(request, pk):
 
     if request.method == 'GET':
-        queryset = MinIONmessages.objects.filter(minION=pk).filter(minKNOW_message_timestamp__gte= timezone.now() - timedelta(hours=24))
-        serializer = MinIONmessagesSerializer(queryset, many=True, context={'request': request})
+        queryset = MinionMessage.objects.filter(minION=pk).filter(minKNOW_message_timestamp__gte=timezone.now() - timedelta(hours=24))
+        serializer = MinionMessageSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
 
 @api_view(['GET'])
 def minknow_message_list_by_flowcell(request, pk):
+
+    form_start_time = request.GET.get('start_time', None)
+    form_end_time = request.GET.get('end_time', None)
+
+    if form_start_time:
+        start_time = dateutil.parser.parse(form_start_time)
+
+    else:
+        start_time = None
+
+    if form_end_time:
+        end_time = dateutil.parser.parse(form_end_time)
+
+    else:
+        end_time = None
 
     flowcell = Flowcell.objects.get(pk=pk)
 
@@ -232,9 +250,28 @@ def minknow_message_list_by_flowcell(request, pk):
 
             minion_list.append(run.minion)
 
-    messages = MinIONmessages.objects.filter(minION__in=minion_list)
+    if start_time and end_time:
 
-    serializer = MinIONmessagesSerializer(messages, many=True, context={'request': request})
+        messages = MinionMessage.objects\
+            .filter(minion__in=minion_list)\
+            .filter(timestamp__gt=start_time)\
+            .filter(timestamp__lt=end_time)
+
+    elif start_time:
+        messages = MinionMessage.objects\
+            .filter(minion__in=minion_list)\
+            .filter(timestamp__gt=start_time)
+
+    elif end_time:
+        messages = MinionMessage.objects\
+            .filter(minion__in=minion_list)\
+            .filter(timestamp__lt=end_time)
+
+    else:
+        messages = MinionMessage.objects\
+            .filter(minion__in=minion_list)[:10]
+
+    serializer = MinionMessageSerializer(messages, many=True, context={'request': request})
 
     return Response(serializer.data)
 
@@ -1351,51 +1388,69 @@ def flowcell_summary_barcode_by_minute_bases(request, pk):
 
     # barcodeset = BarcodeGroup.objects.filter(flowcell=pk)
     barcodedict=dict()
-    resultset=dict()
+    resultset = {
+        'reads': {
+
+        },
+        'bases': {
+
+        }
+    }
 
     readtypes = FastqReadType.objects.all()
 
     for barcode in barcode_set:
+
         barcodedict[barcode.name] = barcode.id
+
         for readtype in readtypes:
-            queryset = RunStatisticBarcode.objects \
-                .filter(run__flowcell=flowcell) \
-                .filter(barcode=barcode)\
-                .filter(type=readtype)\
-                .order_by('sample_time')
-            if len(queryset) > 0:
-                stvlqs = queryset.values_list('sample_time', flat=True)
-                rcvlqs = queryset.values_list('read_count', flat=True)
-                bvlqs = queryset.values_list('total_length', flat=True)
-                # prcvlqs = queryset.values_list('pass_count', flat=True)
-                # pbvlqs = queryset.values_list('pass_length', flat=True)
-                stcats = np.unique(stvlqs)
-                unixtime = [x.timestamp() * 1000 for x in stcats]
-                rc_sum = np.bincount(np.searchsorted(stcats, stvlqs), rcvlqs)
-                # prc_sum = np.bincount(np.searchsorted(stcats, stvlqs), prcvlqs)
-                bc_sum = np.bincount(np.searchsorted(stcats, stvlqs), bvlqs)
-                # pbc_sum = np.bincount(np.searchsorted(stcats, stvlqs), pbvlqs)
-                # fbc_sum = bc_sum - pbc_sum
-                # frc_sum = rc_sum - prc_sum
-                rc = np.column_stack((unixtime, np.cumsum(rc_sum)))
-                # prc = np.column_stack((unixtime, np.cumsum(prc_sum)))
-                # frc = np.column_stack((unixtime, np.cumsum(frc_sum)))
-                bc = np.column_stack((unixtime,np.cumsum(bc_sum)))
-                # pbc = np.column_stack((unixtime,np.cumsum(pbc_sum)))
-                # fbc = np.column_stack((unixtime,np.cumsum(fbc_sum)))
-                resultset[barcode.name]=dict()
-                if "reads" not in resultset[barcode.name]:
-                    resultset[barcode.name]["reads"]=dict()
-                resultset[barcode.name]["reads"][readtype.name]=dict()
-                resultset[barcode.name]["reads"][readtype.name]['all']=rc.tolist()
-                # resultset[barcode.name]["reads"][readtype.name]['pass']=prc.tolist()
-                # resultset[barcode.name]["reads"][readtype.name]['fail']=frc.tolist()
-                if "bases" not in resultset[barcode.name]:
-                    resultset[barcode.name]["bases"]=dict()
-                resultset[barcode.name]["bases"][readtype.name]=dict()
-                resultset[barcode.name]["bases"][readtype.name]['all']=bc.tolist()
-                # resultset[barcode.name]["bases"][readtype.name]['pass']=pbc.tolist()
-                # resultset[barcode.name]["bases"][readtype.name]['fail']=fbc.tolist()
+
+            for is_pass in [True, False]:
+
+                queryset = RunStatisticBarcode.objects \
+                    .filter(run__flowcell=flowcell) \
+                    .filter(barcode=barcode)\
+                    .filter(type=readtype)\
+                    .filter(is_pass=is_pass)\
+                    .order_by('sample_time')
+
+                if len(queryset) > 0:
+
+                    stvlqs = queryset.values_list('sample_time', flat=True)
+                    rcvlqs = queryset.values_list('read_count', flat=True)
+                    bvlqs = queryset.values_list('total_length', flat=True)
+                    # prcvlqs = queryset.values_list('pass_count', flat=True)
+                    # pbvlqs = queryset.values_list('pass_length', flat=True)
+                    stcats = np.unique(stvlqs)
+                    unixtime = [x.timestamp() * 1000 for x in stcats]
+                    rc_sum = np.bincount(np.searchsorted(stcats, stvlqs), rcvlqs)
+                    # prc_sum = np.bincount(np.searchsorted(stcats, stvlqs), prcvlqs)
+                    bc_sum = np.bincount(np.searchsorted(stcats, stvlqs), bvlqs)
+                    # pbc_sum = np.bincount(np.searchsorted(stcats, stvlqs), pbvlqs)
+                    # fbc_sum = bc_sum - pbc_sum
+                    # frc_sum = rc_sum - prc_sum
+                    rc = np.column_stack((unixtime, np.cumsum(rc_sum)))
+                    # prc = np.column_stack((unixtime, np.cumsum(prc_sum)))
+                    # frc = np.column_stack((unixtime, np.cumsum(frc_sum)))
+                    bc = np.column_stack((unixtime,np.cumsum(bc_sum)))
+                    # pbc = np.column_stack((unixtime,np.cumsum(pbc_sum)))
+                    # fbc = np.column_stack((unixtime,np.cumsum(fbc_sum)))
+
+                    if barcode.name not in resultset['reads']:
+
+                        resultset['reads'][barcode.name] = {}
+                        resultset['bases'][barcode.name] = {}
+
+                    if readtype.name not in resultset['reads'][barcode.name]:
+                        resultset['reads'][barcode.name][readtype.name] = {}
+                        resultset['bases'][barcode.name][readtype.name] = {}
+
+                    if is_pass not in resultset['reads'][barcode.name][readtype.name]:
+                        resultset['reads'][barcode.name][readtype.name][is_pass] = []
+                        resultset['bases'][barcode.name][readtype.name][is_pass] = []
+
+                    resultset['reads'][barcode.name][readtype.name][is_pass] = rc.tolist()
+                    resultset['bases'][barcode.name][readtype.name][is_pass] = bc.tolist()
 
     return HttpResponse(json.dumps(resultset, cls=DjangoJSONEncoder), content_type="application/json")
 
@@ -1573,9 +1628,82 @@ def flowcell_summary_barcode_by_minute_rate(request, pk):
 
 @api_view(['GET'])
 def flowcell_histogram_summary(request, pk):
-    """
-    Return a list with histogram summaries for a particular run.
-    """
+
+    barcode_name = request.GET.get('barcode_name', 'All reads')
+
+    flowcell = Flowcell.objects.get(pk=pk)
+
+    run_list = flowcell.runs.all()
+
+    qs = HistogramSummary.objects \
+        .filter(run__in=run_list) \
+        .filter(run__owner=request.user) \
+        .filter(barcode__name=barcode_name)
+
+    max_bin_index = qs.aggregate(Max('bin_index'))
+
+    qs2 = qs.order_by('read_type', 'is_pass', 'bin_index')
+
+    res = qs2.values('barcode__name', 'read_type__name', 'is_pass', 'bin_index').annotate(Sum('read_count'), Sum('read_length'))
+
+    result = []
+
+    result_read_count_sum = {}
+    result_read_length_sum = {}
+
+    for r in res:
+        l_barcode_name = r['barcode__name']
+        l_read_type_name = r['read_type__name']
+        l_is_pass = 'Pass' if r['is_pass'] else 'Fail'
+        l_bin_index = r['bin_index']
+        l_read_count_sum = r['read_count__sum']
+        l_read_length_sum = r['read_length__sum']
+
+        l_key = ("{} - {} - {}".format(l_barcode_name, l_read_type_name, l_is_pass))
+
+        result.append((l_key, l_barcode_name, l_read_type_name, l_is_pass, l_bin_index, l_read_count_sum, l_read_length_sum))
+
+        if l_key not in result_read_count_sum.keys():
+
+            result_read_count_sum[l_key] = [0] * (max_bin_index['bin_index__max'])
+
+        else:
+            result_read_count_sum[l_key][l_bin_index - 1] = l_read_count_sum
+
+        if l_key not in result_read_length_sum.keys():
+
+            result_read_length_sum[l_key] = [0] * (max_bin_index['bin_index__max'])
+
+        else:
+
+            result_read_length_sum[l_key][l_bin_index - 1] = l_read_length_sum
+
+    result_read_count_sum2 = []
+    for key in result_read_count_sum.keys():
+        result_read_count_sum2.append({
+            'name': key,
+            'data': result_read_count_sum[key]
+        })
+
+    result_read_length_sum2 = []
+    for key in result_read_length_sum.keys():
+        result_read_length_sum2.append({
+            'name': key,
+            'data': result_read_length_sum[key]
+        })
+
+    #key = "histogram-summary-flowcell-{}".format(pk)
+
+    #cached_data = cache.get(key)
+
+    #print(cached_data)
+
+    #payload = json.loads(cached_data)
+
+    categories = list(range(1 * 900, (max_bin_index['bin_index__max'] + 1) * 900, 900))
+
+    return Response({'result_read_count_sum': result_read_count_sum2, 'result_read_length_sum': result_read_length_sum2, 'categories': categories})
+
     flowcell = Flowcell.objects.get(pk=pk)
 
     run_list = flowcell.runs.all()
@@ -1584,18 +1712,18 @@ def flowcell_histogram_summary(request, pk):
        .filter(run__in=run_list)\
        .filter(run__owner=request.user)\
        .order_by('read_type', 'bin_index')
-
+    qs.values('barcode__name', 'read_type__name', 'is_pass', 'bin_index').annotate(Sum('read_count'), Sum('read_length'))
     df = pd.DataFrame.from_records(qs.values('barcode__name', 'read_type__name', 'is_pass', 'read_count', 'read_length', 'bin_index'))
 
     gb = df.groupby(['barcode__name', 'read_type__name', 'is_pass', 'bin_index']).agg({'read_count': ['sum'], 'read_length': ['sum']})
-    ## new_index should get the maximum value in the data to rebuild the histogram dataset
+    # # ## new_index should get the maximum value in the data to rebuild the histogram dataset
     new_index = list(range(0, gb.index.values.max()[3] + 1))
     ## Here we unstack the multiindex datafram so we can reindex the bin_index.
     ## We do this using the new_index and we fill in the blanks with 0 values.
     ## We then restack the data to rebuild the multindex.
     ## Finally we reorder the indexes to return the order to the original
     gb = gb.unstack(['barcode__name', 'read_type__name', 'is_pass']).reindex(new_index, fill_value=0).stack(['is_pass', 'read_type__name', 'barcode__name']).reorder_levels(
-        ['barcode__name', 'read_type__name', 'is_pass', 'bin_index']).sortlevel(level=0)
+         ['barcode__name', 'read_type__name', 'is_pass', 'bin_index']).sortlevel(level=0)
 
     payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], '{} {} {}'.format(row['barcode__name'][0], row['read_type__name'][0], 'Pass' if row['is_pass'][0] == True else 'Fail'), row['bin_index'][0] * 900 + 900, row['read_count']['sum'], row['read_length']['sum']), axis=1)
 
@@ -1604,6 +1732,7 @@ def flowcell_histogram_summary(request, pk):
     #categories = list(range(0,100000))
 
     return Response({'data': payload, 'indexes': set(indexes)}) #, 'categories': categories})
+    #return Response({'data': gb.to_records()}) #, 'categories': categories})
 
 @api_view(['GET'])
 def flowcell_channel_summary(request, pk):
