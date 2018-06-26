@@ -257,7 +257,7 @@ class Run(models.Model):
 
     def computer_name(self):
 
-        if self.minion and self.minion.currentrundetails:
+        if self.minion and self.minion.currentrundetails and self.minion.currentrundetails.last():
 
             return self.minion.currentrundetails.last().minKNOW_computer
 
@@ -333,7 +333,7 @@ class Barcode(models.Model):
         return "{} {} {}".format(self.run, self.run.runid, self.name)
 
 
-class MinIONStatus(models.Model):
+class MinIONStatus(models.Model): #TODO Rename class for logical consistency
     minION = models.OneToOneField(MinION, related_name='currentdetails')
     minKNOW_status = models.CharField(max_length=64)
     minKNOW_current_script = models.CharField(max_length=256, blank=True, null=True)
@@ -360,7 +360,7 @@ class MinIONStatus(models.Model):
         return "{} {}".format(self.minION, self.minKNOW_status)
 
 
-class MinIONRunStats(models.Model):
+class MinIONRunStats(models.Model):#Todo consider merging in to one object with
     minION = models.ForeignKey(MinION, related_name='currentrunstats')
     run_id = models.ForeignKey(Run, related_name='RunStats')
     sample_time = models.DateTimeField()
@@ -399,7 +399,7 @@ class MinIONRunStats(models.Model):
     ## This is something to look at for optimisation
     def occupancy(self):
         if (self.strand > 0 and self.inrange > 0):
-            occupancy = (self.strand / (self.strand + self.inrange)) * 100
+            occupancy = round(((self.strand + self.adapter) / (self.strand + self.adapter + self.inrange)) * 100)
         else:
             occupancy = 0
         return occupancy
@@ -478,6 +478,9 @@ class MinIONScripts(models.Model):
     base_calling = models.NullBooleanField(blank=True, null=True)
     flow_cell = models.CharField(max_length=256, blank=True, null=True)
     kit = models.CharField(max_length=256, blank=True, null=True)
+    experiment_time = models.IntegerField(blank=True, null=True)
+    event_ratio = models.FloatField(blank=True, null=True)
+    kit_category = models.CharField(max_length=1024,blank=True,null=True)
 
     class Meta:
         verbose_name = 'MinION Script'
@@ -590,6 +593,15 @@ class FastqReadExtra(models.Model):
         return self.fastqread
 
 
+#<<<<<<< HEAD
+#class MinIONmessages(models.Model): #TODO update field names!
+#    minION = models.ForeignKey(MinION, related_name='messages')
+#    run_id = models.ForeignKey(Run, related_name='runmessages', blank=True, null=True)
+#    minKNOW_message = models.CharField(max_length=256)
+#    minKNOW_identifier = models.CharField(max_length=256)
+#    minKNOW_severity = models.CharField(max_length=64)
+#    minKNOW_message_timestamp = models.DateTimeField()
+#=======
 class MinionMessage(models.Model):
 
     minion = models.ForeignKey(
@@ -619,6 +631,7 @@ class MinionMessage(models.Model):
     timestamp = models.DateTimeField(
 
     )
+#>>>>>>> 2a6dc3c8ce81fb2274135a1b5f55b18f7a39f7fa
 
     class Meta:
         unique_together = ("minion", "run", "timestamp")

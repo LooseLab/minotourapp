@@ -80,7 +80,7 @@ class MinIONSerializer(serializers.HyperlinkedModelSerializer):
 
         model = MinION
         fields = (
-        'url', 'name', 'minION_name', 'space_available', 'minKNOW_version', 'status', 'computer', 'sample_name', 'run_status',
+        'url', 'id', 'name', 'minION_name', 'space_available', 'minKNOW_version', 'status', 'computer', 'sample_name', 'run_status',
         'flow_cell_id', 'run_name', 'total_drive_space', 'space_till_shutdown', 'warnings', 'last_run', 'currentscript',
         'event_yield', 'voltage_value',)
         read_only = (
@@ -195,7 +195,7 @@ class MinIONEventSerializer(serializers.HyperlinkedModelSerializer):
 class MinIONScriptsSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = MinIONScripts
-        fields = ('id', 'minION', 'identifier', 'name', 'experiment_type', 'base_calling', 'flow_cell', 'kit')
+        fields = ('id', 'minION', 'identifier', 'name', 'experiment_type', 'base_calling', 'flow_cell', 'kit', 'event_ratio', 'experiment_time')
         read_only = ('id',)
 
 

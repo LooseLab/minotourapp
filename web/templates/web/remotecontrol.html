@@ -34,6 +34,7 @@
                                 <!-- Nav tabs -->
                                 <ul class="nav nav-tabs" role="tablist">
                                     <li v-for="(keydata,minion) in minions " role="presentation"><a v-bind:href="'#' + minions[minion].name" role="tab" data-toggle="tab">
+                                        {{ minions[minion].status }}
                                         <div v-if='minions[minion].status=="processing"'>
                                             Sequencing:{{minions[minion].livedata.machine_id.result}}/{{minions[minion].name}}
                                         </div>
@@ -47,7 +48,8 @@
                                 </ul>
                                 <div class="tab-content">
                                     <div v-for="(keydata,minion) in minions" role="tabpanel" class="tab-pane" :id="minions[minion].name">
-                                        <div v-if='minions[minion].state=="active"'>
+                                        {{ minions[minion].state }}
+                                        <!--<div v-if='minions[minion].state=="active"'>-->
                                             <div class="panel-body">
 
 
@@ -405,7 +407,7 @@
 
                                         </div>
                                     </div>
-                                    </div>
+                                    <!--</div>-->
                                 </div>
 
                                 {% endverbatim %}

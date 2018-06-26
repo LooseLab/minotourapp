@@ -29,7 +29,7 @@ function requestData(flowcell_id) {
 
             this.rundata = data;
             this.requestRunDetails(flowcellId);
-            requestMinknowMessages(flowcellId);
+            requestMinknowMessages(flowcellId,data);
 
         } else if (flowcell_selected_tab_input.value == 'Tasks') {
 

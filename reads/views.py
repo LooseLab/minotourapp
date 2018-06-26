@@ -423,7 +423,7 @@ def minION_scripts_list(request, pk):
         return Response(serializer.data)
 
     elif request.method == 'POST':
-        serializer = MinIONScriptsSerializer(data=request.data, context={'request': request})
+        serializer = MinIONScriptsSerializer(data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -550,7 +550,7 @@ def minION_run_status_list(request,pk):
         serializer = MinIONRunStatusSerializer(minIONrunstat, many=True, context={'request': request})
         return Response(serializer.data)
 
-    elif request.method == 'PUT':
+    elif request.method == 'POST':
         serializer = MinIONRunStatusSerializer(minIONrunstat, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
@@ -610,7 +610,7 @@ def read_list(request, pk):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 def minION_detail(request, pk):
     # """
     # TODO describe function
@@ -626,28 +626,51 @@ def minION_detail(request, pk):
     #     serializer = MinIONSerializer(minion, context={'request': request})
     #     return Response(serializer.data)
 
-    search_criteria = request.GET.get('search_criteria', 'id')
+    if request.method == 'GET':
 
-    if search_criteria == 'id':
+        search_criteria = request.GET.get('search_criteria', 'id')
 
-        minion_list = MinION.objects.filter(owner=request.user).filter(id=pk)
+        if search_criteria == 'id':
 
-    elif search_criteria == 'name':
+            minion_list = MinION.objects.filter(owner=request.user).filter(id=pk)
 
-        minion_list = MinION.objects.filter(owner=request.user).filter(name=pk)
+        elif search_criteria == 'name':
 
-    else:
+            minion_list = MinION.objects.filter(owner=request.user).filter(name=pk)
 
-        minion_list = MinION.objects.none()
+        else:
 
-    if len(minion_list) != 1:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+            minion_list = MinION.objects.none()
 
-    minion = minion_list[0]
+        if len(minion_list) != 1:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
-    serializer = MinIONSerializer(minion, context={'request': request})
+        minion = minion_list[0]
 
-    return Response(serializer.data)
+        serializer = MinIONSerializer(minion, context={'request': request})
+
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+
+        print ("We are inside POST")
+        print (request.data)
+
+        # id of minION to update
+        # parameter to update
+        # new value
+
+        minion = MinION.objects.get(pk=pk)
+
+        serializer = MinIONSerializer(minion, data=request.data, partial=True,context={'request': request})
+
+        if serializer.is_valid():
+            serializer.save()
+
+        else:
+            print ("PROBLEM")
+
+        return Response(serializer.data)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
