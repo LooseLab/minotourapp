@@ -45,22 +45,22 @@ function requestCumuBasesCallBack(data) {
 
     }
 
-    for (var typeName of Object.keys(data[selected_barcode]["bases"])) {
+    for (var typeName of Object.keys(data["bases"][selected_barcode])) {
 
-        for (var status of Object.keys(data[selected_barcode]["bases"][typeName])) {
+        for (var status of Object.keys(data["bases"][selected_barcode][typeName])) {
 
             chart.addSeries({
                 name: selected_barcode + " - " + typeName + " - " + status,
-                data: data[selected_barcode]["bases"][typeName][status]
+                data: data["bases"][selected_barcode][typeName][status]
             });
         }
     }
 
-    for (var typeName of Object.keys(data[selected_barcode]["reads"])) {
-        for (var status of Object.keys(data[selected_barcode]["reads"][typeName])) {
+    for (var typeName of Object.keys(data["reads"][selected_barcode])) {
+        for (var status of Object.keys(data["reads"][selected_barcode][typeName])) {
             chart2.addSeries({
                 name: selected_barcode + " - " + typeName + " - " + status,
-                data: data[selected_barcode]["reads"][typeName][status]
+                data: data["reads"][selected_barcode][typeName][status]
             });
         }
     }

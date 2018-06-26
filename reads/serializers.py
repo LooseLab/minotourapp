@@ -9,7 +9,7 @@ from reads.models import (Barcode, BarcodeGroup, FastqRead, FastqReadExtra,
                           MinIONEvent, MinIONEventType, MinionMessage,
                           MinIONRunStats, MinIONRunStatus, MinIONScripts,
                           MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
-                          RunStatisticBarcode, RunSummaryBarcode, GroupRun)
+                          RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellSummaryBarcode)
 
 
 class UserOptionsSerializer(serializers.ModelSerializer):
@@ -522,3 +522,25 @@ class GroupRunMembershipSerializer(serializers.Serializer):
     #
     #     fields = ('grouprun', 'run')
     #
+
+
+class FlowcellSummaryBarcodeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = FlowcellSummaryBarcode
+
+        fields = (
+            'flowcell',
+            'read_type_name',
+            'barcode_name',
+            'status',
+            'quality_sum',
+            'read_count',
+            'total_length',
+            'max_length',
+            'min_length',
+            'channel_count',
+        )
+
+        read_only = ('id',)
+

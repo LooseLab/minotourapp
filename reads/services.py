@@ -1,4 +1,4 @@
-from reads.models import RunSummaryBarcode, RunStatisticBarcode, HistogramSummary, ChannelSummary, FlowcellStatisticBarcode
+from reads.models import RunSummaryBarcode, RunStatisticBarcode, HistogramSummary, ChannelSummary, FlowcellStatisticBarcode, FlowcellSummaryBarcode
 
 
 def save_runsummarybarcode(run_id, row):
@@ -38,6 +38,45 @@ def save_runsummarybarcode(run_id, row):
     runSummaryBarcode.channel_presence = ''.join(channel_list)
     runSummaryBarcode.channel_count = len(channels)
     runSummaryBarcode.save()
+
+
+def save_flowcellsummarybarcode(flowcell_id, row):
+
+    barcode_name = row['barcode__name'][0]
+    type_name = row['type__name'][0]
+    status = row['is_pass'][0]
+    sequence_length_sum = row['sequence_length']['sum']
+    sequence_length_max = row['sequence_length']['max']
+    sequence_length_min = row['sequence_length']['min']
+    quality_average_sum = row['quality_average']['sum']
+    read_count = row['sequence_length']['count']
+    channels = row['channel']['unique']
+
+    flowcellSummaryBarcode, created = FlowcellSummaryBarcode.objects.get_or_create(
+        flowcell_id=flowcell_id,
+        barcode_name=barcode_name,
+        read_type_name=type_name,
+        status=status)
+
+    flowcellSummaryBarcode.total_length += sequence_length_sum
+    flowcellSummaryBarcode.quality_sum += quality_average_sum
+    flowcellSummaryBarcode.read_count += read_count
+
+    if flowcellSummaryBarcode.max_length < sequence_length_max:
+        flowcellSummaryBarcode.max_length = sequence_length_max
+
+    if flowcellSummaryBarcode.min_length < sequence_length_min:
+        flowcellSummaryBarcode.min_length = sequence_length_min
+
+    channel_list = list(flowcellSummaryBarcode.channel_presence)
+
+    for c in channels:
+
+        channel_list[c - 1] = '1'
+
+    flowcellSummaryBarcode.channel_presence = ''.join(channel_list)
+    flowcellSummaryBarcode.channel_count = len(channels)
+    flowcellSummaryBarcode.save()
 
 
 def save_runstatisticbarcode(run_id, row):
@@ -84,7 +123,7 @@ def save_runstatisticbarcode(run_id, row):
 
 def save_flowcellstatisticbarcode(flowcell_id, row):
 
-    start_time = row['start_time'][0]
+    start_time = row['start_time_truncate'][0]
     barcode_name = row['barcode__name'][0]
     type_name = row['type__name'][0]
     status = row['is_pass'][0]

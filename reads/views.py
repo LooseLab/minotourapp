@@ -23,7 +23,7 @@ from minotourapp import settings
 from reads.models import (Barcode, BarcodeGroup, FastqRead, FastqReadType,
                           FlowCellRun, MinIONControl, MinIONEvent,
                           MinIONEventType, MinionMessage, MinIONRunStats,
-                          MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun)
+                          MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun, FlowcellStatisticBarcode, FlowcellSummaryBarcode)
 from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
                                ChannelSummarySerializer, FastqReadSerializer,
                                FastqReadTypeSerializer, FlowCellSerializer, JobTypeSerializer,
@@ -37,7 +37,7 @@ from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
                                RunHistogramSummarySerializer, RunSerializer,
                                RunStatisticBarcodeSerializer,
                                RunSummaryBarcodeSerializer, ChannelSummary, HistogramSummary,
-                               RunStatisticBarcode, RunSummaryBarcode, GroupRunSerializer)
+                               RunStatisticBarcode, RunSummaryBarcode, GroupRunSerializer, FlowcellSummaryBarcodeSerializer)
 from reference.models import ReferenceInfo
 
 import math
@@ -1068,21 +1068,23 @@ def flowcell_detail(request, pk):
 @api_view(['GET'])
 def flowcell_summary_barcode(request, pk):
 
+    q = request.GET.get('barcode_name', 'All reads')
+
     flowcell = Flowcell.objects.get(pk=pk)
 
-    qs = RunSummaryBarcode.objects \
-        .filter(run__flowcell=flowcell) \
-        .exclude(barcode__name='No barcode') \
-        .filter(run_id__owner=request.user)
+    qs = FlowcellSummaryBarcode.objects \
+        .filter(flowcell=flowcell) \
+        .filter(barcode_name=q) \
+        # .filter(run_id__owner=request.user)
 
-    df = pd.DataFrame.from_records(qs.values('barcode__name', 'type__name', 'is_pass', 'read_count', 'total_length', 'max_length'))
-#<<<<<<< Updated upstream
-
-    df['is_pass'] = df['is_pass'].map({True: "Pass", False: "Fail"})
-
-    gb = df.groupby(['barcode__name', 'type__name', 'is_pass']).agg({'read_count': ['sum'], 'total_length': ['sum'], 'max_length': ['max']})
-
-    payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], row['type__name'][0], row['is_pass'][0], row['read_count']['sum'], row['total_length']['sum'], int(row['total_length']['sum'] / row['read_count']['sum']), row['max_length']['max']), axis=1)
+    serializer = FlowcellSummaryBarcodeSerializer(qs, many=True)
+    # df = pd.DataFrame.from_records(qs.values('barcode_name', 'type__name', 'is_pass', 'read_count', 'total_length', 'max_length'))
+    #
+    # df['is_pass'] = df['is_pass'].map({True: "Pass", False: "Fail"})
+    #
+    # gb = df.groupby(['barcode__name', 'type__name', 'is_pass']).agg({'read_count': ['sum'], 'total_length': ['sum'], 'max_length': ['max']})
+    #
+    # payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], row['type__name'][0], row['is_pass'][0], row['read_count']['sum'], row['total_length']['sum'], int(row['total_length']['sum'] / row['read_count']['sum']), row['max_length']['max']), axis=1)
 
 #=======
 ##    df['is_pass'] = df['is_pass'].map({True: "Pass", False: "Fail"})
@@ -1096,7 +1098,7 @@ def flowcell_summary_barcode(request, pk):
 #    payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], row['type__name'][0], row['is_pass'][0], row['read_count']['sum'], humanbases(int(row['total_length']['sum'])), humanbases(round(row['total_length']['sum'] / row['read_count']['sum'])), humanbases(row['max_length']['max'])), axis=1)
 #    print (payload)
 #>>>>>>> Stashed changes
-    return Response(payload)
+    return Response(serializer.data)
 
 
 @api_view(['GET'])
@@ -1124,55 +1126,97 @@ def flowcell_summary_barcode_by_minute_quality(request, pk):
     Return a prepared set of summaries for reads quality over time grouped by minute.
     """
 
+    q = request.GET.get('barcode_name', 'All reads')
+
     flowcell = Flowcell.objects.get(pk=pk)
 
     run_list = flowcell.runs.all()
 
     readtype_list = FastqReadType.objects.all()
 
-    barcode_name_set = set()
+    key_list = FlowcellStatisticBarcode.objects\
+        .filter(flowcell=flowcell)\
+        .filter(barcode_name=q)\
+        .values_list('barcode_name', 'read_type_name', 'status')\
+        .distinct()
 
-    for run in run_list:
+    #barcode_name_set = set()
 
-        for barcode in run.barcodes.all():
+    #for barcode in barcode_list:
 
-            barcode_name_set.add(barcode.name)
+    #    barcode_name_set.add(barcode[0])
+
+    # for run in run_list:
+    #
+    #     for barcode in run.barcodes.all():
+    #
+    #         barcode_name_set.add(barcode.name)
 
     result_dict = dict()
 
-    for barcode_name in barcode_name_set:
+    data_keys = []
 
-        result_dict[barcode_name] = dict()
+    for (barcode_name, read_type_name, status) in key_list:
 
-        for readtype in readtype_list:
+        # if barcode_name not in result_dict.keys():
+        #     result_dict[barcode_name] = dict()
+        #
+        # if read_type_name not in result_dict[barcode_name].keys():
+        #     result_dict[barcode_name][read_type_name] = dict()
+        #
+        # if status not in result_dict[barcode_name][read_type_name].keys():
+        #     result_dict[barcode_name][read_type_name][status] = dict()
 
-            result_dict[barcode_name][readtype.name] = dict()
+        # for readtype in readtype_list:
+        #
+        #     result_dict[barcode_name][readtype.name] = dict()
+        #
+        #     for is_pass in ['Pass', 'Fail']:
 
-            for is_pass in [True, False]:
+        queryset = FlowcellStatisticBarcode.objects\
+            .filter(flowcell=flowcell)\
+            .filter(barcode_name=barcode_name)\
+            .filter(read_type_name=read_type_name)\
+            .filter(status=status)\
+            .order_by('sample_time')
 
-                queryset = RunStatisticBarcode.objects\
-                    .filter(run__flowcell=flowcell)\
-                    .filter(barcode__name=barcode_name)\
-                    .filter(type=readtype)\
-                    .filter(is_pass=is_pass)\
-                    .order_by('sample_time')
+        if len(queryset) > 0:
 
-                if len(queryset) > 0:
+            # stvlqs = queryset.values_list('sample_time', flat=True)
+            # qsvlqs = queryset.values_list('quality_sum', flat=True)
+            # rcvlqs = queryset.values_list('read_count', flat=True)
+            #
+            # stcats = np.unique(stvlqs)
+            #
+            # unixtime = [x.timestamp() * 1000 for x in stcats]
+            # qs_sum = np.bincount(np.searchsorted(stcats, stvlqs), qsvlqs)
+            # rc_sum = np.bincount(np.searchsorted(stcats, stvlqs), rcvlqs)
+            # avgqs = qs_sum/rc_sum
+            #
+            # qs = np.column_stack((unixtime, avgqs))
 
-                    stvlqs = queryset.values_list('sample_time', flat=True)
-                    qsvlqs = queryset.values_list('quality_sum', flat=True)
-                    rcvlqs = queryset.values_list('read_count', flat=True)
+            quality_list = []
 
-                    stcats = np.unique(stvlqs)
+            cumulative_bases = 0
+            cumulative_reads = 0
 
-                    unixtime = [x.timestamp() * 1000 for x in stcats]
-                    qs_sum = np.bincount(np.searchsorted(stcats, stvlqs), qsvlqs)
-                    rc_sum = np.bincount(np.searchsorted(stcats, stvlqs), rcvlqs)
-                    avgqs = qs_sum/rc_sum
+            for record in queryset:
 
-                    qs = np.column_stack((unixtime, avgqs))
+                cumulative_bases = cumulative_bases + record.total_length
+                cumulative_reads = cumulative_reads + record.read_count
 
-                    result_dict[barcode_name][readtype.name][is_pass] = qs.tolist()
+                quality_list.append((
+                    record.sample_time.timestamp() * 1000,
+                    float(record.quality_sum/record.read_count),  # chart average quality over time
+                    float(record.total_length / record.read_count),  # chart average read length over time
+                    int(cumulative_bases),  # chart cumulative bases
+                    int(cumulative_reads),  # chart cumulative reads
+                    int(record.max_length),  # chart cumulative reads
+                ))
+
+            result_dict["{} - {} - {}".format(barcode_name, read_type_name, status)] = quality_list
+
+            data_keys.append("{} - {} - {}".format(barcode_name, read_type_name, status))
 
     run_data = []
 
@@ -1189,6 +1233,7 @@ def flowcell_summary_barcode_by_minute_quality(request, pk):
 
     res = {
         'runs': run_data,
+        'data_keys': data_keys,
         'data': result_dict,
         'date_created': datetime.datetime.now()
     }
@@ -1492,11 +1537,11 @@ def flowcell_summary_barcode_by_minute_speed(request, pk):
 
             for is_pass in [True, False]:
 
-                queryset = RunStatisticBarcode.objects\
-                    .filter(run__flowcell=flowcell)\
-                    .filter(barcode__name=barcode_name)\
-                    .filter(type=readtype)\
-                    .filter(is_pass=is_pass)\
+                queryset = FlowcellStatisticBarcode.objects\
+                    .filter(flowcell=flowcell)\
+                    .filter(barcode_name=barcode_name)\
+                    .filter(read_type_name=readtype)\
+                    .filter(status=is_pass)\
                     .order_by('sample_time')
 
                 if len(queryset) > 0:

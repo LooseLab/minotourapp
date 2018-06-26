@@ -3,53 +3,16 @@ function requestHistogramData(id) {
      * Request histogram data
      */
 
+    var selected_barcode = get_selected_barcode();
+
     var url = "/api/v1/flowcells/" + id + "/histogramsummary/";
 
     $.get(url, function (dataObj) {
 
-        var indexes = dataObj['indexes'];
-        var data = dataObj['data'];
+        var result_read_count_sum = dataObj['result_read_count_sum'];
+        var result_read_length_sum = dataObj['result_read_length_sum'];
         var categories = dataObj['categories'];
 
-        if (data.length > 0) {
-
-            var selected_barcode = get_selected_barcode();
-
-            var data_barcode = []
-
-            var categories = []
-
-            data.forEach(function(row) {
-                //console.log(row[0]);
-
-                if (row[0] == selected_barcode) {
-
-                    data_barcode.push(row);
-                }
-            });
-
-            data_barcode.sort(function(a, b) {
-                return a[2] - b[2];
-            });
-
-            data_barcode.forEach(function(row) {
-                if (row[1].endsWith("Pass")){
-                    //console.log(row);
-                    categories.push(row);
-                }
-
-
-            })
-            //console.log(data_barcode[-1]);
-
-            indexes.sort(function(a, b) {
-                return a - b;
-            });
-
-            /*
-             * chart
-             *
-             */
             if (!self.chartHistogramBasesSequencedByReadLength) {
                 self.chartHistogramBasesSequencedByReadLength = self.makeChart2(
                     "histogram-bases-sequenced-by-read-length",
@@ -66,8 +29,6 @@ function requestHistogramData(id) {
                 }
             }
 
-            //console.log(data_barcode);
-
             chart.update({
                 plotOptions: {
                     column: {
@@ -79,19 +40,17 @@ function requestHistogramData(id) {
                 },
                 xAxis: {
                     type: 'category',
-                    categories: categories.map(x => x[2])
+                    categories: categories
                 }
             });
 
-            for (var i = 0; i < indexes.length; i++) {
-
-                if (!indexes[i].startsWith("No barcode")) {
+            for (var i = 0; i < result_read_count_sum.length; i++) {
 
                     chart.addSeries({
-                        name: indexes[i],
-                        data: data_barcode.filter(x => x[1] == indexes[i]).map(x => x[4])
+                        name: result_read_count_sum[i]['name'],
+                        data: result_read_count_sum[i]['data']
                     });
-                }
+                //}
             }
 
 
@@ -126,20 +85,18 @@ function requestHistogramData(id) {
                 },
                 xAxis: {
                     type: 'category',
-                    categories: categories.map(x => x[2])
+                    categories: categories
                 }
             });
 
-            for (var i = 0; i < indexes.length; i++) {
+        for (var i = 0; i < result_read_length_sum.length; i++) {
 
-                if (!indexes[i].startsWith("No barcode")) {
 
-                    chart.addSeries({
-                        name: indexes[i],
-                        data: data_barcode.filter(x => x[1] == indexes[i]).map(x => x[3])
-                    });
-                }
-            }
+                chart.addSeries({
+                    name: result_read_length_sum[i]['name'],
+                    data: result_read_length_sum[i]['data']
+                });
         }
+        //}
     });
 }
