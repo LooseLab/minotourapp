@@ -174,46 +174,6 @@ def processreads(flowcell_id, job_master_id, last_read):
 
 
 @task()
-def proc_alignment(runid, id, reference, last_read):
-
-    JobMaster.objects.filter(pk=id).update(running=True)
-    sams = SamStore.objects.filter(run_id=runid, id__gt=int(last_read))[:1000]
-    # fp = tempfile.TemporaryFile()
-    fp = open('workfile', 'w')
-    for sam in sams:
-        # logger.debug(sam.samline)
-        fp.write(sam.samline)
-        fp.write('\n')
-        last_read = sam.id
-    # logger.debug(fp.read())
-    fp.close()
-    # subprocess.run(["samtools", "faidx", "references/hep_ref.fasta"])
-    subprocess.run(
-        ["samtools", "view", "-bt", "/Volumes/BigElements/human_ref/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa.fai",
-         "workfile", "-o", "workfile.bam"])
-    # subprocess.run(["rm", "workfile"])
-    subprocess.run(["samtools", "sort", "workfile.bam", "-o", "sort_workfile.bam"])
-    # subprocess.run(["rm", "workfile.bam"])
-    subprocess.run(["samtools", "index", "sort_workfile.bam"])
-    stdoutdata = subprocess.getoutput(
-        "pysamstats --type variation sort_workfile.bam  --fasta /Volumes/BigElements/human_ref/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa")
-    # print("stdoutdata:\r\n " + stdoutdata)
-    # subprocess.run(["rm sort_workfile.bam"])
-
-    """
-    Then we need to:
-        samtools faidx references/hep_ref.fasta
-        samtools view -bt references/hep_ref.fasta.fai workfile > workfile.bam
-        samtools sort workfile.bam > sort_workfile.bam
-        samtools index sort_workfile.bam
-        pysamstats --type variation sort_workfile.bam  --fasta references/hep_ref.fasta
-
-    After all that we just (!) parse the pysamstats lines into the existing reference table covering this information.
-    """
-    JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read)
-
-
-@task()
 def test_task(string, reference):
     REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
     print(reference)
