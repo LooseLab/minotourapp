@@ -749,14 +749,15 @@ def run_minimap2_transcriptome(runid, id, reference, last_read):
     JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read, read_count=F('read_count') + len(fastqs))
 
 
-@task()
-def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype):
+@task
+def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_read, inputtype):
 
+    print('test 1')
     logger.info("---> Task run_minimap2_alignment")
     logger.info("---> Parameters")
-    logger.info("---> runid: {}".format(runid))
+    logger.info("---> flowcell_id: {}".format(flowcell_id))
     logger.info("---> job_master_id: {}".format(job_master_id))
-    logger.info("---> reference: {}".format(reference))
+    logger.info("---> reference: {}".format(reference_info_id))
     logger.info("---> last_read: {}".format(last_read))
     logger.info("---> inputtype: {}".format(inputtype))
 
@@ -764,37 +765,38 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
         last_read = 0
 
     try:
-    #if True:
-        starttime = time.time()
+
+        print('test')
 
         JobMaster.objects.filter(pk=job_master_id).update(running=True)
 
         REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
 
-        Reference = ReferenceInfo.objects.get(pk=reference)
+        reference = ReferenceInfo.objects.get(pk=reference_info_id)
 
         chromdict = dict()
 
-        chromosomes = Reference.referencelines.all()
+        chromosomes = reference.referencelines.all()
 
         for chromosome in chromosomes:
 
             chromdict[chromosome.line_name] = chromosome
 
-        minimap2 = Reference.minimap2_index_file_location
+        minimap2 = reference.minimap2_index_file_location
 
         minimap2_ref = os.path.join(REFERENCELOCATION, minimap2)
 
-        fastqs = FastqRead.objects.filter(run__groupruns=runid, id__gt=int(last_read))[:1000]
+        fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id, id__gt=int(last_read))[:1000]
 
-        # logger.debug("fastqs",fastqs)
+        print("found fastqs: {}".format(len(fastqs)))
+
         read = ''
         fastqdict = dict()
         fastqtypedict = dict()
         fastqbarcodegroup = dict()
         fastqbarcode=dict()
 
-        # logger.debug(len(fastqs))
+        logger.debug(len(fastqs))
 
         for fastq in fastqs:
             read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.fastqreadextra.sequence)
@@ -804,8 +806,10 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
             fastqbarcode[fastq.read_id] = fastq.barcode
             last_read = fastq.id
 
-        # logger.debug(read)
+        # print(read)
         cmd = 'minimap2 -x map-ont -t 4 --secondary=no %s -' % (minimap2_ref)
+
+        print(cmd)
 
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
@@ -813,18 +817,13 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
         (out, err) = proc.communicate(input=read.encode("utf-8"))
         status = proc.wait()
         paf = out.decode("utf-8")
-        #logger.debug(paf)
+
         pafdata = paf.splitlines()
 
+        print(pafdata)
 
-        doneminimaps = time.time()
-        #print('!!!!!!!It took {} to run minimap.!!!!!!!!!'.format((doneminimaps-gotreadstime)))
-
-
-        if inputtype =="run":
-            runinstance = Run.objects.get(pk=runid)
-
-        grouprun = GroupRun.objects.get(pk=runid)
+        #grouprun = GroupRun.objects.get(pk=runid)
+        flowcell = Flowcell.objects.get(pk=flowcell_id)
 
         resultstore = dict()
 
@@ -842,9 +841,9 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
             typeid = fastqtypedict[record[0]]
             run = fastqdict[record[0]].run_id
             if inputtype == "flowcell":
-                newpaf = PafStore(grouprun=grouprun, read=readid, read_type=typeid)
-                newpafstart = PafRoughCov(grouprun=grouprun,read_type=typeid,barcode=fastqbarcode[record[0]],barcodegroup=fastqbarcodegroup[record[0]])
-                newpafend = PafRoughCov(grouprun=grouprun,read_type=typeid,barcode=fastqbarcode[record[0]],barcodegroup=fastqbarcodegroup[record[0]])
+                newpaf = PafStore(flowcell=flowcell, read=readid, read_type=typeid)
+                newpafstart = PafRoughCov(flowcell=flowcell,read_type=typeid,barcode=fastqbarcode[record[0]])
+                newpafend = PafRoughCov(flowcell=flowcell,read_type=typeid,barcode=fastqbarcode[record[0]])
             elif inputtype == "run":
                 newpaf = PafStore(run=run, read=readid, read_type=typeid)
             newpaf.reference = Reference
@@ -908,22 +907,22 @@ def run_minimap2_alignment(runid, job_master_id, reference, last_read, inputtype
                 for bc in resultstore[ref][ch]:
                     for ty in resultstore[ref][ch][bc]:
                         # logger.debug(ref,ch,bc,ty,len(resultstore[ref][ch][bc][ty]['read']),resultstore[ref][ch][bc][ty]['length'])
-                        if inputtype == "run":
-                            summarycov, created2 = PafSummaryCov.objects.update_or_create(
-                                run=runinstance,
-                                read_type=ty,
-                                barcode=bc,
-                                reference=ref,
-                                chromosome=ch,
-                            )
-                        elif inputtype == "flowcell":
-                            summarycov, created2 = PafSummaryCov.objects.update_or_create(
-                                flowcell=grouprun,
-                                read_type=ty,
-                                barcodegroup=bc,
-                                reference=ref,
-                                chromosome=ch,
-                            )
+                        # if inputtype == "run":
+                        #     summarycov, created2 = PafSummaryCov.objects.update_or_create(
+                        #         run=runinstance,
+                        #         read_type=ty,
+                        #         barcode=bc,
+                        #         reference=ref,
+                        #         chromosome=ch,
+                        #     )
+                        # elif inputtype == "flowcell":
+                        summarycov, created2 = PafSummaryCov.objects.update_or_create(
+                            flowcell=flowcell,
+                            read_type=ty,
+                            barcodegroup=bc,
+                            reference=ref,
+                            chromosome=ch,
+                        )
                         summarycov.read_count += len(resultstore[ref][ch][bc][ty]['read'])
                         summarycov.cumu_length += resultstore[ref][ch][bc][ty]['length']
                         summarycov.save()
