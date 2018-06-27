@@ -174,19 +174,6 @@ def processreads(flowcell_id, job_master_id, last_read):
 
 
 @task()
-def test_task(string, reference):
-    REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
-    print(reference)
-    Reference = ReferenceInfo.objects.get(pk=reference)
-    print(type(Reference))
-    print(string, REFERENCELOCATION)
-    print(Reference)
-    print(Reference.minimap2_index_file_location)
-    lines = Reference.referencelines.all()
-    for line in lines:
-        print(line.id)
-
-@task()
 def export_reads(runid,id,tmp,last_read,inputtype):
     """
     Function to write out fastq data to known temporary file, compress it,
