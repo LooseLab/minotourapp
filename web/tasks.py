@@ -45,6 +45,7 @@ def utcnow():
 def findbin(x, bin_width=900):
     return (x - x % bin_width) / bin_width
 
+
 def getn50(lens):
     h = sum(lens)/2
     t = 0
@@ -52,33 +53,6 @@ def getn50(lens):
         t += l
         if t >= h:
             return l
-
-
-# def group_channel_presence(series):
-#
-#     num_rows = len(series)
-#
-#     if len(series) <= 0:
-#         return None
-#
-#     num_columns = len(series[0])
-#
-#     new_serie = list('0' * num_columns)
-#
-#     for i in range(num_rows):
-#
-#         row = list(series[i])
-#
-#         for j in range(num_columns):
-#
-#             if row[j] == '1':
-#                 new_serie[j] = '1'
-#
-#                 continue
-#
-#     return ''.join(new_serie)
-#
-#     # positions = [pos for pos, char in enumerate(serie) if char == '1']
 
 
 @task()
