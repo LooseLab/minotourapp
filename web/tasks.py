@@ -99,48 +99,6 @@ def run_monitor():
                                            flowcell_job.read_count, inputtype)
 
 
-def processrun(deleted, added):
-    for run in added:
-        runinstance = Run.objects.get(pk=run)
-        jobinstance = JobType.objects.get(name="ChanCalc")
-        runinstance.active = True
-        runinstance.save()
-
-        newjob, created = JobMaster.objects.get_or_create(run=runinstance, job_type=jobinstance, flowcell=runinstance.flowcell)
-
-        if created is True:
-            newjob.last_read = 0
-
-        newjob.save()
-        send_message([runinstance.owner], "New Active Run", "Minotour has seen a new run start on your account. This is called {}.".format(runinstance.name))
-
-    for run in deleted:
-        try:
-            runinstance = Run.objects.get(pk=run)
-            runinstance.active = False
-            runinstance.save()
-
-            jobinstance = JobType.objects.get(name="ChanCalc")
-            JobMaster.objects.filter(job_type=jobinstance, run=runinstance).update(complete=True)
-            send_message([runinstance.owner], "Run Finished",
-                         "Minotour has seen a run finish on your account. This was called {}.".format(
-                             runinstance.run_name))
-        except Exception as exception:
-            print (exception)
-
-
-def compare_two(newset, cacheset):
-    print("deleted keys", newset.keys() - cacheset.keys())
-
-    deleted = newset.keys() - cacheset.keys()
-
-    print("added keys", cacheset.keys() - newset.keys())
-
-    added = cacheset.keys() - newset.keys()
-
-    return deleted, added
-
-
 @task()
 def processreads(flowcell_id, job_master_id, last_read):
 
