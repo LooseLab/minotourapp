@@ -91,87 +91,12 @@ def run_monitor():
 
                 processreads.delay(flowcell.id, flowcell_job.id, flowcell_job.last_read)
 
-
-@task()
-def slow_monitor():
-    # TODO Remove this function completely
-
-    logger.info('Running slow_monitor celery task.')
-
-    print("Slow Monitor Called")
-
-    # Check for uncompleted read export tasks.
-    exportreadjob = JobType.objects.get(name="ExportReads")
-    jobmastercollection = JobMaster.objects.filter(job_type=exportreadjob).filter(complete=False).filter(running=False)
-    for jobmaster in jobmastercollection:
-        #runid,id,tmp,last_read,inputtype
-        export_reads.delay(jobmaster.flowcell_id,jobmaster.id,jobmaster.tempfile_name,jobmaster.last_read,"flowcell")
-
-
-    testset = {}
-
-    cachesiz = {}
-
-    minion_runs = Run.objects.all()
-
-    timediff = utcnow() - timedelta(days=1)
-
-    active_runs = Run.objects.filter(active=True).distinct()
-
-    ## We need an active flowcell measure.
-
-    flowcell_runs = FlowCellRun.objects.filter(run__active=True).distinct()
-
-    flowcells = set()
-    # So - loop through flowcell_runs and create a job in each sub run.
-
-    for flowcell_run in flowcell_runs:
-        logger.debug("found a flowcell", flowcell_run)
-        flowcells.add(flowcell_run.flowcell)
-
-
-    for flowcell in flowcells:
-        flowcell_jobs = JobMaster.objects.filter(flowcell=flowcell).filter(running=False)
-        for flowcell_job in flowcell_jobs:
-            logger.debug(flowcell_job.job_type.name)
             if flowcell_job.job_type.name == "Assembly":
+
                 inputtype = "flowcell"
+
                 run_minimap_assembly.delay(flowcell.id, flowcell_job.id, flowcell_job.tempfile_name, flowcell_job.last_read,
                                            flowcell_job.read_count, inputtype)
-
-    for minion_run in active_runs:
-
-        print("Found an active run!")
-
-        run_jobs = JobMaster.objects.filter(run=minion_run).filter(running=False)
-
-        for run_job in run_jobs:
-            if run_job.job_type.name == "Assembly":
-                print("Running Assembly")
-                inputtype="run"
-                run_minimap_assembly.delay(minion_run.id, run_job.id, run_job.tempfile_name, run_job.last_read, run_job.read_count,inputtype)
-
-    for minion_run in minion_runs:
-        if minion_run.last_entry() >= timediff or minion_run.last_read() >= timediff:
-            cachesiz[str(minion_run.id)] = minion_run
-
-    try:
-        testset = cache.get('a-unique-key', {})
-
-    except:
-
-        print('a-unique-key not found')
-
-    print('a-unique-key is {}'.format(testset))
-
-    deleted, added = compare_two(testset, cachesiz)
-
-    # processrun(deleted, added)
-
-    cache.set('a-unique-key', cachesiz)
-
-    # TODO: We need someway of removing things from the dictionary which aren't still active - otherwise things will
-    # persist for ever - so a compare to dictionaries.
 
 
 def processrun(deleted, added):
