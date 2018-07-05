@@ -16,23 +16,20 @@ import redis
 from celery import task
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from django.core.cache import cache
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.db.models import F
 from django_mailgun import MailgunAPIError
 from twitter import *
 
-from alignment.models import PafRoughCov, PafStore, PafStore_transcriptome, PafSummaryCov, PafSummaryCov_transcriptome, \
-    SamStore
+from alignment.models import PafRoughCov, PafStore, PafSummaryCov
 from assembly.models import GfaStore, GfaSummary
 from communication.utils import *
 from devices.models import Flowcell
-from jobs.models import JobMaster, JobType
-from minikraken.models import MiniKraken, ParsedKraken
-from reads.models import Barcode, FastqRead, FastqReadType, FlowCellRun, Run, HistogramSummary, GroupRun
-from reads.services import (save_channelsummary, save_histogramsummary,
-                            save_runstatisticbarcode, save_runsummarybarcode, save_flowcellstatisticbarcode, save_flowcellsummarybarcode, save_flowcell_histogram_summary, save_flowcell_channel_summary)
+from jobs.models import JobMaster
+from reads.models import Barcode, FastqRead, FlowCellRun, Run, HistogramSummary
+from reads.services import (save_flowcell_histogram_summary, save_flowcell_channel_summary, save_flowcell_summary_barcode,
+                            save_flowcell_statistic_barcode)
 from reference.models import ReferenceInfo
 
 logger = get_task_logger(__name__)
@@ -138,7 +135,7 @@ def processreads(flowcell_id, job_master_id, last_read):
         #
         fastq_df_result = fastq_df.groupby(['barcode__name', 'type__name', 'is_pass']).agg({'sequence_length': ['min', 'max', 'sum', 'count'], 'quality_average': ['sum'], 'channel': ['unique']})
 
-        fastq_df_result.reset_index().apply(lambda row: save_flowcellsummarybarcode(flowcell_id, row), axis=1)
+        fastq_df_result.reset_index().apply(lambda row: save_flowcell_summary_barcode(flowcell_id, row), axis=1)
 
         # fastq_df['start_time']=fastq_df['start_time'].values.astype('<M8[m]')
         #
@@ -147,7 +144,7 @@ def processreads(flowcell_id, job_master_id, last_read):
         fastq_df_result = fastq_df.groupby(['start_time_truncate', 'barcode__name', 'type__name', 'is_pass']).agg(
             {'sequence_length': ['min', 'max', 'sum', 'count'], 'quality_average': ['sum'], 'channel': ['unique']})
 
-        fastq_df_result.reset_index().apply(lambda row: save_flowcellstatisticbarcode(flowcell_id, row), axis=1)
+        fastq_df_result.reset_index().apply(lambda row: save_flowcell_statistic_barcode(flowcell_id, row), axis=1)
 
         #
         # Calculates statistics for HistogramSummary
