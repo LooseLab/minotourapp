@@ -46,8 +46,9 @@ class MinION(models.Model):
     )
 
     name = models.CharField(
-
-        max_length=64
+        max_length=64,
+        blank=True,
+        null=True
     )
 
     owner = models.ForeignKey(
