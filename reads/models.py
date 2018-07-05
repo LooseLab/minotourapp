@@ -914,6 +914,33 @@ class ChannelSummary(models.Model):
         return "{} {} {}".format(self.run, self.channel, self.read_count)
 
 
+class FlowcellChannelSummary(models.Model):
+
+    flowcell = models.ForeignKey(
+        Flowcell,
+        on_delete=models.CASCADE,
+        related_name='channel_summaries'
+    )
+
+    channel = models.IntegerField(
+
+    )
+
+    read_count = models.BigIntegerField(
+        default=0
+    )
+
+    read_length = models.BigIntegerField(
+        default=0
+    )
+
+    class Meta:
+        db_table = 'flowcell_channel_summary'
+
+    def __str__(self):
+        return "{} {} {}".format(self.flowcell, self.channel, self.read_count)
+
+
 class HistogramSummary(models.Model):
 
     BIN_WIDTH = 900
@@ -953,6 +980,49 @@ class HistogramSummary(models.Model):
 
     def __str__(self):
         return "{} {} {}".format(self.run, self.read_type, self.bin_index)
+
+
+class FlowcellHistogramSummary(models.Model):
+
+    BIN_WIDTH = 900
+
+    flowcell = models.ForeignKey(
+        Flowcell,
+        on_delete=models.CASCADE
+    )
+
+    read_type_name = models.CharField(
+
+        max_length=32
+    )
+
+    barcode_name = models.CharField(
+
+        max_length=32
+    )
+
+    status = models.CharField(
+
+        max_length=32
+    )
+
+    bin_index = models.BigIntegerField(
+
+    )
+
+    read_count = models.BigIntegerField(
+        default=0
+    )
+
+    read_length = models.BigIntegerField(
+        default=0
+    )
+
+    class Meta:
+        db_table = 'flowcell_histogram_summary'
+
+    def __str__(self):
+        return "{} {} {}".format(self.flowcell, self.read_type_name, self.status, self.bin_index)
 
 
 class RunSummaryBarcode(models.Model):

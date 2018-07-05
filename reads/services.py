@@ -1,4 +1,4 @@
-from reads.models import RunSummaryBarcode, RunStatisticBarcode, HistogramSummary, ChannelSummary, FlowcellStatisticBarcode, FlowcellSummaryBarcode
+from reads.models import RunSummaryBarcode, RunStatisticBarcode, HistogramSummary, ChannelSummary, FlowcellStatisticBarcode, FlowcellSummaryBarcode, FlowcellHistogramSummary, FlowcellChannelSummary
 
 
 def save_runsummarybarcode(run_id, row):
@@ -185,6 +185,28 @@ def save_histogramsummary(run_id, row):
     runHistogramSummary.save()
 
 
+def save_flowcell_histogram_summary(flowcell_id, row):
+
+    barcode_name = row['barcode__name'][0]
+    read_type_name = row['type__name'][0]
+    status = row['is_pass'][0]
+    bin_index = row['bin_index'][0]
+    sequence_length_sum = row['sequence_length']['sum']
+    read_count = row['sequence_length']['count']
+
+    flowcellHistogramSummary, created = FlowcellHistogramSummary.objects.get_or_create(
+        flowcell_id=flowcell_id,
+        barcode_name=barcode_name,
+        read_type_name=read_type_name,
+        status=status,
+        bin_index=bin_index)
+
+    flowcellHistogramSummary.read_length += sequence_length_sum
+    flowcellHistogramSummary.read_count += read_count
+
+    flowcellHistogramSummary.save()
+
+
 def save_channelsummary(run_id, row):
 
     channel = row['channel'][0]
@@ -199,4 +221,20 @@ def save_channelsummary(run_id, row):
     runChannelSummary.read_count += read_count
 
     runChannelSummary.save()
+
+
+def save_flowcell_channel_summary(flowcell_id, row):
+
+    channel = row['channel'][0]
+    sequence_length_sum = row['sequence_length']['sum']
+    read_count = row['sequence_length']['count']
+
+    flowcellChannelSummary, created = FlowcellChannelSummary.objects.get_or_create(
+        flowcell_id=flowcell_id,
+        channel=channel)
+
+    flowcellChannelSummary.read_length += sequence_length_sum
+    flowcellChannelSummary.read_count += read_count
+
+    flowcellChannelSummary.save()
 

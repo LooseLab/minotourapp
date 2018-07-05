@@ -32,7 +32,7 @@ from jobs.models import JobMaster, JobType
 from minikraken.models import MiniKraken, ParsedKraken
 from reads.models import Barcode, FastqRead, FastqReadType, FlowCellRun, Run, HistogramSummary, GroupRun
 from reads.services import (save_channelsummary, save_histogramsummary,
-                            save_runstatisticbarcode, save_runsummarybarcode, save_flowcellstatisticbarcode, save_flowcellsummarybarcode)
+                            save_runstatisticbarcode, save_runsummarybarcode, save_flowcellstatisticbarcode, save_flowcellsummarybarcode, save_flowcell_histogram_summary, save_flowcell_channel_summary)
 from reference.models import ReferenceInfo
 
 logger = get_task_logger(__name__)
@@ -152,19 +152,19 @@ def processreads(flowcell_id, job_master_id, last_read):
         #
         # Calculates statistics for HistogramSummary
         #
-        # fastq_df['bin_index'] = (fastq_df['sequence_length'] - fastq_df['sequence_length'] % HistogramSummary.BIN_WIDTH) / HistogramSummary.BIN_WIDTH
-        #
-        # fastq_df_result = fastq_df.groupby(['barcode_id', 'type_id', 'is_pass', 'bin_index']).agg({'sequence_length': ['sum', 'count']})
-        #
-        # fastq_df_result.reset_index().apply(lambda row: save_histogramsummary(runid, row), axis=1)
+        fastq_df['bin_index'] = (fastq_df['sequence_length'] - fastq_df['sequence_length'] % HistogramSummary.BIN_WIDTH) / HistogramSummary.BIN_WIDTH
+
+        fastq_df_result = fastq_df.groupby(['barcode__name', 'type__name', 'is_pass', 'bin_index']).agg({'sequence_length': ['sum', 'count']})
+
+        fastq_df_result.reset_index().apply(lambda row: save_flowcell_histogram_summary(flowcell_id, row), axis=1)
 
         #
         # Calculates statistics for ChannelSummary
         #
-        # fastq_df_result = fastq_df.groupby(['channel']).agg({'sequence_length': ['sum', 'count']})
-        #
-        # fastq_df_result.reset_index().apply(lambda row: save_channelsummary(runid, row), axis=1)
-        #
+        fastq_df_result = fastq_df.groupby(['channel']).agg({'sequence_length': ['sum', 'count']})
+
+        fastq_df_result.reset_index().apply(lambda row: save_flowcell_channel_summary(flowcell_id, row), axis=1)
+
         last_read = fastq_df_barcode['id'].max()
 
     job_master = JobMaster.objects.get(pk=job_master_id)
