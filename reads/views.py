@@ -255,21 +255,25 @@ def minknow_message_list_by_flowcell(request, pk):
         messages = MinionMessage.objects\
             .filter(minion__in=minion_list)\
             .filter(timestamp__gt=start_time)\
-            .filter(timestamp__lt=end_time)
+            .filter(timestamp__lt=end_time) \
+            .order_by('-timestamp')
 
     elif start_time:
         messages = MinionMessage.objects\
             .filter(minion__in=minion_list)\
-            .filter(timestamp__gt=start_time)
+            .filter(timestamp__gt=start_time) \
+            .order_by('-timestamp')
 
     elif end_time:
         messages = MinionMessage.objects\
             .filter(minion__in=minion_list)\
-            .filter(timestamp__lt=end_time)
+            .filter(timestamp__lt=end_time) \
+            .order_by('-timestamp')
 
     else:
         messages = MinionMessage.objects\
-            .filter(minion__in=minion_list)[:10]
+            .filter(minion__in=minion_list)[:10] \
+            .order_by('-timestamp')
 
     serializer = MinionMessageSerializer(messages, many=True, context={'request': request})
 
@@ -534,6 +538,7 @@ def minION_run_status_list(request,pk):
     TODO describe function
     """
     if request.method == 'POST':
+        #print ("we are posting here")
         serializer = MinIONRunStatusSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
@@ -550,7 +555,7 @@ def minION_run_status_list(request,pk):
         serializer = MinIONRunStatusSerializer(minIONrunstat, many=True, context={'request': request})
         return Response(serializer.data)
 
-    elif request.method == 'POST':
+    elif request.method == 'PUT':
         serializer = MinIONRunStatusSerializer(minIONrunstat, data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()

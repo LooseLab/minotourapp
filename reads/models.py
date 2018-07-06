@@ -425,11 +425,28 @@ class MinIONRunStatus(models.Model):
     minKNOW_colours_string = models.TextField(blank=True, null=True)
     minKNOW_computer = models.TextField(max_length=128, blank=True, null=True)
 
+    experiment_type = models.CharField(max_length=256, blank=True, null=True)
+    experiment_id = models.CharField(max_length=256, blank=True, null=True)
+    fast5_output_fastq_in_hdf = models.IntegerField(blank=True, null=True)
+    fast5_raw = models.IntegerField(blank=True, null=True)
+    fast5_reads_per_folder = models.IntegerField(blank=True, null=True)
+    fastq_enabled = models.IntegerField(blank=True, null=True)
+    fastq_reads_per_file = models.IntegerField(blank=True, null=True)
+    filename = models.CharField(max_length=256, blank=True, null=True)
+    flowcell_type = models.CharField(max_length=256, blank=True, null=True)
+    kit_classification = models.CharField(max_length=256, blank=True, null=True)
+    local_basecalling = models.IntegerField(blank=True, null=True)
+    sample_frequency = models.IntegerField(blank=True, null=True)
+    sequencing_kit = models.CharField(max_length=256, blank=True, null=True)
+    user_filename_input = models.CharField(max_length=256, blank=True, null=True)
+
+
     # minKNOW_total_drive_space = models.FloatField(blank=True, null=True)
     # minKNOW_disk_space_till_shutdown = models.FloatField(blank=True, null=True)
     # minKNOW_warnings = models.BooleanField(default=False)
 
     class Meta:
+        unique_together = ("minION", "minKNOW_hash_run_id", "minKNOW_exp_script_purpose")
         verbose_name = 'MinION Run Status'
         verbose_name_plural = 'MinION Run Status'
 
@@ -602,6 +619,7 @@ class FastqReadExtra(models.Model):
 #    minKNOW_severity = models.CharField(max_length=64)
 #    minKNOW_message_timestamp = models.DateTimeField()
 #=======
+
 class MinionMessage(models.Model):
 
     minion = models.ForeignKey(
@@ -617,7 +635,9 @@ class MinionMessage(models.Model):
     )
 
     message = models.CharField(
-        max_length=256
+        max_length=256,
+        blank=True,
+        null=True
     )
 
     identifier = models.CharField(
@@ -634,7 +654,8 @@ class MinionMessage(models.Model):
 #>>>>>>> 2a6dc3c8ce81fb2274135a1b5f55b18f7a39f7fa
 
     class Meta:
-        unique_together = ("minion", "run", "timestamp")
+        #unique_together = ("minion", "run", "timestamp")
+        unique_together = ("minion", "message","timestamp") #Todo note that we assume the same minION will never generate the same message at the same timestamp
         verbose_name = 'Minion message'
         verbose_name_plural = 'MinIon messages'
 

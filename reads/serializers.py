@@ -246,6 +246,21 @@ class MinIONRunStatusSerializer(serializers.HyperlinkedModelSerializer):
             'minKNOW_start_time',
             'minKNOW_colours_string',
             'minKNOW_computer',
+            'experiment_type',
+            'experiment_id',
+            'fast5_output_fastq_in_hdf',
+            'fast5_raw',
+            'fast5_reads_per_folder',
+            'fastq_enabled',
+            'fastq_reads_per_file',
+            'filename',
+            'flowcell_type',
+            'kit_classification',
+            'local_basecalling',
+            'sample_frequency',
+            'sequencing_kit',
+            'user_filename_input',
+
         )
         read_only = ('id', 'minION_name')
 
