@@ -892,8 +892,8 @@ class FlowcellStatisticBarcode(models.Model):
     )
 
     class Meta:
-        verbose_name = 'Run Statistics Barcode'
-        verbose_name_plural = 'Run Statistics Barcodes'
+        verbose_name = 'Flowcell Statistics Barcode'
+        verbose_name_plural = 'Flowcell Statistics Barcodes'
         db_table = 'flowcell_statistics_barcode'
 
     def __str__(self):
@@ -1042,6 +1042,79 @@ class RunSummaryBarcode(models.Model):
             self.read_count,
             self.type,
             self.barcode
+        )
+
+    def number_active_channels(self):
+        return len(self.channel_presence.replace('0', ''))
+
+
+class FlowcellSummaryBarcode(models.Model):
+
+    flowcell = models.ForeignKey(
+
+        Flowcell,
+        on_delete=models.CASCADE,
+        related_name='flowcellsummariesbarcodes'
+    )
+
+    read_type_name = models.CharField(
+
+        max_length=32
+    )
+
+    barcode_name = models.CharField(
+
+        max_length=32
+    )
+
+    status = models.CharField(
+
+        max_length=32
+    )
+
+    quality_sum = models.DecimalField(
+        decimal_places=2,
+        max_digits=12,
+        default=0
+    )
+
+    read_count = models.IntegerField(
+        default=0
+    )
+
+    total_length = models.BigIntegerField(
+        default=0
+    )
+
+    max_length = models.IntegerField(
+        default=0
+    )
+
+    min_length = models.IntegerField(
+        default=0
+    )
+
+    channel_presence = models.CharField(
+        max_length=3000,
+        default='0' * 3000
+    )
+
+    channel_count = models.IntegerField(
+        default=0
+    )
+
+    class Meta:
+        verbose_name = 'Flowcell Summary Barcode'
+        verbose_name_plural = 'Flowcell Summary Barcodes'
+        db_table = 'Flowcell_summary_barcode'
+
+    def __str__(self):
+        return "{} {} {} {} {}".format(
+            self.flowcell,
+            self.total_length,
+            self.read_count,
+            self.read_type_name,
+            self.barcode_name
         )
 
     def number_active_channels(self):

@@ -32,7 +32,7 @@ from jobs.models import JobMaster, JobType
 from minikraken.models import MiniKraken, ParsedKraken
 from reads.models import Barcode, FastqRead, FastqReadType, FlowCellRun, Run, HistogramSummary, GroupRun
 from reads.services import (save_channelsummary, save_histogramsummary,
-                            save_runstatisticbarcode, save_runsummarybarcode)
+                            save_runstatisticbarcode, save_runsummarybarcode, save_flowcellstatisticbarcode, save_flowcellsummarybarcode)
 from reference.models import ReferenceInfo
 
 logger = get_task_logger(__name__)
@@ -88,92 +88,39 @@ def run_monitor():
     logger.info('Running run_monitor celery task.')
     logger.info('--------------------------------')
 
-    grouprun_list = GroupRun.objects.all() # TODO filter only the activies
+    flowcell_list = Flowcell.objects.filter(is_active=True)
 
-    for grouprun in grouprun_list:
+    for flowcell in flowcell_list:
 
-        grouprun_job_list = JobMaster.objects.filter(grouprun=grouprun).filter(running=False)
+        flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False)
 
-        for grouprun_job in grouprun_job_list:
+        for flowcell_job in flowcell_job_list:
 
-            # if grouprun_job.job_type.name == "Kraken":
-            #
-            #     run_kraken.delay(grouprun.id, grouprun_job.id, grouprun_job.last_read, "flowcell")
-
-            if grouprun_job.job_type.name == "Minimap2":
+            if flowcell_job.job_type.name == "Minimap2":
 
                 print("trying to run alignment for flowcell {} {} {} {}".format(
-                    grouprun.id,
-                    grouprun_job.id,
-                    grouprun_job.reference.id,
-                    grouprun_job.last_read
+                    flowcell.id,
+                    flowcell_job.id,
+                    flowcell_job.reference.id,
+                    flowcell_job.last_read
                 ))
 
                 run_minimap2_alignment.delay(
-                    grouprun.id,
-                    grouprun_job.id,
-                    grouprun_job.reference.id,
-                    grouprun_job.last_read,
+                    flowcell.id,
+                    flowcell_job.id,
+                    flowcell_job.reference.id,
+                    flowcell_job.last_read,
                     "flowcell"
                 )
 
-    minion_runs = Run.objects.all() # filter(active=True)
+            if flowcell_job.job_type.name == "ChanCalc":
 
-    for minion_run in minion_runs:
-
-        logger.debug("found a run", minion_run)
-
-        run_jobs = JobMaster.objects.filter(run=minion_run).filter(running=False)
-
-        for run_job in run_jobs:
-
-            # if run_job.job_type.name == "Alignment":
-            #
-            #     print("trying to run bwa alignment {} {} {} {}".format(
-            #         minion_run.id,
-            #         run_job.id,
-            #         run_job.reference.id,
-            #         run_job.last_read
-            #     ))
-            #
-            #     run_bwa_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
-
-            # if run_job.job_type.name == "Minimap2_trans":
-            #     print("trying to run transcription alignemnt {} {} {} {}".format(
-            #         minion_run.id,
-            #         run_job.id,
-            #         run_job.reference.id,
-            #         run_job.last_read
-            #     ))
-            #
-            #     run_minimap2_transcriptome.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
-
-            if run_job.job_type.name == "Minimap2":
-
-                print("trying to run alignment {} {} {} {}".format(
-                    minion_run.id,
-                    run_job.id,
-                    run_job.reference.id,
-                    run_job.last_read
-                ))
-
-                run_minimap2_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read, "run")
-
-            if run_job.job_type.name == "Kraken":
-
-                run_kraken.delay(minion_run.id, run_job.id, run_job.last_read, "run")
-
-            if run_job.job_type.name == "ProcAlign":
-
-                proc_alignment.delay(minion_run.id, run_job.id, run_job.reference.id, run_job.last_read)
-
-            if run_job.job_type.name == "ChanCalc":
-
-                processreads.delay(minion_run.id, run_job.id, run_job.last_read)
+                processreads.delay(flowcell.id, flowcell_job.id, flowcell_job.last_read)
 
 
 @task()
 def slow_monitor():
+    # TODO Remove this function completely
 
     logger.info('Running slow_monitor celery task.')
 
@@ -245,7 +192,7 @@ def slow_monitor():
 
     deleted, added = compare_two(testset, cachesiz)
 
-    processrun(deleted, added)
+    # processrun(deleted, added)
 
     cache.set('a-unique-key', cachesiz)
 
@@ -296,71 +243,71 @@ def compare_two(newset, cacheset):
 
 
 @task()
-def processreads(runid, job_master_id, last_read):
+def processreads(flowcell_id, job_master_id, last_read):
 
-    print('>>>> Running processreads celery task.')
-    print('running processreads with {} {} {}'.format(runid, job_master_id, last_read))
+    print('Running processreads - flowcell: {}, last read: {}, job master id: {}'.format(flowcell_id, last_read, job_master_id))
 
-    run = Run.objects.get(pk=runid)
+    # run = Run.objects.get(pk=runid)
 
-    barcode_allreads = None
-
-    for barcode in run.barcodes.all():
-
-        if barcode.name == 'All reads':
-
-            barcode_allreads = barcode
+    # barcode_allreads = None
+    #
+    # for barcode in run.barcodes.all():
+    #
+    #     if barcode.name == 'All reads':
+    #
+    #         barcode_allreads = barcode
 
     job_master = JobMaster.objects.get(pk=job_master_id)
     job_master.running = True
     job_master.save()
 
-    fastqs = FastqRead.objects.filter(run_id=runid).filter(id__gt=int(last_read))[:2000]
+    fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id).filter(id__gt=int(last_read))[:2000]
 
     print('found {} reads'.format(len(fastqs)))
 
     if len(fastqs) > 0:
 
-        fastq_df_barcode = pd.DataFrame.from_records(fastqs.values())
+        fastq_df_barcode = pd.DataFrame.from_records(fastqs.values('id', 'start_time', 'barcode__name', 'type__name', 'is_pass', 'sequence_length', 'quality_average', 'channel'))
+        fastq_df_barcode['status'] = np.where(fastq_df_barcode['is_pass'] == False, 'Fail', 'Pass')
+        fastq_df_barcode['start_time_truncate'] = np.array(fastq_df_barcode['start_time'], dtype='datetime64[m]')
 
         fastq_df_allreads = fastq_df_barcode.copy()
-        fastq_df_allreads['barcode_id'] = barcode_allreads.id
+        fastq_df_allreads['barcode__name'] = 'All reads'
 
         fastq_df = fastq_df_barcode.append(fastq_df_allreads)
 
         #
         # Calculates statistics for RunSummaryBarcode
         #
-        fastq_df_result = fastq_df.groupby(['barcode_id', 'type_id', 'is_pass']).agg({'sequence_length': ['min', 'max', 'sum', 'count'], 'quality_average': ['sum'], 'channel': ['unique']})
+        fastq_df_result = fastq_df.groupby(['barcode__name', 'type__name', 'is_pass']).agg({'sequence_length': ['min', 'max', 'sum', 'count'], 'quality_average': ['sum'], 'channel': ['unique']})
 
-        fastq_df_result.reset_index().apply(lambda row: save_runsummarybarcode(runid, row), axis=1)
+        fastq_df_result.reset_index().apply(lambda row: save_flowcellsummarybarcode(flowcell_id, row), axis=1)
 
-
-        fastq_df['start_time']=fastq_df['start_time'].values.astype('<M8[m]')
+        # fastq_df['start_time']=fastq_df['start_time'].values.astype('<M8[m]')
         #
         # Calculates statistics for RunStatisticsBarcode
         #
-        fastq_df_result = fastq_df.groupby(['start_time', 'barcode_id', 'type_id', 'is_pass']).agg(
+        fastq_df_result = fastq_df.groupby(['start_time_truncate', 'barcode__name', 'type__name', 'is_pass']).agg(
             {'sequence_length': ['min', 'max', 'sum', 'count'], 'quality_average': ['sum'], 'channel': ['unique']})
 
-        fastq_df_result.reset_index().apply(lambda row: save_runstatisticbarcode(runid, row), axis=1)
+        fastq_df_result.reset_index().apply(lambda row: save_flowcellstatisticbarcode(flowcell_id, row), axis=1)
 
         #
         # Calculates statistics for HistogramSummary
         #
-        fastq_df['bin_index'] = (fastq_df['sequence_length'] - fastq_df['sequence_length'] % HistogramSummary.BIN_WIDTH) / HistogramSummary.BIN_WIDTH
-
-        fastq_df_result = fastq_df.groupby(['barcode_id', 'type_id', 'is_pass', 'bin_index']).agg({'sequence_length': ['sum', 'count']})
-
-        fastq_df_result.reset_index().apply(lambda row: save_histogramsummary(runid, row), axis=1)
+        # fastq_df['bin_index'] = (fastq_df['sequence_length'] - fastq_df['sequence_length'] % HistogramSummary.BIN_WIDTH) / HistogramSummary.BIN_WIDTH
+        #
+        # fastq_df_result = fastq_df.groupby(['barcode_id', 'type_id', 'is_pass', 'bin_index']).agg({'sequence_length': ['sum', 'count']})
+        #
+        # fastq_df_result.reset_index().apply(lambda row: save_histogramsummary(runid, row), axis=1)
 
         #
         # Calculates statistics for ChannelSummary
         #
-        fastq_df_result = fastq_df.groupby(['channel']).agg({'sequence_length': ['sum', 'count']})
-
-        fastq_df_result.reset_index().apply(lambda row: save_channelsummary(runid, row), axis=1)
-
+        # fastq_df_result = fastq_df.groupby(['channel']).agg({'sequence_length': ['sum', 'count']})
+        #
+        # fastq_df_result.reset_index().apply(lambda row: save_channelsummary(runid, row), axis=1)
+        #
         last_read = fastq_df_barcode['id'].max()
 
     job_master = JobMaster.objects.get(pk=job_master_id)

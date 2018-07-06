@@ -16,29 +16,21 @@ function requestSummaryData(id) {
 
             data.forEach(function (row) {
 
-                //console.log(row);
+                var tr = '<tr>';
+                tr += '<td>' + row['barcode_name'] + '</td>';
+                tr += '<td>' + row['read_type_name'] + '</td>';
+                tr += '<td>' + row['status'] + '</td>';
+                tr += '<td align="right">' + row['read_count'] + '</td>';
+                tr += '<td align="right">' + row['total_length'] + '</td>';
+                tr += '<td align="right">' + row['total_length'] + '</td>';
+                tr += '<td align="right">' + row['total_length'] + '</td>';
 
-                if (row[0] != "No barcode") {
+                // if (index == 6) {
+                //     column = Math.round(column);
+                // }
 
-                    var tr = '<tr>';
+                basecalled_summary_table.innerHTML += tr;
 
-                    row.forEach(function (column, index) {
-
-                        if (index == 3 || index == 4 || index == 5 || index == 6) {
-                            var text_align = "right";
-                        } else {
-                            var text_align = "left";
-                        }
-
-                        if (index == 6) {
-                            column = Math.round(column);
-                        }
-
-                        tr += '<td align="' + text_align + '">' + column + '</td>';
-                    });
-
-                    basecalled_summary_table.innerHTML += tr;
-                }
             });
         }
     }).bind(this));

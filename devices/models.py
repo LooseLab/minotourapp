@@ -19,6 +19,10 @@ class Flowcell(models.Model):
         default=512
     )
 
+    is_active = models.BooleanField(
+        default=True
+    )
+
     def barcodes(self):
 
         barcode_set = set()
