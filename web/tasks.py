@@ -478,6 +478,7 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
         REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
 
         reference = ReferenceInfo.objects.get(pk=reference_info_id)
+        reference_info = ReferenceInfo.objects.get(pk=reference_info_id)
 
         chromdict = dict()
 
@@ -512,7 +513,15 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
             last_read = fastq.id
 
         # print(read)
-        cmd = 'minimap2 -x map-ont -t 4 --secondary=no %s -' % (minimap2_ref)
+
+        minimap2_executable = getattr(settings, "MINIMAP2", None)
+
+        if not minimap2_executable:
+
+            print('Can not find minimap2 executable - stopping task.')
+
+
+        cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format(minimap2_executable, minimap2_ref)
 
         print(cmd)
 
@@ -534,7 +543,7 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
 
         ### OK - we need to fix this for getting the group barcodes and not the individual barcodes.
 
-        bulk_paf=[]
+        bulk_paf = []
         bulk_paf_rough = []
 
         for line in pafdata:
@@ -551,7 +560,8 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
                 newpafend = PafRoughCov(flowcell=flowcell,read_type=typeid,barcode=fastqbarcode[record[0]])
             elif inputtype == "run":
                 newpaf = PafStore(run=run, read=readid, read_type=typeid)
-            newpaf.reference = Reference
+
+            newpaf.reference = reference_info
 
             #logger.info("---> Before parsing paf record")
             #logger.info(record)
@@ -570,36 +580,41 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
             newpaf.abl = int(record[10])  # models.IntegerField()#11	int	Alignment block length
             newpaf.mq = int(record[11])  # models.IntegerField()#12	int	Mapping quality (0-255; 255 for missing)
 
-
-            newpafstart.reference=Reference
-            newpafend.reference=Reference
-            newpafstart.chromosome=chromdict[record[5]]
-            newpafend.chromosome=chromdict[record[5]]
-            newpafstart.p=int(record[7])
-            newpafend.p=int(record[8])
-            newpafstart.i=1
-            newpafend.i=-1
+            newpafstart.reference = reference_info
+            newpafend.reference = reference_info
+            newpafstart.chromosome = chromdict[record[5]]
+            newpafend.chromosome = chromdict[record[5]]
+            newpafstart.p = int(record[7])
+            newpafend.p = int(record[8])
+            newpafstart.i = 1
+            newpafend.i = -1
 
             bulk_paf_rough.append(newpafstart)
             bulk_paf_rough.append(newpafend)
             #newpaf.save()
             bulk_paf.append(newpaf)
 
-            if Reference not in resultstore:
-                resultstore[Reference] = dict()
-            if chromdict[record[5]] not in resultstore[Reference]:
-                resultstore[Reference][chromdict[record[5]]] = dict()
+            if reference_info not in resultstore:
+                resultstore[reference_info] = dict()
+
+            if chromdict[record[5]] not in resultstore[reference_info]:
+                resultstore[reference_info][chromdict[record[5]]] = dict()
+
             #readidbarcodegroup = readid.barcode.barcodegroup
             readidbarcodegroup = fastqbarcodegroup[record[0]]
-            if readidbarcodegroup not in resultstore[Reference][chromdict[record[5]]]:
-                resultstore[Reference][chromdict[record[5]]][readidbarcodegroup] = dict()
-            if typeid not in resultstore[Reference][chromdict[record[5]]][readidbarcodegroup]:
-                resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid] = dict()
-            if 'read' not in resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid]:
-                resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid]['read'] = set()
-                resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid]['length'] = 0
-            resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid]['read'].add(record[0])
-            resultstore[Reference][chromdict[record[5]]][readidbarcodegroup][typeid]['length'] += int(record[3]) - int(
+
+            if readidbarcodegroup not in resultstore[reference_info][chromdict[record[5]]]:
+                resultstore[reference_info][chromdict[record[5]]][readidbarcodegroup] = dict()
+
+            if typeid not in resultstore[reference_info][chromdict[record[5]]][readidbarcodegroup]:
+                resultstore[reference_info][chromdict[record[5]]][readidbarcodegroup][typeid] = dict()
+
+            if 'read' not in resultstore[reference_info][chromdict[record[5]]][readidbarcodegroup][typeid]:
+                resultstore[reference_info][chromdict[record[5]]][readidbarcodegroup][typeid]['read'] = set()
+                resultstore[reference_info][chromdict[record[5]]][readidbarcodegroup][typeid]['length'] = 0
+
+            resultstore[reference_info][chromdict[record[5]]][readidbarcodegroup][typeid]['read'].add(record[0])
+            resultstore[reference_info][chromdict[record[5]]][readidbarcodegroup][typeid]['length'] += int(record[3]) - int(
                 record[2]) + 1
         PafStore.objects.bulk_create(bulk_paf)
         PafRoughCov.objects.bulk_create(bulk_paf_rough)
