@@ -12,56 +12,26 @@
         <!-- Main content -->
         <section class="content">
             <!-- Main top nav bar -->
-            <!--<p class="alert alert-info">Mensagem de teste.</p>-->
 
-
-                <div class="nav-tabs-custom">
-                    <ul class="nav nav-tabs nav-justified">
-                        <li class="active"><a href="#tab-active-flowcells" data-toggle="tab">Active Flowcells</a></li>
-                        <li><a href="#tab-all-flowcells" data-toggle="tab">All Flowcells</a></li>
-                    </ul>
-                </div>
                 <div id="messages"></div>
 
-
-                <div class="tab-content">
-                    <div class="tab-pane fade in active box" id="tab-active-flowcells">
-                        <div class="box-body">
-                            <table id="active-runs" class="table table-bordered table-striped table-hover" style="width: 100%" cellspacing="0" >
-                            <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Name</th>
-                                <th>Start Time</th>
-                                <th>Number of Runs</th>
-                                <th>Computer Name</th>
-                                <th>MinION name</th>
-                                <th>MinKNOW Version</th>
-                                <th>Sample Name</th>
-                            </tr>
-                            </thead>
-                        </table>
-                        </div>
-                    </div>
-                    <div class="tab-pane fade box" id="tab-all-flowcells">
-                        <div class="box-body">
-                           <table id="all-runs" class="table table-bordered table-striped table-hover" style="width:100%" cellspacing="0" >
-                            <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Name</th>
-                                <th>Start Time</th>
-                                <th>Number of Runs</th>
-                                <th>Computer Name</th>
-                                <th>MinION name</th>
-                                <th>MinKNOW Version</th>
-                                <th>Sample Name</th>
-                            </tr>
-                            </thead>
-                        </table>
-                        </div>
-                    </div>
+                <div class="box-body">
+                    <table id="all-runs" class="table table-bordered table-striped table-hover" style="width:100%" cellspacing="0" >
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Start Time</th>
+                        <th>Number of Runs</th>
+                        <th>Computer Name</th>
+                        <th>MinION name</th>
+                        <th>MinKNOW Version</th>
+                        <th>Sample Name</th>
+                    </tr>
+                    </thead>
+                    </table>
                 </div>
+
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 {% endblock %}
@@ -74,46 +44,6 @@
 
     $(document).ready(function () {
 
-        table_active_runs = $('#active-runs').DataTable({
-            'ajax': {
-                'url': "{% url 'flowcell-list-active' %}",
-                'dataSrc': function(json){
-
-                    var data = [];
-
-                    for (var i = 0; i < json.length; i++){
-
-                        if (json[i].runs[0].start_time) {
-                            var start_time = new Date(json[i].runs[0].start_time);
-                            var start_time_human_format = start_time.getDate() + "-" + months[start_time.getMonth()] + "-" + start_time.getFullYear() + " " + start_time.getHours() + ":" + start_time.getMinutes();
-                        } else {
-                            var start_time_human_format = "";
-                        }
-
-                        data.push([
-                            json[i].id,
-                            json[i].name,
-                            start_time_human_format,
-                            json[i].runs.length,
-                            json[i].runs[0].computer_name,
-                            json[i].runs[0].minion_name,
-                            json[i].runs[0].minKNOW_version,
-                            json[i].runs[0].sample_name,
-                        ]);
-                    }
-                    return data;
-                }
-            },
-            'columnDefs': [
-                {
-                    'targets': 0,
-                    'data': 0,
-                    'render': function(data, type, full, meta){
-                        return '<a href="/web/private/flowcells/' + data + '/"> See details</a>';
-                    }
-                },
-            ]
-        });
 
         table_all_runs = $('#all-runs').DataTable({
             'ajax': {
