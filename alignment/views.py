@@ -1,7 +1,6 @@
 import json
 
 import numpy as np
-import scipy.stats
 from django.conf import settings
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Sum
@@ -10,14 +9,11 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from alignment.models import (PafRoughCov, PafSummaryCov,
-                              PafSummaryCov_transcriptome)
+from alignment.models import PafRoughCov
+from alignment.models import PafSummaryCov
 from alignment.serializers import (PafRoughCovChromSerializer,
                                    PafRoughCovChromSerializerCount,
                                    PafSummaryCovSerializer)
-from jobs.models import JobMaster
-from reference.models import ReferenceLine
-
 from . import util
 
 
@@ -249,96 +245,7 @@ def flowcellpaf_alignment_summary(request, pk):#,bc,ch):
 
         serializer = PafSummaryCovSerializer(queryset, many=True, context={'request': request})
 
-        return Response(serializer.data)\
-
-
-@api_view(['GET'])
-def paf_alignment_transcriptome_summary(request, pk):#,bc,ch):
-    """
-    CUrrent API behaviour asssumes starting from page1.
-    Request for page 0 returns last page.
-    This could be a source of confusion and we should resolve.
-    :param request:
-    :param pk:
-    :return:
-    """
-    if request.method == 'GET':
-        queryset = PafSummaryCov_transcriptome.objects \
-            .filter(run__owner=request.user) \
-            .filter(run__id=pk) \
-            .order_by('-read_count')
-            #.filter(run__id=pk,barcode=bc,chromosome=ch)
-
-
-        paginator = Paginator(queryset, settings.PAGINATION_PAGE_SIZE)
-
-        page = request.GET.get('page')
-
-        try:
-            result = paginator.page(page)
-        except PageNotAnInteger:
-            result = paginator.page(1)
-        except EmptyPage:
-            result = paginator.page(paginator.num_pages)
-
-        serializer = PafSummaryCovSerializer(result, many=True, context={'request': request})
-
-        result2 = {}
-        result2['number_pages'] = paginator.num_pages
-        result2['data'] = serializer.data
-        return HttpResponse(json.dumps(result2), content_type="application/json")
-
-        #serializer = PafSummaryCovSerializer(queryset, many=True, context={'request': request})
-
-        #return Response(serializer.data)
-
-
-@api_view(['GET'])
-def paf_test(request, pk,bc,ch,ty,po,ln):
-    """
-
-    :param request:
-    :param pk:
-    :return:
-    """
-    if request.method == 'GET':
-        queryset = PafRoughCov.objects \
-            .filter(run__owner=request.user) \
-            .filter(run__id=pk) \
-            .filter(barcode__id=bc) \
-            .filter(chromosome__id=ch) \
-            .filter(read_type__id=ty) \
-            .filter(p__lte=po).values('reference').annotate(sumcount=Sum('i'))
-        # .filter(run__id=pk,barcode=bc,chromosome=ch)
-
-        #serializer = PafRoughCovSerializer(queryset, many=True, context={'request': request})
-
-        #queryset = PafRoughCov.objects.filter(run__owner=request.user).filter(run__id=pk).filter(p__lte=1000000).values('reference').annotate(sumcount = Sum('i')).order_by('sumcount')
-
-        serializer1 = PafRoughCovChromSerializerCount(queryset, many=True, context={'request': request})
-
-        queryset2 = PafRoughCov.objects \
-            .filter(run__owner=request.user) \
-            .filter(run__id=pk) \
-            .filter(barcode__id=bc) \
-            .filter(chromosome__id=ch) \
-            .filter(read_type__id=ty) \
-            .filter(p__gt=po)\
-            .filter(p__lt=(po+ln))\
-            .order_by('p')
-
-        serializer2 = PafRoughCovChromSerializer(queryset2, many=True, context={'request': request})
-
-        Serializer_list = [serializer1.data, serializer2.data]
-
-        content = {
-            'status': 1,
-            'responseCode': status.HTTP_200_OK,
-            'data': Serializer_list,
-
-        }
-
-        return Response(content)
+        return Response(serializer.data)
 
 
 @api_view(['GET'])
