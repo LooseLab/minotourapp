@@ -651,7 +651,7 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
         jobdone = time.time()
         #print('!!!!!!!It took {} to process the resultstore.!!!!!!!!!'.format((jobdone - donepafproc)))
 
-    except Exception as exception:
+    except Exception as exception: #Todo: This method of detecting an error will potentially lead to duplication of analysis
         print('An error occurred when running this task.')
         print(exception)
         JobMaster.objects.filter(pk=job_master_id).update(running=False)
