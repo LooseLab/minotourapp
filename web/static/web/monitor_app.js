@@ -259,10 +259,6 @@ var FlowcellPageApp = {
             "Contig Length".toUpperCase()
         );
 
-        $("#chromosome-id-select").on("change", function () {
-            this.updateStepLineChart(this.chartChromosomeCoverage, 0, 0);
-        });
-
         $("#chromosome-coverage-left").on("click", function () {
             var min = this.chartChromosomeCoverage.xAxis[0].min;
             var max = this.chartChromosomeCoverage.xAxis[0].max;

@@ -282,13 +282,6 @@ function MinotourApp() {
             "Coverage"
         );
 
-        $('#chromosome-id-select').on('change', function () {
-            //self.updateStepLineChart(self.chartChromosomeCoverage, 0, 0);
-            create_master_detail_chart('coverage_div');
-        });
-
-
-
         this.LiveHistogram = this.makeLiveHistogram(
             'live-histogram',
             'Histogram of Read Lengths (Events)',
