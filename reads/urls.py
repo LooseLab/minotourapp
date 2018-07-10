@@ -181,11 +181,6 @@ urlpatterns = [
         name="flowcellsummarybarcodebyminute-detail"
     ),
     url(
-        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute_bases/$',
-        views.flowcell_summary_barcode_by_minute_bases,
-        name="flowcellsummarybarcodebyminute-detail_bases"
-    ),
-    url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute_quality/$',
         views.flowcell_summary_barcode_by_minute_quality,
         name="flowcellsummarybarcodebyminute-detail_quality"

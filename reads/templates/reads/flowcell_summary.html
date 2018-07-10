@@ -1,0 +1,27 @@
+{% load humanize %}
+
+<table class="table">
+    <thead>
+    <th>Barcode</th>
+    <th>Read type</th>
+    <th>Pass/Fail</th>
+    <td align="right"><strong>Reads called</strong></td>
+    <td align="right"><strong>Yield</strong></td>
+    <td align="right"><strong>Average read length</strong></td>
+    <td align="right"><strong>Maximum read length</strong></td>
+    </thead>
+    <tbody>
+    {% for record in qs %}
+        <tr>
+            <td>{{ record.barcode_name }}</td>
+            <td>{{ record.read_type_name }}</td>
+            <td>{{ record.status }}</td>
+            <td align="right">{{ record.read_count|intcomma }}</td>
+            <td align="right">{{ record.total_length|intcomma }}</td>
+            <td align="right">{{ record.average_read_length|floatformat:"0"|intcomma }}</td>
+            <td align="right">{{ record.max_length|intcomma }}</td>
+        </tr>
+    {% endfor %}
+
+    </tbody>
+</table>
