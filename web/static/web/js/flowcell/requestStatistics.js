@@ -1,4 +1,4 @@
-function requestQualTimeCallback(data) {
+function requestStatisticsCallback(data) {
 
     if (!data && data.length <= 0) {
         return;
@@ -206,12 +206,12 @@ function requestQualTimeCallback(data) {
     }
 }
 
-function requestQualTime(id) {
+function requestStatistics(id) {
 
     var url = "/api/v1/flowcells/" + id + "/summarybarcodebyminute_quality";
 
-    requestQualTimeCallback = requestQualTimeCallback.bind(this);
+    requestStatisticsCallback = requestStatisticsCallback.bind(this);
 
-    $.get(url, requestQualTimeCallback);
+    $.get(url, requestStatisticsCallback);
 
 };

@@ -104,14 +104,9 @@
 <script src="{% static 'web/js/flowcell/requestMinknowMessages.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/flowcell/requestTasks.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/flowcell/requestChannelSummaryData.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/flowcell/requestMaxLengthTime.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/flowcell/requestSpeed.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/flowcell/requestStatistics.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/flowcell/requestGfaData.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/flowcell/requestLengthTime.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/flowcell/requestQualTime.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/flowcell/requestCumuBases.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/flowcell/requestPafData.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/flowcell/requestKraken.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/flowcell/requestData.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/flowcell/requestHistogramData.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/flowcell/requestRunDetails.js' %}?{% now 'c' %}"></script>
@@ -156,13 +151,6 @@
      fixed layout. -->
 <script src="{% static 'web/plugins/slimScroll/jquery.slimscroll.min.js' %}"></script>
 <script src="{% static 'web/plugins/fastclick/fastclick.min.js' %}"></script>
-<script>
-$(function() {
-    if (localStorage['MT_MenuState'] == "menu-collapsed") {
-        $("body").addClass('sidebar-collapse')
-    }
-});
-</script>
 {% block javascript %}
 {% endblock %}
 </body>
