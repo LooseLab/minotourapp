@@ -1174,8 +1174,8 @@ class FlowcellSummaryBarcode(models.Model):
     )
 
     class Meta:
-        verbose_name = 'Flowcell Summary Barcode'
-        verbose_name_plural = 'Flowcell Summary Barcodes'
+        verbose_name = 'Flowcell Summary'
+        verbose_name_plural = 'Flowcell Summary'
         db_table = 'Flowcell_summary_barcode'
 
     def __str__(self):
@@ -1186,6 +1186,9 @@ class FlowcellSummaryBarcode(models.Model):
             self.read_type_name,
             self.barcode_name
         )
+
+    def average_read_length(self):
+        return self.total_length / self.read_count
 
     def number_active_channels(self):
         return len(self.channel_presence.replace('0', ''))

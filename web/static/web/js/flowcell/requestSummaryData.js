@@ -1,37 +1,25 @@
 function requestSummaryData(id) {
     /*
-     * Request summary by barcode data
+     * Request flowcell summary
+     * This response is a HTML code that is appended to the page (no json)
      */
-    var url = "/api/v1/flowcells/" + id + "/summarybarcode";
+    var url = "/flowcells/" + id + "/summary_html";
 
     var selectedBarcode = this.getSelectedBarcode();
 
-    $.get(url, (function (data) {
+    var basecalled_summary_table = document.querySelector('#basecalled-summary');
 
-        if (data.length > 0) {
-
-            var basecalled_summary_table = document.querySelector('#basecalled-summary');
-
-            basecalled_summary_table.innerHTML = "";
-
-            data.forEach(function (row) {
-
-                var tr = '<tr>';
-                tr += '<td>' + row['barcode_name'] + '</td>';
-                tr += '<td>' + row['read_type_name'] + '</td>';
-                tr += '<td>' + row['status'] + '</td>';
-                tr += '<td align="right">' + row['read_count'] + '</td>';
-                tr += '<td align="right">' + row['total_length'] + '</td>';
-                tr += '<td align="right">' + row['total_length'] + '</td>';
-                tr += '<td align="right">' + row['total_length'] + '</td>';
-
-                // if (index == 6) {
-                //     column = Math.round(column);
-                // }
-
-                basecalled_summary_table.innerHTML += tr;
-
-            });
+    console.log('requesting summary data');
+    $.ajax({
+        url: url,
+        dataType: "html",
+        success: function(data) {
+            basecalled_summary_table.innerHTML = data;
+            console.log('request returned success');
+        },
+        error: function(e)
+        {
+            alert('Error: ' + e);
         }
-    }).bind(this));
+    });
 };

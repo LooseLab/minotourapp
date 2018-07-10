@@ -167,10 +167,14 @@ urlpatterns = [
         r'^api/v1/flowcells/(?P<pk>[0-9A-Za-z-_]+)/$',
         views.flowcell_detail,
         name="flowcell-detail"),
-    url(
+    url(  # TODO delete?
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcode/$',
         views.flowcell_summary_barcode,
         name="flowcellsummarybarcode-detail"),
+    url(
+        r'^flowcells/(?P<pk>[0-9]+)/summary_html/$',
+        views.flowcell_summary_html,
+        name="flowcell-summary-html"),
     url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcodebyminute/$',
         views.flowcell_summary_barcode_by_minute,

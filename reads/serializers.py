@@ -555,6 +555,7 @@ class FlowcellSummaryBarcodeSerializer(serializers.ModelSerializer):
             'max_length',
             'min_length',
             'channel_count',
+            'average_read_length',
         )
 
         read_only = ('id',)

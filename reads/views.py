@@ -4,6 +4,7 @@ from datetime import timedelta
 import dateutil.parser
 
 from django.db.models import Sum, Max
+from django.shortcuts import redirect, render
 
 import numpy as np
 import pandas as pd
@@ -1094,27 +1095,19 @@ def flowcell_summary_barcode(request, pk):
         # .filter(run_id__owner=request.user)
 
     serializer = FlowcellSummaryBarcodeSerializer(qs, many=True)
-    # df = pd.DataFrame.from_records(qs.values('barcode_name', 'type__name', 'is_pass', 'read_count', 'total_length', 'max_length'))
-    #
-    # df['is_pass'] = df['is_pass'].map({True: "Pass", False: "Fail"})
-    #
-    # gb = df.groupby(['barcode__name', 'type__name', 'is_pass']).agg({'read_count': ['sum'], 'total_length': ['sum'], 'max_length': ['max']})
-    #
-    # payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], row['type__name'][0], row['is_pass'][0], row['read_count']['sum'], row['total_length']['sum'], int(row['total_length']['sum'] / row['read_count']['sum']), row['max_length']['max']), axis=1)
 
-#=======
-##    df['is_pass'] = df['is_pass'].map({True: "Pass", False: "Fail"})
-#    print (df)
-#    gb = df.groupby(['barcode__name', 'type__name', 'is_pass']).agg({'read_count': ['sum'], 'total_length': ['sum'], 'max_length': ['max']})
-#    print (gb)
-#    gb2 = df.groupby(['barcode__name','type__name']).agg({'read_count': ['sum'], 'total_length': ['sum', 'max']})
-#    gb2['is_pass'] = 'All'
-#    gb3 = gb.append(gb2)
-#    print (gb3)
-#    payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], row['type__name'][0], row['is_pass'][0], row['read_count']['sum'], humanbases(int(row['total_length']['sum'])), humanbases(round(row['total_length']['sum'] / row['read_count']['sum'])), humanbases(row['max_length']['max'])), axis=1)
-#    print (payload)
-#>>>>>>> Stashed changes
     return Response(serializer.data)
+
+
+def flowcell_summary_html(request, pk):
+
+    flowcell = Flowcell.objects.get(pk=pk)
+
+    qs = FlowcellSummaryBarcode.objects \
+        .filter(flowcell=flowcell) \
+        .exclude(barcode_name='No barcode')
+
+    return render(request, 'reads/flowcell_summary.html', {'qs': qs})
 
 
 @api_view(['GET'])
