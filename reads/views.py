@@ -24,6 +24,8 @@ from reads.models import (Barcode, BarcodeGroup, FastqRead, FastqReadType,
                           FlowCellRun, MinIONControl, MinIONEvent,
                           MinIONEventType, MinionMessage, MinIONRunStats,
                           MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun, FlowcellStatisticBarcode, FlowcellSummaryBarcode)
+from reads.models import FlowcellHistogramSummary
+from reads.models import FlowcellChannelSummary
 from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
                                ChannelSummarySerializer, FastqReadSerializer,
                                FastqReadTypeSerializer, FlowCellSerializer, JobTypeSerializer,
@@ -819,20 +821,6 @@ def run_summary_barcode_by_minute(request, pk):
 
 
 @api_view(['GET'])
-def run_histogram_summary(request, pk):
-    """
-    Return a list with histogram summaries for a particular run.
-    """
-    queryset = HistogramSummary.objects\
-        .filter(run_id__owner=request.user)\
-        .filter(run_id=pk)
-
-    serializer = RunHistogramSummarySerializer(queryset, many=True, context={'request': request})
-
-    return Response(serializer.data)
-
-
-@api_view(['GET'])
 def run_channel_summary(request, pk):
     """
     Return a list with channel info for a particular run.
@@ -1480,8 +1468,8 @@ def flowcell_summary_barcode_by_minute_bases(request, pk):
 
             for is_pass in [True, False]:
 
-                queryset = RunStatisticBarcode.objects \
-                    .filter(run__flowcell=flowcell) \
+                queryset = FlowcellStatisticBarcode.objects \
+                    .filter(flowcell=flowcell) \
                     .filter(barcode=barcode)\
                     .filter(type=readtype)\
                     .filter(is_pass=is_pass)\
@@ -1708,29 +1696,30 @@ def flowcell_histogram_summary(request, pk):
 
     run_list = flowcell.runs.all()
 
-    qs = HistogramSummary.objects \
-        .filter(run__in=run_list) \
-        .filter(run__owner=request.user) \
-        .filter(barcode__name=barcode_name)
+    max_bin_index = FlowcellHistogramSummary.objects \
+        .filter(flowcell=flowcell) \
+        .filter(barcode_name=barcode_name) \
+        .filter(read_type_name='Template') \
+        .aggregate(Max('bin_index'))
 
-    max_bin_index = qs.aggregate(Max('bin_index'))
+    qs = FlowcellHistogramSummary.objects \
+        .filter(flowcell=flowcell) \
+        .filter(barcode_name=barcode_name) \
+        .filter(read_type_name='Template')
 
-    qs2 = qs.order_by('read_type', 'is_pass', 'bin_index')
-
-    res = qs2.values('barcode__name', 'read_type__name', 'is_pass', 'bin_index').annotate(Sum('read_count'), Sum('read_length'))
 
     result = []
 
     result_read_count_sum = {}
     result_read_length_sum = {}
 
-    for r in res:
-        l_barcode_name = r['barcode__name']
-        l_read_type_name = r['read_type__name']
-        l_is_pass = 'Pass' if r['is_pass'] else 'Fail'
-        l_bin_index = r['bin_index']
-        l_read_count_sum = r['read_count__sum']
-        l_read_length_sum = r['read_length__sum']
+    for r in qs:
+        l_barcode_name = r.barcode_name
+        l_read_type_name = r.read_type_name
+        l_is_pass = 'Pass' if r.status else 'Fail'
+        l_bin_index = r.bin_index
+        l_read_count_sum = r.read_count
+        l_read_length_sum = r.read_length
 
         l_key = ("{} - {} - {}".format(l_barcode_name, l_read_type_name, l_is_pass))
 
@@ -1777,55 +1766,6 @@ def flowcell_histogram_summary(request, pk):
 
     return Response({'result_read_count_sum': result_read_count_sum2, 'result_read_length_sum': result_read_length_sum2, 'categories': categories})
 
-    flowcell = Flowcell.objects.get(pk=pk)
-
-    run_list = flowcell.runs.all()
-
-    qs = HistogramSummary.objects\
-       .filter(run__in=run_list)\
-       .filter(run__owner=request.user)\
-       .order_by('read_type', 'bin_index')
-    qs.values('barcode__name', 'read_type__name', 'is_pass', 'bin_index').annotate(Sum('read_count'), Sum('read_length'))
-    df = pd.DataFrame.from_records(qs.values('barcode__name', 'read_type__name', 'is_pass', 'read_count', 'read_length', 'bin_index'))
-
-    gb = df.groupby(['barcode__name', 'read_type__name', 'is_pass', 'bin_index']).agg({'read_count': ['sum'], 'read_length': ['sum']})
-    # # ## new_index should get the maximum value in the data to rebuild the histogram dataset
-    new_index = list(range(0, gb.index.values.max()[3] + 1))
-    ## Here we unstack the multiindex datafram so we can reindex the bin_index.
-    ## We do this using the new_index and we fill in the blanks with 0 values.
-    ## We then restack the data to rebuild the multindex.
-    ## Finally we reorder the indexes to return the order to the original
-    gb = gb.unstack(['barcode__name', 'read_type__name', 'is_pass']).reindex(new_index, fill_value=0).stack(['is_pass', 'read_type__name', 'barcode__name']).reorder_levels(
-         ['barcode__name', 'read_type__name', 'is_pass', 'bin_index']).sortlevel(level=0)
-
-    payload = gb.reset_index().apply(lambda row: (row['barcode__name'][0], '{} {} {}'.format(row['barcode__name'][0], row['read_type__name'][0], 'Pass' if row['is_pass'][0] == True else 'Fail'), row['bin_index'][0] * 900 + 900, row['read_count']['sum'], row['read_length']['sum']), axis=1)
-
-    indexes = gb.reset_index().apply(lambda row: '{} {} {}'.format(row['barcode__name'][0], row['read_type__name'][0], 'Pass' if row['is_pass'][0] == True else 'Fail'), axis=1)
-
-    #categories = list(range(0,100000))
-
-    return Response({'data': payload, 'indexes': set(indexes)}) #, 'categories': categories})
-    #return Response({'data': gb.to_records()}) #, 'categories': categories})
-
-@api_view(['GET'])
-def flowcell_channel_summary(request, pk):
-    """
-    Return a list with channel info for a particular run.
-    """
-    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
-    runset = list()
-    for run in queryset:
-        # print (run.run_id)
-        runset.append(run.run_id)
-    queryset = ChannelSummary.objects\
-        .filter(run_id__owner=request.user)\
-        .filter(run_id__in=runset)
-
-    serializer = ChannelSummarySerializer(queryset, many=True, context={'request': request})
-
-    return Response(serializer.data)
-
-
 
 @api_view(['GET'])
 def flowcell_run_status_list(request,pk):
@@ -1851,83 +1791,42 @@ def flowcell_run_status_list(request,pk):
 
 
 @api_view(['GET'])
-def flowcell_channel_summary_readcount(request, pk):
-
-    """
-    Return a list with channel info for a particular run.
-    """
+def flowcell_channel_summary(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)
-
-    run_list = flowcell.runs.all()
 
     flowcell_type = 512
 
-    qs = ChannelSummary.objects\
-        .filter(run__owner=request.user)\
-        .filter(run__in=run_list)
+    qs = FlowcellChannelSummary.objects\
+        .filter(flowcell=flowcell)
 
-    df = pd.DataFrame.from_records(qs.values('channel', 'read_count'))
+    result_mapped_to_flowcell = {}
 
-    result = df.groupby(['channel']).agg({'read_count': ['sum']})
+    #
+    # set all channels with value 0
+    #
 
-    result_mapped_to_flowcell = []
-
-    for i in range(1, flowcell_type + 1):
-
-        try:
-
-            channel_count = int(result.loc[i][0])
-
-        except KeyError:
-
-            channel_count = 0
-
-        coordinate = get_coords(i, flowcell_type)
-
-        result_mapped_to_flowcell.append([coordinate[0], coordinate[1], channel_count])
-
-    return HttpResponse(json.dumps(result_mapped_to_flowcell, cls=DjangoJSONEncoder), content_type="application/json")
-
-
-@api_view(['GET'])
-def flowcell_channel_summary_readkb(request, pk):
-
-    """
-    Return a list with channel info for a particular run.
-    """
-
-    flowcell = Flowcell.objects.get(pk=pk)
-
-    run_list = flowcell.runs.all()
-
-    flowcell_type = flowcell.size
-
-    qs = ChannelSummary.objects\
-        .filter(run__owner=request.user)\
-        .filter(run__in=run_list)
-
-    df = pd.DataFrame.from_records(qs.values('channel', 'read_length'))
-
-    result = df.groupby(['channel']).agg({'read_length': ['sum']})
-
-    result_mapped_to_flowcell = []
+    result_mapped_to_flowcell = {}
 
     for i in range(1, flowcell_type + 1):
 
-        try:
-
-            channel_count = int(result.loc[i][0])
-
-        except KeyError:
-
-            channel_count = 0
-
         coordinate = get_coords(i, flowcell_type)
 
-        result_mapped_to_flowcell.append([coordinate[0], coordinate[1], channel_count])
+        result_mapped_to_flowcell[i] = ([coordinate[0], coordinate[1], 0, 0])
 
-    return HttpResponse(json.dumps(result_mapped_to_flowcell), content_type="application/json")
+    #
+    # fill the known channels with correct value
+    #
+
+    for record in qs:
+
+        channel_count = record.read_count
+
+        coordinate = get_coords(record.channel, flowcell_type)
+
+        result_mapped_to_flowcell[record.channel] = ([coordinate[0], coordinate[1], record.read_count, record.read_length])
+
+    return HttpResponse(json.dumps(list(result_mapped_to_flowcell.values()), cls=DjangoJSONEncoder), content_type="application/json")
 
 
 def get_coords(channel,flowcellsize):

@@ -28,8 +28,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '@z+2b+7hj5w6zce6!6puz$s!&amy)j@10#qlzuh9w^p#0zwzvm'
 # SECRET_KEY = os.environ.get('MT_SECRET_KEY', '@z+2b+7hj5w6zce6!6puz$s!&amy)j@10#qlzuh9w^p#0zwzvm')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
 # DEBUG = bool(os.environ.get('MT_DJANGO_DEBUG', True))
 ALLOWED_HOSTS = ['*', ]
 
@@ -202,21 +200,17 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'web.tasks.run_monitor',
         'schedule': 15.0,
     },
-    'slow-monitor': {
-        'task': 'web.tasks.slow_monitor',
-        'schedule': 30.0,
-    },
     'send-messages': {
         'task': 'web.tasks.send_messages',
-        'schedule': 30,
+        'schedule': 600,
     },
     'delete-runs': {
         'task': 'web.tasks.delete_runs',
-        'schedule': 60,
+        'schedule': 600,
     },
     'update_run_start_time': {
         'task': 'web.tasks.update_run_start_time',
-        'schedule': 10,
+        'schedule': 600,
     }
 }
 
@@ -236,3 +230,36 @@ MINIMAP2 = get_env_variable("MT_MINIMAP2")
 BWA = get_env_variable("MT_BWA")
 
 USE_X_FORWARDED_HOST = True
+
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = True
+
+if DEBUG:
+   INTERNAL_IPS = ('127.0.0.1', 'localhost',)
+   MIDDLEWARE += (
+       'debug_toolbar.middleware.DebugToolbarMiddleware',
+   )
+
+   INSTALLED_APPS += (
+       'debug_toolbar',
+   )
+
+   DEBUG_TOOLBAR_PANELS = [
+       'debug_toolbar.panels.versions.VersionsPanel',
+       'debug_toolbar.panels.timer.TimerPanel',
+       'debug_toolbar.panels.settings.SettingsPanel',
+       'debug_toolbar.panels.headers.HeadersPanel',
+       'debug_toolbar.panels.request.RequestPanel',
+       'debug_toolbar.panels.sql.SQLPanel',
+       'debug_toolbar.panels.staticfiles.StaticFilesPanel',
+       'debug_toolbar.panels.templates.TemplatesPanel',
+       'debug_toolbar.panels.cache.CachePanel',
+       'debug_toolbar.panels.signals.SignalsPanel',
+       'debug_toolbar.panels.logging.LoggingPanel',
+       'debug_toolbar.panels.redirects.RedirectsPanel',
+   ]
+
+   DEBUG_TOOLBAR_CONFIG = {
+       'INTERCEPT_REDIRECTS': False,
+   }
+

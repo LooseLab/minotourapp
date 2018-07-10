@@ -26,4 +26,4 @@ django_extensions
 pandas
 isort
 psycopg2-binary
-
+django-debug-toolbar

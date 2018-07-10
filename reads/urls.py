@@ -64,14 +64,6 @@ urlpatterns = [
         name="runsummarybarcodebyminute-detail"
     ),
     url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/histogramsummary/$',
-        views.run_histogram_summary,
-        name="runhistogramsummary-detail"),
-    url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/channelsummary/$',
-        views.run_channel_summary,
-        name="runchannelsummary-list"),
-    url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/barcodes/$',
         views.barcode_list,
         name="runbarcode-list"),
@@ -217,17 +209,7 @@ urlpatterns = [
     url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/channelsummary/$',
         views.flowcell_channel_summary,
-        name="flowcellchannelsummary-list"
-    ),
-    url(
-        r'^api/v1/flowcells/(?P<pk>[0-9]+)/channelsummary_readcount/$',
-        views.flowcell_channel_summary_readcount,
-        name="flowcellchannelsummary-list-readcount"
-    ),
-    url(
-        r'^api/v1/flowcells/(?P<pk>[0-9]+)/channelsummary_readkb/$',
-        views.flowcell_channel_summary_readkb,
-        name="flowcellchannelsummary-list-readkb"
+        name="flowcell-channel-summary"
     ),
     url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/rundetails/$',
