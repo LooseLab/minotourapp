@@ -1149,38 +1149,11 @@ def flowcell_summary_barcode_by_minute_quality(request, pk):
         .values_list('barcode_name', 'read_type_name', 'status')\
         .distinct()
 
-    #barcode_name_set = set()
-
-    #for barcode in barcode_list:
-
-    #    barcode_name_set.add(barcode[0])
-
-    # for run in run_list:
-    #
-    #     for barcode in run.barcodes.all():
-    #
-    #         barcode_name_set.add(barcode.name)
-
     result_dict = dict()
 
     data_keys = []
 
     for (barcode_name, read_type_name, status) in key_list:
-
-        # if barcode_name not in result_dict.keys():
-        #     result_dict[barcode_name] = dict()
-        #
-        # if read_type_name not in result_dict[barcode_name].keys():
-        #     result_dict[barcode_name][read_type_name] = dict()
-        #
-        # if status not in result_dict[barcode_name][read_type_name].keys():
-        #     result_dict[barcode_name][read_type_name][status] = dict()
-
-        # for readtype in readtype_list:
-        #
-        #     result_dict[barcode_name][readtype.name] = dict()
-        #
-        #     for is_pass in ['Pass', 'Fail']:
 
         queryset = FlowcellStatisticBarcode.objects\
             .filter(flowcell=flowcell)\
@@ -1190,19 +1163,6 @@ def flowcell_summary_barcode_by_minute_quality(request, pk):
             .order_by('sample_time')
 
         if len(queryset) > 0:
-
-            # stvlqs = queryset.values_list('sample_time', flat=True)
-            # qsvlqs = queryset.values_list('quality_sum', flat=True)
-            # rcvlqs = queryset.values_list('read_count', flat=True)
-            #
-            # stcats = np.unique(stvlqs)
-            #
-            # unixtime = [x.timestamp() * 1000 for x in stcats]
-            # qs_sum = np.bincount(np.searchsorted(stcats, stvlqs), qsvlqs)
-            # rc_sum = np.bincount(np.searchsorted(stcats, stvlqs), rcvlqs)
-            # avgqs = qs_sum/rc_sum
-            #
-            # qs = np.column_stack((unixtime, avgqs))
 
             quality_list = []
 
@@ -1221,6 +1181,8 @@ def flowcell_summary_barcode_by_minute_quality(request, pk):
                     int(cumulative_bases),  # chart cumulative bases
                     int(cumulative_reads),  # chart cumulative reads
                     int(record.max_length),  # chart cumulative reads
+                    float(record.total_length/60),  # chart sequence rate
+                    float(record.total_length/record.channel_count/60),  # chart sequence speed
                 ))
 
             result_dict["{} - {} - {}".format(barcode_name, read_type_name, status)] = quality_list
@@ -1344,88 +1306,6 @@ def flowcell_summary_barcode_by_minute_speed(request, pk):
     }
 
     return HttpResponse(json.dumps(res, cls=DjangoJSONEncoder), content_type="application/json")
-
-
-# TODO remove - data is now shared in the def flowcell_summary_barcode_by_minute_speed
-@api_view(['GET'])
-def flowcell_summary_barcode_by_minute_rate(request, pk):
-    """
-    Return a list with summaries for a particular run grouped by minute.
-    """
-
-    """
-    Return a prepared set of summaries for reads quality over time grouped by minute.
-    """
-    flowcell = Flowcell.objects.get(pk=pk)
-
-    run_list = flowcell.runs.all()
-
-    readtype_list = FastqReadType.objects.all()
-
-    groupbarcode_set = set()
-
-    for run in run_list:
-
-        for barcode in run.barcodes.all():
-
-            groupbarcode_set.add(barcode.groupbarcodes.all()[0]) # it assumes that a barcode belongs to only one groupbarcode
-
-    result_dict = {
-        'rate': {
-
-        },
-        'speed': {
-
-        }
-    }
-
-    for groupbarcode in groupbarcode_set:
-
-        result_dict['rate'][barcode.name] = dict()
-        result_dict['speed'][barcode.name] = dict()
-
-        for readtype in readtype_list:
-
-            result_dict['rate'][barcode.name][readtype.name] = dict()
-            result_dict['speed'][barcode.name][readtype.name] = dict()
-
-            for is_pass in [True, False]:
-
-                queryset = RunStatisticBarcode.objects\
-                    .filter(barcode__in=groupbarcode.barcodes.all())\
-                    .filter(type=readtype)\
-                    .filter(is_pass=is_pass)\
-                    .order_by('sample_time')
-
-                if len(queryset) > 0:
-
-                    stvlqs = queryset.values_list('sample_time', flat=True)
-                    cpvlqs = queryset.values_list('channel_presence', flat=True)
-                    bvlqs = queryset.values_list('total_length', flat=True)
-                    stcats = np.unique(stvlqs)
-                    channel_count = [np.count_nonzero(list(map(int,x))) for x in cpvlqs]
-                    ## To increase speed, consider moving this to task and storing specific count of channels in RunStatisticBarcode
-                    unixtime = [x.timestamp() * 1000 for x in stcats]
-
-                    cc_sum = np.bincount(np.searchsorted(stcats,stvlqs), channel_count)
-                    bc_sum = np.bincount(np.searchsorted(stcats, stvlqs), bvlqs)
-
-                    ss = np.column_stack((unixtime, bc_sum/60))
-                    sr = np.column_stack((unixtime, bc_sum/cc_sum/60))
-
-                    # if "rate" not in result_dict[barcode.name]:
-                    #
-                    #     result_dict[barcode.name]["rate"]=dict()
-
-                    result_dict["rate"][barcode.name][readtype.name][is_pass]=ss.tolist()
-
-                    # if "speed" not in result_dict[barcode.name]:
-                    #
-                    #     result_dict[barcode.name]["speed"]=dict()
-
-                    result_dict["speed"][barcode.name][readtype.name][is_pass]=sr.tolist()
-
-    return HttpResponse(json.dumps(result_dict, cls=DjangoJSONEncoder), content_type="application/json")
 
 
 @api_view(['GET'])

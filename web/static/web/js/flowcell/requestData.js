@@ -46,12 +46,8 @@ function requestData(flowcell_id) {
             this.barcodes = Array.from(barcodes).sort();
             this.updateBarcodeNavTab();
             this.requestSummaryData(flowcellId);
-            //this.requestCumuBases(flowcellId);
             this.requestHistogramData(flowcellId);
             this.requestQualTime(flowcellId);
-            //this.requestLengthTime(flowcellId);
-            //this.requestMaxLengthTime(flowcellId);
-            this.requestSpeed(flowcellId);
             this.requestChannelSummaryData(flowcellId);
             this.requestReference(flowcellId);
 
