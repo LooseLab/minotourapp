@@ -10,13 +10,6 @@ function requestData(flowcell_id) {
 
     $.get(url_run, (function (data) {
 
-        // if (this.summary !== null) {
-        //     if (this.summary["All reads"]['Template']["max_length"]["all"]["data"][0] >= 1000000 && this.millionaire != true) {
-        //         $('#eastermodal').modal('show');
-        //         this.millionaire = true;
-        //     }
-        // }
-
         var barcodes = new Set();
 
         for (var i = 0; i < data.barcodes.length; i++) {
@@ -29,7 +22,7 @@ function requestData(flowcell_id) {
 
             this.rundata = data;
             this.requestRunDetails(flowcellId);
-            requestMinknowMessages(flowcellId,data);
+            requestMinknowMessages(flowcellId, data);
 
         } else if (flowcell_selected_tab_input.value == 'Tasks') {
 
@@ -59,7 +52,6 @@ function requestData(flowcell_id) {
 
         } else {
 
-            this.requestKraken(flowcellId);
             this.requestPafData(flowcellId);
             this.requestGfaData(flowcellId);
         }

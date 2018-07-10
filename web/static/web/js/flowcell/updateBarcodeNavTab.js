@@ -20,6 +20,9 @@ function updateBarcodeNavTab() {
             console.log('clicked on ' + selected_barcode);
             set_selected_barcode(selected_barcode);
 
+            var flowcell_id = get_selected_flowcell();
+            requestData(flowcell_id);
+
             var barcode_tabs = document.querySelectorAll('.barcode-tab');
             barcode_tabs.forEach(function(value) {
                 value.classList.remove('active');

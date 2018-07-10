@@ -1,5 +1,4 @@
-function requestMinknowMessages(id,data) {
-    console.log(data.runs[0].start_time);
+function requestMinknowMessages(id, data) {
 
     var url = '/api/v1/flowcells/' + id + '/minknow-messages/?start_time=' + data.runs[0].start_time;
 
@@ -13,5 +12,4 @@ function requestMinknowMessages(id,data) {
         stringtowrite = stringtowrite + '</table></div>';
         document.getElementById('Messages').innerHTML = stringtowrite;
     })
-
 }

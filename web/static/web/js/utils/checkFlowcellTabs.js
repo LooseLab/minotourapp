@@ -42,5 +42,5 @@ function checkTabs(flowcell_id) {
         }
     });
 
-    setTimeout(checkTabs.bind(null, flowcell_id), 10000);
+    setTimeout(checkTabs.bind(null, flowcell_id), 60000);
 };

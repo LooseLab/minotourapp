@@ -75,13 +75,11 @@ var FlowcellPageApp = {
         this.makeLiveChart = makeLiveChart;
         this.makeAreaPlot = makeAreaPlot;
         this.makeHeatmapChart = makeHeatmapChart;
-        this.makeStepLineChart = makeStepLineChart;
 
         this.lastread = 0;
         this.needtoupdatecharts = false;
 
         this.updatePoreChart = updatePoreChart;
-        this.updateStepLineChart = updateStepLineChart;
 
         this.requestChannelSummaryData = requestChannelSummaryData;
 
@@ -114,12 +112,6 @@ var FlowcellPageApp = {
         this.requestData = requestData;
 
         this.requestStatistics = requestStatistics.bind(this);
-
-        this.chartChromosomeCoverage = this.makeStepLineChart(
-            "chromosome-coverage",
-            "Chromosome Coverage",
-            "Coverage"
-        );
 
         this.ChartNumContigs = this.makeChart4(
             "num-contigs",
@@ -207,10 +199,6 @@ var FlowcellPageApp = {
 
         this.requestData(this.flowcellId);
 
-        setTimeout(function () {
-            this.requestData(this.flowcellId);
-        }.bind(this), 30000);
-
     }, // end of init
 
     getSelectedBarcode: function () {
@@ -221,20 +209,6 @@ var FlowcellPageApp = {
             return this.selectedBarcode;
         }
 
-    },
-
-
-    /*
-     * Each click on a barcode tab fires this function
-     * that calls requestData and update all charts
-     */
-    updateChartsBasedOnBarcode: function (event) {
-
-        var selected_barcode = event.target.innerText;
-        console.log("clicked on " + selected_barcode);
-        set_selected_barcode(selected_barcode);
-
-        this.requestData(this.flowcellId);
     },
 
     updatePoreStats: function () {
