@@ -1,10 +1,12 @@
-function checkTabs(flowcell_id) {
+function checkFlowcellTabs(flowcell_id) {
 
     console.log("Checking flowcell tabs.");
 
     var url = "/api/v1/flowcells/tabs/" + flowcell_id;
 
-    $.getJSON(url, function (data) {
+    var requestData = this.requestData.bind(this);
+
+    $.getJSON(url, (function (data) {
 
         var items = [];
 
@@ -38,9 +40,11 @@ function checkTabs(flowcell_id) {
             tabs[i].addEventListener('click', function (event) {
 
                 flowcell_selected_tab_input.value = event.target.innerHTML;
+                console.log('Clicked ' + event.target.innerHTML);
+                requestData(flowcell_id);
             });
         }
-    });
+    }).bind(this));
 
-    setTimeout(checkTabs.bind(null, flowcell_id), 60000);
+    setTimeout(checkFlowcellTabs.bind(null, flowcell_id), 60000);
 };

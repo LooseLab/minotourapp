@@ -13,11 +13,13 @@ function requestHistogramData(id) {
             var result_read_length_sum = dataObj['result_read_length_sum'];
             var categories = dataObj['categories'];
 
+            //console.log(categories);
+
             if (result_read_count_sum.length > 0) {
 
                 var data_barcode = []
 
-                var categories = []
+                //var categories = []
 
                 var category_labels = []
 

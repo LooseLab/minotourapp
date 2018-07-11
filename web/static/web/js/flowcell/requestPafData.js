@@ -1,7 +1,7 @@
 
 function requestPafData(id) {
 
-    self.requestMappedChromosomes(id);
+    //this.requestMappedChromosomes(id);
 
     var pafurl = '/api/v1/flowcells/' + id + '/pafsummary/';
 

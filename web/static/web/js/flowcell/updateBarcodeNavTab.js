@@ -1,5 +1,9 @@
 function updateBarcodeNavTab() {
 
+    var requestData = this.requestData.bind(this);
+
+    var flowcell_id = get_selected_flowcell();
+
     var selected_barcode = get_selected_barcode();
 
     var ul = document.getElementById("nav-tabs-barcodes");
@@ -20,7 +24,6 @@ function updateBarcodeNavTab() {
             console.log('clicked on ' + selected_barcode);
             set_selected_barcode(selected_barcode);
 
-            var flowcell_id = get_selected_flowcell();
             requestData(flowcell_id);
 
             var barcode_tabs = document.querySelectorAll('.barcode-tab');
@@ -34,7 +37,7 @@ function updateBarcodeNavTab() {
             });
         });
 
-        a.href = "#";
+        //a.href = "#";
         a.text = sortedBarcodes[i];
 
         if (sortedBarcodes[i] == selected_barcode) {

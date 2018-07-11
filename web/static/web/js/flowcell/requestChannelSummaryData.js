@@ -102,12 +102,12 @@ function makeHeatmapChart(divName, chartTitle, yAxisTitle) {
 
         },
         legend: {
-            align: 'right',
-            layout: 'vertical',
-            margin: 0,
-            verticalAlign: 'top',
-            y: 25,
-            symbolHeight: 280
+            //align: 'right',
+            layout: 'horizontal',
+            //margin: 0,
+            //verticalAlign: 'top',
+            //y: 25,
+            //symbolHeight: 280
         },
         exporting: {
             enabled: false
@@ -148,109 +148,28 @@ function updatePoreChart (chart, summary, parameter) {
             name: parameter,
             data: Object.values(data),
             borderWidth: 0.5,
-            dataLabels: {
-                "enabled": false,
-                "color": "black",
-                "style": {
-                    "textShadow": "none"
-                }
-            }
+            // dataLabels: {
+            //     "enabled": false,
+            //     "color": "black",
+            //     "style": {
+            //         "textShadow": "none"
+            //     }
+            // }
         });
     } else {
         chart.addSeries({
             name: parameter,
             data: Object.values(data),
             borderWidth: 1,
-            dataLabels: {
-                "enabled": true,
-                "color": "black",
-                "style": {
-                    "textShadow": "none"
-                }
-            }
+            // dataLabels: {
+            //     "enabled": true,
+            //     "color": "black",
+            //     "style": {
+            //         "textShadow": "none"
+            //     }
+            // }
         });
     }
-
-}
-
-function updateReadsPerPoreChart (chart, summary) {
-
-    // Remove previous series
-    while (chart.series.length > 0) {
-        chart.series[0].remove();
-    }
-
-    var data = {};
-
-    for (var j = 0; j < 32; j++) {
-        for (var i = 0; i < 16; i++) {
-            var key = 16 * j + i;
-            data[key] = [i, j, 0];
-        }
-    }
-
-    for (var channel_number of Object.keys(summary)) {
-        if (channel_number<=512) { //hacky fix for promethion
-
-            var column = channel_number % 16;
-            var row = (channel_number - column) / 16;
-
-            data[channel_number] = [column, row, summary[channel_number].read_count];
-        }
-    }
-
-
-    chart.addSeries({
-        name: 'read_count',
-        data: Object.values(data),
-        borderWidth: 1,
-        dataLabels: {
-            "enabled": true,
-            "color": "black",
-            "style": {
-                "textShadow": "none"
-            }
-        }
-    });
-
-}
-
-function updateBasesPerPoreChart(chart, summary) {
-
-    // Remove previous series
-    while (chart.series.length > 0) {
-        chart.series[0].remove();
-    }
-
-    var data = {};
-
-    for (var j = 0; j < 32; j++) {
-        for (var i = 0; i < 16; i++) {
-            var key = 16 * j + i;
-            data[key] = [i, j, 0];
-        }
-    }
-
-    for (var channel_number of Object.keys(summary)) {
-
-        var column = channel_number % 16;
-        var row = (channel_number - column) / 16;
-
-        data[channel_number] = [column, row, summary[channel_number].read_length];
-    }
-
-    chart.addSeries({
-        name: 'read_length',
-        data: Object.values(data),
-        borderWidth: 1,
-        dataLabels: {
-            "enabled": true,
-            "color": "black",
-            "style": {
-                "textShadow": "none"
-            }
-        }
-    });
 
 }
 

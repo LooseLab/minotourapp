@@ -83,8 +83,6 @@ var FlowcellPageApp = {
 
         this.requestChannelSummaryData = requestChannelSummaryData;
 
-        this.updateBarcodeNavTab = updateBarcodeNavTab;
-
         this.requestHistogramData = requestHistogramData;
 
         this.updateAssemblyCharts = updateAssemblyCharts;
@@ -95,7 +93,7 @@ var FlowcellPageApp = {
 
         this.requestGfaData = requestGfaData;
 
-        this.requestPafData = requestPafData;
+        this.requestPafData = requestPafData.bind(this);
 
         this.liveUpdateTasks = liveUpdateTasks;
 
@@ -112,6 +110,10 @@ var FlowcellPageApp = {
         this.requestData = requestData;
 
         this.requestStatistics = requestStatistics.bind(this);
+
+        this.checkFlowcellTabs = checkFlowcellTabs.bind(this);
+
+        this.updateBarcodeNavTab = updateBarcodeNavTab.bind(this);
 
         this.ChartNumContigs = this.makeChart4(
             "num-contigs",
@@ -195,21 +197,13 @@ var FlowcellPageApp = {
 
         this.flowcellId = inputFlowcellId.value;
 
-        this.selectedBarcode = "All reads";
+        var flowcell_id = get_selected_flowcell();
+
+        this.checkFlowcellTabs(flowcell_id);
 
         this.requestData(this.flowcellId);
 
     }, // end of init
-
-    getSelectedBarcode: function () {
-
-        if (!this.selectedBarcode) {
-            return "All reads";
-        } else {
-            return this.selectedBarcode;
-        }
-
-    },
 
     updatePoreStats: function () {
         var returndata = this.parseporehist(this.livedata.colours_string, this.livedata.pore_history);
@@ -571,19 +565,6 @@ var FlowcellPageApp = {
                 this.livedata.scalingfactor = (totalyield / readcount) / (this.livedata.yield_history[this.livedata.yield_history.length - 1][1] / this.livedata.live_read_count);
             }
         }
-    },
-
-    requestReference: function (id) {
-        var url = "/api/v1/reference/";
-        $.get(url, function (data) {
-            var references = [];
-            for (var i = 0; i < data.length; i++) {
-                //console.log(data[i]);
-                references.push(data[i]);
-            }
-            //console.log(references);
-            this.references = references;
-        });
     },
 
     updateCoverageBasedCharts: function (chart, field) {

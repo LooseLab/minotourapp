@@ -208,7 +208,9 @@ function requestStatisticsCallback(data) {
 
 function requestStatistics(id) {
 
-    var url = "/api/v1/flowcells/" + id + "/summarybarcodebyminute_quality";
+    var selected_barcode = get_selected_barcode();
+
+    var url = "/api/v1/flowcells/" + id + "/statistics/?barcode_name=" + selected_barcode;;
 
     requestStatisticsCallback = requestStatisticsCallback.bind(this);
 

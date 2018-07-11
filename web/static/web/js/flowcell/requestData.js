@@ -18,9 +18,10 @@ function requestData(flowcell_id) {
 
         var flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
 
+        this.rundata = data;  // TODO who is using this variable?
+
         if (flowcell_selected_tab_input.value == 'Summary') {
 
-            this.rundata = data;
             this.requestRunDetails(flowcellId);
             requestMinknowMessages(flowcellId, data);
 
@@ -42,20 +43,27 @@ function requestData(flowcell_id) {
             this.requestHistogramData(flowcellId);
             this.requestStatistics(flowcellId);
             this.requestChannelSummaryData(flowcellId);
-            this.requestReference(flowcellId);
+            //this.requestReference(flowcellId);
 
         } else if (flowcell_selected_tab_input.value == 'Live Event Data') {
 
-            this.rundata = data;
             this.requestRunDetails(flowcellId);
             this.requestLiveRunStats(flowcellId);
 
-        } else {
+        } else if (flowcell_selected_tab_input.value == 'Runs') {
+
+        } else if (flowcell_selected_tab_input.value == 'Metagenomics') {
+
+        } else if (flowcell_selected_tab_input.value == 'Sequence Mapping') {
 
             this.requestPafData(flowcellId);
+
+        } else if (flowcell_selected_tab_input.value == 'Assembly') {
+
             this.requestGfaData(flowcellId);
+
         }
     }).bind(this));
 
-    setTimeout(requestData.bind(this, flowcell_id), 30000);
+    setTimeout(requestData.bind(this, flowcell_id), 60000);
 };

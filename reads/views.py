@@ -1,18 +1,17 @@
 import datetime
 import json
+import math
 from datetime import timedelta
+
 import dateutil.parser
-
-from django.db.models import Sum, Max
-from django.shortcuts import redirect, render
-
 import numpy as np
-import pandas as pd
 from dateutil import parser
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import Max
 from django.db.models import Q
 from django.http import HttpResponse
+from django.shortcuts import render
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -25,8 +24,8 @@ from reads.models import (Barcode, BarcodeGroup, FastqRead, FastqReadType,
                           FlowCellRun, MinIONControl, MinIONEvent,
                           MinIONEventType, MinionMessage, MinIONRunStats,
                           MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun, FlowcellStatisticBarcode, FlowcellSummaryBarcode)
-from reads.models import FlowcellHistogramSummary
 from reads.models import FlowcellChannelSummary
+from reads.models import FlowcellHistogramSummary
 from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
                                ChannelSummarySerializer, FastqReadSerializer,
                                FastqReadTypeSerializer, FlowCellSerializer, JobTypeSerializer,
@@ -37,16 +36,10 @@ from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
                                MinIONRunStatusSerializer,
                                MinIONScriptsSerializer, MinIONSerializer,
                                MinIONStatusSerializer,
-                               RunHistogramSummarySerializer, RunSerializer,
+                               RunSerializer,
                                RunStatisticBarcodeSerializer,
-                               RunSummaryBarcodeSerializer, ChannelSummary, HistogramSummary,
-                               RunStatisticBarcode, RunSummaryBarcode, GroupRunSerializer, FlowcellSummaryBarcodeSerializer)
+                               RunSummaryBarcodeSerializer, ChannelSummary, RunStatisticBarcode, RunSummaryBarcode, GroupRunSerializer, FlowcellSummaryBarcodeSerializer)
 from reference.models import ReferenceInfo
-
-import math
-
-from django.core.cache import cache
-
 
 
 def humanbases(n):
@@ -1111,26 +1104,7 @@ def flowcell_summary_html(request, pk):
 
 
 @api_view(['GET'])
-def flowcell_summary_barcode_by_minute(request, pk):
-    """
-        Return a list with summaries for a particular run grouped by minute.
-        """
-    queryset = FlowCellRun.objects.filter(flowcell_id=pk)
-    runset = list()
-    for run in queryset:
-        # print (run.run_id)
-        runset.append(run.run_id)
-    queryset = RunStatisticBarcode.objects \
-        .filter(run_id__owner=request.user) \
-        .filter(run_id__in=runset)
-
-    serializer = RunStatisticBarcodeSerializer(queryset, many=True, context={'request': request})
-
-    return Response(serializer.data)
-
-
-@api_view(['GET'])
-def flowcell_summary_barcode_by_minute_quality(request, pk):
+def flowcell_statistics(request, pk):
     """
     Return a prepared set of summaries for reads quality over time grouped by minute.
     """
@@ -1140,8 +1114,6 @@ def flowcell_summary_barcode_by_minute_quality(request, pk):
     flowcell = Flowcell.objects.get(pk=pk)
 
     run_list = flowcell.runs.all()
-
-    readtype_list = FastqReadType.objects.all()
 
     key_list = FlowcellStatisticBarcode.objects\
         .filter(flowcell=flowcell)\
@@ -1162,6 +1134,9 @@ def flowcell_summary_barcode_by_minute_quality(request, pk):
             .filter(status=status)\
             .order_by('sample_time')
 
+        print("---->")
+        print("{} - {} - {} -> {}".format(barcode_name, read_type_name, status, len(queryset)))
+        print("<----")
         if len(queryset) > 0:
 
             quality_list = []
@@ -1216,95 +1191,6 @@ def flowcell_summary_barcode_by_minute_quality(request, pk):
     #res3 = json.loads(res2)
 
     # return HttpResponse(json.dumps(result_dict, cls=DjangoJSONEncoder), content_type="application/json")
-    return HttpResponse(json.dumps(res, cls=DjangoJSONEncoder), content_type="application/json")
-
-
-@api_view(['GET'])
-def flowcell_summary_barcode_by_minute_speed(request, pk):
-
-    flowcell = Flowcell.objects.get(pk=pk)
-
-    run_list = flowcell.runs.all()
-
-    readtype_list = FastqReadType.objects.all()
-
-    barcode_name_set = set()
-
-    for run in run_list:
-
-        for barcode in run.barcodes.all():
-            barcode_name_set.add(barcode.name)
-
-    result_dict = {
-        'rate': {
-
-        },
-        'speed': {
-
-        }
-    }
-
-    for barcode_name in barcode_name_set:
-
-        result_dict['rate'][barcode_name] = dict()
-        result_dict['speed'][barcode_name] = dict()
-
-        for readtype in readtype_list:
-
-            result_dict['rate'][barcode_name][readtype.name] = dict()
-            result_dict['speed'][barcode_name][readtype.name] = dict()
-
-            for is_pass in [True, False]:
-
-                queryset = FlowcellStatisticBarcode.objects\
-                    .filter(flowcell=flowcell)\
-                    .filter(barcode_name=barcode_name)\
-                    .filter(read_type_name=readtype)\
-                    .filter(status=is_pass)\
-                    .order_by('sample_time')
-
-                if len(queryset) > 0:
-
-                    stvlqs = queryset.values_list('sample_time', flat=True)
-                    cpvlqs = queryset.values_list('channel_count', flat=True)
-                    bvlqs = queryset.values_list('total_length', flat=True)
-                    stcats = np.unique(stvlqs)
-
-                    ## To increase speed, consider moving this to task and storing specific count of channels in RunStatisticBarcode
-                    unixtime = [x.timestamp() * 1000 for x in stcats]
-
-                    cc_sum = np.bincount(np.searchsorted(stcats, stvlqs), cpvlqs)
-                    bc_sum = np.bincount(np.searchsorted(stcats, stvlqs), bvlqs)
-
-                    ss = np.column_stack((unixtime, bc_sum/60))
-                    sr = np.column_stack((unixtime, bc_sum/cc_sum/60))
-
-                    # if "speed" not in result_dict[barcode.name]:
-                    #
-                    #     result_dict[barcode.name]["speed"]=dict()
-
-                    result_dict["rate"][barcode_name][readtype.name][is_pass] = ss.tolist()
-                    result_dict["speed"][barcode_name][readtype.name][is_pass] = sr.tolist()
-
-    run_data = []
-
-    for run in run_list:
-        run_dict = {
-            'id': run.id,
-            'name': run.name,
-            'runid': run.runid,
-            'start_time': run.start_time,
-            'last_read': run.last_read(),
-        }
-
-        run_data.append(run_dict)
-
-    res = {
-        'runs': run_data,
-        'data': result_dict,
-        'date_created': datetime.datetime.now()
-    }
-
     return HttpResponse(json.dumps(res, cls=DjangoJSONEncoder), content_type="application/json")
 
 
