@@ -134,7 +134,7 @@ function requestStatisticsCallback(data) {
 
         chart5.addSeries({
             name: data_keys[i],
-            data: data_cumulative_reads
+            data: data_max_length
         });
 
         chart6.addSeries({
