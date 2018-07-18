@@ -1036,8 +1036,6 @@ def flowcell_detail(request, pk):
 
     if request.method == 'GET':
 
-        print('inside flowcell detail get')
-
         search_criteria = request.GET.get('search_criteria', 'id')
 
         if search_criteria == 'id':
@@ -1134,9 +1132,6 @@ def flowcell_statistics(request, pk):
             .filter(status=status)\
             .order_by('sample_time')
 
-        print("---->")
-        print("{} - {} - {} -> {}".format(barcode_name, read_type_name, status, len(queryset)))
-        print("<----")
         if len(queryset) > 0:
 
             quality_list = []
@@ -1145,6 +1140,12 @@ def flowcell_statistics(request, pk):
             cumulative_reads = 0
 
             for record in queryset:
+
+                if status == 'True':
+                    l_status = 'Pass'
+
+                else:
+                    l_status = 'Fail'
 
                 cumulative_bases = cumulative_bases + record.total_length
                 cumulative_reads = cumulative_reads + record.read_count
@@ -1155,14 +1156,14 @@ def flowcell_statistics(request, pk):
                     float(record.total_length / record.read_count),  # chart average read length over time
                     int(cumulative_bases),  # chart cumulative bases
                     int(cumulative_reads),  # chart cumulative reads
-                    int(record.max_length),  # chart cumulative reads
+                    int(record.max_length),  # chart
                     float(record.total_length/60),  # chart sequence rate
                     float(record.total_length/record.channel_count/60),  # chart sequence speed
                 ))
 
-            result_dict["{} - {} - {}".format(barcode_name, read_type_name, status)] = quality_list
+            result_dict["{} - {} - {}".format(barcode_name, read_type_name, l_status)] = quality_list
 
-            data_keys.append("{} - {} - {}".format(barcode_name, read_type_name, status))
+            data_keys.append("{} - {} - {}".format(barcode_name, read_type_name, l_status))
 
     run_data = []
 
@@ -1184,13 +1185,6 @@ def flowcell_statistics(request, pk):
         'date_created': datetime.datetime.now()
     }
 
-    #cache.set('teste', 'ola mundo', timeout=None)
-    #cache.set('teste2', json.dumps(res, cls=DjangoJSONEncoder), timeout=None)
-
-    #res2 = cache.get("teste2")
-    #res3 = json.loads(res2)
-
-    # return HttpResponse(json.dumps(result_dict, cls=DjangoJSONEncoder), content_type="application/json")
     return HttpResponse(json.dumps(res, cls=DjangoJSONEncoder), content_type="application/json")
 
 
@@ -1201,77 +1195,71 @@ def flowcell_histogram_summary(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)
 
-    run_list = flowcell.runs.all()
-
     max_bin_index = FlowcellHistogramSummary.objects \
         .filter(flowcell=flowcell) \
         .filter(barcode_name=barcode_name) \
-        .filter(read_type_name='Template') \
         .aggregate(Max('bin_index'))
 
-    qs = FlowcellHistogramSummary.objects \
-        .filter(flowcell=flowcell) \
-        .filter(barcode_name=barcode_name) \
-        .filter(read_type_name='Template')
+    key_list = FlowcellHistogramSummary.objects\
+        .filter(flowcell=flowcell)\
+        .filter(barcode_name=barcode_name)\
+        .values_list('barcode_name', 'read_type_name', 'status')\
+        .distinct()
 
+    data_keys = {}
 
-    result = []
+    for (barcode_name, read_type_name, status) in key_list:
 
-    result_read_count_sum = {}
-    result_read_length_sum = {}
+        queryset = FlowcellHistogramSummary.objects\
+            .filter(flowcell=flowcell)\
+            .filter(barcode_name=barcode_name)\
+            .filter(read_type_name=read_type_name)\
+            .filter(status=status)\
+            .order_by('bin_index')
 
-    for r in qs:
-        l_barcode_name = r.barcode_name
-        l_read_type_name = r.read_type_name
-        l_is_pass = 'Pass' if r.status else 'Fail'
-        l_bin_index = r.bin_index
-        l_read_count_sum = r.read_count
-        l_read_length_sum = r.read_length
+        result_read_count_sum = [0] * (max_bin_index['bin_index__max'] + 1)
+        result_read_length_sum = [0] * (max_bin_index['bin_index__max'] + 1)
 
-        l_key = ("{} - {} - {}".format(l_barcode_name, l_read_type_name, l_is_pass))
+        if len(queryset) > 0:
 
-        result.append((l_key, l_barcode_name, l_read_type_name, l_is_pass, l_bin_index, l_read_count_sum, l_read_length_sum))
+            if status == 'True':
+                l_is_pass = 'Pass'
+            else:
+                l_is_pass = 'Fail'
 
-        if l_key not in result_read_count_sum.keys():
+            l_key = ("{} - {} - {}".format(barcode_name, read_type_name, l_is_pass))
 
-            result_read_count_sum[l_key] = [0] * (max_bin_index['bin_index__max'])
+            for r in queryset:
 
-        else:
-            result_read_count_sum[l_key][l_bin_index - 1] = l_read_count_sum
+                l_bin_index = r.bin_index
+                l_read_count_sum = r.read_count
+                l_read_length_sum = r.read_length
 
-        if l_key not in result_read_length_sum.keys():
+                result_read_count_sum[l_bin_index] = l_read_count_sum
+                result_read_length_sum[l_bin_index] = l_read_length_sum
 
-            result_read_length_sum[l_key] = [0] * (max_bin_index['bin_index__max'])
+            if barcode_name not in data_keys.keys():
 
-        else:
+                data_keys[barcode_name] = {}
 
-            result_read_length_sum[l_key][l_bin_index - 1] = l_read_length_sum
+            if read_type_name not in data_keys[barcode_name].keys():
 
-    result_read_count_sum2 = []
-    for key in result_read_count_sum.keys():
-        result_read_count_sum2.append({
-            'name': key,
-            'data': result_read_count_sum[key]
-        })
+                data_keys[barcode_name][read_type_name] = {}
 
-    result_read_length_sum2 = []
-    for key in result_read_length_sum.keys():
-        result_read_length_sum2.append({
-            'name': key,
-            'data': result_read_length_sum[key]
-        })
-
-    #key = "histogram-summary-flowcell-{}".format(pk)
-
-    #cached_data = cache.get(key)
-
-    #print(cached_data)
-
-    #payload = json.loads(cached_data)
+            data_keys[barcode_name][read_type_name][l_is_pass] = {
+                'read_count': {
+                    'name': l_key,
+                    'data': result_read_count_sum
+                },
+                'read_length': {
+                    'name': l_key,
+                    'data': result_read_length_sum
+                }
+            }
 
     categories = list(range(1 * 900, (max_bin_index['bin_index__max'] + 1) * 900, 900))
 
-    return Response({'result_read_count_sum': result_read_count_sum2, 'result_read_length_sum': result_read_length_sum2, 'categories': categories})
+    return Response({'data': data_keys, 'categories': categories})
 
 
 @api_view(['GET'])
