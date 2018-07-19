@@ -32,6 +32,9 @@ from reads.services import (save_flowcell_histogram_summary, save_flowcell_chann
                             save_flowcell_statistic_barcode)
 from reference.models import ReferenceInfo
 
+from centRun.RunCentrifuge import Centrifuger
+import sys
+
 logger = get_task_logger(__name__)
 
 
@@ -64,8 +67,9 @@ def run_monitor():
     for flowcell in flowcell_list:
 
         flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False)
-
+        print(flowcell_job_list.values())
         for flowcell_job in flowcell_job_list:
+            print(f"job_type is {flowcell_job.job_type.name}")
 
             if flowcell_job.job_type.name == "Minimap2":
 
@@ -94,6 +98,31 @@ def run_monitor():
 
                 run_minimap_assembly.delay(flowcell.id, flowcell_job.id, flowcell_job.tempfile_name, flowcell_job.last_read,
                                            flowcell_job.read_count, inputtype)
+            if flowcell_job.job_type.name == "Centrifuge":
+                """
+                    Run the Centrifuger class on the metagenomics data
+                """
+                print("trying to run classification for flowcell {} {} {} ".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                    flowcell_job.last_read
+                ))
+                print("starting centrifuge task")
+                print(f"identity is {flowcell.id}")
+                """
+                starts the centrifuge instance as a celery task which should return asynchronously
+                :param request:
+                :return:
+                """
+                try:
+                    print("trying centrifuge task")
+                    c = Centrifuger(flowcell.id, flowcell_job.id)
+                    c.run_centrifuge()
+                    print(sys.stdout)
+
+                except:
+                    e = sys.exc_info()
+                    print(e)
 
 
 @task()

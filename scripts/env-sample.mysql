@@ -2,7 +2,7 @@
 export MT_SECRET_KEY=''
 export MT_DJANGO_DEBUG=''
 export MT_DB_USER='root'
-export MT_DB_PASS=''
+export MT_DB_PASS='toor'
 export MT_DB_HOST='localhost'
 export MT_DB_PORT='3306'
 export MT_DB_NAME='minotour'
