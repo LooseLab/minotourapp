@@ -464,7 +464,7 @@ class RunHistogramSummarySerializer(serializers.ModelSerializer):
         )
 
 
-class FlowCellSerializer(serializers.HyperlinkedModelSerializer):
+class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
 
     barcodes = BarcodeSerializer(many=True, read_only=False, required=False)
     runs = RunSerializer(many=True, read_only=False, required=False)
@@ -474,13 +474,6 @@ class FlowCellSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('url', 'name', 'runs', 'barcodes', 'id')
 
     def create(self, validated_data):
-
-        # flowcell = Flowcell(
-        #
-        #     name=validated_data['name'],
-        #     owner=validated_data['owner']
-        # )
-        # flowcell.save()
 
         flowcell = Flowcell(**validated_data)
         flowcell.save()

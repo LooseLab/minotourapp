@@ -28,7 +28,7 @@ from reads.models import FlowcellChannelSummary
 from reads.models import FlowcellHistogramSummary
 from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
                                ChannelSummarySerializer, FastqReadSerializer,
-                               FastqReadTypeSerializer, FlowCellSerializer, JobTypeSerializer,
+                               FastqReadTypeSerializer, FlowcellSerializer, JobTypeSerializer,
                                MinIONControlSerializer, MinIONEventSerializer,
                                MinIONEventTypeSerializer,
                                MinionMessageSerializer,
@@ -1010,7 +1010,7 @@ def flowcell_list_active(request):
 
     queryset = Flowcell.objects.distinct().filter(owner=request.user)
 
-    serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
+    serializer = FlowcellSerializer(queryset, many=True, context={'request': request})
 
     return Response(serializer.data)
 
@@ -1020,11 +1020,11 @@ def flowcell_list(request):
 
     if request.method == 'GET':
        queryset = Flowcell.objects.filter(owner=request.user)
-       serializer = FlowCellSerializer(queryset, many=True, context={'request': request})
+       serializer = FlowcellSerializer(queryset, many=True, context={'request': request})
        return Response(serializer.data)
 
     elif request.method == 'POST':
-        serializer = FlowCellSerializer(data=request.data, context={'request': request})
+        serializer = FlowcellSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save(owner=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -1056,13 +1056,13 @@ def flowcell_detail(request, pk):
 
         flowcell = flowcell_list[0]
 
-        serializer = FlowCellSerializer(flowcell, context={'request': request})
+        serializer = FlowcellSerializer(flowcell, context={'request': request})
 
         return Response(serializer.data)
 
     elif request.method == 'POST':
 
-        serializer = FlowCellSerializer(data=request.data, context={'request': request})
+        serializer = FlowcellSerializer(data=request.data, context={'request': request})
 
         if serializer.is_valid():
 
