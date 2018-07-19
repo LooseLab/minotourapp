@@ -473,6 +473,28 @@ class FlowCellSerializer(serializers.HyperlinkedModelSerializer):
         model = Flowcell
         fields = ('url', 'name', 'runs', 'barcodes', 'id')
 
+    def create(self, validated_data):
+
+        # flowcell = Flowcell(
+        #
+        #     name=validated_data['name'],
+        #     owner=validated_data['owner']
+        # )
+        # flowcell.save()
+
+        flowcell = Flowcell(**validated_data)
+        flowcell.save()
+
+        job_type = JobType.objects.filter(name="ChanCalc")
+
+        JobMaster.objects.create(
+            flowcell=flowcell,
+            job_type=job_type[0],
+            last_read=0
+        )
+
+        return flowcell
+
 
 class FlowCellRunSerializer(serializers.HyperlinkedModelSerializer):
     barcodes = BarcodeSerializer(
