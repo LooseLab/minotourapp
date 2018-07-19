@@ -651,7 +651,6 @@ class MinionMessage(models.Model):
     timestamp = models.DateTimeField(
 
     )
-#>>>>>>> 2a6dc3c8ce81fb2274135a1b5f55b18f7a39f7fa
 
     class Meta:
         #unique_together = ("minion", "run", "timestamp")
@@ -682,77 +681,6 @@ def create_all_reads_barcode(sender, instance=None, created=False, **kwargs):
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     if created:
         Token.objects.create(user=instance)
-
-
-class FlowCellRun(models.Model):
-    flowcell = models.ForeignKey(
-        Flowcell,
-        related_name='flowcelldetails'
-    )
-
-    run = models.ForeignKey(
-        Run,
-        on_delete=models.CASCADE,
-        related_name='flowcellrun'
-    )
-
-    def name(self):
-        return self.flowcell.name
-
-    def run_name(self):
-        return self.run.run_name
-
-    def barcodes(self):
-        return self.run.barcodes
-
-    def __str__(self):
-        return "{} {}".format(self.flowcell, self.run)
-
-    def last_entry(self):
-        try:
-            return self.run.runstatbarc.last().sample_time
-            # return self.RunStats.last().created_date
-        except AttributeError:
-            # return "undefined"
-            olddate = datetime.datetime(1, 1, 1, 1, 1, 1, 1, pytz.utc)
-            return olddate
-
-    def start_time(self):
-        try:
-            return self.run.runstatbarc.first().sample_time
-            # return self.RunDetails.last().minKNOW_start_time
-        except AttributeError:
-            return "undefined"
-
-    def last_read(self):
-        try:
-            return self.run.runstatbarc.last().sample_time
-            # return self.reads.last().created_date
-        except AttributeError:
-            # return "undefined"
-            olddate = datetime.datetime(1, 1, 1, 1, 1, 1, 1, pytz.utc)
-            return olddate
-
-    def sample_name(self):
-        try:
-            return self.run.minKNOW_sample_name()
-        except AttributeError:
-            return "undefined"
-
-    def minKNOW_flow_cell_id(self):
-        try:
-            return self.run.minKNOW_flow_cell_id()
-        except AttributeError:
-            return "undefined"
-
-    def minKNOW_version(self):
-        try:
-            return self.run.minKNOW_version()
-        except AttributeError:
-            return "undefined"
-
-    def active(self):
-        return self.run.active
 
 
 class RunStatisticBarcode(models.Model):

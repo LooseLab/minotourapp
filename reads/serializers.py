@@ -1,11 +1,9 @@
-from datetime import datetime
-
 from rest_framework import serializers
 
 from devices.models import Flowcell, MinION
 from jobs.models import JobMaster, JobType
 from reads.models import (Barcode, BarcodeGroup, FastqRead, FastqReadExtra,
-                          FastqReadType, FlowCellRun, MinIONControl,
+                          FastqReadType, MinIONControl,
                           MinIONEvent, MinIONEventType, MinionMessage,
                           MinIONRunStats, MinIONRunStatus, MinIONScripts,
                           MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
@@ -487,26 +485,6 @@ class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
         )
 
         return flowcell
-
-
-class FlowCellRunSerializer(serializers.HyperlinkedModelSerializer):
-    barcodes = BarcodeSerializer(
-        many=True,
-        read_only=True
-    )
-
-    class Meta:
-        model = FlowCellRun
-        fields = (
-        'flowcell', 'id', 'run_name', 'run', 'name', 'barcodes', 'last_entry', 'start_time', 'last_read', 'sample_name',
-        'minKNOW_flow_cell_id', 'minKNOW_version', 'active')
-        read_only = (
-            'id',
-            'run_name',
-            'name',
-            'barcodes',
-            'last_entry', 'start_time', 'last_read', 'sample_name', 'minKNOW_flow_cell_id', 'minKNOW_version', 'active'
-        )
 
 
 class GroupRunSerializer(serializers.HyperlinkedModelSerializer):
