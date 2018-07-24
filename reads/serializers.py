@@ -1,11 +1,9 @@
-from datetime import datetime
-
 from rest_framework import serializers
 
 from devices.models import Flowcell, MinION
 from jobs.models import JobMaster, JobType
 from reads.models import (Barcode, BarcodeGroup, FastqRead, FastqReadExtra,
-                          FastqReadType, FlowCellRun, MinIONControl,
+                          FastqReadType, MinIONControl,
                           MinIONEvent, MinIONEventType, MinionMessage,
                           MinIONRunStats, MinIONRunStatus, MinIONScripts,
                           MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
@@ -464,7 +462,7 @@ class RunHistogramSummarySerializer(serializers.ModelSerializer):
         )
 
 
-class FlowCellSerializer(serializers.HyperlinkedModelSerializer):
+class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
 
     barcodes = BarcodeSerializer(many=True, read_only=False, required=False)
     runs = RunSerializer(many=True, read_only=False, required=False)
@@ -473,25 +471,20 @@ class FlowCellSerializer(serializers.HyperlinkedModelSerializer):
         model = Flowcell
         fields = ('url', 'name', 'runs', 'barcodes', 'id')
 
+    def create(self, validated_data):
 
-class FlowCellRunSerializer(serializers.HyperlinkedModelSerializer):
-    barcodes = BarcodeSerializer(
-        many=True,
-        read_only=True
-    )
+        flowcell = Flowcell(**validated_data)
+        flowcell.save()
 
-    class Meta:
-        model = FlowCellRun
-        fields = (
-        'flowcell', 'id', 'run_name', 'run', 'name', 'barcodes', 'last_entry', 'start_time', 'last_read', 'sample_name',
-        'minKNOW_flow_cell_id', 'minKNOW_version', 'active')
-        read_only = (
-            'id',
-            'run_name',
-            'name',
-            'barcodes',
-            'last_entry', 'start_time', 'last_read', 'sample_name', 'minKNOW_flow_cell_id', 'minKNOW_version', 'active'
+        job_type = JobType.objects.filter(name="ChanCalc")
+
+        JobMaster.objects.create(
+            flowcell=flowcell,
+            job_type=job_type[0],
+            last_read=0
         )
+
+        return flowcell
 
 
 class GroupRunSerializer(serializers.HyperlinkedModelSerializer):
@@ -559,4 +552,3 @@ class FlowcellSummaryBarcodeSerializer(serializers.ModelSerializer):
         )
 
         read_only = ('id',)
-

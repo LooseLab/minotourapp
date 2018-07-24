@@ -12,20 +12,6 @@ from rest_framework.authtoken.models import Token
 from devices.models import Flowcell, MinION
 
 
-def create_flowcell(owner_id, name=""):
-
-    if name == "":
-
-        text = '{}'.format(datetime.datetime.now())
-        h = hashlib.md5()
-        h.update(text.encode('utf-8'))
-        name = "flowcell-{}".format(h.hexdigest())[0:15]
-
-    owner = User.objects.get(pk=owner_id)
-
-    return Flowcell.objects.create(name=name, owner=owner)
-
-
 class GroupRun(models.Model):
 
     MINION = 'MINION'
@@ -610,16 +596,6 @@ class FastqReadExtra(models.Model):
         return self.fastqread
 
 
-#<<<<<<< HEAD
-#class MinIONmessages(models.Model): #TODO update field names!
-#    minION = models.ForeignKey(MinION, related_name='messages')
-#    run_id = models.ForeignKey(Run, related_name='runmessages', blank=True, null=True)
-#    minKNOW_message = models.CharField(max_length=256)
-#    minKNOW_identifier = models.CharField(max_length=256)
-#    minKNOW_severity = models.CharField(max_length=64)
-#    minKNOW_message_timestamp = models.DateTimeField()
-#=======
-
 class MinionMessage(models.Model):
 
     minion = models.ForeignKey(
@@ -651,7 +627,6 @@ class MinionMessage(models.Model):
     timestamp = models.DateTimeField(
 
     )
-#>>>>>>> 2a6dc3c8ce81fb2274135a1b5f55b18f7a39f7fa
 
     class Meta:
         #unique_together = ("minion", "run", "timestamp")
@@ -662,97 +637,6 @@ class MinionMessage(models.Model):
     def __str__(self):
         return "{} {} {} {}".format(
             self.minion, self.message, self.severity, self.timestamp)
-
-
-# @receiver(post_save, sender=MinIONRun)
-def create_all_reads_barcode(sender, instance=None, created=False, **kwargs):
-    if created:
-        # barcodegroup, created = BarcodeGroup.objects.get_or_create(flowcell=instance.flowcellrun.first().flowcell,
-        #                                                           name='All reads')
-
-        Barcode.objects.get_or_create(run=instance, name='All reads')
-
-        # barcodegroup, created = BarcodeGroup.objects.get_or_create(flowcell=instance.flowcellrun.first().flowcell,
-        #                                                           name='No barcode')
-
-        Barcode.objects.get_or_create(run=instance, name='No barcode')
-
-
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def create_auth_token(sender, instance=None, created=False, **kwargs):
-    if created:
-        Token.objects.create(user=instance)
-
-
-class FlowCellRun(models.Model):
-    flowcell = models.ForeignKey(
-        Flowcell,
-        related_name='flowcelldetails'
-    )
-
-    run = models.ForeignKey(
-        Run,
-        on_delete=models.CASCADE,
-        related_name='flowcellrun'
-    )
-
-    def name(self):
-        return self.flowcell.name
-
-    def run_name(self):
-        return self.run.run_name
-
-    def barcodes(self):
-        return self.run.barcodes
-
-    def __str__(self):
-        return "{} {}".format(self.flowcell, self.run)
-
-    def last_entry(self):
-        try:
-            return self.run.runstatbarc.last().sample_time
-            # return self.RunStats.last().created_date
-        except AttributeError:
-            # return "undefined"
-            olddate = datetime.datetime(1, 1, 1, 1, 1, 1, 1, pytz.utc)
-            return olddate
-
-    def start_time(self):
-        try:
-            return self.run.runstatbarc.first().sample_time
-            # return self.RunDetails.last().minKNOW_start_time
-        except AttributeError:
-            return "undefined"
-
-    def last_read(self):
-        try:
-            return self.run.runstatbarc.last().sample_time
-            # return self.reads.last().created_date
-        except AttributeError:
-            # return "undefined"
-            olddate = datetime.datetime(1, 1, 1, 1, 1, 1, 1, pytz.utc)
-            return olddate
-
-    def sample_name(self):
-        try:
-            return self.run.minKNOW_sample_name()
-        except AttributeError:
-            return "undefined"
-
-    def minKNOW_flow_cell_id(self):
-        try:
-            return self.run.minKNOW_flow_cell_id()
-        except AttributeError:
-            return "undefined"
-
-    def minKNOW_version(self):
-        try:
-            return self.run.minKNOW_version()
-        except AttributeError:
-            return "undefined"
-
-    def active(self):
-        return self.run.active
 
 
 class RunStatisticBarcode(models.Model):
@@ -1192,6 +1076,12 @@ class FlowcellSummaryBarcode(models.Model):
 
     def number_active_channels(self):
         return len(self.channel_presence.replace('0', ''))
+
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_auth_token(sender, instance=None, created=False, **kwargs):
+    if created:
+        Token.objects.create(user=instance)
 
 
 @receiver(post_save, sender=Run)

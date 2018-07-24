@@ -83,7 +83,7 @@ var FlowcellPageApp = {
 
         this.requestChannelSummaryData = requestChannelSummaryData;
 
-        this.requestHistogramData = requestHistogramData;
+        this.requestHistogramData = requestHistogramData.bind(this);
 
         this.updateAssemblyCharts = updateAssemblyCharts;
 
