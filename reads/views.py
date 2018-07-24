@@ -1302,7 +1302,7 @@ def flowcell_channel_summary(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)
 
-    flowcell_type = 512
+    flowcell_type = 3000
 
     qs = FlowcellChannelSummary.objects\
         .filter(flowcell=flowcell)

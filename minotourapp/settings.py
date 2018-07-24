@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'rest_framework',
     'rest_framework.authtoken',
     'reads',
@@ -224,7 +225,7 @@ TWITCONSUMER_SECRET=get_env_variable("MT_TWITCONSUMER_SECRET")
 # References
 REFERENCELOCATION = get_env_variable("MT_REFERENCE_LOCATION")
 
-PAGINATION_PAGE_SIZE = 100
+PAGINATION_PAGE_SIZE = 1000
 
 MINIMAP2 = get_env_variable("MT_MINIMAP2")
 BWA = get_env_variable("MT_BWA")
