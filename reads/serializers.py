@@ -552,4 +552,3 @@ class FlowcellSummaryBarcodeSerializer(serializers.ModelSerializer):
         )
 
         read_only = ('id',)
-
