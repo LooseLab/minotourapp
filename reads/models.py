@@ -1480,6 +1480,19 @@ class HistogramSummary(models.Model):
 
 
 class FlowcellHistogramSummary(models.Model):
+    """
+    :purpose: Summarise number of reads (read_count) and read length (read_length) in bins of 900 bases width.
+
+    Fields:
+
+    :flowcell: (Flowcell) Foreign key to Flowcell
+    :read_type_name: (FastReadType) FastqReadType name
+    :barcode_name: (Barcode) Barcode name
+    :status: (boolean) Pass or Fail; originates from FastqRead is_pass attribute
+    :bin_index: (int) Bin position
+    :read_count: (float) Total number of all reads from all runs of the flowcell
+    :read_length: (float) Sum of the length of all reads from all runs of the flowcell
+    """
 
     BIN_WIDTH = 900
 
