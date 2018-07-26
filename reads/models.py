@@ -1,9 +1,7 @@
 import datetime
-import hashlib
 
 import pytz
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
@@ -1058,16 +1056,81 @@ class MinIONEvent(models.Model):
 
 
 class MinIONScripts(models.Model):
-    minION = models.ForeignKey(MinION, related_name='scripts')
-    identifier = models.CharField(max_length=256)
-    name = models.CharField(max_length=256)
-    experiment_type = models.CharField(max_length=256, blank=True, null=True)
-    base_calling = models.NullBooleanField(blank=True, null=True)
-    flow_cell = models.CharField(max_length=256, blank=True, null=True)
-    kit = models.CharField(max_length=256, blank=True, null=True)
-    experiment_time = models.IntegerField(blank=True, null=True)
-    event_ratio = models.FloatField(blank=True, null=True)
-    kit_category = models.CharField(max_length=1024,blank=True,null=True)
+    """
+    :purpose: Collect all scripts that are available to run in the used version of minKnow and store them in
+    the database
+
+    Fields:
+    :minION: A FK linking to the minion entry in the database
+    :identifier: TODO Matt what is identifier
+    :name: The name of the script
+    :experiment_type: TODO  MAtt
+    :base_calling: Bool field identifies if script is a base calling or not
+    :flow_cell: The flowcell name
+    :kit: TODO What is kit
+    :experiment_time: TODO MATT
+    :event_ratio: TODO Matt
+    :kit_category: TODO Matt
+
+    """
+    minION = models.ForeignKey(
+
+        MinION,
+        related_name='scripts'
+    )
+
+    identifier = models.CharField(
+
+        max_length=256
+    )
+
+    name = models.CharField(
+
+        max_length=256
+    )
+
+    experiment_type = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True
+    )
+
+    base_calling = models.NullBooleanField(
+
+        blank=True,
+        null=True
+    )
+
+    flow_cell = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True
+    )
+
+    kit = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True
+    )
+    experiment_time = models.IntegerField(
+
+        blank=True,
+        null=True
+    )
+    event_ratio = models.FloatField(
+
+        blank=True,
+        null=True
+    )
+
+    kit_category = models.CharField(
+        max_length=1024,
+        blank=True,
+        null=True
+    )
 
     class Meta:
         verbose_name = 'MinION Script'
@@ -1100,7 +1163,23 @@ class FastqReadType(models.Model):
 
 
 class FastqRead(models.Model):
+    """
+    :purpose: Each read has a fastqread object. Contains the header information broken down, and some metadata about the read.
 
+    Fields:
+    :run: Foreign key linked to run object
+    :read_id: The read ID
+    :read: Read number auto incrementing in fastq header
+    :channel: Channel number that the read was sequenced on
+    :barcode: The barcode identifer/number if any
+    :sequence_length:
+    :quality_average:
+    :is_pass: Whether the read passed QC or not TODO matt is this correct?
+    :type: FK to fastqreadtype, example 1d^2
+    :start_time:
+    :created_date:
+    :modified_Date:
+    """
     run = models.ForeignKey(
 
         Run,
@@ -1169,7 +1248,14 @@ class FastqRead(models.Model):
 
 
 class FastqReadExtra(models.Model):
+    """
+    :purpose: If the user choose to send the read sequence and fastq quality, this is the model that is used to store it
 
+    Fields:
+    :fastqread: One to One field linking each fastqread object to its fastqreadextra counterpart
+    :sequence: The read Sequence
+    :quality: The fastq quality chars
+    """
     fastqread = models.OneToOneField(
         FastqRead,
         on_delete=models.CASCADE,
@@ -1191,7 +1277,17 @@ class FastqReadExtra(models.Model):
 
 
 class MinionMessage(models.Model):
+    """
+    :purpose: The
 
+    Fields:
+    :minion:
+    :run:
+    :message:
+    :identifier:
+    :severity:
+    :timestamp:
+    """
     minion = models.ForeignKey(
         MinION,
         related_name='messages'
@@ -1486,6 +1582,7 @@ class FlowcellHistogramSummary(models.Model):
     BIN_WIDTH = 900
 
     flowcell = models.ForeignKey(
+
         Flowcell,
         on_delete=models.CASCADE
     )
@@ -1510,18 +1607,27 @@ class FlowcellHistogramSummary(models.Model):
     )
 
     read_count = models.BigIntegerField(
+
         default=0
     )
 
     read_length = models.BigIntegerField(
+
         default=0
     )
 
     class Meta:
+
         db_table = 'flowcell_histogram_summary'
 
     def __str__(self):
-        return "{} {} {}".format(self.flowcell, self.read_type_name, self.status, self.bin_index)
+
+        return "{} {} {}".format(
+            self.flowcell, 
+            self.read_type_name, 
+            self.status, 
+            self.bin_index
+        )
 
 
 class RunSummaryBarcode(models.Model):  # TODO to be deleted
@@ -1579,11 +1685,13 @@ class RunSummaryBarcode(models.Model):  # TODO to be deleted
     )
 
     class Meta:
+        
         verbose_name = 'Run Summary Barcode'
         verbose_name_plural = 'Run Summary Barcodes'
         db_table = 'run_summary_barcode'
 
     def __str__(self):
+        
         return "{} {} {} {} {}".format(
             self.run,
             self.total_length,
@@ -1593,6 +1701,10 @@ class RunSummaryBarcode(models.Model):  # TODO to be deleted
         )
 
     def number_active_channels(self):
+        """
+        TODO Remove
+        """
+
         return len(self.channel_presence.replace('0', ''))
 
 
@@ -1692,20 +1804,35 @@ class FlowcellSummaryBarcode(models.Model):
         )
 
     def average_read_length(self):
+        """
+        TODO
+        """
+
         return self.total_length / self.read_count
 
     def number_active_channels(self):
+        """
+        TODO
+        """
+
         return len(self.channel_presence.replace('0', ''))
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
+    """
+    TODO
+    """
+
     if created:
         Token.objects.create(user=instance)
 
 
 @receiver(post_save, sender=Run)
 def create_run_barcodes(sender, instance=None, created=False, **kwargs):
+    """
+    TODO
+    """
 
     if created:
 
@@ -1720,98 +1847,98 @@ def create_run_barcodes(sender, instance=None, created=False, **kwargs):
         )
 
 
-@receiver(post_save, sender=GroupRun)
-def create_grouprun_barcodes(sender, instance=None, created=False, **kwargs):
-    """
-    TODO Remove
-    """
-    if created:
+# @receiver(post_save, sender=GroupRun)
+# def create_grouprun_barcodes(sender, instance=None, created=False, **kwargs):
+#     """
+#     TODO Remove
+#     """
+#     if created:
 
-        GroupBarcode.objects.get_or_create(
-            grouprun=instance,
-            name='All reads'
-        )
+#         GroupBarcode.objects.get_or_create(
+#             grouprun=instance,
+#             name='All reads'
+#         )
 
-        GroupBarcode.objects.get_or_create(
-            grouprun=instance,
-            name='No barcode'
-        )
-
-
-@receiver(post_save, sender=Barcode)
-def add_barcode_to_groupbarcode(sender, instance=None, created=False, **kwargs):
-    """
-    TODO Remove
-    """
-    if created:
-
-        check_barcode_groupbarcode(instance.run)
+#         GroupBarcode.objects.get_or_create(
+#             grouprun=instance,
+#             name='No barcode'
+#         )
 
 
-def run_groupruns_changed(sender, action, instance, **kargs): # don't comment
-    """
-    TODO Remove
-    """
-    if action == 'post_add':
+# @receiver(post_save, sender=Barcode)
+# def add_barcode_to_groupbarcode(sender, instance=None, created=False, **kwargs):
+#     """
+#     TODO Remove
+#     """
+#     if created:
 
-        print('run_groupruns_changed')
-
-        check_barcode_groupbarcode(instance)
-
-
-m2m_changed.connect(run_groupruns_changed, sender=Run.groupruns.through)
+#         check_barcode_groupbarcode(instance.run)
 
 
-def check_barcode_groupbarcode(instance): # don't comment
-    """
-    This function checks if all barcodes from this run (instance)
-    are associated with the groupruns (through groupbarcodes).
+# def run_groupruns_changed(sender, action, instance, **kargs): # don't comment
+#     """
+#     TODO Remove
+#     """
+#     if action == 'post_add':
 
-    For each barcode of a run, it goes through all groupbarcodes of all groupruns associated with the run
-    and checks if there a groupbarcode's name equal to the barcode name.
+#         print('run_groupruns_changed')
 
-    (a) If yes, no action is required.
-    (b) If not, but the groupbarcode exists (groupbarcode name is equal to barcode name), it add a manytomany entry.
-    (c) If not, and the groupbarcode does not exist, it creates a new groupbarcode and add to the grouprun.
-    """
+#         check_barcode_groupbarcode(instance)
 
-    barcode_list = instance.barcodes.all()
 
-    for grouprun in instance.groupruns.all():
+# m2m_changed.connect(run_groupruns_changed, sender=Run.groupruns.through)
 
-        # print('> grouprun: {}'.format(grouprun.name))
 
-        for barcode in barcode_list:
+# def check_barcode_groupbarcode(instance): # don't comment
+#     """
+#     This function checks if all barcodes from this run (instance)
+#     are associated with the groupruns (through groupbarcodes).
 
-            # print('>> barcode: {}'.format(barcode.name))
+#     For each barcode of a run, it goes through all groupbarcodes of all groupruns associated with the run
+#     and checks if there a groupbarcode's name equal to the barcode name.
 
-            has_association = False
+#     (a) If yes, no action is required.
+#     (b) If not, but the groupbarcode exists (groupbarcode name is equal to barcode name), it add a manytomany entry.
+#     (c) If not, and the groupbarcode does not exist, it creates a new groupbarcode and add to the grouprun.
+#     """
 
-            groupbarcode_list = grouprun.groupbarcodes.all()
+#     barcode_list = instance.barcodes.all()
 
-            for groupbarcode in groupbarcode_list:
+#     for grouprun in instance.groupruns.all():
 
-                # print('>>> groupbarcode: {}'.format(groupbarcode.name))
+#         # print('> grouprun: {}'.format(grouprun.name))
 
-                if barcode.name == groupbarcode.name:
+#         for barcode in barcode_list:
 
-                    # print('equal names')
+#             # print('>> barcode: {}'.format(barcode.name))
 
-                    if barcode not in groupbarcode.barcodes.all():
+#             has_association = False
 
-                        barcode.groupbarcodes.add(groupbarcode)  # case (b)
+#             groupbarcode_list = grouprun.groupbarcodes.all()
 
-                        # print('add barcode to groupbarcode')
+#             for groupbarcode in groupbarcode_list:
 
-                    has_association = True
+#                 # print('>>> groupbarcode: {}'.format(groupbarcode.name))
 
-            if not has_association:
+#                 if barcode.name == groupbarcode.name:
 
-                new_groupbarcode = GroupBarcode.objects.create(
-                    grouprun=grouprun,
-                    name=barcode.name
-                )
+#                     # print('equal names')
 
-                barcode.groupbarcodes.add(new_groupbarcode)  # case (c)
+#                     if barcode not in groupbarcode.barcodes.all():
 
-                # print('created new groupbarcode and added barcode')
+#                         barcode.groupbarcodes.add(groupbarcode)  # case (b)
+
+#                         # print('add barcode to groupbarcode')
+
+#                     has_association = True
+
+#             if not has_association:
+
+#                 new_groupbarcode = GroupBarcode.objects.create(
+#                     grouprun=grouprun,
+#                     name=barcode.name
+#                 )
+
+#                 barcode.groupbarcodes.add(new_groupbarcode)  # case (c)
+
+#                 # print('created new groupbarcode and added barcode')
