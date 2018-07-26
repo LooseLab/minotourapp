@@ -1056,16 +1056,81 @@ class MinIONEvent(models.Model):
 
 
 class MinIONScripts(models.Model):
-    minION = models.ForeignKey(MinION, related_name='scripts')
-    identifier = models.CharField(max_length=256)
-    name = models.CharField(max_length=256)
-    experiment_type = models.CharField(max_length=256, blank=True, null=True)
-    base_calling = models.NullBooleanField(blank=True, null=True)
-    flow_cell = models.CharField(max_length=256, blank=True, null=True)
-    kit = models.CharField(max_length=256, blank=True, null=True)
-    experiment_time = models.IntegerField(blank=True, null=True)
-    event_ratio = models.FloatField(blank=True, null=True)
-    kit_category = models.CharField(max_length=1024,blank=True,null=True)
+    """
+    :purpose: Collect all scripts that are available to run in the used version of minKnow and store them in
+    the database
+
+    Fields:
+    :minION: A FK linking to the minion entry in the database
+    :identifier: TODO Matt what is identifier
+    :name: The name of the script
+    :experiment_type: TODO  MAtt
+    :base_calling: Bool field identifies if script is a base calling or not
+    :flow_cell: The flowcell name
+    :kit: TODO What is kit
+    :experiment_time: TODO MATT
+    :event_ratio: TODO Matt
+    :kit_category: TODO Matt
+
+    """
+    minION = models.ForeignKey(
+
+        MinION,
+        related_name='scripts'
+    )
+
+    identifier = models.CharField(
+
+        max_length=256
+    )
+
+    name = models.CharField(
+
+        max_length=256
+    )
+
+    experiment_type = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True
+    )
+
+    base_calling = models.NullBooleanField(
+
+        blank=True,
+        null=True
+    )
+
+    flow_cell = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True
+    )
+
+    kit = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True
+    )
+    experiment_time = models.IntegerField(
+
+        blank=True,
+        null=True
+    )
+    event_ratio = models.FloatField(
+
+        blank=True,
+        null=True
+    )
+
+    kit_category = models.CharField(
+        max_length=1024,
+        blank=True,
+        null=True
+    )
 
     class Meta:
         verbose_name = 'MinION Script'
@@ -1098,7 +1163,23 @@ class FastqReadType(models.Model):
 
 
 class FastqRead(models.Model):
+    """
+    :purpose: Each read has a fastqread object. Contains the header information broken down, and some metadata about the read.
 
+    Fields:
+    :run: Foreign key linked to run object
+    :read_id: The read ID
+    :read: Read number auto incrementing in fastq header
+    :channel: Channel number that the read was sequenced on
+    :barcode: The barcode identifer/number if any
+    :sequence_length:
+    :quality_average:
+    :is_pass: Whether the read passed QC or not TODO matt is this correct?
+    :type: FK to fastqreadtype, example 1d^2
+    :start_time:
+    :created_date:
+    :modified_Date:
+    """
     run = models.ForeignKey(
 
         Run,
@@ -1167,7 +1248,14 @@ class FastqRead(models.Model):
 
 
 class FastqReadExtra(models.Model):
+    """
+    :purpose: If the user choose to send the read sequence and fastq quality, this is the model that is used to store it
 
+    Fields:
+    :fastqread: One to One field linking each fastqread object to its fastqreadextra counterpart
+    :sequence: The read Sequence
+    :quality: The fastq quality chars
+    """
     fastqread = models.OneToOneField(
         FastqRead,
         on_delete=models.CASCADE,
@@ -1189,7 +1277,17 @@ class FastqReadExtra(models.Model):
 
 
 class MinionMessage(models.Model):
+    """
+    :purpose: The
 
+    Fields:
+    :minion:
+    :run:
+    :message:
+    :identifier:
+    :severity:
+    :timestamp:
+    """
     minion = models.ForeignKey(
         MinION,
         related_name='messages'
@@ -1231,7 +1329,7 @@ class MinionMessage(models.Model):
             self.minion, self.message, self.severity, self.timestamp)
 
 
-class RunStatisticBarcode(models.Model):
+class RunStatisticBarcode(models.Model):  # TODO to be removed
 
     run = models.ForeignKey(
         Run,
@@ -1545,7 +1643,7 @@ class FlowcellHistogramSummary(models.Model):
         )
 
 
-class RunSummaryBarcode(models.Model):  # Don't comment
+class RunSummaryBarcode(models.Model):  # TODO to be deleted
 
     run = models.ForeignKey(
         Run,
