@@ -686,54 +686,232 @@ class MinIONRunStats(models.Model):  #Todo consider merging in to one object wit
 
 
 class MinIONRunStatus(models.Model):
-    minION = models.ForeignKey(MinION, related_name='currentrundetails')
-    # minKNOW_status = models.CharField(max_length=64)
-    minKNOW_current_script = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_sample_name = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_exp_script_purpose = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_flow_cell_id = models.CharField(max_length=64, blank=True, null=True)
-    minKNOW_version = models.CharField(max_length=64, blank=True, null=True)
-    minKNOW_run_name = models.CharField(max_length=256, blank=True, null=True)
-    run_id = models.ForeignKey(Run, related_name='RunDetails')
-    minKNOW_hash_run_id = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_script_run_id = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_real_sample_rate = models.IntegerField(blank=True, null=True)
-    # minKNOW_voltage_offset = models.IntegerField(blank=True, null=True)
-    # minKNOW_yield = models.IntegerField(blank=True, null=True)
-    minKNOW_asic_id = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_start_time = models.DateTimeField(blank=True, null=True)
-    minKNOW_colours_string = models.TextField(blank=True, null=True)
-    minKNOW_computer = models.TextField(max_length=128, blank=True, null=True)
+    """
+    :purpose: To store data on the current status of a specific MinION at a given moment in time.
+              This includes detailed pon the connected computer, the space available and other key run details.
 
-    experiment_type = models.CharField(max_length=256, blank=True, null=True)
-    experiment_id = models.CharField(max_length=256, blank=True, null=True)
-    fast5_output_fastq_in_hdf = models.IntegerField(blank=True, null=True)
-    fast5_raw = models.IntegerField(blank=True, null=True)
-    fast5_reads_per_folder = models.IntegerField(blank=True, null=True)
-    fastq_enabled = models.IntegerField(blank=True, null=True)
-    fastq_reads_per_file = models.IntegerField(blank=True, null=True)
-    filename = models.CharField(max_length=256, blank=True, null=True)
-    flowcell_type = models.CharField(max_length=256, blank=True, null=True)
-    kit_classification = models.CharField(max_length=256, blank=True, null=True)
-    local_basecalling = models.IntegerField(blank=True, null=True)
-    sample_frequency = models.IntegerField(blank=True, null=True)
-    sequencing_kit = models.CharField(max_length=256, blank=True, null=True)
-    user_filename_input = models.CharField(max_length=256, blank=True, null=True)
+    Fields:
 
+    :minION: Foreign key linking to a MinION
+    :minKNOW_status: Current status of the MinION device (Ready, Starting, Processing or Finishing) as reported by MinKNOW
+    :minKNOW_current_script: Current or last run sequencing script from MinKNOW for this MinION
+    :minKNOW_sample_name: Current or last used Sample Name
+    :minKNOW_exp_script_purpose: Experiment purpose as identified by MinKNOW
+    :minKNOW_flow_cell_id: The unique identifier for a flow cell
+    :minKNOW_run_name: The run name as determined by MinKNOW
+    :minKNOW_hash_run_id: A hash of the same run name
+    :minKNOW_script_run_id: A script identifier. The format of which is output by MinKNOW and variable.
+    :minKNOW_real_sample_rate: The rate at which data have been sampled for this run
+    :minKNOW_asic_id: The specific asic identifier
+    :minKNOW_total_drive_space: The total hard drive space available to the currently sequencing computer.
+    :minKNOW_disk_space_till_shutdown: How much space is left till the sequencer shuts down.
+    :minKNOW_disk_available: The total amount of space left on the device.
+    :minKNOW_warnings: If minKNOW is about to shutdown a warning is added here. #todo Contact the user if the computer is about to shut down.
+    """
 
-    # minKNOW_total_drive_space = models.FloatField(blank=True, null=True)
-    # minKNOW_disk_space_till_shutdown = models.FloatField(blank=True, null=True)
-    # minKNOW_warnings = models.BooleanField(default=False)
+    minION = models.ForeignKey(
+
+        MinION, 
+        related_name='currentrundetails'
+    )
+
+    minKNOW_current_script = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_sample_name = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_exp_script_purpose = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_flow_cell_id = models.CharField(
+
+        max_length=64, 
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_version = models.CharField(
+
+        max_length=64, 
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_run_name = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    run_id = models.ForeignKey(
+
+        Run, 
+        related_name='RunDetails'
+    )
+
+    minKNOW_hash_run_id = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_script_run_id = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+    
+    minKNOW_real_sample_rate = models.IntegerField(
+
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_asic_id = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_start_time = models.DateTimeField(
+
+        blank=True, 
+        null=True
+    )
+    
+    minKNOW_colours_string = models.TextField(
+
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_computer = models.TextField(
+
+        max_length=128, 
+        blank=True, 
+        null=True
+    )
+
+    experiment_type = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    experiment_id = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    fast5_output_fastq_in_hdf = models.IntegerField(
+
+        blank=True, 
+        null=True
+    )
+
+    fast5_raw = models.IntegerField(
+
+        blank=True, 
+        null=True
+    )
+    
+    fast5_reads_per_folder = models.IntegerField(
+
+        blank=True, 
+        null=True
+    )
+    
+    fastq_enabled = models.IntegerField(
+
+        blank=True, 
+        null=True
+    )
+    
+    fastq_reads_per_file = models.IntegerField(
+
+        blank=True, 
+        null=True
+    )
+    
+    filename = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+    
+    flowcell_type = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    kit_classification = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+    
+    local_basecalling = models.IntegerField(
+
+        blank=True, 
+        null=True
+    )
+
+    sample_frequency = models.IntegerField(
+
+        blank=True, 
+        null=True
+    )
+    
+    sequencing_kit = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    user_filename_input = models.CharField(
+
+        max_length=256, 
+        blank=True,
+        null=True
+    )
 
     class Meta:
+
         unique_together = ("minION", "minKNOW_hash_run_id", "minKNOW_exp_script_purpose")
         verbose_name = 'MinION Run Status'
         verbose_name_plural = 'MinION Run Status'
 
     def __str__(self):
+
         return "{} {} {}".format(self.minION, self.minKNOW_current_script, self.run_id)
 
     def minION_name(self):
+
         return self.minION.minION_name
 
 
