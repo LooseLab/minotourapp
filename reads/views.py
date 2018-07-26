@@ -72,7 +72,7 @@ def read_type_list(request):
     :author: Roberto Santos
 
     ChangeLog
-    2018-07-09 Add documentation
+    2018-07-09 Add documentation - Roberto
 
     :param request: (standard django request) without querystring parameter
     :return: (string) json format
@@ -92,6 +92,7 @@ def events_type_list(request):
 
     ChangeLog
     2018-07-09 Add documentation - Rory
+
     :param request: (Django Request Object) No query parameters
     :return: (String) Json Format string of event types
     """
@@ -102,7 +103,7 @@ def events_type_list(request):
 
 
 @api_view(['GET'])
-def events_type_detail(request, pk):
+def events_type_detail(request, pk): # TODO consider removing
     """
     :purpose: Returns a single Minion Event to the client
     :used_by: minotour client
@@ -110,6 +111,7 @@ def events_type_detail(request, pk):
 
     ChangeLog
     2018-07-09 Add documentation - Rory
+
     :param request: (Django Reqeust Object) No query parameters
     :param pk: (Integer) - Primary key ffor object lookup from database
     :return: (String) Json Format string of a single event types
@@ -158,11 +160,12 @@ def run_list(request):
     :author: Roberto Santos
 
     ChangeLog
-    2018-07-09 Add documentation
+    2018-07-09 Add documentation - Matt
 
     :param request: (standard django request) without querystring parameter
-    :return: (string) json format
+    :return: (str) json format
     """
+
     if request.method == 'GET':
         #print ("run list ", request.user)
         queryset = Run.objects.filter(owner=request.user).filter(to_delete=False)
@@ -195,10 +198,10 @@ def current_run_list(request):
     :author: Roberto Santos
 
     ChangeLog
-    2018-07-09 Add documentation
+    2018-07-09 Add documentation - Matt
 
     :param request: (standard django request) without querystring parameter
-    :return: (string) json format
+    :return: (str) json format
     """
     if request.method == 'GET':
         #queryset = MinIONRun.objects.filter(owner=request.user).filter(Q(reads__created_date__gte = datetime.now()-timedelta(days=1))  | Q(RunStats__created_date__gte = datetime.now()-timedelta(days=1) )).distinct()
@@ -252,8 +255,8 @@ def minion_messages_list(request, pk):
     2018-07-09 Add documentation
 
     :param request: (standard django request) without querystring parameter
-    :param pk: (integer) key to identify a specific minION
-    :return: (string) json format
+    :param pk: (int) Minion id
+    :return: (str) json format
     """
 
     if request.method == 'GET':
@@ -304,8 +307,8 @@ def minknow_message_list_by_flowcell(request, pk):
     :param request: (standard django request)
     :param request.start_time: (datetime) Start of the date and time range
     :param request.end_time: (datetime) End of the date and time range # TODO include format example
-    :param pk: (integer) Flowcell id
-    :return: (string) Json format
+    :param pk: (int) Flowcell id
+    :return: (str) Json format
     """
     form_start_time = request.GET.get('start_time', None)
     form_end_time = request.GET.get('end_time', None)
