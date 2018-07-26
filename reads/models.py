@@ -1,9 +1,7 @@
 import datetime
-import hashlib
 
 import pytz
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
@@ -1486,6 +1484,7 @@ class FlowcellHistogramSummary(models.Model):
     BIN_WIDTH = 900
 
     flowcell = models.ForeignKey(
+
         Flowcell,
         on_delete=models.CASCADE
     )
@@ -1510,21 +1509,30 @@ class FlowcellHistogramSummary(models.Model):
     )
 
     read_count = models.BigIntegerField(
+
         default=0
     )
 
     read_length = models.BigIntegerField(
+
         default=0
     )
 
     class Meta:
+
         db_table = 'flowcell_histogram_summary'
 
     def __str__(self):
-        return "{} {} {}".format(self.flowcell, self.read_type_name, self.status, self.bin_index)
+
+        return "{} {} {}".format(
+            self.flowcell, 
+            self.read_type_name, 
+            self.status, 
+            self.bin_index
+        )
 
 
-class RunSummaryBarcode(models.Model):
+class RunSummaryBarcode(models.Model):  # Don't comment
 
     run = models.ForeignKey(
         Run,
@@ -1579,11 +1587,13 @@ class RunSummaryBarcode(models.Model):
     )
 
     class Meta:
+        
         verbose_name = 'Run Summary Barcode'
         verbose_name_plural = 'Run Summary Barcodes'
         db_table = 'run_summary_barcode'
 
     def __str__(self):
+        
         return "{} {} {} {} {}".format(
             self.run,
             self.total_length,
@@ -1593,6 +1603,10 @@ class RunSummaryBarcode(models.Model):
         )
 
     def number_active_channels(self):
+        """
+        TODO Remove
+        """
+
         return len(self.channel_presence.replace('0', ''))
 
 
@@ -1692,20 +1706,35 @@ class FlowcellSummaryBarcode(models.Model):
         )
 
     def average_read_length(self):
+        """
+        TODO
+        """
+
         return self.total_length / self.read_count
 
     def number_active_channels(self):
+        """
+        TODO
+        """
+
         return len(self.channel_presence.replace('0', ''))
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
+    """
+    TODO
+    """
+
     if created:
         Token.objects.create(user=instance)
 
 
 @receiver(post_save, sender=Run)
 def create_run_barcodes(sender, instance=None, created=False, **kwargs):
+    """
+    TODO
+    """
 
     if created:
 
@@ -1720,98 +1749,98 @@ def create_run_barcodes(sender, instance=None, created=False, **kwargs):
         )
 
 
-@receiver(post_save, sender=GroupRun)
-def create_grouprun_barcodes(sender, instance=None, created=False, **kwargs):
-    """
-    TODO Remove
-    """
-    if created:
+# @receiver(post_save, sender=GroupRun)
+# def create_grouprun_barcodes(sender, instance=None, created=False, **kwargs):
+#     """
+#     TODO Remove
+#     """
+#     if created:
 
-        GroupBarcode.objects.get_or_create(
-            grouprun=instance,
-            name='All reads'
-        )
+#         GroupBarcode.objects.get_or_create(
+#             grouprun=instance,
+#             name='All reads'
+#         )
 
-        GroupBarcode.objects.get_or_create(
-            grouprun=instance,
-            name='No barcode'
-        )
-
-
-@receiver(post_save, sender=Barcode)
-def add_barcode_to_groupbarcode(sender, instance=None, created=False, **kwargs):
-    """
-    TODO Remove
-    """
-    if created:
-
-        check_barcode_groupbarcode(instance.run)
+#         GroupBarcode.objects.get_or_create(
+#             grouprun=instance,
+#             name='No barcode'
+#         )
 
 
-def run_groupruns_changed(sender, action, instance, **kargs): # don't comment
-    """
-    TODO Remove
-    """
-    if action == 'post_add':
+# @receiver(post_save, sender=Barcode)
+# def add_barcode_to_groupbarcode(sender, instance=None, created=False, **kwargs):
+#     """
+#     TODO Remove
+#     """
+#     if created:
 
-        print('run_groupruns_changed')
-
-        check_barcode_groupbarcode(instance)
-
-
-m2m_changed.connect(run_groupruns_changed, sender=Run.groupruns.through)
+#         check_barcode_groupbarcode(instance.run)
 
 
-def check_barcode_groupbarcode(instance): # don't comment
-    """
-    This function checks if all barcodes from this run (instance)
-    are associated with the groupruns (through groupbarcodes).
+# def run_groupruns_changed(sender, action, instance, **kargs): # don't comment
+#     """
+#     TODO Remove
+#     """
+#     if action == 'post_add':
 
-    For each barcode of a run, it goes through all groupbarcodes of all groupruns associated with the run
-    and checks if there a groupbarcode's name equal to the barcode name.
+#         print('run_groupruns_changed')
 
-    (a) If yes, no action is required.
-    (b) If not, but the groupbarcode exists (groupbarcode name is equal to barcode name), it add a manytomany entry.
-    (c) If not, and the groupbarcode does not exist, it creates a new groupbarcode and add to the grouprun.
-    """
+#         check_barcode_groupbarcode(instance)
 
-    barcode_list = instance.barcodes.all()
 
-    for grouprun in instance.groupruns.all():
+# m2m_changed.connect(run_groupruns_changed, sender=Run.groupruns.through)
 
-        # print('> grouprun: {}'.format(grouprun.name))
 
-        for barcode in barcode_list:
+# def check_barcode_groupbarcode(instance): # don't comment
+#     """
+#     This function checks if all barcodes from this run (instance)
+#     are associated with the groupruns (through groupbarcodes).
 
-            # print('>> barcode: {}'.format(barcode.name))
+#     For each barcode of a run, it goes through all groupbarcodes of all groupruns associated with the run
+#     and checks if there a groupbarcode's name equal to the barcode name.
 
-            has_association = False
+#     (a) If yes, no action is required.
+#     (b) If not, but the groupbarcode exists (groupbarcode name is equal to barcode name), it add a manytomany entry.
+#     (c) If not, and the groupbarcode does not exist, it creates a new groupbarcode and add to the grouprun.
+#     """
 
-            groupbarcode_list = grouprun.groupbarcodes.all()
+#     barcode_list = instance.barcodes.all()
 
-            for groupbarcode in groupbarcode_list:
+#     for grouprun in instance.groupruns.all():
 
-                # print('>>> groupbarcode: {}'.format(groupbarcode.name))
+#         # print('> grouprun: {}'.format(grouprun.name))
 
-                if barcode.name == groupbarcode.name:
+#         for barcode in barcode_list:
 
-                    # print('equal names')
+#             # print('>> barcode: {}'.format(barcode.name))
 
-                    if barcode not in groupbarcode.barcodes.all():
+#             has_association = False
 
-                        barcode.groupbarcodes.add(groupbarcode)  # case (b)
+#             groupbarcode_list = grouprun.groupbarcodes.all()
 
-                        # print('add barcode to groupbarcode')
+#             for groupbarcode in groupbarcode_list:
 
-                    has_association = True
+#                 # print('>>> groupbarcode: {}'.format(groupbarcode.name))
 
-            if not has_association:
+#                 if barcode.name == groupbarcode.name:
 
-                new_groupbarcode = GroupBarcode.objects.create(
-                    grouprun=grouprun,
-                    name=barcode.name
-                )
+#                     # print('equal names')
 
-                barcode.groupbarcodes.add(new_groupbarcode)  # case (c)
+#                     if barcode not in groupbarcode.barcodes.all():
 
-                # print('created new groupbarcode and added barcode')
+#                         barcode.groupbarcodes.add(groupbarcode)  # case (b)
+
+#                         # print('add barcode to groupbarcode')
+
+#                     has_association = True
+
+#             if not has_association:
+
+#                 new_groupbarcode = GroupBarcode.objects.create(
+#                     grouprun=grouprun,
+#                     name=barcode.name
+#                 )
+
+#                 barcode.groupbarcodes.add(new_groupbarcode)  # case (c)
+
+#                 # print('created new groupbarcode and added barcode')
