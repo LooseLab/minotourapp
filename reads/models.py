@@ -1233,7 +1233,7 @@ class MinionMessage(models.Model):
             self.minion, self.message, self.severity, self.timestamp)
 
 
-class RunStatisticBarcode(models.Model):
+class RunStatisticBarcode(models.Model):  # TODO to be removed
 
     run = models.ForeignKey(
         Run,
@@ -1524,7 +1524,7 @@ class FlowcellHistogramSummary(models.Model):
         return "{} {} {}".format(self.flowcell, self.read_type_name, self.status, self.bin_index)
 
 
-class RunSummaryBarcode(models.Model):
+class RunSummaryBarcode(models.Model):  # TODO to be deleted
 
     run = models.ForeignKey(
         Run,
