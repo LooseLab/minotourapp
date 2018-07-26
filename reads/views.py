@@ -86,7 +86,14 @@ def read_type_list(request):
 @api_view(['GET'])
 def events_type_list(request):
     """
-    Lis of all event types.
+    :purpose: Returns a list of all possible events to the client
+    :used_by: minotour client
+    :author: Roberto Santos
+
+    ChangeLog
+    2018-07-09 Add documentation - Rory
+    :param request: (Django Request Object) No query parameters
+    :return: (String) Json Format string of event types
     """
     if request.method == "GET":
         queryset = MinIONEventType.objects.all()
@@ -97,8 +104,17 @@ def events_type_list(request):
 @api_view(['GET'])
 def events_type_detail(request, pk):
     """
-    Lis of all event types.
+    :purpose: Returns a single Minion Event to the client
+    :used_by: minotour client
+    :author: Roberto Santos
+
+    ChangeLog
+    2018-07-09 Add documentation - Rory
+    :param request: (Django Reqeust Object) No query parameters
+    :param pk: (Integer) - Primary key ffor object lookup from database
+    :return: (String) Json Format string of a single event types
     """
+
     try:
         event_ = MinIONEventType.objects.get(pk=pk)
     except MinIONEventType.DoesNotExist:
