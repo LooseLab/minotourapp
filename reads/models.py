@@ -1328,9 +1328,8 @@ class MinionMessage(models.Model):
         return "{} {} {} {}".format(
             self.minion, self.message, self.severity, self.timestamp)
 
+class RunStatisticBarcode(models.Model):  # TODO to be removed
 
-class RunStatisticBarcode(models.Model):
-    
     run = models.ForeignKey(
         Run,
         on_delete=models.CASCADE,
@@ -1482,7 +1481,7 @@ class FlowcellStatisticBarcode(models.Model):
         return len(self.channel_presence.replace('0', ''))
 
 
-class ChannelSummary(models.Model):
+class ChannelSummary(models.Model): # don't document
 
     run = models.ForeignKey(
         Run,
@@ -1509,7 +1508,7 @@ class ChannelSummary(models.Model):
         return "{} {} {}".format(self.run, self.channel, self.read_count)
 
 
-class FlowcellChannelSummary(models.Model):
+class FlowcellChannelSummary(models.Model):  # TODO to be deleted
 
     flowcell = models.ForeignKey(
         Flowcell,
@@ -1536,7 +1535,7 @@ class FlowcellChannelSummary(models.Model):
         return "{} {} {}".format(self.flowcell, self.channel, self.read_count)
 
 
-class HistogramSummary(models.Model):
+class HistogramSummary(models.Model):  # don't comment
 
     BIN_WIDTH = 900
 
@@ -1578,6 +1577,19 @@ class HistogramSummary(models.Model):
 
 
 class FlowcellHistogramSummary(models.Model):
+    """
+    :purpose: Summarise number of reads (read_count) and read length (read_length) in bins of 900 bases width.
+
+    Fields:
+
+    :flowcell: (Flowcell) Foreign key to Flowcell
+    :read_type_name: (FastReadType) FastqReadType name
+    :barcode_name: (Barcode) Barcode name
+    :status: (boolean) Pass or Fail; originates from FastqRead is_pass attribute
+    :bin_index: (int) Bin position
+    :read_count: (float) Total number of all reads from all runs of the flowcell
+    :read_length: (float) Sum of the length of all reads from all runs of the flowcell
+    """
 
     BIN_WIDTH = 900
 
@@ -1630,7 +1642,7 @@ class FlowcellHistogramSummary(models.Model):
         )
 
 
-class RunSummaryBarcode(models.Model):  # Don't comment
+class RunSummaryBarcode(models.Model):  # TODO to be deleted
 
     run = models.ForeignKey(
         Run,
