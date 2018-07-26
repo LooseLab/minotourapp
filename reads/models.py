@@ -1482,7 +1482,7 @@ class FlowcellStatisticBarcode(models.Model):
         return len(self.channel_presence.replace('0', ''))
 
 
-class ChannelSummary(models.Model):
+class ChannelSummary(models.Model): # don't document
 
     run = models.ForeignKey(
         Run,
@@ -1536,7 +1536,7 @@ class FlowcellChannelSummary(models.Model):
         return "{} {} {}".format(self.flowcell, self.channel, self.read_count)
 
 
-class HistogramSummary(models.Model):
+class HistogramSummary(models.Model):  # don't comment
 
     BIN_WIDTH = 900
 
