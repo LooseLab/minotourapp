@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'devices',
     'jobs',
+    'readuntil',
 ]
 
 MIDDLEWARE = [

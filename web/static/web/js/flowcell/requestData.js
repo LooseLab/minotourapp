@@ -65,5 +65,5 @@ function requestData(flowcell_id) {
         }
     }).bind(this));
 
-    setTimeout(requestData.bind(this, flowcell_id), 60000);
+    // setTimeout(requestData.bind(this, flowcell_id), 60000);
 };
