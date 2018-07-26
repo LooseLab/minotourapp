@@ -127,7 +127,16 @@ def read_type_detail(request, pk):
 @api_view(['GET', 'POST'])
 def run_list(request):
     """
-    List of all runs by user, or create a new run.
+    :purpose: Get returns a list of all runs in minotour owned by a specific user.
+              Post will create a new run in minotour for a specific user.
+    :used_by: minotour client gets and posts runs, minotour app gets runs only.
+    :author: Roberto Santos
+
+    ChangeLog
+    2018-07-09 Add documentation
+
+    :param request: (standard django request) without querystring parameter
+    :return: (string) json format
     """
     if request.method == 'GET':
         #print ("run list ", request.user)
@@ -156,7 +165,15 @@ def run_list(request):
 @api_view(['GET'])
 def current_run_list(request):
     """
-    List of all runs by user, or create a new run.
+    :purpose: Get returns a list of all runs in minotour owned by a specific user which are specified as active.
+    :used_by: minotour app uses this endpoint to identify active runs.
+    :author: Roberto Santos
+
+    ChangeLog
+    2018-07-09 Add documentation
+
+    :param request: (standard django request) without querystring parameter
+    :return: (string) json format
     """
     if request.method == 'GET':
         #queryset = MinIONRun.objects.filter(owner=request.user).filter(Q(reads__created_date__gte = datetime.now()-timedelta(days=1))  | Q(RunStats__created_date__gte = datetime.now()-timedelta(days=1) )).distinct()
@@ -200,6 +217,19 @@ def activeminion_list(request):
 
 @api_view(['GET', 'POST'])
 def minion_messages_list(request, pk):
+    """
+    :purpose: Get returns a list of all messages sent to minotour from minKNOW for a specific MinION.
+              Post creates a new message from a minION.
+    :used_by: minotour app uses this endpoint to show messages from the MinION.
+    :author: Roberto Santos
+
+    ChangeLog
+    2018-07-09 Add documentation
+
+    :param request: (standard django request) without querystring parameter
+    :param pk: (integer) key to identify a specific minION
+    :return: (string) json format
+    """
 
     if request.method == 'GET':
         queryset = MinionMessage.objects.filter(minION=pk)
@@ -1298,7 +1328,7 @@ def flowcell_channel_summary(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)
 
-    flowcell_type = 512
+    flowcell_type = 3000
 
     qs = FlowcellChannelSummary.objects\
         .filter(flowcell=flowcell)
