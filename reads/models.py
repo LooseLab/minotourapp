@@ -1509,7 +1509,7 @@ class ChannelSummary(models.Model):
         return "{} {} {}".format(self.run, self.channel, self.read_count)
 
 
-class FlowcellChannelSummary(models.Model):
+class FlowcellChannelSummary(models.Model):  # TODO to be deleted
 
     flowcell = models.ForeignKey(
         Flowcell,
