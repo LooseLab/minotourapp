@@ -779,16 +779,81 @@ class MinIONEvent(models.Model):
 
 
 class MinIONScripts(models.Model):
-    minION = models.ForeignKey(MinION, related_name='scripts')
-    identifier = models.CharField(max_length=256)
-    name = models.CharField(max_length=256)
-    experiment_type = models.CharField(max_length=256, blank=True, null=True)
-    base_calling = models.NullBooleanField(blank=True, null=True)
-    flow_cell = models.CharField(max_length=256, blank=True, null=True)
-    kit = models.CharField(max_length=256, blank=True, null=True)
-    experiment_time = models.IntegerField(blank=True, null=True)
-    event_ratio = models.FloatField(blank=True, null=True)
-    kit_category = models.CharField(max_length=1024,blank=True,null=True)
+    """
+    :purpose: Collect all scripts that are available to run in the used version of minKnow and store them in
+    the database
+
+    Fields:
+    :minION: A FK linking to the minion entry in the database
+    :identifier: TODO Matt what is identifier
+    :name: The name of the script
+    :experiment_type: TODO  MAtt
+    :base_calling: Bool field identifies if script is a base calling or not
+    :flow_cell: The flowcell name
+    :kit: TODO What is kit
+    :experiment_time: TODO MATT
+    :event_ratio: TODO Matt
+    :kit_category: TODO Matt
+
+    """
+    minION = models.ForeignKey(
+
+        MinION,
+        related_name='scripts'
+    )
+
+    identifier = models.CharField(
+
+        max_length=256
+    )
+
+    name = models.CharField(
+
+        max_length=256
+    )
+
+    experiment_type = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True
+    )
+
+    base_calling = models.NullBooleanField(
+
+        blank=True,
+        null=True
+    )
+
+    flow_cell = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True
+    )
+
+    kit = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True
+    )
+    experiment_time = models.IntegerField(
+
+        blank=True,
+        null=True
+    )
+    event_ratio = models.FloatField(
+
+        blank=True,
+        null=True
+    )
+
+    kit_category = models.CharField(
+        max_length=1024,
+        blank=True,
+        null=True
+    )
 
     class Meta:
         verbose_name = 'MinION Script'
