@@ -82,10 +82,39 @@ class MinIONControl(models.Model):
 
 
 class UserOptions(models.Model):
-    owner = models.OneToOneField(settings.AUTH_USER_MODEL, related_name='extendedopts')
-    twitterhandle = models.CharField(max_length=64)
-    tweet = models.BooleanField(default=False)
-    email = models.BooleanField(default=False)
+    """
+    :purpose: Store information about the user options
+
+    Fields:
+
+    :owner: (django user model object)
+    :twitterhandle: (str)
+    :tweet: (bool)
+    :email: (bool)
+    """
+
+    owner = models.OneToOneField(
+
+        settings.AUTH_USER_MODEL,
+        related_name='extendedopts'
+
+    )
+
+    twitterhandle = models.CharField(
+
+        max_length=64
+
+    )
+
+    tweet = models.BooleanField(
+        default=False
+    )
+
+    email = models.BooleanField(
+
+        default=False
+
+    )
 
     def __str__(self):
         return "{}".format(str(self.owner))
@@ -319,9 +348,15 @@ class GroupBarcode(models.Model): # Don't document
 
 class Barcode(models.Model):
     """
-    :purpose: Represent a barcode associated with a Run.
+    :purpose: To store barcode names associated with a particular run.
 
     Fields:
+
+    :run: Foreign key linking a barcode to a specific run.
+    :barcodegroup: Foreign key linking to a specific barcode group. #ToDo Remove this field.
+    :groupbarcodes: Foreign key linking to a group barcode. #ToDo Remove this field.
+    :name: Barcode Name - derived from the read name.
+    """
 
     :run: Returns the run that owns the barcode.
     :barcodegroup: To be removed.
@@ -358,28 +393,147 @@ class Barcode(models.Model):
     )
 
     def __str__(self):
-
         return "{} {} {}".format(self.run, self.run.runid, self.name)
 
 
 class MinIONStatus(models.Model): #TODO Rename class for logical consistency
-    minION = models.OneToOneField(MinION, related_name='currentdetails')
-    minKNOW_status = models.CharField(max_length=64)
-    minKNOW_current_script = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_sample_name = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_exp_script_purpose = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_flow_cell_id = models.CharField(max_length=64, blank=True, null=True)
-    minKNOW_run_name = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_hash_run_id = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_script_run_id = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_real_sample_rate = models.IntegerField(blank=True, null=True)
+    """
+    :purpose: To store data on the current status of a specific MinION at a given moment in time.
+              This includes detailed pon the connected computer, the space available and other key run details.
+
+    Fields:
+
+    :minION: Foreign key linking to a MinION
+    :minKNOW_status: Current status of the MinION device (Ready, Starting, Processing or Finishing) as reported by MinKNOW
+    :minKNOW_current_script: Current or last run sequencing script from MinKNOW for this MinION
+    :minKNOW_sample_name: Current or last used Sample Name
+    :minKNOW_exp_script_purpose: Experiment purpose as identified by MinKNOW
+    :minKNOW_flow_cell_id: The unique identifier for a flow cell
+    :minKNOW_run_name: The run name as determined by MinKNOW
+    :minKNOW_hash_run_id: A hash of the same run name
+    :minKNOW_script_run_id: A script identifier. The format of which is output by MinKNOW and variable.
+    :minKNOW_real_sample_rate: The rate at which data have been sampled for this run
+    :minKNOW_asic_id: The specific asic identifier
+    :minKNOW_total_drive_space: The total hard drive space available to the currently sequencing computer.
+    :minKNOW_disk_space_till_shutdown: How much space is left till the sequencer shuts down.
+    :minKNOW_disk_available: The total amount of space left on the device.
+    :minKNOW_warnings: If minKNOW is about to shutdown a warning is added here. #todo Contact the user if the computer is about to shut down.
+
+    """
+
+    minION = models.OneToOneField(
+
+        MinION,
+        related_name='currentdetails'
+
+    )
+
+    minKNOW_status = models.CharField(
+
+        max_length=64
+
+    )
+
+    minKNOW_current_script = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True
+
+    )
+
+    minKNOW_sample_name = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True
+
+    )
+
+    minKNOW_exp_script_purpose = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True
+
+    )
+
+    minKNOW_flow_cell_id = models.CharField(
+
+        max_length=64,
+        blank=True,
+        null=True
+
+    )
+
+    minKNOW_run_name = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True
+
+    )
+
+    minKNOW_hash_run_id = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True
+
+    )
+
+    minKNOW_script_run_id = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True
+
+    )
+
+    minKNOW_real_sample_rate = models.IntegerField(
+        blank=True,
+        null=True
+
+    )
+
     # minKNOW_voltage_offset = models.IntegerField(blank=True, null=True)
+
     # minKNOW_yield = models.IntegerField(blank=True, null=True)
-    minKNOW_asic_id = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_total_drive_space = models.FloatField(blank=True, null=True)
-    minKNOW_disk_space_till_shutdown = models.FloatField(blank=True, null=True)
-    minKNOW_disk_available = models.FloatField(blank=True, null=True)
-    minKNOW_warnings = models.BooleanField(default=False)
+
+    minKNOW_asic_id = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True
+
+    )
+
+    minKNOW_total_drive_space = models.FloatField(
+
+        blank=True,
+        null=True
+
+    )
+
+    minKNOW_disk_space_till_shutdown = models.FloatField(
+
+        blank=True,
+        null=True
+
+    )
+
+    minKNOW_disk_available = models.FloatField(
+
+        blank=True,
+        null=True
+
+    )
+
+    minKNOW_warnings = models.BooleanField(
+
+        default=False
+
+    )
 
     class Meta:
         verbose_name = 'MinION Status'
@@ -487,6 +641,14 @@ class MinIONRunStatus(models.Model):
 
 
 class MinIONEventType(models.Model):
+    # TODO what does this do??
+    """
+    :purpose:
+
+    :Fields:
+
+    :name:
+    """
 
     name = models.CharField(max_length=64)
 
