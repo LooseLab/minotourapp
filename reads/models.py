@@ -1278,15 +1278,15 @@ class FastqReadExtra(models.Model):
 
 class MinionMessage(models.Model):
     """
-    :purpose: The
+    :purpose: Store all the Messages that the minion sends over
 
     Fields:
-    :minion:
-    :run:
-    :message:
-    :identifier:
-    :severity:
-    :timestamp:
+    :minion: FK linking to the minion details stored in the devices_minion table
+    :run: FK linking to the Run detail
+    :message: The message things like run started etc.
+    :identifier: TODO matt
+    :severity: TODO matt
+    :timestamp:  The timestamp of when nthemessagewassent
     """
     minion = models.ForeignKey(
         MinION,
@@ -1330,7 +1330,7 @@ class MinionMessage(models.Model):
 
 
 class RunStatisticBarcode(models.Model):
-
+    
     run = models.ForeignKey(
         Run,
         on_delete=models.CASCADE,
