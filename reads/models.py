@@ -82,6 +82,16 @@ class MinIONControl(models.Model):
 
 
 class UserOptions(models.Model):
+    """
+    :purpose: Store information about the user options
+
+    Fields:
+
+    :owner: (django user model object)
+    :twitterhandle: (str)
+    :tweet: (bool)
+    :email: (bool)
+    """
     owner = models.OneToOneField(settings.AUTH_USER_MODEL, related_name='extendedopts')
     twitterhandle = models.CharField(max_length=64)
     tweet = models.BooleanField(default=False)
@@ -444,6 +454,14 @@ class MinIONRunStatus(models.Model):
 
 
 class MinIONEventType(models.Model):
+    # TODO what does this do??
+    """
+    :purpose:
+
+    :Fields:
+
+    :name:
+    """
 
     name = models.CharField(max_length=64)
 
