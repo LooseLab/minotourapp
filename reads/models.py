@@ -109,23 +109,21 @@ class UserOptions(models.Model):
 
         settings.AUTH_USER_MODEL,
         related_name='extendedopts'
-
     )
 
     twitterhandle = models.CharField(
 
         max_length=64
-
     )
 
     tweet = models.BooleanField(
+
         default=False
     )
 
     email = models.BooleanField(
 
         default=False
-
     )
 
     def __str__(self):
@@ -985,18 +983,21 @@ class MinIONRunStatus(models.Model):
 
 
 class MinIONEventType(models.Model):
-    # TODO what does this do??
     """
-    :purpose:
+    :purpose: Provides a list of states that a MinION can be in at any moment in time.
 
     :Fields:
 
-    :name:
+    :name: The name of the event.
     """
 
-    name = models.CharField(max_length=64)
+    name = models.CharField(
+
+        max_length=64
+    )
 
     class Meta:
+
         verbose_name = 'MinION Event Type'
         verbose_name_plural = 'MinION Event Types'
 
@@ -1006,20 +1007,47 @@ class MinIONEventType(models.Model):
 
 class MinIONEvent(models.Model):
     """
-    :purpose: 
+    :purpose: Report the specific history of events occurring to a minION.
 
     Fields:
 
-    :computer_name: 
-    :minION: 
+    :computer_name: The name of the computer that the MinION is connected to when an event occurs
+    :minION: Foreign key to the MinION id
+    :event: Foreign key to the event type
+    :datetime: datetime that the event occured
+    :created_date: date that this event was first created.
+    :modified_date: last time a change was made to this entry.
+
     """
-    computer_name = models.CharField(max_length=256)
-    minION = models.ForeignKey(MinION, related_name='events')
-    event = models.ForeignKey(MinIONEventType)
-    datetime = models.DateTimeField()
-    created_date = models.DateTimeField(auto_now_add=True)
+
+    computer_name = models.CharField(
+
+        max_length=256
+    )
+
+    minION = models.ForeignKey(
+
+        MinION, related_name='events'
+    )
+
+    event = models.ForeignKey(
+
+        MinIONEventType
+    )
+
+    datetime = models.DateTimeField(
+        
+    )
+
+    created_date = models.DateTimeField(
+
+        auto_now_add=True
+    )
+
     modified_date = models.DateTimeField(
-        auto_now=True)  # These last two fields added to enable auto cleanup of event status for a minION incase of disconnect of client.
+
+        auto_now=True
+    )  # These last two fields added to enable auto cleanup of event status for a minION incase of disconnect of client.
 
     class Meta:
         verbose_name = 'MinION Event'
@@ -1050,8 +1078,16 @@ class MinIONScripts(models.Model):
 
 
 class FastqReadType(models.Model):
+    """
+    :purpose: Store information about the FASTQ read type (eg template/complemnt/1d^2)
+
+    Fields:
+
+    :name: (str) FASTQ read type
+    """
 
     name = models.CharField(
+
         max_length=16
     )
 
@@ -1066,12 +1102,14 @@ class FastqReadType(models.Model):
 class FastqRead(models.Model):
 
     run = models.ForeignKey(
+
         Run,
         on_delete=models.CASCADE,
         related_name='reads'
     )
 
     read_id = models.CharField(
+
         max_length=96
     )
 
