@@ -109,23 +109,21 @@ class UserOptions(models.Model):
 
         settings.AUTH_USER_MODEL,
         related_name='extendedopts'
-
     )
 
     twitterhandle = models.CharField(
 
         max_length=64
-
     )
 
     tweet = models.BooleanField(
+
         default=False
     )
 
     email = models.BooleanField(
 
         default=False
-
     )
 
     def __str__(self):
@@ -889,8 +887,16 @@ class MinIONScripts(models.Model):
 
 
 class FastqReadType(models.Model):
+    """
+    :purpose: Store information about the FASTQ read type (eg template/1d^2)
+
+    Fields:
+
+    :name: (str) FASTQ read type
+    """
 
     name = models.CharField(
+
         max_length=16
     )
 
