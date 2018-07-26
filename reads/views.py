@@ -112,7 +112,16 @@ def events_type_detail(request, pk):
 @api_view(['GET'])
 def read_type_detail(request, pk):
     """
-    Retrieve a fastqread type instance.
+    :purpose: Retrieve a FastqReadType instance
+    :used_by: minotour client
+    :author: Roberto Santos
+
+    ChangeLog
+    2018-07-09 Add documentation - Alex
+
+    :param request: (standard django request) ???
+    :param pk: (int) run primary key
+    :return: ???
     """
     try:
         run = FastqReadType.objects.get(pk=pk)
