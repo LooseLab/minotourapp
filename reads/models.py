@@ -368,7 +368,6 @@ class Barcode(models.Model):
     :barcodegroup: Foreign key linking to a specific barcode group. #ToDo Remove this field.
     :groupbarcodes: Foreign key linking to a group barcode. #ToDo Remove this field.
     :name: Barcode Name - derived from the read name.
-    """
 
     :run: Returns the run that owns the barcode.
     :barcodegroup: To be removed.
