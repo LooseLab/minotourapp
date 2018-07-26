@@ -4,7 +4,7 @@
     <thead>
     <th>Barcode</th>
     <th>Read type</th>
-    <th>Pass/Fail</th>
+    <th>Status</th>
     <td align="right"><strong>Reads called</strong></td>
     <td align="right"><strong>Yield</strong></td>
     <td align="right"><strong>Average read length</strong></td>
@@ -15,7 +15,13 @@
         <tr>
             <td>{{ record.barcode_name }}</td>
             <td>{{ record.read_type_name }}</td>
-            <td>{{ record.status }}</td>
+            <td>
+                {% if record.status == "True" %}
+                Pass
+                {% else %}
+                Fail
+                {% endif %}
+            </td>
             <td align="right">{{ record.read_count|intcomma }}</td>
             <td align="right">{{ record.total_length|intcomma }}</td>
             <td align="right">{{ record.average_read_length|floatformat:"0"|intcomma }}</td>

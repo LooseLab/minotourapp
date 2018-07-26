@@ -7,145 +7,76 @@ function requestHistogramData(id) {
 
     var url = "/api/v1/flowcells/" + id + "/histogramsummary/?barcode_name=" + selected_barcode;
 
-    $.get(url, function (dataObj) {
+    $.get(url, (function (dataObj) {
 
-            var result_read_count_sum = dataObj['result_read_count_sum'];
-            var result_read_length_sum = dataObj['result_read_length_sum'];
+            var data = dataObj['data'];
             var categories = dataObj['categories'];
 
-            //console.log(categories);
+            if (!this.chartHistogramBasesSequencedByReadLength) {
+                this.chartHistogramBasesSequencedByReadLength = this.makeChart2(
+                    "histogram-bases-sequenced-by-read-length",
+                    "Histogram of Bases Sequenced by Read Length".toUpperCase(),
+                    "Number of bases".toUpperCase()
+                );
+            }
 
-            if (result_read_count_sum.length > 0) {
+            var chart_read_length = this.chartHistogramBasesSequencedByReadLength;
 
-                var data_barcode = []
+            if (!this.chartHistogramReadLength) {
+                this.chartHistogramReadLength = this.makeChart2(
+                    "histogram-read-lengths",
+                    "Histogram of Read Lengths".toUpperCase(),
+                    "Number of reads".toUpperCase()
+                );
+            }
 
-                //var categories = []
+            var chart_read_count = this.chartHistogramReadLength;
 
-                var category_labels = []
-
-                // data.forEach(function (row) {
-                //     //console.log(row[0]);
-
-                //     if (row[0] == selected_barcode) {
-
-                //         data_barcode.push(row);
-                //     }
-                // });
-
-                // indexes.forEach(function (row) {
-                //     if (row[0] == selected_barcode) {
-                //         //console.log(row);
-                //         category_labels.push(row);
-                //     }
-
-                // });
-
-                // data_barcode.sort(function (a, b) {
-                //     return a[2] - b[2];
-                // });
-
-                // data_barcode.forEach(function (row) {
-                //     if (row[1].endsWith("Pass")) {
-                //         //console.log(row);
-                //         categories.push(row);
-                //     }
-                // })
-                //console.log(data_barcode[-1]);
-                //console.log(categories.map(x => x[2]));
-                // indexes.sort(function (a, b) {
-                //     return a - b;
-                // });
-
-                /*
-                 * chart
-                 *
-                 */
-
-                if (!self.chartHistogramBasesSequencedByReadLength) {
-                    self.chartHistogramBasesSequencedByReadLength = self.makeChart2(
-                        "histogram-bases-sequenced-by-read-length",
-                        "Histogram of Bases Sequenced by Read Length".toUpperCase(),
-                        "Number of bases".toUpperCase()
-                    );
-                }
-
-                var chart = self.chartHistogramBasesSequencedByReadLength;
-
-                if (chart.series) {
-                    while (chart.series.length > 0) {
-                        chart.series[0].remove();
-                    }
-                }
-
-                chart.update({
-                    plotOptions: {
-                        column: {
-                            stacking: 'normal'
-                        }
-                    },
-                    chart: {
-                        type: 'column'
-                    },
-                    xAxis: {
-                        type: 'category',
-                        categories: categories
-                    }
-                });
-
-                for (var i = 0; i < result_read_count_sum.length; i++) {
-
-                    chart.addSeries({
-                        name: result_read_count_sum[i]['name'],
-                        data: result_read_count_sum[i]['data']
-                    });
-                    //}
-                }
-
-
-                /*
-                 * chart
-                 *
-                 */
-                if (!self.chartHistogramReadLength) {
-                    self.chartHistogramReadLength = self.makeChart2(
-                        "histogram-read-lengths",
-                        "Histogram of Read Lengths".toUpperCase(),
-                        "Number of reads".toUpperCase()
-                    );
-                }
-
-                var chart = self.chartHistogramReadLength;
-
-                if (chart.series) {
-                    while (chart.series.length > 0) {
-                        chart.series[0].remove();
-                    }
-                }
-
-                chart.update({
-                    plotOptions: {
-                        column: {
-                            stacking: 'normal'
-                        }
-                    },
-                    chart: {
-                        type: 'column'
-                    },
-                    xAxis: {
-                        type: 'category',
-                        categories: categories
-                    }
-                });
-
-                for (var i = 0; i < result_read_length_sum.length; i++) {
-
-
-                    chart.addSeries({
-                        name: result_read_length_sum[i]['name'],
-                        data: result_read_length_sum[i]['data']
-                    });
+            if (chart_read_count.series) {
+                while (chart_read_count.series.length > 0) {
+                    chart_read_count.series[0].remove();
                 }
             }
-        }
-    );
+
+            if (chart_read_length.series) {
+                while (chart_read_length.series.length > 0) {
+                    chart_read_length.series[0].remove();
+                }
+            }
+
+            var options = {
+                plotOptions: {
+                    column: {
+                        stacking: 'normal'
+                    }
+                },
+                chart: {
+                    type: 'column'
+                },
+                xAxis: {
+                    type: 'category',
+                    categories: categories
+                }
+            };
+
+            chart_read_count.update(options);
+            chart_read_length.update(options);
+
+            Object.keys(data).forEach(function (barcode_name) {
+
+                Object.keys(data[barcode_name]).forEach(function (read_type_name) {
+
+                    Object.keys(data[barcode_name][read_type_name]).forEach(function (status) {
+
+                        chart_read_count.addSeries(
+                            data[barcode_name][read_type_name][status]["read_count"]
+                        );
+
+                        chart_read_length.addSeries(
+                            data[barcode_name][read_type_name][status]["read_length"]
+                        );
+                    });
+                });
+            });
+        }).bind(this));
 }

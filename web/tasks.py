@@ -27,7 +27,7 @@ from assembly.models import GfaStore, GfaSummary
 from communication.utils import *
 from devices.models import Flowcell
 from jobs.models import JobMaster
-from reads.models import Barcode, FastqRead, FlowCellRun, Run, HistogramSummary
+from reads.models import Barcode, FastqRead, Run, HistogramSummary
 from reads.services import (save_flowcell_histogram_summary, save_flowcell_channel_summary, save_flowcell_summary_barcode,
                             save_flowcell_statistic_barcode)
 from reference.models import ReferenceInfo
@@ -333,18 +333,23 @@ def clean_up_assembly_files(runid,id,tmp):
     JobMaster.objects.filter(pk=id).update(tempfile_name="")
 
 
-def get_runidset(runid,inputtype):
-    runidset = set()
+def get_runidset(runid, inputtype):
+
+    run_set = set()
+
     if inputtype == "flowcell":
-        realflowcell = Flowcell.objects.get(pk=runid)
-        flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
-        for flowcell_run in flowcell_runs:
-            runidset.add(flowcell_run.run_id)
-            # print (flowcell_run.run_id)
-            # we need to get the runids that make up this run
+
+        flowcell = Flowcell.objects.get(pk=runid)
+
+        for run in flowcell.runs.all():
+
+            run_set.add(run.id)
+
     else:
-        runidset.add(runid)
-    return (runidset)
+
+        run_set.add(runid)
+
+    return run_set
 
 
 @task()
@@ -366,7 +371,7 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
     runidset = set()
     if inputtype == "flowcell":
         realflowcell = Flowcell.objects.get(pk=runid)
-        flowcell_runs = FlowCellRun.objects.filter(flowcell=runid)
+        flowcell_runs = realflowcell.runs.all()
         for flowcell_run in flowcell_runs:
             runidset.add(flowcell_run.run_id)
             # print (flowcell_run.run_id)

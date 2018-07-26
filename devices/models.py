@@ -6,8 +6,6 @@ class Flowcell(models.Model):
 
     name = models.CharField(
         max_length=256,
-        blank=True,
-        null=True,
     )
 
     owner = models.ForeignKey(
