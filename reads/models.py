@@ -62,6 +62,18 @@ class GroupRun(models.Model): # TODO don't document
 
 
 class MinIONControl(models.Model):
+    """
+    :purpose: Store a new job for the minion to pickup and perform  TODO could probably be expanded with example job, why it exists
+
+    Fields:
+    :minion: The minion name as stored in the Minion table
+    :owner: The Owner as the user
+    :job: The Job that you want the minion to perform
+    :custom: TODO to be completed
+    :complete: Whether the job is complete or not
+    :created_date: The date that the job was created
+    :modified_date: The date that this as last modified
+    """
     minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minioncontrol')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='controlcontrol')
     job = models.CharField(max_length=256, blank=False, null=False)
@@ -543,34 +555,120 @@ class MinIONStatus(models.Model): #TODO Rename class for logical consistency
         return "{} {}".format(self.minION, self.minKNOW_status)
 
 
-class MinIONRunStats(models.Model):#Todo consider merging in to one object with
-    minION = models.ForeignKey(MinION, related_name='currentrunstats')
-    run_id = models.ForeignKey(Run, related_name='RunStats')
+class MinIONRunStats(models.Model):  #Todo consider merging in to one object with
+    """
+        :purpose: Get comprehensive statistics about a MinION run.
+
+        Fields:
+        :minion: The Minion object as stored in the MInion table of the database
+        :run_id:
+        :sample_time
+        :event_yield:
+        :asic_temp:
+        :heat_sink_temp:
+        :voltage_value:
+        :mean_ratio:
+        :open_pore:
+        :in_strand:
+        :multiple:
+        :unavailable:
+        :unknown:
+        :adapater:
+        :pending_mux_change:
+        :unclassified:
+        :below:
+        :unblocking:
+        :above:
+        :good_single:
+        :saturated:
+        :inrange:
+        :strand:
+        :minKNOW_read_count:
+        :minKNOW_histogram_values:
+        :minKNOW_histogram_bin_width:
+        :created_date:
+    """
+    minION = models.ForeignKey(
+        MinION,
+        related_name='currentrunstats'
+    )
+    run_id = models.ForeignKey(
+        Run,
+        related_name='RunStats'
+    )
     sample_time = models.DateTimeField()
-    event_yield = models.BigIntegerField(default=0)
-    asic_temp = models.FloatField(default=0)
-    heat_sink_temp = models.FloatField(default=0)
-    voltage_value = models.FloatField(default=0)
-    mean_ratio = models.FloatField(default=0)
-    open_pore = models.FloatField(default=0)
-    in_strand = models.FloatField(default=0)
-    multiple = models.IntegerField(default=0)
-    unavailable = models.IntegerField(default=0)
-    unknown = models.IntegerField(default=0)
-    adapter = models.IntegerField(default=0)
-    pending_mux_change = models.IntegerField(default=0)
-    unclassified = models.IntegerField(default=0)
-    below = models.IntegerField(default=0)
-    unblocking = models.IntegerField(default=0)
-    above = models.IntegerField(default=0)
-    good_single = models.IntegerField(default=0)
-    saturated = models.IntegerField(default=0)
-    inrange = models.IntegerField(default=0)
-    strand = models.IntegerField(default=0)
-    minKNOW_read_count = models.IntegerField(default=0)
-    minKNOW_histogram_values = models.TextField(blank=True, null=True)
-    minKNOW_histogram_bin_width = models.IntegerField(default=900)
-    created_date = models.DateTimeField(auto_now_add=True)
+    event_yield = models.BigIntegerField(
+        default=0
+    )
+    asic_temp = models.FloatField(
+        default=0
+    )
+    heat_sink_temp = models.FloatField(
+        default=0
+    )
+    voltage_value = models.FloatField(
+        default=0
+    )
+    mean_ratio = models.FloatField(
+        default=0
+    )
+    open_pore = models.FloatField(
+        default=0
+    )
+    in_strand = models.FloatField(
+        default=0
+    )
+    multiple = models.IntegerField(
+        default=0
+    )
+    unavailable = models.IntegerField(
+        default=0
+    )
+    unknown = models.IntegerField(
+        default=0
+    )
+    adapter = models.IntegerField(
+        default=0
+    )
+    pending_mux_change = models.IntegerField(
+        default=0
+    )
+    unclassified = models.IntegerField(
+        default=0
+    )
+    below = models.IntegerField(
+        default=0
+    )
+    unblocking = models.IntegerField(
+        default=0
+    )
+    above = models.IntegerField(
+        default=0
+    )
+    good_single = models.IntegerField(
+        default=0
+    )
+    saturated = models.IntegerField(
+        default=0
+    )
+    inrange = models.IntegerField(
+        default=0
+    )
+    strand = models.IntegerField(
+        default=0
+    )
+    minKNOW_read_count = models.IntegerField(
+        default=0
+    )
+    minKNOW_histogram_values = models.TextField(
+        blank=True, null=True
+    )
+    minKNOW_histogram_bin_width = models.IntegerField(
+        default=900
+    )
+    created_date = models.DateTimeField(
+        auto_now_add=True
+    )
 
     class Meta:
         verbose_name = 'MinION Run Stats'

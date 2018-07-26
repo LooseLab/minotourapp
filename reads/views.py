@@ -112,8 +112,9 @@ def events_type_detail(request, pk): # TODO consider removing
     ChangeLog
     2018-07-09 Add documentation - Rory
 
-    :param request: (Django Reqeust Object) No query parameters
-    :param pk: (Integer) - Primary key ffor object lookup from database
+    :param request: (Django Request Object) No query parameters
+    :param pk: (Integer) - Primary key for object lookup from database
+
     :return: (String) Json Format string of a single event types
     """
 
