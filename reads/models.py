@@ -318,7 +318,17 @@ class GroupBarcode(models.Model): # Don't document
 
 
 class Barcode(models.Model):
+    """
+    :purpose: Represent a barcode associated with a Run.
 
+    Fields:
+
+    :run: Returns the run that owns the barcode.
+    :barcodegroup: To be removed.
+    :groupbarcodes: To be removed.
+    :name: returns the name as identified in the header of the fastq file.
+    """
+    
     run = models.ForeignKey(
 
         Run,
