@@ -858,7 +858,7 @@ class MinIONScripts(models.Model):
 
 class FastqReadType(models.Model):
     """
-    :purpose: Store information about the FASTQ read type (eg template/1d^2)
+    :purpose: Store information about the FASTQ read type (eg template/complemnt/1d^2)
 
     Fields:
 
@@ -881,12 +881,14 @@ class FastqReadType(models.Model):
 class FastqRead(models.Model):
 
     run = models.ForeignKey(
+
         Run,
         on_delete=models.CASCADE,
         related_name='reads'
     )
 
     read_id = models.CharField(
+
         max_length=96
     )
 
