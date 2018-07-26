@@ -109,23 +109,21 @@ class UserOptions(models.Model):
 
         settings.AUTH_USER_MODEL,
         related_name='extendedopts'
-
     )
 
     twitterhandle = models.CharField(
 
         max_length=64
-
     )
 
     tweet = models.BooleanField(
+
         default=False
     )
 
     email = models.BooleanField(
 
         default=False
-
     )
 
     def __str__(self):
@@ -368,9 +366,13 @@ class Barcode(models.Model):
     :barcodegroup: Foreign key linking to a specific barcode group. #ToDo Remove this field.
     :groupbarcodes: Foreign key linking to a group barcode. #ToDo Remove this field.
     :name: Barcode Name - derived from the read name.
+
+    :run: Returns the run that owns the barcode.
+    :barcodegroup: To be removed.
+    :groupbarcodes: To be removed.
+    :name: returns the name as identified in the header of the fastq file.
     """
-
-
+    
     run = models.ForeignKey(
 
         Run,
@@ -552,116 +554,172 @@ class MinIONStatus(models.Model): #TODO Rename class for logical consistency
 
 class MinIONRunStats(models.Model):  #Todo consider merging in to one object with
     """
-        :purpose: Get comprehensive statistics about a MinION run.
+    :purpose: Get comprehensive statistics about a MinION run.
+              Takes a snapshot every n seconds (n defined by the minotour client).
 
-        Fields:
-        :minion: The Minion object as stored in the MInion table of the database
-        :run_id:
-        :sample_time
-        :event_yield:
-        :asic_temp:
-        :heat_sink_temp:
-        :voltage_value:
-        :mean_ratio:
-        :open_pore:
-        :in_strand:
-        :multiple:
-        :unavailable:
-        :unknown:
-        :adapater:
-        :pending_mux_change:
-        :unclassified:
-        :below:
-        :unblocking:
-        :above:
-        :good_single:
-        :saturated:
-        :inrange:
-        :strand:
-        :minKNOW_read_count:
-        :minKNOW_histogram_values:
-        :minKNOW_histogram_bin_width:
-        :created_date:
+    Fields:
+
+    :minion: Foreign key to link to a specific MinION run.
+    :run_id: Foreign key to link to a specific run id.
+    :sample_time: Date Time field identifying the moment of data collection.
+    :event_yield: Sequencing yield as approximated in events by MinKNOW.
+    :asic_temp: Current temperature of the ASIC.
+    :heat_sink_temp: Current temperature of the heat sink.
+    :voltage_value: Current set voltage on the device.
+    :mean_ratio: A ratio of currents for in strand versus open pore. #ToDO not currently reported.
+    :open_pore: Count of pore classification type (as named)
+    :in_strand: Count of pore classification type (as named)
+    :multiple: Count of pore classification type (as named)
+    :unavailable: Count of pore classification type (as named)
+    :unknown: Count of pore classification type (as named)
+    :adapater: Count of pore classification type (as named)
+    :pending_mux_change: Count of pore classification type (as named)
+    :unclassified: Count of pore classification type (as named)
+    :below: Count of pore classification type (as named)
+    :unblocking: Count of pore classification type (as named)
+    :above: Count of pore classification type (as named)
+    :good_single: Count of pore classification type (as named)
+    :saturated: Count of pore classification type (as named)
+    :inrange: Count of pore classification type (as named)
+    :strand: Count of pore classification type (as named)
+    :minKNOW_read_count: Count of reads seen at this point.
+    :minKNOW_histogram_values: Reporting the values of the histogram from MinKNOW
+    :minKNOW_histogram_bin_width: Measure of the bin width for the above histogram.
+    :created_date: Created Date.
+
     """
+    
     minION = models.ForeignKey(
+
         MinION,
         related_name='currentrunstats'
     )
+
     run_id = models.ForeignKey(
+
         Run,
         related_name='RunStats'
     )
+
     sample_time = models.DateTimeField()
+
     event_yield = models.BigIntegerField(
+
         default=0
     )
+
     asic_temp = models.FloatField(
+
         default=0
     )
+
     heat_sink_temp = models.FloatField(
+
         default=0
     )
+
     voltage_value = models.FloatField(
+
         default=0
     )
+
     mean_ratio = models.FloatField(
+
         default=0
     )
+
     open_pore = models.FloatField(
+
         default=0
     )
+
     in_strand = models.FloatField(
+
         default=0
     )
+
     multiple = models.IntegerField(
+
         default=0
     )
+
     unavailable = models.IntegerField(
+
         default=0
     )
+
     unknown = models.IntegerField(
+
         default=0
     )
+
     adapter = models.IntegerField(
+
         default=0
     )
+
     pending_mux_change = models.IntegerField(
+
         default=0
     )
+
     unclassified = models.IntegerField(
+
         default=0
     )
+
     below = models.IntegerField(
+
         default=0
     )
+
     unblocking = models.IntegerField(
+
         default=0
     )
+
     above = models.IntegerField(
+
         default=0
     )
+
     good_single = models.IntegerField(
+
         default=0
     )
+
     saturated = models.IntegerField(
+
         default=0
     )
+
     inrange = models.IntegerField(
+
         default=0
     )
+
     strand = models.IntegerField(
+
         default=0
     )
+
     minKNOW_read_count = models.IntegerField(
+
         default=0
     )
+
     minKNOW_histogram_values = models.TextField(
+
         blank=True, null=True
     )
+
     minKNOW_histogram_bin_width = models.IntegerField(
+
         default=900
     )
+
     created_date = models.DateTimeField(
+
         auto_now_add=True
     )
 
@@ -734,18 +792,21 @@ class MinIONRunStatus(models.Model):
 
 
 class MinIONEventType(models.Model):
-    # TODO what does this do??
     """
-    :purpose:
+    :purpose: Provides a list of states that a MinION can be in at any moment in time.
 
     :Fields:
 
-    :name:
+    :name: The name of the event.
     """
 
-    name = models.CharField(max_length=64)
+    name = models.CharField(
+
+        max_length=64
+    )
 
     class Meta:
+
         verbose_name = 'MinION Event Type'
         verbose_name_plural = 'MinION Event Types'
 
@@ -755,20 +816,47 @@ class MinIONEventType(models.Model):
 
 class MinIONEvent(models.Model):
     """
-    :purpose: 
+    :purpose: Report the specific history of events occurring to a minION.
 
     Fields:
 
-    :computer_name: 
-    :minION: 
+    :computer_name: The name of the computer that the MinION is connected to when an event occurs
+    :minION: Foreign key to the MinION id
+    :event: Foreign key to the event type
+    :datetime: datetime that the event occured
+    :created_date: date that this event was first created.
+    :modified_date: last time a change was made to this entry.
+
     """
-    computer_name = models.CharField(max_length=256)
-    minION = models.ForeignKey(MinION, related_name='events')
-    event = models.ForeignKey(MinIONEventType)
-    datetime = models.DateTimeField()
-    created_date = models.DateTimeField(auto_now_add=True)
+
+    computer_name = models.CharField(
+
+        max_length=256
+    )
+
+    minION = models.ForeignKey(
+
+        MinION, related_name='events'
+    )
+
+    event = models.ForeignKey(
+
+        MinIONEventType
+    )
+
+    datetime = models.DateTimeField(
+        
+    )
+
+    created_date = models.DateTimeField(
+
+        auto_now_add=True
+    )
+
     modified_date = models.DateTimeField(
-        auto_now=True)  # These last two fields added to enable auto cleanup of event status for a minION incase of disconnect of client.
+
+        auto_now=True
+    )  # These last two fields added to enable auto cleanup of event status for a minION incase of disconnect of client.
 
     class Meta:
         verbose_name = 'MinION Event'
@@ -864,8 +952,16 @@ class MinIONScripts(models.Model):
 
 
 class FastqReadType(models.Model):
+    """
+    :purpose: Store information about the FASTQ read type (eg template/complemnt/1d^2)
+
+    Fields:
+
+    :name: (str) FASTQ read type
+    """
 
     name = models.CharField(
+
         max_length=16
     )
 
@@ -880,12 +976,14 @@ class FastqReadType(models.Model):
 class FastqRead(models.Model):
 
     run = models.ForeignKey(
+
         Run,
         on_delete=models.CASCADE,
         related_name='reads'
     )
 
     read_id = models.CharField(
+
         max_length=96
     )
 
