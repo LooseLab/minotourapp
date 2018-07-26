@@ -158,7 +158,7 @@ class Centrifuger(Reader):
             print(f"flowcell_job_id is {self.flowcell_job_id}")
             JobMaster.objects.filter(pk=self.flowcell_job_id).update(running=True)
             # return all currently present reads
-            cursor = FastqRead.objects.filter(run_id__id__in={self.flowcell_id})
+            cursor = FastqRead.objects.filter(run__flowcell_id__in={self.flowcell_id})
             print(cursor.values())
             doc_no = len(cursor)
             last_read = list(cursor)[-1].id

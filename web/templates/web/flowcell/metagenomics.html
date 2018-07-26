@@ -1,8 +1,14 @@
 <!-- metagenomicstab.html -->
 {% load visview %}
 {% load static %}
+
+<script src="{% static 'web/js/libraries/d3/d3.js' %}"></script>
+<script src="{% static 'web/js/libraries/d3-sankey/d3-sankey.js' %}"></script>
 <script src="{% static 'web/js/vis-d3/sankey.js' %}"></script>
 <script src="{% static 'web/js/vis-d3/donutdothat.js' %}"></script>
+<script src="{% static 'web/js/vis-d3/AllResultsTable.js' %}"></script>
+<script src="{% static 'web/js/vis-d3/donutoTaberu.js' %}"></script>
+
 <div id="loader-wrapper">
     <div id="loader"></div>
     <div class="loader-section section-left"></div>
@@ -21,8 +27,10 @@
 </div>
 <script>
     'use strict';
-    {#testHello(5);#}
-    {#setup();#}
+    testHello(10);
+    setup(10);
+    getTotalReadsTable(10);
+    getDonutRankTable(10);
     $("#startCent").click(function () {
         var flowCellId = document.querySelector("#flowcell-id");
         $(".loaded").removeClass('loaded');

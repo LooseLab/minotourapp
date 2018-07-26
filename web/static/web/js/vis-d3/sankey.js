@@ -1,18 +1,15 @@
 "use strict";
 
-function move() {
-        d3.select(".contain")
-            .attr("transform", d3.event.transform);
-}
 
 function dataPrep(sankeyData) {
     /*
         Data prep takes the results from the factory promise, and transforms it to the correct format
         for D3-sankey
      */
-    let nodes = sankeyData.nodes;
-    let sortedLinks = sankeyData.links;
-    nodes.links = sankeyData.links.filter(function (link) {
+
+    let nodes = sankeyData.queryset;
+    let sortedLinks = sankeyData.values;
+    nodes.links = nodes.links.filter(function (link) {
         return link.target !== link.source;
     });
     let nodeNames = [];
@@ -67,94 +64,80 @@ function dataPrep(sankeyData) {
 }
 
 function draw(nodesObj, sankey, g, format, color, width) {
-
-    let link = g.append("g")
-        .attr("class", "links")
-        .attr("fill", "none")
-        .attr("stroke", "#000")
-        .attr("stroke-opacity", 0.2)
-        .selectAll("path");
-    let node = g.append("g")
-        .attr("class", "nodes")
-        .attr("font-family", "sans-serif")
-        .attr("font-size", 8)
-        .selectAll("g");
-
     sankey(nodesObj);
-    link = link
+
+    const link = g.append("g").attr("class", "links")
+        .attr("fill", "none")
+        .attr("stroke-opacity", 0.5)
+        .selectAll("g")
         .data(nodesObj.links)
-        .enter().append("path")
+        .enter().append("g")
+        .style("mix-blend-mode", "multiply");
+
+      const gradient = link.append("linearGradient")
+      .attr("id", function(d, i){
+          return i;
+      })
+      .attr("gradientUnits", "userSpaceOnUse")
+      .attr("x1", d => d.source.x1)
+      .attr("x2", d => d.target.x0);
+
+      gradient.append("stop")
+          .attr("offset", "0%")
+          .attr("stop-color", d => color(d.source.name.replace(/ .*/, "")));
+
+      gradient.append("stop")
+          .attr("offset", "100%")
+          .attr("stop-color", d => color(d.target.name.replace(/ .*/, "")));
+
+    link.append("path")
         .attr("d", d3.sankeyLinkHorizontal())
-        .attr("class", "link")
-        .attr("stroke-width", function (d) {
-            return Math.max(1, d.width);
-        });
+        .attr("stroke", function(d, i){
+           return "url(#" + i+ ")"
+         })
+        .attr("stroke-width", d => Math.max(1, d.width));
 
     link.append("title")
-        .text(function (d) {
-            return `${d.source.name} → ${d.target.name}
-${format(d.value)}`;
-        });
+      .text(d => `${d.source.name} → ${d.target.name}\n${format(d.value)}`);
 
-
-    node = node
+    let node = g.append("g").attr("class", "nodes")
+        .selectAll("rect")
         .data(nodesObj.nodes)
-        .enter().append("g").attr("class", "node");
-
-    node.append("rect")
-        .attr("x", function (d) {
-            return d.x0;
-        })
-        .attr("y", function (d) {
-            return d.y0;
-        })
-        .attr("height", function (d) {
-            return (d.y1 - d.y0);
-        })
-        .attr("width", function (d) {
-            return d.x1 - d.x0;
-        })
+        .enter().append("rect")
+        .attr("x", d => d.x0)
+        .attr("y", d => d.y0)
+        .attr("height", d => d.y1 - d.y0)
+        .attr("width", d => d.x1 - d.x0)
         .attr("fill", function (d) {
             return color(d.name.replace(/ .*/, ""));
         })
-        .attr("stroke", "#000");
+        .append("title")
+        .text(d => `${d.name}\n${format(d.value)}`);
 
-    node.append("text")
-        .attr("x", function (d) {
-            return d.x0 - 6;
-        })
-        .attr("y", function (d) {
-            return (d.y1 + d.y0) / 2;
-        })
+    let text = g.append("g").attr("class", "text")
+        .style("font", "10px sans-serif")
+        .selectAll("text")
+        .data(nodesObj.nodes)
+        .enter().append("text")
+        .attr("x", d => d.x0 < width / 2 ? d.x1 + 6 : d.x0 - 6)
+        .attr("y", d => (d.y1 + d.y0) / 2)
         .attr("dy", "0.35em")
-        .attr("text-anchor", "end")
-        .text(function (d) {
-            return d.name;
-        })
-        .filter(function (d) {
-            return d.x0 < width / 2;
-        })
-        .attr("x", function (d) {
-            return d.x1 + 6;
-        })
-        .attr("text-anchor", "start");
+        .attr("text-anchor", d => d.x0 < width / 2 ? "start" : "end")
+        .text(d => d.name);
 
-    node.append("title")
-        .text(function (d) {
-            return d.name + "\n" + format(d.value);
-        });
 }
 
 function update(flowcellId, sankey, checkForData, svg, g, format, color, width) {
     console.log("update");
     $.get("/sankey", {flowcellId}, result => {
         console.log(result);
-        let nodes = dataPrep(result.nodes);
+        let nodes = dataPrep(result);
+        console.log(nodes);
         // TODO use is active to check if flowcell is active
-        if (result.links.length !== 0 && checkForData) {
+        if (result.queryset.nodes.length !== 0 && checkForData) {
             setTimeout(function () {
                 d3.select("body").attr("class", "loaded sidebar-collapse")
-            }, 1500)
+            }, 1500);
             checkForData = false;
         }
         svg.select(".contain").selectAll("*").remove();
@@ -167,14 +150,20 @@ function testHello(flowcellId) {
     //set svg width and height
     let container = d3.select("body").node();
     // width of page
-    let width = container.getBoundingClientRect().width * 0.957;
+    let width = container.getBoundingClientRect().width * 0.933;
     // height of page
     let height = container.getBoundingClientRect().height * 0.6;
+
+    function move() {
+        d3.select(".contain")
+            .attr("transform", d3.event.transform);
+    }
+
     let zoom = d3.zoom()
-        .scaleExtent([1, 6]).translateExtent([[0, 0], [width, height * 0.88]])
+        .scaleExtent([1, 6]).translateExtent([[0, 0], [width, height * 0.9]])
         .on("zoom", move);
-    let svg = d3.select(".sankeyContainer").append("svg").attr("width", width)
-                    .attr("height", height * 0.9).call(zoom);
+    let svg = d3.select(".svg-container").append("svg").attr("width", width)
+        .attr("height", height * 0.9).call(zoom);
 
     let formatNumber = d3.format(",.0f"),
         format = function (d) {
@@ -191,10 +180,5 @@ function testHello(flowcellId) {
             return d.name;
         })
     ;
-    console.log(sankey);
-    // zoom function, called on svg
-    console.log(width, height);
-
-    console.log("Hello there");
     update(flowcellId, sankey, checkForData, svg, g, format, color, width)
 }

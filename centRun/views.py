@@ -5,18 +5,17 @@ from centRun.models import CentOutput, CartographyMapped, CartographyGuide, Refe
     LineageValues, LineageKey
 from centRun.serializers import CentSerialiser, CartMappedSerialiser, CartGuideSerialiser, \
     ReferenceGenomeSerialiser
-from centRun.tasks import start_centrifuge
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 import celery.bin.celery
 import celery.platforms
 import celery.bin.base
 from operator import itemgetter
-import datetime
 import uuid
 from ete3 import NCBITaxa
 import pandas as pd
-from django.utils import timezone
+from devices.models import Flowcell
+from jobs.models import JobMaster, JobType
 
 class CentViewSet(viewsets.ModelViewSet):
     """Viewset for viewing and editing centrifuge output objects"""
@@ -94,7 +93,7 @@ def cent_sankey(request):
     """
 
     # queryset from database, filtered by the meta_id
-    queryset = CentOutput.objects.filter(task_meta=request.query_params.get("meta_id", False))
+    queryset = CentOutput.objects.filter(task_meta=request.query_params.get("flowcellId", False))
     # all the taxIDs for this centrifuge job as a list, need for filtering all the relevant lineages
     cent_output_tax_ids = queryset.values_list(
         "taxID", flat=True)
@@ -200,72 +199,6 @@ def cent_sankey(request):
                             nodes["links"].append(link)
                             # create the values of the reads
 
-    # for line83age in lineages:
-    #     # get the lineages dict from the document
-    #     print(lineage)
-    #     # values = serialised_data[]
-    #     # if lineages
-    #     if lineage is not None:
-    #         ordered = []
-    #
-    #         # some lineages are incomplete, so create a list of link flows that only contains present values
-    #         for ord in order:
-    #             if ord in lineage:
-    #                 ordered.append(ord)
-    #         # enumerate over this new list
-    #         for ind, o in enumerate(ordered):
-    #             # the index of the target of the link, whilst ind is the index of the source
-    #             k = ind + 1
-    #             # get the source lineage value, i.e bacteria
-    #             source_lineage_value = lineage[o]
-    #             # append the name to the nodes list
-    #             nodes["nodes"].append({"name": source_lineage_value})
-    #             # if the target index isn't outside the index range, as it is the total indices + 1
-    #             if not k > (len(lineage) - 1):
-    #                 # get the target lineage value
-    #                 target_lineage_value = lineage[ordered[k]]
-    #                 # create a unique id for this link
-    #                 link_id = source_lineage_value + target_lineage_value
-    #                 # check to see if the link is already in the links list
-    #                 index = next((index for (index, d) in enumerate(nodes["links"]) if d["id"]
-    #                               == link_id), None)
-    #                 # if the index is not already in the list
-    #                 if index == None:
-    #                     # if index:
-    #                     index = -1
-    #                 # if link is already in the list, add the value of the new link to the existing link
-    #                 if index > -1:
-    #                     nodes["links"][index]["value"] += 1
-    #                 # if link isn't already in, add it in
-    #                 else:
-    #                     nodes["links"].append(
-    #                         dict(source=source_lineage_value, target=target_lineage_value, value=1, id=link_id,
-    #                              source_tax_level=o, target_tax_level=ordered[k]))
-    #         else:
-    #             print("lineages was none")
-    # Go through the nodes list and remove any duplicate names
-    # TODO rewrite with indexOF style so they are never added in the first place?
-    # unique_names = list(unique_everseen(nodes["nodes"], key=itemgetter('name')))
-    # nodes["nodes"] = unique_names
-
-    # define quick lookup function to return a link in the correct format
-    # def quick_lookup(x):
-    #     return {
-    #         "source": x["source"],
-    #         "target": x["target"],
-    #         "value": x["value"],
-    #         "source_tax_level": x["source_tax_level"],
-    #         "target_tax_level": x["target_tax_level"]
-    #     }
-    #     # else:
-    #     #     return "samesies"
-    #
-    # # TODO this has gone wrong somehow, losing nodes, added into values of other nodes
-    #
-    # nodes["links"] = list(map(quick_lookup, nodes["links"]))
-    # nodes["links"] = filter(lambda x: x != "samesies", map(quick_lookup, nodes["links"]))
-    # sort list by largest to smallest value, so we can do top 50 species
-    # sort the links by number of reads, descending
     sotted = sorted(nodes["links"], key=itemgetter('value'), reverse=True)
 
     # create an object to return
@@ -282,12 +215,12 @@ def vis_table_data(request):
     ----------
     request - Django rest framework request object
 
-    Returns - a dict containing a json string that has all the data
+    Returns - a dict containing a json string that has all the data for the total reads table
     -------
 
     """
     # queryset from database, filtered by the meta_id
-    queryset = CentOutput.objects.filter(task_meta=request.query_params.get("meta_id", False))
+    queryset = CentOutput.objects.filter(task_meta=request.query_params.get("flowcellId", False))
     # all the taxIDs for this centrifuge job as a list, need for filtering all the relevant lineages
     cent_output_tax_ids = queryset.values_list(
         "taxID", flat=True)
@@ -398,7 +331,7 @@ def cent_donut(request):
 
     """
     # get the relevant centOutput database entries for this analysis
-    queryset = CentOutput.objects.filter(task_meta=request.query_params.get("meta_id", False))
+    queryset = CentOutput.objects.filter(task_meta=request.query_params.get("flowcellId", False))
     # if there is no data return a 401 and a message
     if not queryset:
         return Response({"message": "no data"}, status=401)
@@ -512,7 +445,7 @@ def cent_donut(request):
         temp_df.drop_duplicates(keep="first", inplace=True)
         temp_df.reset_index(inplace=True)
         # get the largest 20 members
-        temp_df = temp_df.nlargest(20, sumtitle)
+        temp_df = temp_df.nlargest(10, sumtitle)
         # rename columns to what's expected by the donut chart
         temp_df.rename(columns={clade: "label", sumtitle: "value"}, inplace=True)
         # get the resulst in a list with adict for each record in temp_df
@@ -555,25 +488,18 @@ def start_centrifuge_view(request):
         # see if celery is actually running
         status.run()
         # call celery task, pass the uuid we generated as an argument
-        start_centrifuge.delay(ident)
-        # insert_reads.delay()
-        # get request body data
-        data = request.data
-        # get date and time
-        d = datetime.datetime.now()
-        # date is great
-        date = "{:%Y-%d-%b}".format(d)
-        # time is lime
-        time = "{:%H:%M:%S}".format(d)
-        # hard set user, will eventually come from the request body
-        user = "Rory"
-        # create django model object, save it to database
-        # MetaGenomicsMeta(task_name=data["taskName"], task_description=data["desc"],
-        #                  sample_description=data["samDesc"], timestamp=d, run_date=date,
-        #                  run_time=time, user=user, meta_id=ident, running=True).save()
-        print("saved metadata")
-        return_dict = {"ident": ident}
-        return Response(return_dict, status=200)
+        # start_centrifuge.delay(ident)
+        # Create Jobmaster object, to save. This will be picked up by the run
+        # monitor task
+        flowcell_id = request.data["flowcellId"]
+        flowcell = Flowcell.objects.get(pk=flowcell_id)
+        jobtype = JobType.objects.get(pk=10)
+        JobMaster(flowcell=flowcell, job_type=jobtype,
+                  running=False, complete=0, read_count=0, last_read=0).save()
+        # # create django model object, save it to database
+        # print("saved metadata")
+        # return_dict = {"ident": ident}
+        return Response(status=200)
     # except if celery isn't running
     except celery.bin.base.Error as e:
         if e.status == celery.platforms.EX_UNAVAILABLE:
@@ -585,6 +511,7 @@ def start_centrifuge_view(request):
 @api_view(["POST", "GET"])
 def get_or_set_cartmap(request):
     """
+    Currently Unused
     Get the default mapping targets to display or set them for the run
     Parameters
     ----------
