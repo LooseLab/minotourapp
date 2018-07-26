@@ -92,10 +92,29 @@ class UserOptions(models.Model):
     :tweet: (bool)
     :email: (bool)
     """
-    owner = models.OneToOneField(settings.AUTH_USER_MODEL, related_name='extendedopts')
-    twitterhandle = models.CharField(max_length=64)
-    tweet = models.BooleanField(default=False)
-    email = models.BooleanField(default=False)
+
+    owner = models.OneToOneField(
+
+        settings.AUTH_USER_MODEL,
+        related_name='extendedopts'
+
+    )
+
+    twitterhandle = models.CharField(
+
+        max_length=64
+
+    )
+
+    tweet = models.BooleanField(
+        default=False
+    )
+
+    email = models.BooleanField(
+
+        default=False
+
+    )
 
     def __str__(self):
         return "{}".format(str(self.owner))
