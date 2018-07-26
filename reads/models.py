@@ -407,7 +407,7 @@ class Barcode(models.Model):
         return "{} {} {}".format(self.run, self.run.runid, self.name)
 
 
-class MinIONStatus(models.Model): #TODO Rename class for logical consistency
+class MinIONStatus(models.Model):  # TODO Rename class for logical consistency
     """
     :purpose: To store data on the current status of a specific MinION at a given moment in time.
               This includes detailed pon the connected computer, the space available and other key run details.
@@ -554,10 +554,9 @@ class MinIONStatus(models.Model): #TODO Rename class for logical consistency
         return "{} {}".format(self.minION, self.minKNOW_status)
 
 
-class MinIONRunStats(models.Model):  #Todo consider merging in to one object with
+class MinIONRunStats(models.Model):  # Todo consider merging in to one object with
     """
-    :purpose: Get comprehensive statistics about a MinION run.
-              Takes a snapshot every n seconds (n defined by the minotour client).
+    :purpose: ???
 
     Fields:
 
@@ -588,8 +587,8 @@ class MinIONRunStats(models.Model):  #Todo consider merging in to one object wit
     :minKNOW_histogram_values: Reporting the values of the histogram from MinKNOW
     :minKNOW_histogram_bin_width: Measure of the bin width for the above histogram.
     :created_date: Created Date.
-
     """
+
     
     minION = models.ForeignKey(
 
@@ -748,21 +747,35 @@ class MinIONRunStatus(models.Model):
 
     Fields:
 
-    :minION: Foreign key linking to a MinION
-    :minKNOW_status: Current status of the MinION device (Ready, Starting, Processing or Finishing) as reported by MinKNOW
-    :minKNOW_current_script: Current or last run sequencing script from MinKNOW for this MinION
-    :minKNOW_sample_name: Current or last used Sample Name
-    :minKNOW_exp_script_purpose: Experiment purpose as identified by MinKNOW
-    :minKNOW_flow_cell_id: The unique identifier for a flow cell
-    :minKNOW_run_name: The run name as determined by MinKNOW
-    :minKNOW_hash_run_id: A hash of the same run name
-    :minKNOW_script_run_id: A script identifier. The format of which is output by MinKNOW and variable.
-    :minKNOW_real_sample_rate: The rate at which data have been sampled for this run
-    :minKNOW_asic_id: The specific asic identifier
-    :minKNOW_total_drive_space: The total hard drive space available to the currently sequencing computer.
-    :minKNOW_disk_space_till_shutdown: How much space is left till the sequencer shuts down.
-    :minKNOW_disk_available: The total amount of space left on the device.
-    :minKNOW_warnings: If minKNOW is about to shutdown a warning is added here. #todo Contact the user if the computer is about to shut down.
+    :minION:
+    :minKNOW_current_script:
+    :minKNOW_sample_name:
+    :minKNOW_exp_script_purpose:
+    :minKNOW_flow_cell_id:
+    :minKNOW_version:
+    :minKNOW_run_name:
+    :run_id:
+    :minKNOW_hash_run_id:
+    :minKNOW_script_run_id:
+    :minKNOW_real_sample_rate:
+    :minKNOW_asic_id:
+    :minKNOW_start_time:
+    :minKNOW_colours_string:
+    :minKNOW_computer:
+    :experiment_type:
+    :experiment_id:
+    :fast5_output_fastq_in_hdf:
+    :fast5_raw:
+    :fast5_reads_per_folder:
+    :fastq_enabled:
+    :fastq_reads_per_file:
+    :filename:
+    :flowcell_type:
+    :kit_classification:
+    :local_basecalling:
+    :sample_frequency:
+    :sequencing_kit:
+    :user_filename_input:
     """
 
     minION = models.ForeignKey(
@@ -1546,7 +1559,24 @@ class RunSummaryBarcode(models.Model):
 
 
 class FlowcellSummaryBarcode(models.Model):
+    """
+    :purpose: Summarise information from runs by flowcell, barcode name, fastq read type, and status (pass or fail). There is one record per flowcell. Most of the charts in the flowcell page use this data.
 
+    Fields:
+
+    :flowcell: (Flowcell) Foreign key to Flowcell
+    :read_type_name: (FastReadType) FastqReadType name
+    :barcode_name: (Barcode) Barcode name
+    :status: (boolean) Pass or Fail; originates from FastqRead is_pass attribute
+    :quality_sum: (float) # TODO
+    :read_count: (float) Total number of all reads from all runs of the flowcell
+    :total_length: (float) Sum of the length of all reads from all runs of the flowcell
+    :max_length: (float) Maximum read length of the flowcell
+    :min_length: (float) Minimum read length of the flowcell
+    :channel_presence: (str) Sequence of 3000 zeros and ones representing the presence or absence of a strand
+    :channel_count: (int) Retuns the sum of ones in the channel_presence
+    """
+    
     flowcell = models.ForeignKey(
 
         Flowcell,
@@ -1570,42 +1600,51 @@ class FlowcellSummaryBarcode(models.Model):
     )
 
     quality_sum = models.DecimalField(
+
         decimal_places=2,
         max_digits=12,
         default=0
     )
 
     read_count = models.IntegerField(
+
         default=0
     )
 
     total_length = models.BigIntegerField(
+
         default=0
     )
 
     max_length = models.IntegerField(
+
         default=0
     )
 
     min_length = models.IntegerField(
+
         default=0
     )
 
     channel_presence = models.CharField(
+
         max_length=3000,
         default='0' * 3000
     )
 
     channel_count = models.IntegerField(
+
         default=0
     )
 
     class Meta:
+
         verbose_name = 'Flowcell Summary'
         verbose_name_plural = 'Flowcell Summary'
         db_table = 'Flowcell_summary_barcode'
 
     def __str__(self):
+        
         return "{} {} {} {} {}".format(
             self.flowcell,
             self.total_length,
@@ -1645,7 +1684,9 @@ def create_run_barcodes(sender, instance=None, created=False, **kwargs):
 
 @receiver(post_save, sender=GroupRun)
 def create_grouprun_barcodes(sender, instance=None, created=False, **kwargs):
-
+    """
+    TODO Remove
+    """
     if created:
 
         GroupBarcode.objects.get_or_create(
@@ -1661,14 +1702,18 @@ def create_grouprun_barcodes(sender, instance=None, created=False, **kwargs):
 
 @receiver(post_save, sender=Barcode)
 def add_barcode_to_groupbarcode(sender, instance=None, created=False, **kwargs):
-
+    """
+    TODO Remove
+    """
     if created:
 
         check_barcode_groupbarcode(instance.run)
 
 
 def run_groupruns_changed(sender, action, instance, **kargs): # don't comment
-
+    """
+    TODO Remove
+    """
     if action == 'post_add':
 
         print('run_groupruns_changed')
