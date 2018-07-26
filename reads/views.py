@@ -42,6 +42,17 @@ from reference.models import ReferenceInfo
 
 
 def humanbases(n):
+    """
+    :purpose: Convert bases to human readable format
+    :used_by: used by many
+    :author: Matt Loose
+
+    ChangeLog
+    2018-07-09 Add documentation
+
+    :param n: (integer) number of bases
+    :return: (string) human readable format
+    """
     #return (n)
     millnames = ['', ' Kb', ' Mb', ' Gb', ' Tb']
     n = float(n)
@@ -56,7 +67,15 @@ def humanbases(n):
 @api_view(['GET'])
 def read_type_list(request):
     """
-    List of all runs by fastqread types
+    :purpose: Returns a list of FastqReadType to the client
+    :used_by: minotour client
+    :author: Roberto Santos
+
+    ChangeLog
+    2018-07-09 Add documentation
+
+    :param request: (standard django request) without querystring parameter
+    :return: (string) json format
     """
     if request.method == 'GET':
         queryset = FastqReadType.objects.all()
@@ -219,7 +238,20 @@ def recentminion_messages_list(request, pk):
 
 @api_view(['GET'])
 def minknow_message_list_by_flowcell(request, pk):
+    """
+    :purpose: ??
+    :used_by: ??
+    :author: Roberto Santos
 
+    ChangeLog
+    2018-07-09 Add documentation
+
+    :param request:
+    :param request.start_time:
+    :param request.end_time:
+    :param pk:
+    :return:
+    """
     form_start_time = request.GET.get('start_time', None)
     form_end_time = request.GET.get('end_time', None)
 
