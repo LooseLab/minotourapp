@@ -974,7 +974,23 @@ class FastqReadType(models.Model):
 
 
 class FastqRead(models.Model):
+    """
+    :purpose: Each read has a fastqread object. Contains the header information broken down, and some metadata about the read.
 
+    Fields:
+    :run: Foreign key linked to run object
+    :read_id: The read ID
+    :read: Read number auto incrementing in fastq header
+    :channel: Channel number that the read was sequenced on
+    :barcode: The barcode identifer/number if any
+    :sequence_length:
+    :quality_average:
+    :is_pass: Whether the read passed QC or not TODO matt is this correct?
+    :type: FK to fastqreadtype, example 1d^2
+    :start_time:
+    :created_date:
+    :modified_Date:
+    """
     run = models.ForeignKey(
 
         Run,
@@ -1043,7 +1059,14 @@ class FastqRead(models.Model):
 
 
 class FastqReadExtra(models.Model):
+    """
+    :purpose: If the user choose to send the read sequence and fastq quality, this is the model that is used to store it
 
+    Fields:
+    :fastqread: One to One field linking each fastqread object to its fastqreadextra counterpart
+    :sequence: The read Sequence
+    :quality: The fastq quality chars
+    """
     fastqread = models.OneToOneField(
         FastqRead,
         on_delete=models.CASCADE,
@@ -1065,7 +1088,17 @@ class FastqReadExtra(models.Model):
 
 
 class MinionMessage(models.Model):
+    """
+    :purpose: The
 
+    Fields:
+    :minion:
+    :run:
+    :message:
+    :identifier:
+    :severity:
+    :timestamp:
+    """
     minion = models.ForeignKey(
         MinION,
         related_name='messages'
