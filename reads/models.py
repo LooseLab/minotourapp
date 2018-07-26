@@ -12,7 +12,7 @@ from rest_framework.authtoken.models import Token
 from devices.models import Flowcell, MinION
 
 
-class GroupRun(models.Model):
+class GroupRun(models.Model): # TODO don't document
 
     MINION = 'MINION'
     GRIDION = 'GRIDION'
@@ -252,7 +252,7 @@ class Run(models.Model):
             return None
 
 
-class BarcodeGroup(models.Model):
+class BarcodeGroup(models.Model): # Dont document
 
     flowcell = models.ForeignKey(
         Flowcell,
@@ -267,7 +267,7 @@ class BarcodeGroup(models.Model):
         return "{} {}".format(self.flowcell, self.name)
 
 
-class GroupBarcode(models.Model):
+class GroupBarcode(models.Model): # Don't document
 
     grouprun = models.ForeignKey(
 
@@ -456,7 +456,14 @@ class MinIONEventType(models.Model):
 
 
 class MinIONEvent(models.Model):
+    """
+    :purpose: 
 
+    Fields:
+
+    :computer_name: 
+    :minION: 
+    """
     computer_name = models.CharField(max_length=256)
     minION = models.ForeignKey(MinION, related_name='events')
     event = models.ForeignKey(MinIONEventType)
@@ -1124,7 +1131,7 @@ def add_barcode_to_groupbarcode(sender, instance=None, created=False, **kwargs):
         check_barcode_groupbarcode(instance.run)
 
 
-def run_groupruns_changed(sender, action, instance, **kargs):
+def run_groupruns_changed(sender, action, instance, **kargs): # don't comment
 
     if action == 'post_add':
 
@@ -1136,7 +1143,7 @@ def run_groupruns_changed(sender, action, instance, **kargs):
 m2m_changed.connect(run_groupruns_changed, sender=Run.groupruns.through)
 
 
-def check_barcode_groupbarcode(instance):
+def check_barcode_groupbarcode(instance): # don't comment
     """
     This function checks if all barcodes from this run (instance)
     are associated with the groupruns (through groupbarcodes).
