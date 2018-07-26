@@ -1,9 +1,7 @@
 import datetime
-import hashlib
 
 import pytz
 from django.conf import settings
-from django.contrib.auth.models import User
 from django.db import models
 from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
@@ -405,7 +403,7 @@ class Barcode(models.Model):
         return "{} {} {}".format(self.run, self.run.runid, self.name)
 
 
-class MinIONStatus(models.Model): #TODO Rename class for logical consistency
+class MinIONStatus(models.Model):  # TODO Rename class for logical consistency
     """
     :purpose: To store data on the current status of a specific MinION at a given moment in time.
               This includes detailed pon the connected computer, the space available and other key run details.
@@ -552,10 +550,9 @@ class MinIONStatus(models.Model): #TODO Rename class for logical consistency
         return "{} {}".format(self.minION, self.minKNOW_status)
 
 
-class MinIONRunStats(models.Model):  #Todo consider merging in to one object with
+class MinIONRunStats(models.Model):  # Todo consider merging in to one object with
     """
-    :purpose: Get comprehensive statistics about a MinION run.
-              Takes a snapshot every n seconds (n defined by the minotour client).
+    :purpose: ???
 
     Fields:
 
@@ -586,8 +583,8 @@ class MinIONRunStats(models.Model):  #Todo consider merging in to one object wit
     :minKNOW_histogram_values: Reporting the values of the histogram from MinKNOW
     :minKNOW_histogram_bin_width: Measure of the bin width for the above histogram.
     :created_date: Created Date.
-
     """
+
     
     minION = models.ForeignKey(
 
@@ -740,54 +737,246 @@ class MinIONRunStats(models.Model):  #Todo consider merging in to one object wit
 
 
 class MinIONRunStatus(models.Model):
-    minION = models.ForeignKey(MinION, related_name='currentrundetails')
-    # minKNOW_status = models.CharField(max_length=64)
-    minKNOW_current_script = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_sample_name = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_exp_script_purpose = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_flow_cell_id = models.CharField(max_length=64, blank=True, null=True)
-    minKNOW_version = models.CharField(max_length=64, blank=True, null=True)
-    minKNOW_run_name = models.CharField(max_length=256, blank=True, null=True)
-    run_id = models.ForeignKey(Run, related_name='RunDetails')
-    minKNOW_hash_run_id = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_script_run_id = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_real_sample_rate = models.IntegerField(blank=True, null=True)
-    # minKNOW_voltage_offset = models.IntegerField(blank=True, null=True)
-    # minKNOW_yield = models.IntegerField(blank=True, null=True)
-    minKNOW_asic_id = models.CharField(max_length=256, blank=True, null=True)
-    minKNOW_start_time = models.DateTimeField(blank=True, null=True)
-    minKNOW_colours_string = models.TextField(blank=True, null=True)
-    minKNOW_computer = models.TextField(max_length=128, blank=True, null=True)
+    """
+    :purpose: To store data on the current status of a specific MinION at a given moment in time.
+              This includes detailed pon the connected computer, the space available and other key run details.
 
-    experiment_type = models.CharField(max_length=256, blank=True, null=True)
-    experiment_id = models.CharField(max_length=256, blank=True, null=True)
-    fast5_output_fastq_in_hdf = models.IntegerField(blank=True, null=True)
-    fast5_raw = models.IntegerField(blank=True, null=True)
-    fast5_reads_per_folder = models.IntegerField(blank=True, null=True)
-    fastq_enabled = models.IntegerField(blank=True, null=True)
-    fastq_reads_per_file = models.IntegerField(blank=True, null=True)
-    filename = models.CharField(max_length=256, blank=True, null=True)
-    flowcell_type = models.CharField(max_length=256, blank=True, null=True)
-    kit_classification = models.CharField(max_length=256, blank=True, null=True)
-    local_basecalling = models.IntegerField(blank=True, null=True)
-    sample_frequency = models.IntegerField(blank=True, null=True)
-    sequencing_kit = models.CharField(max_length=256, blank=True, null=True)
-    user_filename_input = models.CharField(max_length=256, blank=True, null=True)
+    Fields:
 
+    :minION:
+    :minKNOW_current_script:
+    :minKNOW_sample_name:
+    :minKNOW_exp_script_purpose:
+    :minKNOW_flow_cell_id:
+    :minKNOW_version:
+    :minKNOW_run_name:
+    :run_id:
+    :minKNOW_hash_run_id:
+    :minKNOW_script_run_id:
+    :minKNOW_real_sample_rate:
+    :minKNOW_asic_id:
+    :minKNOW_start_time:
+    :minKNOW_colours_string:
+    :minKNOW_computer:
+    :experiment_type:
+    :experiment_id:
+    :fast5_output_fastq_in_hdf:
+    :fast5_raw:
+    :fast5_reads_per_folder:
+    :fastq_enabled:
+    :fastq_reads_per_file:
+    :filename:
+    :flowcell_type:
+    :kit_classification:
+    :local_basecalling:
+    :sample_frequency:
+    :sequencing_kit:
+    :user_filename_input:
+    """
 
-    # minKNOW_total_drive_space = models.FloatField(blank=True, null=True)
-    # minKNOW_disk_space_till_shutdown = models.FloatField(blank=True, null=True)
-    # minKNOW_warnings = models.BooleanField(default=False)
+    minION = models.ForeignKey(
+
+        MinION, 
+        related_name='currentrundetails'
+    )
+
+    minKNOW_current_script = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_sample_name = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_exp_script_purpose = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_flow_cell_id = models.CharField(
+
+        max_length=64, 
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_version = models.CharField(
+
+        max_length=64, 
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_run_name = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    run_id = models.ForeignKey(
+
+        Run, 
+        related_name='RunDetails'
+    )
+
+    minKNOW_hash_run_id = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_script_run_id = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+    
+    minKNOW_real_sample_rate = models.IntegerField(
+
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_asic_id = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_start_time = models.DateTimeField(
+
+        blank=True, 
+        null=True
+    )
+    
+    minKNOW_colours_string = models.TextField(
+
+        blank=True, 
+        null=True
+    )
+
+    minKNOW_computer = models.TextField(
+
+        max_length=128, 
+        blank=True, 
+        null=True
+    )
+
+    experiment_type = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    experiment_id = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    fast5_output_fastq_in_hdf = models.IntegerField(
+
+        blank=True, 
+        null=True
+    )
+
+    fast5_raw = models.IntegerField(
+
+        blank=True, 
+        null=True
+    )
+    
+    fast5_reads_per_folder = models.IntegerField(
+
+        blank=True, 
+        null=True
+    )
+    
+    fastq_enabled = models.IntegerField(
+
+        blank=True, 
+        null=True
+    )
+    
+    fastq_reads_per_file = models.IntegerField(
+
+        blank=True, 
+        null=True
+    )
+    
+    filename = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+    
+    flowcell_type = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    kit_classification = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+    
+    local_basecalling = models.IntegerField(
+
+        blank=True, 
+        null=True
+    )
+
+    sample_frequency = models.IntegerField(
+
+        blank=True, 
+        null=True
+    )
+    
+    sequencing_kit = models.CharField(
+
+        max_length=256, 
+        blank=True, 
+        null=True
+    )
+
+    user_filename_input = models.CharField(
+
+        max_length=256, 
+        blank=True,
+        null=True
+    )
 
     class Meta:
+
         unique_together = ("minION", "minKNOW_hash_run_id", "minKNOW_exp_script_purpose")
         verbose_name = 'MinION Run Status'
         verbose_name_plural = 'MinION Run Status'
 
     def __str__(self):
+
         return "{} {} {}".format(self.minION, self.minKNOW_current_script, self.run_id)
 
     def minION_name(self):
+
         return self.minION.minION_name
 
 
@@ -1393,6 +1582,7 @@ class FlowcellHistogramSummary(models.Model):
     BIN_WIDTH = 900
 
     flowcell = models.ForeignKey(
+
         Flowcell,
         on_delete=models.CASCADE
     )
@@ -1417,21 +1607,30 @@ class FlowcellHistogramSummary(models.Model):
     )
 
     read_count = models.BigIntegerField(
+
         default=0
     )
 
     read_length = models.BigIntegerField(
+
         default=0
     )
 
     class Meta:
+
         db_table = 'flowcell_histogram_summary'
 
     def __str__(self):
-        return "{} {} {}".format(self.flowcell, self.read_type_name, self.status, self.bin_index)
+
+        return "{} {} {}".format(
+            self.flowcell, 
+            self.read_type_name, 
+            self.status, 
+            self.bin_index
+        )
 
 
-class RunSummaryBarcode(models.Model):
+class RunSummaryBarcode(models.Model):  # Don't comment
 
     run = models.ForeignKey(
         Run,
@@ -1486,11 +1685,13 @@ class RunSummaryBarcode(models.Model):
     )
 
     class Meta:
+        
         verbose_name = 'Run Summary Barcode'
         verbose_name_plural = 'Run Summary Barcodes'
         db_table = 'run_summary_barcode'
 
     def __str__(self):
+        
         return "{} {} {} {} {}".format(
             self.run,
             self.total_length,
@@ -1500,11 +1701,32 @@ class RunSummaryBarcode(models.Model):
         )
 
     def number_active_channels(self):
+        """
+        TODO Remove
+        """
+
         return len(self.channel_presence.replace('0', ''))
 
 
 class FlowcellSummaryBarcode(models.Model):
+    """
+    :purpose: Summarise information from runs by flowcell, barcode name, fastq read type, and status (pass or fail). There is one record per flowcell. Most of the charts in the flowcell page use this data.
 
+    Fields:
+
+    :flowcell: (Flowcell) Foreign key to Flowcell
+    :read_type_name: (FastReadType) FastqReadType name
+    :barcode_name: (Barcode) Barcode name
+    :status: (boolean) Pass or Fail; originates from FastqRead is_pass attribute
+    :quality_sum: (float) # TODO
+    :read_count: (float) Total number of all reads from all runs of the flowcell
+    :total_length: (float) Sum of the length of all reads from all runs of the flowcell
+    :max_length: (float) Maximum read length of the flowcell
+    :min_length: (float) Minimum read length of the flowcell
+    :channel_presence: (str) Sequence of 3000 zeros and ones representing the presence or absence of a strand
+    :channel_count: (int) Retuns the sum of ones in the channel_presence
+    """
+    
     flowcell = models.ForeignKey(
 
         Flowcell,
@@ -1528,42 +1750,51 @@ class FlowcellSummaryBarcode(models.Model):
     )
 
     quality_sum = models.DecimalField(
+
         decimal_places=2,
         max_digits=12,
         default=0
     )
 
     read_count = models.IntegerField(
+
         default=0
     )
 
     total_length = models.BigIntegerField(
+
         default=0
     )
 
     max_length = models.IntegerField(
+
         default=0
     )
 
     min_length = models.IntegerField(
+
         default=0
     )
 
     channel_presence = models.CharField(
+
         max_length=3000,
         default='0' * 3000
     )
 
     channel_count = models.IntegerField(
+
         default=0
     )
 
     class Meta:
+
         verbose_name = 'Flowcell Summary'
         verbose_name_plural = 'Flowcell Summary'
         db_table = 'Flowcell_summary_barcode'
 
     def __str__(self):
+        
         return "{} {} {} {} {}".format(
             self.flowcell,
             self.total_length,
@@ -1573,20 +1804,35 @@ class FlowcellSummaryBarcode(models.Model):
         )
 
     def average_read_length(self):
+        """
+        TODO
+        """
+
         return self.total_length / self.read_count
 
     def number_active_channels(self):
+        """
+        TODO
+        """
+
         return len(self.channel_presence.replace('0', ''))
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
+    """
+    TODO
+    """
+
     if created:
         Token.objects.create(user=instance)
 
 
 @receiver(post_save, sender=Run)
 def create_run_barcodes(sender, instance=None, created=False, **kwargs):
+    """
+    TODO
+    """
 
     if created:
 
@@ -1601,92 +1847,98 @@ def create_run_barcodes(sender, instance=None, created=False, **kwargs):
         )
 
 
-@receiver(post_save, sender=GroupRun)
-def create_grouprun_barcodes(sender, instance=None, created=False, **kwargs):
+# @receiver(post_save, sender=GroupRun)
+# def create_grouprun_barcodes(sender, instance=None, created=False, **kwargs):
+#     """
+#     TODO Remove
+#     """
+#     if created:
 
-    if created:
+#         GroupBarcode.objects.get_or_create(
+#             grouprun=instance,
+#             name='All reads'
+#         )
 
-        GroupBarcode.objects.get_or_create(
-            grouprun=instance,
-            name='All reads'
-        )
-
-        GroupBarcode.objects.get_or_create(
-            grouprun=instance,
-            name='No barcode'
-        )
-
-
-@receiver(post_save, sender=Barcode)
-def add_barcode_to_groupbarcode(sender, instance=None, created=False, **kwargs):
-
-    if created:
-
-        check_barcode_groupbarcode(instance.run)
+#         GroupBarcode.objects.get_or_create(
+#             grouprun=instance,
+#             name='No barcode'
+#         )
 
 
-def run_groupruns_changed(sender, action, instance, **kargs): # don't comment
+# @receiver(post_save, sender=Barcode)
+# def add_barcode_to_groupbarcode(sender, instance=None, created=False, **kwargs):
+#     """
+#     TODO Remove
+#     """
+#     if created:
 
-    if action == 'post_add':
-
-        print('run_groupruns_changed')
-
-        check_barcode_groupbarcode(instance)
-
-
-m2m_changed.connect(run_groupruns_changed, sender=Run.groupruns.through)
+#         check_barcode_groupbarcode(instance.run)
 
 
-def check_barcode_groupbarcode(instance): # don't comment
-    """
-    This function checks if all barcodes from this run (instance)
-    are associated with the groupruns (through groupbarcodes).
+# def run_groupruns_changed(sender, action, instance, **kargs): # don't comment
+#     """
+#     TODO Remove
+#     """
+#     if action == 'post_add':
 
-    For each barcode of a run, it goes through all groupbarcodes of all groupruns associated with the run
-    and checks if there a groupbarcode's name equal to the barcode name.
+#         print('run_groupruns_changed')
 
-    (a) If yes, no action is required.
-    (b) If not, but the groupbarcode exists (groupbarcode name is equal to barcode name), it add a manytomany entry.
-    (c) If not, and the groupbarcode does not exist, it creates a new groupbarcode and add to the grouprun.
-    """
+#         check_barcode_groupbarcode(instance)
 
-    barcode_list = instance.barcodes.all()
 
-    for grouprun in instance.groupruns.all():
+# m2m_changed.connect(run_groupruns_changed, sender=Run.groupruns.through)
 
-        # print('> grouprun: {}'.format(grouprun.name))
 
-        for barcode in barcode_list:
+# def check_barcode_groupbarcode(instance): # don't comment
+#     """
+#     This function checks if all barcodes from this run (instance)
+#     are associated with the groupruns (through groupbarcodes).
 
-            # print('>> barcode: {}'.format(barcode.name))
+#     For each barcode of a run, it goes through all groupbarcodes of all groupruns associated with the run
+#     and checks if there a groupbarcode's name equal to the barcode name.
 
-            has_association = False
+#     (a) If yes, no action is required.
+#     (b) If not, but the groupbarcode exists (groupbarcode name is equal to barcode name), it add a manytomany entry.
+#     (c) If not, and the groupbarcode does not exist, it creates a new groupbarcode and add to the grouprun.
+#     """
 
-            groupbarcode_list = grouprun.groupbarcodes.all()
+#     barcode_list = instance.barcodes.all()
 
-            for groupbarcode in groupbarcode_list:
+#     for grouprun in instance.groupruns.all():
 
-                # print('>>> groupbarcode: {}'.format(groupbarcode.name))
+#         # print('> grouprun: {}'.format(grouprun.name))
 
-                if barcode.name == groupbarcode.name:
+#         for barcode in barcode_list:
 
-                    # print('equal names')
+#             # print('>> barcode: {}'.format(barcode.name))
 
-                    if barcode not in groupbarcode.barcodes.all():
+#             has_association = False
 
-                        barcode.groupbarcodes.add(groupbarcode)  # case (b)
+#             groupbarcode_list = grouprun.groupbarcodes.all()
 
-                        # print('add barcode to groupbarcode')
+#             for groupbarcode in groupbarcode_list:
 
-                    has_association = True
+#                 # print('>>> groupbarcode: {}'.format(groupbarcode.name))
 
-            if not has_association:
+#                 if barcode.name == groupbarcode.name:
 
-                new_groupbarcode = GroupBarcode.objects.create(
-                    grouprun=grouprun,
-                    name=barcode.name
-                )
+#                     # print('equal names')
 
-                barcode.groupbarcodes.add(new_groupbarcode)  # case (c)
+#                     if barcode not in groupbarcode.barcodes.all():
 
-                # print('created new groupbarcode and added barcode')
+#                         barcode.groupbarcodes.add(groupbarcode)  # case (b)
+
+#                         # print('add barcode to groupbarcode')
+
+#                     has_association = True
+
+#             if not has_association:
+
+#                 new_groupbarcode = GroupBarcode.objects.create(
+#                     grouprun=grouprun,
+#                     name=barcode.name
+#                 )
+
+#                 barcode.groupbarcodes.add(new_groupbarcode)  # case (c)
+
+#                 # print('created new groupbarcode and added barcode')
