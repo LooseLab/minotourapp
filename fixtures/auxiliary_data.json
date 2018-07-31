@@ -145,6 +145,20 @@
   }
 },
 {
+  "model": "jobs.jobtype",
+  "pk": 10,
+  "fields": {
+    "name": "Centrifuge",
+    "description": "Metagenomics classification",
+    "long_description": "Metagenomics classification",
+    "reference": false,
+    "transcriptome": false,
+    "readcount": false,
+    "private": false
+  }
+},
+{
+{
   "model": "reads.minioneventtype",
   "pk": 1,
   "fields": {
