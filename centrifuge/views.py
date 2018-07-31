@@ -1,9 +1,9 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from centRun.models import CentOutput, CartographyMapped, CartographyGuide, ReferenceGenomes, \
+from centrifuge.models import CentOutput, CartographyMapped, CartographyGuide, ReferenceGenomes, \
     LineageValues, LineageKey, MetaGenomicsMeta
-from centRun.serializers import CentSerialiser, CartMappedSerialiser, CartGuideSerialiser, \
+from centrifuge.serializers import CentSerialiser, CartMappedSerialiser, CartGuideSerialiser, \
     ReferenceGenomeSerialiser
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse

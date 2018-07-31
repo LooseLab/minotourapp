@@ -12,7 +12,7 @@ import signal
 from centRun.models import CentOutput, LineageKey, LineageValues, MetaGenomicsMeta
 from jobs.models import JobMaster
 from reads.models import FastqRead
-from centRun.serializers import CentSerialiser
+from centrifuge.serializers import CentSerialiser
 from collections import defaultdict
 
 

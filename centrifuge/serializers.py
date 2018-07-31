@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from centRun.models import CentOutput, CartographyGuide, CartographyMapped, ReferenceGenomes
+from centrifuge.models import CentOutput, CartographyGuide, CartographyMapped, ReferenceGenomes
 
 class CentSerialiser(serializers.ModelSerializer):
     """Serialiser to represent CentOutput model"""
