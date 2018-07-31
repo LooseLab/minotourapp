@@ -192,6 +192,11 @@ var FlowcellPageApp = {
             "Pore States".toUpperCase(),
             "Pore States".toUpperCase()
         );
+        this.drawSankey = drawSankey;
+        this.drawDonut = drawDonut;
+        this.metaHeader = metaHeader;
+        this.getTotalReadsTable = getTotalReadsTable;
+        this.getDonutRankTable = getDonutRankTable;
 
         var inputFlowcellId = document.querySelector("#flowcell-id");
 
@@ -201,7 +206,7 @@ var FlowcellPageApp = {
 
         this.checkFlowcellTabs(flowcell_id);
 
-        this.requestData(this.flowcellId);
+        // this.requestData(this.flowcellId);
 
     }, // end of init
 
@@ -602,4 +607,4 @@ var FlowcellPageApp = {
             }
         }
     }
-}
+};

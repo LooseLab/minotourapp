@@ -9,7 +9,7 @@ from queue import Queue
 import time
 import sys
 import signal
-from centRun.models import CentOutput, LineageKey, LineageValues
+from centRun.models import CentOutput, LineageKey, LineageValues, MetaGenomicsMeta
 from jobs.models import JobMaster
 from reads.models import FastqRead
 from centRun.serializers import CentSerialiser
@@ -79,6 +79,7 @@ class Centrifuger(Reader):
         self.thread1 = None
         # The number of the last read centrifuged
         self.last_read = 0
+        self.limit = 0
 
     @staticmethod
     def delete_series(series, df):
@@ -161,11 +162,17 @@ class Centrifuger(Reader):
             cursor = FastqRead.objects.filter(run__flowcell_id__in={self.flowcell_id})
             print(cursor.values())
             doc_no = len(cursor)
+            self.limit = doc_no - self.last_read
             last_read = list(cursor)[-1].id
+            # Get the metadata for this run
+            metadata = MetaGenomicsMeta.objects.get(meta_id=self.foreign_key)
+            # The number of reads that we have in the database
+            metadata.number_of_reads = doc_no
+            metadata.save()
             print(f"lastread is {last_read}")
             print(f"self.last read is {self.last_read}")
             # if last read is too close to new last read
-            if last_read - self.last_read < 500:
+            if last_read - self.last_read < 100:
                 self.scan = False
                 print("If")
             elif self.last_read == last_read:
@@ -472,6 +479,8 @@ class Centrifuger(Reader):
                 print("Inserted first time")
             # if all reads are centrifuged
             JobMaster.objects.filter(pk=self.flowcell_job_id).update(last_read=last_read)
+            metadata.reads_classified = doc_no
+            metadata.save()
             # TODO need way to stop when all reads are done.
             self.scan = False
             if not self.scan:

@@ -2,11 +2,12 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from centRun.models import CentOutput, CartographyMapped, CartographyGuide, ReferenceGenomes, \
-    LineageValues, LineageKey
+    LineageValues, LineageKey, MetaGenomicsMeta
 from centRun.serializers import CentSerialiser, CartMappedSerialiser, CartGuideSerialiser, \
     ReferenceGenomeSerialiser
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
+from django.utils import timezone
 import celery.bin.celery
 import celery.platforms
 import celery.bin.base
@@ -38,44 +39,48 @@ class RefViewSet(viewsets.ModelViewSet):
     serializer_class = ReferenceGenomeSerialiser
 
 
-# @api_view(["GET"])
-# def metaview(request):
-#     """
-#     Returns the metadata relating to a run, for the header on the vis page
-#     Parameters
-#     ----------
-#     request - django rest framework request object from AJAX get
-#
-#     Returns - A response containing the Run_time, amount of reads in the database, and how many have been classfied, and a percentage
-#     -------
-#
-#     """
-#     print(f"meta_id is {request.query_params.get('meta_id', False)}")
-#     # the relevant metagenomics database entry
-#     queryset = MetaGenomicsMeta.objects.get(meta_id=request.query_params.get("meta_id", False))
-#     # If the run has finished set the finish time permanently
-#     if not queryset.running and not queryset.finish_time:
-#         queryset.finish_time = timezone.now().replace(tzinfo=None)
-#         queryset.save()
-#
-#     number_of_reads = queryset.number_of_reads
-#     reads_class = queryset.reads_classified
-#     # Percentage of reads classified
-#     percentage = reads_class / number_of_reads * 100
-#     start_time = queryset.timestamp
-#     # use the current time to work out how long the ongoing run has taken
-#     current_time = timezone.now().replace(tzinfo=None)
-#     # If the request is for a finished run, return the time taken using the set finish time
-#     if not queryset.running:
-#         runtime = queryset.finish_time - start_time
-#         runtime = str(runtime)
-#     # Else return the time taken using the current time
-#     else:
-#         runtime = current_time - start_time
-#         runtime = str(runtime)
-#
-#     return_list = [{"runtime": runtime, "number_of_reads": number_of_reads, "reads_class": reads_class, "percentage": percentage}]
-#     return Response(return_list)
+@api_view(["GET"])
+def metaview(request):
+    """
+    Returns the metadata relating to a run, for the header on the vis page
+    Parameters
+    ----------
+    request - django rest framework request object from AJAX get
+
+    Returns - A response containing the Run_time, amount of reads in the database, and how many have been classfied, and a percentage
+    -------
+
+    """
+    print(f"meta_id is {request.query_params.get('flowcellId', False)}")
+    # print(request.GET.flowcell_id)
+    # the relevant metagenomics database entry
+    queryset = MetaGenomicsMeta.objects.get(flowcell_id=request.query_params.get("flowcellId", False))
+    # If the run has finished set the finish time permanently
+    if not queryset.running and not queryset.finish_time:
+        queryset.finish_time = timezone.now().replace(tzinfo=None)
+        queryset.save()
+
+    number_of_reads = queryset.number_of_reads
+    reads_class = queryset.reads_classified
+    # Percentage of reads classified
+    percentage = reads_class / number_of_reads * 100
+    start_time = queryset.timestamp.replace(tzinfo=None)
+    # use the current time to work out how long the ongoing run has taken
+    current_time = timezone.now().replace(tzinfo=None)
+    # If the request is for a finished run, return the time taken using the set finish time
+    if not queryset.running:
+        runtime = queryset.finish_time.replace(tzinfo=None) - start_time
+        runtime = str(runtime)
+    # Else return the time taken using the current time
+    else:
+        runtime = current_time - start_time
+        runtime = str(runtime)
+
+    return_list = [{"key": "Reads Sequenced: ", "value": number_of_reads},
+                   {"key": "Reads Classified: ", "value": reads_class},
+                   {"key": "Classified: ", "value": str(percentage) + "%"},
+                   {"key": "Runtime: ", "value": runtime}]
+    return Response(return_list)
 
 
 #TODO REFACTOR into one function - very repetitive

@@ -1,17 +1,22 @@
 from django.db import models
+from django.utils import timezone
 
-# class MetaGenomicsMeta(models.Model):
-#     """Meta data about the metagenomics run"""
-#     task_name = models.CharField(max_length=200)
-#     task_description = models.CharField(max_length=1000)
-#     sample_description = models.CharField(max_length=1000)
-#     timestamp = models.DateTimeField(default=timezone.now, null=True)
-#     run_date = models.CharField(max_length=30, null=True)
-#     run_time = models.CharField(max_length=30, null=True)
-#     user = models.CharField(max_length=30, null=True)
-#     # meta_id is the uuid used to link the centrifuge output sets with a particular job
-#     meta_id = models.CharField(max_length=40, primary_key=True)
-#     running = models.BooleanField()
+
+class MetaGenomicsMeta(models.Model):
+    """Meta data about the metagenomics run"""
+    # task_name = models.CharField(max_length=200)
+    # task_description = models.CharField(max_length=1000)
+    # sample_description = models.CharField(max_length=1000)
+    timestamp = models.DateTimeField(default=timezone.now, null=True)
+    # run_date = models.CharField(max_length=30, null=True)
+    run_time = models.CharField(max_length=30, null=True)
+    # user = models.CharField(max_length=30, null=True)
+    # meta_id is the uuid used to link the centrifuge output sets with a particular job
+    flowcell_id = models.IntegerField()
+    running = models.BooleanField()
+    number_of_reads = models.IntegerField()
+    reads_classified = models.IntegerField()
+    finish_time = models.DateTimeField(null=True)
 
 
 class CentOutput(models.Model):

@@ -16,7 +16,6 @@ function drawPieTables(countedData, color) {
     // if there is less than 7 members keep the data as one for one table
     // for each data point create data fitting the table
     for (i = 0; i < countedData.length; i++) {
-        console.log(countedData[i]["label"]);
         obj = {
             "Species": countedData[i]["label"],
             "# Reads": countedData[i]["value"],
@@ -26,7 +25,6 @@ function drawPieTables(countedData, color) {
         tableData.push(obj);
     }
     // if this is the first time drawing the tables for this page
-    console.log(first);
     drawTables("rank-table-container", tableData);
     first = false;
 }
@@ -41,7 +39,6 @@ function drawTables(selection, dataToDraw) {
     let container = d3.select("body").node();
 
     // let Theight = container.getBoundingClientRect().height*0.35.toString() + "px";
-    // console.log(Theight);
     let Theight = 35;
     let table;
     let thead;
@@ -104,10 +101,7 @@ function drawTables(selection, dataToDraw) {
                     return d.value;
                 }
             });
-        console.log(cells.data());
     } else {
-        console.log("updateing trabvles");
-        console.log(dataToDraw);
         table = d3.select("." + selection).select("table");
         tbody = table.select("tbody");
         rows = tbody.selectAll("tr");
@@ -175,7 +169,6 @@ function getDonutRankTable(flowCellId) {
         let currentlySelectedTaxa = taxas[index];
         // data1 is the data for the currently selected taxa from the results array
         let data1 = dataToDraw[index][currentlySelectedTaxa];
-        console.log(data1);
         // get the number of members in this clade used to determine whether we need a second table
         let dataLength = data1.length;
         // if there is no data return and try again when interval is up on $interval

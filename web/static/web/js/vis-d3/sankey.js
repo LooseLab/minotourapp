@@ -9,29 +9,36 @@ function dataPrep(sankeyData) {
 
     let nodes = sankeyData.queryset;
     let sortedLinks = sankeyData.values;
+    let nodeNames;
+    let topFiftySpecies;
+    let topFiftyLink;
+    let specimin;
+    let notTopOfTree;
+    let first;
+    let source;
+    let link;
+    let sourcey;
     nodes.links = nodes.links.filter(function (link) {
         return link.target !== link.source;
     });
-    let nodeNames = [];
-    let topFiftySpecies = sortedLinks.filter(function (link) {
+    nodeNames = [];
+    topFiftySpecies = sortedLinks.filter(function (link) {
         return link.target_tax_level === "species";
     }).splice(0, 50);
-    let topFiftyLink = [];
+    topFiftyLink = [];
 
     for (let i = 0; i < topFiftySpecies.length; i++) {
-        let specimin = topFiftySpecies[i];
+        specimin = topFiftySpecies[i];
+        notTopOfTree = true;
+        first = true;
         topFiftyLink.push(specimin);
         nodeNames.push({"name": specimin.source}, {"name": specimin.target});
-        let notTopOfTree = true;
-        let first = true;
         while (notTopOfTree) {
-            let source;
-            let link;
             if (first) {
                 source = specimin.source;
                 first = false;
             } else {
-                let sourcey = topFiftyLink[topFiftyLink.length - 1];
+                sourcey = topFiftyLink[topFiftyLink.length - 1];
                 source = sourcey.source;
             }
             if (nodes.links.findIndex(x => x.target === source) ===
@@ -63,10 +70,14 @@ function dataPrep(sankeyData) {
     return nodes;
 }
 
-function draw(nodesObj, sankey, g, format, color, width) {
+function draw(nodesObj, sankey, g, format, color, width, redraw) {
+    let node;
+    let text;
+    let link;
+    let gradient;
     sankey(nodesObj);
 
-    const link = g.append("g").attr("class", "links")
+    link = g.append("g").attr("class", "links")
         .attr("fill", "none")
         .attr("stroke-opacity", 0.5)
         .selectAll("g")
@@ -74,13 +85,13 @@ function draw(nodesObj, sankey, g, format, color, width) {
         .enter().append("g")
         .style("mix-blend-mode", "multiply");
 
-      const gradient = link.append("linearGradient")
-      .attr("id", function(d, i){
-          return i;
-      })
-      .attr("gradientUnits", "userSpaceOnUse")
-      .attr("x1", d => d.source.x1)
-      .attr("x2", d => d.target.x0);
+    gradient = link.append("linearGradient")
+          .attr("id", function(d, i){
+              return i;
+          })
+          .attr("gradientUnits", "userSpaceOnUse")
+          .attr("x1", d => d.source.x1)
+          .attr("x2", d => d.target.x0);
 
       gradient.append("stop")
           .attr("offset", "0%")
@@ -98,9 +109,9 @@ function draw(nodesObj, sankey, g, format, color, width) {
         .attr("stroke-width", d => Math.max(1, d.width));
 
     link.append("title")
-      .text(d => `${d.source.name} → ${d.target.name}\n${format(d.value)}`);
+        .text(d => `${d.source.name} → ${d.target.name}\n${format(d.value)}`);
 
-    let node = g.append("g").attr("class", "nodes")
+    node = g.append("g").attr("class", "nodes")
         .selectAll("rect")
         .data(nodesObj.nodes)
         .enter().append("rect")
@@ -114,7 +125,7 @@ function draw(nodesObj, sankey, g, format, color, width) {
         .append("title")
         .text(d => `${d.name}\n${format(d.value)}`);
 
-    let text = g.append("g").attr("class", "text")
+    text = g.append("g").attr("class", "text")
         .style("font", "10px sans-serif")
         .selectAll("text")
         .data(nodesObj.nodes)
@@ -127,58 +138,65 @@ function draw(nodesObj, sankey, g, format, color, width) {
 
 }
 
-function update(flowcellId, sankey, checkForData, svg, g, format, color, width) {
+function update(flowcellId, sankey, checkForData, svg, g, format, color, width, update) {
     console.log("update");
     $.get("/sankey", {flowcellId}, result => {
-        console.log(result);
         let nodes = dataPrep(result);
         console.log(nodes);
         // TODO use is active to check if flowcell is active
         if (result.queryset.nodes.length !== 0 && checkForData) {
+            d3.select(".metagenomics-settings").style("display", "none");
             setTimeout(function () {
                 d3.select("body").attr("class", "loaded sidebar-collapse")
             }, 1500);
             checkForData = false;
         }
         svg.select(".contain").selectAll("*").remove();
-        draw(nodes, sankey, g, format, color, width);
+        draw(nodes, sankey, g, format, color, width, update);
     });
 }
 
-function testHello(flowcellId) {
+function drawSankey(flowcellId) {
     let running = true;
     //set svg width and height
     let container = d3.select("body").node();
+    // height of page
+    let hi = $(window).height() * 0.55;
     // width of page
     let width = container.getBoundingClientRect().width * 0.933;
-    // height of page
-    let height = container.getBoundingClientRect().height * 0.6;
-
-    function move() {
-        d3.select(".contain")
-            .attr("transform", d3.event.transform);
-    }
-
-    let zoom = d3.zoom()
-        .scaleExtent([1, 6]).translateExtent([[0, 0], [width, height * 0.9]])
-        .on("zoom", move);
-    let svg = d3.select(".svg-container").append("svg").attr("width", width)
-        .attr("height", height * 0.9).call(zoom);
-
+    let svg;
+    let g;
     let formatNumber = d3.format(",.0f"),
         format = function (d) {
             return formatNumber(d) + " Reads";
         },
         // create colour scheme
         color = d3.scaleOrdinal(d3.schemeCategory10);
-    let g = svg.append("g").attr("class", "contain");
     let checkForData = true;
+    let updateExistOrDrawNew = false;
     let sankey = d3.sankey()
         .nodeWidth(20)
         .nodePadding(5)
-        .size([width, height * 0.88]).nodeId(function id(d) {
+        .size([width, hi*0.95]).nodeId(function id(d) {
             return d.name;
         })
     ;
-    update(flowcellId, sankey, checkForData, svg, g, format, color, width)
+    function move() {
+        d3.select(".contain")
+            .attr("transform", d3.event.transform);
+    }
+    let zoom = d3.zoom()
+        .scaleExtent([1, 6]).translateExtent([[0, 0], [width, hi]])
+        .on("zoom", move);
+    console.log($(".svg-sankey").length);
+    if($(".svg-sankey").length) {
+        svg = d3.select(".svg-sankey");
+        g = d3.select(".contain");
+    } else {
+        console.log(hi);
+        svg = d3.select(".svg-container").append("svg").attr("width", width).attr("class", "svg-sankey")
+            .attr("height", hi).call(zoom);
+        g = svg.append("g").attr("class", "contain");
+    }
+    update(flowcellId, sankey, checkForData, svg, g, format, color, width, updateExistOrDrawNew)
 }
