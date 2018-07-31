@@ -42,6 +42,17 @@ from reference.models import ReferenceInfo
 
 
 def humanbases(n):
+    """
+    :purpose: Convert bases to human readable format
+    :used_by: used by many
+    :author: Matt Loose
+
+    ChangeLog
+    2018-07-09 Add documentation
+
+    :param n: (integer) number of bases
+    :return: (string) human readable format
+    """
     #return (n)
     millnames = ['', ' Kb', ' Mb', ' Gb', ' Tb']
     n = float(n)
@@ -56,7 +67,15 @@ def humanbases(n):
 @api_view(['GET'])
 def read_type_list(request):
     """
-    List of all runs by fastqread types
+    :purpose: Returns a list of FastqReadType to the client
+    :used_by: minotour client
+    :author: Roberto Santos
+
+    ChangeLog
+    2018-07-09 Add documentation - Roberto
+
+    :param request: (standard django request) without querystring parameter
+    :return: (string) json format
     """
     if request.method == 'GET':
         queryset = FastqReadType.objects.all()
@@ -67,7 +86,15 @@ def read_type_list(request):
 @api_view(['GET'])
 def events_type_list(request):
     """
-    Lis of all event types.
+    :purpose: Returns a list of all possible events to the client
+    :used_by: minotour client
+    :author: Roberto Santos
+
+    ChangeLog
+    2018-07-09 Add documentation - Rory
+
+    :param request: (Django Request Object) No query parameters
+    :return: (String) Json Format string of event types
     """
     if request.method == "GET":
         queryset = MinIONEventType.objects.all()
@@ -76,10 +103,21 @@ def events_type_list(request):
 
 
 @api_view(['GET'])
-def events_type_detail(request, pk):
+def events_type_detail(request, pk): # TODO consider removing
     """
-    Lis of all event types.
+    :purpose: Returns a single Minion Event to the client
+    :used_by: minotour client
+    :author: Roberto Santos
+
+    ChangeLog
+    2018-07-09 Add documentation - Rory
+
+    :param request: (Django Request Object) No query parameters
+    :param pk: (Integer) - Primary key for object lookup from database
+
+    :return: (String) Json Format string of a single event types
     """
+
     try:
         event_ = MinIONEventType.objects.get(pk=pk)
     except MinIONEventType.DoesNotExist:
@@ -93,7 +131,16 @@ def events_type_detail(request, pk):
 @api_view(['GET'])
 def read_type_detail(request, pk):
     """
-    Retrieve a fastqread type instance.
+    :purpose: Retrieve a FastqReadType instance
+    :used_by: minotour client
+    :author: Roberto Santos
+
+    ChangeLog
+    2018-07-09 Add documentation - Alex
+
+    :param request: (standard django request) ???
+    :param pk: (int) run primary key
+    :return: ???
     """
     try:
         run = FastqReadType.objects.get(pk=pk)
@@ -108,8 +155,18 @@ def read_type_detail(request, pk):
 @api_view(['GET', 'POST'])
 def run_list(request):
     """
-    List of all runs by user, or create a new run.
+    :purpose: Get returns a list of all runs in minotour owned by a specific user.
+              Post will create a new run in minotour for a specific user.
+    :used_by: minotour client gets and posts runs, minotour app gets runs only.
+    :author: Roberto Santos
+
+    ChangeLog
+    2018-07-09 Add documentation - Matt
+
+    :param request: (standard django request) without querystring parameter
+    :return: (str) json format
     """
+
     if request.method == 'GET':
         #print ("run list ", request.user)
         queryset = Run.objects.filter(owner=request.user).filter(to_delete=False)
@@ -137,7 +194,15 @@ def run_list(request):
 @api_view(['GET'])
 def current_run_list(request):
     """
-    List of all runs by user, or create a new run.
+    :purpose: Get returns a list of all runs in minotour owned by a specific user which are specified as active.
+    :used_by: minotour app uses this endpoint to identify active runs.
+    :author: Roberto Santos
+
+    ChangeLog
+    2018-07-09 Add documentation - Matt
+
+    :param request: (standard django request) without querystring parameter
+    :return: (str) json format
     """
     if request.method == 'GET':
         #queryset = MinIONRun.objects.filter(owner=request.user).filter(Q(reads__created_date__gte = datetime.now()-timedelta(days=1))  | Q(RunStats__created_date__gte = datetime.now()-timedelta(days=1) )).distinct()
@@ -181,6 +246,19 @@ def activeminion_list(request):
 
 @api_view(['GET', 'POST'])
 def minion_messages_list(request, pk):
+    """
+    :purpose: Get returns a list of all messages sent to minotour from minKNOW for a specific MinION.
+              Post creates a new message from a minION.
+    :used_by: minotour app uses this endpoint to show messages from the MinION.
+    :author: Roberto Santos
+
+    ChangeLog
+    2018-07-09 Add documentation
+
+    :param request: (standard django request) without querystring parameter
+    :param pk: (int) Minion id
+    :return: (str) json format
+    """
 
     if request.method == 'GET':
         queryset = MinionMessage.objects.filter(minION=pk)
@@ -219,7 +297,20 @@ def recentminion_messages_list(request, pk):
 
 @api_view(['GET'])
 def minknow_message_list_by_flowcell(request, pk):
+    """
+    :purpose: Return messages generated by MinKnow for a particular date and time range.
+    :used_by: Flowcell summary page at the web app.
+    :author: Roberto Santos
 
+    ChangeLog
+    2018-07-09 Add documentation - Roberto
+
+    :param request: (standard django request)
+    :param request.start_time: (datetime) Start of the date and time range
+    :param request.end_time: (datetime) End of the date and time range # TODO include format example
+    :param pk: (int) Flowcell id
+    :return: (str) Json format
+    """
     form_start_time = request.GET.get('start_time', None)
     form_end_time = request.GET.get('end_time', None)
 
@@ -1266,7 +1357,7 @@ def flowcell_channel_summary(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)
 
-    flowcell_type = 512
+    flowcell_type = 3000
 
     qs = FlowcellChannelSummary.objects\
         .filter(flowcell=flowcell)
