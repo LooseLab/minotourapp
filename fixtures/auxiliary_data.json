@@ -158,7 +158,6 @@
   }
 },
 {
-{
   "model": "reads.minioneventtype",
   "pk": 1,
   "fields": {
