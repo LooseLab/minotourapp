@@ -2,21 +2,39 @@
 
 </section>
 <style>
-.dataTables_scrollHeadInner{
-  width:100% !important;
-}
-.dataTables_scrollHeadInner table{
-  width:100% !important;
-}.dataTables_scrollFootInner{
-  width:100% !important;
-}
-.dataTables_scrollFootInner table{
-  width:100% !important;
-}
-.taxons td{
-    padding: 0.29% !important;
-}
+    .dataTables_scrollHeadInner {
+        width: 100% !important;
+    }
 
+    .dataTables_scrollHeadInner table {
+        width: 100% !important;
+    }
+
+    .dataTables_scrollFootInner {
+        width: 100% !important;
+    }
+
+    .dataTables_scrollFootInner table {
+        width: 100% !important;
+    }
+
+    .taxons td {
+        padding: 0.29% !important;
+    }
+
+    td.details-control {
+        text-align: center;
+        color: forestgreen;
+        cursor: pointer;
+    }
+
+    tr.shown td.details-control {
+        text-align: center;
+        color: red;
+    }
+    td.dropdown {
+        width: 14%;
+    }
 </style>
 <section class="content">
     <div id="content">
@@ -129,9 +147,10 @@
                         </div>
                         <div class="box-body" style="">
 
-                            <table class="table table-hover tableLand" style="">
+                            <table class="table table-hover tableLand display" style="">
                                 <thead>
                                 <tr>
+                                    <th></th>
                                     <th>Kingdom</th>
                                     <th>Phylum</th>
                                     <th>Class</th>
@@ -143,6 +162,7 @@
                                 </thead>
                                 <tfoot>
                                 <tr>
+                                    <th></th>
                                     <th>Kingdom</th>
                                     <th>Phylum</th>
                                     <th>Class</th>

@@ -20,5 +20,17 @@
 </div>
 <script>
     'use strict';
-
+        $("#startCent").click(function () {
+            var flowCellId = document.querySelector("#flowcell-id");
+            $(".loaded").removeClass('loaded');
+            $(".metagenomics-settings").css("display", "none");
+            $(".vis-container").css("display", "contents");
+            console.log(flowCellId.value);
+            $.post("/start/", {
+                'csrfmiddlewaretoken': '{{ csrf_token }}',
+                "flowcellId": flowCellId.value
+            }).done(function (data) {
+                alert("Job Created");
+            });
+        });
 </script>

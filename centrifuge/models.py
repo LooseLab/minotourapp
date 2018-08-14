@@ -4,14 +4,9 @@ from django.utils import timezone
 
 class MetaGenomicsMeta(models.Model):
     """Meta data about the metagenomics run"""
-    # task_name = models.CharField(max_length=200)
-    # task_description = models.CharField(max_length=1000)
-    # sample_description = models.CharField(max_length=1000)
+
     timestamp = models.DateTimeField(default=timezone.now, null=True)
-    # run_date = models.CharField(max_length=30, null=True)
     run_time = models.CharField(max_length=30, null=True)
-    # user = models.CharField(max_length=30, null=True)
-    # meta_id is the uuid used to link the centrifuge output sets with a particular job
     flowcell_id = models.IntegerField()
     running = models.BooleanField()
     number_of_reads = models.IntegerField()
@@ -61,11 +56,6 @@ class ReferenceGenomes(models.Model):
     """
     species = models.CharField(max_length=65)
     refseq_link = models.CharField(max_length=100)
-
-
-# tax_rank_filter = ["superkingdom", "phylum", "class", "order", "family", "genus", "species"]
-class LineageKey(models.Model):
-    tax_id = models.IntegerField()
 
 
 class LineageValues(models.Model):

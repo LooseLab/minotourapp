@@ -2,7 +2,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from centrifuge.models import CentOutput, CartographyMapped, CartographyGuide, ReferenceGenomes, \
-    LineageValues, LineageKey, MetaGenomicsMeta
+    LineageValues, MetaGenomicsMeta
 from centrifuge.serializers import CentSerialiser, CartMappedSerialiser, CartGuideSerialiser, \
     ReferenceGenomeSerialiser
 from django.views.decorators.csrf import csrf_exempt
@@ -17,6 +17,7 @@ from ete3 import NCBITaxa
 import pandas as pd
 from devices.models import Flowcell
 from jobs.models import JobMaster, JobType
+from datetime import datetime
 
 class CentViewSet(viewsets.ModelViewSet):
     """Viewset for viewing and editing centrifuge output objects"""
@@ -315,7 +316,10 @@ def vis_table_data(request):
     # for each clade call the above function to perform the calculation and add the series
     for ord in order:
         df = sum_prop_clade_reads(ord, df)
-
+    df["species"] = df["species"] + " (Num Reads - " + df["summed_species"].map(str) \
+                    + " Proportion " + df["prop_species"].map(str) + "%)"
+    df["genus"] = df["genus"] + " (Num Reads - " + df["summed_genus"].map(str) + " Proportion " \
+                  + df["prop_genus"].map(str) + "%)"
     json = df.to_json(orient="records")
     # create an object to return
     return_dict = {"json": json}
@@ -492,11 +496,21 @@ def start_centrifuge_view(request):
     try:
         # see if celery is actually running
         status.run()
+        # Create metadata
+        data = request.data
+        # get date and time
+        d = datetime.now()
+        # date is great
+        # time is lime
+        time = "{:%H:%M:%S}".format(d)
+
+        flowcell_id = request.data["flowcellId"]
+        # create django model object, save it to database
+        MetaGenomicsMeta(run_time=time, flowcell_id=flowcell_id ,running=True, number_of_reads=0,
+                         reads_classified=0).save()
         # call celery task, pass the uuid we generated as an argument
-        # start_centrifuge.delay(ident)
         # Create Jobmaster object, to save. This will be picked up by the run
         # monitor task
-        flowcell_id = request.data["flowcellId"]
         flowcell = Flowcell.objects.get(pk=flowcell_id)
         jobtype = JobType.objects.get(pk=10)
         JobMaster(flowcell=flowcell, job_type=jobtype,

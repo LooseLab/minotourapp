@@ -32,7 +32,7 @@ from reads.services import (save_flowcell_histogram_summary, save_flowcell_chann
                             save_flowcell_statistic_barcode)
 from reference.models import ReferenceInfo
 
-from centRun.RunCentrifuge import Centrifuger
+from centrifuge.centrifuge import Centrifuger
 import sys
 
 logger = get_task_logger(__name__)
@@ -120,7 +120,7 @@ def run_monitor():
                     c.run_centrifuge()
                     print(sys.stdout)
 
-                except:
+                except Exception as e:
                     e = sys.exc_info()
                     print(e)
 

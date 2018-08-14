@@ -9,11 +9,13 @@ from queue import Queue
 import time
 import sys
 import signal
-from centRun.models import CentOutput, LineageKey, LineageValues, MetaGenomicsMeta
+from centrifuge.models import CentOutput, LineageValues, MetaGenomicsMeta
 from jobs.models import JobMaster
 from reads.models import FastqRead
 from centrifuge.serializers import CentSerialiser
 from collections import defaultdict
+from celery import task
+
 
 
 class Reader(threading.Thread):
@@ -126,6 +128,7 @@ class Centrifuger(Reader):
         process = subprocess.Popen(cmd, shell=True, preexec_fn=os.setsid)
 
     @property
+    @task()
     def run_centrifuge(self):
         """
 
@@ -165,13 +168,14 @@ class Centrifuger(Reader):
             self.limit = doc_no - self.last_read
             last_read = list(cursor)[-1].id
             # Get the metadata for this run
-            metadata = MetaGenomicsMeta.objects.get(meta_id=self.foreign_key)
+            metadata = MetaGenomicsMeta.objects.get(flowcell_id=self.flowcell_id)
             # The number of reads that we have in the database
             metadata.number_of_reads = doc_no
             metadata.save()
             print(f"lastread is {last_read}")
             print(f"self.last read is {self.last_read}")
             # if last read is too close to new last read
+            # TODO fix this so it actually stops scanning
             if last_read - self.last_read < 100:
                 self.scan = False
                 print("If")
@@ -238,43 +242,6 @@ class Centrifuger(Reader):
             # use the ncbi thing to get the species names for the tax ids in the tax ids list
             taxid2name = ncbi.get_taxid_translator(taxid_list)
 
-            def get_taxa(tax_id):
-                """
-                if these lineages contain one of these taxIds set a new series in the dataframe row listing it's
-                10239 -> Viruses
-                2 -> bacteria
-                4751 -> Fungi
-                33208 -> Anamalia
-                9605 -> Homo
-
-                :param tax_id:
-                :return: return the names of taxons that are in the lineage that we are interested in
-                Parameters
-                ----------
-                taxID (type Int) the taxID to query for the lineage
-
-                Returns - return taxa level string kingdom in
-                -------
-
-                """
-                # taxId of 0 is unclassified
-                if tax_id is 0:
-                    return 0
-                # get the lineage corresponding to that taxID
-                taxid2lineage = ncbi.get_lineage(tax_id)
-                # list of taxIds to look for in the lineage of the taxId in the dataframe row
-                target_taxa = [10239, 2, 4751, 33208, 9605, 2157]
-                # return the taxon, of taxIDS that have a lineage taxID that is in the list b
-                taxons = list(filter(lambda x: x in target_taxa, taxid2lineage))
-                # get the name of thhe taxiD, as it's adict get the values
-                taxons = ncbi.get_taxid_translator(taxons).values()
-                # if lineage value is unclassified
-                if not taxons:
-                    return "Alex"
-                else:
-                    return ",".join(str(s) for s in taxons)
-            # map over that series taXID to create a new series for the taxa
-            # df["taxa"] = df["taxID"].map(get_taxa)
 
             # insert the taxid2name dict items into the dataframe name columns
             df["name"] = df["taxID"].map(taxid2name)
@@ -300,8 +267,6 @@ class Centrifuger(Reader):
             # rename columns to match database models
             # print(df.head(n=10))
             # if the number of documents is the same as the limit keep the same skip for the next query
-            # print(f"limit is {self.limit}")
-            # print(f"skip was {self.skip}")
             # if theres more than the number of skip left above the limit, add another skip to the milit
             file_lines = fastq.count("\n")
             # else set the skip to however many documents you just pulled from the database, i.e the remainder
@@ -312,20 +277,15 @@ class Centrifuger(Reader):
             print(f"last read is now {self.last_read}")
 
             # get the previous entries in the database
-            # =========================================== # database dataframe
+            # =========================================== database dataframe
             # reset index
             # query the index get all the objects in the database at this point
             queryset = CentOutput.objects.filter(task_meta=self.flowcell_id).values()
             print(f"the length of the queryset is {len(queryset)}")
             if queryset:
-                print("there was a awueryset")
                 df = df.reset_index()
-                # create a dictionary from queryset with taxID as key
-                prev_entries_dict = {int(x["taxID"]): x for x in queryset}
-                # create dataframe from prev_entries_dict fill from database
-                prev_df = pd.DataFrame.from_dict(prev_entries_dict, orient="index")
-                # reset index on dataframe
-                prev_df = prev_df.reset_index()
+
+                prev_df = pd.DataFrame(list(queryset))
                 # rename columns to match the dataframe columns in dataframe
                 #  generated from the centrifuge query this iteration
                 prev_df = prev_df.rename(columns={'num_reads': 'numReads', 'sum_unique': 'sumUnique'})
@@ -360,7 +320,7 @@ class Centrifuger(Reader):
             # create bulk list, to populated with CentOutput items to insert
             bulk_list = []
             # create new defaultDict which creates a default dict for missing values, don't think we ever need this
-            # default behaviour TODO double check this
+            # default behaviour
             new = defaultdict(lambda: defaultdict())
             # Get the taxIDs in the Dataframe
             taxid_list2 = df["taxID"].values
@@ -440,10 +400,6 @@ class Centrifuger(Reader):
             # iterate over lineage dataframe to save to database #TODO maybe rewrite into using mysql
             for ind, row in lin_df.iterrows():
                 print(int(ind))
-                # Add taxID to linage key model, where already lineaged taxIDs are store for fast lookup
-                fk = LineageKey(tax_id=int(ind))
-                fk.save()
-                print("saving")
                 # add to insert list the created lineage value objects to bulk create them
                 insert_list.append(LineageValues(superkingdom=row["superkingdom"], phylum=row["phylum"],
                                                  tax_id=int(ind), classy=row["class"], order=row["order"],
