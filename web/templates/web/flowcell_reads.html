@@ -1,0 +1,137 @@
+{% load static %}
+{% load render_table from django_tables2 %}
+
+
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="{% static 'web/minotour.css' %}">
+    <title>Hello, world!</title>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-sm navbar-dark navbar-minotour">
+    <a class="navbar-brand" href="#">minoTour</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item active">
+                <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">Overview</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">MinKnow Control</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">Flowcells</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">Client</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">Help</a>
+            </li>
+
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown"
+                   aria-haspopup="true" aria-expanded="false">
+                    Dropdown
+                </a>
+                <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <a class="dropdown-item" href="#">Action</a>
+                    <a class="dropdown-item" href="#">Another action</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="#">Something else here</a>
+                </div>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link disabled" href="#">Disabled</a>
+            </li>
+        </ul>
+        <form class="form-inline my-2 my-lg-0">
+            <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+        </form>
+    </div>
+</nav>
+
+<div class="container-fluid ">
+
+    <div class="row">
+        <div class="col-sm">
+            <h1>Flowcell: <span>{{ flowcell.name }}</span><!--<a class="btn btn-primary">Test</a>--></h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg">
+            <table id="example" class="display" style="width:100%">
+                <thead>
+                <tr>
+                    <th>Read ID</th>
+                    <th>Read</th>
+                    <th>Channel</th>
+                    <th>Sequence Length</th>
+                    <th>RunID</th>
+                    <th>Barcode</th>
+                </tr>
+                </thead>
+                <tfoot>
+                <tr>
+                    <th>Read ID</th>
+                    <th>Read</th>
+                    <th>Channel</th>
+                    <th>Sequence Length</th>
+                    <th>RunID</th>
+                    <th>Barcode</th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"
+        integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"
+        integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+
+        console.log('test');
+        $('#example').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "ajax": '/web/private/flowcells_reads_data/',
+            "columns": [
+                {"data": "read_id"},
+                {"data": "read"},
+                {"data": "channel"},
+                {"data": "sequence_length"},
+                {"data": "run__runid"},
+                {"data": "barcode__name"}
+            ]
+        });
+    });
+</script>
+</body>
+</html>

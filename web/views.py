@@ -1,13 +1,19 @@
+import json
+
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.serializers.json import DjangoJSONEncoder
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django_tables2 import RequestConfig
 from rest_framework.authtoken.models import Token
 
 from communication.models import Message
 from devices.models import Flowcell
-from reads.models import Run, UserOptions, GroupRun
+from reads.models import Run, UserOptions, GroupRun, FastqRead
+from reads.tables import FastqReadTable
 from web.forms import SignUpForm, UserOptionsForm
 
 
@@ -111,6 +117,51 @@ def flowcell_index(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)
     return render(request, 'web/flowcell_index.html', context={'flowcell': flowcell})
+
+
+@login_required
+def flowcell_reads(request, pk):
+
+    flowcell = Flowcell.objects.get(pk=pk)
+    queryset = FastqRead.objects.filter(run__flowcell=flowcell).values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
+    table = FastqReadTable(queryset)
+    RequestConfig(request, paginate={"per_page": 10}).configure(table)
+
+    return render(request, 'web/flowcell_reads.html', context={'flowcell': flowcell, 'table': table})
+
+
+def flowcell_reads_data(request):
+
+    draw = int(request.GET.get('draw', 0))
+    search_value = request.GET.get('search[value]', '')
+
+    print('search[value]: {}'.format(search_value))
+
+    start = int(request.GET.get('start', 0))
+    length = int(request.GET.get('length', 10))
+    end = start + length
+
+    print("start: {}".format(start))
+    print("length: {}".format(length))
+    print("end: {}".format(end))
+
+    if not search_value == "":
+        reads = FastqRead.objects.filter(read_id__contains=search_value).values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
+
+    else:
+        reads = FastqRead.objects.all().values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
+
+    records_total = len(reads)
+
+    result = {
+        'draw': draw,
+        "recordsTotal": records_total,
+        "recordsFiltered": records_total,
+        "data": list(reads[start:end])
+    }
+
+    #return render(request, 'web/flowcell_reads_data.html')
+    return JsonResponse(result, safe=True)
 
 
 @login_required
