@@ -9,7 +9,7 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Max
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
 from rest_framework import status
@@ -1861,6 +1861,28 @@ def read_list_new(request):
             return Response({}, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+def readextra_list(request):
+
+    search_criteria = request.GET.get('search_criteria', 'read_id')
+
+    search_value = request.GET.get('search_value', 'name')
+
+    if search_criteria == 'read_id':
+
+        qs = FastqRead.objects.filter(read_id=search_value)
+
+        if len(qs) > 0:
+            read = {
+                'sequence': qs[0].fastqreadextra.sequence
+            }
+
+        else:
+            read = {}
+
+        return JsonResponse(read)
 
 
 @api_view(['POST', 'GET'])

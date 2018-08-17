@@ -1,19 +1,14 @@
-import json
-
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.serializers.json import DjangoJSONEncoder
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
-from django_tables2 import RequestConfig
 from rest_framework.authtoken.models import Token
 
 from communication.models import Message
 from devices.models import Flowcell
-from reads.models import Run, UserOptions, GroupRun, FastqRead
-from reads.tables import FastqReadTable
+from reads.models import Run, UserOptions, FastqRead
 from web.forms import SignUpForm, UserOptionsForm
 
 
@@ -123,33 +118,61 @@ def flowcell_index(request, pk):
 def flowcell_reads(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)
-    queryset = FastqRead.objects.filter(run__flowcell=flowcell).values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
-    table = FastqReadTable(queryset)
-    RequestConfig(request, paginate={"per_page": 10}).configure(table)
 
-    return render(request, 'web/flowcell_reads.html', context={'flowcell': flowcell, 'table': table})
+    return render(request, 'web/flowcell_reads.html', context={'flowcell': flowcell})
 
 
 def flowcell_reads_data(request):
 
+    # column_0_data = request.GET.get('column[0][data]', '')
+    # column_0_name = request.GET.get('column[0][name]', '')
+    # column_0_searchable = request.GET.get('column[0][searchable]', '')
+    # column_0_orderable = request.GET.get('column[0][orderable]', '')
+    # column_0_search_value = request.GET.get('column[0][search][value]', '')
+    # column_0_search_regex = request.GET.get('column[0][search][regex]', '')
+
+    query_columns = [
+        'read_id',
+        'read',
+        'channel',
+        'sequence_length',
+        'run__runid',
+        'barcode__name',
+    ]
+
+    query_columns_string = ['read_id', 'read', 'channel', 'sequence_length', 'run__runid', 'barcode__name']
+
     draw = int(request.GET.get('draw', 0))
+
     search_value = request.GET.get('search[value]', '')
 
-    print('search[value]: {}'.format(search_value))
-
     start = int(request.GET.get('start', 0))
+
     length = int(request.GET.get('length', 10))
+
     end = start + length
 
-    print("start: {}".format(start))
-    print("length: {}".format(length))
-    print("end: {}".format(end))
+    order_column = request.GET.get('order[0][column]', '')
+
+    order_dir = request.GET.get('order[0][dir]', '')
 
     if not search_value == "":
-        reads = FastqRead.objects.filter(read_id__contains=search_value).values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
+        reads_temp = FastqRead.objects.filter(read_id__contains=search_value)
 
     else:
-        reads = FastqRead.objects.all().values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
+        reads_temp = FastqRead.objects.all()
+
+    if order_column:
+
+        if order_dir == 'desc':
+
+            reads_temp2 = reads_temp.order_by('-{}'.format(query_columns[int(order_column)]))
+
+        else:
+
+            reads_temp2 = reads_temp.order_by('{}'.format(query_columns[int(order_column)]))
+
+    reads = reads_temp2.values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
 
     records_total = len(reads)
 
@@ -160,7 +183,6 @@ def flowcell_reads_data(request):
         "data": list(reads[start:end])
     }
 
-    #return render(request, 'web/flowcell_reads_data.html')
     return JsonResponse(result, safe=True)
 
 
