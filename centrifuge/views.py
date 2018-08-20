@@ -1,10 +1,8 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from centrifuge.models import CentOutput, CartographyMapped, CartographyGuide, ReferenceGenomes, \
-    LineageValues, MetaGenomicsMeta
-from centrifuge.serializers import CentSerialiser, CartMappedSerialiser, CartGuideSerialiser, \
-    ReferenceGenomeSerialiser
+from centrifuge.models import CentOutput, CartographyMapped, CartographyGuide, LineageValues, MetaGenomicsMeta, SankeyLinks
+from centrifuge.serializers import CentSerialiser, CartMappedSerialiser, CartGuideSerialiser
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from django.utils import timezone
@@ -19,6 +17,7 @@ from devices.models import Flowcell
 from jobs.models import JobMaster, JobType
 from datetime import datetime
 
+
 class CentViewSet(viewsets.ModelViewSet):
     """Viewset for viewing and editing centrifuge output objects"""
 
@@ -31,14 +30,6 @@ class DefaultViewSet(viewsets.ModelViewSet):
 
     queryset = CartographyGuide.objects.all()
     serializer_class = CartGuideSerialiser
-
-
-class RefViewSet(viewsets.ModelViewSet):
-    # TODO this will need rewriting so people can upload private refences and retrieve them by their userID
-
-    queryset = ReferenceGenomes.objects.all()
-    serializer_class = ReferenceGenomeSerialiser
-
 
 @api_view(["GET"])
 def metaview(request):
@@ -69,19 +60,52 @@ def metaview(request):
     # use the current time to work out how long the ongoing run has taken
     current_time = timezone.now().replace(tzinfo=None)
     # If the request is for a finished run, return the time taken using the set finish time
-    if not queryset.running:
-        runtime = queryset.finish_time.replace(tzinfo=None) - start_time
-        runtime = str(runtime)
-    # Else return the time taken using the current time
-    else:
+    if not queryset.finish_time:
         runtime = current_time - start_time
         runtime = str(runtime)
+    else:
+        runtime = queryset.finish_time
 
     return_list = [{"key": "Reads Sequenced: ", "value": number_of_reads},
                    {"key": "Reads Classified: ", "value": reads_class},
                    {"key": "Classified: ", "value": str(percentage) + "%"},
                    {"key": "Runtime: ", "value": runtime}]
     return Response(return_list)
+
+
+@api_view(["GET"])
+def cent_sankey_two(request):
+    """
+    Retrieves the data for the sankey diagram, returns it
+    Parameters
+    ----------
+    request - The request body and parameters
+
+    Returns - Response containing all the information for the table and the sankey diagram
+    -------
+
+    """
+
+    # ## Get the links for the sankey Diagram ###
+    queryset = SankeyLinks.objects.filter(request.GET.get("flowcellId", ""))
+    df = pd.DataFrame(list(queryset))
+    df.drop(columns=["flowcell_id", "id", "tax_id"])
+    links = df.to_dict(orient="records")
+
+    # ## Get the nodes ###
+    # Get all the nodes values from superkingdom (ex. Bacteria) to species ("E. Coli")
+    nodes = df["source"].append(df["target"])
+
+    # Remove duplicates
+    nodes = pd.DataFrame({"name": nodes.unique()})
+
+    # Put the data in the right format
+    nodes = nodes.to_dict(orient="records")
+
+    # ## Return the array # ##
+    nodes = [{"links": links, "nodes": nodes}]
+
+    return Response(nodes, status=200)
 
 
 #TODO REFACTOR into one function - very repetitive

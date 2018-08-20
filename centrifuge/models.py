@@ -17,8 +17,8 @@ class MetaGenomicsMeta(models.Model):
 class CentOutput(models.Model):
     """ Cent output to be put into the database. Fields include taxid, num reads, taskname, name, sumunique"""
     name = models.CharField(max_length=250, null=True)
-    taxID = models.IntegerField(null=True)
-    num_reads = models.IntegerField(null=True)
+    tax_id = models.IntegerField(null=True)
+    num_matches = models.IntegerField(null=True)
     sum_unique = models.IntegerField(null=True)
     taxa = models.CharField(null=True, max_length=100)
     # lineages = PickledObjectField(null=True)
@@ -50,14 +50,6 @@ class CartographyGuide(models.Model):
     cart_mapped_id = models.CharField(max_length=50)
 
 
-class ReferenceGenomes(models.Model):
-    """
-
-    """
-    species = models.CharField(max_length=65)
-    refseq_link = models.CharField(max_length=100)
-
-
 class LineageValues(models.Model):
     tax_id = models.IntegerField()
     superkingdom = models.CharField(null=True, max_length=100)
@@ -72,3 +64,11 @@ class LineageValues(models.Model):
     leaf = models.CharField(null=True, max_length=100)
     substrainspecies = models.CharField(null=True, max_length=100)
     task_meta = models.CharField(null=True, max_length=50)
+
+
+class SankeyLinks(models.Model):
+    source = models.CharField(null=True, max_length=100)
+    target = models.CharField(null=True, max_length=100)
+    value = models.IntegerField()
+    tax_id = models.IntegerField()
+    flowcell_id = models.IntegerField()
