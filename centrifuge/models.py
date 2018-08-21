@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from jobs.models import JobMaster
 
 
 class MetaGenomicsMeta(models.Model):
@@ -22,6 +23,10 @@ class CentOutput(models.Model):
     sum_unique = models.IntegerField(null=True)
     taxa = models.CharField(null=True, max_length=100)
     flowcell_id = models.IntegerField(null=True)
+    job_master = models.ForeignKey(
+        JobMaster,
+        related_name="centrifuge_summaries"
+    )
 
 
 class CartographyMapped(models.Model):

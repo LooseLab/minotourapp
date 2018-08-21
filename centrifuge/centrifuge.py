@@ -80,9 +80,11 @@ class Centrifuger:
         # Instance of the Ncbi taxa class, for taxonomic id manipulation
         ncbi = NCBITaxa()
         # Loop whilst self.scan = True
+
+        job_master = JobMaster.objects.get(pk=self.flowcell_job_id)
+        job_master.update(running=True)
         while self.scan:
             print(f"id is {self.flowcell_id}")
-            JobMaster.objects.filter(pk=self.flowcell_job_id).update(running=True)
             # return all currently present reads
             cursor = FastqRead.objects.filter(run__flowcell_id__in={self.flowcell_id})
             doc_no = cursor.count()
@@ -399,7 +401,7 @@ class Centrifuger:
             def centoutput_bulk_list(row):
                 centoutput_insert_list.append(CentOutput(name=row["name"], tax_id=row["tax_id"],
                                                          num_matches=row["num_matches"], sum_unique=row["sum_unique"],
-                                                         flowcell_id=self.flowcell_id))
+                                                         flowcell_id=self.flowcell_id, job_master=job_master))
                 return
             df.apply(centoutput_bulk_list, axis=1)
 
@@ -418,13 +420,13 @@ class Centrifuger:
                 CentOutput.objects.bulk_create(centoutput_insert_list)
                 print("Inserted first time")
             # if all reads are centrifuged
-            JobMaster.objects.filter(pk=self.flowcell_job_id).update(last_read=last_read_id)
+            job_master.update(last_read=last_read_id)
             metadata.reads_classified = doc_no
             metadata.save()
             # TODO need way to stop when all reads are done.
         if not self.scan:
             # stop the scan while loop
-            JobMaster.objects.filter(pk=self.flowcell_job_id).update(running=False, complete=True)
+            job_master.update(running=False, complete=True)
             # set running to false. This means client stops querying
             # MetaGenomicsMeta.objects.filter(meta_id=self.foreign_key).update(running=False)
             print("Finished all reads in database")

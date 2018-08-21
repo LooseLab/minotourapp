@@ -143,18 +143,7 @@ urlpatterns = [
         r'^api/v1/barcodegroupss/(?P<pk>[0-9]+)/$',
         views.barcodegroup_detail,
         name="barcodegroup-detail"),
-    url(
-        r'^api/v1/tasks/$',
-        views.tasks_detail,
-        name="tasks-detail"),
-    url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/tasks/$',
-        views.tasks_detail_all,
-        name="tasks-detail-all"),
-    url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/settask/$',
-        views.set_task_detail_all,
-        name="set-task-detail-all"),
+
     url(
         r'^api/v1/flowcells/$',
         views.flowcell_list,
@@ -247,15 +236,5 @@ urlpatterns = [
         r'^api/v1/version/$',
         views.version,
         name='version'
-    ),
-    url(
-        r'^api/v1/jobtype/$',
-        jobs_views.job_type_list,
-        name='jobtype-list'
-    ),
-    url(
-        r'^api/v1/jobtype/(?P<pk>[0-9A-Za-z-]+)/$',
-        jobs_views.job_type_detail,
-        name='jobtype-detail'
     ),
 ]

@@ -50,6 +50,7 @@ class JobType(models.Model):
 
 
 class JobMaster(models.Model):
+    
 
     run = models.ForeignKey(
         Run,
