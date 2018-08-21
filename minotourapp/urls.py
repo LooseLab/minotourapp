@@ -33,7 +33,6 @@ urlpatterns = [
     url(r'^', include('assembly.urls')),
     url(r'^', include('reference.urls')),
     url(r'^', include('communication.urls')),
-    url(r'^', include('minikraken.urls')),
     url(r'^', include('centrifuge.urls')),
     url(r'^$', auth_views.LoginView.as_view(template_name="registration/login.html")),
     url(r'^api-token-auth/', tok_views.obtain_auth_token),
