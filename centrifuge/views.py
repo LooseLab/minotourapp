@@ -81,20 +81,43 @@ def cent_sankey_two(request):
     ----------
     request - The request body and parameters
 
-    Returns - Response containing all the information for the table and the sankey diagram
+    Returns - Response containing all the information for the the sankey diagram
     -------
 
     """
+    species_limit = request.GET.get("speciesLimit", 50)
 
     # ## Get the links for the sankey Diagram ###
-    queryset = SankeyLinks.objects.filter(request.GET.get("flowcellId", ""))
-    df = pd.DataFrame(list(queryset))
-    df.drop(columns=["flowcell_id", "id", "tax_id"])
-    links = df.to_dict(orient="records")
+    print(f"the flowcell is  {request.GET.get('flowcellId', '')}")
+    queryset = SankeyLinks.objects.filter(flowcell_id=request.GET.get("flowcellId", "")).values()
+
+    if not queryset:
+        return Response(status=204)
+
+    source_target_df = pd.DataFrame(list(queryset))
+    # Reduce the DataFrame to the number of species that you need
+    source_target_df = source_target_df[source_target_df["rank"] < species_limit]
+    # Drop unnecessary columns from DataFrame
+    source_target_df.drop(columns=["flowcell_id", "id", "tax_id", "rank"], inplace=True)
+    # Set MultiIndex to group source to target
+    source_target_df.set_index(["source", "target"], inplace=True)
+    # Group by rows where the source and target are the same
+    st_gb = source_target_df.groupby(["source", "target"])
+    # Replace the value columns on dataframe with the sum of all the values of identical source target rows
+    source_target_df["value"] = st_gb["value"].sum()
+    source_target_df.reset_index(inplace=True)
+    # Drop all duplicate rows, only need one new entry
+    source_target_df.drop_duplicates(["source", "target"], keep="first", inplace=True)
+    # Drop any rows where the source and the target are the same and don't keep them
+    source_target_df = pd.concat([source_target_df, source_target_df[
+        source_target_df["source"] == source_target_df["target"]]]).drop_duplicates(["source", "target"],
+                                                                                    keep=False)
+    source_target_df.dropna(inplace=True)
+    links = source_target_df.to_dict(orient="records")
 
     # ## Get the nodes ###
     # Get all the nodes values from superkingdom (ex. Bacteria) to species ("E. Coli")
-    nodes = df["source"].append(df["target"])
+    nodes = source_target_df["source"].append(source_target_df["target"])
 
     # Remove duplicates
     nodes = pd.DataFrame({"name": nodes.unique()})
@@ -103,140 +126,12 @@ def cent_sankey_two(request):
     nodes = nodes.to_dict(orient="records")
 
     # ## Return the array # ##
-    nodes = [{"links": links, "nodes": nodes}]
-
-    return Response(nodes, status=200)
-
-
-#TODO REFACTOR into one function - very repetitive
-@api_view(["GET"])
-def cent_sankey(request):
-    """
-    Calculates the data for the sankey diagram, returns it
-    Parameters
-    ----------
-    request - The request body and parameters
-
-    Returns - Response containing all the information for the table and the sankey diagram
-    -------
-
-    """
-
-    # queryset from database, filtered by the meta_id
-    queryset = CentOutput.objects.filter(task_meta=request.query_params.get("flowcellId", False))
-    # all the taxIDs for this centrifuge job as a list, need for filtering all the relevant lineages
-    cent_output_tax_ids = queryset.values_list(
-        "taxID", flat=True)
-    # if there is no data in the database (yet) return 404 # TODO better status code
-    if len(queryset) == 0:
-        return Response(status=404)
-    # Deserialise Django model object
-    serialiser = CentSerialiser(queryset, many=True)
-    # the data from desrialisation
-    serialised_data = serialiser.data
-    # get all the lineages
-    lineages = list(LineageValues.objects.all().values())
-    # lookup dict so you can get the data corrsponding to a specified taxID
-    lookup_dict = {x["taxID"]: x for x in serialised_data}
-
-    def return_reads(tax_id):
-        """
-
-        Parameters
-        ----------
-        tax_id (type integer) - the taxID from the dataframe series
-
-        Returns (type integer) - the number of reads from the lookup dict from that taxID
-        -------
-
-        """
-        if tax_id in lookup_dict:
-            return lookup_dict[tax_id]["num_reads"]
-
-    def return_unique_reads(tax_id):
-        """
-
-        Parameters
-        ----------
-        tax_id (type integer) - the taxID from the dataframe series
-
-        Returns (type integer) - the number of unique reads from the lookup dict for that taxID
-        -------
-
-        """
-        if tax_id in lookup_dict:
-            return lookup_dict[tax_id]["sum_unique"]
-
-    # Create Nodes dictionary, contains nodes and links array, needed for d3 sankey
-    # nodes key is a list of dicts withe format {name: node_name}
-    # links key is a list of dicts with format {source: starting_node, target: finishing node, value: num_reads}
-    nodes = {"nodes": [], "links": []}
-    # Taxas, in the order that links must flow
-    order = ["superkingdom", "phylum", "classy", "order", "family", "genus", "species", "subspecies", "strain"]
-    # Create a dataframe from the lineages list result from the database
-    df = pd.DataFrame(lineages)
-    # get relevant taxids, so dataframe of only taxIDs that are in the output of this centrifuge run
-    df = df[df['tax_id'].isin(cent_output_tax_ids)]
-    # create the numreads series by mapping over the tax_id series
-    df["num_reads"] = df["tax_id"].map(return_reads, na_action=None)
-    # create the sumunqiue series by mapping over thetax_id series
-    df["sum_unique"] = df["tax_id"].map(return_unique_reads)
-    # try and uniform missing values
-    df = df.replace("nan", "Empty")
-    df = df.replace("None", "Empty")
-    # iterate over the whole data frame
-    # TODO rewrite as the other two to avoid unnecessary iteration
-    for ind, row in df.iterrows():
-        ordered = []
-        # get the flow that skips any missing values
-        for orde in order:
-            if row[orde] != "Empty" and row[orde] != None:
-                ordered.append(orde)
-        # enumerate over the ordered list so links flow from one to the next
-        for index, ori in enumerate(ordered):
-            if row[ori] != "Empty" and row[ori] != None:
-                # the beginning of the link
-                source_lineage_value = row[ori]
-                # the node name isn't already in the list, add it
-                if {"name": source_lineage_value} not in nodes["nodes"]:
-                    nodes["nodes"].append({"name": source_lineage_value})
-
-                # if the index for the target won't be out of range
-                if index != len(ordered) - 1:
-                    target_taxa_index = index + 1
-                    # if the target index exists
-                    if row[ordered[target_taxa_index]] != "Empty" and row[ordered[target_taxa_index]] != None:
-                        # the target node value
-                        target_lineage_value = row[ordered[target_taxa_index]]
-                        # link_id is the unique id used to find the index
-                        link_id = source_lineage_value + target_lineage_value
-                        # create the link dict
-                        link = {"source": source_lineage_value, "target": target_lineage_value,
-                                "value": row["num_reads"], "id": link_id,
-                                "target_tax_level": ordered[target_taxa_index]}
-                        # check to see if the link is already in the links list
-                        index = next((index for (index, d) in enumerate(nodes["links"]) if d["id"]
-                                      == link_id), None)
-                        # if the index is not already in the list
-                        if index == None:
-                            # if index:
-                            index = -1
-                        # if link is already in the list, add the value of the new link to the existing link
-                        if index > -1:
-                            nodes["links"][index]["value"] += link["value"]
-                        # if link isn't already in, add it in
-                        else:
-                            nodes["links"].append(link)
-                            # create the values of the reads
-
-    sotted = sorted(nodes["links"], key=itemgetter('value'), reverse=True)
-
-    # create an object to return
-    return_dict = {"queryset": nodes, "values": sotted, "serialiser_data": serialised_data}
-    # return it
+    nodes = {"links": links, "nodes": nodes}
+    return_dict = {"sankey": nodes}
     return Response(return_dict, status=200)
 
 
+# TODO refactor into run centrifuge.py
 @api_view(["GET"])
 def vis_table_data(request):
     """
@@ -250,179 +145,27 @@ def vis_table_data(request):
 
     """
     # queryset from database, filtered by the meta_id
-    queryset = CentOutput.objects.filter(task_meta=request.query_params.get("flowcellId", False))
+    queryset = CentOutput.objects.filter(flowcell_id=request.GET.get("flowcellId", 0))
     # all the taxIDs for this centrifuge job as a list, need for filtering all the relevant lineages
-    cent_output_tax_ids = queryset.values_list(
-        "taxID", flat=True)
-    # if there is no data in the database (yet) return 404 # TODO better status code
-    if len(queryset) == 0:
-        return Response(status=404)
-    # Deserialise Django model object
-    serialiser = CentSerialiser(queryset, many=True)
-    # the data from deserialisation
-    serialised_data = serialiser.data
-    # get all the lineages
-    lineages = list(LineageValues.objects.all().values())
-    # lookup dict so you can get the data corrsponding to a specified taxID
-    lookup_dict = {x["taxID"]: x for x in serialised_data}
-
-    def return_reads(tax_id):
-        """
-
-        Parameters
-        ----------
-        tax_id (type integer) - the taxID from the dataframe series
-
-        Returns (type integer) - the number of reads from the lookup dict from that taxID
-        -------
-
-        """
-        if tax_id in lookup_dict:
-            return lookup_dict[tax_id]["num_reads"]
-
-    def return_unique_reads(tax_id):
-        """
-
-        Parameters
-        ----------
-        tax_id (type integer) - the taxID from the dataframe series
-
-        Returns (type integer) - the number of unique reads from the lookup dict for that taxID
-        -------
-
-        """
-        if tax_id in lookup_dict:
-            return lookup_dict[tax_id]["sum_unique"]
-
+    centouput_df = pd.DataFrame(list(queryset.values()))
+    # if there is no data in the database (yet) return 404
+    if centouput_df.empty:
+        return Response(status=204)
     # create dataframe
-    df = pd.DataFrame(lineages)
+    lineages_df = pd.DataFrame(list(LineageValues.objects.all().values()))
     # get relevant taxids, so dataframe of only taxIDs that are in the output of this centrifuge run
-    df = df[df['tax_id'].isin(cent_output_tax_ids)]
+    lineages_df = lineages_df[lineages_df['tax_id'].isin(centouput_df["tax_id"])]
     # create the numreads series by mapping over the tax_id series
-    df["num_reads"] = df["tax_id"].map(return_reads, na_action=None)
-    # create the sumunqiue series by mapping over thetax_id series
-    df["sum_unique"] = df["tax_id"].map(return_unique_reads)
+    lineages_df.set_index("tax_id", inplace=True)
+    centouput_df.set_index("tax_id", inplace=True)
+    lineages_df["num_matches"] = centouput_df["num_matches"]
+    lineages_df["sum_unique"] = centouput_df["sum_unique"]
+
     # try and uniform missing values
-    df = df.replace("nan", "Empty")
-    df = df.replace("None", "Empty")
+    lineages_df = lineages_df.replace("nan", "Empty")
+    lineages_df = lineages_df.replace("None", "Empty")
     # The order that the phyla go in
-    order = ["superkingdom", "phylum", "classy", "order", "family", "genus", "species", "subspecies", "strain"]
-
-    def sum_prop_clade_reads(clade, df):
-        """
-        I wrote this function in Manchester! It rained. It calculates the sum and proportion of reads within a clade,
-        and returns them into a new series
-        Parameters
-        ----------
-        clade - (type String) - A taxonomic clade, i.e kingdom, phylum etc.
-        df - (type pandas DataFrame) - The dataframe containing all the centrifuge output objects
-
-        Returns
-        -------
-
-        """
-        # setthe index so we can map the group by object back
-        df = df.set_index(clade)
-        # group the records by clade
-        gb = df.groupby(level=clade)
-        # sum number of reads in each clade
-        gb = gb["num_reads"].sum()
-        sumtitle = "summed_" + clade
-        proptitle = "prop_" + clade
-        # create new series, contains summed reads for this clade
-        df[sumtitle] = gb
-        # create new seies, contains proportion of reads in that clade across the whole dataframe
-        df[proptitle] = df[sumtitle].div(df[sumtitle].unique().sum()).mul(100)
-        # round to two decimal places
-        df[proptitle] = df[proptitle].round(decimals=2)
-        df = df.reset_index()
-        return df
-    # for each clade call the above function to perform the calculation and add the series
-    for ord in order:
-        df = sum_prop_clade_reads(ord, df)
-    df["species"] = df["species"] + " (Num Reads - " + df["summed_species"].map(str) \
-                    + " Proportion " + df["prop_species"].map(str) + "%)"
-    df["genus"] = df["genus"] + " (Num Reads - " + df["summed_genus"].map(str) + " Proportion " \
-                  + df["prop_genus"].map(str) + "%)"
-    json = df.to_json(orient="records")
-    # create an object to return
-    return_dict = {"json": json}
-    # return it
-    return Response(return_dict, status=200)
-
-
-@api_view(["GET"])
-def cent_donut(request):
-    """
-    Create the donut chart data and return it
-    Parameters
-    ----------
-    request - (type DRF request)
-
-    Returns - dict containing an array of objects, one for each clade
-    -------
-
-    """
-    # get the relevant centOutput database entries for this analysis
-    queryset = CentOutput.objects.filter(task_meta=request.query_params.get("flowcellId", False))
-    # if there is no data return a 401 and a message
-    if not queryset:
-        return Response({"message": "no data"}, status=401)
-    # get all the tax_ids from the database query as a list
-    cent_output_tax_ids = queryset.values_list(
-        "taxID", flat=True)
-    # serialise the database entries into a python object
-    serialiser = CentSerialiser(queryset, many=True)
-    # get the serialisation result data
-    serialised_data = serialiser.data
-    # get all the Lineages we have already calculated as a list
-    # TODO ineffecient - memory expensive. Look at only using lineages we need, same in all 3,
-    # TODO a lot of not DRY code here
-    lineages = list(LineageValues.objects.all().values())
-    # lookup dict so you can get the data corrsponding to a specified taxID
-    lookup_dict = {x["taxID"]: x for x in serialised_data}
-
-    def return_reads(tax_id):
-        """
-
-        Parameters
-        ----------
-        tax_id (type integer) - the taxID from the dataframe series
-
-        Returns (type integer) - the number of reads from the lookup dict from that taxID
-        -------
-
-        """
-        if tax_id in lookup_dict:
-            return lookup_dict[tax_id]["num_reads"]
-
-    def return_unique_reads(tax_id):
-        """
-
-        Parameters
-        ----------
-        tax_id (type integer) - the taxID from the dataframe series
-
-        Returns (type integer) - the number of unique reads from the lookup dict for that taxID
-        -------
-
-        """
-        if tax_id in lookup_dict:
-            return lookup_dict[tax_id]["sum_unique"]
-
-    # create dataframe
-    df = pd.DataFrame(lineages)
-    # get relevant taxids, so dataframe of only taxIDs that are in the output of this centrifuge run
-    df = df[df['tax_id'].isin(cent_output_tax_ids)]
-    # create the numreads series by mapping over the tax_id series
-    df["num_reads"] = df["tax_id"].map(return_reads, na_action=None)
-    # create the sumunqiue series by mapping over thetax_id series
-    df["sum_unique"] = df["tax_id"].map(return_unique_reads)
-    # try and uniform missing values # TODo does this even work
-    df = df.replace("nan", "Empty")
-    df = df.replace("None", "Empty")
-    df = df.fillna("Empty")
-    # nodes = {"nodes": [], "links": []}
+    # TODO add in substrain and subspecies when index contains them
     order = ["superkingdom", "phylum", "classy", "order", "family", "genus", "species"]
 
     def sum_prop_clade_reads(clade, df):
@@ -438,12 +181,12 @@ def cent_donut(request):
         -------
 
         """
-        # setthe index so we can map the group by object back
+        # set the index so we can map the group by object back
         df = df.set_index(clade)
         # group the records by clade
         gb = df.groupby(level=clade)
         # sum number of reads in each clade
-        gb = gb["num_reads"].sum()
+        gb = gb["num_matches"].sum()
         sumtitle = "summed_" + clade
         proptitle = "prop_" + clade
         # create new series, contains summed reads for this clade
@@ -454,10 +197,8 @@ def cent_donut(request):
         df[proptitle] = df[proptitle].round(decimals=2)
         df = df.reset_index()
         return df
-    # container array for results to be sent back
-    container_array = []
 
-    def sort_top_twenty_clade(clade, df):
+    def sort_top_ten_clade(clade, df):
         """
         sorts out the top 20 records in each clade, and transforms them into the right form for the donut chart
         Parameters
@@ -472,7 +213,7 @@ def cent_donut(request):
         """
         print(clade)
         sumtitle = "summed_" + clade
-        # create temp df with just the number of reeads and the member of that clade
+        # create temp df with just the number of reads and the member of that clade
         temp_df = df[[clade, sumtitle]]
         temp_df.set_index(clade, inplace=True)
         temp_df.drop_duplicates(keep="first", inplace=True)
@@ -484,22 +225,38 @@ def cent_donut(request):
         # get the resulst in a list with adict for each record in temp_df
         list_dict_of_members = temp_df.to_dict(orient="records")
         return list_dict_of_members
-    # for each clade run the two functions above
+
+    container_array = []
+
+    # for each clade call the above function to perform the calculation and add the series
     for ord in order:
-        df = sum_prop_clade_reads(ord, df)
-        arr = sort_top_twenty_clade(ord, df)
+        lineages_df = sum_prop_clade_reads(ord, lineages_df)
+        arr = sort_top_ten_clade(ord, lineages_df)
         obj = {ord: arr}
         container_array.append(obj)
-    # reverse the array so species appears first
+
+    lineages_df["species"] = lineages_df["species"] + " (Num Reads - " + lineages_df["summed_species"].map(str) \
+        + " Proportion " + lineages_df["prop_species"].map(str) + "%)"
+
+    lineages_df["genus"] = lineages_df["genus"] + " (Num Reads - " + lineages_df["summed_genus"].map(str) + " Proportion " \
+        + lineages_df["prop_genus"].map(str) + "%)"
+
+    json = lineages_df.to_json(orient="records")
+
     container_array.reverse()
 
-    result_dict = {"result": container_array}
-    # return_dict = {"counted": countable_result_cont}
-    return Response(result_dict, status=200)
+    # create an object to return
+    if request.GET.get("visType", "") == "table":
+        return_dict = {"json": json}
+    elif request.GET.get("visType", "") == "donut":
+        return_dict = {"result": container_array}
+    else:
+        return Response(status=400)
+
+    # return it
+    return Response(return_dict, status=200)
 
 
-# stop csrf blocking by django, # TODO fix so it's done properly with authentication
-@csrf_exempt
 @api_view(["POST"])
 def start_centrifuge_view(request):
     """
@@ -550,7 +307,6 @@ def start_centrifuge_view(request):
             return HttpResponse(e).status_code(500)
 
 
-@csrf_exempt
 @api_view(["POST", "GET"])
 def get_or_set_cartmap(request):
     """

@@ -66,8 +66,7 @@ def run_monitor():
 
     for flowcell in flowcell_list:
 
-        flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False)
-        print(flowcell_job_list.values())
+        flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False, complete=False)
         for flowcell_job in flowcell_job_list:
             print(f"job_type is {flowcell_job.job_type.name}")
 
@@ -115,15 +114,18 @@ def run_monitor():
                 :return:
                 """
                 try:
-                    print("trying centrifuge task")
-                    c = Centrifuger(flowcell.id, flowcell_job.id)
-                    c.run_centrifuge()
-                    print(sys.stdout)
+                    run_centrifuge.delay(flowcell.id, flowcell_job.id)
 
                 except Exception as e:
                     e = sys.exc_info()
                     print(e)
 
+@task()
+def run_centrifuge(flowcell_id, flowcell_job_id):
+    print("trying centrifuge task")
+    c = Centrifuger(flowcell_id, flowcell_job_id)
+    c.run_centrifuge()
+    print("finished task")
 
 @task()
 def processreads(flowcell_id, job_master_id, last_read):

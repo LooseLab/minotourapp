@@ -11,6 +11,7 @@ from collections import defaultdict
 from celery import task
 from django.utils import timezone
 
+# TODO del unused df and things
 
 class Centrifuger:
     """
@@ -97,29 +98,25 @@ class Centrifuger:
             print(f"last_read_id is {last_read_id} and self.last_read_id is {self.last_read}")
 
             if self.last_read == last_read_id:
-                print("Elif")
                 # set the finish time
-                start_time = metadata.timestamp.replace(tzinfo=None)
-                end_time = timezone.now().replace(tzinfo=None)
-                metadata.finish_time = end_time - start_time
                 self.scan = False
                 break
             elif last_read_id - self.last_read < 500:
                 self.scan = False
-                print("If")
             else:
-                print("Else")
                 self.last_read = last_read_id
             print(f"found {doc_no} reads in the database")
             # Get all the reads skipping all we did last time
             cursor = FastqRead.objects.filter(run__flowcell_id__in={self.flowcell_id})[self.skip:doc_no]
             # create fastq string by joining the read_id and sequence in the format, for all docs in cursor
+            # TODO sends individual queries to fetch the data for each read. Get the data in memory in one go?
             fastq = "".join([str(">" + c.read_id + "\n" + c.fastqreadextra.sequence + "\n") for c in cursor])
 
             # Write the generated fastq file to stdin, passing it to the command
             print("centrifuging...")
             out, err = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE) \
                 .communicate(input=str.encode(fastq))
+            del fastq
             # the number of centrifuge lines
             cent_out = out.decode()
             # total number of lines of centrifuge output dealt with
@@ -173,7 +170,7 @@ class Centrifuger:
             # =========================================== database dataframe
             # reset index
             # query the index get all the objects in the database at this point
-            queryset = CentOutput.objects.filter(task_meta=self.flowcell_id).values()
+            queryset = CentOutput.objects.filter(flowcell_id=self.flowcell_id).values()
             print(f"the length of the queryset is {len(queryset)}")
 
             new_cent_num_matches = df["num_matches"]
@@ -213,8 +210,7 @@ class Centrifuger:
                 df = df.reset_index()
                 # drop all duplicated lines to keep only one for each entry, Atomicity
             df = df.drop_duplicates(keep="first")
-            # create bulk list, to populated with CentOutput items to insert
-            bulk_list = []
+
             # create new defaultDict which creates a default dict for missing values, don't think we ever need this
             # default behaviour
             new = defaultdict(lambda: defaultdict())
@@ -273,7 +269,6 @@ class Centrifuger:
                 if type(name) is str:
 
                     if "subsp." in name:
-                        print(name)
                         basestring = name.split("subsp.", 1)[0]
                         string = name.split("subsp.", 1)[1]
                         string = string.split(" ")[1]
@@ -298,12 +293,18 @@ class Centrifuger:
             #  isn't, family NaN becomes the genus entry
             sankey_lin_df.fillna(axis=1, method="bfill", inplace=True)
             # Add the number of reads of the lowest common ancestor of a row to the dataframe
+            # TODO This is the line that gives the warning on setting value on copy of slice
             sankey_lin_df["num_matches"] = new_cent_num_matches
+            # Sort the dataframe by the nummatches, descending
+            sankey_lin_df.sort_values(["num_matches"], ascending=False, inplace=True)
+            # Add a rank for the species
+            sankey_lin_df["rank"] = np.arange(len(sankey_lin_df))
             # initialise the series that will become our sankey pandas DataFrame
             source = pd.Series()
             target = pd.Series()
             value = pd.Series()
             tax_id = pd.Series()
+            rank = pd.Series()
             # Iterate across the dataframe columns, to create the source, target, num reads series
             for index, clade in enumerate(tax_rank_filter):
                 source_clade = clade
@@ -314,25 +315,14 @@ class Centrifuger:
                     target = target.append(sankey_lin_df[target_clade])
                     value = value.append(sankey_lin_df["num_matches"])
                     tax_id = tax_id.append(pd.Series(sankey_lin_df.index.values, index=sankey_lin_df.index))
+                    rank = rank.append(sankey_lin_df["rank"])
             # Create a DataFrame of links
-            source_target_df = pd.concat([source, target, value, tax_id], axis=1)
+            source_target_df = pd.concat([source, target, value, tax_id, rank], axis=1)
             # Rename the columns
-            source_target_df.columns = ["source", "target", "value", "tax_id"]
+            source_target_df.columns = ["source", "target", "value", "tax_id", "rank"]
             # Set a multi index of source to target
-            source_target_df.set_index(["source", "target"], inplace=True)
-            # Group by rows where the source and target ar ethe same
-            st_gb = source_target_df.groupby(["source", "target"])
-            # Replace the value columns on dataframe with the sum of all the values of identical source target rows
-            source_target_df["value"] = st_gb["value"].sum()
-            source_target_df.reset_index(inplace=True)
-            # Drop all duplicate rows, only need one new entry
-            source_target_df.drop_duplicates(["source", "target"], keep="first", inplace=True)
-            # Drop any rows where the source and the target are the same and don't keep them
-            source_target_df = pd.concat([source_target_df, source_target_df[
-                source_target_df["source"] == source_target_df["target"]]]).drop_duplicates(["source", "target"],
-                                                                                            keep=False)
+
             source_target_df["flowcell_id"] = self.flowcell_id
-            source_target_df.dropna(inplace=True)
 
             current_links_taxids = set(source_target_df["tax_id"])
 
@@ -346,11 +336,12 @@ class Centrifuger:
             to_update_df = source_target_df[source_target_df["tax_id"].isin(prev_links_taxids)]
 
             sankey_link_insert_list = []
+
             if not to_create_df.empty:
                 def sankey_bulk_insert_list(row):
                     sankey_link_insert_list.append(SankeyLinks(flowcell_id=row["flowcell_id"], source=row["source"],
                                                                target=row["target"], value=row["value"],
-                                                               tax_id=row["tax_id"]))
+                                                               tax_id=row["tax_id"], rank=row["rank"]))
                     return
 
                 to_create_df.apply(sankey_bulk_insert_list, axis=1)
@@ -359,9 +350,25 @@ class Centrifuger:
 
             # ## UPDATE existing links ## #
             if not to_update_df.empty:
+                prev_links_df = pd.DataFrame(list(SankeyLinks.objects.filter(flowcell_id=self.flowcell_id).values()))
+
+                to_combine_values_df = prev_links_df[prev_links_df["tax_id"].isin(prev_links_taxids)]
+
+                del prev_links_df
+
+                to_combine_values_df.set_index("tax_id", inplace=True)
+
+                to_update_df.set_index("tax_id", inplace=True)
+
+                to_update_df["value"] = to_update_df["value"] + to_combine_values_df["value"]
+
+                to_update_df.reset_index(inplace=True)
+
+                del to_combine_values_df
+
                 def sankey_update_links(row):
                     SankeyLinks.objects.filter(flowcell_id=row["flowcell_id"], source=row["source"],
-                                               target=row["target"]).update(value=row["value"])
+                                               target=row["target"]).update(value=row["value"], rank=row["rank"])
                 to_update_df.apply(sankey_update_links, axis=1)
 
             # ##################### Back to the non sankey calculations ####################
@@ -392,23 +399,23 @@ class Centrifuger:
             def centoutput_bulk_list(row):
                 centoutput_insert_list.append(CentOutput(name=row["name"], tax_id=row["tax_id"],
                                                          num_matches=row["num_matches"], sum_unique=row["sum_unique"],
-                                                         task_meta=self.flowcell_id, flowcell_id=self.flowcell_id))
+                                                         flowcell_id=self.flowcell_id))
                 return
             df.apply(centoutput_bulk_list, axis=1)
 
             # If there is already objects in teh database, do this update or create
-            if CentOutput.objects.filter(task_meta=self.flowcell_id):
+            if CentOutput.objects.filter(flowcell_id=self.flowcell_id):
                 # iterate create or update for everything that we are inserting
                 for centoutput in centoutput_insert_list:
                     # get the data from the queryset object
                     cent_in = CentSerialiser(centoutput)
                     CentOutput.objects.update_or_create(
-                        tax_id=cent_in.data["taxID"], task_meta=self.flowcell_id, defaults=cent_in.data
+                        tax_id=cent_in.data["taxID"], flowcell_id=self.flowcell_id, defaults=cent_in.data
                     )
 
             # Bulk insert new model objects using bulk_create
             else:
-                CentOutput.objects.bulk_create(bulk_list)
+                CentOutput.objects.bulk_create(centoutput_insert_list)
                 print("Inserted first time")
             # if all reads are centrifuged
             JobMaster.objects.filter(pk=self.flowcell_job_id).update(last_read=last_read_id)
@@ -425,5 +432,6 @@ class Centrifuger:
             start_time = metadata.timestamp.replace(tzinfo=None)
             end_time = timezone.now().replace(tzinfo=None)
             metadata.finish_time = end_time - start_time
+            metadata.save()
             print("finished")
             print(f"total centOut lines {total_centout}")

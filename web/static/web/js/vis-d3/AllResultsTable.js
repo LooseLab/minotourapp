@@ -14,7 +14,7 @@ function format(d) {
 ;}
 
 function getTotalReadsTable(flowCellId) {
-    $.get("/table", {flowcellId: flowCellId}, result => {
+    $.get("/table", {flowcellId: flowCellId, visType: "table"}, result => {
         console.log(result);
         let data = JSON.parse(result.json);
         let table = $(".tableLand");

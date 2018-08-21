@@ -21,11 +21,7 @@ class CentOutput(models.Model):
     num_matches = models.IntegerField(null=True)
     sum_unique = models.IntegerField(null=True)
     taxa = models.CharField(null=True, max_length=100)
-    # lineages = PickledObjectField(null=True)
-    # uuid that links it to it's corresponding metadata
-    task_meta = models.CharField(max_length=40)
     flowcell_id = models.IntegerField(null=True)
-    # use djongo manager rather than django manager, in order to use mongo query syntax in run_centrifuge.py
 
 
 class CartographyMapped(models.Model):
@@ -72,3 +68,4 @@ class SankeyLinks(models.Model):
     value = models.IntegerField()
     tax_id = models.IntegerField()
     flowcell_id = models.IntegerField()
+    rank = models.IntegerField()

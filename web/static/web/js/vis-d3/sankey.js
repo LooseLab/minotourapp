@@ -1,74 +1,68 @@
 "use strict";
-
-
-function dataPrep(sankeyData) {
-    /*
-        Data prep takes the results from the factory promise, and transforms it to the correct format
-        for D3-sankey
-     */
-
-    let nodes = sankeyData.queryset;
-    let sortedLinks = sankeyData.values;
-    let nodeNames;
-    let topFiftySpecies;
-    let topFiftyLink;
-    let specimin;
-    let notTopOfTree;
-    let first;
-    let source;
-    let link;
-    let sourcey;
-    nodes.links = nodes.links.filter(function (link) {
-        return link.target !== link.source;
-    });
-    nodeNames = [];
-    topFiftySpecies = sortedLinks.filter(function (link) {
-        return link.target_tax_level === "species";
-    }).splice(0, 50);
-    topFiftyLink = [];
-
-    for (let i = 0; i < topFiftySpecies.length; i++) {
-        specimin = topFiftySpecies[i];
-        notTopOfTree = true;
-        first = true;
-        topFiftyLink.push(specimin);
-        nodeNames.push({"name": specimin.source}, {"name": specimin.target});
-        while (notTopOfTree) {
-            if (first) {
-                source = specimin.source;
-                first = false;
-            } else {
-                sourcey = topFiftyLink[topFiftyLink.length - 1];
-                source = sourcey.source;
-            }
-            if (nodes.links.findIndex(x => x.target === source) ===
-                -1
-            ) {
-                notTopOfTree = false;
-            }
-            if (notTopOfTree) {
-                link = nodes.links.filter(function (l) {
-                    return l.target === source
-                });
-                topFiftyLink.push(link[0]);
-                nodeNames.push({"name": link[0].target}, {"name": link[0].source})
-            }
-        }
-    }
-    nodeNames = nodeNames.filter((node, index, self) => self.findIndex(t => t.name === node.name
-        ) ===
-        index
-    )
-    ;
-    topFiftyLink = topFiftyLink.filter((link, index, self) => self.findIndex(t => t.source === link.source && t.target === link.target
-        ) ===
-        index
-    )
-    ;
-    nodes.links = topFiftyLink;
-    nodes.nodes = nodeNames;
-    return nodes;
-}
+// function dataPrep(sankeyData) {
+//     /*
+//         Data prep takes the results from the factory promise, and transforms it to the correct format
+//         for D3-sankey
+//      */
+//     console.log(sankeyData);
+//     let nodes = sankeyData.sankey;
+//     let nodeNames;
+//     let topFiftySpecies;
+//     let topFiftyLink;
+//     let specimin;
+//     let notTopOfTree;
+//     let first;
+//     let source;
+//     let link;
+//     let sourcey;
+//
+//     nodeNames = [];
+//     topFiftyLink = [];
+//     console.log("top Fifty Species");
+//     console.log(topFiftySpecies);
+//     for (let i = 0; i < topFiftySpecies.length; i++) {
+//         specimin = topFiftySpecies[i];
+//         notTopOfTree = true;
+//         first = true;
+//         topFiftyLink.push(specimin);
+//         nodeNames.push({"name": specimin.source}, {"name": specimin.target});
+//         while (notTopOfTree) {
+//             if (first) {
+//                 source = specimin.source;
+//                 first = false;
+//             } else {
+//                 sourcey = topFiftyLink[topFiftyLink.length - 1];
+//                 source = sourcey.source;
+//             }
+//             if (nodes.links.findIndex(x => x.target === source) ===
+//                 -1
+//             ) {
+//                 notTopOfTree = false;
+//             }
+//             if (notTopOfTree) {
+//                 link = nodes.links.filter(function (l) {
+//                     return l.target === source;
+//                 });
+//                 topFiftyLink.push(link[0]);
+//                 nodeNames.push({"name": link[0].target}, {"name": link[0].source})
+//             }
+//         }
+//     }
+//     nodeNames = nodeNames.filter((node, index, self) => self.findIndex(t => t.name === node.name
+//         ) ===
+//         index
+//     )
+//     ;
+//     topFiftyLink = topFiftyLink.filter((link, index, self) => self.findIndex(t => t.source === link.source && t.target === link.target
+//         ) ===
+//         index
+//     )
+//     ;
+//     nodes.links = topFiftyLink;
+//     nodes.nodes = nodeNames;
+//     console.log(nodes);
+//     return nodes;
+// }
 
 function draw(nodesObj, sankey, g, format, color, width, redraw) {
     let node;
@@ -106,7 +100,7 @@ function draw(nodesObj, sankey, g, format, color, width, redraw) {
         .attr("stroke", function(d, i){
            return "url(#" + i+ ")"
          })
-        .attr("stroke-width", d => Math.max(1, d.width));
+        .attr("stroke-width", d => Math.max(0.5, d.width));
 
     link.append("title")
         .text(d => `${d.source.name} → ${d.target.name}\n${format(d.value)}`);
@@ -140,16 +134,17 @@ function draw(nodesObj, sankey, g, format, color, width, redraw) {
 
 function update(flowcellId, sankey, checkForData, svg, g, format, color, width, update) {
     console.log("update");
+    // TODO species limit one day
     $.get("/sankey", {flowcellId}, result => {
-        let nodes = dataPrep(result);
+        console.log(result);
+        let nodes = result.sankey
         console.log(nodes);
         // TODO use is active to check if flowcell is active
-        if (result.queryset.nodes.length !== 0 && checkForData) {
+        if (result.sankey.nodes.length !== 0 && checkForData) {
             d3.select(".metagenomics-settings").style("display", "none");
             setTimeout(function () {
-                d3.select("body").attr("class", "loaded sidebar-collapse")
+                d3.select("body").attr("class", "loaded sidebar-collapse");
             }, 1500);
-            checkForData = false;
         }
         svg.select(".contain").selectAll("*").remove();
         draw(nodes, sankey, g, format, color, width, update);
@@ -157,7 +152,6 @@ function update(flowcellId, sankey, checkForData, svg, g, format, color, width, 
 }
 
 function drawSankey(flowcellId) {
-    let running = true;
     //set svg width and height
     let container = d3.select("body").node();
     // height of page
@@ -198,5 +192,5 @@ function drawSankey(flowcellId) {
             .attr("height", hi).call(zoom);
         g = svg.append("g").attr("class", "contain");
     }
-    update(flowcellId, sankey, checkForData, svg, g, format, color, width, updateExistOrDrawNew)
+    update(flowcellId, sankey, checkForData, svg, g, format, color, width, updateExistOrDrawNew);
 }

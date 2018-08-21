@@ -92,7 +92,8 @@ function drawDonut(flowCellId) {
     }
 
     value.html(DisplayTaxas[0]);
-    $.get("/donut", {flowcellId: flowCellId}, result => {
+    $.get("/donut", {flowcellId: flowCellId, visType: "donut"}, result => {
+        console.log(result)
         let dataToDraw = result.result;
         // if there is no data return and try again when interval is up on $interval
         if (result.result.length === 0) {
