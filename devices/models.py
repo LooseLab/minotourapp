@@ -8,6 +8,10 @@ class Flowcell(models.Model):
         max_length=256,
     )
 
+    sample_name = models.CharField(
+        max_length=256,
+    )
+
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name='flowcells'
@@ -21,6 +25,37 @@ class Flowcell(models.Model):
         default=True
     )
 
+    start_time = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    number_reads = models.IntegerField(
+        default=0
+    )
+
+    number_runs = models.IntegerField(
+        default=0
+    )
+
+    number_barcodes = models.IntegerField(
+        default=0
+    )
+
+    average_read_length = models.IntegerField(
+        default=0
+    )
+
+    total_read_length = models.IntegerField(
+        default=0
+    )
+
+    created_date = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    modified_date = models.DateTimeField(
+        auto_now=True
+    )
     def barcodes(self):
 
         barcode_set = set()

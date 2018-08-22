@@ -1109,9 +1109,29 @@ def flowcell_list_active(request):
 def flowcell_list(request):
 
     if request.method == 'GET':
-       queryset = Flowcell.objects.filter(owner=request.user)
-       serializer = FlowcellSerializer(queryset, many=True, context={'request': request})
-       return Response(serializer.data)
+
+        queryset = Flowcell.objects.filter(owner=request.user)
+        flowcells = []
+
+        for record in queryset:
+            flowcell = {
+                'name': record.name,
+                'size': record.size,
+                'start_time': record.start_time,
+                'number_reads': record.number_reads,
+                'number_runs': record.number_runs,
+                'number_barcodes': record.number_barcodes,
+                'total_read_length': record.total_read_length,
+                'average_read_length': record.average_read_length,
+                'is_active': record.is_active,
+                'sample_name': record.sample_name
+            }
+
+            flowcells.append(flowcell)
+
+        # serializer = FlowcellSerializer(queryset, many=True, context={'request': request})
+        # return Response(serializer.data)
+        return JsonResponse({'data': flowcells})
 
     elif request.method == 'POST':
         serializer = FlowcellSerializer(data=request.data, context={'request': request})
