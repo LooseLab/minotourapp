@@ -32,7 +32,7 @@ from reads.services import (save_flowcell_histogram_summary, save_flowcell_chann
                             save_flowcell_statistic_barcode)
 from reference.models import ReferenceInfo
 
-from centRun.RunCentrifuge import Centrifuger
+from centrifuge.centrifuge import Centrifuger
 import sys
 
 logger = get_task_logger(__name__)
@@ -66,8 +66,7 @@ def run_monitor():
 
     for flowcell in flowcell_list:
 
-        flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False)
-        print(flowcell_job_list.values())
+        flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False, complete=False)
         for flowcell_job in flowcell_job_list:
             print(f"job_type is {flowcell_job.job_type.name}")
 
@@ -115,15 +114,18 @@ def run_monitor():
                 :return:
                 """
                 try:
-                    print("trying centrifuge task")
-                    c = Centrifuger(flowcell.id, flowcell_job.id)
-                    c.run_centrifuge()
-                    print(sys.stdout)
+                    run_centrifuge.delay(flowcell.id, flowcell_job.id)
 
-                except:
+                except Exception as e:
                     e = sys.exc_info()
                     print(e)
 
+@task()
+def run_centrifuge(flowcell_id, flowcell_job_id):
+    print("trying centrifuge task")
+    c = Centrifuger(flowcell_id, flowcell_job_id)
+    c.run_centrifuge()
+    print("finished task")
 
 @task()
 def processreads(flowcell_id, job_master_id, last_read):

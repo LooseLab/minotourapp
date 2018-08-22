@@ -1,11 +1,11 @@
 from rest_framework import serializers
-from centrifuge.models import CentOutput, CartographyGuide, CartographyMapped, ReferenceGenomes
+from centrifuge.models import CentOutput, CartographyGuide, CartographyMapped, LineageValues
 
 class CentSerialiser(serializers.ModelSerializer):
     """Serialiser to represent CentOutput model"""
     class Meta:
         model = CentOutput
-        fields = ("name", "taxID", "num_reads", "sum_unique", "taxa", "task_meta")
+        fields = ("name", "tax_id", "num_matches", "sum_unique", "taxa", "task_meta")
 
 
 class CartMappedSerialiser(serializers.ModelSerializer):
@@ -21,8 +21,3 @@ class CartGuideSerialiser(serializers.ModelSerializer):
         model = CartographyGuide
         fields = ("species", "tax_id", "cart_mapped_id")
 
-class ReferenceGenomeSerialiser(serializers.ModelSerializer):
-    """serialise for the list of available reference genomes"""
-    class Meta:
-        model = ReferenceGenomes
-        fields = ("species", "refseq_link")

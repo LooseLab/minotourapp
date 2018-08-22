@@ -13,3 +13,4 @@ minotour.log
 minUPfastq/*
 minUPfastq
 logfile
+celerybeat*

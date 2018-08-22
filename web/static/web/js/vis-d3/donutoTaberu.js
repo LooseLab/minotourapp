@@ -157,7 +157,7 @@ function drawTables(selection, dataToDraw) {
 }
 
 function getDonutRankTable(flowCellId) {
-    $.get("/donut", {flowcellId: flowCellId}, result => {
+    $.get("/donut", {flowcellId: flowCellId, visType: "donut"}, result => {
         let dataToDraw = result.result;
         let range = $('.input-range'),
              value = $('.taxa-level');
