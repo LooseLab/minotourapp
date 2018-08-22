@@ -75,7 +75,6 @@ function startTask(description, reference) {
     })
 };
 
-
 function drawtaskbutton(taskstring, colour, icon, description, message, percentage, message2, i, long_description, reference, name, transcriptome) {
 
     taskstring = taskstring + '<div class="col-md-4">';
@@ -283,4 +282,26 @@ function loadTasksForm () {
             reference_select.appendChild(option);
         }
     }));
+}
+
+function flowcellTaskHistoryTable(flowcellId){
+    $('.tableLand tbody').DataTable( {
+        ajax: {
+           url: 'api/v1/tasks/?search_criteria=flowcell&search_value=' + flowcellId,
+           method: "GET",
+           xhrFields: {
+               withCredentials: true
+           }
+        },
+        columns: [
+            { data: "id" },
+            { data: "flowcell" },
+            { data: "task_type_name" },
+            { data: "last_read" },
+            { data: "read_count" },
+            { data: "running" },
+            { data: "complete" }
+        ]
+    } );
+
 }

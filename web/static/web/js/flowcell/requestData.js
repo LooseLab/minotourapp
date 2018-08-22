@@ -26,7 +26,7 @@ function requestData(flowcell_id) {
             requestMinknowMessages(flowcellId, data);
 
         } else if (flowcell_selected_tab_input.value == 'Tasks') {
-
+            this.flowcell_task_history_table(flowcellId);
             this.requestTasks(flowcellId);
             this.liveUpdateTasks(flowcellId);
 

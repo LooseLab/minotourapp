@@ -50,25 +50,3 @@
 <h2 class="panel-heading">Run analysis tasks on reads.</h2>
 <span id="tasks"></span>
 
-<script>
-    $('.display tbody').DataTable( {
-        ajax: {
-           url: 'api/v1/',
-           method: "GET",
-           xhrFields: {
-               withCredentials: true
-           }
-        },
-        columns: [
-            { data: "b.Campus" },
-            { data: "b.StudentName" },
-            { data: "b.StudentId" },
-            { data: "b.CourseId" },
-            { data: "b.CourseTitle" },
-            { data: "b.CreditEarned" }
-            /*and so on, keep adding data elements here for all your columns.*/
-        ]
-    } );
-
-</script>
-

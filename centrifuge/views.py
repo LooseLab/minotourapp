@@ -1,36 +1,19 @@
-from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from centrifuge.models import CentOutput, CartographyMapped, CartographyGuide, LineageValues, MetaGenomicsMeta, \
     SankeyLinks
 from centrifuge.serializers import CentSerialiser, CartMappedSerialiser, CartGuideSerialiser
-from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from django.utils import timezone
 import celery.bin.celery
 import celery.platforms
 import celery.bin.base
-from operator import itemgetter
 import uuid
 from ete3 import NCBITaxa
 import pandas as pd
 from devices.models import Flowcell
 from jobs.models import JobMaster, JobType
 from datetime import datetime
-
-
-class CentViewSet(viewsets.ModelViewSet):
-    """Viewset for viewing and editing centrifuge output objects"""
-
-    queryset = CentOutput.objects.all()
-    serializer_class = CentSerialiser
-
-
-class DefaultViewSet(viewsets.ModelViewSet):
-    """Viewset for viewing and editing the default targets in the traffic light analysis"""
-
-    queryset = CartographyGuide.objects.all()
-    serializer_class = CartGuideSerialiser
 
 
 @api_view(["GET"])
