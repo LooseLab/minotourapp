@@ -53,6 +53,7 @@ function requestData(flowcell_id) {
         } else if (flowcell_selected_tab_input.value == 'Runs') {
 
         } else if (flowcell_selected_tab_input.value == 'Metagenomics') {
+
             this.drawSankey(flowcellId);
             this.metaHeader(flowcellId);
             this.drawDonut(flowcellId);

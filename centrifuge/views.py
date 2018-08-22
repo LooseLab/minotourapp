@@ -1,7 +1,8 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from centrifuge.models import CentOutput, CartographyMapped, CartographyGuide, LineageValues, MetaGenomicsMeta, SankeyLinks
+from centrifuge.models import CentOutput, CartographyMapped, CartographyGuide, LineageValues, MetaGenomicsMeta, \
+    SankeyLinks
 from centrifuge.serializers import CentSerialiser, CartMappedSerialiser, CartGuideSerialiser
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
@@ -31,6 +32,7 @@ class DefaultViewSet(viewsets.ModelViewSet):
     queryset = CartographyGuide.objects.all()
     serializer_class = CartGuideSerialiser
 
+
 @api_view(["GET"])
 def metaview(request):
     """
@@ -46,7 +48,11 @@ def metaview(request):
     print(f"meta_id is {request.query_params.get('flowcellId', False)}")
     # print(request.GET.flowcell_id)
     # the relevant metagenomics database entry
-    queryset = MetaGenomicsMeta.objects.get(flowcell_id=request.query_params.get("flowcellId", False))
+
+    flowcell_id = request.GET.get("flowcellId", False)
+    task_id = max(JobMaster.objects.filter(flowcell=flowcell_id).values_list("id", flat=True))
+    queryset = MetaGenomicsMeta.objects.get(flowcell_id=flowcell_id,
+                                            task__id=task_id)
     # If the run has finished set the finish time permanently
     if not queryset.running and not queryset.finish_time:
         queryset.finish_time = timezone.now().replace(tzinfo=None)
@@ -86,10 +92,12 @@ def cent_sankey_two(request):
 
     """
     species_limit = request.GET.get("speciesLimit", 50)
+    flowcell_id = request.GET.get("flowcellId", "")
+    task_id = max(JobMaster.objects.filter(flowcell=flowcell_id).values_list("id", flat=True))
 
     # ## Get the links for the sankey Diagram ###
     print(f"the flowcell is  {request.GET.get('flowcellId', '')}")
-    queryset = SankeyLinks.objects.filter(flowcell_id=request.GET.get("flowcellId", "")).values()
+    queryset = SankeyLinks.objects.filter(flowcell_id=flowcell_id, task__id=task_id).values()
 
     if not queryset:
         return Response(status=204)
@@ -133,7 +141,7 @@ def cent_sankey_two(request):
 
 # TODO refactor into run centrifuge.py
 @api_view(["GET"])
-def vis_table_data(request):
+def vis_table_or_donut_data(request):
     """
     Create the total reads table for the bottom of the page
     Parameters
@@ -144,8 +152,12 @@ def vis_table_data(request):
     -------
 
     """
+    flowcell_id = request.GET.get("flowcellId", 0)
+    # Get the most recent job
+    task_id = max(JobMaster.objects.filter(flowcell=flowcell_id).values_list("id", flat=True))
+
     # queryset from database, filtered by the meta_id
-    queryset = CentOutput.objects.filter(flowcell_id=request.GET.get("flowcellId", 0))
+    queryset = CentOutput.objects.filter(flowcell_id=flowcell_id, task__id=task_id)
     # all the taxIDs for this centrifuge job as a list, need for filtering all the relevant lineages
     centouput_df = pd.DataFrame(list(queryset.values()))
     # if there is no data in the database (yet) return 404
@@ -236,10 +248,11 @@ def vis_table_data(request):
         container_array.append(obj)
 
     lineages_df["species"] = lineages_df["species"] + " (Num Reads - " + lineages_df["summed_species"].map(str) \
-        + " Proportion " + lineages_df["prop_species"].map(str) + "%)"
+                             + " Proportion " + lineages_df["prop_species"].map(str) + "%)"
 
-    lineages_df["genus"] = lineages_df["genus"] + " (Num Reads - " + lineages_df["summed_genus"].map(str) + " Proportion " \
-        + lineages_df["prop_genus"].map(str) + "%)"
+    lineages_df["genus"] = lineages_df["genus"] + " (Num Reads - " + lineages_df["summed_genus"].map(
+        str) + " Proportion " \
+                           + lineages_df["prop_genus"].map(str) + "%)"
 
     json = lineages_df.to_json(orient="records")
 
@@ -286,16 +299,18 @@ def start_centrifuge_view(request):
         time = "{:%H:%M:%S}".format(d)
 
         flowcell_id = request.data["flowcellId"]
-        # create django model object, save it to database
-        MetaGenomicsMeta(run_time=time, flowcell_id=flowcell_id ,running=True, number_of_reads=0,
-                         reads_classified=0).save()
+
         # call celery task, pass the uuid we generated as an argument
         # Create Jobmaster object, to save. This will be picked up by the run
         # monitor task
         flowcell = Flowcell.objects.get(pk=flowcell_id)
-        jobtype = JobType.objects.get(pk=10)
-        JobMaster(flowcell=flowcell, job_type=jobtype,
-                  running=False, complete=0, read_count=0, last_read=0).save()
+        jobtype = JobType.objects.get(name="Centrifuge")
+        task = JobMaster(flowcell=flowcell, job_type=jobtype,
+                         running=False, complete=0, read_count=0, last_read=0)
+        task.save()
+        # create django model object, save it to database
+        MetaGenomicsMeta(run_time=time, flowcell_id=flowcell_id, running=True, number_of_reads=0,
+                         reads_classified=0, task=task).save()
         # # create django model object, save it to database
         # print("saved metadata")
         # return_dict = {"ident": ident}
@@ -350,5 +365,3 @@ def get_or_set_cartmap(request):
                                   alert_level=0, red_reads=0).save()
 
         return Response("Hi there", status=200)
-
-

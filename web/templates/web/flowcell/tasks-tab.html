@@ -1,22 +1,44 @@
 <div class="row">
+    <table class="table table-hover tableLand display" style="">
+                                <thead>
+                                <tr>
+                                    <th>Id</th>
+                                    <th>Task type</th>
+                                    <th>Last read</th>
+                                    <th>Read count</th>
+                                    <th>Running</th>
+                                    <th>Complete</th>
+                                </tr>
+                                </thead>
+                                <tfoot>
+                                <tr>
+                                    <th>Id</th>
+                                    <th>Task type</th>
+                                    <th>Last read</th>
+                                    <th>Read count</th>
+                                    <th>Running</th>
+                                    <th>Complete</th>
+                                </tr>
+                                </tfoot>
+                            </table>
+
+</div>
+<div class="row">
     <div class="col-md-12">
         <div class='panel panel-info'>
             <div class='panel-heading'>
                 <h3 class='panel-title'>Create a new analysis task</h3>
             </div>
             <div class='panel-body'>
-
                 <form class="form-inline">
                     <div class="form-group">
                         <label for="job_type_id">Task type</label>
                         <select id="job_type_id"></select>
                     </div>
-
                     <div class="form-group">
                         <label for="reference_id">Reference</label>
                         <select id="reference_id"></select>
                     </div>
-
                     <button type="submit" class="btn btn-primary">Submit</button>
                 </form>
             </div>
@@ -27,4 +49,26 @@
 
 <h2 class="panel-heading">Run analysis tasks on reads.</h2>
 <span id="tasks"></span>
+
+<script>
+    $('.display tbody').DataTable( {
+        ajax: {
+           url: 'api/v1/',
+           method: "GET",
+           xhrFields: {
+               withCredentials: true
+           }
+        },
+        columns: [
+            { data: "b.Campus" },
+            { data: "b.StudentName" },
+            { data: "b.StudentId" },
+            { data: "b.CourseId" },
+            { data: "b.CourseTitle" },
+            { data: "b.CreditEarned" }
+            /*and so on, keep adding data elements here for all your columns.*/
+        ]
+    } );
+
+</script>
 

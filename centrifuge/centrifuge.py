@@ -13,6 +13,7 @@ from django.utils import timezone
 
 # TODO del unused df and things
 
+
 class Centrifuger:
     """
         The Centrifuger class is a collection of methods that are required to perform the open centrifuge analysis on
@@ -82,7 +83,9 @@ class Centrifuger:
         # Loop whilst self.scan = True
 
         job_master = JobMaster.objects.get(pk=self.flowcell_job_id)
-        job_master.update(running=True)
+        job_master.running = True
+        job_master.save()
+        metadata = MetaGenomicsMeta.objects.get(flowcell_id=self.flowcell_id, task__id=job_master.id)
         while self.scan:
             print(f"id is {self.flowcell_id}")
             # return all currently present reads
@@ -90,7 +93,7 @@ class Centrifuger:
             doc_no = cursor.count()
             last_read_id = cursor[doc_no-1].id
             # Get the metadata for this run
-            metadata = MetaGenomicsMeta.objects.get(flowcell_id=self.flowcell_id)
+
             # The number of reads that we have in the database
             metadata.number_of_reads = doc_no
             metadata.save()
@@ -172,7 +175,7 @@ class Centrifuger:
             # =========================================== database dataframe
             # reset index
             # query the index get all the objects in the database at this point
-            queryset = CentOutput.objects.filter(flowcell_id=self.flowcell_id).values()
+            queryset = CentOutput.objects.filter(flowcell_id=self.flowcell_id, task__id=job_master.id).values()
             print(f"the length of the queryset is {len(queryset)}")
 
             new_cent_num_matches = df["num_matches"]
@@ -328,12 +331,14 @@ class Centrifuger:
 
             current_links_taxids = set(source_target_df["tax_id"])
 
-            prev_links_taxids = set(SankeyLinks.objects.filter(flowcell_id=self.flowcell_id)
+            prev_links_taxids = set(SankeyLinks.objects.filter(flowcell_id=self.flowcell_id, task__id=job_master.id)
                                     .values_list("tax_id", flat=True))
 
             not_yet_linked = current_links_taxids - prev_links_taxids
 
             to_create_df = source_target_df[source_target_df["tax_id"].isin(not_yet_linked)]
+
+            to_create_df["job_master"] = job_master
 
             to_update_df = source_target_df[source_target_df["tax_id"].isin(prev_links_taxids)]
 
@@ -343,7 +348,8 @@ class Centrifuger:
                 def sankey_bulk_insert_list(row):
                     sankey_link_insert_list.append(SankeyLinks(flowcell_id=row["flowcell_id"], source=row["source"],
                                                                target=row["target"], value=row["value"],
-                                                               tax_id=row["tax_id"], rank=row["rank"]))
+                                                               tax_id=row["tax_id"], rank=row["rank"],
+                                                               task=row["job_master"]))
                     return
 
                 to_create_df.apply(sankey_bulk_insert_list, axis=1)
@@ -352,7 +358,8 @@ class Centrifuger:
 
             # ## UPDATE existing links ## #
             if not to_update_df.empty:
-                prev_links_df = pd.DataFrame(list(SankeyLinks.objects.filter(flowcell_id=self.flowcell_id).values()))
+                prev_links_df = pd.DataFrame(list(SankeyLinks.objects.filter(flowcell_id=self.flowcell_id,
+                                                                             task__id=job_master.id).values()))
 
                 to_combine_values_df = prev_links_df[prev_links_df["tax_id"].isin(prev_links_taxids)]
 
@@ -397,11 +404,13 @@ class Centrifuger:
 
             # TODO rewrite iterrows to apply returnin a list
             centoutput_insert_list = []
+            df["flowcell_id"] = self.flowcell_id
+            df["task"] = job_master
 
             def centoutput_bulk_list(row):
                 centoutput_insert_list.append(CentOutput(name=row["name"], tax_id=row["tax_id"],
                                                          num_matches=row["num_matches"], sum_unique=row["sum_unique"],
-                                                         flowcell_id=self.flowcell_id, job_master=job_master))
+                                                         flowcell_id=row["flowcell_id"], task=row["task"]))
                 return
             df.apply(centoutput_bulk_list, axis=1)
 
@@ -420,17 +429,20 @@ class Centrifuger:
                 CentOutput.objects.bulk_create(centoutput_insert_list)
                 print("Inserted first time")
             # if all reads are centrifuged
-            job_master.update(last_read=last_read_id)
+            job_master.last_read = last_read_id
+            job_master.save()
             metadata.reads_classified = doc_no
             metadata.save()
             # TODO need way to stop when all reads are done.
         if not self.scan:
             # stop the scan while loop
-            job_master.update(running=False, complete=True)
+            job_master.running = False
+            job_master.complete = True
+            job_master.save()
             # set running to false. This means client stops querying
             # MetaGenomicsMeta.objects.filter(meta_id=self.foreign_key).update(running=False)
             print("Finished all reads in database")
-            metadata = MetaGenomicsMeta.objects.get(flowcell_id=self.flowcell_id)
+
             start_time = metadata.timestamp.replace(tzinfo=None)
             end_time = timezone.now().replace(tzinfo=None)
             metadata.finish_time = end_time - start_time

@@ -9,6 +9,10 @@ class MetaGenomicsMeta(models.Model):
     timestamp = models.DateTimeField(default=timezone.now, null=True)
     run_time = models.CharField(max_length=30, null=True)
     flowcell_id = models.IntegerField()
+    task = models.ForeignKey(
+        JobMaster,
+        related_name="metadata_metagenomics"
+    )
     running = models.BooleanField()
     number_of_reads = models.IntegerField()
     reads_classified = models.IntegerField()
@@ -23,7 +27,7 @@ class CentOutput(models.Model):
     sum_unique = models.IntegerField(null=True)
     taxa = models.CharField(null=True, max_length=100)
     flowcell_id = models.IntegerField(null=True)
-    job_master = models.ForeignKey(
+    task = models.ForeignKey(
         JobMaster,
         related_name="centrifuge_summaries"
     )
@@ -74,3 +78,7 @@ class SankeyLinks(models.Model):
     tax_id = models.IntegerField()
     flowcell_id = models.IntegerField()
     rank = models.IntegerField()
+    task = models.ForeignKey(
+        JobMaster,
+        related_name="sankey_links"
+    )
