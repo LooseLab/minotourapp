@@ -1026,6 +1026,7 @@ def flowcell_list(request):
 
         for record in queryset:
             flowcell = {
+                'id': record.id,
                 'name': record.name,
                 'size': record.size,
                 'start_time': record.start_time,
