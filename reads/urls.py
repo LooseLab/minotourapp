@@ -29,6 +29,11 @@ urlpatterns = [
         name="fastqread-list-new"
     ),
     url(
+        r'^api/v1/readsextra/$',
+        views.readextra_list,
+        name="readextra_list"
+    ),
+    url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/readnames/$',
         views.readname_list,
         name="fastqreadnames-list"

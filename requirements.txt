@@ -28,4 +28,3 @@ isort
 psycopg2-binary
 django-debug-toolbar
 ete3
-

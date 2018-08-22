@@ -2,12 +2,13 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from rest_framework.authtoken.models import Token
 
 from communication.models import Message
 from devices.models import Flowcell
-from reads.models import Run, UserOptions, GroupRun
+from reads.models import Run, UserOptions, FastqRead
 from web.forms import SignUpForm, UserOptionsForm
 
 
@@ -111,6 +112,78 @@ def flowcell_index(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)
     return render(request, 'web/flowcell_index.html', context={'flowcell': flowcell})
+
+
+@login_required
+def flowcell_reads(request, pk):
+
+    flowcell = Flowcell.objects.get(pk=pk)
+
+    return render(request, 'web/flowcell_reads.html', context={'flowcell': flowcell})
+
+
+def flowcell_reads_data(request):
+
+    # column_0_data = request.GET.get('column[0][data]', '')
+    # column_0_name = request.GET.get('column[0][name]', '')
+    # column_0_searchable = request.GET.get('column[0][searchable]', '')
+    # column_0_orderable = request.GET.get('column[0][orderable]', '')
+    # column_0_search_value = request.GET.get('column[0][search][value]', '')
+    # column_0_search_regex = request.GET.get('column[0][search][regex]', '')
+
+    query_columns = [
+        'read_id',
+        'read',
+        'channel',
+        'sequence_length',
+        'run__runid',
+        'barcode__name',
+    ]
+
+    query_columns_string = ['read_id', 'read', 'channel', 'sequence_length', 'run__runid', 'barcode__name']
+
+    draw = int(request.GET.get('draw', 0))
+
+    search_value = request.GET.get('search[value]', '')
+
+    start = int(request.GET.get('start', 0))
+
+    length = int(request.GET.get('length', 10))
+
+    end = start + length
+
+    order_column = request.GET.get('order[0][column]', '')
+
+    order_dir = request.GET.get('order[0][dir]', '')
+
+    if not search_value == "":
+        reads_temp = FastqRead.objects.filter(read_id__contains=search_value)
+
+    else:
+        reads_temp = FastqRead.objects.all()
+
+    if order_column:
+
+        if order_dir == 'desc':
+
+            reads_temp2 = reads_temp.order_by('-{}'.format(query_columns[int(order_column)]))
+
+        else:
+
+            reads_temp2 = reads_temp.order_by('{}'.format(query_columns[int(order_column)]))
+
+    reads = reads_temp2.values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
+
+    records_total = len(reads)
+
+    result = {
+        'draw': draw,
+        "recordsTotal": records_total,
+        "recordsFiltered": records_total,
+        "data": list(reads[start:end])
+    }
+
+    return JsonResponse(result, safe=True)
 
 
 @login_required
