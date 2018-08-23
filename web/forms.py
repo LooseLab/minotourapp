@@ -2,6 +2,8 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
+from jobs.models import JobMaster
+
 
 class UserOptionsForm(forms.Form):
 
@@ -54,3 +56,11 @@ class SignUpForm(UserCreationForm):
             'password1',
             'password2',
         )
+
+
+class TaskForm(forms.ModelForm):
+
+    class Meta:
+        model = JobMaster
+        fields = ('flowcell', 'job_type')
+
