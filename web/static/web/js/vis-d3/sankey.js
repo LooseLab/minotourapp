@@ -64,6 +64,17 @@
 //     return nodes;
 // }
 
+$(window).on("resize", function(){
+    let hi = $(window).height() * 0.55;
+    // width of page#
+    let width = $(window).width() * 0.900;
+    let inputFlowcellId = document.querySelector("#flowcell-id");
+    let flowcellId = inputFlowcellId.value;
+    d3.select(".svg-sankey").attr("width", width);
+    d3.select(".svg-sankey").attr("height", hi);
+    drawSankey(flowcellId);
+});
+
 function draw(nodesObj, sankey, g, format, color, width, redraw) {
     let node;
     let text;
@@ -143,12 +154,13 @@ function update(flowcellId, sankey, checkForData, svg, g, format, color, width, 
         if (result.sankey.nodes.length !== 0 && checkForData) {
             d3.select(".metagenomics-settings").style("display", "none");
             setTimeout(function () {
-                d3.select("body").attr("class", "loaded sidebar-collapse");
-            }, 1500);
+                // d3.select("body").attr("class", "loaded sidebar-collapse");
+                $("body").addClass("loaded sidebar-collapse");
+            }, 3000);
         }
         svg.select(".contain").selectAll("*").remove();
         draw(nodes, sankey, g, format, color, width, update);
-    });
+    }).fail();
 }
 
 function drawSankey(flowcellId) {
@@ -157,7 +169,7 @@ function drawSankey(flowcellId) {
     // height of page
     let hi = $(window).height() * 0.55;
     // width of page
-    let width = container.getBoundingClientRect().width * 0.933;
+    let width = container.getBoundingClientRect().width * 0.900;
     let svg;
     let g;
     let formatNumber = d3.format(",.0f"),

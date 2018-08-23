@@ -11,12 +11,12 @@ class MetaGenomicsMeta(models.Model):
     flowcell_id = models.IntegerField()
     task = models.ForeignKey(
         JobMaster,
-        related_name="metadata_metagenomics"
+        related_name="metadata_metagenomics",
     )
     running = models.BooleanField()
     number_of_reads = models.IntegerField()
     reads_classified = models.IntegerField()
-    finish_time = models.DateTimeField(null=True)
+    finish_time = models.CharField(max_length=40, null=True)
 
 
 class CentOutput(models.Model):

@@ -119,7 +119,7 @@ function MinotourApp() {
                 //alert("Error: " + errorThrown);
             }
 
-        })
+        });
     };
 
     //this.updateReadsPerPoreChart = updateReadsPerPoreChart;

@@ -1,4 +1,14 @@
 "use strict";
+$(window).on("resize", function(){
+    let width = ($(window).width() * 0.25) - 50;
+    let height = $(window).height() * 0.35;
+    console.log([width, height]);
+    d3.select(".donut-svg").attr("width", width);
+    d3.select(".donut-svg").attr("height", height);
+    let inputFlowcellId = document.querySelector("#flowcell-id");
+    let flowcellId = inputFlowcellId.value;
+    drawDonut(flowcellId);
+});
 
 function move() {
     d3.select(".badCopNoDonut").attr("transform", d3.event.transform);
@@ -43,9 +53,10 @@ function drawDonut(flowCellId) {
     // the taxa titles we wish to display under the slider
     let DisplayTaxas = ["Species", "Genus", "Family", "Order", "Class", "Phylum", "Kingdom"];
     let container = d3.select("body").node();
-    let width = ((container.getBoundingClientRect().width - 30) * 0.25) - 20;
+    let width = ($(window).width() *0.25) -50;
     let height = $(window).height() * 0.35,
-        radius = Math.min(width, height / 1.7);
+        radius = Math.min(width, height)/2;
+    console.log([width, height]);
     let zoom = d3.zoom()
         .scaleExtent([1, 10]).translateExtent([[0, 0], [width, height]])
         .on("zoom", move);
@@ -55,6 +66,7 @@ function drawDonut(flowCellId) {
     let dHeight = 35;
     let svg;
     let g;
+    let taxa;
     // pie is a d3 function that transforms the value for each of the .values in the array of objects, into
     let pie = d3.pie().padAngle(0.01).sort(null)
         .value(function (d) {
@@ -67,33 +79,37 @@ function drawDonut(flowCellId) {
         .padAngle(0.02);
 
     const fillArray = ["rgb(255, 0, 0)", "rgb(0, 0, 255)", "rgb(0, 255, 0)", "rgb(255, 0, 255)", "rgb(255, 153, 51)", "rgb(255, 252, 8)",
-        "rgb(8, 249, 255)", "rgb(202, 8 ,255)", "rgb(35, 144, 35)", "rgb(202, 119, 8)", "rgb(173, 176, 150)", "rgb(0, 0, 0)",
+        "rgb(8, 249, 255)", "rgb(202, 8 ,255)", "rgb(35, 144, 3)", "rgb(202, 119, 8)", "rgb(173, 176, 150)", "rgb(0, 0, 0)",
         "rgb(141, 202, 8)", "rgb(8, 204, 200)", "rgb(117, 114, 45)", "rgb(255, 0, 99)", "rgb(114, 132, 114)", "rgb(204, 255, 102)",
         "rgb(204, 153, 255)", "rgb(255, 153, 0)"];
 
-    if ($(".donut-svg").length) {
+    if (d3.select(".slices").selectAll("path.slice").data().length !== 0) {
+        console.log(d3.select(".donut-svg").selectAll("path.slice").data());
+        console.log("if");
         svg = d3.select(".donut-svg");
-        // d3.select(".slices")/**/.selectAll("*").remove();
+        // recenter
+        d3.select(".slices").attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
     } else {
+        // d3.select(".slices")/**/.selectAll("*").remove();
+        console.log("else");
         svg = d3.select(".donutContainer").append("svg")
             .attr("class", "donut-svg")
             .attr("width", width)
-            .style("height", dHeight+"vh")
+            .attr("height", height)
             .attr("margin", "auto")
-            .style("margin-left", "-20px")
             .attr("display", "block")
             .call(zoom);
         g = svg.append("g").attr("class", "badCopNoDonut");
-        // append g elements to the svg, attr transform translate centers them in the svg, otherwise drawn offscreen
 
+        // append g elements to the svg, attr transform translate centers them in the svg, otherwise drawn offscreen
         g.append("g")
             .attr("class", "slices")
             .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
-    }
+        value.html(DisplayTaxas[0]);
 
-    value.html(DisplayTaxas[0]);
+    }
     $.get("/donut", {flowcellId: flowCellId, visType: "donut"}, result => {
-        console.log(result)
+        console.log(result);
         let dataToDraw = result.result;
         // if there is no data return and try again when interval is up on $interval
         if (result.result.length === 0) {
@@ -125,6 +141,6 @@ function drawDonut(flowCellId) {
             //draw a new donut
             drawPie(sortedData, dataLength, fillArray, pie, arc, svg);
         });
-        drawPie(dataToDraw[0]["species"], dataLength, fillArray, pie, arc, svg);
+        drawPie(data1, dataLength, fillArray, pie, arc, svg);
     });
 }

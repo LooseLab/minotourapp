@@ -33,13 +33,12 @@ def metaview(request):
     # the relevant metagenomics database entry
 
     flowcell_id = request.GET.get("flowcellId", False)
-    task_id = max(JobMaster.objects.filter(flowcell=flowcell_id).values_list("id", flat=True))
+
+    task_ids = JobMaster.objects.filter(flowcell=flowcell_id).values_list("id", flat=True)
+    # Get the most recent job
+    task_id = max(task_ids)
     queryset = MetaGenomicsMeta.objects.get(flowcell_id=flowcell_id,
                                             task__id=task_id)
-    # If the run has finished set the finish time permanently
-    if not queryset.running and not queryset.finish_time:
-        queryset.finish_time = timezone.now().replace(tzinfo=None)
-        queryset.save()
 
     number_of_reads = queryset.number_of_reads
     reads_class = queryset.reads_classified
@@ -144,6 +143,7 @@ def vis_table_or_donut_data(request):
     # all the taxIDs for this centrifuge job as a list, need for filtering all the relevant lineages
     centouput_df = pd.DataFrame(list(queryset.values()))
     # if there is no data in the database (yet) return 404
+    centouput_df.drop(columns=["task_id"], inplace=True)
     if centouput_df.empty:
         return Response(status=204)
     # create dataframe
@@ -236,14 +236,14 @@ def vis_table_or_donut_data(request):
     lineages_df["genus"] = lineages_df["genus"] + " (Num Reads - " + lineages_df["summed_genus"].map(
         str) + " Proportion " \
                            + lineages_df["prop_genus"].map(str) + "%)"
-
-    json = lineages_df.to_json(orient="records")
+    lineages_df.fillna("Unknown", inplace=True)
+    json = lineages_df.to_dict(orient="records")
 
     container_array.reverse()
 
     # create an object to return
     if request.GET.get("visType", "") == "table":
-        return_dict = {"json": json}
+        return_dict = json
     elif request.GET.get("visType", "") == "donut":
         return_dict = {"result": container_array}
     else:

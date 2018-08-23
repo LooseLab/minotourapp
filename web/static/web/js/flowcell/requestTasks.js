@@ -201,14 +201,14 @@ function requestTasks(id) {
     }).bind(this));
 }
 
-function loadTasksForm () {
+function loadTasksForm() {
     /*
      * Loads create task's form and add event listeners
      */
 
     var job_type_select = document.querySelector("#job_type_id");
 
-    job_type_select.onchange = function(event) {
+    job_type_select.onchange = function (event) {
 
         if (!event.target.value) {
 
@@ -284,24 +284,28 @@ function loadTasksForm () {
     }));
 }
 
-function flowcellTaskHistoryTable(flowcellId){
-    $('.tableLand tbody').DataTable( {
-        ajax: {
-           url: 'api/v1/tasks/?search_criteria=flowcell&search_value=' + flowcellId,
-           method: "GET",
-           xhrFields: {
-               withCredentials: true
-           }
-        },
-        columns: [
-            { data: "id" },
-            { data: "flowcell" },
-            { data: "task_type_name" },
-            { data: "last_read" },
-            { data: "read_count" },
-            { data: "running" },
-            { data: "complete" }
-        ]
-    } );
-
+function flowcellTaskHistoryTable(flowcellId) {
+    console.log(flowcellId);
+    console.log("Tabley");
+    let table = $(".tasktablecont");
+    console.log(table);
+    if (table.hasClass("yesload")) {
+        console.log("No worries mate");
+    } else {
+        $('.tasktable').DataTable({
+            ajax: {
+                url: '/api/v1/tasks/?search_criteria=flowcell&search_value=' + flowcellId.toString(),
+                method: "GET",
+            },
+            columns: [
+                {"data": "id"},
+                {"data": "task_type_name"},
+                {"data": "last_read"},
+                {"data": "read_count"},
+                {"data": "running"},
+                {"data": "complete"}
+            ]
+        });
+        $(".tasktablecont").addClass("yesload")
+    }
 }

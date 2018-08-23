@@ -91,6 +91,8 @@ class Centrifuger:
             # return all currently present reads
             cursor = FastqRead.objects.filter(run__flowcell_id__in={self.flowcell_id})
             doc_no = cursor.count()
+            job_master.read_count = doc_no
+            job_master.save()
             last_read_id = cursor[doc_no-1].id
             # Get the metadata for this run
 
@@ -445,7 +447,7 @@ class Centrifuger:
 
             start_time = metadata.timestamp.replace(tzinfo=None)
             end_time = timezone.now().replace(tzinfo=None)
-            metadata.finish_time = end_time - start_time
+            metadata.finish_time = str(end_time - start_time)
             metadata.save()
             print("finished")
             print(f"total centOut lines {total_centout}")

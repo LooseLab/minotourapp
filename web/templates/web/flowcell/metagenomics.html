@@ -31,6 +31,10 @@
                 "flowcellId": flowCellId.value
             }).done(function (data) {
                 alert("Job Created");
-            });
+            }).fail(function(response){
+                console.log(response)
+            })
+
+            ;
         });
 </script>
