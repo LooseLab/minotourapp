@@ -6,36 +6,72 @@ from rest_framework.response import Response
 from jobs.models import JobType, JobMaster
 from jobs.serializers import JobMasterSerializer
 from reads.models import Run
-from reads.serializers import JobTypeSerializer
-from reference.models import ReferenceInfo
+from web.forms import TaskForm
 
 
-@api_view(["GET"])
+@api_view(["GET", "POST"])
 def task_list(request):
     """
     return aLL the tasks active under one flowcell
     :param request:
     :return:
     """
-    search_criteria = request.GET.get('search_criteria', 'flowcell')
 
-    if search_criteria == 'flowcell':
-        flowcell_id = request.GET.get("search_value", "") # TODO have to test for empty search value
-        task_list = JobMaster.objects.filter(flowcell__id=int(flowcell_id))
-        serializer = JobMasterSerializer(task_list, many=True)
-        result = {
-            "data": serializer.data
-        }
-        return JsonResponse(result)
+    if request.method == 'GET':
+
+        search_criteria = request.GET.get('search_criteria', 'flowcell')
+
+        if search_criteria == 'flowcell':
+            flowcell_id = request.GET.get("search_value", "")  # TODO have to test for empty search value
+            task_list = JobMaster.objects.filter(flowcell__id=int(flowcell_id))
+            serializer = JobMasterSerializer(task_list, many=True)
+            result = {
+                "data": serializer.data
+            }
+            return JsonResponse(result)
+        else:
+            return JsonResponse({"data": []})
+
     else:
-        return JsonResponse({"data": []})
+
+        form = TaskForm(data=request.POST)
+
+        print(request.POST)
+        print(form)
+
+        if form.is_valid():
+
+            task = form.save()
+
+            response_data = {}
+            response_data['message'] = "Create task successful!"
+            response_data['pk'] = task.id
+
+            return JsonResponse(response_data)
+
+        else:
+
+            return JsonResponse({'error_messages': form.errors.as_json()}, status=500)
+
 
 @api_view(['GET'])
 def task_types_list(request):
-    if request.method == 'GET':
-        queryset = JobType.objects.filter(private=False)
-        serializer = JobTypeSerializer(queryset, many=True, context={'request': request})
-        return Response(serializer.data)
+    queryset = JobType.objects.filter(private=False)
+    result = []
+
+    for record in queryset:
+        task = {
+            'id': record.id,
+            'name': record.name,
+            'description': record.description
+        }
+
+        result.append(task)
+
+    return JsonResponse({
+        'data': result
+    })
+
 
 @api_view(['POST'])
 def set_task_detail_all(request, pk):
