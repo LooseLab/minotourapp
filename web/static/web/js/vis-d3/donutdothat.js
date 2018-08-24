@@ -2,7 +2,6 @@
 $(window).on("resize", function(){
     let width = ($(window).width() * 0.25) - 50;
     let height = $(window).height() * 0.35;
-    console.log([width, height]);
     d3.select(".donut-svg").attr("width", width);
     d3.select(".donut-svg").attr("height", height);
     let inputFlowcellId = document.querySelector("#flowcell-id");
@@ -56,17 +55,14 @@ function drawDonut(flowCellId) {
     let width = ($(window).width() *0.25) -50;
     let height = $(window).height() * 0.35,
         radius = Math.min(width, height)/2;
-    console.log([width, height]);
     let zoom = d3.zoom()
         .scaleExtent([1, 10]).translateExtent([[0, 0], [width, height]])
         .on("zoom", move);
     let number;
     let range = $('.input-range'),
         value = $('.taxa-level');
-    let dHeight = 35;
     let svg;
     let g;
-    let taxa;
     // pie is a d3 function that transforms the value for each of the .values in the array of objects, into
     let pie = d3.pie().padAngle(0.01).sort(null)
         .value(function (d) {
@@ -83,15 +79,12 @@ function drawDonut(flowCellId) {
         "rgb(141, 202, 8)", "rgb(8, 204, 200)", "rgb(117, 114, 45)", "rgb(255, 0, 99)", "rgb(114, 132, 114)", "rgb(204, 255, 102)",
         "rgb(204, 153, 255)", "rgb(255, 153, 0)"];
 
-    if (d3.select(".slices").selectAll("path.slice").data().length !== 0) {
-        console.log(d3.select(".donut-svg").selectAll("path.slice").data());
-        console.log("if");
+    if ($(".donut-svg").length !== 0) {
         svg = d3.select(".donut-svg");
         // recenter
         d3.select(".slices").attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
     } else {
-        // d3.select(".slices")/**/.selectAll("*").remove();
-        console.log("else");
+        console.log("donut else, appending new donut");
         svg = d3.select(".donutContainer").append("svg")
             .attr("class", "donut-svg")
             .attr("width", width)
@@ -109,12 +102,12 @@ function drawDonut(flowCellId) {
 
     }
     $.get("/donut", {flowcellId: flowCellId, visType: "donut"}, result => {
-        console.log(result);
-        let dataToDraw = result.result;
         // if there is no data return and try again when interval is up on $interval
-        if (result.result.length === 0) {
+        if (result === undefined) {
             return;
         }
+        let dataToDraw = result.result;
+
         let currentSelectionSlider = value.html();
         // what index is that in the display taxas so we can get the right value from the internal taxas array and results array
         let index = DisplayTaxas.indexOf(currentSelectionSlider);

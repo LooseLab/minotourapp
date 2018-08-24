@@ -94,11 +94,11 @@ var FlowcellPageApp = {
 
         this.requestPafData = requestPafData.bind(this);
 
-        this.liveUpdateTasks = liveUpdateTasks;
+        // this.liveUpdateTasks = liveUpdateTasks;
+        //
+        // this.updateTasks = updateTasks.bind(this);
 
-        this.updateTasks = updateTasks.bind(this);
-
-        this.requestTasks = requestTasks.bind(this);
+        // this.requestTasks = requestTasks.bind(this);
 
         this.requestRunDetails = requestRunDetails.bind(this);
 

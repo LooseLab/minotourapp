@@ -158,6 +158,10 @@ function drawTables(selection, dataToDraw) {
 
 function getDonutRankTable(flowCellId) {
     $.get("/donut", {flowcellId: flowCellId, visType: "donut"}, result => {
+        // if there is no data return and try again when interval is up on $interval
+        if (result === undefined) {
+            return;
+        }
         let dataToDraw = result.result;
         let range = $('.input-range'),
              value = $('.taxa-level');
@@ -171,10 +175,6 @@ function getDonutRankTable(flowCellId) {
         let data1 = dataToDraw[index][currentlySelectedTaxa];
         // get the number of members in this clade used to determine whether we need a second table
         let dataLength = data1.length;
-        // if there is no data return and try again when interval is up on $interval
-        if (result.result.length === 0) {
-            return;
-        }
         // if the range slider is changed call the anonymous function to redraw everything
         range.on("input", function () {
             // the selected number for the slider level (0-6)

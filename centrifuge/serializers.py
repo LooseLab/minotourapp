@@ -5,7 +5,7 @@ class CentSerialiser(serializers.ModelSerializer):
     """Serialiser to represent CentOutput model"""
     class Meta:
         model = CentOutput
-        fields = ("name", "tax_id", "num_matches", "sum_unique", "taxa", "task_meta")
+        fields = ("name", "tax_id", "num_matches", "sum_unique", "taxa")
 
 
 class CartMappedSerialiser(serializers.ModelSerializer):

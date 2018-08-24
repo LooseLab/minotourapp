@@ -37,8 +37,11 @@ def metaview(request):
     task_ids = JobMaster.objects.filter(flowcell=flowcell_id).values_list("id", flat=True)
     # Get the most recent job
     task_id = max(task_ids)
-    queryset = MetaGenomicsMeta.objects.get(flowcell_id=flowcell_id,
+    try:
+        queryset = MetaGenomicsMeta.objects.get(flowcell_id=flowcell_id,
                                             task__id=task_id)
+    except MetaGenomicsMeta.DoesNotExist:
+        return Response([], status=404)
 
     number_of_reads = queryset.number_of_reads
     reads_class = queryset.reads_classified
@@ -82,9 +85,12 @@ def cent_sankey_two(request):
     queryset = SankeyLinks.objects.filter(flowcell_id=flowcell_id, task__id=task_id).values()
 
     if not queryset:
-        return Response(status=204)
+        return Response({}, status=204)
 
     source_target_df = pd.DataFrame(list(queryset))
+
+    if source_target_df.empty:
+        return Response({}, status=204)
     # Reduce the DataFrame to the number of species that you need
     source_target_df = source_target_df[source_target_df["rank"] < species_limit]
     # Drop unnecessary columns from DataFrame
@@ -137,15 +143,16 @@ def vis_table_or_donut_data(request):
     flowcell_id = request.GET.get("flowcellId", 0)
     # Get the most recent job
     task_id = max(JobMaster.objects.filter(flowcell=flowcell_id).values_list("id", flat=True))
-
+    print(f"the flowcell job id is {task_id}, the flowcell id is {flowcell_id}")
     # queryset from database, filtered by the meta_id
     queryset = CentOutput.objects.filter(flowcell_id=flowcell_id, task__id=task_id)
     # all the taxIDs for this centrifuge job as a list, need for filtering all the relevant lineages
     centouput_df = pd.DataFrame(list(queryset.values()))
     # if there is no data in the database (yet) return 404
-    centouput_df.drop(columns=["task_id"], inplace=True)
     if centouput_df.empty:
-        return Response(status=204)
+        return Response([], status=204)
+    centouput_df.drop(columns=["task_id"], inplace=True)
+
     # create dataframe
     lineages_df = pd.DataFrame(list(LineageValues.objects.all().values()))
     # get relevant taxids, so dataframe of only taxIDs that are in the output of this centrifuge run
@@ -189,7 +196,7 @@ def vis_table_or_donut_data(request):
         # create new seies, contains proportion of reads in that clade across the whole dataframe
         df[proptitle] = df[sumtitle].div(df[sumtitle].unique().sum()).mul(100)
         # round to two decimal places
-        df[proptitle] = df[proptitle].round(decimals=2)
+        df[proptitle] = df[proptitle].round(decimals=3)
         df = df.reset_index()
         return df
 
@@ -230,12 +237,6 @@ def vis_table_or_donut_data(request):
         obj = {ord: arr}
         container_array.append(obj)
 
-    lineages_df["species"] = lineages_df["species"] + " (Num Reads - " + lineages_df["summed_species"].map(str) \
-                             + " Proportion " + lineages_df["prop_species"].map(str) + "%)"
-
-    lineages_df["genus"] = lineages_df["genus"] + " (Num Reads - " + lineages_df["summed_genus"].map(
-        str) + " Proportion " \
-                           + lineages_df["prop_genus"].map(str) + "%)"
     lineages_df.fillna("Unknown", inplace=True)
     json = lineages_df.to_dict(orient="records")
 
@@ -265,44 +266,44 @@ def start_centrifuge_view(request):
     -------
 
     """
-    # create a new uuid, to use as a unique identifier
-    ident = str(uuid.uuid4())
-    # setup check to see if celery is up and running
-    status = celery.bin.celery.CeleryCommand.commands['status']()
-    status.app = status.get_app()
-    try:
-        # see if celery is actually running
-        status.run()
-        # Create metadata
-        data = request.data
-        # get date and time
-        d = datetime.now()
-        # date is great
-        # time is lime
-        time = "{:%H:%M:%S}".format(d)
-
-        flowcell_id = request.data["flowcellId"]
-
-        # call celery task, pass the uuid we generated as an argument
-        # Create Jobmaster object, to save. This will be picked up by the run
-        # monitor task
-        flowcell = Flowcell.objects.get(pk=flowcell_id)
-        jobtype = JobType.objects.get(name="Centrifuge")
-        task = JobMaster(flowcell=flowcell, job_type=jobtype,
-                         running=False, complete=0, read_count=0, last_read=0)
-        task.save()
-        # create django model object, save it to database
-        MetaGenomicsMeta(run_time=time, flowcell_id=flowcell_id, running=True, number_of_reads=0,
-                         reads_classified=0, task=task).save()
-        # # create django model object, save it to database
-        # print("saved metadata")
-        # return_dict = {"ident": ident}
-        return Response(status=200)
-    # except if celery isn't running
-    except celery.bin.base.Error as e:
-        if e.status == celery.platforms.EX_UNAVAILABLE:
-            print("START CELERY")
-            return HttpResponse(e).status_code(500)
+    # # create a new uuid, to use as a unique identifier
+    # ident = str(uuid.uuid4())
+    # # setup check to see if celery is up and running
+    # status = celery.bin.celery.CeleryCommand.commands['status']()
+    # status.app = status.get_app()
+    # try:
+    #     # see if celery is actually running
+    #     status.run()
+    #     # Create metadata
+    #     data = request.data
+    #     # get date and time
+    #     d = datetime.now()
+    #     # date is great
+    #     # time is lime
+    #     time = "{:%H:%M:%S}".format(d)
+    #
+    #     flowcell_id = request.data["flowcellId"]
+    #
+    #     # call celery task, pass the uuid we generated as an argument
+    #     # Create Jobmaster object, to save. This will be picked up by the run
+    #     # monitor task
+    #     flowcell = Flowcell.objects.get(pk=flowcell_id)
+    #     jobtype = JobType.objects.get(name="Centrifuge")
+    #     task = JobMaster(flowcell=flowcell, job_type=jobtype,
+    #                      running=False, complete=0, read_count=0, last_read=0)
+    #     task.save()
+    #     # create django model object, save it to database
+    #     MetaGenomicsMeta(run_time=time, flowcell_id=flowcell_id, running=True, number_of_reads=0,
+    #                      reads_classified=0, task=task).save()
+    #     # # create django model object, save it to database
+    #     # print("saved metadata")
+    #     # return_dict = {"ident": ident}
+    #     return Response(status=200)
+    # # except if celery isn't running
+    # except celery.bin.base.Error as e:
+    #     if e.status == celery.platforms.EX_UNAVAILABLE:
+    #         print("START CELERY")
+    #         return HttpResponse(e).status_code(500)
 
 
 @api_view(["POST", "GET"])

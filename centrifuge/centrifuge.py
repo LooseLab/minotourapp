@@ -10,6 +10,7 @@ from centrifuge.serializers import CentSerialiser
 from collections import defaultdict
 from celery import task
 from django.utils import timezone
+from datetime import datetime
 
 # TODO del unused df and things
 
@@ -81,10 +82,15 @@ class Centrifuger:
         # Instance of the Ncbi taxa class, for taxonomic id manipulation
         ncbi = NCBITaxa()
         # Loop whilst self.scan = True
-
+        d = datetime.now()
+        # date is great
+        # time is lime
+        time = "{:%H:%M:%S}".format(d)
         job_master = JobMaster.objects.get(pk=self.flowcell_job_id)
         job_master.running = True
         job_master.save()
+        MetaGenomicsMeta(run_time=time, flowcell_id=self.flowcell_id, running=True, number_of_reads=0,
+                         reads_classified=0, task=job_master).save()
         metadata = MetaGenomicsMeta.objects.get(flowcell_id=self.flowcell_id, task__id=job_master.id)
         while self.scan:
             print(f"id is {self.flowcell_id}")
@@ -115,10 +121,11 @@ class Centrifuger:
             print(f"found {doc_no} reads in the database")
             # Get all the reads skipping all we did last time
             cursor = FastqRead.objects.filter(run__flowcell_id__in={self.flowcell_id})[self.skip:doc_no]
+            sequence_data = list(cursor)
             # create fastq string by joining the read_id and sequence in the format, for all docs in cursor
             # TODO sends individual queries to fetch the data for each read. Get the data in memory in one go?
-            fastq = "".join([str(">" + c.read_id + "\n" + c.fastqreadextra.sequence + "\n") for c in cursor])
-
+            fastq = "".join([f"> {c.read_id}\n{c.fastqreadextra.sequence}\n" for c in sequence_data])
+            del sequence_data
             # Write the generated fastq file to stdin, passing it to the command
             print("centrifuging...")
             out, err = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE) \
@@ -417,15 +424,16 @@ class Centrifuger:
             df.apply(centoutput_bulk_list, axis=1)
 
             # If there is already objects in teh database, do this update or create
-            if CentOutput.objects.filter(flowcell_id=self.flowcell_id):
-                # iterate create or update for everything that we are inserting
+            if CentOutput.objects.filter(flowcell_id=self.flowcell_id, task__id=job_master.id):
+                # iterate create or update for everything that we are inserting#
                 for centoutput in centoutput_insert_list:
                     # get the data from the queryset object
-                    cent_in = CentSerialiser(centoutput)
                     CentOutput.objects.update_or_create(
-                        tax_id=cent_in.data["taxID"], flowcell_id=self.flowcell_id, defaults=cent_in.data
+                        tax_id=centoutput.tax_id, flowcell_id=self.flowcell_id, task__id=job_master.id,
+                        defaults={"name": centoutput.name, "tax_id": centoutput.tax_id,
+                                  "num_matches": centoutput.num_matches, "sum_unique": centoutput.sum_unique,
+                                  "flowcell_id": centoutput.flowcell_id, "task": centoutput.task}
                     )
-
             # Bulk insert new model objects using bulk_create
             else:
                 CentOutput.objects.bulk_create(centoutput_insert_list)

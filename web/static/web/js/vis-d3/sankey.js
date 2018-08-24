@@ -75,7 +75,7 @@ $(window).on("resize", function(){
     drawSankey(flowcellId);
 });
 
-function draw(nodesObj, sankey, g, format, color, width, redraw) {
+function draw(nodesObj, sankey, g, format, color, width) {
     let node;
     let text;
     let link;
@@ -143,24 +143,27 @@ function draw(nodesObj, sankey, g, format, color, width, redraw) {
 
 }
 
-function update(flowcellId, sankey, checkForData, svg, g, format, color, width, update) {
-    console.log("update");
+function update(flowcellId, sankey, checkForData, svg, g, format, color, width) {
     // TODO species limit one day
     $.get("/sankey", {flowcellId}, result => {
-        console.log(result);
-        let nodes = result.sankey
-        console.log(nodes);
+        let nodes;
+        if(result === undefined){
+            return;
+        }
+        nodes = result.sankey;
         // TODO use is active to check if flowcell is active
         if (result.sankey.nodes.length !== 0 && checkForData) {
-            d3.select(".metagenomics-settings").style("display", "none");
+            d3.select("#loading-sign").transition().duration(3000).style("opacity", 0);
+
             setTimeout(function () {
-                // d3.select("body").attr("class", "loaded sidebar-collapse");
                 $("body").addClass("loaded sidebar-collapse");
+                d3.select("#loading-sign").style("display", "none");
+                d3.select(".vis-container").style("display", "contents");
             }, 3000);
         }
         svg.select(".contain").selectAll("*").remove();
-        draw(nodes, sankey, g, format, color, width, update);
-    }).fail();
+        draw(nodes, sankey, g, format, color, width);
+    });
 }
 
 function drawSankey(flowcellId) {
@@ -169,7 +172,7 @@ function drawSankey(flowcellId) {
     // height of page
     let hi = $(window).height() * 0.55;
     // width of page
-    let width = container.getBoundingClientRect().width * 0.900;
+    let width = container.getBoundingClientRect().width * 0.920;
     let svg;
     let g;
     let formatNumber = d3.format(",.0f"),
@@ -179,7 +182,6 @@ function drawSankey(flowcellId) {
         // create colour scheme
         color = d3.scaleOrdinal(d3.schemeCategory10);
     let checkForData = true;
-    let updateExistOrDrawNew = false;
     let sankey = d3.sankey()
         .nodeWidth(20)
         .nodePadding(5)
@@ -195,7 +197,7 @@ function drawSankey(flowcellId) {
         .scaleExtent([1, 6]).translateExtent([[0, 0], [width, hi]])
         .on("zoom", move);
     console.log($(".svg-sankey").length);
-    if($(".svg-sankey").length) {
+    if($(".svg-sankey").length !== 0) {
         svg = d3.select(".svg-sankey");
         g = d3.select(".contain");
     } else {
@@ -204,5 +206,5 @@ function drawSankey(flowcellId) {
             .attr("height", hi).call(zoom);
         g = svg.append("g").attr("class", "contain");
     }
-    update(flowcellId, sankey, checkForData, svg, g, format, color, width, updateExistOrDrawNew);
+    update(flowcellId, sankey, checkForData, svg, g, format, color, width);
 }

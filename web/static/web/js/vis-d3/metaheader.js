@@ -10,12 +10,17 @@ function metaHeader(flowcellId){
         row = d3.select(".meta_taberu").select("table").select("tr");
     }
     $.get("/metaview", {flowcellId}, result => {
+        if(result[1].value === 0){
+            return;
+        }
         row.selectAll("th").data(result).enter().append("th");
 
         row.selectAll("th").data(result).html(function(d){
             return d.key + d.value;
         });
         }
-    );
+    ).fail(function(){
+        return;
+    });
     firsty = false;
 }

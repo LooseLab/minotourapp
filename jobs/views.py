@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from jobs.models import JobType, JobMaster
 from jobs.serializers import JobMasterSerializer
 from reads.models import Run
+from reference.models import ReferenceInfo
 from web.forms import TaskForm
 
 
