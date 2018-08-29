@@ -127,10 +127,12 @@ class SankeyLinks(models.Model):
 
         :source: (str) - The source node, that the link starts at, for example bacteria
         :target: (str) - The target node, that the link ends at, for example proteobacteria
-        :value: (int) - The num of macthes illustrated by that link
+        :value: (int) - The num of matches illustrated by that link
         :tax_id: (int) - The tax_id of the target node
         :flowcell_id: (int) - The flowcell id that the centrifuger class was run on
-        :task: (fk JobMAster) - The corresponding jobMaster object, used to seperate the datasets
+        :task: (fk JobMaster) - The corresponding jobMaster object, used to separate the datasets
+        :target_tax_level: - The taxa level of the target node, i.e Phylum for Bacteria (kingdom) \
+        to ProteoBacteria (Phylum)
     """
     source = models.CharField(null=True, max_length=100)
     target = models.CharField(null=True, max_length=100)
@@ -141,3 +143,4 @@ class SankeyLinks(models.Model):
         JobMaster,
         related_name="sankey_links"
     )
+    target_tax_level = models.CharField(max_length=100)

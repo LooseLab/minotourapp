@@ -136,7 +136,6 @@ class Centrifuger:
             # Create list of tuples where the 1st element is the read_id and the second is the sequence
             tupley_list = list(zip(read_ids, sequence_data))
             # create fastq string by joining the read_id and sequence in the format, for all docs in cursor
-            # TODO sends individual queries to fetch the data for each read. Get the data in memory in one go?
             fastq = "".join([f"> {c[0]}\n{c[1]}\n" for c in tupley_list])
             # Remove large objects to free up memory
             del sequence_data
@@ -333,6 +332,7 @@ class Centrifuger:
             value = pd.Series()
             tax_id = pd.Series()
             # rank = pd.Series()
+            target_tax_level = pd.Series()
             # Iterate across the dataframe columns, to create the source, target, num reads series
             for index, clade in enumerate(tax_rank_filter):
                 source_clade = clade
@@ -344,10 +344,13 @@ class Centrifuger:
                     value = value.append(sankey_lin_df["num_matches"])
                     tax_id = tax_id.append(pd.Series(sankey_lin_df.index.values, index=sankey_lin_df.index))
                     # rank = rank.append(sankey_lin_df["rank"])
+                    sankey_lin_df["target_tax_level"] = target_clade
+                    target_tax_level = target_tax_level.append(sankey_lin_df["target_tax_level"])
             # Create a DataFrame of links
-            source_target_df = pd.concat([source, target, value, tax_id], axis=1)
+            print(target_tax_level)
+            source_target_df = pd.concat([source, target, value, tax_id, target_tax_level], axis=1)
             # Rename the columns
-            source_target_df.columns = ["source", "target", "value", "tax_id"]
+            source_target_df.columns = ["source", "target", "value", "tax_id", "target_tax_level"]
             # Create a flowcell id series so each link has a flowcell id value
             source_target_df["flowcell_id"] = self.flowcell_id
             # Taxids from the current results that are in this df
@@ -365,7 +368,7 @@ class Centrifuger:
             to_update_df = source_target_df[source_target_df["tax_id"].isin(prev_links_taxids)]
             # Link to contain objects for bulk insertion
             sankey_link_insert_list = []
-
+            print(to_create_df.head(n=15))
             if not to_create_df.empty:
                 def sankey_bulk_insert_list(row):
                     """
@@ -376,7 +379,8 @@ class Centrifuger:
                     sankey_link_insert_list.append(SankeyLinks(flowcell_id=row["flowcell_id"], source=row["source"],
                                                                target=row["target"], value=row["value"],
                                                                tax_id=row["tax_id"],
-                                                               task=row["job_master"]))
+                                                               task=row["job_master"],
+                                                               target_tax_level=row["target_tax_level"]))
                     return
                 # Perform the apply
                 to_create_df.apply(sankey_bulk_insert_list, axis=1)

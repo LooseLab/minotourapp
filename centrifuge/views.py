@@ -70,7 +70,7 @@ def cent_sankey_two(request):
     """
 
     # Get the number of species to visualise , defaulting to 50 if not present
-    species_limit = request.GET.get("speciesLimit", 50)
+    species_limit = request.GET.get("speciesLimit", 30)
     # Get the flowcell ID , defaulting to False if not present
     flowcell_id = request.GET.get("flowcellId", False)
     # The most up todat task_id
@@ -78,25 +78,29 @@ def cent_sankey_two(request):
                                            job_type__name="Centrifuge").values_list("id", flat=True))
 
     # ## Get the links for the sankey Diagram ###
-    print(f"the flowcell is  {request.GET.get('flowcellId', '')}")
+    print(f"the sankey flowcell is  {request.GET.get('flowcellId', '')} and job_id is {task_id}")
     # Get the Links objects for this run
+
     queryset = SankeyLinks.objects.filter(flowcell_id=flowcell_id, task__id=task_id).values()
     # If the queryset is empty, return an empty object
     if not queryset:
         return Response({}, status=204)
     # Create the dataframe from the results of the database query
     source_target_df = pd.DataFrame(list(queryset))
-
     # If the database is empty return an empty list
     if source_target_df.empty:
+        print("empty")
         return Response({}, status=204)
-    source_target_df.sort_values(["num_matches"], ascending=False, inplace=True)
-    # # Add a rank for the species
-    source_target_df["rank"] = np.arange(len(source_target_df))
-    # Reduce the DataFrame to the number of species that you need
-    source_target_df = source_target_df[source_target_df["rank"] < species_limit]
+    print(f"species_limit is {species_limit}")
+    # get a subset df of all the species rows
+    temp_species_df = source_target_df[source_target_df["target_tax_level"] == "species"]
+    # get species limit (default 50) of the largest species
+    temp_species_df = temp_species_df.nlargest(species_limit, ["value"])
+    # get the values for those species
+    source_target_df = source_target_df[source_target_df["tax_id"].isin(temp_species_df["tax_id"])]
+
     # Drop unnecessary columns from DataFrame
-    source_target_df.drop(columns=["flowcell_id", "id", "tax_id", "rank"], inplace=True)
+    source_target_df.drop(columns=["flowcell_id", "id", "tax_id", "target_tax_level"], inplace=True)
     # Set MultiIndex to group source to target
     source_target_df.set_index(["source", "target"], inplace=True)
     # Group by rows where the source and target are the same
@@ -110,6 +114,7 @@ def cent_sankey_two(request):
     source_target_df = pd.concat([source_target_df, source_target_df[
         source_target_df["source"] == source_target_df["target"]]]).drop_duplicates(["source", "target"], keep=False)
     source_target_df.dropna(inplace=True)
+    source_target_df.sort_values(["value"], ascending=False, inplace=True)
     # Create the links list of dicts to return
     links = source_target_df.to_dict(orient="records")
 
