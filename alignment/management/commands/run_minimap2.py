@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand, CommandError
 
 from jobs.models import JobMaster
-from web.tasks import run_minimap2_alignment
+from web.tasks_alignment import run_minimap2_alignment_by_job_master
 
 
 class Command(BaseCommand):
@@ -24,8 +24,7 @@ class Command(BaseCommand):
             print('---> reference id: {}'.format(task.reference.id))
             print('---> last read: {}'.format(task.last_read))
 
-            #run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_read, inputtype)
-            run_minimap2_alignment(task.flowcell.id, task.id, task.reference.id, 0, 'flowcell')
+            run_minimap2_alignment_by_job_master(task.id)
 
         except Exception as e:
 
