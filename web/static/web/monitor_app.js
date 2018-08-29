@@ -5,7 +5,6 @@ var FlowcellPageApp = {
     },
 
     init: function () {
-
         this.chart_reads_called = null;
         this.chart_yield = null;
         this.chart_average_read_length = null;
@@ -95,11 +94,11 @@ var FlowcellPageApp = {
 
         this.requestPafData = requestPafData.bind(this);
 
-        this.liveUpdateTasks = liveUpdateTasks;
+        // this.liveUpdateTasks = liveUpdateTasks;
+        //
+        // this.updateTasks = updateTasks.bind(this);
 
-        this.updateTasks = updateTasks.bind(this);
-
-        this.requestTasks = requestTasks.bind(this);
+        // this.requestTasks = requestTasks.bind(this);
 
         this.requestRunDetails = requestRunDetails.bind(this);
 
@@ -197,6 +196,8 @@ var FlowcellPageApp = {
         this.metaHeader = metaHeader;
         this.getTotalReadsTable = getTotalReadsTable;
         this.getDonutRankTable = getDonutRankTable;
+        this.flowcellTaskHistoryTable = flowcellTaskHistoryTable;
+
 
         var inputFlowcellId = document.querySelector("#flowcell-id");
 

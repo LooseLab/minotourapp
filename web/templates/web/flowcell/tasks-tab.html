@@ -1,3 +1,4 @@
+
 <div class="row">
     <div class="col-md-12">
         <div class='panel panel-info'>
@@ -6,6 +7,7 @@
             </div>
             <div class='panel-body'>
 
+
                 <form method="post" id="post-form-task-create">
                     {% csrf_token %}
                     <input type="hidden" name="flowcell" value="{{ flowcell.id }}"/>
@@ -13,20 +15,49 @@
                         <label for="job_type_id">Task type</label>
                         <select class="form-control" name="job_type" id="id_job_type"></select>
                     </div>
-
                     <div class="form-group">
                         <label for="reference_id">Reference</label>
                         <select class="form-control" name="reference" id="id_reference"></select>
                     </div>
+
                     <div id="task_form_messages"></div>
                     <input type="submit" value="Create" class="btn btn-default" id="btn_task_create">
+
                 </form>
             </div>
         </div>
     </div>
 </div>
-
-
-<h2 class="panel-heading">Run analysis tasks on reads.</h2>
-<span id="tasks"></span>
-
+<div class="row tasktablecont">
+    <div class="col-md-12">
+        <div class='panel panel-info'>
+            <div class='panel-heading'>
+                <h3 class='panel-title'>Tasks</h3>
+            </div>
+            <div class='panel-body'>
+                <table class="table table-hover tasktable display" style="width: 95%;">
+                    <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Task type</th>
+                        <th>Last read</th>
+                        <th>Read count</th>
+                        <th>Running</th>
+                        <th>Complete</th>
+                    </tr>
+                    </thead>
+                    <tfoot>
+                    <tr>
+                        <th>Id</th>
+                        <th>Task type</th>
+                        <th>Last read</th>
+                        <th>Read count</th>
+                        <th>Running</th>
+                        <th>Complete</th>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

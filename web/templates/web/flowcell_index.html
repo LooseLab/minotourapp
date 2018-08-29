@@ -15,59 +15,59 @@
         </form>
 
         <section class="content">
-
-            <div class="nav-tabs-custom" id="maintabbar">
-                <ul class="nav nav-tabs">
-                    <li class="active"><a class="flowcell-tab" href="#tab-summary-data" data-toggle="tab">Summary</a></li>
-                    <li id="tasks-li"><a class="flowcell-tab" href="#tab-tasks" data-toggle="tab">Tasks</a></li>
-                </ul>
-            </div>
-
-            <div class="tab-content">
-                <div class="tab-pane active" id="tab-summary-data">
-                    {% include "web/flowcell/summary-tab.html" %}
-                </div>
-
-                <div id="tab-live-event-data" class="tab-pane fade">
-                    {% include "web/flowcell/live-tab.html" %}
-                </div>
-
-                <div id="tab-basecalled-data" class="tab-pane fade">
-                    {% include "web/flowcell/basecalled-tab.html" %}
-                </div>
-
-                <div id="tab-sequence-id" class="tab-pane fade">
-                    {% include "web/flowcell/sequence-tab.html" %}
-                </div>
-
-                <div id="tab-sequence-mapping" class="tab-pane fade">
-                    {% include "web/flowcell/mapping-tab.html" %}
-                </div>
-
-                <div id="tab-sequence-assembly" class="tab-pane fade">
-                    {% include "web/flowcell/assembly-tab.html" %}
-                </div>
-
-                <div id="tab-transcriptome-mapping" class="tab-pane fade">
-                    {% include "web/flowcell/transcriptome-tab.html" %}
-                </div>
-
-                <div id="tab-tasks" class="tab-pane fade">
-                    {% include "web/flowcell/tasks-tab.html" %}
-                </div>
-
-                <div id="tab-export-reads" class="tab-pane fade">
-                    {% include "web/flowcell/export-tab.html" %}
-                </div>
-
-                <div id="tab-runs" class="tab-pane fade">
-
-                </div>
-
-                <div id="tab-metagenomics" class="tab-pane fade">
-                    {% include "web/flowcell/metagenomics.html" %}
+            <div style="z-index: 999">
+                <div class="nav-tabs-custom" id="maintabbar">
+                    <ul class="nav nav-tabs">
+                        <li class="active"><a class="flowcell-tab" href="#tab-summary-data" data-toggle="tab">Summary</a></li>
+                        <li id="tasks-li"><a class="flowcell-tab" href="#tab-tasks" data-toggle="tab">Tasks</a></li>
+                    </ul>
                 </div>
             </div>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="tab-summary-data">
+                        {% include "web/flowcell/summary-tab.html" %}
+                    </div>
+
+                    <div id="tab-live-event-data" class="tab-pane fade">
+                        {% include "web/flowcell/live-tab.html" %}
+                    </div>
+
+                    <div id="tab-basecalled-data" class="tab-pane fade">
+                        {% include "web/flowcell/basecalled-tab.html" %}
+                    </div>
+
+                    <div id="tab-sequence-id" class="tab-pane fade">
+                        {% include "web/flowcell/sequence-tab.html" %}
+                    </div>
+
+                    <div id="tab-sequence-mapping" class="tab-pane fade">
+                        {% include "web/flowcell/mapping-tab.html" %}
+                    </div>
+
+                    <div id="tab-sequence-assembly" class="tab-pane fade">
+                        {% include "web/flowcell/assembly-tab.html" %}
+                    </div>
+
+                    <div id="tab-transcriptome-mapping" class="tab-pane fade">
+                        {% include "web/flowcell/transcriptome-tab.html" %}
+                    </div>
+
+                    <div id="tab-tasks" class="tab-pane fade">
+                        {% include "web/flowcell/tasks-tab.html" %}
+                    </div>
+
+                    <div id="tab-export-reads" class="tab-pane fade">
+                        {% include "web/flowcell/export-tab.html" %}
+                    </div>
+
+                    <div id="tab-runs" class="tab-pane fade">
+
+                    </div>
+
+                    <div id="tab-metagenomics" class="tab-pane fade">
+                        {% include "web/flowcell/metagenomics.html" %}
+                    </div>
+                </div>
             <!-- Modal -->
             <div class="modal fade" id="eastermodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
                  aria-hidden="true">

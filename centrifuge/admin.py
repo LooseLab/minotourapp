@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from centrifuge.models import CentOutput, LineageValues, MetaGenomicsMeta, SankeyLinks
 
+# Register all the Models to the django admin site for this app
 admin.site.register(CentOutput)
 admin.site.register(LineageValues)
 admin.site.register(MetaGenomicsMeta)
