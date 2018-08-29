@@ -493,7 +493,6 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
 @task
 def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_read, inputtype):
 
-    print('test 1')
     logger.info("---> Task run_minimap2_alignment")
     logger.info("---> Parameters")
     logger.info("---> flowcell_id: {}".format(flowcell_id))
@@ -506,8 +505,6 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
         last_read = 0
 
     try:
-
-        print('test')
 
         JobMaster.objects.filter(pk=job_master_id).update(running=True)
 
@@ -538,8 +535,6 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
         fastqbarcodegroup = dict()
         fastqbarcode=dict()
 
-        logger.debug(len(fastqs))
-
         for fastq in fastqs:
             read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.fastqreadextra.sequence)
             fastqdict[fastq.read_id] = fastq
@@ -547,8 +542,6 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
             fastqbarcodegroup[fastq.read_id] = fastq.barcode.barcodegroup
             fastqbarcode[fastq.read_id] = fastq.barcode
             last_read = fastq.id
-
-        # print(read)
 
         minimap2_executable = getattr(settings, "MINIMAP2", None)
 
