@@ -63,25 +63,32 @@
 //     console.log(nodes);
 //     return nodes;
 // }
-
-$(window).on("resize", function(){
+// resize svg and graphic on window resize
+$(window).on("resize", function () {
+    // height of page
     let hi = $(window).height() * 0.55;
-    // width of page#
+    // width of page
     let width = $(window).width() * 0.900;
+    // flowcell id for data
     let inputFlowcellId = document.querySelector("#flowcell-id");
     let flowcellId = inputFlowcellId.value;
+    //update svg width and height
     d3.select(".svg-sankey").attr("width", width);
     d3.select(".svg-sankey").attr("height", hi);
+    // draw the sankey diagram
     drawSankey(flowcellId);
 });
 
 function draw(nodesObj, sankey, g, format, color, width) {
+    // Draw the diagram
     let node;
     let text;
     let link;
     let gradient;
+    // use d3-sankey to sankeyify the data, providing path coordinates
     sankey(nodesObj);
 
+    // draw the links
     link = g.append("g").attr("class", "links")
         .attr("fill", "none")
         .attr("stroke-opacity", 0.5)
@@ -89,33 +96,35 @@ function draw(nodesObj, sankey, g, format, color, width) {
         .data(nodesObj.links)
         .enter().append("g")
         .style("mix-blend-mode", "multiply");
-
+    // append the linear gradients for the colour
     gradient = link.append("linearGradient")
-          .attr("id", function(d, i){
-              return i;
-          })
-          .attr("gradientUnits", "userSpaceOnUse")
-          .attr("x1", d => d.source.x1)
-          .attr("x2", d => d.target.x0);
+        .attr("id", function (d, i) {
+            return i;
+        })
+        .attr("gradientUnits", "userSpaceOnUse")
+        .attr("x1", d => d.source.x1)
+        .attr("x2", d => d.target.x0);
+    // set the start colour for the gradient (0%)
+    gradient.append("stop")
+        .attr("offset", "0%")
+        .attr("stop-color", d => color(d.source.name.replace(/ .*/, "")));
+    // set the stop colour for the gradient (100%)
+    gradient.append("stop")
+        .attr("offset", "100%")
+        .attr("stop-color", d => color(d.target.name.replace(/ .*/, "")));
 
-      gradient.append("stop")
-          .attr("offset", "0%")
-          .attr("stop-color", d => color(d.source.name.replace(/ .*/, "")));
-
-      gradient.append("stop")
-          .attr("offset", "100%")
-          .attr("stop-color", d => color(d.target.name.replace(/ .*/, "")));
-
+    // append the path for the link to rhe SVG
     link.append("path")
         .attr("d", d3.sankeyLinkHorizontal())
-        .attr("stroke", function(d, i){
-           return "url(#" + i+ ")"
-         })
+        .attr("stroke", function (d, i) {
+            return "url(#" + i + ")"
+        })
         .attr("stroke-width", d => Math.max(0.5, d.width));
-
+    // append the title
     link.append("title")
         .text(d => `${d.source.name} → ${d.target.name}\n${format(d.value)}`);
 
+    // Append the nodes to the svg
     node = g.append("g").attr("class", "nodes")
         .selectAll("rect")
         .data(nodesObj.nodes)
@@ -130,6 +139,7 @@ function draw(nodesObj, sankey, g, format, color, width) {
         .append("title")
         .text(d => `${d.name}\n${format(d.value)}`);
 
+    // appned the text labels to the svg
     text = g.append("g").attr("class", "text")
         .style("font", "10px sans-serif")
         .selectAll("text")
@@ -142,16 +152,18 @@ function draw(nodesObj, sankey, g, format, color, width) {
         .text(d => d.name);
 
 }
-
+// update or draw the existing svg using the AJAX results from the server
 function update(flowcellId, sankey, checkForData, svg, g, format, color, width) {
     // TODO species limit one day
     $.get("/sankey", {flowcellId}, result => {
         let nodes;
-        if(result === undefined){
+        // if theres no data from the server
+        if (result === undefined) {
             return;
         }
+
         nodes = result.sankey;
-        // TODO use is active to check if flowcell is active
+        // If there is data and checkForData is true, clear the css elements and lloading sign so we can see the graphics
         if (result.sankey.nodes.length !== 0 && checkForData) {
             d3.select("#loading-sign").transition().duration(3000).style("opacity", 0);
 
@@ -161,6 +173,7 @@ function update(flowcellId, sankey, checkForData, svg, g, format, color, width) 
                 d3.select(".vis-container").style("display", "contents");
             }, 3000);
         }
+        // TODO update in place
         svg.select(".contain").selectAll("*").remove();
         draw(nodes, sankey, g, format, color, width);
     });
@@ -185,19 +198,21 @@ function drawSankey(flowcellId) {
     let sankey = d3.sankey()
         .nodeWidth(20)
         .nodePadding(5)
-        .size([width, hi*0.95]).nodeId(function id(d) {
+        .size([width, hi * 0.95]).nodeId(function id(d) {
             return d.name;
         })
     ;
+
     function move() {
         d3.select(".contain")
             .attr("transform", d3.event.transform);
     }
+
     let zoom = d3.zoom()
         .scaleExtent([1, 6]).translateExtent([[0, 0], [width, hi]])
         .on("zoom", move);
     console.log($(".svg-sankey").length);
-    if($(".svg-sankey").length !== 0) {
+    if ($(".svg-sankey").length !== 0) {
         svg = d3.select(".svg-sankey");
         g = d3.select(".contain");
     } else {

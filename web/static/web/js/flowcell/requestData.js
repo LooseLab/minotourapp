@@ -1,4 +1,5 @@
-let comparison_tab = {};
+let comparison_tab = "";
+// Comparison tab stores the
 function requestData(flowcell_id) {
     let updateSankey;
     let updateMeatheader;
@@ -6,6 +7,8 @@ function requestData(flowcell_id) {
     let updateTotalTable;
     let updateDonutTable;
     let check;
+
+    // Clear interavls clears all the interbal calls that we are using to update the page
     function clearIntervals(){
         clearInterval(updateSankey);
         clearInterval(updateMeatheader);
@@ -15,6 +18,7 @@ function requestData(flowcell_id) {
         clearInterval(check);
         console.log("clearing intervals");
     }
+    // Check if the Flowcell is still running, if it isn't cnacel the intervals
     function checkRunning(flowcellID){
         let url = '/api/v1/tasks/';
         let params = {"search_criteria": "flowcell", "search_value": flowcellID};
@@ -49,7 +53,8 @@ function requestData(flowcell_id) {
         }
 
         var flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
-        if (comparison_tab.tab_value !== flowcell_selected_tab_input.value) {
+        // If you've changed tabs, clear the intervals that are updating the metagenomics visualisations
+        if (comparison_tab !== flowcell_selected_tab_input.value) {
             console.log("changed tabs, clearing intervals");
             clearIntervals();
         }
@@ -86,29 +91,39 @@ function requestData(flowcell_id) {
         } else if (flowcell_selected_tab_input.value == 'Runs') {
 
         } else if (flowcell_selected_tab_input.value == 'Metagenomics') {
-            comparison_tab.tab_value = flowcell_selected_tab_input.value;
+            // TODO rewrite into individual funcitons, find a way to note href change
+            // SO you are on the Metagenomics tab
+            comparison_tab = flowcell_selected_tab_input.value;
+            // Clear any previous intervals if they've somehow survived
             clearIntervals();
+            // Cheeck to see if the flowcell Job is still running
             checkRunning(flowcellId);
+            // Draw the sankey diagram
             this.drawSankey(flowcellId);
+            // Setup the interval request fto update the sankey
             updateSankey = setInterval(this.drawSankey, 60000, flowcellId);
+            // update the metadata header
             this.metaHeader(flowcellId);
+            // Setup metaheader interval
             updateMeatheader = setInterval(this.metaHeader, 60000, flowcellId);
+            // Draw the donut chart
             this.drawDonut(flowcellId);
+            // Update the Donut Chart by creating an interval for every 60 seconds
             updateDonut = setInterval(this.drawDonut, 60000, flowcellId);
+            // update the total Reads Table
             this.getTotalReadsTable(flowcellId);
+            // Create a 60 secons unterval to update the table
             updateTotalTable = setInterval(this.getTotalReadsTable, 60000, flowcellId);
+            // Draw rhe donut rank table
             this.getDonutRankTable(flowcellId);
+            // Create 60 second update for donut table
             updateDonutTable = setInterval(this.getDonutRankTable, 60000, flowcellId);
+            // Check to see if the analaysis is still running
             checkRunning(flowcellId);
+            // 30 second interval for flowcell is still running
             check = setInterval(checkRunning, 30000, flowcellId);
-            $(window).on("unload", function () {
-                clearInterval(updateSankey);
-                clearInterval(updateMeatheader);
-                clearInterval(updateDonut);
-                clearInterval(updateTotalTable);
-                clearInterval(updateDonutTable);
-                clearInterval(check);
-            });
+            // If the page changes, clear the intervals
+            $(window).on("unload", clearIntervals);
 
         } else if (flowcell_selected_tab_input.value == 'Sequence Mapping') {
 

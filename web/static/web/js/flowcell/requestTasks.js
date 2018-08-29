@@ -339,8 +339,9 @@ function loadTasksForm() {
 }
 
 function flowcellTaskHistoryTable(flowcellId) {
-
+    // Draw the Task table on the tasks tab showing previous and current analyses
     let table = $(".tasktablecont");
+    // if it's already loaded don't reiniiialise
     if (table.hasClass("yesload")) {
         console.log("No worries mate");
     } else {

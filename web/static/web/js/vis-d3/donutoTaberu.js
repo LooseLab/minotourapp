@@ -1,16 +1,17 @@
 "use strict";
-
+// The taxa titles in order to access the results in the AJAX results object
 let taxas = ["species", "genus", "family", "order", "classy", "phylum", "superkingdom"];
 // the taxa titles we wish to display under the slider
 let displayTaxas = ["Species", "Genus", "Family", "Order", "Class", "Phylum", "Kingdom"];
+// Whether drawing for the first time or updating an existing table
 let first = true;
+// Get the colour scheme, Scale ordinal so colours can be returned the same when given labels
 let color = d3.scaleOrdinal(d3.schemeCategory10);
 
 //create data to draw a table
 function drawPieTables(countedData, color) {
     //create wrapper function to draw a table
     let tableData = [];
-    let length = 0;
     let obj = {};
     let i;
     // if there is less than 7 members keep the data as one for one table

@@ -15,17 +15,22 @@
 // }
 
 function getTotalReadsTable(flowCellId) {
+    // Get ttoal reads table updates the total reads table at te bottom of the page
+    // Get data from the api
     $.get("/table", {flowcellId: flowCellId, visType: "table"}, result => {
-        console.log(result);
+        // Jquery selector
         let table = $(".tableLand");
+        // If the results of the api query is undefined, there are no results in the DB, so retrun here
         if(result === undefined){
             return;
         }
+        // If the table already exists, use the DataTable APi to update in place
         if (table.length !== 1) {
             table.DataTable().clear();
             table.DataTable().rows.add(result);
             table.DataTable().draw();
         } else {
+            // else the databale must be initialised
             table = $(".tableLand").DataTable({
                     data: result, scrollY: "500px",
                     paging: false,
@@ -43,7 +48,6 @@ function getTotalReadsTable(flowCellId) {
                     ]
                 }
             );
-            $(".tableLand").addClass("yesload");
         }
         // $('.tableLand tbody').on('click', 'td.details-control', function () {
         //     var tr = $(this).closest('tr');
