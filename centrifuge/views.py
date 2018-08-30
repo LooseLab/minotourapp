@@ -43,7 +43,7 @@ def metaview(request):
     -------
 
     """
-    print(f"meta_id is {request.query_params.get('flowcellId', False)}")
+    print("meta_id is {}".format(request.query_params.get('flowcellId', False)))
     # print(request.GET.flowcell_id)
     # the relevant metagenomics database entry
     queryset = MetaGenomicsMeta.objects.get(flowcell_id=request.query_params.get("flowcellId", False))
@@ -88,7 +88,7 @@ def cent_sankey_two(request):
     species_limit = request.GET.get("speciesLimit", 50)
 
     # ## Get the links for the sankey Diagram ###
-    print(f"the flowcell is  {request.GET.get('flowcellId', '')}")
+    print("the flowcell is {}".format(request.GET.get('flowcellId', '')))
     queryset = SankeyLinks.objects.filter(flowcell_id=request.GET.get("flowcellId", "")).values()
 
     if not queryset:
