@@ -84,7 +84,7 @@ class Centrifuger:
         job_master = JobMaster.objects.get(pk=self.flowcell_job_id)
         job_master.update(running=True)
         while self.scan:
-            print(f"id is {self.flowcell_id}")
+            print("id is {}".format(self.flowcell_id))
             # return all currently present reads
             cursor = FastqRead.objects.filter(run__flowcell_id__in={self.flowcell_id})
             doc_no = cursor.count()
@@ -94,10 +94,10 @@ class Centrifuger:
             # The number of reads that we have in the database
             metadata.number_of_reads = doc_no
             metadata.save()
-            print(f"lastread is {last_read_id}")
-            print(f"self.last read is {self.last_read}")
+            print("lastread is {}".format(last_read_id))
+            print("self.last read is {}".format(self.last_read))
             # if last read is too close to new last read
-            print(f"last_read_id is {last_read_id} and self.last_read_id is {self.last_read}")
+            print("last_read_id is {} and self.last_read_id is {}".format(last_read_id, self.last_read))
 
             if self.last_read == last_read_id:
                 # set the finish time
@@ -107,7 +107,7 @@ class Centrifuger:
                 self.scan = False
             else:
                 self.last_read = last_read_id
-            print(f"found {doc_no} reads in the database")
+            print("found {} reads in the database".format(doc_no))
             # Get all the reads skipping all we did last time
             cursor = FastqRead.objects.filter(run__flowcell_id__in={self.flowcell_id})[self.skip:doc_no]
             # create fastq string by joining the read_id and sequence in the format, for all docs in cursor
@@ -123,7 +123,7 @@ class Centrifuger:
             cent_out = out.decode()
             # total number of lines of centrifuge output dealt with
             total_centout += cent_out.count("\n") - 1
-            print(f"number of centrifuge output lines is {total_centout}")
+            print("number of centrifuge output lines is {}".format(total_centout))
             # output fields is the column headers for the pandas data frame
             output_fields = ["readID", "seqID", "taxID", "numMatches"]
             # create the DataFrame from the output
@@ -173,7 +173,7 @@ class Centrifuger:
             # reset index
             # query the index get all the objects in the database at this point
             queryset = CentOutput.objects.filter(flowcell_id=self.flowcell_id).values()
-            print(f"the length of the queryset is {len(queryset)}")
+            print("the length of the queryset is {}".format(len(queryset)))
 
             new_cent_num_matches = df["num_matches"]
             # Get the tax ids from the dataframe containg the newly produced centrifuge results
@@ -436,4 +436,4 @@ class Centrifuger:
             metadata.finish_time = end_time - start_time
             metadata.save()
             print("finished")
-            print(f"total centOut lines {total_centout}")
+            print("total centOut lines {}".format(total_centout))
