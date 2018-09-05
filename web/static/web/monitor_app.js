@@ -175,16 +175,21 @@ var FlowcellPageApp = {
             "Voltage Over Time",
             "mV"
         );
+        /*
         this.LivePoreState = this.makeLiveChart(
             "live-porestate",
             "Pore State Currents",
             "Current pA"
         );
+        */
+
+        /*
         this.LiveCurrentRatio = this.makeLiveChart(
             "live-currentratio",
             "Current Ratio In Strand/Open Pore",
             "Current Ratio"
         );
+        */
 
         this.PoreShizzle = this.makeAreaPlot(
             "poreshizzle",
@@ -296,6 +301,8 @@ var FlowcellPageApp = {
         }
         this.LiveInStrand.redraw();
         this.LiveInStrand.reflow();
+
+        /*
         if (this.LivePoreState.series.length < 1) {
             this.LivePoreState.addSeries({data: this.livedata.instrand_history});
             this.LivePoreState.addSeries({data: this.livedata.openpore_history});
@@ -307,6 +314,9 @@ var FlowcellPageApp = {
         this.LivePoreState.series[1].update({name: "Open Pore"}, false);
         this.LivePoreState.redraw();
         this.LivePoreState.reflow();
+        */
+
+        /*
         if (this.LiveCurrentRatio.series.length < 1) {
             this.LiveCurrentRatio.addSeries({data: this.livedata.meanratio_history});
         } else {
@@ -315,6 +325,8 @@ var FlowcellPageApp = {
         this.LiveCurrentRatio.series[0].update({name: "Current Ratio"}, false);
         this.LiveCurrentRatio.redraw();
         this.LiveCurrentRatio.reflow();
+        */
+        
         if (this.LiveTemperature.series.length < 1) {
             this.LiveTemperature.addSeries({data: this.livedata.asictemp});
             this.LiveTemperature.addSeries({data: this.livedata.heatsinktemp});

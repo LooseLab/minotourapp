@@ -322,16 +322,17 @@ function MinotourApp() {
             'Voltage Over Time',
             'mV'
         );
-        this.LivePoreState = this.makeLiveChart(
+        /*this.LivePoreState = this.makeLiveChart(
             'live-porestate',
             'Pore State Currents',
             'Current pA'
-        );
+        );*/
+        /*
         this.LiveCurrentRatio = this.makeLiveChart(
             'live-currentratio',
             'Current Ratio In Strand/Open Pore',
             'Current Ratio'
-        );
+        );*/
 
         self.id = document.getElementById("run-id").innerText;
         self.selectedBarcode = "All reads";
@@ -828,6 +829,7 @@ function MinotourApp() {
         }
         self.LiveInStrand.redraw();
         self.LiveInStrand.reflow();
+        /*
         if (self.LivePoreState.series.length < 1) {
             self.LivePoreState.addSeries({data: self.livedata.instrand_history});
             self.LivePoreState.addSeries({data: self.livedata.openpore_history});
@@ -839,6 +841,9 @@ function MinotourApp() {
         self.LivePoreState.series[1].update({name: "Open Pore"}, false);
         self.LivePoreState.redraw();
         self.LivePoreState.reflow();
+        */
+
+        /*
         if (self.LiveCurrentRatio.series.length < 1) {
             self.LiveCurrentRatio.addSeries({data: self.livedata.meanratio_history});
         } else {
@@ -847,6 +852,8 @@ function MinotourApp() {
         self.LiveCurrentRatio.series[0].update({name: "Current Ratio"}, false);
         self.LiveCurrentRatio.redraw();
         self.LiveCurrentRatio.reflow();
+        */
+
         if (self.LiveTemperature.series.length < 1) {
             self.LiveTemperature.addSeries({data: self.livedata.asictemp});
             self.LiveTemperature.addSeries({data: self.livedata.heatsinktemp});
