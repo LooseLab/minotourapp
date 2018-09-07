@@ -234,7 +234,7 @@ BWA = get_env_variable("MT_BWA")
 USE_X_FORWARDED_HOST = True
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 if DEBUG:
    INTERNAL_IPS = ('127.0.0.1', 'localhost',)
