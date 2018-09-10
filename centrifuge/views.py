@@ -88,7 +88,6 @@ def cent_sankey_two(request):
     if source_target_df.empty:
         print("empty")
         return Response({}, status=204)
-    print(f"species_limit is {species_limit}")
     # get a subset df of all the species rows
     temp_species_df = source_target_df[source_target_df["target_tax_level"] == "species"]
     # get species limit (default 50) of the largest species
@@ -147,7 +146,6 @@ def vis_table_or_donut_data(request):
     # Get the most recent job
     task_id = max(JobMaster.objects.filter(flowcell=flowcell_id, job_type__name="Centrifuge")
                   .values_list("id", flat=True))
-    print(f"the flowcell job id is {task_id}, the flowcell id is {flowcell_id}")
     # queryset from database, filtered by the flowcell_id and the corresponding JobMaster ID
     queryset = CentOutput.objects.filter(flowcell_id=flowcell_id, task__id=task_id)
     # Create a dataframe from the results of the querying the database
