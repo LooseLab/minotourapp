@@ -32,7 +32,9 @@
     <link rel="stylesheet" href="{% static 'web/datatables/css/jquery.dataTables.css' %}">
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
+    <!--[if lt IE 9]>-->
+    <link rel="stylesheet" href="{% static 'web/css/minotour.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/loader.css' %}">
 
     <!-- jQuery 2.2.3 -->
     <!--<script src="{% static 'web/plugins/jQuery/jquery-2.2.3.min.js' %}"></script>-->
@@ -159,8 +161,7 @@
      fixed layout. -->
 <script src="{% static 'web/plugins/slimScroll/jquery.slimscroll.min.js' %}"></script>
 <script src="{% static 'web/plugins/fastclick/fastclick.min.js' %}"></script>
-<script src="{% static 'web/js/libraries/d3/d3.js' %}"></script>
-<script src="{% static 'web/js/libraries/d3-sankey/d3-sankey.js' %}"></script>
+
 
 {% block javascript %}
 {% endblock %}

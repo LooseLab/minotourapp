@@ -2,35 +2,38 @@
 {% load visview %}
 
 
-<div id="loader-wrapper">
+<div id="loading-sign" style="position: fixed;left: 0;width: 100%;height: 100%; z-index: 12">
+    <h1 style="text-align: center;transform: translateY(36vh);position: relative;">
+    Loading
+
+    </h1>
+</div>
+<div id="loader-wrapper" style="text-align: center">
     <div id="loader"></div>
     <div class="loader-section section-left"></div>
     <div class="loader-section section-right"></div>
 </div>
-<div class="metagenomics-settings">
-    <h1>Hello world!</h1>
-    <h3>Classification not previously run. Run classification?</h3>
-    <div class="card-footer">
-        <button type="submit" href="{url}" id="startCent" class="btn btn-primary">Submit
-        </button>
-    </div>
-</div>
-<div class="vis-container" style="display: contents">
+
+<div class="vis-container" style="display: none">
     {% render_vis %}
 </div>
 <script>
     'use strict';
-        $("#startCent").click(function () {
-            var flowCellId = document.querySelector("#flowcell-id");
-            $(".loaded").removeClass('loaded');
-            $(".metagenomics-settings").css("display", "none");
-            $(".vis-container").css("display", "contents");
-            console.log(flowCellId.value);
-            $.post("/start/", {
-                'csrfmiddlewaretoken': '{{ csrf_token }}',
-                "flowcellId": flowCellId.value
-            }).done(function (data) {
-                alert("Job Created");
-            });
-        });
+        {#$("#startCent").click(function () {#}
+        {#    var flowCellId = document.querySelector("#flowcell-id");#}
+        {#    $(".loaded").removeClass('loaded');#}
+        {#    $(".metagenomics-settings").css("display", "none");#}
+        {#    $(".vis-container").css("display", "contents");#}
+        {#    console.log(flowCellId.value);#}
+        {#    $.post("/start/", {#}
+        {#        'csrfmiddlewaretoken': '{{ csrf_token }}',#}
+        {#        "flowcellId": flowCellId.value#}
+        {#    }).done(function (data) {#}
+        {#        alert("Job Created");#}
+        {#    }).fail(function(response){#}
+        {#        console.log(response)#}
+        {#    })#}
+        {##}
+        {#    ;#}
+        {#{);#}
 </script>

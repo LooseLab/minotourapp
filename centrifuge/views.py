@@ -1,68 +1,52 @@
-from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from centrifuge.models import CentOutput, CartographyMapped, CartographyGuide, LineageValues, MetaGenomicsMeta, SankeyLinks
-from centrifuge.serializers import CentSerialiser, CartMappedSerialiser, CartGuideSerialiser
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse
+from centrifuge.models import CentOutput, CartographyMapped, LineageValues, MetaGenomicsMeta, \
+    SankeyLinks
+from centrifuge.serializers import CartMappedSerialiser
 from django.utils import timezone
-import celery.bin.celery
-import celery.platforms
-import celery.bin.base
-from operator import itemgetter
-import uuid
 from ete3 import NCBITaxa
 import pandas as pd
-from devices.models import Flowcell
-from jobs.models import JobMaster, JobType
-from datetime import datetime
+from jobs.models import JobMaster
 
-
-class CentViewSet(viewsets.ModelViewSet):
-    """Viewset for viewing and editing centrifuge output objects"""
-
-    queryset = CentOutput.objects.all()
-    serializer_class = CentSerialiser
-
-
-class DefaultViewSet(viewsets.ModelViewSet):
-    """Viewset for viewing and editing the default targets in the traffic light analysis"""
-
-    queryset = CartographyGuide.objects.all()
-    serializer_class = CartGuideSerialiser
 
 @api_view(["GET"])
 def metaview(request):
     """
-    Returns the metadata relating to a run, for the header on the vis page
-    Parameters
-    ----------
-    request - django rest framework request object from AJAX get
+    :purpose: return the metadata displayed at the top of the page relating to the task data eing currently visualised
 
-    Returns - A response containing the Run_time, amount of reads in the database, and how many have been classfied, and a percentage
-    -------
+    :author: Rory
 
+    :param request: A django rest framework request body object, contains the flowcell id as a query parameter
+    :return: A Response object, containg a list with the four data objects, Reads sequenced, Reads Classified,
+    Classified and the Runtime
     """
-    print("meta_id is {}".format(request.query_params.get('flowcellId', False)))
-    # print(request.GET.flowcell_id)
-    # the relevant metagenomics database entry
-    queryset = MetaGenomicsMeta.objects.get(flowcell_id=request.query_params.get("flowcellId", False))
-    # If the run has finished set the finish time permanently
-    if not queryset.running and not queryset.finish_time:
-        queryset.finish_time = timezone.now().replace(tzinfo=None)
-        queryset.save()
+    # The flowcell id for the flowcell that the fastq data came from, default to False if not present
+    flowcell_id = request.GET.get("flowcellId", False)
+    # The ids of the JobMaster entries for this flowcell
+    task_ids = JobMaster.objects.filter(flowcell=flowcell_id, job_type__name="Centrifuge").values_list("id", flat=True)
+    # Get the most recent job, which has the highest ID
+    task_id = max(task_ids)
+    # If there is no MetaGenomicsMeta object return an empty list
+    try:
+        queryset = MetaGenomicsMeta.objects.get(flowcell_id=flowcell_id,
+                                            task__id=task_id)
+    except MetaGenomicsMeta.DoesNotExist:
+        return Response([], status=404)
 
     number_of_reads = queryset.number_of_reads
     reads_class = queryset.reads_classified
     # Percentage of reads classified
     percentage = reads_class / number_of_reads * 100
+    # Get the start time of the task, removing the timezone info
     start_time = queryset.timestamp.replace(tzinfo=None)
-    # use the current time to work out how long the ongoing run has taken
+    # Get the current time, removing the timezone info
     current_time = timezone.now().replace(tzinfo=None)
-    # If the request is for a finished run, return the time taken using the set finish time
+    # If the request is not for a finished run, subtract the start time from the current
+    # time to give the time taken so far
     if not queryset.finish_time:
         runtime = current_time - start_time
         runtime = str(runtime)
+    # If the run is finished, use the final time taken saved into the database
     else:
         runtime = queryset.finish_time
 
@@ -76,29 +60,44 @@ def metaview(request):
 @api_view(["GET"])
 def cent_sankey_two(request):
     """
-    Retrieves the data for the sankey diagram, returns it
-    Parameters
-    ----------
-    request - The request body and parameters
-
-    Returns - Response containing all the information for the the sankey diagram
-    -------
-
+    :purpose: Query the database for the sankeyLink data, return the top 50 Lineages
+    :author: Rory
+    :param request: (obj) Django rest framework object, with query params, speciesLimit - The number of species to Return
+    flowcell_id, the Flowcell id for the flowcell that provided the reads
+    :return: (obj) A Response obj containing a dict with data for the sankey diagram
     """
-    species_limit = request.GET.get("speciesLimit", 50)
+
+    # Get the number of species to visualise , defaulting to 50 if not present
+    species_limit = request.GET.get("speciesLimit", 30)
+    # Get the flowcell ID , defaulting to False if not present
+    flowcell_id = request.GET.get("flowcellId", False)
+    # The most up to dat task_id
+    task_id = max(JobMaster.objects.filter(flowcell=flowcell_id,
+                                           job_type__name="Centrifuge").values_list("id", flat=True))
 
     # ## Get the links for the sankey Diagram ###
+
     print("the flowcell is {}".format(request.GET.get('flowcellId', '')))
-    queryset = SankeyLinks.objects.filter(flowcell_id=request.GET.get("flowcellId", "")).values()
-
+    queryset = SankeyLinks.objects.filter(flowcell_id=flowcell_id, task__id=task_id).values()
+    # If the queryset is empty, return an empty object
     if not queryset:
-        return Response(status=204)
-
+        return Response({}, status=204)
+    # Create the dataframe from the results of the database query
     source_target_df = pd.DataFrame(list(queryset))
-    # Reduce the DataFrame to the number of species that you need
-    source_target_df = source_target_df[source_target_df["rank"] < species_limit]
+    # If the database is empty return an empty list
+    if source_target_df.empty:
+        print("empty")
+        return Response({}, status=204)
+    print(f"species_limit is {species_limit}")
+    # get a subset df of all the species rows
+    temp_species_df = source_target_df[source_target_df["target_tax_level"] == "species"]
+    # get species limit (default 50) of the largest species
+    temp_species_df = temp_species_df.nlargest(species_limit, ["value"])
+    # get the values for those species
+    source_target_df = source_target_df[source_target_df["tax_id"].isin(temp_species_df["tax_id"])]
+
     # Drop unnecessary columns from DataFrame
-    source_target_df.drop(columns=["flowcell_id", "id", "tax_id", "rank"], inplace=True)
+    source_target_df.drop(columns=["flowcell_id", "id", "tax_id", "target_tax_level"], inplace=True)
     # Set MultiIndex to group source to target
     source_target_df.set_index(["source", "target"], inplace=True)
     # Group by rows where the source and target are the same
@@ -110,13 +109,15 @@ def cent_sankey_two(request):
     source_target_df.drop_duplicates(["source", "target"], keep="first", inplace=True)
     # Drop any rows where the source and the target are the same and don't keep them
     source_target_df = pd.concat([source_target_df, source_target_df[
-        source_target_df["source"] == source_target_df["target"]]]).drop_duplicates(["source", "target"],
-                                                                                    keep=False)
+        source_target_df["source"] == source_target_df["target"]]]).drop_duplicates(["source", "target"], keep=False)
     source_target_df.dropna(inplace=True)
+    source_target_df.sort_values(["value"], ascending=False, inplace=True)
+    # Create the links list of dicts to return
     links = source_target_df.to_dict(orient="records")
 
     # ## Get the nodes ###
     # Get all the nodes values from superkingdom (ex. Bacteria) to species ("E. Coli")
+    # Create a series of all possible nodes
     nodes = source_target_df["source"].append(source_target_df["target"])
 
     # Remove duplicates
@@ -131,31 +132,36 @@ def cent_sankey_two(request):
     return Response(return_dict, status=200)
 
 
-# TODO refactor into run centrifuge.py
+# TODO refactor into run centrifuge.py then save results in the correct format
 @api_view(["GET"])
-def vis_table_data(request):
+def vis_table_or_donut_data(request):
     """
-    Create the total reads table for the bottom of the page
-    Parameters
-    ----------
-    request - Django rest framework request object
-
-    Returns - a dict containing a json string that has all the data for the total reads table
-    -------
-
+    :purpose: Create and return the data for the bottom of the page total results table or the
+     data for the donut chart
+    :author: Rory
+    :param request: (obj) - A django rest framework request object with query params - FlowcellID: the flowcell ID
+    visType  - Whether this is a a request for donut chart or results table data
+    :return:
     """
-    # queryset from database, filtered by the meta_id
-    queryset = CentOutput.objects.filter(flowcell_id=request.GET.get("flowcellId", 0))
-    # all the taxIDs for this centrifuge job as a list, need for filtering all the relevant lineages
+    flowcell_id = request.GET.get("flowcellId", 0)
+    # Get the most recent job
+    task_id = max(JobMaster.objects.filter(flowcell=flowcell_id, job_type__name="Centrifuge")
+                  .values_list("id", flat=True))
+    print(f"the flowcell job id is {task_id}, the flowcell id is {flowcell_id}")
+    # queryset from database, filtered by the flowcell_id and the corresponding JobMaster ID
+    queryset = CentOutput.objects.filter(flowcell_id=flowcell_id, task__id=task_id)
+    # Create a dataframe from the results of the querying the database
     centouput_df = pd.DataFrame(list(queryset.values()))
-    # if there is no data in the database (yet) return 404
+    # if there is no data in the database (yet) return 204
     if centouput_df.empty:
-        return Response(status=204)
-    # create dataframe
+        return Response([], status=204)
+    centouput_df.drop(columns=["task_id"], inplace=True)
+
+    # create dataframe of all the Lineages we have stored in the database
     lineages_df = pd.DataFrame(list(LineageValues.objects.all().values()))
-    # get relevant taxids, so dataframe of only taxIDs that are in the output of this centrifuge run
+    # get relevant taxids, so dataframe of only lineages for taxIDs that are in the output of this centrifuge run
     lineages_df = lineages_df[lineages_df['tax_id'].isin(centouput_df["tax_id"])]
-    # create the numreads series by mapping over the tax_id series
+    # Create the new columns in the dataframe for num_matches and num_unique matches
     lineages_df.set_index("tax_id", inplace=True)
     centouput_df.set_index("tax_id", inplace=True)
     lineages_df["num_matches"] = centouput_df["num_matches"]
@@ -164,8 +170,9 @@ def vis_table_data(request):
     # try and uniform missing values
     lineages_df = lineages_df.replace("nan", "Empty")
     lineages_df = lineages_df.replace("None", "Empty")
+    lineages_df = lineages_df.fillna("Empty")
     # The order that the phyla go in
-    # TODO add in substrain and subspecies when index contains them
+    # TODO add in substrain and subspecies when centrifuge index contains them
     order = ["superkingdom", "phylum", "classy", "order", "family", "genus", "species"]
 
     def sum_prop_clade_reads(clade, df):
@@ -179,7 +186,7 @@ def vis_table_data(request):
 
         Returns
         -------
-
+        The new Dataframe
         """
         # set the index so we can map the group by object back
         df = df.set_index(clade)
@@ -194,7 +201,7 @@ def vis_table_data(request):
         # create new seies, contains proportion of reads in that clade across the whole dataframe
         df[proptitle] = df[sumtitle].div(df[sumtitle].unique().sum()).mul(100)
         # round to two decimal places
-        df[proptitle] = df[proptitle].round(decimals=2)
+        df[proptitle] = df[proptitle].round(decimals=3)
         df = df.reset_index()
         return df
 
@@ -235,19 +242,14 @@ def vis_table_data(request):
         obj = {ord: arr}
         container_array.append(obj)
 
-    lineages_df["species"] = lineages_df["species"] + " (Num Reads - " + lineages_df["summed_species"].map(str) \
-        + " Proportion " + lineages_df["prop_species"].map(str) + "%)"
-
-    lineages_df["genus"] = lineages_df["genus"] + " (Num Reads - " + lineages_df["summed_genus"].map(str) + " Proportion " \
-        + lineages_df["prop_genus"].map(str) + "%)"
-
-    json = lineages_df.to_json(orient="records")
+    lineages_df.fillna("Empty", inplace=True)
+    json = lineages_df.to_dict(orient="records")
 
     container_array.reverse()
 
     # create an object to return
     if request.GET.get("visType", "") == "table":
-        return_dict = {"json": json}
+        return_dict = json
     elif request.GET.get("visType", "") == "donut":
         return_dict = {"result": container_array}
     else:
@@ -257,60 +259,10 @@ def vis_table_data(request):
     return Response(return_dict, status=200)
 
 
-@api_view(["POST"])
-def start_centrifuge_view(request):
-    """
-
-    Parameters
-    ----------
-    request - (type DRF Request object) contains all the metadata we need to store about the run
-
-    Returns - Response status 200 if celery task starts
-    -------
-
-    """
-    # create a new uuid, to use as a unique identifier
-    ident = str(uuid.uuid4())
-    # setup check to see if celery is up and running
-    status = celery.bin.celery.CeleryCommand.commands['status']()
-    status.app = status.get_app()
-    try:
-        # see if celery is actually running
-        status.run()
-        # Create metadata
-        data = request.data
-        # get date and time
-        d = datetime.now()
-        # date is great
-        # time is lime
-        time = "{:%H:%M:%S}".format(d)
-
-        flowcell_id = request.data["flowcellId"]
-        # create django model object, save it to database
-        MetaGenomicsMeta(run_time=time, flowcell_id=flowcell_id ,running=True, number_of_reads=0,
-                         reads_classified=0).save()
-        # call celery task, pass the uuid we generated as an argument
-        # Create Jobmaster object, to save. This will be picked up by the run
-        # monitor task
-        flowcell = Flowcell.objects.get(pk=flowcell_id)
-        jobtype = JobType.objects.get(pk=10)
-        JobMaster(flowcell=flowcell, job_type=jobtype,
-                  running=False, complete=0, read_count=0, last_read=0).save()
-        # # create django model object, save it to database
-        # print("saved metadata")
-        # return_dict = {"ident": ident}
-        return Response(status=200)
-    # except if celery isn't running
-    except celery.bin.base.Error as e:
-        if e.status == celery.platforms.EX_UNAVAILABLE:
-            print("START CELERY")
-            return HttpResponse(e).status_code(500)
-
-
 @api_view(["POST", "GET"])
 def get_or_set_cartmap(request):
     """
-    Currently Unused
+    TODO Currently Unused
     Get the default mapping targets to display or set them for the run
     Parameters
     ----------
@@ -350,5 +302,3 @@ def get_or_set_cartmap(request):
                                   alert_level=0, red_reads=0).save()
 
         return Response("Hi there", status=200)
-
-

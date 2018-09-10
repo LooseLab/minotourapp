@@ -1,10 +1,12 @@
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from jobs.models import JobType, JobMaster
 from jobs.serializers import JobMasterSerializer
-from reads.serializers import JobTypeSerializer
+from reads.models import Run
+from reference.models import ReferenceInfo
 from web.forms import TaskForm
 
 

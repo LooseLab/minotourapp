@@ -151,9 +151,9 @@ def flowcell_reads_data(request):
     length = int(request.GET.get('length', 10))
 
     end = start + length
-
+    # Which column s
     order_column = request.GET.get('order[0][column]', '')
-
+    # ascending descending
     order_dir = request.GET.get('order[0][dir]', '')
 
     if not search_value == "":

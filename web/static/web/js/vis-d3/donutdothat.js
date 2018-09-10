@@ -1,15 +1,33 @@
 "use strict";
+// Redraw the SVGs on window resize
+$(window).on("resize", function(){
+    let width = ($(window).width() * 0.25) - 50;
+    let height = $(window).height() * 0.35;
+    // Update the svg width and height
+    d3.select(".donut-svg").attr("width", width);
+    d3.select(".donut-svg").attr("height", height);
+    // Get the flowcell id
+    let inputFlowcellId = document.querySelector("#flowcell-id");
+    let flowcellId = inputFlowcellId.value;
+    // Redraw the donut
+    drawDonut(flowcellId);
+});
 
+// The panning and zooming function, called when you apply a call of zoom to the svg on initialisation
 function move() {
     d3.select(".badCopNoDonut").attr("transform", d3.event.transform);
 }
 
-function drawPie(countedData, dataLength, fillArray, pie, arc, svg) {
+// draw the actual donut chart slices
+function drawPie(countedData, pie, arc, svg) {
     // draw the dount chart
+    // select an actual good colour scheme
     let color = d3.scaleOrdinal(d3.schemeCategory10);
+    // Select all the slices and bind the provided data after it's been transformed by d3.pie()
     let slice = svg.select(".slices").selectAll("path.slice")
         .data(pie(countedData));
     //enter your data, returned from pie(countedData, insert a path, set d to data provided by arc function)
+    // Update existing donut slices
     slice.attr("class", "slice")
         .style("fill", function (d) {
             return color(d.data.label);
@@ -20,7 +38,7 @@ function drawPie(countedData, dataLength, fillArray, pie, arc, svg) {
         .text(function (d) {
             return d.data.label + "\n" + d.value + " reads";
         });
-
+    // add the new donut slices, held in d3s enter selection
     slice.enter()
         .insert("path")
         .attr("class", "slice")
@@ -33,26 +51,31 @@ function drawPie(countedData, dataLength, fillArray, pie, arc, svg) {
         .text(function (d) {
             return d.data.label + "\n" + d.value + " reads";
         });
-
+    // remove any slices held in the exit selection, that used to have DOM elements but now have no data for them
     slice.exit().remove();
 }
 
 function drawDonut(flowCellId) {
-    let running = true;
+    // setup the donut chart TODO this coud be more effeicent as it is sometimes called unecessarily
+    // the taxas in the order we want, to access them from the AJAX get request results
     let taxas = ["species", "genus", "family", "order", "classy", "phylum", "superkingdom"];
     // the taxa titles we wish to display under the slider
     let DisplayTaxas = ["Species", "Genus", "Family", "Order", "Class", "Phylum", "Kingdom"];
-    let container = d3.select("body").node();
-    let width = ((container.getBoundingClientRect().width - 30) * 0.25) - 20;
+    // Calculate the width
+    let width = ($(window).width() *0.25) -50;
+    // Calculate the height
     let height = $(window).height() * 0.35,
-        radius = Math.min(width, height / 1.7);
+        // the radius, the smallest of the width and height /2 so it fits in hte svg
+        radius = Math.min(width, height)/2;
+    // The d3 zoom function
     let zoom = d3.zoom()
         .scaleExtent([1, 10]).translateExtent([[0, 0], [width, height]])
         .on("zoom", move);
     let number;
+    // Select the Range of the html slider and the Displayed label underneath the slider
     let range = $('.input-range'),
         value = $('.taxa-level');
-    let dHeight = 35;
+    // Declare the svg and group element variables
     let svg;
     let g;
     // pie is a d3 function that transforms the value for each of the .values in the array of objects, into
@@ -62,43 +85,43 @@ function drawDonut(flowCellId) {
         });
     // arc is a d3 function that generates arc paths from the data provided from d3.pie
     let arc = d3.arc()
+        // \The inner and outer radius of the actual donut slices
         .innerRadius(radius * 0.8)
         .outerRadius(radius * 0.5)
         .padAngle(0.02);
 
-    const fillArray = ["rgb(255, 0, 0)", "rgb(0, 0, 255)", "rgb(0, 255, 0)", "rgb(255, 0, 255)", "rgb(255, 153, 51)", "rgb(255, 252, 8)",
-        "rgb(8, 249, 255)", "rgb(202, 8 ,255)", "rgb(35, 144, 35)", "rgb(202, 119, 8)", "rgb(173, 176, 150)", "rgb(0, 0, 0)",
-        "rgb(141, 202, 8)", "rgb(8, 204, 200)", "rgb(117, 114, 45)", "rgb(255, 0, 99)", "rgb(114, 132, 114)", "rgb(204, 255, 102)",
-        "rgb(204, 153, 255)", "rgb(255, 153, 0)"];
-
-    if ($(".donut-svg").length) {
+    // If there is already a donut-svg
+    if ($(".donut-svg").length !== 0) {
+        // Select the svg
         svg = d3.select(".donut-svg");
-        // d3.select(".slices")/**/.selectAll("*").remove();
+        // recenter, as resizing doesn't change the tansformation
+        d3.select(".slices").attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
     } else {
+        // If no extant svg, append a new svg and g element
         svg = d3.select(".donutContainer").append("svg")
             .attr("class", "donut-svg")
             .attr("width", width)
-            .style("height", dHeight+"vh")
+            .attr("height", height)
             .attr("margin", "auto")
-            .style("margin-left", "-20px")
             .attr("display", "block")
             .call(zoom);
         g = svg.append("g").attr("class", "badCopNoDonut");
-        // append g elements to the svg, attr transform translate centers them in the svg, otherwise drawn offscreen
 
+        // append g elements to the svg, attr transform translate centers them in the svg, otherwise drawn offscreen
         g.append("g")
             .attr("class", "slices")
             .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+        // Set the slider level to Display Species
+        value.html(DisplayTaxas[0]);
     }
-
-    value.html(DisplayTaxas[0]);
+    // Get the data from the server to sisplay
     $.get("/donut", {flowcellId: flowCellId, visType: "donut"}, result => {
-        console.log(result)
-        let dataToDraw = result.result;
         // if there is no data return and try again when interval is up on $interval
-        if (result.result.length === 0) {
+        if (result === undefined) {
             return;
         }
+        let dataToDraw = result.result;
+        // what the label is displaying, starts on species
         let currentSelectionSlider = value.html();
         // what index is that in the display taxas so we can get the right value from the internal taxas array and results array
         let index = DisplayTaxas.indexOf(currentSelectionSlider);
@@ -123,8 +146,9 @@ function drawDonut(flowCellId) {
             // datalength - how many members ar ein this clade (1-20)
             dataLength = sortedData.length;
             //draw a new donut
-            drawPie(sortedData, dataLength, fillArray, pie, arc, svg);
+            drawPie(sortedData, pie, arc, svg);
         });
-        drawPie(dataToDraw[0]["species"], dataLength, fillArray, pie, arc, svg);
+        // Draw a new pie chart
+        drawPie(data1, pie, arc, svg);
     });
 }

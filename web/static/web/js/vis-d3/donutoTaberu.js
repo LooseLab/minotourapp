@@ -1,16 +1,17 @@
 "use strict";
-
+// The taxa titles in order to access the results in the AJAX results object
 let taxas = ["species", "genus", "family", "order", "classy", "phylum", "superkingdom"];
 // the taxa titles we wish to display under the slider
 let displayTaxas = ["Species", "Genus", "Family", "Order", "Class", "Phylum", "Kingdom"];
+// Whether drawing for the first time or updating an existing table
 let first = true;
+// Get the colour scheme, Scale ordinal so colours can be returned the same when given labels
 let color = d3.scaleOrdinal(d3.schemeCategory10);
 
 //create data to draw a table
 function drawPieTables(countedData, color) {
     //create wrapper function to draw a table
     let tableData = [];
-    let length = 0;
     let obj = {};
     let i;
     // if there is less than 7 members keep the data as one for one table
@@ -158,6 +159,10 @@ function drawTables(selection, dataToDraw) {
 
 function getDonutRankTable(flowCellId) {
     $.get("/donut", {flowcellId: flowCellId, visType: "donut"}, result => {
+        // if there is no data return and try again when interval is up on $interval
+        if (result === undefined) {
+            return;
+        }
         let dataToDraw = result.result;
         let range = $('.input-range'),
              value = $('.taxa-level');
@@ -171,10 +176,6 @@ function getDonutRankTable(flowCellId) {
         let data1 = dataToDraw[index][currentlySelectedTaxa];
         // get the number of members in this clade used to determine whether we need a second table
         let dataLength = data1.length;
-        // if there is no data return and try again when interval is up on $interval
-        if (result.result.length === 0) {
-            return;
-        }
         // if the range slider is changed call the anonymous function to redraw everything
         range.on("input", function () {
             // the selected number for the slider level (0-6)
