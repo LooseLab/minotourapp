@@ -7,7 +7,6 @@ from django.utils import timezone
 from ete3 import NCBITaxa
 import pandas as pd
 from jobs.models import JobMaster
-import numpy as np
 
 
 @api_view(["GET"])
@@ -21,7 +20,6 @@ def metaview(request):
     :return: A Response object, containg a list with the four data objects, Reads sequenced, Reads Classified,
     Classified and the Runtime
     """
-    print(f"meta_id is {request.GET.get('flowcellId', False)}")
     # The flowcell id for the flowcell that the fastq data came from, default to False if not present
     flowcell_id = request.GET.get("flowcellId", False)
     # The ids of the JobMaster entries for this flowcell
@@ -66,21 +64,20 @@ def cent_sankey_two(request):
     :author: Rory
     :param request: (obj) Django rest framework object, with query params, speciesLimit - The number of species to Return
     flowcell_id, the Flowcell id for the flowcell that provided the reads
-    :return: (obj) A Repsponse obj containg a dict with data for the sankey diagram
+    :return: (obj) A Response obj containing a dict with data for the sankey diagram
     """
 
     # Get the number of species to visualise , defaulting to 50 if not present
     species_limit = request.GET.get("speciesLimit", 30)
     # Get the flowcell ID , defaulting to False if not present
     flowcell_id = request.GET.get("flowcellId", False)
-    # The most up todat task_id
+    # The most up to dat task_id
     task_id = max(JobMaster.objects.filter(flowcell=flowcell_id,
                                            job_type__name="Centrifuge").values_list("id", flat=True))
 
     # ## Get the links for the sankey Diagram ###
-    print(f"the sankey flowcell is  {request.GET.get('flowcellId', '')} and job_id is {task_id}")
-    # Get the Links objects for this run
 
+    print("the flowcell is {}".format(request.GET.get('flowcellId', '')))
     queryset = SankeyLinks.objects.filter(flowcell_id=flowcell_id, task__id=task_id).values()
     # If the queryset is empty, return an empty object
     if not queryset:
@@ -91,7 +88,6 @@ def cent_sankey_two(request):
     if source_target_df.empty:
         print("empty")
         return Response({}, status=204)
-    print(f"species_limit is {species_limit}")
     # get a subset df of all the species rows
     temp_species_df = source_target_df[source_target_df["target_tax_level"] == "species"]
     # get species limit (default 50) of the largest species
@@ -150,7 +146,6 @@ def vis_table_or_donut_data(request):
     # Get the most recent job
     task_id = max(JobMaster.objects.filter(flowcell=flowcell_id, job_type__name="Centrifuge")
                   .values_list("id", flat=True))
-    print(f"the flowcell job id is {task_id}, the flowcell id is {flowcell_id}")
     # queryset from database, filtered by the flowcell_id and the corresponding JobMaster ID
     queryset = CentOutput.objects.filter(flowcell_id=flowcell_id, task__id=task_id)
     # Create a dataframe from the results of the querying the database
@@ -260,6 +255,7 @@ def vis_table_or_donut_data(request):
 
     # return it
     return Response(return_dict, status=200)
+
 
 @api_view(["POST", "GET"])
 def get_or_set_cartmap(request):

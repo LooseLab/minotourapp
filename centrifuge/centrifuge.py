@@ -6,7 +6,6 @@ import numpy as np
 from centrifuge.models import CentOutput, LineageValues, MetaGenomicsMeta, SankeyLinks
 from jobs.models import JobMaster
 from reads.models import FastqRead
-from centrifuge.serializers import CentSerialiser
 from collections import defaultdict
 from celery import task
 from django.utils import timezone
@@ -84,19 +83,20 @@ class Centrifuger:
         # date is great
         # time is lime
         time = "{:%H:%M:%S}".format(d)
-        # Get the task record from the JobMaster table in the database. Used to seperate the results inserted,
+        # Get the task record from the JobMaster table in the database. Used to separate the results inserted,
         # and tell the Javascript and RunMonitor the task is running and when it is complete
         job_master = JobMaster.objects.get(pk=self.flowcell_job_id)
         job_master.running = True
         job_master.save()
-        # Create a MetaData object about the Classification analysis, used to poulate the header on the visualisation.html page
+        # Create a MetaData object about the Classification analysis, used to populate
+        # the header on the visualisation.html page
         MetaGenomicsMeta(run_time=time, flowcell_id=self.flowcell_id, running=True, number_of_reads=0,
                          reads_classified=0, task=job_master).save()
         # Get the object that we just created back out
         metadata = MetaGenomicsMeta.objects.get(flowcell_id=self.flowcell_id, task__id=job_master.id)
         # While self.scan is true we query the fastqreads model for new readss that have appearedsince last time
         while self.scan:
-            print(f"id is {self.flowcell_id}")
+            print("id is {}".format(self.flowcell_id))
             # return all currently present reads
             cursor = FastqRead.objects.filter(run__flowcell_id__in={self.flowcell_id})
             # Get the total number of reads in the database for this flowcell
@@ -110,10 +110,11 @@ class Centrifuger:
             # The number of reads that we have in the database
             metadata.number_of_reads = doc_no
             metadata.save()
-            print(f"lastread is {last_read_id}")
-            print(f"self.last read is {self.last_read}")
-            # if last read is too close to new last read
-            print(f"last_read_id is {last_read_id} and self.last_read_id is {self.last_read}")
+            print("lastread is {}".format(last_read_id))
+            print("self.last read is {}".format(self.last_read))
+
+            print("last_read_id is {} and self.last_read_id is {}".format(last_read_id, self.last_read))
+
             # If the last read id that we have retrieved is the same as it was last iterations
             if self.last_read == last_read_id:
                 # set the finish time
@@ -126,7 +127,8 @@ class Centrifuger:
             else:
                 self.last_read = last_read_id
 
-            print(f"found {doc_no} reads in the database")
+            print("found {} reads in the database".format(doc_no))
+
             # Get all the reads skipping all we did last time
             cursor = FastqRead.objects.filter(run__flowcell_id__in={self.flowcell_id})[self.skip:doc_no]
             # create python list for zipping
@@ -136,7 +138,7 @@ class Centrifuger:
             # Create list of tuples where the 1st element is the read_id and the second is the sequence
             tupley_list = list(zip(read_ids, sequence_data))
             # create fastq string by joining the read_id and sequence in the format, for all docs in cursor
-            fastq = "".join([f"> {c[0]}\n{c[1]}\n" for c in tupley_list])
+            fastq = "".join([str(">" + c[0] + "\n" + c[1] + "\n") for c in tupley_list])
             # Remove large objects to free up memory
             del sequence_data
             del read_ids
@@ -152,7 +154,7 @@ class Centrifuger:
             cent_out = out.decode()
             # total number of lines of centrifuge output dealt with
             total_centout += cent_out.count("\n") - 1
-            print(f"number of centrifuge output lines is {total_centout}")
+            print("number of centrifuge output lines is {}".format(total_centout))
             # output fields is the column headers for the pandas data frame
             output_fields = ["readID", "seqID", "taxID", "numMatches"]
             # create the DataFrame from the output
@@ -197,8 +199,10 @@ class Centrifuger:
             # =========================================== database dataframe PREVIOUS RESULTS
             # reset index
             # query the index get all the objects in the database at this point
+
             queryset = CentOutput.objects.filter(flowcell_id=self.flowcell_id, task__id=job_master.id).values()
-            print(f"the length of the queryset is {len(queryset)}")
+            print("the length of the queryset is {}".format(len(queryset)))
+
             # Num matches series to map onto sankey links df below
             new_cent_num_matches = df["num_matches"]
             # Get the tax ids from the dataframe containg the newly produced centrifuge results
@@ -504,4 +508,4 @@ class Centrifuger:
             metadata.finish_time = str(end_time - start_time)
             metadata.save()
             print("finished")
-            print(f"total centOut lines {total_centout}")
+            print("total centOut lines {}".format(total_centout))

@@ -22,10 +22,10 @@
                 Fail
                 {% endif %}
             </td>
-            <td align="right">{{ record.read_count|intcomma }}</td>
-            <td align="right">{{ record.total_length|intcomma }}</td>
-            <td align="right">{{ record.average_read_length|floatformat:"0"|intcomma }}</td>
-            <td align="right">{{ record.max_length|intcomma }}</td>
+            <td align="right">{{ record.read_count }}</td>
+            <td align="right">{{ record.total_length }}</td>
+            <td align="right">{{ record.average_read_length|floatformat:"0" }}</td>
+            <td align="right">{{ record.max_length }}</td>
         </tr>
     {% endfor %}
 
