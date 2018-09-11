@@ -641,16 +641,12 @@
 
             var master_minion_list = [];
             var tabslist = document.getElementById('tabslist');
-            console.log(master_minion_list);
             function start() {
-                console.log('running start');
                 $.get("{% url 'activeminION_list' %}", function (data) {
                     //$( ".result" ).html( data
                     var data2 = [];
                     var ien = data.length;
                     //var counter = 0;
-                    console.log("{% url 'activeminION_list' %}");
-                    console.log(data);
                     for (var i = 0; i < ien; i++) {
                         var minIONname = data[i].minION_name;
                         if ($.inArray(data[i].minION_name, master_minion_list) == -1) {
@@ -844,7 +840,6 @@
                             })
                         }
                     }
-                    console.log(minionsthings);
                 });
 
 
@@ -956,8 +951,6 @@
                         this.chart.redraw();
 
                         setInterval(function () {
-                            console.log('check me out');
-                            console.log(this.start_time);
                             var timeleft = geteighthours(this.datain2.slice(-1), this.start_time);
                             var firsthour = 120;
                             [scalingfactor, difference] = projectdata(this.datain2);
@@ -1050,7 +1043,6 @@
                             var returndata = parseporehist(this.datain[0], this.datain2);
                             while (this.chart.series.length > 0)
                                 this.chart.series[0].remove(true);
-                            console.log(returndata[0]);
                             for (var i = 0; i < returndata.length; i++) {
                                 this.chart.addSeries(returndata[i]);
                             }
@@ -1336,7 +1328,6 @@
                         //this.chart = new Highcharts.Chart(this.opts);
                         this.chart.series[0].setData(this.datain2);
                         setInterval(function () {
-                            console.log(this.datain2);
                             this.chart.series[0].setData(this.datain2);
                             this.chart.redraw();
                         }.bind(this), 10000);
@@ -2512,10 +2503,6 @@
                             var returndata = tohistogram(this.datain, parseInt(this.datain2), this.totalyield);
                             this.chart.series[0].setData(returndata[0]);
                             this.chart.xAxis[0].setCategories(returndata[1]);
-                            //console.log('updating highcharts histogram');
-                            console.log(this.datain2);
-                            //console.log(returndata[2]-0.5);
-                            //console.log(typeof(returndata[2]));
                             var N50 = parseInt(returndata[2]);
                             this.chart.xAxis[0].removePlotBand('plot-band-1');
                             this.chart.xAxis[0].addPlotBand({
@@ -2797,15 +2784,11 @@
                                 "complete": 'False'
                             },
                             "beforeSend": function (xhr, settings) {
-                                console.log("before send");
                                 $.ajaxSettings.beforeSend(xhr, settings);
                             },
                             "success": function (result) {
-                                console.log(result);
                             },
                             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                console.log("Status: " + textStatus);
-                                alert("Error: " + errorThrown);
                             }
 
                         })
@@ -2840,15 +2823,11 @@
                                 "complete": 'False'
                             },
                             "beforeSend": function (xhr, settings) {
-                                console.log("before send");
                                 $.ajaxSettings.beforeSend(xhr, settings);
                             },
                             "success": function (result) {
-                                console.log(result);
                             },
                             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                console.log("Status: " + textStatus);
-                                alert("Error: " + errorThrown);
                             }
 
                         })
@@ -2884,15 +2863,11 @@
                                 "complete": 'False'
                             },
                             "beforeSend": function (xhr, settings) {
-                                console.log("before send");
                                 $.ajaxSettings.beforeSend(xhr, settings);
                             },
                             "success": function (result) {
-                                console.log(result);
                             },
                             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                console.log("Status: " + textStatus);
-                                alert("Error: " + errorThrown);
                             }
 
                         })
@@ -2935,15 +2910,11 @@
                                 "complete": 'False'
                             },
                             "beforeSend": function (xhr, settings) {
-                                console.log("before send");
                                 $.ajaxSettings.beforeSend(xhr, settings);
                             },
                             "success": function (result) {
-                                console.log(result);
                             },
                             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                console.log("Status: " + textStatus);
-                                alert("Error: " + errorThrown);
                             }
 
                         })
@@ -2979,14 +2950,11 @@
                                 "complete": 'False'
                             },
                             "beforeSend": function (xhr, settings) {
-                                console.log("before send");
                                 $.ajaxSettings.beforeSend(xhr, settings);
                             },
                             "success": function (result) {
-                                console.log(result);
                             },
                             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                console.log("Status: " + textStatus);
                                 alert("Error: " + errorThrown);
                             }
 
@@ -3016,14 +2984,11 @@
                             "url": url_mask,
                             "data": {"custom": "", "job": "stopminion", "minION": event.target.id, "complete": 'False'},
                             "beforeSend": function (xhr, settings) {
-                                console.log("before send");
                                 $.ajaxSettings.beforeSend(xhr, settings);
                             },
                             "success": function (result) {
-                                console.log(result);
                             },
                             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                console.log("Status: " + textStatus);
                                 alert("Error: " + errorThrown);
                             }
 
@@ -3057,14 +3022,11 @@
                                 "complete": 'False'
                             },
                             "beforeSend": function (xhr, settings) {
-                                console.log("before send");
                                 $.ajaxSettings.beforeSend(xhr, settings);
                             },
                             "success": function (result) {
-                                console.log(result);
                             },
                             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                console.log("Status: " + textStatus);
                                 alert("Error: " + errorThrown);
                             }
 
@@ -3097,15 +3059,11 @@
                                 "complete": 'False'
                             },
                             "beforeSend": function (xhr, settings) {
-                                console.log("before send");
                                 $.ajaxSettings.beforeSend(xhr, settings);
                             },
                             "success": function (result) {
-                                console.log(result);
                             },
                             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                console.log("Status: " + textStatus);
-                                alert("Error: " + errorThrown);
                             }
 
                         })
