@@ -11,6 +11,7 @@ from celery import task
 from django.utils import timezone
 from datetime import datetime
 import time as timmy
+from minotourapp.utils import get_env_variable
 
 
 # TODO del unused df and things
@@ -72,8 +73,9 @@ class Centrifuger:
          Once parsed it's deposited into the database, updating any existing records. The organising key is a uuid,
          stored in self.foreign key.
         """
-
-        cmd = "centrifuge -f --mm -x /home/rory/testData/p_compressed -"
+        centrifuge_path = get_env_variable("MT_CENTRIFUGE")
+        index_path = get_env_variable("MT_CENT_INDEX")
+        cmd = "perl" + centrifuge_path + " -f --mm -x " + index_path + " -"
         # Counter for total centOut
         total_centout = 0
         # Instance of the Ncbi taxa class, for taxonomic id manipulation
