@@ -195,3 +195,6 @@ for each command. If you chose to create the environmental variable bash file, a
 
 * Time to test - if everything worked well, you should be able to access the web
 interface on http://localhost:8100.
+
+# Centrifuge
+"Specify the "
