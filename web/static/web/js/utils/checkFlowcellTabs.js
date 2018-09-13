@@ -6,7 +6,7 @@ function checkFlowcellTabs(flowcell_id) {
 
     var requestData = this.requestData.bind(this);
 
-    $.getJSON(url, (function (data) {
+    $.getJSON(url, function (data) {
 
         var items = [];
 
@@ -28,6 +28,7 @@ function checkFlowcellTabs(flowcell_id) {
             if (!$('#nav-' + value.id).length) {
                 var element = '<li><a href="#' + value.id + '"id="nav-' + value.id + '" class="flowcell-tab" data-toggle="tab">' + value.title + '</a></li>';
                 $('#tasks-li').before(element);
+                element
             }
         });
 
@@ -36,7 +37,7 @@ function checkFlowcellTabs(flowcell_id) {
         var tabs = document.querySelectorAll('.flowcell-tab');
 
         for (var i = 0; i < tabs.length; i++) {
-
+            console.log(tabs[i]);
             tabs[i].addEventListener('click', function (event) {
 
                 flowcell_selected_tab_input.value = event.target.innerHTML;
@@ -44,7 +45,7 @@ function checkFlowcellTabs(flowcell_id) {
                 requestData(flowcell_id);
             });
         }
-    }).bind(this));
+    });
 
-    setTimeout(checkFlowcellTabs.bind(null, flowcell_id), 60000);
-};
+    // setTimeout(checkFlowcellTabs, 60000, flowcell_id);
+}

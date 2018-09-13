@@ -1,71 +1,6 @@
 "use strict";
-// function dataPrep(sankeyData) {
-//     /*
-//         Data prep takes the results from the factory promise, and transforms it to the correct format
-//         for D3-sankey
-//      */
-//     console.log(sankeyData);
-//     let nodes = sankeyData.sankey;
-//     let nodeNames;
-//     let topFiftySpecies;
-//     let topFiftyLink;
-//     let specimin;
-//     let notTopOfTree;
-//     let first;
-//     let source;
-//     let link;
-//     let sourcey;
-//
-//     nodeNames = [];
-//     topFiftyLink = [];
-//     console.log("top Fifty Species");
-//     console.log(topFiftySpecies);
-//     for (let i = 0; i < topFiftySpecies.length; i++) {
-//         specimin = topFiftySpecies[i];
-//         notTopOfTree = true;
-//         first = true;
-//         topFiftyLink.push(specimin);
-//         nodeNames.push({"name": specimin.source}, {"name": specimin.target});
-//         while (notTopOfTree) {
-//             if (first) {
-//                 source = specimin.source;
-//                 first = false;
-//             } else {
-//                 sourcey = topFiftyLink[topFiftyLink.length - 1];
-//                 source = sourcey.source;
-//             }
-//             if (nodes.links.findIndex(x => x.target === source) ===
-//                 -1
-//             ) {
-//                 notTopOfTree = false;
-//             }
-//             if (notTopOfTree) {
-//                 link = nodes.links.filter(function (l) {
-//                     return l.target === source;
-//                 });
-//                 topFiftyLink.push(link[0]);
-//                 nodeNames.push({"name": link[0].target}, {"name": link[0].source})
-//             }
-//         }
-//     }
-//     nodeNames = nodeNames.filter((node, index, self) => self.findIndex(t => t.name === node.name
-//         ) ===
-//         index
-//     )
-//     ;
-//     topFiftyLink = topFiftyLink.filter((link, index, self) => self.findIndex(t => t.source === link.source && t.target === link.target
-//         ) ===
-//         index
-//     )
-//     ;
-//     nodes.links = topFiftyLink;
-//     nodes.nodes = nodeNames;
-//     console.log(nodes);
-//     return nodes;
-// }
+let updateSankey;
 // resize svg and graphic on window resize
-
-
 $(window).on("resize", function () {
     // height of page
     let hi = $(window).height() * 0.55;
@@ -141,7 +76,7 @@ function draw(nodesObj, sankey, g, format, color, width) {
         .append("title")
         .text(d => `${d.name}\n${format(d.value)}`);
 
-    // appned the text labels to the svg
+    // append the text labels to the svg
     text = g.append("g").attr("class", "text")
         .style("font", "10px sans-serif")
         .selectAll("text")
@@ -181,7 +116,21 @@ function update(flowcellId, sankey, checkForData, svg, g, format, color, width) 
     });
 }
 
+function topLevelSankeyDrawer(flowcellID){
+    drawSankey(flowcellID);
+    updateSankey = setInterval(drawSankey, 60000, flowcellID);
+}
+
+// top level function
 function drawSankey(flowcellId) {
+    // Check the tab value
+    let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
+
+    if(flowcell_selected_tab_input.value !== "Metagenomics"){
+        console.log("clearing snakey");
+        clearInterval(updateSankey);
+        return;
+    }
     //set svg width and height
     let container = d3.select("body").node();
     // height of page
@@ -204,7 +153,7 @@ function drawSankey(flowcellId) {
             return d.name;
         })
     ;
-
+    // panning and zoom function
     function move() {
         d3.select(".contain")
             .attr("transform", d3.event.transform);
@@ -213,7 +162,6 @@ function drawSankey(flowcellId) {
     let zoom = d3.zoom()
         .scaleExtent([1, 6]).translateExtent([[0, 0], [width, hi]])
         .on("zoom", move);
-    console.log($(".svg-sankey").length);
     if ($(".svg-sankey").length !== 0) {
         svg = d3.select(".svg-sankey");
         g = d3.select(".contain");

@@ -5,6 +5,7 @@ var FlowcellPageApp = {
     },
 
     init: function () {
+        console.log("initialising flowcellpageapp");
         this.chart_reads_called = null;
         this.chart_yield = null;
         this.chart_average_read_length = null;
@@ -191,11 +192,11 @@ var FlowcellPageApp = {
             "Pore States".toUpperCase(),
             "Pore States".toUpperCase()
         );
-        this.drawSankey = drawSankey;
-        this.drawDonut = drawDonut;
-        this.metaHeader = metaHeader;
-        this.getTotalReadsTable = getTotalReadsTable;
-        this.getDonutRankTable = getDonutRankTable;
+        this.topLevelSankeyDrawer = topLevelSankeyDrawer;
+        this.topMetaHeader = topMetaHeader;
+        this.topLevelDrawDonut = topLevelDrawDonut;
+        this.topGetTotalReadsTable = topGetTotalReadsTable;
+        this.topGetDonutRankTable = topGetDonutRankTable;
         this.flowcellTaskHistoryTable = flowcellTaskHistoryTable;
 
 

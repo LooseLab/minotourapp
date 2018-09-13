@@ -44,7 +44,7 @@ class CentOutput(models.Model):
     :tax_id: (int) - The taxonomic ID of this species
     :num_matches: (int) - The number of centrifuge matches to this species in this analysis
     :sum_unique: (int) - The number of centrifuge matches that match uniquely to this species
-    :flowcell_id: (int) - The Id of the flowcell the reads came from #TODO make this a foreign key?
+    :flowcell_id: (int) - The Id of the flowcell the reads came from
     :task: (JobMaster Object) FK - the task record in the JobMaster that started this analysis
     """
     name = models.CharField(max_length=250, null=True)

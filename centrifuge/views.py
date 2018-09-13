@@ -166,9 +166,9 @@ def vis_table_or_donut_data(request):
     lineages_df["sum_unique"] = centouput_df["sum_unique"]
 
     # try and uniform missing values
-    lineages_df = lineages_df.replace("nan", "Empty")
-    lineages_df = lineages_df.replace("None", "Empty")
-    lineages_df = lineages_df.fillna("Empty")
+    lineages_df = lineages_df.replace("nan", "Unclassified")
+    lineages_df = lineages_df.replace("None", "Unclassified")
+    lineages_df = lineages_df.fillna("Unclassified")
     # The order that the phyla go in
     # TODO add in substrain and subspecies when centrifuge index contains them
     order = ["superkingdom", "phylum", "classy", "order", "family", "genus", "species"]
@@ -240,7 +240,7 @@ def vis_table_or_donut_data(request):
         obj = {ord: arr}
         container_array.append(obj)
 
-    lineages_df.fillna("Empty", inplace=True)
+    lineages_df.fillna("Unclassified", inplace=True)
     json = lineages_df.to_dict(orient="records")
 
     container_array.reverse()
