@@ -64,3 +64,15 @@ class TaskForm(forms.ModelForm):
         model = JobMaster
         fields = ('flowcell', 'job_type')
 
+
+class ExperimentForm(forms.Form):
+
+    name = forms.CharField(
+        label='Experiment name',
+        widget=forms.TextInput(
+            attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter Experiment name here'
+            }
+        )
+    )

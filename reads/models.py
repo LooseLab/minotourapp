@@ -3,14 +3,42 @@ import datetime
 import pytz
 from django.conf import settings
 from django.db import models
-from django.db.models.signals import post_save, m2m_changed
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
 from devices.models import Flowcell, MinION
 
 
-class GroupRun(models.Model): # TODO don't document
+class Experiment(models.Model):
+
+    """
+    Define a group of runs
+    """
+
+    name = models.CharField(
+
+        max_length=32
+    )
+
+    owner = models.ForeignKey(
+
+        settings.AUTH_USER_MODEL,
+        related_name='experiments'
+    )
+
+    created_date = models.DateTimeField(
+
+        auto_now_add=True
+    )
+
+    modified_date = models.DateTimeField(
+
+        auto_now=True
+    )
+
+
+class GroupRun(models.Model):  # TODO don't document
 
     MINION = 'MINION'
     GRIDION = 'GRIDION'
@@ -31,14 +59,14 @@ class GroupRun(models.Model): # TODO don't document
 
     name = models.CharField(
 
-        max_length = 32
+        max_length=32
     )
 
     device = models.CharField(
 
-        max_length = 10,
-        choices = NANOPORE_DEVICES,
-        default = MINION
+        max_length=10,
+        choices=NANOPORE_DEVICES,
+        default=MINION
     )
 
     def __str__(self):
@@ -170,7 +198,7 @@ class Run(models.Model):
     groupruns = models.ManyToManyField(
 
         GroupRun,
-        blank = True,
+        blank=True,
         related_name='runs',
     )
 
@@ -322,7 +350,7 @@ class Run(models.Model):
             return None
 
 
-class BarcodeGroup(models.Model): # Dont document
+class BarcodeGroup(models.Model):  # Dont document
 
     flowcell = models.ForeignKey(
         Flowcell,
@@ -337,7 +365,7 @@ class BarcodeGroup(models.Model): # Dont document
         return "{} {}".format(self.flowcell, self.name)
 
 
-class GroupBarcode(models.Model): # Don't document
+class GroupBarcode(models.Model):  # Don't document
 
     grouprun = models.ForeignKey(
 
@@ -370,7 +398,7 @@ class Barcode(models.Model):
     :groupbarcodes: To be removed.
     :name: returns the name as identified in the header of the fastq file.
     """
-    
+
     run = models.ForeignKey(
 
         Run,
@@ -585,7 +613,6 @@ class MinIONRunStats(models.Model):  # Todo consider merging in to one object wi
     :created_date: Created Date.
     """
 
-    
     minION = models.ForeignKey(
 
         MinION,
@@ -776,207 +803,204 @@ class MinIONRunStatus(models.Model):
 
     minION = models.ForeignKey(
 
-        MinION, 
+        MinION,
         related_name='currentrundetails'
     )
 
     minKNOW_current_script = models.CharField(
 
-        max_length=256, 
-        blank=True, 
+        max_length=256,
+        blank=True,
         null=True
     )
 
     minKNOW_sample_name = models.CharField(
 
-        max_length=256, 
-        blank=True, 
+        max_length=256,
+        blank=True,
         null=True
     )
 
     minKNOW_exp_script_purpose = models.CharField(
 
-        max_length=256, 
-        blank=True, 
+        max_length=256,
+        blank=True,
         null=True
     )
 
     minKNOW_flow_cell_id = models.CharField(
 
-        max_length=64, 
-        blank=True, 
+        max_length=64,
+        blank=True,
         null=True
     )
 
     minKNOW_version = models.CharField(
 
-        max_length=64, 
-        blank=True, 
+        max_length=64,
+        blank=True,
         null=True
     )
 
     minKNOW_run_name = models.CharField(
 
-        max_length=256, 
-        blank=True, 
+        max_length=256,
+        blank=True,
         null=True
     )
 
     run_id = models.ForeignKey(
 
-        Run, 
+        Run,
         related_name='RunDetails'
     )
 
     minKNOW_hash_run_id = models.CharField(
 
-        max_length=256, 
-        blank=True, 
+        max_length=256,
+        blank=True,
         null=True
     )
 
     minKNOW_script_run_id = models.CharField(
 
-        max_length=256, 
-        blank=True, 
+        max_length=256,
+        blank=True,
         null=True
     )
-    
+
     minKNOW_real_sample_rate = models.IntegerField(
 
-        blank=True, 
+        blank=True,
         null=True
     )
 
     minKNOW_asic_id = models.CharField(
 
-        max_length=256, 
-        blank=True, 
+        max_length=256,
+        blank=True,
         null=True
     )
 
     minKNOW_start_time = models.DateTimeField(
 
-        blank=True, 
+        blank=True,
         null=True
     )
-    
+
     minKNOW_colours_string = models.TextField(
 
-        blank=True, 
+        blank=True,
         null=True
     )
 
     minKNOW_computer = models.TextField(
 
-        max_length=128, 
-        blank=True, 
+        max_length=128,
+        blank=True,
         null=True
     )
 
     experiment_type = models.CharField(
 
-        max_length=256, 
-        blank=True, 
+        max_length=256,
+        blank=True,
         null=True
     )
 
     experiment_id = models.CharField(
 
-        max_length=256, 
-        blank=True, 
+        max_length=256,
+        blank=True,
         null=True
     )
 
     fast5_output_fastq_in_hdf = models.IntegerField(
 
-        blank=True, 
+        blank=True,
         null=True
     )
 
     fast5_raw = models.IntegerField(
 
-        blank=True, 
+        blank=True,
         null=True
     )
-    
+
     fast5_reads_per_folder = models.IntegerField(
 
-        blank=True, 
+        blank=True,
         null=True
     )
-    
+
     fastq_enabled = models.IntegerField(
 
-        blank=True, 
+        blank=True,
         null=True
     )
-    
+
     fastq_reads_per_file = models.IntegerField(
 
-        blank=True, 
+        blank=True,
         null=True
     )
-    
+
     filename = models.CharField(
 
-        max_length=256, 
-        blank=True, 
+        max_length=256,
+        blank=True,
         null=True
     )
-    
+
     flowcell_type = models.CharField(
 
-        max_length=256, 
-        blank=True, 
+        max_length=256,
+        blank=True,
         null=True
     )
 
     kit_classification = models.CharField(
 
-        max_length=256, 
-        blank=True, 
+        max_length=256,
+        blank=True,
         null=True
     )
-    
+
     local_basecalling = models.IntegerField(
 
-        blank=True, 
+        blank=True,
         null=True
     )
 
     sample_frequency = models.IntegerField(
 
-        blank=True, 
+        blank=True,
         null=True
     )
-    
+
     sequencing_kit = models.CharField(
 
-        max_length=256, 
-        blank=True, 
+        max_length=256,
+        blank=True,
         null=True
     )
 
     user_filename_input = models.CharField(
 
-        max_length=256, 
+        max_length=256,
         blank=True,
         null=True
     )
 
     class Meta:
-
         unique_together = ("minION", "minKNOW_hash_run_id", "minKNOW_exp_script_purpose")
         verbose_name = 'MinION Run Status'
         verbose_name_plural = 'MinION Run Status'
 
     def __str__(self):
-
         return "{} {} {}".format(self.minION, self.minKNOW_current_script, self.run_id)
 
     def minION_name(self):
-
         return self.minION.minION_name
 
 
@@ -995,7 +1019,6 @@ class MinIONEventType(models.Model):
     )
 
     class Meta:
-
         verbose_name = 'MinION Event Type'
         verbose_name_plural = 'MinION Event Types'
 
@@ -1034,7 +1057,7 @@ class MinIONEvent(models.Model):
     )
 
     datetime = models.DateTimeField(
-        
+
     )
 
     created_date = models.DateTimeField(
@@ -1319,14 +1342,16 @@ class MinionMessage(models.Model):
     )
 
     class Meta:
-        #unique_together = ("minion", "run", "timestamp")
-        unique_together = ("minion", "message","timestamp") #Todo note that we assume the same minION will never generate the same message at the same timestamp
+        # unique_together = ("minion", "run", "timestamp")
+        unique_together = ("minion", "message",
+                           "timestamp")  # Todo note that we assume the same minION will never generate the same message at the same timestamp
         verbose_name = 'Minion message'
         verbose_name_plural = 'MinIon messages'
 
     def __str__(self):
         return "{} {} {} {}".format(
             self.minion, self.message, self.severity, self.timestamp)
+
 
 class RunStatisticBarcode(models.Model):  # TODO to be removed
 
@@ -1405,7 +1430,6 @@ class RunStatisticBarcode(models.Model):  # TODO to be removed
 
 
 class FlowcellStatisticBarcode(models.Model):
-
     flowcell = models.ForeignKey(
 
         Flowcell,
@@ -1481,7 +1505,7 @@ class FlowcellStatisticBarcode(models.Model):
         return len(self.channel_presence.replace('0', ''))
 
 
-class ChannelSummary(models.Model): # don't document
+class ChannelSummary(models.Model):  # don't document
 
     run = models.ForeignKey(
         Run,
@@ -1629,15 +1653,13 @@ class FlowcellHistogramSummary(models.Model):
     )
 
     class Meta:
-
         db_table = 'flowcell_histogram_summary'
 
     def __str__(self):
-
         return "{} {} {}".format(
-            self.flowcell, 
-            self.read_type_name, 
-            self.status, 
+            self.flowcell,
+            self.read_type_name,
+            self.status,
             self.bin_index
         )
 
@@ -1697,13 +1719,11 @@ class RunSummaryBarcode(models.Model):  # TODO to be deleted
     )
 
     class Meta:
-        
         verbose_name = 'Run Summary Barcode'
         verbose_name_plural = 'Run Summary Barcodes'
         db_table = 'run_summary_barcode'
 
     def __str__(self):
-        
         return "{} {} {} {} {}".format(
             self.run,
             self.total_length,
@@ -1738,7 +1758,7 @@ class FlowcellSummaryBarcode(models.Model):
     :channel_presence: (str) Sequence of 3000 zeros and ones representing the presence or absence of a strand
     :channel_count: (int) Retuns the sum of ones in the channel_presence
     """
-    
+
     flowcell = models.ForeignKey(
 
         Flowcell,
@@ -1800,13 +1820,11 @@ class FlowcellSummaryBarcode(models.Model):
     )
 
     class Meta:
-
         verbose_name = 'Flowcell Summary'
         verbose_name_plural = 'Flowcell Summary'
         db_table = 'Flowcell_summary_barcode'
 
     def __str__(self):
-        
         return "{} {} {} {} {}".format(
             self.flowcell,
             self.total_length,
@@ -1847,7 +1865,6 @@ def create_run_barcodes(sender, instance=None, created=False, **kwargs):
     """
 
     if created:
-
         Barcode.objects.update_or_create(
             run=instance,
             name='All reads'
@@ -1857,7 +1874,6 @@ def create_run_barcodes(sender, instance=None, created=False, **kwargs):
             run=instance,
             name='No barcode'
         )
-
 
 # @receiver(post_save, sender=GroupRun)
 # def create_grouprun_barcodes(sender, instance=None, created=False, **kwargs):

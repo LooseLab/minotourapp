@@ -8,8 +8,10 @@ from rest_framework.authtoken.models import Token
 
 from communication.models import Message
 from devices.models import Flowcell
-from reads.models import Run, UserOptions, FastqRead
-from web.forms import SignUpForm, UserOptionsForm
+from reads.models import Run, UserOptions, FastqRead, Experiment
+from web.forms import SignUpForm, UserOptionsForm, ExperimentForm
+
+from django.contrib import messages
 
 
 def signup(request):
@@ -194,3 +196,41 @@ def remotecontrol(request):
 @login_required
 def sandbox(request):
     return render(request, 'web/sandbox.html')
+
+
+@login_required
+def experiments(request):
+
+    if request.method == 'POST':
+
+
+        form = ExperimentForm(request.POST)
+
+        if form.is_valid():
+
+            experiment_name = form.cleaned_data['name']
+
+            experiment = Experiment()
+            experiment.name = experiment_name
+            experiment.owner = request.user
+            experiment.save()
+
+            print('Form is valid')
+            messages.success(request, 'O mapa for criado com sucesso.')
+
+    else:
+
+
+        form = ExperimentForm()
+
+
+    experiment_list = Experiment.objects.filter(owner=request.user)
+
+    return render(
+        request,
+        'web/experiments.html',
+        {
+            'form': form,
+            'experiment_list': experiment_list,
+        }
+    )
