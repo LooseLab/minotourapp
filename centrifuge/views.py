@@ -23,7 +23,7 @@ def metaview(request):
     # The flowcell id for the flowcell that the fastq data came from, default to False if not present
     flowcell_id = request.GET.get("flowcellId", False)
     # The ids of the JobMaster entries for this flowcell
-    task_ids = JobMaster.objects.filter(flowcell=flowcell_id, job_type__name="Centrifuge").values_list("id", flat=True)
+    task_ids = JobMaster.objects.filter(flowcell=flowcell_id, job_type__name="Metagenomics").values_list("id", flat=True)
     # Get the most recent job, which has the highest ID
     task_id = max(task_ids)
     # If there is no MetaGenomicsMeta object return an empty list
@@ -73,7 +73,7 @@ def cent_sankey_two(request):
     flowcell_id = request.GET.get("flowcellId", False)
     # The most up to dat task_id
     task_id = max(JobMaster.objects.filter(flowcell=flowcell_id,
-                                           job_type__name="Centrifuge").values_list("id", flat=True))
+                                           job_type__name="Metagenomics").values_list("id", flat=True))
 
     # ## Get the links for the sankey Diagram ###
 
@@ -144,7 +144,7 @@ def vis_table_or_donut_data(request):
     """
     flowcell_id = request.GET.get("flowcellId", 0)
     # Get the most recent job
-    task_id = max(JobMaster.objects.filter(flowcell=flowcell_id, job_type__name="Centrifuge")
+    task_id = max(JobMaster.objects.filter(flowcell=flowcell_id, job_type__name="Metagenomics")
                   .values_list("id", flat=True))
     # queryset from database, filtered by the flowcell_id and the corresponding JobMaster ID
     queryset = CentOutput.objects.filter(flowcell_id=flowcell_id, task__id=task_id)

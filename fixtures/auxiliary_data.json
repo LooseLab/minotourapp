@@ -136,7 +136,7 @@
   "model": "jobs.jobtype",
   "pk": 10,
   "fields": {
-    "name": "Centrifuge",
+    "name": "Metagenomics",
     "description": "Metagenomics classification",
     "long_description": "Metagenomics classification",
     "reference": false,
