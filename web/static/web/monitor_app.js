@@ -112,7 +112,7 @@ var FlowcellPageApp = {
         this.requestStatistics = requestStatistics.bind(this);
 
         this.checkFlowcellTabs = checkFlowcellTabs.bind(this);
-
+        this.addStartTabsEvents = addStartTabsEvents.bind(this);
         this.updateBarcodeNavTab = updateBarcodeNavTab.bind(this);
 
         this.ChartNumContigs = this.makeChart4(
@@ -206,9 +206,8 @@ var FlowcellPageApp = {
 
         var flowcell_id = get_selected_flowcell();
 
+        this.addStartTabsEvents(flowcell_id);
         this.checkFlowcellTabs(flowcell_id);
-
-        // this.requestData(this.flowcellId);
 
     }, // end of init
 

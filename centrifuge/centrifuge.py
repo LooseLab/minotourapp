@@ -99,10 +99,11 @@ class Centrifuger:
 
         # While self.scan is true we query the fastqreads model for new readss that have appearedsince last time
         iteration_count = 0
+        cursor = FastqRead.objects.filter(run__flowcell_id__in={self.flowcell_id})
         while self.scan:
             iteration_count += 1
             print("id is {}".format(self.flowcell_id))
-            cursor = FastqRead.objects.filter(run__flowcell_id__in={self.flowcell_id})
+
             # return all currently present reads
             # Get the total number of reads in the database for this flowcell
             if not cursor:
@@ -157,12 +158,6 @@ class Centrifuger:
             print(tupley_list[-1])
             print("\n \n \n")
             # create fastq string by joining the read_id and sequence in the format, for all docs in cursor
-            # fastq_list = []
-            # for c in tupley_list:
-            #     print(c)
-            #     if c[1] is not None:
-            #         fastq_list.append(str(">" + c[0] + "\n" + c[1] + "\n"))
-            # fastq = "".join(fastq_list)
             fastq = "".join([str(">" + c[0] + "\n" + c[1] + "\n") for c in tupley_list if c[1] is not None])
             # Remove large objects to free up memory
             del sequence_data
