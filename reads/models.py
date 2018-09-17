@@ -757,7 +757,7 @@ class MinIONRunStats(models.Model):  # Todo consider merging in to one object wi
     ## This is something to look at for optimisation
     def occupancy(self):
         if (self.strand > 0 and self.inrange > 0):
-            occupancy = round(((self.strand + self.adapter) / (self.strand + self.adapter + self.inrange)) * 100)
+            occupancy = round(((self.strand + self.adapter) / (self.strand + self.adapter + self.good_single)) * 100)
         else:
             occupancy = 0
         return occupancy
