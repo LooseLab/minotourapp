@@ -1,29 +1,65 @@
 from django.db import models
 from django.utils import timezone
 from jobs.models import JobMaster
+from reads.models import Barcode
+from devices.models import Flowcell
+
+
+class CentOutputBarcoded(models.Model):
+    """
+        :purpose: Store the output of the metagenomics classification split by barcode, used to draw the table and donut
+        , per barcode
+        :author: Rory
+        Fields:
+
+        :barcode: (FK)Foreign key linked to the Barcode object in the database in the reads models
+        :number_of_reads: (int) Number of matches for this species
+        :sum_unique: (int) Number of reads that only match to this species
+        :tax_id: (int) The taxonomic identifier number of this species
+        :flowcell: (FK) foreign key linking to the flowcell database entry for the flowcell
+        that the reads were generated on
+        :name: (str) The name of this species
+    """
+    barcode = models.CharField(max_length=10, null=True)
+    num_matches = models.IntegerField(null=True)
+    sum_unique = models.IntegerField(null=True)
+    tax_id = models.IntegerField()
+    flowcell = models.ForeignKey(
+        Flowcell,
+        related_name="flowcell_metagenomics_barcode"
+    )
+    name = models.CharField(max_length=150, null=True)
+    task = models.ForeignKey(
+        JobMaster,
+        related_name="barcode_meta_task"
+    )
 
 
 class MetaGenomicsMeta(models.Model):
     """"
-    :purpose: Store information about the Metagenomics classification analysis
-    :author: Rory
+        :purpose: Store information about the Metagenomics classification analysis, used in centrifuger.py
+        :author: Rory
 
-    Fields:
+        Fields:
 
-    :timestamp: (datetime) - Start of the analysis task
-    :runtime: (str) - Time taken to run
-    :flowcell_id: (int) - The Flowcell ID
-    :task: (JobMaster Object) FK - the task record in the JobMaster that started this analysis
-    :running: (bool) - If the analysis is currently running
-    :number_of_reads: (int) - Number of reads in Flowcell
-    :reads_classified: (int) - Number of reads that have been analysed
-    :finish_time: (str) - The time the analysis finished
+        :timestamp: (datetime) - Start of the analysis task
+        :runtime: (str) - Time taken to run
+        :flowcell_id: (int) - The Flowcell ID
+        :task: (JobMaster Object) FK - the task record in the JobMaster that started this analysis
+        :running: (bool) - If the analysis is currently running
+        :number_of_reads: (int) - Number of reads in Flowcell
+        :reads_classified: (int) - Number of reads that have been analysed
+        :finish_time: (str) - The time the analysis finished
 
     """
 
     timestamp = models.DateTimeField(default=timezone.now, null=True)
     run_time = models.CharField(max_length=30, null=True)
-    flowcell_id = models.IntegerField()
+    flowcell = models.ForeignKey(
+        Flowcell,
+        related_name="metadata_flowcell",
+
+    )
     task = models.ForeignKey(
         JobMaster,
         related_name="metadata_metagenomics",
@@ -36,22 +72,27 @@ class MetaGenomicsMeta(models.Model):
 
 class CentOutput(models.Model):
     """
-    :purpose: Store the summarised output of the metagenomics task, used to draw donut chart and All reads table
-    :author: Rory
-    Fields:
+        :purpose: Store the summarised output of the metagenomics task for all reads
+        , used to draw donut chart and All reads table
+        :author: Rory
+        Fields:
 
-    :name: (str) - The name of the Species
-    :tax_id: (int) - The taxonomic ID of this species
-    :num_matches: (int) - The number of centrifuge matches to this species in this analysis
-    :sum_unique: (int) - The number of centrifuge matches that match uniquely to this species
-    :flowcell_id: (int) - The Id of the flowcell the reads came from
-    :task: (JobMaster Object) FK - the task record in the JobMaster that started this analysis
+        :name: (str) - The name of the Species
+        :tax_id: (int) - The taxonomic ID of this species
+        :num_matches: (int) - The number of centrifuge matches to this species in this analysis
+        :sum_unique: (int) - The number of centrifuge matches that match uniquely to this species
+        :flowcell_id: (int) - The Id of the flowcell the reads came from
+        :task: (JobMaster Object) FK - the task record in the JobMaster that started this analysis
     """
     name = models.CharField(max_length=250, null=True)
     tax_id = models.IntegerField(null=True)
     num_matches = models.IntegerField(null=True)
     sum_unique = models.IntegerField(null=True)
-    flowcell_id = models.IntegerField(null=True)
+    flowcell = models.ForeignKey(
+        Flowcell,
+        related_name="centoutput_flowcell",
+        null=True
+    )
     task = models.ForeignKey(
         JobMaster,
         related_name="centrifuge_summaries"
@@ -138,7 +179,11 @@ class SankeyLinks(models.Model):
     target = models.CharField(null=True, max_length=100)
     value = models.IntegerField()
     tax_id = models.IntegerField()
-    flowcell_id = models.IntegerField()
+    flowcell = models.ForeignKey(
+        Flowcell,
+        related_name="sankeylinks_flowcell",
+        null=True
+    )
     task = models.ForeignKey(
         JobMaster,
         related_name="sankey_links"

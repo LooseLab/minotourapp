@@ -47,8 +47,15 @@ function requestData(flowcell_id) {
         } else if (flowcell_selected_tab_input.value == 'Runs') {
 
         } else if (flowcell_selected_tab_input.value == 'Metagenomics') {
-            // SO you are on the Metagenomics tab
             // The intervals for updating the charts are found in the individual files in the vis-d3 directory
+            // SO you are on the Metagenomics tab
+            if (selected_barcode == '') {
+                set_selected_barcode('All reads');
+            }
+
+            this.barcodes = Array.from(barcodes).sort();
+            // add the barcodes for this flowcell
+            this.addBarcodeTabs(flowcellId);
             // draw the sankey
             this.topLevelSankeyDrawer(flowcellId);
             // update the metadata header
@@ -70,6 +77,6 @@ function requestData(flowcell_id) {
 
         }
     }).bind(this));
-
+    // todo is this fixed?
     // setTimeout(requestData.bind(this, flowcell_id), 60000);
 };

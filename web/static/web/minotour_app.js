@@ -1918,7 +1918,6 @@ function MinotourApp() {
             self.requestGfaData(self.id);
             self.requestPafTransData(self.id);
             self.liveUpdateTasks(self.id);
-            self.requestKraken(self.id);
         });
 
         console.log(self);

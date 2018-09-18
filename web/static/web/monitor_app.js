@@ -198,7 +198,7 @@ var FlowcellPageApp = {
         this.topGetTotalReadsTable = topGetTotalReadsTable;
         this.topGetDonutRankTable = topGetDonutRankTable;
         this.flowcellTaskHistoryTable = flowcellTaskHistoryTable;
-
+        this.addBarcodeTabs = addBarcodeTabs.bind(this);
 
         var inputFlowcellId = document.querySelector("#flowcell-id");
 

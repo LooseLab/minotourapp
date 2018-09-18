@@ -3,9 +3,10 @@ from io import StringIO
 import pandas as pd
 from ete3 import NCBITaxa
 import numpy as np
-from centrifuge.models import CentOutput, LineageValues, MetaGenomicsMeta, SankeyLinks
+from centrifuge.models import CentOutput, LineageValues, MetaGenomicsMeta, SankeyLinks, CentOutputBarcoded
 from jobs.models import JobMaster
 from reads.models import FastqRead
+from reads.models import Flowcell
 from collections import defaultdict
 from celery import task
 from django.utils import timezone
@@ -74,8 +75,8 @@ class Centrifuger:
          stored in self.foreign key.
         """
         centrifuge_path = get_env_variable("MT_CENTRIFUGE")
-        index_path = get_env_variable("MT_CENT_INDEX")
-        cmd = "perl" + centrifuge_path + " -f --mm -x " + index_path + " -"
+        index_path = get_env_variable("MT_CENTRIFUGE_INDEX")
+        cmd = "perl " + centrifuge_path + " -f --mm -x " + index_path + " -"
         # Counter for total centOut
         total_centout = 0
         # Instance of the Ncbi taxa class, for taxonomic id manipulation
@@ -92,10 +93,11 @@ class Centrifuger:
         job_master.save()
         # Create a MetaData object about the Classification analysis, used to populate
         # the header on the visualisation.html page
-        MetaGenomicsMeta(run_time=time, flowcell_id=self.flowcell_id, running=True, number_of_reads=0,
+        flowcell = Flowcell.objects.get(pk=self.flowcell_id)
+        MetaGenomicsMeta(run_time=time, flowcell=flowcell, running=True, number_of_reads=0,
                          reads_classified=0, task=job_master).save()
         # Get the object that we just created back out
-        metadata = MetaGenomicsMeta.objects.get(flowcell_id=self.flowcell_id, task__id=job_master.id)
+        metadata = MetaGenomicsMeta.objects.get(flowcell__id=self.flowcell_id, task__id=job_master.id)
 
         # While self.scan is true we query the fastqreads model for new readss that have appearedsince last time
         iteration_count = 0
@@ -110,7 +112,8 @@ class Centrifuger:
                 print("no reads in database")
                 timmy.sleep(10)
                 continue
-            doc_no = int(cursor.count())
+            # doc_no = int(cursor.count())
+            doc_no = 2000
             # Update the read count on the JobMaster
             job_master.read_count = doc_no
             job_master.save()
@@ -147,18 +150,18 @@ class Centrifuger:
             # create list of read ids for zipping
             read_ids = list(cursor.values_list("read_id", flat=True)[self.skip:doc_no])
             # Create list of tuples where
+            barcodes = list(cursor.values_list("barcode__name", flat=True)[self.skip:doc_no])
             # the 1st element is the read_id and the second is the sequence
-            tupley_list = list(zip(read_ids, sequence_data))
+            tupley_list = list(zip(read_ids, sequence_data, barcodes))
             # update skip number
             self.skip = doc_no
             print("\n \n \n")
             print("number of reads in this iteration is {}".format(len(tupley_list)))
-            print("\n \n \n")
-            print("\n \n \n")
-            print(tupley_list[-1])
-            print("\n \n \n")
+
             # create fastq string by joining the read_id and sequence in the format, for all docs in cursor
-            fastq = "".join([str(">" + c[0] + "\n" + c[1] + "\n") for c in tupley_list if c[1] is not None])
+            fastq = "".join([str(">read_id=" + c[0] + ",barcode=" + c[2] + "\n" + c[1] + "\n")
+                             for c in tupley_list if c[1] is not None])
+
             # Remove large objects to free up memory
             del sequence_data
             del read_ids
@@ -187,19 +190,22 @@ class Centrifuger:
                 0  # False
             )
             # get all the taxIds from the dataframe
-            df.rename(columns={"taxID": "tax_id"}, inplace=True)
+            df = pd.concat([df, df["readID"].str.split(",").str[1].str.split("=").str[1]], axis=1)
+            df.columns = ["readID", "seqID", "tax_id", "numMatches", "unique", "barcode"]
+
             # get np array of the taxids
             taxid_list = df["tax_id"].values
-
             # use the ncbi thing to get the species names for the tax ids in the tax ids list
             taxid2name = ncbi.get_taxid_translator(taxid_list)
-
             # insert the taxid2name dict items into the dataframe name columns
             df["name"] = df["tax_id"].map(taxid2name)
             # any NaNs replace with Unclassified
-            df["name"] = df["name"].fillna("Rory")
+            df["name"] = df["name"].fillna("Unclassified")
+
             #  set the index to be taxID
             df = df.set_index("tax_id")
+            # The barcoding
+            gb_bc = df.groupby(["barcode"])
             # create lots of mini data frames grouping by taxID
             gb = df.groupby(level="tax_id")
             # create a sumUnique column in the DataFrame, where the value
@@ -210,16 +216,89 @@ class Centrifuger:
             # the number of rows in the corresponding grouped_by
             # table
             df["num_matches"] = gb.size()
-            # delete these columns, no longer needed
-            df = self.delete_series(["readID", "seqID", "numMatches", "unique"], df)
 
+            # holding_df = df.copy(deep=True)
+            barcode_df = pd.DataFrame()
+
+            def barcode_calculations(gb_df, ho_df):
+                """
+                Return the main cent output data frame with the barcode only result concatenated on
+                :param gb_df: barcode data frame group data frame, one for each barcode
+                :param ho_df: the main results data frame
+                :return: A new df with the result for barcode appended
+                """
+
+                gb_df_gb = gb_df.groupby(level="tax_id")
+                # get barcode
+                # barcode = gb_df["barcode"].unique()[0]
+                # calculate total unique matches for this species in this barcode
+                sum_unique = gb_df_gb["unique"].sum()
+                # calculate the total matches fot this species in this barcode
+                num_matches = gb_df_gb.size()
+                gb_df.drop(columns=["readID", "seqID", "numMatches", "unique"], inplace=True)
+                gb_df.drop_duplicates(keep="first", inplace=True)
+
+                # combine the dataframes
+                gb_ap = pd.concat([sum_unique, num_matches, gb_df["name"]], axis=1)
+                ho_df = ho_df.append(gb_ap)
+                return ho_df
+
+            unique_barcode = set(barcodes)
+            if len(unique_barcode) > 1:
+                barcode_df = gb_bc.apply(barcode_calculations, barcode_df)
+
+                barcode_df.reset_index(inplace=True)
+                barcode_df.rename(columns={"unique": "sum_unique", 0: "num_matches"}, inplace=True)
+                # get the flowcell model object that these reads came from
+
+                barcode_df["flowcell"] = flowcell
+                barcode_df["task"] = job_master
+
+                prev_barcodes_df = pd.DataFrame(list(CentOutputBarcoded.objects
+                                                     .filter(flowcell__id=self.flowcell_id,
+                                                             task__id=job_master.id).values()))
+                to_update_bar_df = barcode_df[barcode_df["tax_id"].isin(prev_barcodes_df["tax_id"])]
+                to_create_bar_df = barcode_df[~barcode_df["tax_id"].isin(prev_barcodes_df["tax_id"])]
+                del prev_barcodes_df
+                to_insert_barcodes = []
+
+                def create_barcode(row):
+                    to_insert_barcodes.append(CentOutputBarcoded(barcode=row["barcode"],
+                                                                 number_of_reads=row["num_matches"],
+                                                                 sum_unique=row["sum_unique"],
+                                                                 tax_id=row["tax_id"],
+                                                                 flowcell=row["flowcell"],
+                                                                 name=row["name"], task=row["task"]))
+                    return
+                if not to_create_bar_df.empty:
+                    to_create_bar_df.apply(create_barcode, axis=1)
+                    CentOutputBarcoded.objects.bulk_create(to_insert_barcodes)
+
+                def update_barcode(row):
+                    CentOutputBarcoded.objects.filter(barcode=row["barcode"],
+                                                      tax_id=row["tax_id"],
+                                                      flowcell=row["flowcell"],
+                                                      name=row["name"],
+                                                      task=row["task"]).update(num_matches=row["updated_num_matches"],
+                                                                               sum_unique=row["updated_sum_unique"])
+                if not to_update_bar_df.empty:
+                    barcode_df.set_index(["tax_id", "barcode"], inplace=True)
+                    to_update_bar_df.set_index(["tax_id", "barcode"], inplace=True)
+                    to_update_bar_df["updated_num_matches"] = barcode_df["num_matches"] + to_update_bar_df["num_matches"]
+                    to_update_bar_df["updated_sum_unique"] = barcode_df["sum_unique"] + to_update_bar_df["sum_unique"]
+                    to_update_bar_df.reset_index(inplace=True)
+                    barcode_df.reset_index(inplace=True)
+                    to_update_bar_df.apply(update_barcode, axis=1)
+
+            # delete these columns, no longer needed
+            df.drop(columns=["readID", "seqID", "numMatches", "unique", "barcode"], inplace=True)
             # remove duplicate rows in the data frame,so we only have one entry for each species
-            df = df.drop_duplicates(keep="first")
+            df.drop_duplicates(keep="first", inplace=True)
 
             # =========================================== database dataframe PREVIOUS RESULTS
-            # query the index get all the objects in the database at this point
+            # query the index get all the objects in the database for this analysis at this point
 
-            queryset = CentOutput.objects.filter(flowcell_id=self.flowcell_id, task__id=job_master.id).values()
+            queryset = CentOutput.objects.filter(flowcell__id=self.flowcell_id, task__id=job_master.id).values()
 
             # Num matches series to map onto sankey links df below
             new_cent_num_matches = df["num_matches"]
@@ -252,8 +331,6 @@ class Centrifuger:
                 df = df.rename(columns={'updated_sum_unique': 'sum_unique', 'updated_num_matches': 'num_matches'})
                 # reset index
                 df = df.reset_index()
-                # delete index series
-                # df = self.delete_series(["index"], df)
             else:
                 df = df.reset_index()
                 # drop all duplicated lines to keep only one for each entry, Atomicity
@@ -364,25 +441,31 @@ class Centrifuger:
             source_target_df = pd.concat([source, target, value, tax_id, target_tax_level], axis=1)
             # Rename the columns
             source_target_df.columns = ["source", "target", "value", "tax_id", "target_tax_level"]
-            # Create a flowcell id series so each link has a flowcell id value
-            source_target_df["flowcell_id"] = self.flowcell_id
+
+            source_target_df["flowcell"] = flowcell
+            source_target_df["job_master"] = job_master
+
             # Taxids from the current results that are in this df
             current_links_taxids = set(source_target_df["tax_id"])
             # TAxids that have links from this analysis already
-            prev_links_taxids = set(SankeyLinks.objects.filter(flowcell_id=self.flowcell_id, task__id=job_master.id)
+            prev_links_taxids = set(SankeyLinks.objects.filter(flowcell__id=self.flowcell_id, task__id=job_master.id)
                                     .values_list("tax_id", flat=True))
             # Not yet linked is the taxIDs that don't have any result in the database
             not_yet_linked = current_links_taxids - prev_links_taxids
             # Create a subset dataframe that contains only links for new taxIDS
             to_create_df = source_target_df[source_target_df["tax_id"].isin(not_yet_linked)]
             # Create  a new series that contains the task record for this in each row
-            to_create_df["job_master"] = job_master
+            # to_create_df["job_master"] = job_master
 
             # Create a subset df containing links that already have reuslts
             to_update_df = source_target_df[source_target_df["tax_id"].isin(prev_links_taxids)]
-            to_update_df["job_master"] = job_master
+            # to_update_df["job_master"] = job_master
             # Link to contain objects for bulk insertion
             sankey_link_insert_list = []
+
+            # # add a new series, broadcast the flowcell object down it
+            # to_create_df["flowcell"] = flowcell
+            # to_update_df["flowcell"] = flowcell
             if not to_create_df.empty:
                 def sankey_bulk_insert_list(row):
                     """
@@ -390,7 +473,7 @@ class Centrifuger:
                     :param row: The dataframe row
                     :return:
                     """
-                    sankey_link_insert_list.append(SankeyLinks(flowcell_id=row["flowcell_id"], source=row["source"],
+                    sankey_link_insert_list.append(SankeyLinks(flowcell=row["flowcell"], source=row["source"],
                                                                target=row["target"], value=row["value"],
                                                                tax_id=row["tax_id"],
                                                                task=row["job_master"],
@@ -404,7 +487,7 @@ class Centrifuger:
             # ## UPDATE existing links ## #
             if not to_update_df.empty:
                 # Create a dataframe from the results that are already in the database
-                prev_links_df = pd.DataFrame(list(SankeyLinks.objects.filter(flowcell_id=self.flowcell_id,
+                prev_links_df = pd.DataFrame(list(SankeyLinks.objects.filter(flowcell__id=self.flowcell_id,
                                                                              task__id=job_master.id).values()))
                 # Create a subset df that contains already linked taxids
                 to_combine_values_df = prev_links_df[prev_links_df["tax_id"].isin(prev_links_taxids)]
@@ -427,8 +510,8 @@ class Centrifuger:
                     :param row: The dataframe row
                     :return:
                     """
-                    SankeyLinks.objects.filter(tax_id=row["tax_id"], flowcell_id=row["flowcell_id"], source=row["source"],
-                                               target=row["target"], task=row["job_master"])\
+                    SankeyLinks.objects.filter(tax_id=row["tax_id"], flowcell=row["flowcell"], source=row["source"],
+                                               target=row["target"], task=row["job_master"]) \
                         .update(value=row["value"])
                 to_update_df.apply(sankey_update_links, axis=1)
 
@@ -465,8 +548,8 @@ class Centrifuger:
 
             # List to contain CentOutput objects
             centoutput_insert_list = []
-            # Give each row a flowcell id cell, as part of the flowcell_id series
-            df["flowcell_id"] = self.flowcell_id
+            # Give each row a flowcell object cell, as part of the flowcell_id series
+            df["flowcell"] = flowcell
             # same with task from Jobmaster
             df["task"] = job_master
 
@@ -477,22 +560,22 @@ class Centrifuger:
                 :return:
                 """
                 centoutput_insert_list.append(CentOutput(name=row["name"], tax_id=row["tax_id"],
-                                                         num_matches=row["num_matches"], sum_unique=row["sum_unique"],
-                                                         flowcell_id=row["flowcell_id"], task=row["task"]))
+                                            num_matches=row["num_matches"], sum_unique=row["sum_unique"],
+                                            flowcell=row["flowcell"], task=row["task"]))
                 return
             # apply the function to the rows of this dataframe
             df.apply(centoutput_bulk_list, axis=1)
 
             # If there is already objects in teh database, do this update or create
-            if CentOutput.objects.filter(flowcell_id=self.flowcell_id, task__id=job_master.id):
+            if CentOutput.objects.filter(flowcell__id=self.flowcell_id, task__id=job_master.id):
                 # iterate create or update for everything that we are inserting#
                 for centoutput in centoutput_insert_list:
 
                     CentOutput.objects.update_or_create(
-                        tax_id=centoutput.tax_id, flowcell_id=self.flowcell_id, task__id=job_master.id,
+                        tax_id=centoutput.tax_id, flowcell__id=self.flowcell_id, task__id=job_master.id,
                         defaults={"name": centoutput.name, "tax_id": centoutput.tax_id,
                                   "num_matches": centoutput.num_matches, "sum_unique": centoutput.sum_unique,
-                                  "flowcell_id": centoutput.flowcell_id, "task": centoutput.task}
+                                  "flowcell": centoutput.flowcell, "task": centoutput.task}
                     )
             # Bulk insert new model objects using bulk_create
             else:
@@ -503,9 +586,9 @@ class Centrifuger:
             job_master.save()
             metadata.reads_classified = doc_no
             metadata.save()
-            if iteration_count < 20:
+            if iteration_count < 10:
                 print(iteration_count)
-                timmy.sleep(4)
+                timmy.sleep(10)
         # if self.scan is false
         if not self.scan:
             # Update the job_master object to running

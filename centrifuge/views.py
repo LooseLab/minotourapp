@@ -23,13 +23,14 @@ def metaview(request):
     # The flowcell id for the flowcell that the fastq data came from, default to False if not present
     flowcell_id = request.GET.get("flowcellId", False)
     # The ids of the JobMaster entries for this flowcell
-    task_ids = JobMaster.objects.filter(flowcell=flowcell_id, job_type__name="Metagenomics").values_list("id", flat=True)
+    task_ids = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics")\
+        .values_list("id", flat=True)
     # Get the most recent job, which has the highest ID
     task_id = max(task_ids)
     # If there is no MetaGenomicsMeta object return an empty list
     try:
-        queryset = MetaGenomicsMeta.objects.get(flowcell_id=flowcell_id,
-                                            task__id=task_id)
+        queryset = MetaGenomicsMeta.objects.get(flowcell__id=flowcell_id,
+                                                task__id=task_id)
     except MetaGenomicsMeta.DoesNotExist:
         return Response([], status=404)
 
@@ -62,7 +63,8 @@ def cent_sankey_two(request):
     """
     :purpose: Query the database for the sankeyLink data, return the top 50 Lineages
     :author: Rory
-    :param request: (obj) Django rest framework object, with query params, speciesLimit - The number of species to Return
+    :param request: (obj) Django rest framework object, with query params, speciesLimit -
+    The number of species to Return
     flowcell_id, the Flowcell id for the flowcell that provided the reads
     :return: (obj) A Response obj containing a dict with data for the sankey diagram
     """
@@ -72,13 +74,13 @@ def cent_sankey_two(request):
     # Get the flowcell ID , defaulting to False if not present
     flowcell_id = request.GET.get("flowcellId", False)
     # The most up to dat task_id
-    task_id = max(JobMaster.objects.filter(flowcell=flowcell_id,
+    task_id = max(JobMaster.objects.filter(flowcell__id=flowcell_id,
                                            job_type__name="Metagenomics").values_list("id", flat=True))
 
     # ## Get the links for the sankey Diagram ###
 
     print("the flowcell is {}".format(request.GET.get('flowcellId', '')))
-    queryset = SankeyLinks.objects.filter(flowcell_id=flowcell_id, task__id=task_id).values()
+    queryset = SankeyLinks.objects.filter(flowcell__id=flowcell_id, task__id=task_id).values()
     # If the queryset is empty, return an empty object
     if not queryset:
         return Response({}, status=204)
@@ -144,10 +146,10 @@ def vis_table_or_donut_data(request):
     """
     flowcell_id = request.GET.get("flowcellId", 0)
     # Get the most recent job
-    task_id = max(JobMaster.objects.filter(flowcell=flowcell_id, job_type__name="Metagenomics")
+    task_id = max(JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics")
                   .values_list("id", flat=True))
     # queryset from database, filtered by the flowcell_id and the corresponding JobMaster ID
-    queryset = CentOutput.objects.filter(flowcell_id=flowcell_id, task__id=task_id)
+    queryset = CentOutput.objects.filter(flowcell__id=flowcell_id, task__id=task_id)
     # Create a dataframe from the results of the querying the database
     centouput_df = pd.DataFrame(list(queryset.values()))
     # if there is no data in the database (yet) return 204
