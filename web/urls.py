@@ -16,4 +16,5 @@ urlpatterns = [
     url(r'^private/flowcells_reads_data/$', views.flowcell_reads_data, name='flowcell-reads-data'),
     url(r'^private/remote-control/$', views.remotecontrol, name='remotecontrol'),
     url(r'^private/sandbox/$', views.sandbox, name='sandbox'),
+    url(r'^private/experiments/$', views.experiments, name='experiments'),
 ]

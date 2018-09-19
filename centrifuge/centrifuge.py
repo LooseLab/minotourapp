@@ -10,6 +10,9 @@ from collections import defaultdict
 from celery import task
 from django.utils import timezone
 from datetime import datetime
+import time as timmy
+from minotourapp.utils import get_env_variable
+
 
 # TODO del unused df and things
 
@@ -33,8 +36,6 @@ class Centrifuger:
         self.flowcell_id = flowcell_id
         # The id this job is stored under in the Jobmaster table
         self.flowcell_job_id = flowcell_job_id
-        # make the queue object available to the whole class
-        self.outputLinesQueue = None
         # Continue centrifuging
         self.scan = True
         # The number of the last read centrifuged
@@ -72,8 +73,9 @@ class Centrifuger:
          Once parsed it's deposited into the database, updating any existing records. The organising key is a uuid,
          stored in self.foreign key.
         """
-
-        cmd = "centrifuge -f --mm -x /home/rory/testData/p_compressed -"
+        centrifuge_path = get_env_variable("MT_CENTRIFUGE")
+        index_path = get_env_variable("MT_CENT_INDEX")
+        cmd = "perl" + centrifuge_path + " -f --mm -x " + index_path + " -"
         # Counter for total centOut
         total_centout = 0
         # Instance of the Ncbi taxa class, for taxonomic id manipulation
@@ -94,51 +96,74 @@ class Centrifuger:
                          reads_classified=0, task=job_master).save()
         # Get the object that we just created back out
         metadata = MetaGenomicsMeta.objects.get(flowcell_id=self.flowcell_id, task__id=job_master.id)
+
         # While self.scan is true we query the fastqreads model for new readss that have appearedsince last time
+        iteration_count = 0
         while self.scan:
+            iteration_count += 1
             print("id is {}".format(self.flowcell_id))
-            # return all currently present reads
             cursor = FastqRead.objects.filter(run__flowcell_id__in={self.flowcell_id})
+            # return all currently present reads
             # Get the total number of reads in the database for this flowcell
-            doc_no = cursor.count()
+            if not cursor:
+                print("no reads in database")
+                timmy.sleep(10)
+                continue
+            doc_no = int(cursor.count())
             # Update the read count on the JobMaster
             job_master.read_count = doc_no
             job_master.save()
             # Get the Id of the last read that we retrieve
-            last_read_id = cursor[doc_no-1].id
+            last_read_id = doc_no
 
             # The number of reads that we have in the database
             metadata.number_of_reads = doc_no
             metadata.save()
-            print("lastread is {}".format(last_read_id))
-            print("self.last read is {}".format(self.last_read))
 
+            print("found {} reads in the database for metagenomics on flowcell {}".format(doc_no, self.flowcell_id))
             print("last_read_id is {} and self.last_read_id is {}".format(last_read_id, self.last_read))
 
             # If the last read id that we have retrieved is the same as it was last iterations
             if self.last_read == last_read_id:
                 # set the finish time
+                print("if all reads finished")
                 self.scan = False
                 break
             # If less than 500 reads have appeared since last time, centrifuge them then stop scanning
-            elif last_read_id - self.last_read < 500:
+            elif last_read_id - self.last_read < 100:
+                print("elif less than 100")
                 self.scan = False
             # Else Just update the last reads id on the self object and continue
             else:
+                print("elsey more reads")
                 self.last_read = last_read_id
 
-            print("found {} reads in the database".format(doc_no))
-
             # Get all the reads skipping all we did last time
-            cursor = FastqRead.objects.filter(run__flowcell_id__in={self.flowcell_id})[self.skip:doc_no]
+
+            print("slef.skip is {} and limit is {}".format(self.skip, doc_no))
             # create python list for zipping
-            sequence_data = list(cursor.values_list("fastqreadextra__sequence", flat=True))
+            sequence_data = list(cursor.values_list("fastqreadextra__sequence", flat=True)[self.skip:doc_no])
             # create list of read ids for zipping
-            read_ids = list(cursor.values_list("read_id", flat=True))
-            # Create list of tuples where the 1st element is the read_id and the second is the sequence
+            read_ids = list(cursor.values_list("read_id", flat=True)[self.skip:doc_no])
+            # Create list of tuples where
+            # the 1st element is the read_id and the second is the sequence
             tupley_list = list(zip(read_ids, sequence_data))
+            # update skip number
+            self.skip = doc_no
+            print("\n \n \n")
+            print("number of reads in this iteration is {}".format(len(tupley_list)))
+            print("\n \n \n")
+            print("\n \n \n")
+            print(tupley_list[-1])
+            print("\n \n \n")
             # create fastq string by joining the read_id and sequence in the format, for all docs in cursor
-            fastq = "".join([str(">" + c[0] + "\n" + c[1] + "\n") for c in tupley_list])
+            # fastq_list = []
+            # for c in tupley_list:
+            #     print(c)
+            #     if c[1] is not None:
+            #         fastq_list.append(str(">" + c[0] + "\n" + c[1] + "\n"))
+            # fastq = "".join(fastq_list)
+            fastq = "".join([str(">" + c[0] + "\n" + c[1] + "\n") for c in tupley_list if c[1] is not None])
             # Remove large objects to free up memory
             del sequence_data
             del read_ids
@@ -197,11 +222,9 @@ class Centrifuger:
             df = df.drop_duplicates(keep="first")
 
             # =========================================== database dataframe PREVIOUS RESULTS
-            # reset index
             # query the index get all the objects in the database at this point
 
             queryset = CentOutput.objects.filter(flowcell_id=self.flowcell_id, task__id=job_master.id).values()
-            print("the length of the queryset is {}".format(len(queryset)))
 
             # Num matches series to map onto sankey links df below
             new_cent_num_matches = df["num_matches"]
@@ -212,8 +235,9 @@ class Centrifuger:
             # if theres a new dataset
             if queryset:
                 df = df.reset_index()
-
                 prev_df = pd.DataFrame(list(queryset))
+                prev_df = self.delete_series(["id", "flowcell_id", "task_id"], prev_df)
+
                 # append the two dataframes together
                 df = df.append(prev_df, ignore_index=True)
                 # set taxID as index
@@ -227,16 +251,14 @@ class Centrifuger:
                 # create a number of updatednum_matches column in the data frame by getting
                 # the number of rows in the corresponding grouped_by table, for total in each group
                 df["updated_num_matches"] = gb["num_matches"].sum()
-                print("\n")
-                print(df.head(15))
                 # delete the unnecessary old values series
-                df = self.delete_series(["num_matches", "sumUnique"], df)
+                df = self.delete_series(["num_matches", "sum_unique"], df)
                 # rename updated to columns to names that model is expecting
                 df = df.rename(columns={'updated_sum_unique': 'sum_unique', 'updated_num_matches': 'num_matches'})
                 # reset index
                 df = df.reset_index()
                 # delete index series
-                df = self.delete_series(["index"], df)
+                # df = self.delete_series(["index"], df)
             else:
                 df = df.reset_index()
                 # drop all duplicated lines to keep only one for each entry, Atomicity
@@ -258,7 +280,6 @@ class Centrifuger:
             # value is listof taxIDS in lineage
             lineages_taxidlist_dict = ncbi.get_lineage_translator(new_tax_ids_list)
 
-            print("Entering lineages loop")
             # loop over the new lineages dictionary, the values of which is a list of taxIDs from root to the organism,
             # key is a int taxID
             # TODO rewrite into pandas mapping function, low priority
@@ -272,7 +293,6 @@ class Centrifuger:
                 # condition, the if key==taxID is if they are subspecies or strain
                 new[key] = {rank: taxid_species_lookup_dict[tax_id] for tax_id, rank in lineage_ranked.items()
                             if rank in tax_rank_filter or key == tax_id}
-            print("lindf")
             # create dataframe, the .T means that the dataframe is transposed, so dict key is the series title
             lin_df = pd.DataFrame.from_records(new).T
             # rename the no rank column to strain
@@ -304,7 +324,6 @@ class Centrifuger:
                         string = name.split("subsp.", 1)[1]
                         string = string.split(" ")[1]
                         subspecies = basestring + " subsp. " + string
-                        print(subspecies)
                         return subspecies
                 else:
                     pass
@@ -317,7 +336,7 @@ class Centrifuger:
             # delete the new subspecies column
             self.delete_series(["subStrainSpecies"], lin_df)
             # ##############  Storing snakey links and nodes ################
-
+            lin_df.head(n=20)
             # Order the DataFrame descending hierarchically, from kingdom to species
             sankey_lin_df = lin_df[tax_rank_filter]
             # Baqckfill the dataframe nas with the lowest common entry, if family is missing, and genus
@@ -326,10 +345,6 @@ class Centrifuger:
             # Add the number of reads of the lowest common ancestor of a row to the dataframe
             # TODO This is the line that gives the warning on setting value on copy of slice
             sankey_lin_df["num_matches"] = new_cent_num_matches
-            # # Sort the dataframe by the nummatches, descending
-            # sankey_lin_df.sort_values(["num_matches"], ascending=False, inplace=True)
-            # # Add a rank for the species
-            # sankey_lin_df["rank"] = np.arange(len(sankey_lin_df))
             # initialise the series that will become our sankey pandas DataFrame
             source = pd.Series()
             target = pd.Series()
@@ -351,7 +366,6 @@ class Centrifuger:
                     sankey_lin_df["target_tax_level"] = target_clade
                     target_tax_level = target_tax_level.append(sankey_lin_df["target_tax_level"])
             # Create a DataFrame of links
-            print(target_tax_level)
             source_target_df = pd.concat([source, target, value, tax_id, target_tax_level], axis=1)
             # Rename the columns
             source_target_df.columns = ["source", "target", "value", "tax_id", "target_tax_level"]
@@ -368,11 +382,12 @@ class Centrifuger:
             to_create_df = source_target_df[source_target_df["tax_id"].isin(not_yet_linked)]
             # Create  a new series that contains the task record for this in each row
             to_create_df["job_master"] = job_master
+
             # Create a subset df containing links that already have reuslts
             to_update_df = source_target_df[source_target_df["tax_id"].isin(prev_links_taxids)]
+            to_update_df["job_master"] = job_master
             # Link to contain objects for bulk insertion
             sankey_link_insert_list = []
-            print(to_create_df.head(n=15))
             if not to_create_df.empty:
                 def sankey_bulk_insert_list(row):
                     """
@@ -400,10 +415,10 @@ class Centrifuger:
                 to_combine_values_df = prev_links_df[prev_links_df["tax_id"].isin(prev_links_taxids)]
                 # delete the redundant dataframe
                 del prev_links_df
-                # Set taxID as the index on previous results df
-                to_combine_values_df.set_index("tax_id", inplace=True)
-                # Set taxID on new results df
-                to_update_df.set_index("tax_id", inplace=True)
+
+                to_update_df.set_index(["tax_id", "target_tax_level"], inplace=True)
+                to_combine_values_df.set_index(["tax_id", "target_tax_level"], inplace=True)
+
                 # Update the value by combining the series from the two dataframes
                 to_update_df["value"] = to_update_df["value"] + to_combine_values_df["value"]
 
@@ -417,7 +432,7 @@ class Centrifuger:
                     :param row: The dataframe row
                     :return:
                     """
-                    SankeyLinks.objects.filter(flowcell_id=row["flowcell_id"], source=row["source"],
+                    SankeyLinks.objects.filter(tax_id=row["tax_id"], flowcell_id=row["flowcell_id"], source=row["source"],
                                                target=row["target"], task=row["job_master"])\
                         .update(value=row["value"])
                 to_update_df.apply(sankey_update_links, axis=1)
@@ -493,6 +508,9 @@ class Centrifuger:
             job_master.save()
             metadata.reads_classified = doc_no
             metadata.save()
+            if iteration_count < 20:
+                print(iteration_count)
+                timmy.sleep(4)
         # if self.scan is false
         if not self.scan:
             # Update the job_master object to running

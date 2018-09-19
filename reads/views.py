@@ -1558,8 +1558,8 @@ def tabs_details(request, pk):
             "title": "Basecalled Data",
             "position": 2
         },
-        "Kraken": {
-            "id": "tab-sequence-id",
+        "Metagenomics": {
+            "id": "tab-metagenomics",
             "title": "Sequence Identification",
             "position": 3
         },

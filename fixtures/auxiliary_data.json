@@ -92,19 +92,7 @@
     "private": false
   }
 },
-{
-  "model": "jobs.jobtype",
-  "pk": 6,
-  "fields": {
-    "name": "Kraken",
-    "description": "Metagenomics Identification",
-    "long_description": "Using the minikraken pipeline, reads will be identified against the minikraken light database.",
-    "reference": false,
-    "transcriptome": false,
-    "readcount": true,
-    "private": false
-  }
-},
+
 {
   "model": "jobs.jobtype",
   "pk": 7,
@@ -148,7 +136,7 @@
   "model": "jobs.jobtype",
   "pk": 10,
   "fields": {
-    "name": "Centrifuge",
+    "name": "Metagenomics",
     "description": "Metagenomics classification",
     "long_description": "Metagenomics classification",
     "reference": false,

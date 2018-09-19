@@ -19,7 +19,7 @@ function drawPieTables(countedData, color) {
     for (i = 0; i < countedData.length; i++) {
         obj = {
             "Species": countedData[i]["label"],
-            "# Reads": countedData[i]["value"],
+            "# Matches": countedData[i]["value"],
             "Rank": i + 1,
             "Key": color(countedData[i]["label"])
         };
@@ -35,7 +35,7 @@ function drawPieTables(countedData, color) {
 function drawTables(selection, dataToDraw) {
     // draw the tables using d3
     // get table height
-    let columns = ["Species", "# Reads", "Rank", "Key"];
+    let columns = ["Species", "# Matches", "Rank", "Key"];
 
     let container = d3.select("body").node();
 
