@@ -1182,6 +1182,11 @@ class FastqRead(models.Model):
         null=True
     )
 
+    barcode_name = models.CharField(
+
+        max_length=32
+    )
+
     sequence_length = models.BigIntegerField(
         null=True,
         blank=True
