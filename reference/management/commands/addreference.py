@@ -53,19 +53,17 @@ class Command(BaseCommand):
                 total_length=total_length+len(record.seq)
             print("Total Reference Length={}".format(total_length))
             print(subfile)
-            #cmd = 'bwa index %s' % (dstname)
-            #subprocess.call(cmd, shell=True)
+
             cmd2 = "minimap2 -x map-ont -d {}/{}.mmi {}".format(REFERENCELOCATION,os.path.basename(options['reference']),dstname)
             subprocess.call(cmd2, shell=True)
-            #bwa_index_path = os.path.basename(options['reference'])
+
             minimap2_index_path = os.path.basename(options['reference']) + ".mmi"
-            #print (bwa_index_path)
+
             print (minimap2_index_path)
 
             refInfo, created1 = ReferenceInfo.objects.update_or_create(
                 reference_name=os.path.basename(options['reference']).split('.')[0],
                 filename=os.path.basename(options['reference']),
-                #bwa_index_file_location=bwa_index_path,
                 minimap2_index_file_location=minimap2_index_path,
                 totalrefleN=total_length
             )

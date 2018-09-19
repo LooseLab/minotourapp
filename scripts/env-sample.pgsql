@@ -1,7 +1,7 @@
 #!/bin/bash
 export MT_CENTRIFUGE_INDEX=''
 export MT_CENTRIFUGE=''
-export MT_DB_ENGINE='django.db.backends.mysql'
+export MT_DB_ENGINE='django.db.backends.postgresql'
 export MT_DB_HOST=''
 export MT_DB_NAME=''
 export MT_DB_PASS=''

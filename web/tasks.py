@@ -812,3 +812,16 @@ def update_run_start_time():
 
         run.save()
         print('Updating start_time for run {} from {}'.format(run.runid, origin))
+
+@task
+def update_flowcell_details():
+    """
+    This task updates the flowcell details (number of runs, number of reads)
+    """
+
+    flowcell_list = Flowcell.objects.all()
+
+    for flowcell in flowcell_list:
+
+        flowcell.number_runs = len(flowcell.runs.all())
+        flowcell.save()
