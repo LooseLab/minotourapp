@@ -1,8 +1,6 @@
 from django.conf.urls import url
 
-from jobs import views as jobs_views
 from reads import views
-
 
 urlpatterns = [
     url(
@@ -144,11 +142,6 @@ urlpatterns = [
         r'^api/v1/barcodes/(?P<pk>[0-9]+)/$',
         views.barcode_detail,
         name="barcode-detail"),
-    url(
-        r'^api/v1/barcodegroupss/(?P<pk>[0-9]+)/$',
-        views.barcodegroup_detail,
-        name="barcodegroup-detail"),
-
     url(
         r'^api/v1/flowcells/$',
         views.flowcell_list,

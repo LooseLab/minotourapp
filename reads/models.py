@@ -350,38 +350,6 @@ class Run(models.Model):
             return None
 
 
-class BarcodeGroup(models.Model):  # Dont document
-
-    flowcell = models.ForeignKey(
-        Flowcell,
-        related_name='flowcellbarcode'
-    )
-
-    name = models.CharField(
-        max_length=32
-    )
-
-    def __str__(self):
-        return "{} {}".format(self.flowcell, self.name)
-
-
-class GroupBarcode(models.Model):  # Don't document
-
-    grouprun = models.ForeignKey(
-
-        GroupRun,
-        related_name='groupbarcodes'
-    )
-
-    name = models.CharField(
-
-        max_length=32
-    )
-
-    def __str__(self):
-        return "{} {}".format(self.grouprun, self.name)
-
-
 class Barcode(models.Model):
     """
     :purpose: To store barcode names associated with a particular run.
@@ -403,22 +371,6 @@ class Barcode(models.Model):
 
         Run,
         on_delete=models.CASCADE,
-        related_name='barcodes'
-    )
-
-    barcodegroup = models.ForeignKey(
-
-        BarcodeGroup,
-        on_delete=models.CASCADE,
-        null=True, blank=True,
-        related_name='barcodegroup'
-    )
-
-    groupbarcodes = models.ManyToManyField(
-
-        GroupBarcode,
-
-        blank=True,
         related_name='barcodes'
     )
 

@@ -1,21 +1,18 @@
-import datetime
-
-from django.conf import settings
 from django.db import models
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
 from devices.models import Flowcell
-from reads.models import Barcode, BarcodeGroup, FastqRead, FastqReadType, Run
+from reads.models import Barcode, FastqRead, FastqReadType, Run
+from django.db import models
 
-# Create your models here.
+from devices.models import Flowcell
+from reads.models import Barcode, FastqRead, FastqReadType, Run
+
 
 class GfaStore(models.Model):
     run = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='gfastorerun', blank=True, null=True)
     flowcell = models.ForeignKey(Flowcell, on_delete=models.CASCADE, related_name='gfastoreflowcell', blank=True, null=True)
     readtype = models.ForeignKey(FastqReadType, related_name='readtypegfastore', blank=True,null=True)
     barcode = models.ForeignKey(Barcode,related_name='barcodegfastore', blank=True,null=True)
-    barcodegroup = models.ForeignKey(BarcodeGroup,related_name='barcodegroupfastore', blank=True,null=True)
     nreads = models.IntegerField() # Number of input reads
 
     gfaformat = models.TextField()  #   string  The whole GFA file
@@ -28,7 +25,6 @@ class GfaSummary(models.Model):
     flowcell = models.ForeignKey(Flowcell, on_delete=models.CASCADE, related_name='gfasummaryflowcell', blank=True, null=True)
     readtype = models.ForeignKey(FastqReadType, related_name='readtypegfasummary', blank=True,null=True)
     barcode = models.ForeignKey(Barcode,related_name='barcodegfasummary', blank=True,null=True)
-    barcodegroup = models.ForeignKey(BarcodeGroup,related_name='barcodegroupfasummary', blank=True,null=True)
     nreads = models.IntegerField() # Number of input reads
     ncontigs = models.IntegerField()#	int	Number of contigs
     maxlen = models.IntegerField()  #	int	Maximum contig length

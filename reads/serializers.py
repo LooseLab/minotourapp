@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from devices.models import Flowcell, MinION
 from jobs.models import JobMaster, JobType
-from reads.models import (Barcode, BarcodeGroup, FastqRead, FastqReadExtra,
+from reads.models import (Barcode, FastqRead, FastqReadExtra,
                           FastqReadType, MinIONControl,
                           MinIONEvent, MinIONEventType, MinionMessage,
                           MinIONRunStats, MinIONRunStatus, MinIONScripts,
@@ -348,10 +348,6 @@ class JobSerializer(serializers.ModelSerializer):
 
 class BarcodeSerializer(serializers.HyperlinkedModelSerializer):
 
-    barcodegroupname = serializers.ReadOnlyField(
-        source="barcodegroup.name"
-    )
-
     class Meta:
         model = Barcode
 
@@ -359,7 +355,6 @@ class BarcodeSerializer(serializers.HyperlinkedModelSerializer):
             'url',
             'id',
             'name',
-            'barcodegroupname',
             'run',
         )
 
@@ -368,22 +363,6 @@ class BarcodeSerializer(serializers.HyperlinkedModelSerializer):
             'id'
         )
 
-
-class BarcodeGroupSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = BarcodeGroup
-
-        fields = (
-            'id',
-            'name',
-            'flowcell',
-            'url'
-        )
-
-        read_only = (
-            'id',
-            'url'
-        )
 
 class RunSerializer(serializers.HyperlinkedModelSerializer):
 

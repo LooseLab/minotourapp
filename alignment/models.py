@@ -3,7 +3,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from devices.models import Flowcell
-from reads.models import Barcode, BarcodeGroup, FastqRead, FastqReadType, Run, GroupRun
+from reads.models import Barcode, FastqRead, FastqReadType, Run, GroupRun
 from reference.models import ReferenceInfo, ReferenceLine
 
 
@@ -140,12 +140,6 @@ class PafRoughCov(models.Model):
         null=True
     )
 
-    barcodegroup = models.ForeignKey(
-        BarcodeGroup,
-        related_name='prc_barcodegroup',
-        null=True
-    )
-
     reference = models.ForeignKey(
         ReferenceInfo,
         related_name='pafreference'
@@ -173,7 +167,6 @@ class PafSummaryCov(models.Model):
     flowcell = models.ForeignKey(Flowcell, on_delete=models.CASCADE, related_name='flowcell_paf_summary', null=True, blank=True)
     read_type = models.ForeignKey(FastqReadType, related_name='paf_summary_type')
     barcode = models.ForeignKey(Barcode, related_name='paf_summary_barcode', null=True)
-    barcodegroup = models.ForeignKey(BarcodeGroup, related_name='paf_summary_barcodegroup', null=True)
     reference = models.ForeignKey(ReferenceInfo,related_name='paf_summary_reference')
     chromosome = models.ForeignKey(ReferenceLine, related_name='paf_summary_chromosome')
     read_count = models.BigIntegerField(default=0)
@@ -246,7 +239,6 @@ def updatePafRoughCov(instance, sender, **kwargs):
             run=pafline.run,
             read_type=pafline.read.type,
             barcode=pafline.read.barcode,
-            barcodegroup=pafline.read.barcode.barcodegroup,
             reference=pafline.reference,
             chromosome=pafline.tsn,
             p=pafline.ts #position
@@ -257,7 +249,6 @@ def updatePafRoughCov(instance, sender, **kwargs):
             run=pafline.run,
             read_type=pafline.read.type,
             barcode=pafline.read.barcode,
-            barcodegroup=pafline.read.barcode.barcodegroup,
             reference=pafline.reference,
             chromosome=pafline.tsn,
             p=(pafline.te)+1 #position
@@ -269,7 +260,6 @@ def updatePafRoughCov(instance, sender, **kwargs):
             flowcell=pafline.flowcell,
             read_type=pafline.read.type,
             barcode=pafline.read.barcode,
-            barcodegroup=pafline.read.barcode.barcodegroup,
             reference=pafline.reference,
             chromosome=pafline.tsn,
             p=pafline.ts  # position
@@ -280,7 +270,6 @@ def updatePafRoughCov(instance, sender, **kwargs):
             flowcell=pafline.flowcell,
             read_type=pafline.read.type,
             barcode=pafline.read.barcode,
-            barcodegroup=pafline.read.barcode.barcodegroup,
             reference=pafline.reference,
             chromosome=pafline.tsn,
             p=(pafline.te) + 1  # position

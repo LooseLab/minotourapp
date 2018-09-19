@@ -1,8 +1,6 @@
 from rest_framework import serializers
 
 from alignment.models import PafRoughCov, PafStore, PafSummaryCov
-from reads.models import BarcodeGroup
-from reference.models import ReferenceInfo, ReferenceLine
 
 
 class PafStoreSerializer(serializers.HyperlinkedModelSerializer):
