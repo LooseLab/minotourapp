@@ -1,15 +1,11 @@
-# Minotour
-
-To do in this branch:
-- Remove links from web `urls.py` and `views.py` that have been removed from the side menu
-- Remove or repurpose `admin` dropdown menu
-- Fix expanding table in active runs
-
----
-minoTour webservice module
+# minoTour
 
 
-To run (we hope):
+
+### minoTour webservice module
+
+
+To run:
 
 * To serve the site in production (run from root directory of Django Project, all background tasks must be running):
 
@@ -62,11 +58,6 @@ GRANT ALL PRIVILEGES ON minotourdb TO 'minotour'@'localhost' IDENTIFIED BY '<pas
 * [Minimap2](https://github.com/lh3/minimap2) - Minotour uses **Minimap2** to run
 fast alignment, so if you are not running alignments, just skip this step.
 Otherwise, follow the instructions and make sure that the **minimap2** executable
-is available in the PATH environment variable.
-
-* [Bwa](https://github.com/lh3/bwa) - Minotour uses **bwa** to run short read 
-alignment, so if you are not running alignments, just skip this step.
-Otherwise, follow the instructions and make sure that the **bwa** executable
 is available in the PATH environment variable.
 
 * [Python 3](https://www.python.org) - Minotour uses Python 3, so make sure it
@@ -196,5 +187,6 @@ for each command. If you chose to create the environmental variable bash file, a
 * Time to test - if everything worked well, you should be able to access the web
 interface on http://localhost:8100.
 
-# Centrifuge
+## Centrifuge
+
 "Specify the "

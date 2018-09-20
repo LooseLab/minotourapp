@@ -1822,7 +1822,7 @@ class FlowcellSummaryBarcode(models.Model):
     class Meta:
         verbose_name = 'Flowcell Summary'
         verbose_name_plural = 'Flowcell Summary'
-        db_table = 'Flowcell_summary_barcode'
+        db_table = 'flowcell_summary_barcode'
 
     def __str__(self):
         return "{} {} {} {} {}".format(
