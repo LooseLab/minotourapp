@@ -1,10 +1,10 @@
 let updateResultsTable;
-function topGetTotalReadsTable(flowCellId) {
-    getTotalReadsTable(flowCellId);
+function topGetTotalReadsTable(flowCellId, selectedBarcode) {
+    getTotalReadsTable(flowCellId, selectedBarcode);
     updateResultsTable = setInterval(getTotalReadsTable, 60000, flowCellId);
 }
 
-function getTotalReadsTable(flowCellId) {
+function getTotalReadsTable(flowCellId, selectedBarcode) {
     // Get ttoal reads table updates the total reads table at te bottom of the page
     // Get data from the api
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
@@ -13,7 +13,7 @@ function getTotalReadsTable(flowCellId) {
         console.log("Cleared results table interval");
         return;
     }
-    $.get("/table", {flowcellId: flowCellId, visType: "table"}, result => {
+    $.get("/table", {flowcellId: flowCellId, visType: "table", barcode: selectedBarcode}, result => {
         // Jquery selector
         let table = $(".tableLand");
         // If the results of the api query is undefined, there are no results in the DB, so retrun here

@@ -3,7 +3,7 @@ function requestData(flowcell_id) {
     console.log('Running requestData for flowcell ' + flowcell_id);
 
     var selected_barcode = get_selected_barcode();
-
+    console.log(selected_barcode);
     var flowcellId = flowcell_id;
 
     var url_run = '/api/v1/flowcells/' + flowcellId + '/';
@@ -61,11 +61,11 @@ function requestData(flowcell_id) {
             // update the metadata header
             this.topMetaHeader(flowcellId);
             // Draw the donut chart
-            this.topLevelDrawDonut(flowcellId);
+            this.topLevelDrawDonut(flowcellId, selected_barcode);
             // update the total Reads Table
-            this.topGetTotalReadsTable(flowcellId);
+            this.topGetTotalReadsTable(flowcellId, selected_barcode);
             // Draw rhe donut rank table
-            this.topGetDonutRankTable(flowcellId);
+            this.topGetDonutRankTable(flowcellId, selected_barcode);
 
         } else if (flowcell_selected_tab_input.value == 'Sequence Mapping') {
 

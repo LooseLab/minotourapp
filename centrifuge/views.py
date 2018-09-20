@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from centrifuge.models import CentOutput, CartographyMapped, LineageValues, MetaGenomicsMeta, \
-    SankeyLinks
+    SankeyLinks, CentOutputBarcoded
 from centrifuge.serializers import CartMappedSerialiser
 from django.utils import timezone
 from ete3 import NCBITaxa
@@ -145,11 +145,16 @@ def vis_table_or_donut_data(request):
     :return:
     """
     flowcell_id = request.GET.get("flowcellId", 0)
+    barcode = request.GET.get("barcode", "All reads")
     # Get the most recent job
     task_id = max(JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics")
                   .values_list("id", flat=True))
     # queryset from database, filtered by the flowcell_id and the corresponding JobMaster ID
-    queryset = CentOutput.objects.filter(flowcell__id=flowcell_id, task__id=task_id)
+    print(f"barcode is {barcode}")
+    if barcode == "All reads":
+        queryset = CentOutput.objects.filter(flowcell__id=flowcell_id, task__id=task_id, barcode=barcode)
+    else:
+        queryset = CentOutputBarcoded.objects.filter(flowcell__id=flowcell_id, task__id=task_id, barcode=barcode)
     # Create a dataframe from the results of the querying the database
     centouput_df = pd.DataFrame(list(queryset.values()))
     # if there is no data in the database (yet) return 204

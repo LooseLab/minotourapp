@@ -5,6 +5,14 @@ from reads.models import Barcode
 from devices.models import Flowcell
 
 
+class SankeyLinksBarcode(models.Model):
+    """
+        The values for the different barcodes for the sankey diagram
+    """
+    value = models.IntegerField(null=True, default=0)
+    barcode = models.CharField(max_length=20)
+
+
 class CentOutputBarcoded(models.Model):
     """
         :purpose: Store the output of the metagenomics classification split by barcode, used to draw the table and donut
@@ -31,7 +39,8 @@ class CentOutputBarcoded(models.Model):
     name = models.CharField(max_length=150, null=True)
     task = models.ForeignKey(
         JobMaster,
-        related_name="barcode_meta_task"
+        related_name="barcode_meta_task",
+        null=True
     )
 
 
@@ -97,6 +106,7 @@ class CentOutput(models.Model):
         JobMaster,
         related_name="centrifuge_summaries"
     )
+    barcode = models.CharField(max_length=10, default="All reads")
 
 
 class CartographyMapped(models.Model):

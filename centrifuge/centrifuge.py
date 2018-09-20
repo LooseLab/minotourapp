@@ -252,25 +252,32 @@ class Centrifuger:
                 # get the flowcell model object that these reads came from
 
                 barcode_df["flowcell"] = flowcell
+                print(job_master.id)
                 barcode_df["task"] = job_master
 
                 prev_barcodes_df = pd.DataFrame(list(CentOutputBarcoded.objects
                                                      .filter(flowcell__id=self.flowcell_id,
                                                              task__id=job_master.id).values()))
-                to_update_bar_df = barcode_df[barcode_df["tax_id"].isin(prev_barcodes_df["tax_id"])]
-                to_create_bar_df = barcode_df[~barcode_df["tax_id"].isin(prev_barcodes_df["tax_id"])]
+                prev_barcodes_df.head()
+                prev_barcodes_tax_id = CentOutputBarcoded.objects.filter(flowcell__id=self.flowcell_id,
+                                                             task__id=job_master.id).values()
+                print("barcode df")
+                barcode_df.head()
+                to_update_bar_df = barcode_df[barcode_df["tax_id"].isin(prev_barcodes_tax_id)]
+                to_create_bar_df = barcode_df[~barcode_df["tax_id"].isin(prev_barcodes_tax_id)]
                 del prev_barcodes_df
                 to_insert_barcodes = []
 
                 def create_barcode(row):
                     to_insert_barcodes.append(CentOutputBarcoded(barcode=row["barcode"],
-                                                                 number_of_reads=row["num_matches"],
+                                                                 num_matches=row["num_matches"],
                                                                  sum_unique=row["sum_unique"],
                                                                  tax_id=row["tax_id"],
                                                                  flowcell=row["flowcell"],
                                                                  name=row["name"], task=row["task"]))
                     return
                 if not to_create_bar_df.empty:
+                    to_create_bar_df.head()
                     to_create_bar_df.apply(create_barcode, axis=1)
                     CentOutputBarcoded.objects.bulk_create(to_insert_barcodes)
 
@@ -282,6 +289,7 @@ class Centrifuger:
                                                       task=row["task"]).update(num_matches=row["updated_num_matches"],
                                                                                sum_unique=row["updated_sum_unique"])
                 if not to_update_bar_df.empty:
+                    to_update_bar_df.head()
                     barcode_df.set_index(["tax_id", "barcode"], inplace=True)
                     to_update_bar_df.set_index(["tax_id", "barcode"], inplace=True)
                     to_update_bar_df["updated_num_matches"] = barcode_df["num_matches"] + to_update_bar_df["num_matches"]

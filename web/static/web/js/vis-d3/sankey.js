@@ -5,7 +5,7 @@ $(window).on("resize", function () {
     // height of page
     let hi = $(window).height() * 0.55;
     // width of page
-    let width = $(window).width() * 0.900;
+    let width = $(window).width() - 60;
     // flowcell id for data
     let inputFlowcellId = document.querySelector("#flowcell-id");
     let flowcellId = inputFlowcellId.value;
@@ -132,11 +132,11 @@ function drawSankey(flowcellId) {
         return;
     }
     //set svg width and height
-    let container = d3.select("body").node();
     // height of page
     let hi = $(window).height() * 0.55;
     // width of page
-    let width = container.getBoundingClientRect().width * 0.920;
+    hi = d3.max([hi, 480]);
+    let width = $(window).width() - 60;
     let svg;
     let g;
     let formatNumber = d3.format(",.0f"),
@@ -149,7 +149,7 @@ function drawSankey(flowcellId) {
     let sankey = d3.sankey()
         .nodeWidth(20)
         .nodePadding(5)
-        .size([width, hi * 0.95]).nodeId(function id(d) {
+        .size([width*0.95, hi * 0.95]).nodeId(function id(d) {
             return d.name;
         })
     ;
