@@ -56,6 +56,7 @@ class Flowcell(models.Model):
     modified_date = models.DateTimeField(
         auto_now=True
     )
+
     def barcodes(self):
 
         barcode_set = set()

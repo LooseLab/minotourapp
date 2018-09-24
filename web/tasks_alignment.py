@@ -188,7 +188,6 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
                         summarycov, created2 = PafSummaryCov.objects.update_or_create(
                             flowcell=flowcell,
                             read_type=ty,
-                            barcodegroup=bc,
                             reference=ref,
                             chromosome=ch,
                         )

@@ -1,9 +1,9 @@
 import datetime
 import json
-import math
 from datetime import timedelta
 
 import dateutil.parser
+import math
 from dateutil import parser
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.serializers.json import DjangoJSONEncoder
@@ -19,16 +19,17 @@ from rest_framework.response import Response
 from devices.models import Flowcell, MinION
 from jobs.models import JobMaster, JobType
 from minotourapp import settings
-from reads.models import (Barcode, BarcodeGroup, FastqRead, FastqReadType,
+from reads.models import (Barcode, FastqRead, FastqReadType,
                           MinIONControl, MinIONEvent,
                           MinIONEventType, MinionMessage, MinIONRunStats,
-                          MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun, FlowcellStatisticBarcode, FlowcellSummaryBarcode)
+                          MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun, FlowcellStatisticBarcode,
+                          FlowcellSummaryBarcode)
 from reads.models import FlowcellChannelSummary
 from reads.models import FlowcellHistogramSummary
-from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
+from reads.serializers import (BarcodeSerializer,
                                ChannelSummarySerializer, FastqReadSerializer,
-                               FastqReadTypeSerializer, FlowcellSerializer, JobTypeSerializer,
-                               MinIONControlSerializer, MinIONEventSerializer,
+                               FastqReadTypeSerializer, FlowcellSerializer, MinIONControlSerializer,
+                               MinIONEventSerializer,
                                MinIONEventTypeSerializer,
                                MinionMessageSerializer,
                                MinIONRunStatsSerializer,
@@ -37,7 +38,8 @@ from reads.serializers import (BarcodeGroupSerializer, BarcodeSerializer,
                                MinIONStatusSerializer,
                                RunSerializer,
                                RunStatisticBarcodeSerializer,
-                               RunSummaryBarcodeSerializer, ChannelSummary, RunStatisticBarcode, RunSummaryBarcode, GroupRunSerializer, FlowcellSummaryBarcodeSerializer)
+                               RunSummaryBarcodeSerializer, ChannelSummary, RunStatisticBarcode, RunSummaryBarcode,
+                               GroupRunSerializer, FlowcellSummaryBarcodeSerializer)
 from reference.models import ReferenceInfo
 
 
@@ -948,13 +950,7 @@ def barcode_list(request, pk):
 
         print (flowcellruns)
 
-
-
-        #Can we great the barcodegroup instance here?
-
-        barcodegroup,created = BarcodeGroup.objects.get_or_create(flowcell=minionrun.flowcellrun.first().flowcell, name=barcodename)
-
-        barcode,created2 = Barcode.objects.get_or_create(run=minionrun,barcodegroup=barcodegroup,name=barcodename)
+        barcode,created2 = Barcode.objects.get_or_create(run=minionrun, name=barcodename)
 
         serializer = BarcodeSerializer(barcode, context={'request': request})
 
@@ -973,18 +969,6 @@ def barcode_detail(request, pk):
     queryset = Barcode.objects.get(pk=pk)
 
     serializer = BarcodeSerializer(queryset, many=False, context={'request': request})
-
-    return Response(serializer.data)
-
-
-@api_view(['GET'])
-def barcodegroup_detail(request, pk):
-    """
-    Return the details of a particular barcode.
-    """
-    queryset = BarcodeGroup.objects.get(pk=pk)
-
-    serializer = BarcodeGroupSerializer(queryset, many=False, context={'request': request})
 
     return Response(serializer.data)
 

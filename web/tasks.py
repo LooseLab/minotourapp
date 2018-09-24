@@ -27,7 +27,7 @@ from assembly.models import GfaStore, GfaSummary
 from communication.utils import *
 from devices.models import Flowcell
 from jobs.models import JobMaster
-from reads.models import Barcode, FastqRead, Run, HistogramSummary
+from reads.models import Barcode, FastqRead, Run, HistogramSummary, FlowcellSummaryBarcode
 from reads.services import (save_flowcell_histogram_summary, save_flowcell_channel_summary, save_flowcell_summary_barcode,
                             save_flowcell_statistic_barcode)
 from reference.models import ReferenceInfo
@@ -823,5 +823,14 @@ def update_flowcell_details():
 
     for flowcell in flowcell_list:
 
+        flowcell_summary_list = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).filter(barcode_name='All reads')
+
+        if len(flowcell_summary_list) == 1:
+            flowcell_summary = flowcell_summary_list[0]
+            flowcell.average_read_length = flowcell_summary.average_read_length()
+            flowcell.total_read_length = flowcell_summary.total_length
+            flowcell.number_reads = flowcell_summary.read_count
+
         flowcell.number_runs = len(flowcell.runs.all())
+        flowcell.number_barcodes = len(FastqRead.objects.filter(run__flowcell=flowcell).values('barcode_name').distinct())
         flowcell.save()
