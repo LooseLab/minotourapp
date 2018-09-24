@@ -57,7 +57,7 @@ function requestData(flowcell_id) {
             // add the barcodes for this flowcell
             this.addBarcodeTabs(flowcellId);
             // draw the sankey
-            this.topLevelSankeyDrawer(flowcellId);
+            this.topLevelSankeyDrawer(flowcellId, selected_barcode);
             // update the metadata header
             this.topMetaHeader(flowcellId);
             // Draw the donut chart

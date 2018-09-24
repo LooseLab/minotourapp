@@ -90,9 +90,9 @@ function draw(nodesObj, sankey, g, format, color, width) {
 
 }
 // update or draw the existing svg using the AJAX results from the server
-function update(flowcellId, sankey, checkForData, svg, g, format, color, width) {
+function update(flowcellId, sankey, checkForData, svg, g, format, color, width, selectedBarcode) {
     // TODO species limit one day
-    $.get("/sankey", {flowcellId}, result => {
+    $.get("/sankey", {flowcellId , "barcode":selectedBarcode}, result => {
         let nodes;
         // if theres no data from the server
         if (result === undefined) {
@@ -116,13 +116,13 @@ function update(flowcellId, sankey, checkForData, svg, g, format, color, width) 
     });
 }
 
-function topLevelSankeyDrawer(flowcellID){
-    drawSankey(flowcellID);
-    updateSankey = setInterval(drawSankey, 60000, flowcellID);
+function topLevelSankeyDrawer(flowcellID, selectedBarcode){
+    drawSankey(flowcellID, selectedBarcode);
+    updateSankey = setInterval(drawSankey, 60000, flowcellID, selectedBarcode);
 }
 
 // top level function
-function drawSankey(flowcellId) {
+function drawSankey(flowcellId, selectedBarcode) {
     // Check the tab value
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
 
@@ -171,5 +171,5 @@ function drawSankey(flowcellId) {
             .attr("height", hi).call(zoom);
         g = svg.append("g").attr("class", "contain");
     }
-    update(flowcellId, sankey, checkForData, svg, g, format, color, width);
+    update(flowcellId, sankey, checkForData, svg, g, format, color, width, selectedBarcode);
 }

@@ -5,43 +5,51 @@ from reads.models import Barcode
 from devices.models import Flowcell
 
 
+class SankeyLinks(models.Model):
+    """
+        :purpose: Store the centrifuge classifier output in the format for the sankey diagram
+        Used in centrifuge class, and all the sankey diagram view
+        :author: Rory
+        Fields:
+
+        :source: (str) - The source node, that the link starts at, for example bacteria
+        :target: (str) - The target node, that the link ends at, for example proteobacteria
+        :value: (int) - The num of matches illustrated by that link
+        :tax_id: (int) - The tax_id of the target node
+        :flowcell_id: (int) - The flowcell id that the centrifuger class was run on
+        :task: (fk JobMaster) - The corresponding jobMaster object, used to separate the datasets
+        :target_tax_level: - The taxa level of the target node, i.e Phylum for Bacteria (kingdom) \
+        to ProteoBacteria (Phylum)
+    """
+    source = models.CharField(null=True, max_length=100)
+    target = models.CharField(null=True, max_length=100)
+
+    tax_id = models.IntegerField()
+    flowcell = models.ForeignKey(
+        Flowcell,
+        related_name="sankeylinks_flowcell",
+        null=True
+    )
+    task = models.ForeignKey(
+        JobMaster,
+        related_name="sankey_links"
+    )
+    target_tax_level = models.CharField(max_length=100)
+
+
 class SankeyLinksBarcode(models.Model):
     """
         The values for the different barcodes for the sankey diagram
     """
     value = models.IntegerField(null=True, default=0)
     barcode = models.CharField(max_length=20)
-
-
-class CentOutputBarcoded(models.Model):
-    """
-        :purpose: Store the output of the metagenomics classification split by barcode, used to draw the table and donut
-        , per barcode
-        :author: Rory
-        Fields:
-
-        :barcode: (FK)Foreign key linked to the Barcode object in the database in the reads models
-        :number_of_reads: (int) Number of matches for this species
-        :sum_unique: (int) Number of reads that only match to this species
-        :tax_id: (int) The taxonomic identifier number of this species
-        :flowcell: (FK) foreign key linking to the flowcell database entry for the flowcell
-        that the reads were generated on
-        :name: (str) The name of this species
-    """
-    barcode = models.CharField(max_length=10, null=True)
-    num_matches = models.IntegerField(null=True)
-    sum_unique = models.IntegerField(null=True)
-    tax_id = models.IntegerField()
-    flowcell = models.ForeignKey(
-        Flowcell,
-        related_name="flowcell_metagenomics_barcode"
+    link = models.ForeignKey(
+        SankeyLinks,
+        related_name="barcode_value_links",
+        null=True,
+        on_delete=models.CASCADE
     )
-    name = models.CharField(max_length=150, null=True)
-    task = models.ForeignKey(
-        JobMaster,
-        related_name="barcode_meta_task",
-        null=True
-    )
+    tax_id = models.IntegerField(default=0)
 
 
 class MetaGenomicsMeta(models.Model):
@@ -95,8 +103,7 @@ class CentOutput(models.Model):
     """
     name = models.CharField(max_length=250, null=True)
     tax_id = models.IntegerField(null=True)
-    num_matches = models.IntegerField(null=True)
-    sum_unique = models.IntegerField(null=True)
+
     flowcell = models.ForeignKey(
         Flowcell,
         related_name="centoutput_flowcell",
@@ -106,7 +113,22 @@ class CentOutput(models.Model):
         JobMaster,
         related_name="centrifuge_summaries"
     )
-    barcode = models.CharField(max_length=10, default="All reads")
+
+
+class CentOutputBarcoded(models.Model):
+    """
+        Value for different barcodes
+    """
+    num_matches = models.IntegerField(default=0)
+    sum_unique = models.IntegerField(default=0)
+    output = models.ForeignKey(
+        CentOutput,
+        related_name="cent_barcode_values",
+        on_delete=models.CASCADE,
+        null=True
+    )
+    tax_id = models.IntegerField()
+    barcode = models.CharField(max_length=50)
 
 
 class CartographyMapped(models.Model):
@@ -169,33 +191,4 @@ class LineageValues(models.Model):
     substrainspecies = models.CharField(null=True, max_length=100)
 
 
-class SankeyLinks(models.Model):
-    """
-        :purpose: Store the centrifuge classifier output in the format for the sankey diagram
-        Used in centrifuge class, and all the sankey diagram view
-        :author: Rory
-        Fields:
 
-        :source: (str) - The source node, that the link starts at, for example bacteria
-        :target: (str) - The target node, that the link ends at, for example proteobacteria
-        :value: (int) - The num of matches illustrated by that link
-        :tax_id: (int) - The tax_id of the target node
-        :flowcell_id: (int) - The flowcell id that the centrifuger class was run on
-        :task: (fk JobMaster) - The corresponding jobMaster object, used to separate the datasets
-        :target_tax_level: - The taxa level of the target node, i.e Phylum for Bacteria (kingdom) \
-        to ProteoBacteria (Phylum)
-    """
-    source = models.CharField(null=True, max_length=100)
-    target = models.CharField(null=True, max_length=100)
-    value = models.IntegerField()
-    tax_id = models.IntegerField()
-    flowcell = models.ForeignKey(
-        Flowcell,
-        related_name="sankeylinks_flowcell",
-        null=True
-    )
-    task = models.ForeignKey(
-        JobMaster,
-        related_name="sankey_links"
-    )
-    target_tax_level = models.CharField(max_length=100)
