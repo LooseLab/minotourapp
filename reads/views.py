@@ -16,14 +16,13 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from devices.models import Flowcell, MinION
 from jobs.models import JobMaster, JobType
 from minotourapp import settings
 from reads.models import (Barcode, FastqRead, FastqReadType,
                           MinIONControl, MinIONEvent,
                           MinIONEventType, MinionMessage, MinIONRunStats,
                           MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun, FlowcellStatisticBarcode,
-                          FlowcellSummaryBarcode)
+                          FlowcellSummaryBarcode, Flowcell, MinION)
 from reads.models import FlowcellChannelSummary
 from reads.models import FlowcellHistogramSummary
 from reads.serializers import (BarcodeSerializer,

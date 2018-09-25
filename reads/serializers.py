@@ -1,13 +1,12 @@
 from rest_framework import serializers
 
-from devices.models import Flowcell, MinION
 from jobs.models import JobMaster, JobType
 from reads.models import (Barcode, FastqRead, FastqReadExtra,
                           FastqReadType, MinIONControl,
                           MinIONEvent, MinIONEventType, MinionMessage,
                           MinIONRunStats, MinIONRunStatus, MinIONScripts,
                           MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
-                          RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellSummaryBarcode)
+                          RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellSummaryBarcode, Flowcell, MinION)
 
 
 class UserOptionsSerializer(serializers.ModelSerializer):

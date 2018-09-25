@@ -2,14 +2,15 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
+from django.forms import formset_factory
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.views.generic import ListView, DeleteView
 from rest_framework.authtoken.models import Token
 
 from communication.models import Message
-from devices.models import Flowcell
-from reads.models import Run, UserOptions, FastqRead, Experiment
-from web.forms import SignUpForm, UserOptionsForm, ExperimentForm
+from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell
+from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
 
 from django.contrib import messages
 
@@ -198,39 +199,111 @@ def sandbox(request):
     return render(request, 'web/sandbox.html')
 
 
+class ExperimentList(ListView):
+    model = Experiment
+
+
+class ExperimentDelete(DeleteView):
+    model = Experiment
+
+
 @login_required
-def experiments(request):
+def experiments_create(request):
+
+    ExperimentFlowcellFormSet = formset_factory(ExperimentFlowcellForm, extra=3)
 
     if request.method == 'POST':
 
-
         form = ExperimentForm(request.POST)
+        experiment_flowcell_formset = ExperimentFlowcellFormSet(request.POST)
 
-        if form.is_valid():
+        if form.is_valid() and experiment_flowcell_formset.is_valid():
 
             experiment_name = form.cleaned_data['name']
 
             experiment = Experiment()
-            experiment.name = experiment_name
+            experiment.name = experiment_name.upper()
             experiment.owner = request.user
             experiment.save()
 
-            print('Form is valid')
-            messages.success(request, 'O mapa for criado com sucesso.')
+            for experiment_flowcell_form in experiment_flowcell_formset:
+
+                flowcell = experiment_flowcell_form.cleaned_data.get('flowcell')
+
+                if flowcell:
+
+                    flowcell.experiments.add(experiment)
+
+            messages.success(request, 'The experiment {} was created with success.'.format(experiment.name))
+            return redirect('experiment-list')
 
     else:
 
-
         form = ExperimentForm()
-
+        experiment_flowcell_formset = ExperimentFlowcellFormSet()
 
     experiment_list = Experiment.objects.filter(owner=request.user)
 
     return render(
         request,
-        'web/experiments.html',
+        'reads/experiments_create.html',
         {
             'form': form,
+            'experiment_flowcell_formset': experiment_flowcell_formset,
             'experiment_list': experiment_list,
+        }
+    )
+
+@login_required
+def experiments_update(request, pk):
+
+    experiment = Experiment.objects.get(pk=pk)
+
+    ExperimentFlowcellFormSet = formset_factory(ExperimentFlowcellForm, extra=3)
+
+    if request.method == 'POST':
+
+        form = ExperimentForm(request.POST)
+        experiment_flowcell_formset = ExperimentFlowcellFormSet(request.POST)
+
+        if form.is_valid() and experiment_flowcell_formset.is_valid():
+
+            experiment_name = form.cleaned_data['name']
+
+
+            experiment.name = experiment_name.upper()
+            experiment.save()
+
+            for experiment_flowcell_form in experiment_flowcell_formset:
+
+                flowcell = experiment_flowcell_form.cleaned_data.get('flowcell')
+
+                if flowcell:
+
+                    flowcell.experiments.add(experiment)
+
+            messages.success(request, 'The experiment {} was updated with success.'.format(experiment.name))
+            return redirect('experiment-list')
+
+    else:
+
+        form = ExperimentForm(instance=experiment)
+
+        experiment_flowcell_list = experiment.flowcell_set.all()
+
+        initial_data = []
+
+        for experiment_flowcell in experiment_flowcell_list:
+
+            initial_data.append({'flowcell': experiment_flowcell})
+
+        experiment_flowcell_formset = ExperimentFlowcellFormSet(initial=initial_data)
+
+    return render(
+        request,
+        'reads/experiments_update.html',
+        {
+            'form': form,
+            'experiment_flowcell_formset': experiment_flowcell_formset,
         }
     )

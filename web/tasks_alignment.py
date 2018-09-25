@@ -9,9 +9,8 @@ from django.conf import settings
 from django.db.models import F
 
 from alignment.models import PafRoughCov, PafStore
-from devices.models import Flowcell
 from jobs.models import JobMaster
-from reads.models import FastqRead
+from reads.models import FastqRead, Flowcell
 from reference.models import ReferenceInfo
 
 logger = get_task_logger(__name__)

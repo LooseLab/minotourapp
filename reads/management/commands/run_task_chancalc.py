@@ -1,6 +1,6 @@
 from django.core.management import BaseCommand, CommandError
 
-from devices.models import Flowcell
+from reads.models import Flowcell
 from jobs.models import JobMaster
 from web.tasks import update_flowcell_details, processreads
 

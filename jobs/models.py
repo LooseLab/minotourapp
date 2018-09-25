@@ -1,7 +1,6 @@
 from django.db import models
 
-from devices.models import Flowcell
-from reads.models import Run, GroupRun
+from reads.models import Run, GroupRun, Flowcell
 from reference.models import ReferenceInfo
 
 

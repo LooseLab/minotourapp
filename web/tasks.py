@@ -25,9 +25,8 @@ from twitter import *
 from alignment.models import PafRoughCov, PafStore, PafSummaryCov
 from assembly.models import GfaStore, GfaSummary
 from communication.utils import *
-from devices.models import Flowcell
 from jobs.models import JobMaster
-from reads.models import Barcode, FastqRead, Run, HistogramSummary, FlowcellSummaryBarcode
+from reads.models import Barcode, FastqRead, Run, HistogramSummary, FlowcellSummaryBarcode, Flowcell
 from reads.services import (save_flowcell_histogram_summary, save_flowcell_channel_summary, save_flowcell_summary_barcode,
                             save_flowcell_statistic_barcode)
 from reference.models import ReferenceInfo
