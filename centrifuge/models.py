@@ -138,12 +138,21 @@ class CartographyMapped(models.Model):
     """
     species = models.CharField(max_length=50)
     tax_id = models.IntegerField(null=True)
-    total_reads = models.IntegerField(null=True)
     alert_level = models.IntegerField(null=True)
-    num_reads = models.IntegerField(null=True)
     red_reads = models.IntegerField(null=True)
-    task_meta = models.CharField(max_length=50)
+    sum_unique = models.IntegerField(default=0)
 
+
+class RedReadIds(models.Model):
+    """
+        The read ids for reads that have identified dangerously
+    """
+    read_id = models.CharField(max_length=100)
+    CM_species = models.ForeignKey(
+        CartographyMapped,
+        related_name="mapped_read_ids",
+        on_delete=models.CASCADE
+    )
 
 class CartographyGuide(models.Model):
     """
@@ -189,6 +198,8 @@ class LineageValues(models.Model):
     strain = models.CharField(null=True, max_length=100)
     leaf = models.CharField(null=True, max_length=100)
     substrainspecies = models.CharField(null=True, max_length=100)
+
+
 
 
 

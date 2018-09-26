@@ -13,6 +13,7 @@ from django.utils import timezone
 from datetime import datetime
 import time as timmy
 from minotourapp.utils import get_env_variable
+from centrifuge.mapping import Metamap
 
 
 # TODO del unused df and things
@@ -155,7 +156,7 @@ class Centrifuger:
             tupley_list = list(zip(read_ids, sequence_data, barcodes))
             # update skip number
             # TODO UNCOMMENT
-            # self.skip = doc_no
+            self.skip = doc_no
             print("\n \n \n")
             print("number of reads in this iteration is {}".format(len(tupley_list)))
 
@@ -193,15 +194,18 @@ class Centrifuger:
             # get all the taxIds from the dataframe
             df = pd.concat([df, df["readID"].str.split(",").str[1].str.split("=").str[1]], axis=1)
             df.columns = ["readID", "seqID", "tax_id", "numMatches", "unique", "barcode"]
+            df = pd.concat([df, df["readID"].str.split(",").str[0].str.split("=").str[1]], axis=1)
+            df.columns = ["readID", "seqID", "tax_id", "numMatches", "unique", "barcode", "read_id"]
 
             # get np array of the taxids
             taxid_list = df["tax_id"].values
             # use the ncbi thing to get the species names for the tax ids in the tax ids list
-            taxid2name = ncbi.get_taxid_translator(taxid_list)
+            taxid2name_df = pd.DataFrame.from_dict(ncbi.get_taxid_translator(taxid_list), orient="index",
+                                                   columns=["name"])
             # insert the taxid2name dict items into the dataframe name columns
-            df["name"] = df["tax_id"].map(taxid2name)
+            df = pd.merge(df, taxid2name_df, how="outer", left_on="tax_id", right_index=True)
             # any NaNs replace with Unclassified
-            df["name"] = df["name"].fillna("Unclassified")
+            df["name"].fillna("Unclassified", inplace=True)
 
             #  set the index to be taxID
             df = df.set_index("tax_id")
@@ -218,9 +222,16 @@ class Centrifuger:
             # table
             df["num_matches"] = gb.size()
 
-            # holding_df = df.copy(deep=True)
+            temp_targets = ["Escherichia coli", "Bacillus cereus"]
+
+            # name_df = df[df["name"].isin(temp_targets)]
+            # if not name_df.empty:
+            #     # map the target reads
+            #     m = Metamap(name_df, self.flowcell_id, self.flowcell_job_id)
+            #     m.map_the_reads()
             barcode_df = pd.DataFrame()
             # TODO vectorise these bad boys
+
             def barcode_calculations(gb_df, ho_df):
                 """
                 Return the main cent output data frame with the barcode only result concatenated on
@@ -520,7 +531,7 @@ class Centrifuger:
                 SankeyLinks.objects.bulk_create(sankey_link_insert_list)
 
             if not source_target_df.empty:
-                # TODO very inefficient database pounding
+                # TODO very inefficient database pounding. Rewrite first get into filter with dict lookup
                 def sankey_bulk_bar_insert(row):
                     link = SankeyLinks.objects.get(tax_id=row["tax_id"], flowcell=row["flowcell"], task=row["job_master"],
                                                    target_tax_level=row["target_tax_level"])
