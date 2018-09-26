@@ -205,9 +205,9 @@ var FlowcellPageApp = {
         this.flowcellTaskHistoryTable = flowcellTaskHistoryTable;
         this.addBarcodeTabs = addBarcodeTabs.bind(this);
 
-        var inputFlowcellId = document.querySelector("#flowcell-id");
-
-        this.flowcellId = inputFlowcellId.value;
+        // var inputFlowcellId = document.querySelector("#flowcell-id");
+        //
+        // this.flowcellId = inputFlowcellId.value;
 
         var flowcell_id = get_selected_flowcell();
 
