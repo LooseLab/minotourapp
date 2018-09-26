@@ -151,7 +151,7 @@ class Centrifuger:
             # create list of read ids for zipping
             read_ids = list(cursor.values_list("read_id", flat=True)[self.skip:doc_no])
             # Create list of tuples where
-            barcodes = list(cursor.values_list("barcode__name", flat=True)[self.skip:doc_no])
+            barcodes = list(cursor.values_list("barcode_name", flat=True)[self.skip:doc_no])
             # the 1st element is the read_id and the second is the sequence
             tupley_list = list(zip(read_ids, sequence_data, barcodes))
             # update skip number
