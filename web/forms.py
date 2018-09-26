@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
+from reads.models import Flowcell, Experiment
 from jobs.models import JobMaster
 
 
@@ -65,7 +66,12 @@ class TaskForm(forms.ModelForm):
         fields = ('flowcell', 'job_type')
 
 
-class ExperimentForm(forms.Form):
+class ExperimentForm(forms.ModelForm):
+
+    class Meta:
+
+        model = Experiment
+        fields = ('name',)
 
     name = forms.CharField(
         label='Experiment name',
@@ -73,6 +79,19 @@ class ExperimentForm(forms.Form):
             attrs={
                 'class': 'form-control',
                 'placeholder': 'Enter Experiment name here'
+            }
+        )
+    )
+
+
+class ExperimentFlowcellForm(forms.Form):
+
+    flowcell = forms.ModelChoiceField(
+        queryset=Flowcell.objects.all(),
+        required=False,
+        widget=forms.Select(
+            attrs={
+                'class': 'form-control'
             }
         )
     )

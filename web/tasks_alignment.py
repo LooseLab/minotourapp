@@ -9,9 +9,8 @@ from django.conf import settings
 from django.db.models import F
 
 from alignment.models import PafRoughCov, PafStore
-from devices.models import Flowcell
 from jobs.models import JobMaster
-from reads.models import FastqRead
+from reads.models import FastqRead, Flowcell
 from reference.models import ReferenceInfo
 
 logger = get_task_logger(__name__)
@@ -188,7 +187,6 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
                         summarycov, created2 = PafSummaryCov.objects.update_or_create(
                             flowcell=flowcell,
                             read_type=ty,
-                            barcodegroup=bc,
                             reference=ref,
                             chromosome=ch,
                         )

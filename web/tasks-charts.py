@@ -4,8 +4,7 @@ import pandas as pd
 from celery import task
 from django.core.cache import cache
 
-from devices.models import Flowcell
-from reads.models import HistogramSummary
+from reads.models import HistogramSummary, Flowcell
 
 
 @task
