@@ -1,20 +1,20 @@
 "use strict";
 let updateSankey;
 // resize svg and graphic on window resize
-$(window).on("resize", function () {
-    // height of page
-    let hi = $(window).height() * 0.55;
-    // width of page
-    let width = $(window).width() - 60;
-    // flowcell id for data
-    let inputFlowcellId = document.querySelector("#flowcell-id");
-    let flowcellId = inputFlowcellId.value;
-    //update svg width and height
-    d3.select(".svg-sankey").attr("width", width);
-    d3.select(".svg-sankey").attr("height", hi);
-    // draw the sankey diagram
-    drawSankey(flowcellId);
-});
+// $(window).on("resize", function () {
+//     // height of page
+//     let hi = $(window).height() * 0.55;
+//     // width of page
+//     let width = $(window).width() - 60;
+//     // flowcell id for data
+//     let inputFlowcellId = document.querySelector("#flowcell-id");
+//     let flowcellId = inputFlowcellId.value;
+//     //update svg width and height
+//     d3.select(".svg-sankey").attr("width", width);
+//     d3.select(".svg-sankey").attr("height", hi);
+//     // draw the sankey diagram
+//     drawSankey(flowcellId);
+// });
 
 function draw(nodesObj, sankey, g, format, color, width) {
     // Draw the diagram
