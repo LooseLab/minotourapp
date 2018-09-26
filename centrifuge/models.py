@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 from jobs.models import JobMaster
 from reads.models import Barcode
-from devices.models import Flowcell
+from reads.models import Flowcell
 
 
 class SankeyLinks(models.Model):
