@@ -467,11 +467,11 @@ def run_detail(request, pk):
 
         run_list = Run.objects.none()
 
-    if len(run_list) != 1:
+    if len(run_list) < 1:
 
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    run = run_list[0]
+    run = run_list[0]  # TODO what if by any means we have more than one run if the same runid?
 
     if request.method == 'GET':
         serializer = RunSerializer(run, context={'request': request})
