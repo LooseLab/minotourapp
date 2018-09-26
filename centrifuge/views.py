@@ -162,7 +162,6 @@ def vis_table_or_donut_data(request):
     task_id = max(JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics")
                   .values_list("id", flat=True))
     # queryset from database, filtered by the flowcell_id and the corresponding JobMaster ID
-    print(f"barcode is {barcode}")
 
     queryset = CentOutputBarcoded.objects.filter(output__flowcell__id=flowcell_id, output__task__id=task_id,
                                                  barcode=barcode)
