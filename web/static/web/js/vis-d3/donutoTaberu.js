@@ -8,6 +8,8 @@ let first = true;
 // Get the colour scheme, Scale ordinal so colours can be returned the same when given labels
 let color = d3.scaleOrdinal(d3.schemeCategory10);
 
+let updateDonutTable;
+
 //create data to draw a table
 function drawPieTables(countedData, color) {
     //create wrapper function to draw a table
@@ -156,10 +158,20 @@ function drawTables(selection, dataToDraw) {
     }
 
 }
-
-function getDonutRankTable(flowCellId) {
-    $.get("/donut", {flowcellId: flowCellId, visType: "donut"}, result => {
+function topGetDonutRankTable(flowCellId, selectedBarcode){
+    getDonutRankTable(flowCellId, selectedBarcode);
+    updateDonutTable = setInterval(getDonutRankTable, 60000, flowCellId);
+}
+function getDonutRankTable(flowCellId, selectedBarcode) {
+    let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
+    if (flowcell_selected_tab_input.value !== "Metagenomics"){
+        clearInterval(updateDonutTable);
+        console.log("cleared donut table interval");
+        return;
+    }
+    $.get("/donut", {flowcellId: flowCellId, visType: "donut", barcode: selectedBarcode}, result => {
         // if there is no data return and try again when interval is up on $interval
+        console.log(result);
         if (result === undefined) {
             return;
         }

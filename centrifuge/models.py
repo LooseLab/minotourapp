@@ -1,29 +1,82 @@
 from django.db import models
 from django.utils import timezone
 from jobs.models import JobMaster
+from reads.models import Barcode
+from devices.models import Flowcell
+
+
+class SankeyLinks(models.Model):
+    """
+        :purpose: Store the centrifuge classifier output in the format for the sankey diagram
+        Used in centrifuge class, and all the sankey diagram view
+        :author: Rory
+        Fields:
+
+        :source: (str) - The source node, that the link starts at, for example bacteria
+        :target: (str) - The target node, that the link ends at, for example proteobacteria
+        :value: (int) - The num of matches illustrated by that link
+        :tax_id: (int) - The tax_id of the target node
+        :flowcell_id: (int) - The flowcell id that the centrifuger class was run on
+        :task: (fk JobMaster) - The corresponding jobMaster object, used to separate the datasets
+        :target_tax_level: - The taxa level of the target node, i.e Phylum for Bacteria (kingdom) \
+        to ProteoBacteria (Phylum)
+    """
+    source = models.CharField(null=True, max_length=100)
+    target = models.CharField(null=True, max_length=100)
+
+    tax_id = models.IntegerField()
+    flowcell = models.ForeignKey(
+        Flowcell,
+        related_name="sankeylinks_flowcell",
+        null=True
+    )
+    task = models.ForeignKey(
+        JobMaster,
+        related_name="sankey_links"
+    )
+    target_tax_level = models.CharField(max_length=100)
+
+
+class SankeyLinksBarcode(models.Model):
+    """
+        The values for the different barcodes for the sankey diagram
+    """
+    value = models.IntegerField(null=True, default=0)
+    barcode = models.CharField(max_length=20)
+    link = models.ForeignKey(
+        SankeyLinks,
+        related_name="barcode_value_links",
+        null=True,
+        on_delete=models.CASCADE
+    )
+    tax_id = models.IntegerField(default=0)
 
 
 class MetaGenomicsMeta(models.Model):
     """"
-    :purpose: Store information about the Metagenomics classification analysis
-    :author: Rory
+        :purpose: Store information about the Metagenomics classification analysis, used in centrifuger.py
+        :author: Rory
 
-    Fields:
+        Fields:
 
-    :timestamp: (datetime) - Start of the analysis task
-    :runtime: (str) - Time taken to run
-    :flowcell_id: (int) - The Flowcell ID
-    :task: (JobMaster Object) FK - the task record in the JobMaster that started this analysis
-    :running: (bool) - If the analysis is currently running
-    :number_of_reads: (int) - Number of reads in Flowcell
-    :reads_classified: (int) - Number of reads that have been analysed
-    :finish_time: (str) - The time the analysis finished
+        :timestamp: (datetime) - Start of the analysis task
+        :runtime: (str) - Time taken to run
+        :flowcell_id: (int) - The Flowcell ID
+        :task: (JobMaster Object) FK - the task record in the JobMaster that started this analysis
+        :running: (bool) - If the analysis is currently running
+        :number_of_reads: (int) - Number of reads in Flowcell
+        :reads_classified: (int) - Number of reads that have been analysed
+        :finish_time: (str) - The time the analysis finished
 
     """
 
     timestamp = models.DateTimeField(default=timezone.now, null=True)
     run_time = models.CharField(max_length=30, null=True)
-    flowcell_id = models.IntegerField()
+    flowcell = models.ForeignKey(
+        Flowcell,
+        related_name="metadata_flowcell",
+
+    )
     task = models.ForeignKey(
         JobMaster,
         related_name="metadata_metagenomics",
@@ -36,26 +89,46 @@ class MetaGenomicsMeta(models.Model):
 
 class CentOutput(models.Model):
     """
-    :purpose: Store the summarised output of the metagenomics task, used to draw donut chart and All reads table
-    :author: Rory
-    Fields:
+        :purpose: Store the summarised output of the metagenomics task for all reads
+        , used to draw donut chart and All reads table
+        :author: Rory
+        Fields:
 
-    :name: (str) - The name of the Species
-    :tax_id: (int) - The taxonomic ID of this species
-    :num_matches: (int) - The number of centrifuge matches to this species in this analysis
-    :sum_unique: (int) - The number of centrifuge matches that match uniquely to this species
-    :flowcell_id: (int) - The Id of the flowcell the reads came from #TODO make this a foreign key?
-    :task: (JobMaster Object) FK - the task record in the JobMaster that started this analysis
+        :name: (str) - The name of the Species
+        :tax_id: (int) - The taxonomic ID of this species
+        :num_matches: (int) - The number of centrifuge matches to this species in this analysis
+        :sum_unique: (int) - The number of centrifuge matches that match uniquely to this species
+        :flowcell_id: (int) - The Id of the flowcell the reads came from
+        :task: (JobMaster Object) FK - the task record in the JobMaster that started this analysis
     """
     name = models.CharField(max_length=250, null=True)
     tax_id = models.IntegerField(null=True)
-    num_matches = models.IntegerField(null=True)
-    sum_unique = models.IntegerField(null=True)
-    flowcell_id = models.IntegerField(null=True)
+
+    flowcell = models.ForeignKey(
+        Flowcell,
+        related_name="centoutput_flowcell",
+        null=True
+    )
     task = models.ForeignKey(
         JobMaster,
         related_name="centrifuge_summaries"
     )
+
+
+class CentOutputBarcoded(models.Model):
+    """
+        Value for different barcodes
+    """
+    num_matches = models.IntegerField(default=0)
+    sum_unique = models.IntegerField(default=0)
+    output = models.ForeignKey(
+        CentOutput,
+        related_name="cent_barcode_values",
+        on_delete=models.CASCADE,
+        null=True
+    )
+    tax_id = models.IntegerField()
+    barcode = models.CharField(max_length=50)
 
 
 class CartographyMapped(models.Model):
@@ -65,12 +138,21 @@ class CartographyMapped(models.Model):
     """
     species = models.CharField(max_length=50)
     tax_id = models.IntegerField(null=True)
-    total_reads = models.IntegerField(null=True)
     alert_level = models.IntegerField(null=True)
-    num_reads = models.IntegerField(null=True)
     red_reads = models.IntegerField(null=True)
-    task_meta = models.CharField(max_length=50)
+    sum_unique = models.IntegerField(default=0)
 
+
+class RedReadIds(models.Model):
+    """
+        The read ids for reads that have identified dangerously
+    """
+    read_id = models.CharField(max_length=100)
+    CM_species = models.ForeignKey(
+        CartographyMapped,
+        related_name="mapped_read_ids",
+        on_delete=models.CASCADE
+    )
 
 class CartographyGuide(models.Model):
     """
@@ -118,29 +200,6 @@ class LineageValues(models.Model):
     substrainspecies = models.CharField(null=True, max_length=100)
 
 
-class SankeyLinks(models.Model):
-    """
-        :purpose: Store the centrifuge classifier output in the format for the sankey diagram
-        Used in centrifuge class, and all the sankey diagram view
-        :author: Rory
-        Fields:
 
-        :source: (str) - The source node, that the link starts at, for example bacteria
-        :target: (str) - The target node, that the link ends at, for example proteobacteria
-        :value: (int) - The num of matches illustrated by that link
-        :tax_id: (int) - The tax_id of the target node
-        :flowcell_id: (int) - The flowcell id that the centrifuger class was run on
-        :task: (fk JobMaster) - The corresponding jobMaster object, used to separate the datasets
-        :target_tax_level: - The taxa level of the target node, i.e Phylum for Bacteria (kingdom) \
-        to ProteoBacteria (Phylum)
-    """
-    source = models.CharField(null=True, max_length=100)
-    target = models.CharField(null=True, max_length=100)
-    value = models.IntegerField()
-    tax_id = models.IntegerField()
-    flowcell_id = models.IntegerField()
-    task = models.ForeignKey(
-        JobMaster,
-        related_name="sankey_links"
-    )
-    target_tax_level = models.CharField(max_length=100)
+
+

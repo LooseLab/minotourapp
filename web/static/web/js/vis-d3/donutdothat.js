@@ -1,5 +1,7 @@
 "use strict";
 // Redraw the SVGs on window resize
+let updateDonut;
+
 $(window).on("resize", function(){
     let width = ($(window).width() * 0.25) - 50;
     let height = $(window).height() * 0.35;
@@ -54,9 +56,20 @@ function drawPie(countedData, pie, arc, svg) {
     // remove any slices held in the exit selection, that used to have DOM elements but now have no data for them
     slice.exit().remove();
 }
+// TODO this could be more effeicent as it is sometimes called unnecessarily;
+function topLevelDrawDonut(flowCellId, selectedBarcode){
+    drawDonut(flowCellId, selectedBarcode);
+    updateDonut = setInterval(drawDonut, 60000, flowCellId);
+}
 
-function drawDonut(flowCellId) {
-    // setup the donut chart TODO this coud be more effeicent as it is sometimes called unecessarily
+function drawDonut(flowCellId, selectedBarcode) {
+    let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
+    if(flowcell_selected_tab_input.value !== "Metagenomics"){
+        clearInterval(updateDonut);
+        console.log("cleared donut interval");
+        return;
+    }
+    // setup the donut chart
     // the taxas in the order we want, to access them from the AJAX get request results
     let taxas = ["species", "genus", "family", "order", "classy", "phylum", "superkingdom"];
     // the taxa titles we wish to display under the slider
@@ -115,11 +128,12 @@ function drawDonut(flowCellId) {
         value.html(DisplayTaxas[0]);
     }
     // Get the data from the server to sisplay
-    $.get("/donut", {flowcellId: flowCellId, visType: "donut"}, result => {
+    $.get("/donut", {flowcellId: flowCellId, visType: "donut", barcode: selectedBarcode}, result => {
         // if there is no data return and try again when interval is up on $interval
         if (result === undefined) {
             return;
         }
+        console.log(result);
         let dataToDraw = result.result;
         // what the label is displaying, starts on species
         let currentSelectionSlider = value.html();
@@ -137,8 +151,6 @@ function drawDonut(flowCellId) {
             number = this.value;
             // set the html below the slider to the right level
             value.html(DisplayTaxas[number]);
-            // remove the current donut chart
-            // d3.select(".slices").selectAll("*").remove();
             // get the right taxa for the key to the results object
             let current_selected_taxa = taxas[number];
             // get the results data array for the currently selected taxa clade

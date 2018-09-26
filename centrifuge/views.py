@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from centrifuge.models import CentOutput, CartographyMapped, LineageValues, MetaGenomicsMeta, \
-    SankeyLinks
+    SankeyLinks, CentOutputBarcoded, SankeyLinksBarcode
 from centrifuge.serializers import CartMappedSerialiser
 from django.utils import timezone
 from ete3 import NCBITaxa
@@ -23,13 +23,14 @@ def metaview(request):
     # The flowcell id for the flowcell that the fastq data came from, default to False if not present
     flowcell_id = request.GET.get("flowcellId", False)
     # The ids of the JobMaster entries for this flowcell
-    task_ids = JobMaster.objects.filter(flowcell=flowcell_id, job_type__name="Metagenomics").values_list("id", flat=True)
+    task_ids = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics")\
+        .values_list("id", flat=True)
     # Get the most recent job, which has the highest ID
     task_id = max(task_ids)
     # If there is no MetaGenomicsMeta object return an empty list
     try:
-        queryset = MetaGenomicsMeta.objects.get(flowcell_id=flowcell_id,
-                                            task__id=task_id)
+        queryset = MetaGenomicsMeta.objects.get(flowcell__id=flowcell_id,
+                                                task__id=task_id)
     except MetaGenomicsMeta.DoesNotExist:
         return Response([], status=404)
 
@@ -62,7 +63,8 @@ def cent_sankey_two(request):
     """
     :purpose: Query the database for the sankeyLink data, return the top 50 Lineages
     :author: Rory
-    :param request: (obj) Django rest framework object, with query params, speciesLimit - The number of species to Return
+    :param request: (obj) Django rest framework object, with query params, speciesLimit -
+    The number of species to Return
     flowcell_id, the Flowcell id for the flowcell that provided the reads
     :return: (obj) A Response obj containing a dict with data for the sankey diagram
     """
@@ -71,14 +73,18 @@ def cent_sankey_two(request):
     species_limit = request.GET.get("speciesLimit", 30)
     # Get the flowcell ID , defaulting to False if not present
     flowcell_id = request.GET.get("flowcellId", False)
+    # Selected barcode, default all reads
+    selected_barcode = request.GET.get("barcode", "All reads")
+
     # The most up to dat task_id
-    task_id = max(JobMaster.objects.filter(flowcell=flowcell_id,
+    task_id = max(JobMaster.objects.filter(flowcell__id=flowcell_id,
                                            job_type__name="Metagenomics").values_list("id", flat=True))
 
     # ## Get the links for the sankey Diagram ###
 
-    print("the flowcell is {}".format(request.GET.get('flowcellId', '')))
-    queryset = SankeyLinks.objects.filter(flowcell_id=flowcell_id, task__id=task_id).values()
+    print("the flowcell is {}".format(flowcell_id))
+    print("the barcode is {}".format(selected_barcode))
+    queryset = SankeyLinks.objects.filter(flowcell__id=flowcell_id, task__id=task_id).values()
     # If the queryset is empty, return an empty object
     if not queryset:
         return Response({}, status=204)
@@ -88,6 +94,12 @@ def cent_sankey_two(request):
     if source_target_df.empty:
         print("empty")
         return Response({}, status=204)
+
+    barcode_df = pd.DataFrame(list(SankeyLinksBarcode.objects.filter(link__flowcell_id=flowcell_id,
+                                                                     link__task__id=task_id,
+                                                                     barcode=selected_barcode).values()))
+    # Merge barcode values onto dataframe
+    source_target_df = pd.merge(source_target_df, barcode_df, how="inner", on="tax_id")
     # get a subset df of all the species rows
     temp_species_df = source_target_df[source_target_df["target_tax_level"] == "species"]
     # get species limit (default 50) of the largest species
@@ -96,7 +108,9 @@ def cent_sankey_two(request):
     source_target_df = source_target_df[source_target_df["tax_id"].isin(temp_species_df["tax_id"])]
 
     # Drop unnecessary columns from DataFrame
-    source_target_df.drop(columns=["flowcell_id", "id", "tax_id", "target_tax_level"], inplace=True)
+    print(source_target_df.keys())
+    source_target_df.drop(columns=["flowcell_id", "id_x", "id_y", "tax_id", "target_tax_level",
+                                   "task_id", "link_id"], inplace=True)
     # Set MultiIndex to group source to target
     source_target_df.set_index(["source", "target"], inplace=True)
     # Group by rows where the source and target are the same
@@ -143,32 +157,45 @@ def vis_table_or_donut_data(request):
     :return:
     """
     flowcell_id = request.GET.get("flowcellId", 0)
+    barcode = request.GET.get("barcode", "All reads")
     # Get the most recent job
-    task_id = max(JobMaster.objects.filter(flowcell=flowcell_id, job_type__name="Metagenomics")
+    task_id = max(JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics")
                   .values_list("id", flat=True))
     # queryset from database, filtered by the flowcell_id and the corresponding JobMaster ID
-    queryset = CentOutput.objects.filter(flowcell_id=flowcell_id, task__id=task_id)
+    print(f"barcode is {barcode}")
+
+    queryset = CentOutputBarcoded.objects.filter(output__flowcell__id=flowcell_id, output__task__id=task_id,
+                                                 barcode=barcode)
     # Create a dataframe from the results of the querying the database
-    centouput_df = pd.DataFrame(list(queryset.values()))
+    centoutput_df = pd.DataFrame(list(queryset.values()))
+
+    names = CentOutput.objects.filter(flowcell__id=flowcell_id, task__id=task_id).values()
+
+    names_df = pd.DataFrame(list(names))
+
+    names_df.set_index("tax_id", inplace=True)
+    centoutput_df.set_index("tax_id", inplace=True)
+
+    centoutput_df["name"] = names_df["name"]
+
     # if there is no data in the database (yet) return 204
-    if centouput_df.empty:
+    if centoutput_df.empty:
         return Response([], status=204)
-    centouput_df.drop(columns=["task_id"], inplace=True)
+    centoutput_df.drop(columns=["output_id"], inplace=True)
 
     # create dataframe of all the Lineages we have stored in the database
     lineages_df = pd.DataFrame(list(LineageValues.objects.all().values()))
     # get relevant taxids, so dataframe of only lineages for taxIDs that are in the output of this centrifuge run
-    lineages_df = lineages_df[lineages_df['tax_id'].isin(centouput_df["tax_id"])]
+    lineages_df = lineages_df[lineages_df['tax_id'].isin(centoutput_df.index.values)]
     # Create the new columns in the dataframe for num_matches and num_unique matches
     lineages_df.set_index("tax_id", inplace=True)
-    centouput_df.set_index("tax_id", inplace=True)
-    lineages_df["num_matches"] = centouput_df["num_matches"]
-    lineages_df["sum_unique"] = centouput_df["sum_unique"]
+    lineages_df["num_matches"] = centoutput_df["num_matches"]
+    lineages_df["sum_unique"] = centoutput_df["sum_unique"]
 
     # try and uniform missing values
-    lineages_df = lineages_df.replace("nan", "Empty")
-    lineages_df = lineages_df.replace("None", "Empty")
-    lineages_df = lineages_df.fillna("Empty")
+    lineages_df = lineages_df.replace("nan", "Unclassified")
+    lineages_df = lineages_df.replace("None", "Unclassified")
+    lineages_df = lineages_df.fillna("Unclassified")
     # The order that the phyla go in
     # TODO add in substrain and subspecies when centrifuge index contains them
     order = ["superkingdom", "phylum", "classy", "order", "family", "genus", "species"]
@@ -240,7 +267,7 @@ def vis_table_or_donut_data(request):
         obj = {ord: arr}
         container_array.append(obj)
 
-    lineages_df.fillna("Empty", inplace=True)
+    lineages_df.fillna("Unclassified", inplace=True)
     json = lineages_df.to_dict(orient="records")
 
     container_array.reverse()

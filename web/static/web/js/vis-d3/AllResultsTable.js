@@ -1,23 +1,19 @@
-// function format(d) {
-//
-//     // `d` is the original data object for the row
-//     return '<tr style="display: inline-block; width: 100%">' +
-//         '<td style="width: 15px"></td>' +
-//         '<td class="dropdown"> Kingdom (Num reads / Proportion <br>' + d.summed_superkingdom + ' / ' + d.prop_superkingdom + '%)    </td>' +
-//         '<td class="dropdown"> Phylum (Num reads/ Proportion <br>' + d.summed_phylum + ' / ' + d.prop_phylum + '%)       </td>' +
-//         '<td class="dropdown"> Class (Num reads / Proportion <br>' + d.summed_classy + ' / ' + d.prop_class + '%)   </td>' +
-//         '<td class="dropdown"> Order (Num reads / Proportion <br>' + d.summed_order + ' / ' + d.prop_order + '%)    </td>' +
-//         '<td class="dropdown"> Family (Num reads / Proprtion <br>' + d.summed_family + ' / ' + d.prop_family + '%)      </td>' +
-//         '<td class="dropdown"> Genus (Num reads / Proportion <br>' + d.summed_genus + ' / ' + d.prop_genus + '%)     </td>' +
-//         '<td class="dropdown"> Species (Num reads / Proportion <br>' + d.summed_species + ' / ' + d.prop_species + '%)        </td>' +
-//         '</tr>'
-//         ;
-// }
+let updateResultsTable;
+function topGetTotalReadsTable(flowCellId, selectedBarcode) {
+    getTotalReadsTable(flowCellId, selectedBarcode);
+    updateResultsTable = setInterval(getTotalReadsTable, 60000, flowCellId);
+}
 
-function getTotalReadsTable(flowCellId) {
+function getTotalReadsTable(flowCellId, selectedBarcode) {
     // Get ttoal reads table updates the total reads table at te bottom of the page
     // Get data from the api
-    $.get("/table", {flowcellId: flowCellId, visType: "table"}, result => {
+    let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
+    if(flowcell_selected_tab_input.value !== "Metagenomics"){
+        clearInterval(updateResultsTable);
+        console.log("Cleared results table interval");
+        return;
+    }
+    $.get("/table", {flowcellId: flowCellId, visType: "table", barcode: selectedBarcode}, result => {
         // Jquery selector
         let table = $(".tableLand");
         // If the results of the api query is undefined, there are no results in the DB, so retrun here
@@ -25,8 +21,6 @@ function getTotalReadsTable(flowCellId) {
             return;
         }
         // If the table already exists, use the DataTable APi to update in place
-        console.log(table.length);
-        console.log(table);
         if ($.fn.DataTable.isDataTable(table)) {
             table.DataTable().clear();
             table.DataTable().rows.add(result);

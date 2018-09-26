@@ -1,20 +1,12 @@
-function updateBarcodeNavTab() {
-
+function addBarcodeTabs(flowcellId){
     var requestData = this.requestData.bind(this);
-
-    var flowcell_id = get_selected_flowcell();
-
     var selected_barcode = get_selected_barcode();
-
-    var ul = document.getElementById("nav-tabs-barcodes");
-
+    var ul = document.getElementById("nav-tabs-meta-barcodes");
     ul.innerHTML = "";
-
     var sortedBarcodes = this.barcodes;
-    // TODO nice way of selecting active tab, add on for top tabs on minotour private index page
     for (var i = 0; i < sortedBarcodes.length; i++) {
         var li = document.createElement("li");
-        li.classList.add('barcode-tab');
+        li.classList.add('barcode-meta-tab');
         var a = document.createElement("a");
         // a.onclick = self.updateChartsBasedOnBarcode;
 
@@ -24,7 +16,7 @@ function updateBarcodeNavTab() {
             console.log('clicked on ' + selected_barcode);
             set_selected_barcode(selected_barcode);
 
-            requestData(flowcell_id);
+            requestData(flowcellId);
 
             var barcode_tabs = document.querySelectorAll('.barcode-tab');
             barcode_tabs.forEach(function(value) {
@@ -47,4 +39,5 @@ function updateBarcodeNavTab() {
         li.appendChild(a);
         ul.appendChild(li);
     }
-};
+
+}
