@@ -65,7 +65,6 @@ function MinotourApp() {
     this.makeYieldProjection = makeYieldProjection;
     this.makeLiveChart = makeLiveChart;
     this.makeAreaPlot = makeAreaPlot;
-    this.makeHeatmapChart = makeHeatmapChart;
     this.makeStepLineChart = makeStepLineChart;
     this.afterSetExtremes = afterSetExtremes;
 
@@ -262,18 +261,6 @@ function MinotourApp() {
             "histogram-bases-sequenced-by-read-length",
             "Histogram of Bases Sequenced by Read Length".toUpperCase(),
             "Number of bases".toUpperCase()
-        );
-
-        this.chartReadsPerPore = this.makeHeatmapChart(
-            "reads-per-pore",
-            "Reads per Channel".toUpperCase(),
-            ""
-        );
-
-        this.chartBasesPerPore = this.makeHeatmapChart(
-            "bases-per-pore",
-            "bases (kb) per Channel".toUpperCase(),
-            ""
         );
 
         this.chartChromosomeCoverage = this.makeStepLineChart(
