@@ -453,6 +453,10 @@ class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
 
     def create(self, validated_data):
 
+        print('>>> validated_data')
+        print(validated_data)
+        print('<<< validated_data')
+        # flowcell = Flowcell.objects.get_or_create(name=, owner=)
         flowcell = Flowcell(**validated_data)
         flowcell.save()
 
