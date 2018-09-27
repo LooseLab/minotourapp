@@ -113,8 +113,8 @@ class Centrifuger:
                 print("no reads in database")
                 timmy.sleep(10)
                 continue
-            # doc_no = int(cursor.count())
-            doc_no = 500
+            doc_no = int(cursor.count())
+            # doc_no = 500
             # Update the read count on the JobMaster
             job_master.read_count = doc_no
             job_master.save()
