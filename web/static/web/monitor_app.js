@@ -74,10 +74,17 @@ var FlowcellPageApp = {
         this.makeYieldProjection = makeYieldProjection;
         this.makeLiveChart = makeLiveChart;
         this.makeAreaPlot = makeAreaPlot;
-        this.makeHeatmapChart = makeHeatmapChart;
 
         this.lastread = 0;
         this.needtoupdatecharts = false;
+
+        this.topLevelSankeyDrawer = topLevelSankeyDrawer;
+        this.topMetaHeader = topMetaHeader;
+        this.topLevelDrawDonut = topLevelDrawDonut;
+        this.topGetTotalReadsTable = topGetTotalReadsTable;
+        this.topGetDonutRankTable = topGetDonutRankTable;
+        this.flowcellTaskHistoryTable = flowcellTaskHistoryTable;
+        this.addBarcodeTabs = addBarcodeTabs.bind(this);
 
         this.updatePoreChart = updatePoreChart;
 
@@ -197,13 +204,6 @@ var FlowcellPageApp = {
             "Pore States".toUpperCase(),
             "Pore States".toUpperCase()
         );
-        this.topLevelSankeyDrawer = topLevelSankeyDrawer;
-        this.topMetaHeader = topMetaHeader;
-        this.topLevelDrawDonut = topLevelDrawDonut;
-        this.topGetTotalReadsTable = topGetTotalReadsTable;
-        this.topGetDonutRankTable = topGetDonutRankTable;
-        this.flowcellTaskHistoryTable = flowcellTaskHistoryTable;
-        this.addBarcodeTabs = addBarcodeTabs.bind(this);
 
         // var inputFlowcellId = document.querySelector("#flowcell-id");
         //

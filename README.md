@@ -160,6 +160,8 @@ for each command. If you chose to create the environmental variable bash file, a
     cd ~/projects/minotourws;
     python manage.py makemigrations;
     python manage.py migrate;
+    python manage.py loaddata fixtures/auxiliary_data.json
+    python manage.py createsuperuser
     ```
     
     * Start Celery
