@@ -158,11 +158,12 @@ function drawTables(selection, dataToDraw) {
     }
 
 }
-function topGetDonutRankTable(flowCellId, selectedBarcode){
-    getDonutRankTable(flowCellId, selectedBarcode);
-    updateDonutTable = setInterval(getDonutRankTable, 60000, flowCellId);
+function topGetDonutRankTable(flowCellId){
+    getDonutRankTable(flowCellId);
+
 }
-function getDonutRankTable(flowCellId, selectedBarcode) {
+function getDonutRankTable(flowCellId) {
+    var selectedBarcode = get_selected_barcode();
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     if (flowcell_selected_tab_input.value !== "Metagenomics"){
         clearInterval(updateDonutTable);
@@ -171,7 +172,6 @@ function getDonutRankTable(flowCellId, selectedBarcode) {
     }
     $.get("/donut", {flowcellId: flowCellId, visType: "donut", barcode: selectedBarcode}, result => {
         // if there is no data return and try again when interval is up on $interval
-        console.log(result);
         if (result === undefined) {
             return;
         }
@@ -210,4 +210,5 @@ function getDonutRankTable(flowCellId, selectedBarcode) {
 
         drawPieTables(data1, color);
     });
+    updateDonutTable = setTimeout(getDonutRankTable, 60000, flowCellId, selectedBarcode);
 }

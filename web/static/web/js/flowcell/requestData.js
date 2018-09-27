@@ -55,15 +55,15 @@ function requestData(flowcell_id) {
             // add the barcodes for this flowcell
             this.addBarcodeTabs(flowcellId);
             // draw the sankey
-            this.topLevelSankeyDrawer(flowcellId, selected_barcode);
+            this.topLevelSankeyDrawer(flowcellId);
             // update the metadata header
             this.topMetaHeader(flowcellId);
             // Draw the donut chart
-            this.topLevelDrawDonut(flowcellId, selected_barcode);
+            this.topLevelDrawDonut(flowcellId);
             // update the total Reads Table
-            this.topGetTotalReadsTable(flowcellId, selected_barcode);
+            this.topGetTotalReadsTable(flowcellId);
             // Draw rhe donut rank table
-            this.topGetDonutRankTable(flowcellId, selected_barcode);
+            this.topGetDonutRankTable(flowcellId);
 
         } else if (flowcell_selected_tab_input.value == 'Sequence Mapping') {
 

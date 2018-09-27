@@ -1,10 +1,10 @@
 let updateResultsTable;
-function topGetTotalReadsTable(flowCellId, selectedBarcode) {
-    getTotalReadsTable(flowCellId, selectedBarcode);
-    updateResultsTable = setInterval(getTotalReadsTable, 60000, flowCellId);
+function topGetTotalReadsTable(flowCellId) {
+    getTotalReadsTable(flowCellId);
 }
 
-function getTotalReadsTable(flowCellId, selectedBarcode) {
+function getTotalReadsTable(flowCellId) {
+    var selectedBarcode = get_selected_barcode();
     // Get ttoal reads table updates the total reads table at te bottom of the page
     // Get data from the api
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
@@ -44,5 +44,5 @@ function getTotalReadsTable(flowCellId, selectedBarcode) {
             );
         }
     });
-
+    updateResultsTable = setTimeout(getTotalReadsTable, 60000, flowCellId, selectedBarcode);
 }
