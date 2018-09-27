@@ -153,7 +153,7 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
             read_id=validated_data['read_id'],
             read=validated_data['read'],
             channel=validated_data['channel'],
-            # barcode=validated_data['barcode'],
+            barcode=validated_data['barcode'],
             barcode_name=validated_data['barcode_name'],
             sequence_length=validated_data['sequence_length'],
             quality_average=validated_data['quality_average'],

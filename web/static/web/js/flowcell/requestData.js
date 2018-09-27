@@ -1,9 +1,7 @@
 function requestData(flowcell_id) {
 
-    console.log('Running requestData for flowcell ' + flowcell_id);
-
     var selected_barcode = get_selected_barcode();
-    console.log(selected_barcode);
+
     var flowcellId = flowcell_id;
 
     var url_run = '/api/v1/flowcells/' + flowcellId + '/';
