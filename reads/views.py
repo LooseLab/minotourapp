@@ -990,16 +990,6 @@ def minION_liverun_list(request,pk):
     return None
 
 
-@api_view(['GET'])
-def flowcell_list_active(request):
-
-    queryset = Flowcell.objects.distinct().filter(owner=request.user)
-
-    serializer = FlowcellSerializer(queryset, many=True, context={'request': request})
-
-    return Response(serializer.data)
-
-
 @api_view(['GET','POST'])
 def flowcell_list(request):
 
