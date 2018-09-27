@@ -26,7 +26,7 @@ from alignment.models import PafRoughCov, PafStore, PafSummaryCov
 from assembly.models import GfaStore, GfaSummary
 from communication.utils import *
 from jobs.models import JobMaster
-from reads.models import Barcode, FastqRead, Run, HistogramSummary, FlowcellSummaryBarcode, Flowcell
+from reads.models import Barcode, FastqRead, Run, HistogramSummary, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus
 from reads.services import (save_flowcell_histogram_summary, save_flowcell_channel_summary, save_flowcell_summary_barcode,
                             save_flowcell_statistic_barcode)
 from reference.models import ReferenceInfo
@@ -821,6 +821,16 @@ def update_flowcell_details():
     flowcell_list = Flowcell.objects.all()
 
     for flowcell in flowcell_list:
+
+        #
+        # This block update flowcell start_time based on the
+        # MinIONRunStatus or the FlowcellSummaryBarcode
+        #
+        minion_run_status_first = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell).order_by('minKNOW_start_time').first()
+
+        if minion_run_status_first:
+
+            flowcell.start_time = minion_run_status_first.minKNOW_start_time
 
         flowcell_summary_list = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).filter(barcode_name='All reads')
 
