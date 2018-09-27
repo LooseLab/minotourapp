@@ -57,12 +57,14 @@ function drawPie(countedData, pie, arc, svg) {
     slice.exit().remove();
 }
 // TODO this could be more effeicent as it is sometimes called unnecessarily;
-function topLevelDrawDonut(flowCellId, selectedBarcode){
-    drawDonut(flowCellId, selectedBarcode);
-    updateDonut = setInterval(drawDonut, 60000, flowCellId);
+function topLevelDrawDonut(flowCellId){
+
+    drawDonut(flowCellId);
+
 }
 
 function drawDonut(flowCellId, selectedBarcode) {
+    var selectedBarcode = get_selected_barcode();
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     if(flowcell_selected_tab_input.value !== "Metagenomics"){
         clearInterval(updateDonut);
@@ -163,4 +165,5 @@ function drawDonut(flowCellId, selectedBarcode) {
         // Draw a new pie chart
         drawPie(data1, pie, arc, svg);
     });
+    let timmyDonut = setTimeout(drawDonut, 60000, flowCellId, selectedBarcode);
 }
