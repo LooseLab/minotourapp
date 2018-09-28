@@ -92,12 +92,13 @@ def cent_sankey_two(request):
     source_target_df = pd.DataFrame(list(queryset))
     # If the database is empty return an empty list
     if source_target_df.empty:
-        print("empty")
         return Response({}, status=204)
 
     barcode_df = pd.DataFrame(list(SankeyLinksBarcode.objects.filter(link__flowcell_id=flowcell_id,
                                                                      link__task__id=task_id,
                                                                      barcode=selected_barcode).values()))
+    if barcode_df.empty:
+        return Response({}, status=204)
     # Merge barcode values onto dataframe
     source_target_df = pd.merge(source_target_df, barcode_df, how="inner", on="tax_id")
     # get a subset df of all the species rows
@@ -108,7 +109,6 @@ def cent_sankey_two(request):
     source_target_df = source_target_df[source_target_df["tax_id"].isin(temp_species_df["tax_id"])]
 
     # Drop unnecessary columns from DataFrame
-    print(source_target_df.keys())
     source_target_df.drop(columns=["flowcell_id", "id_x", "id_y", "tax_id", "target_tax_level",
                                    "task_id", "link_id"], inplace=True)
     # Set MultiIndex to group source to target
@@ -167,19 +167,21 @@ def vis_table_or_donut_data(request):
                                                  barcode=barcode)
     # Create a dataframe from the results of the querying the database
     centoutput_df = pd.DataFrame(list(queryset.values()))
-
+    # if there is no data in the database (yet) return 204
+    if centoutput_df.empty:
+        return Response([], status=204)
     names = CentOutput.objects.filter(flowcell__id=flowcell_id, task__id=task_id).values()
 
     names_df = pd.DataFrame(list(names))
-
+    # if there is no names data
+    if names_df.empty:
+        return Response([], status=204)
     names_df.set_index("tax_id", inplace=True)
     centoutput_df.set_index("tax_id", inplace=True)
 
     centoutput_df["name"] = names_df["name"]
 
-    # if there is no data in the database (yet) return 204
-    if centoutput_df.empty:
-        return Response([], status=204)
+
     centoutput_df.drop(columns=["output_id"], inplace=True)
 
     # create dataframe of all the Lineages we have stored in the database
@@ -242,7 +244,6 @@ def vis_table_or_donut_data(request):
         -------
 
         """
-        print(clade)
         sumtitle = "summed_" + clade
         # create temp df with just the number of reads and the member of that clade
         temp_df = df[[clade, sumtitle]]

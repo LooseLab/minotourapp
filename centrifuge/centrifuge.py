@@ -1,6 +1,7 @@
 import subprocess
 from io import StringIO
 import pandas as pd
+from celery.utils.log import get_task_logger
 from ete3 import NCBITaxa
 import numpy as np
 from centrifuge.models import CentOutput, LineageValues, MetaGenomicsMeta, SankeyLinks, CentOutputBarcoded, SankeyLinksBarcode
@@ -13,10 +14,167 @@ from django.utils import timezone
 from datetime import datetime
 import time as timmy
 from minotourapp.utils import get_env_variable
+from django.db.models import ObjectDoesNotExist
 from centrifuge.mapping import Metamap
 
 
+logger = get_task_logger(__name__)
+
 # TODO del unused df and things
+
+def barcode_calculations(gb_df, ho_df):
+    """
+    Return the main cent output data frame with the barcode only result concatenated on
+    :param gb_df: barcode data frame group data frame, one for each barcode
+    :param ho_df: the main results data frame
+    :return: A new df with the result for barcode appended
+    """
+
+    gb_df_gb = gb_df.groupby("tax_id")
+    # calculate total unique matches for this species in this barcode
+    sum_unique = gb_df_gb["unique"].sum()
+    # calculate the total matches fot this species in this barcode
+    num_matches = gb_df_gb.size()
+    gb_df.drop(columns=["readID", "seqID", "numMatches", "unique"], inplace=True)
+    gb_df.drop_duplicates(subset=["barcode", "name"], keep="first", inplace=True)
+
+    # combine the dataframes
+    gb_ap = pd.concat([sum_unique, num_matches, gb_df["name"]], axis=1)
+    ho_df = ho_df.append(gb_ap)
+    return ho_df
+
+
+def centoutput_bulk_list(row, centoutput_insert_list):
+    """
+    Append a CentOutput object to a list  for each row in a dataframe
+    :param centoutput_insert_list: The list to append the centoutput objects to
+    :param row: the row from the dataframe
+    :return: The list of newly created objects
+    """
+    centoutput_insert_list.append(CentOutput(name=row["name"], tax_id=row["tax_id"],
+                                             flowcell=row["flowcell"], task=row["task"]))
+    return centoutput_insert_list
+
+
+def bulk_create_list(row, bulk_insert_list_bar, job_master):
+    """
+    Create barcoded lists
+    :param job_master: The job_master object for this task run
+    :param bulk_insert_list_bar: The list to append the objects to
+    :param row: The dataframe row
+    :return: The list of newly created objects
+    """
+    try:
+        cent = CentOutput.objects.get(tax_id=row["tax_id"], task__id=job_master.id)
+        cent_bar = CentOutputBarcoded(num_matches=row["num_matches"],
+                                      sum_unique=row["sum_unique"],
+                                      output=cent,
+                                      tax_id=row["tax_id"],
+                                      barcode=row["barcode"])
+        bulk_insert_list_bar.append(cent_bar)
+    except ObjectDoesNotExist:
+        logger.info("<<<<<")
+        logger.info("Cent Object doesn't exist")
+        logger.info("No matching entry for tax_id {} and task_id {}".format(row["tax_id"], job_master.id))
+        logger.info("<<<<<")
+    return bulk_insert_list_bar
+
+
+def update_bar_values(row, flowcell_job_id, flowcell_id):
+    """
+
+    :param flowcell_id: The flowcell_id for this task
+    :param flowcell_job_id: The id for the job_master for this task run
+    :param row: The data frame row
+    :return: The list of newly created objects
+    """
+    CentOutputBarcoded.objects.filter(tax_id=row["tax_id"], barcode=row["barcode"],
+                                      output__task__id=flowcell_job_id,
+                                      output__flowcell__id=flowcell_id).update(
+        num_matches=row["updated_num_matches"], sum_unique=row["updated_sum_unique"])
+
+
+def subspecies_determine(name):
+    """
+
+    Parameters
+    ----------
+    name - (type string) The name of the strain
+
+    Returns - (type String) The subspecies as a string
+    -------
+
+    """
+    # if the name is a string, not a float
+    if type(name) is str:
+
+        if "subsp." in name:
+            basestring = name.split("subsp.", 1)[0]
+            string = name.split("subsp.", 1)[1]
+            string = string.split(" ")[1]
+            subspecies = basestring + " subsp. " + string
+            return subspecies
+    else:
+        pass
+
+
+def sankey_bulk_insert_list(row, sankey_link_insert_list):
+    """
+    apply to the dataframe and create sankeylinks objects for each row
+    :param sankey_link_insert_list: The list to append the created sankey links objects to
+    :param row: The data frame row
+    :return: The list of created objects
+    """
+    sankey_link_insert_list.append(SankeyLinks(flowcell=row["flowcell"], source=row["source"],
+                                               target=row["target"],
+                                               tax_id=row["tax_id"],
+                                               task=row["job_master"],
+                                               target_tax_level=row["target_tax_level"]))
+    return sankey_link_insert_list
+
+
+# TODO very inefficient database pounding. Rewrite first get into filter with dict lookup
+def sankey_bulk_bar_insert(row, flowcell_id, flowcell_job_id):
+    """
+    Create or update the barcode objects in the database
+    :param row: The dataframe row
+    :param flowcell_id: The primary key for the flowcell the task is being run on
+    :param flowcell_job_id: The Pk of the task ID
+    :return: Nothing
+    """
+    try:
+        link = SankeyLinks.objects.get(tax_id=row["tax_id"], flowcell=row["flowcell"], task=row["job_master"],
+                                       target_tax_level=row["target_tax_level"])
+        SankeyLinksBarcode.objects.update_or_create(
+            link__flowcell__id=flowcell_id,
+            link__task__id=flowcell_job_id,
+            tax_id=row["tax_id"],
+            barcode=row["barcode"],
+            defaults={"link": link, "tax_id": row["tax_id"], "value": row["value"], "barcode": row["barcode"]}
+        )
+    except ObjectDoesNotExist:
+        logger.info("<<<<<")
+        logger.info("Cent Object doesn't exist")
+        logger.info("No matching entry for tax_id {} and target level {}".format(row["tax_id"],
+                                                                                 row["target_tax_level"]))
+        logger.info("<<<<<")
+
+
+def lineages_bulk_insert_list(row, lineages_insert_list):
+    """
+    Apply function to the dataframe to populate a list with a LineageValue for each row
+    :param lineages_insert_list: List to add new created objects to
+    :param row: The row of the dataframe
+    :return: The list of newly created objects
+    """
+    lineages_insert_list.append(LineageValues(superkingdom=row["superkingdom"], phylum=row["phylum"],
+                                              tax_id=row["tax_id"], classy=row["class"],
+                                              order=row["order"],
+                                              family=row["family"], genus=row["genus"],
+                                              species=row["species"],
+                                              subspecies=row["subspecies"], strain=row["strain"]
+                                              ))
+    return lineages_insert_list
 
 
 class Centrifuger:
@@ -105,12 +263,12 @@ class Centrifuger:
         cursor = FastqRead.objects.filter(run__flowcell_id__in={self.flowcell_id})
         while self.scan:
             iteration_count += 1
-            print("id is {}".format(self.flowcell_id))
+            logger.info("id is {}".format(self.flowcell_id))
 
             # return all currently present reads
             # Get the total number of reads in the database for this flowcell
             if not cursor:
-                print("no reads in database")
+                logger.info("no reads in database")
                 timmy.sleep(10)
                 continue
             doc_no = int(cursor.count())
@@ -125,27 +283,30 @@ class Centrifuger:
             metadata.number_of_reads = doc_no
             metadata.save()
 
-            print("found {} reads in the database for metagenomics on flowcell {}".format(doc_no, self.flowcell_id))
-            print("last_read_id is {} and self.last_read_id is {}".format(last_read_id, self.last_read))
+            logger.info("found {} reads in the database for metagenomics on flowcell {}".format(
+                doc_no,
+                self.flowcell_id)
+            )
+            logger.info("last_read_id is {} and self.last_read_id is {}".format(last_read_id, self.last_read))
 
             # If the last read id that we have retrieved is the same as it was last iterations
             if self.last_read == last_read_id:
                 # set the finish time
-                print("if all reads finished")
+                logger.info("if all reads finished")
                 self.scan = False
                 break
             # If less than 500 reads have appeared since last time, centrifuge them then stop scanning
             elif last_read_id - self.last_read < 100:
-                print("elif less than 100")
+                logger.info("elif less than 100")
                 self.scan = False
             # Else Just update the last reads id on the self object and continue
             else:
-                print("elsey more reads")
+                logger.info("elsey more reads")
                 self.last_read = last_read_id
 
             # Get all the reads skipping all we did last time
 
-            print("slef.skip is {} and limit is {}".format(self.skip, doc_no))
+            logger.info("slef.skip is {} and limit is {}".format(self.skip, doc_no))
             # create python list for zipping
             sequence_data = list(cursor.values_list("fastqreadextra__sequence", flat=True)[self.skip:doc_no])
             # create list of read ids for zipping
@@ -157,8 +318,8 @@ class Centrifuger:
             # update skip number
             # TODO UNCOMMENT
             self.skip = doc_no
-            print("\n \n \n")
-            print("number of reads in this iteration is {}".format(len(tupley_list)))
+            logger.info("\n \n \n")
+            logger.info("number of reads in this iteration is {}".format(len(tupley_list)))
 
             # create fastq string by joining the read_id and sequence in the format, for all docs in cursor
             fastq = "".join([str(">read_id=" + c[0] + ",barcode=" + c[2] + "\n" + c[1] + "\n")
@@ -169,7 +330,7 @@ class Centrifuger:
             del read_ids
             del tupley_list
             # Write the generated fastq file to stdin, passing it to the command
-            print("centrifuging...")
+            logger.info("centrifuging...")
             # Use Popen to run the centrifuge command
             out, err = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE) \
                 .communicate(input=str.encode(fastq))
@@ -179,7 +340,7 @@ class Centrifuger:
             cent_out = out.decode()
             # total number of lines of centrifuge output dealt with
             total_centout += cent_out.count("\n") - 1
-            print("number of centrifuge output lines is {}".format(total_centout))
+            logger.info("number of centrifuge output lines is {}".format(total_centout))
             # output fields is the column headers for the pandas data frame
             output_fields = ["readID", "seqID", "taxID", "numMatches"]
             # create the DataFrame from the output
@@ -221,8 +382,8 @@ class Centrifuger:
             # the number of rows in the corresponding grouped_by
             # table
             df["num_matches"] = gb.size()
-
-            temp_targets = ["Escherichia coli", "Bacillus cereus"]
+            # TODO future mapping target
+            # temp_targets = ["Escherichia coli", "Bacillus cereus"]
 
             # name_df = df[df["name"].isin(temp_targets)]
             # if not name_df.empty:
@@ -231,27 +392,6 @@ class Centrifuger:
             #     m.map_the_reads()
             barcode_df = pd.DataFrame()
             # TODO vectorise these bad boys
-
-            def barcode_calculations(gb_df, ho_df):
-                """
-                Return the main cent output data frame with the barcode only result concatenated on
-                :param gb_df: barcode data frame group data frame, one for each barcode
-                :param ho_df: the main results data frame
-                :return: A new df with the result for barcode appended
-                """
-
-                gb_df_gb = gb_df.groupby("tax_id")
-                # calculate total unique matches for this species in this barcode
-                sum_unique = gb_df_gb["unique"].sum()
-                # calculate the total matches fot this species in this barcode
-                num_matches = gb_df_gb.size()
-                gb_df.drop(columns=["readID", "seqID", "numMatches", "unique"], inplace=True)
-                gb_df.drop_duplicates(subset=["barcode", "name"], keep="first", inplace=True)
-
-                # combine the dataframes
-                gb_ap = pd.concat([sum_unique, num_matches, gb_df["name"]], axis=1)
-                ho_df = ho_df.append(gb_ap)
-                return ho_df
 
             unique_barcode = set(barcodes)
             if len(unique_barcode) > 1:
@@ -283,25 +423,14 @@ class Centrifuger:
             df["barcode"] = "All reads"
             prev_df_tax_ids = list(queryset.values_list("tax_id", flat=True))
             # ###### BULK CREATE CENTOUTPUT OBJECTS ########
+            # Give each row a flowcell object cell, as part of the flowcell_id series
             df["flowcell"] = flowcell
             # same with task from Jobmaster
             df["task"] = job_master
             cent_to_create = df[~df["tax_id"].isin(prev_df_tax_ids)]
             centoutput_insert_list = []
-            # Give each row a flowcell object cell, as part of the flowcell_id series
-
-            def centoutput_bulk_list(row):
-                """
-                Append a CentoutPut object to a list  for each row in a datframe
-                :param row: the row from the dataframe
-                :return:
-                """
-                centoutput_insert_list.append(CentOutput(name=row["name"], tax_id=row["tax_id"],
-                                                         flowcell=row["flowcell"], task=row["task"]))
-                return
-
             # apply row wise
-            cent_to_create.apply(centoutput_bulk_list, axis=1)
+            centoutput_insert_list = cent_to_create.apply(centoutput_bulk_list, args=(centoutput_insert_list,), axis=1)
             CentOutput.objects.bulk_create(centoutput_insert_list)
 
             df.set_index("tax_id", inplace=True)
@@ -311,21 +440,6 @@ class Centrifuger:
             # append previous data frame to current
             bar_queryset = CentOutputBarcoded.objects.filter(output__flowcell__id=self.flowcell_id,
                                                              output__task__id=self.flowcell_job_id).values()
-
-            def bulk_create_list(row):
-                """
-                Create barcoded lists
-                :param row:
-                :return:
-                """
-                cent = CentOutput.objects.get(tax_id=row["tax_id"], task__id=job_master.id)
-                cent_bar = CentOutputBarcoded(num_matches=row["num_matches"],
-                                              sum_unique=row["sum_unique"],
-                                              output=cent,
-                                              tax_id=row["tax_id"],
-                                              barcode=row["barcode"])
-                bulk_insert_list_bar.append(cent_bar)
-
             bulk_insert_list_bar = []
 
             if bar_queryset:
@@ -343,28 +457,22 @@ class Centrifuger:
                                                                                    "tax_id"])["num_matches"].sum()
                 to_update_bar_df = to_update_bar_df[~to_update_bar_df.index.duplicated(keep="first")]
                 to_update_bar_df.reset_index(inplace=True)
-
-                def update_bar_values(row):
-                    """
-
-                    :param row:
-                    :return:
-                    """
-                    CentOutputBarcoded.objects.filter(tax_id=row["tax_id"], barcode=row["barcode"],
-                                                      output__task__id=self.flowcell_job_id,
-                                                      output__flowcell__id=self.flowcell_id).update(
-                        num_matches=row["updated_num_matches"], sum_unique=row["updated_sum_unique"])
-                to_update_bar_df.apply(update_bar_values, axis=1)
+                # TODO update the function
+                to_update_bar_df.apply(update_bar_values, args=(self.flowcell_job_id, self.flowcell_job_id,),
+                                       axis=1)
 
                 # ###### Update existing barcode output ######
                 to_create_bar_df.drop_duplicates(subset=["tax_id", "barcode"], inplace=True, keep=False)
                 to_create_bar_df = to_create_bar_df[to_create_bar_df["temp"] == "N"]
-                to_create_bar_df.apply(bulk_create_list, axis=1)
+                bulk_insert_list_bar = to_create_bar_df.apply(bulk_create_list, args=(bulk_insert_list_bar,
+                                                                                      job_master,)
+                                                              , axis=1)
                 CentOutputBarcoded.objects.bulk_create(bulk_insert_list_bar)
                 df.drop(columns=["temp"], inplace=True)
 
             else:
-                df.apply(bulk_create_list, axis=1)
+                bulk_insert_list_bar = df.apply(bulk_create_list, args=(bulk_insert_list_bar, job_master,),
+                                                axis=1)
                 CentOutputBarcoded.objects.bulk_create(bulk_insert_list_bar)
 
             # create new defaultDict which creates a default dict for missing values, don't think we ever need this
@@ -408,31 +516,8 @@ class Centrifuger:
             # strain and not the subspecies above it so this function splits out the subspecies and adds it to a new
             # series
 
-            def subspecies_determine(name):
-                """
-
-                Parameters
-                ----------
-                name - (type string) The name of the strain
-
-                Returns - (type String) The subspecies as a string
-                -------
-
-                """
-                # if the name is a string, not a float
-                if type(name) is str:
-
-                    if "subsp." in name:
-                        basestring = name.split("subsp.", 1)[0]
-                        string = name.split("subsp.", 1)[1]
-                        string = string.split(" ")[1]
-                        subspecies = basestring + " subsp. " + string
-                        return subspecies
-                else:
-                    pass
-
             # lin_df.fillna("NA")
-            print("determining subspecies")
+            logger.info("determining subspecies")
             # create new additional subspecies column, from strains column which has subspecies above it in taxa level
             lin_df["subStrainSpecies"] = lin_df["strain"].map(subspecies_determine)
             # merge new subspecies column with existing column
@@ -508,38 +593,18 @@ class Centrifuger:
             # to_create_df["flowcell"] = flowcell
             # to_update_df["flowcell"] = flowcell
             if not to_create_sank_df.empty:
-                def sankey_bulk_insert_list(row):
-                    """
-                    apply to the dataframe and create sankeylinks objects for each row
-                    :param row: The dataframe row
-                    :return:
-                    """
-                    sankey_link_insert_list.append(SankeyLinks(flowcell=row["flowcell"], source=row["source"],
-                                                               target=row["target"],
-                                                               tax_id=row["tax_id"],
-                                                               task=row["job_master"],
-                                                               target_tax_level=row["target_tax_level"]))
-                    return
-
                 # Perform the apply
-                to_create_sank_df.apply(sankey_bulk_insert_list, axis=1)
+                sankey_link_insert_list = to_create_sank_df.apply(sankey_bulk_insert_list,
+                                                                  args=(sankey_link_insert_list,),
+                                                                  axis=1)
                 # Bulk create the objects
                 SankeyLinks.objects.bulk_create(sankey_link_insert_list)
 
             if not source_target_df.empty:
-                # TODO very inefficient database pounding. Rewrite first get into filter with dict lookup
-                def sankey_bulk_bar_insert(row):
-                    link = SankeyLinks.objects.get(tax_id=row["tax_id"], flowcell=row["flowcell"], task=row["job_master"],
-                                                   target_tax_level=row["target_tax_level"])
-                    SankeyLinksBarcode.objects.update_or_create(
-                        link__flowcell__id=self.flowcell_id,
-                        link__task__id=self.flowcell_job_id,
-                        tax_id=row["tax_id"],
-                        barcode=row["barcode"],
-                        defaults={"link": link, "tax_id": row["tax_id"], "value": row["value"], "barcode": row["barcode"] }
-                    )
-
-                source_target_df.apply(sankey_bulk_bar_insert, axis=1)
+                # TODO slowest point in code
+                source_target_df.apply(sankey_bulk_bar_insert, args=(self.flowcell_id,
+                                                                     self.flowcell_job_id,)
+                                       , axis=1)
 
             # ##################### Back to the non sankey calculations ####################
             # Create a dataframe for lineages that aren't already in the table
@@ -553,22 +618,9 @@ class Centrifuger:
                 # list to contain the bulk insert object
                 lineages_insert_list = []
 
-                def lineages_bulk_insert_list(row):
-                    """
-                    Apply function to the dataframe to poulate a list with a LineageValue for each row
-                    :param row: The row of the dataframe
-                    :return:
-                    """
-                    lineages_insert_list.append(LineageValues(superkingdom=row["superkingdom"], phylum=row["phylum"],
-                                                              tax_id=row["tax_id"], classy=row["class"],
-                                                              order=row["order"],
-                                                              family=row["family"], genus=row["genus"],
-                                                              species=row["species"],
-                                                              subspecies=row["subspecies"], strain=row["strain"]
-                                                              ))
-                    return
-
-                new_lineages_for_saving_df.apply(lineages_bulk_insert_list, axis=1)
+                lineages_insert_list = new_lineages_for_saving_df.apply(lineages_bulk_insert_list,
+                                                                        args=(lineages_insert_list,)
+                                                                        , axis=1)
                 # Bulk create
                 LineageValues.objects.bulk_create(lineages_insert_list)
 
@@ -578,7 +630,7 @@ class Centrifuger:
             metadata.reads_classified = doc_no
             metadata.save()
             if iteration_count < 10:
-                print(iteration_count)
+                logger.info(iteration_count)
                 timmy.sleep(10)
         # if self.scan is false
         if not self.scan:
@@ -588,11 +640,11 @@ class Centrifuger:
             job_master.save()
             # set running to false. This means client stops querying
             # MetaGenomicsMeta.objects.filter(meta_id=self.foreign_key).update(running=False)
-            print("Finished all reads in database")
+            logger.info("Finished all reads in database")
 
             start_time = metadata.timestamp.replace(tzinfo=None)
             end_time = timezone.now().replace(tzinfo=None)
             metadata.finish_time = str(end_time - start_time)
             metadata.save()
-            print("finished")
-            print("total centOut lines {}".format(total_centout))
+            logger.info("finished")
+            logger.info("total centOut lines {}".format(total_centout))

@@ -5,6 +5,7 @@ from reads.models import Barcode
 from reads.models import Flowcell
 
 
+
 class SankeyLinks(models.Model):
     """
         :purpose: Store the centrifuge classifier output in the format for the sankey diagram

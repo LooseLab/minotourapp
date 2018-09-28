@@ -14,3 +14,4 @@ minUPfastq/*
 minUPfastq
 logfile
 celerybeat*
+centrifuge_report.tsv
