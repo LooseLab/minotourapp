@@ -280,7 +280,7 @@ def flowcellreferences_used_by_run(request, flowcell_id):
 
     references = PafRoughCov.objects.\
         filter(flowcell_id=flowcell_id).\
-        values('chromosome__id', 'barcode__barcodegroup', 'barcode__name', 'reference', 'reference__reference_name', 'chromosome__line_name', 'read_type', 'read_type__name').distinct()
+        values('chromosome__id', 'barcode_name', 'reference', 'reference__reference_name', 'chromosome__line_name', 'read_type', 'read_type__name').distinct()
 
-    result = [{'flowcell_id': flowcell_id, 'chromosome_id': r['chromosome__id'], 'chromosome_name': r['chromosome__line_name'], 'barcode_id': r['barcode__barcodegroup'], 'barcode_name': r['barcode__name'], 'reference_id': r['reference'], 'reference_name': r['reference__reference_name'], 'read_type_id': r['read_type'], 'read_type_name': r['read_type__name']} for r in references]
+    result = [{'flowcell_id': flowcell_id, 'chromosome_id': r['chromosome__id'], 'chromosome_name': r['chromosome__line_name'], 'barcode_name': r['barcode_name'], 'reference_id': r['reference'], 'reference_name': r['reference__reference_name'], 'read_type_id': r['read_type'], 'read_type_name': r['read_type__name']} for r in references]
     return HttpResponse(json.dumps(list(result)), content_type="application/json")
