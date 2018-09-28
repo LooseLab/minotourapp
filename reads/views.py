@@ -990,22 +990,13 @@ def minION_liverun_list(request,pk):
     return None
 
 
-@api_view(['GET'])
-def flowcell_list_active(request):
-
-    queryset = Flowcell.objects.distinct().filter(owner=request.user)
-
-    serializer = FlowcellSerializer(queryset, many=True, context={'request': request})
-
-    return Response(serializer.data)
-
-
-@api_view(['GET','POST'])
+@api_view(['GET', 'POST'])
 def flowcell_list(request):
 
     if request.method == 'GET':
 
         queryset = Flowcell.objects.filter(owner=request.user)
+
         flowcells = []
 
         for record in queryset:
@@ -1025,15 +1016,18 @@ def flowcell_list(request):
 
             flowcells.append(flowcell)
 
-        # serializer = FlowcellSerializer(queryset, many=True, context={'request': request})
-        # return Response(serializer.data)
         return JsonResponse({'data': flowcells})
 
-    elif request.method == 'POST':
+    else:
+
         serializer = FlowcellSerializer(data=request.data, context={'request': request})
+
         if serializer.is_valid():
+
             serializer.save(owner=request.user)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

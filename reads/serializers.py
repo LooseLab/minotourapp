@@ -445,24 +445,32 @@ class RunHistogramSummarySerializer(serializers.ModelSerializer):
 class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
 
     barcodes = BarcodeSerializer(many=True, read_only=False, required=False)
+
     runs = RunSerializer(many=True, read_only=False, required=False)
 
     class Meta:
+
         model = Flowcell
+
         fields = ('url', 'name', 'runs', 'barcodes', 'id')
 
     def create(self, validated_data):
 
-        flowcell = Flowcell(**validated_data)
+        #
+        # Flowcell names must be unique for a particular user
+        #
+        flowcell, created = Flowcell.objects.get_or_create(**validated_data)
         flowcell.save()
 
-        job_type = JobType.objects.filter(name="ChanCalc")
+        if created:
 
-        JobMaster.objects.create(
-            flowcell=flowcell,
-            job_type=job_type[0],
-            last_read=0
-        )
+            job_type = JobType.objects.filter(name="ChanCalc")
+
+            JobMaster.objects.create(
+                flowcell=flowcell,
+                job_type=job_type[0],
+                last_read=0
+            )
 
         return flowcell
 

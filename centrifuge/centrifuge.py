@@ -236,6 +236,7 @@ class Centrifuger:
         centrifuge_path = get_env_variable("MT_CENTRIFUGE")
         index_path = get_env_variable("MT_CENTRIFUGE_INDEX")
         cmd = "perl " + centrifuge_path + " -f --mm -x " + index_path + " -"
+
         # Counter for total centOut
         total_centout = 0
         # Instance of the Ncbi taxa class, for taxonomic id manipulation
@@ -253,10 +254,21 @@ class Centrifuger:
         # Create a MetaData object about the Classification analysis, used to populate
         # the header on the visualisation.html page
         flowcell = Flowcell.objects.get(pk=self.flowcell_id)
-        MetaGenomicsMeta(run_time=time, flowcell=flowcell, running=True, number_of_reads=0,
-                         reads_classified=0, task=job_master).save()
+
+        metadata = MetaGenomicsMeta(
+            run_time=time,
+            flowcell=flowcell,
+            running=True,
+            number_of_reads=0,
+            reads_classified=0,
+            task=job_master
+        )
+
+        metadata.save()
+
         # Get the object that we just created back out
-        metadata = MetaGenomicsMeta.objects.get(flowcell__id=self.flowcell_id, task__id=job_master.id)
+        # metadata = MetaGenomicsMeta.objects.get(flowcell__id=self.flowcell_id, task__id=job_master.id)
+
 
         # While self.scan is true we query the fastqreads model for new readss that have appearedsince last time
         iteration_count = 0
