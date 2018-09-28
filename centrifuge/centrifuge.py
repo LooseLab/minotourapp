@@ -44,40 +44,36 @@ def barcode_calculations(gb_df, ho_df):
     return ho_df
 
 
-def centoutput_bulk_list(row, centoutput_insert_list):
+def centoutput_bulk_list(row):
     """
     Append a CentOutput object to a list  for each row in a dataframe
-    :param centoutput_insert_list: The list to append the centoutput objects to
     :param row: the row from the dataframe
     :return: The list of newly created objects
     """
-    centoutput_insert_list.append(CentOutput(name=row["name"], tax_id=row["tax_id"],
-                                             flowcell=row["flowcell"], task=row["task"]))
-    return centoutput_insert_list
+    return CentOutput(name=row["name"], tax_id=row["tax_id"],
+                                             flowcell=row["flowcell"], task=row["task"])
 
 
-def bulk_create_list(row, bulk_insert_list_bar, job_master):
+def bulk_create_list(row, job_master):
     """
     Create barcoded lists
     :param job_master: The job_master object for this task run
-    :param bulk_insert_list_bar: The list to append the objects to
     :param row: The dataframe row
-    :return: The list of newly created objects
+    :return: The  newly created objects
     """
     try:
         cent = CentOutput.objects.get(tax_id=row["tax_id"], task__id=job_master.id)
-        cent_bar = CentOutputBarcoded(num_matches=row["num_matches"],
+        return CentOutputBarcoded(num_matches=row["num_matches"],
                                       sum_unique=row["sum_unique"],
                                       output=cent,
                                       tax_id=row["tax_id"],
                                       barcode=row["barcode"])
-        bulk_insert_list_bar.append(cent_bar)
+
     except ObjectDoesNotExist:
         logger.info("<<<<<")
         logger.info("Cent Object doesn't exist")
         logger.info("No matching entry for tax_id {} and task_id {}".format(row["tax_id"], job_master.id))
         logger.info("<<<<<")
-    return bulk_insert_list_bar
 
 
 def update_bar_values(row, flowcell_job_id, flowcell_id):
@@ -118,19 +114,18 @@ def subspecies_determine(name):
         pass
 
 
-def sankey_bulk_insert_list(row, sankey_link_insert_list):
+def sankey_bulk_insert_list(row):
     """
     apply to the dataframe and create sankeylinks objects for each row
     :param sankey_link_insert_list: The list to append the created sankey links objects to
     :param row: The data frame row
     :return: The list of created objects
     """
-    sankey_link_insert_list.append(SankeyLinks(flowcell=row["flowcell"], source=row["source"],
-                                               target=row["target"],
-                                               tax_id=row["tax_id"],
-                                               task=row["job_master"],
-                                               target_tax_level=row["target_tax_level"]))
-    return sankey_link_insert_list
+    return SankeyLinks(flowcell=row["flowcell"], source=row["source"],
+                       target=row["target"],
+                       tax_id=row["tax_id"],
+                       task=row["job_master"],
+                       target_tax_level=row["target_tax_level"])
 
 
 # TODO very inefficient database pounding. Rewrite first get into filter with dict lookup
@@ -160,21 +155,19 @@ def sankey_bulk_bar_insert(row, flowcell_id, flowcell_job_id):
         logger.info("<<<<<")
 
 
-def lineages_bulk_insert_list(row, lineages_insert_list):
+def lineages_bulk_insert_list(row):
     """
     Apply function to the dataframe to populate a list with a LineageValue for each row
-    :param lineages_insert_list: List to add new created objects to
     :param row: The row of the dataframe
     :return: The list of newly created objects
     """
-    lineages_insert_list.append(LineageValues(superkingdom=row["superkingdom"], phylum=row["phylum"],
-                                              tax_id=row["tax_id"], classy=row["class"],
-                                              order=row["order"],
-                                              family=row["family"], genus=row["genus"],
-                                              species=row["species"],
-                                              subspecies=row["subspecies"], strain=row["strain"]
-                                              ))
-    return lineages_insert_list
+    return LineageValues(superkingdom=row["superkingdom"], phylum=row["phylum"],
+                         tax_id=row["tax_id"], classy=row["class"],
+                         order=row["order"],
+                         family=row["family"], genus=row["genus"],
+                         species=row["species"],
+                         subspecies=row["subspecies"], strain=row["strain"]
+                         )
 
 
 class Centrifuger:
@@ -442,8 +435,8 @@ class Centrifuger:
             cent_to_create = df[~df["tax_id"].isin(prev_df_tax_ids)]
             centoutput_insert_list = []
             # apply row wise
-            centoutput_insert_list = cent_to_create.apply(centoutput_bulk_list, args=(centoutput_insert_list,), axis=1)
-            CentOutput.objects.bulk_create(centoutput_insert_list)
+            centoutput_insert_list = cent_to_create.apply(centoutput_bulk_list, axis=1)
+            CentOutput.objects.bulk_create(list(centoutput_insert_list.values))
 
             df.set_index("tax_id", inplace=True)
 
@@ -476,16 +469,15 @@ class Centrifuger:
                 # ###### Update existing barcode output ######
                 to_create_bar_df.drop_duplicates(subset=["tax_id", "barcode"], inplace=True, keep=False)
                 to_create_bar_df = to_create_bar_df[to_create_bar_df["temp"] == "N"]
-                bulk_insert_list_bar = to_create_bar_df.apply(bulk_create_list, args=(bulk_insert_list_bar,
-                                                                                      job_master,)
+                bulk_insert_list_bar = to_create_bar_df.apply(bulk_create_list, args=(job_master,)
                                                               , axis=1)
-                CentOutputBarcoded.objects.bulk_create(bulk_insert_list_bar)
+                CentOutputBarcoded.objects.bulk_create(list(bulk_insert_list_bar.values))
                 df.drop(columns=["temp"], inplace=True)
 
             else:
-                bulk_insert_list_bar = df.apply(bulk_create_list, args=(bulk_insert_list_bar, job_master,),
+                bulk_insert_list_bar = df.apply(bulk_create_list, args=(job_master,),
                                                 axis=1)
-                CentOutputBarcoded.objects.bulk_create(bulk_insert_list_bar)
+                CentOutputBarcoded.objects.bulk_create(list(bulk_insert_list_bar.values))
 
             # create new defaultDict which creates a default dict for missing values, don't think we ever need this
             # default behaviour
@@ -606,11 +598,10 @@ class Centrifuger:
             # to_update_df["flowcell"] = flowcell
             if not to_create_sank_df.empty:
                 # Perform the apply
-                sankey_link_insert_list = to_create_sank_df.apply(sankey_bulk_insert_list,
-                                                                  args=(sankey_link_insert_list,),
-                                                                  axis=1)
+                sankey_link_insert_list = to_create_sank_df.apply(sankey_bulk_insert_list, axis=1)
+
                 # Bulk create the objects
-                SankeyLinks.objects.bulk_create(sankey_link_insert_list)
+                SankeyLinks.objects.bulk_create(list(sankey_link_insert_list.values))
 
             if not source_target_df.empty:
                 # TODO slowest point in code
@@ -631,10 +622,9 @@ class Centrifuger:
                 lineages_insert_list = []
 
                 lineages_insert_list = new_lineages_for_saving_df.apply(lineages_bulk_insert_list,
-                                                                        args=(lineages_insert_list,)
-                                                                        , axis=1)
+                                                                        axis=1)
                 # Bulk create
-                LineageValues.objects.bulk_create(lineages_insert_list)
+                LineageValues.objects.bulk_create(list(lineages_insert_list.values))
 
             # Update the jobmaster object fields that are relevant
             job_master.last_read = last_read_id
