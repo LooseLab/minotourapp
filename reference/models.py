@@ -47,7 +47,7 @@ class ReferenceInfo(models.Model):
     )
 
     def __str__(self):
-        return self.reference_name
+        return self.name
 
 
 class ReferenceLine(models.Model):
