@@ -3,34 +3,46 @@ from django.db import models
 
 
 class ReferenceInfo(models.Model):
+    """
+    This class represents the genome references
+    used in the mapping and metagenomics tasks.
+    minoTour comes with the Ecoli reference.
+    """
 
-    reference_name = models.CharField(
+    name = models.CharField(
+
         max_length=512
     )
 
     filename = models.CharField(
+
         max_length=512
     )
 
     minimap2_index_file_location = models.CharField(
+
         max_length=512,
         null=True
     )
 
-    totalrefleN = models.BigIntegerField(
+    length = models.BigIntegerField(
 
+        default=0
     )
 
     private = models.BooleanField(
+
         default=False
     )
 
     users = models.ManyToManyField(
+
         settings.AUTH_USER_MODEL,
         blank=True
     )
 
     transcripts = models.BooleanField(
+
         default=False
     )
 

@@ -498,24 +498,22 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
     logger.info("---> last_read: {}".format(last_read))
     logger.info("---> inputtype: {}".format(inputtype))
 
+    REFERENCE_LOCATION = getattr(settings, "REFERENCE_LOCATION", None)
+
     if last_read is None:
         last_read = 0
 
     try:
 
         job_master = JobMaster.objects.get(pk=job_master_id)
-        job_master.running=True
+        job_master.running = True
         job_master.save()
-
-        REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
-
-        reference = ReferenceInfo.objects.get(pk=reference_info_id)
 
         reference_info = ReferenceInfo.objects.get(pk=reference_info_id)
 
         chromdict = dict()
 
-        chromosomes = reference.referencelines.all()
+        chromosomes = reference_info.referencelines.all()
 
         for chromosome in chromosomes:
 
@@ -523,7 +521,7 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
 
         minimap2 = reference.minimap2_index_file_location
 
-        minimap2_ref = os.path.join(REFERENCELOCATION, minimap2)
+        minimap2_ref = os.path.join(REFERENCE_LOCATION, minimap2)
 
         fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id, id__gt=int(last_read))[:1000]
 

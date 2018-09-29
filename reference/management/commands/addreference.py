@@ -22,20 +22,15 @@ class Command(BaseCommand):
         try:
             print("Processing Reference {}".format(options['reference']))
 
-            #print(os.path.basename(options['reference']))
-            REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
-
-            #print(REFERENCELOCATION)
+            REFERENCE_LOCATION = getattr(settings, "REFERENCE_LOCATION", None)
+            MINIMAP2 = getattr(settings, "MINIMAP2", None)
 
             srcname = options['reference']
-            dstname = os.path.join(REFERENCELOCATION, os.path.basename(options['reference']))
+            dstname = os.path.join(REFERENCE_LOCATION, os.path.basename(options['reference']))
 
-            if srcname.startswith('~') or  dstname.startswith('~'):
+            if srcname.startswith('~') or dstname.startswith('~'):
                 print('Path to reference file and env variable MT_REFERENCE_LOCATION must be absolute.')
                 exit()
-
-            #print('origin: {}'.format(srcname))
-            #print('destination: {}'.format(dstname))
 
             try:
                 shutil.copy(srcname, dstname)
@@ -45,7 +40,7 @@ class Command(BaseCommand):
                 print(error)
                 exit()
 
-            total_length=0
+            total_length = 0
             subfile=dict()
             for record in SeqIO.parse(dstname, "fasta"):
                 #print(record.id,len(record.seq))
@@ -54,28 +49,32 @@ class Command(BaseCommand):
             print("Total Reference Length={}".format(total_length))
             print(subfile)
 
-            cmd2 = "minimap2 -x map-ont -d {}/{}.mmi {}".format(REFERENCELOCATION,os.path.basename(options['reference']),dstname)
+            cmd2 = "{} -x map-ont -d {}/{}.mmi {}".format(
+                MINIMAP2,
+                REFERENCE_LOCATION,
+                os.path.basename(options['reference']),
+                dstname
+            )
+
             subprocess.call(cmd2, shell=True)
 
             minimap2_index_path = os.path.basename(options['reference']) + ".mmi"
 
-            print (minimap2_index_path)
-
-            refInfo, created1 = ReferenceInfo.objects.update_or_create(
+            reference_info, created1 = ReferenceInfo.objects.update_or_create(
                 reference_name=os.path.basename(options['reference']).split('.')[0],
                 filename=os.path.basename(options['reference']),
                 minimap2_index_file_location=minimap2_index_path,
                 totalrefleN=total_length
             )
-            refInfo.save()
+            reference_info.save()
 
             for line in subfile:
-                refLine, created2 = ReferenceLine.objects.update_or_create(
-                    reference=refInfo,
-                    line_name = line,
-                    chromosome_length = subfile[line]
+                reference_line, created2 = ReferenceLine.objects.update_or_create(
+                    reference=reference_info,
+                    line_name=line,
+                    chromosome_length=subfile[line]
                 )
-                refLine.save()
+                reference_line.save()
 
         except Exception as e:
             raise CommandError(repr(e))
