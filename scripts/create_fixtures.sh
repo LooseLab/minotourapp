@@ -1,6 +1,7 @@
 python ../manage.py dumpdata --indent 2 \
     reads.fastqreadtype \
-    reads.groupruntype \
-    reads.jobtype \
+    jobs.jobtype \
     reads.minioneventtype \
+    reference.referenceinfo \
+    reference.referenceline \
     > ../fixtures/auxiliary_data.json

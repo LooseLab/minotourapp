@@ -28,6 +28,41 @@
   }
 },
 {
+  "model": "reads.minioneventtype",
+  "pk": 1,
+  "fields": {
+    "name": "active"
+  }
+},
+{
+  "model": "reads.minioneventtype",
+  "pk": 2,
+  "fields": {
+    "name": "inactive"
+  }
+},
+{
+  "model": "reads.minioneventtype",
+  "pk": 3,
+  "fields": {
+    "name": "sequencing"
+  }
+},
+{
+  "model": "reads.minioneventtype",
+  "pk": 4,
+  "fields": {
+    "name": "unplugged"
+  }
+},
+{
+  "model": "reads.minioneventtype",
+  "pk": 5,
+  "fields": {
+    "name": "connected"
+  }
+},
+{
   "model": "jobs.jobtype",
   "pk": 1,
   "fields": {
@@ -92,7 +127,6 @@
     "private": false
   }
 },
-
 {
   "model": "jobs.jobtype",
   "pk": 7,
@@ -146,38 +180,25 @@
   }
 },
 {
-  "model": "reads.minioneventtype",
+  "model": "reference.referenceinfo",
   "pk": 1,
   "fields": {
-    "name": "active"
+    "name": "Ecoli",
+    "filename": "Ecoli.fa",
+    "minimap2_index_file_location": "Ecoli.fa.mmi",
+    "length": 0,
+    "private": false,
+    "transcripts": false,
+    "users": []
   }
 },
 {
-  "model": "reads.minioneventtype",
-  "pk": 2,
+  "model": "reference.referenceline",
+  "pk": 1,
   "fields": {
-    "name": "inactive"
-  }
-},
-{
-  "model": "reads.minioneventtype",
-  "pk": 3,
-  "fields": {
-    "name": "sequencing"
-  }
-},
-{
-  "model": "reads.minioneventtype",
-  "pk": 4,
-  "fields": {
-    "name": "unplugged"
-  }
-},
-{
-  "model": "reads.minioneventtype",
-  "pk": 5,
-  "fields": {
-    "name": "connected"
+    "reference": 1,
+    "line_name": "NC_000913.3",
+    "chromosome_length": 4641652
   }
 }
 ]
