@@ -61,10 +61,10 @@ class Command(BaseCommand):
             minimap2_index_path = os.path.basename(options['reference']) + ".mmi"
 
             reference_info, created1 = ReferenceInfo.objects.update_or_create(
-                reference_name=os.path.basename(options['reference']).split('.')[0],
+                name=os.path.basename(options['reference']).split('.')[0],
                 filename=os.path.basename(options['reference']),
                 minimap2_index_file_location=minimap2_index_path,
-                totalrefleN=total_length
+                length=total_length
             )
             reference_info.save()
 

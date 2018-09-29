@@ -186,7 +186,7 @@
     "name": "Ecoli",
     "filename": "Ecoli.fa",
     "minimap2_index_file_location": "Ecoli.fa.mmi",
-    "length": 0,
+    "length": 4641652,
     "private": false,
     "transcripts": false,
     "users": []
