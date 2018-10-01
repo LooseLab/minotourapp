@@ -12,8 +12,8 @@ class ReferenceInfoSerializer(serializers.HyperlinkedModelSerializer):
         fields = (
             'id',
             'url',
-            'reference_name',
-            'totalrefleN',
+            'name',
+            'length',
             'private',
         )
         read_only = (
