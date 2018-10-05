@@ -173,85 +173,32 @@ class PafRoughCov(models.Model):
 
 class PafSummaryCov(models.Model):
 
-    paf_store = models.ForeignKey(
+    job_master = models.ForeignKey(
 
-        PafStore,
-        on_delete=models.CASCADE
+        JobMaster,
+        on_delete=models.CASCADE,
+        related_name='paf_summary_cov_list'
     )
 
-    run = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='paf_summary', null=True, blank=True)
+    barcode_name = models.CharField(
 
-    flowcell = models.ForeignKey(Flowcell, on_delete=models.CASCADE, related_name='flowcell_paf_summary', null=True,
-                                 blank=True)
+        max_length=32
+    )
 
-    read_type = models.ForeignKey(FastqReadType, related_name='paf_summary_type')
+    reference_line_name = models.CharField(
 
-    barcode = models.ForeignKey(Barcode, related_name='paf_summary_barcode', null=True)
+        max_length=512
+    )
 
-    reference = models.ForeignKey(ReferenceInfo, related_name='paf_summary_reference')
+    read_count = models.BigIntegerField(
 
-    chromosome = models.ForeignKey(ReferenceLine, related_name='paf_summary_chromosome')
+        default=0
+    )
 
-    read_count = models.BigIntegerField(default=0)
+    total_length = models.BigIntegerField(
 
-    cumu_length = models.BigIntegerField(default=0)
-
-    def barcode_name(self):
-        try:
-            return self.barcode.name
-        except AttributeError:
-            return "undefined"
-
-    def barcode_group_name(self):
-        try:
-            return self.barcodegroup.name
-        except AttributeError:
-            return "undefined"
-
-    def read_type_name(self):
-        try:
-            return self.read_type.name
-        except AttributeError:
-            return "undefined"
-
-    def ref_name(self):
-        try:
-            return self.reference.reference_name
-        except AttributeError:
-            return "undefined"
-
-    def ref_len(self):
-        try:
-            return self.reference.length
-        except AttributeError:
-            return "undefined"
-
-    def chrom_name(self):
-        try:
-            return self.chromosome.line_name
-        except AttributeError:
-            return "undefined"
-
-    def chrom_len(self):
-        try:
-            return self.chromosome.chromosome_length
-        except AttributeError:
-            return "undefined"
-
-    def chrom_cover(self):
-        try:
-            return (round(self.cumu_length / self.chrom_len(), 3))
-        except AttributeError:
-            return "undefined"
-
-    def avg_read_len(self):
-        try:
-            return (round(self.cumu_length / self.read_count, 3))
-        except AttributeError:
-            return "undefined"
-
-    def __str__(self):
-        return "{} {} {}".format(self.run, self.reference, self.chromosome)
+        default=0
+    )
 
 
 @receiver(post_save, sender=PafStore)

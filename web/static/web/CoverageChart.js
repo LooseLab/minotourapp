@@ -37,15 +37,21 @@ CoverageChart.prototype.create_url = function () {
 
     console.log('Selected option: ' + selected_option.value);
 
+    // var value_combination = data[i]['task_id'] + '_' + data[i]['barcode_name'] + '_' + data[i]['read_type_id'] + '_' + '_' + data[i]['chromosome_id'];
+
     var value_combination = selected_option.value.split('_');
-    var run_id = value_combination[0];
-    var barcode_id = value_combination[1];
+    var task_id = value_combination[0];
+    // var run_id = value_combination[0];
+    var barcode_name = value_combination[1];
+    // var barcode_id = value_combination[1];
     var read_type_id = value_combination[2];
-    var reference_id = value_combination[3];
-    var chromosome_id = value_combination[4];
+    // var reference_id = value_combination[3];
+    var chromosome_id = value_combination[3];
+    // var chromosome_id = value_combination[4];
 
     //return "http://localhost:8000/api/v1/flowcells/1/pafcover/2/1/1/";
-    var url = "/api/v1/flowcells/" + run_id + "/pafcover/" + barcode_id + "/" + read_type_id + "/" + chromosome_id + "/";
+    var url = "/api/v1/flowcells/" + task_id + "/pafcover/" + barcode_name + "/" + read_type_id + "/" + chromosome_id + "/";
+    // var url = "/api/v1/flowcells/" + run_id + "/pafcover/" + barcode_id + "/" + read_type_id + "/" + chromosome_id + "/";
 
     return url;
 }

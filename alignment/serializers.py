@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from alignment.models import PafRoughCov, PafStore, PafSummaryCov
+from alignment.models import PafRoughCov, PafStore
 
 
 class PafStoreSerializer(serializers.HyperlinkedModelSerializer):
@@ -25,32 +25,6 @@ class PafRoughCovSerializer(serializers.HyperlinkedModelSerializer):
             'id',
         )
 
-class PafSummaryCovSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = PafSummaryCov
-        fields = (
-            'id',
-            'run',
-            'read_type',
-            'barcode',
-            'barcodegroup',
-            'reference',
-            'ref_name',
-            'ref_len',
-            'chromosome',
-            'chrom_name',
-            'chrom_len',
-            'read_count',
-            'cumu_length',
-            'chrom_cover',
-            'avg_read_len',
-            'read_type_name',
-            'barcode_name',
-            'barcode_group_name'
-        )
-        read_only = (
-            'id',
-        )
 
 class PafRoughCovChromSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -67,6 +41,7 @@ class PafRoughCovChromSerializer(serializers.HyperlinkedModelSerializer):
         read_only = (
             'id',
         )
+
 
 class PafRoughCovChromSerializerCount(serializers.HyperlinkedModelSerializer):
     sumcount = serializers.IntegerField()

@@ -14,9 +14,14 @@ urlpatterns = [
         name="rough_coverage_complete_chromosome_flowcell"
     ),
     url(
+        r'^api/v1/pafcoverage/(?P<task_id>[0-9]+)/(?P<barcode_name>[a-zA-Z0-9 ]+)/(?P<read_type_id>[0-9]+)/(?P<chromosome_id>[0-9]+)/$',
+        views.rough_coverage_complete_chromosome_flowcell,
+        name="rough_coverage_complete_chromosome_flowcell"
+    ),
+    url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/pafsummary/$',
-        views.flowcellpaf_alignment_summary,
-        name="flowcellpaf_alignment_summary"
+        views.flowcell_paf_summary_cov,
+        name="flowcell_paf_summary_cov"
     ),
     url(
         r'^api/v1/flowcells/(?P<flowcell_id>[0-9]+)/references/$',
