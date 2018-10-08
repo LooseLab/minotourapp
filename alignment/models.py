@@ -167,6 +167,10 @@ class PafRoughCov(models.Model):
         default=0
     )  # incdel
 
+    def to_chart_data(self):
+
+        return [ self.p, self.i]
+
     def __str__(self):
         return "{} {}".format(self.run, self.p)
 

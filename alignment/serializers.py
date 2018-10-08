@@ -9,23 +9,6 @@ class PafStoreSerializer(serializers.HyperlinkedModelSerializer):
         fields = '__all__'
 
 
-class PafRoughCovSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = PafRoughCov
-        fields = (
-            'id',
-            'run',
-            'barcode',
-            'reference',
-            'chromosome',
-            #'p',
-            #'i',
-        )
-        read_only = (
-            'id',
-        )
-
-
 class PafRoughCovChromSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = PafRoughCov
@@ -62,4 +45,16 @@ class PafRoughCovChromSerializerCount(serializers.HyperlinkedModelSerializer):
         )
         read_only = (
             'id',
+        )
+
+
+class PafRoughCovSerializer(serializers.ModelSerializer):
+
+    class Meta:
+
+        model = PafRoughCov
+
+        fields = (
+            'p',
+            'i',
         )

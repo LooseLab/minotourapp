@@ -176,7 +176,9 @@ def calculate_coverage_new(user, task_id, barcode_name, read_type_id, chromosome
             .filter(read_type__id=read_type_id) \
             .filter(p__gte=min_extreme) \
             .filter(p__lte=max_extreme) \
-            .order_by('p')
+            .order_by('p') \
+
+        return queryset
 
         current_incdel = get_incdel_at_position(task_id, barcode_name, read_type_id, chromosome_id, min_extreme)
         # current_incdel = get_incdel_at_position(flowcell_id, barcodegroup_id, read_type_id, chromosome_id, min_extreme, True)
@@ -191,7 +193,9 @@ def calculate_coverage_new(user, task_id, barcode_name, read_type_id, chromosome
             .filter(barcode_name=barcode_name) \
             .filter(chromosome__id=chromosome_id) \
             .filter(read_type__id=read_type_id) \
-            .order_by('p')
+            .order_by('p') \
+
+        return queryset
 
         min_extreme = 0
         max_extreme = queryset[0].chromosome.chromosome_length
