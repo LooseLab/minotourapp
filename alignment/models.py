@@ -190,6 +190,10 @@ class PafSummaryCov(models.Model):
         max_length=512
     )
 
+    reference_line_length = models.BigIntegerField(
+
+    )
+
     read_count = models.BigIntegerField(
 
         default=0

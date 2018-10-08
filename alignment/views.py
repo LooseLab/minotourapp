@@ -247,11 +247,14 @@ def flowcell_paf_summary_cov(request, pk):
 
         paf_summary_cov = {
 
-            'job_master_id': record.job_master.id,
+            'id': record.job_master.id,
             'barcode_name': record.barcode_name,
+            'read_type_name': 'Template',
             'reference_line_name': record.reference_line_name,
             'read_count': record.read_count,
-            'total_length': record.total_length
+            'total_length': record.total_length,
+            'chrom_cover': record.total_length/record.reference_line_length,
+            'avg_read_len': record.total_length / record.read_count
         }
 
         response.append(paf_summary_cov)

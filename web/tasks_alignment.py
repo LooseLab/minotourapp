@@ -12,7 +12,7 @@ from django.db.models import F
 from alignment.models import PafRoughCov, PafStore, PafSummaryCov
 from jobs.models import JobMaster
 from reads.models import FastqRead, Flowcell
-from reference.models import ReferenceInfo
+from reference.models import ReferenceInfo, ReferenceLine
 
 logger = get_task_logger(__name__)
 
@@ -253,17 +253,20 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
 
 def save_paf_store_summary(job_master_id, row):
 
-    print(row)
-
     barcode_name = row['read__barcode_name'][0]
     reference_line_name = row['tsn__line_name'][0]
     total_length = row['length']['sum']
     read_list = row['qsn']['unique']
 
+    job_master = JobMaster.objects.get(pk=job_master_id)
+
+    reference_line = ReferenceLine.objects.filter(reference=job_master.reference).filter(line_name=reference_line_name)[0]
+
     paf_summary_cov, created = PafSummaryCov.objects.get_or_create(
         job_master_id=job_master_id,
         barcode_name=barcode_name,
-        reference_line_name=reference_line_name
+        reference_line_name=reference_line_name,
+        reference_line_length=reference_line.chromosome_length
     )
 
     paf_summary_cov.total_length = total_length

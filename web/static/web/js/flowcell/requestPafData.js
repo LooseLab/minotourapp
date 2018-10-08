@@ -77,7 +77,9 @@ function requestPafData(id) {
 
     }
 
-    $.get(pafurl, (function (data) {
+    $.get(pafurl, (function (data_obj) {
+
+        var data = data_obj.data;
 
         if (data.length > 0) {
 
@@ -85,25 +87,25 @@ function requestPafData(id) {
 
             for (var i = 0; i < data.length; i++) {
 
-                if (summarycoverage[data[i].barcode_group_name] === undefined) {
-                    summarycoverage[data[i].barcode_group_name] = {};
+                if (summarycoverage[data[i].barcode_name] === undefined) {
+                    summarycoverage[data[i].barcode_name] = {};
                 }
 
-                if (summarycoverage[data[i].barcode_group_name][data[i].read_type_name] === undefined) {
-                    summarycoverage[data[i].barcode_group_name][data[i].read_type_name] = {};
+                if (summarycoverage[data[i].barcode_name][data[i].read_type_name] === undefined) {
+                    summarycoverage[data[i].barcode_name][data[i].read_type_name] = {};
                 }
 
-                if (summarycoverage[data[i].barcode_group_name][data[i].read_type_name][data[i].chrom_name] === undefined) {
-                    summarycoverage[data[i].barcode_group_name][data[i].read_type_name][data[i].chrom_name] = {};
+                if (summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].reference_line_name] === undefined) {
+                    summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].reference_line_name] = {};
                 }
 
-                summarycoverage[data[i].barcode_group_name][data[i].read_type_name][data[i].chrom_name]["coverage"] = {
+                summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].reference_line_name]["coverage"] = {
                     "name": "coverage",
                     "data": [data[i].chrom_cover],
                     "animation": false
                 };
 
-                summarycoverage[data[i].barcode_group_name][data[i].read_type_name][data[i].chrom_name]["ave_read_len"] = {
+                summarycoverage[data[i].barcode_name][data[i].read_type_name][data[i].reference_line_name]["ave_read_len"] = {
                     "name": "Average Read Length",
                     "data": [data[i].avg_read_len],
                     "animation": false
