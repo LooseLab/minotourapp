@@ -4,7 +4,8 @@ import pandas as pd
 from celery.utils.log import get_task_logger
 from ete3 import NCBITaxa
 import numpy as np
-from centrifuge.models import CentOutput, LineageValues, MetaGenomicsMeta, SankeyLinks, CentOutputBarcoded, SankeyLinksBarcode
+from centrifuge.models import CentOutput, LineageValues, MetaGenomicsMeta, SankeyLinks, CentOutputBarcoded, \
+    SankeyLinksBarcode
 from jobs.models import JobMaster
 from reads.models import FastqRead
 from reads.models import Flowcell
@@ -17,8 +18,8 @@ from minotourapp.utils import get_env_variable
 from django.db.models import ObjectDoesNotExist
 from centrifuge.mapping import Metamap
 
-
 logger = get_task_logger(__name__)
+
 
 # TODO del unused df and things
 
@@ -51,7 +52,7 @@ def centoutput_bulk_list(row):
     :return: The list of newly created objects
     """
     return CentOutput(name=row["name"], tax_id=row["tax_id"],
-                                             flowcell=row["flowcell"], task=row["task"])
+                      flowcell=row["flowcell"], task=row["task"])
 
 
 def bulk_create_list(row, job_master):
@@ -64,10 +65,10 @@ def bulk_create_list(row, job_master):
     try:
         cent = CentOutput.objects.get(tax_id=row["tax_id"], task__id=job_master.id)
         return CentOutputBarcoded(num_matches=row["num_matches"],
-                                      sum_unique=row["sum_unique"],
-                                      output=cent,
-                                      tax_id=row["tax_id"],
-                                      barcode=row["barcode"])
+                                  sum_unique=row["sum_unique"],
+                                  output=cent,
+                                  tax_id=row["tax_id"],
+                                  barcode=row["barcode"])
 
     except ObjectDoesNotExist:
         logger.info("<<<<<")
@@ -117,7 +118,6 @@ def subspecies_determine(name):
 def sankey_bulk_insert_list(row):
     """
     apply to the dataframe and create sankeylinks objects for each row
-    :param sankey_link_insert_list: The list to append the created sankey links objects to
     :param row: The data frame row
     :return: The list of created objects
     """
@@ -262,7 +262,6 @@ class Centrifuger:
         # Get the object that we just created back out
         # metadata = MetaGenomicsMeta.objects.get(flowcell__id=self.flowcell_id, task__id=job_master.id)
 
-
         # While self.scan is true we query the fastqreads model for new readss that have appearedsince last time
         iteration_count = 0
         cursor = FastqRead.objects.filter(run__flowcell_id__in={self.flowcell_id})
@@ -388,13 +387,13 @@ class Centrifuger:
             # table
             df["num_matches"] = gb.size()
             # TODO future mapping target
-            # temp_targets = ["Escherichia coli", "Bacillus cereus"]
+            temp_targets = ["Escherichia coli", "Bacillus cereus"]
 
-            # name_df = df[df["name"].isin(temp_targets)]
+            name_df = df[df["name"].isin(temp_targets)]
             # if not name_df.empty:
-            #     # map the target reads
-            #     m = Metamap(name_df, self.flowcell_id, self.flowcell_job_id)
-            #     m.map_the_reads()
+                # map the target reads
+                # m = Metamap(name_df, self.flowcell_id, self.flowcell_job_id)
+                # m.map_the_reads()
             barcode_df = pd.DataFrame()
             # TODO vectorise these bad boys
 
@@ -459,7 +458,7 @@ class Centrifuger:
                 to_update_bar_df["updated_sum_unique"] = to_update_bar_df.groupby(["barcode",
                                                                                    "tax_id"])["sum_unique"].sum()
                 to_update_bar_df["updated_num_matches"] = to_update_bar_df.groupby(["barcode",
-                                                                                   "tax_id"])["num_matches"].sum()
+                                                                                    "tax_id"])["num_matches"].sum()
                 to_update_bar_df = to_update_bar_df[~to_update_bar_df.index.duplicated(keep="first")]
                 to_update_bar_df.reset_index(inplace=True)
                 # TODO update the function

@@ -68,18 +68,25 @@ class Metamap:
         map_df = gb.apply(map_all_the_groups)
 
         def falls_in_region(row):
+            """
+
+            :param row:
+            :return:
+            """
             start_low = map_df["target_start"] > row["start"]
             start_high = map_df["target_start"] < row["end"]
             end_low = map_df["target_end"] > row["start"]
             end_high = map_df["target_end"] < row["end"]
 
-            bool_df = pd.concat([start_low, start_high, end_low, end_high])
+            bool_df = pd.concat([start_low, start_high, end_low, end_high], axis=1, ignore_index=True)
+            print(bool_df)
             bool_df["keep"] = np.where((bool_df[0] & bool_df[1]) | (bool_df[2] & bool_df[3]), True, False)
             return bool_df["keep"]
+
         bool_df = gff3_df.apply(falls_in_region, axis=1)
         bool_df = bool_df.any()
         map_df = map_df[bool_df]
-        map_df.set_index(["read_id"])
+        map_df.set_index(["read_id"], inplace=True)
 
         results_df = pd.merge(targets_df, map_df, how="inner", left_on="read_id", right_index=True)
         gb_mp = results_df.groupby(["name"])
@@ -87,9 +94,7 @@ class Metamap:
         results_df["sum_unique"] = gb_mp["unique"].sum()
         # TODO this is where barcoding step would be
         results_df.reset_index(inplace=True)
-
         results_input_df = results_df.drop_duplicates(subset=["tax_id"])
-
         bulk_insert = []
         def bulk_create_maps(row):
             mapped = CartographyMapped(species=row["name"], tax_id=row["tax_id"], alert_level=1,
