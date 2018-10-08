@@ -227,7 +227,11 @@ TWITCONSUMER_SECRET=get_env_variable("MT_TWITCONSUMER_SECRET")
 
 # Variables for storing additonal files
 # References
-REFERENCELOCATION = get_env_variable("MT_REFERENCE_LOCATION")
+# REFERENCELOCATION = get_env_variable("MT_REFERENCE_LOCATION")
+REFERENCE_LOCATION = get_env_variable("MT_REFERENCE_LOCATION")
+
+if REFERENCE_LOCATION == '':
+    REFERENCE_LOCATION = os.path.join(BASE_DIR, 'data')
 
 PAGINATION_PAGE_SIZE = 1000
 

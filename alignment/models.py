@@ -2,20 +2,22 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from jobs.models import JobMaster
 from reads.models import Barcode, FastqRead, FastqReadType, Run, GroupRun, Flowcell
 from reference.models import ReferenceInfo, ReferenceLine
 
 
 class PafStore(models.Model):
-    run = models.ForeignKey(
-        Run,
+
+    job_master = models.ForeignKey(
+
+        JobMaster,
         on_delete=models.CASCADE,
-        related_name='pafalignemnts',
-        null=True,
-        blank=True
+        related_name='pafstore_list'
     )
 
-    flowcell = models.ForeignKey(
+    flowcell = models.ForeignKey(  # TODO dele - read from job_master.flowcell
+
         Flowcell,
         on_delete=models.CASCADE,
         related_name='flowcellpafalignemnts',
@@ -23,31 +25,22 @@ class PafStore(models.Model):
         blank=True
     )
 
-    grouprun = models.ForeignKey(
-        GroupRun,
-        on_delete=models.CASCADE,
-        related_name='pafstores',
-        null=True,
-        blank=True
-    )
-
     read = models.ForeignKey(
+
         FastqRead,
         related_name='pafreadalignment'
     )
 
-    reference = models.ForeignKey(
+    reference = models.ForeignKey(  # TODO delete - read from job_master.reference
+
         ReferenceInfo,
         related_name='pafstorereference'
     )
 
-    read_type = models.ForeignKey(
-        FastqReadType,
-        related_name='pafstoretype'
-    )
-
     # PAF File Format:
+
     qsn = models.CharField(
+
         max_length=256
     )  # 1	string	Query sequence name
 
@@ -64,13 +57,15 @@ class PafStore(models.Model):
     )  # 4	int	Query end (0-based)
 
     rs = models.CharField(
+
         max_length=1
     )  # 5	char	Relative strand: "+" or "-"
-    # tsn = models.CharField(max_length=256)#6	string	Target sequence name
 
     tsn = models.ForeignKey(
+
         ReferenceLine,
-        related_name='pafstorechromosome'
+        on_delete=models.CASCADE,
+        related_name='pafstore_list'
     )  # 6	string	Target sequence name
 
     tsl = models.IntegerField(
@@ -98,10 +93,18 @@ class PafStore(models.Model):
     )  # 12	int	Mapping quality (0-255; 255 for missing)
 
     def __str__(self):
-        return "{} {}".format(self.run, self.qsn)
+        return "{}".format(self.qsn)
 
 
 class PafRoughCov(models.Model):
+
+    job_master = models.ForeignKey(
+
+        JobMaster,
+        on_delete=models.CASCADE,
+        related_name='pafroughcov_list'
+    )
+
     run = models.ForeignKey(
         Run,
         on_delete=models.CASCADE,
@@ -131,10 +134,19 @@ class PafRoughCov(models.Model):
         related_name='prc_type'
     )
 
+    is_pass = models.BooleanField(
+
+    )  # pass = true, fail = false
+
     barcode = models.ForeignKey(
         Barcode,
         related_name='prc_barcode',
         null=True
+    )
+
+    barcode_name = models.CharField(
+
+        max_length=32
     )
 
     reference = models.ForeignKey(
@@ -160,14 +172,28 @@ class PafRoughCov(models.Model):
 
 
 class PafSummaryCov(models.Model):
+
+    paf_store = models.ForeignKey(
+
+        PafStore,
+        on_delete=models.CASCADE
+    )
+
     run = models.ForeignKey(Run, on_delete=models.CASCADE, related_name='paf_summary', null=True, blank=True)
+
     flowcell = models.ForeignKey(Flowcell, on_delete=models.CASCADE, related_name='flowcell_paf_summary', null=True,
                                  blank=True)
+
     read_type = models.ForeignKey(FastqReadType, related_name='paf_summary_type')
+
     barcode = models.ForeignKey(Barcode, related_name='paf_summary_barcode', null=True)
+
     reference = models.ForeignKey(ReferenceInfo, related_name='paf_summary_reference')
+
     chromosome = models.ForeignKey(ReferenceLine, related_name='paf_summary_chromosome')
+
     read_count = models.BigIntegerField(default=0)
+
     cumu_length = models.BigIntegerField(default=0)
 
     def barcode_name(self):
@@ -196,7 +222,7 @@ class PafSummaryCov(models.Model):
 
     def ref_len(self):
         try:
-            return self.reference.totalrefleN
+            return self.reference.length
         except AttributeError:
             return "undefined"
 
