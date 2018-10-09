@@ -29,7 +29,7 @@ function requestMappedChromosomes(flowcell_id) {
         for (var i = 0; i < data.length; i++) {
             var option = document.createElement('option');
 
-            var value_combination = data[i]['task_id'] + '_' + data[i]['barcode_name'] + '_' + data[i]['read_type_id'] + '_' + '_' + data[i]['chromosome_id'];
+            var value_combination = data[i]['task_id'] + '_' + data[i]['barcode_name'] + '_' + data[i]['read_type_id'] + '_' + data[i]['chromosome_id'];
 
             option.text = data[i]['barcode_name'] + ' - ' + data[i]['read_type_name'] + ' - ' + data[i]['reference_name'] + ' - ' + data[i]['chromosome_name'];
             option.value = value_combination;

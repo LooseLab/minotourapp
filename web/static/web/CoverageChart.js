@@ -59,7 +59,7 @@ CoverageChart.prototype.create_url = function () {
     // var chromosome_id = value_combination[4];
 
     // var url = "/api/v1/flowcells/pafcoverage/" + task_id + "/" + barcode_name + "/" + read_type_id + "/" + chromosome_id + "/";
-    var url = "/api/v1/pafcoverage/" + task_id + "/" + barcode_name + "/" + read_type_id + "/1/";
+    var url = "/api/v1/pafcoverage/" + task_id + "/" + barcode_name + "/" + read_type_id + "/" + chromosome_id + "/";
 
     return url;
 }
