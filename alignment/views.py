@@ -6,9 +6,7 @@ from django.http import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view
 
 from alignment.models import PafRoughCov, PafSummaryCov
-from alignment.serializers import PafRoughCovChromSerializer, PafRoughCovSerializer
 from alignment.utils import calculate_coverage_new
-from reference.models import ReferenceLine
 from . import utils
 
 
@@ -29,19 +27,8 @@ class NumpyEncoder(json.JSONEncoder):
 @api_view(['GET'])
 def rough_coverage_complete_chromosome_flowcell(request, task_id, barcode_name, read_type_id, chromosome_id):
 
-    reference_line = ReferenceLine.objects.get(pk=chromosome_id)
-
-    # result_list = calculate_coverage_new(
-    #     request.user,
-    #     task_id,
-    #     barcode_name,
-    #     read_type_id,
-    #     chromosome_id,
-    #     0,
-    #     reference_line.chromosome_length
-    # )
-
     queryset = PafRoughCov.objects \
+        .filter(job_master__id=task_id) \
         .filter(flowcell__owner=request.user) \
         .filter(barcode_name=barcode_name) \
         .filter(chromosome__id=chromosome_id) \
@@ -50,33 +37,13 @@ def rough_coverage_complete_chromosome_flowcell(request, task_id, barcode_name, 
         .annotate(Sum('i')) \
         .order_by('p')
 
-
     result = []
 
     for record in queryset:
 
         result.append([record['p'], record['i__sum']])
 
-    print(queryset)
-
-
-
-
-    # serializer = PafRoughCovSerializer(result_list, many=True)
-
-    # result = [record.to_chart_data() for record in result_list]
-
-    # return JsonResponse(serializer.data, safe=False)
-
     return JsonResponse(result, safe=False)
-
-
-
-
-    # return flowcell_paf_alignment_list(request, task_id, barcode_name, read_type_id, chromosome_id, 0, 0)
-
-# def rough_coverage_complete_chromosome_flowcell(request, flowcell_id, barcodegroup_id, read_type_id, chromosome_id):
-#     return flowcell_paf_alignment_list(request, flowcell_id, barcodegroup_id, read_type_id, chromosome_id, 0, 0)
 
 
 @api_view(['GET'])

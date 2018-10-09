@@ -25,7 +25,6 @@ CoverageChart.prototype.afterSelection = function (event) {
 
     var new_serie = [];
 
-    console.log('>>>');
     for (var i = 0; i < this.master_chart.series[0].xData.length; i++) {
 
         if (this.master_chart.series[0].xData[i] > min && this.master_chart.series[0].xData[i] < max) {
@@ -35,9 +34,6 @@ CoverageChart.prototype.afterSelection = function (event) {
 
     this.detail_chart.series[0].setData(new_serie);
 
-    console.log(this.master_chart.series[0]);
-    console.log('<<<');
-
 }
 
 CoverageChart.prototype.create_url = function () {
@@ -46,11 +42,9 @@ CoverageChart.prototype.create_url = function () {
     var selected_option = this.select_container[selected_index];
 
     if (parseInt(selected_option.value) < 0) {
-        console.log('No mapped chromosome selected.');
-        return;
-    }
 
-    console.log('Selected option: ' + selected_option.value);
+        return "/api/v1/pafcoverage/0/0/0/1/";
+    }
 
     // var value_combination = data[i]['task_id'] + '_' + data[i]['barcode_name'] + '_' + data[i]['read_type_id'] + '_' + '_' + data[i]['chromosome_id'];
 
@@ -74,12 +68,8 @@ CoverageChart.prototype.load_chart_data = function (url, div_main_name) {
 
     $.getJSON(url, (function (data) {
 
-        console.log('>>> got data from server');
-        console.log(data);
-        console.log('master_chart series data length is: ' + this.master_chart.series[0].data.length);
-
         if (this.master_chart.series[0].data.length === 0) {
-            console.log('setting master_chart data');
+
             this.master_chart.series[0].setData(data);
         }
 
@@ -117,7 +107,8 @@ CoverageChart.prototype.create_detail_chart = function () {
             zoomType: 'x',
             events: {
                 selection: this.afterSelection.bind(this)
-            }
+            },
+            type: 'area'
         },
         credits: {
             enabled: false
