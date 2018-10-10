@@ -49,14 +49,14 @@ class Command(BaseCommand):
             print("Total Reference Length={}".format(total_length))
             print(subfile)
 
-            cmd2 = "{} -x map-ont -d {}/{}.mmi {}".format(
-                MINIMAP2,
-                REFERENCE_LOCATION,
-                os.path.basename(options['reference']),
-                dstname
-            )
+            # cmd2 = "{} -x map-ont -d {}/{}.mmi {}".format(
+            #     MINIMAP2,
+            #     REFERENCE_LOCATION,
+            #     os.path.basename(options['reference']),
+            #     dstname
+            # )
 
-            subprocess.call(cmd2, shell=True)
+            # subprocess.call(cmd2, shell=True)
 
             minimap2_index_path = os.path.basename(options['reference']) + ".mmi"
 
