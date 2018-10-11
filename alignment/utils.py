@@ -1,14 +1,13 @@
 import numpy as np
+from django.db.models import Sum
+
+from alignment.models import PafRoughCov
 
 
 def calculate_coverage(positions, incdels, current_incdel, reference_size, number_of_bins, bin_width, bin_edges, min_extreme, max_extreme):
-    # print(positions)
-    # print(incdels)
 
-    # q = np.array([
-    #     [3, 10, 15, 23, 70, 99],  # positions
-    #     [1, 1, -1, 7, -1, -3]  # incdels
-    # ])
+    print(positions)
+    print(incdels)
 
     q = np.array([
         positions,
@@ -59,6 +58,10 @@ def calculate_coverage(positions, incdels, current_incdel, reference_size, numbe
             #
             if i == 0:
                 length = positions[0] - begin_bin
+
+                # print('>>> current_contribution: {}'.format(current_contribution))
+                # print('>>> current_incdel: {}'.format(current_incdel))
+                # print('>>> length: {}'.format(length))
 
                 current_contribution = current_contribution + current_incdel * length
 
@@ -124,3 +127,113 @@ def calculate_coverage(positions, incdels, current_incdel, reference_size, numbe
     # print('bin averages: ')
     # print(bin_results)
     return bin_results
+
+
+def get_incdel_at_position(task_id, barcode_name, read_type_id, chromosome_id, position):
+
+    print('>>> get_incdel_at_position')
+    print('>>> task_id: {}'.format(task_id))
+    print('>>> barcode_name: {}'.format(barcode_name))
+    print('>>> read_type_id: {}'.format(read_type_id))
+    print('>>> chromosome_id: {}'.format(chromosome_id))
+    print('>>> position: {}'.format(position))
+
+    queryset = PafRoughCov.objects \
+        .filter(job_master__id=task_id) \
+        .filter(barcode_name=barcode_name) \
+        .filter(chromosome__id=chromosome_id) \
+        .filter(read_type__id=read_type_id) \
+        .filter(p__lte=position) \
+        .aggregate(incdel=Sum('i'))
+
+    if queryset['incdel']:
+
+        return queryset['incdel']
+
+    else:
+
+        return 0
+
+    return queryset['incdel']
+
+
+def calculate_coverage_new(user, task_id, barcode_name, read_type_id, chromosome_id, min_extreme, max_extreme):
+
+    if min_extreme != '' and max_extreme != '':
+
+        print('Running query with min and max {} {}'.format(min_extreme, max_extreme))
+
+        min_extreme = int(min_extreme)
+        max_extreme = int(max_extreme)
+
+        if min_extreme < 0:
+            min_extreme = 0
+
+        queryset = PafRoughCov.objects \
+            .filter(flowcell__owner=user) \
+            .filter(barcode_name=barcode_name) \
+            .filter(chromosome__id=chromosome_id) \
+            .filter(read_type__id=read_type_id) \
+            .filter(p__gte=min_extreme) \
+            .filter(p__lte=max_extreme) \
+            .order_by('p') \
+
+        return queryset
+
+        current_incdel = get_incdel_at_position(task_id, barcode_name, read_type_id, chromosome_id, min_extreme)
+        # current_incdel = get_incdel_at_position(flowcell_id, barcodegroup_id, read_type_id, chromosome_id, min_extreme, True)
+
+    else:
+
+        print('Running query without min and max')
+
+        queryset = PafRoughCov.objects \
+            .filter(flowcell__owner=user) \
+            .filter(job_master=task_id) \
+            .filter(barcode_name=barcode_name) \
+            .filter(chromosome__id=chromosome_id) \
+            .filter(read_type__id=read_type_id) \
+            .order_by('p') \
+
+        return queryset
+
+        min_extreme = 0
+        max_extreme = queryset[0].chromosome.chromosome_length
+
+        current_incdel = 0
+
+    reference_size = max_extreme - min_extreme
+
+    number_of_bins = 200
+
+    bin_width = reference_size / number_of_bins
+
+    #
+    # the size of bin_edges is the number of bins + 1
+    #
+    bin_edges = np.array([min_extreme + bin_width * i for i in range(number_of_bins + 1)])
+
+    positions = []
+    incdels = []
+
+    print("queryset length: {}".format(len(queryset)))
+    for item in queryset:
+        positions.append(item.p)
+        incdels.append(item.i)
+
+    bin_results = calculate_coverage(
+        positions,
+        incdels,
+        current_incdel,
+        reference_size,
+        number_of_bins,
+        bin_width,
+        bin_edges,
+        min_extreme,
+        max_extreme
+    )
+
+    result_list = []
+
+    for key in bin_results.keys():
+        result_list.append((min_extreme + (key * bin_width), bin_results[key]))
