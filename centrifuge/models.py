@@ -23,7 +23,8 @@ class SankeyLinks(models.Model):
     """
     source = models.CharField(null=True, max_length=100)
     target = models.CharField(null=True, max_length=100)
-
+    value = models.IntegerField(null=True, default=0)
+    barcode = models.CharField(null=True, max_length=100)
     tax_id = models.IntegerField()
     flowcell = models.ForeignKey(
         Flowcell,
@@ -107,11 +108,13 @@ class CentOutput(models.Model):
     flowcell = models.ForeignKey(
         Flowcell,
         related_name="centoutput_flowcell",
+        on_delete=models.CASCADE,
         null=True
     )
     task = models.ForeignKey(
         JobMaster,
-        related_name="centrifuge_summaries"
+        related_name="centrifuge_summaries",
+        on_delete=models.CASCADE,
     )
 
 
@@ -134,12 +137,23 @@ class CentOutputBarcoded(models.Model):
 class CartographyMapped(models.Model):
     """
         The traffic light species that have been identified
-        # TODO currently ununsed
     """
+    flowcell = models.ForeignKey(
+        Flowcell,
+        related_name="centrifuge_cart_flowcell",
+        on_delete=models.CASCADE,
+        null=True
+    )
+    task = models.ForeignKey(
+        JobMaster,
+        related_name="centrifuge_cart_task",
+        on_delete=models.CASCADE,
+        null=True
+    )
     species = models.CharField(max_length=50)
     tax_id = models.IntegerField(null=True)
-    alert_level = models.IntegerField(null=True)
     red_reads = models.IntegerField(null=True)
+    num_matches = models.IntegerField(default=0)
     sum_unique = models.IntegerField(default=0)
 
 

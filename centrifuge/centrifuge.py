@@ -195,6 +195,8 @@ class Centrifuger:
         self.last_read = 0
         # The number of reads to skip when getting the reads out of the database
         self.skip = 0
+        # the number to chunk in
+        self.chunk = 10000
 
     @staticmethod
     def delete_series(series, df):
@@ -311,17 +313,21 @@ class Centrifuger:
             # Get all the reads skipping all we did last time
 
             logger.info("slef.skip is {} and limit is {}".format(self.skip, doc_no))
+            if doc_no < (self.skip + self.chunk):
+                limit = doc_no
+            else:
+                limit = self.skip + self.chunk
             # create python list for zipping
-            sequence_data = list(cursor.values_list("fastqreadextra__sequence", flat=True)[self.skip:doc_no])
+            sequence_data = list(cursor.values_list("fastqreadextra__sequence", flat=True)[self.skip:limit])
             # create list of read ids for zipping
-            read_ids = list(cursor.values_list("read_id", flat=True)[self.skip:doc_no])
+            read_ids = list(cursor.values_list("read_id", flat=True)[self.skip:limit])
             # Create list of tuples where
-            barcodes = list(cursor.values_list("barcode_name", flat=True)[self.skip:doc_no])
+            barcodes = list(cursor.values_list("barcode_name", flat=True)[self.skip:limit])
             # the 1st element is the read_id and the second is the sequence
             tupley_list = list(zip(read_ids, sequence_data, barcodes))
             # update skip number
             # TODO UNCOMMENT
-            self.skip = doc_no
+            self.skip = limit
             logger.info("\n \n \n")
             logger.info("number of reads in this iteration is {}".format(len(tupley_list)))
 

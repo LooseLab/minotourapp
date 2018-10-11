@@ -15,3 +15,4 @@ minUPfastq
 logfile
 celerybeat*
 centrifuge_report.tsv
+centrifuge/utils.py

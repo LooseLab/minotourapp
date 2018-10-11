@@ -64,6 +64,8 @@ function requestData(flowcell_id) {
             this.topGetTotalReadsTable(flowcellId);
             // Draw rhe donut rank table
             this.topGetDonutRankTable(flowcellId);
+            // Draw the alert mapping targets table;
+            this.update_mapping_table(flowcellId);
 
         } else if (flowcell_selected_tab_input.value == 'Sequence Mapping') {
 

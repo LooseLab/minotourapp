@@ -327,3 +327,23 @@ def get_or_set_cartmap(request):
                                   alert_level=0, red_reads=0).save()
 
         return Response("Hi there", status=200)
+
+
+@api_view(["POST", "GET"])
+def get_target_mapping(request):
+    flowcell_id = request.GET.get("flowcellId", 0)
+
+    if flowcell_id == 0:
+        return Response(status=404)
+
+    print("flowcell_id_id-{}".format(flowcell_id))
+    task_id = max(JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics")
+                  .values_list("id", flat=True))
+
+    queryset = CartographyMapped.objects.filter(flowcell__id=flowcell_id,
+                                                task__id=task_id).values()
+
+    return Response(queryset)
+
+
+
