@@ -73,6 +73,14 @@ def cent_sankey_two(request):
     species_limit = request.GET.get("speciesLimit", 30)
     # Get the flowcell ID , defaulting to False if not present
     flowcell_id = request.GET.get("flowcellId", False)
+
+
+
+
+
+
+
+
     # Selected barcode, default all reads
     selected_barcode = request.GET.get("barcode", "All reads")
 
@@ -104,7 +112,7 @@ def cent_sankey_two(request):
     # get a subset df of all the species rows
     temp_species_df = source_target_df[source_target_df["target_tax_level"] == "species"]
     # get species limit (default 50) of the largest species
-    temp_species_df = temp_species_df.nlargest(species_limit, ["value"])
+    temp_species_df = temp_species_df.nlargest(species_limit, ["value_y"])
     # get the values for those species
     source_target_df = source_target_df[source_target_df["tax_id"].isin(temp_species_df["tax_id"])]
 
@@ -116,13 +124,14 @@ def cent_sankey_two(request):
     # Group by rows where the source and target are the same
     st_gb = source_target_df.groupby(["source", "target"])
     # Replace the value columns on dataframe with the sum of all the values of identical source target rows
-    source_target_df["value"] = st_gb["value"].sum()
+    source_target_df["value"] = st_gb["value_y"].sum()
     source_target_df.reset_index(inplace=True)
     # Drop all duplicate rows, only need one new entry
     source_target_df.drop_duplicates(["source", "target"], keep="first", inplace=True)
     # Drop any rows where the source and the target are the same and don't keep them
     source_target_df = pd.concat([source_target_df, source_target_df[
         source_target_df["source"] == source_target_df["target"]]]).drop_duplicates(["source", "target"], keep=False)
+    source_target_df.drop(columns=["barcode_x", "value_x", "value_y"], inplace=True)
     source_target_df.dropna(inplace=True)
     source_target_df.sort_values(["value"], ascending=False, inplace=True)
     # Create the links list of dicts to return
