@@ -82,6 +82,7 @@ def run_monitor():
 
             if flowcell_job.job_type.name == "ChanCalc":
 
+                print("trying to run chancalc for flowcell {} {} {}".format(flowcell.id, flowcell_job.id, flowcell_job.last_read))
                 processreads.delay(flowcell.id, flowcell_job.id, flowcell_job.last_read)
 
             if flowcell_job.job_type.name == "Assembly":
@@ -122,7 +123,6 @@ def run_centrifuge(flowcell_id, flowcell_job_id):
 @task()
 def processreads(flowcell_id, job_master_id, last_read):
 
-    print('Running processreads - flowcell: {}, last read: {}, job master id: {}'.format(flowcell_id, last_read, job_master_id))
 
     # run = Run.objects.get(pk=runid)
 
@@ -140,7 +140,7 @@ def processreads(flowcell_id, job_master_id, last_read):
 
     fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id).filter(id__gt=int(last_read))[:2000]
 
-    print('found {} reads'.format(len(fastqs)))
+    print('Running processreads - flowcell: {}, last read: {}, job master id: {}, reads: {}'.format(flowcell_id, last_read, job_master_id, len(fastqs)))
 
     if len(fastqs) > 0:
 
@@ -642,7 +642,8 @@ def update_flowcell_details():
             total_read_length += flowcell_summary.total_length
             number_reads += flowcell_summary.read_count
 
-        average_read_length = total_read_length / number_reads
+        if number_reads > 0:
+            average_read_length = total_read_length / number_reads
 
         flowcell.average_read_length = average_read_length
         flowcell.total_read_length = total_read_length
