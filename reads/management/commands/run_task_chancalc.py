@@ -11,8 +11,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        try:
-
             print('Running chancalc task')
 
             flowcell_list = Flowcell.objects.all()
@@ -27,6 +25,3 @@ class Command(BaseCommand):
 
                         processreads(flowcell.id, flowcell_job.id, flowcell_job.last_read)
 
-        except Exception as e:
-
-            raise CommandError(repr(e))
