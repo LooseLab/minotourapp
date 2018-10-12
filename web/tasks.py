@@ -140,6 +140,8 @@ def processreads(flowcell_id, job_master_id, last_read):
 
     fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id).filter(id__gt=int(last_read))[:2000]
 
+    new_last_read = fastqs[-1:].id
+
     print('Running processreads - flowcell: {}, last read: {}, job master id: {}, reads: {}'.format(flowcell_id, last_read, job_master_id, len(fastqs)))
 
     if len(fastqs) > 0:
@@ -185,7 +187,8 @@ def processreads(flowcell_id, job_master_id, last_read):
 
         fastq_df_result.reset_index().apply(lambda row: save_flowcell_channel_summary(flowcell_id, row), axis=1)
 
-        last_read = fastq_df_barcode['id'].max()
+        # last_read = fastq_df_barcode['id'].max()
+        last_read = new_last_read
 
     job_master = JobMaster.objects.get(pk=job_master_id)
     job_master.running = False
