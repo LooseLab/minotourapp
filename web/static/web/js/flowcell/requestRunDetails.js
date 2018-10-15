@@ -57,7 +57,7 @@ function updatetext(data) {
         for (var i in data) {
 
             if (!data.hasOwnProperty(i)) continue;
-            console.log(data);
+            
             datadump[i] = new Array;
             datadump[i].minIONname = data[i]['minION_name'];
             datadump[i].minKNOW_asic_id = data[i]['minKNOW_asic_id'];
