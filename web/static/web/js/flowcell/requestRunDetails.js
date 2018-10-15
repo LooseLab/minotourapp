@@ -1,7 +1,7 @@
 function write_run_data(textinfo) {
 
     var text = '';
-    text += "<div class='table-responsive table-bordered'>";
+    text += "<div class='table-responsive'>";
     text += "<table class='table'>";
     text += "<tr>";
     text += "<th>Run</th>";
@@ -17,8 +17,6 @@ function write_run_data(textinfo) {
     text += "<th>Flowcell ID</th>";
     text += "<th>Sample Name</th>";
     text += "<th>Experiment Name</th>";
-    // text += "<th>Sequencing</th>";
-    // text += "<th>Barcoded</th>";
     text += "</tr>";
 
     $.each(textinfo, function (key, val) {
@@ -39,38 +37,22 @@ function write_run_data(textinfo) {
         text += "<td>" + textinfo[key]['flowcellid'] + "</td>";
         text += "<td>" + textinfo[key]["sample_name"] + "</td>";
         text += "<td>" + textinfo[key]['experiment_id'] + "</td>";
-        // if (textinfo[key]['active'] == true) {
-        //     text += '<td><i class="fa fa-check" aria-hidden="true"></i></td>';
-        // } else {
-        //     text += '<td><i class="fa fa-times" aria-hidden="true"></i></td>';
-        // }
-        // if (textinfo[key]['barcodes'].length > 2) {
-        //     text += '<td><i class="fa fa-check" aria-hidden="true"></i></td>';
-        // } else {
-        //     text += '<td><i class="fa fa-times" aria-hidden="true"></i></td>';
-        // }
 
         text += "</tr>";
     })
+
     text += "</table></div>";
 
-    $("#minknow-realtime-data-div").html(text);
+    $("#run-summaries-div").html(text);
+
 }
 
 
 function updatetext(data) {
-//<<<<<<< Updated upstream
 
-//    //this.rundetails = data;
     datadump = new Array();
 
     if (data.length > 0) {
-//=======
-//    this.rundetails = data;
-//    datadump = new Array();
-//    console.log(this.rundetails);
-//    if (this.rundetails != undefined && data.length > 0) {
-//>>>>>>> Stashed changes
 
         for (var i in data) {
 
@@ -87,15 +69,11 @@ function updatetext(data) {
             datadump[i].sequencing_kit = data[i]['sequencing_kit'];
             datadump[i].computer_name = data[i]['minKNOW_computer'];
             datadump[i].experiment_id = data[i]['experiment_id'];
-            // datadump[i].minKNOW_current_script = data[i]['minKNOW_current_script'];
-            //datadump[i].name = this.rundata[i]['name'];
 
             var starttime = new Date(data[i]['minKNOW_start_time']);
             datadump[i].starttime = starttime;
             datadump[i].flowcellid = data[i]['minKNOW_flow_cell_id'];
             datadump[i].flowcelltype = data[i]['flowcell_type'];
-            //datadump[i].active = this.rundata[i].active;
-            //datadump[i].barcodes = this.rundata[i].barcodes;
 
         }
 
@@ -150,8 +128,11 @@ function requestRunDetails(id) {
         } else {
 
             var message = "No information available.";
-            var div = document.querySelector("#minknow-realtime-data-div");
+            var div = document.querySelector("#run-summaries-div");
             div.innerHTML = message;
+
         }
+
     }).bind(this))
+
 }

@@ -316,17 +316,28 @@ def minknow_message_list_by_flowcell(request, pk):
     form_start_time = request.GET.get('start_time', None)
     form_end_time = request.GET.get('end_time', None)
 
-    if form_start_time:
-        start_time = dateutil.parser.parse(form_start_time)
+    start_time = None
+    end_time = None
 
-    else:
-        start_time = None
+    if form_start_time:
+
+        try:
+
+            start_time = dateutil.parser.parse(form_start_time)
+
+        except ValueError:
+
+            print('Error when parsing start_time')
 
     if form_end_time:
-        end_time = dateutil.parser.parse(form_end_time)
 
-    else:
-        end_time = None
+        try:
+
+            end_time = dateutil.parser.parse(form_end_time)
+
+        except ValueError:
+
+            print('Error when parsing end_time')
 
     flowcell = Flowcell.objects.get(pk=pk)
 
@@ -347,21 +358,24 @@ def minknow_message_list_by_flowcell(request, pk):
             .order_by('-timestamp')
 
     elif start_time:
+
         messages = MinionMessage.objects\
             .filter(minion__in=minion_list)\
             .filter(timestamp__gt=start_time) \
             .order_by('-timestamp')
 
     elif end_time:
+
         messages = MinionMessage.objects\
             .filter(minion__in=minion_list)\
             .filter(timestamp__lt=end_time) \
             .order_by('-timestamp')
 
     else:
+
         messages = MinionMessage.objects\
-            .filter(minion__in=minion_list)[:10] \
-            .order_by('-timestamp')
+            .filter(minion__in=minion_list) \
+            .order_by('-timestamp')[:10]
 
     serializer = MinionMessageSerializer(messages, many=True, context={'request': request})
 
