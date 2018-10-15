@@ -1,0 +1,54 @@
+{% for record in run_list|dictsort:"run_start_time" %}
+
+    {% if forloop.first %}
+
+        <div class='table-responsive'>
+        <table class="table">
+        <thead>
+        <th>Run</th>
+        <th>Run Start Time</th>
+        <th>Last Read Seen</th>
+        <th>MinKNOW Computer Name</th>
+        <th>MinION ID</th>
+        <th>ASIC ID</th>
+        <th>Sequencing Kit</th>
+        <th>Purpose</th>
+        <th>minKNOW version</th>
+        <th>Flowcell Type</th>
+        <th>Flowcell ID</th>
+        <th>Sample Name</th>
+        <th>Experiment Name</th>
+        </thead>
+        <tbody>
+
+    {% endif %}
+
+    <tr>
+        <td></td>
+        <td>{{ record.run_start_time }}</td>
+        <td>{{ record.last_read_seen }}</td>
+        <td>{{ record.minknow_computer_name }}</td>
+        <td>{{ record.minion_id }}</td>
+        <td>{{ record.asic_id }}</td>
+        <td>{{ record.sequencing_kit }}</td>
+        <td>{{ record.purpose }}</td>
+        <td>{{ record.minknow_version }}</td>
+        <td>{{ record.flowcell_type }}</td>
+        <td>{{ record.flowcell_id }}</td>
+        <td>{{ record.sample_name }}</td>
+        <td>{{ record.experiment_name }}</td>
+    </tr>
+
+    {% if forloop.last %}
+        </tbody>
+
+        </table>
+
+        </div>
+    {% endif %}
+
+{% empty %}
+
+No information available.
+
+{% endfor %}

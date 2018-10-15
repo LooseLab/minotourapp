@@ -377,9 +377,12 @@ def minknow_message_list_by_flowcell(request, pk):
             .filter(minion__in=minion_list) \
             .order_by('-timestamp')[:10]
 
-    serializer = MinionMessageSerializer(messages, many=True, context={'request': request})
 
-    return Response(serializer.data)
+
+    # serializer = MinionMessageSerializer(messages, many=True, context={'request': request})
+
+    # return Response(serializer.data)
+    return render(request, 'reads/minknow_messages.html', {'message_list': messages})
 
 
 @api_view(['GET','POST'],)
@@ -1316,13 +1319,43 @@ def flowcell_channel_summary(request, pk):
 
 
 @api_view(['GET'])
-def flowcell_run_status_list(request, pk):
+def flowcell_run_summaries_html(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)
-    queryset = MinIONRunStatus.objects.filter(run_id__in=flowcell.runs.all())
-    #print (queryset)
-    serializer = MinIONRunStatusSerializer(queryset, many=True, context={'request': request})
-    return Response(serializer.data)
+
+    result = []
+
+    for run in flowcell.runs.all():
+
+        # Create an element with information from the run (originally from the fastq files)
+
+        element = {
+
+            'run_start_time': run.start_time,
+            'last_read_seen': None,
+        }
+
+        minion_run_status_list = MinIONRunStatus.objects.filter(run_id=run)
+
+        if len(minion_run_status_list) > 0:
+
+            minion_run_status = minion_run_status_list[0]
+
+            element['last_read_seen'] = None
+            element['minknow_computer_name'] = None
+            element['minion_id'] = None
+            element['asic_id'] = None
+            element['sequencing_kit'] = None
+            element['purpose'] = minion_run_status.minKNOW_exp_script_purpose
+            element['minknow_version'] = None
+            element['flowcell_type'] = None
+            element['flowcell_id'] = minion_run_status.minKNOW_flow_cell_id
+            element['sample_name'] = minion_run_status.minKNOW_sample_name
+            element['experiment_name'] = minion_run_status.experiment_id
+
+        result.append(element)
+
+    return render(request, 'reads/flowcell_runs_summary.html', {'run_list': result})
 
 
 @api_view(['GET'])
