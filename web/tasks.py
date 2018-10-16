@@ -10,7 +10,6 @@ import zipfile
 from datetime import datetime, timedelta
 
 import numpy as np
-import pandas as pd
 import pytz
 import redis
 from celery import task
@@ -25,9 +24,8 @@ from assembly.models import GfaStore, GfaSummary
 from centrifuge.centrifuge import Centrifuger
 from communication.utils import *
 from jobs.models import JobMaster
-from reads.models import Barcode, FastqRead, Run, HistogramSummary, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus
-from reads.services import (save_flowcell_histogram_summary, save_flowcell_channel_summary, save_flowcell_summary_barcode,
-                            save_flowcell_statistic_barcode)
+from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus
+from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
 
 logger = get_task_logger(__name__)
@@ -83,7 +81,7 @@ def run_monitor():
             if flowcell_job.job_type.name == "ChanCalc":
 
                 print("trying to run chancalc for flowcell {} {} {}".format(flowcell.id, flowcell_job.id, flowcell_job.last_read))
-                processreads.delay(flowcell.id, flowcell_job.id, flowcell_job.last_read)
+                chancalc.delay(flowcell.id, flowcell_job.id, flowcell_job.last_read)
 
             if flowcell_job.job_type.name == "Assembly":
 
@@ -119,88 +117,6 @@ def run_centrifuge(flowcell_id, flowcell_job_id):
     c = Centrifuger(flowcell_id, flowcell_job_id)
     c.run_centrifuge()
     print("finished task")
-
-@task()
-def processreads(flowcell_id, job_master_id, last_read):
-
-
-    # run = Run.objects.get(pk=runid)
-
-    # barcode_allreads = None
-    #
-    # for barcode in run.barcodes.all():
-    #
-    #     if barcode.name == 'All reads':
-    #
-    #         barcode_allreads = barcode
-
-    job_master = JobMaster.objects.get(pk=job_master_id)
-    job_master.running = True
-    job_master.save()
-
-    fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id).filter(id__gt=int(last_read))[:12000]
-    # fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id).filter(id__gt=int(last_read))[:2000]
-
-    print('Starting: {}'.format(datetime.now()))
-    print('Running processreads - flowcell: {}, last read: {}, job master id: {}, reads: {}'.format(flowcell_id, last_read, job_master_id, len(fastqs)))
-
-    if len(fastqs) > 0:
-
-        last_fastq = fastqs[len(fastqs) - 1]
-
-        new_last_read = last_fastq.id
-
-        print('The new last read is {}'.format(new_last_read))
-
-        fastq_df_barcode = pd.DataFrame.from_records(fastqs.values('id', 'start_time', 'barcode__name', 'type__name', 'is_pass', 'sequence_length', 'quality_average', 'channel'))
-        fastq_df_barcode['status'] = np.where(fastq_df_barcode['is_pass'] == False, 'Fail', 'Pass')
-        fastq_df_barcode['start_time_truncate'] = np.array(fastq_df_barcode['start_time'], dtype='datetime64[m]')
-
-        fastq_df_allreads = fastq_df_barcode.copy()
-        fastq_df_allreads['barcode__name'] = 'All reads'
-
-        fastq_df = fastq_df_barcode.append(fastq_df_allreads)
-
-        #
-        # Calculates statistics for RunSummaryBarcode
-        #
-        fastq_df_result = fastq_df.groupby(['barcode__name', 'type__name', 'is_pass']).agg({'sequence_length': ['min', 'max', 'sum', 'count'], 'quality_average': ['sum'], 'channel': ['unique']})
-
-        fastq_df_result.reset_index().apply(lambda row: save_flowcell_summary_barcode(flowcell_id, row), axis=1)
-
-        # fastq_df['start_time']=fastq_df['start_time'].values.astype('<M8[m]')
-        #
-        # Calculates statistics for RunStatisticsBarcode
-        #
-        fastq_df_result = fastq_df.groupby(['start_time_truncate', 'barcode__name', 'type__name', 'is_pass']).agg(
-            {'sequence_length': ['min', 'max', 'sum', 'count'], 'quality_average': ['sum'], 'channel': ['unique']})
-
-        fastq_df_result.reset_index().apply(lambda row: save_flowcell_statistic_barcode(flowcell_id, row), axis=1)
-
-        #
-        # Calculates statistics for HistogramSummary
-        #
-        fastq_df['bin_index'] = (fastq_df['sequence_length'] - fastq_df['sequence_length'] % HistogramSummary.BIN_WIDTH) / HistogramSummary.BIN_WIDTH
-
-        fastq_df_result = fastq_df.groupby(['barcode__name', 'type__name', 'is_pass', 'bin_index']).agg({'sequence_length': ['sum', 'count']})
-
-        fastq_df_result.reset_index().apply(lambda row: save_flowcell_histogram_summary(flowcell_id, row), axis=1)
-
-        #
-        # Calculates statistics for ChannelSummary
-        #
-        fastq_df_result = fastq_df.groupby(['channel']).agg({'sequence_length': ['sum', 'count']})
-
-        fastq_df_result.reset_index().apply(lambda row: save_flowcell_channel_summary(flowcell_id, row), axis=1)
-
-        # last_read = fastq_df_barcode['id'].max()
-        last_read = new_last_read
-
-    job_master = JobMaster.objects.get(pk=job_master_id)
-    job_master.running = False
-    job_master.last_read = last_read
-    job_master.read_count = job_master.read_count + len(fastqs)
-    job_master.save()
 
 
 @task()
@@ -618,42 +534,60 @@ def update_run_start_time():
         run.save()
         print('Updating start_time for run {} from {}'.format(run.runid, origin))
 
+
 @task
 def update_flowcell_details():
     """
-    This task updates the flowcell details (number of runs, number of reads)
+    This task updates the flowcell details (number of runs, number of reads, sample name)
+    using the MinIONRunStatus records if they are available, otherwise reading from the
+    fastq file summaries
     """
 
     flowcell_list = Flowcell.objects.all()
 
     for flowcell in flowcell_list:
 
+        logger.info('Flowcell id: {} - Updating details of flowcell {}'.format(flowcell.id, flowcell.name))
+
         #
-        # This block update flowcell start_time based on the
-        # MinIONRunStatus or the FlowcellSummaryBarcode
+        # Get the first MinIONRunStatus for a particular flowcell
         #
         minion_run_status_first = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell).order_by('minKNOW_start_time').first()
 
+        #
+        # If the MinIONRunStatus exists, than update start time and sample name
+        #
         if minion_run_status_first:
 
-            flowcell.start_time = minion_run_status_first.minKNOW_start_time
+            logger.info('Flowcell id: {} - There is at least one MinIONRunStatus'.format(flowcell.id))
 
+            flowcell.start_time = minion_run_status_first.minKNOW_start_time
+            flowcell.sample_name = minion_run_status_first.minKNOW_sample_name
+
+            logger.info('Flowcell id: {} - Setting start_time to {}'.format(flowcell.id, flowcell.start_time))
+            logger.info('Flowcell id: {} - Setting sample_name to {}'.format(flowcell.id, flowcell.sample_name))
+
+        #
+        # Get the FlowcellSummaryBarcodes for a particular flowcell and for barcode_name "All reads"
+        #
         flowcell_summary_list = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).filter(barcode_name='All reads')
 
         average_read_length = 0
         total_read_length = 0
         number_reads = 0
 
+        logger.info('Flowcell id: {} - There is/are {} FlowcellSummaryBarcode records'.format(flowcell.id, len(flowcell_summary_list)))
+
         for flowcell_summary in flowcell_summary_list:
-            # flowcell_summary = flowcell_summary_list[0]
-            # flowcell.average_read_length = flowcell_summary.average_read_length()
-            # flowcell.total_read_length = flowcell_summary.total_length
-            # flowcell.number_reads = flowcell_summary.read_count
             total_read_length += flowcell_summary.total_length
             number_reads += flowcell_summary.read_count
 
         if number_reads > 0:
             average_read_length = total_read_length / number_reads
+
+        logger.info('Flowcell id: {} - Total read length {}'.format(flowcell.id, total_read_length))
+        logger.info('Flowcell id: {} - Number reads {}'.format(flowcell.id, number_reads))
+        logger.info('Flowcell id: {} - Average read length {}'.format(flowcell.id, average_read_length))
 
         flowcell.average_read_length = average_read_length
         flowcell.total_read_length = total_read_length
@@ -662,3 +596,6 @@ def update_flowcell_details():
         flowcell.number_runs = len(flowcell.runs.all())
         flowcell.number_barcodes = len(FastqRead.objects.filter(run__flowcell=flowcell).values('barcode_name').distinct())
         flowcell.save()
+
+        logger.info('Flowcell id: {} - Number runs {}'.format(flowcell.id, flowcell.number_runs))
+        logger.info('Flowcell id: {} - Number barcodes {}'.format(flowcell.id, flowcell.number_barcodes))
