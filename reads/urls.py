@@ -174,9 +174,9 @@ urlpatterns = [
         name="flowcell-channel-summary"
     ),
     url(
-        r'^api/v1/flowcells/(?P<pk>[0-9]+)/rundetails/$',
-        views.flowcell_run_status_list,
-        name="flowcellrunstatus_list"
+        r'^flowcells/(?P<pk>[0-9]+)/run_summaries_html/$',
+        views.flowcell_run_summaries_html,
+        name="flowcell_run_summaries_html"
     ),
     url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/runstats/(?P<checkid>[0-9]+)/$',
@@ -202,7 +202,7 @@ urlpatterns = [
         name="tabs-details"
     ),
     url(
-        r'^api/v1/flowcells/(?P<pk>[0-9]+)/minknow-messages/$',
+        r'^flowcells/(?P<pk>[0-9]+)/minknow_messages_html/$',
         views.minknow_message_list_by_flowcell,
         name="minknow-message-list-by-flowcell"
     ),
