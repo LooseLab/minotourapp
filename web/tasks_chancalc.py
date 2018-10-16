@@ -21,8 +21,7 @@ def chancalc(flowcell_id, job_master_id, last_read):
 
     flowcell = Flowcell.objects.get(pk=flowcell_id)
 
-    fastqs = FastqRead.objects.filter(run__flowcell=flowcell).filter(id__gt=int(last_read))[:12000]
-    # fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id).filter(id__gt=int(last_read))[:2000]
+    fastqs = FastqRead.objects.filter(run__flowcell=flowcell).filter(id__gt=int(last_read))[:1000]
 
     logger.info('Flowcell id: {} - Updating details of flowcell {}'.format(flowcell.id, flowcell.name))
     logger.info('Flowcell id: {} - job_master {}'.format(flowcell.id, job_master.id))
