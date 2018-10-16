@@ -52,7 +52,7 @@ function requestData(flowcell_id) {
             if (selected_barcode == '') {
                 set_selected_barcode('All reads');
             }
-
+            this.barcodes = Array.from(barcodes).sort();
             this.addBarcodeTabs(flowcell_id);
             // draw the sankey
             this.drawSankey(flowcell_id);
