@@ -1,20 +1,12 @@
 "use strict";
 // If the table doesn't already exist
 let firsty = true;
-let updateHeader;
-
-function topMetaHeader(flowcellId){
-    metaHeader(flowcellId);
-    updateHeader = setInterval(metaHeader, 60000, flowcellId);
-}
-
 function metaHeader(flowcellId){
     // Metaheader draws or updates the metadata header at the top of the visualisation page
     // initialise variables
     let table, head, row;
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     if(flowcell_selected_tab_input.value !== "Metagenomics"){
-        clearInterval(updateHeader);
         console.log("Cleared header interval");
         return;
     }

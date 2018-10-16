@@ -78,11 +78,11 @@ var FlowcellPageApp = {
         this.lastread = 0;
         this.needtoupdatecharts = false;
 
-        this.topLevelSankeyDrawer = topLevelSankeyDrawer;
-        this.topMetaHeader = topMetaHeader;
-        this.topLevelDrawDonut = topLevelDrawDonut;
-        this.topGetTotalReadsTable = topGetTotalReadsTable;
-        this.topGetDonutRankTable = topGetDonutRankTable;
+        this.drawSankey = drawSankey;
+        this.metaHeader = metaHeader;
+        this.drawDonut = drawDonut;
+        this.getTotalReadsTable = getTotalReadsTable;
+        this.drawDonutRankTable = drawDonutRankTable;
         this.flowcellTaskHistoryTable = flowcellTaskHistoryTable;
         this.addBarcodeTabs = addBarcodeTabs.bind(this);
         this.update_mapping_table = update_mapping_table;

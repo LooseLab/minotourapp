@@ -1,20 +1,5 @@
 "use strict";
 let updateSankey;
-// resize svg and graphic on window resize
-// $(window).on("resize", function () {
-//     // height of page
-//     let hi = $(window).height() * 0.55;
-//     // width of page
-//     let width = $(window).width() - 60;
-//     // flowcell id for data
-//     let inputFlowcellId = document.querySelector("#flowcell-id");
-//     let flowcellId = inputFlowcellId.value;
-//     //update svg width and height
-//     d3.select(".svg-sankey").attr("width", width);
-//     d3.select(".svg-sankey").attr("height", hi);
-//     // draw the sankey diagram
-//     drawSankey(flowcellId);
-// });
 
 function draw(nodesObj, sankey, g, format, color, width) {
     // Draw the diagram
@@ -116,13 +101,6 @@ function update(flowcellId, sankey, checkForData, svg, g, format, color, width, 
         draw(nodes, sankey, g, format, color, width);
     });
 }
-
-function topLevelSankeyDrawer(flowcellID){
-
-    drawSankey(flowcellID);
-
-}
-
 // top level function
 function drawSankey(flowcellId) {
     var selectedBarcode = get_selected_barcode();
@@ -175,5 +153,4 @@ function drawSankey(flowcellId) {
         g = svg.append("g").attr("class", "contain");
     }
     update(flowcellId, sankey, checkForData, svg, g, format, color, width, selectedBarcode);
-    let timmy = setTimeout(drawSankey, 60000, flowcellId, selectedBarcode);
 }

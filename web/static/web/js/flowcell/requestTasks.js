@@ -133,7 +133,7 @@ function flowcellTaskHistoryTable(flowcellId) {
     let table = $(".tasktable");
     // if it's already loaded don't reiniiialise
     if ($.fn.DataTable.isDataTable(table)) {
-        table.ajax.reload();
+        table.DataTable.ajax.reload();
     } else {
         table.DataTable({
             ajax: {

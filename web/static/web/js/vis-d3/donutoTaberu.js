@@ -7,9 +7,6 @@ let displayTaxas = ["Species", "Genus", "Family", "Order", "Class", "Phylum", "K
 let first = true;
 // Get the colour scheme, Scale ordinal so colours can be returned the same when given labels
 let color = d3.scaleOrdinal(d3.schemeCategory10);
-
-let updateDonutTable;
-
 //create data to draw a table
 function drawPieTables(countedData, color) {
     //create wrapper function to draw a table
@@ -38,10 +35,6 @@ function drawTables(selection, dataToDraw) {
     // draw the tables using d3
     // get table height
     let columns = ["Species", "# Matches", "Rank", "Key"];
-
-    let container = d3.select("body").node();
-
-    // let Theight = container.getBoundingClientRect().height*0.35.toString() + "px";
     let Theight = 35;
     let table;
     let thead;
@@ -158,11 +151,8 @@ function drawTables(selection, dataToDraw) {
     }
 
 }
-function topGetDonutRankTable(flowCellId){
-    getDonutRankTable(flowCellId);
 
-}
-function getDonutRankTable(flowCellId) {
+function drawDonutRankTable(flowCellId) {
     var selectedBarcode = get_selected_barcode();
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     if (flowcell_selected_tab_input.value !== "Metagenomics"){
@@ -210,5 +200,4 @@ function getDonutRankTable(flowCellId) {
 
         drawPieTables(data1, color);
     });
-    updateDonutTable = setTimeout(getDonutRankTable, 60000, flowCellId, selectedBarcode);
 }

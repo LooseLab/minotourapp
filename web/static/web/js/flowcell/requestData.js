@@ -53,19 +53,17 @@ function requestData(flowcell_id) {
                 set_selected_barcode('All reads');
             }
 
-            this.barcodes = Array.from(barcodes).sort();
-            // add the barcodes for this flowcell
             this.addBarcodeTabs(flowcell_id);
             // draw the sankey
-            this.topLevelSankeyDrawer(flowcell_id);
+            this.drawSankey(flowcell_id);
             // update the metadata header
-            this.topMetaHeader(flowcell_id);
+            this.metaHeader(flowcell_id);
             // Draw the donut chart
-            this.topLevelDrawDonut(flowcell_id);
+            this.drawDonut(flowcell_id);
             // update the total Reads Table
-            this.topGetTotalReadsTable(flowcell_id);
+            this.getTotalReadsTable(flowcell_id);
             // Draw the donut rank table
-            this.topGetDonutRankTable(flowcell_id);
+            this.drawDonutRankTable(flowcell_id);
             // Draw the alert mapping targets table;
             this.update_mapping_table(flowcell_id);
 

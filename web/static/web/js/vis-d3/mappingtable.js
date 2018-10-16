@@ -1,9 +1,3 @@
-let updateAlert;
-function intervalAlert(flowcellId){
-    update_mapping_table(flowcellId);
-    updateAlert = setInterval(update_mapping_table, 60000, flowcellId)
-}
-
 function update_mapping_table(flowcellId){
     let table;
     let thead;
@@ -13,7 +7,6 @@ function update_mapping_table(flowcellId){
     let columns = ["species", "tax_id", "num_matches", "sum_unique","red_reads"];
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     if(flowcell_selected_tab_input.value !== "Metagenomics"){
-        clearInterval(updateAlert);
         console.log("Cleared header interval");
         return;
     }
