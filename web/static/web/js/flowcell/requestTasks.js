@@ -130,12 +130,12 @@ function loadTasksForm() {
 
 function flowcellTaskHistoryTable(flowcellId) {
     // Draw the Task table on the tasks tab showing previous and current analyses
-    let table = $(".tasktablecont");
+    let table = $(".tasktable");
     // if it's already loaded don't reiniiialise
-    if (table.hasClass("yesload")) {
-        console.log("No worries mate");
+    if ($.fn.DataTable.isDataTable(table)) {
+        table.ajax.reload();
     } else {
-        $('.tasktable').DataTable({
+        table.DataTable({
             ajax: {
                 url: '/api/v1/tasks/?search_criteria=flowcell&search_value=' + flowcellId.toString(),
                 method: "GET",
@@ -149,7 +149,6 @@ function flowcellTaskHistoryTable(flowcellId) {
                 {"data": "complete"}
             ]
         });
-        $(".tasktablecont").addClass("yesload");
     }
-
+    setTimeout(flowcellTaskHistoryTable, 30000, flowcellId);
 }

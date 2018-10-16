@@ -54,15 +54,16 @@ def centoutput_bulk_list(row):
                       flowcell=row["flowcell"], task=row["task"])
 
 
-def bulk_create_list(row, job_master):
+def bulk_create_list(row, job_master, flowcell_id):
     """
     Create barcoded lists
     :param job_master: The job_master object for this task run
     :param row: The dataframe row
+    :param flowcell_id: the id of the flowcell
     :return: The  newly created objects
     """
     try:
-        cent = CentOutput.objects.get(tax_id=row["tax_id"], task__id=job_master.id)
+        cent = CentOutput.objects.get(tax_id=row["tax_id"], task__id=job_master.id, flowcell__id=flowcell_id)
         return CentOutputBarcoded(num_matches=row["num_matches"],
                                   sum_unique=row["sum_unique"],
                                   output=cent,
@@ -87,7 +88,7 @@ def update_bar_values(row, flowcell_job_id, flowcell_id):
     CentOutputBarcoded.objects.filter(tax_id=row["tax_id"], barcode=row["barcode"],
                                       output__task__id=flowcell_job_id,
                                       output__flowcell__id=flowcell_id).update(
-        num_matches=row["updated_num_matches"], sum_unique=row["updated_sum_unique"])
+    num_matches=row["updated_num_matches"], sum_unique=row["updated_sum_unique"])
 
 
 def subspecies_determine(name):
@@ -128,7 +129,6 @@ def sankey_bulk_insert_list(row):
                        barcode=row["barcode"])
 
 
-# TODO very inefficient database pounding. Rewrite first get into filter with dict lookup
 def sankey_bulk_bar_insert(row, flowcell_id, flowcell_job_id):
     """
     Create or update the barcode objects in the database
@@ -140,8 +140,8 @@ def sankey_bulk_bar_insert(row, flowcell_id, flowcell_job_id):
 
     # try:
     SankeyLinks.objects.filter(flowcell__id=flowcell_id, task__id=flowcell_job_id,
-                                   target_tax_level=row["target_tax_level"],
-                                   barcode=row["barcode"], tax_id=row["tax_id"]).update(value=row["updated_value"])
+                               target_tax_level=row["target_tax_level"],
+                               barcode=row["barcode"], tax_id=row["tax_id"]).update(value=row["updated_value"])
     # except KeyError as e:
     #     logger.warning(e.__traceback__)
     #     logger.info("<<<<<")
@@ -193,7 +193,7 @@ class Centrifuger:
         # The number of reads to skip when getting the reads out of the database
         self.skip = 0
         # the number to chunk in
-        self.chunk = 10000
+        self.chunk = 5000
 
     @staticmethod
     def delete_series(series, df):
@@ -461,21 +461,23 @@ class Centrifuger:
                                                                                    "tax_id"])["sum_unique"].sum()
                 to_update_bar_df["updated_num_matches"] = to_update_bar_df.groupby(["barcode",
                                                                                     "tax_id"])["num_matches"].sum()
-                to_update_bar_df = to_update_bar_df[~to_update_bar_df.index.duplicated(keep="first")]
+                # to_update_bar_df = to_update_bar_df[~to_update_bar_df.index.duplicated(keep="first")]
+                to_update_bar_df = to_update_bar_df[to_update_bar_df.index.duplicated(keep="first")]
                 to_update_bar_df.reset_index(inplace=True)
                 # TODO update the function
-                to_update_bar_df.apply(update_bar_values, args=(self.flowcell_job_id, self.flowcell_job_id,),
+                to_update_bar_df.apply(update_bar_values, args=(self.flowcell_job_id, self.flowcell_id),
                                        axis=1)
 
                 # ###### Update existing barcode output ######
                 to_create_bar_df.drop_duplicates(subset=["tax_id", "barcode"], inplace=True, keep=False)
                 to_create_bar_df = to_create_bar_df[to_create_bar_df["temp"] == "N"]
-                bulk_insert_list_bar = to_create_bar_df.apply(bulk_create_list, args=(job_master,), axis=1)
+                bulk_insert_list_bar = to_create_bar_df.apply(bulk_create_list, args=(job_master, self.flowcell_id),
+                                                              axis=1)
                 CentOutputBarcoded.objects.bulk_create(list(bulk_insert_list_bar.values))
                 df.drop(columns=["temp"], inplace=True)
 
             else:
-                bulk_insert_list_bar = df.apply(bulk_create_list, args=(job_master,),
+                bulk_insert_list_bar = df.apply(bulk_create_list, args=(job_master, self.flowcell_id),
                                                 axis=1)
                 CentOutputBarcoded.objects.bulk_create(list(bulk_insert_list_bar.values))
 
@@ -594,7 +596,7 @@ class Centrifuger:
 
             # ## ### Create the SankeyLinks object #### # One for each link
             to_create_sank_df.reset_index(inplace=True)
-            to_create_sank_df = to_create_sank_df[to_create_sank_df["value"] > 2]
+            to_create_sank_df = to_create_sank_df[to_create_sank_df["value"] > 5]
             to_create_sank_df = to_create_sank_df.drop_duplicates(subset=["tax_id", "target_tax_level"])
 
             # Create a subset df containing links that already have reuslts
@@ -617,6 +619,7 @@ class Centrifuger:
             if not to_update_sank_df.empty:
                 print(to_update_sank_df.head())
                 print(to_update_sank_df.keys())
+                print(to_update_sank_df.shape)
                 to_update_sank_df["updated_value"] = to_update_sank_df["value_x"] + to_update_sank_df["value_y"]
                 # TODO slowest point in code
                 to_update_sank_df.apply(sankey_bulk_bar_insert, args=(self.flowcell_id,
@@ -639,12 +642,13 @@ class Centrifuger:
 
             # Update the jobmaster object fields that are relevant
             job_master.last_read = last_read_id
+            job_master.read_count = doc_no
             job_master.save()
             metadata.reads_classified = limit
             metadata.save()
-            if iteration_count < 5:
+            if iteration_count < 3:
                 logger.info(iteration_count)
-                timmy.sleep(10)
+                timmy.sleep(60)
         # if self.scan is false
         if not self.scan:
             # Update the job_master object to running

@@ -116,6 +116,9 @@ class CentOutput(models.Model):
         related_name="centrifuge_summaries",
         on_delete=models.CASCADE,
     )
+    num_matches = models.IntegerField(default=0)
+    sum_unique = models.IntegerField(default=0)
+    barcode = models.CharField(max_length=50)
 
 
 class CentOutputBarcoded(models.Model):
