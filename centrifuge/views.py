@@ -73,14 +73,6 @@ def cent_sankey_two(request):
     species_limit = request.GET.get("speciesLimit", 30)
     # Get the flowcell ID , defaulting to False if not present
     flowcell_id = request.GET.get("flowcellId", False)
-
-
-
-
-
-
-
-
     # Selected barcode, default all reads
     selected_barcode = request.GET.get("barcode", "All reads")
 
@@ -92,46 +84,45 @@ def cent_sankey_two(request):
 
     print("the flowcell is {}".format(flowcell_id))
     print("the barcode is {}".format(selected_barcode))
-    queryset = SankeyLinks.objects.filter(flowcell__id=flowcell_id, task__id=task_id).values()
+    queryset = SankeyLinks.objects.filter(flowcell__id=flowcell_id, task__id=task_id, barcode=selected_barcode).values()
     # If the queryset is empty, return an empty object
     if not queryset:
+        print("no queryset")
         return Response({}, status=204)
     # Create the dataframe from the results of the database query
     source_target_df = pd.DataFrame(list(queryset))
     # If the database is empty return an empty list
     if source_target_df.empty:
+        print("no source target")
         return Response({}, status=204)
 
-    barcode_df = pd.DataFrame(list(SankeyLinksBarcode.objects.filter(link__flowcell_id=flowcell_id,
-                                                                     link__task__id=task_id,
-                                                                     barcode=selected_barcode).values()))
-    if barcode_df.empty:
-        return Response({}, status=204)
+    # barcode_df = pd.DataFrame(list(SankeyLinksBarcode.objects.filter(link__flowcell_id=flowcell_id,
+    #                                                                  link__task__id=task_id,
+    #                                                                  barcode=selected_barcode).values()))
     # Merge barcode values onto dataframe
-    source_target_df = pd.merge(source_target_df, barcode_df, how="inner", on="tax_id")
+    # source_target_df = pd.merge(source_target_df, barcode_df, how="inner", on="tax_id")
     # get a subset df of all the species rows
     temp_species_df = source_target_df[source_target_df["target_tax_level"] == "species"]
     # get species limit (default 50) of the largest species
-    temp_species_df = temp_species_df.nlargest(species_limit, ["value_y"])
+    temp_species_df = temp_species_df.nlargest(species_limit, ["value"])
     # get the values for those species
     source_target_df = source_target_df[source_target_df["tax_id"].isin(temp_species_df["tax_id"])]
 
     # Drop unnecessary columns from DataFrame
-    source_target_df.drop(columns=["flowcell_id", "id_x", "id_y", "tax_id", "target_tax_level",
-                                   "task_id", "link_id"], inplace=True)
+    source_target_df.drop(columns=["flowcell_id", "tax_id", "target_tax_level",
+                                   "task_id"], inplace=True)
     # Set MultiIndex to group source to target
     source_target_df.set_index(["source", "target"], inplace=True)
     # Group by rows where the source and target are the same
     st_gb = source_target_df.groupby(["source", "target"])
     # Replace the value columns on dataframe with the sum of all the values of identical source target rows
-    source_target_df["value"] = st_gb["value_y"].sum()
+    source_target_df["value"] = st_gb["value"].sum()
     source_target_df.reset_index(inplace=True)
     # Drop all duplicate rows, only need one new entry
     source_target_df.drop_duplicates(["source", "target"], keep="first", inplace=True)
     # Drop any rows where the source and the target are the same and don't keep them
     source_target_df = pd.concat([source_target_df, source_target_df[
         source_target_df["source"] == source_target_df["target"]]]).drop_duplicates(["source", "target"], keep=False)
-    source_target_df.drop(columns=["barcode_x", "value_x", "value_y"], inplace=True)
     source_target_df.dropna(inplace=True)
     source_target_df.sort_values(["value"], ascending=False, inplace=True)
     # Create the links list of dicts to return
@@ -167,6 +158,7 @@ def vis_table_or_donut_data(request):
     """
     flowcell_id = request.GET.get("flowcellId", 0)
     barcode = request.GET.get("barcode", "All reads")
+    print()
     # Get the most recent job
     task_id = max(JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics")
                   .values_list("id", flat=True))
@@ -189,8 +181,6 @@ def vis_table_or_donut_data(request):
     centoutput_df.set_index("tax_id", inplace=True)
 
     centoutput_df["name"] = names_df["name"]
-
-
     centoutput_df.drop(columns=["output_id"], inplace=True)
 
     # create dataframe of all the Lineages we have stored in the database

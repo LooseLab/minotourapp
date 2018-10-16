@@ -4,8 +4,7 @@ import pandas as pd
 from celery.utils.log import get_task_logger
 from ete3 import NCBITaxa
 import numpy as np
-from centrifuge.models import CentOutput, LineageValues, MetaGenomicsMeta, SankeyLinks, CentOutputBarcoded, \
-    SankeyLinksBarcode
+from centrifuge.models import CentOutput, LineageValues, MetaGenomicsMeta, SankeyLinks, CentOutputBarcoded
 from jobs.models import JobMaster
 from reads.models import FastqRead
 from reads.models import Flowcell
@@ -125,7 +124,8 @@ def sankey_bulk_insert_list(row):
                        target=row["target"],
                        tax_id=row["tax_id"],
                        task=row["job_master"],
-                       target_tax_level=row["target_tax_level"])
+                       target_tax_level=row["target_tax_level"], value=row["value"],
+                       barcode=row["barcode"])
 
 
 # TODO very inefficient database pounding. Rewrite first get into filter with dict lookup
@@ -137,22 +137,19 @@ def sankey_bulk_bar_insert(row, flowcell_id, flowcell_job_id):
     :param flowcell_job_id: The Pk of the task ID
     :return: Nothing
     """
-    try:
-        link = SankeyLinks.objects.get(tax_id=row["tax_id"], flowcell=row["flowcell"], task=row["job_master"],
-                                       target_tax_level=row["target_tax_level"])
-        SankeyLinksBarcode.objects.update_or_create(
-            link__flowcell__id=flowcell_id,
-            link__task__id=flowcell_job_id,
-            tax_id=row["tax_id"],
-            barcode=row["barcode"],
-            defaults={"link": link, "tax_id": row["tax_id"], "value": row["value"], "barcode": row["barcode"]}
-        )
-    except ObjectDoesNotExist:
-        logger.info("<<<<<")
-        logger.info("Cent Object doesn't exist")
-        logger.info("No matching entry for tax_id {} and target level {}".format(row["tax_id"],
-                                                                                 row["target_tax_level"]))
-        logger.info("<<<<<")
+
+    # try:
+    SankeyLinks.objects.filter(flowcell__id=flowcell_id, task__id=flowcell_job_id,
+                                   target_tax_level=row["target_tax_level"],
+                                   barcode=row["barcode"], tax_id=row["tax_id"]).update(value=row["updated_value"])
+    # except KeyError as e:
+    #     logger.warning(e.__traceback__)
+    #     logger.info("<<<<<")
+    #     logger.info("SankeyLinks doesn't exist")
+    #     logger.info("No matching entry for tax_id {} and target level {} in barcode {}".format(row["tax_id"],
+    #                                                                                            row["target_tax_level"],
+    #                                                                                            row["barcode"]))
+    #     logger.info("<<<<<")
 
 
 def lineages_bulk_insert_list(row):
@@ -283,7 +280,11 @@ class Centrifuger:
             job_master.read_count = doc_no
             job_master.save()
             # Get the Id of the last read that we retrieve
-            last_read_id = doc_no
+            if doc_no < (self.skip + self.chunk):
+                limit = doc_no
+            else:
+                limit = self.skip + self.chunk
+            last_read_id = limit
 
             # The number of reads that we have in the database
             metadata.number_of_reads = doc_no
@@ -313,10 +314,7 @@ class Centrifuger:
             # Get all the reads skipping all we did last time
 
             logger.info("slef.skip is {} and limit is {}".format(self.skip, doc_no))
-            if doc_no < (self.skip + self.chunk):
-                limit = doc_no
-            else:
-                limit = self.skip + self.chunk
+
             # create python list for zipping
             sequence_data = list(cursor.values_list("fastqreadextra__sequence", flat=True)[self.skip:limit])
             # create list of read ids for zipping
@@ -438,7 +436,6 @@ class Centrifuger:
             # same with task from Jobmaster
             df["task"] = job_master
             cent_to_create = df[~df["tax_id"].isin(prev_df_tax_ids)]
-            centoutput_insert_list = []
             # apply row wise
             centoutput_insert_list = cent_to_create.apply(centoutput_bulk_list, axis=1)
             CentOutput.objects.bulk_create(list(centoutput_insert_list.values))
@@ -450,7 +447,6 @@ class Centrifuger:
             # append previous data frame to current
             bar_queryset = CentOutputBarcoded.objects.filter(output__flowcell__id=self.flowcell_id,
                                                              output__task__id=self.flowcell_job_id).values()
-            bulk_insert_list_bar = []
 
             if bar_queryset:
                 to_create_bar_df = pd.DataFrame(list(bar_queryset))
@@ -474,8 +470,7 @@ class Centrifuger:
                 # ###### Update existing barcode output ######
                 to_create_bar_df.drop_duplicates(subset=["tax_id", "barcode"], inplace=True, keep=False)
                 to_create_bar_df = to_create_bar_df[to_create_bar_df["temp"] == "N"]
-                bulk_insert_list_bar = to_create_bar_df.apply(bulk_create_list, args=(job_master,)
-                                                              , axis=1)
+                bulk_insert_list_bar = to_create_bar_df.apply(bulk_create_list, args=(job_master,), axis=1)
                 CentOutputBarcoded.objects.bulk_create(list(bulk_insert_list_bar.values))
                 df.drop(columns=["temp"], inplace=True)
 
@@ -576,43 +571,56 @@ class Centrifuger:
 
             source_target_df["flowcell"] = flowcell
             source_target_df["job_master"] = job_master
+            print(source_target_df["barcode"].unique())
             # TODO DO sorting magic before the database deposition
             # Taxids from the current results that are in this df
-            current_links_taxids = set(source_target_df["tax_id"])
+            # current_links_taxids = set(source_target_df["tax_id"])
             # TAxids that have links from this analysis already
-            prev_links_taxids = set(SankeyLinks.objects.filter(flowcell__id=self.flowcell_id,
-                                                               task__id=self.flowcell_job_id)
-                                    .values_list("tax_id", flat=True))
+            prev_link_df = pd.DataFrame(
+                list(SankeyLinks.objects.filter(flowcell__id=self.flowcell_id,
+                                                task__id=self.flowcell_job_id).values()))
+            if prev_link_df.empty:
+                to_create_sank_df = source_target_df
+            else:
+                tax_id_list = list(prev_link_df["tax_id"])
+                barcodes_list = list(prev_link_df["barcode"])
+                tupley_tuple = list(zip(tax_id_list, barcodes_list))
+                prev_links_mask = source_target_df[['tax_id', 'barcode']].agg(tuple, 1).isin(tupley_tuple)
+                to_create_sank_df = source_target_df[~prev_links_mask]
             # Not yet linked is the taxIDs that don't have any result in the database
-            not_yet_linked = current_links_taxids - prev_links_taxids
             # Create a subset dataframe that contains only links for new taxIDS
-            to_create_sank_df = source_target_df[source_target_df["tax_id"].isin(not_yet_linked)]
             # Create  a new series that contains the task record for this in each row
             # to_create_df["job_master"] = job_master
 
             # ## ### Create the SankeyLinks object #### # One for each link
             to_create_sank_df.reset_index(inplace=True)
+            to_create_sank_df = to_create_sank_df[to_create_sank_df["value"] > 2]
             to_create_sank_df = to_create_sank_df.drop_duplicates(subset=["tax_id", "target_tax_level"])
 
             # Create a subset df containing links that already have reuslts
-            # to_update_df["job_master"] = job_master
-            # Link to contain objects for bulk insertion
-            sankey_link_insert_list = []
             # # add a new series, broadcast the flowcell object down it
             # to_create_df["flowcell"] = flowcell
             # to_update_df["flowcell"] = flowcell
+            to_update_sank_df = pd.DataFrame()
+            if not prev_link_df.empty:
+                to_update_sank_df = pd.merge(source_target_df, prev_link_df, how="inner", on=["tax_id", "barcode",
+                                                                                              "target_tax_level"])
+
             if not to_create_sank_df.empty:
                 # Perform the apply
+
                 sankey_link_insert_list = to_create_sank_df.apply(sankey_bulk_insert_list, axis=1)
 
                 # Bulk create the objects
                 SankeyLinks.objects.bulk_create(list(sankey_link_insert_list.values))
 
-            if not source_target_df.empty:
+            if not to_update_sank_df.empty:
+                print(to_update_sank_df.head())
+                print(to_update_sank_df.keys())
+                to_update_sank_df["updated_value"] = to_update_sank_df["value_x"] + to_update_sank_df["value_y"]
                 # TODO slowest point in code
-                source_target_df.apply(sankey_bulk_bar_insert, args=(self.flowcell_id,
-                                                                     self.flowcell_job_id,)
-                                       , axis=1)
+                to_update_sank_df.apply(sankey_bulk_bar_insert, args=(self.flowcell_id,
+                                                                      self.flowcell_job_id), axis=1)
 
             # ##################### Back to the non sankey calculations ####################
             # Create a dataframe for lineages that aren't already in the table
@@ -624,8 +632,6 @@ class Centrifuger:
                 new_lineages_for_saving_df.index.name = "tax_id"
                 new_lineages_for_saving_df.reset_index(inplace=True)
                 # list to contain the bulk insert object
-                lineages_insert_list = []
-
                 lineages_insert_list = new_lineages_for_saving_df.apply(lineages_bulk_insert_list,
                                                                         axis=1)
                 # Bulk create
@@ -634,9 +640,9 @@ class Centrifuger:
             # Update the jobmaster object fields that are relevant
             job_master.last_read = last_read_id
             job_master.save()
-            metadata.reads_classified = doc_no
+            metadata.reads_classified = limit
             metadata.save()
-            if iteration_count < 10:
+            if iteration_count < 5:
                 logger.info(iteration_count)
                 timmy.sleep(10)
         # if self.scan is false

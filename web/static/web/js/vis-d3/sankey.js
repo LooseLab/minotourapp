@@ -94,13 +94,14 @@ function update(flowcellId, sankey, checkForData, svg, g, format, color, width, 
     // TODO species limit one day
     $.get("/sankey", {flowcellId , "barcode":selectedBarcode}, result => {
         let nodes;
+        console.log(result);
         // if theres no data from the server
         if (result === undefined) {
             return;
         }
 
         nodes = result.sankey;
-        // If there is data and checkForData is true, clear the css elements and lloading sign so we can see the graphics
+        // If there is data and checkForData is true, clear the css elements and loading sign so we can see the graphics
         if (result.sankey.nodes.length !== 0 && checkForData) {
             d3.select("#loading-sign").transition().duration(4500).style("opacity", 0);
 

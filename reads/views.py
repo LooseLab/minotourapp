@@ -1547,7 +1547,6 @@ def flowcell_tabs_details(request, pk):
     print(len(JobMaster.objects.filter(Q(run__in=run_list) | Q(flowcell=flowcell)).filter(last_read__gt=0).values_list(
         'job_type__name', flat=True)))
     for master in JobMaster.objects.filter(Q(run__in=run_list) | Q(flowcell=flowcell)).filter(last_read__gt=0).values_list('job_type__name', flat=True):
-        print(master)
         if master in flowcell_tabs_dict.keys():
 
             tabs.append(flowcell_tabs_dict[master])

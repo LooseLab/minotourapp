@@ -40,7 +40,7 @@ class SankeyLinks(models.Model):
 
 class SankeyLinksBarcode(models.Model):
     """
-        The values for the different barcodes for the sankey diagram
+        The values for the different barcodes for the sankey diagram TODO unused
     """
     value = models.IntegerField(null=True, default=0)
     barcode = models.CharField(max_length=20)
