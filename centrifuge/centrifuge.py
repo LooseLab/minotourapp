@@ -78,6 +78,7 @@ class Centrifuger:
         centrifuge_path = get_env_variable("MT_CENTRIFUGE")
         index_path = get_env_variable("MT_CENTRIFUGE_INDEX")
         cmd = "perl " + centrifuge_path + " -f --mm -x " + index_path + " -"
+
         # Counter for total centOut
         total_centout = 0
         # Instance of the Ncbi taxa class, for taxonomic id manipulation
@@ -95,10 +96,21 @@ class Centrifuger:
         # Create a MetaData object about the Classification analysis, used to populate
         # the header on the visualisation.html page
         flowcell = Flowcell.objects.get(pk=self.flowcell_id)
-        MetaGenomicsMeta(run_time=time, flowcell=flowcell, running=True, number_of_reads=0,
-                         reads_classified=0, task=job_master).save()
+
+        metadata = MetaGenomicsMeta(
+            run_time=time,
+            flowcell=flowcell,
+            running=True,
+            number_of_reads=0,
+            reads_classified=0,
+            task=job_master
+        )
+
+        metadata.save()
+
         # Get the object that we just created back out
-        metadata = MetaGenomicsMeta.objects.get(flowcell__id=self.flowcell_id, task__id=job_master.id)
+        # metadata = MetaGenomicsMeta.objects.get(flowcell__id=self.flowcell_id, task__id=job_master.id)
+
 
         # While self.scan is true we query the fastqreads model for new readss that have appearedsince last time
         iteration_count = 0
@@ -113,8 +125,8 @@ class Centrifuger:
                 print("no reads in database")
                 timmy.sleep(10)
                 continue
-            # doc_no = int(cursor.count())
-            doc_no = 2000
+            doc_no = int(cursor.count())
+            # doc_no = 500
             # Update the read count on the JobMaster
             job_master.read_count = doc_no
             job_master.save()
@@ -151,7 +163,7 @@ class Centrifuger:
             # create list of read ids for zipping
             read_ids = list(cursor.values_list("read_id", flat=True)[self.skip:doc_no])
             # Create list of tuples where
-            barcodes = list(cursor.values_list("barcode__name", flat=True)[self.skip:doc_no])
+            barcodes = list(cursor.values_list("barcode_name", flat=True)[self.skip:doc_no])
             # the 1st element is the read_id and the second is the sequence
             tupley_list = list(zip(read_ids, sequence_data, barcodes))
             # update skip number
@@ -241,14 +253,12 @@ class Centrifuger:
                 """
 
                 gb_df_gb = gb_df.groupby("tax_id")
-                # get barcode
-                # barcode = gb_df["barcode"].unique()[0]
                 # calculate total unique matches for this species in this barcode
                 sum_unique = gb_df_gb["unique"].sum()
                 # calculate the total matches fot this species in this barcode
                 num_matches = gb_df_gb.size()
                 gb_df.drop(columns=["readID", "seqID", "numMatches", "unique"], inplace=True)
-                gb_df.drop_duplicates(keep="first", inplace=True)
+                gb_df.drop_duplicates(subset=["barcode", "name"], keep="first", inplace=True)
 
                 # combine the dataframes
                 gb_ap = pd.concat([sum_unique, num_matches, gb_df["name"]], axis=1)
@@ -258,23 +268,20 @@ class Centrifuger:
             unique_barcode = set(barcodes)
             if len(unique_barcode) > 1:
                 barcode_df = gb_bc.apply(barcode_calculations, barcode_df)
-
                 barcode_df.reset_index(inplace=True)
                 barcode_df.rename(columns={"unique": "sum_unique", 0: "num_matches"}, inplace=True)
 
             # delete these columns, no longer needed
-            df.drop(columns=["readID", "seqID", "numMatches", "unique", "barcode"], inplace=True)
+            df.drop(columns=["readID", "seqID", "numMatches", "unique", "barcode", "read_id"], inplace=True)
             # remove duplicate rows in the data frame,so we only have one entry for each species
             df.drop_duplicates(keep="first", inplace=True)
-            df["barcode"] = "All reads"
 
             barcode_df.set_index("tax_id", inplace=True)
 
             # =========================================== database dataframe PREVIOUS RESULTS
-            # query the index get all the objects in the database for this analysis at this point
-            new_cent_num_matches = df["num_matches"]
             # Get the tax ids from the dataframe containg the newly produced centrifuge results
             new_tax_ids_list = df.index.values
+            # query the index get all the objects in the database for this analysis at this point
             queryset = CentOutput.objects.filter(flowcell__id=self.flowcell_id, task__id=job_master.id)
 
             # Num matches series to map onto sankey links df below
@@ -285,6 +292,7 @@ class Centrifuger:
             # drop all duplicated lines to keep only one for each entry, Atomicity
             df.reset_index(inplace=True)
             df = df.drop_duplicates(keep="first")
+            df["barcode"] = "All reads"
             prev_df_tax_ids = list(queryset.values_list("tax_id", flat=True))
             # ###### BULK CREATE CENTOUTPUT OBJECTS ########
             df["flowcell"] = flowcell

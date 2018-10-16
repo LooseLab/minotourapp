@@ -316,17 +316,28 @@ def minknow_message_list_by_flowcell(request, pk):
     form_start_time = request.GET.get('start_time', None)
     form_end_time = request.GET.get('end_time', None)
 
-    if form_start_time:
-        start_time = dateutil.parser.parse(form_start_time)
+    start_time = None
+    end_time = None
 
-    else:
-        start_time = None
+    if form_start_time:
+
+        try:
+
+            start_time = dateutil.parser.parse(form_start_time)
+
+        except ValueError:
+
+            print('Error when parsing start_time')
 
     if form_end_time:
-        end_time = dateutil.parser.parse(form_end_time)
 
-    else:
-        end_time = None
+        try:
+
+            end_time = dateutil.parser.parse(form_end_time)
+
+        except ValueError:
+
+            print('Error when parsing end_time')
 
     flowcell = Flowcell.objects.get(pk=pk)
 
@@ -347,21 +358,24 @@ def minknow_message_list_by_flowcell(request, pk):
             .order_by('-timestamp')
 
     elif start_time:
+
         messages = MinionMessage.objects\
             .filter(minion__in=minion_list)\
             .filter(timestamp__gt=start_time) \
             .order_by('-timestamp')
 
     elif end_time:
+
         messages = MinionMessage.objects\
             .filter(minion__in=minion_list)\
             .filter(timestamp__lt=end_time) \
             .order_by('-timestamp')
 
     else:
+
         messages = MinionMessage.objects\
-            .filter(minion__in=minion_list)[:10] \
-            .order_by('-timestamp')
+            .filter(minion__in=minion_list) \
+            .order_by('-timestamp')[:10]
 
     serializer = MinionMessageSerializer(messages, many=True, context={'request': request})
 
@@ -990,22 +1004,13 @@ def minION_liverun_list(request,pk):
     return None
 
 
-@api_view(['GET'])
-def flowcell_list_active(request):
-
-    queryset = Flowcell.objects.distinct().filter(owner=request.user)
-
-    serializer = FlowcellSerializer(queryset, many=True, context={'request': request})
-
-    return Response(serializer.data)
-
-
-@api_view(['GET','POST'])
+@api_view(['GET', 'POST'])
 def flowcell_list(request):
 
     if request.method == 'GET':
 
         queryset = Flowcell.objects.filter(owner=request.user)
+
         flowcells = []
 
         for record in queryset:
@@ -1025,15 +1030,18 @@ def flowcell_list(request):
 
             flowcells.append(flowcell)
 
-        # serializer = FlowcellSerializer(queryset, many=True, context={'request': request})
-        # return Response(serializer.data)
         return JsonResponse({'data': flowcells})
 
-    elif request.method == 'POST':
+    else:
+
         serializer = FlowcellSerializer(data=request.data, context={'request': request})
+
         if serializer.is_valid():
+
             serializer.save(owner=request.user)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

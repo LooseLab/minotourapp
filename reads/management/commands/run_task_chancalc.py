@@ -11,22 +11,16 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        try:
+        print('Running chancalc task')
 
-            print('Running chancalc task')
+        flowcell_list = Flowcell.objects.all()
 
-            flowcell_list = Flowcell.objects.all()
+        for flowcell in flowcell_list:
 
-            for flowcell in flowcell_list:
+            flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell)
 
-                flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell)
+            for flowcell_job in flowcell_job_list:
 
-                for flowcell_job in flowcell_job_list:
+                if flowcell_job.job_type.name == "ChanCalc":
 
-                    if flowcell_job.job_type.name == "ChanCalc":
-
-                        processreads(flowcell.id, flowcell_job.id, flowcell_job.last_read)
-
-        except Exception as e:
-
-            raise CommandError(repr(e))
+                    processreads(flowcell.id, flowcell_job.id, flowcell_job.last_read)

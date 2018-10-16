@@ -13,19 +13,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        try:
+        print('Recovering information about the task')
 
-            print('Recovering information about the task')
+        task = JobMaster.objects.get(pk=int(options['task_id']))
 
-            task = JobMaster.objects.get(pk=int(options['task_id']))
+        print('---> task id: {}'.format(task.id))
+        print('---> flowcell id: {}'.format(task.flowcell.id))
+        print('---> reference id: {}'.format(task.reference.id))
+        print('---> last read: {}'.format(task.last_read))
 
-            print('---> task id: {}'.format(task.id))
-            print('---> flowcell id: {}'.format(task.flowcell.id))
-            print('---> reference id: {}'.format(task.reference.id))
-            print('---> last read: {}'.format(task.last_read))
-
-            run_minimap2_alignment_by_job_master(task.id)
-
-        except Exception as e:
-
-            raise CommandError(repr(e))
+        run_minimap2_alignment_by_job_master(task.id)

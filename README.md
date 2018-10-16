@@ -189,6 +189,50 @@ for each command. If you chose to create the environmental variable bash file, a
 * Time to test - if everything worked well, you should be able to access the web
 interface on http://localhost:8100.
 
-## Centrifuge
+## Metagenomics analyses
 
-"Specify the "
+minoTour uses Centrifuge (https://ccb.jhu.edu/software/centrifuge/) to run metagenomics analyses. 
+Before creating new metagenomics tasks, there are a few requirements that need to be completed.
+
+- Centrifuge index - Choose one of the centrifuge indexes (ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data)
+and save in the local disk.
+
+- Centrifuge application - Download (https://github.com/infphilo/centrifuge/releases) and compile the most recent version. 
+
+- Set the environment variables MT_CENTRIFUGE (the path to the executable) and MT_CENTRIFUGE_INDEX (the path to indexes without the suffix) as below.
+
+export MT_CENTRIFUGE="/home/user/centrifuge-1.0.4-beta/centrifuge"
+
+export MT_CENTRIFUGE_INDEX="/home/user/centrifuge_indexes/p_compressed"
+
+The MT_CENTRIFUGE_INDEX above points to the following indexes:
+
+p_compressed.1.cf
+
+p_compressed.2.cf
+
+p_compressed.3.cf
+
+p_compressed.4.cf
+
+- minoTour uses ete3 package, that needs access to the internet to download the NCBI species database.
+To force the download (this step just need to be execured once), type the following instructions on the python interpreter.
+
+>>> $ python
+
+>>> import ete3
+
+>>> from ete3 import NCBITaxa
+
+>>> n = NCBITaxa()
+
+>>> NCBI database not present yet (first time used?)
+
+>>> Downloading taxdump.tar.gz from NCBI FTP site (via HTTP)...
+
+
+
+
+
+
+

@@ -1,7 +1,5 @@
 function checkFlowcellTabs(flowcell_id) {
 
-    console.log("Checking flowcell tabs.");
-
     var url = "/api/v1/flowcells/tabs/" + flowcell_id;
 
     var requestData = this.requestData.bind(this);
@@ -31,7 +29,7 @@ function checkFlowcellTabs(flowcell_id) {
                 $('#tasks-li').before(element);
                 document.querySelector("#nav-"+value.id).addEventListener("click", function(event){
                     flowcell_selected_tab_input.value = event.target.innerHTML;
-                    console.log('Clicked ' + event.target.innerHTML);
+
                     requestData(flowcell_id);
                 });
             }
@@ -43,17 +41,19 @@ function checkFlowcellTabs(flowcell_id) {
 
     setTimeout(checkFlowcellTabs, 60000, flowcell_id);
 }
+
 function addStartTabsEvents(flowcellId){
-    console.log("adding start tab events");
+
     var requestData = this.requestData.bind(this);
     // add the on click method to the summary and tasks tabs on the page - author Rory
     var flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
 
     let tabs = document.querySelectorAll(".flowcell-tab");
+
     for (let tab of tabs){
         tab.addEventListener("click", function (event) {
             flowcell_selected_tab_input.value = event.target.innerHTML;
-            console.log('Clicked ' + event.target.innerHTML);
+
             requestData(flowcellId);
         });
     }

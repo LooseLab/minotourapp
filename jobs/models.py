@@ -87,10 +87,9 @@ class JobMaster(models.Model):
         blank=True
     )
 
-    last_read = models.CharField(
-        max_length=256,
-        blank=True,
-        null=True
+    last_read = models.BigIntegerField(
+
+        default=0
     )
 
     tempfile_name = models.CharField(

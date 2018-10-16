@@ -4,8 +4,8 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
-import time
 import zipfile
 from datetime import datetime, timedelta
 
@@ -18,21 +18,17 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
-from django.db.models import F
 from django_mailgun import MailgunAPIError
 from twitter import *
 
-from alignment.models import PafRoughCov, PafStore, PafSummaryCov
 from assembly.models import GfaStore, GfaSummary
+from centrifuge.centrifuge import Centrifuger
 from communication.utils import *
 from jobs.models import JobMaster
-from reads.models import Barcode, FastqRead, Run, HistogramSummary, FlowcellSummaryBarcode, Flowcell
+from reads.models import Barcode, FastqRead, Run, HistogramSummary, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus
 from reads.services import (save_flowcell_histogram_summary, save_flowcell_channel_summary, save_flowcell_summary_barcode,
                             save_flowcell_statistic_barcode)
-from reference.models import ReferenceInfo
-
-from centrifuge.centrifuge import Centrifuger
-import sys
+from .tasks_alignment import run_minimap2_alignment
 
 logger = get_task_logger(__name__)
 
@@ -81,12 +77,12 @@ def run_monitor():
                     flowcell.id,
                     flowcell_job.id,
                     flowcell_job.reference.id,
-                    flowcell_job.last_read,
-                    "flowcell"
+                    flowcell_job.last_read
                 )
 
             if flowcell_job.job_type.name == "ChanCalc":
 
+                print("trying to run chancalc for flowcell {} {} {}".format(flowcell.id, flowcell_job.id, flowcell_job.last_read))
                 processreads.delay(flowcell.id, flowcell_job.id, flowcell_job.last_read)
 
             if flowcell_job.job_type.name == "Assembly":
@@ -127,7 +123,6 @@ def run_centrifuge(flowcell_id, flowcell_job_id):
 @task()
 def processreads(flowcell_id, job_master_id, last_read):
 
-    print('Running processreads - flowcell: {}, last read: {}, job master id: {}'.format(flowcell_id, last_read, job_master_id))
 
     # run = Run.objects.get(pk=runid)
 
@@ -143,11 +138,19 @@ def processreads(flowcell_id, job_master_id, last_read):
     job_master.running = True
     job_master.save()
 
-    fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id).filter(id__gt=int(last_read))[:2000]
+    fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id).filter(id__gt=int(last_read))[:12000]
+    # fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id).filter(id__gt=int(last_read))[:2000]
 
-    print('found {} reads'.format(len(fastqs)))
+    print('Starting: {}'.format(datetime.now()))
+    print('Running processreads - flowcell: {}, last read: {}, job master id: {}, reads: {}'.format(flowcell_id, last_read, job_master_id, len(fastqs)))
 
     if len(fastqs) > 0:
+
+        last_fastq = fastqs[len(fastqs) - 1]
+
+        new_last_read = last_fastq.id
+
+        print('The new last read is {}'.format(new_last_read))
 
         fastq_df_barcode = pd.DataFrame.from_records(fastqs.values('id', 'start_time', 'barcode__name', 'type__name', 'is_pass', 'sequence_length', 'quality_average', 'channel'))
         fastq_df_barcode['status'] = np.where(fastq_df_barcode['is_pass'] == False, 'Fail', 'Pass')
@@ -190,11 +193,13 @@ def processreads(flowcell_id, job_master_id, last_read):
 
         fastq_df_result.reset_index().apply(lambda row: save_flowcell_channel_summary(flowcell_id, row), axis=1)
 
-        last_read = fastq_df_barcode['id'].max()
+        # last_read = fastq_df_barcode['id'].max()
+        last_read = new_last_read
 
     job_master = JobMaster.objects.get(pk=job_master_id)
     job_master.running = False
     job_master.last_read = last_read
+    job_master.read_count = job_master.read_count + len(fastqs)
     job_master.save()
 
 
@@ -488,205 +493,6 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
 
 
 @task
-def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_read, inputtype):
-
-    logger.info("---> Task run_minimap2_alignment")
-    logger.info("---> Parameters")
-    logger.info("---> flowcell_id: {}".format(flowcell_id))
-    logger.info("---> job_master_id: {}".format(job_master_id))
-    logger.info("---> reference: {}".format(reference_info_id))
-    logger.info("---> last_read: {}".format(last_read))
-    logger.info("---> inputtype: {}".format(inputtype))
-
-    if last_read is None:
-        last_read = 0
-
-    try:
-
-        JobMaster.objects.filter(pk=job_master_id).update(running=True)
-
-        REFERENCELOCATION = getattr(settings, "REFERENCELOCATION", None)
-
-        reference = ReferenceInfo.objects.get(pk=reference_info_id)
-        reference_info = ReferenceInfo.objects.get(pk=reference_info_id)
-
-        chromdict = dict()
-
-        chromosomes = reference.referencelines.all()
-
-        for chromosome in chromosomes:
-
-            chromdict[chromosome.line_name] = chromosome
-
-        minimap2 = reference.minimap2_index_file_location
-
-        minimap2_ref = os.path.join(REFERENCELOCATION, minimap2)
-
-        fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id, id__gt=int(last_read))[:1000]
-
-        print("found fastqs: {}".format(len(fastqs)))
-
-        read = ''
-        fastqdict = dict()
-        fastqtypedict = dict()
-        fastqbarcodegroup = dict()
-        fastqbarcode=dict()
-
-        for fastq in fastqs:
-            read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.fastqreadextra.sequence)
-            fastqdict[fastq.read_id] = fastq
-            fastqtypedict[fastq.read_id] = fastq.type
-            fastqbarcodegroup[fastq.read_id] = fastq.barcode.barcodegroup
-            fastqbarcode[fastq.read_id] = fastq.barcode
-            last_read = fastq.id
-
-        minimap2_executable = getattr(settings, "MINIMAP2", None)
-
-        if not minimap2_executable:
-
-            print('Can not find minimap2 executable - stopping task.')
-
-
-        cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format(minimap2_executable, minimap2_ref)
-
-        print(cmd)
-
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                stdin=subprocess.PIPE, shell=True)
-        (out, err) = proc.communicate(input=read.encode("utf-8"))
-        status = proc.wait()
-        paf = out.decode("utf-8")
-
-        pafdata = paf.splitlines()
-
-        print(pafdata)
-
-        #grouprun = GroupRun.objects.get(pk=runid)
-        flowcell = Flowcell.objects.get(pk=flowcell_id)
-
-        resultstore = dict()
-
-        ### OK - we need to fix this for getting the group barcodes and not the individual barcodes.
-
-        bulk_paf = []
-        bulk_paf_rough = []
-
-        for line in pafdata:
-            line = line.strip('\n')
-            record = line.split('\t')
-            #print(record)
-            # readid = FastqRead.objects.get(read_id=record[0])
-            readid = fastqdict[record[0]]
-            typeid = fastqtypedict[record[0]]
-            run = fastqdict[record[0]].run_id
-            if inputtype == "flowcell":
-                newpaf = PafStore(flowcell=flowcell, read=readid, read_type=typeid)
-                newpafstart = PafRoughCov(flowcell=flowcell,read_type=typeid,barcode=fastqbarcode[record[0]])
-                newpafend = PafRoughCov(flowcell=flowcell,read_type=typeid,barcode=fastqbarcode[record[0]])
-            elif inputtype == "run":
-                newpaf = PafStore(run=run, read=readid, read_type=typeid)
-
-            newpaf.reference = reference_info
-
-            #logger.info("---> Before parsing paf record")
-            #logger.info(record)
-
-            newpaf.qsn = record[0]  # models.CharField(max_length=256)#1	string	Query sequence name
-            newpaf.qsl = int(record[1])  # models.IntegerField()#2	int	Query sequence length
-            newpaf.qs = int(record[2])  # models.IntegerField()#3	int	Query start (0-based)
-            newpaf.qe = int(record[3])  # models.IntegerField()#4	int	Query end (0-based)
-            newpaf.rs = record[4]  # models.CharField(max_length=1)#5	char	Relative strand: "+" or "-"
-            # newpaf.tsn = record[5] #models.CharField(max_length=256)#6	string	Target sequence name
-            newpaf.tsn = chromdict[record[5]]  # models.CharField(max_length=256)#6	string	Target sequence name
-            newpaf.tsl = int(record[6])  # models.IntegerField()#7	int	Target sequence length
-            newpaf.ts = int(record[7])  # models.IntegerField()#8	int	Target start on original strand (0-based)
-            newpaf.te = int(record[8])  # models.IntegerField()#9	int	Target end on original strand (0-based)
-            newpaf.nrm = int(record[9])  # models.IntegerField()#10	int	Number of residue matches
-            newpaf.abl = int(record[10])  # models.IntegerField()#11	int	Alignment block length
-            newpaf.mq = int(record[11])  # models.IntegerField()#12	int	Mapping quality (0-255; 255 for missing)
-
-            newpafstart.reference = reference_info
-            newpafend.reference = reference_info
-            newpafstart.chromosome = chromdict[record[5]]
-            newpafend.chromosome = chromdict[record[5]]
-            newpafstart.p = int(record[7])
-            newpafend.p = int(record[8])
-            newpafstart.i = 1
-            newpafend.i = -1
-
-            bulk_paf_rough.append(newpafstart)
-            bulk_paf_rough.append(newpafend)
-            #newpaf.save()
-            bulk_paf.append(newpaf)
-
-            if reference_info not in resultstore:
-                resultstore[reference_info] = dict()
-
-            if chromdict[record[5]] not in resultstore[reference_info]:
-                resultstore[reference_info][chromdict[record[5]]] = dict()
-
-            #readidbarcodegroup = readid.barcode.barcodegroup
-            readidbarcodegroup = fastqbarcodegroup[record[0]]
-
-            if readidbarcodegroup not in resultstore[reference_info][chromdict[record[5]]]:
-                resultstore[reference_info][chromdict[record[5]]][readidbarcodegroup] = dict()
-
-            if typeid not in resultstore[reference_info][chromdict[record[5]]][readidbarcodegroup]:
-                resultstore[reference_info][chromdict[record[5]]][readidbarcodegroup][typeid] = dict()
-
-            if 'read' not in resultstore[reference_info][chromdict[record[5]]][readidbarcodegroup][typeid]:
-                resultstore[reference_info][chromdict[record[5]]][readidbarcodegroup][typeid]['read'] = set()
-                resultstore[reference_info][chromdict[record[5]]][readidbarcodegroup][typeid]['length'] = 0
-
-            resultstore[reference_info][chromdict[record[5]]][readidbarcodegroup][typeid]['read'].add(record[0])
-            resultstore[reference_info][chromdict[record[5]]][readidbarcodegroup][typeid]['length'] += int(record[3]) - int(
-                record[2]) + 1
-        PafStore.objects.bulk_create(bulk_paf)
-        PafRoughCov.objects.bulk_create(bulk_paf_rough)
-        donepafproc = time.time()
-
-        #print('!!!!!!!It took {} to parse the paf.!!!!!!!!!'.format((donepafproc-doneminimaps)))
-
-        for ref in resultstore:
-            for ch in resultstore[ref]:
-                for bc in resultstore[ref][ch]:
-                    for ty in resultstore[ref][ch][bc]:
-                        # logger.debug(ref,ch,bc,ty,len(resultstore[ref][ch][bc][ty]['read']),resultstore[ref][ch][bc][ty]['length'])
-                        # if inputtype == "run":
-                        #     summarycov, created2 = PafSummaryCov.objects.update_or_create(
-                        #         run=runinstance,
-                        #         read_type=ty,
-                        #         barcode=bc,
-                        #         reference=ref,
-                        #         chromosome=ch,
-                        #     )
-                        # elif inputtype == "flowcell":
-                        summarycov, created2 = PafSummaryCov.objects.update_or_create(
-                            flowcell=flowcell,
-                            read_type=ty,
-                            barcodegroup=bc,
-                            reference=ref,
-                            chromosome=ch,
-                        )
-                        summarycov.read_count += len(resultstore[ref][ch][bc][ty]['read'])
-                        summarycov.cumu_length += resultstore[ref][ch][bc][ty]['length']
-                        summarycov.save()
-
-
-        jobdone = time.time()
-        #print('!!!!!!!It took {} to process the resultstore.!!!!!!!!!'.format((jobdone - donepafproc)))
-
-    except Exception as exception: #Todo: This method of detecting an error will potentially lead to duplication of analysis
-        print('An error occurred when running this task.')
-        print(exception)
-        JobMaster.objects.filter(pk=job_master_id).update(running=False)
-
-    #else:
-    JobMaster.objects.filter(pk=job_master_id).update(running=False, last_read=last_read, read_count=F('read_count') + len(fastqs))
-
-
-@task
 def updateReadNamesOnRedis():
     print('>>> running updateReadNamesOnRedis')
     r = redis.StrictRedis(host='localhost', port=6379, db=0)
@@ -822,13 +628,36 @@ def update_flowcell_details():
 
     for flowcell in flowcell_list:
 
+        #
+        # This block update flowcell start_time based on the
+        # MinIONRunStatus or the FlowcellSummaryBarcode
+        #
+        minion_run_status_first = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell).order_by('minKNOW_start_time').first()
+
+        if minion_run_status_first:
+
+            flowcell.start_time = minion_run_status_first.minKNOW_start_time
+
         flowcell_summary_list = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).filter(barcode_name='All reads')
 
-        if len(flowcell_summary_list) == 1:
-            flowcell_summary = flowcell_summary_list[0]
-            flowcell.average_read_length = flowcell_summary.average_read_length()
-            flowcell.total_read_length = flowcell_summary.total_length
-            flowcell.number_reads = flowcell_summary.read_count
+        average_read_length = 0
+        total_read_length = 0
+        number_reads = 0
+
+        for flowcell_summary in flowcell_summary_list:
+            # flowcell_summary = flowcell_summary_list[0]
+            # flowcell.average_read_length = flowcell_summary.average_read_length()
+            # flowcell.total_read_length = flowcell_summary.total_length
+            # flowcell.number_reads = flowcell_summary.read_count
+            total_read_length += flowcell_summary.total_length
+            number_reads += flowcell_summary.read_count
+
+        if number_reads > 0:
+            average_read_length = total_read_length / number_reads
+
+        flowcell.average_read_length = average_read_length
+        flowcell.total_read_length = total_read_length
+        flowcell.number_reads = number_reads
 
         flowcell.number_runs = len(flowcell.runs.all())
         flowcell.number_barcodes = len(FastqRead.objects.filter(run__flowcell=flowcell).values('barcode_name').distinct())

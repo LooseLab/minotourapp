@@ -116,13 +116,15 @@ function update(flowcellId, sankey, checkForData, svg, g, format, color, width, 
     });
 }
 
-function topLevelSankeyDrawer(flowcellID, selectedBarcode){
-    drawSankey(flowcellID, selectedBarcode);
-    updateSankey = setInterval(drawSankey, 60000, flowcellID, selectedBarcode);
+function topLevelSankeyDrawer(flowcellID){
+
+    drawSankey(flowcellID);
+
 }
 
 // top level function
-function drawSankey(flowcellId, selectedBarcode) {
+function drawSankey(flowcellId) {
+    var selectedBarcode = get_selected_barcode();
     // Check the tab value
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
 
@@ -133,7 +135,7 @@ function drawSankey(flowcellId, selectedBarcode) {
     }
     //set svg width and height
     // height of page
-    let hi = $(window).height() * 0.55;
+    let hi = $(window).height() * 0.6;
     // width of page
     hi = d3.max([hi, 480]);
     let width = $(window).width() - 60;
@@ -148,7 +150,7 @@ function drawSankey(flowcellId, selectedBarcode) {
     let checkForData = true;
     let sankey = d3.sankey()
         .nodeWidth(20)
-        .nodePadding(5)
+        .nodePadding(3)
         .size([width*0.95, hi * 0.95]).nodeId(function id(d) {
             return d.name;
         })
@@ -172,4 +174,5 @@ function drawSankey(flowcellId, selectedBarcode) {
         g = svg.append("g").attr("class", "contain");
     }
     update(flowcellId, sankey, checkForData, svg, g, format, color, width, selectedBarcode);
+    let timmy = setTimeout(drawSankey, 60000, flowcellId, selectedBarcode);
 }

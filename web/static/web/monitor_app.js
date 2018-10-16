@@ -214,6 +214,8 @@ var FlowcellPageApp = {
         this.addStartTabsEvents(flowcell_id);
         this.checkFlowcellTabs(flowcell_id);
 
+        console.log('>> calling request data');
+        this.requestData(flowcell_id);
     }, // end of init
 
     updatePoreStats: function () {
