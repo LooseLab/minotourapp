@@ -82,6 +82,7 @@ def run_monitor():
 
             if flowcell_job.job_type.name == "ChanCalc":
 
+                print("trying to run chancalc for flowcell {} {} {}".format(flowcell.id, flowcell_job.id, flowcell_job.last_read))
                 processreads.delay(flowcell.id, flowcell_job.id, flowcell_job.last_read)
 
             if flowcell_job.job_type.name == "Assembly":
@@ -122,7 +123,6 @@ def run_centrifuge(flowcell_id, flowcell_job_id):
 @task()
 def processreads(flowcell_id, job_master_id, last_read):
 
-    print('Running processreads - flowcell: {}, last read: {}, job master id: {}'.format(flowcell_id, last_read, job_master_id))
 
     # run = Run.objects.get(pk=runid)
 
@@ -138,11 +138,19 @@ def processreads(flowcell_id, job_master_id, last_read):
     job_master.running = True
     job_master.save()
 
-    fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id).filter(id__gt=int(last_read))[:2000]
+    fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id).filter(id__gt=int(last_read))[:12000]
+    # fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id).filter(id__gt=int(last_read))[:2000]
 
-    print('found {} reads'.format(len(fastqs)))
+    print('Starting: {}'.format(datetime.now()))
+    print('Running processreads - flowcell: {}, last read: {}, job master id: {}, reads: {}'.format(flowcell_id, last_read, job_master_id, len(fastqs)))
 
     if len(fastqs) > 0:
+
+        last_fastq = fastqs[len(fastqs) - 1]
+
+        new_last_read = last_fastq.id
+
+        print('The new last read is {}'.format(new_last_read))
 
         fastq_df_barcode = pd.DataFrame.from_records(fastqs.values('id', 'start_time', 'barcode__name', 'type__name', 'is_pass', 'sequence_length', 'quality_average', 'channel'))
         fastq_df_barcode['status'] = np.where(fastq_df_barcode['is_pass'] == False, 'Fail', 'Pass')
@@ -185,11 +193,13 @@ def processreads(flowcell_id, job_master_id, last_read):
 
         fastq_df_result.reset_index().apply(lambda row: save_flowcell_channel_summary(flowcell_id, row), axis=1)
 
-        last_read = fastq_df_barcode['id'].max()
+        # last_read = fastq_df_barcode['id'].max()
+        last_read = new_last_read
 
     job_master = JobMaster.objects.get(pk=job_master_id)
     job_master.running = False
     job_master.last_read = last_read
+    job_master.read_count = job_master.read_count + len(fastqs)
     job_master.save()
 
 
@@ -642,7 +652,8 @@ def update_flowcell_details():
             total_read_length += flowcell_summary.total_length
             number_reads += flowcell_summary.read_count
 
-        average_read_length = total_read_length / number_reads
+        if number_reads > 0:
+            average_read_length = total_read_length / number_reads
 
         flowcell.average_read_length = average_read_length
         flowcell.total_read_length = total_read_length

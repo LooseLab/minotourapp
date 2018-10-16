@@ -74,8 +74,6 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
 
     number_reads = len(fastqs)
 
-    print("found fastqs: {}".format(number_reads))
-
     read = ''
     fastq_dict = dict()
     fastqtypedict = dict()
@@ -102,7 +100,6 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
         os.path.join(REFERENCE_LOCATION, reference_info.filename)
     )
 
-    print(cmd)
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
@@ -212,9 +209,6 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
         paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid]['length'] += int(record[3]) - int(
             record[2]) + 1
 
-    print('>>>')
-    print('>>> Length of bulf_paf: {}'.format(len(bulk_paf)))
-    print('>>>')
 
     PafStore.objects.bulk_create(bulk_paf)
     PafRoughCov.objects.bulk_create(bulk_paf_rough)
@@ -230,9 +224,6 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
         'qe'
     )
 
-    print('--->')
-    print(paf_store_list)
-    print('--->')
 
     paf_store_df = pd.DataFrame.from_records(paf_store_list)
 

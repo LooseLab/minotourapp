@@ -62,7 +62,7 @@ class Flowcell(models.Model):
         auto_now_add=True
     )
 
-    number_reads = models.IntegerField(
+    number_reads = models.BigIntegerField(
         default=0
     )
 
@@ -74,11 +74,11 @@ class Flowcell(models.Model):
         default=0
     )
 
-    average_read_length = models.IntegerField(
+    average_read_length = models.BigIntegerField(
         default=0
     )
 
-    total_read_length = models.IntegerField(
+    total_read_length = models.BigIntegerField(
         default=0
     )
 

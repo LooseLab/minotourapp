@@ -2,9 +2,9 @@ function requestData(flowcell_id) {
 
     var selected_barcode = get_selected_barcode();
 
-    var flowcellId = flowcell_id;
+    var flowcell_id = flowcell_id;
 
-    var url_run = '/api/v1/flowcells/' + flowcellId + '/';
+    var url_run = '/api/v1/flowcells/' + flowcell_id + '/';
 
     $.get(url_run, (function (data) {
 
@@ -18,29 +18,31 @@ function requestData(flowcell_id) {
 
         if (flowcell_selected_tab_input.value == 'Summary') {
 
-            this.requestRunDetails(flowcellId);
-            requestMinknowMessages(flowcellId, data);
+            this.requestRunDetails(flowcell_id);
+            requestMinknowMessages(flowcell_id, data);
 
         } else if (flowcell_selected_tab_input.value == 'Tasks') {
-            this.flowcellTaskHistoryTable(flowcellId);
+
+            this.flowcellTaskHistoryTable(flowcell_id);
 
         } else if (flowcell_selected_tab_input.value == 'Basecalled Data') {
+
             if (selected_barcode == '') {
                 set_selected_barcode('All reads');
             }
 
             this.barcodes = Array.from(barcodes).sort();
             this.updateBarcodeNavTab();
-            this.requestSummaryData(flowcellId);
-            this.requestHistogramData(flowcellId);
-            this.requestStatistics(flowcellId);
-            this.requestChannelSummaryData(flowcellId);
-            //this.requestReference(flowcellId);
+            this.requestSummaryData(flowcell_id);
+            this.requestHistogramData(flowcell_id);
+            this.requestStatistics(flowcell_id);
+            this.requestChannelSummaryData(flowcell_id);
+            //this.requestReference(flowcell_id);
 
         } else if (flowcell_selected_tab_input.value == 'Live Event Data') {
 
-            this.requestRunDetails(flowcellId);
-            this.requestLiveRunStats(flowcellId);
+            this.requestRunDetails(flowcell_id);
+            this.requestLiveRunStats(flowcell_id);
 
         } else if (flowcell_selected_tab_input.value == 'Runs') {
 
@@ -53,30 +55,29 @@ function requestData(flowcell_id) {
 
             this.barcodes = Array.from(barcodes).sort();
             // add the barcodes for this flowcell
-            this.addBarcodeTabs(flowcellId);
+            this.addBarcodeTabs(flowcell_id);
             // draw the sankey
-            this.topLevelSankeyDrawer(flowcellId);
+            this.topLevelSankeyDrawer(flowcell_id);
             // update the metadata header
-            this.topMetaHeader(flowcellId);
+            this.topMetaHeader(flowcell_id);
             // Draw the donut chart
-            this.topLevelDrawDonut(flowcellId);
+            this.topLevelDrawDonut(flowcell_id);
             // update the total Reads Table
-            this.topGetTotalReadsTable(flowcellId);
-            // Draw rhe donut rank table
+            this.topGetTotalReadsTable(flowcell_id);
+            // Draw the donut rank table
             this.topGetDonutRankTable(flowcellId);
             // Draw the alert mapping targets table;
             this.update_mapping_table(flowcellId);
 
         } else if (flowcell_selected_tab_input.value == 'Sequence Mapping') {
 
-            this.requestPafData(flowcellId);
+            this.requestPafData(flowcell_id);
 
         } else if (flowcell_selected_tab_input.value == 'Assembly') {
 
-            this.requestGfaData(flowcellId);
+            this.requestGfaData(flowcell_id);
 
         }
     }).bind(this));
-    // todo is this fixed?
-    // setTimeout(requestData.bind(this, flowcell_id), 60000);
+    setTimeout(requestData.bind(this, flowcell_id), 60000);
 };

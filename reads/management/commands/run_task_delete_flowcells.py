@@ -7,11 +7,11 @@ from web.tasks import update_flowcell_details, processreads
 
 class Command(BaseCommand):
 
-    help = 'Run task chancalc'
+    help = 'Run task delete flowcells'
 
     def handle(self, *args, **options):
 
-        print('Running chancalc task')
+        print('Run task delete flowcells')
 
         flowcell_list = Flowcell.objects.all()
 
@@ -21,6 +21,8 @@ class Command(BaseCommand):
 
             for flowcell_job in flowcell_job_list:
 
-                if flowcell_job.job_type.name == "ChanCalc":
+                if flowcell_job.job_type.name == "Delete_Flowcell":
 
-                    processreads(flowcell.id, flowcell_job.id, flowcell_job.last_read)
+                    print('Deleting flowcell {}'.format(flowcell.id))
+
+                    flowcell.delete()

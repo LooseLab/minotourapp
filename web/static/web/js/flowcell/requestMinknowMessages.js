@@ -4,12 +4,27 @@ function requestMinknowMessages(id, data) {
 
     $.get(url, function (data) {
 
-        stringtowrite = "<div class='table-responsive'><table class='table'><tr><th>Message</th><th>Time</th></tr>";
-        for (var i = 0; i < data.length; i++) {
-            //stringtowrite=stringtowrite+'<div class="alert alert-info" role="alert">'+data[i].minKNOW_message + ' <p>(<i>' + new Date(data[i].minKNOW_message_timestamp) + '</i>) '+'</div>'
-            stringtowrite = stringtowrite + '<tr><td>' + data[i].message + ' </td><td><i>' + new Date(data[i].timestamp) + '</i></td> ' + '</tr>'
+        if (data && data.length > 0) {
+
+            stringtowrite = "";
+            stringtowrite = stringtowrite + "<div class='table-responsive'><table class='table'><tr><th>Message</th><th>Time</th></tr>";
+
+            for (var i = 0; i < data.length; i++) {
+                stringtowrite = stringtowrite + '<tr><td>' + data[i].message + '</td><td><i>' + new Date(data[i].timestamp) + '</i></td></tr>'
+            }
+
+            stringtowrite = stringtowrite + '</table></div>';
+            document.getElementById('minknow-messages-div').innerHTML = stringtowrite;
+
+        } else {
+
+
+            var message = "No information available.";
+            var div = document.querySelector("#minknow-messages-div");
+            div.innerHTML = message;
+
         }
-        stringtowrite = stringtowrite + '</table></div>';
-        document.getElementById('Messages').innerHTML = stringtowrite;
+
     })
+
 }
