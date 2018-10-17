@@ -400,19 +400,22 @@ class Centrifuger:
                 # m.map_the_reads()
             barcode_df = pd.DataFrame()
             # TODO vectorise these bad boys
-
+            logger.info("The dataframe shape is {}".format(df.shape))
             unique_barcode = set(barcodes)
             if len(unique_barcode) > 1:
+                logger.debug("These are the barcodes in this set")
+                logger.debug(unique_barcode)
+                logger.debug("more than one barcode")
                 barcode_df = gb_bc.apply(barcode_calculations, barcode_df)
                 barcode_df.reset_index(inplace=True)
                 barcode_df.rename(columns={"unique": "sum_unique", 0: "num_matches"}, inplace=True)
-
+                barcode_df.set_index("tax_id", inplace=True)
             # delete these columns, no longer needed
             df.drop(columns=["readID", "seqID", "numMatches", "unique", "barcode", "read_id"], inplace=True)
             # remove duplicate rows in the data frame,so we only have one entry for each species
             df.drop_duplicates(keep="first", inplace=True)
 
-            barcode_df.set_index("tax_id", inplace=True)
+
 
             # =========================================== database dataframe PREVIOUS RESULTS
             # Get the tax ids from the dataframe containg the newly produced centrifuge results
@@ -464,7 +467,6 @@ class Centrifuger:
                 # to_update_bar_df = to_update_bar_df[~to_update_bar_df.index.duplicated(keep="first")]
                 to_update_bar_df = to_update_bar_df[to_update_bar_df.index.duplicated(keep="first")]
                 to_update_bar_df.reset_index(inplace=True)
-                # TODO update the function
                 to_update_bar_df.apply(update_bar_values, args=(self.flowcell_job_id, self.flowcell_id),
                                        axis=1)
 
@@ -573,7 +575,7 @@ class Centrifuger:
 
             source_target_df["flowcell"] = flowcell
             source_target_df["job_master"] = job_master
-            print(source_target_df["barcode"].unique())
+            logger.info(source_target_df["barcode"].unique())
             # TODO DO sorting magic before the database deposition
             # Taxids from the current results that are in this df
             # current_links_taxids = set(source_target_df["tax_id"])
@@ -617,9 +619,6 @@ class Centrifuger:
                 SankeyLinks.objects.bulk_create(list(sankey_link_insert_list.values))
 
             if not to_update_sank_df.empty:
-                print(to_update_sank_df.head())
-                print(to_update_sank_df.keys())
-                print(to_update_sank_df.shape)
                 to_update_sank_df["updated_value"] = to_update_sank_df["value_x"] + to_update_sank_df["value_y"]
                 # TODO slowest point in code
                 to_update_sank_df.apply(sankey_bulk_bar_insert, args=(self.flowcell_id,
