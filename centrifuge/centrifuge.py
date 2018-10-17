@@ -193,9 +193,9 @@ class Centrifuger:
         # The number of the last read centrifuged
         self.last_read = job_master.last_read
         # The number of reads to skip when getting the reads out of the database
-        self.skip = 0
+        # self.skip = 1000
         # the number to chunk in
-        self.chunk = 5000
+        self.chunk = 500
 
     @staticmethod
     def delete_series(series, df):
@@ -285,11 +285,11 @@ class Centrifuger:
         # job_master.read_count = doc_no
         # job_master.save()
         # Get the Id of the last read that we retrieve
-        if doc_no < (self.skip + self.chunk):
-            limit = doc_no
-        else:
-            limit = self.skip + self.chunk
-        last_read_id = limit
+        # if doc_no < (self.skip + self.chunk):
+        #     limit = doc_no
+        # else:
+        #     limit = self.skip + self.chunk
+        # last_read_id = limit
 
         # The number of reads that we have in the database
         metadata.number_of_reads = doc_no
@@ -299,7 +299,10 @@ class Centrifuger:
             doc_no,
             self.flowcell_id)
         )
-        logger.info("last_read_id is {} and self.last_read_id is {}".format(last_read_id, self.last_read))
+        logger.info("self.last_read_id is {} and self.last_read_id is {}".format(
+            self.last_read,
+            self.last_read)
+        )
 
         # If the last read id that we have retrieved is the same as it was last iterations
         # if self.last_read == last_read_id:
@@ -318,19 +321,22 @@ class Centrifuger:
 
         # Get all the reads skipping all we did last time
 
-        logger.info("slef.skip is {} and limit is {}".format(self.skip, doc_no))
+        logger.info("slef.last_read is {} and limit is {}".format(
+            self.last_read,
+            doc_no)
+        )
 
         # create python list for zipping
-        sequence_data = list(cursor.values_list("fastqreadextra__sequence", flat=True)[self.skip:limit])
+        sequence_data = list(cursor.values_list("fastqreadextra__sequence", flat=True)[self.last_read:self.chunk])
         # create list of read ids for zipping
-        read_ids = list(cursor.values_list("read_id", flat=True)[self.skip:limit])
+        read_ids = list(cursor.values_list("read_id", flat=True)[self.last_read:self.chunk])
         # Create list of tuples where
-        barcodes = list(cursor.values_list("barcode_name", flat=True)[self.skip:limit])
+        barcodes = list(cursor.values_list("barcode_name", flat=True)[self.last_read:self.chunk])
         # the 1st element is the read_id and the second is the sequence
         tupley_list = list(zip(read_ids, sequence_data, barcodes))
         # update skip number
         # TODO UNCOMMENT
-        self.skip = limit
+        # self.skip = limit
         logger.info("\n \n \n")
         logger.info("number of reads in this iteration is {}".format(len(tupley_list)))
 
@@ -419,8 +425,6 @@ class Centrifuger:
         df.drop(columns=["readID", "seqID", "numMatches", "unique", "barcode", "read_id"], inplace=True)
         # remove duplicate rows in the data frame,so we only have one entry for each species
         df.drop_duplicates(keep="first", inplace=True)
-
-
 
         # =========================================== database dataframe PREVIOUS RESULTS
         # Get the tax ids from the dataframe containg the newly produced centrifuge results
@@ -540,7 +544,6 @@ class Centrifuger:
         # ##############  Storing snakey links and nodes ################
         lin_df.head(n=20)
         # Order the DataFrame descending hierarchically, from kingdom to species
-        # TODO ask alex what how="outer" means
         merge_lin_df = pd.merge(lin_df, df, how="outer", left_index=True, right_on="tax_id")
 
         merge_lin_df.set_index("tax_id", inplace=True)
@@ -645,20 +648,16 @@ class Centrifuger:
             LineageValues.objects.bulk_create(list(lineages_insert_list.values))
 
         # Update the jobmaster object fields that are relevant
-        job_master.last_read = last_read_id
-        job_master.read_count = doc_no
-        job_master.save()
-        metadata.reads_classified = limit
+        # job_master.last_read = last_read_id
+        # job_master.read_count = doc_no
+        # job_master.save()
+        metadata.reads_classified = 8008135
         metadata.save()
-        if iteration_count < 3:
-            logger.info(iteration_count)
-            timmy.sleep(60)
-
-
-        # Update the job_master object to running
-        job_master.running = False
-        job_master.complete = True
-        job_master.save()
+        # if iteration_count < 3:
+        #     logger.info(iteration_count)
+        #     timmy.sleep(60)
+        # job_master.complete = True
+        # job_master.save()
         # set running to false. This means client stops querying
         # MetaGenomicsMeta.objects.filter(meta_id=self.foreign_key).update(running=False)
         logger.info("Finished all reads in database")
@@ -667,5 +666,10 @@ class Centrifuger:
         end_time = timezone.now().replace(tzinfo=None)
         metadata.finish_time = str(end_time - start_time)
         metadata.save()
+        # Update the jobmaster object fields that are relevant
+        job_master.running = False
+        job_master.last_read = self.last_read + self.chunk
+        job_master.read_count = doc_no
+        job_master.save()
         logger.info("finished")
         logger.info("total centOut lines {}".format(total_centout))
