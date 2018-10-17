@@ -1,25 +1,46 @@
+import logging
+import os
+
 from django.core.management.base import BaseCommand, CommandError
 
 from jobs.models import JobMaster
+from reads.models import Flowcell
 from web.tasks_alignment import run_minimap2_alignment_by_job_master
+
+log_folder = os.environ.get('MT_LOG_FOLDER')
+
+logging.basicConfig(
+    format='%(asctime)s %(module)s:%(levelname)s:%(thread)d:%(message)s',
+    filename=os.path.join(log_folder, 'run_task_minimap2.log'),
+    level=os.environ.get('LOGLEVEL', 'INFO')
+)
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
 
-    help = 'Run minimap2 task for a specific flowcell'
-
-    def add_arguments(self, parser):
-        parser.add_argument('task_id', type=int)
+    help = 'Run minimap2 task'
 
     def handle(self, *args, **options):
 
-        print('Recovering information about the task')
+        logger.info('Running minimap2 task')
 
-        task = JobMaster.objects.get(pk=int(options['task_id']))
+        try:
 
-        print('---> task id: {}'.format(task.id))
-        print('---> flowcell id: {}'.format(task.flowcell.id))
-        print('---> reference id: {}'.format(task.reference.id))
-        print('---> last read: {}'.format(task.last_read))
+            flowcell_list = Flowcell.objects.all()
 
-        run_minimap2_alignment_by_job_master(task.id)
+            for flowcell in flowcell_list:
+
+                flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell)
+
+                for flowcell_job in flowcell_job_list:
+
+                    if flowcell_job.job_type.name == "Minimap2":
+
+                        run_minimap2_alignment_by_job_master(flowcell_job.id)
+
+        except Exception as e:
+
+            logger.exception('Failed running task.')
+            raise CommandError(repr(e))
