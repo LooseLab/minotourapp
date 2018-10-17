@@ -112,9 +112,13 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
 
         status = proc.wait()
 
+        logger.info('Flowcell id: {} - Finished minimap - {}'.format(flowcell.id, cmd))
+
         paf = out.decode("utf-8")
 
         pafdata = paf.splitlines()
+
+        logger.info('Flowcell id: {} - Found {} paf records'.format(flowcell.id, len(pafdata)))
 
         paf_summary_cov_dict = dict()
 
@@ -223,7 +227,11 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
             'qe'
         )
 
+        print(paf_store_list)
+
         paf_store_df = pd.DataFrame.from_records(paf_store_list)
+
+        print(paf_store_df)
 
         paf_store_df['length'] = paf_store_df['qe'] - paf_store_df['qs']
 
