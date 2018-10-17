@@ -227,10 +227,12 @@ class Centrifuger:
          Once parsed it's deposited into the database, updating any existing records. The organising key is a uuid,
          stored in self.foreign key.
         """
-
         job_master = JobMaster.objects.get(pk=self.flowcell_job_id)
         job_master.running = True
         job_master.save()
+        logger.info("Metagenomics Flowcell id: {} - Running Metagenomics on Flowcell {}, with JobMaster ID {}".format(
+            self.flowcell_id, self.flowcell_id, job_master.id)
+        )
 
         centrifuge_path = get_env_variable("MT_CENTRIFUGE")
         index_path = get_env_variable("MT_CENTRIFUGE_INDEX")
@@ -294,13 +296,13 @@ class Centrifuger:
         # The number of reads that we have in the database
         metadata.number_of_reads = doc_no
         metadata.save()
-
-        logger.info("found {} reads in the database for metagenomics on flowcell {}".format(
+        logger.info(" Metagenomics Flowcell id: {} - found {} reads in the database for metagenomics on flowcell {}".format(
+            self.flowcell_id,
             doc_no,
             self.flowcell_id)
         )
-        logger.info("self.last_read_id is {} and self.last_read_id is {}".format(
-            self.last_read,
+        logger.info("Metagenomics Flowcell id: {} - self.last_read_id is {}".format(
+            self.flowcell_id,
             self.last_read)
         )
 
@@ -321,24 +323,25 @@ class Centrifuger:
 
         # Get all the reads skipping all we did last time
 
-        logger.info("slef.last_read is {} and limit is {}".format(
-            self.last_read,
+        logger.info("Metagenomics Flowcell id: {} - Reads Found".format(
+            self.flowcell_id,
             doc_no)
         )
-
+        limit = self.last_read + self.chunk
         # create python list for zipping
-        sequence_data = list(cursor.values_list("fastqreadextra__sequence", flat=True)[self.last_read:self.chunk])
+        sequence_data = list(cursor.values_list("fastqreadextra__sequence", flat=True)[self.last_read:limit])
         # create list of read ids for zipping
-        read_ids = list(cursor.values_list("read_id", flat=True)[self.last_read:self.chunk])
+        read_ids = list(cursor.values_list("read_id", flat=True)[self.last_read:limit])
         # Create list of tuples where
-        barcodes = list(cursor.values_list("barcode_name", flat=True)[self.last_read:self.chunk])
+        barcodes = list(cursor.values_list("barcode_name", flat=True)[self.last_read:limit])
         # the 1st element is the read_id and the second is the sequence
         tupley_list = list(zip(read_ids, sequence_data, barcodes))
         # update skip number
         # TODO UNCOMMENT
         # self.skip = limit
         logger.info("\n \n \n")
-        logger.info("number of reads in this iteration is {}".format(len(tupley_list)))
+        logger.info("Metagenomics Flowcell id: {} - number of reads in this iteration is {}".format(self.flowcell_id,
+                                                                                                    len(tupley_list)))
 
         # create fastq string by joining the read_id and sequence in the format, for all docs in cursor
         fastq = "".join([str(">read_id=" + c[0] + ",barcode=" + c[2] + "\n" + c[1] + "\n")
@@ -349,7 +352,8 @@ class Centrifuger:
         del read_ids
         del tupley_list
         # Write the generated fastq file to stdin, passing it to the command
-        logger.info("centrifuging...")
+        logger.info("Metagenomics Flowcell id: {} - Loading index and Centrifuging".format(self.flowcell_id,
+                                                                                           ))
         # Use Popen to run the centrifuge command
         out, err = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE) \
             .communicate(input=str.encode(fastq))
@@ -359,7 +363,8 @@ class Centrifuger:
         cent_out = out.decode()
         # total number of lines of centrifuge output dealt with
         total_centout += cent_out.count("\n") - 1
-        logger.info("number of centrifuge output lines is {}".format(total_centout))
+        logger.info("Metagenomics Flowcell id: {} - number of centrifuge output lines is {}".format(self.flowcell_id,
+                                                                                                    total_centout))
         # output fields is the column headers for the pandas data frame
         output_fields = ["readID", "seqID", "taxID", "numMatches"]
         # create the DataFrame from the output
@@ -411,12 +416,11 @@ class Centrifuger:
             # m.map_the_reads()
         barcode_df = pd.DataFrame()
         # TODO vectorise these bad boys
-        logger.info("The dataframe shape is {}".format(df.shape))
+        logger.info("Metagenomics Flowcell id: {} - The dataframe shape is {}".format(self.flowcell_id, df.shape))
         unique_barcode = set(barcodes)
         if len(unique_barcode) > 1:
-            logger.debug("These are the barcodes in this set")
-            logger.debug(unique_barcode)
-            logger.debug("more than one barcode")
+            logger.info("Metagenomics Flowcell id: {} - These are the barcodes in this set".format(self.flowcell_id))
+            logger.info(unique_barcode)
             barcode_df = gb_bc.apply(barcode_calculations, barcode_df)
             barcode_df.reset_index(inplace=True)
             barcode_df.rename(columns={"unique": "sum_unique", 0: "num_matches"}, inplace=True)
@@ -450,6 +454,7 @@ class Centrifuger:
         cent_to_create = df[~df["tax_id"].isin(prev_df_tax_ids)]
         # apply row wise
         centoutput_insert_list = cent_to_create.apply(centoutput_bulk_list, axis=1)
+        logger.info("Metagenomics Flowcell id: {} - Bulk creating CentOutput objects".format(self.flowcell_id))
         CentOutput.objects.bulk_create(list(centoutput_insert_list.values))
 
         df.set_index("tax_id", inplace=True)
@@ -461,6 +466,7 @@ class Centrifuger:
                                                          output__task__id=self.flowcell_job_id).values()
 
         if bar_queryset:
+            logger.info("Metagenomics Flowcell id: {} - Previous CentOutput data found".format(self.flowcell_id))
             to_create_bar_df = pd.DataFrame(list(bar_queryset))
             to_create_bar_df["temp"] = "Y"
             df["temp"] = "N"
@@ -485,12 +491,18 @@ class Centrifuger:
             bulk_insert_list_bar = to_create_bar_df.apply(bulk_create_list, args=(job_master, self.flowcell_id),
                                                           axis=1)
             CentOutputBarcoded.objects.bulk_create(list(bulk_insert_list_bar.values))
+            logger.info("Metagenomics Flowcell id: {} - Bulk creating CentOutputBarcoded objects".format(
+                self.flowcell_id)
+            )
             df.drop(columns=["temp"], inplace=True)
 
         else:
             bulk_insert_list_bar = df.apply(bulk_create_list, args=(job_master, self.flowcell_id),
                                             axis=1)
             CentOutputBarcoded.objects.bulk_create(list(bulk_insert_list_bar.values))
+            logger.info("Metagenomics Flowcell id: {} - Bulk creating CentOutputBarcoded objects".format(
+                self.flowcell_id)
+            )
 
         # create new defaultDict which creates a default dict for missing values, don't think we ever need this
         # default behaviour
@@ -534,7 +546,7 @@ class Centrifuger:
         # series
 
         # lin_df.fillna("NA")
-        logger.info("determining subspecies")
+        logger.info("Metagenomics Flowcell id: {} - Determining Subspecies".format(self.flowcell_id))
         # create new additional subspecies column, from strains column which has subspecies above it in taxa level
         lin_df["subStrainSpecies"] = lin_df["strain"].map(subspecies_determine)
         # merge new subspecies column with existing column
@@ -542,6 +554,7 @@ class Centrifuger:
         # delete the new subspecies column
         self.delete_series(["subStrainSpecies"], lin_df)
         # ##############  Storing snakey links and nodes ################
+        logger.info("Metagenomics Flowcell id: {} - Starting Sankey Calculations".format(self.flowcell_id))
         lin_df.head(n=20)
         # Order the DataFrame descending hierarchically, from kingdom to species
         merge_lin_df = pd.merge(lin_df, df, how="outer", left_index=True, right_on="tax_id")
@@ -583,6 +596,7 @@ class Centrifuger:
 
         source_target_df["flowcell"] = flowcell
         source_target_df["job_master"] = job_master
+        logger.info("Metagenomics Flowcell id: {} - Barcodes are:".format(self.flowcell_id))
         logger.info(source_target_df["barcode"].unique())
         # TODO DO sorting magic before the database deposition
         # Taxids from the current results that are in this df
@@ -629,8 +643,12 @@ class Centrifuger:
         if not to_update_sank_df.empty:
             to_update_sank_df["updated_value"] = to_update_sank_df["value_x"] + to_update_sank_df["value_y"]
             # TODO slowest point in code
+            logger.info("Metagenomics Flowcell id: {} - Updating Sankey Links - This will take a minute...".format(
+                self.flowcell_id)
+            )
             to_update_sank_df.apply(sankey_bulk_bar_insert, args=(self.flowcell_id,
                                                                   self.flowcell_job_id), axis=1)
+            logger.info("Metagenomics Flowcell id: {} - Finished updating sankey links".format(self.flowcell_id))
 
         # ##################### Back to the non sankey calculations ####################
         # Create a dataframe for lineages that aren't already in the table
@@ -660,7 +678,7 @@ class Centrifuger:
         # job_master.save()
         # set running to false. This means client stops querying
         # MetaGenomicsMeta.objects.filter(meta_id=self.foreign_key).update(running=False)
-        logger.info("Finished all reads in database")
+        logger.info("Metagenomics Flowcell id: {} - Finished all reads in database".format(self.flowcell_id))
 
         start_time = metadata.timestamp.replace(tzinfo=None)
         end_time = timezone.now().replace(tzinfo=None)
@@ -671,5 +689,6 @@ class Centrifuger:
         job_master.last_read = self.last_read + self.chunk
         job_master.read_count = doc_no
         job_master.save()
-        logger.info("finished")
-        logger.info("total centOut lines {}".format(total_centout))
+        logger.info("Metagenomics Flowcell id: {} - Finished!".format(self.flowcell_id))
+        logger.info("Metagenomics Flowcell id: {} - New last_read_id is - ".format(self.flowcell_id, job_master.last_read))
+        logger.info("Metagenomics Flowcell id: {} - Total CentOut lines - ".format(self.flowcell_id, total_centout))

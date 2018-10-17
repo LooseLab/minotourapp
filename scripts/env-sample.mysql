@@ -19,3 +19,4 @@ export MT_DB_ENGINE="django.db.backends.mysql"
 export MT_TWITTOKEN=''
 export MT_TWITTOKEN_SECRET=''
 export MT_GFF_LOCATION='/home/rory/data'
+export MT_LOG_FOLDER='/home/rory/data/logs'
