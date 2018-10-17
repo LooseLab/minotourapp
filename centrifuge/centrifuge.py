@@ -215,8 +215,6 @@ class Centrifuger:
                 df = df.drop(s, 1)
         return df
 
-    @property
-    @task()
     def run_centrifuge(self):
         """
 
@@ -690,5 +688,5 @@ class Centrifuger:
         job_master.read_count = doc_no
         job_master.save()
         logger.info("Metagenomics Flowcell id: {} - Finished!".format(self.flowcell_id))
-        logger.info("Metagenomics Flowcell id: {} - New last_read_id is - ".format(self.flowcell_id, job_master.last_read))
-        logger.info("Metagenomics Flowcell id: {} - Total CentOut lines - ".format(self.flowcell_id, total_centout))
+        logger.info("Metagenomics Flowcell id: {} - New last_read_id is - {}".format(self.flowcell_id, job_master.last_read))
+        logger.info("Metagenomics Flowcell id: {} - Total CentOut lines - {}".format(self.flowcell_id, total_centout))

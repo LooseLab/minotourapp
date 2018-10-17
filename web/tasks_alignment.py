@@ -227,11 +227,7 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
                 'qe'
             )
 
-            print(paf_store_list)
-
             paf_store_df = pd.DataFrame.from_records(paf_store_list)
-
-            print(paf_store_df)
 
             paf_store_df['length'] = paf_store_df['qe'] - paf_store_df['qs']
 

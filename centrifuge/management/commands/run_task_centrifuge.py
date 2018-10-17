@@ -24,7 +24,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        try:
+        #try:
 
             logger.info('Running centrifuge task')
 
@@ -49,7 +49,7 @@ class Command(BaseCommand):
                         run_centrifuge(flowcell_job.id)
 
 
-        except Exception as e:
+        #except Exception as e:
 
-            logger.exception('Failed running task.')
-            raise CommandError(repr(e))
+        #    logger.exception('Failed running task.')
+        #    raise CommandError(repr(e))

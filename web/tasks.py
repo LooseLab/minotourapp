@@ -119,6 +119,13 @@ def run_centrifuge(flowcell_job_id):
     logger.info("Flowcell id: {} - Starting centrifuge task".format(job_master.flowcell.id))
 
     c = Centrifuger(job_master.id)
+
+    logger.info("Flowcell id: {} - Centrifuger class initialised".format(job_master.flowcell.id))
+
+    print('>>>')
+    print(c)
+    print('<<<')
+
     c.run_centrifuge()
 
     logger.info("Flowcell id: {} - Finished centrifuge task".format(job_master.flowcell.id))
