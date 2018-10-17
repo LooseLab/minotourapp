@@ -103,6 +103,7 @@ class CentOutput(models.Model):
         :task: (JobMaster Object) FK - the task record in the JobMaster that started this analysis
     """
     name = models.CharField(max_length=250, null=True)
+
     tax_id = models.IntegerField(null=True)
 
     flowcell = models.ForeignKey(
@@ -111,13 +112,17 @@ class CentOutput(models.Model):
         on_delete=models.CASCADE,
         null=True
     )
+
     task = models.ForeignKey(
         JobMaster,
         related_name="centrifuge_summaries",
         on_delete=models.CASCADE,
     )
+
     num_matches = models.IntegerField(default=0)
+
     sum_unique = models.IntegerField(default=0)
+
     barcode = models.CharField(max_length=50)
 
 
