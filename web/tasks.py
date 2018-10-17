@@ -112,11 +112,16 @@ def run_monitor():
                     print(e)
 
 @task()
-def run_centrifuge(flowcell_id, flowcell_job_id):
-    print("trying centrifuge task")
-    c = Centrifuger(flowcell_id, flowcell_job_id)
+def run_centrifuge(flowcell_job_id):
+
+    job_master = JobMaster.objects.get(pk=flowcell_job_id)
+
+    logger.info("Flowcell id: {} - Starting centrifuge task".format(job_master.flowcell.id))
+
+    c = Centrifuger(job_master.id)
     c.run_centrifuge()
-    print("finished task")
+
+    logger.info("Flowcell id: {} - Finished centrifuge task".format(job_master.flowcell.id))
 
 
 @task()
