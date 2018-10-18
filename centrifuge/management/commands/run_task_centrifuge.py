@@ -49,6 +49,5 @@ class Command(BaseCommand):
                         run_centrifuge(flowcell_job.id)
 
         except Exception as e:
-
             logger.exception('Failed running task.')
             raise CommandError(repr(e))
