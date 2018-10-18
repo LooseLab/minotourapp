@@ -29,8 +29,8 @@ def metaview(request):
     task_id = max(task_ids)
     # If there is no MetaGenomicsMeta object return an empty list
     try:
-        queryset = MetaGenomicsMeta.objects.get(flowcell__id=flowcell_id,
-                                                task__id=task_id)
+        queryset = MetaGenomicsMeta.objects.filter(flowcell__id=flowcell_id,
+                                                task__id=task_id).last()
     except MetaGenomicsMeta.DoesNotExist:
         return Response([], status=404)
 

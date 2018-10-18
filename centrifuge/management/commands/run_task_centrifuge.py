@@ -24,14 +24,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        #try:
+        try:
 
             logger.info('Running centrifuge task')
 
             flowcell_list = Flowcell.objects.filter(is_active=True)
 
             for flowcell in flowcell_list:
-                # TODO could we filter for only metagenomics tasks here? And return if none found? 
+                # TODO could we filter for only metagenomics tasks here? And return if none found?
                 flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False, complete=False)
 
                 for flowcell_job in flowcell_job_list:
@@ -48,8 +48,6 @@ class Command(BaseCommand):
 
                         run_centrifuge(flowcell_job.id)
 
-
-        #except Exception as e:
-
-        #    logger.exception('Failed running task.')
-        #    raise CommandError(repr(e))
+        except Exception as e:
+            logger.exception('Failed running task.')
+            raise CommandError(repr(e))

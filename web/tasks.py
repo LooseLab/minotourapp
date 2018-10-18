@@ -118,7 +118,7 @@ def run_centrifuge(flowcell_job_id):
 
     logger.info("Flowcell id: {} - Starting centrifuge task".format(job_master.flowcell.id))
 
-    centrifuge.centrifuge.run_centrifuge(flowcell_job_id)
+    centrifuge.run_centrifuge(flowcell_job_id)
 
 
 @task()
