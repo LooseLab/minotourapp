@@ -98,6 +98,8 @@
 {% block javascript %}
     <script>
 
+        var input_flowcell_id = document.querySelector("#flowcell-id");
+
         console.log("Initialising FlowcellPageApp.");
 
         var app = FlowcellPageApp;
@@ -111,5 +113,8 @@
         coverage_chart.create_master_detail_chart('coverage_div', 'chromosome-id-select');
 
         loadTasksForm();
+
+        var mTaskController = new MTaskController(input_flowcell_id.value);
+
     </script>
 {% endblock %}
