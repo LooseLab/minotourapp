@@ -48,11 +48,6 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         Check that reference exists if type is Minimap2
         """
 
-        print(data)
-
-        print(data['job_type'].id)
-        print(data['reference'])
-
         if data['job_type'].id == 4 and data['reference'] is None:
 
             raise serializers.ValidationError("Reference is mandatory for task Minimap2")

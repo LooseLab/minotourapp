@@ -66,6 +66,10 @@ class Flowcell(models.Model):
         default=0
     )
 
+    number_reads_processed = models.BigIntegerField(
+        default=0
+    )
+
     number_runs = models.IntegerField(
         default=0
     )

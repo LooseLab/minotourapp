@@ -6,6 +6,10 @@ class MTaskController {
         this._select_job_type = document.querySelector('#id_job_type');
         this._select_reference = document.querySelector('#id_reference');
         this._task_list = new MTaskList();
+
+        this._message = new MMessage();
+        this._messageView = new MMessageView(document.querySelector('#messageView'));
+        this._messageView.update(this._message);
     }
 
     add(event) {
@@ -24,40 +28,28 @@ class MTaskController {
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.setRequestHeader("Accept", "application/json");
 
+        let self = this;
+
         xhr.onreadystatechange = function() {
 
             if(this.readyState === XMLHttpRequest.DONE) {
 
-                console.log('Response status: ' +  this.status);
-                console.log('Response text: ' + this.responseText);
-
                 if(this.status === 200) {
 
+                    self._message.texto = 'Task successfully created!';
+                    self._messageView.update(self._message);
+
                     let taskTable = $(".tasktable");
-
-                    let messages = $("#task_form_messages");
-
-                    function empty(messages){
-                        messages.empty();
-                    }
-
-                    messages.empty();
-
-                    messages.prepend("<div class=\"alert alert-success\" role=\"alert\">Success</div>");
-
-                    setTimeout(empty, 1500, messages);
-
                     taskTable.DataTable().ajax.reload();
+
+                } else {
+
+                    self._message.texto = 'Something wrong happened. Please check the following message. ' + this.responseText;
+                    self._messageView.update(self._message);
+
                 }
             }
         };
-
-        console.log(JSON.stringify({
-
-            flowcell: task_new.flowcell_id,
-            reference: task_new.reference_id,
-            job_type: task_new.job_type_id
-        }));
 
         xhr.send(JSON.stringify({
 
