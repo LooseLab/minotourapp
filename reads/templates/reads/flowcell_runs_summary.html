@@ -7,7 +7,7 @@
         <thead>
         <th>Run</th>
         <th>Run Start Time</th>
-        <th>Last Read Seen</th>
+        <th>Timestamp Last Read Seen</th>
         <th>MinKNOW Computer Name</th>
         <th>MinION ID</th>
         <th>ASIC ID</th>
@@ -24,8 +24,8 @@
     {% endif %}
 
     <tr>
-        <td></td>
-        <td>{{ record.run_start_time }}</td>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ record.run_start_time|date:"d-m-Y H:i:s" }}</td>
         <td>{{ record.last_read_seen }}</td>
         <td>{{ record.minknow_computer_name }}</td>
         <td>{{ record.minion_id }}</td>

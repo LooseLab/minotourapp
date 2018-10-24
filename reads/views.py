@@ -3,7 +3,6 @@ import json
 from datetime import timedelta
 
 import dateutil.parser
-import math
 from dateutil import parser
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.serializers.json import DjangoJSONEncoder
@@ -41,29 +40,6 @@ from reads.serializers import (BarcodeSerializer,
                                GroupRunSerializer, FlowcellSummaryBarcodeSerializer)
 from reads.utils import get_coords
 from reference.models import ReferenceInfo
-
-
-def humanbases(n):
-    """
-    :purpose: Convert bases to human readable format
-    :used_by: used by many
-    :author: Matt Loose
-
-    ChangeLog
-    2018-07-09 Add documentation
-
-    :param n: (integer) number of bases
-    :return: (string) human readable format
-    """
-    #return (n)
-    millnames = ['', ' Kb', ' Mb', ' Gb', ' Tb']
-    n = float(n)
-    millidx = max(0,min(len(millnames)-1,
-                        int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
-
-    return '{:.3f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
-
-
 
 
 @api_view(['GET'])
@@ -276,25 +252,30 @@ def minion_messages_list(request, pk):
 
 
 @api_view(['GET'],)
-def sinceminion_messages_list(request, pk, starttime,endtime):
-    if request.method == 'GET':
-        #print (starttime)
-        correctedstart = parser.parse(starttime) - timedelta(minutes=180)
-        correctedend = parser.parse(endtime) + timedelta(minutes=180)
-        #print (correctedstart.isoformat().replace('+00:00', 'Z'))
-        queryset = MinionMessage.objects.filter(minION=pk).filter(
-        minKNOW_message_timestamp__gte=correctedstart.isoformat().replace('+00:00', 'Z')).filter(minKNOW_message_timestamp__lte=correctedend.isoformat().replace('+00:00', 'Z'))
-        serializer = MinionMessageSerializer(queryset, many=True, context={'request': request})
-        return Response(serializer.data)
+def sinceminion_messages_list(request, pk, starttime, endtime):
+
+    correctedstart = parser.parse(starttime) - timedelta(minutes=180)
+
+    correctedend = parser.parse(endtime) + timedelta(minutes=180)
+
+    queryset = MinionMessage.objects.filter(minION=pk)\
+        .filter(minKNOW_message_timestamp__gte=correctedstart.isoformat().replace('+00:00', 'Z'))\
+        .filter(minKNOW_message_timestamp__lte=correctedend.isoformat().replace('+00:00', 'Z'))
+
+    serializer = MinionMessageSerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
 
 
 @api_view(['GET'],)
 def recentminion_messages_list(request, pk):
 
-    if request.method == 'GET':
-        queryset = MinionMessage.objects.filter(minION=pk).filter(minKNOW_message_timestamp__gte=timezone.now() - timedelta(hours=24))
-        serializer = MinionMessageSerializer(queryset, many=True, context={'request': request})
-        return Response(serializer.data)
+    queryset = MinionMessage.objects.filter(minION=pk)\
+        .filter(minKNOW_message_timestamp__gte=timezone.now() - timedelta(hours=24))
+
+    serializer = MinionMessageSerializer(queryset, many=True, context={'request': request})
+
+    return Response(serializer.data)
 
 
 @api_view(['GET'])
@@ -377,11 +358,6 @@ def minknow_message_list_by_flowcell(request, pk):
             .filter(minion__in=minion_list) \
             .order_by('-timestamp')[:10]
 
-
-
-    # serializer = MinionMessageSerializer(messages, many=True, context={'request': request})
-
-    # return Response(serializer.data)
     return render(request, 'reads/minknow_messages.html', {'message_list': messages})
 
 
@@ -405,7 +381,7 @@ def minION_control_list(request,pk):
 
 
 @api_view(['GET','POST'],)
-def minION_control_update(request,pk,checkid):
+def minION_control_update(request, pk, checkid):
     """
     TODO describe function
     """
@@ -420,32 +396,14 @@ def minION_control_update(request,pk,checkid):
 
     if request.method == 'GET':
         serializer = MinIONControlSerializer(event_, context={'request': request})
-        #print (serializer)
         return Response(serializer.data)
 
     if request.method == 'POST':
-        #serializer = MinIONControlSerializer(data=event_, context={'request': request})
-        #if serializer.is_valid():
-        #    serializer.complete=True
-        #    serializer.save(update_fields=['complete'])
 
         event_ = MinIONControl.objects.get(id=checkid)
         event_.complete=True
         event_.save(update_fields=['complete'])
         return Response(status=status.HTTP_204_NO_CONTENT)
-        #return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        #
-        # serializer = MinIONControlSerializer(event_, context={'request': request})
-        #if serializer.is_valid():
-        #    serializer.complete=True
-        #    serializer.save()
-        #    return Response(serializer.data, status=status.HTTP_201_CREATED)
-        #return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    #try:
-    #    event_ = MinIONControl.objects.get(id=checkid)
-    #except MinIONControl.DoesNotExist:
-    #    return Response(status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['GET',])
@@ -763,13 +721,6 @@ def minION_detail(request, pk):
 
     elif request.method == 'POST':
 
-        print ("We are inside POST")
-        print (request.data)
-
-        # id of minION to update
-        # parameter to update
-        # new value
-
         minion = MinION.objects.get(pk=pk)
 
         serializer = MinIONSerializer(minion, data=request.data, partial=True,context={'request': request})
@@ -809,34 +760,6 @@ def read_detail(request, pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-"""
-@api_view(['PATCH'])
-def read_update(request,pk,readid):
-    if request.method == "PATCH":
-        print (request.data)
-        print (readid)
-        FastQRecord = FastqRead.objects.get(read_id=readid)
-        #FastQRecord = FastqRead.objects.filter(run_id=pk)
-        print (FastQRecord.type_id)
-        print (request.data["type"])
-        if (str(FastQRecord.type_id) != request.data["type"].split('/')[-2]):
-            serializer = FastqReadSerializer(FastQRecord, data=request.data, context={'request': request}, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                FastQRecord = FastqRead.objects.get(read_id=readid)
-                try:
-                    update_global_state(FastQRecord)
-                except Exception as e:
-                    print ("update global state failed", e)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            print('Serializer errors: {} '.format(serializer.errors))
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            print ('State not needed to change.')
-            return Response("state not needed", status=status.HTTP_201_CREATED)
-"""
-
-
 @api_view(['GET'])
 def readname_list(request, pk):
     """
@@ -867,32 +790,6 @@ def readname_list(request, pk):
         result3['number_pages'] = paginator.num_pages
         result3['data'] = list(result2)
         return HttpResponse(json.dumps(result3), content_type="application/json")
-
-
-@api_view(['GET'])
-def cumulative_read_count(request, pk):
-    """
-    TODO describe function
-    """
-    if request.method == 'GET':
-        queryset = RunStatistic.objects.filter(run_id__owner=request.user).filter(run_id=pk).order_by('type',
-                                                                                                      'sample_time', )
-        result = dict()
-        for key in queryset:
-            if str(key.type) not in result:
-                result[str(key.type)] = dict()
-            result[str(key.type)][str(key.sample_time)] = key.total_length
-        data_to_return = dict()
-        counter = 0
-        for readtype in result:
-            cumuyield = 0
-            data_to_return[counter] = dict()
-            data_to_return[counter]['name'] = readtype
-            data_to_return[counter]['data'] = list()
-            for data in result[readtype]:
-                cumuyield = cumuyield + result[readtype][data]
-                data_to_return[counter]['data'].append((UTC_time_to_epoch(data), cumuyield))
-        return HttpResponse(json.dumps(data_to_return), content_type="application/json")
 
 
 @api_view(['GET'])
@@ -952,30 +849,17 @@ def barcode_list(request, pk):
 
         return Response(serializer.data)
 
-
     elif request.method == 'POST':
-        print (request)
 
-        #run=request.POST["run"]
         barcodename=request.data["name"]
-        print (request.data)
-        print(barcodename)
 
         minionrun = Run.objects.get(pk=pk)
 
-        flowcellruns = minionrun.flowcellrun
-
-        print (flowcellruns)
-
-        barcode,created2 = Barcode.objects.get_or_create(run=minionrun, name=barcodename)
+        barcode, created2 = Barcode.objects.get_or_create(run=minionrun, name=barcodename)
 
         serializer = BarcodeSerializer(barcode, context={'request': request})
 
-        #if serializer.is_valid():
-        #if created2:
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        #return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -988,23 +872,6 @@ def barcode_detail(request, pk):
     serializer = BarcodeSerializer(queryset, many=False, context={'request': request})
 
     return Response(serializer.data)
-
-
-def UTC_time_to_epoch(timestamp):
-    """
-    TODO describe function
-    """
-    dt = parser.parse(timestamp)
-
-    return dt.timestamp()*1000
-
-
-@api_view(['GET'])
-def minION_liverun_list(request,pk):
-    """
-    TODO describe function
-    """
-    return None
 
 
 @api_view(['GET', 'POST'])
@@ -1333,7 +1200,7 @@ def flowcell_run_summaries_html(request, pk):
         element = {
 
             'run_start_time': run.start_time,
-            'last_read_seen': None,
+            'timestamp_last_read_seen': None,
         }
 
         minion_run_status_list = MinIONRunStatus.objects.filter(run_id=run)
@@ -1342,14 +1209,14 @@ def flowcell_run_summaries_html(request, pk):
 
             minion_run_status = minion_run_status_list[0]
 
-            element['last_read_seen'] = None
-            element['minknow_computer_name'] = None
-            element['minion_id'] = None
-            element['asic_id'] = None
-            element['sequencing_kit'] = None
+            element['timestamp_last_read_seen'] = None
+            element['minknow_computer_name'] = minion_run_status.minKNOW_computer
+            element['minion_id'] = minion_run_status.minION.minION_name
+            element['asic_id'] = minion_run_status.minKNOW_asic_id
+            element['sequencing_kit'] = minion_run_status.sequencing_kit
             element['purpose'] = minion_run_status.minKNOW_exp_script_purpose
-            element['minknow_version'] = None
-            element['flowcell_type'] = None
+            element['minknow_version'] = minion_run_status.minKNOW_version
+            element['flowcell_type'] = minion_run_status.flowcell_type
             element['flowcell_id'] = minion_run_status.minKNOW_flow_cell_id
             element['sample_name'] = minion_run_status.minKNOW_sample_name
             element['experiment_name'] = minion_run_status.experiment_id

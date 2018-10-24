@@ -1,3 +1,8 @@
+import math
+
+from dateutil import parser
+
+
 def get_coords(channel, flowcellsize):
 
     if flowcellsize==3000:
@@ -98,3 +103,33 @@ def flowcell_layout(channel):
                   509: (24, 11), 510: (24, 10), 511: (24, 9), 512: (24, 8)}
 
     return chanlookup[channel]
+
+
+def humanbases(n):
+    """
+    :purpose: Convert bases to human readable format
+    :used_by: used by many
+    :author: Matt Loose
+
+    ChangeLog
+    2018-07-09 Add documentation
+
+    :param n: (integer) number of bases
+    :return: (string) human readable format
+    """
+    #return (n)
+    millnames = ['', ' Kb', ' Mb', ' Gb', ' Tb']
+    n = float(n)
+    millidx = max(0,min(len(millnames)-1,
+                        int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
+
+    return '{:.3f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
+
+
+def UTC_time_to_epoch(timestamp):
+    """
+    TODO describe function
+    """
+    dt = parser.parse(timestamp)
+
+    return dt.timestamp()*1000

@@ -772,7 +772,10 @@ class MinIONRunStats(models.Model):  # Todo consider merging in to one object wi
         related_name='RunStats'
     )
 
-    sample_time = models.DateTimeField()
+    sample_time = models.DateTimeField(
+
+
+    )
 
     event_yield = models.BigIntegerField(
 

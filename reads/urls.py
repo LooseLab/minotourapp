@@ -37,11 +37,6 @@ urlpatterns = [
         name="fastqreadnames-list"
     ),
     url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/yield/$',
-        views.cumulative_read_count,
-        name="cumulative_read_count"
-    ),
-    url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/rundetails/$',
         views.minION_run_status_list,
         name="minIONrunstatus_list"
