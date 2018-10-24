@@ -12,12 +12,12 @@ from jobs.models import JobMaster
 @api_view(["GET"])
 def metaview(request):
     """
-    :purpose: return the metadata displayed at the top of the page relating to the task data eing currently visualised
+    :purpose: return the metadata displayed at the top of the page relating to the task data being currently visualised
 
     :author: Rory
 
     :param request: A django rest framework request body object, contains the flowcell id as a query parameter
-    :return: A Response object, containg a list with the four data objects, Reads sequenced, Reads Classified,
+    :return: A Response object, containing a list with the four data objects, Reads sequenced, Reads Classified,
     Classified and the Runtime
     """
     # The flowcell id for the flowcell that the fastq data came from, default to False if not present
@@ -30,12 +30,17 @@ def metaview(request):
     # If there is no MetaGenomicsMeta object return an empty list
     try:
         queryset = MetaGenomicsMeta.objects.filter(flowcell__id=flowcell_id,
-                                                task__id=task_id).last()
+                                                   task__id=task_id).last()
     except MetaGenomicsMeta.DoesNotExist:
         return Response([], status=404)
 
+    try:
+        job_master = JobMaster.objects.get(pk=task_id)
+    except Exception as e:
+        return Response(e, status=500)
+
     number_of_reads = queryset.number_of_reads
-    reads_class = queryset.reads_classified
+    reads_class = job_master.read_count
     # Percentage of reads classified
     percentage = reads_class / number_of_reads * 100
     # Get the start time of the task, removing the timezone info
@@ -330,6 +335,11 @@ def get_or_set_cartmap(request):
 
 @api_view(["POST", "GET"])
 def get_target_mapping(request):
+    """
+    Get the target species
+    :param request:
+    :return:
+    """
     flowcell_id = request.GET.get("flowcellId", 0)
 
     if flowcell_id == 0:

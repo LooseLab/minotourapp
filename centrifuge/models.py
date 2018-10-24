@@ -160,7 +160,7 @@ class CartographyMapped(models.Model):
     )
     species = models.CharField(max_length=50)
     tax_id = models.IntegerField(null=True)
-    red_reads = models.IntegerField(null=True)
+    red_reads = models.IntegerField(null=True, default=0)
     num_matches = models.IntegerField(default=0)
     sum_unique = models.IntegerField(default=0)
 
@@ -180,11 +180,14 @@ class RedReadIds(models.Model):
 class CartographyGuide(models.Model):
     """
         The species defaults for the detection
-        # TODO currently unused
     """
     species = models.CharField(max_length=100)
     tax_id = models.IntegerField(null=True)
-    cart_mapped_id = models.CharField(max_length=50)
+    set = models.CharField(default="Default", max_length=100)
+    start = models.IntegerField(default=0)
+    end = models.IntegerField(default=1)
+    name = models.CharField(default="danger_zone", max_length=50)
+    type = models.CharField(default="gene", max_length=100)
 
 
 class LineageValues(models.Model):

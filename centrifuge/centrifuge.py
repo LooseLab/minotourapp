@@ -13,11 +13,15 @@ from django.db.models import ObjectDoesNotExist
 from django.utils import timezone
 from ete3 import NCBITaxa
 
-from centrifuge.models import CentOutput, LineageValues, MetaGenomicsMeta, SankeyLinks, CentOutputBarcoded
+from centrifuge.models import CentOutput, LineageValues, MetaGenomicsMeta, SankeyLinks, CentOutputBarcoded, \
+    CartographyMapped, RedReadIds, CartographyGuide
 from jobs.models import JobMaster
 from minotourapp.utils import get_env_variable
 from reads.models import FastqRead
+from reference.models import ReferenceInfo
+from django.conf import settings
 
+pd.options.mode.chained_assignment = None
 logger = get_task_logger(__name__)
 
 
@@ -41,7 +45,7 @@ def barcode_calculations(gb_df, ho_df):
 
     # combine the dataframes
     gb_ap = pd.concat([sum_unique, num_matches, gb_df["name"]], axis=1)
-    ho_df = ho_df.append(gb_ap)
+    ho_df = ho_df.append(gb_ap, sort=True)
     return ho_df
 
 
@@ -353,7 +357,7 @@ def calculate_insert_sankey(lin_df, df, flowcell, tax_rank_filter, job_master):
     to_create_sank_df.reset_index(inplace=True)
 
     # Remove any in this iteration where the value is 4 or less, as these will not be in the top 30
-    to_create_sank_df = to_create_sank_df[to_create_sank_df["value"] > 5]
+    to_create_sank_df = to_create_sank_df[to_create_sank_df["value"] > 2]
     # Drop duplicates as we only need to create one
     to_create_sank_df = to_create_sank_df.drop_duplicates(subset=["tax_id", "target_tax_level"])
 
@@ -389,6 +393,187 @@ def calculate_insert_sankey(lin_df, df, flowcell, tax_rank_filter, job_master):
         logger.info("Flowcell id: {} - Finished updating sankey links".format(flowcell.id))
 
 
+def map_all_the_groups(group_df, reference_location, flowcell_id):
+    """
+
+    :param group_df:
+    :param reference_location:
+    :param flowcell_id:
+    :return:
+    """
+    species = group_df["name"].unique()
+    species = species[0].replace(" ", "_")
+    print("Flowcell id: {} - species is {}".format(flowcell_id, species))
+    refs = ReferenceInfo.objects.get(name=species)
+    minimap2_ref = reference_location + refs.minimap2_index_file_location
+    reads = FastqRead.objects.filter(run__flowcell_id__in={flowcell_id}, read_id__in=group_df["read_id"])
+
+    sequence_data = list(reads.values_list("fastqreadextra__sequence", flat=True))
+    # create list of read ids for zipping
+    read_ids = list(reads.values_list("read_id", flat=True))
+    # Create list of tuples where
+    # the 1st element is the read_id and the second is the sequence
+    tupley_list = list(zip(read_ids, sequence_data))
+    fastq = "".join([str(">" + c[0] + "\n" + c[1] + "\n")
+                     for c in tupley_list if c[1] is not None])
+    map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format("minimap2", minimap2_ref)
+    out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE) \
+        .communicate(input=str.encode(fastq))
+    map_out = out.decode()
+    map_df = pd.read_csv(StringIO(map_out), sep="\t", header=None)
+
+    columns = ["read_id", "query_seq_len", "query_start", "query_end", "rel_strand", "target_seq_name",
+               "target_seq_len", "target_start", "target_end", "num_matching_bases", "num_matching_bases_gaps",
+               "mapping_qual", "type_align", "number_minimiser", "chaining_score", "chaining_score_2nd_chain",
+               "random"]
+    map_df.columns = columns
+    map_df.drop(columns=["number_minimiser", "chaining_score", "chaining_score_2nd_chain", "random"],
+                inplace=True)
+    return map_df
+
+
+def falls_in_region(row, map_df):
+    """
+
+    :param row:
+    :param map_df:
+    :return:
+    """
+    start_low = map_df["target_start"] > row["start"]
+    start_high = map_df["target_start"] < row["end"]
+    end_low = map_df["target_end"] > row["start"]
+    end_high = map_df["target_end"] < row["end"]
+
+    bool_df = pd.concat([start_low, start_high, end_low, end_high], axis=1, ignore_index=True)
+    print(bool_df)
+    bool_df["keep"] = np.where((bool_df[0] & bool_df[1]) | (bool_df[2] & bool_df[3]), True, False)
+    return bool_df["keep"]
+
+
+def update_mapped_values(row, bulk_insert_red_id, cart_map_dict, flowcell, task):
+    """
+
+    :param row:
+    :param bulk_insert_red_id:
+    :param cart_map_dict:
+    :param flowcell:
+    :param task:
+    :return:
+    """
+    if row["name"] not in cart_map_dict:
+        mapped = CartographyMapped.objects.get(species=row["name"],
+                                               tax_id=row["tax_id"],
+                                               flowcell=flowcell, task=task)
+        mapped.red_reads = row["red_num_matches"]
+        mapped.num_matches = row["num_matches"]
+        mapped.sum_unique = row["sum_unique"]
+
+        mapped.save()
+
+        cart_map_dict[row["name"]] = mapped.id
+
+        red_rum = RedReadIds(read_id=row["read_id"], CM_species_id=mapped.id)
+
+        bulk_insert_red_id.append(red_rum)
+    else:
+        red_rum = RedReadIds(read_id=row["read_id"], CM_species_id=cart_map_dict[row["name"]])
+
+        bulk_insert_red_id.append(red_rum)
+
+    return bulk_insert_red_id
+
+
+def map_the_reads(name_df, task, flowcell):
+    """
+     Run the mapping step
+    :return: The
+    """
+    # Targets_df
+    targets_df = name_df
+    if targets_df.empty:
+        return
+    targets_df.reset_index(inplace=True)
+    # refs = ReferenceInfo.objects.all().values()
+
+    reference_location = getattr(settings, "REFERENCE_LOCATION", None)
+
+    gb = targets_df.groupby(["name"], as_index=False)
+    # TODO currently hardcoded below
+    target_set = "starting_defaults"
+
+    gff3_df = pd.DataFrame(list(CartographyGuide.objects.filter(set=target_set).values()))
+
+    target_species = gff3_df["name"].unique()
+
+    target_tax_id = gff3_df["tax_id"].unqiue()
+
+    target_tuple = list(zip(target_species, target_tax_id))
+
+    for target in target_tuple:
+        obj, created = CartographyMapped.objects.get_or_create(flowcell=flowcell,
+                                                               task=task,
+                                                               species=target[0],
+                                                               tax_id=target[1],
+                                                               defaults={"red_reads": 0,
+                                                                         "num_matches": 0,
+                                                                         "sum_unique": 0}
+                                                               )
+        if created:
+            print("\033[1;36;1m Flowcell id {} - ".format(flowcell.id))
+    # All mapped reads
+    map_df = gb.apply(map_all_the_groups, reference_location, flowcell.id)
+
+    bool_df = gff3_df.apply(falls_in_region, args=(map_df,), axis=1)
+    # Get whether it's inside the boundaries or not
+    bool_df = bool_df.any()
+    # Red reads
+    red_df = map_df[bool_df]
+
+    red_df.set_index(["read_id"], inplace=True)
+    # results df contains all details on red reads
+    results_df = pd.merge(targets_df, red_df, how="inner", left_on="read_id", right_index=True)
+
+    gb_mp = results_df.groupby(["name"])
+
+    results_df.set_index(["name"], inplace=True)
+
+    results_df["red_num_matches"] = gb_mp.size()
+
+    results_df["sum_unique"] = gb_mp["unique"].sum()
+
+    # TODO this is where barcoding step would be
+    results_df.reset_index(inplace=True)
+
+    bulk_insert_red_from_update = []
+
+    cart_map_dict = {}
+
+    prev_df = pd.DataFrame(list(CartographyMapped.objects.filter(flowcell__id=flowcell.id,
+                                                                 task__id=task.id).values()))
+
+    if not results_df.empty:
+        results_df.set_index(["tax_id"], inplace=True)
+
+        results_df["to_add_num_matches"] = prev_df["num_matches"]
+
+        results_df["to_add_red_reads"] = prev_df["red_reads"]
+
+        results_df["to_add_red_sum_unique"] = prev_df["sum_unique"]
+
+        results_df["summed_num_matches"] = results_df["num_matches"] + results_df["to_add_num_matches"]
+
+        results_df["summed_red_reads"] = results_df["red_num_matches"] + results_df["to_add_red_reads"]
+
+        results_df["summed_sum_unique"] = results_df["sum_unique"] + results_df["to_add_red_sum_unique"]
+
+        results_df.reset_index(inplace=True)
+
+        results_df.apply(update_mapped_values, args=(bulk_insert_red_from_update,
+                                                     cart_map_dict,
+                                                     flowcell.id, task.id), axis=1)
+        RedReadIds.objects.bulk_create(bulk_insert_red_from_update)
+
+
 def run_centrifuge(flowcell_job_id):
     """
 
@@ -405,6 +590,8 @@ def run_centrifuge(flowcell_job_id):
     job_master.save()
 
     flowcell = job_master.flowcell
+
+    total_reads = FastqRead.objects.filter(run__flowcell__id=flowcell.id).count()
 
     logger.info('Flowcell id: {} - Running centrifuge on flowcell {}'.format(flowcell.id, flowcell.name))
     logger.info('Flowcell id: {} - job_master_id {}'.format(flowcell.id, job_master.id))
@@ -431,7 +618,7 @@ def run_centrifuge(flowcell_job_id):
     # and tell the Javascript and RunMonitor the task is running and when it is complete
 
     fastqs = FastqRead.objects.filter(run__flowcell=flowcell, id__gt=int(job_master.last_read)
-                                      ).order_by('id')[:500]
+                                      ).order_by('id')[:1000]
 
     logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, fastqs.count()))
     try:
@@ -442,7 +629,7 @@ def run_centrifuge(flowcell_job_id):
             run_time=time,
             flowcell=flowcell,
             running=True,
-            number_of_reads=99999,  # to be deleted?
+            number_of_reads=total_reads,  # to be deleted?
             reads_classified=0,
             task=job_master
         )
@@ -528,14 +715,16 @@ def run_centrifuge(flowcell_job_id):
     df["num_matches"] = gb.size()
 
     # TODO future mapping target
-    temp_targets = ["Escherichia coli", "Bacillus cereus"]
+    # temp_targets = ["Bacillus anthracis", "Clostridium botulinum",
+    # "Yersinia pestis", "Variola major", "Variola minor",
+    #                 "Francisella tularensis", "Escherichia coli O157:H7", "Conexibacter woesei",
+    #                 "Rickettsia prowazekii",
+    #                 "Escherichia coli"]
+    temp_targets = ["Bacillus anthracis", "Clostridium botulinum", "Escherichia coli"]
 
-    # name_df = df[df["name"].isin(temp_targets)]
-    #
-    # if not name_df.empty:
-    #     map the target reads
-    #     m = Metamap(name_df, flowcell.id, flowcell_job_id)
-    #     m.map_the_reads()
+    name_df = df[df["name"].isin(temp_targets)]
+
+    map_the_reads(name_df, job_master, flowcell)
 
     barcode_df = pd.DataFrame()
 
@@ -595,13 +784,13 @@ def run_centrifuge(flowcell_job_id):
 
     df.set_index("tax_id", inplace=True)
     # Add the barcode dataframe onto the dataframe, so now we have all reads and barcodes
-    df = df.append(barcode_df)
+    df = df.append(barcode_df, sort=True)
 
     df.reset_index(inplace=True)
     # Get all the results for the barcoded entries, so each species will have multiple entries under different barcodes
     # TODO Split back into one table in database, barcoded results
     bar_queryset = CentOutputBarcoded.objects.filter(output__flowcell__id=flowcell.id,
-                                                     output__task__id=flowcell_job_id).values()
+                                                     output__task__id=job_master.id).values()
     # If there are results
     if bar_queryset:
         logger.info("Flowcell id: {} - Previous CentOutput data found".format(flowcell.id))
@@ -612,7 +801,7 @@ def run_centrifuge(flowcell_job_id):
         # The original dataframe results will be kept
         df["temp"] = "N"
         # Append the two dataframes together
-        to_create_bar_df = df.append(to_create_bar_df)
+        to_create_bar_df = df.append(to_create_bar_df, sort=True)
         # separate out lines with duplicated tax_id and barcodes, these are lines with values that need updating in the
         #  database, keep both lines
         to_update_bar_df = to_create_bar_df[to_create_bar_df.duplicated(subset=["tax_id", "barcode"],
@@ -631,7 +820,7 @@ def run_centrifuge(flowcell_job_id):
         to_update_bar_df.reset_index(inplace=True)
         # ###### Update existing barcode output ######
         # Apply to update the existing entries in the databases
-        to_update_bar_df.apply(update_bar_values, args=(flowcell_job_id, flowcell.id),
+        to_update_bar_df.apply(update_bar_values, args=(job_master.id, flowcell.id),
                                axis=1)
         # Drop duplicates of barcodes under each tax_id so we only create one entry to update
         to_create_bar_df.drop_duplicates(subset=["tax_id", "barcode"], inplace=True, keep=False)
@@ -664,18 +853,18 @@ def run_centrifuge(flowcell_job_id):
 
     # ##################### Back to the non sankey calculations ####################
     # Update the metadata for the headers
-    metadata.reads_classified = 8008135
-    metadata.save()
     logger.info("Flowcell id: {} - Finished all reads in database".format(flowcell.id))
 
     # Get the start time #TODO remove the unused fields
     start_time = metadata.timestamp.replace(tzinfo=None)
     end_time = timezone.now().replace(tzinfo=None)
+    metadata.reads_classified = 8008135
+
     metadata.finish_time = str(end_time - start_time)
     metadata.save()
 
     # Update the jobmaster object fields that are relevant
-    job_master = JobMaster.objects.get(pk=flowcell_job_id)
+    job_master = JobMaster.objects.get(pk=job_master.id)
     job_master.running = False
 
     if fastqs.count() > 0:
