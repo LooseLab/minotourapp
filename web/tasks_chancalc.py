@@ -21,7 +21,7 @@ def chancalc(flowcell_id, job_master_id, last_read):
 
     flowcell = Flowcell.objects.get(pk=flowcell_id)
 
-    fastqs = FastqRead.objects.filter(run__flowcell=flowcell).filter(id__gt=int(last_read))[:1000]
+    fastqs = FastqRead.objects.filter(run__flowcell=flowcell).filter(id__gt=int(last_read))[:50000]
 
     logger.info('Flowcell id: {} - Updating details of flowcell {}'.format(flowcell.id, flowcell.name))
     logger.info('Flowcell id: {} - job_master {}'.format(flowcell.id, job_master.id))
@@ -71,6 +71,7 @@ def chancalc(flowcell_id, job_master_id, last_read):
         #
         fastq_df_result = fastq_df.groupby(['start_time_truncate', 'barcode__name', 'type__name', 'is_pass']).agg(
             {'sequence_length': ['min', 'max', 'sum', 'count'], 'quality_average': ['sum'], 'channel': ['unique']})
+
 
         fastq_df_result.reset_index().apply(lambda row: save_flowcell_statistic_barcode(flowcell_id, row), axis=1)
 

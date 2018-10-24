@@ -63,7 +63,7 @@ class TaskForm(forms.ModelForm):
 
     class Meta:
         model = JobMaster
-        fields = ('flowcell', 'job_type')
+        fields = ('flowcell', 'reference', 'job_type')
 
 
 class ExperimentForm(forms.ModelForm):

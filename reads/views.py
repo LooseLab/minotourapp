@@ -1023,6 +1023,7 @@ def flowcell_list(request):
                 'size': record.size,
                 'start_time': record.start_time,
                 'number_reads': record.number_reads,
+                'number_reads_processed': record.number_reads_processed,
                 'number_runs': record.number_runs,
                 'number_barcodes': record.number_barcodes,
                 'total_read_length': record.total_read_length,

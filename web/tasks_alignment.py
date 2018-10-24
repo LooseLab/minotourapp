@@ -85,9 +85,18 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
 
         fastqbarcode=dict()
 
+        # fastq_filename = '/home/ubuntu/logs/flowcell-{}-last-read-{}.fastq'.format(flowcell.id, job_master.last_read)
+        # fastq_file = open(fastq_filename, 'w')
+
         for fastq in fastqs:
 
+            if not (fastq.fastqreadextra and fastq.fastqreadextra.sequence):
+
+                continue
+
             read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.fastqreadextra.sequence)
+
+            # fastq_file.write(read)
 
             fastq_dict[fastq.read_id] = fastq
             fastqtypedict[fastq.read_id] = fastq.type
@@ -96,6 +105,8 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
             fastqbarcode[fastq.read_id] = fastq.barcode.name
 
             last_read = fastq.id
+
+        # fastq_file.close()
 
         cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format(
             MINIMAP2,

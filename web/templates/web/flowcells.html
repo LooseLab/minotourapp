@@ -25,6 +25,7 @@
                         <th>Sample<br/>Name</th>
                         <th>Start<br/>Time</th>
                         <th>Number<br/>of Reads</th>
+                        <th>Number<br/>of Reads Processed</th>
                         <th>Number<br/>of Runs</th>
                         <th>Number<br/>of Barcodes</th>
                         <th>Yield</th>
@@ -39,7 +40,7 @@
 {% endblock %}
 {% block javascript %}
 <script>
-    var table_active_runs;
+
     var table_all_runs;
 
     $(document).ready(function () {
@@ -63,6 +64,7 @@
                             json[i].sample_name,
                             start_time_human_format,
                             json[i].number_reads,
+                            json[i].number_reads_processed,
                             json[i].number_runs,
                             json[i].number_barcodes,
                             json[i].total_read_length,
@@ -127,7 +129,6 @@
                         "to_delete": "True",
                     },
                     success: function(data2) {
-                        table_active_runs.ajax.reload();
                         table_all_runs.ajax.reload();
                     }
                 });

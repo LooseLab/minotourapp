@@ -570,30 +570,40 @@ def update_flowcell_details():
             logger.info('Flowcell id: {} - Setting sample_name to {}'.format(flowcell.id, flowcell.sample_name))
 
         #
+        # Get number of fastqreads
+        #
+        number_reads = 0
+
+        for run in flowcell.runs.all():
+            number_reads = number_reads + run.reads.all().count()
+
+        #
         # Get the FlowcellSummaryBarcodes for a particular flowcell and for barcode_name "All reads"
         #
         flowcell_summary_list = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).filter(barcode_name='All reads')
 
         average_read_length = 0
         total_read_length = 0
-        number_reads = 0
+        number_reads_processed = 0
 
         logger.info('Flowcell id: {} - There is/are {} FlowcellSummaryBarcode records'.format(flowcell.id, len(flowcell_summary_list)))
 
         for flowcell_summary in flowcell_summary_list:
             total_read_length += flowcell_summary.total_length
-            number_reads += flowcell_summary.read_count
+            number_reads_processed += flowcell_summary.read_count
 
         if number_reads > 0:
             average_read_length = total_read_length / number_reads
 
         logger.info('Flowcell id: {} - Total read length {}'.format(flowcell.id, total_read_length))
         logger.info('Flowcell id: {} - Number reads {}'.format(flowcell.id, number_reads))
+        logger.info('Flowcell id: {} - Number reads processed {}'.format(flowcell.id, number_reads_processed))
         logger.info('Flowcell id: {} - Average read length {}'.format(flowcell.id, average_read_length))
 
         flowcell.average_read_length = average_read_length
         flowcell.total_read_length = total_read_length
         flowcell.number_reads = number_reads
+        flowcell.number_reads_processed = number_reads_processed
 
         flowcell.number_runs = len(flowcell.runs.all())
         flowcell.number_barcodes = len(FastqRead.objects.filter(run__flowcell=flowcell).values('barcode_name').distinct())
