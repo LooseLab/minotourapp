@@ -105,7 +105,7 @@ def flowcell_layout(channel):
     return chanlookup[channel]
 
 
-def humanbases(n):
+def human_readable(number, suffix='b'):
     """
     :purpose: Convert bases to human readable format
     :used_by: used by many
@@ -113,17 +113,18 @@ def humanbases(n):
 
     ChangeLog
     2018-07-09 Add documentation
+    2018-10-25 Update the algorithm
 
-    :param n: (integer) number of bases
-    :return: (string) human readable format
     """
-    #return (n)
-    millnames = ['', ' Kb', ' Mb', ' Gb', ' Tb']
-    n = float(n)
-    millidx = max(0,min(len(millnames)-1,
-                        int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
+    for unit in ['', 'K', 'M', 'G', 'T']:
 
-    return '{:.3f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
+        if abs(number) < 1024.0:
+
+            return "%3.1f%s%s" % (number, unit, suffix)
+
+        number /= 1024.0
+
+    return "%.1f%s%s" % (number, 'Y', suffix)
 
 
 def UTC_time_to_epoch(timestamp):

@@ -488,38 +488,6 @@ class GroupRunSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('id', 'url', 'name', 'device', 'runs')
 
 
-class GroupRunMembershipSerializer(serializers.Serializer):
-
-    grouprun_id = serializers.IntegerField()
-    run_id = serializers.IntegerField()
-
-    # grouprun = serializers.HyperlinkedRelatedField(
-    #     view_name='grouprun-detail',
-    #     queryset=GroupRun.objects.all()  # we should include a filter here
-    # )
-
-    # class Meta:
-    #
-    #     model = Run
-    #     fields = ('url', 'grouprun')
-
-    def create(self, validated_data):
-
-        print('>>> validated_data')
-        print(validated_data)
-        print('<<< validated_data')
-        #self.run.groupruns.add(self.grouprun)
-
-        return GroupRun.objects.all()[0]
-
-
-
-    # class Meta:
-    #
-    #     fields = ('grouprun', 'run')
-    #
-
-
 class FlowcellSummaryBarcodeSerializer(serializers.ModelSerializer):
 
     class Meta:

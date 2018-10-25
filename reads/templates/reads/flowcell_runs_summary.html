@@ -6,8 +6,8 @@
         <table class="table">
         <thead>
         <th>Run</th>
+        <th>Runid</th>
         <th>Run Start Time</th>
-        <th>Timestamp Last Read Seen</th>
         <th>MinKNOW Computer Name</th>
         <th>MinION ID</th>
         <th>ASIC ID</th>
@@ -25,8 +25,8 @@
 
     <tr>
         <td>{{ forloop.counter }}</td>
-        <td>{{ record.run_start_time|date:"d-m-Y H:i:s" }}</td>
-        <td>{{ record.last_read_seen }}</td>
+        <td>{{ record.runid }}</td>
+        <td>{{ record.run_start_time }}</td>
         <td>{{ record.minknow_computer_name }}</td>
         <td>{{ record.minion_id }}</td>
         <td>{{ record.asic_id }}</td>
