@@ -157,9 +157,9 @@ REST_FRAMEWORK = {
     )
 }
 
-LOGIN_URL='/login'
-LOGIN_REDIRECT_URL='/web/private/index'
-LOGOUT_REDIRECT_URL=LOGIN_URL
+LOGIN_URL = '/login'
+LOGIN_REDIRECT_URL = '/web/private/flowcells'
+LOGOUT_REDIRECT_URL = LOGIN_URL
 
 # EMAIL_BACKEND = 'django_mailgun.MailgunBackend'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

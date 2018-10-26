@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from rest_framework.authtoken import views as tok_views
 
+from web.views import index
 
 urlpatterns = [
     url(r'^login/$', auth_views.LoginView.as_view(template_name="registration/login.html"), name="login",
@@ -35,7 +36,8 @@ urlpatterns = [
     url(r'^', include('communication.urls')),
     url(r'^', include('centrifuge.urls')),
     url(r'^', include('jobs.urls')),
-    url(r'^$', auth_views.LoginView.as_view(template_name="registration/login.html")),
+    # url(r'^$', auth_views.LoginView.as_view(template_name="registration/login.html")),
+    url(r'^$', index),
     url(r'^api-token-auth/', tok_views.obtain_auth_token),
 
 ]

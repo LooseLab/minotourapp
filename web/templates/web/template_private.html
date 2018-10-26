@@ -8,7 +8,7 @@
         <nav class="navbar navbar-static-top">
             <div class="container">
                 <div class="navbar-header">
-                    <a href="{% url 'private-index' %}" class="navbar-brand">
+                    <a href="{% url 'flowcells' %}" class="navbar-brand">
                         <emph>Minotour</emph>
                     </a>
                 </div>
@@ -17,8 +17,8 @@
                 <div class="collapse navbar-collapse pull-left" id="navbar-collapse">
                     <ul class="nav navbar-nav">
                         <li>
-                            <a href="{% url 'private-index' %}">
-                                <i class="fa fa-dashboard fa-fw"></i><span> Overview</span>
+                            <a href="{% url 'flowcells' %}">
+                                <i class="fa fa-table fa-fw"></i><span>Flowcells</span>
                             </a>
                         </li>
                         <li>
@@ -27,18 +27,13 @@
                             </a>
                         </li>
                         <li>
-                            <a href="{% url 'flowcells' %}">
-                                <i class="fa fa-table fa-fw"></i><span>Flowcells</span>
-                            </a>
-                        </li>
-                        <!--<li>
-                            <a href="{% url 'experiment-list' %}">
-                                <i class="fa fa-table fa-fw"></i><span>Experiments</span>
-                            </a>
-                        </li>-->
-                        <li>
                             <a href="{% url 'minup' %}">
                                 <i class="fa fa-cloud-upload fa-fw"></i><span>Client</span></a>
+                        </li>
+                        <li>
+                            <a href="{% url 'private-index' %}">
+                                <i class="fa fa-dashboard fa-fw"></i><span>About</span>
+                            </a>
                         </li>
                         <li>
                             <a href="{% url 'tutorial' %}">
