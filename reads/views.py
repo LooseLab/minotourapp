@@ -1252,18 +1252,66 @@ def flowcell_run_stats_latest(request, pk, checkid):
     """
     flowcell = Flowcell.objects.get(pk=pk)
 
-    try:
-        crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all(), id__gt=checkid)[:1000]
+    minion_run_status_list = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell)
 
-    except MinIONRunStats.DoesNotExist:
+    if minion_run_status_list.count() > 0:
 
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        minion_run_status = minion_run_status_list[0]
 
-    if request.method == 'GET':
+    else:
 
-        serializer = MinIONRunStatsSerializer(crazyminIONrunstats, many=True , context={'request': request})
+        minion_run_status = None
 
-        return Response(serializer.data)
+    crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all(), id__gt=checkid)[:1000]
+
+    result = []
+
+    for minion_run_stats in crazyminIONrunstats:
+
+        element = {
+            "id": minion_run_stats.id,
+            "minION": None,
+            "run_id": None,
+            "sample_time": minion_run_stats.sample_time,
+            "event_yield": minion_run_stats.event_yield,
+            "asic_temp": minion_run_stats.asic_temp,
+            "heat_sink_temp": minion_run_stats.heat_sink_temp,
+            "voltage_value": minion_run_stats.voltage_value,
+            "mean_ratio": minion_run_stats.mean_ratio,
+            "open_pore": minion_run_stats.open_pore,
+            "in_strand": minion_run_stats.in_strand,
+            "multiple": minion_run_stats.multiple,
+            "unavailable": minion_run_stats.unavailable,
+            "unknown": minion_run_stats.unknown,
+            "adapter": minion_run_stats.adapter,
+            "pending_mux_change": minion_run_stats.pending_mux_change,
+            "unclassified": minion_run_stats.unclassified,
+            "below": minion_run_stats.below,
+            "unblocking": minion_run_stats.unblocking,
+            "above": minion_run_stats.above,
+            "good_single": minion_run_stats.good_single,
+            "saturated": minion_run_stats.saturated,
+            "inrange": minion_run_stats.inrange,
+            "strand": minion_run_stats.strand,
+            "occupancy": minion_run_stats.occupancy(),
+            "minKNOW_read_count": minion_run_stats.minKNOW_read_count,
+            "minKNOW_histogram_values": minion_run_stats.minKNOW_histogram_values,
+            "minKNOW_histogram_bin_width": minion_run_stats.minKNOW_histogram_bin_width
+        }
+
+        if minion_run_status:
+
+            element['minKNOW_colours_string'] = minion_run_status.minKNOW_colours_string
+
+        else:
+
+            element['minKNOW_colours_string'] = None
+
+        print(element)
+
+        result.append(element)
+
+    return JsonResponse(result, safe=False)
 
 
 @api_view(['GET'])
@@ -1426,15 +1474,13 @@ def flowcell_tabs_details(request, pk):
     tabs_send = list()
 
     flowcell = Flowcell.objects.get(pk=pk)
+
     run_list = Run.objects.filter(flowcell=flowcell)
 
     if MinIONRunStatus.objects.filter(run_id__in=run_list):
 
         tabs.append(flowcell_tabs_dict['LiveEvent'])
-    print(JobMaster.objects.filter(Q(run__in=run_list) | Q(flowcell=flowcell)).filter(last_read__gt=0).values_list(
-        'job_type__name', flat=True))
-    print(len(JobMaster.objects.filter(Q(run__in=run_list) | Q(flowcell=flowcell)).filter(last_read__gt=0).values_list(
-        'job_type__name', flat=True)))
+
     for master in JobMaster.objects.filter(Q(run__in=run_list) | Q(flowcell=flowcell)).filter(last_read__gt=0).values_list('job_type__name', flat=True):
         if master in flowcell_tabs_dict.keys():
 
@@ -1449,9 +1495,6 @@ def flowcell_tabs_details(request, pk):
         if tab not in tabs_send:
 
             tabs_send.append(tab)
-
-    # tabs_send.append(flowcell_tabs_dict['Runs'])  # always add a tab for runs
-    # tabs_send.append(flowcell_tabs_dict['Metagenomics'])  # always add a tab for runs
 
     return Response(tabs_send)
 
