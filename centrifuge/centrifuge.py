@@ -1,5 +1,4 @@
-"""
-    Centrifuge.py
+"""Centrifuge.py
 """
 import subprocess
 from collections import defaultdict
@@ -393,80 +392,135 @@ def calculate_insert_sankey(lin_df, df, flowcell, tax_rank_filter, job_master):
         logger.info("Flowcell id: {} - Finished updating sankey links".format(flowcell.id))
 
 
-def map_all_the_groups(group_df, reference_location, flowcell_id):
+def map_all_the_groups(group_df, reference_location, flowcell, gff3_df, targets_df, task):
     """
-
-    :param group_df:
-    :param reference_location:
-    :param flowcell_id:
+    Map the reads from the target dataframes
+    :param group_df: A dataframe that contains reads from only one species
+    :param reference_location: Where we have stored our reference files for minimap2
+    :param flowcell: The flowcell model from where these reads came from
+    :param gff3_df:
+    :param targets_df:
+    :param task:
     :return:
     """
+    # The species as identified by centrifuge for this group of reads
     species = group_df["name"].unique()
+    # Replace the space with underscore for this set of reads
     species = species[0].replace(" ", "_")
-    print("Flowcell id: {} - species is {}".format(flowcell_id, species))
-    refs = ReferenceInfo.objects.get(name=species)
-    minimap2_ref = reference_location + refs.minimap2_index_file_location
-    reads = FastqRead.objects.filter(run__flowcell_id__in={flowcell_id}, read_id__in=group_df["read_id"])
 
-    sequence_data = list(reads.values_list("fastqreadextra__sequence", flat=True))
-    # create list of read ids for zipping
-    read_ids = list(reads.values_list("read_id", flat=True))
-    # Create list of tuples where
-    # the 1st element is the read_id and the second is the sequence
-    tupley_list = list(zip(read_ids, sequence_data))
+    logger.info("Flowcell id: {} - species is {}".format(flowcell.id, species))
+    # The reference file for this species
+    try:
+        refs = ReferenceInfo.objects.get(name=species)
+    except ObjectDoesNotExist:
+        logger.info("\033[1;36;1m Flowcell id: {} - No reference found for species {}!".format(flowcell.id, species))
+        return
+    # the minimap2 reference fasta
+    minimap2_ref = reference_location + refs.filename
+    # The read sequences for the reads we want to map
+    reads = FastqRead.objects.filter(run__flowcell_id=flowcell.id, read_id__in=group_df["read_id"])
+    # The fasta sequence
+    fastqs_list = reads.values_list('read_id', 'fastqreadextra__sequence')
+    # Assemble the fastq into a string
     fastq = "".join([str(">" + c[0] + "\n" + c[1] + "\n")
-                     for c in tupley_list if c[1] is not None])
+                     for c in fastqs_list if c[1] is not None])
+    # The command to execute minimap
     map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format("minimap2", minimap2_ref)
+    # Execute minimap2
     out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE) \
         .communicate(input=str.encode(fastq))
+    # Get the output of minimap2
     map_out = out.decode()
-    map_df = pd.read_csv(StringIO(map_out), sep="\t", header=None)
 
+    logger.info("Flowcell id: {} - map out {} ".format(flowcell.id, map_out))
+    # If there is output from minimap2 create a dataframe
+    if map_out:
+        map_df = pd.read_csv(StringIO(map_out), sep="\t", header=None)
+    # Else stop and return. There is no output if there are no mappings
+    else:
+        logger.info("Flowcell id: {} - No minimap output".format(flowcell.id))
+        return
+    # The columns headers
     columns = ["read_id", "query_seq_len", "query_start", "query_end", "rel_strand", "target_seq_name",
                "target_seq_len", "target_start", "target_end", "num_matching_bases", "num_matching_bases_gaps",
                "mapping_qual", "type_align", "number_minimiser", "chaining_score", "chaining_score_2nd_chain",
                "random"]
+    # set the column headers to above
     map_df.columns = columns
+    # Drop unecessary columns
     map_df.drop(columns=["number_minimiser", "chaining_score", "chaining_score_2nd_chain", "random"],
                 inplace=True)
-    return map_df
+    test_gf = gff3_df[gff3_df["species"] == species.replace("_", " ")]
+    bool_df = test_gf.apply(falls_in_region, args=(map_df,), axis=1)
+    # Get whether it's inside the boundaries or not
+    bool_df = bool_df.any()
+    # Red reads, reads that fall within boundaries
+    red_df = map_df[bool_df]
+    logger.info(
+        "\033[1;36;1m Flowcell id {} - This many reads mapped evilly on this reference {}".format(flowcell.id,
+                                                                                                  red_df.shape[0]))
+    # Non red reads, reads that mapped elsewhere on the reference
+    map_df = map_df[~bool_df]
+    logger.info(
+        "\033[1;32;1m Flowcell id {} - This many reads mapped elsewhere on this reference {}".format(flowcell.id,
+                                                                                                     map_df.shape[0]))
+    # get the info on the mapped reads from the original dataframe
+    update_num_mapped_df = pd.merge(targets_df, map_df, how="inner", left_on="read_id", right_on="read_id")
+    # Group by name, to get size of group, so number of reads matching
+    gb_unredmap = update_num_mapped_df.groupby("name")
+    # Set the index as name
+    update_num_mapped_df.set_index("name", inplace=True)
+    # Get the number of reads that mapped to each species
+    update_num_mapped_df["num_mapped"] = gb_unredmap.size()
+    # Drop duplicates so unique in each species
+    update_num_mapped_df = update_num_mapped_df[~update_num_mapped_df.index.duplicated(keep="first")]
+
+    update_num_mapped_df.reset_index(inplace=True)
+    # Apply to each row to make an update
+    update_num_mapped_df.apply(update_mapped_non_dangerous, args=(task,), axis=1)
+
+    logger.info("\033[1;32;1m Flowcell id {} - Finished updating mapped reads".format(flowcell.id))
+
+    return red_df
 
 
 def falls_in_region(row, map_df):
     """
-
-    :param row:
-    :param map_df:
+    Does this reads mapping fall within any of the regions we have defined?
+    :param row: The gff3 dataframe row
+    :param map_df: The results of the mapping step in a pandas dataframe
     :return:
     """
+    # TODO which region?
+    # If the start is higher than the region start
     start_low = map_df["target_start"] > row["start"]
+    # If the start is lower than the region end
     start_high = map_df["target_start"] < row["end"]
+    # If the end is higher than the region end
     end_low = map_df["target_end"] > row["start"]
+    # If the end is lower than the region end
     end_high = map_df["target_end"] < row["end"]
-
+    # Concat the series together, create "truth" dataframe
     bool_df = pd.concat([start_low, start_high, end_low, end_high], axis=1, ignore_index=True)
-    print(bool_df)
+    # Keep where the start is in the region,
     bool_df["keep"] = np.where((bool_df[0] & bool_df[1]) | (bool_df[2] & bool_df[3]), True, False)
     return bool_df["keep"]
 
 
-def update_mapped_values(row, bulk_insert_red_id, cart_map_dict, flowcell, task):
+def update_mapped_values(row, bulk_insert_red_id, cart_map_dict, task):
     """
-
-    :param row:
-    :param bulk_insert_red_id:
-    :param cart_map_dict:
-    :param flowcell:
-    :param task:
+    Update the values that we have in the database for each species after getting results for this iteration
+    :param row: The results_df row
+    :param bulk_insert_red_id: The list to store the red reads database object in
+    :param cart_map_dict: Whether we have update this entry or not as each species row only differs by read_id
+    :param task: The task model object
     :return:
     """
     if row["name"] not in cart_map_dict:
         mapped = CartographyMapped.objects.get(species=row["name"],
-                                               tax_id=row["tax_id"],
-                                               flowcell=flowcell, task=task)
-        mapped.red_reads = row["red_num_matches"]
-        mapped.num_matches = row["num_matches"]
-        mapped.sum_unique = row["sum_unique"]
+                                               task=task)
+        mapped.red_reads = row["summed_red_reads"]
+        mapped.red_sum_unique = row["summed_sum_unique"]
 
         mapped.save()
 
@@ -483,94 +537,140 @@ def update_mapped_values(row, bulk_insert_red_id, cart_map_dict, flowcell, task)
     return bulk_insert_red_id
 
 
+def update_mapped_non_dangerous(row, task):
+    """
+    Update number of mapped reads that don't map to danger but do map to reference
+    :param row: DataFrame row
+    :param task: The related task for this analysis
+    :return:
+    """
+    cm = CartographyMapped.objects.get(task=task, species=row["name"])
+    cm.num_mapped += row["num_mapped"]
+    cm.save()
+
+
 def map_the_reads(name_df, task, flowcell):
     """
      Run the mapping step
     :return: The
     """
     # Targets_df
+    logger.info("\033[1;36;1m Flowcell id {} - Mapping the target reads".format(flowcell.id))
     targets_df = name_df
-    if targets_df.empty:
-        return
-    targets_df.reset_index(inplace=True)
-    # refs = ReferenceInfo.objects.all().values()
-
-    reference_location = getattr(settings, "REFERENCE_LOCATION", None)
-
-    gb = targets_df.groupby(["name"], as_index=False)
     # TODO currently hardcoded below
     target_set = "starting_defaults"
+    # if there are no targets identified by centrifuge in this iteration
+    if targets_df.empty:
 
+        logger.info("\033[1;36;0m Flowcell id {} - No targets in this batch of reads".format(flowcell.id,
+                                                                                             targets_df.shape))
+        # Get the targets set in the gff files and uploaded
+        gff3_df = pd.DataFrame(list(CartographyGuide.objects.filter(set=target_set).values()))
+        # If there are no target regions found for the set name
+        if gff3_df.empty:
+            logger.info("\033[1;31;1m Flowcell id {} - No set of target regions found by that set name"
+                        .format(flowcell.id, ))
+            return
+        # Get np array of the target species
+        target_species = gff3_df["species"].unique()
+        # Get np array of their tax_ids
+        target_tax_id = gff3_df["tax_id"].unique()
+        # Combine into tuple, one for each
+        target_tuple = list(zip(target_species, target_tax_id))
+        # create one CartographyMapped entry for each target species
+        for target in target_tuple:
+            obj, created = CartographyMapped.objects.get_or_create(flowcell=flowcell,
+                                                                   task=task,
+                                                                   species=target[0],
+                                                                   tax_id=target[1],
+                                                                   defaults={"red_reads": 0,
+                                                                             "num_mapped": 0,
+                                                                             "red_sum_unique": 0}
+                                                                   )
+            if created:
+                logger.info("\033[1;36;0m Flowcell id {} - CM object created for {}".format(flowcell.id, obj.species))
+        return
+
+    # Reset the index
+    targets_df.reset_index(inplace=True)
+
+    logger.info("\033[1;36;0m Flowcell id {} - targets_df shape is {}".format(flowcell.id, targets_df.shape))
+    # Location of the reference file
+    reference_location = getattr(settings, "REFERENCE_LOCATION", None)
+    # Get one group for each name
+    gb = targets_df.groupby(["name"], as_index=False)
+    # Get the targets set in the gff files and uploaded
     gff3_df = pd.DataFrame(list(CartographyGuide.objects.filter(set=target_set).values()))
-
-    target_species = gff3_df["name"].unique()
-
-    target_tax_id = gff3_df["tax_id"].unqiue()
-
+    # Get np array of the target species
+    target_species = gff3_df["species"].unique()
+    # Get np array of their tax_ids
+    target_tax_id = gff3_df["tax_id"].unique()
+    # Combine into tuple, one for each
     target_tuple = list(zip(target_species, target_tax_id))
-
+    # create one CartographyMapped entry for each target species
     for target in target_tuple:
         obj, created = CartographyMapped.objects.get_or_create(flowcell=flowcell,
                                                                task=task,
                                                                species=target[0],
                                                                tax_id=target[1],
                                                                defaults={"red_reads": 0,
-                                                                         "num_matches": 0,
-                                                                         "sum_unique": 0}
+                                                                         "num_mapped": 0,
+                                                                         "red_sum_unique": 0}
                                                                )
         if created:
-            print("\033[1;36;1m Flowcell id {} - ".format(flowcell.id))
+            logger.info("\033[1;32;1m Flowcell id {} - CM object created for {}".format(flowcell.id, obj.species))
     # All mapped reads
-    map_df = gb.apply(map_all_the_groups, reference_location, flowcell.id)
-
-    bool_df = gff3_df.apply(falls_in_region, args=(map_df,), axis=1)
-    # Get whether it's inside the boundaries or not
-    bool_df = bool_df.any()
-    # Red reads
-    red_df = map_df[bool_df]
+    red_df = gb.apply(map_all_the_groups, reference_location, flowcell, gff3_df, targets_df, task)
+    # If none of the reads mapped to inside the groups
+    if red_df.empty:
+        logger.info("\033[1;31;1m Flowcell id {} - No reads mapped to dangerous areas! Better luck next time."
+                    .format(flowcell.id))
+        return
 
     red_df.set_index(["read_id"], inplace=True)
     # results df contains all details on red reads
     results_df = pd.merge(targets_df, red_df, how="inner", left_on="read_id", right_index=True)
-
+    # If there are no reads that are red reads
     gb_mp = results_df.groupby(["name"])
 
     results_df.set_index(["name"], inplace=True)
-
+    # Get how many reads are mapped to each genome dangerously
     results_df["red_num_matches"] = gb_mp.size()
-
-    results_df["sum_unique"] = gb_mp["unique"].sum()
+    # Get the sum of the unique reads
+    results_df["red_sum_unique"] = gb_mp["unique"].sum()
 
     # TODO this is where barcoding step would be
     results_df.reset_index(inplace=True)
+    logger.info("Flowcell id {} - The results of the mapping stage are {}".format(flowcell.id, results_df))
+    logger.info("Flowcell id {} - The results keys are {}".format(flowcell.id, results_df.keys()))
 
+    # List to store the read read ids
     bulk_insert_red_from_update = []
 
     cart_map_dict = {}
-
-    prev_df = pd.DataFrame(list(CartographyMapped.objects.filter(flowcell__id=flowcell.id,
-                                                                 task__id=task.id).values()))
-
+    # Get the previous values for the mappings
+    prev_df = pd.DataFrame(list(CartographyMapped.objects.filter(task=task).values()))
+    prev_df.set_index(["tax_id"], inplace=True)
+    logger.info("Flowcell id {} - The previous results are {}".format(flowcell.id, prev_df.head()))
+    logger.info("Flowcell id {} - The previous results keys are {}".format(flowcell.id, prev_df.keys()))
     if not results_df.empty:
         results_df.set_index(["tax_id"], inplace=True)
-
-        results_df["to_add_num_matches"] = prev_df["num_matches"]
-
+        # Add the previous number of red reads to the results df
         results_df["to_add_red_reads"] = prev_df["red_reads"]
-
-        results_df["to_add_red_sum_unique"] = prev_df["sum_unique"]
-
-        results_df["summed_num_matches"] = results_df["num_matches"] + results_df["to_add_num_matches"]
-
+        # Add the previous sum unique to the results dataframe
+        results_df["to_add_red_sum_unique"] = prev_df["red_sum_unique"]
+        # Combine the previous and new number matches
         results_df["summed_red_reads"] = results_df["red_num_matches"] + results_df["to_add_red_reads"]
-
-        results_df["summed_sum_unique"] = results_df["sum_unique"] + results_df["to_add_red_sum_unique"]
-
+        # Combine the previous sum of the unique reads
+        results_df["summed_sum_unique"] = results_df["red_sum_unique"] + results_df["to_add_red_sum_unique"]
+        logger.info("Flowcell id {} -  {}".format(flowcell.id, prev_df.keys()))
+        logger.info("Flowcell id {} -  {}".format(flowcell.id, prev_df.keys()))
         results_df.reset_index(inplace=True)
-
+        # Apply the update mapped values function
         results_df.apply(update_mapped_values, args=(bulk_insert_red_from_update,
                                                      cart_map_dict,
-                                                     flowcell.id, task.id), axis=1)
+                                                     task), axis=1)
+        # BUlk create the red read ids
         RedReadIds.objects.bulk_create(bulk_insert_red_from_update)
 
 
@@ -593,7 +693,7 @@ def run_centrifuge(flowcell_job_id):
 
     total_reads = FastqRead.objects.filter(run__flowcell__id=flowcell.id).count()
 
-    logger.info('Flowcell id: {} - Running centrifuge on flowcell {}'.format(flowcell.id, flowcell.name))
+    logger.info('\033[1;32;1m Flowcell id: {} - Running centrifuge on flowcell {}'.format(flowcell.id, flowcell.name))
     logger.info('Flowcell id: {} - job_master_id {}'.format(flowcell.id, job_master.id))
     logger.info('Flowcell id: {} - last_read {}'.format(flowcell.id, job_master.last_read))
     logger.info('Flowcell id: {} - read_count {}'.format(flowcell.id, job_master.read_count))
@@ -720,21 +820,21 @@ def run_centrifuge(flowcell_job_id):
     #                 "Francisella tularensis", "Escherichia coli O157:H7", "Conexibacter woesei",
     #                 "Rickettsia prowazekii",
     #                 "Escherichia coli"]
-    temp_targets = ["Bacillus anthracis", "Clostridium botulinum", "Escherichia coli"]
-
+    # Unique targets in this set of regions
+    temp_targets = set(CartographyGuide.objects.filter(set="starting_defaults").values_list("species", flat=True))
+    logger.info("Flowcell id: {} - Targets are {}".format(flowcell.id, temp_targets))
     name_df = df[df["name"].isin(temp_targets)]
-
+    logger.info("Flowcell id: {} - The dataframe target dataframe is {}".format(flowcell.id, name_df))
     map_the_reads(name_df, job_master, flowcell)
 
     barcode_df = pd.DataFrame()
 
     # TODO vectorise these bad boys
-    logger.info("Flowcell id: {} - The dataframe shape is {}".format(flowcell.id, df.shape))
+    logger.info("\033[1;32;1m Flowcell id: {} - The dataframe shape is {}".format(flowcell.id, df.shape))
 
     unique_barcode = set([c[1] for c in fastqs_list])
 
     if len(unique_barcode) > 1:
-
         logger.info("Flowcell id: {} - These are the barcodes in this set {}".format(flowcell.id, unique_barcode))
 
         barcode_df = gb_bc.apply(barcode_calculations, barcode_df)
@@ -868,7 +968,6 @@ def run_centrifuge(flowcell_job_id):
     job_master.running = False
 
     if fastqs.count() > 0:
-
         job_master.last_read = fastqs[499].id
 
     job_master.read_count = job_master.read_count + fastqs.count()

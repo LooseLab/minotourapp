@@ -31,7 +31,6 @@ class Command(BaseCommand):
             flowcell_list = Flowcell.objects.filter(is_active=True)
 
             for flowcell in flowcell_list:
-                # TODO could we filter for only metagenomics tasks here? And return if none found?
                 flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False, complete=False)
 
                 for flowcell_job in flowcell_job_list:

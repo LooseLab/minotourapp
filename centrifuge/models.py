@@ -1,3 +1,6 @@
+"""models.py
+
+"""
 from django.db import models
 from django.utils import timezone
 from jobs.models import JobMaster
@@ -38,19 +41,19 @@ class SankeyLinks(models.Model):
     target_tax_level = models.CharField(max_length=100)
 
 
-class SankeyLinksBarcode(models.Model):
-    """
-        The values for the different barcodes for the sankey diagram TODO unused
-    """
-    value = models.IntegerField(null=True, default=0)
-    barcode = models.CharField(max_length=20)
-    link = models.ForeignKey(
-        SankeyLinks,
-        related_name="barcode_value_links",
-        null=True,
-        on_delete=models.CASCADE
-    )
-    tax_id = models.IntegerField(default=0)
+# class SankeyLinksBarcode(models.Model):
+#     """
+#         The values for the different barcodes for the sankey diagram TODO unused
+#     """
+#     value = models.IntegerField(null=True, default=0)
+#     barcode = models.CharField(max_length=20)
+#     link = models.ForeignKey(
+#         SankeyLinks,
+#         related_name="barcode_value_links",
+#         null=True,
+#         on_delete=models.CASCADE
+#     )
+#     tax_id = models.IntegerField(default=0)
 
 
 class MetaGenomicsMeta(models.Model):
@@ -161,8 +164,8 @@ class CartographyMapped(models.Model):
     species = models.CharField(max_length=50)
     tax_id = models.IntegerField(null=True)
     red_reads = models.IntegerField(null=True, default=0)
-    num_matches = models.IntegerField(default=0)
-    sum_unique = models.IntegerField(default=0)
+    num_mapped = models.IntegerField(default=0)
+    red_sum_unique = models.IntegerField(default=0)
 
 
 class RedReadIds(models.Model):

@@ -1,13 +1,14 @@
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from centrifuge.models import CentOutput, CartographyMapped, LineageValues, MetaGenomicsMeta, \
-    SankeyLinks, CentOutputBarcoded, SankeyLinksBarcode
+    SankeyLinks, CentOutputBarcoded
 from centrifuge.serializers import CartMappedSerialiser
 from django.utils import timezone
 from ete3 import NCBITaxa
 import pandas as pd
 from jobs.models import JobMaster
 
+pd.options.mode.chained_assignment = None
 
 @api_view(["GET"])
 def metaview(request):
@@ -351,8 +352,31 @@ def get_target_mapping(request):
 
     queryset = CartographyMapped.objects.filter(flowcell__id=flowcell_id,
                                                 task__id=task_id).values()
+    species_list = CartographyMapped.objects.filter(flowcell__id=flowcell_id,
+                                                task__id=task_id).values_list("tax_id", flat=True)
+    cent_output = CentOutputBarcoded.objects.filter(output__task__id=task_id, tax_id__in=species_list,
+                                                    barcode="All reads").values()
 
-    return Response(queryset)
+    results_df = pd.DataFrame(list(queryset))
+
+    cent_output_df = pd.DataFrame(list(cent_output))
+
+    merger_df = pd.merge(results_df, cent_output_df, how="inner", left_on="tax_id", right_on="tax_id")
+
+    merger_df.drop(columns=["id_x", "id_y", "barcode"], inplace=True)
+
+    merger_df.rename(columns={"num_mapped": "Num. mapped",
+                              "red_reads": "Danger reads",
+                              "red_sum_unique": "Unique Danger reads",
+                              "species": "Species",
+                              "tax_id": "Tax id",
+                              "num_matches": "Num. matches",
+                              "sum_unique": "Sum. Unique"
+                              }, inplace=True)
+
+    results = merger_df.to_dict(orient="records")
+
+    return Response(results)
 
 
 

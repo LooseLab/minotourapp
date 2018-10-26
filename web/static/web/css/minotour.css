@@ -1,3 +1,9 @@
 .navbar-minotour {
     background-color: #6bb9f0;
 }
+.red-alert{
+    background-color: red;
+}
+.yellow-alert{
+    background-color: yellow;
+}

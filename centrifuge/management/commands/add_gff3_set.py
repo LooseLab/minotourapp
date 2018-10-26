@@ -72,9 +72,9 @@ class Command(BaseCommand):
             reference_list = list(ReferenceInfo.objects.all().values_list("name", flat=True))
 
             if options["species"]:
-                set_name = options["species"]
+                set_name = options["species"].replace("_", " ")
             else:
-                set_name = os.path.basename(options['gff']).split(".")[0]
+                set_name = os.path.basename(options['gff']).split(".")[0].replace("_", " ")
 
             if set_name not in reference_list:
                 raise CommandError('No matching reference file with name "%s" found in database. Please upload '
