@@ -3,7 +3,34 @@
 }
 .red-alert{
     background-color: red;
+    color: white;
 }
 .yellow-alert{
     background-color: yellow;
+}
+.orange-alert{
+    background-color: rgb(255, 127, 14);
+}
+.map-alert{
+    font-size: 18px;
+    font-weight: 800;
+}
+.dataTables_scrollHeadInner {
+    width: 100% !important;
+}
+
+.dataTables_scrollHeadInner table {
+    width: 100% !important;
+}
+
+.dataTables_scrollFootInner {
+    width: 100% !important;
+}
+
+.dataTables_scrollFootInner table {
+    width: 100% !important;
+}
+
+.taxons td {
+    padding: 0.29% !important;
 }

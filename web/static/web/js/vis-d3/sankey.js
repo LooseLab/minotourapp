@@ -1,5 +1,4 @@
 "use strict";
-let updateSankey;
 
 function draw(nodesObj, sankey, g, format, color, width) {
     // Draw the diagram
@@ -117,7 +116,7 @@ function drawSankey(flowcellId) {
     let hi = $(window).height() * 0.6;
     // width of page
     hi = d3.max([hi, 480]);
-    let width = $(window).width() - 60;
+    let width = $(window).width() - 120;
     let svg;
     let g;
     let formatNumber = d3.format(",.0f"),
@@ -130,7 +129,7 @@ function drawSankey(flowcellId) {
     let sankey = d3.sankey()
         .nodeWidth(20)
         .nodePadding(3)
-        .size([width*0.95, hi * 0.95]).nodeId(function id(d) {
+        .size([width, hi * 0.95]).nodeId(function id(d) {
             return d.name;
         })
     ;

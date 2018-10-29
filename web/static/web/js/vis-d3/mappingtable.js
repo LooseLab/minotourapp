@@ -17,7 +17,7 @@ function update_mapping_table(flowcellId) {
             tbody = table.select("tbody");
         }
         else {
-            table = d3.select(".alert-table").classed("has-tabley?", true).style("width", "100%").append("table").attr("class", "table table-hover");
+            table = d3.select(".alert-table").classed("has-tabley?", true).style("width", "100%").append("table").attr("class", "table table-hover map-alert");
             thead = table.append('thead').append('tr');
             tbody = table.append('tbody').attr("class", "alert-tbody");
 
@@ -62,13 +62,15 @@ function update_mapping_table(flowcellId) {
                 // if the cell contains the key, set the background colour to the rgb value in the data
                 let variable = d3.select("#" + d3.select(this).node().parentNode.id.replace(/ /g, "_"));
                 if (d.column === "Num. mapped" && d.value > 0 && !variable.classed("red-alert")) {
-                    console.log("warning! yellow! for " + d3.select(this).node().parentNode.id.replace(/ /g, "_"));
-                    variable.classed("yellow-alert", true);
+                    variable.classed("orange-alert", true);
                 }
                 else if (d.column === "Danger reads" && d.value > 0) {
-                    console.log("Danger! Red! for " + d3.select(this).node().parentNode.id.replace(/ /g, "_"));
+                    variable.classed("orange-alert", false);
                     variable.classed("yellow-alert", false);
                     variable.classed("red-alert", true);
+                }
+                else if (d.column === "Num. matches" && d.value > 0 && !variable.classed("red-alert") && !variable.classed("orange-alert")){
+                    variable.classed("yellow-alert", true);
                 }
             })
             // fill the cell with the string by setting the inner html

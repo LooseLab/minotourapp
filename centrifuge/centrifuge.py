@@ -639,7 +639,6 @@ def map_the_reads(name_df, task, flowcell):
     # Get the sum of the unique reads
     results_df["red_sum_unique"] = gb_mp["unique"].sum()
 
-    # TODO this is where barcoding step would be
     results_df.reset_index(inplace=True)
     logger.info("Flowcell id {} - The results of the mapping stage are {}".format(flowcell.id, results_df))
     logger.info("Flowcell id {} - The results keys are {}".format(flowcell.id, results_df.keys()))

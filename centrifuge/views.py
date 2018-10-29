@@ -43,7 +43,7 @@ def metaview(request):
     number_of_reads = queryset.number_of_reads
     reads_class = job_master.read_count
     # Percentage of reads classified
-    percentage = reads_class / number_of_reads * 100
+    percentage = round(reads_class / number_of_reads * 100, 2)
     # Get the start time of the task, removing the timezone info
     start_time = queryset.timestamp.replace(tzinfo=None)
     # Get the current time, removing the timezone info
@@ -101,12 +101,6 @@ def cent_sankey_two(request):
     if source_target_df.empty:
         print("no source target")
         return Response({}, status=204)
-
-    # barcode_df = pd.DataFrame(list(SankeyLinksBarcode.objects.filter(link__flowcell_id=flowcell_id,
-    #                                                                  link__task__id=task_id,
-    #                                                                  barcode=selected_barcode).values()))
-    # Merge barcode values onto dataframe
-    # source_target_df = pd.merge(source_target_df, barcode_df, how="inner", on="tax_id")
     # get a subset df of all the species rows
     temp_species_df = source_target_df[source_target_df["target_tax_level"] == "species"]
     # get species limit (default 50) of the largest species
@@ -172,6 +166,8 @@ def vis_table_or_donut_data(request):
 
     queryset = CentOutputBarcoded.objects.filter(output__flowcell__id=flowcell_id, output__task__id=task_id,
                                                  barcode=barcode)
+    barcode_list = list(set(CentOutputBarcoded.objects.filter(output__flowcell__id=flowcell_id, output__task__id=task_id)
+                            .values_list("barcode", flat=True)))
     # Create a dataframe from the results of the querying the database
     centoutput_df = pd.DataFrame(list(queryset.values()))
     # if there is no data in the database (yet) return 204
@@ -281,7 +277,7 @@ def vis_table_or_donut_data(request):
     if request.GET.get("visType", "") == "table":
         return_dict = json
     elif request.GET.get("visType", "") == "donut":
-        return_dict = {"result": container_array}
+        return_dict = {"result": container_array, "barcodes": barcode_list}
     else:
         return Response(status=400)
 

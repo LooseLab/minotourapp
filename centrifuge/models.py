@@ -41,21 +41,6 @@ class SankeyLinks(models.Model):
     target_tax_level = models.CharField(max_length=100)
 
 
-# class SankeyLinksBarcode(models.Model):
-#     """
-#         The values for the different barcodes for the sankey diagram TODO unused
-#     """
-#     value = models.IntegerField(null=True, default=0)
-#     barcode = models.CharField(max_length=20)
-#     link = models.ForeignKey(
-#         SankeyLinks,
-#         related_name="barcode_value_links",
-#         null=True,
-#         on_delete=models.CASCADE
-#     )
-#     tax_id = models.IntegerField(default=0)
-
-
 class MetaGenomicsMeta(models.Model):
     """"
         :purpose: Store information about the Metagenomics classification analysis, used in centrifuger.py
@@ -172,7 +157,7 @@ class RedReadIds(models.Model):
     """
         The read ids for reads that have identified dangerously
     """
-    read_id = models.CharField(max_length=100)
+    read_id = models.CharField(max_length=100, unique=True)
     CM_species = models.ForeignKey(
         CartographyMapped,
         related_name="mapped_read_ids",
@@ -228,6 +213,20 @@ class LineageValues(models.Model):
     leaf = models.CharField(null=True, max_length=100)
     substrainspecies = models.CharField(null=True, max_length=100)
 
+
+class BarcodedCartographyMapped(models.Model):
+    """
+        The results by barcode for the target mapping
+    """
+    cm = models.ForeignKey(
+        CartographyMapped,
+        related_name="mapped_targets_barcodes",
+        on_delete=models.CASCADE
+    )
+    tax_id = models.IntegerField(null=True)
+    red_reads = models.IntegerField(null=True, default=0)
+    num_mapped = models.IntegerField(default=0)
+    red_sum_unique = models.IntegerField(default=0)
 
 
 
