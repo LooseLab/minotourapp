@@ -15,4 +15,22 @@ function requestRunDetails(id) {
             console.log('Error: ' + e);
         }
     });
+
+    var url = "/flowcells/" + id + "/flowcell_run_basecalled_summary_html/";
+
+    var flowcell_run_basecalled_summary_html_div = document.querySelector('#flowcell_run_basecalled_summary_html_div');
+
+    $.ajax({
+        url: url,
+        dataType: "html",
+        success: function(data) {
+            flowcell_run_basecalled_summary_html_div.innerHTML = data;
+        },
+        error: function(e)
+        {
+            console.log('Error: ' + e);
+        }
+    });
+
+
 };

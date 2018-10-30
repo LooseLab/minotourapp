@@ -37,11 +37,6 @@ urlpatterns = [
         name="fastqreadnames-list"
     ),
     url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/yield/$',
-        views.cumulative_read_count,
-        name="cumulative_read_count"
-    ),
-    url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/rundetails/$',
         views.minION_run_status_list,
         name="minIONrunstatus_list"
@@ -174,11 +169,6 @@ urlpatterns = [
         name="flowcell-channel-summary"
     ),
     url(
-        r'^flowcells/(?P<pk>[0-9]+)/run_summaries_html/$',
-        views.flowcell_run_summaries_html,
-        name="flowcell_run_summaries_html"
-    ),
-    url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/runstats/(?P<checkid>[0-9]+)/$',
         views.flowcell_run_stats_latest,
         name="flowcellrunstats_latest"
@@ -187,10 +177,6 @@ urlpatterns = [
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/tasks/$',
         views.flowcell_tasks_detail_all,
         name="flowcelltasks-detail-all"),
-    url(
-        r'^api/v1/flowcells/(?P<pk>[0-9]+)/settask/$',
-        views.flowcellset_task_detail_all,
-        name="flowcellset-task-detail-all"),
     url(
         r'^api/v1/tabs/(?P<pk>[0-9]+)/$',
         views.tabs_details,
@@ -231,4 +217,19 @@ urlpatterns = [
         views.version,
         name='version'
     ),
+    #
+    # The links below generated html
+    #
+    url(
+        r'^flowcells/(?P<pk>[0-9]+)/run_summaries_html/$',
+        views.flowcell_run_summaries_html,
+        name="flowcell_run_summaries_html"
+    ),
+
+    url(
+        r'^flowcells/(?P<pk>[0-9]+)/flowcell_run_basecalled_summary_html/$',
+        views.flowcell_run_basecalled_summary_html,
+        name="flowcell_run_basecalled_summary_html"
+    ),
+
 ]

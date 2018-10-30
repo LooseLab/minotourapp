@@ -1,48 +1,4 @@
 <div class="row">
-    <div class="col-md-12">
-        <!---
-        <h4 class="panel-heading">We're going to estimate yield in bases
-            here.</h4>
-        <p style='text-align: center;'>If basecalling is occuring concurrently with the run and data
-            uploaded to
-            minoTour, the scaling from events to bases is dynamically
-            calculated. If
-            not, the scaling factor can be chosen in the drop down
-            box.</p>
-        <div class="col-md-2">
-            <p> Set sequencing speed: </p>
-            <select id="seqspeed">
-                <option selected="selected">450 b/s</option>
-                <option>250 b/s</option>
-                <option>70 b/s</option>
-            </select>
-        </div>
-
-        <div>
-            <div class="col-md-2">
-                <p>Estimated Current Yield (bases) <strong><span
-                        id="speedresult"></span></strong></p>
-            </div>
-            <div class="col-md-2">
-                <p>Estimated Average Read Length (bases) <strong><span
-                        id="averageresult"></span></strong></p>
-            </div>
-            <div class="col-md-2">
-                <p>Theoretical Predicted Yield at 24 hours (bases)
-                    <strong><span
-                            id="end24"></span></strong></p>
-            </div>
-            <div class="col-md-2">
-                <p> Theoretical Predicted Yield at 48 hours (bases)
-                    <strong><span
-                            id="end48"></span></strong></p>
-            </div>
-        </div>
-        --->
-    </div>
-</div>
-
-<div class="row">
     <div id="chart-yield" class="col-md-12 highcharts"
          style="height:400px; display:block;">
         <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
@@ -62,16 +18,6 @@
     </div>
 </div>
 
-<!--
-<div class="row">
-    <div id="yield-projection" class="col-md-12 highcharts-container"
-         style="width:100%; height:400px;display:block;">
-        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
-        Projections
-    </div>
-</div>
--->
-
 <div class="row">
     <div id="live-strand" class="col-md-6 highcharts"
          style="width:50%; height:400px;display:block;">
@@ -83,20 +29,6 @@
         <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Occupancy
     </div>
 </div>
-
-<!--<div class="row">
-    <div id="live-porestate" class="col-md-6 highcharts"
-         style="width:50%; height:400px;display:block;">
-        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
-        Projections
-    </div>
-
-    <div id="live-currentratio" class="col-md-6 highcharts"
-         style="width:50%; height:400px;display:block;">
-        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
-        Projections
-    </div>
-</div>-->
 
 <div class="row">
     <div id="live-temperature" class="col-md-6 highcharts"

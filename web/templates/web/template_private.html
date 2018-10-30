@@ -4,21 +4,26 @@
 {% block header %}
     <header class="main-header">
 
-        <!-- Header Navbar -->
-        <nav class="navbar navbar-static-top">
-            <div class="container">
+        <nav class="navbar navbar-default">
+            <div class="container-fluid">
+                <!-- Brand and toggle get grouped for better mobile display -->
                 <div class="navbar-header">
-                    <a href="{% url 'private-index' %}" class="navbar-brand">
-                        <emph>Minotour</emph>
-                    </a>
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
+                            data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="{% url 'flowcells' %}">minoTour</a>
                 </div>
 
                 <!-- Collect the nav links, forms, and other content for toggling -->
-                <div class="collapse navbar-collapse pull-left" id="navbar-collapse">
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                     <ul class="nav navbar-nav">
-                        <li>
-                            <a href="{% url 'private-index' %}">
-                                <i class="fa fa-dashboard fa-fw"></i><span> Overview</span>
+                        <li class="active">
+                            <a href="{% url 'flowcells' %}">
+                                <i class="fa fa-table fa-fw"></i><span>Flowcells</span>
                             </a>
                         </li>
                         <li>
@@ -27,74 +32,33 @@
                             </a>
                         </li>
                         <li>
-                            <a href="{% url 'flowcells' %}">
-                                <i class="fa fa-table fa-fw"></i><span>Flowcells</span>
+                            <a href="{% url 'minup' %}">
+                                <i class="fa fa-cloud-upload fa-fw"></i><span>Client</span>
                             </a>
                         </li>
-                        <!--<li>
-                            <a href="{% url 'experiment-list' %}">
-                                <i class="fa fa-table fa-fw"></i><span>Experiments</span>
-                            </a>
-                        </li>-->
                         <li>
-                            <a href="{% url 'minup' %}">
-                                <i class="fa fa-cloud-upload fa-fw"></i><span>Client</span></a>
+                            <a href="{% url 'private-index' %}">
+                                <i class="fa fa-dashboard fa-fw"></i><span>About</span>
+                            </a>
                         </li>
                         <li>
                             <a href="{% url 'tutorial' %}">
                                 <i class="fa fa-question-circle fa-fw"></i><span>Help</span>
                             </a>
                         </li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button"
+                               aria-haspopup="true" aria-expanded="false">{{ request.user }} <span class="caret"></span></a>
+                            <ul class="dropdown-menu">
+                                <li><a href="{% url 'password_change' %}">Change Password</a></li>
+                                <li><a href="{% url 'profile' %}">Profile</a></li>
+                                <li><a href="{% url 'logout' %}">Sign out</a></li>
+                            </ul>
+                        </li>
                     </ul>
-                </div>
-
-                <!-- Navbar Right Menu -->
-                <div id="sumdat">
-                    <div class="navbar-custom-menu">
-                        <ul class="nav navbar-nav">
-                            <!-- Messages: style can be found in dropdown.less-->
-                            <li id="all-messages" class="dropdown messages-menu">
-                            </li><!-- /.messages-menu -->
-                            <!-- User Account Menu -->
-                            <li class="dropdown user user-menu">
-                                <!-- Menu Toggle Button -->
-                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                    <!-- The user image in the navbar-->
-                                    <img src="{% static 'web/img/minitour.png' %}" class="user-image" alt="User Image">
-                                    <!-- hidden-xs hides the username on small devices so only the image appears. -->
-                                    <span class="hidden-xs">{{ request.user }}</span>
-                                </a>
-                                <ul class="dropdown-menu">
-                                    <!-- The user image in the menu -->
-                                    <li class="user-header">
-                                        <img src="{% static 'web/img/minitour.png' %}" class="img-circle"
-                                             alt="User Image">
-                                        <p>
-                                            {{ request.user }}
-                                            <small>Manage your user account here.</small>
-                                        </p>
-                                    </li>
-                                    <!-- Menu Body -->
-                                    <li class="user-body">
-                                        <div class="col-xs-4 text-center">
-                                            <a href="{% url 'password_change' %}">Change Password</a>
-                                        </div>
-                                        <div class="col-xs-4 text-center">
-                                            <a href="{% url 'profile' %}">Profile</a>
-                                        </div>
-                                    </li>
-                                    <!-- Menu Footer-->
-                                    <li class="user-footer">
-                                        <div class="pull-right">
-                                            <a href="{% url 'logout' %}" class="btn btn-default btn-flat">Sign out</a>
-                                        </div>
-                                    </li>
-                                </ul>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+                </div><!-- /.navbar-collapse -->
+            </div><!-- /.container-fluid -->
         </nav>
+
     </header>
 {% endblock %}

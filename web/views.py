@@ -15,6 +15,16 @@ from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlo
 from django.contrib import messages
 
 
+def index(request):
+
+    if request.user.is_authenticated:
+
+        return redirect('flowcells')
+
+    else:
+
+        return redirect('login')
+
 def signup(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
@@ -24,7 +34,7 @@ def signup(request):
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=username, password=raw_password)
             login(request, user)
-            return redirect('private-index')
+            return redirect('flowcells')
 
     else:
         form = SignUpForm()
