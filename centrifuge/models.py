@@ -40,6 +40,9 @@ class SankeyLinks(models.Model):
     )
     target_tax_level = models.CharField(max_length=100)
 
+    def __str__(self):
+        return "{} {} {} {}".format(self.barcode, self.tax_id, self.target_tax_level, self.task)
+
 
 class MetaGenomicsMeta(models.Model):
     """"
@@ -113,6 +116,9 @@ class CentOutput(models.Model):
 
     barcode = models.CharField(max_length=50)
 
+    def __str__(self):
+        return "{} {} {} {}".format(self.barcode, self.tax_id, self.name, self.task)
+
 
 class CentOutputBarcoded(models.Model):
     """
@@ -128,6 +134,9 @@ class CentOutputBarcoded(models.Model):
     )
     tax_id = models.IntegerField()
     barcode = models.CharField(max_length=50)
+
+    def __str__(self):
+        return "{} {} {}".format(self.barcode, self.tax_id, self.output)
 
 
 class CartographyMapped(models.Model):
@@ -151,6 +160,10 @@ class CartographyMapped(models.Model):
     red_reads = models.IntegerField(null=True, default=0)
     num_mapped = models.IntegerField(default=0)
     red_sum_unique = models.IntegerField(default=0)
+    barcode = models.CharField(max_length=50, default="All reads")
+
+    def __str__(self):
+        return "{} {} {}".format(self.species, self.tax_id, self.task)
 
 
 class RedReadIds(models.Model):
@@ -163,6 +176,9 @@ class RedReadIds(models.Model):
         related_name="mapped_read_ids",
         on_delete=models.CASCADE
     )
+
+    def __str__(self):
+        return self.read_id
 
 
 class CartographyGuide(models.Model):
@@ -223,10 +239,15 @@ class BarcodedCartographyMapped(models.Model):
         related_name="mapped_targets_barcodes",
         on_delete=models.CASCADE
     )
+    species = models.CharField(max_length=50, default="Species")
     tax_id = models.IntegerField(null=True)
     red_reads = models.IntegerField(null=True, default=0)
     num_mapped = models.IntegerField(default=0)
     red_sum_unique = models.IntegerField(default=0)
+    barcode = models.CharField(max_length=50, default="No barcode")
+
+    def __str__(self):
+        return "{} {} {}".format(self.barcode, self.tax_id, self.cm)
 
 
 

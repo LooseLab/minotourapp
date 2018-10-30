@@ -102,7 +102,7 @@ function update(flowcellId, sankey, checkForData, svg, g, format, color, width, 
 }
 // top level function
 function drawSankey(flowcellId) {
-    var selectedBarcode = get_selected_barcode();
+    let selectedBarcode = get_selected_barcode();
     // Check the tab value
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
 

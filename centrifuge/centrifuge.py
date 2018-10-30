@@ -13,12 +13,13 @@ from django.utils import timezone
 from ete3 import NCBITaxa
 
 from centrifuge.models import CentOutput, LineageValues, MetaGenomicsMeta, SankeyLinks, CentOutputBarcoded, \
-    CartographyMapped, RedReadIds, CartographyGuide
+    CartographyMapped, RedReadIds, CartographyGuide, BarcodedCartographyMapped
 from jobs.models import JobMaster
 from minotourapp.utils import get_env_variable
 from reads.models import FastqRead
 from reference.models import ReferenceInfo
 from django.conf import settings
+from django.db.utils import IntegrityError
 
 pd.options.mode.chained_assignment = None
 logger = get_task_logger(__name__)
@@ -392,7 +393,43 @@ def calculate_insert_sankey(lin_df, df, flowcell, tax_rank_filter, job_master):
         logger.info("Flowcell id: {} - Finished updating sankey links".format(flowcell.id))
 
 
-def map_all_the_groups(group_df, reference_location, flowcell, gff3_df, targets_df, task):
+def insert_nummapped_barcode(row, species_to_pk):
+    """
+    Insert the model object for the reads that mapped to their target reference, outside target regions
+    :param row: Dataframe row
+    :param species_to_pk: The primary key for each species CartographyMapped database row in a dict
+    :return:
+    """
+    # TODO a lot of database calls, may need changing
+    pk = species_to_pk[row["name"]]
+    logger.info(pk)
+    obj, created = BarcodedCartographyMapped.objects.get_or_create(
+        tax_id=row["tax_id"],
+        cm=pk,
+        barcode=row["barcode"],
+        species=row["name"]
+    )
+    obj.num_mapped += row["num_mapped"]
+    obj.save()
+
+
+def barcode_nummapped_insert(gbm_df, species_to_pk):
+    """
+    Calculate the num_mapped for reads that mapped to their reference outside target regions
+    :param gbm_df: The dataframe for each group of barcodes
+    :param task: The task for this analysis
+    :param species_to_pk: The primary key of the species entry in Cartography mapped, to use as Foreign Key
+    :return:
+    """
+    name_gbm = gbm_df.groupby("name")
+    gbm_df.set_index("name", inplace=True)
+    gbm_df["num_mapped"] = name_gbm.size()
+    gbm_df.reset_index(inplace=True)
+    gbm_df.apply(insert_nummapped_barcode, args=(species_to_pk,), axis=1)
+    return "top_banter"
+
+
+def map_all_the_groups(group_df, reference_location, flowcell, gff3_df, targets_df, task, species_to_pk):
     """
     Map the reads from the target dataframes
     :param group_df: A dataframe that contains reads from only one species
@@ -438,7 +475,7 @@ def map_all_the_groups(group_df, reference_location, flowcell, gff3_df, targets_
         map_df = pd.read_csv(StringIO(map_out), sep="\t", header=None)
     # Else stop and return. There is no output if there are no mappings
     else:
-        logger.info("Flowcell id: {} - No minimap output".format(flowcell.id))
+        logger.info("Flowcell id: {} - No minimap output (No reads mapped) for species {}".format(flowcell.id, species))
         return
     # The columns headers
     columns = ["read_id", "query_seq_len", "query_start", "query_end", "rel_strand", "target_seq_name",
@@ -456,15 +493,18 @@ def map_all_the_groups(group_df, reference_location, flowcell, gff3_df, targets_
     bool_df = bool_df.any()
     # Red reads, reads that fall within boundaries
     red_df = map_df[bool_df]
+
     logger.info(
-        "\033[1;36;1m Flowcell id {} - This many reads mapped evilly on this reference {}".format(flowcell.id,
-                                                                                                  red_df.shape[0]))
+        "\033[1;36;1m Flowcell id {} - This many reads mapped evilly on this reference {} for species {}"
+        .format(flowcell.id, red_df.shape[0], species))
     # Non red reads, reads that mapped elsewhere on the reference
     map_df = map_df[~bool_df]
+
     logger.info(
         "\033[1;32;1m Flowcell id {} - This many reads mapped elsewhere on this reference {}".format(flowcell.id,
                                                                                                      map_df.shape[0]))
     # get the info on the mapped reads from the original dataframe
+    # TODO this is where we sort the barcodes
     update_num_mapped_df = pd.merge(targets_df, map_df, how="inner", left_on="read_id", right_on="read_id")
     # Group by name, to get size of group, so number of reads matching
     gb_unredmap = update_num_mapped_df.groupby("name")
@@ -478,6 +518,10 @@ def map_all_the_groups(group_df, reference_location, flowcell, gff3_df, targets_
     update_num_mapped_df.reset_index(inplace=True)
     # Apply to each row to make an update
     update_num_mapped_df.apply(update_mapped_non_dangerous, args=(task,), axis=1)
+
+    # Update the barcoded mapped but none dangerous reads
+    gb_unred_mapped_barcode = update_num_mapped_df.groupby("barcode")
+    gb_unred_mapped_barcode.apply(barcode_nummapped_insert, species_to_pk)
 
     logger.info("\033[1;32;1m Flowcell id {} - Finished updating mapped reads".format(flowcell.id))
 
@@ -549,6 +593,46 @@ def update_mapped_non_dangerous(row, task):
     cm.save()
 
 
+def insert_barcode_mapped_dangerous(row, species_to_pk):
+    """
+    Insert the updated values into the database
+    :param row: The dataframe row
+    :param species_to_pk: A dict with lookup for species to their database row primary key, used to Foreign key
+    to Cartography mapped
+    :return:
+    """
+    pk = species_to_pk[row["name"]]
+
+    obj, created = BarcodedCartographyMapped.objects.get_or_create(
+        tax_id=row["tax_id"],
+        cm=pk,
+        barcode=row["barcode"],
+        species=row["name"]
+    )
+
+    obj.red_reads += row["barcode_red_reads"]
+
+    obj.red_sum_unique += row["barcode_summed_red"]
+    obj.save()
+
+
+def update_mapped_dangerous_barcode(gb_mp_dan_df, species_to_pk):
+    """
+    Update or create the red reads values for Each Barcode
+    :param gb_mp_dan_df: Groups of dangerous reads mapping to t
+    :param species_to_pk: A dict with lookup for species to their database row primary key, used to Foreign key
+    to Cartography mapped
+    :return:
+    """
+    name_gbm = gb_mp_dan_df.groupby("name")
+    gb_mp_dan_df.set_index("name", inplace=True)
+    gb_mp_dan_df["barcode_red_reads"] = name_gbm.size()
+    gb_mp_dan_df["barcode_summed_red"] = name_gbm["unique"].sum()
+    gb_mp_dan_df.reset_index(inplace=True)
+    gb_mp_dan_df.drop_duplicates(subset=["barcode", "name"], inplace=True)
+    gb_mp_dan_df.apply(insert_barcode_mapped_dangerous, args=(species_to_pk,), axis=1)
+
+
 def map_the_reads(name_df, task, flowcell):
     """
      Run the mapping step
@@ -597,6 +681,10 @@ def map_the_reads(name_df, task, flowcell):
     logger.info("\033[1;36;0m Flowcell id {} - targets_df shape is {}".format(flowcell.id, targets_df.shape))
     # Location of the reference file
     reference_location = getattr(settings, "REFERENCE_LOCATION", None)
+
+    queryset = CartographyMapped.objects.filter(task=task)
+    # Create a lookup of pks to species
+    species_to_pk = {query.species: query for query in queryset}
     # Get one group for each name
     gb = targets_df.groupby(["name"], as_index=False)
     # Get the targets set in the gff files and uploaded
@@ -620,7 +708,8 @@ def map_the_reads(name_df, task, flowcell):
         if created:
             logger.info("\033[1;32;1m Flowcell id {} - CM object created for {}".format(flowcell.id, obj.species))
     # All mapped reads
-    red_df = gb.apply(map_all_the_groups, reference_location, flowcell, gff3_df, targets_df, task)
+    # TODO pass the lookup dict in here
+    red_df = gb.apply(map_all_the_groups, reference_location, flowcell, gff3_df, targets_df, task, species_to_pk)
     # If none of the reads mapped to inside the groups
     if red_df.empty:
         logger.info("\033[1;31;1m Flowcell id {} - No reads mapped to dangerous areas! Better luck next time."
@@ -670,7 +759,15 @@ def map_the_reads(name_df, task, flowcell):
                                                      cart_map_dict,
                                                      task), axis=1)
         # BUlk create the red read ids
-        RedReadIds.objects.bulk_create(bulk_insert_red_from_update)
+        try:
+            RedReadIds.objects.bulk_create(bulk_insert_red_from_update)
+        except IntegrityError:
+            logger.info("Flowcell id {} - dupliacte red reads!".format(flowcell.id))
+        # Apply the calculation and update to the dataframe
+        gb_bc = results_df.groupby("barcode")
+        # Apply to each barcode group
+        gb_bc.apply(update_mapped_dangerous_barcode, species_to_pk)
+
 
 
 def run_centrifuge(flowcell_job_id):

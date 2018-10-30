@@ -1,7 +1,7 @@
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from centrifuge.models import CentOutput, CartographyMapped, LineageValues, MetaGenomicsMeta, \
-    SankeyLinks, CentOutputBarcoded
+    SankeyLinks, CentOutputBarcoded, BarcodedCartographyMapped
 from centrifuge.serializers import CartMappedSerialiser
 from django.utils import timezone
 from ete3 import NCBITaxa
@@ -338,16 +338,19 @@ def get_target_mapping(request):
     :return:
     """
     flowcell_id = request.GET.get("flowcellId", 0)
-
+    barcode = request.GET.get("barcode", "All reads")
     if flowcell_id == 0:
         return Response(status=404)
 
     print("flowcell_id_id-{}".format(flowcell_id))
     task_id = max(JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics")
                   .values_list("id", flat=True))
+    if barcode == "All reads":
+        queryset = CartographyMapped.objects.filter(flowcell__id=flowcell_id,
+                                                    task__id=task_id, barcode=barcode).values()
+    else:
+        queryset = BarcodedCartographyMapped.objects.filter(cm__task__id=task_id, barcode=barcode).values()
 
-    queryset = CartographyMapped.objects.filter(flowcell__id=flowcell_id,
-                                                task__id=task_id).values()
     species_list = CartographyMapped.objects.filter(flowcell__id=flowcell_id,
                                                 task__id=task_id).values_list("tax_id", flat=True)
     cent_output = CentOutputBarcoded.objects.filter(output__task__id=task_id, tax_id__in=species_list,
@@ -356,10 +359,28 @@ def get_target_mapping(request):
     results_df = pd.DataFrame(list(queryset))
 
     cent_output_df = pd.DataFrame(list(cent_output))
+    # TODO sorted
+    if results_df.empty:
+        queryset = CartographyMapped.objects.filter(flowcell__id=flowcell_id,
+                                                    task__id=task_id).values()
+        results_df = pd.DataFrame(list(queryset))
+        results_df[["num_mapped", "red_reads", "red_sum_unique"]] = 0
+        results_df["Num. matches"] = 0
+        results_df["Sum. Unique"] = 0
+        results_df.rename(columns={"num_mapped": "Num. mapped",
+                                  "red_reads": "Danger reads",
+                                  "red_sum_unique": "Unique Danger reads",
+                                  "species": "Species",
+                                  "tax_id": "Tax id",
+                                  "num_matches": "Num. matches",
+                                  "sum_unique": "Sum. Unique"
+                                  }, inplace=True)
+        results = results_df.to_dict(orient="records")
+
+        return Response(results)
 
     merger_df = pd.merge(results_df, cent_output_df, how="inner", left_on="tax_id", right_on="tax_id")
-
-    merger_df.drop(columns=["id_x", "id_y", "barcode"], inplace=True)
+    merger_df.drop(columns=["id_x", "id_y", "barcode_x", "barcode_y"], inplace=True)
 
     merger_df.rename(columns={"num_mapped": "Num. mapped",
                               "red_reads": "Danger reads",
