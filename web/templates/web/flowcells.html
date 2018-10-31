@@ -102,39 +102,12 @@
             ]
         });
 
+        set_active_navbar_item(0);
+
     });
 
-    function delete_run(id) {
-        $.ajax({
-            url: '/api/v1/runs/' + id + '/',
-            type: 'GET',
-            success: function(data) {
 
-                var csrftoken = Cookies.get('csrftoken');
 
-                $.ajaxSetup({
-                    beforeSend: function (xhr, settings) {
-                        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                            xhr.setRequestHeader("X-CSRFToken", csrftoken);
-                        }
-                    }
-                });
-
-                $.ajax({
-                    url: '/api/v1/runs/' + id + '/',
-                    type: 'PUT',
-                    'data': {
-                        "run_id": data['run_id'],
-                        "run_name": data['run_name'],
-                        "to_delete": "True",
-                    },
-                    success: function(data2) {
-                        table_all_runs.ajax.reload();
-                    }
-                });
-            },
-        });
-    }
 
 </script>
 {% endblock %}
