@@ -17,6 +17,7 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
+from django.db.models import Max
 from django_mailgun import MailgunAPIError
 from twitter import *
 
@@ -611,3 +612,32 @@ def update_flowcell_details():
 
         logger.info('Flowcell id: {} - Number runs {}'.format(flowcell.id, flowcell.number_runs))
         logger.info('Flowcell id: {} - Number barcodes {}'.format(flowcell.id, flowcell.number_barcodes))
+
+        #
+        # Update flowcell size
+        #
+        max_channel = FastqRead.objects.filter(run__flowcell=flowcell).aggregate(result=Max('channel'))
+
+        print('>>>')
+        print(max_channel)
+        print('<<<')
+
+        if max_channel['result']:
+
+            if max_channel['result'] > 512:
+
+                flowcell.size = 3000
+
+            elif max_channel['result'] > 128:
+
+                flowcell.size = 512
+
+            else:
+
+                flowcell.size = 128
+
+        else:
+
+            flowcell.size = 512
+
+        flowcell.save()
