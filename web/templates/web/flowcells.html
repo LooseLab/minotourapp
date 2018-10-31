@@ -19,7 +19,6 @@
                     <table id="all-runs" class="table table-bordered table-striped table-hover" style="width:100%" cellspacing="0" >
                     <thead>
                     <tr>
-                        <th>#</th>
                         <th>Flowcell<br/>Name</th>
                         <th>Flowcell<br/>Size</th>
                         <th>Sample<br/>Name</th>
@@ -38,6 +37,7 @@
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 {% endblock %}
+
 {% block javascript %}
 <script>
 
@@ -46,6 +46,7 @@
     $(document).ready(function () {
 
         table_all_runs = $('#all-runs').DataTable({
+            "scrollX": true,
             'ajax': {
                 'url': "{% url 'flowcell-list' %}",
                 'dataSrc': function(jsonData){
@@ -85,14 +86,77 @@
                     'targets': 0,
                     'data': 0,
                     'render': function(data, type, full, meta) {
-                        return '<a href="/web/private/flowcells/' + data + '/"> See details</a>';
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[1] + '</a>';
+                    }
+                },
+                {
+                    'targets': 1,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[2] + '</a>';
+                    }
+                },
+                {
+                    'targets': 2,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[3] + '</a>';
+                    }
+                },
+                {
+                    'targets': 3,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[4] + '</a>';
+                    }
+                },
+                {
+                    'targets': 4,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[5] + '</a>';
+                    }
+                },
+                {
+                    'targets': 5,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[6] + '</a>';
+                    }
+                },
+                {
+                    'targets': 6,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[7] + '</a>';
+                    }
+                },
+                {
+                    'targets': 7,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[8] + '</a>';
+                    }
+                },
+                {
+                    'targets': 8,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[9] + '</a>';
+                    }
+                },
+                {
+                    'targets': 9,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[10] + '</a>';
                     }
                 },
                 {
                     'targets': 10,
                     'data': 0,
                     'render': function(data, type, full, meta) {
-                        if (data) {
+                        if (full[11]) {
                             return 'Active';
                         } else {
                             return 'Inactive';
