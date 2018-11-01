@@ -115,12 +115,6 @@ def flowcells(request):
 
 
 @login_required
-def run_index(request, pk):
-    minion_run = Run.objects.get(pk=pk)
-    return render(request, 'web/run_index.html', context={'minion_run': minion_run})
-
-
-@login_required
 def flowcell_index(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)

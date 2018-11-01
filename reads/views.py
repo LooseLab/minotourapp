@@ -1366,57 +1366,6 @@ def flowcell_tasks_detail_all(request, pk):
 
 
 @api_view(['GET'])
-def tabs_details(request, pk):
-    """
-    Return tab_id, tab_title, and tab_position for a given run.
-    """
-    run_tabs_dict = {
-        "LiveEvent": {
-            "id": "tab-live-event-data",
-            "title": "Live Event Data",
-            "position": 1
-        },
-        "ChanCalc": {
-            "id": "tab-basecalled-data",
-            "title": "Basecalled Data",
-            "position": 2
-        },
-        "Metagenomics": {
-            "id": "tab-metagenomics",
-            "title": "Sequence Identification",
-            "position": 3
-        },
-        "Minimap2": {
-            "id": "tab-sequence-mapping",
-            "title": "Sequence Mapping",
-            "position": 4
-        },
-        "Assembly": {
-            "id": "tab-sequence-assembly",
-            "title": "Assembly",
-            "position": 5
-        },
-        "Minimap2_trans": {
-            "id": "tab-transcriptome-mapping",
-            "title": "Transcriptome Mapping",
-            "position": 6
-        }
-    }
-    tabs = list()
-    # Find live event data
-    if MinIONRunStatus.objects.filter(run_id=pk):
-        tabs.append(run_tabs_dict['LiveEvent'])
-
-    for master in JobMaster.objects.filter(run_id=pk).values_list('job_type__name', flat=True):
-        if master in run_tabs_dict.keys():
-            tabs.append(run_tabs_dict[master])
-        else:
-            print("RunID '" + pk + "' has JobType '" + master + "' but there is no corresponding tab defined in reads/views.py")
-
-    return Response(tabs)
-
-
-@api_view(['GET'])
 def flowcell_tabs_details(request, pk):
     """
     Return tab_id, tab_title, and tab_position for a given flowcell.
