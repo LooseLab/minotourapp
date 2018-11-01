@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import (Barcode, FastqRead, FastqReadType,
+from .models import (Barcode, FastqFile, FastqRead, FastqReadType,
                      MinIONControl, MinIONEvent, MinIONEventType,
                      MinionMessage, MinIONRunStats, MinIONRunStatus,
                      MinIONScripts, MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
@@ -20,6 +20,7 @@ class RunSummaryBarcodeAdmin(admin.ModelAdmin):
 
 
 admin.site.register(FastqRead)
+admin.site.register(FastqFile)
 admin.site.register(FastqReadType)
 admin.site.register(FlowcellStatisticBarcode)
 admin.site.register(FlowcellSummaryBarcode)

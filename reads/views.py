@@ -17,7 +17,7 @@ from rest_framework.response import Response
 
 from jobs.models import JobMaster, JobType
 from minotourapp import settings
-from reads.models import (Barcode, FastqRead, FastqReadType,
+from reads.models import (Barcode, FastqFile, FastqRead, FastqReadType,
                           MinIONControl, MinIONEvent,
                           MinIONEventType, MinionMessage, MinIONRunStats,
                           MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun, FlowcellStatisticBarcode,
@@ -25,7 +25,7 @@ from reads.models import (Barcode, FastqRead, FastqReadType,
 from reads.models import FlowcellChannelSummary
 from reads.models import FlowcellHistogramSummary
 from reads.serializers import (BarcodeSerializer,
-                               ChannelSummarySerializer, FastqReadSerializer,
+                               ChannelSummarySerializer, FastqFileSerializer, FastqReadSerializer,
                                FastqReadTypeSerializer, FlowcellSerializer, MinIONControlSerializer,
                                MinIONEventSerializer,
                                MinIONEventTypeSerializer,
@@ -128,6 +128,57 @@ def read_type_detail(request, pk):
     if request.method == 'GET':
         serializer = FastqReadTypeSerializer(run, context={'request': request})
         return Response(serializer.data)
+
+
+@api_view(['GET','POST'])
+def fastq_file(request,pk):
+    """
+    :purpose: returns an md5 checksum for a file as seen by minotour for a specific run id
+    :used_by: minotour client gets data and checks observed files against it.
+    :author: Matt Loose
+
+    :param request: (standard django request) without querystring parameter
+    :param pk: pk is the runid
+
+    :return: (str) json format
+    """
+    '''if request.method == "GET":
+        try:
+            queryset = FastqFile.objects.filter(runid=pk)
+            serializer = FastqFileSerializer(queryset, many=True, context={'request': request})
+            return Response(serializer.data)
+        except FastqFile.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+    '''
+
+    if request.method == 'GET':
+        queryset = FastqFile.objects \
+            .filter(runid=pk)
+
+        serializer = FastqFileSerializer(queryset, many=True, context={'request': request})
+
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+
+        obj,created = FastqFile.objects.get_or_create(
+            runid = request.data["runid"],
+            name = request.data["name"]
+        )
+
+        obj.md5 = request.data["md5"]
+
+
+        obj.save()
+
+
+        return Response(request.data, status=status.HTTP_201_CREATED)
+
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 @api_view(['GET', 'POST'])

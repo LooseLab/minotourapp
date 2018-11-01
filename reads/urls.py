@@ -62,6 +62,11 @@ urlpatterns = [
         name="runsummarybarcodebyminute-detail"
     ),
     url(
+        r'^api/v1/runs/(?P<pk>[0-9A-Za-z-_]+)/files/$',
+        views.fastq_file,
+        name="fastqfile-list",
+    ),
+    url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/barcodes/$',
         views.barcode_list,
         name="runbarcode-list"),

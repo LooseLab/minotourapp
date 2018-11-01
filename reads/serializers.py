@@ -1,12 +1,24 @@
 from rest_framework import serializers
 
 from jobs.models import JobMaster, JobType
-from reads.models import (Barcode, FastqRead, FastqReadExtra,
+from reads.models import (Barcode, FastqFile, FastqRead, FastqReadExtra,
                           FastqReadType, MinIONControl,
                           MinIONEvent, MinIONEventType, MinionMessage,
                           MinIONRunStats, MinIONRunStatus, MinIONScripts,
                           MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
                           RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellSummaryBarcode, Flowcell, MinION)
+
+
+class FastqFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FastqFile
+        fields = (
+            'id',
+            'name',
+            'runid',
+            'md5'
+        )
+        read_only=('id',)
 
 
 class UserOptionsSerializer(serializers.ModelSerializer):
