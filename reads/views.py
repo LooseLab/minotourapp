@@ -212,11 +212,26 @@ def activeminion_list(request):
     """
     List of all minIONs by user, or create a new minION.
     """
-    if request.method == 'GET':
-        #queryset = MinION.objects.filter(owner=request.user)
-        queryset = [obj for obj in MinION.objects.filter(owner=request.user) if obj.status() != "unplugged"]
-        serializer = MinIONSerializer(queryset, many=True, context={'request': request})
-        return Response(serializer.data)
+
+    active_minion_list = []
+
+    for minion in MinION.objects.filter(owner=request.user):
+
+        minion_event_list = MinIONEvent.objects.filter(minION=minion).order_by('datetime')
+
+        if minion_event_list.count() > 0:
+
+            last_minion_event = minion_event_list.last()
+
+            print('>>> Minion: {}, last event type: {}'.format(minion.name, last_minion_event.event.name))
+
+            if last_minion_event.event.name != 'unplugged':
+
+                active_minion_list.append(minion)
+
+    serializer = MinIONSerializer(active_minion_list, many=True, context={'request': request})
+
+    return Response(serializer.data)
 
 
 @api_view(['GET', 'POST'])
@@ -1381,9 +1396,9 @@ def flowcell_tabs_details(request, pk):
             "title": "Basecalled Data",
             "position": 2
         },
-        "Kraken": {
-            "id": "tab-sequence-id",
-            "title": "Sequence Identification",
+        "Reads": {
+            "id": "tab-reads",
+            "title": "Reads data",
             "position": 3
         },
         "Minimap2": {

@@ -1,0 +1,111 @@
+
+    <div class="row">
+        <div class="col-md-12">
+        <div class='panel panel-info'>
+            <div class='panel-heading'>
+                <h3 class='panel-title'>Reads</h3>
+            </div>
+            <div class='panel-body'>
+
+            <table id="example" class="display" style="width:100%">
+                <thead>
+                <tr>
+                    <th>Read ID</th>
+                    <th>Read</th>
+                    <th>Channel</th>
+                    <th>Sequence Length</th>
+                    <th>RunID</th>
+                    <th>Barcode</th>
+                    <th>Command</th>
+                </tr>
+                </thead>
+                <tfoot>
+                <tr>
+                    <th>Read ID</th>
+                    <th>Read</th>
+                    <th>Channel</th>
+                    <th>Sequence Length</th>
+                    <th>RunID</th>
+                    <th>Barcode</th>
+                    <th>Command</th>
+                </tr>
+                </tfoot>
+            </table>
+            </div>
+        </div>
+        </div>
+
+    </div>
+
+<script>
+
+    function format(rowData) {
+        var div = $('<div/>')
+            .addClass('loading')
+            .text('Loading...');
+
+        $.ajax({
+            url: '/api/v1/readsextra/?search_criteria=read_id&search_value=' + rowData.read_id,
+            //dataType: 'json',
+            success: function (json) {
+
+                var textarea = $('<textarea rows=10 cols=100/>');
+
+                div
+                    .html('')
+                    .removeClass('loading');
+
+                textarea.text(json.sequence);
+
+                div.append(textarea);
+            }
+        });
+
+        return div;
+    }
+
+    $(document).ready(function () {
+
+        var table = $('#example').DataTable({
+            "processing": true,
+            "serverSide": true,
+            "ajax": {
+                "url": '/web/private/flowcells_reads_data/',
+                "data": {
+                    "flowcell_id": {{ flowcell.id }}
+                },
+            },
+            "columns": [
+                {"data": "read_id"},
+                {"data": "read"},
+                {"data": "channel"},
+                {"data": "sequence_length"},
+                {"data": "run__runid"},
+                {"data": "barcode__name"},
+                {
+                    'className': 'details-control',
+                    'sortable': false,
+                    'data': null,
+                    'defaultContent': "<button class=\"btn btn-primary\" type=\"button\">Show sequence</button>"
+                },
+            ]
+        });
+
+        $('#example').on('click', 'td.details-control', function () {
+
+            var tr = $(this).closest('tr');
+            var row = table.row(tr);
+
+            if (row.child.isShown()) {
+                row.child.hide();
+                tr.removeClass('shown');
+            }
+            else {
+                row.child(format(row.data())).show();
+                tr.addClass('shown');
+            }
+        });
+
+    });
+
+</script>

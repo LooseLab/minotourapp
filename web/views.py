@@ -149,6 +149,8 @@ def flowcell_reads_data(request):
 
     query_columns_string = ['read_id', 'read', 'channel', 'sequence_length', 'run__runid', 'barcode__name']
 
+    flowcell_id = int(request.GET.get('flowcell_id', 0))
+
     draw = int(request.GET.get('draw', 0))
 
     search_value = request.GET.get('search[value]', '')
@@ -164,10 +166,33 @@ def flowcell_reads_data(request):
     order_dir = request.GET.get('order[0][dir]', '')
 
     if not search_value == "":
-        reads_temp = FastqRead.objects.filter(read_id__contains=search_value)
+
+        if search_value[0] == '>':
+
+            reads_temp = FastqRead.objects\
+                .filter(run__flowcell_id=flowcell_id)\
+                .filter(run__flowcell__owner=request.user)\
+                .filter(sequence_length__gt=search_value[1:])
+
+        elif search_value[0] == '<':
+
+            reads_temp = FastqRead.objects\
+                .filter(run__flowcell_id=flowcell_id) \
+                .filter(run__flowcell__owner=request.user)\
+                .filter(sequence_length__lt=search_value[1:])
+
+        else:
+
+            reads_temp = FastqRead.objects \
+                .filter(run__flowcell_id=flowcell_id) \
+                .filter(run__flowcell__owner=request.user) \
+                .filter(read_id__contains=search_value)
 
     else:
-        reads_temp = FastqRead.objects.all()
+
+        reads_temp = FastqRead.objects\
+            .filter(run__flowcell_id=flowcell_id)\
+            .filter(run__flowcell__owner=request.user)\
 
     if order_column:
 

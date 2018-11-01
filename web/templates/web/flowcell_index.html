@@ -17,15 +17,36 @@
 
         <section class="content">
 
-            <div style="z-index: 999">
-                <div class="nav-tabs-custom" id="maintabbar">
-                    <ul class="nav nav-tabs">
-                        <li class="active"><a class="flowcell-tab" href="#tab-summary-data"
-                                              data-toggle="tab">Summary</a></li>
-                        <li id="tasks-li"><a class="flowcell-tab" href="#tab-tasks" data-toggle="tab">Tasks</a></li>
-                    </ul>
-                </div>
-            </div>
+            <ul class="nav nav-tabs">
+
+                <li class="active">
+                    <a class="flowcell-tab" href="#tab-summary-data" data-toggle="tab">Summary</a>
+                </li>
+                <li>
+                    <a class="flowcell-tab" href="#tab-live-event-data" data-toggle="tab">Live Event Data</a>
+                </li>
+                <li>
+                    <a class="flowcell-tab" href="#tab-basecalled-data" data-toggle="tab">Basecalled Data</a>
+                </li>
+                <li>
+                    <a class="flowcell-tab" href="#tab-reads" data-toggle="tab">Read Data</a>
+                </li>
+                <li>
+                    <a class="flowcell-tab" href="#tab-sequence-mapping" data-toggle="tab">Sequence Mapping</a>
+                </li>
+                <li class="disabled">
+                    <a class="flowcell-tab" href="#tab-sequence-assembly" data-toggle="tab">Assembly</a>
+                </li>
+                <li>
+                    <a class="flowcell-tab" href="#tab-metagenomics" data-toggle="tab">Metagenomics</a>
+                </li>
+                <li id="tasks-li">
+                    <a class="flowcell-tab" href="#tab-tasks" data-toggle="tab">Tasks</a>
+                </li>
+            </ul>
+
+            <br/>
+
             <div class="tab-content">
                 <div id="tab-summary-data" class="tab-pane active">
                     {% include "web/flowcell/summary-tab.html" %}
@@ -123,5 +144,10 @@
 
         var mTaskController = new MTaskController(input_flowcell_id.value);
 
+        /*document.querySelector("#nav-"+value.id).addEventListener("click", function(event){
+            flowcell_selected_tab_input.value = event.target.innerHTML;
+
+            requestData(flowcell_id);
+        });*/
     </script>
 {% endblock %}
