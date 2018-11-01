@@ -155,10 +155,6 @@ urlpatterns = [
         views.flowcell_summary_barcode,
         name="flowcellsummarybarcode-detail"),
     url(
-        r'^flowcells/(?P<pk>[0-9]+)/summary_html/$',
-        views.flowcell_summary_html,
-        name="flowcell-summary-html"),
-    url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/statistics/$',
         views.flowcell_statistics,
         name="flowcell-statistics"
@@ -183,19 +179,9 @@ urlpatterns = [
         views.flowcell_tasks_detail_all,
         name="flowcelltasks-detail-all"),
     url(
-        r'^api/v1/tabs/(?P<pk>[0-9]+)/$',
-        views.tabs_details,
-        name="tabs-details"
-    ),
-    url(
-        r'^api/v1/flowcells/tabs/(?P<pk>[0-9]+)/$',
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/tabs/$',
         views.flowcell_tabs_details,
         name="tabs-details"
-    ),
-    url(
-        r'^flowcells/(?P<pk>[0-9]+)/minknow_messages_html/$',
-        views.minknow_message_list_by_flowcell,
-        name="minknow-message-list-by-flowcell"
     ),
     url(
         r'^api/v1/grouprun/$',
@@ -236,5 +222,13 @@ urlpatterns = [
         views.flowcell_run_basecalled_summary_html,
         name="flowcell_run_basecalled_summary_html"
     ),
-
+    url(
+        r'^flowcells/(?P<pk>[0-9]+)/summary_html/$',
+        views.flowcell_summary_html,
+        name="flowcell-summary-html"),
+    url(
+        r'^flowcells/(?P<pk>[0-9]+)/minknow_messages_html/$',
+        views.minknow_message_list_by_flowcell,
+        name="minknow-message-list-by-flowcell"
+    ),
 ]

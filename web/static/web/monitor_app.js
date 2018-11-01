@@ -1,3 +1,15 @@
+function set_active_navbar_item(item_index) {
+
+    var nav_bar = document.querySelectorAll('.nav li')
+
+    nav_bar.forEach(function(element, index){
+
+        element.className = '';
+        if(index == item_index) element.className += 'active';
+    });
+}
+
+
 var FlowcellPageApp = {
 
     constructor () {

@@ -135,11 +135,17 @@
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 
+{% endblock %}
+
+{% block javascript %}
+
     <script>
 
         document.getElementById("btn-copy-token").addEventListener("click", function() {
             copyToClipboardMsg(document.getElementById("token"), "msg");
         });
 
+
+        set_active_navbar_item(5);
     </script>
 {% endblock %}
