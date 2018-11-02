@@ -13,7 +13,6 @@ urlpatterns = [
     url(r'^private/flowcells/(?P<pk>[0-9]+)/reads/$', views.flowcell_reads, name='flowcell-reads'),
     url(r'^private/flowcells_reads_data/$', views.flowcell_reads_data, name='flowcell-reads-data'),
     url(r'^private/remote-control/$', views.remotecontrol, name='remotecontrol'),
-    url(r'^private/sandbox/$', views.sandbox, name='sandbox'),
     url(r'^private/experiments/$', views.ExperimentList.as_view(), name='experiment-list'),
     url(r'^private/experiments/(?P<pk>[0-9]+)/$', views.experiments_update, name='experiment-update'),
     url(r'^private/experiments/create/$', views.experiments_create, name='experiment-create'),

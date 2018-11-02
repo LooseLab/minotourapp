@@ -8,10 +8,6 @@ urlpatterns = [
         views.run_list,
         name="run-list"),
     url(
-        r'^api/v1/currentruns/$',
-        views.current_run_list,
-        name="current-run-list"),
-    url(
         r'^api/v1/runs/(?P<pk>[0-9a-z-]+)/$',
         views.run_detail,
         name="run-detail"

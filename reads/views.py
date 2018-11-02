@@ -168,27 +168,6 @@ def run_list(request):
 
 
 
-@api_view(['GET'])
-def current_run_list(request):
-    """
-    :purpose: Get returns a list of all runs in minotour owned by a specific user which are specified as active.
-    :used_by: minotour app uses this endpoint to identify active runs.
-    :author: Roberto Santos
-
-    ChangeLog
-    2018-07-09 Add documentation - Matt
-
-    :param request: (standard django request) without querystring parameter
-    :return: (str) json format
-    """
-    if request.method == 'GET':
-
-        queryset = Run.objects.filter(owner=request.user).filter(active=True).distinct()
-
-        serializer = RunSerializer(queryset, many=True, context={'request': request})
-        return Response(serializer.data)
-
-
 @api_view(['GET', 'POST'])
 def minion_list(request):
     """

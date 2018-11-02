@@ -95,11 +95,6 @@ class MinionRunTestCase(APITestCase):
         self.assertEqual(minionrun_barcoded.is_barcoded, True)
         self.assertEqual(minionrun_no_barcoded.is_barcoded, False)
 
-    def test_minionruns_get_method_without_auth(self):
-        response = self.client.get('/api/v1/runs/')
-
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
     def test_minionruns_get_method_with_wrong_auth(self):
         response = self.client.get('/api/v1/runs/')
 
