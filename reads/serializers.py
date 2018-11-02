@@ -473,7 +473,7 @@ class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
 
         model = Flowcell
 
-        fields = ('url', 'name', 'runs', 'barcodes', 'id')
+        fields = ('url', 'name', 'runs', 'barcodes', 'id', 'has_fastq')
 
     def create(self, validated_data):
 

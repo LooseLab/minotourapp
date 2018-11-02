@@ -30,6 +30,7 @@
                         <th>Yield</th>
                         <th>Average<br/>Read Length</th>
                         <th>Status</th>
+                        <th>Contains<br/>sequence data</th>
                     </tr>
                     </thead>
                     </table>
@@ -70,7 +71,8 @@
                             json[i].number_barcodes,
                             json[i].total_read_length,
                             json[i].average_read_length,
-                            json[i].is_active
+                            json[i].is_active,
+                            json[i].has_fastq
                             /*json[i].runs.length,
                             json[i].runs[0].computer_name,
                             json[i].runs[0].minion_name,
@@ -160,6 +162,17 @@
                             return 'Active';
                         } else {
                             return 'Inactive';
+                        }
+                    }
+                },
+                {
+                    'targets': 11,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        if (full[12]) {
+                            return 'Yes';
+                        } else {
+                            return 'No';
                         }
                     }
                 },

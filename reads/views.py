@@ -39,7 +39,6 @@ from reads.serializers import (BarcodeSerializer,
                                RunSummaryBarcodeSerializer, ChannelSummary, RunStatisticBarcode, RunSummaryBarcode,
                                GroupRunSerializer, FlowcellSummaryBarcodeSerializer, FastqReadGetSerializer)
 from reads.utils import get_coords
-from reference.models import ReferenceInfo
 
 
 @api_view(['GET'])
@@ -55,10 +54,32 @@ def read_type_list(request):
     :param request: (standard django request) without querystring parameter
     :return: (string) json format
     """
-    if request.method == 'GET':
-        queryset = FastqReadType.objects.all()
-        serializer = FastqReadTypeSerializer(queryset, many=True, context={'request': request})
-        return Response(serializer.data)
+    queryset = FastqReadType.objects.all()
+    serializer = FastqReadTypeSerializer(queryset, many=True, context={'request': request})
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def read_type_detail(request, pk):
+    """
+    :purpose: Retrieve a FastqReadType instance
+    :used_by: minotour client
+    :author: Roberto Santos
+
+    ChangeLog
+    2018-07-09 Add documentation - Alex
+
+    :param request: (standard django request) ???
+    :param pk: (int) run primary key
+    :return: ???
+    """
+    try:
+        run = FastqReadType.objects.get(pk=pk)
+    except FastqReadType.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    serializer = FastqReadTypeSerializer(run, context={'request': request})
+    return Response(serializer.data)
 
 
 @api_view(['GET'])
@@ -74,10 +95,9 @@ def events_type_list(request):
     :param request: (Django Request Object) No query parameters
     :return: (String) Json Format string of event types
     """
-    if request.method == "GET":
-        queryset = MinIONEventType.objects.all()
-        serializer = MinIONEventTypeSerializer(queryset, many=True, context={'request': request})
-        return Response(serializer.data)
+    queryset = MinIONEventType.objects.all()
+    serializer = MinIONEventTypeSerializer(queryset, many=True, context={'request': request})
+    return Response(serializer.data)
 
 
 @api_view(['GET'])
@@ -101,33 +121,8 @@ def events_type_detail(request, pk): # TODO consider removing
     except MinIONEventType.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    if request.method == "GET":
-        serializer = MinIONEventTypeSerializer(event_, context={'request': request})
-        return Response(serializer.data)
-
-
-@api_view(['GET'])
-def read_type_detail(request, pk):
-    """
-    :purpose: Retrieve a FastqReadType instance
-    :used_by: minotour client
-    :author: Roberto Santos
-
-    ChangeLog
-    2018-07-09 Add documentation - Alex
-
-    :param request: (standard django request) ???
-    :param pk: (int) run primary key
-    :return: ???
-    """
-    try:
-        run = FastqReadType.objects.get(pk=pk)
-    except FastqReadType.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == 'GET':
-        serializer = FastqReadTypeSerializer(run, context={'request': request})
-        return Response(serializer.data)
+    serializer = MinIONEventTypeSerializer(event_, context={'request': request})
+    return Response(serializer.data)
 
 
 @api_view(['GET', 'POST'])
@@ -166,6 +161,43 @@ def run_list(request):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+@api_view(['GET', 'PUT'])
+def run_detail(request, pk):
+    """
+    Retrieve, update or delete a run instance.
+    """
+
+    search_criteria = request.GET.get('search_criteria', 'id')
+
+    if search_criteria == 'runid':
+
+        run_list = Run.objects.filter(owner=request.user).filter(runid=pk)
+
+    elif search_criteria == 'id':
+
+        run_list = Run.objects.filter(owner=request.user).filter(id=pk)
+
+    else:
+
+        run_list = Run.objects.none()
+
+    if len(run_list) < 1:
+
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    run = run_list[0]  # TODO what if by any means we have more than one run if the same runid?
+
+    if request.method == 'GET':
+        serializer = RunSerializer(run, context={'request': request})
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = RunSerializer(run, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'POST'])
@@ -410,44 +442,6 @@ def minION_currentrun_list(request, pk):
     if request.method == 'GET':
         serializer = MinIONSerializer(minion, context={'request': request})
         return Response(serializer.data)
-
-
-@api_view(['GET', 'PUT'])
-def run_detail(request, pk):
-    """
-    Retrieve, update or delete a run instance.
-    """
-
-    search_criteria = request.GET.get('search_criteria', 'id')
-
-    if search_criteria == 'runid':
-
-        run_list = Run.objects.filter(owner=request.user).filter(runid=pk)
-
-    elif search_criteria == 'id':
-
-        run_list = Run.objects.filter(owner=request.user).filter(id=pk)
-
-    else:
-
-        run_list = Run.objects.none()
-
-    if len(run_list) < 1:
-
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    run = run_list[0]  # TODO what if by any means we have more than one run if the same runid?
-
-    if request.method == 'GET':
-        serializer = RunSerializer(run, context={'request': request})
-        return Response(serializer.data)
-
-    elif request.method == 'PUT':
-        serializer = RunSerializer(run, data=request.data, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'POST'])
@@ -840,7 +834,8 @@ def flowcell_list(request):
                 'total_read_length': record.total_read_length,
                 'average_read_length': record.average_read_length,
                 'is_active': record.is_active,
-                'sample_name': record.sample_name
+                'sample_name': record.sample_name,
+                'has_fastq': record.has_fastq,
             }
 
             flowcells.append(flowcell)

@@ -593,8 +593,11 @@ def update_flowcell_details():
             total_read_length += flowcell_summary.total_length
             number_reads_processed += flowcell_summary.read_count
 
-        if number_reads > 0:
-            average_read_length = total_read_length / number_reads
+        # if number_reads > 0:
+        #     average_read_length = total_read_length / number_reads
+
+        else:
+            flowcell.has_fastq = False
 
         logger.info('Flowcell id: {} - Total read length {}'.format(flowcell.id, total_read_length))
         logger.info('Flowcell id: {} - Number reads {}'.format(flowcell.id, number_reads))
@@ -617,10 +620,6 @@ def update_flowcell_details():
         # Update flowcell size
         #
         max_channel = FastqRead.objects.filter(run__flowcell=flowcell).aggregate(result=Max('channel'))
-
-        print('>>>')
-        print(max_channel)
-        print('<<<')
 
         if max_channel['result']:
 
