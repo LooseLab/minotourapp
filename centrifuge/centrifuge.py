@@ -480,7 +480,7 @@ def plasmid_mapping(row, species, reference_location, fastq, flowcell):
         # red_df = map_df[bool_df]
 
         logger.info(
-            "Flowcell id {} - This many reads mapped evilly on this reference {} for species {}"
+            "Flowcell id: {} - This many reads mapped evilly on this reference {} for species {}"
             .format(flowcell.id, map_df.shape[0], species))
         # return as tuple to iterate over
         return map_df
@@ -490,6 +490,7 @@ def map_all_the_groups(group_df, group_name, reference_location, flowcell, gff3_
     """
     Map the reads from the target dataframes
     :param group_df: A dataframe that contains reads from only one species
+    :param group_name: The name of the species in this group
     :param reference_location: Where we have stored our reference files for minimap2
     :param flowcell: The flowcell model from where these reads came from
     :param gff3_df:
@@ -563,13 +564,13 @@ def map_all_the_groups(group_df, group_name, reference_location, flowcell, gff3_
         red_df = red_df.append(plasmid_red_df)
 
     logger.info(
-        "Flowcell id {} - This many reads mapped evilly on this reference {} for species {}"
+        "Flowcell id: {} - This many reads mapped evilly on this reference {} for species {}"
         .format(flowcell.id, red_df.shape[0], species))
     # Non red reads, reads that mapped elsewhere on the reference
     map_df = map_df[~bool_df]
 
     logger.info(
-        "Flowcell id {} - This many reads mapped elsewhere on this reference {}".format(flowcell.id,
+        "Flowcell id: {} - This many reads mapped elsewhere on this reference {}".format(flowcell.id,
                                                                                                      map_df.shape[0]))
     # get the info on the mapped reads from the original dataframe
     # TODO this is where we sort the barcodes
@@ -594,7 +595,7 @@ def map_all_the_groups(group_df, group_name, reference_location, flowcell, gff3_
         barcode_nummapped_insert(g, species_to_pk)
     # gb_unred_mapped_barcode.apply(barcode_nummapped_insert, species_to_pk)
 
-    logger.info("Flowcell id {} - Finished updating mapped reads".format(flowcell.id))
+    logger.info("Flowcell id: {} - Finished updating mapped reads".format(flowcell.id))
 
     return red_df
 
@@ -710,20 +711,20 @@ def map_the_reads(name_df, task, flowcell):
     :return: The
     """
     # Targets_df
-    logger.info("Flowcell id {} - Mapping the target reads".format(flowcell.id))
+    logger.info("Flowcell id: {} - Mapping the target reads".format(flowcell.id))
     targets_df = name_df
     # TODO currently hardcoded below
     target_set = "starting_defaults"
     # if there are no targets identified by centrifuge in this iteration
     if targets_df.empty:
 
-        logger.info("Flowcell id {} - No targets in this batch of reads".format(flowcell.id,
+        logger.info("Flowcell id: {} - No targets in this batch of reads".format(flowcell.id,
                                                                                              targets_df.shape))
         # Get the targets set in the gff files and uploaded
         gff3_df = pd.DataFrame(list(CartographyGuide.objects.filter(set=target_set).values()))
         # If there are no target regions found for the set name
         if gff3_df.empty:
-            logger.info("Flowcell id {} - No set of target regions found by that set name"
+            logger.info("Flowcell id: {} - No set of target regions found by that set name"
                         .format(flowcell.id, ))
             return
         # Get np array of the target species
@@ -743,13 +744,13 @@ def map_the_reads(name_df, task, flowcell):
                                                                              "red_sum_unique": 0}
                                                                    )
             if created:
-                logger.info("Flowcell id {} - CM object created for {}".format(flowcell.id, obj.species))
+                logger.info("Flowcell id: {} - CM object created for {}".format(flowcell.id, obj.species))
         return
 
     # Reset the index
     targets_df.reset_index(inplace=True)
 
-    logger.info("Flowcell id {} - targets_df shape is {}".format(flowcell.id, targets_df.shape))
+    logger.info("Flowcell id: {} - targets_df shape is {}".format(flowcell.id, targets_df.shape))
     # Location of the reference file
     reference_location = getattr(settings, "REFERENCE_LOCATION", None)
 
@@ -778,7 +779,7 @@ def map_the_reads(name_df, task, flowcell):
                                                                          "red_sum_unique": 0}
                                                                )
         if created:
-            logger.info("Flowcell id {} - CM object created for {}".format(flowcell.id, obj.species))
+            logger.info("Flowcell id: {} - CM object created for {}".format(flowcell.id, obj.species))
     # All mapped reads
     # TODO pass the lookup dict in here
     logger.info(dict(list(gb)))
@@ -790,7 +791,7 @@ def map_the_reads(name_df, task, flowcell):
 
     # If none of the reads mapped to inside the groups
     if red_df.empty:
-        logger.info("Flowcell id {} - No reads mapped to dangerous areas! Better luck next time."
+        logger.info("Flowcell id: {} - No reads mapped to dangerous areas! Better luck next time."
                     .format(flowcell.id))
         return
 
@@ -807,8 +808,8 @@ def map_the_reads(name_df, task, flowcell):
     results_df["red_sum_unique"] = gb_mp["unique"].sum()
 
     results_df.reset_index(inplace=True)
-    logger.info("Flowcell id {} - The results of the mapping stage are {}".format(flowcell.id, results_df))
-    logger.info("Flowcell id {} - The results keys are {}".format(flowcell.id, results_df.keys()))
+    logger.info("Flowcell id: {} - The results of the mapping stage are {}".format(flowcell.id, results_df))
+    logger.info("Flowcell id: {} - The results keys are {}".format(flowcell.id, results_df.keys()))
 
     # List to store the read read ids
     bulk_insert_red_from_update = []
@@ -817,8 +818,8 @@ def map_the_reads(name_df, task, flowcell):
     # Get the previous values for the mappings
     prev_df = pd.DataFrame(list(CartographyMapped.objects.filter(task=task).values()))
     prev_df.set_index(["tax_id"], inplace=True)
-    logger.info("Flowcell id {} - The previous results are {}".format(flowcell.id, prev_df.head()))
-    logger.info("Flowcell id {} - The previous results keys are {}".format(flowcell.id, prev_df.keys()))
+    logger.info("Flowcell id: {} - The previous results are {}".format(flowcell.id, prev_df.head()))
+    logger.info("Flowcell id: {} - The previous results keys are {}".format(flowcell.id, prev_df.keys()))
     if not results_df.empty:
         results_df.set_index(["tax_id"], inplace=True)
         # Add the previous number of red reads to the results df
@@ -829,8 +830,8 @@ def map_the_reads(name_df, task, flowcell):
         results_df["summed_red_reads"] = results_df["red_num_matches"] + results_df["to_add_red_reads"]
         # Combine the previous sum of the unique reads
         results_df["summed_sum_unique"] = results_df["red_sum_unique"] + results_df["to_add_red_sum_unique"]
-        logger.info("Flowcell id {} -  {}".format(flowcell.id, prev_df.keys()))
-        logger.info("Flowcell id {} -  {}".format(flowcell.id, prev_df.keys()))
+        logger.info("Flowcell id: {} -  {}".format(flowcell.id, prev_df.keys()))
+        logger.info("Flowcell id: {} -  {}".format(flowcell.id, prev_df.keys()))
         results_df.reset_index(inplace=True)
         # Apply the update mapped values function
         results_df.apply(update_mapped_values, args=(bulk_insert_red_from_update,
@@ -840,7 +841,7 @@ def map_the_reads(name_df, task, flowcell):
         try:
             RedReadIds.objects.bulk_create(bulk_insert_red_from_update)
         except IntegrityError:
-            logger.info("Flowcell id {} - dupliacte red reads!".format(flowcell.id))
+            logger.info("Flowcell id: {} - dupliacte red reads!".format(flowcell.id))
         # Apply the calculation and update to the dataframe
         gb_bc = results_df.groupby("barcode")
         # Apply to each barcode group
@@ -1012,16 +1013,15 @@ def run_centrifuge(flowcell_job_id):
 
     unique_barcode = set([c[1] for c in fastqs_list])
 
-    if len(unique_barcode) > 1:
-        logger.info("Flowcell id: {} - These are the barcodes in this set {}".format(flowcell.id, unique_barcode))
+    logger.info("Flowcell id: {} - These are the barcodes in this set {}".format(flowcell.id, unique_barcode))
 
-        barcode_df = gb_bc.apply(barcode_calculations, barcode_df)
+    barcode_df = gb_bc.apply(barcode_calculations, barcode_df)
 
-        barcode_df.reset_index(inplace=True)
+    barcode_df.reset_index(inplace=True)
 
-        barcode_df.rename(columns={"unique": "sum_unique", 0: "num_matches"}, inplace=True)
+    barcode_df.rename(columns={"unique": "sum_unique", 0: "num_matches"}, inplace=True)
 
-        barcode_df.set_index("tax_id", inplace=True)
+    barcode_df.set_index("tax_id", inplace=True)
 
     # delete these columns, no longer needed
     df.drop(columns=["readID", "seqID", "numMatches", "unique", "barcode", "read_id"], inplace=True)
