@@ -402,7 +402,6 @@ def insert_nummapped_barcode(row, species_to_pk):
     """
     # TODO a lot of database calls, may need changing
     pk = species_to_pk[row["name"]]
-    logger.info(pk)
     obj, created = BarcodedCartographyMapped.objects.get_or_create(
         tax_id=row["tax_id"],
         cm=pk,
@@ -417,7 +416,6 @@ def barcode_nummapped_insert(gbm_df, species_to_pk):
     """
     Calculate the num_mapped for reads that mapped to their reference outside target regions
     :param gbm_df: The dataframe for each group of barcodes
-    :param task: The task for this analysis
     :param species_to_pk: The primary key of the species entry in Cartography mapped, to use as Foreign Key
     :return:
     """
@@ -429,7 +427,66 @@ def barcode_nummapped_insert(gbm_df, species_to_pk):
     return "top_banter"
 
 
-def map_all_the_groups(group_df, reference_location, flowcell, gff3_df, targets_df, task, species_to_pk):
+def plasmid_mapping(row, species, reference_location, fastq, flowcell):
+    """
+
+    :param row:
+    :param species:
+    :param reference_location:
+    :param fastq:
+    :param flowcell:
+    :return:
+    """
+    species = species.replace(" ", "_")
+    reference_name = species+"_"+row["name"]
+
+    refs = ReferenceInfo.objects.get(name=reference_name)
+
+    minimap2_ref_path = reference_location + refs.filename
+
+    map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format("minimap2", minimap2_ref_path)
+
+    # Execute minimap2
+    out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE) \
+        .communicate(input=str.encode(fastq))
+    # Get the output of minimap2
+    map_out = out.decode()
+
+    if not map_out:
+        logger.info("Flowcell id: {} - No mappings for plasmid {} on species {}".format(flowcell.id, row["name"],
+                                                                                        species))
+        return
+    else:
+        map_df = pd.read_csv(StringIO(map_out), sep="\t", header=None)
+
+        columns = ["read_id", "query_seq_len", "query_start", "query_end", "rel_strand", "target_seq_name",
+                   "target_seq_len", "target_start", "target_end", "num_matching_bases", "num_matching_bases_gaps",
+                   "mapping_qual", "type_align", "number_minimiser", "chaining_score", "chaining_score_2nd_chain",
+                   "random"]
+        # set the column headers to above
+        map_df.columns = columns
+        # Drop unecessary columns
+        map_df.drop(columns=["number_minimiser", "chaining_score", "chaining_score_2nd_chain", "random"],
+                    inplace=True)
+        # TODO NOTE that atm, we're just counting any map that reads to a plasmid as a red read
+
+        # # Get the gff regions for this plasmid as a dataframe
+        # plasmid_regions_df = pd.DataFrame(row).T
+        #
+        # bool_df = plasmid_regions_df.apply(falls_in_region, args=(map_df,), axis=1)
+        # # Get whether it's inside the boundaries or not
+        # bool_df = bool_df.any()
+        # # Red reads, reads that fall within boundaries
+        # red_df = map_df[bool_df]
+
+        logger.info(
+            "\033[1;36;1m Flowcell id {} - This many reads mapped evilly on this reference {} for species {}"
+            .format(flowcell.id, map_df.shape[0], species))
+        # return as tuple to iterate over
+        return map_df
+
+
+def map_all_the_groups(group_df, group_name, reference_location, flowcell, gff3_df, targets_df, task, species_to_pk):
     """
     Map the reads from the target dataframes
     :param group_df: A dataframe that contains reads from only one species
@@ -438,22 +495,24 @@ def map_all_the_groups(group_df, reference_location, flowcell, gff3_df, targets_
     :param gff3_df:
     :param targets_df:
     :param task:
+    :param species_to_pk:
     :return:
     """
     # The species as identified by centrifuge for this group of reads
-    species = group_df["name"].unique()
-    # Replace the space with underscore for this set of reads
-    species = species[0].replace(" ", "_")
 
-    logger.info("Flowcell id: {} - species is {}".format(flowcell.id, species))
+    logger.info("Flowcell id: {} - species is {}".format(flowcell.id, group_name))
     # The reference file for this species
+    test_gf = gff3_df[gff3_df["species"] == group_name]
+
+    plasmid_df = test_gf[test_gf["type"] == "plasmid"]
+    species = group_name.replace(" ", "_")
     try:
         refs = ReferenceInfo.objects.get(name=species)
     except ObjectDoesNotExist:
         logger.info("\033[1;36;1m Flowcell id: {} - No reference found for species {}!".format(flowcell.id, species))
         return
     # the minimap2 reference fasta
-    minimap2_ref = reference_location + refs.filename
+    minimap2_ref_path = reference_location + refs.filename
     # The read sequences for the reads we want to map
     reads = FastqRead.objects.filter(run__flowcell_id=flowcell.id, read_id__in=group_df["read_id"])
     # The fasta sequence
@@ -462,7 +521,7 @@ def map_all_the_groups(group_df, reference_location, flowcell, gff3_df, targets_
     fastq = "".join([str(">" + c[0] + "\n" + c[1] + "\n")
                      for c in fastqs_list if c[1] is not None])
     # The command to execute minimap
-    map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format("minimap2", minimap2_ref)
+    map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format("minimap2", minimap2_ref_path)
     # Execute minimap2
     out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE) \
         .communicate(input=str.encode(fastq))
@@ -470,7 +529,14 @@ def map_all_the_groups(group_df, reference_location, flowcell, gff3_df, targets_
     map_out = out.decode()
 
     logger.info("Flowcell id: {} - map out {} ".format(flowcell.id, map_out))
+    plasmid_red_df = pd.DataFrame()
     # If there is output from minimap2 create a dataframe
+    if not plasmid_df.empty:
+        logger.info("Flowcell id: {} - Mapping reads to plasmids for species {} ".format(flowcell.id, species))
+        # TODO is this doubling the first line?
+        plasmid_red_df = plasmid_df.apply(plasmid_mapping, args=(species, reference_location, fastq, flowcell),
+                                          axis=1)
+
     if map_out:
         map_df = pd.read_csv(StringIO(map_out), sep="\t", header=None)
     # Else stop and return. There is no output if there are no mappings
@@ -487,12 +553,14 @@ def map_all_the_groups(group_df, reference_location, flowcell, gff3_df, targets_
     # Drop unecessary columns
     map_df.drop(columns=["number_minimiser", "chaining_score", "chaining_score_2nd_chain", "random"],
                 inplace=True)
-    test_gf = gff3_df[gff3_df["species"] == species.replace("_", " ")]
+
     bool_df = test_gf.apply(falls_in_region, args=(map_df,), axis=1)
     # Get whether it's inside the boundaries or not
     bool_df = bool_df.any()
     # Red reads, reads that fall within boundaries
     red_df = map_df[bool_df]
+    if not plasmid_red_df.empty:
+        red_df = red_df.append(plasmid_red_df)
 
     logger.info(
         "\033[1;36;1m Flowcell id {} - This many reads mapped evilly on this reference {} for species {}"
@@ -521,7 +589,10 @@ def map_all_the_groups(group_df, reference_location, flowcell, gff3_df, targets_
 
     # Update the barcoded mapped but none dangerous reads
     gb_unred_mapped_barcode = update_num_mapped_df.groupby("barcode")
-    gb_unred_mapped_barcode.apply(barcode_nummapped_insert, species_to_pk)
+
+    for n, g in gb_unred_mapped_barcode:
+        barcode_nummapped_insert(g, species_to_pk)
+    # gb_unred_mapped_barcode.apply(barcode_nummapped_insert, species_to_pk)
 
     logger.info("\033[1;32;1m Flowcell id {} - Finished updating mapped reads".format(flowcell.id))
 
@@ -695,6 +766,7 @@ def map_the_reads(name_df, task, flowcell):
     target_tax_id = gff3_df["tax_id"].unique()
     # Combine into tuple, one for each
     target_tuple = list(zip(target_species, target_tax_id))
+
     # create one CartographyMapped entry for each target species
     for target in target_tuple:
         obj, created = CartographyMapped.objects.get_or_create(flowcell=flowcell,
@@ -709,7 +781,13 @@ def map_the_reads(name_df, task, flowcell):
             logger.info("\033[1;32;1m Flowcell id {} - CM object created for {}".format(flowcell.id, obj.species))
     # All mapped reads
     # TODO pass the lookup dict in here
-    red_df = gb.apply(map_all_the_groups, reference_location, flowcell, gff3_df, targets_df, task, species_to_pk)
+    logger.info(dict(list(gb)))
+    # Initialise red_df for red alert target reads
+    red_df = pd.DataFrame()
+    for name, group in gb:
+        red_df = red_df.append(map_all_the_groups(group, name, reference_location, flowcell, gff3_df, targets_df, task,
+                                                  species_to_pk))
+
     # If none of the reads mapped to inside the groups
     if red_df.empty:
         logger.info("\033[1;31;1m Flowcell id {} - No reads mapped to dangerous areas! Better luck next time."
@@ -769,7 +847,6 @@ def map_the_reads(name_df, task, flowcell):
         gb_bc.apply(update_mapped_dangerous_barcode, species_to_pk)
 
 
-
 def run_centrifuge(flowcell_job_id):
     """
 
@@ -814,7 +891,7 @@ def run_centrifuge(flowcell_job_id):
     # and tell the Javascript and RunMonitor the task is running and when it is complete
 
     fastqs = FastqRead.objects.filter(run__flowcell=flowcell, id__gt=int(job_master.last_read)
-                                      ).order_by('id')[:1000]
+                                      ).order_by('id')[:2000]
 
     logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, fastqs.count()))
     try:
@@ -878,6 +955,9 @@ def run_centrifuge(flowcell_job_id):
 
     df.columns = ["readID", "seqID", "tax_id", "numMatches", "unique", "barcode", "read_id"]
 
+    print(df["barcode"].unique())
+    logger.info(df["barcode"].unique())
+
     # get np array of the taxids
     taxid_list = np.unique(df["tax_id"].values)
 
@@ -920,7 +1000,9 @@ def run_centrifuge(flowcell_job_id):
     temp_targets = set(CartographyGuide.objects.filter(set="starting_defaults").values_list("species", flat=True))
     logger.info("Flowcell id: {} - Targets are {}".format(flowcell.id, temp_targets))
     name_df = df[df["name"].isin(temp_targets)]
+
     logger.info("Flowcell id: {} - The dataframe target dataframe is {}".format(flowcell.id, name_df))
+
     map_the_reads(name_df, job_master, flowcell)
 
     barcode_df = pd.DataFrame()

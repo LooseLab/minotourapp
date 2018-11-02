@@ -10,7 +10,7 @@ from reference.models import ReferenceInfo
 import numpy as np
 
 
-def gff_bulk_create(row, set_name, tax_id):
+def gff_create(row, set_name, tax_id):
     """
     Create the model objects for the gff
     :param row:
@@ -72,22 +72,25 @@ class Command(BaseCommand):
             reference_list = list(ReferenceInfo.objects.all().values_list("name", flat=True))
 
             if options["species"]:
-                set_name = options["species"].replace("_", " ")
+                set_name = options["species"].replace(" ", "_")
             else:
-                set_name = os.path.basename(options['gff']).split(".")[0].replace("_", " ")
+                set_name = os.path.basename(options['gff']).split(".")[0].replace(" ", "_")
 
             if set_name not in reference_list:
                 raise CommandError('No matching reference file with name "%s" found in database. Please upload '
                                    'a reference with'
                                    ' the exact species name' % set_name)
+
             else:
                 print("\033[1;35;1m Reference found for species {} in database".format(set_name))
+
+            set_name = set_name.replace("_", " ")
 
             print("\033[1;37;1m Processing gff3 file {} with a set name of {}".format(options['gff'], set_name))
 
             ncbi = NCBITaxa()
 
-            tax_id = ncbi.get_name_translator([set_name.replace("_", " ")])
+            tax_id = ncbi.get_name_translator([set_name])
 
             srcname = options['gff']
 
@@ -101,7 +104,7 @@ class Command(BaseCommand):
 
             gff_df["name"] = gff_df["name"].fillna("no_provided_name")
 
-            gff_df.apply(gff_bulk_create, args=(set_name, tax_id), axis=1)
+            gff_df.apply(gff_create, args=(set_name, tax_id), axis=1)
 
         except Exception as e:
             raise CommandError(repr(e))

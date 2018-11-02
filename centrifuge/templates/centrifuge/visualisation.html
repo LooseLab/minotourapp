@@ -12,6 +12,8 @@
                 <div class="col-md-8 meta_taberu">
 
                 </div>
+
+
                 <div class="col-md-2">
 
                 </div>
@@ -40,108 +42,118 @@
                     <!-- ./traffic light box-->
                 </div>
             </div>
-            <div class="col-md-12">
-                <div class="box">
-                    <div class="box-body" style="width: 100%; height: 8%;">
-                        <div class="range-slider" style="margin: auto; text-align: center;">
-                            <input id=nbSliders class="input-range" type="range" value="0" min="0" max="6"
-                                   style="width: 100%">
-
-                            <span class="taxa-level"
-                                  style="width: 25%; display: inline-block; margin-left: 5px;"><b>Species</b></span>
-                        </div>
-                    </div>
+            <div class="row" style="padding-bottom: 20px">
+                <div class="col-md-12">
+                    <button type="button" class="btn btn-info" data-toggle="collapse" data-target="#demo">
+                    Expand data
+                    </button>
                 </div>
             </div>
-            <div class="row donut" style="">
-                <!-- The proportion table and donut-->
-                <div class="col-md-3 ">
-                    <div class="box box-primary donut" style="height: 96%">
-                        <div class="box-header text-center">
-                            <h3 class="box-title">Species Breakdown</h3>
-                        </div>
-                        <div class="box-body donutContainer ">
 
-                        </div>
-                    </div>
-                </div>
-                <!-- End of donut directive box -->
-                <div class="col-md-9">
-                    <div class="box box-primary" style="width: 100%;">
-                        <div class="box-header text-center">
-                            <h3 class="box-title">Species Breakdown</h3>
-                        </div>
-                        <div class="row">
-                            <div class="box-body rank-table-container col-md-6" style="">
+            <div id="demo" class="collapse">
+                <div class="col-md-12">
+                    <div class="box">
+                        <div class="box-body" style="width: 100%; height: 8%;">
+                            <div class="range-slider" style="margin: auto; text-align: center;">
+                                <input id=nbSliders class="input-range" type="range" value="0" min="0" max="6"
+                                       style="width: 100%">
 
-                            </div>
-                            <div class="box-body rank-table-container2 col-md-6">
-
+                                <span class="taxa-level"
+                                      style="width: 25%; display: inline-block; margin-left: 5px;"><b>Species</b></span>
                             </div>
                         </div>
                     </div>
                 </div>
-                <!-- End of table box -->
-            </div>
+                <div class="row donut" style="">
+                    <!-- The proportion table and donut-->
+                    <div class="col-md-3 ">
+                        <div class="box box-primary donut" style="height: 96%">
+                            <div class="box-header text-center">
+                                <h3 class="box-title">Species Breakdown</h3>
+                            </div>
+                            <div class="box-body donutContainer ">
 
-            <div class="row">
-                <div class="col-md-12 sankeyContainer" style="min-width: 1200px; min-height: 500px">
-                    <div class="box box-primary" style="width:100%;">
-                        <div class="box-header text-center">
-                            <h4 class="box-title">Lineages</h4>
-                        </div>
-                        <div class="box-body svg-container" style="min-width: 1200px; min-height: 500px">
-
-                        </div>
-                    </div>
-                </div>
-                <!-- End of sankey directive box -->
-
-            </div>
-            <div class="row">
-                <div class="col-md-12 all-reads-table">
-                    <div class="box box-primary" style="top: 20px; ">
-                        <div class="box-header text-center">
-                            <h3 class="box-title">All Results</h3>
-                        </div>
-                        <div class="box-body" style="">
-
-                            <table class="table table-hover tableLand display" style="width: 100%">
-                                <thead>
-                                <tr>
-                                    <th>Kingdom</th>
-                                    <th>Phylum</th>
-                                    <th>Class</th>
-                                    <th>Order</th>
-                                    <th>Family</th>
-                                    <th>Genus</th>
-                                    <th>Species</th>
-                                    <th>Number matches</th>
-                                    <th>Proportion</th>
-                                </tr>
-                                </thead>
-                                <tfoot>
-                                <tr>
-                                    <th>Kingdom</th>
-                                    <th>Phylum</th>
-                                    <th>Class</th>
-                                    <th>Order</th>
-                                    <th>Family</th>
-                                    <th>Genus</th>
-                                    <th>Species</th>
-                                    <th>Number matches</th>
-                                    <th>Proportion</th>
-                                </tr>
-                                </tfoot>
-                            </table>
+                            </div>
                         </div>
                     </div>
-                    <!-- End of table box-->
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12" style="">
+                    <!-- End of donut directive box -->
+                    <div class="col-md-9">
+                        <div class="box box-primary" style="width: 100%;">
+                            <div class="box-header text-center">
+                                <h3 class="box-title">Species Breakdown</h3>
+                            </div>
+                            <div class="row">
+                                <div class="box-body rank-table-container col-md-6" style="">
 
+                                </div>
+                                <div class="box-body rank-table-container2 col-md-6">
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of table box -->
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12 sankeyContainer" style="min-width: 1200px; min-height: 500px">
+                        <div class="box box-primary" style="width:100%;">
+                            <div class="box-header text-center">
+                                <h4 class="box-title">Lineages</h4>
+                            </div>
+                            <div class="box-body svg-container" style="min-width: 1200px; min-height: 500px">
+
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End of sankey directive box -->
+
+                </div>
+                <div class="row">
+                    <div class="col-md-12 all-reads-table">
+                        <div class="box box-primary" style="top: 20px; ">
+                            <div class="box-header text-center">
+                                <h3 class="box-title">All Results</h3>
+                            </div>
+                            <div class="box-body" style="">
+
+                                <table class="table table-hover tableLand display" style="width: 100%">
+                                    <thead>
+                                    <tr>
+                                        <th>Kingdom</th>
+                                        <th>Phylum</th>
+                                        <th>Class</th>
+                                        <th>Order</th>
+                                        <th>Family</th>
+                                        <th>Genus</th>
+                                        <th>Species</th>
+                                        <th>Number matches</th>
+                                        <th>Proportion</th>
+                                    </tr>
+                                    </thead>
+                                    <tfoot>
+                                    <tr>
+                                        <th>Kingdom</th>
+                                        <th>Phylum</th>
+                                        <th>Class</th>
+                                        <th>Order</th>
+                                        <th>Family</th>
+                                        <th>Genus</th>
+                                        <th>Species</th>
+                                        <th>Number matches</th>
+                                        <th>Proportion</th>
+                                    </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                        <!-- End of table box-->
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12" style="">
+
+                    </div>
                 </div>
             </div>
         </div>
