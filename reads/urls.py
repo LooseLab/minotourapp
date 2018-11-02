@@ -8,10 +8,6 @@ urlpatterns = [
         views.run_list,
         name="run-list"),
     url(
-        r'^api/v1/currentruns/$',
-        views.current_run_list,
-        name="current-run-list"),
-    url(
         r'^api/v1/runs/(?P<pk>[0-9a-z-]+)/$',
         views.run_detail,
         name="run-detail"
@@ -75,10 +71,6 @@ urlpatterns = [
         r'^api/v1/runs/(?P<pk>[0-9]+)/barcodes/$',
         views.barcode_list,
         name="runbarcode-list"),
-    url(
-        r'^api/v1/reads/(?P<pk>[0-9]+)/$',
-        views.read_detail,
-        name="fastqread-detail"),
     url(
         r'^api/v1/readtypes/$',
         views.read_type_list,

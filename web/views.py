@@ -103,12 +103,6 @@ def tutorial(request):
 
 
 @login_required
-def runs(request):
-    minion_runs = Run.objects.filter(owner=request.user)
-    return render(request, 'web/runs.html', context={'minion_runs': minion_runs})
-
-
-@login_required
 def flowcells(request):
     flowcells = Flowcell.objects.filter(owner=request.user)
     return render(request, 'web/flowcells.html', context={'flowcells': flowcells})
@@ -221,11 +215,6 @@ def flowcell_reads_data(request):
 @login_required
 def remotecontrol(request):
     return render(request, 'web/remotecontrol.html')
-
-
-@login_required
-def sandbox(request):
-    return render(request, 'web/sandbox.html')
 
 
 class ExperimentList(ListView):
