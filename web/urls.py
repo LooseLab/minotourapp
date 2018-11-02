@@ -8,7 +8,6 @@ urlpatterns = [
     url(r'^private/minup/$', views.minup, name='minup'),
     url(r'^private/profile/$', views.profile, name='profile'),
     url(r'^private/tutorial/$', views.tutorial, name='tutorial'),
-    url(r'^private/runs/$', views.runs, name='runs'),
     url(r'^private/flowcells/$', views.flowcells, name='flowcells'),
     url(r'^private/flowcells/(?P<pk>[0-9]+)/$', views.flowcell_index, name='flowcell-index'),
     url(r'^private/flowcells/(?P<pk>[0-9]+)/reads/$', views.flowcell_reads, name='flowcell-reads'),
