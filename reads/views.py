@@ -130,6 +130,19 @@ def read_type_detail(request, pk):
         return Response(serializer.data)
 
 
+
+@api_view(['GET'])
+def fastq_detail(request,pk):
+    """
+
+    :param request:
+    :param pk: fastqid
+    :return:
+    """
+    queryset = FastqFile.objects.filter(runid=pk)
+    serializer = FastqFileSerializer(queryset, many=True, context={'request': request})
+    return Response(serializer.data)
+
 @api_view(['GET','POST'])
 def fastq_file(request,pk):
     """
@@ -171,8 +184,9 @@ def fastq_file(request,pk):
 
         obj.save()
 
+        serializer = FastqFileSerializer(obj, context={'request': request})
 
-        return Response(request.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

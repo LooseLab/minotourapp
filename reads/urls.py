@@ -67,6 +67,11 @@ urlpatterns = [
         name="fastqfile-list",
     ),
     url(
+        #r'^api/v1/minions/(?P<pk>[0-9A-Za-z-_]+)/$',
+        r'^api/v1/files/(?P<pk>[0-9]+)/$',
+        views.fastq_detail,
+        name="fastqfile-detail"),
+    url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/barcodes/$',
         views.barcode_list,
         name="runbarcode-list"),

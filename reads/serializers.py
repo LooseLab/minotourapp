@@ -9,14 +9,15 @@ from reads.models import (Barcode, FastqFile, FastqRead, FastqReadExtra,
                           RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellSummaryBarcode, Flowcell, MinION)
 
 
-class FastqFileSerializer(serializers.ModelSerializer):
+class FastqFileSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = FastqFile
         fields = (
-            'id',
+            'url',
+            #'id',
             'name',
             'runid',
-            'md5'
+            'md5',
         )
         read_only=('id',)
 
@@ -149,7 +150,8 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
             'start_time',
             'run',
             'type',
-            'created_date'
+            'created_date',
+            'fastqfile'
         )
 
     def create(self, validated_data):

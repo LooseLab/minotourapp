@@ -381,7 +381,7 @@ class FastqFile(models.Model):
         unique_together = (("name", "runid"),)
 
     def __str__(self):
-        return "{} {}".format(self.name,self.runid)
+        return "{} {}".format(str(self.name),str(self.runid))
 
 
 
@@ -1463,7 +1463,8 @@ class FastqRead(models.Model):
         verbose_name_plural = 'FASTQ Read'
 
     def __str__(self):
-        return self.read_id
+        return "1"
+        #return str(self.read_id)
 
 
 class FastqReadExtra(models.Model):
