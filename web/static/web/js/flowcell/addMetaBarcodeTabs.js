@@ -4,6 +4,7 @@ function addBarcodeTabs(flowcellId){
     var ul = document.getElementById("nav-tabs-meta-barcodes");
     ul.innerHTML = "";
     var sortedBarcodes = this.barcodes;
+    console.log(sortedBarcodes);
     for (var i = 0; i < sortedBarcodes.length; i++) {
         var li = document.createElement("li");
         li.classList.add('barcode-meta-tab');
@@ -35,9 +36,7 @@ function addBarcodeTabs(flowcellId){
         if (sortedBarcodes[i] == selected_barcode) {
             li.classList.add("active");
         }
-
         li.appendChild(a);
         ul.appendChild(li);
     }
-
 }

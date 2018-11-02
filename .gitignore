@@ -16,4 +16,4 @@ logfile
 celerybeat*
 centrifuge_report.tsv
 centrifuge/utils.py
-env-sample.*
+scripts/env-sample.*

@@ -1352,7 +1352,7 @@ class FastqRead(models.Model):
     :barcode: The barcode identifer/number if any
     :sequence_length:
     :quality_average:
-    :is_pass: Whether the read passed QC or not TODO matt is this correct?
+    :is_pass: Whether the read passed QC or not
     :type: FK to fastqreadtype, example 1d^2
     :start_time:
     :created_date:

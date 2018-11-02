@@ -1,3 +1,6 @@
+"""models.py
+
+"""
 from django.db import models
 from django.utils import timezone
 from jobs.models import JobMaster
@@ -37,20 +40,8 @@ class SankeyLinks(models.Model):
     )
     target_tax_level = models.CharField(max_length=100)
 
-
-class SankeyLinksBarcode(models.Model):
-    """
-        The values for the different barcodes for the sankey diagram TODO unused
-    """
-    value = models.IntegerField(null=True, default=0)
-    barcode = models.CharField(max_length=20)
-    link = models.ForeignKey(
-        SankeyLinks,
-        related_name="barcode_value_links",
-        null=True,
-        on_delete=models.CASCADE
-    )
-    tax_id = models.IntegerField(default=0)
+    def __str__(self):
+        return "{} {} {} {}".format(self.barcode, self.tax_id, self.target_tax_level, self.task)
 
 
 class MetaGenomicsMeta(models.Model):
@@ -125,6 +116,9 @@ class CentOutput(models.Model):
 
     barcode = models.CharField(max_length=50)
 
+    def __str__(self):
+        return "{} {} {} {}".format(self.barcode, self.tax_id, self.name, self.task)
+
 
 class CentOutputBarcoded(models.Model):
     """
@@ -140,6 +134,9 @@ class CentOutputBarcoded(models.Model):
     )
     tax_id = models.IntegerField()
     barcode = models.CharField(max_length=50)
+
+    def __str__(self):
+        return "{} {} {}".format(self.barcode, self.tax_id, self.output)
 
 
 class CartographyMapped(models.Model):
@@ -160,31 +157,41 @@ class CartographyMapped(models.Model):
     )
     species = models.CharField(max_length=50)
     tax_id = models.IntegerField(null=True)
-    red_reads = models.IntegerField(null=True)
-    num_matches = models.IntegerField(default=0)
-    sum_unique = models.IntegerField(default=0)
+    red_reads = models.IntegerField(null=True, default=0)
+    num_mapped = models.IntegerField(default=0)
+    red_sum_unique = models.IntegerField(default=0)
+    barcode = models.CharField(max_length=50, default="All reads")
+
+    def __str__(self):
+        return "{} {} {}".format(self.species, self.tax_id, self.task)
 
 
 class RedReadIds(models.Model):
     """
         The read ids for reads that have identified dangerously
     """
-    read_id = models.CharField(max_length=100)
+    read_id = models.CharField(max_length=100, unique=True)
     CM_species = models.ForeignKey(
         CartographyMapped,
         related_name="mapped_read_ids",
         on_delete=models.CASCADE
     )
 
+    def __str__(self):
+        return self.read_id
+
 
 class CartographyGuide(models.Model):
     """
         The species defaults for the detection
-        # TODO currently unused
     """
     species = models.CharField(max_length=100)
     tax_id = models.IntegerField(null=True)
-    cart_mapped_id = models.CharField(max_length=50)
+    set = models.CharField(default="Default", max_length=100)
+    start = models.IntegerField(default=0)
+    end = models.IntegerField(default=1)
+    name = models.CharField(default="danger_zone", max_length=50)
+    type = models.CharField(default="gene", max_length=100)
 
 
 class LineageValues(models.Model):
@@ -222,6 +229,25 @@ class LineageValues(models.Model):
     leaf = models.CharField(null=True, max_length=100)
     substrainspecies = models.CharField(null=True, max_length=100)
 
+
+class BarcodedCartographyMapped(models.Model):
+    """
+        The results by barcode for the target mapping
+    """
+    cm = models.ForeignKey(
+        CartographyMapped,
+        related_name="mapped_targets_barcodes",
+        on_delete=models.CASCADE
+    )
+    species = models.CharField(max_length=50, default="Species")
+    tax_id = models.IntegerField(null=True)
+    red_reads = models.IntegerField(null=True, default=0)
+    num_mapped = models.IntegerField(default=0)
+    red_sum_unique = models.IntegerField(default=0)
+    barcode = models.CharField(max_length=50, default="No barcode")
+
+    def __str__(self):
+        return "{} {} {}".format(self.barcode, self.tax_id, self.cm)
 
 
 
