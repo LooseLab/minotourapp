@@ -480,7 +480,7 @@ def plasmid_mapping(row, species, reference_location, fastq, flowcell):
         # red_df = map_df[bool_df]
 
         logger.info(
-            "\033[1;36;1m Flowcell id {} - This many reads mapped evilly on this reference {} for species {}"
+            "Flowcell id {} - This many reads mapped evilly on this reference {} for species {}"
             .format(flowcell.id, map_df.shape[0], species))
         # return as tuple to iterate over
         return map_df
@@ -509,7 +509,7 @@ def map_all_the_groups(group_df, group_name, reference_location, flowcell, gff3_
     try:
         refs = ReferenceInfo.objects.get(name=species)
     except ObjectDoesNotExist:
-        logger.info("\033[1;36;1m Flowcell id: {} - No reference found for species {}!".format(flowcell.id, species))
+        logger.info("Flowcell id: {} - No reference found for species {}!".format(flowcell.id, species))
         return
     # the minimap2 reference fasta
     minimap2_ref_path = reference_location + refs.filename
@@ -563,13 +563,13 @@ def map_all_the_groups(group_df, group_name, reference_location, flowcell, gff3_
         red_df = red_df.append(plasmid_red_df)
 
     logger.info(
-        "\033[1;36;1m Flowcell id {} - This many reads mapped evilly on this reference {} for species {}"
+        "Flowcell id {} - This many reads mapped evilly on this reference {} for species {}"
         .format(flowcell.id, red_df.shape[0], species))
     # Non red reads, reads that mapped elsewhere on the reference
     map_df = map_df[~bool_df]
 
     logger.info(
-        "\033[1;32;1m Flowcell id {} - This many reads mapped elsewhere on this reference {}".format(flowcell.id,
+        "Flowcell id {} - This many reads mapped elsewhere on this reference {}".format(flowcell.id,
                                                                                                      map_df.shape[0]))
     # get the info on the mapped reads from the original dataframe
     # TODO this is where we sort the barcodes
@@ -594,7 +594,7 @@ def map_all_the_groups(group_df, group_name, reference_location, flowcell, gff3_
         barcode_nummapped_insert(g, species_to_pk)
     # gb_unred_mapped_barcode.apply(barcode_nummapped_insert, species_to_pk)
 
-    logger.info("\033[1;32;1m Flowcell id {} - Finished updating mapped reads".format(flowcell.id))
+    logger.info("Flowcell id {} - Finished updating mapped reads".format(flowcell.id))
 
     return red_df
 
@@ -710,20 +710,20 @@ def map_the_reads(name_df, task, flowcell):
     :return: The
     """
     # Targets_df
-    logger.info("\033[1;36;1m Flowcell id {} - Mapping the target reads".format(flowcell.id))
+    logger.info("Flowcell id {} - Mapping the target reads".format(flowcell.id))
     targets_df = name_df
     # TODO currently hardcoded below
     target_set = "starting_defaults"
     # if there are no targets identified by centrifuge in this iteration
     if targets_df.empty:
 
-        logger.info("\033[1;36;0m Flowcell id {} - No targets in this batch of reads".format(flowcell.id,
+        logger.info("Flowcell id {} - No targets in this batch of reads".format(flowcell.id,
                                                                                              targets_df.shape))
         # Get the targets set in the gff files and uploaded
         gff3_df = pd.DataFrame(list(CartographyGuide.objects.filter(set=target_set).values()))
         # If there are no target regions found for the set name
         if gff3_df.empty:
-            logger.info("\033[1;31;1m Flowcell id {} - No set of target regions found by that set name"
+            logger.info("Flowcell id {} - No set of target regions found by that set name"
                         .format(flowcell.id, ))
             return
         # Get np array of the target species
@@ -743,13 +743,13 @@ def map_the_reads(name_df, task, flowcell):
                                                                              "red_sum_unique": 0}
                                                                    )
             if created:
-                logger.info("\033[1;36;0m Flowcell id {} - CM object created for {}".format(flowcell.id, obj.species))
+                logger.info("Flowcell id {} - CM object created for {}".format(flowcell.id, obj.species))
         return
 
     # Reset the index
     targets_df.reset_index(inplace=True)
 
-    logger.info("\033[1;36;0m Flowcell id {} - targets_df shape is {}".format(flowcell.id, targets_df.shape))
+    logger.info("Flowcell id {} - targets_df shape is {}".format(flowcell.id, targets_df.shape))
     # Location of the reference file
     reference_location = getattr(settings, "REFERENCE_LOCATION", None)
 
@@ -778,7 +778,7 @@ def map_the_reads(name_df, task, flowcell):
                                                                          "red_sum_unique": 0}
                                                                )
         if created:
-            logger.info("\033[1;32;1m Flowcell id {} - CM object created for {}".format(flowcell.id, obj.species))
+            logger.info("Flowcell id {} - CM object created for {}".format(flowcell.id, obj.species))
     # All mapped reads
     # TODO pass the lookup dict in here
     logger.info(dict(list(gb)))
@@ -790,7 +790,7 @@ def map_the_reads(name_df, task, flowcell):
 
     # If none of the reads mapped to inside the groups
     if red_df.empty:
-        logger.info("\033[1;31;1m Flowcell id {} - No reads mapped to dangerous areas! Better luck next time."
+        logger.info("Flowcell id {} - No reads mapped to dangerous areas! Better luck next time."
                     .format(flowcell.id))
         return
 
@@ -866,7 +866,7 @@ def run_centrifuge(flowcell_job_id):
 
     total_reads = FastqRead.objects.filter(run__flowcell__id=flowcell.id).count()
 
-    logger.info('\033[1;32;1m Flowcell id: {} - Running centrifuge on flowcell {}'.format(flowcell.id, flowcell.name))
+    logger.info('Flowcell id: {} - Running centrifuge on flowcell {}'.format(flowcell.id, flowcell.name))
     logger.info('Flowcell id: {} - job_master_id {}'.format(flowcell.id, job_master.id))
     logger.info('Flowcell id: {} - last_read {}'.format(flowcell.id, job_master.last_read))
     logger.info('Flowcell id: {} - read_count {}'.format(flowcell.id, job_master.read_count))
@@ -1008,7 +1008,7 @@ def run_centrifuge(flowcell_job_id):
     barcode_df = pd.DataFrame()
 
     # TODO vectorise these bad boys
-    logger.info("\033[1;32;1m Flowcell id: {} - The dataframe shape is {}".format(flowcell.id, df.shape))
+    logger.info("Flowcell id: {} - The dataframe shape is {}".format(flowcell.id, df.shape))
 
     unique_barcode = set([c[1] for c in fastqs_list])
 
