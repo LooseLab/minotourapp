@@ -115,6 +115,27 @@ class MinIONEventTypeSerializer(serializers.HyperlinkedModelSerializer):
         read_only = ('id',)
 
 
+class FastqReadGetSerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+        model = FastqRead
+        fields = (
+            'url',
+            'read_id',
+            'read',
+            'channel',
+            'barcode',
+            'barcode_name',
+            'sequence_length',
+            'quality_average',
+            'is_pass',
+            'start_time',
+            'run',
+            'type',
+            'created_date'
+        )
+
+
 class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
 
     sequence = serializers.CharField(allow_blank=True)

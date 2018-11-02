@@ -37,7 +37,7 @@ from reads.serializers import (BarcodeSerializer,
                                RunSerializer,
                                RunStatisticBarcodeSerializer,
                                RunSummaryBarcodeSerializer, ChannelSummary, RunStatisticBarcode, RunSummaryBarcode,
-                               GroupRunSerializer, FlowcellSummaryBarcodeSerializer)
+                               GroupRunSerializer, FlowcellSummaryBarcodeSerializer, FastqReadGetSerializer)
 from reads.utils import get_coords
 from reference.models import ReferenceInfo
 
@@ -723,32 +723,6 @@ def minION_detail(request, pk):
             print ("PROBLEM")
 
         return Response(serializer.data)
-
-
-@api_view(['GET', 'PUT', 'DELETE'])
-def read_detail(request, pk):
-    """
-    Retrieve, update or delete a read instance.
-    """
-    try:
-        read = FastqRead.objects.get(pk=pk)
-    except FastqRead.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == 'GET':
-        serializer = FastqReadSerializer(read, context={'request': request})
-        return Response(serializer.data)
-
-    elif request.method == 'PUT':
-        serializer = FastqReadSerializer(read, data=request.data, context={'request': request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    elif request.method == 'DELETE':
-        read.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @api_view(['GET'])
@@ -1552,17 +1526,21 @@ def read_list_new(request):
 
     search_value = request.GET.get('search_value', 'name')
 
+    offset = int(request.GET.get('offset', '0'))
+
+    limit = int(request.GET.get('limit', '10'))
+
     if request.method == 'GET':
 
-        if search_criteria != 'run':
+        if search_criteria == 'run':
 
-            qs = FastqRead.objects.filter(run__id=search_value)
+            qs = FastqRead.objects.filter(run__id=search_value)[offset:offset + limit]
 
-        elif search_criteria == 'grouprun':
+        else:
 
-            qs = FastqRead.objects.filter(run__id=search_value)
+            qs = FastqRead.objects.none()
 
-        serializer = FastqReadSerializer(qs, many=True, context={'request': request})
+        serializer = FastqReadGetSerializer(qs, many=True, context={'request': request})
 
         return Response(serializer.data)
 

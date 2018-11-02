@@ -66,10 +66,6 @@ urlpatterns = [
         views.barcode_list,
         name="runbarcode-list"),
     url(
-        r'^api/v1/reads/(?P<pk>[0-9]+)/$',
-        views.read_detail,
-        name="fastqread-detail"),
-    url(
         r'^api/v1/readtypes/$',
         views.read_type_list,
         name="fastqreadtype-list"),
