@@ -1558,6 +1558,11 @@ def grouprun_membership_list(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+@api_view(['GET'])
+def read_detail(request,pk):
+    return Response({})
+
+
 @api_view(['GET', 'POST'])
 def read_list_new(request):
 

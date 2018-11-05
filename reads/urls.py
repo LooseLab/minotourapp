@@ -18,6 +18,11 @@ urlpatterns = [
         name="fastqread-list"
     ),
     url(
+        r'^api/v1/reads/(?P<pk>[0-9]+)/$',
+        views.read_detail,
+        name="fastqread-detail"
+    ),
+    url(
         r'^api/v1/read/$',
         views.read_list_new,
         name="fastqread-list-new"
