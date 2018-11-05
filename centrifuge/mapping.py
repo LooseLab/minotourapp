@@ -1,4 +1,7 @@
-from centrifuge.models import CentOutput, CartographyMapped, RedReadIds
+"""
+mapping.py - perform the mappings
+"""
+from centrifuge.models import CentOutput, CartographyMapped, RedReadIds, CartographyGuide
 from reads.models import FastqRead
 from reference.models import ReferenceInfo
 from django.conf import settings
@@ -6,8 +9,11 @@ import pandas as pd
 import numpy as np
 from io import StringIO
 import subprocess
+from celery.utils.log import get_task_logger
 from reads.models import Flowcell
 from jobs.models import JobMaster
+pd.options.mode.chained_assignment = None
+logger = get_task_logger(__name__)
 
 
 def map_all_the_groups(group_df, reference_location, flowcell_id):
@@ -19,9 +25,10 @@ def map_all_the_groups(group_df, reference_location, flowcell_id):
     :return:
     """
     species = group_df["name"].unique()
+    print("species is {}".format(species))
     species = species[0].replace(" ", "_")
     refs = ReferenceInfo.objects.get(name=species)
-    minimap2_ref = reference_location + refs.minimap2_index_file_location
+    minimap2_ref = reference_location + refs.filename
     reads = FastqRead.objects.filter(run__flowcell_id__in={flowcell_id}, read_id__in=group_df["read_id"])
 
     sequence_data = list(reads.values_list("fastqreadextra__sequence", flat=True))
@@ -36,7 +43,11 @@ def map_all_the_groups(group_df, reference_location, flowcell_id):
     out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE) \
         .communicate(input=str.encode(fastq))
     map_out = out.decode()
-    map_df = pd.read_csv(StringIO(map_out), sep="\t", header=None)
+    if map_out:
+        map_df = pd.read_csv(StringIO(map_out), sep="\t", header=None)
+    else:
+        print("Flowcell id: {} - No minimap output".format(flowcell_id))
+        return
 
     columns = ["read_id", "query_seq_len", "query_start", "query_end", "rel_strand", "target_seq_name",
                "target_seq_len", "target_start", "target_end", "num_matching_bases", "num_matching_bases_gaps",
@@ -61,12 +72,11 @@ def falls_in_region(row, map_df):
     end_high = map_df["target_end"] < row["end"]
 
     bool_df = pd.concat([start_low, start_high, end_low, end_high], axis=1, ignore_index=True)
-    print(bool_df)
     bool_df["keep"] = np.where((bool_df[0] & bool_df[1]) | (bool_df[2] & bool_df[3]), True, False)
     return bool_df["keep"]
 
 
-def bulk_create_maps(row, bulk_insert_red_id, cart_map_dict, flowcell, task):
+def update_mapped_values(row, bulk_insert_red_id, cart_map_dict, flowcell, task):
     """
 
     :param row:
@@ -77,50 +87,36 @@ def bulk_create_maps(row, bulk_insert_red_id, cart_map_dict, flowcell, task):
     :return:
     """
     if row["name"] not in cart_map_dict:
-        mapped = CartographyMapped(species=row["name"], tax_id=row["tax_id"], red_reads=row["red_num_matches"],
-                                   num_matches=row["num_matches"], sum_unique=row["sum_unique"],
-                                   flowcell=flowcell, task=task)
+        mapped = CartographyMapped.objects.get(species=row["name"],
+                                               tax_id=row["tax_id"],
+                                               flowcell=flowcell, task=task)
+        mapped.red_reads = row["red_num_matches"]
+        mapped.num_matches = row["num_matches"]
+        mapped.sum_unique = row["sum_unique"]
+
         mapped.save()
+
         cart_map_dict[row["name"]] = mapped.id
+
         red_rum = RedReadIds(read_id=row["read_id"], CM_species_id=mapped.id)
+
         bulk_insert_red_id.append(red_rum)
     else:
         red_rum = RedReadIds(read_id=row["read_id"], CM_species_id=cart_map_dict[row["name"]])
+
         bulk_insert_red_id.append(red_rum)
 
     return bulk_insert_red_id
-
-
-def to_update_maps(row, flowcell_id, task_id, to_insert_red, cm_id):
-    """
-
-    :param row:
-    :param flowcell_id:
-    :param task_id:
-    :param to_insert_red:
-    :param cm_id:
-    :return:
-    """
-
-    CartographyMapped.objects.filter(flowcell__id=flowcell_id, task__id=task_id,
-                                     tax_id=row["tax_id"]).update(
-        red_reads=row["summed_red_reads"], num_matches=row["summed_num_matches"],
-        sum_unique=row["summed_sum_unique"]
-    )
-
-    red_id = RedReadIds(read_id=row["read_id"], CM_species_id=cm_id)
-    to_insert_red.append(red_id)
-    return to_insert_red
 
 
 class Metamap:
     """
         Perform the mapping of reads that match our target species
     """
-    def __init__(self, dataframe, flowcell_id, task_id):
+    def __init__(self, dataframe, flowcell_id, task_id, target_set):
         self.dataframe = dataframe
-        self.flowcell_id = flowcell_id
         self.task_id = task_id
+        self.target_set = target_set
 
     def map_the_reads(self):
         """
@@ -128,9 +124,11 @@ class Metamap:
         :return: The
         """
         # Targets_df
-        flowcell = Flowcell.objects.get(pk=self.flowcell_id)
         task = JobMaster.objects.get(pk=self.task_id)
+        flowcell = task.flowcell
         targets_df = self.dataframe
+        if targets_df.empty:
+            return
         targets_df.reset_index(inplace=True)
         # refs = ReferenceInfo.objects.all().values()
 
@@ -138,11 +136,29 @@ class Metamap:
 
         gb = targets_df.groupby(["name"], as_index=False)
 
-        gff3_df = pd.read_csv("/home/rory/data/gff/Escherichia_coli.gff3", sep="\t", header=None,
-                              names=["seq_id", "source", "type", "start", "end", "score", "strand", "phase",
-                                     "attributes"], index_col=False)
+        self.target_set = "starting_defaults"
+
+        gff3_df = pd.DataFrame(list(CartographyGuide.objects.filter(set=self.target_set).values()))
+
+        target_species = gff3_df["name"].unique()
+
+        target_tax_id = gff3_df["tax_id"].unqiue()
+
+        target_tuple = list(zip(target_species, target_tax_id))
+
+        for target in target_tuple:
+            obj, created = CartographyMapped.objects.get_or_create(flowcell=task.flowcell,
+                                                                   task=task,
+                                                                   species=target[0],
+                                                                   tax_id=target[1],
+                                                                   defaults={"red_reads": 0,
+                                                                             "num_matches": 0,
+                                                                             "sum_unique": 0}
+                                                                   )
+            if created:
+                print("\033[1;36;1m Flowcell id {} - ".format(flowcell.id))
         # All mapped reads
-        map_df = gb.apply(map_all_the_groups, reference_location, self.flowcell_id)
+        map_df = gb.apply(map_all_the_groups, reference_location, flowcell.id)
 
         bool_df = gff3_df.apply(falls_in_region, args=(map_df,), axis=1)
         # Get whether it's inside the boundaries or not
@@ -163,34 +179,24 @@ class Metamap:
         bulk_insert_red_from_update = []
         cart_map_dict = {}
         prev_tax_ids = []
-        prev_df = pd.DataFrame(list(CartographyMapped.objects.filter(flowcell__id=self.flowcell_id,
-                                                                     task__id=self.task_id).values()))
-        if not prev_df.empty:
-            prev_tax_ids = prev_df["tax_id"]
-            prev_df.set_index(["tax_id"], inplace=True)
-        to_create_df = results_df[~results_df["tax_id"].isin(prev_tax_ids)]
-        to_update_df = results_df[results_df["tax_id"].isin(prev_tax_ids)]
+        prev_df = pd.DataFrame(list(CartographyMapped.objects.filter(flowcell__id=flowcell.id,
+                                                                     task__id=task.id).values()))
 
-        if not to_create_df.empty:
-            to_create_df.apply(bulk_create_maps, args=(bulk_insert_red_id, cart_map_dict,
-                                                       flowcell, task), axis=1)
-            RedReadIds.objects.bulk_create(bulk_insert_red_id)
-
-        if not to_update_df.empty:
+        if not results_df.empty:
             cm_id = prev_df["id"].unique()[0]
-            to_update_df.set_index(["tax_id"], inplace=True)
+            results_df.set_index(["tax_id"], inplace=True)
 
-            to_update_df["to_add_num_matches"] = prev_df["num_matches"]
-            to_update_df["to_add_red_reads"] = prev_df["red_reads"]
-            to_update_df["to_add_red_sum_unique"] = prev_df["sum_unique"]
+            results_df["to_add_num_matches"] = prev_df["num_matches"]
+            results_df["to_add_red_reads"] = prev_df["red_reads"]
+            results_df["to_add_red_sum_unique"] = prev_df["sum_unique"]
 
-            to_update_df["summed_num_matches"] = to_update_df["num_matches"] + to_update_df["to_add_num_matches"]
-            to_update_df["summed_red_reads"] = to_update_df["red_num_matches"] + to_update_df["to_add_red_reads"]
-            to_update_df["summed_sum_unique"] = to_update_df["sum_unique"] + to_update_df["to_add_red_sum_unique"]
+            results_df["summed_num_matches"] = results_df["num_matches"] + results_df["to_add_num_matches"]
+            results_df["summed_red_reads"] = results_df["red_num_matches"] + results_df["to_add_red_reads"]
+            results_df["summed_sum_unique"] = results_df["sum_unique"] + results_df["to_add_red_sum_unique"]
 
-            to_update_df.reset_index(inplace=True)
+            results_df.reset_index(inplace=True)
 
-            to_update_df.apply(to_update_maps, args=(self.flowcell_id, self.task_id,
+            results_df.apply(update_mapped_values, args=(flowcell.id, task.id,
                                                      bulk_insert_red_from_update,
                                                      cm_id), axis=1)
             RedReadIds.objects.bulk_create(bulk_insert_red_from_update)
