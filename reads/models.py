@@ -1468,8 +1468,8 @@ class FastqRead(models.Model):
         verbose_name_plural = 'FASTQ Read'
 
     def __str__(self):
-        return "1"
-        #return str(self.read_id)
+        #return "1"
+        return str(self.read_id)
 
 
 class FastqReadExtra(models.Model):
