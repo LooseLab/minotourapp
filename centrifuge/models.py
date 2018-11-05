@@ -44,7 +44,7 @@ class SankeyLinks(models.Model):
         return "{} {} {} {}".format(self.barcode, self.tax_id, self.target_tax_level, self.task)
 
 
-class MetaGenomicsMeta(models.Model):
+class Metadata(models.Model):
     """"
         :purpose: Store information about the Metagenomics classification analysis, used in centrifuger.py
         :author: Rory
@@ -139,7 +139,7 @@ class CentOutputBarcoded(models.Model):
         return "{} {} {}".format(self.barcode, self.tax_id, self.output)
 
 
-class CartographyMapped(models.Model):
+class MappingResults(models.Model):
     """
         The traffic light species that have been identified
     """
@@ -172,7 +172,7 @@ class RedReadIds(models.Model):
     """
     read_id = models.CharField(max_length=100, unique=True)
     CM_species = models.ForeignKey(
-        CartographyMapped,
+        MappingResults,
         related_name="mapped_read_ids",
         on_delete=models.CASCADE
     )
@@ -181,7 +181,7 @@ class RedReadIds(models.Model):
         return self.read_id
 
 
-class CartographyGuide(models.Model):
+class MappingTargets(models.Model):
     """
         The species defaults for the detection
     """
@@ -230,12 +230,12 @@ class LineageValues(models.Model):
     substrainspecies = models.CharField(null=True, max_length=100)
 
 
-class BarcodedCartographyMapped(models.Model):
+class MappingResultsBarcoded(models.Model):
     """
         The results by barcode for the target mapping
     """
     cm = models.ForeignKey(
-        CartographyMapped,
+        MappingResults,
         related_name="mapped_targets_barcodes",
         on_delete=models.CASCADE
     )

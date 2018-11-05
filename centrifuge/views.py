@@ -1,14 +1,15 @@
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from centrifuge.models import CentOutput, CartographyMapped, LineageValues, MetaGenomicsMeta, \
-    SankeyLinks, CentOutputBarcoded, BarcodedCartographyMapped
-from centrifuge.serializers import CartMappedSerialiser
+from centrifuge.models import CentOutput, MappingResults, LineageValues, Metadata, \
+    SankeyLinks, CentOutputBarcoded, MappingResultsBarcoded
+from centrifuge.serializers import MappedResultsSerialiser
 from django.utils import timezone
 from ete3 import NCBITaxa
 import pandas as pd
 from jobs.models import JobMaster
 
 pd.options.mode.chained_assignment = None
+
 
 @api_view(["GET"])
 def metaview(request):
@@ -24,15 +25,15 @@ def metaview(request):
     # The flowcell id for the flowcell that the fastq data came from, default to False if not present
     flowcell_id = request.GET.get("flowcellId", False)
     # The ids of the JobMaster entries for this flowcell
-    task_ids = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics")\
+    task_ids = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics") \
         .values_list("id", flat=True)
     # Get the most recent job, which has the highest ID
     task_id = max(task_ids)
     # If there is no MetaGenomicsMeta object return an empty list
     try:
-        queryset = MetaGenomicsMeta.objects.filter(flowcell__id=flowcell_id,
-                                                   task__id=task_id).last()
-    except MetaGenomicsMeta.DoesNotExist:
+        queryset = Metadata.objects.filter(flowcell__id=flowcell_id,
+                                           task__id=task_id).last()
+    except Metadata.DoesNotExist:
         return Response([], status=404)
 
     try:
@@ -164,9 +165,11 @@ def vis_table_or_donut_data(request):
                   .values_list("id", flat=True))
     # queryset from database, filtered by the flowcell_id and the corresponding JobMaster ID
 
-    queryset = CentOutputBarcoded.objects.filter(output__flowcell__id=flowcell_id, output__task__id=task_id,
+    queryset = CentOutputBarcoded.objects.filter(output__flowcell__id=flowcell_id,
+                                                 output__task__id=task_id,
                                                  barcode=barcode)
-    barcode_list = list(set(CentOutputBarcoded.objects.filter(output__flowcell__id=flowcell_id, output__task__id=task_id)
+    barcode_list = list(set(CentOutputBarcoded.objects.filter(output__flowcell__id=flowcell_id,
+                                                              output__task__id=task_id)
                             .values_list("barcode", flat=True)))
     # Create a dataframe from the results of the querying the database
     centoutput_df = pd.DataFrame(list(queryset.values()))
@@ -299,8 +302,8 @@ def get_or_set_cartmap(request):
 
     """
     if request.method == "GET":
-        queryset = CartographyMapped.objects.filter(task_meta=request.query_params.get("meta_id", False))
-        data = CartMappedSerialiser(queryset, many=True)
+        queryset = MappingResults.objects.filter(task_meta=request.query_params.get("meta_id", False))
+        data = MappedResultsSerialiser(queryset, many=True)
         return_data = []
         for data in data.data:
             data["amb_proportion"] = 0
@@ -321,11 +324,11 @@ def get_or_set_cartmap(request):
                 species = [r["species"]]
                 name_to_taxid = ncbi.get_name_translator(species)
                 tax_id = name_to_taxid[species[0]][0]
-                CartographyMapped(species=species[0], tax_id=tax_id, task_meta=ident, total_reads=0, num_reads=0,
-                                  alert_level=0, red_reads=0).save()
+                MappingResults(species=species[0], tax_id=tax_id, task_meta=ident, total_reads=0, num_reads=0,
+                               alert_level=0, red_reads=0).save()
             else:
-                CartographyMapped(species=r["species"], tax_id=r["tax_id"], task_meta=ident, total_reads=0, num_reads=0,
-                                  alert_level=0, red_reads=0).save()
+                MappingResults(species=r["species"], tax_id=r["tax_id"], task_meta=ident, total_reads=0, num_reads=0,
+                               alert_level=0, red_reads=0).save()
 
         return Response("Hi there", status=200)
 
@@ -346,13 +349,13 @@ def get_target_mapping(request):
     task_id = max(JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics")
                   .values_list("id", flat=True))
     if barcode == "All reads":
-        queryset = CartographyMapped.objects.filter(flowcell__id=flowcell_id,
-                                                    task__id=task_id, barcode=barcode).values()
+        queryset = MappingResults.objects.filter(flowcell__id=flowcell_id,
+                                                 task__id=task_id, barcode=barcode).values()
     else:
-        queryset = BarcodedCartographyMapped.objects.filter(cm__task__id=task_id, barcode=barcode).values()
+        queryset = MappingResultsBarcoded.objects.filter(cm__task__id=task_id, barcode=barcode).values()
 
-    species_list = CartographyMapped.objects.filter(flowcell__id=flowcell_id,
-                                                task__id=task_id).values_list("tax_id", flat=True)
+    species_list = MappingResults.objects.filter(flowcell__id=flowcell_id,
+                                                 task__id=task_id).values_list("tax_id", flat=True)
     cent_output = CentOutputBarcoded.objects.filter(output__task__id=task_id, tax_id__in=species_list,
                                                     barcode="All reads").values()
 
@@ -361,20 +364,20 @@ def get_target_mapping(request):
     cent_output_df = pd.DataFrame(list(cent_output))
     # TODO sorted
     if results_df.empty:
-        queryset = CartographyMapped.objects.filter(flowcell__id=flowcell_id,
-                                                    task__id=task_id).values()
+        queryset = MappingResults.objects.filter(flowcell__id=flowcell_id,
+                                                 task__id=task_id).values()
         results_df = pd.DataFrame(list(queryset))
         results_df[["num_mapped", "red_reads", "red_sum_unique"]] = 0
         results_df["Num. matches"] = 0
         results_df["Sum. Unique"] = 0
         results_df.rename(columns={"num_mapped": "Num. mapped",
-                                  "red_reads": "Danger reads",
-                                  "red_sum_unique": "Unique Danger reads",
-                                  "species": "Species",
-                                  "tax_id": "Tax id",
-                                  "num_matches": "Num. matches",
-                                  "sum_unique": "Sum. Unique"
-                                  }, inplace=True)
+                                   "red_reads": "Danger reads",
+                                   "red_sum_unique": "Unique Danger reads",
+                                   "species": "Species",
+                                   "tax_id": "Tax id",
+                                   "num_matches": "Num. matches",
+                                   "sum_unique": "Sum. Unique"
+                                   }, inplace=True)
         results = results_df.to_dict(orient="records")
 
         return Response(results)
@@ -394,6 +397,3 @@ def get_target_mapping(request):
     results = merger_df.to_dict(orient="records")
 
     return Response(results)
-
-
-

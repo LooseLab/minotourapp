@@ -1,7 +1,7 @@
 """
 mapping.py - perform the mappings
 """
-from centrifuge.models import CentOutput, CartographyMapped, RedReadIds, CartographyGuide
+from centrifuge.models import CentOutput, MappingResults, RedReadIds, CartographyGuide
 from reads.models import FastqRead
 from reference.models import ReferenceInfo
 from django.conf import settings
@@ -10,7 +10,6 @@ import numpy as np
 from io import StringIO
 import subprocess
 from celery.utils.log import get_task_logger
-from reads.models import Flowcell
 from jobs.models import JobMaster
 pd.options.mode.chained_assignment = None
 logger = get_task_logger(__name__)
@@ -87,7 +86,7 @@ def update_mapped_values(row, bulk_insert_red_id, cart_map_dict, flowcell, task)
     :return:
     """
     if row["name"] not in cart_map_dict:
-        mapped = CartographyMapped.objects.get(species=row["name"],
+        mapped = MappingResults.objects.get(species=row["name"],
                                                tax_id=row["tax_id"],
                                                flowcell=flowcell, task=task)
         mapped.red_reads = row["red_num_matches"]
@@ -147,7 +146,7 @@ class Metamap:
         target_tuple = list(zip(target_species, target_tax_id))
 
         for target in target_tuple:
-            obj, created = CartographyMapped.objects.get_or_create(flowcell=task.flowcell,
+            obj, created = MappingResults.objects.get_or_create(flowcell=task.flowcell,
                                                                    task=task,
                                                                    species=target[0],
                                                                    tax_id=target[1],
@@ -179,7 +178,7 @@ class Metamap:
         bulk_insert_red_from_update = []
         cart_map_dict = {}
         prev_tax_ids = []
-        prev_df = pd.DataFrame(list(CartographyMapped.objects.filter(flowcell__id=flowcell.id,
+        prev_df = pd.DataFrame(list(MappingResults.objects.filter(flowcell__id=flowcell.id,
                                                                      task__id=task.id).values()))
 
         if not results_df.empty:

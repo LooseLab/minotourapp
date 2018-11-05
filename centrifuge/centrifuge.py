@@ -12,8 +12,8 @@ from django.db.models import ObjectDoesNotExist
 from django.utils import timezone
 from ete3 import NCBITaxa
 
-from centrifuge.models import CentOutput, LineageValues, MetaGenomicsMeta, SankeyLinks, CentOutputBarcoded, \
-    CartographyMapped, RedReadIds, CartographyGuide, BarcodedCartographyMapped
+from centrifuge.models import CentOutput, LineageValues, Metadata, SankeyLinks, CentOutputBarcoded, \
+    MappingResults, RedReadIds, MappingTargets, MappingResultsBarcoded
 from jobs.models import JobMaster
 from minotourapp.utils import get_env_variable
 from reads.models import FastqRead
@@ -397,12 +397,12 @@ def insert_nummapped_barcode(row, species_to_pk):
     """
     Insert the model object for the reads that mapped to their target reference, outside target regions
     :param row: Dataframe row
-    :param species_to_pk: The primary key for each species CartographyMapped database row in a dict
+    :param species_to_pk: The primary key for each species MappingResults database row in a dict
     :return:
     """
     # TODO a lot of database calls, may need changing
     pk = species_to_pk[row["name"]]
-    obj, created = BarcodedCartographyMapped.objects.get_or_create(
+    obj, created = MappingResultsBarcoded.objects.get_or_create(
         tax_id=row["tax_id"],
         cm=pk,
         barcode=row["barcode"],
@@ -438,7 +438,7 @@ def plasmid_mapping(row, species, reference_location, fastq, flowcell):
     :return:
     """
     species = species.replace(" ", "_")
-    reference_name = species+"_"+row["name"]
+    reference_name = species + "_" + row["name"]
 
     refs = ReferenceInfo.objects.get(name=reference_name)
 
@@ -481,7 +481,8 @@ def plasmid_mapping(row, species, reference_location, fastq, flowcell):
 
         logger.info(
             "Flowcell id: {} - This many reads mapped evilly on this reference {} for species {}"
-            .format(flowcell.id, map_df.shape[0], species))
+            .format(flowcell.id, map_df.shape[0], species)
+        )
         # return as tuple to iterate over
         return map_df
 
@@ -564,14 +565,17 @@ def map_all_the_groups(group_df, group_name, reference_location, flowcell, gff3_
         red_df = red_df.append(plasmid_red_df)
 
     logger.info(
-        "Flowcell id: {} - This many reads mapped evilly on this reference {} for species {}"
-        .format(flowcell.id, red_df.shape[0], species))
+        "Flowcell id: {} - This many reads mapped evilly on this reference {} for species {}".format(
+            flowcell.id,
+            red_df.shape[0],
+            species)
+    )
     # Non red reads, reads that mapped elsewhere on the reference
     map_df = map_df[~bool_df]
 
     logger.info(
         "Flowcell id: {} - This many reads mapped elsewhere on this reference {}".format(flowcell.id,
-                                                                                                     map_df.shape[0]))
+                                                                                         map_df.shape[0]))
     # get the info on the mapped reads from the original dataframe
     # TODO this is where we sort the barcodes
     update_num_mapped_df = pd.merge(targets_df, map_df, how="inner", left_on="read_id", right_on="read_id")
@@ -633,8 +637,8 @@ def update_mapped_values(row, bulk_insert_red_id, cart_map_dict, task):
     :return:
     """
     if row["name"] not in cart_map_dict:
-        mapped = CartographyMapped.objects.get(species=row["name"],
-                                               task=task)
+        mapped = MappingResults.objects.get(species=row["name"],
+                                            task=task)
         mapped.red_reads = row["summed_red_reads"]
         mapped.red_sum_unique = row["summed_sum_unique"]
 
@@ -660,7 +664,7 @@ def update_mapped_non_dangerous(row, task):
     :param task: The related task for this analysis
     :return:
     """
-    cm = CartographyMapped.objects.get(task=task, species=row["name"])
+    cm = MappingResults.objects.get(task=task, species=row["name"])
     cm.num_mapped += row["num_mapped"]
     cm.save()
 
@@ -675,7 +679,7 @@ def insert_barcode_mapped_dangerous(row, species_to_pk):
     """
     pk = species_to_pk[row["name"]]
 
-    obj, created = BarcodedCartographyMapped.objects.get_or_create(
+    obj, created = MappingResultsBarcoded.objects.get_or_create(
         tax_id=row["tax_id"],
         cm=pk,
         barcode=row["barcode"],
@@ -719,9 +723,9 @@ def map_the_reads(name_df, task, flowcell):
     if targets_df.empty:
 
         logger.info("Flowcell id: {} - No targets in this batch of reads".format(flowcell.id,
-                                                                                             targets_df.shape))
+                                                                                 targets_df.shape))
         # Get the targets set in the gff files and uploaded
-        gff3_df = pd.DataFrame(list(CartographyGuide.objects.filter(set=target_set).values()))
+        gff3_df = pd.DataFrame(list(MappingTargets.objects.filter(set=target_set).values()))
         # If there are no target regions found for the set name
         if gff3_df.empty:
             logger.info("Flowcell id: {} - No set of target regions found by that set name"
@@ -733,16 +737,16 @@ def map_the_reads(name_df, task, flowcell):
         target_tax_id = gff3_df["tax_id"].unique()
         # Combine into tuple, one for each
         target_tuple = list(zip(target_species, target_tax_id))
-        # create one CartographyMapped entry for each target species
+        # create one MappingResults entry for each target species
         for target in target_tuple:
-            obj, created = CartographyMapped.objects.get_or_create(flowcell=flowcell,
-                                                                   task=task,
-                                                                   species=target[0],
-                                                                   tax_id=target[1],
-                                                                   defaults={"red_reads": 0,
-                                                                             "num_mapped": 0,
-                                                                             "red_sum_unique": 0}
-                                                                   )
+            obj, created = MappingResults.objects.get_or_create(flowcell=flowcell,
+                                                                task=task,
+                                                                species=target[0],
+                                                                tax_id=target[1],
+                                                                defaults={"red_reads": 0,
+                                                                          "num_mapped": 0,
+                                                                          "red_sum_unique": 0}
+                                                                )
             if created:
                 logger.info("Flowcell id: {} - CM object created for {}".format(flowcell.id, obj.species))
         return
@@ -754,13 +758,13 @@ def map_the_reads(name_df, task, flowcell):
     # Location of the reference file
     reference_location = getattr(settings, "REFERENCE_LOCATION", None)
 
-    queryset = CartographyMapped.objects.filter(task=task)
+    queryset = MappingResults.objects.filter(task=task)
     # Create a lookup of pks to species
     species_to_pk = {query.species: query for query in queryset}
     # Get one group for each name
     gb = targets_df.groupby(["name"], as_index=False)
     # Get the targets set in the gff files and uploaded
-    gff3_df = pd.DataFrame(list(CartographyGuide.objects.filter(set=target_set).values()))
+    gff3_df = pd.DataFrame(list(MappingTargets.objects.filter(set=target_set).values()))
     # Get np array of the target species
     target_species = gff3_df["species"].unique()
     # Get np array of their tax_ids
@@ -768,16 +772,16 @@ def map_the_reads(name_df, task, flowcell):
     # Combine into tuple, one for each
     target_tuple = list(zip(target_species, target_tax_id))
 
-    # create one CartographyMapped entry for each target species
+    # create one MappingResults entry for each target species
     for target in target_tuple:
-        obj, created = CartographyMapped.objects.get_or_create(flowcell=flowcell,
-                                                               task=task,
-                                                               species=target[0],
-                                                               tax_id=target[1],
-                                                               defaults={"red_reads": 0,
-                                                                         "num_mapped": 0,
-                                                                         "red_sum_unique": 0}
-                                                               )
+        obj, created = MappingResults.objects.get_or_create(flowcell=flowcell,
+                                                            task=task,
+                                                            species=target[0],
+                                                            tax_id=target[1],
+                                                            defaults={"red_reads": 0,
+                                                                      "num_mapped": 0,
+                                                                      "red_sum_unique": 0}
+                                                            )
         if created:
             logger.info("Flowcell id: {} - CM object created for {}".format(flowcell.id, obj.species))
     # All mapped reads
@@ -816,7 +820,7 @@ def map_the_reads(name_df, task, flowcell):
 
     cart_map_dict = {}
     # Get the previous values for the mappings
-    prev_df = pd.DataFrame(list(CartographyMapped.objects.filter(task=task).values()))
+    prev_df = pd.DataFrame(list(MappingResults.objects.filter(task=task).values()))
     prev_df.set_index(["tax_id"], inplace=True)
     logger.info("Flowcell id: {} - The previous results are {}".format(flowcell.id, prev_df.head()))
     logger.info("Flowcell id: {} - The previous results keys are {}".format(flowcell.id, prev_df.keys()))
@@ -896,10 +900,10 @@ def run_centrifuge(flowcell_job_id):
 
     logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, fastqs.count()))
     try:
-        metadata = MetaGenomicsMeta.objects.get(flowcell=flowcell, task=job_master)
-    except (MetaGenomicsMeta.DoesNotExist, MetaGenomicsMeta.MultipleObjectsReturned):
+        metadata = Metadata.objects.get(flowcell=flowcell, task=job_master)
+    except (Metadata.DoesNotExist, Metadata.MultipleObjectsReturned):
 
-        metadata = MetaGenomicsMeta(
+        metadata = Metadata(
             run_time=time,
             flowcell=flowcell,
             running=True,
@@ -998,7 +1002,7 @@ def run_centrifuge(flowcell_job_id):
     #                 "Rickettsia prowazekii",
     #                 "Escherichia coli"]
     # Unique targets in this set of regions
-    temp_targets = set(CartographyGuide.objects.filter(set="starting_defaults").values_list("species", flat=True))
+    temp_targets = set(MappingTargets.objects.filter(set="starting_defaults").values_list("species", flat=True))
     logger.info("Flowcell id: {} - Targets are {}".format(flowcell.id, temp_targets))
     name_df = df[df["name"].isin(temp_targets)]
 
