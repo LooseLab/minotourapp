@@ -15,8 +15,6 @@ function checkFlowcellTabs(flowcell_id) {
 
     $.getJSON(url, function (data) {
 
-        console.log(data);
-
         var items = [];
 
         $.each(data, function (key, value) {
