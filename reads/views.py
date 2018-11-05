@@ -927,6 +927,7 @@ def flowcell_list(request):
 
 @api_view(['GET', 'POST'])
 def flowcell_detail(request, pk):
+
     if request.method == 'GET':
         print(request.user)
         search_criteria = request.GET.get('search_criteria', 'id')
@@ -946,14 +947,20 @@ def flowcell_detail(request, pk):
         if len(flowcell_list) != 1:
 
             return Response(status=status.HTTP_404_NOT_FOUND)
+
         # TODO updated this, check with Roberto that this is cool
 
         flowcell = flowcell_list[0]
-        # Get largest task_id
-        task_id = max(JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics")
-                      .values_list("id", flat=True))
-        # Get the metagenomics barcodes fot his task thatactually have data attached
-        meta_barcodes = set(CentOutputBarcoded.objects.filter(output__task__id=task_id).values_list("barcode", flat=True))
+
+        task = JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics").order_by('id').last()
+
+        if task:
+
+            meta_barcodes = set(CentOutputBarcoded.objects.filter(output__task__id=task_id).values_list("barcode", flat=True))
+
+        else:
+
+            meta_barcodes = []
 
         serializer = FlowcellSerializer(flowcell, context={'request': request})
 

@@ -56,15 +56,16 @@
 
                     for (var i = 0; i < json.length; i++){
 
-                        var start_time = new Date(json[i].start_time);
-                        var start_time_human_format = start_time.toLocaleString();
+                        var start_time = moment(json[i].start_time).format('YYYY-MM-DD HH:mm');
 
                         data.push([
                             json[i].id,
                             json[i].name,
                             json[i].size,
                             json[i].sample_name,
-                            start_time_human_format,
+                            // start_time_human_format,
+                            // start_time,
+                            start_time,
                             json[i].number_reads,
                             json[i].number_reads_processed,
                             json[i].number_runs,
@@ -73,11 +74,6 @@
                             json[i].average_read_length,
                             json[i].is_active,
                             json[i].has_fastq
-                            /*json[i].runs.length,
-                            json[i].runs[0].computer_name,
-                            json[i].runs[0].minion_name,
-                            json[i].runs[0].minKNOW_version,
-                            json[i].runs[0].sample_name,*/
                         ]);
                     }
                     return data;
@@ -159,9 +155,9 @@
                     'data': 0,
                     'render': function(data, type, full, meta) {
                         if (full[11]) {
-                            return 'Active';
+                            return '<a href="/web/private/flowcells/' + data + '/">Active</a>';
                         } else {
-                            return 'Inactive';
+                            return '<a href="/web/private/flowcells/' + data + '/">Inactive</a>';
                         }
                     }
                 },
@@ -170,9 +166,9 @@
                     'data': 0,
                     'render': function(data, type, full, meta) {
                         if (full[12]) {
-                            return 'Yes';
+                            return '<a href="/web/private/flowcells/' + data + '/">Yes</a>';
                         } else {
-                            return 'No';
+                            return '<a href="/web/private/flowcells/' + data + '/">No</a>';
                         }
                     }
                 },
