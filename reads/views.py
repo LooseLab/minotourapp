@@ -170,9 +170,13 @@ def fastq_file(request,pk):
 
     elif request.method == 'POST':
 
+        run = Run.objects.filter(runid=request.data["runid"]).filter(owner=request.user).first()
+
         obj,created = FastqFile.objects.get_or_create(
             runid = request.data["runid"],
-            name = request.data["name"]
+            name = request.data["name"],
+            owner = request.user,
+            run=run
         )
 
         obj.md5 = request.data["md5"]
@@ -703,7 +707,7 @@ def read_list(request, pk):
 
         querysets = FastqRead.objects.filter(run_id=pk)
 
-        serializer = FastqReadSerializer(querysets, many=True, context={'request': request})
+        serializer = FastqReadGetSerializer(querysets, many=True, context={'request': request})
 
         return Response(serializer.data)
 
@@ -773,7 +777,7 @@ def readname_list(request, pk):
     This could be a source of confusion and we should resolve.
     """
     if request.method == 'GET':
-        queryset = FastqRead.objects.filter(run_id=pk).order_by('id')
+        queryset = FastqRead.objects.filter(fastqfile_id=pk).order_by('id')
 
         paginator = Paginator(queryset, settings.PAGINATION_PAGE_SIZE)
 
@@ -1588,6 +1592,11 @@ def read_list_new(request):
         if search_criteria == 'run':
 
             qs = FastqRead.objects.filter(run__id=search_value)[offset:offset + limit]
+
+        elif search_criteria == 'fastqfile':
+
+            qs = FastqRead.objects.filter(fastqfile_id=search_value)[offset:offset + limit]
+
 
         else:
 

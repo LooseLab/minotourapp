@@ -195,7 +195,8 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
             is_pass=validated_data['is_pass'],
             start_time=validated_data['start_time'],
             run=validated_data['run'],
-            type=validated_data['type']
+            type=validated_data['type'],
+            fastqfile=validated_data['fastqfile']
         )
 
         fastqread.save()
