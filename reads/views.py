@@ -14,7 +14,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from centrifuge.models import CentOutputBarcoded
+from centrifuge.models import CentrifugeOutputBarcoded
 
 from jobs.models import JobMaster, JobType
 from minotourapp import settings
@@ -921,7 +921,7 @@ def flowcell_detail(request, pk):
         task_id = max(JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics")
                       .values_list("id", flat=True))
         # Get the metagenomics barcodes fot his task thatactually have data attached
-        meta_barcodes = set(CentOutputBarcoded.objects.filter(output__task__id=task_id).values_list("barcode", flat=True))
+        meta_barcodes = set(CentrifugeOutputBarcoded.objects.filter(output__task__id=task_id).values_list("barcode", flat=True))
 
         serializer = FlowcellSerializer(flowcell, context={'request': request})
 

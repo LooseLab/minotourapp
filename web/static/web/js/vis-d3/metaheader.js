@@ -20,7 +20,7 @@ function metaHeader(flowcellId){
         row = d3.select(".meta_taberu").select("table").select("tr");
     }
     // AJAX request for the metadata
-    $.get("/metaview", {flowcellId}, result => {
+    $.get("/centrifuge_metadata", {flowcellId}, result => {
         // If there is no data, return
         if(result[1].value === 0){
             return;
