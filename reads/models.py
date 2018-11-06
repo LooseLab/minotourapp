@@ -1456,7 +1456,8 @@ class FastqReadExtra(models.Model):
     )
 
     def __str__(self):
-        return self.fastqread
+
+        return str(self.id)
 
 
 class MinionMessage(models.Model):
