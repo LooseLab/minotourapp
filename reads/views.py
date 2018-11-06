@@ -860,7 +860,7 @@ def flowcell_list(request):
 def flowcell_detail(request, pk):
 
     if request.method == 'GET':
-        print(request.user)
+
         search_criteria = request.GET.get('search_criteria', 'id')
 
         if search_criteria == 'id':
@@ -883,20 +883,11 @@ def flowcell_detail(request, pk):
 
         flowcell = flowcell_list[0]
 
-        task = JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics").order_by('id').last()
-
-        if task:
-
-            meta_barcodes = set(CentOutputBarcoded.objects.filter(output__task__id=task_id).values_list("barcode", flat=True))
-
-        else:
-
-            meta_barcodes = []
-
         serializer = FlowcellSerializer(flowcell, context={'request': request})
 
         data = serializer.data
-        return_dict = {"data": data, "meta_barcodes": meta_barcodes}
+
+        return_dict = {"data": data}
 
         return Response(return_dict)
 
