@@ -4,7 +4,6 @@ function getTotalReadsTable(flowCellId) {
     // Get data from the api
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     if(flowcell_selected_tab_input.value !== "Metagenomics"){
-        console.log("Cleared results table interval");
         return;
     }
     $.get("/table", {flowcellId: flowCellId, visType: "table", barcode: selectedBarcode}, result => {

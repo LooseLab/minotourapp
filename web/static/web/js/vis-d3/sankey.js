@@ -78,7 +78,6 @@ function update(flowcellId, sankey, checkForData, svg, g, format, color, width, 
     // TODO species limit one day
     $.get("/sankey", {flowcellId , "barcode":selectedBarcode}, result => {
         let nodes;
-        console.log(result);
         // if theres no data from the server
         if (result === undefined) {
             return;
@@ -107,7 +106,6 @@ function drawSankey(flowcellId) {
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
 
     if(flowcell_selected_tab_input.value !== "Metagenomics"){
-        console.log("clearing snakey");
         clearInterval(updateSankey);
         return;
     }
@@ -146,7 +144,6 @@ function drawSankey(flowcellId) {
         svg = d3.select(".svg-sankey");
         g = d3.select(".contain");
     } else {
-        console.log(hi);
         svg = d3.select(".svg-container").append("svg").attr("width", width).attr("class", "svg-sankey")
             .attr("height", hi).call(zoom);
         g = svg.append("g").attr("class", "contain");

@@ -8,7 +8,7 @@ function requestData(flowcell_id) {
     $.get(url_run, (function (result) {
 
         let data = result.data;
-        let meta_barcodes= result.meta_barcodes;
+        // let meta_barcodes= result.meta_barcodes;
         var barcodes = new Set();
 
         for (var i = 0; i < data.barcodes.length; i++) {
@@ -50,15 +50,12 @@ function requestData(flowcell_id) {
         } else if (flowcell_selected_tab_input.value == 'Metagenomics') {
             // The intervals for updating the charts are found in the individual files in the vis-d3 directory
             // SO you are on the Metagenomics tab
-
+            let bants = this.addMetaBarcodeTabs.bind(this);
             if (selected_barcode == '') {
                 set_selected_barcode('All reads');
             }
-            this.barcodes = meta_barcodes.sort();
-            this.addBarcodeTabs(flowcell_id);
-            // draw the sankey
+            let url = "/api/v1/flowcells/" + flowcell_id + "/metagenomic_barcodes";
             this.drawSankey(flowcell_id);
-            // update the metadata header
             this.metaHeader(flowcell_id);
             // Draw the donut rank table
             this.drawDonutRankTable(flowcell_id);
@@ -68,6 +65,14 @@ function requestData(flowcell_id) {
             this.getTotalReadsTable(flowcell_id);
             // Draw the alert mapping targets table;
             this.update_mapping_table(flowcell_id);
+
+            $.get(url, {}, function (result) {
+                this.barcodes = result.data.sort();
+                // draw the sankey
+                bants(flowcell_id, this.barcodes);
+                // update the metadata header
+
+            });
 
         } else if (flowcell_selected_tab_input.value == 'Sequence Mapping') {
 

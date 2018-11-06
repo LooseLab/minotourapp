@@ -28,8 +28,7 @@ def centrifuge_metadata(request):
     # The flowcell id for the flowcell that the fastq data came from, default to False if not present
     flowcell_id = request.GET.get("flowcellId", False)
     # The ids of the JobMaster entries for this flowcell
-    job_master = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics") \
-        .values_list("id", flat=True).order_by("id").last()
+    job_master = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last()
 
     if not job_master:
         return Response("No Centrifuge tasks. This is not the API you are looking for....")
@@ -39,13 +38,12 @@ def centrifuge_metadata(request):
         queryset = Metadata.objects.filter(task__id=job_master.id).last()
     except Metadata.DoesNotExist as e:
         return Response(e, status=404)
-
-    number_of_reads = queryset.number_of_reads
+    number_of_reads = job_master.flowcell.number_reads
     reads_class = job_master.read_count
     # Percentage of reads classified
     percentage = round(reads_class / number_of_reads * 100, 2)
     # Get the start time of the task, removing the timezone info
-    start_time = queryset.timestamp.replace(tzinfo=None)
+    start_time = queryset.start_time.replace(tzinfo=None)
     # Get the current time, removing the timezone info
     current_time = timezone.now().replace(tzinfo=None)
     # If the request is not for a finished run, subtract the start time from the current
@@ -66,6 +64,7 @@ def centrifuge_metadata(request):
 
 @api_view(["GET"])
 def centrifuge_sankey(request):
+
     # TODO refactor logic into centrifuge.py
     """
     :purpose: Query the database for the sankeyLink data, return the top 50 Lineages
@@ -80,18 +79,18 @@ def centrifuge_sankey(request):
     species_limit = request.GET.get("speciesLimit", 30)
     # Get the flowcell ID , defaulting to False if not present
     flowcell_id = request.GET.get("flowcellId", False)
+    print(flowcell_id)
     # Selected barcode, default all reads
     selected_barcode = request.GET.get("barcode", "All reads")
 
     # The most up to dat task_id
-    task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics") \
-        .values_list("id", flat=True).order_by("id").last().id
+    task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last().id
 
     # ## Get the links for the sankey Diagram ###
 
     print("the flowcell is {}".format(flowcell_id))
     print("the barcode is {}".format(selected_barcode))
-    queryset = SankeyLink.objects.filter(task__id=task_id, barcode=selected_barcode).values()
+    queryset = SankeyLink.objects.filter(task__id=task_id, barcode_name=selected_barcode).values()
     # If the queryset is empty, return an empty object
     if not queryset:
         print("no queryset")
@@ -163,17 +162,16 @@ def vis_table_or_donut_data(request):
 
     barcode = request.GET.get("barcode", "All reads")
     # Get the most recent job
-    task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics") \
-        .values_list("id", flat=True).order_by("id").last().id
+    task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last().id
     # queryset from database, filtered by the flowcell_id and the corresponding JobMaster ID
 
     queryset = CentrifugeOutputBarcoded.objects.filter(
         output__task__id=task_id,
-        barcode=barcode)
+        barcode_name=barcode)
 
     barcode_list = list(CentrifugeOutputBarcoded.objects.filter(
         output__task__id=task_id)
-                        .values_list("barcode", flat=True).distinct())
+                        .values_list("barcode_name", flat=True).distinct())
 
     # Create a dataframe from the results of the querying the database
     centrifuge_output_barcoded_df = pd.DataFrame(list(queryset.values()))
@@ -329,24 +327,38 @@ def get_target_mapping(request):
 
     print("flowcell_id_id-{}".format(flowcell_id))
 
-    task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics") \
-        .values_list("id", flat=True).order_by("id").last().id
+    task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last().id
 
     if barcode == "All reads":
-        queryset = MappingResult.objects.filter(task__id=task_id, barcode=barcode).values()
+        queryset = MappingResult.objects.filter(task__id=task_id, barcode_name=barcode).values()
 
+        results_df = pd.DataFrame(list(queryset))
     else:
-        queryset = MappingResultsBarcoded.objects.filter(mapping_result__task__id=task_id, barcode=barcode).values()
+        map_queryset = MappingResult.objects.filter(task__id=task_id).values()
+
+        queryset = MappingResultsBarcoded.objects.filter(mapping_result__task__id=task_id,
+                                                         barcode_name=barcode
+                                                         ).values()
+        just_barcode_df = pd.DataFrame(list(queryset))
+        # Barcode data only has species with results, need to add on any targets that have no results in that barcode
+
+        all_targets_df = pd.DataFrame(list(map_queryset))
+        print(all_targets_df)
+        print(just_barcode_df)
+        # results_df = pd.merge(all_targets_df, just_barcode_df, how="outer", left_on="tax_id", right_on="tax_id")
+        results_df = just_barcode_df.append(all_targets_df)
+        results_df.drop_duplicates(subset=["species"], keep="first", inplace=True)
+        print(results_df)
 
     species_list = MappingResult.objects.filter(task__id=task_id).values_list("tax_id", flat=True)
 
     cent_output = CentrifugeOutputBarcoded.objects.filter(output__task__id=task_id, tax_id__in=species_list,
-                                                          barcode="All reads").values()
+                                                          barcode_name="All reads").values()
 
-    results_df = pd.DataFrame(list(queryset))
-
+    print(results_df)
     cent_output_df = pd.DataFrame(list(cent_output))
     # TODO sorted
+    print(cent_output_df)
     if results_df.empty:
 
         queryset = MappingResult.objects.filter(task__id=task_id).values()
@@ -369,12 +381,14 @@ def get_target_mapping(request):
                                    }, inplace=True)
 
         results = results_df.to_dict(orient="records")
+        print(results_df)
 
         return Response(results)
 
-    merger_df = pd.merge(results_df, cent_output_df, how="inner", left_on="tax_id", right_on="tax_id")
-
-    merger_df.drop(columns=["id_x", "id_y", "barcode_x", "barcode_y"], inplace=True)
+    merger_df = pd.merge(results_df, cent_output_df, how="outer", left_on="tax_id", right_on="tax_id")
+    merger_df.drop(columns=["id_x", "id_y", "barcode_name_x", "barcode_name_y", "output_id"], inplace=True)
+    merger_df.fillna(0, inplace=True)
+    print(merger_df)
 
     merger_df.rename(columns={"num_mapped": "Num. mapped",
                               "red_reads": "Danger reads",
@@ -392,10 +406,16 @@ def get_target_mapping(request):
 
 @api_view(['GET'])
 def metagenomic_barcodes(request, pk):
+    """
 
+    :param request:
+    :param pk:
+    :return:
+    """
+    print("Metagenomics barcodes")
     flowcell_list = Flowcell.objects.filter(owner=request.user).filter(id=pk)
-
-    metagenomic_barcodes = []
+    print(pk)
+    metagenomics_barcodes = []
 
     if flowcell_list.count() > 0:
 
@@ -404,7 +424,7 @@ def metagenomic_barcodes(request, pk):
         task = JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics").order_by('id').last()
 
         if task:
-            metagenomic_barcodes = CentrifugeOutput.objects.filter(output__task__id=task.id)\
-                .values_list("barcode", flat=True).distinct()
+            metagenomics_barcodes = CentrifugeOutputBarcoded.objects.filter(output__task__id=task.id)\
+                .values_list("barcode_name", flat=True).distinct()
 
-    return Response({"data": metagenomic_barcodes})
+    return Response({"data": metagenomics_barcodes})

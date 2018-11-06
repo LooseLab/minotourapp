@@ -21,6 +21,7 @@ function update_mapping_table(flowcellId) {
         return;
     }
     $.get("/mapped_targets", {flowcellId, barcode}, result => {
+        console.log(result);
         result.sort(compare);
         if (d3.select(".alert-table").classed("has-tabley?")) {
             table = d3.select(".alert-table").select("table");

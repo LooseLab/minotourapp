@@ -158,7 +158,6 @@ function drawDonutRankTable(flowCellId) {
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     if (flowcell_selected_tab_input.value !== "Metagenomics"){
         clearInterval(updateDonutTable);
-        console.log("cleared donut table interval");
         return;
     }
     $.get("/donut", {flowcellId: flowCellId, visType: "donut", barcode: selectedBarcode}, result => {

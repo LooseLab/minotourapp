@@ -96,7 +96,7 @@ var FlowcellPageApp = {
         this.getTotalReadsTable = getTotalReadsTable;
         this.drawDonutRankTable = drawDonutRankTable;
         this.flowcellTaskHistoryTable = flowcellTaskHistoryTable;
-        this.addBarcodeTabs = addBarcodeTabs.bind(this);
+        this.addMetaBarcodeTabs = addMetaBarcodeTabs.bind(this);
         this.update_mapping_table = update_mapping_table;
 
         this.updatePoreChart = updatePoreChart;

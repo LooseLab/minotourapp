@@ -7,7 +7,6 @@ function metaHeader(flowcellId){
     let table, head, row;
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     if(flowcell_selected_tab_input.value !== "Metagenomics"){
-        console.log("Cleared header interval");
         return;
     }
     if(firsty){

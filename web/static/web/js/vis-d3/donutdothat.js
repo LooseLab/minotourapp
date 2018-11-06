@@ -48,7 +48,6 @@ function drawDonut(flowCellId, selectedBarcode) {
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     if(flowcell_selected_tab_input.value !== "Metagenomics"){
         clearInterval(updateDonut);
-        console.log("cleared donut interval");
         return;
     }
     // setup the donut chart
@@ -115,7 +114,6 @@ function drawDonut(flowCellId, selectedBarcode) {
         if (result === undefined) {
             return;
         }
-        console.log(result);
         let dataToDraw = result.result;
         // what the label is displaying, starts on species
         let currentSelectionSlider = value.html();
