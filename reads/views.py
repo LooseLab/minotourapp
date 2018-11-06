@@ -303,8 +303,6 @@ def activeminion_list(request):
 
             last_minion_event = minion_event_list.last()
 
-            print('>>> Minion: {}, last event type: {}'.format(minion.name, last_minion_event.event.name))
-
             if last_minion_event.event.name != 'unplugged':
 
                 active_minion_list.append(minion)
@@ -928,7 +926,7 @@ def flowcell_list(request):
 def flowcell_detail(request, pk):
 
     if request.method == 'GET':
-        print(request.user)
+
         search_criteria = request.GET.get('search_criteria', 'id')
 
         if search_criteria == 'id':
@@ -945,27 +943,18 @@ def flowcell_detail(request, pk):
 
         if len(flowcell_list) != 1:
 
-            #return Response(status=status.HTTP_404_NOT_FOUND)
-            return Response({"data": {}} )
+            return Response({'data': {}})
+
 
         # TODO updated this, check with Roberto that this is cool
 
         flowcell = flowcell_list[0]
 
-        task = JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics").order_by('id').last()
-
-        if task:
-
-            meta_barcodes = set(CentOutputBarcoded.objects.filter(output__task__id=task_id).values_list("barcode", flat=True))
-
-        else:
-
-            meta_barcodes = []
-
         serializer = FlowcellSerializer(flowcell, context={'request': request})
 
         data = serializer.data
-        return_dict = {"data": data, "meta_barcodes": meta_barcodes}
+
+        return_dict = {"data": data}
 
         return Response(return_dict)
 
@@ -1354,8 +1343,6 @@ def flowcell_run_stats_latest(request, pk, checkid):
         else:
 
             element['minKNOW_colours_string'] = None
-
-        print(element)
 
         result.append(element)
 
