@@ -1,6 +1,5 @@
 import os
 import shutil
-import subprocess
 from shutil import SameFileError
 
 from Bio import SeqIO

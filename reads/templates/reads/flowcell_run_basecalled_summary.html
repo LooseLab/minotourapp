@@ -1,0 +1,46 @@
+{% for record in result_basecalled_summary|dictsort:"first_read_start_time" %}
+
+    {% if forloop.first %}
+
+        <div class='table-responsive'>
+        <table class="table">
+        <thead>
+        <th>Run</th>
+        <th>Runid</th>
+        <th>First Read</th>
+        <th>Last Read</th>
+        <th>Read Count</th>
+        <th>Yield</th>
+        <th>Max Read Length</th>
+        <th>Avg Read Length</th>
+        <th>Min Read Length</th>
+        </thead>
+        <tbody>
+
+    {% endif %}
+
+    <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ record.runid }}</td>
+        <td>{{ record.first_read_start_time }}</td>
+        <td>{{ record.last_read_start_time }}</td>
+        <td>{{ record.read_count }}</td>
+        <td>{{ record.total_read_length }}</td>
+        <td>{{ record.max_read_length }}</td>
+        <td>{{ record.avg_read_length }}</td>
+        <td>{{ record.min_read_length }}</td>
+    </tr>
+
+    {% if forloop.last %}
+        </tbody>
+
+        </table>
+
+        </div>
+    {% endif %}
+
+{% empty %}
+
+No information available.
+
+{% endfor %}

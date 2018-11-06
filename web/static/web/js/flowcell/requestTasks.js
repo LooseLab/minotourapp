@@ -43,7 +43,7 @@ function loadTasksForm() {
         }
 
         var option = document.createElement("option");
-        option.value = -1;
+        option.value = "";
         option.text = "-- select an option --";
 
         job_type_select.appendChild(option);
@@ -67,7 +67,7 @@ function loadTasksForm() {
     $.get(url_reference_list, function (data) {
 
         let option = document.createElement("option");
-        option.value = -1;
+        option.value = "";
         option.text = "-- select an option --";
 
         reference_select.appendChild(option);
@@ -83,59 +83,59 @@ function loadTasksForm() {
     });
 
 
-    $("#post-form-task-create").on("submit", function (event) {
-        event.preventDefault();
-
-
-        var csrftoken = getCookie('csrftoken');
-        var csrftoken2 = Cookies.get('csrftoken');
-
-        $.ajaxSetup({
-            beforeSend: function (xhr, settings) {
-                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                    xhr.setRequestHeader("X-CSRFToken", csrftoken);
-                }
-            }
-        });
-
-        $.ajax({
-            url: "/api/v1/tasks/",
-            type: "post",
-            data: $("#post-form-task-create").serializeArray(),
-            success: function (json) {
-                let taskTable = $(".tasktable");
-                let messages = $("#task_form_messages");
-                function empty(messages){
-                    messages.empty();
-                }
-                messages.empty();
-                messages.prepend("<div class=\"alert alert-success\" role=\"alert\">" + json.message + "</div>");
-                setTimeout(empty, 1500, messages);
-                taskTable.DataTable().ajax.reload();
-            },
-            error: function (json) {
-
-                var fields = Object.keys(json['error_messages']);
-
-                fields.forEach(function (element) {
-                    for (var i = 0; i < json['error_messages'][element].length; i++) {
-                        $("#task_form_messages").prepend("<div class=\"alert alert-danger\" role=\"alert\">" + json['error_messages'][element][i] + "</div>");
-                    }
-                });
-
-            }
-        });
-    });
+    // $("#post-form-task-create").on("submit", function (event) {
+    //     event.preventDefault();
+    //
+    //
+    //     var csrftoken = getCookie('csrftoken');
+    //     var csrftoken2 = Cookies.get('csrftoken');
+    //
+    //     $.ajaxSetup({
+    //         beforeSend: function (xhr, settings) {
+    //             if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+    //                 xhr.setRequestHeader("X-CSRFToken", csrftoken);
+    //             }
+    //         }
+    //     });
+    //
+    //     $.ajax({
+    //         url: "/api/v1/tasks/",
+    //         type: "post",
+    //         data: $("#post-form-task-create").serializeArray(),
+    //         success: function (json) {
+    //             let taskTable = $(".tasktable");
+    //             let messages = $("#task_form_messages");
+    //             function empty(messages){
+    //                 messages.empty();
+    //             }
+    //             messages.empty();
+    //             messages.prepend("<div class=\"alert alert-success\" role=\"alert\">" + json.message + "</div>");
+    //             setTimeout(empty, 1500, messages);
+    //             taskTable.DataTable().ajax.reload();
+    //         },
+    //         error: function (json) {
+    //
+    //             var fields = Object.keys(json['error_messages']);
+    //
+    //             fields.forEach(function (element) {
+    //                 for (var i = 0; i < json['error_messages'][element].length; i++) {
+    //                     $("#task_form_messages").prepend("<div class=\"alert alert-danger\" role=\"alert\">" + json['error_messages'][element][i] + "</div>");
+    //                 }
+    //             });
+    //
+    //         }
+    //     });
+    // });
 }
 
 function flowcellTaskHistoryTable(flowcellId) {
     // Draw the Task table on the tasks tab showing previous and current analyses
-    let table = $(".tasktablecont");
+    let table = $(".tasktable");
     // if it's already loaded don't reiniiialise
-    if (table.hasClass("yesload")) {
-        console.log("No worries mate");
+    if ($.fn.DataTable.isDataTable(table)) {
+        table.DataTable().ajax.reload();
     } else {
-        $('.tasktable').DataTable({
+        table.DataTable({
             ajax: {
                 url: '/api/v1/tasks/?search_criteria=flowcell&search_value=' + flowcellId.toString(),
                 method: "GET",
@@ -149,7 +149,6 @@ function flowcellTaskHistoryTable(flowcellId) {
                 {"data": "complete"}
             ]
         });
-        $(".tasktablecont").addClass("yesload");
     }
-
+    setTimeout(flowcellTaskHistoryTable, 30000, flowcellId);
 }

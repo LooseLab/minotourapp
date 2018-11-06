@@ -1,15 +1,9 @@
-let updateResultsTable;
-function topGetTotalReadsTable(flowCellId) {
-    getTotalReadsTable(flowCellId);
-}
-
 function getTotalReadsTable(flowCellId) {
     var selectedBarcode = get_selected_barcode();
     // Get ttoal reads table updates the total reads table at te bottom of the page
     // Get data from the api
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     if(flowcell_selected_tab_input.value !== "Metagenomics"){
-        clearInterval(updateResultsTable);
         console.log("Cleared results table interval");
         return;
     }
@@ -44,5 +38,5 @@ function getTotalReadsTable(flowCellId) {
             );
         }
     });
-    updateResultsTable = setTimeout(getTotalReadsTable, 60000, flowCellId, selectedBarcode);
+    // updateResultsTable = setTimeout(getTotalReadsTable, 60000, flowCellId, selectedBarcode);
 }

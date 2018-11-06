@@ -15,6 +15,16 @@ from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlo
 from django.contrib import messages
 
 
+def index(request):
+
+    if request.user.is_authenticated:
+
+        return redirect('flowcells')
+
+    else:
+
+        return redirect('login')
+
 def signup(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
@@ -24,7 +34,7 @@ def signup(request):
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=username, password=raw_password)
             login(request, user)
-            return redirect('private-index')
+            return redirect('flowcells')
 
     else:
         form = SignUpForm()
@@ -93,21 +103,9 @@ def tutorial(request):
 
 
 @login_required
-def runs(request):
-    minion_runs = Run.objects.filter(owner=request.user)
-    return render(request, 'web/runs.html', context={'minion_runs': minion_runs})
-
-
-@login_required
 def flowcells(request):
     flowcells = Flowcell.objects.filter(owner=request.user)
     return render(request, 'web/flowcells.html', context={'flowcells': flowcells})
-
-
-@login_required
-def run_index(request, pk):
-    minion_run = Run.objects.get(pk=pk)
-    return render(request, 'web/run_index.html', context={'minion_run': minion_run})
 
 
 @login_required
@@ -145,6 +143,8 @@ def flowcell_reads_data(request):
 
     query_columns_string = ['read_id', 'read', 'channel', 'sequence_length', 'run__runid', 'barcode__name']
 
+    flowcell_id = int(request.GET.get('flowcell_id', 0))
+
     draw = int(request.GET.get('draw', 0))
 
     search_value = request.GET.get('search[value]', '')
@@ -160,10 +160,33 @@ def flowcell_reads_data(request):
     order_dir = request.GET.get('order[0][dir]', '')
 
     if not search_value == "":
-        reads_temp = FastqRead.objects.filter(read_id__contains=search_value)
+
+        if search_value[0] == '>':
+
+            reads_temp = FastqRead.objects\
+                .filter(run__flowcell_id=flowcell_id)\
+                .filter(run__flowcell__owner=request.user)\
+                .filter(sequence_length__gt=search_value[1:])
+
+        elif search_value[0] == '<':
+
+            reads_temp = FastqRead.objects\
+                .filter(run__flowcell_id=flowcell_id) \
+                .filter(run__flowcell__owner=request.user)\
+                .filter(sequence_length__lt=search_value[1:])
+
+        else:
+
+            reads_temp = FastqRead.objects \
+                .filter(run__flowcell_id=flowcell_id) \
+                .filter(run__flowcell__owner=request.user) \
+                .filter(read_id__contains=search_value)
 
     else:
-        reads_temp = FastqRead.objects.all()
+
+        reads_temp = FastqRead.objects\
+            .filter(run__flowcell_id=flowcell_id)\
+            .filter(run__flowcell__owner=request.user)\
 
     if order_column:
 
@@ -192,11 +215,6 @@ def flowcell_reads_data(request):
 @login_required
 def remotecontrol(request):
     return render(request, 'web/remotecontrol.html')
-
-
-@login_required
-def sandbox(request):
-    return render(request, 'web/sandbox.html')
 
 
 class ExperimentList(ListView):

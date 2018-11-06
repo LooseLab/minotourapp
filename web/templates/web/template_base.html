@@ -119,11 +119,13 @@
 <script src="{% static 'web/js/flowcell/addMetaBarcodeTabs.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/libraries/d3/d3.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/libraries/d3-sankey/d3-sankey.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/libraries/moment.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/vis-d3/sankey.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/vis-d3/donutdothat.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/vis-d3/AllResultsTable.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/vis-d3/donutoTaberu.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/vis-d3/metaheader.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/vis-d3/mappingtable.js'%}?{% now 'c' %}"></script>
 
 <script src="{% static 'web/js/models/Message.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/controllers/MessageController.js' %}?{% now 'c' %}"></script>
@@ -132,6 +134,15 @@
 <script src="{% static 'web/js/controllers/AppController.js' %}?{% now 'c' %}"></script>
 
 <script src="{% static 'web/js/helpers/DateHelper.js' %}?{% now 'c' %}"></script>
+
+<script src="{% static 'web/js/models/Flowcell.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/models/MTask.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/models/MTaskList.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/models/MMessage.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/controllers/FlowcellController.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/controllers/MTaskController.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/views/MView.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/views/MMessageView.js' %}?{% now 'c' %}"></script>
 
 <!-- Highcharts -->
 <script src="https://code.highcharts.com/stock/highstock.js"></script>
@@ -151,7 +162,6 @@
 <script src="{% static 'web/ajax_setup.js' %}"></script>
 <script src="{% static 'web/minotour.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/monitor_app.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/minotour_app.js' %}?{% now 'c' %}"></script>
 
 <!-- Data tables -->
 <script src="{% static 'web/datatables/js/jquery.dataTables.min.js' %}"></script>

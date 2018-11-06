@@ -1,3 +1,4 @@
+<div id="messageView"></div>
 
 <div class="row">
     <div class="col-md-12">
@@ -8,7 +9,7 @@
             <div class='panel-body'>
 
 
-                <form method="post" id="post-form-task-create">
+                <form method="post" id="post-form-task-create" onsubmit="mTaskController.add(event)">
                     {% csrf_token %}
                     <input type="hidden" name="flowcell" value="{{ flowcell.id }}"/>
                     <div class="form-group">
@@ -20,7 +21,6 @@
                         <select class="form-control" name="reference" id="id_reference"></select>
                     </div>
 
-                    <div id="task_form_messages"></div>
                     <input type="submit" value="Create" class="btn btn-primary" id="btn_task_create">
 
                 </form>

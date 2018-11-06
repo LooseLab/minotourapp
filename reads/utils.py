@@ -1,3 +1,8 @@
+import math
+
+from dateutil import parser
+
+
 def get_coords(channel, flowcellsize):
 
     if flowcellsize==3000:
@@ -98,3 +103,34 @@ def flowcell_layout(channel):
                   509: (24, 11), 510: (24, 10), 511: (24, 9), 512: (24, 8)}
 
     return chanlookup[channel]
+
+
+def human_readable(number, suffix='b'):
+    """
+    :purpose: Convert bases to human readable format
+    :used_by: used by many
+    :author: Matt Loose
+
+    ChangeLog
+    2018-07-09 Add documentation
+    2018-10-25 Update the algorithm
+
+    """
+    for unit in ['', 'K', 'M', 'G', 'T']:
+
+        if abs(number) < 1024.0:
+
+            return "%3.1f%s%s" % (number, unit, suffix)
+
+        number /= 1024.0
+
+    return "%.1f%s%s" % (number, 'Y', suffix)
+
+
+def UTC_time_to_epoch(timestamp):
+    """
+    TODO describe function
+    """
+    dt = parser.parse(timestamp)
+
+    return dt.timestamp()*1000

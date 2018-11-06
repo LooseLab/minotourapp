@@ -1,19 +1,5 @@
 "use strict";
-// Redraw the SVGs on window resize
-let updateDonut;
 
-// $(window).on("resize", function(){
-//     let width = ($(window).width() * 0.25) - 50;
-//     let height = $(window).height() * 0.35;
-//     // Update the svg width and height
-//     d3.select(".donut-svg").attr("width", width);
-//     d3.select(".donut-svg").attr("height", height);
-//     // Get the flowcell id
-//     let inputFlowcellId = document.querySelector("#flowcell-id");
-//     let flowcellId = inputFlowcellId.value;
-//     // Redraw the donut
-//     drawDonut(flowcellId);
-// });
 
 // The panning and zooming function, called when you apply a call of zoom to the svg on initialisation
 function move() {
@@ -55,12 +41,6 @@ function drawPie(countedData, pie, arc, svg) {
         });
     // remove any slices held in the exit selection, that used to have DOM elements but now have no data for them
     slice.exit().remove();
-}
-// TODO this could be more effeicent as it is sometimes called unnecessarily;
-function topLevelDrawDonut(flowCellId){
-
-    drawDonut(flowCellId);
-
 }
 
 function drawDonut(flowCellId, selectedBarcode) {
@@ -165,5 +145,4 @@ function drawDonut(flowCellId, selectedBarcode) {
         // Draw a new pie chart
         drawPie(data1, pie, arc, svg);
     });
-    let timmyDonut = setTimeout(drawDonut, 60000, flowCellId, selectedBarcode);
 }

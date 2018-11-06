@@ -1,3 +1,15 @@
+function set_active_navbar_item(item_index) {
+
+    var nav_bar = document.querySelectorAll('.nav li')
+
+    nav_bar.forEach(function(element, index){
+
+        element.className = '';
+        if(index == item_index) element.className += 'active';
+    });
+}
+
+
 var FlowcellPageApp = {
 
     constructor () {
@@ -78,13 +90,14 @@ var FlowcellPageApp = {
         this.lastread = 0;
         this.needtoupdatecharts = false;
 
-        this.topLevelSankeyDrawer = topLevelSankeyDrawer;
-        this.topMetaHeader = topMetaHeader;
-        this.topLevelDrawDonut = topLevelDrawDonut;
-        this.topGetTotalReadsTable = topGetTotalReadsTable;
-        this.topGetDonutRankTable = topGetDonutRankTable;
+        this.drawSankey = drawSankey;
+        this.metaHeader = metaHeader;
+        this.drawDonut = drawDonut;
+        this.getTotalReadsTable = getTotalReadsTable;
+        this.drawDonutRankTable = drawDonutRankTable;
         this.flowcellTaskHistoryTable = flowcellTaskHistoryTable;
         this.addBarcodeTabs = addBarcodeTabs.bind(this);
+        this.update_mapping_table = update_mapping_table;
 
         this.updatePoreChart = updatePoreChart;
 

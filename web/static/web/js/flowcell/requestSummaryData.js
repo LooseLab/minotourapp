@@ -17,7 +17,7 @@ function requestSummaryData(id) {
         },
         error: function(e)
         {
-            alert('Error: ' + e);
+            console.log('Error: ' + e);
         }
     });
 };

@@ -1,23 +1,25 @@
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from centrifuge.models import CentOutput, CartographyMapped, LineageValues, MetaGenomicsMeta, \
-    SankeyLinks, CentOutputBarcoded, SankeyLinksBarcode
+    SankeyLinks, CentOutputBarcoded, BarcodedCartographyMapped
 from centrifuge.serializers import CartMappedSerialiser
 from django.utils import timezone
 from ete3 import NCBITaxa
 import pandas as pd
 from jobs.models import JobMaster
+from reads.models import Flowcell
 
+pd.options.mode.chained_assignment = None
 
 @api_view(["GET"])
 def metaview(request):
     """
-    :purpose: return the metadata displayed at the top of the page relating to the task data eing currently visualised
+    :purpose: return the metadata displayed at the top of the page relating to the task data being currently visualised
 
     :author: Rory
 
     :param request: A django rest framework request body object, contains the flowcell id as a query parameter
-    :return: A Response object, containg a list with the four data objects, Reads sequenced, Reads Classified,
+    :return: A Response object, containing a list with the four data objects, Reads sequenced, Reads Classified,
     Classified and the Runtime
     """
     # The flowcell id for the flowcell that the fastq data came from, default to False if not present
@@ -29,15 +31,20 @@ def metaview(request):
     task_id = max(task_ids)
     # If there is no MetaGenomicsMeta object return an empty list
     try:
-        queryset = MetaGenomicsMeta.objects.get(flowcell__id=flowcell_id,
-                                                task__id=task_id)
+        queryset = MetaGenomicsMeta.objects.filter(flowcell__id=flowcell_id,
+                                                   task__id=task_id).last()
     except MetaGenomicsMeta.DoesNotExist:
         return Response([], status=404)
 
+    try:
+        job_master = JobMaster.objects.get(pk=task_id)
+    except Exception as e:
+        return Response(e, status=500)
+
     number_of_reads = queryset.number_of_reads
-    reads_class = queryset.reads_classified
+    reads_class = job_master.read_count
     # Percentage of reads classified
-    percentage = reads_class / number_of_reads * 100
+    percentage = round(reads_class / number_of_reads * 100, 2)
     # Get the start time of the task, removing the timezone info
     start_time = queryset.timestamp.replace(tzinfo=None)
     # Get the current time, removing the timezone info
@@ -84,22 +91,17 @@ def cent_sankey_two(request):
 
     print("the flowcell is {}".format(flowcell_id))
     print("the barcode is {}".format(selected_barcode))
-    queryset = SankeyLinks.objects.filter(flowcell__id=flowcell_id, task__id=task_id).values()
+    queryset = SankeyLinks.objects.filter(flowcell__id=flowcell_id, task__id=task_id, barcode=selected_barcode).values()
     # If the queryset is empty, return an empty object
     if not queryset:
+        print("no queryset")
         return Response({}, status=204)
     # Create the dataframe from the results of the database query
     source_target_df = pd.DataFrame(list(queryset))
     # If the database is empty return an empty list
     if source_target_df.empty:
-        print("empty")
+        print("no source target")
         return Response({}, status=204)
-
-    barcode_df = pd.DataFrame(list(SankeyLinksBarcode.objects.filter(link__flowcell_id=flowcell_id,
-                                                                     link__task__id=task_id,
-                                                                     barcode=selected_barcode).values()))
-    # Merge barcode values onto dataframe
-    source_target_df = pd.merge(source_target_df, barcode_df, how="inner", on="tax_id")
     # get a subset df of all the species rows
     temp_species_df = source_target_df[source_target_df["target_tax_level"] == "species"]
     # get species limit (default 50) of the largest species
@@ -108,9 +110,8 @@ def cent_sankey_two(request):
     source_target_df = source_target_df[source_target_df["tax_id"].isin(temp_species_df["tax_id"])]
 
     # Drop unnecessary columns from DataFrame
-    print(source_target_df.keys())
-    source_target_df.drop(columns=["flowcell_id", "id_x", "id_y", "tax_id", "target_tax_level",
-                                   "task_id", "link_id"], inplace=True)
+    source_target_df.drop(columns=["flowcell_id", "tax_id", "target_tax_level",
+                                   "task_id"], inplace=True)
     # Set MultiIndex to group source to target
     source_target_df.set_index(["source", "target"], inplace=True)
     # Group by rows where the source and target are the same
@@ -158,6 +159,7 @@ def vis_table_or_donut_data(request):
     """
     flowcell_id = request.GET.get("flowcellId", 0)
     barcode = request.GET.get("barcode", "All reads")
+    print()
     # Get the most recent job
     task_id = max(JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics")
                   .values_list("id", flat=True))
@@ -165,21 +167,23 @@ def vis_table_or_donut_data(request):
 
     queryset = CentOutputBarcoded.objects.filter(output__flowcell__id=flowcell_id, output__task__id=task_id,
                                                  barcode=barcode)
+    barcode_list = list(set(CentOutputBarcoded.objects.filter(output__flowcell__id=flowcell_id, output__task__id=task_id)
+                            .values_list("barcode", flat=True)))
     # Create a dataframe from the results of the querying the database
     centoutput_df = pd.DataFrame(list(queryset.values()))
-
+    # if there is no data in the database (yet) return 204
+    if centoutput_df.empty:
+        return Response([], status=204)
     names = CentOutput.objects.filter(flowcell__id=flowcell_id, task__id=task_id).values()
 
     names_df = pd.DataFrame(list(names))
-
+    # if there is no names data
+    if names_df.empty:
+        return Response([], status=204)
     names_df.set_index("tax_id", inplace=True)
     centoutput_df.set_index("tax_id", inplace=True)
 
     centoutput_df["name"] = names_df["name"]
-
-    # if there is no data in the database (yet) return 204
-    if centoutput_df.empty:
-        return Response([], status=204)
     centoutput_df.drop(columns=["output_id"], inplace=True)
 
     # create dataframe of all the Lineages we have stored in the database
@@ -242,7 +246,6 @@ def vis_table_or_donut_data(request):
         -------
 
         """
-        print(clade)
         sumtitle = "summed_" + clade
         # create temp df with just the number of reads and the member of that clade
         temp_df = df[[clade, sumtitle]]
@@ -275,7 +278,7 @@ def vis_table_or_donut_data(request):
     if request.GET.get("visType", "") == "table":
         return_dict = json
     elif request.GET.get("visType", "") == "donut":
-        return_dict = {"result": container_array}
+        return_dict = {"result": container_array, "barcodes": barcode_list}
     else:
         return Response(status=400)
 
@@ -326,3 +329,89 @@ def get_or_set_cartmap(request):
                                   alert_level=0, red_reads=0).save()
 
         return Response("Hi there", status=200)
+
+
+@api_view(["POST", "GET"])
+def get_target_mapping(request):
+    """
+    Get the target species
+    :param request:
+    :return:
+    """
+    flowcell_id = request.GET.get("flowcellId", 0)
+    barcode = request.GET.get("barcode", "All reads")
+    if flowcell_id == 0:
+        return Response(status=404)
+
+    print("flowcell_id_id-{}".format(flowcell_id))
+    task_id = max(JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics")
+                  .values_list("id", flat=True))
+    if barcode == "All reads":
+        queryset = CartographyMapped.objects.filter(flowcell__id=flowcell_id,
+                                                    task__id=task_id, barcode=barcode).values()
+    else:
+        queryset = BarcodedCartographyMapped.objects.filter(cm__task__id=task_id, barcode=barcode).values()
+
+    species_list = CartographyMapped.objects.filter(flowcell__id=flowcell_id,
+                                                task__id=task_id).values_list("tax_id", flat=True)
+    cent_output = CentOutputBarcoded.objects.filter(output__task__id=task_id, tax_id__in=species_list,
+                                                    barcode="All reads").values()
+
+    results_df = pd.DataFrame(list(queryset))
+
+    cent_output_df = pd.DataFrame(list(cent_output))
+    # TODO sorted
+    if results_df.empty:
+        queryset = CartographyMapped.objects.filter(flowcell__id=flowcell_id,
+                                                    task__id=task_id).values()
+        results_df = pd.DataFrame(list(queryset))
+        results_df[["num_mapped", "red_reads", "red_sum_unique"]] = 0
+        results_df["Num. matches"] = 0
+        results_df["Sum. Unique"] = 0
+        results_df.rename(columns={"num_mapped": "Num. mapped",
+                                  "red_reads": "Danger reads",
+                                  "red_sum_unique": "Unique Danger reads",
+                                  "species": "Species",
+                                  "tax_id": "Tax id",
+                                  "num_matches": "Num. matches",
+                                  "sum_unique": "Sum. Unique"
+                                  }, inplace=True)
+        results = results_df.to_dict(orient="records")
+
+        return Response(results)
+
+    merger_df = pd.merge(results_df, cent_output_df, how="inner", left_on="tax_id", right_on="tax_id")
+    merger_df.drop(columns=["id_x", "id_y", "barcode_x", "barcode_y"], inplace=True)
+
+    merger_df.rename(columns={"num_mapped": "Num. mapped",
+                              "red_reads": "Danger reads",
+                              "red_sum_unique": "Unique Danger reads",
+                              "species": "Species",
+                              "tax_id": "Tax id",
+                              "num_matches": "Num. matches",
+                              "sum_unique": "Sum. Unique"
+                              }, inplace=True)
+
+    results = merger_df.to_dict(orient="records")
+
+    return Response(results)
+
+
+@api_view(['GET'])
+def metagenomic_barcodes(request, pk):
+
+    flowcell_list = Flowcell.objects.filter(owner=request.user).filter(id=pk)
+
+    metagenomic_barcodes = []
+
+    if flowcell_list.count() > 0:
+
+        flowcell = flowcell_list[0]
+
+        task = JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics").order_by('id').last()
+
+        if task:
+
+            metagenomic_barcodes = CentOutputBarcoded.objects.filter(output__task__id=task.id).values_list("barcode", flat=True).distinct()
+
+    return Response({"data": metagenomic_barcodes})

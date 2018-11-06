@@ -1,10 +1,11 @@
 from django.http import JsonResponse, HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
+from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 
 from jobs.models import JobType, JobMaster
-from jobs.serializers import JobMasterSerializer
+from jobs.serializers import JobMasterSerializer, JobMasterInsertSerializer
 from reads.models import Run
 from reference.models import ReferenceInfo
 from web.forms import TaskForm
@@ -30,19 +31,17 @@ def task_list(request):
                 "data": serializer.data
             }
             return JsonResponse(result)
+
         else:
             return JsonResponse({"data": []})
 
     else:
 
-        form = TaskForm(data=request.POST)
+        serializer = JobMasterInsertSerializer(data=request.data)
 
-        print(request.POST)
-        print(form)
+        if serializer.is_valid():
 
-        if form.is_valid():
-
-            task = form.save()
+            task = serializer.save()
 
             response_data = {}
             response_data['message'] = "Create task successful!"
@@ -52,7 +51,7 @@ def task_list(request):
 
         else:
 
-            return JsonResponse({'error_messages': form.errors.as_json()}, status=500)
+            return JsonResponse({'error_messages': serializer.errors}, status=500)
 
 
 @api_view(['GET'])

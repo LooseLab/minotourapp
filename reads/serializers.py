@@ -115,6 +115,27 @@ class MinIONEventTypeSerializer(serializers.HyperlinkedModelSerializer):
         read_only = ('id',)
 
 
+class FastqReadGetSerializer(serializers.HyperlinkedModelSerializer):
+
+    class Meta:
+        model = FastqRead
+        fields = (
+            'url',
+            'read_id',
+            'read',
+            'channel',
+            'barcode',
+            'barcode_name',
+            'sequence_length',
+            'quality_average',
+            'is_pass',
+            'start_time',
+            'run',
+            'type',
+            'created_date'
+        )
+
+
 class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
 
     sequence = serializers.CharField(allow_blank=True)
@@ -448,11 +469,13 @@ class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
 
     runs = RunSerializer(many=True, read_only=False, required=False)
 
+
+
     class Meta:
 
         model = Flowcell
 
-        fields = ('url', 'name', 'runs', 'barcodes', 'id')
+        fields = ('url', 'name', 'runs', 'barcodes', 'id', 'has_fastq')
 
     def create(self, validated_data):
 
@@ -486,38 +509,6 @@ class GroupRunSerializer(serializers.HyperlinkedModelSerializer):
 
         model = GroupRun
         fields = ('id', 'url', 'name', 'device', 'runs')
-
-
-class GroupRunMembershipSerializer(serializers.Serializer):
-
-    grouprun_id = serializers.IntegerField()
-    run_id = serializers.IntegerField()
-
-    # grouprun = serializers.HyperlinkedRelatedField(
-    #     view_name='grouprun-detail',
-    #     queryset=GroupRun.objects.all()  # we should include a filter here
-    # )
-
-    # class Meta:
-    #
-    #     model = Run
-    #     fields = ('url', 'grouprun')
-
-    def create(self, validated_data):
-
-        print('>>> validated_data')
-        print(validated_data)
-        print('<<< validated_data')
-        #self.run.groupruns.add(self.grouprun)
-
-        return GroupRun.objects.all()[0]
-
-
-
-    # class Meta:
-    #
-    #     fields = ('grouprun', 'run')
-    #
 
 
 class FlowcellSummaryBarcodeSerializer(serializers.ModelSerializer):

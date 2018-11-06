@@ -157,9 +157,9 @@ REST_FRAMEWORK = {
     )
 }
 
-LOGIN_URL='/login'
-LOGIN_REDIRECT_URL='/web/private/index'
-LOGOUT_REDIRECT_URL=LOGIN_URL
+LOGIN_URL = '/login'
+LOGIN_REDIRECT_URL = '/web/private/flowcells'
+LOGOUT_REDIRECT_URL = LOGIN_URL
 
 # EMAIL_BACKEND = 'django_mailgun.MailgunBackend'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -227,7 +227,6 @@ TWITCONSUMER_SECRET=get_env_variable("MT_TWITCONSUMER_SECRET")
 
 # Variables for storing additonal files
 # References
-# REFERENCELOCATION = get_env_variable("MT_REFERENCE_LOCATION")
 REFERENCE_LOCATION = get_env_variable("MT_REFERENCE_LOCATION")
 
 if REFERENCE_LOCATION == '':
