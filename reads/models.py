@@ -99,6 +99,11 @@ class Flowcell(models.Model):
         blank=True
     )
 
+    has_fastq = models.BooleanField(
+
+        default=True
+    )
+
     def barcodes(self):
 
         barcode_set = set()

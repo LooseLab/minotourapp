@@ -9,6 +9,7 @@ from django.utils import timezone
 
 import pandas as pd
 from jobs.models import JobMaster
+from reads.models import Flowcell
 
 pd.options.mode.chained_assignment = None
 
@@ -387,3 +388,23 @@ def get_target_mapping(request):
     results = merger_df.to_dict(orient="records")
 
     return Response(results)
+
+
+@api_view(['GET'])
+def metagenomic_barcodes(request, pk):
+
+    flowcell_list = Flowcell.objects.filter(owner=request.user).filter(id=pk)
+
+    metagenomic_barcodes = []
+
+    if flowcell_list.count() > 0:
+
+        flowcell = flowcell_list[0]
+
+        task = JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics").order_by('id').last()
+
+        if task:
+            metagenomic_barcodes = CentrifugeOutput.objects.filter(output__task__id=task.id)\
+                .values_list("barcode", flat=True).distinct()
+
+    return Response({"data": metagenomic_barcodes})

@@ -1,6 +1,9 @@
+"""
+urls.py
+"""
 from django.conf.urls import url
-
 from centrifuge.views import centrifuge_sankey, vis_table_or_donut_data, centrifuge_metadata, get_target_mapping
+from centrifuge import views
 
 urlpatterns = [
     # Return all the data for the sankey diagram in the correct form, called from sankey.js in the web app
@@ -12,5 +15,6 @@ urlpatterns = [
     # Return the data for the header containing metadata at the top of the vis page
     url(r"^centrifuge_metadata/$", centrifuge_metadata),
     # Return the data on for the target table
-    url(r"^mapped_targets/$", get_target_mapping)
+    url(r"^mapped_targets/$", get_target_mapping),
+    url(r'^api/v1/flowcells/(?P<pk>[0-9]+)/metagenomic_barcodes/$', views.metagenomic_barcodes),
 ]

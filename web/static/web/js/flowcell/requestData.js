@@ -6,7 +6,7 @@ function requestData(flowcell_id) {
 
     var url_run = '/api/v1/flowcells/' + flowcell_id + '/';
     $.get(url_run, (function (result) {
-        console.log(result);
+
         let data = result.data;
         let meta_barcodes= result.meta_barcodes;
         var barcodes = new Set();
@@ -16,8 +16,6 @@ function requestData(flowcell_id) {
         }
 
         var flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
-
-        console.log(flowcell_selected_tab_input.value);
 
         if (flowcell_selected_tab_input.value == 'Summary') {
 
@@ -52,7 +50,7 @@ function requestData(flowcell_id) {
         } else if (flowcell_selected_tab_input.value == 'Metagenomics') {
             // The intervals for updating the charts are found in the individual files in the vis-d3 directory
             // SO you are on the Metagenomics tab
-            console.log("MetagaaaaaaGenomics");
+
             if (selected_barcode == '') {
                 set_selected_barcode('All reads');
             }
