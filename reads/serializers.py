@@ -14,7 +14,7 @@ class FastqFileSerializer(serializers.HyperlinkedModelSerializer):
         model = FastqFile
         fields = (
             'url',
-            #'id',
+            'id',
             'name',
             'runid',
             'md5',

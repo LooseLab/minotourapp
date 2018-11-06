@@ -176,9 +176,8 @@ def fastq_file(request,pk):
             runid = request.data["runid"],
             name = request.data["name"],
             owner = request.user,
-            run=run
         )
-
+        obj.run = run
         obj.md5 = request.data["md5"]
 
 
@@ -946,7 +945,8 @@ def flowcell_detail(request, pk):
 
         if len(flowcell_list) != 1:
 
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            #return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response({"data": {}} )
 
         # TODO updated this, check with Roberto that this is cool
 
