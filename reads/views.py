@@ -235,8 +235,6 @@ def activeminion_list(request):
 
             last_minion_event = minion_event_list.last()
 
-            print('>>> Minion: {}, last event type: {}'.format(minion.name, last_minion_event.event.name))
-
             if last_minion_event.event.name != 'unplugged':
 
                 active_minion_list.append(minion)
@@ -877,7 +875,7 @@ def flowcell_detail(request, pk):
 
         if len(flowcell_list) != 1:
 
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return Response({'data': {}})
 
         # TODO updated this, check with Roberto that this is cool
 
@@ -1276,8 +1274,6 @@ def flowcell_run_stats_latest(request, pk, checkid):
         else:
 
             element['minKNOW_colours_string'] = None
-
-        print(element)
 
         result.append(element)
 
