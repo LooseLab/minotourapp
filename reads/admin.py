@@ -4,7 +4,8 @@ from .models import (Barcode, FastqRead, FastqReadType,
                      MinIONControl, MinIONEvent, MinIONEventType,
                      MinionMessage, MinIONRunStats, MinIONRunStatus,
                      MinIONScripts, MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
-                     RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellStatisticBarcode, FlowcellSummaryBarcode)
+                     RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellStatisticBarcode, FlowcellSummaryBarcode,
+                     FlowcellTab)
 
 
 class RunStatisticsBarcodeAdmin(admin.ModelAdmin):
@@ -23,6 +24,7 @@ admin.site.register(FastqRead)
 admin.site.register(FastqReadType)
 admin.site.register(FlowcellStatisticBarcode)
 admin.site.register(FlowcellSummaryBarcode)
+admin.site.register(FlowcellTab)
 admin.site.register(Run)
 admin.site.register(MinIONEventType)
 admin.site.register(MinIONEvent)

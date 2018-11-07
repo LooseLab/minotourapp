@@ -6,7 +6,8 @@ from reads.models import (Barcode, FastqRead, FastqReadExtra,
                           MinIONEvent, MinIONEventType, MinionMessage,
                           MinIONRunStats, MinIONRunStatus, MinIONScripts,
                           MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
-                          RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellSummaryBarcode, Flowcell, MinION)
+                          RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellSummaryBarcode, Flowcell, MinION,
+                          FlowcellTab)
 
 
 class UserOptionsSerializer(serializers.ModelSerializer):
@@ -531,3 +532,11 @@ class FlowcellSummaryBarcodeSerializer(serializers.ModelSerializer):
         )
 
         read_only = ('id',)
+
+
+
+class FlowcellTabSerializer(serializers.ModelSerializer):
+
+    class Meta:
+         model = FlowcellTab
+         fields = '__all__'
