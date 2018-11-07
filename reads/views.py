@@ -20,7 +20,7 @@ from centrifuge.models import CentOutputBarcoded
 
 from jobs.models import JobMaster, JobType
 from minotourapp import settings
-from reads.models import (Barcode, FastqRead, FastqReadType,
+from reads.models import (Barcode, FastqFile, FastqRead, FastqReadType,
                           MinIONControl, MinIONEvent,
                           MinIONEventType, MinionMessage, MinIONRunStats,
                           MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun, FlowcellStatisticBarcode,
@@ -28,7 +28,7 @@ from reads.models import (Barcode, FastqRead, FastqReadType,
 from reads.models import FlowcellChannelSummary
 from reads.models import FlowcellHistogramSummary
 from reads.serializers import (BarcodeSerializer,
-                               ChannelSummarySerializer, FastqReadSerializer,
+                               ChannelSummarySerializer, FastqFileSerializer, FastqReadSerializer,
                                FastqReadTypeSerializer, FlowcellSerializer, MinIONControlSerializer,
                                MinIONEventSerializer,
                                MinIONEventTypeSerializer,
@@ -127,6 +127,74 @@ def events_type_detail(request, pk): # TODO consider removing
 
     serializer = MinIONEventTypeSerializer(event_, context={'request': request})
     return Response(serializer.data)
+
+
+
+@api_view(['GET'])
+def fastq_detail(request,pk):
+    """
+
+    :param request:
+    :param pk: fastqid
+    :return:
+    """
+    queryset = FastqFile.objects.filter(runid=pk)
+    serializer = FastqFileSerializer(queryset, many=True, context={'request': request})
+    return Response(serializer.data)
+
+@api_view(['GET','POST'])
+def fastq_file(request,pk):
+    """
+    :purpose: returns an md5 checksum for a file as seen by minotour for a specific run id
+    :used_by: minotour client gets data and checks observed files against it.
+    :author: Matt Loose
+
+    :param request: (standard django request) without querystring parameter
+    :param pk: pk is the runid
+
+    :return: (str) json format
+    """
+    '''if request.method == "GET":
+        try:
+            queryset = FastqFile.objects.filter(runid=pk)
+            serializer = FastqFileSerializer(queryset, many=True, context={'request': request})
+            return Response(serializer.data)
+        except FastqFile.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+    '''
+
+    if request.method == 'GET':
+        queryset = FastqFile.objects \
+            .filter(runid=pk)
+
+        serializer = FastqFileSerializer(queryset, many=True, context={'request': request})
+
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+
+        run = Run.objects.filter(runid=request.data["runid"]).filter(owner=request.user).first()
+
+        obj,created = FastqFile.objects.get_or_create(
+            runid = request.data["runid"],
+            name = request.data["name"],
+            owner = request.user,
+        )
+        obj.run = run
+        obj.md5 = request.data["md5"]
+
+
+        obj.save()
+
+        serializer = FastqFileSerializer(obj, context={'request': request})
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 @api_view(['GET', 'POST'])
@@ -639,7 +707,7 @@ def read_list(request, pk):
 
         querysets = FastqRead.objects.filter(run_id=pk)
 
-        serializer = FastqReadSerializer(querysets, many=True, context={'request': request})
+        serializer = FastqReadGetSerializer(querysets, many=True, context={'request': request})
 
         return Response(serializer.data)
 
@@ -709,7 +777,7 @@ def readname_list(request, pk):
     This could be a source of confusion and we should resolve.
     """
     if request.method == 'GET':
-        queryset = FastqRead.objects.filter(run_id=pk).order_by('id')
+        queryset = FastqRead.objects.filter(fastqfile_id=pk).order_by('id')
 
         paginator = Paginator(queryset, settings.PAGINATION_PAGE_SIZE)
 
@@ -879,6 +947,7 @@ def flowcell_detail(request, pk):
         if len(flowcell_list) != 1:
 
             return Response({'data': {}})
+
 
         # TODO updated this, check with Roberto that this is cool
 
@@ -1499,6 +1568,11 @@ def grouprun_membership_list(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
+@api_view(['GET'])
+def read_detail(request,pk):
+    return Response({})
+
+
 @api_view(['GET', 'POST'])
 def read_list_new(request):
 
@@ -1515,6 +1589,11 @@ def read_list_new(request):
         if search_criteria == 'run':
 
             qs = FastqRead.objects.filter(run__id=search_value)[offset:offset + limit]
+
+        elif search_criteria == 'fastqfile':
+
+            qs = FastqRead.objects.filter(fastqfile_id=search_value)[offset:offset + limit]
+
 
         else:
 
