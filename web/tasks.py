@@ -539,6 +539,23 @@ def update_run_start_time():
 
 
 @task
+def update_flowcell_list_details():
+
+    flowcell_list = Flowcell.objects.filter(is_active=True)
+
+    for flowcell in flowcell_list:
+
+        flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell)
+
+        for flowcell_job in flowcell_job_list:
+
+            if flowcell_job.job_type.name == "UpdateFlowcellDetails":
+
+                if not flowcell_job.running:
+
+                    update_flowcell_details(flowcell.id, flowcell_job.id)
+
+
 def update_flowcell_details(flowcell_id, job_master_id):
     """
     This task updates the flowcell details (number of runs, number of reads, sample name)
