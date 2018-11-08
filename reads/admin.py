@@ -4,7 +4,7 @@ from .models import (Barcode, FastqFile, FastqRead, FastqReadType,
                      MinIONControl, MinIONEvent, MinIONEventType,
                      MinionMessage, MinIONRunStats, MinIONRunStatus,
                      MinIONScripts, MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
-                     RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellStatisticBarcode, FlowcellSummaryBarcode,
+                     RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellHistogramSummary, FlowcellStatisticBarcode, FlowcellSummaryBarcode,
                      FlowcellTab)
 
 
@@ -25,6 +25,7 @@ admin.site.register(FastqFile)
 admin.site.register(FastqReadType)
 admin.site.register(FlowcellStatisticBarcode)
 admin.site.register(FlowcellSummaryBarcode)
+admin.site.register(FlowcellHistogramSummary)
 admin.site.register(FlowcellTab)
 admin.site.register(Run)
 admin.site.register(MinIONEventType)
