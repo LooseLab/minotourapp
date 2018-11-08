@@ -2127,6 +2127,50 @@ class FlowcellSummaryBarcode(models.Model):
         return len(self.channel_presence.replace('0', ''))
 
 
+class FlowcellTab(models.Model):
+
+    #
+    # tab choices
+    #
+
+    SUMMARY = 'SU'
+    LIVE_EVENT = 'LE'
+    BASECALLED = 'BC'
+    READ_DATA = 'RD'
+    MAPPING = 'MA'
+    ASSEMBLY = 'AS'
+    METAGENOMICS = 'ME'
+    TASK = 'TA'
+
+    TAB_CHOICES = (
+        (SUMMARY, 'Summary'),
+        (LIVE_EVENT, 'Live Event Data'),
+        (BASECALLED, 'Basecalled Data'),
+        (READ_DATA, 'Read Data'),
+        (MAPPING, 'Sequence Mapping'),
+        (ASSEMBLY, 'Assembly'),
+        (METAGENOMICS, 'Metagenomics'),
+        (TASK, 'Tasks'),
+    )
+
+    flowcell = models.ForeignKey(
+
+        Flowcell,
+        related_name='tabs',
+        on_delete=models.CASCADE
+    )
+
+    tab = models.CharField(
+
+        max_length=2,
+        choices=TAB_CHOICES
+    )
+
+    def __str__(self):
+        return '{} - {}'.format(self.flowcell.id, self.tab)
+
+
+
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
     """

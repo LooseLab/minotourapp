@@ -6,7 +6,8 @@ from reads.models import (Barcode, FastqFile, FastqRead, FastqReadExtra,
                           MinIONEvent, MinIONEventType, MinionMessage,
                           MinIONRunStats, MinIONRunStatus, MinIONScripts,
                           MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
-                          RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellSummaryBarcode, Flowcell, MinION)
+                          RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellSummaryBarcode, Flowcell, MinION,
+                          FlowcellTab)
 
 
 class FastqFileSerializer(serializers.HyperlinkedModelSerializer):
@@ -510,6 +511,12 @@ class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
                 last_read=0
             )
 
+            JobMaster.objects.create(
+                flowcell=flowcell,
+                job_type=JobType.objects.filter(name="UpdateFlowcellDetails"),
+                last_read=0
+            )
+
         return flowcell
 
 
@@ -546,3 +553,11 @@ class FlowcellSummaryBarcodeSerializer(serializers.ModelSerializer):
         )
 
         read_only = ('id',)
+
+
+
+class FlowcellTabSerializer(serializers.ModelSerializer):
+
+    class Meta:
+         model = FlowcellTab
+         fields = '__all__'

@@ -14,6 +14,8 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from centrifuge.models import CentOutputBarcoded
 
 from jobs.models import JobMaster, JobType
@@ -22,7 +24,7 @@ from reads.models import (Barcode, FastqFile, FastqRead, FastqReadType,
                           MinIONControl, MinIONEvent,
                           MinIONEventType, MinionMessage, MinIONRunStats,
                           MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun, FlowcellStatisticBarcode,
-                          FlowcellSummaryBarcode, Flowcell, MinION)
+                          FlowcellSummaryBarcode, Flowcell, MinION, FlowcellTab)
 from reads.models import FlowcellChannelSummary
 from reads.models import FlowcellHistogramSummary
 from reads.serializers import (BarcodeSerializer,
@@ -38,7 +40,8 @@ from reads.serializers import (BarcodeSerializer,
                                RunSerializer,
                                RunStatisticBarcodeSerializer,
                                RunSummaryBarcodeSerializer, ChannelSummary, RunStatisticBarcode, RunSummaryBarcode,
-                               GroupRunSerializer, FlowcellSummaryBarcodeSerializer, FastqReadGetSerializer)
+                               GroupRunSerializer, FlowcellSummaryBarcodeSerializer, FastqReadGetSerializer,
+                               FlowcellTabSerializer)
 from reads.utils import get_coords
 
 
@@ -1674,3 +1677,14 @@ def version(request):
     }
 
     return HttpResponse(json.dumps(version), content_type="application/json")
+
+
+class FlowcellTabList(APIView):
+
+    def get(self, request, pk):
+
+        flowcell_tab_list = FlowcellTab.objects.all()
+
+        data = FlowcellTabSerializer(flowcell_tab_list, many=True).data
+
+        return Response(data)
