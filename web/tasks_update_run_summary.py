@@ -50,6 +50,13 @@ def update_run_summary():
 
                     run_summary = run_summary_list[0]
 
+                else:
+
+                    run_summary = RunSummary.objects.create(
+
+                        run=run
+                    )
+
             except RunSummary.DoesNotExist:
 
                 run_summary = RunSummary.objects.create(

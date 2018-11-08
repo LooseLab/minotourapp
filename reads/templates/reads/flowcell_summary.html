@@ -11,7 +11,7 @@
     <td align="right"><strong>Maximum read length</strong></td>
     </thead>
     <tbody>
-    {% for record in qs|dictsort:"barcode_name" %}
+    {% for record in qs|dictsort:"status"|dictsort:"barcode_name" %}
         <tr>
             <td>{{ record.barcode_name }}</td>
             <td>{{ record.read_type_name }}</td>

@@ -996,6 +996,8 @@ def flowcell_summary_html(request, pk):
         .filter(flowcell=flowcell) \
         .exclude(barcode_name='No barcode')
 
+    ### Manipulate qs to add in missing records?!
+
     return render(request, 'reads/flowcell_summary.html', {'qs': qs})
 
 
