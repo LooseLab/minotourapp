@@ -513,7 +513,7 @@ class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
 
             JobMaster.objects.create(
                 flowcell=flowcell,
-                job_type=JobType.objects.filter(name="UpdateFlowcellDetails"),
+                job_type=JobType.objects.filter(name="UpdateFlowcellDetails")[0],
                 last_read=0
             )
 

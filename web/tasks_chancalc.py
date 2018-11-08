@@ -28,10 +28,10 @@ def chancalc(flowcell_id, job_master_id, last_read):
 
     fastqlen = len(fastq_df_barcode)
 
-    new_last_read = fastq_df_barcode.iloc[-1]['id']
+
 
     if fastqlen > 0:
-
+        new_last_read = fastq_df_barcode.iloc[-1]['id']
         #
         # if read_count = 0, then delete summaries
         #
