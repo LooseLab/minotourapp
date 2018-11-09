@@ -1,18 +1,35 @@
 {#{% load humanize %}#}
 
-<table class="table">
+<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab" id="headingOne">
+      <h4 class="panel-title">
+        <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+          All Reads Summary
+        </a>
+      </h4>
+    </div>
+    <div id="collapseOne" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+      <div class="panel-body">
+        <table class="table table-condensed table-hover">
     <thead>
     <th>Barcode</th>
     <th>Read type</th>
-    <th>Status</th>
+    <th>Pass/Fail</th>
     <td align="right"><strong>Reads called</strong></td>
     <td align="right"><strong>Yield</strong></td>
     <td align="right"><strong>Average read length</strong></td>
     <td align="right"><strong>Maximum read length</strong></td>
     </thead>
     <tbody>
-    {% for record in qs|dictsort:"status"|dictsort:"barcode_name" %}
-        <tr>
+    {% for record in qs|dictsortreversed:"status"|dictsort:"barcode_name" %}
+        {% if record.barcode_name == "All reads" %}
+
+        {% if record.status == "True" %}
+        <tr class="success">
+            {% else %}
+        <tr class="danger">
+        {%  endif %}
             <td>{{ record.barcode_name }}</td>
             <td>{{ record.read_type_name }}</td>
             <td>
@@ -27,7 +44,67 @@
             <td align="right">{{ record.average_read_length|floatformat:"0" }}</td>
             <td align="right">{{ record.max_length }}</td>
         </tr>
+        {% endif %}
     {% endfor %}
 
     </tbody>
 </table>
+      </div>
+    </div>
+  </div>
+  <div class="panel panel-default">
+    <div class="panel-heading" role="tab" id="headingTwo">
+      <h4 class="panel-title">
+        <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+          Read Summary by Barcode
+        </a>
+      </h4>
+    </div>
+    <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+      <div class="panel-body">
+        <table class="table table-condensed table-hover">
+    <thead>
+    <th>Barcode</th>
+    <th>Read type</th>
+    <th>Pass/Fail</th>
+    <td align="right"><strong>Reads called</strong></td>
+    <td align="right"><strong>Yield</strong></td>
+    <td align="right"><strong>Average read length</strong></td>
+    <td align="right"><strong>Maximum read length</strong></td>
+    </thead>
+    <tbody>
+    {% for record in qs|dictsortreversed:"status"|dictsort:"barcode_name" %}
+        {% if record.barcode_name != "All reads" %}
+
+        {% if record.status == "True" %}
+        <tr class="success">
+            {% else %}
+        <tr class="danger">
+        {%  endif %}
+            <td>{{ record.barcode_name }}</td>
+            <td>{{ record.read_type_name }}</td>
+            <td>
+                {% if record.status == "True" %}
+                Pass
+                {% else %}
+                Fail
+                {% endif %}
+            </td>
+            <td align="right">{{ record.read_count }}</td>
+            <td align="right">{{ record.total_length }}</td>
+            <td align="right">{{ record.average_read_length|floatformat:"0" }}</td>
+            <td align="right">{{ record.max_length }}</td>
+        </tr>
+        {% endif %}
+    {% endfor %}
+
+    </tbody>
+</table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
