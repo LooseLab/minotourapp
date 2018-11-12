@@ -17,8 +17,9 @@
 
         <section class="content">
 
-            <ul class="nav nav-tabs">
+            <ul class="nav nav-pills nav-tabs">
 
+                <!--
                 <li class="active">
                     <a class="flowcell-tab" id='#nav-summary-data' href="#tab-summary-data" data-toggle="tab">Summary</a>
                 </li>
@@ -42,13 +43,13 @@
                 </li>
                 <li id="tasks-li">
                     <a class="flowcell-tab" id="#nav-tasks" href="#tab-tasks" data-toggle="tab">Tasks</a>
-                </li>
+                </li>-->
             </ul>
 
             <br/>
 
             <div class="tab-content">
-                <div id="tab-summary-data" class="tab-pane active">
+                <div class="tab-pane fade" id="panel-summary-data" role="tabpanel" aria-labelledby="nav-summary-data">
                     {% include "web/flowcell/summary-tab.html" %}
                 </div>
 
@@ -60,7 +61,7 @@
                     {% include "web/flowcell/tab-reads.html" %}
                 </div>
 
-                <div id="tab-basecalled-data" class="tab-pane fade">
+                <div class="tab-pane fade" id="panel-basecalled-data" role="tabpanel" aria-labelledby="nav-basecalled-data">
                     {% include "web/flowcell/basecalled-tab.html" %}
                 </div>
 

@@ -1458,34 +1458,49 @@ def flowcell_tabs_details(request, pk):
         }
     }
 
-    tabs = list()
+    tabs = ['Summary', 'Tasks']
 
-    tabs_send = list()
+    #
+    # Check for basecalled data
+    #
+    flowcell_summary_barcode_list = FlowcellSummaryBarcode.objects.filter(flowcell__id=pk)
 
-    flowcell = Flowcell.objects.get(pk=pk)
+    if flowcell_summary_barcode_list.count() > 0:
 
-    run_list = Run.objects.filter(flowcell=flowcell)
+        tabs.append('Basecalled Data')
 
-    if MinIONRunStatus.objects.filter(run_id__in=run_list):
+    minion_run_stats_list = MinIONRunStats.objects.filter(run_id__flowcell__id=pk)
 
-        tabs.append(flowcell_tabs_dict['LiveEvent'])
+    if minion_run_stats_list.count() > 0:
 
-    for master in JobMaster.objects.filter(Q(run__in=run_list) | Q(flowcell=flowcell)).filter(last_read__gt=0).values_list('job_type__name', flat=True):
-        if master in flowcell_tabs_dict.keys():
+        tabs.append('Live Event Data')
 
-            tabs.append(flowcell_tabs_dict[master])
+    # tabs_send = list()
+    #
+    # flowcell = Flowcell.objects.get(pk=pk)
+    #
+    # run_list = Run.objects.filter(flowcell=flowcell)
+    #
+    # if MinIONRunStatus.objects.filter(run_id__in=run_list):
+    #
+    #     tabs.append(flowcell_tabs_dict['LiveEvent'])
+    #
+    # for master in JobMaster.objects.filter(Q(run__in=run_list) | Q(flowcell=flowcell)).filter(last_read__gt=0).values_list('job_type__name', flat=True):
+    #     if master in flowcell_tabs_dict.keys():
+    #
+    #         tabs.append(flowcell_tabs_dict[master])
+    #
+    #     else:
+    #
+    #         print("Flowcell '" + pk + "' has JobType '" + master + "' but there is no corresponding tab defined in reads/views.py")
+    #
+    # for tab in tabs:
+    #
+    #     if tab not in tabs_send:
+    #
+    #         tabs_send.append(tab)
 
-        else:
-
-            print("Flowcell '" + pk + "' has JobType '" + master + "' but there is no corresponding tab defined in reads/views.py")
-
-    for tab in tabs:
-
-        if tab not in tabs_send:
-
-            tabs_send.append(tab)
-
-    return Response(tabs_send)
+    return Response(tabs)
 
 
 @api_view(['GET', 'POST'])
