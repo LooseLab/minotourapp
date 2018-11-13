@@ -4,9 +4,9 @@ views.py
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from centrifuge.models import CentrifugeOutput, MappingResult, LineageValue, Metadata, \
-    SankeyLink, CentrifugeOutputBarcoded, MappingResultsBarcoded
+    SankeyLink, MappingResultsBarcoded, DonutData
 from django.utils import timezone
-
+from django.http import JsonResponse
 import pandas as pd
 from jobs.models import JobMaster
 from reads.models import Flowcell
@@ -31,14 +31,19 @@ def centrifuge_metadata(request):
     job_master = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last()
 
     if not job_master:
-        return Response("No Centrifuge tasks. This is not the API you are looking for....")
+        return Response("No Centrifuge tasks. This is not the API you are looking for....", status=404)
 
     # If there is no MetaGenomicsMeta object return an error
     try:
         queryset = Metadata.objects.filter(task__id=job_master.id).last()
     except Metadata.DoesNotExist as e:
         return Response(e, status=404)
+
+    if not queryset:
+        return Response("No Metadata. This is not the task you are looking for....", status=404)
+
     number_of_reads = job_master.flowcell.number_reads
+
     reads_class = job_master.read_count
     # Percentage of reads classified
     percentage = round(reads_class / number_of_reads * 100, 2)
@@ -64,7 +69,6 @@ def centrifuge_metadata(request):
 
 @api_view(["GET"])
 def centrifuge_sankey(request):
-
     # TODO refactor logic into centrifuge.py
     """
     :purpose: Query the database for the sankeyLink data, return the top 50 Lineages
@@ -158,160 +162,42 @@ def vis_table_or_donut_data(request):
     visType  - Whether this is a a request for donut chart or results table data
     :return:
     """
+
     flowcell_id = request.GET.get("flowcellId", 0)
 
     barcode = request.GET.get("barcode", "All reads")
     # Get the most recent job
-    task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last().id
-    # queryset from database, filtered by the flowcell_id and the corresponding JobMaster ID
+    task = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last()
+    results_df = pd.DataFrame()
 
-    queryset = CentrifugeOutputBarcoded.objects.filter(
-        output__task__id=task_id,
-        barcode_name=barcode)
+    tax_rank_filter = ["superkingdom", "phylum", "classy", "order", "family", "genus", "species"]
 
-    barcode_list = list(CentrifugeOutputBarcoded.objects.filter(
-        output__task__id=task_id)
-                        .values_list("barcode_name", flat=True).distinct())
+    for rank in tax_rank_filter:
+        data_df = pd.DataFrame(
+            list(DonutData.objects.filter(task=task, tax_rank=rank,
+                                          barcode_name=barcode).order_by("-num_matches")[:10].values()))
+        results_df = results_df.append(data_df)
 
-    # Create a dataframe from the results of the querying the database
-    centrifuge_output_barcoded_df = pd.DataFrame(list(queryset.values()))
+    if results_df.empty:
+        return Response("No results", status=204)
 
-    # if there is no data in the database (yet) return 204
-    if centrifuge_output_barcoded_df.empty:
-        return Response([], status=204)
+    results_df = results_df[["tax_rank", "name", "num_matches"]]
 
-    species_names = CentrifugeOutput.objects.filter(task__id=task_id).values()
+    results_df = results_df.rename(columns={"name": "label", "num_matches": "value"})
 
-    species_names_df = pd.DataFrame(list(species_names))
-    # if there is no species_names data
-    if species_names_df.empty:
-        return Response([], status=204)
+    results_df.fillna("Unclassified", inplace=True)
 
-    species_names_df.set_index("tax_id", inplace=True)
+    gb = results_df.groupby("tax_rank")
 
-    centrifuge_output_barcoded_df.set_index("tax_id", inplace=True)
+    return_dict = {}
 
-    centrifuge_output_barcoded_df["name"] = species_names_df["name"]
+    for name, group in gb:
+        return_dict[name] = group.to_dict(orient="records")
 
-    centrifuge_output_barcoded_df.drop(columns=["output_id"], inplace=True)
-
-    # create dataframe of all the Lineages we have stored in the database
-    lineages_df = pd.DataFrame(list(LineageValue.objects.all().values()))
-    # get relevant taxids, so dataframe of only lineages for taxIDs that are in the output of this centrifuge run
-    lineages_df = lineages_df[lineages_df['tax_id'].isin(centrifuge_output_barcoded_df.index.values)]
-    # Create the new columns in the dataframe for num_matches and num_unique matches
-    lineages_df.set_index("tax_id", inplace=True)
-
-    lineages_df["num_matches"] = centrifuge_output_barcoded_df["num_matches"]
-
-    lineages_df["sum_unique"] = centrifuge_output_barcoded_df["sum_unique"]
-
-    # try and uniform missing values
-    lineages_df = lineages_df.replace("nan", "Unclassified")
-
-    lineages_df = lineages_df.replace("None", "Unclassified")
-
-    lineages_df = lineages_df.fillna("Unclassified")
-    # The order that the phyla go in
-    # TODO add in substrain and subspecies when centrifuge index contains them
-    order = ["superkingdom", "phylum", "classy", "order", "family", "genus", "species"]
-
-    def sum_prop_clade_reads(clade, df):
-        """
-        I wrote this function in Manchester! It rained. It calculates the sum and proportion of reads within a clade,
-        and returns them into a new series
-        Parameters
-        ----------
-        clade - (type String) - A taxonomic clade, i.e kingdom, phylum etc.
-        df - (type pandas DataFrame) - The dataframe containing all the centrifuge output objects
-
-        Returns
-        -------
-        The new Dataframe
-        """
-        # set the index so we can map the group by object back
-        df = df.set_index(clade)
-        # group the records by clade
-        gb = df.groupby(level=clade)
-        # sum number of reads in each clade
-        gb = gb["num_matches"].sum()
-
-        sum_title = "summed_" + clade
-
-        proportion_title = "prop_" + clade
-        # create new series, contains summed reads for this clade
-        df[sum_title] = gb
-        # create new seies, contains proportion of reads in that clade across the whole dataframe
-        df[proportion_title] = df[sum_title].div(df[sum_title].unique().sum()).mul(100)
-        # round to two decimal places
-        df[proportion_title] = df[proportion_title].round(decimals=3)
-        df = df.reset_index()
-        return df
-
-    def sort_top_ten_clade(clade, df):
-        """
-        sorts out the top 10 records in each clade, and transforms them into the right form for the donut chart
-        Parameters
-        ----------
-        clade - (type String)
-        df - (type pandas DataFrame)
-
-        Returns - a list of dictionaries containg the top 20 members of a taxa format
-        [{"label": "bacteria": "value": 36000}] where value is the num_reads in a clade
-        -------
-
-        """
-        summed_title = "summed_" + clade
-        # create temp df with just the number of reads and the member of that clade
-        temp_df = df[[clade, summed_title]]
-
-        temp_df.set_index(clade, inplace=True)
-
-        temp_df.drop_duplicates(keep="first", inplace=True)
-
-        temp_df.reset_index(inplace=True)
-        # get the largest 20 members
-        temp_df = temp_df.nlargest(10, summed_title)
-        # rename columns to what's expected by the donut chart
-        temp_df.rename(columns={clade: "label", summed_title: "value"}, inplace=True)
-        # get the resulst in a list with adict for each record in temp_df
-        list_dict_of_top_ten_members = temp_df.to_dict(orient="records")
-
-        return list_dict_of_top_ten_members
-
-    container_array = []
-
-    # for each clade call the above function to perform the calculation and add the series
-    for ordy in order:
-        lineages_df = sum_prop_clade_reads(ordy, lineages_df)
-
-        arr = sort_top_ten_clade(ordy, lineages_df)
-
-        obj = {ordy: arr}
-
-        container_array.append(obj)
-
-    lineages_df.fillna("Unclassified", inplace=True)
-
-    json = lineages_df.to_dict(orient="records")
-    # Species to kingdom
-    container_array.reverse()
-
-    # create an object to return
-    if request.GET.get("visType", "") == "table":
-        return_dict = json
-
-    elif request.GET.get("visType", "") == "donut":
-        return_dict = {"result": container_array, "barcodes": barcode_list}
-
-    else:
-        return Response(status=400)
-
-    # return it
     return Response(return_dict, status=200)
 
 
-@api_view(["POST", "GET"])
+@api_view(["GET"])
 def get_target_mapping(request):
     """
     Get the target species
@@ -323,26 +209,42 @@ def get_target_mapping(request):
     barcode = request.GET.get("barcode", "All reads")
 
     if flowcell_id == 0:
-        return Response(status=404)
+        return Response("Flowcell id has failed to be delivered", status=404)
 
     print("flowcell_id_id-{}".format(flowcell_id))
-
+    # Get the most recent jobmaster id
     task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last().id
 
     if barcode == "All reads":
+        print("all reads")
         queryset = MappingResult.objects.filter(task__id=task_id, barcode_name=barcode).values()
-
         results_df = pd.DataFrame(list(queryset))
+        if results_df.empty:
+            return Response("No data has yet been produced for the target mappings", status=204)
+
     else:
+        # Get a line for all the targets
         map_queryset = MappingResult.objects.filter(task__id=task_id).values()
 
+        if not map_queryset:
+            print("no map queryset")
+            return Response("No data has yet been produced for the target mappings", status=204)
+        # Get the Results for this barcode
         queryset = MappingResultsBarcoded.objects.filter(mapping_result__task__id=task_id,
                                                          barcode_name=barcode
                                                          ).values()
+        # Create a dataframe for this barcode
         just_barcode_df = pd.DataFrame(list(queryset))
+        if just_barcode_df.empty:
+            print("no queryset")
+            return Response("No data has been found for this barcode. Perhaps an old barcode href is being queried",
+                            status=404)
         # Barcode data only has species with results, need to add on any targets that have no results in that barcode
 
         all_targets_df = pd.DataFrame(list(map_queryset))
+        all_targets_df[["num_mapped", "red_reads", "mapped_proportion_of_classified",
+                        "red_reads_proportion_of_classified", "red_sum_unique",
+                        "red_sum_unique_proportion_of_classified"]] = 0
         print(all_targets_df)
         print(just_barcode_df)
         # results_df = pd.merge(all_targets_df, just_barcode_df, how="outer", left_on="tax_id", right_on="tax_id")
@@ -352,15 +254,15 @@ def get_target_mapping(request):
 
     species_list = MappingResult.objects.filter(task__id=task_id).values_list("tax_id", flat=True)
 
-    cent_output = CentrifugeOutputBarcoded.objects.filter(output__task__id=task_id, tax_id__in=species_list,
-                                                          barcode_name="All reads").values()
+    cent_output = CentrifugeOutput.objects.filter(task__id=task_id, tax_id__in=species_list,
+                                                  barcode_name=barcode).values()
+    if not cent_output:
+        return Response("No data has been found for this barcode. Perhaps an old barcode href is being queried",
+                        status=404)
 
-    print(results_df)
     cent_output_df = pd.DataFrame(list(cent_output))
-    # TODO sorted
-    print(cent_output_df)
-    if results_df.empty:
 
+    if results_df.empty:
         queryset = MappingResult.objects.filter(task__id=task_id).values()
 
         results_df = pd.DataFrame(list(queryset))
@@ -386,14 +288,14 @@ def get_target_mapping(request):
         return Response(results)
 
     merger_df = pd.merge(results_df, cent_output_df, how="outer", left_on="tax_id", right_on="tax_id")
-    merger_df.drop(columns=["id_x", "id_y", "barcode_name_x", "barcode_name_y", "output_id"], inplace=True)
+    merger_df.drop(columns=["id_x", "id_y", "barcode_name_x", "barcode_name_y"], inplace=True)
     merger_df.fillna(0, inplace=True)
     print(merger_df)
 
     merger_df.rename(columns={"num_mapped": "Num. mapped",
                               "red_reads": "Danger reads",
                               "red_sum_unique": "Unique Danger reads",
-                              "species": "Species",
+                              "species_x": "Species",
                               "tax_id": "Tax id",
                               "num_matches": "Num. matches",
                               "sum_unique": "Sum. Unique"
@@ -424,7 +326,118 @@ def metagenomic_barcodes(request, pk):
         task = JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics").order_by('id').last()
 
         if task:
-            metagenomics_barcodes = CentrifugeOutputBarcoded.objects.filter(output__task__id=task.id)\
+            metagenomics_barcodes = CentrifugeOutput.objects.filter(task__id=task.id) \
                 .values_list("barcode_name", flat=True).distinct()
 
     return Response({"data": metagenomics_barcodes})
+
+
+def all_results_table(request):
+    """
+    Returns the data for the metagenomics tab all results table
+    :param request:
+    :return:
+    """
+    query_columns = [
+        'barcode_name',
+        'superkingdom',
+        'phylum',
+        'classy',
+        'order',
+        'family',
+        'genus',
+        'species',
+        'num_matches',
+        'proportion_of_classified',
+    ]
+
+    flowcell_id = int(request.GET.get('flowcell_id', 5))
+
+    draw = int(request.GET.get('draw', 0))
+
+    start = int(request.GET.get('start', 0))
+
+    length = int(request.GET.get('length', 10))
+
+    end = start + length
+    # Which column s
+    search_value = request.GET.get('search[value]', '')
+
+    order_column = request.GET.get('order[0][column]', '')
+    # ascending descending
+    order_dir = request.GET.get('order[0][dir]', '')
+
+    if not search_value == "":
+
+        cent_out_temp = CentrifugeOutput.objects \
+            .filter(task__flowcell_id=flowcell_id) \
+            .filter(task__flowcell__owner=request.user) \
+            .filter(species__icontains=search_value) | CentrifugeOutput.objects \
+            .filter(task__flowcell_id=flowcell_id) \
+            .filter(task__flowcell__owner=request.user) \
+            .filter(genus__icontains=search_value) | CentrifugeOutput.objects \
+            .filter(task__flowcell_id=flowcell_id) \
+            .filter(task__flowcell__owner=request.user) \
+            .filter(family__icontains=search_value) | CentrifugeOutput.objects \
+            .filter(task__flowcell_id=flowcell_id) \
+            .filter(task__flowcell__owner=request.user) \
+            .filter(order__icontains=search_value)
+
+    else:
+
+        cent_out_temp = CentrifugeOutput.objects \
+            .filter(task__flowcell_id=flowcell_id) \
+            .filter(task__flowcell__owner=request.user)
+
+    if order_column:
+
+        if order_dir == 'desc':
+            print("Descending")
+
+            print("MATCHES")
+            cent_out_temp = cent_out_temp.order_by('-{}'.format(query_columns[int(order_column)]))
+
+        else:
+            print("ASCENDING")
+
+            cent_out_temp = cent_out_temp.order_by('{}'.format(query_columns[int(order_column)]))
+
+    cents = cent_out_temp.values('tax_id',
+                                 'barcode_name',
+                                 'name',
+                                 'num_matches',
+                                 'proportion_of_classified',
+                                 'superkingdom',
+                                 'phylum',
+                                 'classy',
+                                 'order',
+                                 'family',
+                                 'genus',
+                                 'species',
+                                 )
+
+    records_total = cent_out_temp.count()
+
+    result = {
+        'draw': draw,
+        "recordsTotal": records_total,
+        "recordsFiltered": records_total,
+        "data": list(cents[start:end])
+    }
+
+    return JsonResponse(result, safe=True)
+
+
+# holding_df = pd.DataFrame()
+#     for name, group in gb_bc:
+#          series = pd.Series()
+#          for tax_rank in tax_rank_filter:
+#             gb = group.groupby(level=tax_rank)
+#             series = gb["num_matches"].sum()
+#             temp_df = pd.DataFrame(series)
+#             temp_df["sum_unique"] = gb["sum_unique"].sum()
+#             temp_df["tax_rank"] = tax_rank
+#             temp_df["barcode_name"] = name
+#             holding_df = holding_df.append(temp_df)
+
+# holding_df = holding_df[holding_df["num_matches"] > 2]

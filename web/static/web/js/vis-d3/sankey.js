@@ -86,13 +86,13 @@ function update(flowcellId, sankey, checkForData, svg, g, format, color, width, 
         nodes = result.sankey;
         // If there is data and checkForData is true, clear the css elements and loading sign so we can see the graphics
         if (result.sankey.nodes.length !== 0 && checkForData) {
-            d3.select("#loading-sign").transition().duration(4500).style("opacity", 0);
+            d3.select("#loading-sign").transition().duration(1000).style("opacity", 0);
 
             setTimeout(function () {
                 $("body").addClass("loaded sidebar-collapse");
                 d3.select("#loading-sign").style("display", "none");
                 d3.select(".vis-container").style("display", "contents");
-            }, 5000);
+            }, 1500);
         }
         // TODO update in place
         svg.select(".contain").selectAll("*").remove();

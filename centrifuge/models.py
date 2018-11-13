@@ -104,31 +104,24 @@ class CentrifugeOutput(models.Model):
 
     barcode_name = models.CharField(max_length=50)
 
+    proportion_of_classified = models.FloatField(default=0.0)
+
+    superkingdom = models.CharField(null=True, max_length=70)
+
+    phylum = models.CharField(null=True, max_length=70)
+
+    classy = models.CharField(null=True, max_length=70)
+
+    order = models.CharField(null=True, max_length=70)
+
+    family = models.CharField(null=True, max_length=70)
+
+    genus = models.CharField(null=True, max_length=70)
+
+    species = models.CharField(null=True, max_length=70)
+
     def __str__(self):
         return "{} {} {} {}".format(self.barcode_name, self.tax_id, self.name, self.task)
-
-
-class CentrifugeOutputBarcoded(models.Model):
-    """
-        Value for different barcodes
-    """
-    num_matches = models.IntegerField(default=0)
-
-    sum_unique = models.IntegerField(default=0)
-
-    output = models.ForeignKey(
-        CentrifugeOutput,
-        related_name="centrifuge_output_barcode",
-        on_delete=models.CASCADE,
-        null=True
-    )
-
-    tax_id = models.IntegerField()
-
-    barcode_name = models.CharField(max_length=50)
-
-    def __str__(self):
-        return "{} {} {}".format(self.barcode_name, self.tax_id, self.output)
 
 
 class MappingResult(models.Model):
@@ -146,13 +139,19 @@ class MappingResult(models.Model):
 
     tax_id = models.IntegerField(null=True)
 
-    red_reads = models.IntegerField(null=True, default=0)
+    barcode_name = models.CharField(max_length=50, default="All reads")
 
     num_mapped = models.IntegerField(default=0)
 
+    mapped_proportion_of_classified = models.FloatField(default=0)
+
+    red_reads = models.IntegerField(null=True, default=0)
+
+    red_reads_proportion_of_classified = models.FloatField(default=0)
+
     red_sum_unique = models.IntegerField(default=0)
 
-    barcode_name = models.CharField(max_length=50, default="All reads")
+    red_sum_unique_proportion_of_classified = models.FloatField(default=0)
 
     def __str__(self):
         return "{} {} {}".format(self.species, self.tax_id, self.task)
@@ -255,16 +254,40 @@ class MappingResultsBarcoded(models.Model):
 
     tax_id = models.IntegerField(null=True)
 
-    red_reads = models.IntegerField(null=True, default=0)
+    barcode_name = models.CharField(max_length=50, default="All reads")
 
     num_mapped = models.IntegerField(default=0)
 
+    mapped_proportion_of_classified = models.FloatField(default=0)
+
+    red_reads = models.IntegerField(null=True, default=0)
+
+    red_reads_proportion_of_classified = models.FloatField(default=0)
+
     red_sum_unique = models.IntegerField(default=0)
 
-    barcode_name = models.CharField(max_length=50, default="No barcode")
+    red_sum_unique_proportion_of_classified = models.FloatField(default=0)
 
     def __str__(self):
         return "{} {} {}".format(self.barcode_name, self.tax_id, self.mapping_result)
+
+
+class DonutData(models.Model):
+    """
+        The data for the donut chart and the donut ranking table
+    """
+    task = models.ForeignKey(
+        JobMaster,
+        on_delete=models.CASCADE,
+        related_name="donut_data"
+    )
+    num_matches = models.IntegerField(default=0)
+    sum_unique = models.IntegerField(default=0)
+    name = models.CharField(max_length=60)
+    barcode_name = models.CharField(max_length=40, default="All reads")
+    tax_rank = models.CharField(max_length=80, default="Species")
+
+
 
 
 

@@ -1,204 +1,217 @@
 [
-{
-  "model": "reads.fastqreadtype",
-  "pk": 1,
-  "fields": {
-    "name": "Template"
+  {
+    "model": "reads.fastqreadtype",
+    "pk": 1,
+    "fields": {
+      "name": "Template"
+    }
+  },
+  {
+    "model": "reads.fastqreadtype",
+    "pk": 2,
+    "fields": {
+      "name": "Complement"
+    }
+  },
+  {
+    "model": "reads.fastqreadtype",
+    "pk": 3,
+    "fields": {
+      "name": "2D"
+    }
+  },
+  {
+    "model": "reads.fastqreadtype",
+    "pk": 4,
+    "fields": {
+      "name": "1D^2"
+    }
+  },
+  {
+    "model": "reads.minioneventtype",
+    "pk": 1,
+    "fields": {
+      "name": "active"
+    }
+  },
+  {
+    "model": "reads.minioneventtype",
+    "pk": 2,
+    "fields": {
+      "name": "inactive"
+    }
+  },
+  {
+    "model": "reads.minioneventtype",
+    "pk": 3,
+    "fields": {
+      "name": "sequencing"
+    }
+  },
+  {
+    "model": "reads.minioneventtype",
+    "pk": 4,
+    "fields": {
+      "name": "unplugged"
+    }
+  },
+  {
+    "model": "reads.minioneventtype",
+    "pk": 5,
+    "fields": {
+      "name": "connected"
+    }
+  },
+  {
+    "model": "jobs.jobtype",
+    "pk": 1,
+    "fields": {
+      "name": "ChanCalc",
+      "description": null,
+      "long_description": null,
+      "reference": false,
+      "transcriptome": false,
+      "readcount": false,
+      "private": true
+    }
+  },
+  {
+    "model": "jobs.jobtype",
+    "pk": 2,
+    "fields": {
+      "name": "ProcAlign",
+      "description": null,
+      "long_description": null,
+      "reference": false,
+      "transcriptome": false,
+      "readcount": false,
+      "private": true
+    }
+  },
+  {
+    "model": "jobs.jobtype",
+    "pk": 3,
+    "fields": {
+      "name": "Alignment",
+      "description": "",
+      "long_description": "",
+      "reference": false,
+      "transcriptome": false,
+      "readcount": false,
+      "private": true
+    }
+  },
+  {
+    "model": "jobs.jobtype",
+    "pk": 4,
+    "fields": {
+      "name": "Minimap2",
+      "description": "Reference Mapping",
+      "long_description": "Minimap2 can be used to map reads against a reference genome. Several genomes are already installed in minoTour. Others (less than 100 Mb in size) can be uploaded for your own use under 'admin'.",
+      "reference": true,
+      "transcriptome": false,
+      "readcount": true,
+      "private": false
+    }
+  },
+  {
+    "model": "jobs.jobtype",
+    "pk": 5,
+    "fields": {
+      "name": "Assembly",
+      "description": "Rapid rough assembly of reads.",
+      "long_description": "Using minimap and miniasm a rapid assembly of your data will be performed every n reads generated.",
+      "reference": false,
+      "transcriptome": false,
+      "readcount": true,
+      "private": false
+    }
+  },
+  {
+    "model": "jobs.jobtype",
+    "pk": 7,
+    "fields": {
+      "name": "Minimap2_trans",
+      "description": "Transcriptome Mapping",
+      "long_description": "You can use minimap2 to map your reads against a reference set of transcripts available on this minoTour server. Please note that all secondary mappings are suppressed. We also use the default map-ont parameter as we are mapping to a transcriptome collection, not a genome.",
+      "reference": true,
+      "transcriptome": true,
+      "readcount": true,
+      "private": false
+    }
+  },
+  {
+    "model": "jobs.jobtype",
+    "pk": 8,
+    "fields": {
+      "name": "ExportLive",
+      "description": "Export Live Data",
+      "long_description": "This service allows you to export live data collected by minoTour in a json format for analysis in other packages.<br>\r\nWhen the task is complete, you will receive an email containing a link to the json file. This link will remain active for 7 days.",
+      "reference": false,
+      "transcriptome": false,
+      "readcount": false,
+      "private": false
+    }
+  },
+  {
+    "model": "jobs.jobtype",
+    "pk": 9,
+    "fields": {
+      "name": "ExportReads",
+      "description": "Export Read Data",
+      "long_description": "Export fastq files split by barcode (where appropriate) from a run. Files once generated will be stored on the server for one week, then deleted.",
+      "reference": false,
+      "transcriptome": false,
+      "readcount": false,
+      "private": false
+    }
+  },
+  {
+    "model": "jobs.jobtype",
+    "pk": 10,
+    "fields": {
+      "name": "Metagenomics",
+      "description": "Metagenomics classification",
+      "long_description": "Metagenomics classification",
+      "reference": false,
+      "transcriptome": false,
+      "readcount": false,
+      "private": false
+    }
+  },
+  {
+    "model": "jobs.jobtype",
+    "pk": 11,
+    "fields": {
+      "name": "Delete_Flowcell",
+      "description": "Delete a flowcell",
+      "long_description": "Delete a flowcell from the database",
+      "reference": false,
+      "transcriptome": false,
+      "readcount": false,
+      "private": false
+    }
+  },
+  {
+    "model": "reference.referenceinfo",
+    "pk": 1,
+    "fields": {
+      "name": "Ecoli",
+      "filename": "Ecoli.fa",
+      "minimap2_index_file_location": "Ecoli.fa.mmi",
+      "length": 4641652,
+      "private": false,
+      "transcripts": false,
+      "users": []
+    }
+  },
+  {
+    "model": "reference.referenceline",
+    "pk": 1,
+    "fields": {
+      "reference": 1,
+      "line_name": "NC_000913.3",
+      "chromosome_length": 4641652
+    }
   }
-},
-{
-  "model": "reads.fastqreadtype",
-  "pk": 2,
-  "fields": {
-    "name": "Complement"
-  }
-},
-{
-  "model": "reads.fastqreadtype",
-  "pk": 3,
-  "fields": {
-    "name": "2D"
-  }
-},
-{
-  "model": "reads.fastqreadtype",
-  "pk": 4,
-  "fields": {
-    "name": "1D^2"
-  }
-},
-{
-  "model": "reads.minioneventtype",
-  "pk": 1,
-  "fields": {
-    "name": "active"
-  }
-},
-{
-  "model": "reads.minioneventtype",
-  "pk": 2,
-  "fields": {
-    "name": "inactive"
-  }
-},
-{
-  "model": "reads.minioneventtype",
-  "pk": 3,
-  "fields": {
-    "name": "sequencing"
-  }
-},
-{
-  "model": "reads.minioneventtype",
-  "pk": 4,
-  "fields": {
-    "name": "unplugged"
-  }
-},
-{
-  "model": "reads.minioneventtype",
-  "pk": 5,
-  "fields": {
-    "name": "connected"
-  }
-},
-{
-  "model": "jobs.jobtype",
-  "pk": 1,
-  "fields": {
-    "name": "ChanCalc",
-    "description": null,
-    "long_description": null,
-    "reference": false,
-    "transcriptome": false,
-    "readcount": false,
-    "private": true
-  }
-},
-{
-  "model": "jobs.jobtype",
-  "pk": 2,
-  "fields": {
-    "name": "ProcAlign",
-    "description": null,
-    "long_description": null,
-    "reference": false,
-    "transcriptome": false,
-    "readcount": false,
-    "private": true
-  }
-},
-{
-  "model": "jobs.jobtype",
-  "pk": 3,
-  "fields": {
-    "name": "Alignment",
-    "description": "",
-    "long_description": "",
-    "reference": false,
-    "transcriptome": false,
-    "readcount": false,
-    "private": true
-  }
-},
-{
-  "model": "jobs.jobtype",
-  "pk": 4,
-  "fields": {
-    "name": "Minimap2",
-    "description": "Reference Mapping",
-    "long_description": "Minimap2 can be used to map reads against a reference genome. Several genomes are already installed in minoTour. Others (less than 100 Mb in size) can be uploaded for your own use under 'admin'.",
-    "reference": true,
-    "transcriptome": false,
-    "readcount": true,
-    "private": false
-  }
-},
-{
-  "model": "jobs.jobtype",
-  "pk": 5,
-  "fields": {
-    "name": "Assembly",
-    "description": "Rapid rough assembly of reads.",
-    "long_description": "Using minimap and miniasm a rapid assembly of your data will be performed every n reads generated.",
-    "reference": false,
-    "transcriptome": false,
-    "readcount": true,
-    "private": false
-  }
-},
-{
-  "model": "jobs.jobtype",
-  "pk": 7,
-  "fields": {
-    "name": "Minimap2_trans",
-    "description": "Transcriptome Mapping",
-    "long_description": "You can use minimap2 to map your reads against a reference set of transcripts available on this minoTour server. Please note that all secondary mappings are suppressed. We also use the default map-ont parameter as we are mapping to a transcriptome collection, not a genome.",
-    "reference": true,
-    "transcriptome": true,
-    "readcount": true,
-    "private": false
-  }
-},
-{
-  "model": "jobs.jobtype",
-  "pk": 8,
-  "fields": {
-    "name": "ExportLive",
-    "description": "Export Live Data",
-    "long_description": "This service allows you to export live data collected by minoTour in a json format for analysis in other packages.<br>\r\nWhen the task is complete, you will receive an email containing a link to the json file. This link will remain active for 7 days.",
-    "reference": false,
-    "transcriptome": false,
-    "readcount": false,
-    "private": false
-  }
-},
-{
-  "model": "jobs.jobtype",
-  "pk": 9,
-  "fields": {
-    "name": "ExportReads",
-    "description": "Export Read Data",
-    "long_description": "Export fastq files split by barcode (where appropriate) from a run. Files once generated will be stored on the server for one week, then deleted.",
-    "reference": false,
-    "transcriptome": false,
-    "readcount": false,
-    "private": false
-  }
-},
-{
-  "model": "jobs.jobtype",
-  "pk": 10,
-  "fields": {
-    "name": "Metagenomics",
-    "description": "Metagenomics classification",
-    "long_description": "Metagenomics classification",
-    "reference": false,
-    "transcriptome": false,
-    "readcount": false,
-    "private": false
-  }
-},
-{
-  "model": "reference.referenceinfo",
-  "pk": 1,
-  "fields": {
-    "name": "Ecoli",
-    "filename": "Ecoli.fa",
-    "minimap2_index_file_location": "Ecoli.fa.mmi",
-    "length": 4641652,
-    "private": false,
-    "transcripts": false,
-    "users": []
-  }
-},
-{
-  "model": "reference.referenceline",
-  "pk": 1,
-  "fields": {
-    "reference": 1,
-    "line_name": "NC_000913.3",
-    "chromosome_length": 4641652
-  }
-}
 ]

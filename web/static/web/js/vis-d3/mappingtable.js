@@ -29,7 +29,7 @@ function update_mapping_table(flowcellId) {
             tbody = table.select("tbody");
         }
         else {
-            table = d3.select(".alert-table").classed("has-tabley?", true).style("width", "100%").append("table").attr("class", "table table-hover map-alert");
+            table = d3.select(".alert-table").classed("has-tabley?", true).style("width", "100%").append("table").attr("class", "table map-alert");
             thead = table.append('thead').append('tr');
             tbody = table.append('tbody').attr("class", "alert-tbody");
 

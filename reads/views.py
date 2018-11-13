@@ -14,7 +14,6 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from centrifuge.models import CentrifugeOutputBarcoded
 
 from jobs.models import JobMaster, JobType
 from minotourapp import settings

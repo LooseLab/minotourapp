@@ -51,5 +51,9 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         if data['job_type'].id == 4 and data['reference'] is None:
 
             raise serializers.ValidationError("Reference is mandatory for task Minimap2")
+        # CHeck if a metagenomics task is already running on this flowcell, if so refuse to create a new one
+        if JobMaster.objects.filter(flowcell=data["flowcell"]).filter(job_type__name="Metagenomics").count() > 0:
+
+            raise serializers.ValidationError("A metagnomics task is already running for this flowcell.")
 
         return data

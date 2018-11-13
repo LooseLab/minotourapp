@@ -1359,7 +1359,6 @@ class FastqRead(models.Model):
     :modified_Date:
     """
     run = models.ForeignKey(
-
         Run,
         on_delete=models.CASCADE,
         related_name='reads'

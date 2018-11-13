@@ -11,7 +11,7 @@ function metaHeader(flowcellId){
     }
     if(firsty){
         // append the table to the page
-        table = d3.select(".meta_taberu").append("table").attr("class", "table table-hover").attr("table-layout", "fixed");
+        table = d3.select(".meta_taberu").append("table").attr("class", "table table-striped").attr("table-layout", "fixed");
         head = table.append("thead");
         row = head.append("tr");
     } else{
