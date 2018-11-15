@@ -7,6 +7,7 @@ function addMetaBarcodeTabs(flowcellId, barcodes){
     for (var i = 0; i < sortedBarcodes.length; i++) {
         var li = document.createElement("li");
         li.classList.add('barcode-meta-tab');
+        li.classList.add(sortedBarcodes[i].toString().replace(" ", "_"));
         var a = document.createElement("a");
         // a.onclick = self.updateChartsBasedOnBarcode;
 

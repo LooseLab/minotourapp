@@ -83,7 +83,6 @@ def centrifuge_sankey(request):
     species_limit = request.GET.get("speciesLimit", 30)
     # Get the flowcell ID , defaulting to False if not present
     flowcell_id = request.GET.get("flowcellId", False)
-    print(flowcell_id)
     # Selected barcode, default all reads
     selected_barcode = request.GET.get("barcode", "All reads")
 
@@ -92,18 +91,14 @@ def centrifuge_sankey(request):
 
     # ## Get the links for the sankey Diagram ###
 
-    print("the flowcell is {}".format(flowcell_id))
-    print("the barcode is {}".format(selected_barcode))
     queryset = SankeyLink.objects.filter(task__id=task_id, barcode_name=selected_barcode).values()
     # If the queryset is empty, return an empty object
     if not queryset:
-        print("no queryset")
         return Response({}, status=204)
     # Create the dataframe from the results of the database query
     source_target_df = pd.DataFrame(list(queryset))
     # If the database is empty return an empty list
     if source_target_df.empty:
-        print("no source target")
         return Response({}, status=204)
     # get a subset df of all the species rows
     temp_species_df = source_target_df[source_target_df["target_tax_level"] == "species"]
@@ -111,11 +106,6 @@ def centrifuge_sankey(request):
     temp_species_df = temp_species_df.nlargest(species_limit, ["value"])
     # get the values for those species
     source_target_df = source_target_df[source_target_df["tax_id"].isin(temp_species_df["tax_id"])]
-
-    # Drop unnecessary columns from DataFrame
-    source_target_df.drop(columns=["tax_id", "target_tax_level",
-                                   "task_id"], inplace=True)
-    # Set MultiIndex to group source to target
     source_target_df.set_index(["source", "target"], inplace=True)
     # Group by rows where the source and target are the same
     st_gb = source_target_df.groupby(["source", "target"])
@@ -129,6 +119,13 @@ def centrifuge_sankey(request):
     source_target_df = pd.concat([source_target_df, source_target_df[
         source_target_df["source"] == source_target_df["target"]]]).drop_duplicates(["source", "target"], keep=False)
     source_target_df.dropna(inplace=True)
+
+    # Drop unnecessary columns from DataFrame
+    source_target_df.drop(columns=["tax_id", "target_tax_level",
+                                   "task_id"], inplace=True)
+    # Set MultiIndex to group source to target
+    source_target_df = pd.concat([source_target_df, source_target_df[
+        source_target_df["source"] == source_target_df["target"]]]).drop_duplicates(["source", "target"], keep=False)
     source_target_df.sort_values(["value"], ascending=False, inplace=True)
     # Create the links list of dicts to return
     links = source_target_df.to_dict(orient="records")
@@ -150,8 +147,6 @@ def centrifuge_sankey(request):
     return Response(return_dict, status=200)
 
 
-# TODO refactor into run centrifuge.py then save results in the correct format, cuase this is a slow point
-# TODO refactor table into server side preprocessing
 @api_view(["GET"])
 def vis_table_or_donut_data(request):
     """
@@ -211,12 +206,10 @@ def get_target_mapping(request):
     if flowcell_id == 0:
         return Response("Flowcell id has failed to be delivered", status=404)
 
-    print("flowcell_id_id-{}".format(flowcell_id))
     # Get the most recent jobmaster id
     task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last().id
 
     if barcode == "All reads":
-        print("all reads")
         queryset = MappingResult.objects.filter(task__id=task_id, barcode_name=barcode).values()
         results_df = pd.DataFrame(list(queryset))
         if results_df.empty:
@@ -227,7 +220,6 @@ def get_target_mapping(request):
         map_queryset = MappingResult.objects.filter(task__id=task_id).values()
 
         if not map_queryset:
-            print("no map queryset")
             return Response("No data has yet been produced for the target mappings", status=204)
         # Get the Results for this barcode
         queryset = MappingResultsBarcoded.objects.filter(mapping_result__task__id=task_id,
@@ -236,7 +228,6 @@ def get_target_mapping(request):
         # Create a dataframe for this barcode
         just_barcode_df = pd.DataFrame(list(queryset))
         if just_barcode_df.empty:
-            print("no queryset")
             return Response("No data has been found for this barcode. Perhaps an old barcode href is being queried",
                             status=404)
         # Barcode data only has species with results, need to add on any targets that have no results in that barcode
@@ -245,12 +236,9 @@ def get_target_mapping(request):
         all_targets_df[["num_mapped", "red_reads", "mapped_proportion_of_classified",
                         "red_reads_proportion_of_classified", "red_sum_unique",
                         "red_sum_unique_proportion_of_classified"]] = 0
-        print(all_targets_df)
-        print(just_barcode_df)
         # results_df = pd.merge(all_targets_df, just_barcode_df, how="outer", left_on="tax_id", right_on="tax_id")
         results_df = just_barcode_df.append(all_targets_df)
         results_df.drop_duplicates(subset=["species"], keep="first", inplace=True)
-        print(results_df)
 
     species_list = MappingResult.objects.filter(task__id=task_id).values_list("tax_id", flat=True)
 
@@ -279,18 +267,19 @@ def get_target_mapping(request):
                                    "species": "Species",
                                    "tax_id": "Tax id",
                                    "num_matches": "Num. matches",
-                                   "sum_unique": "Sum. Unique"
+                                   "sum_unique": "Sum. Unique",
+                                   "mapped_proportion_of_classified": "Mapped prop. total",
+                                   "red_reads_proportion_of_classified": "Red prop. total",
+                                   "proportion_of_classified": "Prop. classified"
                                    }, inplace=True)
 
         results = results_df.to_dict(orient="records")
-        print(results_df)
 
         return Response(results)
 
     merger_df = pd.merge(results_df, cent_output_df, how="outer", left_on="tax_id", right_on="tax_id")
     merger_df.drop(columns=["id_x", "id_y", "barcode_name_x", "barcode_name_y"], inplace=True)
     merger_df.fillna(0, inplace=True)
-    print(merger_df)
 
     merger_df.rename(columns={"num_mapped": "Num. mapped",
                               "red_reads": "Danger reads",
@@ -298,7 +287,10 @@ def get_target_mapping(request):
                               "species_x": "Species",
                               "tax_id": "Tax id",
                               "num_matches": "Num. matches",
-                              "sum_unique": "Sum. Unique"
+                              "sum_unique": "Sum. Unique",
+                              "mapped_proportion_of_classified": "Mapped prop. total (%)",
+                              "red_reads_proportion_of_classified": "Red prop. total (%)",
+                              "proportion_of_classified": "Prop. classified (%)"
                               }, inplace=True)
 
     results = merger_df.to_dict(orient="records")
@@ -314,9 +306,7 @@ def metagenomic_barcodes(request, pk):
     :param pk:
     :return:
     """
-    print("Metagenomics barcodes")
     flowcell_list = Flowcell.objects.filter(owner=request.user).filter(id=pk)
-    print(pk)
     metagenomics_barcodes = []
 
     if flowcell_list.count() > 0:
@@ -392,14 +382,9 @@ def all_results_table(request):
     if order_column:
 
         if order_dir == 'desc':
-            print("Descending")
-
-            print("MATCHES")
             cent_out_temp = cent_out_temp.order_by('-{}'.format(query_columns[int(order_column)]))
 
         else:
-            print("ASCENDING")
-
             cent_out_temp = cent_out_temp.order_by('{}'.format(query_columns[int(order_column)]))
 
     cents = cent_out_temp.values('tax_id',

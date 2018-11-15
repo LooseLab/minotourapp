@@ -128,6 +128,8 @@ var FlowcellPageApp = {
         this.requestSummaryData = requestSummaryData;
 
         this.requestData = requestData;
+        var flowcell_id = get_selected_flowcell();
+        setInterval(requestData, 60000, flowcell_id);
 
         this.requestStatistics = requestStatistics.bind(this);
 
@@ -221,8 +223,6 @@ var FlowcellPageApp = {
         var inputFlowcellId = document.querySelector("#flowcell-id");
 
         this.flowcellId = inputFlowcellId.value;
-
-        var flowcell_id = get_selected_flowcell();
 
         this.addStartTabsEvents(flowcell_id);
         this.checkFlowcellTabs(flowcell_id);

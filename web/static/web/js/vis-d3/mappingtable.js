@@ -4,7 +4,12 @@ function update_mapping_table(flowcellId) {
     let tbody;
     let rows;
     let cells;
-    let columns = ["Species", "Tax id", "Num. matches", "Sum. Unique", "Num. mapped", "Danger reads", "Unique Danger reads"];
+    let columns = ["Species", "Tax id", "Num. matches", "Prop. classified (%)",
+        "Sum. Unique", "Num. mapped",
+        "Mapped prop. total (%)", "Danger reads",
+        "Red prop. total (%)",
+        "Unique Danger reads"
+         ];
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     let barcode = get_selected_barcode();
 

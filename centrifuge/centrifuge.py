@@ -10,13 +10,14 @@ from django.db.models import ObjectDoesNotExist
 from django.utils import timezone
 from ete3 import NCBITaxa
 from centrifuge.models import CentrifugeOutput, LineageValue, Metadata, SankeyLink, \
-     MappingResult, TargetMappedReadId, MappingTarget, MappingResultsBarcoded, DonutData
+    MappingResult, TargetMappedReadId, MappingTarget, MappingResultsBarcoded, DonutData
 from jobs.models import JobMaster
 from minotourapp.utils import get_env_variable
 from reads.models import FastqRead
 from reference.models import ReferenceInfo
 from django.conf import settings
 from django.db.utils import IntegrityError
+from django.db.models import Sum
 
 pd.options.mode.chained_assignment = None
 logger = get_task_logger(__name__)
@@ -24,15 +25,17 @@ logger = get_task_logger(__name__)
 
 # TODO del unused df and things
 
-def calculate_barcoded_values(barcode_group_df, barcode_df, task, chunk_size):
+def calculate_barcoded_values(barcode_group_df, barcode_df, classified_per_barcode):
     """
     Return the main cent output data frame with the barcode only result concatenated on
     :param barcode_group_df: barcode data frame group data frame, one for each barcode
     :param barcode_df: the main results data frame
-    :param task: The task object
-    :param chunk_size: The number of reads in this
+    :param classified_per_barcode: The number of classified reads in a barcode
     :return: A new df with the result for barcode appended
     """
+    barcode = barcode_group_df["barcode_name"].unique()[0]
+
+    reads_classed_in_barcode = classified_per_barcode[barcode]
 
     barcode_group_df_gb = barcode_group_df.groupby("tax_id")
     # calculate total unique matches for this species in this barcode as a series
@@ -44,8 +47,8 @@ def calculate_barcoded_values(barcode_group_df, barcode_df, task, chunk_size):
 
     barcode_group_df.drop_duplicates(subset=["barcode_name", "name"], keep="first", inplace=True)
     # Calculate the proportion
-    barcode_group_df["proportion_of_classified"] = barcode_group_df["num_matches"]\
-        .div(task.read_count + chunk_size).mul(100)
+    barcode_group_df["proportion_of_classified"] = barcode_group_df["num_matches"] \
+        .div(reads_classed_in_barcode).mul(100).round(decimals=5)
 
     # combine the dataframes
     values_df = pd.concat([sum_unique, num_matches,
@@ -77,28 +80,6 @@ def create_centrifuge_models(row):
                             family=row["family"],
                             genus=row["genus"],
                             species=row["species"])
-
-
-# def create_centrifuge_barcoded_models(row, job_master):
-#     """
-#     Create centrifuge_output_barcoded objects and return as an element in a new series
-#     :param job_master: The job_master object for this task run
-#     :param row: The dataframe row
-#     :return: The  newly created objects
-#     """
-#     try:
-#         centrifuge_output = CentrifugeOutput.objects.get(tax_id=row["tax_id"], task__id=job_master.id)
-#         return CentrifugeOutputBarcoded(num_matches=row["num_matches"],
-#                                         sum_unique=row["sum_unique"],
-#                                         output=centrifuge_output,
-#                                         tax_id=row["tax_id"],
-#                                         barcode_name=row["barcode_name"])
-#
-#     except ObjectDoesNotExist:
-#         logger.info("<<<<<")
-#         logger.info("Cent Object doesn't exist")
-#         logger.info("No matching entry for tax_id {} and task_id {}".format(row["tax_id"], job_master.id))
-#         logger.info("<<<<<")
 
 
 def update_centrifuge_output_values(row, flowcell_job_id):
@@ -422,22 +403,25 @@ def calculate_sankey_values(lineages_df, df, flowcell, tax_rank_filter, job_mast
         logger.info("Flowcell id: {} - Finished updating sankey links".format(flowcell.id))
 
 
-def calculate_num_mapped_barcoded(barcode_group_df, species_to_pk, task, chunk_size):
+def calculate_num_mapped_barcoded(barcode_group_df, species_to_pk, classified_per_barcode):
     """
     Calculate the num_mapped for reads that mapped to their reference outside target regions
     :param barcode_group_df: The dataframe for each group of barcodes
     :param species_to_pk: The primary key of the species entry in Cartography mapped, to use as Foreign Key
-    :param task: The task model object
-    :param chunk_size: The number of reads in this iteration
+
+    :param classified_per_barcode: The number of reads classified in each barcode
     :return:
     """
     name_map_gb = barcode_group_df.groupby(level="name")
-    logger.info(barcode_group_df)
+
+    barcode = barcode_group_df["barcode_name"].unique()[0]
+
+    num_classified_in_barcode = classified_per_barcode[barcode]
 
     barcode_group_df["num_mapped"] = name_map_gb.size()
 
-    barcode_group_df["num_mapped_barcode_proportion"] = barcode_group_df["num_mapped"]\
-        .div(task.read_count + chunk_size).mul(100)
+    barcode_group_df["num_mapped_barcode_proportion"] = barcode_group_df["num_mapped"] \
+        .div(num_classified_in_barcode).mul(100)
 
     barcode_group_df = barcode_group_df[~barcode_group_df.index.duplicated(keep="first")]
 
@@ -529,7 +513,7 @@ def plasmid_mapping(row, species, reference_location, fastq, flowcell):
 
 
 def map_all_the_groups(target_species_group_df, group_name, reference_location, flowcell, gff3_df, targets_results_df,
-                       task, species_to_pk, chunk_size):
+                       task, species_to_pk, classified_per_barcode):
     """
     Map the reads from the target data frames, after they've been grouped by species
     :param target_species_group_df: A data frame that contains reads from only one species
@@ -540,7 +524,7 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
     :param targets_results_df: The data frame containing the new targets mapping against reference
     :param task: The task object
     :param species_to_pk: The primary key to species dict lookup
-    :param chunk_size: The number of reads being sequenced
+    :param classified_per_barcode: The number of reads classified in each barcode
     :return red_df: Any reads that map to plasmids
     """
     # The species as identified by centrifuge for this group of reads
@@ -637,7 +621,7 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
     update_num_mapped_df["num_mapped"] = gb_species_mapped_non_read.size()
 
     update_num_mapped_df["proportion_mapped"] = update_num_mapped_df["num_mapped"].div(
-        task.read_count + chunk_size).mul(100)
+        classified_per_barcode["All reads"]).mul(100).round(decimals=5)
     # Drop duplicates so unique in each species
     update_num_mapped_df_non_barcode = update_num_mapped_df[~update_num_mapped_df.index.duplicated(keep="first")]
 
@@ -652,7 +636,7 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
     gb_barcode_mapped_non_red = update_num_mapped_df.groupby("barcode_name")
 
     for name, group in gb_barcode_mapped_non_red:
-        calculate_num_mapped_barcoded(group, species_to_pk, task, chunk_size)
+        calculate_num_mapped_barcoded(group, species_to_pk, classified_per_barcode)
     # gb_unred_mapped_barcode.apply(calculate_num_mapped_barcoded, species_to_pk)
 
     logger.info("Flowcell id: {} - Finished updating mapped reads".format(flowcell.id))
@@ -728,17 +712,21 @@ def update_mapped_non_dangerous(row, task):
     mapped_result.save()
 
 
-def calculate_mapped_dangerous_barcode(mapped_dangerous_barcode_group, species_to_pk, task, chunk_size):
+def calculate_mapped_dangerous_barcode(mapped_dangerous_barcode_group, species_to_pk,
+                                       classified_per_barcode):
     """
     Update or create the red reads values for Each Barcode
     :param mapped_dangerous_barcode_group: Groups of dangerous reads mapping to t
     :param species_to_pk: A dict with lookup for species to their database row primary key, used to Foreign key
     to Cartography mapped
-    :param task: The task id
-    :param chunk_size: The chunk size of the reads in this analysis
+    :param classified_per_barcode: The number of reads classified per barcode
     :return:
     """
     name_gb = mapped_dangerous_barcode_group.groupby("name")
+
+    barcode = mapped_dangerous_barcode_group["barcode_name"].unique()[0]
+
+    reads_classed_in_barcode = classified_per_barcode[barcode]
 
     mapped_dangerous_barcode_group.set_index("name", inplace=True)
 
@@ -747,12 +735,12 @@ def calculate_mapped_dangerous_barcode(mapped_dangerous_barcode_group, species_t
     mapped_dangerous_barcode_group["barcode_summed_red"] = name_gb["unique"].sum()
 
     mapped_dangerous_barcode_group["barcode_red_reads_proportion"] = \
-        mapped_dangerous_barcode_group["barcode_red_reads"]\
-        .div(task.read_count + chunk_size).mul(100)
+        mapped_dangerous_barcode_group["barcode_red_reads"] \
+        .div(reads_classed_in_barcode).mul(100).round(decimals=5)
 
     mapped_dangerous_barcode_group["barcode_summed_red_proportion"] = \
         mapped_dangerous_barcode_group["barcode_summed_red"] \
-        .div(task.read_count + chunk_size).mul(100)
+        .div(reads_classed_in_barcode).mul(100).round(decimals=5)
 
     mapped_dangerous_barcode_group.reset_index(inplace=True)
 
@@ -785,13 +773,13 @@ def create_or_update_barcode_mapped_dangerous(row, species_to_pk):
     obj.save()
 
 
-def map_the_reads(name_df, task, flowcell, chunk_size):
+def map_the_reads(name_df, task, flowcell, classified_per_barcode):
     """
 
     :param name_df:
     :param task:
     :param flowcell:
-    :param chunk_size:
+    :param classified_per_barcode:
     :return:
     """
     # Targets_df
@@ -829,7 +817,7 @@ def map_the_reads(name_df, task, flowcell, chunk_size):
                                                                          "red_sum_unique": 0}
                                                                )
             if created:
-                logger.info("Flowcell id: {} - CM object created for {}".format(flowcell.id, obj.species))
+                logger.info("Flowcell id: {} - Result Mapping object created for {}".format(flowcell.id, obj.species))
         return
 
     # Reset the index
@@ -859,10 +847,11 @@ def map_the_reads(name_df, task, flowcell, chunk_size):
             tax_id=target[1],
             defaults={"red_reads": 0,
                       "num_mapped": 0,
-                      "red_sum_unique": 0}
+                      "red_sum_unique": 0,
+                      "barcode_name": "All reads"}
         )
         if created:
-            logger.info("Flowcell id: {} - CM object created for {}".format(flowcell.id, obj.species))
+            logger.info("Flowcell id: {} - Result Mapping object created for {}".format(flowcell.id, obj.species))
     # Initialise red_df for red alert target reads
     queryset = MappingResult.objects.filter(task=task)
     # Create a lookup of pks to species
@@ -871,7 +860,7 @@ def map_the_reads(name_df, task, flowcell, chunk_size):
     for name, group in gb:
         red_reads_df = red_reads_df.append(map_all_the_groups(group, name, reference_location, flowcell,
                                                               target_regions_df, targets_df, task,
-                                                              species_to_pk, chunk_size)
+                                                              species_to_pk, classified_per_barcode)
                                            )
 
     # If none of the reads mapped to inside the groups
@@ -917,10 +906,11 @@ def map_the_reads(name_df, task, flowcell, chunk_size):
         # Combine the previous sum of the unique reads
         results_df["summed_sum_unique"] = results_df["red_sum_unique"] + results_df["to_add_red_sum_unique"]
 
-        results_df["red_reads_proportion"] = results_df["summed_red_reads"].div(task.read_count+chunk_size).mul(100)
+        results_df["red_reads_proportion"] = results_df["summed_red_reads"].div(
+            classified_per_barcode["All reads"]).mul(100).round(decimals=5)
 
-        results_df["unique_red_reads_proportion"] = results_df["summed_sum_unique"]\
-            .div(task.read_count+chunk_size).mul(100)
+        results_df["unique_red_reads_proportion"] = results_df["summed_sum_unique"] \
+            .div(classified_per_barcode["All reads"]).mul(100).round(decimals=5)
 
         logger.info("Flowcell id: {} -  {}".format(flowcell.id, prev_df.keys()))
         logger.info("Flowcell id: {} -  {}".format(flowcell.id, prev_df.keys()))
@@ -937,7 +927,8 @@ def map_the_reads(name_df, task, flowcell, chunk_size):
         # Apply the calculation and update to the dataframe
         barcode_mapped_gb = results_df.groupby("barcode_name")
         # Apply to each barcode group
-        barcode_mapped_gb.apply(calculate_mapped_dangerous_barcode, species_to_pk, task, chunk_size)
+        barcode_mapped_gb.apply(calculate_mapped_dangerous_barcode, species_to_pk,
+                                classified_per_barcode)
 
 
 def create_donut_data_models(row, task):
@@ -964,23 +955,25 @@ def update_donut_data_models(row, task):
     """
     DonutData.objects.filter(task=task,
                              name=row["name"],
-                             barcode_name=row["barcode_name_x"]).update(num_matches=row["updated_num_matches"],
+                             barcode_name=row["barcode_name"]).update(num_matches=row["updated_num_matches"],
                                                                         sum_unique=row["updated_sum_unique"])
 
 
-def calculate_donut_data(df, flowcell, task, tax_rank_filter):
+def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
     """
     Calculate the donut data for the donut chart and table
     :param df: The dataframe of centrifuge output, with barcodes as well
+    :param lineages_df: The dataframe of lineages for centrifuge output species in this analysis iteration
     :param task: The task object for this analysis
     :param flowcell: The flowcell
+    :param tax_rank_filter: A list of the taxonomic ranks in order from superkingdom to species
     :return donut_df: A dataframe containing the
     """
-
-    df.set_index(tax_rank_filter, inplace=True)
+    data_df = pd.merge(df, lineages_df, left_on="tax_id", right_index=True)
+    data_df.set_index(tax_rank_filter, inplace=True)
 
     # logger.info('Flowcell id: {} - Calculating donut data'.format(flowcell.id))
-    gb_bc = df.groupby("barcode_name")
+    gb_bc = data_df.groupby("barcode_name")
     donut_df = pd.DataFrame()
     for name, group in gb_bc:
         for tax_rank in tax_rank_filter:
@@ -1002,6 +995,10 @@ def calculate_donut_data(df, flowcell, task, tax_rank_filter):
 
     prev_donut_df = pd.DataFrame(list(DonutData.objects.filter(task=task).values().distinct()))
 
+    if prev_donut_df.empty:
+        donut_models_bulk_create = donut_df.apply(create_donut_data_models, args=(task,), axis=1)
+        DonutData.objects.bulk_create(list(donut_models_bulk_create.values))
+        return
     donut_to_create_df = donut_df[~donut_df["name"].isin(prev_donut_df["name"])]
 
     donut_models_bulk_create = donut_to_create_df.apply(create_donut_data_models, args=(task,), axis=1)
@@ -1017,12 +1014,9 @@ def calculate_donut_data(df, flowcell, task, tax_rank_filter):
     donut_data_to_update_df = donut_df[prev_links_mask]
 
     combined_df = pd.merge(donut_data_to_update_df, prev_donut_df, how="inner", on=["name", "barcode_name"])
-
     combined_df["updated_num_matches"] = combined_df["num_matches_x"].add(combined_df["num_matches_y"], fill_value=0)
-
     combined_df["updated_sum_unique"] = combined_df["sum_unique_x"].add(combined_df["sum_unique_y"], fill_value=0)
-
-    donut_data_to_update_df.apply(update_donut_data_models, args=(task,), axis=1)
+    combined_df.apply(update_donut_data_models, args=(task,), axis=1)
 
 
 def run_centrifuge(flowcell_job_id):
@@ -1045,11 +1039,6 @@ def run_centrifuge(flowcell_job_id):
     flowcell = task.flowcell
 
     document_number = FastqRead.objects.filter(run__flowcell=flowcell).count()
-
-    if task.read_count + chunk_size > document_number:
-        chunk_size = task.read_count + chunk_size - document_number
-        task.complete = True
-        task.save()
 
     logger.info('Flowcell id: {} - Running centrifuge on flowcell {}'.format(flowcell.id, flowcell.name))
     logger.info('Flowcell id: {} - job_master_id {}'.format(flowcell.id, task.id))
@@ -1077,6 +1066,13 @@ def run_centrifuge(flowcell_job_id):
         task.running = False
         task.save()
         return
+
+    if task.read_count + chunk_size > document_number:
+        chunk_size = fastqs.count()
+        task.complete = True
+        task.running = False
+        task.save()
+        logger.info('Flowcell id: {} - Chunk size is {}'.format(flowcell.id, chunk_size))
 
     logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, fastqs.count()))
 
@@ -1170,6 +1166,22 @@ def run_centrifuge(flowcell_job_id):
     # table
     df["num_matches"] = gb.size()
 
+    barcodes = list(df["barcode_name"].unique())
+    barcodes.append("All reads")
+    # Get the reads classified in each barcode into a lookup dictionary
+    #  so we can work out proportions inside the barcode
+    classified_per_barcode = {
+        barcode: CentrifugeOutput.objects.filter(task=task, barcode_name=barcode).aggregate(Sum("num_matches"))[
+            "num_matches__sum"] for barcode in barcodes}
+
+    if classified_per_barcode["All reads"] is None:
+        classified_per_barcode["All reads"] = 0
+
+    for name, group in gb_bc:
+        if classified_per_barcode[name] is None:
+            classified_per_barcode[name] = 0
+        classified_per_barcode[name] += group.shape[0]
+
     # TODO future mapping target
 
     # Unique targets in this set of regions
@@ -1182,8 +1194,6 @@ def run_centrifuge(flowcell_job_id):
 
     logger.info("Flowcell id: {} - The dataframe target dataframe is {}".format(flowcell.id, name_df))
 
-    map_the_reads(name_df, task, flowcell, chunk_size)
-
     barcode_df = pd.DataFrame()
 
     # TODO vectorise these bad boys
@@ -1193,13 +1203,24 @@ def run_centrifuge(flowcell_job_id):
 
     logger.info("Flowcell id: {} - These are the barcodes in this set {}".format(flowcell.id, unique_barcode))
 
-    barcode_df = gb_bc.apply(calculate_barcoded_values, barcode_df, task, chunk_size)
+    df2 = df.reset_index()
+
+    df2 = df2.drop_duplicates(keep="first")
+    # Make this the results for all reads in the centrifuge output
+    df2["barcode_name"] = "All reads"
+
+    # Include these reads in the lookup dict
+    classified_per_barcode["All reads"] += df2.shape[0]
+
+    barcode_df = gb_bc.apply(calculate_barcoded_values, barcode_df, classified_per_barcode)
 
     barcode_df.reset_index(inplace=True)
 
     barcode_df.rename(columns={"unique": "sum_unique", 0: "num_matches"}, inplace=True)
 
     barcode_df.set_index("tax_id", inplace=True)
+
+    map_the_reads(name_df, task, flowcell, classified_per_barcode)
 
     # delete these columns, no longer needed
     df.drop(columns=["readID", "seqID", "numMatches", "unique", "barcode_name", "read_id"], inplace=True)
@@ -1210,12 +1231,14 @@ def run_centrifuge(flowcell_job_id):
     # filter out no ranks, like root and cellular organism
     tax_rank_filter = ["superkingdom", "phylum", "class", "order", "family", "genus", "species"]
 
-    # drop all duplicated lines to keep only one for each entry, Atomicity
+    # drop all duplicated lines to keep only one for each entry, creating atomicity
     df.reset_index(inplace=True)
 
     df = df.drop_duplicates(keep="first")
     # Make this the results for all reads in the centrifuge output
     df["barcode_name"] = "All reads"
+
+    # Include these reads in the lookup dict
     # query the index get all the objects in the database for this analysis at this point
     queryset = CentrifugeOutput.objects.filter(task=task)
     # Get the previous tax ids in this analysis
@@ -1228,7 +1251,8 @@ def run_centrifuge(flowcell_job_id):
     # same with task from Jobmaster
     df["task"] = task
 
-    df["proportion_of_classified"] = df["num_matches"].div(task.read_count+chunk_size).mul(100)
+    df["proportion_of_classified"] = df["num_matches"].div(
+        classified_per_barcode["All reads"]).mul(100).round(decimals=5)
     df.set_index("tax_id", inplace=True)
     # Add the barcode dataframe onto the dataframe, so now we have all reads and barcodes
     df = df.append(barcode_df, sort=True)
@@ -1237,10 +1261,13 @@ def run_centrifuge(flowcell_job_id):
 
     lineages_df = insert_new_lineages(ncbi, df, tax_rank_filter, flowcell)
 
+    df.fillna("Unclassified", inplace=True)
+
+    df.replace("nan", "Unclassified", inplace=True, regex=True)
+
     # Split out the rows that have a tax_id that doesn't already have results
     prev_links_mask = df[['tax_id', 'barcode_name']].agg(tuple, 1).isin(prev_df_tax_ids_barcodes)
-
-    calculate_donut_data(df, flowcell, task, tax_rank_filter)
+    calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter)
 
     # subset where there is so these need dootdating
     cent_to_create_df = df[~prev_links_mask]
@@ -1277,8 +1304,8 @@ def run_centrifuge(flowcell_job_id):
 
         cent_to_update_df["sum_unique"] = previous_df["sum_unique"] + cent_to_update_df["sum_unique"]
 
-        cent_to_update_df["proportion_of_classified"] = cent_to_update_df["num_matches"]\
-            .div(task.read_count + chunk_size).mul(100)
+        cent_to_update_df["proportion_of_classified"] = cent_to_update_df["num_matches"] \
+            .div(classified_per_barcode["All reads"]).mul(100).round(decimals=5)
 
         # ###### Update existing barcode output ######
         # Apply to update the existing entries in the databases
@@ -1304,7 +1331,11 @@ def run_centrifuge(flowcell_job_id):
     task.running = False
 
     if fastqs.count() > 0:
-        task.last_read = fastqs[chunk_size-1].id
+        print(chunk_size)
+        print(fastqs.count())
+        print(len(fastqs))
+        task.last_read = fastqs[chunk_size - 1].id
+        logger.info("Inseide if")
 
     task.read_count = task.read_count + fastqs.count()
     task.save()

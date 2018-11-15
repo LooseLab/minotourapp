@@ -77,6 +77,7 @@ function draw(nodesObj, sankey, g, format, color, width) {
 function update(flowcellId, sankey, checkForData, svg, g, format, color, width, selectedBarcode) {
     // TODO species limit one day
     $.get("/sankey", {flowcellId , "barcode":selectedBarcode}, result => {
+        console.log(result);
         let nodes;
         // if theres no data from the server
         if (result === undefined) {
@@ -140,7 +141,7 @@ function drawSankey(flowcellId) {
     let zoom = d3.zoom()
         .scaleExtent([1, 6]).translateExtent([[0, 0], [width, hi]])
         .on("zoom", move);
-    if ($(".svg-sankey").length !== 0) {
+    if ($(".svg-sankey").length !== 0){
         svg = d3.select(".svg-sankey");
         g = d3.select(".contain");
     } else {
