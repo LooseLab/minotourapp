@@ -4,6 +4,8 @@ class FlowcellTabController {
 
         this._flowcell_id = flowcell_id;
 
+        this._flowcell_selected_tab = document.querySelector('#flowcell-selected-tab');
+
         this._nav_summary_data = document.querySelector('#nav-summary-data');
         this._nav_live_event_data = document.querySelector('#nav-live-event-data');
         this._nav_basecalled_data = document.querySelector('#nav-basecalled-data');
@@ -63,6 +65,8 @@ class FlowcellTabController {
         var nav_name = 'nav-' + name;
         var panel_name = 'panel-' + name;
 
+        this._flowcell_selected_tab.value = nav_name;
+
         this._all_navs.forEach(nav => {
 
             nav.classList.remove('active');
@@ -114,6 +118,7 @@ class FlowcellTabController {
 
                 this.toggle_content(this._nav_tasks, this._tab_tasks);
                 break;
+
         }
     }
 
