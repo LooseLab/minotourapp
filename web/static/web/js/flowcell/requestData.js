@@ -5,6 +5,9 @@ function requestData(flowcell_id) {
     var flowcell_id = flowcell_id;
 
     var url_run = '/api/v1/flowcells/' + flowcell_id + '/';
+
+    console.log('>> Inside request data');
+
     $.get(url_run, (function (result) {
 
         let data = result.data;

@@ -18,6 +18,11 @@ urlpatterns = [
         name="fastqread-list"
     ),
     url(
+        r'^api/v1/reads/(?P<pk>[0-9]+)/$',
+        views.read_detail,
+        name="fastqread-detail"
+    ),
+    url(
         r'^api/v1/read/$',
         views.read_list_new,
         name="fastqread-list-new"
@@ -57,6 +62,16 @@ urlpatterns = [
         views.run_summary_barcode_by_minute,
         name="runsummarybarcodebyminute-detail"
     ),
+    url(
+        r'^api/v1/runs/(?P<pk>[0-9A-Za-z-_]+)/files/$',
+        views.fastq_file,
+        name="fastqfile-list",
+    ),
+    url(
+        #r'^api/v1/minions/(?P<pk>[0-9A-Za-z-_]+)/$',
+        r'^api/v1/files/(?P<pk>[0-9]+)/$',
+        views.fastq_detail,
+        name="fastqfile-detail"),
     url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/barcodes/$',
         views.barcode_list,
@@ -169,6 +184,11 @@ urlpatterns = [
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/tabs/$',
         views.flowcell_tabs_details,
         name="tabs-details"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/tabs2/$',
+        views.FlowcellTabList.as_view(),
+        name="flowcell-tab-list"
     ),
     url(
         r'^api/v1/grouprun/$',

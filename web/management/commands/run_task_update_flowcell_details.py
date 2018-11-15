@@ -3,6 +3,8 @@ import os
 
 from django.core.management import BaseCommand, CommandError
 
+from reads.models import Flowcell
+from jobs.models import JobMaster
 from web.tasks import update_flowcell_details
 
 
@@ -23,11 +25,23 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
+        logger.info('Running update flowcell details task')
+
         try:
 
-            logger.info('Running update flowcell details task')
+            flowcell_list = Flowcell.objects.filter(is_active=True)
 
-            update_flowcell_details()
+            for flowcell in flowcell_list:
+
+                flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell)
+
+                for flowcell_job in flowcell_job_list:
+
+                    if flowcell_job.job_type.name == "UpdateFlowcellDetails":
+
+                        if not flowcell_job.running:
+
+                            update_flowcell_details(flowcell.id, flowcell_job.id)
 
         except Exception as e:
 

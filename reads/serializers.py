@@ -1,12 +1,26 @@
 from rest_framework import serializers
 
 from jobs.models import JobMaster, JobType
-from reads.models import (Barcode, FastqRead, FastqReadExtra,
+from reads.models import (Barcode, FastqFile, FastqRead, FastqReadExtra,
                           FastqReadType, MinIONControl,
                           MinIONEvent, MinIONEventType, MinionMessage,
                           MinIONRunStats, MinIONRunStatus, MinIONScripts,
                           MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
-                          RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellSummaryBarcode, Flowcell, MinION)
+                          RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellSummaryBarcode, Flowcell, MinION,
+                          FlowcellTab)
+
+
+class FastqFileSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = FastqFile
+        fields = (
+            'url',
+            'id',
+            'name',
+            'runid',
+            'md5',
+        )
+        read_only=('id',)
 
 
 class UserOptionsSerializer(serializers.ModelSerializer):
@@ -158,7 +172,8 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
             'start_time',
             'run',
             'type',
-            'created_date'
+            'created_date',
+            'fastqfile'
         )
 
     def create(self, validated_data):
@@ -181,7 +196,8 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
             is_pass=validated_data['is_pass'],
             start_time=validated_data['start_time'],
             run=validated_data['run'],
-            type=validated_data['type']
+            type=validated_data['type'],
+            fastqfile=validated_data['fastqfile']
         )
 
         fastqread.save()
@@ -495,6 +511,12 @@ class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
                 last_read=0
             )
 
+            JobMaster.objects.create(
+                flowcell=flowcell,
+                job_type=JobType.objects.filter(name="UpdateFlowcellDetails")[0],
+                last_read=0
+            )
+
         return flowcell
 
 
@@ -531,3 +553,11 @@ class FlowcellSummaryBarcodeSerializer(serializers.ModelSerializer):
         )
 
         read_only = ('id',)
+
+
+
+class FlowcellTabSerializer(serializers.ModelSerializer):
+
+    class Meta:
+         model = FlowcellTab
+         fields = '__all__'
