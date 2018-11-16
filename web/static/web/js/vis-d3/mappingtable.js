@@ -22,7 +22,7 @@ function update_mapping_table(flowcellId) {
         return 0;
     }
 
-    if (flowcell_selected_tab_input.value !== "Metagenomics") {
+    if (flowcell_selected_tab_input.value !== "nav-metagenomics") {
         return;
     }
     $.get("/mapped_targets", {flowcellId, barcode}, result => {

@@ -76,6 +76,7 @@ function draw(nodesObj, sankey, g, format, color, width) {
 // update or draw the existing svg using the AJAX results from the server
 function update(flowcellId, sankey, checkForData, svg, g, format, color, width, selectedBarcode) {
     // TODO species limit one day
+    console.log("Update");
     $.get("/sankey", {flowcellId , "barcode":selectedBarcode}, result => {
         console.log(result);
         let nodes;
@@ -105,9 +106,7 @@ function drawSankey(flowcellId) {
     let selectedBarcode = get_selected_barcode();
     // Check the tab value
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
-
-    if(flowcell_selected_tab_input.value !== "Metagenomics"){
-        clearInterval(updateSankey);
+    if(flowcell_selected_tab_input.value !== "nav-metagenomics"){
         return;
     }
     //set svg width and height

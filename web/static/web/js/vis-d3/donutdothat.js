@@ -46,8 +46,7 @@ function drawPie(countedData, pie, arc, svg) {
 function drawDonut(flowCellId, selectedBarcode) {
     var selectedBarcode = get_selected_barcode();
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
-    if(flowcell_selected_tab_input.value !== "Metagenomics"){
-        clearInterval(updateDonut);
+    if(flowcell_selected_tab_input.value !== "nav-metagenomics"){
         return;
     }
     // setup the donut chart

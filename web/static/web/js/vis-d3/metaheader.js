@@ -6,7 +6,7 @@ function metaHeader(flowcellId){
     // initialise variables
     let table, head, row;
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
-    if(flowcell_selected_tab_input.value !== "Metagenomics"){
+    if(flowcell_selected_tab_input.value !== "nav-metagenomics"){
         return;
     }
     if(firsty){

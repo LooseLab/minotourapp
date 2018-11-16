@@ -156,8 +156,7 @@ function drawDonutRankTable(flowCellId) {
     var selectedBarcode = get_selected_barcode();
     let barcodes = [];
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
-    if (flowcell_selected_tab_input.value !== "Metagenomics"){
-        clearInterval(updateDonutTable);
+    if (flowcell_selected_tab_input.value !== "nav-metagenomics"){
         return;
     }
     $.get("/donut", {flowcellId: flowCellId, visType: "donut", barcode: selectedBarcode}, result => {

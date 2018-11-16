@@ -3,7 +3,7 @@ function getTotalReadsTable(flowCellId) {
     // Get ttoal reads table updates the total reads table at te bottom of the page
     // Get data from the api
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
-    if (flowcell_selected_tab_input.value !== "Metagenomics") {
+    if (flowcell_selected_tab_input.value !== "nav-metagenomics") {
         return;
     }
         // Jquery selector

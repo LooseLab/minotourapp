@@ -20,16 +20,16 @@ function requestData(flowcell_id) {
 
         var flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
 
-        if (flowcell_selected_tab_input.value == 'Summary') {
+        if (flowcell_selected_tab_input.value == 'nav-summary') {
 
             this.requestRunDetails(flowcell_id);
             requestMinknowMessages(flowcell_id, data);
 
-        } else if (flowcell_selected_tab_input.value == 'Tasks') {
+        } else if (flowcell_selected_tab_input.value == 'nav-tasks') {
 
             this.flowcellTaskHistoryTable(flowcell_id);
 
-        } else if (flowcell_selected_tab_input.value == 'Basecalled Data') {
+        } else if (flowcell_selected_tab_input.value == 'nav-basecalled-data') {
 
             if (selected_barcode == '') {
                 set_selected_barcode('All reads');
@@ -43,14 +43,12 @@ function requestData(flowcell_id) {
             this.requestChannelSummaryData(flowcell_id);
             //this.requestReference(flowcell_id);
 
-        } else if (flowcell_selected_tab_input.value == 'Live Event Data') {
+        } else if (flowcell_selected_tab_input.value == 'nav-live-event-data') {
 
             this.requestRunDetails(flowcell_id);
             this.requestLiveRunStats(flowcell_id);
 
-        } else if (flowcell_selected_tab_input.value == 'Runs') {
-
-        } else if (flowcell_selected_tab_input.value == 'Metagenomics') {
+        } else if (flowcell_selected_tab_input.value == 'nav-metagenomics') {
             // The intervals for updating the charts are found in the individual files in the vis-d3 directory
             // SO you are on the Metagenomics tab
             let bants = this.addMetaBarcodeTabs.bind(this);
@@ -77,11 +75,12 @@ function requestData(flowcell_id) {
 
             });
 
-        } else if (flowcell_selected_tab_input.value == 'Sequence Mapping') {
+
+        } else if (flowcell_selected_tab_input.value == 'nav-sequence-mapping') {
 
             this.requestPafData(flowcell_id);
 
-        } else if (flowcell_selected_tab_input.value == 'Assembly') {
+        } else if (flowcell_selected_tab_input.value == 'nav-sequence-assembly') {
 
             this.requestGfaData(flowcell_id);
 

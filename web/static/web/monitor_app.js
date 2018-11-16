@@ -13,7 +13,7 @@ function set_active_navbar_item(item_index) {
 var FlowcellPageApp = {
 
     constructor () {
-
+        console.log("BBC");
     },
 
     init: function () {
