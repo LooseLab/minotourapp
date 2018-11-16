@@ -41,6 +41,8 @@ class SankeyLink(models.Model):
 
     target_tax_level = models.CharField(max_length=100)
 
+    path = models.IntegerField(default=0)
+
     def __str__(self):
         return "{} {} {} {}".format(self.barcode_name, self.tax_id, self.target_tax_level, self.task)
 

@@ -136,7 +136,8 @@ def create_sankeylink_models(row):
                       task=row["job_master"],
                       target_tax_level=row["target_tax_level"],
                       value=row["value"],
-                      barcode_name=row["barcode_name"])
+                      barcode_name=row["barcode_name"],
+                      path=row["path"])
 
 
 def update_sankeylink_values(row, flowcell_job_id):
@@ -296,6 +297,12 @@ def calculate_sankey_values(lineages_df, df, flowcell, tax_rank_filter, job_mast
     #  isn't, family NaN becomes the genus entry
     sankey_lineages_df = sankey_lineages_df.fillna(axis=1, method="bfill")
 
+    sankey_lineages_df = sankey_lineages_df.sort_values("num_matches", ascending=False)
+
+    logger.info(sankey_lineages_df)
+    # Rank lineages to flow through
+    sankey_lineages_df["path"] = np.arange(0, sankey_lineages_df.shape[0], 1)
+
     # initialise the series that will become our sankey pandas DataFrame
     source = pd.Series()
     target = pd.Series()
@@ -303,6 +310,7 @@ def calculate_sankey_values(lineages_df, df, flowcell, tax_rank_filter, job_mast
     tax_id = pd.Series()
     barcode = pd.Series()
     target_tax_level = pd.Series()
+    path = pd.Series()
     # Iterate across the dataframe taxonnomic rank columns, to create the source, target, num reads series
     for index, rank in enumerate(tax_rank_filter):
         # The taxonomic rank of the source of this link
@@ -328,12 +336,13 @@ def calculate_sankey_values(lineages_df, df, flowcell, tax_rank_filter, job_mast
             # Contains the taxonomic rank of the links target, useful for ordering later
             sankey_lineages_df["target_tax_level"] = target_tax_rank
             target_tax_level = target_tax_level.append(sankey_lineages_df["target_tax_level"])
+            path = path.append(sankey_lineages_df["path"])
 
     # Create a DataFrame of links
-    source_target_df = pd.concat([source, target, value, tax_id, target_tax_level, barcode], axis=1)
+    source_target_df = pd.concat([source, target, value, tax_id, target_tax_level, barcode, path], axis=1)
 
     # Rename the columns
-    source_target_df.columns = ["source", "target", "value", "tax_id", "target_tax_level", "barcode_name"]
+    source_target_df.columns = ["source", "target", "value", "tax_id", "target_tax_level", "barcode_name", "path"]
 
     # Create a series of Job_master objects through broadcasting
     source_target_df["job_master"] = job_master
@@ -1267,7 +1276,11 @@ def run_centrifuge(flowcell_job_id):
 
     # Split out the rows that have a tax_id that doesn't already have results
     prev_links_mask = df[['tax_id', 'barcode_name']].agg(tuple, 1).isin(prev_df_tax_ids_barcodes)
-    calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter)
+    try:
+        calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter)
+    except KeyError as e:
+        logger.info("PROBLEMS {}".format(e))
+        return
 
     # subset where there is so these need dootdating
     cent_to_create_df = df[~prev_links_mask]

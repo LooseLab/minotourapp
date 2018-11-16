@@ -138,8 +138,22 @@ def centrifuge_sankey(request):
     # Remove duplicates
     nodes = pd.DataFrame({"name": nodes.unique()})
 
+    merge = pd.merge(nodes, source_target_df, how="outer", right_on="source", left_on="name")
+
+    merge = merge[["name", "path"]]
+
+    merge = pd.merge(merge, source_target_df, how="outer", right_on="target", left_on="name")
+
+    merge["path_x"].fillna(merge["path_y"], inplace=True)
+
+    merge = merge[["name", "path_x"]]
+
+    merge.drop_duplicates(subset="name", inplace=True, keep="first")
+
+    merge.rename(columns={"path_x": "path"}, inplace=True)
+
     # Put the data in the right format
-    nodes = nodes.to_dict(orient="records")
+    nodes = merge.to_dict(orient="records")
 
     # ## Return the array # ##
     nodes = {"links": links, "nodes": nodes}

@@ -5,7 +5,7 @@ function draw(nodesObj, sankey, g, format, color, width) {
     let node;
     let text;
     let link;
-    let gradient;
+    // let gradient;
     // use d3-sankey to sankeyify the data, providing path coordinates
     sankey(nodesObj);
 
@@ -18,27 +18,27 @@ function draw(nodesObj, sankey, g, format, color, width) {
         .enter().append("g")
         .style("mix-blend-mode", "multiply");
     // append the linear gradients for the colour
-    gradient = link.append("linearGradient")
-        .attr("id", function (d, i) {
-            return i;
-        })
-        .attr("gradientUnits", "userSpaceOnUse")
-        .attr("x1", d => d.source.x1)
-        .attr("x2", d => d.target.x0);
-    // set the start colour for the gradient (0%)
-    gradient.append("stop")
-        .attr("offset", "0%")
-        .attr("stop-color", d => color(d.source.name.replace(/ .*/, "")));
-    // set the stop colour for the gradient (100%)
-    gradient.append("stop")
-        .attr("offset", "100%")
-        .attr("stop-color", d => color(d.target.name.replace(/ .*/, "")));
+    // gradient = link.append("linearGradient")
+    //     .attr("id", function (d, i) {
+    //         return i;
+    //     })
+    //     .attr("gradientUnits", "userSpaceOnUse")
+    //     .attr("x1", d => d.source.x1)
+    //     .attr("x2", d => d.target.x0);
+    // // set the start colour for the gradient (0%)
+    // gradient.append("stop")
+    //     .attr("offset", "0%")
+    //     .attr("stop-color", d => color(d.source.name.replace(/ .*/, "")));
+    // // set the stop colour for the gradient (100%)
+    // gradient.append("stop")
+    //     .attr("offset", "100%")
+    //     .attr("stop-color", d => color(d.target.name.replace(/ .*/, "")));
 
     // append the path for the link to rhe SVG
     link.append("path")
         .attr("d", d3.sankeyLinkHorizontal())
-        .attr("stroke", function (d, i) {
-            return "url(#" + i + ")"
+        .style("stroke", function (d) {
+            return color(d.path);
         })
         .attr("stroke-width", d => Math.max(0.5, d.width));
     // append the title
@@ -49,13 +49,14 @@ function draw(nodesObj, sankey, g, format, color, width) {
     node = g.append("g").attr("class", "nodes")
         .selectAll("rect")
         .data(nodesObj.nodes)
-        .enter().append("rect")
+        .enter()
+        .append("rect")
         .attr("x", d => d.x0)
         .attr("y", d => d.y0)
         .attr("height", d => d.y1 - d.y0)
         .attr("width", d => d.x1 - d.x0)
         .attr("fill", function (d) {
-            return color(d.name.replace(/ .*/, ""));
+            return color(d.path);
         })
         .append("title")
         .text(d => `${d.name}\n${format(d.value)}`);

@@ -193,6 +193,19 @@
     }
   },
   {
+    "model": "jobs.jobtype",
+    "pk": 12,
+    "fields": {
+      "name": "UpdateFlowcellDetails",
+      "description": "Update flowcell details",
+      "long_description": "Update flowcell details in the database",
+      "reference": false,
+      "transcriptome": false,
+      "readcount": false,
+      "private": false
+    }
+  },
+  {
     "model": "reference.referenceinfo",
     "pk": 1,
     "fields": {
