@@ -14,11 +14,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
 from rest_framework.views import APIView
-
-
-
 from jobs.models import JobMaster, JobType
 from minotourapp import settings
 from reads.models import (Barcode, FastqFile, FastqRead, FastqReadType,
@@ -143,7 +139,8 @@ def fastq_detail(request,pk):
     serializer = FastqFileSerializer(queryset, many=True, context={'request': request})
     return Response(serializer.data)
 
-@api_view(['GET','POST'])
+
+@api_view(['GET', 'POST'])
 def fastq_file(request,pk):
     """
     :purpose: returns an md5 checksum for a file as seen by minotour for a specific run id
