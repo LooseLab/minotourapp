@@ -411,18 +411,3 @@ def all_results_table(request):
     }
 
     return JsonResponse(result, safe=True)
-
-
-# holding_df = pd.DataFrame()
-#     for name, group in gb_bc:
-#          series = pd.Series()
-#          for tax_rank in tax_rank_filter:
-#             gb = group.groupby(level=tax_rank)
-#             series = gb["num_matches"].sum()
-#             temp_df = pd.DataFrame(series)
-#             temp_df["sum_unique"] = gb["sum_unique"].sum()
-#             temp_df["tax_rank"] = tax_rank
-#             temp_df["barcode_name"] = name
-#             holding_df = holding_df.append(temp_df)
-
-# holding_df = holding_df[holding_df["num_matches"] > 2]

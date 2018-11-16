@@ -13,7 +13,7 @@ function set_active_navbar_item(item_index) {
 var FlowcellPageApp = {
 
     constructor () {
-        console.log("BBC");
+
     },
 
     init: function () {
@@ -129,7 +129,6 @@ var FlowcellPageApp = {
 
         this.requestData = requestData;
         var flowcell_id = get_selected_flowcell();
-        setInterval(requestData, 60000, flowcell_id);
 
         this.requestStatistics = requestStatistics.bind(this);
 
