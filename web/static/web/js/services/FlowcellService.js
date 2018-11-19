@@ -10,7 +10,7 @@ class FlowcellService {
         return this._http
             .get(`/api/v1/flowcells/${flowcell_id}/tabs/`)
             .then(tabs => {
-                console.log(tabs);
+
                 return tabs;
             })
             .catch(erro => {

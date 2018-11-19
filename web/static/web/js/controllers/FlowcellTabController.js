@@ -53,11 +53,15 @@ class FlowcellTabController {
         this._tabs = new FlowcellTabList();
 
         // this._tabs_view.update(this._tabs);
-        // this._flowcell_services = new FlowcellService();
+        this._flowcell_services = new FlowcellService();
 
-        // this._tabs = this._flowcell_services.getFlowcellTabs(flowcell_id);
+        let promise1 = this._flowcell_services.getFlowcellTabs(flowcell_id);
 
-        this.toggle_tab_content('summary-data');
+        promise1.then((tabs) => {
+
+            this.show_tabs(tabs);
+            this.toggle_tab_content('summary-data')
+        });
     }
 
     toggle_tab_content(name) {
@@ -128,5 +132,57 @@ class FlowcellTabController {
         tab.classList.remove('hidden');
         tab.classList.add('show');
         app.requestData(this._flowcell_id);
+    }
+
+    show_tabs(tabs) {
+
+        tabs.forEach((name) => {
+
+            switch(name) {
+
+                case 'summary-data':
+
+                    this._nav_summary_data.classList.remove('hidden');
+                    this._nav_summary_data.classList.add('show');
+                    break;
+
+                case 'nav-live-event-data':
+
+                    this.toggle_content(this._nav_live_event_data, this._tab_live_event_data);
+                    break;
+
+                case 'nav-basecalled-data':
+
+                    this.toggle_content(this._nav_basecalled_data, this._tab_basecalled_data);
+                    break;
+
+                case 'nav-reads':
+
+                    this.toggle_content(this._nav_reads_data, this._tab_reads_data);
+                    break;
+
+                case 'nav-sequence-mapping':
+
+                    this.toggle_content(this._nav_sequence_mapping, this._tab_sequence_mapping);
+                    break;
+
+                case 'nav-sequence-assembly':
+
+                    this.toggle_content(this._nav_sequence_assembly, this._tab_sequence_assembly);
+                    break;
+
+                case 'nav-metagenomics':
+
+                    this.toggle_content(this._nav_metagenomics, this._tab_metagenomics);
+                    break;
+
+                case 'tasks':
+
+                    this._nav_tasks.classList.remove('hidden');
+                    this._nav_tasks.classList.add('show');
+                    break;
+
+            }
+        });
     }
 }
