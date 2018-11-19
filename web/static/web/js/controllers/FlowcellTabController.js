@@ -146,34 +146,40 @@ class FlowcellTabController {
                     this._nav_summary_data.classList.add('show');
                     break;
 
-                case 'nav-live-event-data':
+                case 'live-event-data':
 
-                    this.toggle_content(this._nav_live_event_data, this._tab_live_event_data);
+                    this._nav_live_event_data.classList.remove('hidden');
+                    this._nav_live_event_data.classList.add('show');
                     break;
 
-                case 'nav-basecalled-data':
+                case 'basecalled-data':
 
-                    this.toggle_content(this._nav_basecalled_data, this._tab_basecalled_data);
+                    this._nav_basecalled_data.classList.remove('hidden');
+                    this._nav_basecalled_data.classList.add('show');
                     break;
 
-                case 'nav-reads':
+                case 'reads':
 
-                    this.toggle_content(this._nav_reads_data, this._tab_reads_data);
+                    this._nav_reads_data.classList.remove('hidden');
+                    this._nav_reads_data.classList.add('show');
                     break;
 
-                case 'nav-sequence-mapping':
+                case 'sequence-mapping':
 
-                    this.toggle_content(this._nav_sequence_mapping, this._tab_sequence_mapping);
+                    this._nav_sequence_mapping.remove('hidden');
+                    this._nav_sequence_mapping.add('show');
                     break;
 
-                case 'nav-sequence-assembly':
+                case 'sequence-assembly':
 
-                    this.toggle_content(this._nav_sequence_assembly, this._tab_sequence_assembly);
+                    this._nav_sequence_assembly.remove('hidden');
+                    this._nav_sequence_assembly.add('show');
                     break;
 
-                case 'nav-metagenomics':
+                case 'metagenomics':
 
-                    this.toggle_content(this._nav_metagenomics, this._tab_metagenomics);
+                    this._nav_metagenomics.remove('hidden');
+                    this._nav_metagenomics.add('show');
                     break;
 
                 case 'tasks':
@@ -181,8 +187,9 @@ class FlowcellTabController {
                     this._nav_tasks.classList.remove('hidden');
                     this._nav_tasks.classList.add('show');
                     break;
-
             }
         });
     }
 }
+
+
