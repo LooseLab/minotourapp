@@ -15,6 +15,8 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from alignment.models import PafRoughCov
 from jobs.models import JobMaster, JobType
 from minotourapp import settings
 from reads.models import (Barcode, FastqFile, FastqRead, FastqReadType,
@@ -1456,7 +1458,7 @@ def flowcell_tabs_details(request, pk):
         }
     }
 
-    tabs = ['Summary', 'Tasks']
+    tabs = ['summary-data', 'tasks']
 
     #
     # Check for basecalled data
@@ -1465,13 +1467,20 @@ def flowcell_tabs_details(request, pk):
 
     if flowcell_summary_barcode_list.count() > 0:
 
-        tabs.append('Basecalled Data')
+        tabs.append('basecalled-data')
+        tabs.append('reads')
 
     minion_run_stats_list = MinIONRunStats.objects.filter(run_id__flowcell__id=pk)
 
     if minion_run_stats_list.count() > 0:
 
-        tabs.append('Live Event Data')
+        tabs.append('live-event-data')
+
+    paf_rough_cov_list = PafRoughCov.objects.filter(job_master__flowcell_id=pk)
+
+    if paf_rough_cov_list.count() > 0:
+
+        tabs.append('sequence-mapping')
 
     # tabs_send = list()
     #
