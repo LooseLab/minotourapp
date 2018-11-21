@@ -4,7 +4,12 @@ function update_mapping_table(flowcellId) {
     let tbody;
     let rows;
     let cells;
-    let columns = ["Species", "Tax id", "Num. matches", "Sum. Unique", "Num. mapped", "Danger reads", "Unique Danger reads"];
+    let columns = ["Species", "Tax id", "Num. matches", "Prop. classified (%)",
+        "Sum. Unique", "Num. mapped",
+        "Mapped prop. total (%)", "Danger reads",
+        "Red prop. total (%)",
+        "Unique Danger reads"
+         ];
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     let barcode = get_selected_barcode();
 
@@ -17,10 +22,11 @@ function update_mapping_table(flowcellId) {
         return 0;
     }
 
-    if (flowcell_selected_tab_input.value !== "Metagenomics") {
+    if (flowcell_selected_tab_input.value !== "nav-metagenomics") {
         return;
     }
     $.get("/mapped_targets", {flowcellId, barcode}, result => {
+        console.log(result);
         result.sort(compare);
         if (d3.select(".alert-table").classed("has-tabley?")) {
             table = d3.select(".alert-table").select("table");
@@ -28,7 +34,7 @@ function update_mapping_table(flowcellId) {
             tbody = table.select("tbody");
         }
         else {
-            table = d3.select(".alert-table").classed("has-tabley?", true).style("width", "100%").append("table").attr("class", "table table-hover map-alert");
+            table = d3.select(".alert-table").classed("has-tabley?", true).style("width", "100%").append("table").attr("class", "table map-alert");
             thead = table.append('thead').append('tr');
             tbody = table.append('tbody').attr("class", "alert-tbody");
 

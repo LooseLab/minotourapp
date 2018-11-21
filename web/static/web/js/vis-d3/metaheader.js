@@ -6,13 +6,12 @@ function metaHeader(flowcellId){
     // initialise variables
     let table, head, row;
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
-    if(flowcell_selected_tab_input.value !== "Metagenomics"){
-        console.log("Cleared header interval");
+    if(flowcell_selected_tab_input.value !== "nav-metagenomics"){
         return;
     }
     if(firsty){
         // append the table to the page
-        table = d3.select(".meta_taberu").append("table").attr("class", "table table-hover").attr("table-layout", "fixed");
+        table = d3.select(".meta_taberu").append("table").attr("class", "table table-striped").attr("table-layout", "fixed");
         head = table.append("thead");
         row = head.append("tr");
     } else{
@@ -20,7 +19,7 @@ function metaHeader(flowcellId){
         row = d3.select(".meta_taberu").select("table").select("tr");
     }
     // AJAX request for the metadata
-    $.get("/metaview", {flowcellId}, result => {
+    $.get("/centrifuge_metadata", {flowcellId}, result => {
         // If there is no data, return
         if(result[1].value === 0){
             return;

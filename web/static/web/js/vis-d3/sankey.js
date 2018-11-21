@@ -5,7 +5,7 @@ function draw(nodesObj, sankey, g, format, color, width) {
     let node;
     let text;
     let link;
-    let gradient;
+    // let gradient;
     // use d3-sankey to sankeyify the data, providing path coordinates
     sankey(nodesObj);
 
@@ -18,27 +18,27 @@ function draw(nodesObj, sankey, g, format, color, width) {
         .enter().append("g")
         .style("mix-blend-mode", "multiply");
     // append the linear gradients for the colour
-    gradient = link.append("linearGradient")
-        .attr("id", function (d, i) {
-            return i;
-        })
-        .attr("gradientUnits", "userSpaceOnUse")
-        .attr("x1", d => d.source.x1)
-        .attr("x2", d => d.target.x0);
-    // set the start colour for the gradient (0%)
-    gradient.append("stop")
-        .attr("offset", "0%")
-        .attr("stop-color", d => color(d.source.name.replace(/ .*/, "")));
-    // set the stop colour for the gradient (100%)
-    gradient.append("stop")
-        .attr("offset", "100%")
-        .attr("stop-color", d => color(d.target.name.replace(/ .*/, "")));
+    // gradient = link.append("linearGradient")
+    //     .attr("id", function (d, i) {
+    //         return i;
+    //     })
+    //     .attr("gradientUnits", "userSpaceOnUse")
+    //     .attr("x1", d => d.source.x1)
+    //     .attr("x2", d => d.target.x0);
+    // // set the start colour for the gradient (0%)
+    // gradient.append("stop")
+    //     .attr("offset", "0%")
+    //     .attr("stop-color", d => color(d.source.name.replace(/ .*/, "")));
+    // // set the stop colour for the gradient (100%)
+    // gradient.append("stop")
+    //     .attr("offset", "100%")
+    //     .attr("stop-color", d => color(d.target.name.replace(/ .*/, "")));
 
     // append the path for the link to rhe SVG
     link.append("path")
         .attr("d", d3.sankeyLinkHorizontal())
-        .attr("stroke", function (d, i) {
-            return "url(#" + i + ")"
+        .style("stroke", function (d) {
+            return color(d.path);
         })
         .attr("stroke-width", d => Math.max(0.5, d.width));
     // append the title
@@ -49,13 +49,14 @@ function draw(nodesObj, sankey, g, format, color, width) {
     node = g.append("g").attr("class", "nodes")
         .selectAll("rect")
         .data(nodesObj.nodes)
-        .enter().append("rect")
+        .enter()
+        .append("rect")
         .attr("x", d => d.x0)
         .attr("y", d => d.y0)
         .attr("height", d => d.y1 - d.y0)
         .attr("width", d => d.x1 - d.x0)
         .attr("fill", function (d) {
-            return color(d.name.replace(/ .*/, ""));
+            return color(d.path);
         })
         .append("title")
         .text(d => `${d.name}\n${format(d.value)}`);
@@ -76,9 +77,10 @@ function draw(nodesObj, sankey, g, format, color, width) {
 // update or draw the existing svg using the AJAX results from the server
 function update(flowcellId, sankey, checkForData, svg, g, format, color, width, selectedBarcode) {
     // TODO species limit one day
+    console.log("Update");
     $.get("/sankey", {flowcellId , "barcode":selectedBarcode}, result => {
-        let nodes;
         console.log(result);
+        let nodes;
         // if theres no data from the server
         if (result === undefined) {
             return;
@@ -87,13 +89,13 @@ function update(flowcellId, sankey, checkForData, svg, g, format, color, width, 
         nodes = result.sankey;
         // If there is data and checkForData is true, clear the css elements and loading sign so we can see the graphics
         if (result.sankey.nodes.length !== 0 && checkForData) {
-            d3.select("#loading-sign").transition().duration(4500).style("opacity", 0);
+            d3.select("#loading-sign").transition().duration(1000).style("opacity", 0);
 
             setTimeout(function () {
                 $("body").addClass("loaded sidebar-collapse");
                 d3.select("#loading-sign").style("display", "none");
                 d3.select(".vis-container").style("display", "contents");
-            }, 5000);
+            }, 1500);
         }
         // TODO update in place
         svg.select(".contain").selectAll("*").remove();
@@ -105,10 +107,7 @@ function drawSankey(flowcellId) {
     let selectedBarcode = get_selected_barcode();
     // Check the tab value
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
-
-    if(flowcell_selected_tab_input.value !== "Metagenomics"){
-        console.log("clearing snakey");
-        clearInterval(updateSankey);
+    if(flowcell_selected_tab_input.value !== "nav-metagenomics"){
         return;
     }
     //set svg width and height
@@ -142,11 +141,10 @@ function drawSankey(flowcellId) {
     let zoom = d3.zoom()
         .scaleExtent([1, 6]).translateExtent([[0, 0], [width, hi]])
         .on("zoom", move);
-    if ($(".svg-sankey").length !== 0) {
+    if ($(".svg-sankey").length !== 0){
         svg = d3.select(".svg-sankey");
         g = d3.select(".contain");
     } else {
-        console.log(hi);
         svg = d3.select(".svg-container").append("svg").attr("width", width).attr("class", "svg-sankey")
             .attr("height", hi).call(zoom);
         g = svg.append("g").attr("class", "contain");

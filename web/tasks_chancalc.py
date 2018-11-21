@@ -22,15 +22,16 @@ def chancalc(flowcell_id, job_master_id, last_read):
     flowcell = Flowcell.objects.get(pk=flowcell_id)
 
     fastqs = FastqRead.objects.filter(run__flowcell=flowcell).filter(id__gt=int(last_read))[:50000]
+    fastq_df_barcode = pd.DataFrame.from_records(
+        fastqs.values('id', 'start_time', 'barcode__name', 'type__name', 'is_pass', 'sequence_length',
+                      'quality_average', 'channel'))
 
-    logger.info('Flowcell id: {} - Updating details of flowcell {}'.format(flowcell.id, flowcell.name))
-    logger.info('Flowcell id: {} - job_master {}'.format(flowcell.id, job_master.id))
-    logger.info('Flowcell id: {} - last_read {}'.format(flowcell.id, job_master.last_read))
-    logger.info('Flowcell id: {} - read_count {}'.format(flowcell.id, job_master.read_count))
-    logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, len(fastqs)))
+    fastqlen = len(fastq_df_barcode)
 
-    if len(fastqs) > 0:
 
+
+    if fastqlen > 0:
+        new_last_read = fastq_df_barcode.iloc[-1]['id']
         #
         # if read_count = 0, then delete summaries
         #
@@ -43,15 +44,17 @@ def chancalc(flowcell_id, job_master_id, last_read):
             FlowcellHistogramSummary.objects.filter(flowcell=flowcell).delete()
             FlowcellChannelSummary.objects.filter(flowcell=flowcell).delete()
 
-        last_fastq = fastqs[len(fastqs) - 1]
+        #last_fastq = fastqs[len(fastqs) - 1]
 
-        new_last_read = last_fastq.id
+        #new_last_read = last_fastq.id
 
-        logger.info('Flowcell id: {} - The new last read is {}'.format(flowcell.id, new_last_read))
 
-        fastq_df_barcode = pd.DataFrame.from_records(fastqs.values('id', 'start_time', 'barcode__name', 'type__name', 'is_pass', 'sequence_length', 'quality_average', 'channel'))
+        #fastq_df_barcode = pd.DataFrame.from_records(fastqs.values('id', 'start_time', 'barcode__name', 'type__name', 'is_pass', 'sequence_length', 'quality_average', 'channel'))
+
         fastq_df_barcode['status'] = np.where(fastq_df_barcode['is_pass'] == False, 'Fail', 'Pass')
         fastq_df_barcode['start_time_truncate'] = np.array(fastq_df_barcode['start_time'], dtype='datetime64[m]')
+
+        logger.info('Flowcell id: {} - The new last read is {}'.format(flowcell.id, new_last_read))
 
         fastq_df_allreads = fastq_df_barcode.copy()
         fastq_df_allreads['barcode__name'] = 'All reads'
@@ -94,8 +97,9 @@ def chancalc(flowcell_id, job_master_id, last_read):
         # last_read = fastq_df_barcode['id'].max()
         last_read = new_last_read
 
+
     job_master = JobMaster.objects.get(pk=job_master_id)
     job_master.running = False
     job_master.last_read = last_read
-    job_master.read_count = job_master.read_count + len(fastqs)
+    job_master.read_count = job_master.read_count + fastqlen
     job_master.save()

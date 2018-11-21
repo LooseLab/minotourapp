@@ -96,7 +96,7 @@ var FlowcellPageApp = {
         this.getTotalReadsTable = getTotalReadsTable;
         this.drawDonutRankTable = drawDonutRankTable;
         this.flowcellTaskHistoryTable = flowcellTaskHistoryTable;
-        this.addBarcodeTabs = addBarcodeTabs.bind(this);
+        this.addMetaBarcodeTabs = addMetaBarcodeTabs.bind(this);
         this.update_mapping_table = update_mapping_table;
 
         this.updatePoreChart = updatePoreChart;
@@ -128,6 +128,7 @@ var FlowcellPageApp = {
         this.requestSummaryData = requestSummaryData;
 
         this.requestData = requestData;
+        var flowcell_id = get_selected_flowcell();
 
         this.requestStatistics = requestStatistics.bind(this);
 
@@ -221,8 +222,6 @@ var FlowcellPageApp = {
         // var inputFlowcellId = document.querySelector("#flowcell-id");
         //
         // this.flowcellId = inputFlowcellId.value;
-
-        var flowcell_id = get_selected_flowcell();
 
         this.addStartTabsEvents(flowcell_id);
         this.checkFlowcellTabs(flowcell_id);

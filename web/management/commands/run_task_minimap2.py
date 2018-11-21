@@ -28,7 +28,7 @@ class Command(BaseCommand):
 
         try:
 
-            flowcell_list = Flowcell.objects.all()
+            flowcell_list = Flowcell.objects.filter(is_active=True)
 
             for flowcell in flowcell_list:
 

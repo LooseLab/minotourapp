@@ -5,7 +5,7 @@ import os
 import pandas as pd
 from django.core.management.base import BaseCommand, CommandError
 from ete3 import NCBITaxa
-from centrifuge.models import CartographyGuide
+from centrifuge.models import MappingTarget
 from reference.models import ReferenceInfo
 import numpy as np
 
@@ -24,13 +24,13 @@ def gff_create(row, set_name, tax_id):
     else:
         name = "danger_zone"
 
-    obj, created = CartographyGuide.objects.get_or_create(
+    obj, created = MappingTarget.objects.get_or_create(
         species=set_name,
         tax_id=tax_id[set_name.replace("_", " ")][0],
-        set="starting_defaults",
+        target_set="starting_defaults",
         start=row["start"],
         end=row["end"],
-        type=row["type"],
+        gff_line_type=row["type"],
         defaults={"name": name}
     )
 

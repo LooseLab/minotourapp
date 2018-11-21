@@ -1,13 +1,13 @@
-function addBarcodeTabs(flowcellId){
+function addMetaBarcodeTabs(flowcellId, barcodes){
     var requestData = this.requestData.bind(this);
     var selected_barcode = get_selected_barcode();
     var ul = document.getElementById("nav-tabs-meta-barcodes");
     ul.innerHTML = "";
-    var sortedBarcodes = this.barcodes;
-    console.log(sortedBarcodes);
+    var sortedBarcodes = barcodes;
     for (var i = 0; i < sortedBarcodes.length; i++) {
         var li = document.createElement("li");
         li.classList.add('barcode-meta-tab');
+        li.classList.add(sortedBarcodes[i].toString().replace(" ", "_"));
         var a = document.createElement("a");
         // a.onclick = self.updateChartsBasedOnBarcode;
 

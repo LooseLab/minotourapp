@@ -8,7 +8,7 @@ from reads.models import Barcode
 from reads.models import Flowcell
 
 
-class SankeyLinks(models.Model):
+class SankeyLink(models.Model):
     """
         :purpose: Store the centrifuge classifier output in the format for the sankey diagram
         Used in centrifuge class, and all the sankey diagram view
@@ -25,26 +25,29 @@ class SankeyLinks(models.Model):
         to ProteoBacteria (Phylum)
     """
     source = models.CharField(null=True, max_length=100)
+
     target = models.CharField(null=True, max_length=100)
+
     value = models.IntegerField(null=True, default=0)
-    barcode = models.CharField(null=True, max_length=100)
+
+    barcode_name = models.CharField(null=True, max_length=100)
+
     tax_id = models.IntegerField()
-    flowcell = models.ForeignKey(
-        Flowcell,
-        related_name="sankeylinks_flowcell",
-        null=True
-    )
+
     task = models.ForeignKey(
         JobMaster,
-        related_name="sankey_links"
+        related_name="sankey_link"
     )
+
     target_tax_level = models.CharField(max_length=100)
 
+    path = models.IntegerField(default=0)
+
     def __str__(self):
-        return "{} {} {} {}".format(self.barcode, self.tax_id, self.target_tax_level, self.task)
+        return "{} {} {} {}".format(self.barcode_name, self.tax_id, self.target_tax_level, self.task)
 
 
-class MetaGenomicsMeta(models.Model):
+class Metadata(models.Model):
     """"
         :purpose: Store information about the Metagenomics classification analysis, used in centrifuger.py
         :author: Rory
@@ -62,24 +65,17 @@ class MetaGenomicsMeta(models.Model):
 
     """
 
-    timestamp = models.DateTimeField(default=timezone.now, null=True)
-    run_time = models.CharField(max_length=30, null=True)
-    flowcell = models.ForeignKey(
-        Flowcell,
-        related_name="metadata_flowcell",
-
-    )
     task = models.ForeignKey(
         JobMaster,
-        related_name="metadata_metagenomics",
+        related_name="metadata",
     )
-    running = models.BooleanField()
-    number_of_reads = models.IntegerField()
-    reads_classified = models.IntegerField()
+
+    start_time = models.DateTimeField(default=timezone.now, null=True)
+
     finish_time = models.CharField(max_length=40, null=True)
 
 
-class CentOutput(models.Model):
+class CentrifugeOutput(models.Model):
     """
         :purpose: Store the summarised output of the metagenomics task for all reads
         , used to draw donut chart and All reads table
@@ -93,20 +89,14 @@ class CentOutput(models.Model):
         :flowcell_id: (int) - The Id of the flowcell the reads came from
         :task: (JobMaster Object) FK - the task record in the JobMaster that started this analysis
     """
+
     name = models.CharField(max_length=250, null=True)
 
     tax_id = models.IntegerField(null=True)
 
-    flowcell = models.ForeignKey(
-        Flowcell,
-        related_name="centoutput_flowcell",
-        on_delete=models.CASCADE,
-        null=True
-    )
-
     task = models.ForeignKey(
         JobMaster,
-        related_name="centrifuge_summaries",
+        related_name="centrifuge_output",
         on_delete=models.CASCADE,
     )
 
@@ -114,66 +104,70 @@ class CentOutput(models.Model):
 
     sum_unique = models.IntegerField(default=0)
 
-    barcode = models.CharField(max_length=50)
+    barcode_name = models.CharField(max_length=50)
+
+    proportion_of_classified = models.FloatField(default=0.0)
+
+    superkingdom = models.CharField(null=True, max_length=70)
+
+    phylum = models.CharField(null=True, max_length=70)
+
+    classy = models.CharField(null=True, max_length=70)
+
+    order = models.CharField(null=True, max_length=70)
+
+    family = models.CharField(null=True, max_length=70)
+
+    genus = models.CharField(null=True, max_length=70)
+
+    species = models.CharField(null=True, max_length=70)
 
     def __str__(self):
-        return "{} {} {} {}".format(self.barcode, self.tax_id, self.name, self.task)
+        return "{} {} {} {}".format(self.barcode_name, self.tax_id, self.name, self.task)
 
 
-class CentOutputBarcoded(models.Model):
-    """
-        Value for different barcodes
-    """
-    num_matches = models.IntegerField(default=0)
-    sum_unique = models.IntegerField(default=0)
-    output = models.ForeignKey(
-        CentOutput,
-        related_name="cent_barcode_values",
-        on_delete=models.CASCADE,
-        null=True
-    )
-    tax_id = models.IntegerField()
-    barcode = models.CharField(max_length=50)
-
-    def __str__(self):
-        return "{} {} {}".format(self.barcode, self.tax_id, self.output)
-
-
-class CartographyMapped(models.Model):
+class MappingResult(models.Model):
     """
         The traffic light species that have been identified
     """
-    flowcell = models.ForeignKey(
-        Flowcell,
-        related_name="centrifuge_cart_flowcell",
-        on_delete=models.CASCADE,
-        null=True
-    )
     task = models.ForeignKey(
         JobMaster,
-        related_name="centrifuge_cart_task",
+        related_name="mapping_result",
         on_delete=models.CASCADE,
         null=True
     )
+
     species = models.CharField(max_length=50)
+
     tax_id = models.IntegerField(null=True)
-    red_reads = models.IntegerField(null=True, default=0)
+
+    barcode_name = models.CharField(max_length=50, default="All reads")
+
     num_mapped = models.IntegerField(default=0)
+
+    mapped_proportion_of_classified = models.FloatField(default=0)
+
+    red_reads = models.IntegerField(null=True, default=0)
+
+    red_reads_proportion_of_classified = models.FloatField(default=0)
+
     red_sum_unique = models.IntegerField(default=0)
-    barcode = models.CharField(max_length=50, default="All reads")
+
+    red_sum_unique_proportion_of_classified = models.FloatField(default=0)
 
     def __str__(self):
         return "{} {} {}".format(self.species, self.tax_id, self.task)
 
 
-class RedReadIds(models.Model):
+class TargetMappedReadId(models.Model):
     """
         The read ids for reads that have identified dangerously
     """
     read_id = models.CharField(max_length=100, unique=True)
-    CM_species = models.ForeignKey(
-        CartographyMapped,
-        related_name="mapped_read_ids",
+
+    mapping_result = models.ForeignKey(
+        MappingResult,
+        related_name="target_read_id",
         on_delete=models.CASCADE
     )
 
@@ -181,20 +175,26 @@ class RedReadIds(models.Model):
         return self.read_id
 
 
-class CartographyGuide(models.Model):
+class MappingTarget(models.Model):
     """
         The species defaults for the detection
     """
     species = models.CharField(max_length=100)
+
     tax_id = models.IntegerField(null=True)
-    set = models.CharField(default="Default", max_length=100)
+
+    target_set = models.CharField(default="Default", max_length=100)
+
     start = models.IntegerField(default=0)
+
     end = models.IntegerField(default=1)
+
     name = models.CharField(default="danger_zone", max_length=50)
-    type = models.CharField(default="gene", max_length=100)
+
+    gff_line_type = models.CharField(default="gene", max_length=100)
 
 
-class LineageValues(models.Model):
+class LineageValue(models.Model):
     """
         :purpose: Store the complete Lineages that are produced by NCBI taxa,
         manipulated into this more helpful format
@@ -217,37 +217,79 @@ class LineageValues(models.Model):
 
         """
     tax_id = models.IntegerField()
+
     superkingdom = models.CharField(null=True, max_length=100)
+
     phylum = models.CharField(null=True, max_length=100)
+
     classy = models.CharField(null=True, max_length=100)
+
     order = models.CharField(null=True, max_length=100)
+
     family = models.CharField(null=True, max_length=100)
+
     genus = models.CharField(null=True, max_length=100)
+
     species = models.CharField(null=True, max_length=100)
+
     subspecies = models.CharField(null=True, max_length=100)
+
     strain = models.CharField(null=True, max_length=100)
+
     leaf = models.CharField(null=True, max_length=100)
+
     substrainspecies = models.CharField(null=True, max_length=100)
 
 
-class BarcodedCartographyMapped(models.Model):
+class MappingResultsBarcoded(models.Model):
     """
         The results by barcode for the target mapping
     """
-    cm = models.ForeignKey(
-        CartographyMapped,
-        related_name="mapped_targets_barcodes",
-        on_delete=models.CASCADE
+    mapping_result = models.ForeignKey(
+        MappingResult,
+        related_name="mapping_result_barcode",
+        on_delete=models.CASCADE,
+        null=True
     )
+
     species = models.CharField(max_length=50, default="Species")
+
     tax_id = models.IntegerField(null=True)
-    red_reads = models.IntegerField(null=True, default=0)
+
+    barcode_name = models.CharField(max_length=50, default="All reads")
+
     num_mapped = models.IntegerField(default=0)
+
+    mapped_proportion_of_classified = models.FloatField(default=0)
+
+    red_reads = models.IntegerField(null=True, default=0)
+
+    red_reads_proportion_of_classified = models.FloatField(default=0)
+
     red_sum_unique = models.IntegerField(default=0)
-    barcode = models.CharField(max_length=50, default="No barcode")
+
+    red_sum_unique_proportion_of_classified = models.FloatField(default=0)
 
     def __str__(self):
-        return "{} {} {}".format(self.barcode, self.tax_id, self.cm)
+        return "{} {} {}".format(self.barcode_name, self.tax_id, self.mapping_result)
+
+
+class DonutData(models.Model):
+    """
+        The data for the donut chart and the donut ranking table
+    """
+    task = models.ForeignKey(
+        JobMaster,
+        on_delete=models.CASCADE,
+        related_name="donut_data"
+    )
+    num_matches = models.IntegerField(default=0)
+    sum_unique = models.IntegerField(default=0)
+    name = models.CharField(max_length=60)
+    barcode_name = models.CharField(max_length=40, default="All reads")
+    tax_rank = models.CharField(max_length=80, default="Species")
+
+
 
 
 

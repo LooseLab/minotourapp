@@ -539,104 +539,128 @@ def update_run_start_time():
 
 
 @task
-def update_flowcell_details():
+def update_flowcell_list_details():
+
+    flowcell_list = Flowcell.objects.filter(is_active=True)
+
+    for flowcell in flowcell_list:
+
+        flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell)
+
+        for flowcell_job in flowcell_job_list:
+
+            if flowcell_job.job_type.name == "UpdateFlowcellDetails":
+
+                if not flowcell_job.running:
+
+                    update_flowcell_details(flowcell.id, flowcell_job.id)
+
+
+def update_flowcell_details(flowcell_id, job_master_id):
     """
     This task updates the flowcell details (number of runs, number of reads, sample name)
     using the MinIONRunStatus records if they are available, otherwise reading from the
     fastq file summaries
     """
 
-    flowcell_list = Flowcell.objects.all()
+    job_master = JobMaster.objects.get(pk=job_master_id)
+    job_master.running = True
+    job_master.save()
 
-    for flowcell in flowcell_list:
+    flowcell = Flowcell.objects.get(pk=flowcell_id)
 
-        logger.info('Flowcell id: {} - Updating details of flowcell {}'.format(flowcell.id, flowcell.name))
+    logger.info('Flowcell id: {} - Updating details of flowcell {}'.format(flowcell.id, flowcell.name))
 
-        #
-        # Get the first MinIONRunStatus for a particular flowcell
-        #
-        minion_run_status_first = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell).order_by('minKNOW_start_time').first()
+    #
+    # Get the first MinIONRunStatus for a particular flowcell
+    #
+    minion_run_status_first = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell).order_by('minKNOW_start_time').first()
 
-        #
-        # If the MinIONRunStatus exists, than update start time and sample name
-        #
-        if minion_run_status_first:
+    #
+    # If the MinIONRunStatus exists, than update start time and sample name
+    #
+    if minion_run_status_first:
 
-            logger.info('Flowcell id: {} - There is at least one MinIONRunStatus'.format(flowcell.id))
+        logger.info('Flowcell id: {} - There is at least one MinIONRunStatus'.format(flowcell.id))
 
-            flowcell.start_time = minion_run_status_first.minKNOW_start_time
-            flowcell.sample_name = minion_run_status_first.minKNOW_sample_name
+        flowcell.start_time = minion_run_status_first.minKNOW_start_time
+        flowcell.sample_name = minion_run_status_first.minKNOW_sample_name
 
-            logger.info('Flowcell id: {} - Setting start_time to {}'.format(flowcell.id, flowcell.start_time))
-            logger.info('Flowcell id: {} - Setting sample_name to {}'.format(flowcell.id, flowcell.sample_name))
+        logger.info('Flowcell id: {} - Setting start_time to {}'.format(flowcell.id, flowcell.start_time))
+        logger.info('Flowcell id: {} - Setting sample_name to {}'.format(flowcell.id, flowcell.sample_name))
 
-        #
-        # Get number of fastqreads
-        #
-        number_reads = 0
+    #
+    # Get number of fastqreads
+    #
+    number_reads = 0
 
-        for run in flowcell.runs.all():
-            number_reads = number_reads + run.reads.all().count()
+    for run in flowcell.runs.all():
+        number_reads = number_reads + run.reads.all().count()
 
-        #
-        # Get the FlowcellSummaryBarcodes for a particular flowcell and for barcode_name "All reads"
-        #
-        flowcell_summary_list = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).filter(barcode_name='All reads')
+    #
+    # Get the FlowcellSummaryBarcodes for a particular flowcell and for barcode_name "All reads"
+    #
+    flowcell_summary_list = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).filter(barcode_name='All reads')
 
-        average_read_length = 0
-        total_read_length = 0
-        number_reads_processed = 0
+    average_read_length = 0
+    total_read_length = 0
+    number_reads_processed = 0
 
-        logger.info('Flowcell id: {} - There is/are {} FlowcellSummaryBarcode records'.format(flowcell.id, len(flowcell_summary_list)))
+    logger.info('Flowcell id: {} - There is/are {} FlowcellSummaryBarcode records'.format(flowcell.id, len(flowcell_summary_list)))
 
-        for flowcell_summary in flowcell_summary_list:
-            total_read_length += flowcell_summary.total_length
-            number_reads_processed += flowcell_summary.read_count
+    for flowcell_summary in flowcell_summary_list:
+        total_read_length += flowcell_summary.total_length
+        number_reads_processed += flowcell_summary.read_count
 
-        # if number_reads > 0:
-        #     average_read_length = total_read_length / number_reads
+    if number_reads > 0:
+        average_read_length = total_read_length / number_reads
 
-        else:
-            flowcell.has_fastq = False
+    else:
+        flowcell.has_fastq = False
 
-        logger.info('Flowcell id: {} - Total read length {}'.format(flowcell.id, total_read_length))
-        logger.info('Flowcell id: {} - Number reads {}'.format(flowcell.id, number_reads))
-        logger.info('Flowcell id: {} - Number reads processed {}'.format(flowcell.id, number_reads_processed))
-        logger.info('Flowcell id: {} - Average read length {}'.format(flowcell.id, average_read_length))
+    logger.info('Flowcell id: {} - Total read length {}'.format(flowcell.id, total_read_length))
+    logger.info('Flowcell id: {} - Number reads {}'.format(flowcell.id, number_reads))
+    logger.info('Flowcell id: {} - Number reads processed {}'.format(flowcell.id, number_reads_processed))
+    logger.info('Flowcell id: {} - Average read length {}'.format(flowcell.id, average_read_length))
 
-        flowcell.average_read_length = average_read_length
-        flowcell.total_read_length = total_read_length
-        flowcell.number_reads = number_reads
-        flowcell.number_reads_processed = number_reads_processed
+    flowcell.average_read_length = average_read_length
+    flowcell.total_read_length = total_read_length
+    flowcell.number_reads = number_reads
+    flowcell.number_reads_processed = number_reads_processed
 
-        flowcell.number_runs = len(flowcell.runs.all())
-        flowcell.number_barcodes = len(FastqRead.objects.filter(run__flowcell=flowcell).values('barcode_name').distinct())
-        flowcell.save()
+    flowcell.number_runs = len(flowcell.runs.all())
+    flowcell.number_barcodes = len(FastqRead.objects.filter(run__flowcell=flowcell).values('barcode_name').distinct())
+    flowcell.save()
 
-        logger.info('Flowcell id: {} - Number runs {}'.format(flowcell.id, flowcell.number_runs))
-        logger.info('Flowcell id: {} - Number barcodes {}'.format(flowcell.id, flowcell.number_barcodes))
+    logger.info('Flowcell id: {} - Number runs {}'.format(flowcell.id, flowcell.number_runs))
+    logger.info('Flowcell id: {} - Number barcodes {}'.format(flowcell.id, flowcell.number_barcodes))
 
-        #
-        # Update flowcell size
-        #
-        max_channel = FastqRead.objects.filter(run__flowcell=flowcell).aggregate(result=Max('channel'))
+    #
+    # Update flowcell size
+    #
+    max_channel = FastqRead.objects.filter(run__flowcell=flowcell).aggregate(result=Max('channel'))
 
-        if max_channel['result']:
+    if max_channel['result']:
 
-            if max_channel['result'] > 512:
+        if max_channel['result'] > 512:
 
-                flowcell.size = 3000
+            flowcell.size = 3000
 
-            elif max_channel['result'] > 128:
-
-                flowcell.size = 512
-
-            else:
-
-                flowcell.size = 128
-
-        else:
+        elif max_channel['result'] > 128:
 
             flowcell.size = 512
 
-        flowcell.save()
+        else:
+
+            flowcell.size = 128
+
+    else:
+
+        flowcell.size = 512
+
+    flowcell.save()
+
+    job_master = JobMaster.objects.get(pk=job_master_id)
+    job_master.running = False
+    job_master.save()
+

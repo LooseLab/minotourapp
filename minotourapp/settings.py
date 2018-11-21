@@ -213,8 +213,8 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'web.tasks.update_run_start_time',
         'schedule': 600,
     },
-    'update_flowcell_details': {
-        'task': 'web.tasks.update_flowcell_details',
+    'update_flowcell_list_details': {
+        'task': 'web.tasks.update_flowcell_list_details',
         'schedule': 30,
     }
 }
