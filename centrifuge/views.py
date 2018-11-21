@@ -80,7 +80,7 @@ def centrifuge_sankey(request):
     """
 
     # Get the number of species to visualise , defaulting to 50 if not present
-    species_limit = request.GET.get("speciesLimit", 30)
+    species_limit = request.GET.get("speciesLimit", 20)
     # Get the flowcell ID , defaulting to False if not present
     flowcell_id = request.GET.get("flowcellId", False)
     # Selected barcode, default all reads
@@ -126,7 +126,7 @@ def centrifuge_sankey(request):
     # Set MultiIndex to group source to target
     source_target_df = pd.concat([source_target_df, source_target_df[
         source_target_df["source"] == source_target_df["target"]]]).drop_duplicates(["source", "target"], keep=False)
-    source_target_df.sort_values(["value"], ascending=False, inplace=True)
+    # source_target_df.sort_values(["value"], ascending=False, inplace=True)
     # Create the links list of dicts to return
     links = source_target_df.to_dict(orient="records")
 

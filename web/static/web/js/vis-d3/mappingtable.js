@@ -4,7 +4,8 @@ function update_mapping_table(flowcellId) {
     let tbody;
     let rows;
     let cells;
-    let columns = ["Species", "Tax id", "Num. matches", "Prop. classified (%)",
+    let row_count = 0;
+    let columns = ["Alert level", "Species", "Tax id", "Num. matches", "Prop. classified (%)",
         "Sum. Unique", "Num. mapped",
         "Mapped prop. total (%)", "Danger reads",
         "Red prop. total (%)",
@@ -72,32 +73,38 @@ function update_mapping_table(flowcellId) {
                 return {column: column, value: row[column]};
                 // }
             });
-        }).attr("class", function (d, i) {
-            return columns[i];
+        }).attr("id", function (d, i) {
+            if (d.column === "Alert level"){
+                row_count += 1;
+            }
+            return columns[i].replace(" ", "_") + "_" + row_count.toString();
         })
-            .style("background-color", function (d, i) {
-                // if the cell contains the key, set the background colour to the rgb value in the data
-                let variable = d3.select("#" + d3.select(this).node().parentNode.id.replace(/ /g, "_"));
-                if (d.column === "Num. mapped" && d.value > 0 && !variable.classed("red-alert")) {
-                    variable.classed("yellow-alert", false);
-                    variable.classed("orange-alert", true);
-                }
-                else if (d.column === "Danger reads" && d.value > 0) {
-                    variable.classed("orange-alert", false);
-                    variable.classed("yellow-alert", false);
-                    variable.classed("red-alert", true);
-                }
-                else if (d.column === "Num. matches" && d.value > 0 && !variable.classed("red-alert") && !variable.classed("orange-alert")) {
-                    variable.classed("yellow-alert", true);
-                }
-                else if (d.column === "Num. matches" && d.value=== 0){
-                    variable.attr("class", "");
-                }
-            })
-            // fill the cell with the string by setting the inner html
-            .html(function (d) {
-                return d.value;
-            });
+        .style("background-color", function (d, i) {
+            // if the cell contains the key, set the background colour to the rgb value in the data
+            let variable = d3.select("#" + d3.select(this).node().parentNode.children[0].id);
+            if (d.column === "Num. mapped" && d.value > 0 && !variable.classed("red-alert")) {
+                variable.classed("green-alert", false);
+                variable.classed("yellow-alert", false);
+                variable.classed("orange-alert", true);
+            }
+            else if (d.column === "Danger reads" && d.value > 0) {
+                variable.classed("green-alert", false);
+                variable.classed("orange-alert", false);
+                variable.classed("yellow-alert", false);
+                variable.classed("red-alert", true);
+            }
+            else if (d.column === "Num. matches" && d.value > 0 && !variable.classed("red-alert") && !variable.classed("orange-alert")) {
+                variable.classed("green-alert", false);
+                variable.classed("yellow-alert", true);
+            }
+            else if (d.column === "Num. matches" && d.value=== 0){
+                variable.attr("class", "green-alert");
+            }
+        })
+        // fill the cell with the string by setting the inner html
+        .html(function (d) {
+            return d.value;
+        });
     });
 
 }
