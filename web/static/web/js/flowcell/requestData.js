@@ -20,7 +20,7 @@ function requestData(flowcell_id) {
 
         var flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
 
-        if (flowcell_selected_tab_input.value == 'nav-summary') {
+        if (flowcell_selected_tab_input.value == 'nav-summary-data') {
 
             this.requestRunDetails(flowcell_id);
             requestMinknowMessages(flowcell_id, data);
