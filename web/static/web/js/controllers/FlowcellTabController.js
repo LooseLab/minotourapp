@@ -130,7 +130,6 @@ class FlowcellTabController {
 
         nav.classList.add('active');
         tab.classList.remove('hidden');
-        tab.classList.add('show');
         app.requestData(this._flowcell_id);
     }
 
@@ -143,49 +142,41 @@ class FlowcellTabController {
                 case 'summary-data':
 
                     this._nav_summary_data.classList.remove('hidden');
-                    this._nav_summary_data.classList.add('show');
                     break;
 
                 case 'live-event-data':
 
                     this._nav_live_event_data.classList.remove('hidden');
-                    this._nav_live_event_data.classList.add('show');
                     break;
 
                 case 'basecalled-data':
 
                     this._nav_basecalled_data.classList.remove('hidden');
-                    this._nav_basecalled_data.classList.add('show');
                     break;
 
                 case 'reads':
 
                     this._nav_reads_data.classList.remove('hidden');
-                    this._nav_reads_data.classList.add('show');
                     break;
 
                 case 'sequence-mapping':
 
                     this._nav_sequence_mapping.remove('hidden');
-                    this._nav_sequence_mapping.add('show');
                     break;
 
                 case 'sequence-assembly':
 
                     this._nav_sequence_assembly.remove('hidden');
-                    this._nav_sequence_assembly.add('show');
                     break;
 
                 case 'metagenomics':
 
                     this._nav_metagenomics.remove('hidden');
-                    this._nav_metagenomics.add('show');
                     break;
 
                 case 'tasks':
 
                     this._nav_tasks.classList.remove('hidden');
-                    this._nav_tasks.classList.add('show');
                     break;
             }
         });
