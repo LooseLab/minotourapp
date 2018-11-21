@@ -130,6 +130,7 @@ class FlowcellTabController {
 
         nav.classList.add('active');
         tab.classList.remove('hidden');
+        tab.classList.add('show');
         app.requestData(this._flowcell_id);
     }
 
