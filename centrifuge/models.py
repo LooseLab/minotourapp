@@ -157,6 +157,8 @@ class MappingResult(models.Model):
 
     num_matches = models.IntegerField(default=0)
 
+    proportion_of_classified = models.FloatField(default=0.0)
+
     sum_unique = models.IntegerField(default=0)
 
     def __str__(self):
@@ -243,39 +245,6 @@ class LineageValue(models.Model):
     leaf = models.CharField(null=True, max_length=100)
 
     substrainspecies = models.CharField(null=True, max_length=100)
-
-
-class MappingResultsBarcoded(models.Model):
-    """
-        The results by barcode for the target mapping
-    """
-    mapping_result = models.ForeignKey(
-        MappingResult,
-        related_name="mapping_result_barcode",
-        on_delete=models.CASCADE,
-        null=True
-    )
-
-    species = models.CharField(max_length=50, default="Species")
-
-    tax_id = models.IntegerField(null=True)
-
-    barcode_name = models.CharField(max_length=50, default="All reads")
-
-    num_mapped = models.IntegerField(default=0)
-
-    mapped_proportion_of_classified = models.FloatField(default=0)
-
-    red_reads = models.IntegerField(null=True, default=0)
-
-    red_reads_proportion_of_classified = models.FloatField(default=0)
-
-    red_sum_unique = models.IntegerField(default=0)
-
-    red_sum_unique_proportion_of_classified = models.FloatField(default=0)
-
-    def __str__(self):
-        return "{} {} {}".format(self.barcode_name, self.tax_id, self.mapping_result)
 
 
 class DonutData(models.Model):

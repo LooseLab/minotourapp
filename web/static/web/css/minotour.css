@@ -7,17 +7,17 @@
     /*background-size: contain;*/
     /*background-repeat: no-repeat;*/
 }
-.yellow-alert{
-    background-color: rgba(242, 249, 17, 0.8);
-    /*background-image: url("thinking-face_1f914.png");*/
-    /*background-size: contain;*/
-    /*background-repeat: no-repeat;*/
-}
 .orange-alert{
     background-color: rgba(255, 179, 42, 0.8);
     /*background-image: url("face-with-open-mouth_1f62e.png");*/
     /*background-size: contain;*/
     /*background-repeat: no-repeat;*/
+}
+.yellow-alert{
+background-color: rgba(242, 249, 17, 0.8);
+/*background-image: url("thinking-face_1f914.png");*/
+/*background-size: contain;*/
+/*background-repeat: no-repeat;*/
 }
 .green-alert{
     background-color: rgba(0, 128, 0, 0.7);
@@ -26,6 +26,20 @@
     /*background-repeat: no-repeat;*/
 
 }
+.red-alert-tab{
+    background-color: rgba(255, 0, 0, 0.7);
+
+}
+.orange-alert-tab{
+    background-color: rgba(255, 179, 42, 0.8);
+}
+.yellow-alert-tab{
+background-color: rgba(242, 249, 17, 0.8);
+}
+.green-alert-tab{
+    background-color: rgba(0, 128, 0, 0.7);
+}
+
 .map-alert{
     font-size: 18px;
     font-weight: 800;

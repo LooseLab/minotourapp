@@ -69,7 +69,7 @@ def create_centrifuge_models(row, classified_per_barcode):
 
     """
     if row["proportion_of_classified"] == "Unclassified":
-        row["proportion_of_classified"] = row["num_matches"] / classified_per_barcode[row["barcode_name"]]
+        row["proportion_of_classified"] = round(row["num_matches"] / classified_per_barcode[row["barcode_name"]], 5)
     return CentrifugeOutput(name=row["name"],
                             tax_id=row["tax_id"],
                             task=row["task"],
@@ -415,18 +415,22 @@ def calculate_sankey_values(lineages_df, df, flowcell, tax_rank_filter, job_mast
         logger.info("Flowcell id: {} - Finished updating sankey links".format(flowcell.id))
 
 
-def calculate_num_mapped_barcoded(barcode_group_df):
+def calculate_num_mapped_barcoded(barcode_group_df, class_per_bar, name):
     """
     Calculate the num_mapped for reads that mapped to their reference outside target regions for each barcode
     :param barcode_group_df: The dataframe for each group of barcodes
+    :param class_per_bar: The number of classified reads per barcode
+    :param name: The name of the barcode
     :return:
     """
     name_map_gb = barcode_group_df.groupby(level="name")
 
     barcode_group_df["num_mapped"] = name_map_gb.size()
 
-    barcode_group_df["num_mapped_barcode_proportion"] = barcode_group_df["num_mapped"] \
-        .div(barcode_group_df["num_matches"]).mul(100).round(decimals=5)
+    barcode_group_df["num_matches"] = name_map_gb.size()
+
+    barcode_group_df["prop_class"] = barcode_group_df["num_matches"]\
+        .div(class_per_bar[name]).mul(100).round(decimals=5)
 
     barcode_group_df = barcode_group_df[~barcode_group_df.index.duplicated(keep="first")]
 
@@ -449,13 +453,15 @@ def insert_or_update_num_mapped_barcoded(row):
 
     obj = MappingResult.objects.get(species=row["name"], tax_id=row["tax_id"], barcode_name=row["barcode_name"])
     obj.num_mapped += row["num_mapped"]
+    nm = obj.num_mapped
     obj.num_matches = row["num_matches"]
     obj.sum_unique = row["sum_unique"]
-    obj.mapped_proportion_of_classified = row["num_mapped_barcode_proportion"]
+    obj.proportion_of_classified = row["prop_class"]
+    obj.mapped_proportion_of_classified = round(row["num_mapped"] / nm, 5)
     obj.save()
 
 
-def plasmid_mapping(row, species, reference_location, fastq, flowcell):
+def plasmid_mapping(row, species, reference_location, fastq, flowcell, plasmid_red_df):
     """
     Map the reads for groups that have danger regions on plasmids
     :param row: The row of the target dataframe for species with plasmid danger regions
@@ -463,7 +469,8 @@ def plasmid_mapping(row, species, reference_location, fastq, flowcell):
     :param reference_location: The location of the reference files on the system
     :param fastq: The reads sequences
     :param flowcell: The flowcell for logging by flowcell_id
-    :return:
+    :param plasmid_red_df: A dataframe containing all the reads that mapped to plasmids, to be added to and returned
+    :return plasmid_red_df: The dataframe from the arguments, updated with any reads that map to the plasmid references
     """
     species = species.replace(" ", "_")
 
@@ -488,12 +495,12 @@ def plasmid_mapping(row, species, reference_location, fastq, flowcell):
     if not map_output:
         logger.info("Flowcell id: {} - No mappings for plasmid {} on species {}".format(flowcell.id, row["name"],
                                                                                         species))
-        return pd.DataFrame(data=np.zeros(len(columns)), index=columns).T
+        plasmid_red_df = plasmid_red_df.append(pd.DataFrame())
+        return plasmid_red_df
     else:
         plasmid_map_df = pd.read_csv(StringIO(map_output), sep="\t", header=None)
 
         logger.info("Plasmid mapping map output df is {}".format(plasmid_map_df))
-
 
         # set the column headers to above
         plasmid_map_df.columns = columns
@@ -508,12 +515,13 @@ def plasmid_mapping(row, species, reference_location, fastq, flowcell):
         )
         # return as tuple to iterate over
         logger.info("Plasmid mapping map output df is {}".format(plasmid_map_df))
+        plasmid_red_df = plasmid_red_df.append(plasmid_map_df)
 
-        return plasmid_map_df
+        return plasmid_red_df
 
 
 def map_all_the_groups(target_species_group_df, group_name, reference_location, flowcell, gff3_df, targets_results_df,
-                       task, species_to_pk, num_matches_target_barcoded_df, barcodes, targets):
+                       task, num_matches_target_barcoded_df, barcodes, targets, class_per_bar):
     """
     Map the reads from the target data frames, after they've been grouped by species
     :param target_species_group_df: A data frame that contains reads from only one species
@@ -523,11 +531,11 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
     :param gff3_df: The data frame containing the target regions
     :param targets_results_df: The data frame containing the new targets mapping against reference
     :param task: The task object
-    :param species_to_pk: The primary key to species dict lookup
     :param num_matches_target_barcoded_df: The number of matches per barcode for each target species in a dataframe
     :param barcodes: An np array of all the barcodes in this set of target reads
     :param targets: A list of all the targets species names in this target set
-    :return red_df: Any reads that map to plasmids
+    :return red_df: Any reads that map to plasmids and their information as a dataframe
+    :return class_per_bar: The number of classified reads per barcode
     """
     # The species as identified by centrifuge for this group of reads
 
@@ -583,10 +591,10 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
     if not plasmid_df.empty:
         logger.info("Flowcell id: {} - Mapping reads to plasmids for species {} ".format(flowcell.id, species))
         # TODO is this doubling the first line?
-        plasmid_red_df = plasmid_df.apply(plasmid_mapping, args=(species, reference_location, fastq, flowcell),
+        plasmid_red_df = plasmid_df.apply(plasmid_mapping, args=(species, reference_location, fastq, flowcell,
+                                                                 plasmid_red_df),
                                           axis=1)
-        logger.info(plasmid_red_df)
-        plasmid_red_df = plasmid_red_df[~plasmid_red_df["type_align"] == 0.0]
+        logger.info("plasmid red df is {}".format(plasmid_red_df))
     if map_output:
         map_df = pd.read_csv(StringIO(map_output), sep="\t", header=None)
     # Else stop and return. There is no output if there are no mappings
@@ -610,9 +618,10 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
     # Red reads, reads that fall within boundaries
     red_df = map_df[boolean_df]
     # If there is output from the plasmid mapping, put it into
+    logger.info("The red df pre plasmid red df append is {}".format(red_df))
     if not plasmid_red_df.empty and (type(plasmid_red_df) != pd.core.series.Series):
         red_df = red_df.append(plasmid_red_df)
-    logger.info(red_df)
+    logger.info("red df is {}".format(red_df))
     logger.info(
         "Flowcell id: {} - This many reads mapped evilly on this reference {} for species {}".format(
             flowcell.id,
@@ -641,10 +650,14 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
 
         update_num_mapped_df["sum_unique_y"].fillna(0, inplace=True)
 
-        update_num_mapped_df["num_matches"] = update_num_mapped_df["num_matches_x"] + \
-                                              update_num_mapped_df["num_matches_y"]
+        update_num_mapped_df["num_matches"] = \
+            update_num_mapped_df["num_matches_x"] + update_num_mapped_df["num_matches_y"]
 
-        update_num_mapped_df["sum_unique"] = update_num_mapped_df["sum_unique_x"] + update_num_mapped_df["sum_unique_y"]
+        update_num_mapped_df["sum_unique"] = \
+            update_num_mapped_df["sum_unique_x"] + update_num_mapped_df["sum_unique_y"]
+
+        update_num_mapped_df["prop_classed_nb"] = \
+            update_num_mapped_df["num_matches"].div(class_per_bar["All reads"]).mul(100).round(decimals=5)
 
         logger.info(update_num_mapped_df[["num_matches", "sum_unique_x", "sum_unique_y", "num_matches_x",
                                           "num_matches_y"]])
@@ -658,10 +671,11 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
 
     update_num_mapped_df["num_mapped_no_bar"] = gb_species_mapped_non_red["num_mapped"].sum()
 
-    update_num_mapped_df["proportion_mapped"] = update_num_mapped_df["num_mapped"].div(
-        update_num_mapped_df["num_matches"]).mul(100).round(decimals=5)
+    # update_num_mapped_df["proportion_mapped"] = update_num_mapped_df["num_mapped"].div(
+    #    update_num_mapped_df["num_matches"]).mul(100).round(decimals=5)
 
-    logger.info(update_num_mapped_df[["num_mapped", "num_matches", "proportion_mapped"]])
+    logger.info("update num_mapped is {}".format(update_num_mapped_df[["num_mapped",
+                                                                       "num_matches"]]))
 
     # Drop duplicates so unique in each species
     update_num_mapped_df_non_barcode = update_num_mapped_df[~update_num_mapped_df.index.duplicated(keep="first")]
@@ -678,7 +692,7 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
     gb_barcode_mapped_non_red = update_num_mapped_df.groupby("barcode_name")
 
     for name, group in gb_barcode_mapped_non_red:
-        calculate_num_mapped_barcoded(group)
+        calculate_num_mapped_barcoded(group, class_per_bar, name)
 
     logger.info("Flowcell id: {} - Finished updating mapped reads".format(flowcell.id))
 
@@ -717,23 +731,25 @@ def update_mapped_red_values(row, bulk_insert_red_id, mapped_targets_dict, task)
     :param task: The task model object
     :return:
     """
-    if row["name"] not in mapped_targets_dict:
-        mapped = MappingResult.objects.get(species=row["name"],
+    if row["species"] not in mapped_targets_dict:
+        logger.info("updating the number of mapped red reads for species {}".format(row["species"]))
+        mapped = MappingResult.objects.get(species=row["species"],
                                            task=task, barcode_name="All reads")
+        nm = mapped.num_mapped
         mapped.red_reads = row["summed_red_reads"]
         mapped.red_sum_unique = row["summed_sum_unique"]
-        mapped.red_reads_proportion_of_classified = row["red_reads_proportion"]
-        mapped.red_sum_unique_proportion_of_classified = row["unique_red_reads_proportion"]
-
+        mapped.red_reads_proportion_of_classified = round(row["summed_red_reads"] / nm, 5)
+        mapped.red_sum_unique_proportion_of_classified = round(row["summed_sum_unique"] / nm, 5)
         mapped.save()
 
-        mapped_targets_dict[row["name"]] = mapped.id
+        mapped_targets_dict[row["species"]] = mapped.id
 
         target_read_id = TargetMappedReadId(read_id=row["read_id"], mapping_result=mapped.id)
 
         bulk_insert_red_id.append(target_read_id)
     else:
-        mapped_result = TargetMappedReadId(read_id=row["read_id"], mapping_result_id=mapped_targets_dict[row["name"]])
+        mapped_result = TargetMappedReadId(read_id=row["read_id"],
+                                           mapping_result_id=mapped_targets_dict[row["species"]])
 
         bulk_insert_red_id.append(mapped_result)
 
@@ -749,42 +765,43 @@ def update_mapped_non_dangerous(row, task):
     """
     mapped_result = MappingResult.objects.get(task=task, species=row["name"], barcode_name="All reads")
     mapped_result.num_mapped += row["num_mapped"]
+    nm = mapped_result.num_mapped
     mapped_result.num_matches = row["num_matches"]
     mapped_result.sum_unique = row["sum_unique"]
-    mapped_result.mapped_proportion_of_classified = row["proportion_mapped"]
+    mapped_result.mapped_proportion_of_classified = round(mapped_result.num_mapped / nm, 5)
+    mapped_result.proportion_of_classified = row["prop_classed_nb"]
     mapped_result.save()
 
 
-def calculate_mapped_dangerous_barcode(mapped_dangerous_barcode_group_df, species_to_pk,
+def calculate_mapped_dangerous_barcode(mapped_dangerous_barcode_group_df
                                        ):
     """
     Update or create the red reads values for Each Barcode
     :param mapped_dangerous_barcode_group_df: Groups of dangerous reads mapping to t
-    :param species_to_pk: A dict with lookup for species to their database row primary key, used to Foreign key
-    to Cartography mapped
     :return:
     """
-    name_gb = mapped_dangerous_barcode_group_df.groupby("name")
+    logger.info("calculate_mapped_dangerous_barcode {}".format(mapped_dangerous_barcode_group_df.keys()))
+    name_gb = mapped_dangerous_barcode_group_df.groupby("species")
 
-    mapped_dangerous_barcode_group_df.set_index("name", inplace=True)
+    mapped_dangerous_barcode_group_df.set_index("species", inplace=True)
 
     mapped_dangerous_barcode_group_df["barcode_red_reads"] = name_gb.size()
 
     mapped_dangerous_barcode_group_df["barcode_summed_red"] = name_gb["unique"].sum()
 
-    mapped_dangerous_barcode_group_df["barcode_red_reads_proportion"] = \
-        mapped_dangerous_barcode_group_df["barcode_red_reads"] \
-        .div(mapped_dangerous_barcode_group_df["num_matches"]).mul(100).round(decimals=5)
-
-    mapped_dangerous_barcode_group_df["barcode_summed_red_proportion"] = \
-        mapped_dangerous_barcode_group_df["barcode_summed_red"] \
-        .div(mapped_dangerous_barcode_group_df["num_matches"]).mul(100).round(decimals=5)
+    # mapped_dangerous_barcode_group_df["barcode_red_reads_proportion"] = \
+    #     mapped_dangerous_barcode_group_df["barcode_red_reads"] \
+    #     .div(mapped_dangerous_barcode_group_df["num_matches"]).mul(100).round(decimals=5)
+    #
+    # mapped_dangerous_barcode_group_df["barcode_summed_red_proportion"] = \
+    #     mapped_dangerous_barcode_group_df["barcode_summed_red"] \
+    #     .div(mapped_dangerous_barcode_group_df["num_matches"]).mul(100).round(decimals=5)
 
     mapped_dangerous_barcode_group_df.reset_index(inplace=True)
 
-    mapped_dangerous_barcode_group_df.drop_duplicates(subset=["barcode_name", "name"], inplace=True)
+    mapped_dangerous_barcode_group_df.drop_duplicates(subset=["barcode_name", "species"], inplace=True)
 
-    mapped_dangerous_barcode_group_df.apply(create_or_update_barcode_mapped_dangerous, args=(species_to_pk,), axis=1)
+    mapped_dangerous_barcode_group_df.apply(create_or_update_barcode_mapped_dangerous, axis=1)
 
 
 def create_or_update_barcode_mapped_dangerous(row):
@@ -797,26 +814,27 @@ def create_or_update_barcode_mapped_dangerous(row):
     obj, created = MappingResult.objects.get_or_create(
         tax_id=row["tax_id"],
         barcode_name=row["barcode_name"],
-        species=row["name"]
+        species=row["species"]
     )
 
+    nm = obj.num_mapped
     obj.red_reads += row["barcode_red_reads"]
-    obj.red_reads_proportion_of_classified = row["barcode_red_reads_proportion"]
+    obj.red_reads_proportion_of_classified = round(row["barcode_red_reads"] / nm, 5)
     obj.red_sum_unique += row["barcode_summed_red"]
-    obj.red_sum_unique_proportion_of_classified = row["barcode_summed_red_proportion"]
+    obj.red_sum_unique_proportion_of_classified = round(row["barcode_summed_red"] / nm, 5)
     obj.save()
 
 
-def map_the_reads(name_df, task, flowcell, classified_per_barcode, num_matches_targets_barcoded_df, targets):
+def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targets, class_per_bar):
     """
     Map the reads is called on the dataframe of targets that have been split out, splits them into a group by name, and
     applies the map_all_the_groups function, which returns any reads that map to target areas in a dataframe.
     :param name_df: The targets dataframe
     :param task: The task model object
     :param flowcell: The flowcell model object
-    :param classified_per_barcode: The total number of reads classified in each barcode
     :param num_matches_targets_barcoded_df: The number of matches per barcode for each target species in a dataframe
     :param targets: The targets in this set of targets
+    :param class_per_bar: The number of reads classified per barcode
     :return:
     """
     # Targets_df
@@ -892,10 +910,8 @@ def map_the_reads(name_df, task, flowcell, classified_per_barcode, num_matches_t
         )
         if created:
             logger.info("Flowcell id: {} - Result Mapping object created for {}".format(flowcell.id, obj.species))
+
     # Initialise red_df for red alert target reads
-    queryset = MappingResult.objects.filter(task=task)
-    # Create a lookup of pks to species
-    species_to_pk = {query.species: query for query in queryset}
     red_reads_df = pd.DataFrame()
 
     barcodes = targets_df["barcode_name"].unique()
@@ -905,10 +921,9 @@ def map_the_reads(name_df, task, flowcell, classified_per_barcode, num_matches_t
     for name, group in gb:
         red_reads_df = red_reads_df.append(map_all_the_groups(group, name, reference_location, flowcell,
                                                               target_regions_df, targets_df, task,
-                                                              species_to_pk,
                                                               num_matches_targets_barcoded_df,
                                                               barcodes,
-                                                              targets)
+                                                              targets, class_per_bar)
                                            )
 
     # If none of the reads mapped to inside the groups
@@ -932,13 +947,24 @@ def map_the_reads(name_df, task, flowcell, classified_per_barcode, num_matches_t
     results_df["red_num_matches"] = mapping_gb.size()
     # Get the sum of the unique reads
     results_df["red_sum_unique"] = mapping_gb["unique"].sum()
+    logger.info("Flowcell id: {} - The results of the mapping stage pre prev num matches merge "
+                "are {}".format(flowcell.id, results_df[["barcode_name", "tax_id"]]))
+    logger.info("Flowcell id: {} - The results of the mapping stage pre prev num matches merge "
+                "are {}".format(flowcell.id, results_df.keys()))
+    logger.info("Flowcell id: {} - The pre prev num matches merge are {}".format(flowcell.id, prev_num_matches_df))
+    logger.info("Flowcell id: {} - The pre prev num matches merge are {}".format(flowcell.id,
+                                                                                 prev_num_matches_df.keys()))
+
     if not prev_num_matches_df.empty:
-        results_df = pd.merge(results_df, prev_num_matches_df, how="left", left_on=["tax_id, barcode_name"],
-                              right_on=["tax_id", "barcode_name"])
+        results_df = pd.merge(results_df, prev_num_matches_df, how="left", on=["tax_id", "barcode_name"])
 
         results_df["num_matches_y"].fillna(0, inplace=True)
 
+        results_df["sum_unique_y"].fillna(0, inplace=True)
+
         results_df["num_matches"] = results_df["red_num_matches"] + results_df["num_matches_y"]
+
+        results_df["sum_unique"] = results_df["red_sum_unique"] + results_df["sum_unique_y"]
 
     results_df.reset_index(inplace=True)
     logger.info("Flowcell id: {} - The results of the mapping stage are {}".format(flowcell.id, results_df))
@@ -950,12 +976,12 @@ def map_the_reads(name_df, task, flowcell, classified_per_barcode, num_matches_t
     mapped_target_dict = {}
     # Get the previous values for the mappings
     prev_df = pd.DataFrame(list(MappingResult.objects.filter(task=task).values()))
-    prev_df.set_index(["tax_id"], inplace=True)
+    prev_df.set_index(["tax_id", "barcode_name"], inplace=True)
     logger.info("Flowcell id: {} - The previous results are {}".format(flowcell.id, prev_df.head()))
     logger.info("Flowcell id: {} - The previous results keys are {}".format(flowcell.id, prev_df.keys()))
 
     if not results_df.empty:
-        results_df.set_index(["tax_id"], inplace=True)
+        results_df.set_index(["tax_id", "barcode_name"], inplace=True)
         # Add the previous number of red reads to the results df
         results_df["to_add_red_reads"] = prev_df["red_reads"]
         # Add the previous sum unique to the results dataframe
@@ -965,11 +991,15 @@ def map_the_reads(name_df, task, flowcell, classified_per_barcode, num_matches_t
         # Combine the previous sum of the unique reads
         results_df["summed_sum_unique"] = results_df["red_sum_unique"] + results_df["to_add_red_sum_unique"]
 
-        results_df["red_reads_proportion"] = results_df["summed_red_reads"].div(
-            results_df["num_matches"]).mul(100).round(decimals=5)
-
-        results_df["unique_red_reads_proportion"] = results_df["summed_sum_unique"] \
-            .div(results_df["num_matches"]).mul(100).round(decimals=5)
+        # results_df["to_add_num_mapped"] = prev_df["num_mapped"]
+        #
+        # results_df["summed_num_mapped"] = results_df["num_mapped"] + results_df["to_add_num_mapped"]
+        #
+        # results_df["red_reads_proportion"] = results_df["summed_red_reads"].div(
+        #     results_df["summed_num_mapped"]).mul(100).round(decimals=5)
+        #
+        # results_df["unique_red_reads_proportion"] = results_df["summed_sum_unique"] \
+        #     .div(results_df["summed_red_reads"]).mul(100).round(decimals=5)
 
         logger.info("Flowcell id: {} -  {}".format(flowcell.id, prev_df.keys()))
         logger.info("Flowcell id: {} -  {}".format(flowcell.id, results_df))
@@ -984,10 +1014,9 @@ def map_the_reads(name_df, task, flowcell, classified_per_barcode, num_matches_t
         except IntegrityError:
             logger.info("Flowcell id: {} - duplicate red reads!".format(flowcell.id))
         # Apply the calculation and update to the dataframe
-        barcode_mapped_gb = results_df.groupby("barcode_name")
+        barcode_mapped_gb = results_df.groupby("barcode_name", as_index=False)
         # Apply to each barcode group
-        barcode_mapped_gb.apply(calculate_mapped_dangerous_barcode, species_to_pk,
-                                classified_per_barcode)
+        barcode_mapped_gb.apply(calculate_mapped_dangerous_barcode)
 
 
 def create_donut_data_models(row, task):
@@ -1288,7 +1317,7 @@ def run_centrifuge(flowcell_job_id):
 
     logger.info("The number of matches dataframe is {}".format(num_matches_per_target_df))
 
-    map_the_reads(name_df, task, flowcell, classified_per_barcode, num_matches_per_target_df, temp_targets)
+    map_the_reads(name_df, task, flowcell, num_matches_per_target_df, temp_targets, classified_per_barcode)
 
     # delete these columns, no longer needed
     df.drop(columns=["readID", "seqID", "numMatches", "unique", "barcode_name", "read_id"], inplace=True)

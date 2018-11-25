@@ -7,9 +7,9 @@ function update_mapping_table(flowcellId) {
     let row_count = 0;
     let columns = ["Alert level", "Species", "Tax id", "Num. matches", "Prop. classified (%)",
         "Sum. Unique", "Num. mapped",
-        "Mapped prop. total (%)", "Danger reads",
+        "Mapped prop. total (%)", "Target reads",
         "Red prop. total (%)",
-        "Unique Danger reads"
+        "Unique Target reads"
          ];
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     let barcode = get_selected_barcode();
@@ -27,8 +27,19 @@ function update_mapping_table(flowcellId) {
         return;
     }
     $.get("/mapped_targets", {flowcellId, barcode}, result => {
-        console.log(result);
-        result.sort(compare);
+        // Set the barcode tabs to the highest alert level in their contents
+        let alertLevels = {1 : "yellow-alert-tab", 2 : "orange-alert-tab", 3 : "red-alert-tab"};
+        let tab_level;
+        for (let i = 0; i < result.tabs.length; i++){
+            tab = result.tabs[i];
+            console.log(tab);
+            tab_level = alertLevels[tab["value"]];
+            console.log(tab_level);
+            d3.select("."+tab["key"]).classed(tab_level, true);
+        }
+
+        data = result.table;
+        data.sort(compare);
         if (d3.select(".alert-table").classed("has-tabley?")) {
             table = d3.select(".alert-table").select("table");
             thead = table.select("thead");
@@ -49,12 +60,12 @@ function update_mapping_table(flowcellId) {
             });
         rows = tbody.selectAll('tr');
         rows
-            .data(result)
+            .data(data)
             .enter()
             .append('tr').attr("id", function (d) {
             return d.Species.replace(/ /g, "_");
         });
-        rows.data(result).exit().remove();
+        rows.data(data).exit().remove();
         rows = tbody.selectAll('tr');
         cells = rows.selectAll('td');
         cells.data(function (row) {
@@ -87,7 +98,7 @@ function update_mapping_table(flowcellId) {
                 variable.classed("yellow-alert", false);
                 variable.classed("orange-alert", true);
             }
-            else if (d.column === "Danger reads" && d.value > 0) {
+            else if (d.column === "Target reads" && d.value > 0) {
                 variable.classed("green-alert", false);
                 variable.classed("orange-alert", false);
                 variable.classed("yellow-alert", false);

@@ -4,14 +4,26 @@ views.py
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from centrifuge.models import CentrifugeOutput, MappingResult, Metadata, \
-    SankeyLink, MappingResultsBarcoded, DonutData
+    SankeyLink, DonutData
 from django.utils import timezone
 from django.http import JsonResponse
 import pandas as pd
 from jobs.models import JobMaster
 from reads.models import Flowcell, FastqRead
+import numpy as np
 
 pd.options.mode.chained_assignment = None
+
+
+def alert_level(col):
+    """
+    Returns the highest alert level for a barcode
+    :param col: The dataframe column that we are applying the function to
+    :return:
+    """
+    alert_levels = {"num_matches": 1, "num_mapped": 2, "red_reads": 3}
+    series = np.where(col > 0, alert_levels[col.name], 0)
+    return series
 
 
 @api_view(["GET"])
@@ -165,7 +177,7 @@ def centrifuge_sankey(request):
 
 
 @api_view(["GET"])
-def vis_table_or_donut_data(request):
+def donut_data(request):
     """
     :purpose: Create and return the data for the bottom of the page total results table or the
      data for the donut chart
@@ -236,85 +248,46 @@ def get_target_mapping(request):
 
     else:
         # Get a line for all the targets
-        map_queryset = MappingResult.objects.filter(task__id=task_id).values()
+        map_queryset = MappingResult.objects.filter(task__id=task_id, barcode_name=barcode).values()
 
         if not map_queryset:
             return Response("No data has yet been produced for the target mappings", status=204)
-        # Get the Results for this barcode
-        queryset = MappingResultsBarcoded.objects.filter(mapping_result__task__id=task_id,
-                                                         barcode_name=barcode
-                                                         ).values()
         # Create a dataframe for this barcode
-        just_barcode_df = pd.DataFrame(list(queryset))
-        if just_barcode_df.empty:
-            return Response("No data has been found for this barcode. Perhaps an old barcode href is being queried",
-                            status=404)
-        # Barcode data only has species with results, need to add on any targets that have no results in that barcode
+        results_df = pd.DataFrame(list(map_queryset))
 
-        all_targets_df = pd.DataFrame(list(map_queryset))
-        all_targets_df[["num_mapped", "red_reads", "mapped_proportion_of_classified",
-                        "red_reads_proportion_of_classified", "red_sum_unique",
-                        "red_sum_unique_proportion_of_classified"]] = 0
-        # results_df = pd.merge(all_targets_df, just_barcode_df, how="outer", left_on="tax_id", right_on="tax_id")
-        results_df = just_barcode_df.append(all_targets_df)
-        results_df.drop_duplicates(subset=["species"], keep="first", inplace=True)
+    # #### Get the barcode alert levels #### #
+    barcode_df = pd.DataFrame(list(MappingResult.objects.filter(task__id=task_id).values()))
+    calc_df = barcode_df[["num_matches", "num_mapped", "red_reads"]]
 
-    species_list = MappingResult.objects.filter(task__id=task_id).values_list("tax_id", flat=True)
+    hodf = calc_df.apply(alert_level)
 
-    cent_output = CentrifugeOutput.objects.filter(task__id=task_id, tax_id__in=species_list,
-                                                  barcode_name=barcode).values()
-    if not cent_output:
-        return Response("No data has been found for this barcode. Perhaps an old barcode href is being queried",
-                        status=404)
+    barcode_df["alert_level"] = hodf.max(axis=1)
 
-    cent_output_df = pd.DataFrame(list(cent_output))
+    alert_level_results = barcode_df.groupby("barcode_name")["alert_level"].max()
 
-    if results_df.empty:
-        queryset = MappingResult.objects.filter(task__id=task_id).values()
+    alert_level_results = pd.DataFrame(alert_level_results).reset_index().rename(
+        columns={"barcode_name": "key", "alert_level": "value"}
+    )
+    alert_level_results["key"] = alert_level_results["key"].str.replace(" ", "_", regex=True)
+    alert_level_results = alert_level_results.to_dict(orient="records")
 
-        results_df = pd.DataFrame(list(queryset))
-
-        results_df[["num_mapped", "red_reads", "red_sum_unique"]] = 0
-
-        results_df["Num. matches"] = 0
-
-        results_df["Sum. Unique"] = 0
-
-        results_df.rename(columns={"num_mapped": "Num. mapped",
-                                   "red_reads": "Danger reads",
-                                   "red_sum_unique": "Unique Danger reads",
-                                   "species": "Species",
-                                   "tax_id": "Tax id",
-                                   "num_matches": "Num. matches",
-                                   "sum_unique": "Sum. Unique",
-                                   "mapped_proportion_of_classified": "Mapped prop. total",
-                                   "red_reads_proportion_of_classified": "Red prop. total",
-                                   "proportion_of_classified": "Prop. classified"
-                                   }, inplace=True)
-
-        results = results_df.to_dict(orient="records")
-
-        return Response(results)
-
-    merger_df = pd.merge(results_df, cent_output_df, how="outer", left_on="tax_id", right_on="tax_id")
-    merger_df.drop(columns=["id_x", "id_y", "barcode_name_x", "barcode_name_y"], inplace=True)
-    merger_df.fillna(0, inplace=True)
-
-    merger_df.rename(columns={"num_mapped": "Num. mapped",
-                              "red_reads": "Danger reads",
-                              "red_sum_unique": "Unique Danger reads",
-                              "species_x": "Species",
+    results_df.rename(columns={"num_mapped": "Num. mapped",
+                              "red_reads": "Target reads",
+                              "red_sum_unique": "Unique Target reads",
+                              "species": "Species",
                               "tax_id": "Tax id",
-                              "num_matches_y": "Num. matches",
-                              "sum_unique_y": "Sum. Unique",
+                              "num_matches": "Num. matches",
+                              "sum_unique": "Sum. Unique",
                               "mapped_proportion_of_classified": "Mapped prop. total (%)",
                               "red_reads_proportion_of_classified": "Red prop. total (%)",
                               "proportion_of_classified": "Prop. classified (%)"
                               }, inplace=True)
 
-    results = merger_df.to_dict(orient="records")
+    results = results_df.to_dict(orient="records")
 
-    return Response(results)
+    return_dict = {"table": results, "tabs": alert_level_results}
+
+    return Response(return_dict)
 
 
 @api_view(['GET'])
