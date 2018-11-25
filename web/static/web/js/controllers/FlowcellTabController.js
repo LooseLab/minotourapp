@@ -162,17 +162,17 @@ class FlowcellTabController {
 
                 case 'sequence-mapping':
 
-                    this._nav_sequence_mapping.remove('hidden');
+                    this._nav_sequence_mapping.classList.remove('hidden');
                     break;
 
                 case 'sequence-assembly':
 
-                    this._nav_sequence_assembly.remove('hidden');
+                    this._nav_sequence_assembly.classList.remove('hidden');
                     break;
 
                 case 'metagenomics':
 
-                    this._nav_metagenomics.remove('hidden');
+                    this._nav_metagenomics.classList.remove('hidden');
                     break;
 
                 case 'tasks':

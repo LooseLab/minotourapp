@@ -3,13 +3,13 @@ views.py
 """
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from centrifuge.models import CentrifugeOutput, MappingResult, LineageValue, Metadata, \
+from centrifuge.models import CentrifugeOutput, MappingResult, Metadata, \
     SankeyLink, MappingResultsBarcoded, DonutData
 from django.utils import timezone
 from django.http import JsonResponse
 import pandas as pd
 from jobs.models import JobMaster
-from reads.models import Flowcell
+from reads.models import Flowcell, FastqRead
 
 pd.options.mode.chained_assignment = None
 
@@ -42,8 +42,11 @@ def centrifuge_metadata(request):
     if not queryset:
         return Response("No Metadata. This is not the task you are looking for....", status=404)
 
-    number_of_reads = job_master.flowcell.number_reads
+    print(job_master.flowcell.number_reads)
 
+    # number_of_reads = job_master.flowcell.number_reads
+
+    number_of_reads = FastqRead.objects.filter(run__flowcell__id=flowcell_id).count()
     reads_class = job_master.read_count
     # Percentage of reads classified
     percentage = round(reads_class / number_of_reads * 100, 2)
@@ -213,16 +216,18 @@ def get_target_mapping(request):
     :param request:
     :return:
     """
+    # The id of the flowcell that produced these reads
     flowcell_id = request.GET.get("flowcellId", 0)
-
+    # The barcode that is currently selected to be viewed on the page
     barcode = request.GET.get("barcode", "All reads")
 
     if flowcell_id == 0:
         return Response("Flowcell id has failed to be delivered", status=404)
 
-    # Get the most recent jobmaster id
+    # Get the most recent jobmaster id, although there should only be one
     task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last().id
 
+    # If the barcode is All reads, there is always four
     if barcode == "All reads":
         queryset = MappingResult.objects.filter(task__id=task_id, barcode_name=barcode).values()
         results_df = pd.DataFrame(list(queryset))
@@ -300,8 +305,8 @@ def get_target_mapping(request):
                               "red_sum_unique": "Unique Danger reads",
                               "species_x": "Species",
                               "tax_id": "Tax id",
-                              "num_matches": "Num. matches",
-                              "sum_unique": "Sum. Unique",
+                              "num_matches_y": "Num. matches",
+                              "sum_unique_y": "Sum. Unique",
                               "mapped_proportion_of_classified": "Mapped prop. total (%)",
                               "red_reads_proportion_of_classified": "Red prop. total (%)",
                               "proportion_of_classified": "Prop. classified (%)"
