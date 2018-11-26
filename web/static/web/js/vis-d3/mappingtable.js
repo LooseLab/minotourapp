@@ -5,11 +5,10 @@ function update_mapping_table(flowcellId) {
     let rows;
     let cells;
     let row_count = 0;
-    let columns = ["Alert level", "Species", "Tax id", "Num. matches", "Prop. classified (%)",
+    let columns = ["Alert level", "Species", "Num. matches", "Prop. classified (%)",
         "Sum. Unique", "Num. mapped",
         "Mapped prop. total (%)", "Target reads",
         "Red prop. total (%)",
-        "Unique Target reads"
          ];
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     let barcode = get_selected_barcode();
@@ -28,7 +27,7 @@ function update_mapping_table(flowcellId) {
     }
     $.get("/mapped_targets", {flowcellId, barcode}, result => {
         // Set the barcode tabs to the highest alert level in their contents
-        let alertLevels = {1 : "yellow-alert-tab", 2 : "orange-alert-tab", 3 : "red-alert-tab"};
+        let alertLevels = {0: "green-alert-tab", 1 : "yellow-alert-tab", 2 : "orange-alert-tab", 3 : "red-alert-tab"};
         let tab_level;
         for (let i = 0; i < result.tabs.length; i++){
             tab = result.tabs[i];
@@ -93,7 +92,7 @@ function update_mapping_table(flowcellId) {
         .style("background-color", function (d, i) {
             // if the cell contains the key, set the background colour to the rgb value in the data
             let variable = d3.select("#" + d3.select(this).node().parentNode.children[0].id);
-            if (d.column === "Num. mapped" && d.value > 0 && !variable.classed("red-alert")) {
+            if (d.column === "Num. mapped" && d.value > 0) {
                 variable.classed("green-alert", false);
                 variable.classed("yellow-alert", false);
                 variable.classed("orange-alert", true);
@@ -104,7 +103,7 @@ function update_mapping_table(flowcellId) {
                 variable.classed("yellow-alert", false);
                 variable.classed("red-alert", true);
             }
-            else if (d.column === "Num. matches" && d.value > 0 && !variable.classed("red-alert") && !variable.classed("orange-alert")) {
+            else if (d.column === "Num. matches" && d.value > 0) {
                 variable.classed("green-alert", false);
                 variable.classed("yellow-alert", true);
             }

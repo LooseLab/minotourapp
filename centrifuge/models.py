@@ -151,10 +151,6 @@ class MappingResult(models.Model):
 
     red_reads_proportion_of_classified = models.FloatField(default=0)
 
-    red_sum_unique = models.IntegerField(default=0)
-
-    red_sum_unique_proportion_of_classified = models.FloatField(default=0)
-
     num_matches = models.IntegerField(default=0)
 
     proportion_of_classified = models.FloatField(default=0.0)
