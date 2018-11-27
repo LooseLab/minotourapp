@@ -16,7 +16,8 @@ BioPython
 celery
 django_celery_beat
 twitter
-redis
+redis==2.10.6
+whitenoise
 django_redis
 flower
 tqdm
@@ -28,3 +29,4 @@ isort
 psycopg2-binary
 django-debug-toolbar
 ete3
+gunicorn

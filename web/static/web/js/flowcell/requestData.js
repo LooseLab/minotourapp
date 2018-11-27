@@ -69,8 +69,10 @@ function requestData(flowcell_id) {
 
             $.get(url, {}, function (result) {
                 this.barcodes = result.data.sort();
+
+                this.tabs = result.tabs;
                 // draw the sankey
-                bants(flowcell_id, this.barcodes);
+                bants(flowcell_id, this.barcodes, this.tabs);
                 // update the metadata header
 
             });
@@ -86,5 +88,4 @@ function requestData(flowcell_id) {
 
         }
     }).bind(this));
-    // setTimeout(requestData.bind(this, flowcell_id), 60000);
 };

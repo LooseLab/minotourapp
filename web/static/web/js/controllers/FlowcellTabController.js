@@ -48,19 +48,33 @@ class FlowcellTabController {
             this._tab_tasks
         ];
 
-        // this._tabs_view = new MFlowcellTabsView(document.querySelector('.flowcell-tabs'));
-
         this._tabs = new FlowcellTabList();
 
-        // this._tabs_view.update(this._tabs);
         this._flowcell_services = new FlowcellService();
 
-        let promise1 = this._flowcell_services.getFlowcellTabs(flowcell_id);
+        this.draw_tabs();
+
+        this._redraw_interval = setInterval(() => this.redraw_tabs(), 5000);
+    }
+
+    draw_tabs(){
+
+        let promise1 = this._flowcell_services.getFlowcellTabs(this._flowcell_id);
 
         promise1.then((tabs) => {
 
             this.show_tabs(tabs);
-            this.toggle_tab_content('summary-data')
+            this.toggle_tab_content("summary-data");
+        });
+    }
+
+    redraw_tabs() {
+
+        let promise1 = this._flowcell_services.getFlowcellTabs(this._flowcell_id);
+
+        promise1.then((tabs) => {
+
+            this.show_tabs(tabs);
         });
     }
 
@@ -162,17 +176,17 @@ class FlowcellTabController {
 
                 case 'sequence-mapping':
 
-                    this._nav_sequence_mapping.remove('hidden');
+                    this._nav_sequence_mapping.classList.remove('hidden');
                     break;
 
                 case 'sequence-assembly':
 
-                    this._nav_sequence_assembly.remove('hidden');
+                    this._nav_sequence_assembly.classList.remove('hidden');
                     break;
 
                 case 'metagenomics':
-
-                    this._nav_metagenomics.remove('hidden');
+                    console.log("removing metagenomics");
+                    this._nav_metagenomics.classList.remove('hidden');
                     break;
 
                 case 'tasks':
