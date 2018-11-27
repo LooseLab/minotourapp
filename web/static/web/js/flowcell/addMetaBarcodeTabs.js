@@ -1,4 +1,4 @@
-function addMetaBarcodeTabs(flowcellId, barcodes){
+function addMetaBarcodeTabs(flowcellId, barcodes, tabs){
     var requestData = this.requestData.bind(this);
 
     var selected_barcode = get_selected_barcode();
@@ -11,11 +11,17 @@ function addMetaBarcodeTabs(flowcellId, barcodes){
 
     for (var i = 0; i < sortedBarcodes.length; i++) {
 
+        var alertLevels = {0: "green-alert-tab", 1 : "yellow-alert-tab", 2 : "orange-alert-tab", 3 : "red-alert-tab"};
+
         var li = document.createElement("li");
+
+        var tabLevel = tabs[sortedBarcodes[i]];
+
+        var tabLevelClass = alertLevels[tabLevel];
 
         li.classList.add('barcode-meta-tab');
 
-        li.classList.add(sortedBarcodes[i].toString().replace(" ", "_"));
+        li.classList.add(tabLevelClass);
 
         var a = document.createElement("a");
         // a.onclick = self.updateChartsBasedOnBarcode;

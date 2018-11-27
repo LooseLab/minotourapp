@@ -56,8 +56,16 @@ class FlowcellTabController {
         // this._tabs_view.update(this._tabs);
         this._flowcell_services = new FlowcellService();
 
-        this.redraw_tabs(flowcell_id);
+        this.draw_tabs(flowcell_id);
         this._redraw_interval = setInterval(() => this.redraw_tabs(), 5000);
+    }
+    draw_tabs(){
+        let promise1 = this._flowcell_services.getFlowcellTabs(this._flowcell_id);
+
+        promise1.then((tabs) => {
+            this.show_tabs(tabs);
+            this.toggle_tab_content("summary-data");
+        });
     }
 
     redraw_tabs(){
@@ -67,10 +75,7 @@ class FlowcellTabController {
 
         promise1.then((tabs) => {
             this.show_tabs(tabs);
-            this.toggle_tab_content('summary-data');
         });
-
-        console.log('>> redraw_tabs');
     }
 
     toggle_tab_content(name) {
