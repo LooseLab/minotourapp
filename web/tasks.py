@@ -106,7 +106,7 @@ def run_monitor():
                 :return:
                 """
                 try:
-                    run_centrifuge.delay(flowcell.id, flowcell_job.id)
+                    run_centrifuge.delay(flowcell_job.id)
 
                 except Exception as e:
                     e = sys.exc_info()
