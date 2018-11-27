@@ -679,12 +679,12 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
                                      read_id__in=target_species_group_df["read_id"])
     # The fasta sequence
     fastqs_list = reads.values_list('read_id', 'fastqreadextra__sequence')
-    logger.info('fastqs_list content below:')
-    logger.info(fastqs_list)
+    # logger.info('fastqs_list content below:')
+    # logger.info(fastqs_list)
     
-    for fastq in fastqs_list:
-        logger.info('read_id: {}'.format(fastq[0]))
-        logger.info('sequence: {}'.format(fastq[1]))
+    # for fastq in fastqs_list:
+    #     logger.info('read_id: {}'.format(fastq[0]))
+    #     logger.info('sequence: {}'.format(fastq[1]))
     # Assemble the fastq into a string
     # fastq = "".join([str(">" + c[0] + "\n" + c[1] + "\n")
     #                  for c in fastqs_list if c[1] is not None])
@@ -707,6 +707,18 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
         .communicate(input=str.encode(fastq))
     # Get the output of minimap2
     map_output = out.decode()
+
+    if len(map_output) > 0:
+
+        logger.info('>>> Found mappings')
+        logger.info('>>> map_output')
+        logger.info(map_output)
+
+        logger.info('>>> minimap2 command:')
+        logger.info(map_cmd)
+
+        logger.info('>>> read_id:')
+        logger.info(fastqs_list)
 
     logger.info("Flowcell id: {} - minimap output {} ".format(flowcell.id, map_output))
 
