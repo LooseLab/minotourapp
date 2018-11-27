@@ -541,8 +541,6 @@ def update_mapped_red_values(row, task, flowcell):
                                        task=task, barcode_name=row["barcode_name"])
     nm = mapped.num_mapped
     mapped.red_reads += row["red_num_matches"]
-    logger.info(mapped.red_reads)
-    logger.info(nm)
     mapped.red_reads_proportion_of_classified = round((mapped.red_reads / nm) * 100, 2)
     mapped.save()
 
@@ -759,14 +757,9 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
 
     update_num_mapped_df_non_barcode["barcode_name"] = "All reads"
 
-    logger.info("num_mapped {}".format(update_num_mapped_df_non_barcode))
-    logger.info("num_mapped {}".format(update_num_mapped_df_non_barcode.keys()))
-
     update_num_mapped_df_non_barcode["num_mapped"] = update_num_mapped_df_non_barcode.shape[0]
 
     update_num_mapped_df_non_barcode.drop_duplicates(subset="name", inplace=True)
-
-    logger.info("num_mapped {}".format(update_num_mapped_df_non_barcode[["num_mapped", "barcode_name"]]))
 
     update_num_mapped_df_non_barcode.apply(update_mapped_non_dangerous, args=(task,), axis=1)
 
@@ -783,8 +776,6 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
     update_num_mapped_df_barcoded.reset_index(inplace=True)
 
     update_num_mapped_df_barcoded.drop_duplicates(subset=["name", "barcode_name"], inplace=True)
-
-    logger.info("num_mapped {}".format(update_num_mapped_df_barcoded[["num_mapped", "barcode_name", "name"]]))
 
     update_num_mapped_df_barcoded.apply(update_mapped_non_dangerous, args=(task,), axis=1)
 
@@ -1018,10 +1009,6 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
 
     results_df.set_index("name", inplace=True)
 
-    logger.info(mapping_gb_nb)
-
-    logger.info(mapping_gb_nb.size())
-
     results_df["red_num_matches"] = mapping_gb_nb.size()
 
     results_df["barcode_name"] = "All reads"
@@ -1055,20 +1042,12 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
 
     results_df_bar.rename(columns={"name": "species"}, inplace=True)
 
-    logger.info(">>>>")
-    logger.info(">>>>")
-    logger.info(">>>>")
-    logger.info(">>>>")
-    logger.info(results_df_bar)
-
     results_df_bar.drop_duplicates(subset=["species", "barcode_name"], inplace=True)
-
-    logger.info(results_df_bar)
 
     results_df_bar.apply(update_mapped_red_values, args=(task, flowcell), axis=1)
 
     # prev_num_matches_df = num_matches_targets_barcoded_df
-    # logger.info("Flowcell id: {} - The pre prev num matches merge are {}".format(flowcell.id, prev_num_matches_df))
+    # ("Flowcell id: {} - The pre prev num matches merge are {}".format(flowcell.id, prev_num_matches_df))
     # logger.info("Flowcell id: {} - The pre prev num matches merge are {}".format(flowcell.id,
     #                                                                              prev_num_matches_df.keys()))
     #
@@ -1181,7 +1160,7 @@ def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
     data_df = pd.merge(df, lineages_df, left_on="tax_id", right_index=True)
     data_df.set_index(tax_rank_filter, inplace=True)
 
-    # logger.info('Flowcell id: {} - Calculating donut data'.format(flowcell.id))
+    logger.info('Flowcell id: {} - Calculating donut data'.format(flowcell.id))
     gb_bc = data_df.groupby("barcode_name")
     donut_df = pd.DataFrame()
     for name, group in gb_bc:
@@ -1200,7 +1179,7 @@ def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
 
     donut_df.reset_index(inplace=True)
 
-    # logger.info('Flowcell id: {} - Bulk inserting new species donut data'.format(flowcell.id))
+    logger.info('Flowcell id: {} - Bulk inserting new species donut data'.format(flowcell.id))
 
     prev_donut_df = pd.DataFrame(list(DonutData.objects.filter(task=task).values().distinct()))
 
