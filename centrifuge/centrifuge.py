@@ -494,6 +494,8 @@ def plasmid_mapping(row, species, reference_location, fastq, flowcell):
 
     map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format("minimap2", minimap2_ref_path)
 
+    logger.info("Fastqs {}".format(fastq))
+
     # Execute minimap2
     out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE) \
         .communicate(input=str.encode(fastq))
