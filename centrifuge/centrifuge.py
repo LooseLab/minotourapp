@@ -475,7 +475,7 @@ def update_mapped_non_dangerous(row, task):
     mapped_result.save()
 
 
-def plasmid_mapping(row, species, reference_location, fastq, flowcell):
+def plasmid_mapping(row, species, reference_location, fastq_list, flowcell):
     """
     Map the reads for groups that have danger regions on plasmids
     :param row: The row of the target dataframe for species with plasmid danger regions
@@ -485,6 +485,28 @@ def plasmid_mapping(row, species, reference_location, fastq, flowcell):
     :param flowcell: The flowcell for logging by flowcell_id
     :return plasmid_map_df: A list of dicts containing the information about the plasmid mappings
     """
+
+    #
+    # TODO Delete next lines
+    #
+    fastq_input = ''
+
+    for fastq in fastq_list:
+
+        if fastq[1]:
+
+            temp = '>{}\n{}\n'.format(fastq[0], fastq[1])
+            fastq_input += temp
+
+    fastq = fastq_input
+    logger.info('>>> Inside plasmid_mapping')
+    logger.info('>>> Fastq list (begin)')
+    logger.info(fastq)
+    logger.info('>>> Fastq list (end)')
+
+    #
+    # End of deletion
+    #
 
     REFERENCE_LOCATION = getattr(settings, "REFERENCE_LOCATION", None)
     MINIMAP2 = getattr(settings, "MINIMAP2", None)
@@ -690,28 +712,10 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
 
     plasmid_df = species_regions_df[species_regions_df["gff_line_type"] == "plasmid"]
     # If there is output from minimap2 create a dataframe
-
-    #
-    # TODO Delete next lines
-    #
-    fastq_input = ''
-
-    for fastq in fastqs_list:
-
-        if fastq[1]:
-
-            temp = '>{}\n{}\n'.format(fastq[0], fastq[1])
-            fastq_input += temp
-
-    fastq = fastq_input
-    #
-    # End of deletion
-    #
-
     if not plasmid_df.empty:
         logger.info("Flowcell id: {} - Mapping reads to plasmids for species {} ".format(flowcell.id, species))
-        plasmid_red_df = plasmid_df.apply(plasmid_mapping, args=(species, reference_location, fastq, flowcell),
-                                          axis=1)
+        # plasmid_red_df = plasmid_df.apply(plasmid_mapping, args=(species, reference_location, fastq, flowcell), axis=1)
+        plasmid_red_df = plasmid_df.apply(plasmid_mapping, args=(species, reference_location, fastqs_list, flowcell), axis=1)
         plasmid_red_df.dropna(inplace=True)
         logger.info("Flowcell id: {} - plasmid mapping output is {}".format(flowcell.id, plasmid_red_df))
         if not plasmid_red_df.empty:
