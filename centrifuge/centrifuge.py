@@ -674,8 +674,6 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
             temp = '>{}\n{}\n'.format(fastq[0], fastq[1])
             fastq_input += temp
 
-    logger.info(fastq_input)
-
     fastq = fastq_input
 
     # The command to execute minimap
@@ -692,6 +690,24 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
 
     plasmid_df = species_regions_df[species_regions_df["gff_line_type"] == "plasmid"]
     # If there is output from minimap2 create a dataframe
+
+    #
+    # TODO Delete next lines
+    #
+    fastq_input = ''
+
+    for fastq in fastqs_list:
+
+        if fastq[1]:
+
+            temp = '>{}\n{}\n'.format(fastq[0], fastq[1])
+            fastq_input += temp
+
+    fastq = fastq_input
+    #
+    # End of deletion
+    #
+
     if not plasmid_df.empty:
         logger.info("Flowcell id: {} - Mapping reads to plasmids for species {} ".format(flowcell.id, species))
         plasmid_red_df = plasmid_df.apply(plasmid_mapping, args=(species, reference_location, fastq, flowcell),
