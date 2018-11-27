@@ -199,7 +199,7 @@ CELERY_TIMEZONE = 'Europe/London'
 CELERY_BEAT_SCHEDULE = {
     'rapid-monitor': {
         'task': 'web.tasks.run_monitor',
-        'schedule': 15,
+        'schedule': 30,
     },
     'send-messages': {
         'task': 'web.tasks.send_messages',
@@ -212,6 +212,10 @@ CELERY_BEAT_SCHEDULE = {
     'update_run_start_time': {
         'task': 'web.tasks.update_run_start_time',
         'schedule': 600,
+    },
+    'run_summary': {
+        'task': 'web.tasks_update_run_summary.update_run_summary',
+        'schedule': 60,
     },
     'update_flowcell_list_details': {
         'task': 'web.tasks.update_flowcell_list_details',
