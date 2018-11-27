@@ -14,6 +14,7 @@ class FlowcellTabController {
         this._nav_sequence_assembly = document.querySelector('#nav-sequence-assembly');
         this._nav_metagenomics = document.querySelector('#nav-metagenomics');
         this._nav_tasks = document.querySelector('#nav-tasks');
+        // TODO change to setTimeout at end of redraw_tabs
 
         this._all_navs = [
 
@@ -55,13 +56,21 @@ class FlowcellTabController {
         // this._tabs_view.update(this._tabs);
         this._flowcell_services = new FlowcellService();
 
-        let promise1 = this._flowcell_services.getFlowcellTabs(flowcell_id);
+        this.redraw_tabs(flowcell_id);
+        this._redraw_interval = setInterval(() => this.redraw_tabs(), 5000);
+    }
+
+    redraw_tabs(){
+        // TODO this is garbo code, ask Roberto
+        // this._flowcell_services = new FlowcellService();
+        let promise1 = this._flowcell_services.getFlowcellTabs(this._flowcell_id);
 
         promise1.then((tabs) => {
-
             this.show_tabs(tabs);
-            this.toggle_tab_content('summary-data')
+            this.toggle_tab_content('summary-data');
         });
+
+        console.log('>> redraw_tabs');
     }
 
     toggle_tab_content(name) {
@@ -171,7 +180,7 @@ class FlowcellTabController {
                     break;
 
                 case 'metagenomics':
-
+                    console.log("removing metagenomics");
                     this._nav_metagenomics.classList.remove('hidden');
                     break;
 

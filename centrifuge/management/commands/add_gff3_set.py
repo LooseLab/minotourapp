@@ -10,12 +10,13 @@ from reference.models import ReferenceInfo
 import numpy as np
 
 
-def gff_create(row, set_name, tax_id):
+def gff_create(row, species_name, tax_id, set_name):
     """
     Create the model objects for the gff
-    :param row:
-    :param set_name:
-    :param tax_id:
+    :param row: The row of the data-frame
+    :param species_name: The name of the species these gff regions relate to
+    :param tax_id: A dictionary with the tax_id as value, species name as key
+    :param set_name: The name of the ste to include these reads in
     :return:
     """
 
@@ -25,9 +26,9 @@ def gff_create(row, set_name, tax_id):
         name = "danger_zone"
 
     obj, created = MappingTarget.objects.get_or_create(
-        species=set_name,
-        tax_id=tax_id[set_name.replace("_", " ")][0],
-        target_set="starting_defaults",
+        species=species_name,
+        tax_id=tax_id[species_name.replace("_", " ")][0],
+        target_set=set_name,
         start=row["start"],
         end=row["end"],
         gff_line_type=row["type"],
@@ -36,11 +37,11 @@ def gff_create(row, set_name, tax_id):
 
     if created:
         print("\033[1;36;1m Adding Entry {} for position {} to {} for species {} in set {}"
-              .format(name, row["start"], row["end"], set_name, "starting_defaults"))
+              .format(name, row["start"], row["end"], species_name, "starting_defaults"))
     else:
         print("\033[1;31;1m Entry matching position {} to {} for species {} in set {}"
               " already exists in database"
-              .format(row["start"], row["end"], set_name, "starting_defaults"))
+              .format(row["start"], row["end"], species_name, "starting_defaults"))
 
 
 class Command(BaseCommand):
@@ -60,6 +61,9 @@ class Command(BaseCommand):
         parser.add_argument('gff', type=str, help="Absolute path to the gff file containing the set of the regions.")
         parser.add_argument('-s', '--species', type=str, help="The name of the species of this genome,"
                                                               " otherwise the filename is used.")
+        parser.add_argument("-S", "--set", type=str, help="The name of the target set to include the gff regions "
+                                                          "for the species in")
+        # TODO add recursive functionality
 
     def handle(self, *args, **options):
         """
@@ -70,27 +74,41 @@ class Command(BaseCommand):
         """
         try:
             reference_list = list(ReferenceInfo.objects.all().values_list("name", flat=True))
+            set_name_list = list(MappingTarget.objects.all().values_list("target_set", flat=True))
 
             if options["species"]:
-                set_name = options["species"].replace(" ", "_")
+                species_name = options["species"].replace(" ", "_")
             else:
-                set_name = os.path.basename(options['gff']).split(".")[0].replace(" ", "_")
+                species_name = os.path.basename(options['gff']).split(".")[0].replace(" ", "_")
 
-            if set_name not in reference_list:
+            if options["set"]:
+                set_name = options["set"].replace(" ", "_")
+            else:
+                set_name = "starting_defaults"
+
+            if species_name not in reference_list:
                 raise CommandError('No matching reference file with name "%s" found in database. Please upload '
                                    'a reference with'
-                                   ' the exact species name' % set_name)
+                                   ' the exact species name' % species_name)
 
             else:
-                print("\033[1;35;1m Reference found for species {} in database".format(set_name))
+                print("\033[1;35;1m Reference found for species {} in database".format(species_name))
 
-            set_name = set_name.replace("_", " ")
+            if set_name in set_name_list:
+                print("\033[1;35;1m Trying to add regions for species {} to already existing set {}"
+                      .format(species_name, set_name))
 
-            print("\033[1;37;1m Processing gff3 file {} with a set name of {}".format(options['gff'], set_name))
+            else:
+                print("\033[1;35;1m Creating new set {} and adding target regions for species {}"
+                      .format(set_name, species_name))
+
+            species_name = species_name.replace("_", " ")
+
+            print("\033[1;37;1m Processing gff3 file {} with a set name of {}".format(options['gff'], species_name))
 
             ncbi = NCBITaxa()
 
-            tax_id = ncbi.get_name_translator([set_name])
+            tax_id = ncbi.get_name_translator([species_name])
 
             srcname = options['gff']
 
@@ -104,9 +122,7 @@ class Command(BaseCommand):
 
             gff_df["name"] = gff_df["name"].fillna("no_provided_name")
 
-            gff_df.apply(gff_create, args=(set_name, tax_id), axis=1)
+            gff_df.apply(gff_create, args=(species_name, tax_id, set_name), axis=1)
 
         except Exception as e:
             raise CommandError(repr(e))
-
-
