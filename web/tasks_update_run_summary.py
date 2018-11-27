@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+from celery import task
 from celery.utils.log import get_task_logger
 from django.db.models import Count, Max, Min, Sum, Avg
 
@@ -8,6 +9,7 @@ from reads.models import FastqRead, Flowcell, RunSummary
 logger = get_task_logger(__name__)
 
 
+@task()
 def update_run_summary():
 
     for flowcell in Flowcell.objects.filter(is_active=True):

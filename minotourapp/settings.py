@@ -185,7 +185,7 @@ MAILGUN_SERVER_NAME = get_env_variable("MT_MAILGUN_SERVER_NAME")
     },
 }"""
 
-CELERY_IMPORTS = ('web.tasks')
+CELERY_IMPORTS = ('web.tasks', 'web.tasks_update_run_summary')
 # For RabbitMQ
 #CELERY_BROKER_URL = 'amqp://'
 CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
@@ -197,21 +197,25 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Europe/London'
 CELERY_BEAT_SCHEDULE = {
-    'rapid-monitor': {
-        'task': 'web.tasks.run_monitor',
-        'schedule': 15,
-    },
-    'send-messages': {
-        'task': 'web.tasks.send_messages',
-        'schedule': 600,
-    },
-    'delete-runs': {
-        'task': 'web.tasks.delete_runs',
-        'schedule': 600,
-    },
-    'update_run_start_time': {
-        'task': 'web.tasks.update_run_start_time',
-        'schedule': 600,
+    # 'rapid-monitor': {
+    #     'task': 'web.tasks.run_monitor',
+    #     'schedule': 30,
+    # },
+    # 'send-messages': {
+    #     'task': 'web.tasks.send_messages',
+    #     'schedule': 600,
+    # },
+    # 'delete-runs': {
+    #     'task': 'web.tasks.delete_runs',
+    #     'schedule': 600,
+    # },
+    # 'update_run_start_time': {
+    #     'task': 'web.tasks.update_run_start_time',
+    #     'schedule': 600,
+    # },
+    'run_summary': {
+        'task': 'web.tasks_update_run_summary.update_run_summary',
+        'schedule': 30,
     },
     'update_flowcell_list_details': {
         'task': 'web.tasks.update_flowcell_list_details',
@@ -239,7 +243,7 @@ MINIMAP2 = get_env_variable("MT_MINIMAP2")
 USE_X_FORWARDED_HOST = True
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 # if DEBUG:
 #    INTERNAL_IPS = ('127.0.0.1', 'localhost',)
