@@ -14,7 +14,6 @@ class FlowcellTabController {
         this._nav_sequence_assembly = document.querySelector('#nav-sequence-assembly');
         this._nav_metagenomics = document.querySelector('#nav-metagenomics');
         this._nav_tasks = document.querySelector('#nav-tasks');
-        // TODO change to setTimeout at end of redraw_tabs
 
         this._all_navs = [
 
@@ -49,28 +48,33 @@ class FlowcellTabController {
             this._tab_tasks
         ];
 
-        // this._tabs_view = new MFlowcellTabsView(document.querySelector('.flowcell-tabs'));
-
         this._tabs = new FlowcellTabList();
 
-        // this._tabs_view.update(this._tabs);
         this._flowcell_services = new FlowcellService();
 
-        this.redraw_tabs(flowcell_id);
+        this.draw_tabs();
+
         this._redraw_interval = setInterval(() => this.redraw_tabs(), 5000);
     }
 
-    redraw_tabs(){
-        // TODO this is garbo code, ask Roberto
-        // this._flowcell_services = new FlowcellService();
+    draw_tabs() {
+
         let promise1 = this._flowcell_services.getFlowcellTabs(this._flowcell_id);
 
         promise1.then((tabs) => {
             this.show_tabs(tabs);
             this.toggle_tab_content('summary-data');
         });
+    }
 
-        console.log('>> redraw_tabs');
+    redraw_tabs() {
+
+        let promise1 = this._flowcell_services.getFlowcellTabs(this._flowcell_id);
+
+        promise1.then((tabs) => {
+
+            this.show_tabs(tabs);
+        });
     }
 
     toggle_tab_content(name) {
