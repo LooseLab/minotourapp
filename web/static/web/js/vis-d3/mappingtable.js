@@ -26,16 +26,16 @@ function update_mapping_table(flowcellId) {
         return;
     }
     $.get("/mapped_targets", {flowcellId, barcode}, result => {
-        // Set the barcode tabs to the highest alert level in their contents
-        let alertLevels = {0: "green-alert-tab", 1 : "yellow-alert-tab", 2 : "orange-alert-tab", 3 : "red-alert-tab"};
-        let tab_level;
-        for (let i = 0; i < result.tabs.length; i++){
-            tab = result.tabs[i];
-            console.log(tab);
-            tab_level = alertLevels[tab["value"]];
-            console.log(tab_level);
-            d3.select("."+tab["key"]).classed(tab_level, true);
-        }
+        // // Set the barcode tabs to the highest alert level in their contents
+        // let alertLevels = {0: "green-alert-tab", 1 : "yellow-alert-tab", 2 : "orange-alert-tab", 3 : "red-alert-tab"};
+        // let tab_level;
+        // for (let i = 0; i < result.tabs.length; i++){
+        //     tab = result.tabs[i];
+        //     console.log(tab);
+        //     tab_level = alertLevels[tab["value"]];
+        //     console.log(tab_level);
+        //     d3.select("."+tab["key"]).classed(tab_level, true);
+        // }
 
         data = result.table;
         data.sort(compare);
