@@ -24,7 +24,7 @@ from reads.models import (Barcode, FastqFile, FastqRead, FastqReadType,
                           MinIONControl, MinIONEvent,
                           MinIONEventType, MinionMessage, MinIONRunStats,
                           MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun, FlowcellStatisticBarcode,
-                          FlowcellSummaryBarcode, Flowcell, MinION, FlowcellTab)
+                          FlowcellSummaryBarcode, Flowcell, MinION, FlowcellTab, RunSummary)
 from reads.models import FlowcellChannelSummary
 from reads.models import FlowcellHistogramSummary
 from reads.serializers import (BarcodeSerializer,
@@ -1268,7 +1268,7 @@ def flowcell_run_basecalled_summary_html(request, pk):
 
     for run in flowcell.runs.all():
 
-        if run.summary:
+        try:
 
             run_summary = {
                 'runid': run.summary.run.runid,
@@ -1281,7 +1281,11 @@ def flowcell_run_basecalled_summary_html(request, pk):
                 'last_read_start_time': run.summary.last_read_start_time
             }
 
-        result_basecalled_summary.append(run_summary)
+            result_basecalled_summary.append(run_summary)
+
+        except RunSummary.DoesNotExist:
+
+            print('RunSummary does not exist for run {}'.format(run.id))
 
     return render(request, 'reads/flowcell_run_basecalled_summary.html', {
         'result_basecalled_summary': result_basecalled_summary
