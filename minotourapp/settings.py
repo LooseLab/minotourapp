@@ -58,6 +58,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -197,22 +198,22 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Europe/London'
 CELERY_BEAT_SCHEDULE = {
-    # 'rapid-monitor': {
-    #     'task': 'web.tasks.run_monitor',
-    #     'schedule': 30,
-    # },
-    # 'send-messages': {
-    #     'task': 'web.tasks.send_messages',
-    #     'schedule': 600,
-    # },
-    # 'delete-runs': {
-    #     'task': 'web.tasks.delete_runs',
-    #     'schedule': 600,
-    # },
-    # 'update_run_start_time': {
-    #     'task': 'web.tasks.update_run_start_time',
-    #     'schedule': 600,
-    # },
+    'rapid-monitor': {
+        'task': 'web.tasks.run_monitor',
+        'schedule': 30,
+    },
+    'send-messages': {
+        'task': 'web.tasks.send_messages',
+        'schedule': 600,
+    },
+    'delete-runs': {
+        'task': 'web.tasks.delete_runs',
+        'schedule': 600,
+    },
+    'update_run_start_time': {
+        'task': 'web.tasks.update_run_start_time',
+        'schedule': 600,
+    },
     'run_summary': {
         'task': 'web.tasks_update_run_summary.update_run_summary',
         'schedule': 30,
@@ -243,7 +244,7 @@ MINIMAP2 = get_env_variable("MT_MINIMAP2")
 USE_X_FORWARDED_HOST = True
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = get_env_variable("MT_DJANGO_DEBUG")
 
 # if DEBUG:
 #    INTERNAL_IPS = ('127.0.0.1', 'localhost',)

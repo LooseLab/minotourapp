@@ -255,22 +255,6 @@ def get_target_mapping(request):
         # Create a dataframe for this barcode
         results_df = pd.DataFrame(list(map_queryset))
 
-    # #### Get the barcode alert levels #### #
-    barcode_df = pd.DataFrame(list(MappingResult.objects.filter(task__id=task_id).values()))
-    calc_df = barcode_df[["num_matches", "num_mapped", "red_reads"]]
-
-    hodf = calc_df.apply(alert_level)
-
-    barcode_df["alert_level"] = hodf.max(axis=1)
-
-    alert_level_results = barcode_df.groupby("barcode_name")["alert_level"].max()
-
-    alert_level_results = pd.DataFrame(alert_level_results).reset_index().rename(
-        columns={"barcode_name": "key", "alert_level": "value"}
-    )
-    alert_level_results["key"] = alert_level_results["key"].str.replace(" ", "_", regex=True)
-    alert_level_results = alert_level_results.to_dict(orient="records")
-
     results_df.rename(columns={"num_mapped": "Num. mapped",
                               "red_reads": "Target reads",
                               "red_sum_unique": "Unique Target reads",
@@ -285,7 +269,7 @@ def get_target_mapping(request):
 
     results = results_df.to_dict(orient="records")
 
-    return_dict = {"table": results, "tabs": alert_level_results}
+    return_dict = {"table": results}
 
     return Response(return_dict)
 
@@ -311,7 +295,32 @@ def metagenomic_barcodes(request, pk):
             metagenomics_barcodes = CentrifugeOutput.objects.filter(task__id=task.id) \
                 .values_list("barcode_name", flat=True).distinct()
 
-    return Response({"data": metagenomics_barcodes})
+    else:
+        return Response("No flowcells found for this owner", status=204)
+
+    # #### Get the barcode alert levels #### #
+    task_id = JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics").order_by("id").last().id
+
+    barcode_df = pd.DataFrame(list(MappingResult.objects.filter(task__id=task_id).values()))
+
+    calc_df = barcode_df[["num_matches", "num_mapped", "red_reads"]]
+
+    hodf = calc_df.apply(alert_level)
+
+    barcode_df["alert_level"] = hodf.max(axis=1)
+
+    alert_level_results = barcode_df.groupby("barcode_name")["alert_level"].max()
+
+    # alert_level_results = pd.DataFrame(alert_level_results).reset_index().rename(
+    #     columns={"barcode_name": "key", "alert_level": "value"}
+    # )
+    # alert_level_results["key"] = alert_level_results["key"].str.replace(" ", "_", regex=True)
+
+    # alert_level_results.index = alert_level_results.index.str.replace(" ", "_")
+
+    alert_level_results = alert_level_results.to_dict()
+
+    return Response({"data": metagenomics_barcodes, "tabs": alert_level_results})
 
 
 def all_results_table(request):

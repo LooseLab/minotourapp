@@ -57,13 +57,14 @@ class FlowcellTabController {
         this._redraw_interval = setInterval(() => this.redraw_tabs(), 5000);
     }
 
-    draw_tabs() {
+    draw_tabs(){
 
         let promise1 = this._flowcell_services.getFlowcellTabs(this._flowcell_id);
 
         promise1.then((tabs) => {
+
             this.show_tabs(tabs);
-            this.toggle_tab_content('summary-data');
+            this.toggle_tab_content("summary-data");
         });
     }
 
