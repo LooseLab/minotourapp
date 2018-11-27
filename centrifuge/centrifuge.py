@@ -500,6 +500,8 @@ def plasmid_mapping(row, species, reference_location, fastq_list, flowcell):
 
     fastq = fastq_input
     logger.info('>>> Inside plasmid_mapping')
+    logger.info('>>> original fastq list')
+    logger.info(fastq_list)
     logger.info('>>> Fastq list (begin)')
     logger.info(fastq)
     logger.info('>>> Fastq list (end)')
