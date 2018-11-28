@@ -1,5 +1,7 @@
 {#{% load humanize %}#}
 
+
+
 <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
   <div class="panel panel-default">
     <div class="panel-heading" role="tab" id="headingOne">
@@ -18,8 +20,10 @@
     <th>Pass/Fail</th>
     <td align="right"><strong>Reads called</strong></td>
     <td align="right"><strong>Yield</strong></td>
+    <td align="right"><strong>Percentage(bases)</strong></td>
     <td align="right"><strong>Average read length</strong></td>
     <td align="right"><strong>Maximum read length</strong></td>
+    <td align="right"><strong>Average Quality</strong></td>
     </thead>
     <tbody>
     {% for record in qs|dictsortreversed:"status"|dictsort:"barcode_name" %}
@@ -41,17 +45,25 @@
             </td>
             <td align="right">{{ record.read_count }}</td>
             <td align="right">{{ record.total_length }}</td>
+            <td align="right">{{ record.percentage }}</td>
             <td align="right">{{ record.average_read_length|floatformat:"0" }}</td>
             <td align="right">{{ record.max_length }}</td>
+            <td align="right">{{ record.avg_qual }}</td>
         </tr>
         {% endif %}
     {% endfor %}
 
     </tbody>
+
+
 </table>
+
+
       </div>
     </div>
   </div>
+
+{% if qs|length > 2  %}
   <div class="panel panel-default">
     <div class="panel-heading" role="tab" id="headingTwo">
       <h4 class="panel-title">
@@ -62,15 +74,17 @@
     </div>
     <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
       <div class="panel-body">
-        <table class="table table-condensed table-hover">
+        <table id="barcode_table" class="table table-condensed table-hover">
     <thead>
     <th>Barcode</th>
     <th>Read type</th>
     <th>Pass/Fail</th>
     <td align="right"><strong>Reads called</strong></td>
     <td align="right"><strong>Yield</strong></td>
+    <td align="right"><strong>Percentage(bases)</strong></td>
     <td align="right"><strong>Average read length</strong></td>
     <td align="right"><strong>Maximum read length</strong></td>
+    <td align="right"><strong>Average Quality</strong></td>
     </thead>
     <tbody>
     {% for record in qs|dictsortreversed:"status"|dictsort:"barcode_name" %}
@@ -92,19 +106,33 @@
             </td>
             <td align="right">{{ record.read_count }}</td>
             <td align="right">{{ record.total_length }}</td>
+            <td align="right">{{ record.percentage }}</td>
             <td align="right">{{ record.average_read_length|floatformat:"0" }}</td>
             <td align="right">{{ record.max_length }}</td>
+            <td align="right">{{ record.avg_qual }}</td>
         </tr>
         {% endif %}
     {% endfor %}
 
     </tbody>
 </table>
+
       </div>
     </div>
   </div>
 </div>
+{% endif %}
 
+
+
+{% block javascript %}
+    <script>
+$(document).ready( function () {
+    $('#barcode_table').DataTable();
+} );
+
+</script>
+{% endblock %}
 
 
 
