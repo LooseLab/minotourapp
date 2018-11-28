@@ -6,6 +6,7 @@ from django.core.management import BaseCommand, CommandError
 from jobs.models import JobMaster
 from reads.models import Flowcell
 from web.tasks_chancalc import chancalc
+import time
 
 log_folder = os.environ.get('MT_LOG_FOLDER')
 
@@ -27,18 +28,19 @@ class Command(BaseCommand):
         logger.info('Running chancalc task')
 
         try:
+            while True:
+                time.sleep(45)
+                flowcell_list = Flowcell.objects.filter(is_active=True)
 
-            flowcell_list = Flowcell.objects.filter(is_active=True)
+                for flowcell in flowcell_list:
 
-            for flowcell in flowcell_list:
+                    flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell)
 
-                flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell)
+                    for flowcell_job in flowcell_job_list:
 
-                for flowcell_job in flowcell_job_list:
+                        if flowcell_job.job_type.name == "ChanCalc":
 
-                    if flowcell_job.job_type.name == "ChanCalc":
-
-                        chancalc(flowcell.id, flowcell_job.id, flowcell_job.last_read)
+                            chancalc(flowcell.id, flowcell_job.id, flowcell_job.last_read)
 
         except Exception as e:
 

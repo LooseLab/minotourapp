@@ -6,6 +6,7 @@ from django.core.management import BaseCommand, CommandError
 from reads.models import Flowcell
 from jobs.models import JobMaster
 from web.tasks import update_flowcell_details
+import time
 
 
 log_folder = os.environ.get('MT_LOG_FOLDER')
@@ -28,20 +29,23 @@ class Command(BaseCommand):
         logger.info('Running update flowcell details task')
 
         try:
+            while True:
+                time.sleep(45)
+                flowcell_list = Flowcell.objects.filter(is_active=True)
 
-            flowcell_list = Flowcell.objects.filter(is_active=True)
+                for flowcell in flowcell_list:
 
-            for flowcell in flowcell_list:
+                    flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell)
 
-                flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell)
+                    for flowcell_job in flowcell_job_list:
 
-                for flowcell_job in flowcell_job_list:
+                        if flowcell_job.job_type.name == "UpdateFlowcellDetails":
 
-                    if flowcell_job.job_type.name == "UpdateFlowcellDetails":
+                            if not flowcell_job.running:
 
-                        if not flowcell_job.running:
+                                update_flowcell_details(flowcell.id, flowcell_job.id)
 
-                            update_flowcell_details(flowcell.id, flowcell_job.id)
+
 
         except Exception as e:
 

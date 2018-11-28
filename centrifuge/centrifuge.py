@@ -494,8 +494,6 @@ def plasmid_mapping(row, species, reference_location, fastq, flowcell):
 
     map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format("minimap2", minimap2_ref_path)
 
-    logger.info("Fastqs {}".format(fastq))
-
     # Execute minimap2
     out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE) \
         .communicate(input=str.encode(fastq))
@@ -648,7 +646,8 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
     # The command to execute minimap
     map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format("minimap2", minimap2_reference_path)
     # Execute minimap2
-    out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE) \
+    out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
+                                stderr=subprocess.PIPE) \
         .communicate(input=str.encode(fastq))
     # Get the output of minimap2
     map_output = out.decode()
@@ -1252,15 +1251,15 @@ def run_centrifuge(flowcell_job_id):
                                       ).order_by('id')[:chunk_size]
 
     if fastqs.count() == 0:
-        task.complete = True
+        # task.complete = True
         task.running = False
         task.save()
         return
 
     if task.read_count + chunk_size > document_number:
         chunk_size = fastqs.count()
-        task.complete = True
-        task.running = False
+        # task.complete = True
+        # task.running = False
         task.save()
         logger.info('Flowcell id: {} - Chunk size is {}'.format(flowcell.id, chunk_size))
 
@@ -1534,7 +1533,7 @@ def run_centrifuge(flowcell_job_id):
 
     # Update the jobmaster object fields that are relevant
     task = JobMaster.objects.get(pk=task.id)
-    # task.running = False
+    task.running = False
 
     if fastqs.count() > 0:
         task.last_read = fastqs[chunk_size - 1].id

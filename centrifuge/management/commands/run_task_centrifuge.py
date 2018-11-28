@@ -28,27 +28,27 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         try:
+            while True:
+                logger.info('Running centrifuge task')
 
-            logger.info('Running centrifuge task')
+                flowcell_list = Flowcell.objects.filter(is_active=True)
 
-            flowcell_list = Flowcell.objects.filter(is_active=True)
+                for flowcell in flowcell_list:
+                    flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False, complete=False)
 
-            for flowcell in flowcell_list:
-                flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False, complete=False)
+                    for flowcell_job in flowcell_job_list:
 
-                for flowcell_job in flowcell_job_list:
+                        if flowcell_job.job_type.name == "Metagenomics":
 
-                    if flowcell_job.job_type.name == "Metagenomics":
+                            logger.info("trying to run classification for flowcell {} {} {} ".format(
+                                flowcell.id,
+                                flowcell_job.id,
+                                flowcell_job.last_read
+                            ))
 
-                        logger.info("trying to run classification for flowcell {} {} {} ".format(
-                            flowcell.id,
-                            flowcell_job.id,
-                            flowcell_job.last_read
-                        ))
-
-                        logger.info("starting centrifuge task")
-                        # while not flowcell_job.complete:
-                        run_centrifuge(flowcell_job.id)
+                            logger.info("starting centrifuge task")
+                            # while not flowcell_job.complete:
+                            run_centrifuge(flowcell_job.id)
 
         except Exception as e:
             logger.exception('Failed running task.')
