@@ -47,8 +47,8 @@ class Command(BaseCommand):
                         ))
 
                         logger.info("starting centrifuge task")
-                        while not flowcell_job.complete:
-                            run_centrifuge(flowcell_job.id)
+                        # while not flowcell_job.complete:
+                        run_centrifuge(flowcell_job.id)
 
         except Exception as e:
             logger.exception('Failed running task.')

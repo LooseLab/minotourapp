@@ -499,12 +499,6 @@ def plasmid_mapping(row, species, reference_location, fastq_list, flowcell):
             fastq_input += temp
 
     fastq = fastq_input
-    logger.info('>>> Inside plasmid_mapping')
-    logger.info('>>> original fastq list')
-    logger.info(fastq_list)
-    logger.info('>>> Fastq list (begin)')
-    logger.info(fastq)
-    logger.info('>>> Fastq list (end)')
 
     #
     # End of deletion
@@ -523,7 +517,6 @@ def plasmid_mapping(row, species, reference_location, fastq_list, flowcell):
 
     map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format(MINIMAP2, minimap2_ref_path)
     logger.info(map_cmd)
-    logger.info(fastq)
 
     # Execute minimap2
     out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE) \
@@ -717,8 +710,6 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
         logger.info('>>> minimap2 command:')
         logger.info(map_cmd)
 
-        logger.info('>>> read_id:')
-        logger.info(fastqs_list)
 
     logger.info("Flowcell id: {} - minimap output {} ".format(flowcell.id, map_output))
 
