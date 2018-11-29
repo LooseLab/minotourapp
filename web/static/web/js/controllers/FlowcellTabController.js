@@ -54,7 +54,7 @@ class FlowcellTabController {
 
         this.draw_tabs();
 
-        this._redraw_interval = setInterval(() => this.redraw_tabs(), 5000);
+        this._redraw_interval = setInterval(() => this.redraw_tabs(), 30000);
     }
 
     draw_tabs(){

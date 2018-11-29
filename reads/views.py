@@ -2,6 +2,8 @@ import datetime
 import json
 from datetime import timedelta
 
+from celery import task
+
 import dateutil.parser
 from dateutil import parser
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
@@ -44,6 +46,10 @@ from reads.serializers import (BarcodeSerializer,
                                FlowcellTabSerializer)
 from reads.utils import get_coords
 
+from celery.utils.log import get_task_logger
+
+
+logger = get_task_logger(__name__)
 
 @api_view(['GET'])
 def read_type_list(request):
@@ -1649,6 +1655,18 @@ def read_list_new(request):
             return Response({}, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@task
+def save_reads(request):
+
+    serializer = FastqReadSerializer(data=request.data, many=True, context={'request': request})
+
+    if serializer.is_valid():
+        serializer.save()
+        logger.info('Saving reads with success')
+
+    else:
+        logger.info('Saving reads with failure')
 
 
 @api_view(['GET'])

@@ -6,14 +6,8 @@
     <div class="content-wrapper" style="background-color: white;">
 
         <section class="content-header">
-            <h1>Flowcell: <span>{{ flowcell.name }}</span><!--<a class="btn btn-primary">Test</a>--></h1>
+            <h1>Flowcell: {{ flowcell.name }}</h1>
         </section>
-
-        <form>
-            <input id="flowcell-id" type="text" value="{{ flowcell.id }}" style="visibility: hidden;"/>
-            <input id="flowcell-selected-tab" type="text" value="Summary" style="visibility: hidden;"/>
-            <input id="flowcell-selected-barcode" type="text" value="All reads" style="visibility: hidden;"/>
-        </form>
 
         <section class="content">
 
@@ -112,6 +106,12 @@
                     </div>
                 </div>
             </div>
+
+        <form>
+            <input id="flowcell-id" type="text" value="{{ flowcell.id }}" style="visibility: hidden;"/>
+            <input id="flowcell-selected-tab" type="text" value="Summary" style="visibility: hidden;"/>
+            <input id="flowcell-selected-barcode" type="text" value="All reads" style="visibility: hidden;"/>
+        </form>
 
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->

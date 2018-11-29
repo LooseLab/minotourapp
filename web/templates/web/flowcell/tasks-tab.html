@@ -1,13 +1,12 @@
-<div id="messageView"></div>
-
 <div class="row">
+    <div id="messageView"></div>
+
     <div class="col-md-12">
         <div class='panel panel-info'>
             <div class='panel-heading'>
                 <h3 class='panel-title'>Create a new analysis task</h3>
             </div>
             <div class='panel-body'>
-
 
                 <form method="post" id="post-form-task-create" onsubmit="mTaskController.add(event)">
                     {% csrf_token %}
@@ -28,6 +27,7 @@
         </div>
     </div>
 </div>
+
 <div class="row tasktablecont">
     <div class="col-md-12">
         <div class='panel panel-info'>
@@ -35,7 +35,7 @@
                 <h3 class='panel-title'>Tasks</h3>
             </div>
             <div class='panel-body'>
-                <table class="table table-hover tasktable display" style="width: 95%;">
+                <table class="table table-hover tasktable display" style="width: 100%;">
                     <thead>
                     <tr>
                         <th>Id</th>

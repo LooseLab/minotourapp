@@ -90,27 +90,28 @@ def run_monitor():
 
                 run_minimap_assembly.delay(flowcell.id, flowcell_job.id, flowcell_job.tempfile_name, flowcell_job.last_read,
                                            flowcell_job.read_count, inputtype)
-            if flowcell_job.job_type.name == "Metagenomics":
-                """
-                    Run the Centrifuger class on the metagenomics data
-                """
-                print("trying to run classification for flowcell {} {} {} ".format(
-                    flowcell.id,
-                    flowcell_job.id,
-                    flowcell_job.last_read
-                ))
-                print("starting centrifuge task")
-                """
-                starts the centrifuge instance as a celery task which should return asynchronously
-                :param request:
-                :return:
-                """
-                try:
-                    run_centrifuge.delay(flowcell_job.id)
 
-                except Exception as e:
-                    e = sys.exc_info()
-                    print(e)
+            # if flowcell_job.job_type.name == "Metagenomics":
+            #     """
+            #         Run the Centrifuger class on the metagenomics data
+            #     """
+            #     print("trying to run classification for flowcell {} {} {} ".format(
+            #         flowcell.id,
+            #         flowcell_job.id,
+            #         flowcell_job.last_read
+            #     ))
+            #     print("starting centrifuge task")
+            #     """
+            #     starts the centrifuge instance as a celery task which should return asynchronously
+            #     :param request:
+            #     :return:
+            #     """
+            #     try:
+            #         run_centrifuge.delay(flowcell_job.id)
+            #
+            #     except Exception as e:
+            #         e = sys.exc_info()
+            #         print(e)
 
 @task()
 def run_centrifuge(flowcell_job_id):
@@ -598,19 +599,30 @@ def update_flowcell_details(flowcell_id, job_master_id):
         number_reads = number_reads + run.reads.all().count()
 
     #
+    # Get the job_master chancalc for this flowcell
+    #
+    job_master_list = JobMaster.objects.filter(flowcell=flowcell, job_type__name='Chancalc')
+
+    number_reads_processed = flowcell.number_reads_processed
+
+    if job_master_list.count() > 0:
+
+        number_reads_processed = job_master_list[0].read_count
+
+    #
     # Get the FlowcellSummaryBarcodes for a particular flowcell and for barcode_name "All reads"
     #
     flowcell_summary_list = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).filter(barcode_name='All reads')
 
     average_read_length = 0
     total_read_length = 0
-    number_reads_processed = 0
+    # number_reads_processed = 0
 
     logger.info('Flowcell id: {} - There is/are {} FlowcellSummaryBarcode records'.format(flowcell.id, len(flowcell_summary_list)))
 
     for flowcell_summary in flowcell_summary_list:
         total_read_length += flowcell_summary.total_length
-        number_reads_processed += flowcell_summary.read_count
+        # number_reads_processed += flowcell_summary.read_count
 
     if number_reads > 0:
         average_read_length = total_read_length / number_reads
