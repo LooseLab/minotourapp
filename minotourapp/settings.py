@@ -210,7 +210,7 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'web.tasks.delete_runs',
         'schedule': 600,
     },
-    'update_run_start_time': {
+    'update_run_list_details': {
         'task': 'web.tasks.update_run_start_time',
         'schedule': 600,
     },
