@@ -18,15 +18,15 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from centrifuge.models import CentOutputBarcoded
-
+from alignment.models import PafRoughCov
+from centrifuge.models import CentrifugeOutput
 from jobs.models import JobMaster, JobType
 from minotourapp import settings
 from reads.models import (Barcode, FastqFile, FastqRead, FastqReadType,
                           MinIONControl, MinIONEvent,
                           MinIONEventType, MinionMessage, MinIONRunStats,
                           MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun, FlowcellStatisticBarcode,
-                          FlowcellSummaryBarcode, Flowcell, MinION, FlowcellTab)
+                          FlowcellSummaryBarcode, Flowcell, MinION, FlowcellTab, RunSummary)
 from reads.models import FlowcellChannelSummary
 from reads.models import FlowcellHistogramSummary
 from reads.serializers import (BarcodeSerializer,
@@ -144,7 +144,8 @@ def fastq_detail(request,pk):
     serializer = FastqFileSerializer(queryset, many=True, context={'request': request})
     return Response(serializer.data)
 
-@api_view(['GET','POST'])
+
+@api_view(['GET', 'POST'])
 def fastq_file(request,pk):
     """
     :purpose: returns an md5 checksum for a file as seen by minotour for a specific run id
@@ -1322,7 +1323,7 @@ def flowcell_run_basecalled_summary_html(request, pk):
 
     for run in flowcell.runs.all():
 
-        if run.summary:
+        try:
 
             run_summary = {
                 'runid': run.summary.run.runid,
@@ -1335,7 +1336,11 @@ def flowcell_run_basecalled_summary_html(request, pk):
                 'last_read_start_time': run.summary.last_read_start_time
             }
 
-        result_basecalled_summary.append(run_summary)
+            result_basecalled_summary.append(run_summary)
+
+        except RunSummary.DoesNotExist:
+
+            print('RunSummary does not exist for run {}'.format(run.id))
 
     return render(request, 'reads/flowcell_run_basecalled_summary.html', {
         'result_basecalled_summary': result_basecalled_summary
@@ -1513,34 +1518,62 @@ def flowcell_tabs_details(request, pk):
         }
     }
 
-    tabs = list()
+    tabs = ['summary-data', 'tasks']
 
-    tabs_send = list()
+    #
+    # Check for basecalled data
+    #
+    flowcell_summary_barcode_list = FlowcellSummaryBarcode.objects.filter(flowcell__id=pk)
 
-    flowcell = Flowcell.objects.get(pk=pk)
+    if flowcell_summary_barcode_list.count() > 0:
 
-    run_list = Run.objects.filter(flowcell=flowcell)
+        tabs.append('basecalled-data')
+        tabs.append('reads')
 
-    if MinIONRunStatus.objects.filter(run_id__in=run_list):
+    minion_run_stats_list = MinIONRunStats.objects.filter(run_id__flowcell__id=pk)
 
-        tabs.append(flowcell_tabs_dict['LiveEvent'])
+    if minion_run_stats_list.count() > 0:
 
-    for master in JobMaster.objects.filter(Q(run__in=run_list) | Q(flowcell=flowcell)).filter(last_read__gt=0).values_list('job_type__name', flat=True):
-        if master in flowcell_tabs_dict.keys():
+        tabs.append('live-event-data')
 
-            tabs.append(flowcell_tabs_dict[master])
+    paf_rough_cov_list = PafRoughCov.objects.filter(job_master__flowcell_id=pk)
 
-        else:
+    if paf_rough_cov_list.count() > 0:
 
-            print("Flowcell '" + pk + "' has JobType '" + master + "' but there is no corresponding tab defined in reads/views.py")
+        tabs.append('sequence-mapping')
 
-    for tab in tabs:
+    centrifuge_output_list = CentrifugeOutput.objects.filter(task__flowcell_id=pk)
 
-        if tab not in tabs_send:
+    if centrifuge_output_list.count() > 0:
 
-            tabs_send.append(tab)
+        tabs.append('metagenomics')
 
-    return Response(tabs_send)
+    # tabs_send = list()
+    #
+    # flowcell = Flowcell.objects.get(pk=pk)
+    #
+    # run_list = Run.objects.filter(flowcell=flowcell)
+    #
+    # if MinIONRunStatus.objects.filter(run_id__in=run_list):
+    #
+    #     tabs.append(flowcell_tabs_dict['LiveEvent'])
+    #
+    # for master in JobMaster.objects.filter(Q(run__in=run_list) | Q(flowcell=flowcell)).filter(last_read__gt=0).values_list('job_type__name', flat=True):
+    #     if master in flowcell_tabs_dict.keys():
+    #
+    #         tabs.append(flowcell_tabs_dict[master])
+    #
+    #     else:
+    #
+    #         print("Flowcell '" + pk + "' has JobType '" + master + "' but there is no corresponding tab defined in reads/views.py")
+    #
+    # for tab in tabs:
+    #
+    #     if tab not in tabs_send:
+    #
+    #         tabs_send.append(tab)
+
+    return Response(tabs)
 
 
 @api_view(['GET', 'POST'])

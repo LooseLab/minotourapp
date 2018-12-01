@@ -1,3 +1,6 @@
+"""
+run_task_centrifuge.py
+"""
 import logging
 import os
 
@@ -44,7 +47,7 @@ class Command(BaseCommand):
                         ))
 
                         logger.info("starting centrifuge task")
-
+                        # while not flowcell_job.complete:
                         run_centrifuge(flowcell_job.id)
 
         except Exception as e:

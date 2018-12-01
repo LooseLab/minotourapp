@@ -63,21 +63,21 @@ def run_monitor():
         flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False, complete=False)
         for flowcell_job in flowcell_job_list:
 
-            # if flowcell_job.job_type.name == "Minimap2":
-            #
-            #     print("trying to run alignment for flowcell {} {} {} {}".format(
-            #         flowcell.id,
-            #         flowcell_job.id,
-            #         flowcell_job.reference.id,
-            #         flowcell_job.last_read
-            #     ))
-            #
-            #     run_minimap2_alignment.delay(
-            #         flowcell.id,
-            #         flowcell_job.id,
-            #         flowcell_job.reference.id,
-            #         flowcell_job.last_read
-            #     )
+            if flowcell_job.job_type.name == "Minimap2":
+
+                 print("trying to run alignment for flowcell {} {} {} {}".format(
+                     flowcell.id,
+                     flowcell_job.id,
+                     flowcell_job.reference.id,
+                     flowcell_job.last_read
+                 ))
+
+                 run_minimap2_alignment.delay(
+                     flowcell.id,
+                     flowcell_job.id,
+                     flowcell_job.reference.id,
+                     flowcell_job.last_read
+                 )
 
             if flowcell_job.job_type.name == "ChanCalc":
 
@@ -106,7 +106,7 @@ def run_monitor():
                 :return:
                 """
                 try:
-                    run_centrifuge.delay(flowcell.id, flowcell_job.id)
+                    run_centrifuge.delay(flowcell_job.id)
 
                 except Exception as e:
                     e = sys.exc_info()

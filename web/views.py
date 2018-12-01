@@ -200,7 +200,7 @@ def flowcell_reads_data(request):
 
     reads = reads_temp2.values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
 
-    records_total = len(reads)
+    records_total = reads_temp.count()
 
     result = {
         'draw': draw,

@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from centrifuge.models import CentOutput, CartographyGuide, CartographyMapped, CentOutputBarcoded
+from centrifuge.models import CentOutput, MappingTargets, MappingResults
+
 
 class CentSerialiser(serializers.ModelSerializer):
     """
@@ -12,23 +13,17 @@ class CentSerialiser(serializers.ModelSerializer):
         fields = ("name", "tax_id")
 
 
-class CartMappedSerialiser(serializers.ModelSerializer):
+class MappedResultsSerialiser(serializers.ModelSerializer):
     """Serialiser to represent CartographyMapped model TODO currently unused"""
     class Meta:
-        model = CartographyMapped
+        model = MappingResults
         fields = ("species", "tax_id", "total_reads", "alert_level", "num_reads", "red_reads", "task_meta")
 
 
-class CartGuideSerialiser(serializers.ModelSerializer):
+class MappedTargetsSerialiser(serializers.ModelSerializer):
     """Serialiser to represent the CartographyGuide model TODO currently unsused"""
     class Meta:
-        model = CartographyGuide
+        model = MappingTargets
         fields = ("species", "tax_id", "cart_mapped_id")
 
-
-class CentBarcodeSerialiser(serializers.ModelSerializer):
-
-    class Meta:
-        model = CentOutputBarcoded
-        fields = ("barcode")
 

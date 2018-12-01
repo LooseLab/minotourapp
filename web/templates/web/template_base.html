@@ -58,7 +58,7 @@
             width: 95%;
             height: 70px;
         }
-    </style>    
+    </style>
 </head>
 
 {% block body_tag %}
@@ -97,7 +97,16 @@
 <script src="{% static 'web/bootstrap/js/bootstrap.min.js' %}"></script>
 <!-- AdminLTE App -->
 <script src="{% static 'web/dist/js/app.min.js' %}?dev=19"></script>
-
+<script src="{% static 'web/js/flowcell/addMetaBarcodeTabs.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/libraries/d3/d3.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/libraries/d3-sankey/d3-sankey.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/libraries/moment.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/vis-d3/sankey.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/vis-d3/donutdothat.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/vis-d3/AllResultsTable.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/vis-d3/donutoTaberu.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/vis-d3/metaheader.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/vis-d3/mappingtable.js'%}?{% now 'c' %}"></script>
 <script src="{% static 'web/CoverageChart.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/utils/checkFlowcellTabs.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/utils/selectedBarcode.js' %}?{% now 'c' %}"></script>
@@ -116,16 +125,7 @@
 <script src="{% static 'web/js/flowcell/requestSummaryData.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/flowcell/updateBarcodeNavTab.js' %}?{% now 'c' %}"></script>
 
-<script src="{% static 'web/js/flowcell/addMetaBarcodeTabs.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/libraries/d3/d3.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/libraries/d3-sankey/d3-sankey.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/libraries/moment.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/vis-d3/sankey.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/vis-d3/donutdothat.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/vis-d3/AllResultsTable.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/vis-d3/donutoTaberu.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/vis-d3/metaheader.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/vis-d3/mappingtable.js'%}?{% now 'c' %}"></script>
+
 
 <script src="{% static 'web/js/models/Message.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/controllers/MessageController.js' %}?{% now 'c' %}"></script>
@@ -135,13 +135,19 @@
 
 <script src="{% static 'web/js/helpers/DateHelper.js' %}?{% now 'c' %}"></script>
 
+<script src="{% static 'web/js/views/MView.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/models/FlowcellTab.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/models/FlowcellTabList.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/views/MFlowcellTabsView.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/models/Flowcell.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/models/MTask.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/models/MTaskList.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/models/MMessage.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/controllers/FlowcellController.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/controllers/FlowcellTabController.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/services/HttpService.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/services/FlowcellService.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/controllers/MTaskController.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/views/MView.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/views/MMessageView.js' %}?{% now 'c' %}"></script>
 
 <!-- Highcharts -->

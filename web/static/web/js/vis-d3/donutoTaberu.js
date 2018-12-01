@@ -156,9 +156,7 @@ function drawDonutRankTable(flowCellId) {
     var selectedBarcode = get_selected_barcode();
     let barcodes = [];
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
-    if (flowcell_selected_tab_input.value !== "Metagenomics"){
-        clearInterval(updateDonutTable);
-        console.log("cleared donut table interval");
+    if (flowcell_selected_tab_input.value !== "nav-metagenomics"){
         return;
     }
     $.get("/donut", {flowcellId: flowCellId, visType: "donut", barcode: selectedBarcode}, result => {
@@ -166,7 +164,7 @@ function drawDonutRankTable(flowCellId) {
         if (result === undefined) {
             return;
         }
-        let dataToDraw = result.result;
+        let dataToDraw = result;
         let range = $('.input-range'),
              value = $('.taxa-level');
         // what is the value of the current slider? Kingdom, species etc.
@@ -176,7 +174,7 @@ function drawDonutRankTable(flowCellId) {
         // get the right taxa string, so we can use it as a key o the results object
         let currentlySelectedTaxa = taxas[index];
         // data1 is the data for the currently selected taxa from the results array
-        let data1 = dataToDraw[index][currentlySelectedTaxa];
+        let data1 = dataToDraw[currentlySelectedTaxa];
         // get the number of members in this clade used to determine whether we need a second table
         let dataLength = data1.length;
         // if the range slider is changed call the anonymous function to redraw everything
@@ -184,9 +182,9 @@ function drawDonutRankTable(flowCellId) {
             // the selected number for the slider level (0-6)
             let number = this.value;
             // get the right taxa for the key to the results object
-            let current_selected_taxa = taxas[number];
+            let currentSelectedTaxa = taxas[number];
             // get the results data array for the currently selected taxa clade
-            let sortedData = dataToDraw[number][current_selected_taxa];
+            let sortedData = dataToDraw[currentSelectedTaxa];
             // set the html below the slider to the right level
             value.html(displayTaxas[number]);
             // datalength - how many members ar ein this clade (1-20)

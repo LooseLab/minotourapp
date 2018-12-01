@@ -17,85 +17,79 @@
 
         <section class="content">
 
-            <ul class="nav nav-tabs">
+            <ul class="nav nav-pills">
 
-                <li class="active">
-                    <a class="flowcell-tab" id='#nav-summary-data' href="#tab-summary-data" data-toggle="tab">Summary</a>
+                <li role="presentation" id='nav-summary-data' class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('summary-data')">Summary</a>
                 </li>
-                <li>
-                    <a class="flowcell-tab" id="#nav-live-event-data" href="#tab-live-event-data" data-toggle="tab">Live Event Data</a>
+                <li role="presentation" id="nav-live-event-data" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('live-event-data')">Live Event Data</a>
                 </li>
-                <li>
-                    <a class="flowcell-tab" id="#nav-basecalled-data" href="#tab-basecalled-data" data-toggle="tab">Basecalled Data</a>
+                <li role="presentation" id="nav-basecalled-data" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('basecalled-data')">Basecalled Data</a>
                 </li>
-                <li>
-                    <a class="flowcell-tab" id="#nav-reads" href="#tab-reads" data-toggle="tab">Read Data</a>
+                <li role="presentation" id="nav-reads" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('reads')">Read Data</a>
                 </li>
-                <li>
-                    <a class="flowcell-tab" id="#nav-sequence-mapping" href="#tab-sequence-mapping" data-toggle="tab">Sequence Mapping</a>
+                <li role="presentation" id="nav-sequence-mapping" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('sequence-mapping')">Sequence Mapping</a>
                 </li>
-                <li class="disabled">
-                    <a class="flowcell-tab" id="#nav-sequence-assembly" href="#tab-sequence-assembly" data-toggle="tab">Assembly</a>
+                <li role="presentation" id="nav-sequence-assembly" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('sequence-assembly')">Assembly</a>
                 </li>
-                <li>
-                    <a class="flowcell-tab" id="#nav-metagenomics" href="#tab-metagenomics" data-toggle="tab">Metagenomics</a>
+                <li role="presentation" id="nav-metagenomics" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('metagenomics')">Metagenomics</a>
                 </li>
-                <li id="tasks-li">
-                    <a class="flowcell-tab" id="#nav-tasks" href="#tab-tasks" data-toggle="tab">Tasks</a>
+                <li role="presentation" id="nav-tasks" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('tasks')">Tasks</a>
                 </li>
             </ul>
 
             <br/>
 
             <div class="tab-content">
-                <div id="tab-summary-data" class="tab-pane active">
+
+                <div id="tab-summary-data" class="tab-pane">
                     {% include "web/flowcell/summary-tab.html" %}
                 </div>
 
-                <div id="tab-live-event-data" class="tab-pane fade">
+                <div id="tab-live-event-data" class="tab-pane">
                     {% include "web/flowcell/live-tab.html" %}
                 </div>
 
-                <div id="tab-reads" class="tab-pane fade">
+                <div id="tab-reads" class="tab-pane">
                     {% include "web/flowcell/tab-reads.html" %}
                 </div>
 
-                <div id="tab-basecalled-data" class="tab-pane fade">
+                <div id="tab-basecalled-data" class="tab-pane">
                     {% include "web/flowcell/basecalled-tab.html" %}
                 </div>
 
-                <div id="tab-sequence-id" class="tab-pane fade">
-                    {% include "web/flowcell/sequence-tab.html" %}
-                </div>
-
-                <div id="tab-sequence-mapping" class="tab-pane fade">
+                <div id="tab-sequence-mapping" class="tab-pane">
                     {% include "web/flowcell/mapping-tab.html" %}
                 </div>
 
-                <div id="tab-sequence-assembly" class="tab-pane fade">
+                <div id="tab-sequence-assembly" class="tab-pane">
                     {% include "web/flowcell/assembly-tab.html" %}
                 </div>
 
-                <div id="tab-transcriptome-mapping" class="tab-pane fade">
-                    {% include "web/flowcell/transcriptome-tab.html" %}
-                </div>
-
-                <div id="tab-tasks" class="tab-pane fade">
+                <div id="tab-tasks" class="tab-pane">
                     {% include "web/flowcell/tasks-tab.html" %}
                 </div>
 
-                <div id="tab-export-reads" class="tab-pane fade">
-                    {% include "web/flowcell/export-tab.html" %}
-                </div>
-
-                <div id="tab-runs" class="tab-pane fade">
-
-                </div>
-
-                <div id="tab-metagenomics" class="tab-pane fade">
+                <div id="tab-metagenomics" class="tab-pane">
                     {% include "web/flowcell/metagenomics.html" %}
                 </div>
             </div>
+
             <!-- Modal -->
             <div class="modal fade" id="eastermodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
                  aria-hidden="true">
@@ -131,8 +125,6 @@
         console.log("Initialising FlowcellPageApp.");
 
         var app = FlowcellPageApp;
-
-        window.app = app;
 
         app.init();
 
