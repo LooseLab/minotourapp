@@ -91,27 +91,27 @@ def run_monitor():
                 run_minimap_assembly.delay(flowcell.id, flowcell_job.id, flowcell_job.tempfile_name, flowcell_job.last_read,
                                            flowcell_job.read_count, inputtype)
 
-            # if flowcell_job.job_type.name == "Metagenomics":
-            #     """
-            #         Run the Centrifuger class on the metagenomics data
-            #     """
-            #     print("trying to run classification for flowcell {} {} {} ".format(
-            #         flowcell.id,
-            #         flowcell_job.id,
-            #         flowcell_job.last_read
-            #     ))
-            #     print("starting centrifuge task")
-            #     """
-            #     starts the centrifuge instance as a celery task which should return asynchronously
-            #     :param request:
-            #     :return:
-            #     """
-            #     try:
-            #         run_centrifuge.delay(flowcell_job.id)
-            #
-            #     except Exception as e:
-            #         e = sys.exc_info()
-            #         print(e)
+            if flowcell_job.job_type.name == "Metagenomics":
+                """
+                    Run the Centrifuger class on the metagenomics data
+                """
+                print("trying to run classification for flowcell {} {} {} ".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                    flowcell_job.last_read
+                ))
+                print("starting centrifuge task")
+                """
+                starts the centrifuge instance as a celery task which should return asynchronously
+                :param request:
+                :return:
+                """
+                try:
+                    run_centrifuge.delay(flowcell_job.id)
+
+                except Exception as e:
+                    e = sys.exc_info()
+                    print(e)
 
 @task()
 def run_centrifuge(flowcell_job_id):

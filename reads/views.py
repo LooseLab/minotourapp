@@ -2,9 +2,9 @@ import datetime
 import json
 from datetime import timedelta
 
-from celery import task
-
 import dateutil.parser
+from celery import task
+from celery.utils.log import get_task_logger
 from dateutil import parser
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.serializers.json import DjangoJSONEncoder
@@ -45,9 +45,6 @@ from reads.serializers import (BarcodeSerializer,
                                GroupRunSerializer, FlowcellSummaryBarcodeSerializer, FastqReadGetSerializer,
                                FlowcellTabSerializer)
 from reads.utils import get_coords
-
-from celery.utils.log import get_task_logger
-
 
 logger = get_task_logger(__name__)
 
@@ -1005,6 +1002,59 @@ def flowcell_summary_html(request, pk):
     qs = FlowcellSummaryBarcode.objects \
         .filter(flowcell=flowcell) \
         .exclude(barcode_name='No barcode')
+
+    total = 0
+    for row in qs:
+        if row.barcode_name=="All reads":
+            total+=row.total_length
+
+    barcodedict=dict()
+
+    for row in qs:
+        if row.read_type_name not in barcodedict:
+            barcodedict[row.read_type_name]=dict()
+        if row.barcode_name not in barcodedict[row.read_type_name]:
+            barcodedict[row.read_type_name][row.barcode_name]=dict()
+        barcodedict[row.read_type_name][row.barcode_name][row.status]=1
+        row.percentage = round(row.total_length/total*100,2)
+        if row.read_count>0:
+            row.avg_qual = round(row.quality_sum/row.read_count,2)
+        else:
+            row.avg_qual = 0
+
+    """
+    qs = list(qs)
+    tempqs = deepcopy(qs[-1])
+    for readtype in barcodedict:
+        for barcode in barcodedict[readtype]:
+            if len(barcodedict[readtype][barcode])<2:
+                #print (type(barcodedict[readtype][barcode]))
+                for status in barcodedict[readtype][barcode]:
+                    if status==True:
+                        tempqs.read_type_name=readtype
+                        tempqs.barcode_name=barcode
+                        tempqs.read_count=0
+                        tempqs.total_length=0
+                        print (tempqs.status)
+                        tempqs.status=None
+                        print (tempqs.status)
+                        qs.append(tempqs)
+                        pass
+                    else:
+                        tempqs.read_type_name=readtype
+                        tempqs.barcode_name=barcode
+                        tempqs.read_count = 0
+                        tempqs.total_length = 0
+                        print (tempqs.status)
+                        tempqs.status=None
+                        print (tempqs.status)
+                        qs.append(tempqs)
+                        pass
+
+    #qs.append(qs[-1])
+    print (qs)
+    
+    """
 
     ### Manipulate qs to add in missing records?!
 
