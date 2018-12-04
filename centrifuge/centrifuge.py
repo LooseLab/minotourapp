@@ -1317,7 +1317,7 @@ def run_centrifuge(flowcell_job_id):
 
     if task.read_count + chunk_size > document_number:
         chunk_size = fastqs.count()
-        task.complete = True
+        # task.complete = True
         task.running = False
         task.save()
         logger.info('Flowcell id: {} - Chunk size is {}'.format(flowcell.id, chunk_size))
