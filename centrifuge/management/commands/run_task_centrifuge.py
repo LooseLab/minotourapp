@@ -20,7 +20,6 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-
 class Command(BaseCommand):
 
     help = 'Run task centrifuge'
@@ -28,27 +27,28 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         try:
-
             logger.info('Running centrifuge task')
 
             flowcell_list = Flowcell.objects.filter(is_active=True)
 
             for flowcell in flowcell_list:
-                flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False, complete=False)
 
-                for flowcell_job in flowcell_job_list:
+                    flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False,
+                                                                                           complete=False)
 
-                    if flowcell_job.job_type.name == "Metagenomics":
+                    for flowcell_job in flowcell_job_list:
 
-                        logger.info("trying to run classification for flowcell {} {} {} ".format(
-                            flowcell.id,
-                            flowcell_job.id,
-                            flowcell_job.last_read
-                        ))
+                        if flowcell_job.job_type.name == "Metagenomics":
 
-                        logger.info("starting centrifuge task")
-                        # while not flowcell_job.complete:
-                        run_centrifuge(flowcell_job.id)
+                            logger.info("trying to run classification for flowcell {} {} {} ".format(
+                                flowcell.id,
+                                flowcell_job.id,
+                                flowcell_job.last_read
+                            ))
+
+                            logger.info("starting centrifuge task")
+                            run_centrifuge(flowcell_job.id)
+
 
         except Exception as e:
             logger.exception('Failed running task.')

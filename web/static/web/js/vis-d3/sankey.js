@@ -28,16 +28,17 @@ function draw(nodesObj, sankey, g, format, color, width) {
     // // set the start colour for the gradient (0%)
     // gradient.append("stop")
     //     .attr("offset", "0%")
-    //     .attr("stop-color", d => color(d.source.name.replace(/ .*/, "")));
+    //     .attr("stop-color", d => color(d.path));
     // // set the stop colour for the gradient (100%)
     // gradient.append("stop")
     //     .attr("offset", "100%")
-    //     .attr("stop-color", d => color(d.target.name.replace(/ .*/, "")));
+    //     .attr("stop-color", d => color(d.target.path));
 
     // append the path for the link to rhe SVG
     link.append("path")
         .attr("d", d3.sankeyLinkHorizontal())
-        .style("stroke", function (d) {
+        .attr("stroke", function (d, i) {
+            // return "url(#" + i + ")";
             return color(d.path);
         })
         .attr("stroke-width", d => Math.max(0.5, d.width));
@@ -74,27 +75,22 @@ function draw(nodesObj, sankey, g, format, color, width) {
         .text(d => d.name);
 
 }
+
+
 // update or draw the existing svg using the AJAX results from the server
 function update(flowcellId, sankey, checkForData, svg, g, format, color, width, selectedBarcode) {
     // TODO species limit one day
     $.get("/sankey", {flowcellId , "barcode":selectedBarcode}, result => {
         let nodes;
         // if theres no data from the server
-        if (result === undefined) {
+        if (result.sankey === undefined) {
+            svg.select(".contain").selectAll("*").remove();
+            svg.append("text").text("No data to display").attr("text-anchor", "middle").attr("x", "50%").attr("y", "50%");
             return;
         }
 
         nodes = result.sankey;
         // If there is data and checkForData is true, clear the css elements and loading sign so we can see the graphics
-        if (result.sankey.nodes.length !== 0 && checkForData) {
-            d3.select("#loading-sign").transition().duration(1000).style("opacity", 0);
-
-            setTimeout(function () {
-                $("body").addClass("loaded sidebar-collapse");
-                d3.select("#loading-sign").style("display", "none");
-                d3.select(".vis-container").style("display", "contents");
-            }, 1500);
-        }
         // TODO update in place
         svg.select(".contain").selectAll("*").remove();
         draw(nodes, sankey, g, format, color, width);

@@ -8,6 +8,7 @@ from jobs.models import JobMaster
 from web.tasks import update_flowcell_details
 
 
+
 log_folder = os.environ.get('MT_LOG_FOLDER')
 
 logging.basicConfig(
@@ -28,7 +29,6 @@ class Command(BaseCommand):
         logger.info('Running update flowcell details task')
 
         try:
-
             flowcell_list = Flowcell.objects.filter(is_active=True)
 
             for flowcell in flowcell_list:
@@ -42,6 +42,8 @@ class Command(BaseCommand):
                         if not flowcell_job.running:
 
                             update_flowcell_details(flowcell.id, flowcell_job.id)
+
+
 
         except Exception as e:
 

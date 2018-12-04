@@ -43,8 +43,8 @@ function drawPie(countedData, pie, arc, svg) {
     slice.exit().remove();
 }
 
-function drawDonut(flowCellId, selectedBarcode) {
-    var selectedBarcode = get_selected_barcode();
+function drawDonut(flowCellId) {
+    let selectedBarcode = get_selected_barcode();
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     if(flowcell_selected_tab_input.value !== "nav-metagenomics"){
         return;
@@ -98,6 +98,7 @@ function drawDonut(flowCellId, selectedBarcode) {
             .attr("margin", "auto")
             .attr("display", "block")
             .call(zoom);
+
         g = svg.append("g").attr("class", "badCopNoDonut");
 
         // append g elements to the svg, attr transform translate centers them in the svg, otherwise drawn offscreen
@@ -111,9 +112,16 @@ function drawDonut(flowCellId, selectedBarcode) {
     $.get("/donut", {flowcellId: flowCellId, visType: "donut", barcode: selectedBarcode}, result => {
         // if there is no data return and try again when interval is up on $interval
         if (result === undefined) {
+            svg.select(".badCopNoDonut").selectAll("*").remove();
+            svg.append("text").text("No data to display").attr("text-anchor", "middle").attr("x", "50%").attr("y", "50%");
+            return;
+        } else if (result.species === undefined){
+                        console.log("no data");
+
+            svg.select(".badCopNoDonut").selectAll("*").remove();
+            svg.select(".badCopNoDonut").append("text").text("No data to display").attr("text-anchor", "middle").attr("x", "50%").attr("y", "50%");
             return;
         }
-        console.log(result);
         let dataToDraw = result;
         // what the label is displaying, starts on species
         let currentSelectionSlider = value.html();

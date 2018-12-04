@@ -38,5 +38,4 @@ function getTotalReadsTable(flowCellId) {
                 }
             );
         }
-    // updateResultsTable = setTimeout(getTotalReadsTable, 60000, flowCellId, selectedBarcode);
 }

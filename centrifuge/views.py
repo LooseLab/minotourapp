@@ -311,13 +311,6 @@ def metagenomic_barcodes(request, pk):
 
     alert_level_results = barcode_df.groupby("barcode_name")["alert_level"].max()
 
-    # alert_level_results = pd.DataFrame(alert_level_results).reset_index().rename(
-    #     columns={"barcode_name": "key", "alert_level": "value"}
-    # )
-    # alert_level_results["key"] = alert_level_results["key"].str.replace(" ", "_", regex=True)
-
-    # alert_level_results.index = alert_level_results.index.str.replace(" ", "_")
-
     alert_level_results = alert_level_results.to_dict()
 
     return Response({"data": metagenomics_barcodes, "tabs": alert_level_results})

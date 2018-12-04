@@ -54,6 +54,7 @@ class FlowcellTabController {
 
         this.draw_tabs();
 
+
         this._redraw_interval = setInterval(() => this.redraw_tabs(), 30000);
     }
 
@@ -77,7 +78,6 @@ class FlowcellTabController {
             this.show_tabs(tabs);
         });
     }
-
     toggle_tab_content(name) {
 
         var nav_name = 'nav-' + name;
