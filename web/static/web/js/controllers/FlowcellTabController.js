@@ -54,17 +54,20 @@ class FlowcellTabController {
 
         this.draw_tabs();
 
-        this._redraw_interval = setInterval(() => this.redraw_tabs(), 5000);
+
+        this._redraw_interval = setInterval(() => this.redraw_tabs(), 30000);
     }
+
     draw_tabs(){
+
         let promise1 = this._flowcell_services.getFlowcellTabs(this._flowcell_id);
 
         promise1.then((tabs) => {
+
             this.show_tabs(tabs);
             this.toggle_tab_content("summary-data");
         });
     }
-
 
     redraw_tabs() {
 
@@ -75,7 +78,6 @@ class FlowcellTabController {
             this.show_tabs(tabs);
         });
     }
-
     toggle_tab_content(name) {
 
         var nav_name = 'nav-' + name;

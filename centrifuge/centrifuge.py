@@ -1,5 +1,6 @@
 """Centrifuge.py
 """
+import os
 import subprocess
 from collections import defaultdict
 from io import StringIO
@@ -431,25 +432,47 @@ def update_mapped_non_dangerous(row, task):
     mapped_result.save()
 
 
-def plasmid_mapping(row, species, reference_location, fastq, flowcell):
+def plasmid_mapping(row, species, fastq_list, flowcell):
     """
     Map the reads for groups that have danger regions on plasmids
     :param row: The row of the target dataframe for species with plasmid danger regions
     :param species: The species name
-    :param reference_location: The location of the reference files on the system
-    :param fastq: The reads sequences
+    :param fastq_list: The reads sequences
     :param flowcell: The flowcell for logging by flowcell_id
     :return plasmid_map_df: A list of dicts containing the information about the plasmid mappings
     """
+
+    #
+    # TODO Delete next lines
+    #
+    fastq_input = ''
+
+    for fastq in fastq_list:
+
+        if fastq[1]:
+
+            temp = '>{}\n{}\n'.format(fastq[0], fastq[1])
+            fastq_input += temp
+
+    fastq = fastq_input
+
+    #
+    # End of deletion
+    #
+
+    REFERENCE_LOCATION = getattr(settings, "REFERENCE_LOCATION", None)
+    MINIMAP2 = getattr(settings, "MINIMAP2", None)
+
     species = species.replace(" ", "_")
 
     reference_name = species + "_" + row["name"]
 
     references = ReferenceInfo.objects.get(name=reference_name)
 
-    minimap2_ref_path = reference_location + references.filename
+    minimap2_ref_path = os.path.join(REFERENCE_LOCATION, references.filename)
 
-    map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format("minimap2", minimap2_ref_path)
+    map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format(MINIMAP2, minimap2_ref_path)
+    logger.info(map_cmd)
 
     # Execute minimap2
     out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
@@ -457,6 +480,8 @@ def plasmid_mapping(row, species, reference_location, fastq, flowcell):
     if err:
         logger.info("Flowcell id: {} - Minimap error!! {}".format(flowcell.id, err))
     # Get the output of minimap2
+    logger.info(out)
+    logger.info(err)
     map_output = out.decode()
     logger.info("Flowcell id: {} - Plasmid mapping map output is {}".format(flowcell.id, map_output))
     columns = ["read_id", "query_seq_len", "query_start", "query_end", "rel_strand", "target_seq_name",
@@ -536,18 +561,42 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
 
         return
 
+    REFERENCE_LOCATION = getattr(settings, "REFERENCE_LOCATION", None)
+    MINIMAP2 = getattr(settings, "MINIMAP2", None)
+
     # the minimap2 reference fasta
-    minimap2_reference_path = reference_location + references.filename
+    # minimap2_reference_path = os.path.join(reference_location, references.filename)
+    minimap2_reference_path = os.path.join(REFERENCE_LOCATION, references.filename)
     # The read sequences for the reads we want to map
+
+    logger.info('target_species_group_df[read_id]: {}'.format(target_species_group_df['read_id']))
     reads = FastqRead.objects.filter(run__flowcell_id=flowcell.id,
                                      read_id__in=target_species_group_df["read_id"])
     # The fasta sequence
     fastqs_list = reads.values_list('read_id', 'fastqreadextra__sequence')
+    # logger.info('fastqs_list content below:')
+    # logger.info(fastqs_list)
+    
+    # for fastq in fastqs_list:
+    #     logger.info('read_id: {}'.format(fastq[0]))
+    #     logger.info('sequence: {}'.format(fastq[1]))
     # Assemble the fastq into a string
-    fastq = "".join([str(">" + c[0] + "\n" + c[1] + "\n")
-                     for c in fastqs_list if c[1] is not None])
+    # fastq = "".join([str(">" + c[0] + "\n" + c[1] + "\n")
+    #                  for c in fastqs_list if c[1] is not None])
+
+    fastq_input = ''
+
+    for fastq in fastqs_list:
+
+        if fastq[1]:
+
+            temp = '>{}\n{}\n'.format(fastq[0], fastq[1])
+            fastq_input += temp
+
+    fastq = fastq_input
+
     # The command to execute minimap
-    map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format("minimap2", minimap2_reference_path)
+    map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format(MINIMAP2, minimap2_reference_path)
     # Execute minimap2
     out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
                                 stderr=subprocess.PIPE).communicate(input=str.encode(fastq))
@@ -557,6 +606,16 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
     # Get the output of minimap2
     map_output = out.decode()
 
+    if len(map_output) > 0:
+
+        logger.info('>>> Found mappings')
+        logger.info('>>> map_output')
+        logger.info(map_output)
+
+        logger.info('>>> minimap2 command:')
+        logger.info(map_cmd)
+
+
     logger.info("Flowcell id: {} - minimap output {} ".format(flowcell.id, map_output))
 
     plasmid_red_df = pd.DataFrame()
@@ -564,10 +623,9 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
     # If there is output from minimap2 create a dataframe
     if not plasmid_df.empty:
         logger.info("Flowcell id: {} - Mapping reads to plasmids for species {} ".format(flowcell.id, species))
-        plasmid_red_series = plasmid_df.apply(plasmid_mapping, args=(species, reference_location, fastq, flowcell),
-                                          axis=1)
+
+        plasmid_red_series = plasmid_df.apply(plasmid_mapping, args=(species, fastqs_list, flowcell), axis=1)
         plasmid_red_series.dropna(inplace=True)
-        # TODo add this to server asap
         logger.info("Flowcell id: {} - plasmid mapping output is {}".format(flowcell.id, plasmid_red_series.head()))
         if not plasmid_red_series.empty:
             try:

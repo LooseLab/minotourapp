@@ -2116,7 +2116,10 @@ class FlowcellSummaryBarcode(models.Model):
         TODO
         """
 
-        return self.total_length / self.read_count
+        if self.read_count > 0:
+            return self.total_length / self.read_count
+        else:
+            return 0
 
     def number_active_channels(self):
         """
