@@ -1109,7 +1109,7 @@ def run_centrifuge(flowcell_job_id):
                                       ).order_by('id')[:chunk_size]
 
     if fastqs.count() == 0:
-        # task.complete = True
+        task.complete = True
         logger.info('Flowcell id: {} - Found 0 reads in the database, for this flowcell. Aborting...'.format(
             flowcell.id, chunk_size)
         )
@@ -1119,8 +1119,6 @@ def run_centrifuge(flowcell_job_id):
 
     if task.read_count + chunk_size > document_number:
         chunk_size = fastqs.count()
-        # task.complete = True
-        task.running = False
         task.save()
         logger.info('Flowcell id: {} - Chunk size is {}, less than 2000 reads in the database'.format(
             flowcell.id, chunk_size)
