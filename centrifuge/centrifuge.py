@@ -452,8 +452,10 @@ def plasmid_mapping(row, species, reference_location, fastq, flowcell):
     map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format("minimap2", minimap2_ref_path)
 
     # Execute minimap2
-    out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE) \
-        .communicate(input=str.encode(fastq))
+    out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
+                                stderr=subprocess.PIPE).communicate(input=str.encode(fastq))
+    if err:
+        logger.info("Flowcell id: {} - Minimap error!! {}".format(flowcell.id, err))
     # Get the output of minimap2
     map_output = out.decode()
     logger.info("Flowcell id: {} - Plasmid mapping map output is {}".format(flowcell.id, map_output))
@@ -548,8 +550,10 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
     map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format("minimap2", minimap2_reference_path)
     # Execute minimap2
     out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
-                                stderr=subprocess.PIPE) \
-        .communicate(input=str.encode(fastq))
+                                stderr=subprocess.PIPE).communicate(input=str.encode(fastq))
+
+    if err:
+        logger.info("Flowcell id: {} - Minimap error!! {}".format(flowcell.id, err))
     # Get the output of minimap2
     map_output = out.decode()
 
@@ -914,78 +918,6 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
 
     results_df_bar.apply(update_mapped_red_values, args=(task, flowcell), axis=1)
 
-    # prev_num_matches_df = num_matches_targets_barcoded_df
-    # ("Flowcell id: {} - The pre prev num matches merge are {}".format(flowcell.id, prev_num_matches_df))
-    # logger.info("Flowcell id: {} - The pre prev num matches merge are {}".format(flowcell.id,
-    #                                                                              prev_num_matches_df.keys()))
-    #
-    # if not prev_num_matches_df.empty:
-    #     results_df = pd.merge(results_df, prev_num_matches_df, how="left", on=["tax_id", "barcode_name"])
-    #
-    #     results_df["num_matches_y"].fillna(0, inplace=True)
-    #
-    #     results_df["sum_unique_y"].fillna(0, inplace=True)
-    #
-    #     results_df["num_matches"] = results_df["red_num_matches"] + results_df["num_matches_y"]
-    #
-    #     results_df["sum_unique"] = results_df["red_sum_unique"] + results_df["sum_unique_y"]
-
-    # results_df.reset_index(inplace=True)
-    # logger.info("Flowcell id: {} - The results keys are {}".format(flowcell.id, results_df.keys()))
-    # logger.info("Flowcell id: {} - The results of the mapping stage are {}".format(flowcell.id, results_df))
-    #
-    # # List to store the read read ids
-    # bulk_insert_red_read_ids_from_update = []
-    #
-    # mapped_target_dict = {}
-    # # Get the previous values for the mappings
-    # prev_df = pd.DataFrame(list(MappingResult.objects.filter(task=task).values()))
-    # prev_df.set_index(["tax_id", "barcode_name"], inplace=True)
-    # logger.info("Flowcell id: {} - The previous results are {}".format(flowcell.id, prev_df))
-    # logger.info("Flowcell id: {} - The previous results keys are {}".format(flowcell.id, prev_df.keys()))
-    #
-    # if not results_df.empty:
-    #     results_df.set_index(["tax_id", "barcode_name"], inplace=True)
-    #     # Add the previous number of red reads to the results df
-    #     results_df["to_add_red_reads"] = prev_df["red_reads"]
-    #     # Add the previous sum unique to the results dataframe
-    #     results_df["to_add_red_sum_unique"] = prev_df["red_sum_unique"]
-    #     # Combine the previous and new number matches
-    #     results_df["summed_red_reads"] = results_df["red_num_matches"] + results_df["to_add_red_reads"]
-    #     # Combine the previous sum of the unique reads
-    #     results_df["summed_sum_unique"] = results_df["red_sum_unique"] + results_df["to_add_red_sum_unique"]
-    #
-    #     # results_df["to_add_num_mapped"] = prev_df["num_mapped"]
-    #     #
-    #     # results_df["summed_num_mapped"] = results_df["num_mapped"] + results_df["to_add_num_mapped"]
-    #     #
-    #     # results_df["red_reads_proportion"] = results_df["summed_red_reads"].div(
-    #     #     results_df["summed_num_mapped"]).mul(100).round(decimals=5)
-    #     #
-    #     # results_df["unique_red_reads_proportion"] = results_df["summed_sum_unique"] \
-    #     #     .div(results_df["summed_red_reads"]).mul(100).round(decimals=5)
-    #     if "name" in results_df.keys():
-    #         results_df.rename(columns={"name": "species"})
-    #
-    #     logger.info("Flowcell id: {} -  {}".format(flowcell.id, prev_df.keys()))
-    #     logger.info("Flowcell id: {} -  {}".format(flowcell.id, results_df))
-    #     results_df.reset_index(inplace=True)
-    #     # Apply the update mapped values function
-    #     results_df.apply(update_mapped_red_values, args=(bulk_insert_red_read_ids_from_update,
-    #                                                      mapped_target_dict,
-    #                                                      task, flowcell), axis=1)
-    #     # BUlk create the red read ids
-    #     try:
-    #         TargetMappedReadId.objects.bulk_create(bulk_insert_red_read_ids_from_update)
-    #     except IntegrityError:
-    #         logger.info("Flowcell id: {} - duplicate red reads!".format(flowcell.id))
-    #     # Apply the calculation and update to the dataframe
-    #     gb_bc = results_df.groupby("barcode_name", as_index=False)
-    #     results_df
-
-    # Apply to each barcode group
-    # barcode_mapped_gb.apply(calculate_mapped_dangerous_barcode, flowcell, task)
-
 
 def create_donut_data_models(row, task):
     """
@@ -1119,6 +1051,9 @@ def run_centrifuge(flowcell_job_id):
 
     if fastqs.count() == 0:
         # task.complete = True
+        logger.info('Flowcell id: {} - Found 0 reads in the database, for this flowcell. Aborting...'.format(
+            flowcell.id, chunk_size)
+        )
         task.running = False
         task.save()
         return
@@ -1126,9 +1061,11 @@ def run_centrifuge(flowcell_job_id):
     if task.read_count + chunk_size > document_number:
         chunk_size = fastqs.count()
         # task.complete = True
-        # task.running = False
+        task.running = False
         task.save()
-        logger.info('Flowcell id: {} - Chunk size is {}'.format(flowcell.id, chunk_size))
+        logger.info('Flowcell id: {} - Chunk size is {}, less than 2000 reads in the database'.format(
+            flowcell.id, chunk_size)
+        )
 
     logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, fastqs.count()))
 
@@ -1153,8 +1090,11 @@ def run_centrifuge(flowcell_job_id):
     logger.info("Flowcell id: {} - Loading index and Centrifuging".format(flowcell.id))
 
     # Use Popen to run the centrifuge command
-    out, err = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE) \
-        .communicate(input=str.encode(fastqs_data))
+    out, err = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
+                                stderr=subprocess.PIPE).communicate(input=str.encode(fastqs_data))
+
+    if err:
+        logger.info("Flowcell id: {} - Centrifuge error!! {}".format(flowcell.id, err))
 
     # the number of centrifuge lines
     centrifuge_output = out.decode()
@@ -1172,7 +1112,8 @@ def run_centrifuge(flowcell_job_id):
     df = pd.read_csv(StringIO(centrifuge_output), sep="\t", usecols=output_fields)
 
     if df.empty:
-        logger.info("Flowcell id: {} - No reads found or no centrifuge output".format(flowcell.id))
+        logger.info("Flowcell id: {} - No reads found or no centrifuge output."
+                    " Check above for error".format(flowcell.id))
         return
 
     # create DataFrame column unique, where if the number of matches is 1, unique is 1, if matches is more than
@@ -1346,7 +1287,7 @@ def run_centrifuge(flowcell_job_id):
     cent_to_create_df = df[~prev_links_mask]
 
     cent_to_create_df = pd.merge(cent_to_create_df, lineages_df, how="inner", left_on="tax_id", right_index=True)
-
+    logger.info("Flowcell id: {} - Centrifuge to update dataframe {}".format(flowcell.id, cent_to_create_df.head()))
     cent_to_create_df["task"] = task
 
     # apply row wise to append model representation objects into a series
@@ -1373,6 +1314,7 @@ def run_centrifuge(flowcell_job_id):
         previous_df.set_index(["tax_id", "barcode_name"], inplace=True)
         cent_to_update_df = cent_to_update_df[~cent_to_update_df.index.duplicated(keep="first")]
         previous_df = previous_df[~previous_df.index.duplicated(keep="first")]
+        logger.info("Flowcell id: {} - Centrifuge to update dataframe {}".format(flowcell.id, cent_to_update_df.head()))
         cent_to_update_df["num_matches"] = previous_df["num_matches"] + cent_to_update_df["num_matches"]
 
         cent_to_update_df["sum_unique"] = previous_df["sum_unique"] + cent_to_update_df["sum_unique"]
@@ -1390,7 +1332,6 @@ def run_centrifuge(flowcell_job_id):
 
     # ##################### Back to the non sankey calculations ####################
     # Update the metadata for the headers
-    logger.info("Flowcell id: {} - Finished all reads in database".format(flowcell.id))
 
     # Get the start time #TODO remove the unused fields
     start_time = metadata.start_time.replace(tzinfo=None)
