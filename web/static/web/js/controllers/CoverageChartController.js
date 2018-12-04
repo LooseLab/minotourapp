@@ -52,7 +52,9 @@ class CoverageChartController {
 
         let self = this;
 
-        $.getJSON(url, (function (data) {
+        $.getJSON(url, (function (datax) {
+
+            var data = JSON.parse(datax);
 
             self._coverage_chart.master_chart.series[0].setData(data);
             self._coverage_chart.detail_chart.series[0].setData(data);

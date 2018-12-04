@@ -1,6 +1,7 @@
 import json
 
 import numpy as np
+import pandas as pd
 from django.db.models import Sum
 from django.http import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view
@@ -37,13 +38,16 @@ def rough_coverage_complete_chromosome_flowcell(request, task_id, barcode_name, 
         .annotate(Sum('i')) \
         .order_by('p')
 
-    result = []
+    queryset_df = pd.DataFrame.from_records(
+        queryset.values('p', 'i__sum')
+    )
 
-    for record in queryset:
+    queryset_df['i__sum__cumsum'] = queryset_df['i__sum'].cumsum()
 
-        result.append([record['p'], record['i__sum']])
+    result = queryset_df[['p', 'i__sum__cumsum']]
 
-    return JsonResponse(result, safe=False)
+    # this method return the json between double quotes and requires a JSON.parse on the client side
+    return JsonResponse(result.to_json(orient='values'), safe=False)
 
 
 @api_view(['GET'])
