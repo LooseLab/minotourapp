@@ -35,7 +35,7 @@ function drawTables(selection, dataToDraw) {
     // draw the tables using d3
     // get table height
     let columns = ["Species", "# Matches", "Rank", "Key"];
-    let Theight = 35;
+    let height = $(window).height() * 0.35 + 20;
     let table;
     let thead;
     let tbody;
@@ -44,7 +44,7 @@ function drawTables(selection, dataToDraw) {
     // select the table out of one of two sides
     if (first) {
         table = d3.select("." + selection)
-            .style("width", "100%").style("height", Theight+"vh").style("overflow-y", "scroll").append("table").attr("class", "table table-hover taxons").style("table-layout", "fixed").style("overflow", "scroll").style("margin-left", "8px");
+            .style("width", "100%").style("height", height+"px").style("overflow-y", "scroll").append("table").attr("class", "table table-hover taxons").style("table-layout", "fixed").style("overflow", "scroll").style("margin-left", "8px");
         // append table head, using the data in the columns array
         thead = table.append('thead').append('tr')
             .selectAll('th')
@@ -154,15 +154,25 @@ function drawTables(selection, dataToDraw) {
 
 function drawDonutRankTable(flowCellId) {
     var selectedBarcode = get_selected_barcode();
-    let barcodes = [];
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     if (flowcell_selected_tab_input.value !== "nav-metagenomics"){
         return;
     }
     $.get("/donut", {flowcellId: flowCellId, visType: "donut", barcode: selectedBarcode}, result => {
         // if there is no data return and try again when interval is up on $interval
-        if (result === undefined) {
+        let rankTable = d3.select(".rank-table-container");
+        let height = $(window).height() * 0.35;
+        let noData = (height/2 - 20).toString();
+        if (result.species === undefined) {
+            rankTable.selectAll("*").remove();
+            rankTable.append("div");
+            let div = rankTable.select("div");
+            div.style("height", height+"px").style("transform", "translateY("+ noData +"px)").attr("class", "col-md-12");
+            div.append("text").text("No data to display");
+            div.classed("no-data", true);
             return;
+        } else {
+            rankTable.select("div").remove();
         }
         let dataToDraw = result;
         let range = $('.input-range'),

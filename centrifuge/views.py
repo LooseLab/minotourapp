@@ -218,7 +218,7 @@ def donut_data(request):
     for name, group in gb:
         return_dict[name] = group.to_dict(orient="records")
 
-    return Response(return_dict, status=200)
+    return Response("return_dict", status=200)
 
 
 @api_view(["GET"])
@@ -271,7 +271,7 @@ def get_target_mapping(request):
 
     return_dict = {"table": results}
 
-    return Response(return_dict)
+    return Response("return_dict")
 
 
 @api_view(['GET'])
@@ -310,13 +310,6 @@ def metagenomic_barcodes(request, pk):
     barcode_df["alert_level"] = hodf.max(axis=1)
 
     alert_level_results = barcode_df.groupby("barcode_name")["alert_level"].max()
-
-    # alert_level_results = pd.DataFrame(alert_level_results).reset_index().rename(
-    #     columns={"barcode_name": "key", "alert_level": "value"}
-    # )
-    # alert_level_results["key"] = alert_level_results["key"].str.replace(" ", "_", regex=True)
-
-    # alert_level_results.index = alert_level_results.index.str.replace(" ", "_")
 
     alert_level_results = alert_level_results.to_dict()
 

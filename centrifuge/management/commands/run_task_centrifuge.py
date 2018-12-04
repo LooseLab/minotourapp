@@ -20,7 +20,6 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-
 class Command(BaseCommand):
 
     help = 'Run task centrifuge'
@@ -28,13 +27,14 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         try:
-            while True:
-                logger.info('Running centrifuge task')
+            logger.info('Running centrifuge task')
 
-                flowcell_list = Flowcell.objects.filter(is_active=True)
+            flowcell_list = Flowcell.objects.filter(is_active=True)
 
-                for flowcell in flowcell_list:
-                    flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False, complete=False)
+            for flowcell in flowcell_list:
+
+                    flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False,
+                                                                                           complete=False)
 
                     for flowcell_job in flowcell_job_list:
 
@@ -47,7 +47,6 @@ class Command(BaseCommand):
                             ))
 
                             logger.info("starting centrifuge task")
-                            # while not flowcell_job.complete:
                             run_centrifuge(flowcell_job.id)
 
         except Exception as e:

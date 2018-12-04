@@ -1,3 +1,13 @@
+function revealMetagenomicsPage(){
+    d3.select("#loading-sign").transition().duration(1000).style("opacity", 0);
+
+    setTimeout(function () {
+        $("body").addClass("loaded sidebar-collapse");
+        d3.select("#loading-sign").style("display", "none");
+        d3.select(".vis-container").style("display", "contents");
+    }, 1500);
+}
+
 function update_mapping_table(flowcellId) {
     let table;
     let thead;
@@ -26,16 +36,17 @@ function update_mapping_table(flowcellId) {
         return;
     }
     $.get("/mapped_targets", {flowcellId, barcode}, result => {
-        // // Set the barcode tabs to the highest alert level in their contents
-        // let alertLevels = {0: "green-alert-tab", 1 : "yellow-alert-tab", 2 : "orange-alert-tab", 3 : "red-alert-tab"};
-        // let tab_level;
-        // for (let i = 0; i < result.tabs.length; i++){
-        //     tab = result.tabs[i];
-        //     console.log(tab);
-        //     tab_level = alertLevels[tab["value"]];
-        //     console.log(tab_level);
-        //     d3.select("."+tab["key"]).classed(tab_level, true);
-        // }
+        if (result.table === undefined){
+            let alertTable = d3.select(".alert-table");
+            alertTable.selectAll("*").remove();
+            alertTable.append("text").text("No data to display");
+            alertTable.classed("no-data", true);
+            revealMetagenomicsPage();
+            return;
+        } else {
+            d3.select(".alert-table").classed("no-data", false).select("text").remove();
+            revealMetagenomicsPage();
+        }
 
         data = result.table;
         data.sort(compare);

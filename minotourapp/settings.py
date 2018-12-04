@@ -144,7 +144,6 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = "/home/rory/PycharmProjects/minotour_static"
-print(STATIC_ROOT)
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
