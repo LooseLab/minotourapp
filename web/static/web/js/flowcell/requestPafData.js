@@ -1,3 +1,39 @@
+function updateCoverageBasedCharts(chart, summarycoverage, field) {
+
+    var series = [];
+    var categories = [];
+    for (var barcode of Object.keys(summarycoverage)) {
+
+        data = [];
+        for (var readtype of Object.keys(summarycoverage[barcode])) {
+
+            for (var chromosome of Object.keys(summarycoverage[barcode][readtype])) {
+
+                categories.push(chromosome);
+                data.push(summarycoverage[barcode][readtype][chromosome][field]["data"]);
+            }
+        }
+        serie = {
+            "name": barcode + " " + readtype,
+            "data": data
+        };
+        series.push(serie);
+    }
+
+    chart.xAxis[0].setCategories(categories);
+    var chartSeriesLength = (chart.series ? chart.series.length : 0);
+    for (var i = 0; i < series.length; i++) {
+        if (i <= (chartSeriesLength - 1)) {
+            chart.series[i].setData(series[i].data);
+            chart.series[i].update({
+                name: series[i].name
+            });
+        } else {
+            chart.addSeries(series[i]);
+        }
+    }
+}
+
 function requestMappedChromosomes(flowcell_id) {
     /*
      * Request the chromosomes that have reads mapped to using minimap2
@@ -113,9 +149,8 @@ function requestPafData(id) {
 
             }
 
-            this.summarycoverage = summarycoverage;
-            this.updateCoverageBasedCharts(this.chart_per_chrom_cov, "coverage");
-            this.updateCoverageBasedCharts(this.chart_per_chrom_avg, "ave_read_len");
+            updateCoverageBasedCharts(this.chart_per_chrom_cov, summarycoverage, "coverage");
+            updateCoverageBasedCharts(this.chart_per_chrom_avg, summarycoverage, "ave_read_len");
 
         }
 
