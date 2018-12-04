@@ -13,10 +13,7 @@ class CoverageChartController {
 
     reload_master_chart() {
 
-        console.log('reloading master chart');
-        console.log('chromossome id: ' + this._chromossome_select.value)
         let url = this.create_url();
-        console.log('url: ' + url);
         this.load_chart_data(url);
     }
 
@@ -58,6 +55,7 @@ class CoverageChartController {
 
             self._coverage_chart.master_chart.series[0].setData(data);
             self._coverage_chart.detail_chart.series[0].setData(data);
+            self._coverage_chart.master_chart.xAxis[0].removePlotBand('mask-before');
 
             return data;
         }));

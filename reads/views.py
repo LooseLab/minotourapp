@@ -1731,8 +1731,20 @@ def readextra_list(request):
         qs = FastqRead.objects.filter(read_id=search_value)
 
         if len(qs) > 0:
+
+            fastq_record = qs[0]
+
+            fastq_string = ">{} runid={} ch={} read={} start_time={}\n{}\n".format(
+                fastq_record.read_id,
+                fastq_record.run.runid,
+                fastq_record.channel,
+                fastq_record.read,
+                fastq_record.start_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                fastq_record.fastqreadextra.sequence
+            )
+
             read = {
-                'sequence': qs[0].fastqreadextra.sequence
+                'sequence': fastq_string
             }
 
         else:
