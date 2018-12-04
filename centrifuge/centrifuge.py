@@ -480,8 +480,6 @@ def plasmid_mapping(row, species, fastq_list, flowcell):
     if err:
         logger.info("Flowcell id: {} - Minimap error!! {}".format(flowcell.id, err))
     # Get the output of minimap2
-    logger.info(out)
-    logger.info(err)
     map_output = out.decode()
     logger.info("Flowcell id: {} - Plasmid mapping map output is {}".format(flowcell.id, map_output))
     columns = ["read_id", "query_seq_len", "query_start", "query_end", "rel_strand", "target_seq_name",
@@ -506,7 +504,7 @@ def plasmid_mapping(row, species, fastq_list, flowcell):
             "Flowcell id: {} - This many reads mapped evilly on this reference {} for species {}"
             .format(flowcell.id, plasmid_map_df.shape[0], species)
         )
-        # return as tuple to iterate over
+        logger.info(plasmid_map_df.head())
 
         return plasmid_map_df
 
@@ -574,15 +572,7 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
                                      read_id__in=target_species_group_df["read_id"])
     # The fasta sequence
     fastqs_list = reads.values_list('read_id', 'fastqreadextra__sequence')
-    # logger.info('fastqs_list content below:')
-    # logger.info(fastqs_list)
-    
-    # for fastq in fastqs_list:
-    #     logger.info('read_id: {}'.format(fastq[0]))
-    #     logger.info('sequence: {}'.format(fastq[1]))
-    # Assemble the fastq into a string
-    # fastq = "".join([str(">" + c[0] + "\n" + c[1] + "\n")
-    #                  for c in fastqs_list if c[1] is not None])
+
 
     fastq_input = ''
 
@@ -615,7 +605,6 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
         logger.info('>>> minimap2 command:')
         logger.info(map_cmd)
 
-
     logger.info("Flowcell id: {} - minimap output {} ".format(flowcell.id, map_output))
 
     plasmid_red_df = pd.DataFrame()
@@ -627,10 +616,21 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
         plasmid_red_series = plasmid_df.apply(plasmid_mapping, args=(species, fastqs_list, flowcell), axis=1)
         plasmid_red_series.dropna(inplace=True)
         logger.info("Flowcell id: {} - plasmid mapping output is {}".format(flowcell.id, plasmid_red_series.head()))
+        logger.info("Flowcell id: {} - plasmid mapping output is {}".format(flowcell.id, type(plasmid_red_series)))
         if not plasmid_red_series.empty:
             try:
                 for ind, df_plas in plasmid_red_series.iteritems():
-                    plasmid_red_df = plasmid_red_df.append(df_plas)
+                    if type(df_plas) == np.ndarray:
+                        df_append = pd.DataFrame(df_plas)
+                        df_append.columns = ['read_id', 'query_seq_len', 'query_start', 'query_end', 'rel_strand',
+                                             'target_seq_name', 'target_seq_len', 'target_start', 'target_end',
+                                             'num_matching_bases', 'num_matching_bases_gaps', 'mapping_qual',
+                                             'type_align']
+                        logger.info("df_append is {}".format(df_append))
+                        plasmid_red_df = plasmid_red_df.append(df_append, sort=True)
+                    else:
+
+                        plasmid_red_df = plasmid_red_df.append(df_plas, sort=True)
                 logger.info("Flowcell id: {} - plasmid mapping output is {}".format(flowcell.id, plasmid_red_df.head()))
             except AttributeError as e:
                 logger.info(e)
@@ -659,6 +659,7 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
     boolean_df = boolean_df.any()
     # Red reads, reads that fall within boundaries
     red_df = map_df[boolean_df]
+    logger.info(red_df.keys())
     # If there is output from the plasmid mapping, put it into
     logger.info("Flowcell id: {} - The target df before plasmid mapping results is {}".format(flowcell.id, red_df))
     if not plasmid_red_df.empty and (type(plasmid_red_df) != pd.core.series.Series):
