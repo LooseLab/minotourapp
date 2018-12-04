@@ -597,41 +597,5 @@ var FlowcellPageApp = {
                 this.livedata.scalingfactor = (totalyield / readcount) / (this.livedata.yield_history[this.livedata.yield_history.length - 1][1] / this.livedata.live_read_count);
             }
         }
-    },
-
-    updateCoverageBasedCharts: function (chart, field) {
-        var summarycoverage = this.summarycoverage;
-        var series = [];
-        var categories = [];
-        for (var barcode of Object.keys(summarycoverage)) {
-    //            console.log(summarycoverage[barcode]);
-            data = [];
-            for (var readtype of Object.keys(summarycoverage[barcode])) {
-
-                for (var chromosome of Object.keys(summarycoverage[barcode][readtype])) {
-                    categories.push(chromosome);
-    //                    console.log(summarycoverage[barcode][readtype][chromosome]["coverage"]["data"]);
-                    data.push(summarycoverage[barcode][readtype][chromosome][field]["data"]);
-                }
-            }
-            serie = {
-                "name": barcode + " " + readtype,
-                "data": data
-            };
-            series.push(serie);
-        }
-        ;
-        chart.xAxis[0].setCategories(categories);
-        var chartSeriesLength = (chart.series ? chart.series.length : 0);
-        for (var i = 0; i < series.length; i++) {
-            if (i <= (chartSeriesLength - 1)) {
-                chart.series[i].setData(series[i].data);
-                chart.series[i].update({
-                    name: series[i].name
-                });
-            } else {
-                chart.addSeries(series[i]);
-            }
-        }
     }
 };

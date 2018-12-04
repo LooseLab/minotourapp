@@ -63,21 +63,21 @@ def run_monitor():
         flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False, complete=False)
         for flowcell_job in flowcell_job_list:
 
-            # if flowcell_job.job_type.name == "Minimap2":
-            #
-            #     print("trying to run alignment for flowcell {} {} {} {}".format(
-            #         flowcell.id,
-            #         flowcell_job.id,
-            #         flowcell_job.reference.id,
-            #         flowcell_job.last_read
-            #     ))
-            #
-            #     run_minimap2_alignment.delay(
-            #         flowcell.id,
-            #         flowcell_job.id,
-            #         flowcell_job.reference.id,
-            #         flowcell_job.last_read
-            #     )
+            if flowcell_job.job_type.name == "Minimap2":
+
+                print("trying to run alignment for flowcell {} {} {} {}".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                    flowcell_job.reference.id,
+                    flowcell_job.last_read
+                ))
+
+                run_minimap2_alignment.delay(
+                    flowcell.id,
+                    flowcell_job.id,
+                    flowcell_job.reference.id,
+                    flowcell_job.last_read
+                )
 
             if flowcell_job.job_type.name == "ChanCalc":
 
@@ -90,6 +90,7 @@ def run_monitor():
 
                 run_minimap_assembly.delay(flowcell.id, flowcell_job.id, flowcell_job.tempfile_name, flowcell_job.last_read,
                                            flowcell_job.read_count, inputtype)
+
             if flowcell_job.job_type.name == "Metagenomics":
                 """
                     Run the Centrifuger class on the metagenomics data
@@ -598,19 +599,30 @@ def update_flowcell_details(flowcell_id, job_master_id):
         number_reads = number_reads + run.reads.all().count()
 
     #
+    # Get the job_master chancalc for this flowcell
+    #
+    job_master_list = JobMaster.objects.filter(flowcell=flowcell, job_type__name='Chancalc')
+
+    number_reads_processed = flowcell.number_reads_processed
+
+    if job_master_list.count() > 0:
+
+        number_reads_processed = job_master_list[0].read_count
+
+    #
     # Get the FlowcellSummaryBarcodes for a particular flowcell and for barcode_name "All reads"
     #
     flowcell_summary_list = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).filter(barcode_name='All reads')
 
     average_read_length = 0
     total_read_length = 0
-    number_reads_processed = 0
+    # number_reads_processed = 0
 
     logger.info('Flowcell id: {} - There is/are {} FlowcellSummaryBarcode records'.format(flowcell.id, len(flowcell_summary_list)))
 
     for flowcell_summary in flowcell_summary_list:
         total_read_length += flowcell_summary.total_length
-        number_reads_processed += flowcell_summary.read_count
+        # number_reads_processed += flowcell_summary.read_count
 
     if number_reads > 0:
         average_read_length = total_read_length / number_reads

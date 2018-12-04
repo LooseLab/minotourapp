@@ -1,6 +1,6 @@
 {% load static %}
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -51,11 +51,11 @@
         }
 
         .detail_chart {
-            width: 95%;
+            width: 100%;
             height: 200px;
         }
         .master_chart {
-            width: 95%;
+            width: 100%;
             height: 70px;
         }
     </style>
@@ -107,7 +107,8 @@
 <script src="{% static 'web/js/vis-d3/donutoTaberu.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/vis-d3/metaheader.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/vis-d3/mappingtable.js'%}?{% now 'c' %}"></script>
-<script src="{% static 'web/CoverageChart.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/models/CoverageChart.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/controllers/CoverageChartController.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/utils/checkFlowcellTabs.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/utils/selectedBarcode.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/utils/selectedFlowcell.js' %}?{% now 'c' %}"></script>
