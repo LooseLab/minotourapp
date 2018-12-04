@@ -218,7 +218,7 @@ def donut_data(request):
     for name, group in gb:
         return_dict[name] = group.to_dict(orient="records")
 
-    return Response("return_dict", status=200)
+    return Response(return_dict, status=200)
 
 
 @api_view(["GET"])
@@ -271,7 +271,7 @@ def get_target_mapping(request):
 
     return_dict = {"table": results}
 
-    return Response("return_dict")
+    return Response(return_dict)
 
 
 @api_view(['GET'])
