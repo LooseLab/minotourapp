@@ -1696,20 +1696,32 @@ def read_list_new(request):
 
     elif request.method == 'POST':
 
-        serializer = FastqReadSerializer(data=request.data, many=True, context={'request': request})
+        # serializer = FastqReadSerializer(data=request.data, many=True)
 
-        if serializer.is_valid():
+        # print(request.data)
 
-            serializer.save()
+        save_reads.delay(request.data)
 
-            return Response({}, status=status.HTTP_201_CREATED)
+        return Response({}, status=status.HTTP_201_CREATED)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        # if serializer.is_valid():
+        #
+        #     print('reads valid')
+        #     res = serializer.save()
+        #     print(res)
+        #
+        #     return Response({}, status=status.HTTP_201_CREATED)
+        #
+        # else:
+        #
+        #     print('reads not valid')
+        #
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @task
-def save_reads(request):
+def save_reads(data):
 
-    serializer = FastqReadSerializer(data=request.data, many=True, context={'request': request})
+    serializer = FastqReadSerializer(data=data, many=True)
 
     if serializer.is_valid():
         serializer.save()
