@@ -113,6 +113,7 @@ def run_monitor():
                     e = sys.exc_info()
                     print(e)
 
+
 @task()
 def run_centrifuge(flowcell_job_id):
 

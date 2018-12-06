@@ -206,6 +206,19 @@
     }
   },
   {
+    "model": "jobs.jobtype",
+    "pk": 12,
+    "fields": {
+      "name": "CalculateSankey",
+      "description": "Calculate Sankey",
+      "long_description": "Calculate the sankey diagram on demand",
+      "reference": false,
+      "transcriptome": false,
+      "readcount": false,
+      "private": false
+    }
+  },
+  {
     "model": "reference.referenceinfo",
     "pk": 1,
     "fields": {
