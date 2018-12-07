@@ -682,8 +682,7 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
     # get the info on the mapped reads from the original dataframe
     # TODO this is where we sort the barcodes
     update_num_mapped_df = pd.merge(targets_results_df, map_df, how="inner", left_on="read_id", right_on="read_id")
-    PATH = "/home/rory/data/logs/" + flowcell.name + ".csv"
-    update_num_mapped_df.to_csv(PATH, mode="a")
+
     update_num_mapped_df_non_barcode = update_num_mapped_df.copy(deep=True)
 
     update_num_mapped_df_non_barcode["barcode_name"] = "All reads"
