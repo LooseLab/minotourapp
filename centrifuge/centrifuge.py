@@ -1351,6 +1351,8 @@ def run_centrifuge(flowcell_job_id):
     centrifuge_create_series = cent_to_create_df.apply(create_centrifuge_models, args=(classified_per_barcode,), axis=1)
 
     logger.info("Flowcell id: {} - Bulk creating CentOutput objects".format(flowcell.id))
+    logger.info("Flowcell id: {} - Bulk creating CentOutput objects- example obj = {}"
+                .format(flowcell.id, list(centrifuge_create_series.values)[0]))
     # Bulk create the objects
     CentrifugeOutput.objects.bulk_create(list(centrifuge_create_series.values))
     # Get all the results for the barcoded entries, so each species will have multiple entries under different barcodes
