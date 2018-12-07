@@ -1342,6 +1342,7 @@ def run_centrifuge(flowcell_job_id):
 
     # subset where there is so these need dootdating
     cent_to_create_df = df[~prev_links_mask]
+    logger.info("Flowcell id: {} - Centrifuge to lineages dataframe {}".format(flowcell.id, lineages_df.head()))
 
     cent_to_create_df = pd.merge(cent_to_create_df, lineages_df, how="inner", left_on="tax_id", right_index=True)
     logger.info("Flowcell id: {} - Centrifuge to update dataframe {}".format(flowcell.id, cent_to_create_df.head()))
