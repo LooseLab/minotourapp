@@ -219,9 +219,9 @@ var FlowcellPageApp = {
             "Pore States".toUpperCase()
         );
 
-        var inputFlowcellId = document.querySelector("#flowcell-id");
-
-        this.flowcellId = inputFlowcellId.value;
+        // var inputFlowcellId = document.querySelector("#flowcell-id");
+        //
+        // this.flowcellId = inputFlowcellId.value;
 
         this.addStartTabsEvents(flowcell_id);
         this.checkFlowcellTabs(flowcell_id);

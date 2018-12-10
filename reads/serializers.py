@@ -103,7 +103,7 @@ class MinIONSerializer(serializers.HyperlinkedModelSerializer):
 class FastqReadTypeSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = FastqReadType
-        fields = ('url', 'name',)
+        fields = ('url', 'name', 'id')
         read_only = ('id',)
 
 
@@ -150,7 +150,7 @@ class FastqReadGetSerializer(serializers.HyperlinkedModelSerializer):
         )
 
 
-class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
+class FastqReadSerializer(serializers.ModelSerializer):
 
     sequence = serializers.CharField(allow_blank=True)
     quality = serializers.CharField(allow_blank=True)
@@ -158,7 +158,6 @@ class FastqReadSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = FastqRead
         fields = (
-            'url',
             'read_id',
             'read',
             'channel',

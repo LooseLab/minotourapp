@@ -1192,6 +1192,7 @@ def run_centrifuge(flowcell_job_id):
 
     # subset where there is so these need dootdating
     cent_to_create_df = df[~prev_links_mask]
+    logger.info("Flowcell id: {} - Centrifuge to lineages dataframe {}".format(flowcell.id, lineages_df.head()))
 
     cent_to_create_df = pd.merge(cent_to_create_df, lineages_df, how="inner", left_on="tax_id", right_index=True)
     logger.info("Flowcell id: {} - Centrifuge to update dataframe {}".format(flowcell.id, cent_to_create_df.head()))
@@ -1201,6 +1202,8 @@ def run_centrifuge(flowcell_job_id):
     centrifuge_create_series = cent_to_create_df.apply(create_centrifuge_models, args=(classified_per_barcode,), axis=1)
 
     logger.info("Flowcell id: {} - Bulk creating CentOutput objects".format(flowcell.id))
+    logger.info("Flowcell id: {} - Bulk creating CentOutput objects- example obj = {}"
+                .format(flowcell.id, list(centrifuge_create_series.values)[0]))
     # Bulk create the objects
     CentrifugeOutput.objects.bulk_create(list(centrifuge_create_series.values))
     # Get all the results for the barcoded entries, so each species will have multiple entries under different barcodes
