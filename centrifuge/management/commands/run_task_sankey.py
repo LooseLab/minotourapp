@@ -9,7 +9,7 @@ from django.core.management import BaseCommand, CommandError
 
 from jobs.models import JobMaster
 from reads.models import Flowcell
-from centrifuge.utils import calculate_sankey
+from centrifuge.sankey import calculate_sankey
 
 log_folder = os.environ.get('MT_LOG_FOLDER')
 

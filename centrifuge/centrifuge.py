@@ -69,8 +69,12 @@ def create_centrifuge_models(row, classified_per_barcode):
     :return: The list of newly created objects
 
     """
-    if row["proportion_of_classified"] == "Unclassified":
+    if row["proportion_of_classified"] == "Unclassified" or row["proportion_of_classified"] == np.nan:
         row["proportion_of_classified"] = round(row["num_matches"] / classified_per_barcode[row["barcode_name"]], 3)
+    # logger.info(row["proportion_of_classified"])
+    # logger.info(row["barcode_name"])
+    # logger.info(row["proportion_of_classified"] == np.NaN)
+    # logger.info(row["proportion_of_classified"] == np.nan)
     return CentrifugeOutput(name=row["name"],
                             tax_id=row["tax_id"],
                             task=row["task"],
@@ -1160,10 +1164,7 @@ def run_centrifuge(flowcell_job_id):
 
     # ###### BULK CREATE CENTOUTPUT OBJECTS ########
     # Give each row a flowcell object cell, as part of the flowcell_id series
-    df["flowcell"] = flowcell
 
-    # same with task from Jobmaster
-    df["task"] = task
 
     df["proportion_of_classified"] = df["num_matches"].div(
         classified_per_barcode["All reads"]).mul(100).round(decimals=3)
@@ -1171,6 +1172,11 @@ def run_centrifuge(flowcell_job_id):
     df.set_index("tax_id", inplace=True)
     # Add the barcode dataframe onto the dataframe, so now we have all reads and barcodes
     df = df.append(barcode_df, sort=True)
+
+    df["flowcell"] = flowcell
+
+    # same with task from Jobmaster
+    df["task"] = task
 
     df.reset_index(inplace=True)
 
@@ -1197,13 +1203,10 @@ def run_centrifuge(flowcell_job_id):
     cent_to_create_df = pd.merge(cent_to_create_df, lineages_df, how="inner", left_on="tax_id", right_index=True)
     logger.info("Flowcell id: {} - Centrifuge to update dataframe {}".format(flowcell.id, cent_to_create_df.head()))
     cent_to_create_df["task"] = task
-
+    cent_to_create_df["proportion_of_classified"].fillna("Unclassified", inplace=True)
     # apply row wise to append model representation objects into a series
     centrifuge_create_series = cent_to_create_df.apply(create_centrifuge_models, args=(classified_per_barcode,), axis=1)
 
-    logger.info("Flowcell id: {} - Bulk creating CentOutput objects".format(flowcell.id))
-    logger.info("Flowcell id: {} - Bulk creating CentOutput objects- example obj = {}"
-                .format(flowcell.id, list(centrifuge_create_series.values)[0]))
     # Bulk create the objects
     CentrifugeOutput.objects.bulk_create(list(centrifuge_create_series.values))
     # Get all the results for the barcoded entries, so each species will have multiple entries under different barcodes

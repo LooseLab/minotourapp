@@ -101,11 +101,16 @@ def centrifuge_sankey(request):
     # Selected barcode, default all reads
     selected_barcode = request.GET.get("barcode", "All reads")
 
+    has_been_run = False
+
     # The most up to dat task_id
     task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last().id
 
     # ## Get the links for the sankey Diagram ###
-
+    been_run = JobMaster.objects.filter(flowcell__id=flowcell_id,
+                                        job_type__name="CalculateSankey").order_by("id").last().id
+    if been_run:
+        has_been_run = True
     queryset = SankeyLink.objects.filter(task__id=task_id, barcode_name=selected_barcode).values()
     # If the queryset is empty, return an empty object
     if not queryset:
@@ -172,7 +177,7 @@ def centrifuge_sankey(request):
 
     # ## Return the array # ##
     nodes = {"links": links, "nodes": nodes}
-    return_dict = {"sankey": nodes}
+    return_dict = {"sankey": nodes, "run": has_been_run}
     return Response(return_dict, status=200)
 
 
