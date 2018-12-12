@@ -597,7 +597,7 @@ def falls_in_region(row, map_df):
 def update_targets_no_mapping(row, task):
     """
     Update the targets to reflect the number of matches, if we've classified reads that don't map
-    
+
     :param row: The target dataframe row
     :param task: The task database model object
     :return: None
