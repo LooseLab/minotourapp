@@ -510,7 +510,7 @@ def map_all_the_groups(target_species_group_df, group_name,  flowcell, gff3_df, 
     # Drop unecessary columns
     map_df.drop(columns=["number_minimiser", "chaining_score", "chaining_score_2nd_chain", "random"],
                 inplace=True)
-
+    map_df.to_csv("/home/rory/data/mappings.csv", mode="a")
     boolean_df = species_regions_df.apply(falls_in_region, args=(map_df,), axis=1)
     # Get whether it's inside the boundaries or not
     boolean_df = boolean_df.any()
@@ -596,7 +596,8 @@ def falls_in_region(row, map_df):
 
 def update_targets_no_mapping(row, task):
     """
-    Update the targets to reflect the number of matches, if they don't map
+    Update the targets to reflect the number of matches, if we've classified reads that don't map
+    
     :param row: The target dataframe row
     :param task: The task database model object
     :return: None
@@ -606,7 +607,7 @@ def update_targets_no_mapping(row, task):
     obj.sum_unique = row["sum_unique"]
     nm = obj.num_mapped
     obj.proportion_of_classified = row["prop_classed"]
-    obj.mapped_proportion_of_classified = round(nm / row["num_matches"], 5)
+    obj.mapped_proportion_of_classified = round(nm / row["num_matches"] * 100, 3)
     logger.info(obj.mapped_proportion_of_classified)
     obj.save()
 
@@ -808,7 +809,7 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
     logger.info("Flowcell id: {} - The results of the mapping stage pre prev num matches merge "
                 "are {}".format(flowcell.id, results_df[["barcode_name", "species", "red_num_matches"]]))
 
-    logger.info("Flowcell id: {} - The results of the mapping stage pre prev num matches merge "
+    logger.info("Flowcell id: {} - The results of the mapping stage pre prev num matches merge"
                 "are {}".format(flowcell.id, results_df.keys()))
 
     results_df.apply(update_mapped_red_values, args=(task, flowcell), axis=1)
