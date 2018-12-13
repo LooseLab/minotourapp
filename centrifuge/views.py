@@ -108,18 +108,21 @@ def centrifuge_sankey(request):
 
     # ## Get the links for the sankey Diagram ###
     been_run = JobMaster.objects.filter(flowcell__id=flowcell_id,
-                                        job_type__name="CalculateSankey").order_by("id").last().id
+                                        job_type__name="CalculateSankey").order_by("id").last()
+
     if been_run:
         has_been_run = True
+    else:
+        return Response({"message": "No Sankey data has been found", "run": False})
     queryset = SankeyLink.objects.filter(task__id=task_id, barcode_name=selected_barcode).values()
     # If the queryset is empty, return an empty object
     if not queryset:
-        return Response({}, status=204)
+        return Response({"message": "No Sankey data has been found", "run": False})
     # Create the dataframe from the results of the database query
     source_target_df = pd.DataFrame(list(queryset))
     # If the database is empty return an empty list
     if source_target_df.empty:
-        return Response({}, status=204)
+        return Response({"message": "No Sankey data has been found", "run": False})
     # get a subset df of all the species rows
     temp_species_df = source_target_df[source_target_df["target_tax_level"] == "species"]
     # get species limit (default 50) of the largest species

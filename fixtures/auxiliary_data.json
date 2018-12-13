@@ -207,12 +207,25 @@
   },
   {
     "model": "jobs.jobtype",
-    "pk": 12,
+    "pk": 13,
     "fields": {
       "name": "CalculateSankey",
       "description": "Calculate Sankey",
       "long_description": "Calculate the sankey diagram on demand",
       "reference": false,
+      "transcriptome": false,
+      "readcount": false,
+      "private": false
+    }
+  },
+  {
+    "model": "jobs.jobtype",
+    "pk": 14,
+    "fields": {
+      "name": "Other",
+      "description": "Extra jobtype for non specific jobs",
+      "long_description": "Used now to distinguish between the two minimaps, metagenomics and alignment",
+      "reference": true,
       "transcriptome": false,
       "readcount": false,
       "private": false

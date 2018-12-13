@@ -12,13 +12,15 @@ from django.utils import timezone
 from ete3 import NCBITaxa
 from centrifuge.models import CentrifugeOutput, LineageValue, Metadata, SankeyLink, \
     MappingResult, MappingTarget, DonutData  # , TargetMappedReadId
-from jobs.models import JobMaster
+from jobs.models import JobMaster, JobType
 from minotourapp.utils import get_env_variable
 from reads.models import FastqRead
 from reference.models import ReferenceInfo
 from django.conf import settings
+from alignment.models import PafStore
 # from django.db.utils import IntegrityError
 from django.db.models import Sum
+from web.tasks_alignment import align_reads
 
 pd.options.mode.chained_assignment = None
 logger = get_task_logger(__name__)
@@ -291,36 +293,22 @@ def update_mapped_non_dangerous(row, task):
     mapped_result.save()
 
 
-def plasmid_mapping(row, species, fastq_list, flowcell):
+def plasmid_mapping(row, species, fastq_list, flowcell, read_ids):
     """
     Map the reads for groups that have danger regions on plasmids
     :param row: The row of the target dataframe for species with plasmid danger regions
     :param species: The species name
     :param fastq_list: The reads sequences
     :param flowcell: The flowcell for logging by flowcell_id
+    :param read_ids: reads ids of the reads being mapped
     :return plasmid_map_df: A list of dicts containing the information about the plasmid mappings
     """
 
-    #
-    # TODO Delete next lines
-    #
     fastq_input = ''
 
-    for fastq in fastq_list:
+    read_ids = read_ids
 
-        if fastq[1]:
-
-            temp = '>{}\n{}\n'.format(fastq[0], fastq[1])
-            fastq_input += temp
-
-    fastq = fastq_input
-
-    #
-    # End of deletion
-    #
-
-    reference_location = getattr(settings, "REFERENCE_LOCATION", None)
-    minimap2 = getattr(settings, "MINIMAP2", None)
+    flowcell = flowcell
 
     species = species.replace(" ", "_")
 
@@ -328,35 +316,31 @@ def plasmid_mapping(row, species, fastq_list, flowcell):
 
     references = ReferenceInfo.objects.get(name=reference_name)
 
-    minimap2_ref_path = os.path.join(reference_location, references.filename)
+    map_job_type = JobType.objects.get(name="Other")
+    mapping_task = JobMaster.objects.get(job_type=map_job_type, flowcell=flowcell, reference=references)
 
-    map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format(minimap2, minimap2_ref_path)
-    logger.info(map_cmd)
+    align_reads(fastq_list, mapping_task.id)
 
-    # Execute minimap2
-    out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
-                                stderr=subprocess.PIPE).communicate(input=str.encode(fastq))
-    if err:
-        logger.info("Flowcell id: {} - Minimap error!! {}".format(flowcell.id, err))
-    # Get the output of minimap2
-    map_output = out.decode()
+    map_output = PafStore.objects.filter(job_master=mapping_task, qsn__in=read_ids)
     logger.info("Flowcell id: {} - Plasmid mapping map output is {}".format(flowcell.id, map_output))
-    columns = ["read_id", "query_seq_len", "query_start", "query_end", "rel_strand", "target_seq_name",
-               "target_seq_len", "target_start", "target_end", "num_matching_bases", "num_matching_bases_gaps",
-               "mapping_qual", "type_align", "number_minimiser", "chaining_score", "chaining_score_2nd_chain",
-               "random"]
+    # columns = ["read_id", "query_seq_len", "query_start", "query_end", "rel_strand", "target_seq_name",
+    #            "target_seq_len", "target_start", "target_end", "num_matching_bases", "num_matching_bases_gaps",
+    #            "mapping_qual", "type_align", "number_minimiser", "chaining_score", "chaining_score_2nd_chain",
+    #            "random"]
+    columns = ["alignment_block_length", "flowcell_id", "id", "job_master_id", "mapping_qual", "num_residue_matches",
+              "query_end", "query_start", "query_seq_len", "read_id", "read_pk", "reference_id", "rel_strand",
+              "target_end", "target_start", "target_seq_len", "target_seq_name"]
+
     if not map_output:
         logger.info("Flowcell id: {} - No mappings for plasmid {} on species {}".format(flowcell.id, row["name"],
                                                                                         species))
         return np.NaN
-    else:
-        plasmid_map_df = pd.read_csv(StringIO(map_output), sep="\t", header=None)
 
-        # set the column headers to above
+    else:
+        plasmid_map_df = pd.DataFrame(list(map_output.values()))
         plasmid_map_df.columns = columns
-        # Drop unnecessary columns
-        plasmid_map_df.drop(columns=["number_minimiser", "chaining_score", "chaining_score_2nd_chain", "random"],
-                            inplace=True)
+        # set the column headers to above
+
         # TODO NOTE that atm, we're just counting any map that reads to a plasmid as a red read
 
         logger.info(
@@ -417,50 +401,62 @@ def map_all_the_groups(target_species_group_df, group_name,  flowcell, gff3_df, 
 
         return
 
-    reference_location = getattr(settings, "REFERENCE_LOCATION", None)
-    minimap2 = getattr(settings, "MINIMAP2", None)
+    # reference_location = getattr(settings, "REFERENCE_LOCATION", None)
+    # minimap2 = getattr(settings, "MINIMAP2", None)
 
     # the minimap2 reference fasta
     # minimap2_reference_path = os.path.join(reference_location, references.filename)
-    minimap2_reference_path = os.path.join(reference_location, references.filename)
+    # minimap2_reference_path = os.path.join(reference_location, references.filename)
     # The read sequences for the reads we want to map
 
     logger.info('target_species_group_df[read_id]: {}'.format(target_species_group_df['read_id']))
     reads = FastqRead.objects.filter(run__flowcell_id=flowcell.id,
                                      read_id__in=target_species_group_df["read_id"])
-    # The fasta sequence
-    fastqs_list = reads.values_list('read_id', 'fastqreadextra__sequence')
 
-    fastq_input = ''
+    read_ids = target_species_group_df["read_id"].values
+    # # The fasta sequence
+    # fastqs_list = reads.values_list('read_id', 'fastqreadextra__sequence')
+    #
+    # fastq_input = ''
+    #
+    # read_ids = []
+    #
+    # for fastq in fastqs_list:
+    #
+    #     if fastq[1]:
+    #         read_ids.append(fastq[0])
+    #         temp = '>{}\n{}\n'.format(fastq[0], fastq[1])
+    #         fastq_input += temp
 
-    for fastq in fastqs_list:
-
-        if fastq[1]:
-
-            temp = '>{}\n{}\n'.format(fastq[0], fastq[1])
-            fastq_input += temp
-
-    fastq = fastq_input
+    # fastq = fastq_input
 
     # The command to execute minimap
-    map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format(minimap2, minimap2_reference_path)
-    # Execute minimap2
-    out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
-                                stderr=subprocess.PIPE).communicate(input=str.encode(fastq))
+    # map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format(minimap2, minimap2_reference_path)
+    # # Execute minimap2
+    # out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
+    #                             stderr=subprocess.PIPE).communicate(input=str.encode(fastq))
 
-    if err:
-        logger.info("Flowcell id: {} - Minimap error!! {}".format(flowcell.id, err))
+    # if err:
+    #     logger.info("Flowcell id: {} - Minimap error!! {}".format(flowcell.id, err))
     # Get the output of minimap2
-    map_output = out.decode()
+    # map_output = out.decode()
 
-    if len(map_output) > 0:
+    # if len(map_output) > 0:
+    #
+    #     logger.info('>>> Found mappings')
+    #     logger.info('>>> map_output')
+    #     logger.info(map_output)
+    #
+    #     logger.info('>>> minimap2 command:')
+    #     logger.info(map_cmd)
 
-        logger.info('>>> Found mappings')
-        logger.info('>>> map_output')
-        logger.info(map_output)
+    map_job_type = JobType.objects.get(name="Other")
+    mapping_task = JobMaster.objects.get(job_type=map_job_type, flowcell=flowcell,
+                                         reference=references)
 
-        logger.info('>>> minimap2 command:')
-        logger.info(map_cmd)
+    align_reads(reads, mapping_task.id)
+
+    map_output = PafStore.objects.filter(job_master=mapping_task, qsn__in=read_ids)
 
     logger.info("Flowcell id: {} - minimap output {} ".format(flowcell.id, map_output))
 
@@ -470,7 +466,7 @@ def map_all_the_groups(target_species_group_df, group_name,  flowcell, gff3_df, 
     if not plasmid_df.empty:
         logger.info("Flowcell id: {} - Mapping reads to plasmids for species {} ".format(flowcell.id, species))
 
-        plasmid_red_series = plasmid_df.apply(plasmid_mapping, args=(species, fastqs_list, flowcell), axis=1)
+        plasmid_red_series = plasmid_df.apply(plasmid_mapping, args=(species, reads, flowcell, read_ids), axis=1)
         plasmid_red_series.dropna(inplace=True)
         logger.info("Flowcell id: {} - plasmid mapping output is {}".format(flowcell.id, plasmid_red_series.head()))
         logger.info("Flowcell id: {} - plasmid mapping output is {}".format(flowcell.id, type(plasmid_red_series)))
@@ -479,10 +475,11 @@ def map_all_the_groups(target_species_group_df, group_name,  flowcell, gff3_df, 
                 for ind, df_plas in plasmid_red_series.iteritems():
                     if type(df_plas) == np.ndarray:
                         df_append = pd.DataFrame(df_plas)
-                        df_append.columns = ['read_id', 'query_seq_len', 'query_start', 'query_end', 'rel_strand',
-                                             'target_seq_name', 'target_seq_len', 'target_start', 'target_end',
-                                             'num_matching_bases', 'num_matching_bases_gaps', 'mapping_qual',
-                                             'type_align']
+                        df_append.columns = ["alignment_block_length", "flowcell_id", "id", "job_master_id",
+                                             "mapping_qual", "num_residue_matches",
+                                             "query_end", "query_start", "query_seq_len", "read_id", "read_pk",
+                                             "reference_id", "rel_strand",
+                                             "target_end", "target_start", "target_seq_len", "target_seq_name"]
                         logger.info("df_append is {}".format(df_append))
                         plasmid_red_df = plasmid_red_df.append(df_append, sort=True)
                     else:
@@ -494,23 +491,24 @@ def map_all_the_groups(target_species_group_df, group_name,  flowcell, gff3_df, 
                 return
 
     if map_output:
-        map_df = pd.read_csv(StringIO(map_output), sep="\t", header=None)
+        map_df = pd.DataFrame(list(map_output.values()))
     # Else stop and return. There is no output if there are no mappings
     else:
         logger.info("Flowcell id: {} - No minimap output (No reads mapped) for species {}".format(flowcell.id, species))
         return
 
     # The columns headers
-    columns = ["read_id", "query_seq_len", "query_start", "query_end", "rel_strand", "target_seq_name",
-               "target_seq_len", "target_start", "target_end", "num_matching_bases", "num_matching_bases_gaps",
-               "mapping_qual", "type_align", "number_minimiser", "chaining_score", "chaining_score_2nd_chain",
-               "random"]
+    # columns = ["read_id", "query_seq_len", "query_start", "query_end", "rel_strand", "target_seq_name",
+    #            "target_seq_len", "target_start", "target_end", "num_matching_bases", "num_matching_bases_gaps",
+    #            "mapping_qual", "type_align", "number_minimiser", "chaining_score", "chaining_score_2nd_chain",
+    #            "random"]
+    columns = ["alignment_block_length", "flowcell_id", "id", "job_master_id", "mapping_qual", "num_residue_matches",
+               "query_end", "query_start", "query_seq_len", "read_id", "read_pk", "reference_id", "rel_strand",
+               "target_end", "target_start", "target_seq_len", "target_seq_name"]
     # set the column headers to above
     map_df.columns = columns
-    # Drop unecessary columns
-    map_df.drop(columns=["number_minimiser", "chaining_score", "chaining_score_2nd_chain", "random"],
-                inplace=True)
-    map_df.to_csv("/home/rory/data/mappings.csv", mode="a")
+
+    # map_df.to_csv("/home/rory/data/mappings.csv", mode="a")
     boolean_df = species_regions_df.apply(falls_in_region, args=(map_df,), axis=1)
     # Get whether it's inside the boundaries or not
     boolean_df = boolean_df.any()
