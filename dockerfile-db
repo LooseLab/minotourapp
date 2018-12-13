@@ -1,0 +1,4 @@
+FROM postgres:alpine
+ADD ./init /docker-entrypoint-initdb.d/
+ENV POSTGRES_PASSWORD=test
+EXPOSE 5432
