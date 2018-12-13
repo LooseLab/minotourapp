@@ -88,7 +88,7 @@ function update(flowcellId, sankey, checkForData, svg, g, format, color, width, 
             svg.append("text").text("No data to display").attr("text-anchor", "middle").attr("x", "50%").attr("y", "50%");
             return;
         } else if(result.run === false) {
-            console.log("not run")
+            console.log("not run");
             return;
         } else if (result.run === true){
             d3.select(".sankeyContainer").style("display", "block");
