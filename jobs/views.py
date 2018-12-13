@@ -25,7 +25,7 @@ def task_list(request):
 
         if search_criteria == 'flowcell':
             flowcell_id = request.GET.get("search_value", "")  # TODO have to test for empty search value
-            task_list = JobMaster.objects.filter(flowcell__id=int(flowcell_id))
+            task_list = JobMaster.objects.filter(flowcell__id=int(flowcell_id)).exclude(job_type__name="Other")
             serializer = JobMasterSerializer(task_list, many=True)
             result = {
                 "data": serializer.data

@@ -228,7 +228,7 @@
       "reference": true,
       "transcriptome": false,
       "readcount": false,
-      "private": false
+      "private": true
     }
   },
   {
