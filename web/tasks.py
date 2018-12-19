@@ -62,7 +62,6 @@ def run_monitor():
 
         flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False, complete=False)
         for flowcell_job in flowcell_job_list:
-
             if flowcell_job.job_type.name == "Minimap2":
 
                 print("trying to run alignment for flowcell {} {} {} {}".format(
@@ -112,6 +111,7 @@ def run_monitor():
                 except Exception as e:
                     e = sys.exc_info()
                     print(e)
+
 
 @task()
 def run_centrifuge(flowcell_job_id):

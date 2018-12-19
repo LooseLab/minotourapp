@@ -12,13 +12,15 @@ from django.utils import timezone
 from ete3 import NCBITaxa
 from centrifuge.models import CentrifugeOutput, LineageValue, Metadata, SankeyLink, \
     MappingResult, MappingTarget, DonutData  # , TargetMappedReadId
-from jobs.models import JobMaster
+from jobs.models import JobMaster, JobType
 from minotourapp.utils import get_env_variable
 from reads.models import FastqRead
 from reference.models import ReferenceInfo
 from django.conf import settings
+from alignment.models import PafStore
 # from django.db.utils import IntegrityError
 from django.db.models import Sum
+from web.tasks_alignment import align_reads
 
 pd.options.mode.chained_assignment = None
 logger = get_task_logger(__name__)
@@ -69,8 +71,12 @@ def create_centrifuge_models(row, classified_per_barcode):
     :return: The list of newly created objects
 
     """
-    if row["proportion_of_classified"] == "Unclassified":
+    if row["proportion_of_classified"] == "Unclassified" or row["proportion_of_classified"] == np.nan:
         row["proportion_of_classified"] = round(row["num_matches"] / classified_per_barcode[row["barcode_name"]], 3)
+    # logger.info(row["proportion_of_classified"])
+    # logger.info(row["barcode_name"])
+    # logger.info(row["proportion_of_classified"] == np.NaN)
+    # logger.info(row["proportion_of_classified"] == np.nan)
     return CentrifugeOutput(name=row["name"],
                             tax_id=row["tax_id"],
                             task=row["task"],
@@ -273,151 +279,6 @@ def insert_new_lineages(ncbi, df, tax_rank_filter, flowcell):
     return lineages_df
 
 
-def calculate_sankey_values(lineages_df, df, flowcell, tax_rank_filter, job_master):
-    """
-    Calculate the values for the sankey diagram and save them into the database.
-    :param lineages_df: A dataframe of lineages created from the current centrifuge output
-    :param df: The main dataframe of centrifuge results
-    :param flowcell: The flowcell for these reads
-    :param tax_rank_filter: The taxonomic ranks in descending order
-    :param job_master: The jobmaster object for this task
-    :return:
-    """
-    # ##############  Storing snakey links and nodes ################
-
-    logger.info("Flowcell id: {} - Starting Sankey Calculations".format(flowcell.id))
-    # pd.merge outer join to combine the rows on tax_id, one row for each tax_id
-    merged_lineages_df = pd.merge(lineages_df, df, how="outer", left_index=True, right_on="tax_id")
-    # set index to tax_id
-    merged_lineages_df.set_index("tax_id", inplace=True)
-
-    # The columns we actually need
-    columns = ["num_matches", "sum_unique", "barcode_name", "superkingdom", "phylum", "class", "order", "family",
-               "genus", "species"]
-
-    # Subset the dataframe into those columns
-    sankey_lineages_df = merged_lineages_df[columns]
-
-    # Backfill the dataframe nas with the lowest common entry, if family is missing, and genus
-    #  isn't, family NaN becomes the genus entry
-    sankey_lineages_df = sankey_lineages_df.fillna(axis=1, method="bfill")
-
-    sankey_lineages_df = sankey_lineages_df.sort_values("num_matches", ascending=False)
-
-    # Rank lineages to flow through
-    sankey_lineages_df["path"] = np.arange(0, sankey_lineages_df.shape[0], 1)
-
-    # initialise the series that will become our sankey pandas DataFrame
-    source = pd.Series()
-    target = pd.Series()
-    value = pd.Series()
-    tax_id = pd.Series()
-    barcode = pd.Series()
-    target_tax_level = pd.Series()
-    path = pd.Series()
-    # Iterate across the dataframe taxonnomic rank columns, to create the source, target, num reads series
-    for index, rank in enumerate(tax_rank_filter):
-        # The taxonomic rank of the source of this link
-        source_tax_rank = rank
-        # The next index up, so for kingdom it would be phylum
-        shifted_index = index + 1
-        if shifted_index < len(tax_rank_filter):
-            # The target taxonomic rank
-            target_tax_rank = tax_rank_filter[shifted_index]
-            # Create a source series, append it to the bottom of the existing source series
-            source = source.append(sankey_lineages_df[source_tax_rank])
-            # Create a target series, append it to the bottom of the existing target series
-            target = target.append(sankey_lineages_df[target_tax_rank])
-            # Create a values series, append it to the bottom of the existing value series,
-            # contains the number of matches
-            value = value.append(sankey_lineages_df["num_matches"])
-            # Create a tax_id series, append it to the bottom of the existing tax_id series
-            tax_id = tax_id.append(pd.Series(sankey_lineages_df.index.values, index=sankey_lineages_df.index))
-            # Create a barcode series, append it to the bottom of the existing barcode series
-            barcode = barcode.append(sankey_lineages_df["barcode_name"])
-            # Create a target tax level series, by broadcasting the value down the dataframe,
-            # add it to the bottom of the existing series
-            # Contains the taxonomic rank of the links target, useful for ordering later
-            sankey_lineages_df["target_tax_level"] = target_tax_rank
-            target_tax_level = target_tax_level.append(sankey_lineages_df["target_tax_level"])
-            path = path.append(sankey_lineages_df["path"])
-
-    # Create a DataFrame of links
-    source_target_df = pd.concat([source, target, value, tax_id, target_tax_level, barcode, path], axis=1)
-
-    # Rename the columns
-    source_target_df.columns = ["source", "target", "value", "tax_id", "target_tax_level", "barcode_name", "path"]
-
-    # Create a series of Job_master objects through broadcasting
-    source_target_df["job_master"] = job_master
-
-    logger.info("Flowcell id: {} - Barcodes are:".format(flowcell.id))
-    logger.info(source_target_df["barcode_name"].unique())
-
-    # TODO DO sorting magic before the database deposition
-    # Create a dataframe of the previous results for this metagenomics task
-    previous_link_df = pd.DataFrame(
-        list(SankeyLink.objects.filter(task__id=job_master.id).values())
-    )
-
-    # If there no results, i.e this is the first iteration
-    if previous_link_df.empty:
-        # The entire dataframe needs to be added into the database
-        to_create_sankey_df = source_target_df
-    # if there are results these need updating where we have the same link
-    else:
-        tax_id_list = list(previous_link_df["tax_id"])
-
-        barcodes_list = list(previous_link_df["barcode_name"])
-        # list of tuples
-        tupley_tuple = list(zip(tax_id_list, barcodes_list))
-        # Mask whether there is a link for this barcode and tax_id
-        prev_links_mask = source_target_df[['tax_id', 'barcode_name']].agg(tuple, 1).isin(tupley_tuple)
-        # subset where there is so these need dootdating
-        to_create_sankey_df = source_target_df[~prev_links_mask]
-
-    # ## ### Create the SankeyLinks object #### # One for each link #### #
-    to_create_sankey_df.reset_index(inplace=True)
-
-    # Remove any in this iteration where the value is 4 or less, as these will not be in the top 30
-    to_create_sankey_df = to_create_sankey_df[to_create_sankey_df["value"] > 2]
-    # Drop duplicates as we only need to create one
-    to_create_sankey_df = to_create_sankey_df.drop_duplicates(subset=["tax_id", "target_tax_level"])
-
-    # Create a second dataframe for values that need updating
-    to_update_sankey_df = pd.DataFrame()
-
-    # If there are values that need updating
-    if not previous_link_df.empty:
-        # Merge inner so only rows that are in both dataframe are kept, these are the rows that need updating
-        # The target taxa level makes sure the rows intersect to the correct rank
-        to_update_sankey_df = pd.merge(source_target_df, previous_link_df, how="inner", on=["tax_id", "barcode_name",
-                                                                                            "target_tax_level"])
-
-    # If there are values that need creating
-    if not to_create_sankey_df.empty:
-        # Perform the apply to create the series to create
-        sankey_models_for_bulk_insert = to_create_sankey_df.apply(create_sankeylink_models, axis=1)
-
-        # Bulk create the objects
-        SankeyLink.objects.bulk_create(list(sankey_models_for_bulk_insert.values))
-
-    # If there are values that need updating
-    if not to_update_sankey_df.empty:
-        # Sum the two values from the merged previous and current dataframes together
-        to_update_sankey_df["updated_value"] = to_update_sankey_df["value_x"] + to_update_sankey_df["value_y"]
-        logger.info("Flowcell id: {} - Updating Sankey Links - This will take a minute...".format(
-            flowcell.id)
-        )
-        # TODO slowest point in code
-        # Apply the update function to the dataframe
-        to_update_sankey_df.apply(update_sankeylink_values, args=(
-            job_master.id,), axis=1)
-        logger.info("Flowcell id: {} - Finished updating sankey links".format(flowcell.id))
-
-
-
-
 def update_mapped_non_dangerous(row, task):
     """
     Update number of mapped reads that don't map to danger but do map to reference
@@ -432,36 +293,22 @@ def update_mapped_non_dangerous(row, task):
     mapped_result.save()
 
 
-def plasmid_mapping(row, species, fastq_list, flowcell):
+def plasmid_mapping(row, species, fastq_list, flowcell, read_ids):
     """
     Map the reads for groups that have danger regions on plasmids
     :param row: The row of the target dataframe for species with plasmid danger regions
     :param species: The species name
     :param fastq_list: The reads sequences
     :param flowcell: The flowcell for logging by flowcell_id
+    :param read_ids: reads ids of the reads being mapped
     :return plasmid_map_df: A list of dicts containing the information about the plasmid mappings
     """
 
-    #
-    # TODO Delete next lines
-    #
     fastq_input = ''
 
-    for fastq in fastq_list:
+    read_ids = read_ids
 
-        if fastq[1]:
-
-            temp = '>{}\n{}\n'.format(fastq[0], fastq[1])
-            fastq_input += temp
-
-    fastq = fastq_input
-
-    #
-    # End of deletion
-    #
-
-    REFERENCE_LOCATION = getattr(settings, "REFERENCE_LOCATION", None)
-    MINIMAP2 = getattr(settings, "MINIMAP2", None)
+    flowcell = flowcell
 
     species = species.replace(" ", "_")
 
@@ -469,35 +316,31 @@ def plasmid_mapping(row, species, fastq_list, flowcell):
 
     references = ReferenceInfo.objects.get(name=reference_name)
 
-    minimap2_ref_path = os.path.join(REFERENCE_LOCATION, references.filename)
+    map_job_type = JobType.objects.get(name="Other")
+    mapping_task = JobMaster.objects.get(job_type=map_job_type, flowcell=flowcell, reference=references)
 
-    map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format(MINIMAP2, minimap2_ref_path)
-    logger.info(map_cmd)
+    align_reads(fastq_list, mapping_task.id)
 
-    # Execute minimap2
-    out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
-                                stderr=subprocess.PIPE).communicate(input=str.encode(fastq))
-    if err:
-        logger.info("Flowcell id: {} - Minimap error!! {}".format(flowcell.id, err))
-    # Get the output of minimap2
-    map_output = out.decode()
+    map_output = PafStore.objects.filter(job_master=mapping_task, qsn__in=read_ids)
     logger.info("Flowcell id: {} - Plasmid mapping map output is {}".format(flowcell.id, map_output))
-    columns = ["read_id", "query_seq_len", "query_start", "query_end", "rel_strand", "target_seq_name",
-               "target_seq_len", "target_start", "target_end", "num_matching_bases", "num_matching_bases_gaps",
-               "mapping_qual", "type_align", "number_minimiser", "chaining_score", "chaining_score_2nd_chain",
-               "random"]
+    # columns = ["read_id", "query_seq_len", "query_start", "query_end", "rel_strand", "target_seq_name",
+    #            "target_seq_len", "target_start", "target_end", "num_matching_bases", "num_matching_bases_gaps",
+    #            "mapping_qual", "type_align", "number_minimiser", "chaining_score", "chaining_score_2nd_chain",
+    #            "random"]
+    columns = ["alignment_block_length", "flowcell_id", "id", "job_master_id", "mapping_qual", "num_residue_matches",
+              "query_end", "query_start", "query_seq_len", "read_id", "read_pk", "reference_id", "rel_strand",
+              "target_end", "target_start", "target_seq_len", "target_seq_name"]
+
     if not map_output:
         logger.info("Flowcell id: {} - No mappings for plasmid {} on species {}".format(flowcell.id, row["name"],
                                                                                         species))
         return np.NaN
-    else:
-        plasmid_map_df = pd.read_csv(StringIO(map_output), sep="\t", header=None)
 
-        # set the column headers to above
+    else:
+        plasmid_map_df = pd.DataFrame(list(map_output.values()))
         plasmid_map_df.columns = columns
-        # Drop unnecessary columns
-        plasmid_map_df.drop(columns=["number_minimiser", "chaining_score", "chaining_score_2nd_chain", "random"],
-                            inplace=True)
+        # set the column headers to above
+
         # TODO NOTE that atm, we're just counting any map that reads to a plasmid as a red read
 
         logger.info(
@@ -527,13 +370,12 @@ def update_mapped_red_values(row, task, flowcell):
     mapped.save()
 
 
-def map_all_the_groups(target_species_group_df, group_name, reference_location, flowcell, gff3_df, targets_results_df,
+def map_all_the_groups(target_species_group_df, group_name,  flowcell, gff3_df, targets_results_df,
                        task, num_matches_target_barcoded_df):
     """
     Map the reads from the target data frames, after they've been grouped by species
     :param target_species_group_df: A data frame that contains reads from only one species
     :param group_name: The name of the species in this group
-    :param reference_location: Where we have stored our reference files for minimap2
     :param flowcell: The flowcell model from where these reads came from
     :param gff3_df: The data frame containing the target regions
     :param targets_results_df: The data frame containing the new targets mapping against reference
@@ -559,51 +401,62 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
 
         return
 
-    REFERENCE_LOCATION = getattr(settings, "REFERENCE_LOCATION", None)
-    MINIMAP2 = getattr(settings, "MINIMAP2", None)
+    # reference_location = getattr(settings, "REFERENCE_LOCATION", None)
+    # minimap2 = getattr(settings, "MINIMAP2", None)
 
     # the minimap2 reference fasta
     # minimap2_reference_path = os.path.join(reference_location, references.filename)
-    minimap2_reference_path = os.path.join(REFERENCE_LOCATION, references.filename)
+    # minimap2_reference_path = os.path.join(reference_location, references.filename)
     # The read sequences for the reads we want to map
 
     logger.info('target_species_group_df[read_id]: {}'.format(target_species_group_df['read_id']))
     reads = FastqRead.objects.filter(run__flowcell_id=flowcell.id,
                                      read_id__in=target_species_group_df["read_id"])
-    # The fasta sequence
-    fastqs_list = reads.values_list('read_id', 'fastqreadextra__sequence')
 
+    read_ids = target_species_group_df["read_id"].values
+    # # The fasta sequence
+    # fastqs_list = reads.values_list('read_id', 'fastqreadextra__sequence')
+    #
+    # fastq_input = ''
+    #
+    # read_ids = []
+    #
+    # for fastq in fastqs_list:
+    #
+    #     if fastq[1]:
+    #         read_ids.append(fastq[0])
+    #         temp = '>{}\n{}\n'.format(fastq[0], fastq[1])
+    #         fastq_input += temp
 
-    fastq_input = ''
-
-    for fastq in fastqs_list:
-
-        if fastq[1]:
-
-            temp = '>{}\n{}\n'.format(fastq[0], fastq[1])
-            fastq_input += temp
-
-    fastq = fastq_input
+    # fastq = fastq_input
 
     # The command to execute minimap
-    map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format(MINIMAP2, minimap2_reference_path)
-    # Execute minimap2
-    out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
-                                stderr=subprocess.PIPE).communicate(input=str.encode(fastq))
+    # map_cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format(minimap2, minimap2_reference_path)
+    # # Execute minimap2
+    # out, err = subprocess.Popen(map_cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
+    #                             stderr=subprocess.PIPE).communicate(input=str.encode(fastq))
 
-    if err:
-        logger.info("Flowcell id: {} - Minimap error!! {}".format(flowcell.id, err))
+    # if err:
+    #     logger.info("Flowcell id: {} - Minimap error!! {}".format(flowcell.id, err))
     # Get the output of minimap2
-    map_output = out.decode()
+    # map_output = out.decode()
 
-    if len(map_output) > 0:
+    # if len(map_output) > 0:
+    #
+    #     logger.info('>>> Found mappings')
+    #     logger.info('>>> map_output')
+    #     logger.info(map_output)
+    #
+    #     logger.info('>>> minimap2 command:')
+    #     logger.info(map_cmd)
 
-        logger.info('>>> Found mappings')
-        logger.info('>>> map_output')
-        logger.info(map_output)
+    map_job_type = JobType.objects.get(name="Other")
+    mapping_task = JobMaster.objects.get(job_type=map_job_type, flowcell=flowcell,
+                                         reference=references)
 
-        logger.info('>>> minimap2 command:')
-        logger.info(map_cmd)
+    align_reads(reads, mapping_task.id)
+
+    map_output = PafStore.objects.filter(job_master=mapping_task, qsn__in=read_ids)
 
     logger.info("Flowcell id: {} - minimap output {} ".format(flowcell.id, map_output))
 
@@ -613,7 +466,7 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
     if not plasmid_df.empty:
         logger.info("Flowcell id: {} - Mapping reads to plasmids for species {} ".format(flowcell.id, species))
 
-        plasmid_red_series = plasmid_df.apply(plasmid_mapping, args=(species, fastqs_list, flowcell), axis=1)
+        plasmid_red_series = plasmid_df.apply(plasmid_mapping, args=(species, reads, flowcell, read_ids), axis=1)
         plasmid_red_series.dropna(inplace=True)
         logger.info("Flowcell id: {} - plasmid mapping output is {}".format(flowcell.id, plasmid_red_series.head()))
         logger.info("Flowcell id: {} - plasmid mapping output is {}".format(flowcell.id, type(plasmid_red_series)))
@@ -622,10 +475,11 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
                 for ind, df_plas in plasmid_red_series.iteritems():
                     if type(df_plas) == np.ndarray:
                         df_append = pd.DataFrame(df_plas)
-                        df_append.columns = ['read_id', 'query_seq_len', 'query_start', 'query_end', 'rel_strand',
-                                             'target_seq_name', 'target_seq_len', 'target_start', 'target_end',
-                                             'num_matching_bases', 'num_matching_bases_gaps', 'mapping_qual',
-                                             'type_align']
+                        df_append.columns = ["alignment_block_length", "flowcell_id", "id", "job_master_id",
+                                             "mapping_qual", "num_residue_matches",
+                                             "query_end", "query_start", "query_seq_len", "read_id", "read_pk",
+                                             "reference_id", "rel_strand",
+                                             "target_end", "target_start", "target_seq_len", "target_seq_name"]
                         logger.info("df_append is {}".format(df_append))
                         plasmid_red_df = plasmid_red_df.append(df_append, sort=True)
                     else:
@@ -637,23 +491,24 @@ def map_all_the_groups(target_species_group_df, group_name, reference_location, 
                 return
 
     if map_output:
-        map_df = pd.read_csv(StringIO(map_output), sep="\t", header=None)
+        map_df = pd.DataFrame(list(map_output.values()))
     # Else stop and return. There is no output if there are no mappings
     else:
         logger.info("Flowcell id: {} - No minimap output (No reads mapped) for species {}".format(flowcell.id, species))
         return
 
     # The columns headers
-    columns = ["read_id", "query_seq_len", "query_start", "query_end", "rel_strand", "target_seq_name",
-               "target_seq_len", "target_start", "target_end", "num_matching_bases", "num_matching_bases_gaps",
-               "mapping_qual", "type_align", "number_minimiser", "chaining_score", "chaining_score_2nd_chain",
-               "random"]
+    # columns = ["read_id", "query_seq_len", "query_start", "query_end", "rel_strand", "target_seq_name",
+    #            "target_seq_len", "target_start", "target_end", "num_matching_bases", "num_matching_bases_gaps",
+    #            "mapping_qual", "type_align", "number_minimiser", "chaining_score", "chaining_score_2nd_chain",
+    #            "random"]
+    columns = ["alignment_block_length", "flowcell_id", "id", "job_master_id", "mapping_qual", "num_residue_matches",
+               "query_end", "query_start", "query_seq_len", "read_id", "read_pk", "reference_id", "rel_strand",
+               "target_end", "target_start", "target_seq_len", "target_seq_name"]
     # set the column headers to above
     map_df.columns = columns
-    # Drop unecessary columns
-    map_df.drop(columns=["number_minimiser", "chaining_score", "chaining_score_2nd_chain", "random"],
-                inplace=True)
 
+    # map_df.to_csv("/home/rory/data/mappings.csv", mode="a")
     boolean_df = species_regions_df.apply(falls_in_region, args=(map_df,), axis=1)
     # Get whether it's inside the boundaries or not
     boolean_df = boolean_df.any()
@@ -739,7 +594,8 @@ def falls_in_region(row, map_df):
 
 def update_targets_no_mapping(row, task):
     """
-    Update the targets to reflect the number of matches, if they don't map
+    Update the targets to reflect the number of matches, if we've classified reads that don't map
+
     :param row: The target dataframe row
     :param task: The task database model object
     :return: None
@@ -749,7 +605,7 @@ def update_targets_no_mapping(row, task):
     obj.sum_unique = row["sum_unique"]
     nm = obj.num_mapped
     obj.proportion_of_classified = row["prop_classed"]
-    obj.mapped_proportion_of_classified = round(nm / row["num_matches"], 5)
+    obj.mapped_proportion_of_classified = round(nm / row["num_matches"] * 100, 3)
     logger.info(obj.mapped_proportion_of_classified)
     obj.save()
 
@@ -867,8 +723,6 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
     targets_df.reset_index(inplace=True)
 
     logger.info("Flowcell id: {} - targets_df shape is {}".format(flowcell.id, targets_df.shape))
-    # Location of the reference file
-    reference_location = getattr(settings, "REFERENCE_LOCATION", None)
 
     # Get one group for each name
     gb = targets_df.groupby(["name"], as_index=False)
@@ -918,7 +772,7 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
     red_reads_df = pd.DataFrame()
 
     for name, group in gb:
-        red_reads_df = red_reads_df.append(map_all_the_groups(group, name, reference_location, flowcell,
+        red_reads_df = red_reads_df.append(map_all_the_groups(group, name, flowcell,
                                                               target_regions_df, targets_df, task,
                                                               num_matches_targets_barcoded_df,
                                                               )
@@ -953,7 +807,7 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
     logger.info("Flowcell id: {} - The results of the mapping stage pre prev num matches merge "
                 "are {}".format(flowcell.id, results_df[["barcode_name", "species", "red_num_matches"]]))
 
-    logger.info("Flowcell id: {} - The results of the mapping stage pre prev num matches merge "
+    logger.info("Flowcell id: {} - The results of the mapping stage pre prev num matches merge"
                 "are {}".format(flowcell.id, results_df.keys()))
 
     results_df.apply(update_mapped_red_values, args=(task, flowcell), axis=1)
@@ -1309,10 +1163,7 @@ def run_centrifuge(flowcell_job_id):
 
     # ###### BULK CREATE CENTOUTPUT OBJECTS ########
     # Give each row a flowcell object cell, as part of the flowcell_id series
-    df["flowcell"] = flowcell
 
-    # same with task from Jobmaster
-    df["task"] = task
 
     df["proportion_of_classified"] = df["num_matches"].div(
         classified_per_barcode["All reads"]).mul(100).round(decimals=3)
@@ -1320,6 +1171,11 @@ def run_centrifuge(flowcell_job_id):
     df.set_index("tax_id", inplace=True)
     # Add the barcode dataframe onto the dataframe, so now we have all reads and barcodes
     df = df.append(barcode_df, sort=True)
+
+    df["flowcell"] = flowcell
+
+    # same with task from Jobmaster
+    df["task"] = task
 
     df.reset_index(inplace=True)
 
@@ -1346,13 +1202,10 @@ def run_centrifuge(flowcell_job_id):
     cent_to_create_df = pd.merge(cent_to_create_df, lineages_df, how="inner", left_on="tax_id", right_index=True)
     logger.info("Flowcell id: {} - Centrifuge to update dataframe {}".format(flowcell.id, cent_to_create_df.head()))
     cent_to_create_df["task"] = task
-
+    cent_to_create_df["proportion_of_classified"].fillna("Unclassified", inplace=True)
     # apply row wise to append model representation objects into a series
     centrifuge_create_series = cent_to_create_df.apply(create_centrifuge_models, args=(classified_per_barcode,), axis=1)
 
-    logger.info("Flowcell id: {} - Bulk creating CentOutput objects".format(flowcell.id))
-    logger.info("Flowcell id: {} - Bulk creating CentOutput objects- example obj = {}"
-                .format(flowcell.id, list(centrifuge_create_series.values)[0]))
     # Bulk create the objects
     CentrifugeOutput.objects.bulk_create(list(centrifuge_create_series.values))
     # Get all the results for the barcoded entries, so each species will have multiple entries under different barcodes
@@ -1387,9 +1240,6 @@ def run_centrifuge(flowcell_job_id):
         cent_to_update_df.apply(update_centrifuge_output_values, args=(task.id,),
                                 axis=1)
 
-    calculate_sankey_values(lineages_df, df, flowcell, tax_rank_filter, task)
-
-    # ##################### Back to the non sankey calculations ####################
     # Update the metadata for the headers
 
     # Get the start time #TODO remove the unused fields

@@ -51,7 +51,7 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
     logger.info('Flowcell id: {} - read_count {}'.format(flowcell.id, job_master.read_count))
     logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, len(fastqs)))
 
-    if len(fastqs) > 0:
+    if fastqs.count() > 0:
 
         last_read = align_reads(fastqs, job_master.id)
 
@@ -77,7 +77,7 @@ def align_reads(fastqs, job_master_id):
     job_master = JobMaster.objects.get(pk=job_master_id)
 
     last_read = job_master.last_read
-    reference_info_id= job_master.reference.id
+    reference_info_id = job_master.reference.id
     flowcell = job_master.flowcell
 
     if not MINIMAP2:

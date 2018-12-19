@@ -83,12 +83,16 @@ function update(flowcellId, sankey, checkForData, svg, g, format, color, width, 
     $.get("/sankey", {flowcellId , "barcode":selectedBarcode}, result => {
         let nodes;
         // if theres no data from the server
-        if (result.sankey === undefined) {
+        if (result.sankey === undefined && result.run === true) {
             svg.select(".contain").selectAll("*").remove();
             svg.append("text").text("No data to display").attr("text-anchor", "middle").attr("x", "50%").attr("y", "50%");
             return;
+        } else if(result.run === false) {
+            console.log("not run");
+            return;
+        } else if (result.run === true){
+            d3.select(".sankeyContainer").style("display", "block");
         }
-
         nodes = result.sankey;
         // If there is data and checkForData is true, clear the css elements and loading sign so we can see the graphics
         // TODO update in place
