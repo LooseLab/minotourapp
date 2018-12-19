@@ -168,8 +168,8 @@ def fastq_file(request,pk):
     '''
 
     if request.method == 'GET':
-        queryset = FastqFile.objects \
-            .filter(runid=pk)
+
+        queryset = FastqFile.objects.filter(runid=pk).filter(owner=request.user)
 
         serializer = FastqFileSerializer(queryset, many=True, context={'request': request})
 
@@ -1699,6 +1699,8 @@ def read_list_new(request):
         # serializer = FastqReadSerializer(data=request.data, many=True)
 
         # print(request.data)
+
+        logger.info('>>> received reads post - calling task - request.data size: {}'.format(len(request.data)))
 
         save_reads.delay(request.data)
 
