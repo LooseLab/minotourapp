@@ -931,8 +931,8 @@ def run_centrifuge(flowcell_job_id):
     """
 
     task = JobMaster.objects.get(pk=flowcell_job_id)
-    task.running = True
-    task.save()
+    # task.running = True
+    # task.save()
 
     chunk_size = 2000
 

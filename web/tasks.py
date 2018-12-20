@@ -61,7 +61,12 @@ def run_monitor():
     for flowcell in flowcell_list:
 
         flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False, complete=False)
+
         for flowcell_job in flowcell_job_list:
+
+            flowcell_job.running = True
+            flowcell_job.save()
+
             if flowcell_job.job_type.name == "Minimap2":
 
                 print("trying to run alignment for flowcell {} {} {} {}".format(
@@ -111,6 +116,7 @@ def run_monitor():
                 except Exception as e:
                     e = sys.exc_info()
                     print(e)
+
 
 
 @task()
@@ -279,7 +285,9 @@ def get_runidset(runid, inputtype):
 @task()
 def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
 
-    JobMaster.objects.filter(pk=id).update(running=True)
+    job_master = JobMaster.objects.get(pk=id)
+    # job_master.running = True
+    # job_master.save()
 
     if last_read is None:
         last_read = 0

@@ -37,8 +37,8 @@ def run_minimap2_alignment_by_job_master(job_master_id):
 def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_read):
 
     job_master = JobMaster.objects.get(pk=job_master_id)
-    job_master.running = True
-    job_master.save()
+    # job_master.running = True
+    # job_master.save()
 
     flowcell = Flowcell.objects.get(pk=flowcell_id)
 

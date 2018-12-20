@@ -16,8 +16,8 @@ logger = get_task_logger(__name__)
 def chancalc(flowcell_id, job_master_id, last_read):
 
     job_master = JobMaster.objects.get(pk=job_master_id)
-    job_master.running = True
-    job_master.save()
+    # job_master.running = True
+    # job_master.save()
 
     flowcell = Flowcell.objects.get(pk=flowcell_id)
 
@@ -27,8 +27,6 @@ def chancalc(flowcell_id, job_master_id, last_read):
                       'quality_average', 'channel'))
 
     fastqlen = len(fastq_df_barcode)
-
-
 
     if fastqlen > 0:
         new_last_read = fastq_df_barcode.iloc[-1]['id']
