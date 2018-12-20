@@ -69,11 +69,9 @@ def run_monitor():
 
             if flowcell_job.job_type.name == "Minimap2":
 
-                print("trying to run alignment for flowcell {} {} {} {}".format(
+                logger.info("Sending task minimap2 to server - Flowcell id: {}, job_master id: {}".format(
                     flowcell.id,
                     flowcell_job.id,
-                    flowcell_job.reference.id,
-                    flowcell_job.last_read
                 ))
 
                 run_minimap2_alignment.delay(
@@ -85,10 +83,19 @@ def run_monitor():
 
             if flowcell_job.job_type.name == "ChanCalc":
 
-                print("trying to run chancalc for flowcell {} {} {}".format(flowcell.id, flowcell_job.id, flowcell_job.last_read))
+                logger.info("Sending task chancalc to server - Flowcell id: {}, job_master id: {}".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                ))
+
                 chancalc.delay(flowcell.id, flowcell_job.id, flowcell_job.last_read)
 
             if flowcell_job.job_type.name == "Assembly":
+
+                logger.info("Sending task assembly to server - Flowcell id: {}, job_master id: {}".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                ))
 
                 inputtype = "flowcell"
 
@@ -96,27 +103,22 @@ def run_monitor():
                                            flowcell_job.read_count, inputtype)
 
             if flowcell_job.job_type.name == "Metagenomics":
-                """
-                    Run the Centrifuger class on the metagenomics data
-                """
-                print("trying to run classification for flowcell {} {} {} ".format(
+
+                logger.info("Sending task metagenomics to server - Flowcell id: {}, job_master id: {}".format(
                     flowcell.id,
                     flowcell_job.id,
-                    flowcell_job.last_read
                 ))
-                print("starting centrifuge task")
-                """
-                starts the centrifuge instance as a celery task which should return asynchronously
-                :param request:
-                :return:
-                """
-                try:
-                    run_centrifuge.delay(flowcell_job.id)
 
-                except Exception as e:
-                    e = sys.exc_info()
-                    print(e)
+                run_centrifuge.delay(flowcell_job.id)
 
+            if flowcell_job.job_type.name == "UpdateFlowcellDetails":
+
+                logger.info("Sending task updateflowcelldetails to server - Flowcell id: {}, job_master id: {}".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                ))
+
+                update_flowcell_details.delay(flowcell_job.id)
 
 
 @task()
@@ -562,10 +564,13 @@ def update_flowcell_list_details():
 
                 if not flowcell_job.running:
 
+                    flowcell_job.running = True
+                    flowcell_job.save()
                     update_flowcell_details(flowcell.id, flowcell_job.id)
 
 
-def update_flowcell_details(flowcell_id, job_master_id):
+@task
+def update_flowcell_details(job_master_id):
     """
     This task updates the flowcell details (number of runs, number of reads, sample name)
     using the MinIONRunStatus records if they are available, otherwise reading from the
@@ -573,10 +578,10 @@ def update_flowcell_details(flowcell_id, job_master_id):
     """
 
     job_master = JobMaster.objects.get(pk=job_master_id)
-    job_master.running = True
-    job_master.save()
+    # job_master.running = True
+    # job_master.save()
 
-    flowcell = Flowcell.objects.get(pk=flowcell_id)
+    flowcell = job_master.flowcell
 
     logger.info('Flowcell id: {} - Updating details of flowcell {}'.format(flowcell.id, flowcell.name))
 
