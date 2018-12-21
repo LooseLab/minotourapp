@@ -317,7 +317,7 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids):
     references = ReferenceInfo.objects.get(name=reference_name)
 
     map_job_type = JobType.objects.get(name="Other")
-    mapping_task = JobMaster.objects.get(job_type=map_job_type, flowcell=flowcell, reference=references)
+    mapping_task, created = JobMaster.objects.get_or_create(job_type=map_job_type, flowcell=flowcell, reference=references)
 
     align_reads(fastq_list, mapping_task.id)
 
@@ -451,8 +451,11 @@ def map_all_the_groups(target_species_group_df, group_name,  flowcell, gff3_df, 
     #     logger.info(map_cmd)
 
     map_job_type = JobType.objects.get(name="Other")
-    mapping_task = JobMaster.objects.get(job_type=map_job_type, flowcell=flowcell,
-                                         reference=references)
+    mapping_task, created = JobMaster.objects.get_or_create(
+        job_type=map_job_type, 
+        flowcell=flowcell,
+        reference=references
+    )
 
     align_reads(reads, mapping_task.id)
 
@@ -934,11 +937,11 @@ def run_centrifuge(flowcell_job_id):
     # task.running = True
     # task.save()
 
-    chunk_size = 2000
+    chunk_size = 100
 
     flowcell = task.flowcell
 
-    document_number = FastqRead.objects.filter(run__flowcell=flowcell).count()
+#    document_number = FastqRead.objects.filter(run__flowcell=flowcell).count()
 
     logger.info('Flowcell id: {} - Running centrifuge on flowcell {}'.format(flowcell.id, flowcell.name))
     logger.info('Flowcell id: {} - job_master_id {}'.format(flowcell.id, task.id))
@@ -948,6 +951,7 @@ def run_centrifuge(flowcell_job_id):
     centrifuge_path = get_env_variable("MT_CENTRIFUGE")
     index_path = get_env_variable("MT_CENTRIFUGE_INDEX")
     cmd = "perl " + centrifuge_path + " -f --mm -x " + index_path + " -"
+    logger.info('Flowcell id: {} - {}'.format(flowcell.id, cmd))
 
     # Counter for total centOut
     total_centrifuge_output = 0
@@ -962,7 +966,7 @@ def run_centrifuge(flowcell_job_id):
                                       ).order_by('id')[:chunk_size]
 
     if fastqs.count() == 0:
-        task.complete = True
+        #task.complete = True
         logger.info('Flowcell id: {} - Found 0 reads in the database, for this flowcell. Aborting...'.format(
             flowcell.id, chunk_size)
         )
@@ -970,12 +974,12 @@ def run_centrifuge(flowcell_job_id):
         task.save()
         return
 
-    if task.read_count + chunk_size > document_number:
-        chunk_size = fastqs.count()
-        task.save()
-        logger.info('Flowcell id: {} - Chunk size is {}, less than 2000 reads in the database'.format(
-            flowcell.id, chunk_size)
-        )
+#    if task.read_count + chunk_size > document_number:
+#        chunk_size = fastqs.count()
+#        task.save()
+#        logger.info('Flowcell id: {} - Chunk size is {}, less than 2000 reads in the database'.format(
+#            flowcell.id, chunk_size)
+#        )
 
     logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, fastqs.count()))
 
@@ -1024,6 +1028,9 @@ def run_centrifuge(flowcell_job_id):
     if df.empty:
         logger.info("Flowcell id: {} - No reads found or no centrifuge output."
                     " Check above for error".format(flowcell.id))
+        
+        task.running = False
+        task.save()
         return
 
     # create DataFrame column unique, where if the number of matches is 1, unique is 1, if matches is more than
@@ -1193,7 +1200,7 @@ def run_centrifuge(flowcell_job_id):
         calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter)
     except KeyError as e:
         logger.info("PROBLEMS {}".format(e))
-        return
+#        return
 
     # subset where there is so these need dootdating
     cent_to_create_df = df[~prev_links_mask]
@@ -1250,16 +1257,26 @@ def run_centrifuge(flowcell_job_id):
     metadata.save()
 
     # Update the jobmaster object fields that are relevant
-    task = JobMaster.objects.get(pk=task.id)
-    task.running = False
 
     if fastqs.count() > 0:
+
+        task = JobMaster.objects.get(pk=task.id)
+        task.running = True
         task.last_read = fastqs[chunk_size - 1].id
-        logger.info("Inseide if")
+        task.read_count = task.read_count + fastqs.count()
+        task.save()
 
-    task.read_count = task.read_count + fastqs.count()
-    task.save()
+        logger.info("Flowcell id: {} - Calling run_centrifuge from run_centrifuge.".format(flowcell.id))
+        
+        run_centrifuge(flowcell_job_id)
 
-    logger.info("Flowcell id: {} - New last_read_id is - {}".format(flowcell.id, task.last_read))
-    logger.info("Flowcell id: {} - Total CentOut lines - {}".format(flowcell.id, total_centrifuge_output))
-    logger.info("Flowcell id: {} - Finished!".format(flowcell.id))
+    else:
+
+        task = JobMaster.objects.get(pk=task.id)
+        task.running = False
+        task.read_count = task.read_count + fastqs.count()
+        task.save()
+
+        logger.info("Flowcell id: {} - New last_read_id is - {}".format(flowcell.id, task.last_read))
+        logger.info("Flowcell id: {} - Total CentOut lines - {}".format(flowcell.id, total_centrifuge_output))
+        logger.info("Flowcell id: {} - Finished!".format(flowcell.id))
