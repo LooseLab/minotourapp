@@ -3,7 +3,7 @@ from django.contrib import admin
 from .models import (Barcode, FastqFile, FastqRead, FastqReadType,
                      MinIONControl, MinIONEvent, MinIONEventType,
                      MinionMessage, MinIONRunStats, MinIONRunStatus,
-                     MinIONScripts, MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
+                     MinIONScripts, MinIONStatus, Run, RunSummary, UserOptions, ChannelSummary, HistogramSummary,
                      RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellHistogramSummary, FlowcellStatisticBarcode, FlowcellSummaryBarcode,
                      FlowcellTab)
 
@@ -43,3 +43,4 @@ admin.site.register(HistogramSummary)
 admin.site.register(UserOptions)
 admin.site.register(Barcode)
 admin.site.register(GroupRun)
+admin.site.register(RunSummary)
