@@ -922,7 +922,7 @@ def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
     combined_df.apply(update_donut_data_models, args=(task,), axis=1)
 
 
-def     run_centrifuge(flowcell_job_id):
+def run_centrifuge(flowcell_job_id):
     """
 
     Returns nothing.
@@ -937,7 +937,7 @@ def     run_centrifuge(flowcell_job_id):
     # task.running = True
     # task.save()
 
-    chunk_size = 2000
+    chunk_size = 20000
 
     flowcell = task.flowcell
 
@@ -962,10 +962,24 @@ def     run_centrifuge(flowcell_job_id):
     # Get the task record from the JobMaster table in the database. Used to separate the results inserted,
     # and tell the Javascript and RunMonitor the task is running and when it is complete
 
-    fastqs = FastqRead.objects.filter(run__flowcell=flowcell, id__gt=int(task.last_read)
-                                      ).order_by('id')[:chunk_size]
+    proceed = False
 
-    if fastqs.count() == 0:
+    runs = flowcell.runs.all()
+
+    for run in runs:
+        fastqs = FastqRead.objects.filter(run=run, id__gt=int(task.last_read)
+                                          ).order_by('id')[:chunk_size]
+
+        if fastqs.count() > 0:
+            #we have data - so go off and use it.
+            proceed = True
+            break
+
+
+    #fastqs = FastqRead.objects.filter(run__flowcell=flowcell, id__gt=int(task.last_read)
+    #                                  ).order_by('id')[:chunk_size]
+
+    if not proceed:
         #task.complete = True
         logger.info('Flowcell id: {} - Found 0 reads in the database, for this flowcell. Aborting...'.format(
             flowcell.id, chunk_size)
@@ -997,6 +1011,8 @@ def     run_centrifuge(flowcell_job_id):
 
     fastqs_list = fastqs.values_list('read_id', 'barcode_name', 'fastqreadextra__sequence')
 
+
+    ##This query is very slow - not just very slow... insanely slow
     fastqs_data = "".join([str(">read_id=" + c[0] + ",barcode=" + c[1] + "\n" + c[2] + "\n") for c in fastqs_list
                            if c[2] is not None])
 
@@ -1257,26 +1273,28 @@ def     run_centrifuge(flowcell_job_id):
     metadata.save()
 
     # Update the jobmaster object fields that are relevant
-
+    '''
     if fastqs.count() > 0:
 
         task = JobMaster.objects.get(pk=task.id)
-        task.running = True
+        task.running = False
         task.last_read = fastqs[chunk_size - 1].id
         task.read_count = task.read_count + fastqs.count()
         task.save()
 
-        logger.info("Flowcell id: {} - Calling run_centrifuge from run_centrifuge.".format(flowcell.id))
+        #logger.info("Flowcell id: {} - Calling run_centrifuge from run_centrifuge.".format(flowcell.id))
         
-        run_centrifuge(flowcell_job_id)
+        #run_centrifuge(flowcell_job_id)
 
     else:
+    '''
 
-        task = JobMaster.objects.get(pk=task.id)
-        task.running = False
-        task.read_count = task.read_count + fastqs.count()
-        task.save()
+    task = JobMaster.objects.get(pk=task.id)
+    task.running = False
+    task.last_read = fastqs[chunk_size - 1].id
+    task.read_count = task.read_count + fastqs.count()
+    task.save()
 
-        logger.info("Flowcell id: {} - New last_read_id is - {}".format(flowcell.id, task.last_read))
-        logger.info("Flowcell id: {} - Total CentOut lines - {}".format(flowcell.id, total_centrifuge_output))
-        logger.info("Flowcell id: {} - Finished!".format(flowcell.id))
+    logger.info("Flowcell id: {} - New last_read_id is - {}".format(flowcell.id, task.last_read))
+    logger.info("Flowcell id: {} - Total CentOut lines - {}".format(flowcell.id, total_centrifuge_output))
+    logger.info("Flowcell id: {} - Finished!".format(flowcell.id))
