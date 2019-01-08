@@ -75,3 +75,4 @@ def update_run_summary():
             run_summary.last_read_start_time = result['start_time__max']
 
             run_summary.save()
+
