@@ -922,7 +922,7 @@ def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
     combined_df.apply(update_donut_data_models, args=(task,), axis=1)
 
 
-def     run_centrifuge(flowcell_job_id):
+def run_centrifuge(flowcell_job_id):
     """
 
     Returns nothing.
@@ -961,8 +961,9 @@ def     run_centrifuge(flowcell_job_id):
 
     # Get the task record from the JobMaster table in the database. Used to separate the results inserted,
     # and tell the Javascript and RunMonitor the task is running and when it is complete
+    runs = flowcell.runs.all()
 
-    fastqs = FastqRead.objects.filter(run__flowcell=flowcell, id__gt=int(task.last_read)
+    fastqs = FastqRead.objects.filter(run__in=runs, id__gt=int(task.last_read)
                                       ).order_by('id')[:chunk_size]
 
     if fastqs.count() == 0:
