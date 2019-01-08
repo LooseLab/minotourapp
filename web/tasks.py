@@ -577,6 +577,12 @@ def update_flowcell_details(job_master_id):
     fastq file summaries
     """
 
+    """
+    Refactoring this task such that:
+    1. it only runs when new reads have appeared.
+    2. it only processes reads since the last one was processed.
+    """
+
     job_master = JobMaster.objects.get(pk=job_master_id)
     # job_master.running = True
     # job_master.save()
@@ -588,6 +594,8 @@ def update_flowcell_details(job_master_id):
     #
     # Get the first MinIONRunStatus for a particular flowcell
     #
+
+    ## Seems fast enough.
     minion_run_status_first = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell).order_by('minKNOW_start_time').first()
 
     #
@@ -663,29 +671,45 @@ def update_flowcell_details(job_master_id):
     #
     # Update flowcell size
     #
-    max_channel = FastqRead.objects.filter(run__flowcell=flowcell).aggregate(result=Max('channel'))
+    ### This is a very slow query.
+    ### To solve we are going to track how many reads we have looked at in the job_master - which here is the update_flow_cell task.
 
-    if max_channel['result']:
+    runs = flowcell.runs.all()
 
-        if max_channel['result'] > 512:
+    for run in runs:
+        max_channel = FastqRead.objects.filter(run=run, id__gt=int(job_master.last_read)).aggregate(result=Max('channel'),
+                                                                                 last_read=Max('id'))
+        if max_channel['result'] != None and max_channel['result'] > 0:
+            # we have data - so go off and use it.
+            break
 
-            flowcell.size = 3000
+    # Now we need to compare the previous result with this result. To do this we need to save something else on the flowcell.
 
-        elif max_channel['result'] > 128:
+    if max_channel['result'] != None and max_channel['result'] > flowcell.max_channel:
+        flowcell.max_channel = max_channel['result']
+        if max_channel['result']:
 
-            flowcell.size = 512
+            if max_channel['result'] > 512:
+
+                flowcell.size = 3000
+
+            elif max_channel['result'] > 128:
+
+                flowcell.size = 512
+
+            else:
+
+                flowcell.size = 126
 
         else:
 
-            flowcell.size = 128
-
-    else:
-
-        flowcell.size = 512
+            flowcell.size = 512
 
     flowcell.save()
 
     job_master = JobMaster.objects.get(pk=job_master_id)
     job_master.running = False
+    if max_channel['last_read'] != None:
+        job_master.last_read = max_channel['last_read']
     job_master.save()
 

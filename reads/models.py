@@ -50,6 +50,10 @@ class Flowcell(models.Model):
         related_name='flowcells'
     )
 
+    max_channel = models.IntegerField(
+        default = 0
+    )
+
     size = models.IntegerField(
         default=512
     )
