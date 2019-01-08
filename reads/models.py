@@ -1931,6 +1931,17 @@ class RunSummary(models.Model):
         blank=True
     )
 
+    last_read = models.BigIntegerField(
+
+        default=0
+    )
+
+    running = models.BooleanField(
+        default=False
+    )
+
+
+
     class Meta:
 
         verbose_name = 'Run Summary'

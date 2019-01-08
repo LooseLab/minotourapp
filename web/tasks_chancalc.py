@@ -21,7 +21,7 @@ def chancalc(flowcell_id, job_master_id, last_read):
 
     flowcell = Flowcell.objects.get(pk=flowcell_id)
 
-    fastqs = FastqRead.objects.filter(run__flowcell=flowcell).filter(id__gt=int(last_read))[:50000]
+    fastqs = FastqRead.objects.filter(run__flowcell=flowcell).filter(id__gt=int(last_read)).order_by('id')[:50000]
     fastq_df_barcode = pd.DataFrame.from_records(
         fastqs.values('id', 'start_time', 'barcode__name', 'type__name', 'is_pass', 'sequence_length',
                       'quality_average', 'channel'))
