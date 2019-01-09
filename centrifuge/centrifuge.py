@@ -1,6 +1,6 @@
 """Centrifuge.py
 """
-import os
+
 import subprocess
 from collections import defaultdict
 from io import StringIO
@@ -11,14 +11,12 @@ from django.db.models import ObjectDoesNotExist
 from django.utils import timezone
 from ete3 import NCBITaxa
 from centrifuge.models import CentrifugeOutput, LineageValue, Metadata, SankeyLink, \
-    MappingResult, MappingTarget, DonutData  # , TargetMappedReadId
+    MappingResult, MappingTarget, DonutData
 from jobs.models import JobMaster, JobType
 from minotourapp.utils import get_env_variable
 from reads.models import FastqRead
 from reference.models import ReferenceInfo
-from django.conf import settings
 from alignment.models import PafStore
-# from django.db.utils import IntegrityError
 from django.db.models import Sum
 from web.tasks_alignment import align_reads
 
@@ -304,8 +302,6 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids):
     :return plasmid_map_df: A list of dicts containing the information about the plasmid mappings
     """
 
-    fastq_input = ''
-
     read_ids = read_ids
 
     flowcell = flowcell
@@ -346,7 +342,7 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids):
 
         logger.info(
             "Flowcell id: {} - This many reads mapped evilly on this reference {} for species {}"
-                .format(flowcell.id, plasmid_map_df.shape[0], species)
+            .format(flowcell.id, plasmid_map_df.shape[0], species)
         )
         logger.info(plasmid_map_df.head())
 
