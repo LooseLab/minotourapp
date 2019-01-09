@@ -1299,10 +1299,9 @@ def run_centrifuge(flowcell_job_id):
         task.last_read = fastqs[chunk_size - 1].id
         logger.info("Inseide if")
 
-
+    '''
     task = JobMaster.objects.get(pk=task.id)
     task.running = False
-    '''
     # OK - this returns the last record of all fastqs, not the last record of the chunk.
     # task.last_read = fastqs.last().id
     # if fastqs.count() > 0:
