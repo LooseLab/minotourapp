@@ -56,7 +56,7 @@ def update_run_summary():
                 run_summary.running = True
                 run_summary.save()
 
-                reads = FastqRead.objects.filter(run=run).filter(id__gt=int(run_summary.last_read))[:50000]
+                reads = FastqRead.objects.filter(run=run).filter(id__gt=int(run_summary.last_read))[:20000]
 
                 if reads.count() > 0:
 
