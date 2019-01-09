@@ -994,7 +994,8 @@ def run_centrifuge(flowcell_job_id):
             holderformaxreadseen = fastqs[fastqs.count() - 1].id
 
     # May not always create fastqstore need to check.
-    fastqs = fastq_store.order_by('id')[:chunk_size]
+    if runs.count()>1:
+        fastqs = fastq_store.order_by('id')[:chunk_size]
 
     if fastqs.count() > 0:
         proceed = True
