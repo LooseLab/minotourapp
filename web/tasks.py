@@ -570,7 +570,10 @@ def update_run_start_time():
 
 @task
 def update_flowcell_list_details():
-
+    """
+    
+    :return:
+    """
     flowcell_list = Flowcell.objects.filter(is_active=True)
 
     for flowcell in flowcell_list:
