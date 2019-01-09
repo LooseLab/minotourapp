@@ -937,7 +937,7 @@ def run_centrifuge(flowcell_job_id):
     # task.running = True
     # task.save()
 
-    chunk_size = 20000
+    chunk_size = 8000
 
     flowcell = task.flowcell
 
@@ -966,7 +966,13 @@ def run_centrifuge(flowcell_job_id):
 
     runs = flowcell.runs.all()
 
+    holderformaxreadseen = 0
+
     for run in runs:
+        ## This query doesn't work because it assumes that reads are entered into the database in run order
+        ## And they are not. So we need a way to work around this.
+        ##
+        '''
         fastqs = FastqRead.objects.filter(run=run, id__gt=int(task.last_read)
                                           ).order_by('id')[:chunk_size]
 
@@ -974,6 +980,26 @@ def run_centrifuge(flowcell_job_id):
             #we have data - so go off and use it.
             proceed = True
             break
+        '''
+        if holderformaxreadseen > 0:
+            fastqs = FastqRead.objects.filter(run=run, id__gt=int(task.last_read),
+                                              id__lt=int(holderformaxreadseen)).order_by('id')
+        else:
+            fastqs = FastqRead.objects.filter(run=run, id__gt=int(task.last_read)).order_by('id')[:chunk_size]
+
+        if 'fastq_store' in locals():
+            fastq_store = fastq_store.union(fastqs)
+        else:
+            fastq_store = fastqs
+
+        if holderformaxreadseen == 0 and fastqs.count() > 0:
+            holderformaxreadseen = fastqs[fastqs.count() - 1].id
+
+    ##May not always create fastqstore need to check.
+    fastqs = fastq_store.order_by('id')[:chunk_size]
+
+    if fastqs.count() > 0:
+        proceed = True
 
 
     #fastqs = FastqRead.objects.filter(run__flowcell=flowcell, id__gt=int(task.last_read)
@@ -1009,7 +1035,7 @@ def run_centrifuge(flowcell_job_id):
 
         metadata.save()
 
-    fastqs_list = fastqs.values_list('read_id', 'barcode_name', 'fastqreadextra__sequence')
+    fastqs_list = fastqs.values_list('read_id', 'barcode_name', 'fastqreadextra__sequence', 'id')
 
 
     ##This query is very slow - not just very slow... insanely slow
@@ -1291,7 +1317,11 @@ def run_centrifuge(flowcell_job_id):
 
     task = JobMaster.objects.get(pk=task.id)
     task.running = False
-    task.last_read = fastqs[chunk_size - 1].id
+    ### OK - this returns the last record of all fastqs, not the last record of the chunk.
+    # task.last_read = fastqs.last().id
+    # if fastqs.count() > 0:
+    if holderformaxreadseen > 0:
+        task.last_read = holderformaxreadseen
     task.read_count = task.read_count + fastqs.count()
     task.save()
 
