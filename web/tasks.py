@@ -17,7 +17,7 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
-from django.db.models import Max
+from django.db.models import Max,Min
 from django_mailgun import MailgunAPIError
 from twitter import *
 
@@ -540,8 +540,10 @@ def update_run_start_time():
 
         else:
 
-            fastq = FastqRead.objects.filter(run=run).order_by('start_time').first()
-            run.start_time = fastq.start_time
+            #fastq = FastqRead.objects.filter(run=run).order_by('start_time').first()
+            #run.start_time = fastq.start_time
+            fastq = FastqRead.objects.filter(run=run)
+            run.start_time = fastq.aggregate(Min('start_time'))['start_time__min']
 
             origin = 'Basecalled data'
 
