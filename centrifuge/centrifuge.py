@@ -317,7 +317,8 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids):
     references = ReferenceInfo.objects.get(name=reference_name)
 
     map_job_type = JobType.objects.get(name="Other")
-    mapping_task, created = JobMaster.objects.get_or_create(job_type=map_job_type, flowcell=flowcell, reference=references)
+    mapping_task, created = JobMaster.objects.get_or_create(job_type=map_job_type, flowcell=flowcell,
+                                                            reference=references)
 
     align_reads(fastq_list, mapping_task.id)
 
@@ -328,8 +329,8 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids):
     #            "mapping_qual", "type_align", "number_minimiser", "chaining_score", "chaining_score_2nd_chain",
     #            "random"]
     columns = ["alignment_block_length", "flowcell_id", "id", "job_master_id", "mapping_qual", "num_residue_matches",
-              "query_end", "query_start", "query_seq_len", "read_id", "read_pk", "reference_id", "rel_strand",
-              "target_end", "target_start", "target_seq_len", "target_seq_name"]
+               "query_end", "query_start", "query_seq_len", "read_id", "read_pk", "reference_id", "rel_strand",
+               "target_end", "target_start", "target_seq_len", "target_seq_name"]
 
     if not map_output:
         logger.info("Flowcell id: {} - No mappings for plasmid {} on species {}".format(flowcell.id, row["name"],
@@ -345,7 +346,7 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids):
 
         logger.info(
             "Flowcell id: {} - This many reads mapped evilly on this reference {} for species {}"
-            .format(flowcell.id, plasmid_map_df.shape[0], species)
+                .format(flowcell.id, plasmid_map_df.shape[0], species)
         )
         logger.info(plasmid_map_df.head())
 
@@ -370,8 +371,8 @@ def update_mapped_red_values(row, task, flowcell):
     mapped.save()
 
 
-def map_all_the_groups(target_species_group_df, group_name,  flowcell, gff3_df, targets_results_df,
-                       task, num_matches_target_barcoded_df):
+def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, targets_results_df,
+                       task, num_matches_target_barcoded_df, run):
     """
     Map the reads from the target data frames, after they've been grouped by species
     :param target_species_group_df: A data frame that contains reads from only one species
@@ -381,6 +382,7 @@ def map_all_the_groups(target_species_group_df, group_name,  flowcell, gff3_df, 
     :param targets_results_df: The data frame containing the new targets mapping against reference
     :param task: The task object
     :param num_matches_target_barcoded_df: The number of matches per barcode for each target species in a dataframe
+    :param run:
     :return red_df: Any reads that map to plasmids and their information as a dataframe
     """
     # The species as identified by centrifuge for this group of reads
@@ -410,7 +412,7 @@ def map_all_the_groups(target_species_group_df, group_name,  flowcell, gff3_df, 
     # The read sequences for the reads we want to map
 
     logger.info('target_species_group_df[read_id]: {}'.format(target_species_group_df['read_id']))
-    reads = FastqRead.objects.filter(run__flowcell_id=flowcell.id,
+    reads = FastqRead.objects.filter(run=run,
                                      read_id__in=target_species_group_df["read_id"])
 
     read_ids = target_species_group_df["read_id"].values
@@ -452,7 +454,7 @@ def map_all_the_groups(target_species_group_df, group_name,  flowcell, gff3_df, 
 
     map_job_type = JobType.objects.get(name="Other")
     mapping_task, created = JobMaster.objects.get_or_create(
-        job_type=map_job_type, 
+        job_type=map_job_type,
         flowcell=flowcell,
         reference=references
     )
@@ -629,7 +631,7 @@ def calculate_num_matches_update(target_df, task, num_matches_targets_barcoded_d
     all_reads_df["barcode_name"] = "All reads"
     all_reads_df.drop_duplicates(subset="name", inplace=True)
     if not num_matches_targets_barcoded_df.empty:
-        all_reads_df = pd.merge(all_reads_df, num_matches_targets_barcoded_df, how="left", 
+        all_reads_df = pd.merge(all_reads_df, num_matches_targets_barcoded_df, how="left",
                                 on=["tax_id", "barcode_name"])
         all_reads_df["num_matches_y"].fillna(0, inplace=True)
 
@@ -649,7 +651,6 @@ def calculate_num_matches_update(target_df, task, num_matches_targets_barcoded_d
     barcode_df["sum_unique"] = gb_bc["unique"].sum()
     barcode_df.reset_index(inplace=True)
     if not num_matches_targets_barcoded_df.empty:
-
         barcode_df = pd.merge(barcode_df, num_matches_targets_barcoded_df, how="left",
                               on=["tax_id", "barcode_name"])
 
@@ -668,20 +669,21 @@ def calculate_num_matches_update(target_df, task, num_matches_targets_barcoded_d
 
     barcode_df.drop_duplicates(subset=["barcode_name", "tax_id"], inplace=True)
     logger.info("Barcode Df is {}".format(barcode_df))
-    
+
     barcode_df.apply(update_targets_no_mapping, args=(task,), axis=1)
 
 
-def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targets, class_per_bar):
+def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targets, class_per_bar, run):
     """
     Map the reads is called on the dataframe of targets that have been split out, splits them into a group by name, and
-    applies the map_all_the_groups function, which returns any reads that map to target areas in a dataframe.
+    applies the map_all_the_groups function, which returns any reads that map to target areas in a data frame.
     :param name_df: The targets dataframe
     :param task: The task model object
     :param flowcell: The flowcell model object
-    :param num_matches_targets_barcoded_df: The number of matches per barcode for each target species in a dataframe
+    :param num_matches_targets_barcoded_df: The number of matches per barcode for each target species in a data frame
     :param targets: The targets in this set of targets
     :param class_per_bar: The number of reads classified per barcode as a dict
+    :param run: The run that the reads came from
     :return:
     """
     # Targets_df
@@ -777,7 +779,7 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
     for name, group in gb:
         red_reads_df = red_reads_df.append(map_all_the_groups(group, name, flowcell,
                                                               target_regions_df, targets_df, task,
-                                                              num_matches_targets_barcoded_df,
+                                                              num_matches_targets_barcoded_df, run
                                                               )
                                            )
 
@@ -937,11 +939,11 @@ def run_centrifuge(flowcell_job_id):
     # task.running = True
     # task.save()
 
-    chunk_size = 2000
+    chunk_size = 20000
 
     flowcell = task.flowcell
 
-#    document_number = FastqRead.objects.filter(run__flowcell=flowcell).count()
+    # document_number = FastqRead.objects.filter(run__flowcell=flowcell).count()
 
     logger.info('Flowcell id: {} - Running centrifuge on flowcell {}'.format(flowcell.id, flowcell.name))
     logger.info('Flowcell id: {} - job_master_id {}'.format(flowcell.id, task.id))
@@ -961,13 +963,22 @@ def run_centrifuge(flowcell_job_id):
 
     # Get the task record from the JobMaster table in the database. Used to separate the results inserted,
     # and tell the Javascript and RunMonitor the task is running and when it is complete
+
+    proceed = False
+
     runs = flowcell.runs.all()
+    for run in runs:
 
-    fastqs = FastqRead.objects.filter(run__in=runs, id__gt=int(task.last_read)
-                                      ).order_by('id')[:chunk_size]
+        fastqs = FastqRead.objects.filter(run=run, id__gt=int(task.last_read)
+                                          ).order_by('id')[:chunk_size]
 
-    if fastqs.count() == 0:
-        #task.complete = True
+        if fastqs.count() > 0:
+            # we have data - so go off and use it.
+            proceed = True
+            break
+
+    if not proceed:
+        # task.complete = True
         logger.info('Flowcell id: {} - Found 0 reads in the database, for this flowcell. Aborting...'.format(
             flowcell.id, chunk_size)
         )
@@ -975,12 +986,12 @@ def run_centrifuge(flowcell_job_id):
         task.save()
         return
 
-#    if task.read_count + chunk_size > document_number:
-#        chunk_size = fastqs.count()
-#        task.save()
-#        logger.info('Flowcell id: {} - Chunk size is {}, less than 2000 reads in the database'.format(
-#            flowcell.id, chunk_size)
-#        )
+    #    if task.read_count + chunk_size > document_number:
+    #        chunk_size = fastqs.count()
+    #        task.save()
+    #        logger.info('Flowcell id: {} - Chunk size is {}, less than 2000 reads in the database'.format(
+    #            flowcell.id, chunk_size)
+    #        )
 
     logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, fastqs.count()))
 
@@ -1029,7 +1040,7 @@ def run_centrifuge(flowcell_job_id):
     if df.empty:
         logger.info("Flowcell id: {} - No reads found or no centrifuge output."
                     " Check above for error".format(flowcell.id))
-        
+
         task.running = False
         task.save()
         return
@@ -1145,7 +1156,7 @@ def run_centrifuge(flowcell_job_id):
     logger.info("Flowcell id: {} - The previous number of matches dataframe is {}"
                 .format(flowcell.id, num_matches_per_target_df))
 
-    map_the_reads(name_df, task, flowcell, num_matches_per_target_df, temp_targets, classified_per_barcode)
+    map_the_reads(name_df, task, flowcell, num_matches_per_target_df, temp_targets, classified_per_barcode, run)
 
     # delete these columns, no longer needed
     df.drop(columns=["readID", "seqID", "numMatches", "unique", "barcode_name", "read_id"], inplace=True)
@@ -1171,7 +1182,6 @@ def run_centrifuge(flowcell_job_id):
 
     # ###### BULK CREATE CENTOUTPUT OBJECTS ########
     # Give each row a flowcell object cell, as part of the flowcell_id series
-
 
     df["proportion_of_classified"] = df["num_matches"].div(
         classified_per_barcode["All reads"]).mul(100).round(decimals=3)
@@ -1201,7 +1211,7 @@ def run_centrifuge(flowcell_job_id):
         calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter)
     except KeyError as e:
         logger.info("PROBLEMS {}".format(e))
-#        return
+    #        return
 
     # subset where there is so these need dootdating
     cent_to_create_df = df[~prev_links_mask]
@@ -1258,26 +1268,16 @@ def run_centrifuge(flowcell_job_id):
     metadata.save()
 
     # Update the jobmaster object fields that are relevant
+    task = JobMaster.objects.get(pk=task.id)
+    task.running = False
 
     if fastqs.count() > 0:
-
-        task = JobMaster.objects.get(pk=task.id)
-        task.running = True
         task.last_read = fastqs[chunk_size - 1].id
-        task.read_count = task.read_count + fastqs.count()
-        task.save()
+        logger.info("Inseide if")
 
-        logger.info("Flowcell id: {} - Calling run_centrifuge from run_centrifuge.".format(flowcell.id))
-        
-        run_centrifuge(flowcell_job_id)
+    task.read_count = task.read_count + fastqs.count()
+    task.save()
 
-    else:
-
-        task = JobMaster.objects.get(pk=task.id)
-        task.running = False
-        task.read_count = task.read_count + fastqs.count()
-        task.save()
-
-        logger.info("Flowcell id: {} - New last_read_id is - {}".format(flowcell.id, task.last_read))
-        logger.info("Flowcell id: {} - Total CentOut lines - {}".format(flowcell.id, total_centrifuge_output))
-        logger.info("Flowcell id: {} - Finished!".format(flowcell.id))
+    logger.info("Flowcell id: {} - New last_read_id is - {}".format(flowcell.id, task.last_read))
+    logger.info("Flowcell id: {} - Total CentOut lines - {}".format(flowcell.id, total_centrifuge_output))
+    logger.info("Flowcell id: {} - Finished!".format(flowcell.id))
