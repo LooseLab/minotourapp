@@ -28,6 +28,7 @@ from jobs.models import JobMaster
 from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus
 from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
+from centrifuge.sankey import calculate_sankey
 
 logger = get_task_logger(__name__)
 
@@ -119,6 +120,24 @@ def run_monitor():
                 ))
 
                 update_flowcell_details.delay(flowcell_job.id)
+            if flowcell_job.job_type.name == "CalculateSankey":
+                logger.info("Sending task CalculateSankey - Flowcell id: {}, job_master id: {}".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                ))
+                run_sankey(flowcell_job.id)
+
+@task()
+def run_sankey(flowcell_job_id):
+    """
+    Calculate sankeys for a flowcell upon demand of the user
+    :param flowcell_job_id: The pk id of this task
+    :author: Rory
+    :return:
+    """
+    job_master = JobMaster.objects.get(pk=flowcell_job_id)
+    logger.info("Flowcell id: {} - Starting Sankey calculation task".format(job_master.flowcell.id))
+    calculate_sankey(flowcell_job_id)
 
 
 @task()
@@ -553,7 +572,10 @@ def update_run_start_time():
 
 @task
 def update_flowcell_list_details():
-
+    """
+    
+    :return:
+    """
     flowcell_list = Flowcell.objects.filter(is_active=True)
 
     for flowcell in flowcell_list:
@@ -598,7 +620,8 @@ def update_flowcell_details(job_master_id):
     #
 
     ## Seems fast enough.
-    minion_run_status_first = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell).order_by('minKNOW_start_time').first()
+    minion_run_status_first = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell).order_by('minKNOW_start_time')\
+        .first()
 
     #
     # If the MinIONRunStatus exists, than update start time and sample name
