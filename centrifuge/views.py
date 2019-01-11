@@ -7,6 +7,7 @@ from centrifuge.models import CentrifugeOutput, MappingResult, Metadata, \
     SankeyLink, DonutData
 from django.utils import timezone
 from django.http import JsonResponse
+from django.db.models import Sum
 import pandas as pd
 from jobs.models import JobMaster
 from reads.models import Flowcell, FastqRead
@@ -206,12 +207,14 @@ def donut_data(request):
 
     for rank in tax_rank_filter:
         data_df = pd.DataFrame(
-            list(DonutData.objects.filter(task=task, tax_rank=rank,
-                                          barcode_name=barcode).order_by("-num_matches")[:10].values()))
+            list(DonutData.objects.filter(task=task, barcode_name=barcode, tax_rank=rank).values("name", "tax_rank")
+                 .distinct().annotate(sum_value=Sum("num_matches")).order_by("-sum_value")[0:10]))
         results_df = results_df.append(data_df)
 
     if results_df.empty:
         return Response("No results", status=204)
+
+    results_df = results_df.rename(columns={"sum_value": "num_matches"})
 
     results_df = results_df[["tax_rank", "name", "num_matches"]]
 
@@ -389,19 +392,19 @@ def all_results_table(request):
         else:
             cent_out_temp = cent_out_temp.order_by('{}'.format(query_columns[int(order_column)]))
 
-    cents = cent_out_temp.values('tax_id',
-                                 'barcode_name',
-                                 'name',
-                                 'num_matches',
-                                 'proportion_of_classified',
-                                 'superkingdom',
-                                 'phylum',
-                                 'classy',
-                                 'order',
-                                 'family',
-                                 'genus',
-                                 'species',
-                                 )
+    species_to_return = list(cent_out_temp.values_list("species", flat=True).distinct()[start:end])
+
+    df = pd.DataFrame(list(CentrifugeOutput.objects.filter(species__in=species_to_return).values()))
+
+    gb = df.groupby(["barcode_name", "species"])
+
+    df.set_index(["barcode_name", "species"], inplace=True)
+
+    df["num_matches"] = gb["num_matches"].sum()
+
+    df.reset_index(inplace=True)
+
+    df.drop_duplicates(subset=["barcode_name", "species"], inplace=True)
 
     records_total = cent_out_temp.count()
 
@@ -409,7 +412,7 @@ def all_results_table(request):
         'draw': draw,
         "recordsTotal": records_total,
         "recordsFiltered": records_total,
-        "data": list(cents[start:end])
+        "data": df.to_dict(orient="records")
     }
 
     return JsonResponse(result, safe=True)

@@ -10,7 +10,7 @@ from celery.utils.log import get_task_logger
 from django.db.models import ObjectDoesNotExist
 from django.utils import timezone
 from ete3 import NCBITaxa
-from centrifuge.models import CentrifugeOutput, LineageValue, Metadata, SankeyLink, \
+from centrifuge.models import CentrifugeOutput, LineageValue, Metadata, \
     MappingResult, MappingTarget, DonutData
 from jobs.models import JobMaster, JobType
 from minotourapp.utils import get_env_variable
@@ -91,21 +91,21 @@ def create_centrifuge_models(row, classified_per_barcode):
                             species=row["species"])
 
 
-def update_centrifuge_output_values(row, flowcell_job_id):
-    """
-    Update existing CentrifugeOutputBarcoded objects in the database
-    :param flowcell_job_id: The id for the job_master for this task run
-    :param row: The data frame row
-    :return: The list of newly created objects
-    """
-    CentrifugeOutput.objects.filter(tax_id=row["tax_id"],
-                                    barcode_name=row["barcode_name"],
-                                    task__id=flowcell_job_id
-                                    ).update(
-        num_matches=row["num_matches"],
-        sum_unique=row["sum_unique"],
-        proportion_of_classified=row["proportion_of_classified"]
-    )
+# def update_centrifuge_output_values(row, flowcell_job_id):
+#     """
+#     Update existing CentrifugeOutputBarcoded objects in the database
+#     :param flowcell_job_id: The id for the job_master for this task run
+#     :param row: The data frame row
+#     :return: The list of newly created objects
+#     """
+#     CentrifugeOutput.objects.filter(tax_id=row["tax_id"],
+#                                     barcode_name=row["barcode_name"],
+#                                     task__id=flowcell_job_id
+#                                     ).update(
+#         num_matches=row["num_matches"],
+#         sum_unique=row["sum_unique"],
+#         proportion_of_classified=row["proportion_of_classified"]
+#     )
 
 
 def convert_species_to_subspecies(name):
@@ -133,34 +133,34 @@ def convert_species_to_subspecies(name):
         pass
 
 
-def create_sankeylink_models(row):
-    """
-    apply to the dataframe and create sankeylinks objects for each row, return into a series
-    :param row: The data frame row
-    :return: The list of created objects
-    """
-    return SankeyLink(source=row["source"],
-                      target=row["target"],
-                      tax_id=row["tax_id"],
-                      task=row["job_master"],
-                      target_tax_level=row["target_tax_level"],
-                      value=row["value"],
-                      barcode_name=row["barcode_name"],
-                      path=row["path"])
-
-
-def update_sankeylink_values(row, flowcell_job_id):
-    """
-    Update the barcode sankey links rows in the database
-    :param row: The data frame row
-    :param flowcell_job_id: The Pk of the task ID
-    :return: Nothing
-    """
-    SankeyLink.objects.filter(task__id=flowcell_job_id,
-                              target_tax_level=row["target_tax_level"],
-                              barcode_name=row["barcode_name"],
-                              tax_id=row["tax_id"]).update(value=row["updated_value"])
-
+# def create_sankeylink_models(row):
+#     """
+#     apply to the dataframe and create sankeylinks objects for each row, return into a series
+#     :param row: The data frame row
+#     :return: The list of created objects
+#     """
+#     return SankeyLink(source=row["source"],
+#                       target=row["target"],
+#                       tax_id=row["tax_id"],
+#                       task=row["job_master"],
+#                       target_tax_level=row["target_tax_level"],
+#                       value=row["value"],
+#                       barcode_name=row["barcode_name"],
+#                       path=row["path"])
+#
+#
+# def update_sankeylink_values(row, flowcell_job_id):
+#     """
+#     Update the barcode sankey links rows in the database
+#     :param row: The data frame row
+#     :param flowcell_job_id: The Pk of the task ID
+#     :return: Nothing
+#     """
+#     SankeyLink.objects.filter(task__id=flowcell_job_id,
+#                               target_tax_level=row["target_tax_level"],
+#                               barcode_name=row["barcode_name"],
+#                               tax_id=row["tax_id"]).update(value=row["updated_value"])
+#
 
 def create_lineage_models(row):
     """
@@ -847,17 +847,17 @@ def create_donut_data_models(row, task):
                      barcode_name=row["barcode_name"])
 
 
-def update_donut_data_models(row, task):
-    """
-    Update existing model objectsin the database
-    :param row: The row of the dataframe
-    :param task: The task object for this analysis
-    :return: Nothing
-    """
-    DonutData.objects.filter(task=task,
-                             name=row["name"],
-                             barcode_name=row["barcode_name"]).update(num_matches=row["updated_num_matches"],
-                                                                      sum_unique=row["updated_sum_unique"])
+# def update_donut_data_models(row, task):
+#     """
+#     Update existing model objectsin the database
+#     :param row: The row of the dataframe
+#     :param task: The task object for this analysis
+#     :return: Nothing
+#     """
+#     DonutData.objects.filter(task=task,
+#                              name=row["name"],
+#                              barcode_name=row["barcode_name"]).update(num_matches=row["updated_num_matches"],
+#                                                                       sum_unique=row["updated_sum_unique"])
 
 
 def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
@@ -871,11 +871,15 @@ def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
     :return donut_df: A dataframe containing the
     """
     data_df = pd.merge(df, lineages_df, left_on="tax_id", right_index=True)
+
     data_df.set_index(tax_rank_filter, inplace=True)
 
     logger.info('Flowcell id: {} - Calculating donut data'.format(flowcell.id))
+
     gb_bc = data_df.groupby("barcode_name")
+
     donut_df = pd.DataFrame()
+
     for name, group in gb_bc:
         for tax_rank in tax_rank_filter:
             gb = group.groupby(level=tax_rank)
@@ -894,30 +898,31 @@ def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
 
     logger.info('Flowcell id: {} - Bulk inserting new species donut data'.format(flowcell.id))
 
-    prev_donut_df = pd.DataFrame(list(DonutData.objects.filter(task=task).values().distinct()))
-
-    if prev_donut_df.empty:
-        donut_models_bulk_create = donut_df.apply(create_donut_data_models, args=(task,), axis=1)
-        DonutData.objects.bulk_create(list(donut_models_bulk_create.values))
-        return
-    donut_to_create_df = donut_df[~donut_df["name"].isin(prev_donut_df["name"])]
+    # prev_donut_df = pd.DataFrame(list(DonutData.objects.filter(task=task).values().distinct()))
+    #
+    # if prev_donut_df.empty:
+    #     donut_models_bulk_create = donut_df.apply(create_donut_data_models, args=(task,), axis=1)
+    #     DonutData.objects.bulk_create(list(donut_models_bulk_create.values))
+    #     return
+    # donut_to_create_df = donut_df[~donut_df["name"].isin(prev_donut_df["name"])]
+    donut_to_create_df = donut_df
 
     donut_models_bulk_create = donut_to_create_df.apply(create_donut_data_models, args=(task,), axis=1)
 
     DonutData.objects.bulk_create(list(donut_models_bulk_create.values))
 
-    logger.info('Flowcell id: {} - Updating existing species donut data'.format(flowcell.id))
-
-    prev_df_name_barcodes = list(DonutData.objects.filter(task=task).values_list("name", "barcode_name"))
-
-    prev_links_mask = donut_df[['name', 'barcode_name']].agg(tuple, 1).isin(prev_df_name_barcodes)
-
-    donut_data_to_update_df = donut_df[prev_links_mask]
-
-    combined_df = pd.merge(donut_data_to_update_df, prev_donut_df, how="inner", on=["name", "barcode_name"])
-    combined_df["updated_num_matches"] = combined_df["num_matches_x"].add(combined_df["num_matches_y"], fill_value=0)
-    combined_df["updated_sum_unique"] = combined_df["sum_unique_x"].add(combined_df["sum_unique_y"], fill_value=0)
-    combined_df.apply(update_donut_data_models, args=(task,), axis=1)
+    # logger.info('Flowcell id: {} - Updating existing species donut data'.format(flowcell.id))
+    #
+    # prev_df_name_barcodes = list(DonutData.objects.filter(task=task).values_list("name", "barcode_name"))
+    #
+    # prev_links_mask = donut_df[['name', 'barcode_name']].agg(tuple, 1).isin(prev_df_name_barcodes)
+    #
+    # donut_data_to_update_df = donut_df[prev_links_mask]
+    #
+    # combined_df = pd.merge(donut_data_to_update_df, prev_donut_df, how="inner", on=["name", "barcode_name"])
+    # combined_df["updated_num_matches"] = combined_df["num_matches_x"].add(combined_df["num_matches_y"], fill_value=0)
+    # combined_df["updated_sum_unique"] = combined_df["sum_unique_x"].add(combined_df["sum_unique_y"], fill_value=0)
+    # combined_df.apply(update_donut_data_models, args=(task,), axis=1)
 
 
 def run_centrifuge(flowcell_job_id):
@@ -1168,7 +1173,7 @@ def run_centrifuge(flowcell_job_id):
     barcode_df.rename(columns={"unique": "sum_unique", 0: "num_matches"}, inplace=True)
 
     barcode_df.set_index("tax_id", inplace=True)
-
+    # TODO this may be slow
     df_data = CentrifugeOutput.objects.filter(species__in=temp_targets,
                                               task=task,
                                               barcode_name__in=barcodes).values(
@@ -1201,7 +1206,7 @@ def run_centrifuge(flowcell_job_id):
     # query the index get all the objects in the database for this analysis at this point
     queryset = CentrifugeOutput.objects.filter(task=task)
     # Get the previous tax ids in this analysis
-    prev_df_tax_ids_barcodes = list(queryset.values_list("tax_id", "barcode_name"))
+    # prev_df_tax_ids_barcodes = list(queryset.values_list("tax_id", "barcode_name"))
 
     # ###### BULK CREATE CENTOUTPUT OBJECTS ########
     # Give each row a flowcell object cell, as part of the flowcell_id series
@@ -1229,7 +1234,7 @@ def run_centrifuge(flowcell_job_id):
     # df["proportion_of_classified"].fillna(0, inplace=True)
 
     # Split out the rows that have a tax_id that doesn't already have results
-    prev_links_mask = df[['tax_id', 'barcode_name']].agg(tuple, 1).isin(prev_df_tax_ids_barcodes)
+    # prev_links_mask = df[['tax_id', 'barcode_name']].agg(tuple, 1).isin(prev_df_tax_ids_barcodes)
     try:
         calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter)
     except KeyError as e:
@@ -1237,7 +1242,8 @@ def run_centrifuge(flowcell_job_id):
     #        return
 
     # subset where there is so these need dootdating
-    cent_to_create_df = df[~prev_links_mask]
+    # cent_to_create_df = df[~prev_links_mask]
+    cent_to_create_df = df
     logger.info("Flowcell id: {} - Centrifuge to lineages dataframe {}".format(flowcell.id, lineages_df.head()))
 
     cent_to_create_df = pd.merge(cent_to_create_df, lineages_df, how="inner", left_on="tax_id", right_index=True)
@@ -1252,34 +1258,35 @@ def run_centrifuge(flowcell_job_id):
     # Get all the results for the barcoded entries, so each species will have multiple entries under different barcodes
     # TODO Split back into one table in database, barcoded results
 
-    cent_to_update_df = df[prev_links_mask]
+    # cent_to_update_df = df[prev_links_mask]
 
-    prev_tax_ids_array = cent_to_update_df["tax_id"].values
+    # prev_tax_ids_array = cent_to_update_df["tax_id"].values
 
-    previous_centrifuge_data_queryset = CentrifugeOutput.objects.filter(task=task,
-                                                                        tax_id__in=prev_tax_ids_array).values()
+    # previous_centrifuge_data_queryset = CentrifugeOutput.objects.filter(task=task,
+    #                                                                     tax_id__in=prev_tax_ids_array).values()
     # If there are results, we need to update existing results database rows and create new ones for non extant rows
-    if not cent_to_update_df.empty:
-        # Create a pandas dataframe
-        previous_df = pd.DataFrame(list(previous_centrifuge_data_queryset))
-        logger.info("Flowcell id: {} - Previous CentOutput data found {}".format(flowcell.id, previous_df.head()))
-        cent_to_update_df.set_index(["tax_id", "barcode_name"], inplace=True)
-        previous_df.set_index(["tax_id", "barcode_name"], inplace=True)
-        cent_to_update_df = cent_to_update_df[~cent_to_update_df.index.duplicated(keep="first")]
-        previous_df = previous_df[~previous_df.index.duplicated(keep="first")]
-        logger.info("Flowcell id: {} - Centrifuge to update dataframe {}".format(flowcell.id, cent_to_update_df.head()))
-        cent_to_update_df["num_matches"] = previous_df["num_matches"] + cent_to_update_df["num_matches"]
-
-        cent_to_update_df["sum_unique"] = previous_df["sum_unique"] + cent_to_update_df["sum_unique"]
-
-        cent_to_update_df["proportion_of_classified"] = cent_to_update_df["num_matches"] \
-            .div(classified_per_barcode["All reads"]).mul(100).round(decimals=3)
-
-        # ###### Update existing barcode output ######
-        # Apply to update the existing entries in the databases
-        cent_to_update_df.reset_index(inplace=True)
-        cent_to_update_df.apply(update_centrifuge_output_values, args=(task.id,),
-                                axis=1)
+    # if not cent_to_update_df.empty:
+    #     # Create a pandas dataframe
+    #     previous_df = pd.DataFrame(list(previous_centrifuge_data_queryset))
+    #     logger.info("Flowcell id: {} - Previous CentOutput data found {}".format(flowcell.id, previous_df.head()))
+    #     cent_to_update_df.set_index(["tax_id", "barcode_name"], inplace=True)
+    #     previous_df.set_index(["tax_id", "barcode_name"], inplace=True)
+    #     cent_to_update_df = cent_to_update_df[~cent_to_update_df.index.duplicated(keep="first")]
+    #     previous_df = previous_df[~previous_df.index.duplicated(keep="first")]
+    #     logger.info("Flowcell id: {} - Centrifuge to update dataframe {}".format(flowcell.id,
+    #                                                                       cent_to_update_df.head()))
+    #     cent_to_update_df["num_matches"] = previous_df["num_matches"] + cent_to_update_df["num_matches"]
+    #
+    #     cent_to_update_df["sum_unique"] = previous_df["sum_unique"] + cent_to_update_df["sum_unique"]
+    #
+    #     cent_to_update_df["proportion_of_classified"] = cent_to_update_df["num_matches"] \
+    #         .div(classified_per_barcode["All reads"]).mul(100).round(decimals=3)
+    #
+    #     # ###### Update existing barcode output ######
+    #     # Apply to update the existing entries in the databases
+    #     cent_to_update_df.reset_index(inplace=True)
+    #     cent_to_update_df.apply(update_centrifuge_output_values, args=(task.id,),
+    #                             axis=1)
 
     # Update the metadata for the headers
 
