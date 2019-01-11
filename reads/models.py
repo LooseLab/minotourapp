@@ -1459,7 +1459,7 @@ class FastqRead(models.Model):
     )
 
     start_time = models.DateTimeField(
-
+        db_index=True
     )
 
     created_date = models.DateTimeField(
@@ -1470,6 +1470,7 @@ class FastqRead(models.Model):
         auto_now=True
     )
 
+
     fastqfile = models.ForeignKey(
         FastqFile,
         on_delete=models.CASCADE,
@@ -1477,6 +1478,17 @@ class FastqRead(models.Model):
         null = True
     )
 
+    '''
+    sequence = models.TextField(
+        blank=True,
+        null=True
+    )
+    
+    quality = models.TextField(
+        blank=True,
+        null=True,
+    )
+    '''
     class Meta:
         verbose_name = 'FASTQ Read'
         verbose_name_plural = 'FASTQ Read'
@@ -1513,6 +1525,8 @@ class FastqReadExtra(models.Model):
 
     def __str__(self):
         return str(self.id)
+        
+
 
 
 class MinionMessage(models.Model):

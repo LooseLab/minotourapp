@@ -21,7 +21,47 @@ def chancalc(flowcell_id, job_master_id, last_read):
 
     flowcell = Flowcell.objects.get(pk=flowcell_id)
 
-    fastqs = FastqRead.objects.filter(run__flowcell=flowcell).filter(id__gt=int(last_read)).order_by('id')[:50000]
+    ## This is a slow query and needs optimisation...
+
+    #fastqs = FastqRead.objects.filter(run__flowcell=flowcell).filter(id__gt=int(last_read)).order_by('id')[:50000]
+
+    runs = flowcell.runs.all()
+
+    chunk_size = 20000
+
+    holderformaxreadseen = 0
+
+    for run in runs:
+        # This query doesn't work because it assumes that reads are entered into the database in run order
+        # And they are not. So we need a way to work around this.
+        #
+        '''
+        fastqs = FastqRead.objects.filter(run=run, id__gt=int(task.last_read)
+                                          ).order_by('id')[:chunk_size]
+
+        if fastqs.count() > 0:
+            # we have data - so go off and use it.
+            proceed = True
+            break
+        '''
+        if holderformaxreadseen > 0:
+            fastqs = FastqRead.objects.filter(run=run, id__gt=int(job_master.last_read),
+                                              id__lt=int(holderformaxreadseen)).order_by('id')
+        else:
+            fastqs = FastqRead.objects.filter(run=run, id__gt=int(job_master.last_read)).order_by('id')[:chunk_size]
+
+        if 'fastq_store' in locals():
+            fastq_store = fastq_store.union(fastqs)
+        else:
+            fastq_store = fastqs
+
+        if holderformaxreadseen == 0 and fastqs.count() > 0:
+            holderformaxreadseen = fastqs[fastqs.count() - 1].id
+
+    # May not always create fastqstore need to check.
+    if runs.count() > 1:
+        fastqs = fastq_store.order_by('id')[:chunk_size]
+
     fastq_df_barcode = pd.DataFrame.from_records(
         fastqs.values('id', 'start_time', 'barcode__name', 'type__name', 'is_pass', 'sequence_length',
                       'quality_average', 'channel'))
