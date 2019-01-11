@@ -1720,7 +1720,7 @@ def read_list_new(request):
         #
         # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@task
+@task(rate_limit="100/m")
 def save_reads(data):
 
     serializer = FastqReadSerializer(data=data, many=True)
