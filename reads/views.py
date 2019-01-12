@@ -1692,7 +1692,7 @@ def read_list_new(request):
 
     elif request.method == 'POST':
 
-        # serializer = FastqReadSerializer(data=request.data, many=True)
+        #serializer = FastqReadSerializer(data=request.data, many=True)
 
         # print(request.data)
 
@@ -1702,19 +1702,21 @@ def read_list_new(request):
 
         return Response({}, status=status.HTTP_201_CREATED)
 
-        # if serializer.is_valid():
-        #
-        #     print('reads valid')
-        #     res = serializer.save()
-        #     print(res)
-        #
-        #     return Response({}, status=status.HTTP_201_CREATED)
-        #
-        # else:
-        #
-        #     print('reads not valid')
-        #
-        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        '''
+        if serializer.is_valid():
+
+            #print('reads valid')
+            res = serializer.save()
+            #print(res)
+
+            return Response({}, status=status.HTTP_201_CREATED)
+
+        else:
+
+            print('reads not valid')
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        '''
 
 @task(rate_limit="100/m")
 def save_reads(data):
@@ -1750,7 +1752,7 @@ def readextra_list(request):
                 fastq_record.channel,
                 fastq_record.read,
                 fastq_record.start_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                fastq_record.fastqreadextra.sequence
+                fastq_record.sequence
             )
 
             read = {

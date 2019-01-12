@@ -772,6 +772,8 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
     # Initialise red_df for red alert target reads
     red_reads_df = pd.DataFrame()
 
+
+    ### This is really slow!
     for name, group in gb:
         red_reads_df = red_reads_df.append(map_all_the_groups(group, name, flowcell,
                                                               target_regions_df, targets_df, task,
@@ -1035,7 +1037,7 @@ def run_centrifuge(flowcell_job_id):
 
         metadata.save()
 
-    fastqs_list = fastqs.values_list('read_id', 'barcode_name', 'fastqreadextra__sequence', 'id')
+    fastqs_list = fastqs.values_list('read_id', 'barcode_name', 'sequence', 'id')
 
     fastqs_data = "".join([str(">read_id=" + c[0] + ",barcode=" + c[1] + "\n" + c[2] + "\n") for c in fastqs_list
                            if c[2] is not None])
@@ -1184,6 +1186,10 @@ def run_centrifuge(flowcell_job_id):
     logger.info("Flowcell id: {} - The previous number of matches dataframe is {}"
                 .format(flowcell.id, num_matches_per_target_df))
 
+    ##There are some slow queries in here somewhere:
+    """
+    #SELECT `reads_fastqread`.`id`, `reads_fastqread`.`run_id`, `reads_fastqread`.`read_id`, `reads_fastqread`.`read`, `reads_fastqread`.`channel`, `reads_fastqread`.`barcode_id`, `reads_fastqread`.`barcode_name`, `reads_fastqread`.`sequence_length`, `reads_fastqread`.`quality_average`, `reads_fastqread`.`is_pass`, `reads_fastqread`.`type_id`, `reads_fastqread`.`start_time`, `reads_fastqread`.`created_date`, `reads_fastqread`.`modified_date`, `reads_fastqread`.`fastqfile_id`, `reads_fastqread`.`sequence`, `reads_fastqread`.`quality` FROM `reads_fastqread` WHERE (`reads_fastqread`.`run_id` = 5 AND `reads_fastqread`.`read_id` IN ('e2f9306f-791f-4c94-8a41-5174be4146af'));
+    """
     map_the_reads(name_df, task, flowcell, num_matches_per_target_df, temp_targets, classified_per_barcode, run)
 
     # delete these columns, no longer needed

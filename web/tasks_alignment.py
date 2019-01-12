@@ -111,10 +111,10 @@ def align_reads(fastqs, job_master_id):
 
     for fastq in fastqs:
 
-        if not (fastq.fastqreadextra and fastq.fastqreadextra.sequence):
-            continue
+        #if not fastq.sequence:
+        #    continue
 
-        read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.fastqreadextra.sequence)
+        read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
 
         # fastq_file.write(read)
 
@@ -128,7 +128,7 @@ def align_reads(fastqs, job_master_id):
 
     # fastq_file.close()
 
-    cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format(
+    cmd = '{} -x map-ont -t 1 --secondary=no {} -'.format(
         MINIMAP2,
         os.path.join(REFERENCE_LOCATION, reference_info.filename)
     )
@@ -269,7 +269,7 @@ def align_reads(fastqs, job_master_id):
 
         paf_store_gb.reset_index().apply(lambda row: save_paf_store_summary(job_master.id, row), axis=1)
 
-        return last_read
+    return last_read
 
 
 def save_paf_store_summary(job_master_id, row):

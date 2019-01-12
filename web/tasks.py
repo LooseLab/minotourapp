@@ -268,7 +268,7 @@ def format_read(fastq):
         lineheader = lineheader + " start_time={}".format(fastq.start_time.replace(tzinfo=pytz.UTC).isoformat())
     if fastq.barcode.name != "No barcode":
         lineheader = lineheader + " barcode={}".format(fastq.barcode.name)
-    return ("{}\n{}\n+\n{}\n".format(lineheader,fastq.fastqreadextra.sequence,fastq.fastqreadextra.quality))
+    return ("{}\n{}\n+\n{}\n".format(lineheader,fastq.sequence,fastq.quality))
 
 
 @task()
@@ -344,12 +344,12 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
         if fastq.type not in fastqdict[fastq.barcode.barcodegroup]:
             fastqdict[fastq.barcode.barcodegroup][fastq.type] = []
 
-        fastqdict[fastq.barcode.barcodegroup][fastq.type].append([fastq.read_id, fastq.fastqreadextra.sequence])
+        fastqdict[fastq.barcode.barcodegroup][fastq.type].append([fastq.read_id, fastq.sequence])
         newfastqs += 1
-        #read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.fastqreadextra.sequence)
+        #read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
         #fastqdict[fastq.read_id]=fastq
         #fastqtypedict[fastq.read_id]=fastq.type
-        #outtemp.write('>{}\n{}\n'.format(fastq.read_id, fastq.fastqreadextra.sequence))
+        #outtemp.write('>{}\n{}\n'.format(fastq.read_id, fastq.sequence))
         last_read = fastq.id
 
     #outtemp.close()
@@ -687,7 +687,13 @@ def update_flowcell_details(job_master_id):
     flowcell.number_reads_processed = number_reads_processed
 
     flowcell.number_runs = len(flowcell.runs.all())
-    flowcell.number_barcodes = len(FastqRead.objects.filter(run__flowcell=flowcell).values('barcode_name').distinct())
+    ##Faster way of doing this by using the barcode table!
+    #barcode_count=0
+    #runs = flowcell.runs.all()
+    #for run in runs:
+        #barcode_count += len(FastqRead.objects.filter(run=run).values('barcode_name').distinct())
+    barcode_count = len(Barcode.objects.filter(run_id__flowcell=flowcell).values('name').distinct())-1
+    flowcell.number_barcodes = barcode_count
     flowcell.save()
 
     logger.info('Flowcell id: {} - Number runs {}'.format(flowcell.id, flowcell.number_runs))

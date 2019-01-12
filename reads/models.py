@@ -1414,7 +1414,7 @@ class FastqRead(models.Model):
     )
 
     read_id = models.CharField(
-
+        db_index=True,
         max_length=96
     )
 
@@ -1434,7 +1434,7 @@ class FastqRead(models.Model):
     )
 
     barcode_name = models.CharField(
-
+        db_index=True,
         max_length=32
     )
 
@@ -1478,7 +1478,6 @@ class FastqRead(models.Model):
         null = True
     )
 
-    '''
     sequence = models.TextField(
         blank=True,
         null=True
@@ -1488,7 +1487,7 @@ class FastqRead(models.Model):
         blank=True,
         null=True,
     )
-    '''
+
     class Meta:
         verbose_name = 'FASTQ Read'
         verbose_name_plural = 'FASTQ Read'
@@ -1497,7 +1496,7 @@ class FastqRead(models.Model):
         #return "1"
         return str(self.read_id)
 
-
+'''
 class FastqReadExtra(models.Model):
     """
     :purpose: If the user choose to send the read sequence and fastq quality, this is the model that is used to store it
@@ -1526,7 +1525,7 @@ class FastqReadExtra(models.Model):
     def __str__(self):
         return str(self.id)
         
-
+'''
 
 
 class MinionMessage(models.Model):
