@@ -11,7 +11,7 @@ from django.db.models import ObjectDoesNotExist
 from django.utils import timezone
 from ete3 import NCBITaxa
 from centrifuge.models import CentrifugeOutput, LineageValue, Metadata, \
-    MappingResult, MappingTarget, DonutData
+    MappingResult, MappingTarget, DonutData, CentrifugeOutputParsed
 from jobs.models import JobMaster, JobType
 from minotourapp.utils import get_env_variable
 from reads.models import FastqRead
@@ -61,34 +61,34 @@ def calculate_barcoded_values(barcode_group_df, barcode_df, classified_per_barco
     return barcode_df
 
 
-def create_centrifuge_models(row, classified_per_barcode):
-    """
-    Append a CentOutput object to a list for each row in the centrifuge output
-    :param row: the row from the data frame
-    :param classified_per_barcode: The number of reads classified for each barcode as a dictionary
-    :return: The list of newly created objects
-
-    """
-    if row["proportion_of_classified"] == "Unclassified" or row["proportion_of_classified"] == np.nan:
-        row["proportion_of_classified"] = round(row["num_matches"] / classified_per_barcode[row["barcode_name"]], 3)
-    # logger.info(row["proportion_of_classified"])
-    # logger.info(row["barcode_name"])
-    # logger.info(row["proportion_of_classified"] == np.NaN)
-    # logger.info(row["proportion_of_classified"] == np.nan)
-    return CentrifugeOutput(name=row["name"],
-                            tax_id=row["tax_id"],
-                            task=row["task"],
-                            num_matches=row["num_matches"],
-                            sum_unique=row["sum_unique"],
-                            barcode_name=row["barcode_name"],
-                            proportion_of_classified=row["proportion_of_classified"],
-                            superkingdom=row["superkingdom"],
-                            phylum=row["phylum"],
-                            classy=row["class"],
-                            order=row["order"],
-                            family=row["family"],
-                            genus=row["genus"],
-                            species=row["species"])
+# def create_centrifuge_models(row, classified_per_barcode):
+#     """
+#     Append a CentOutput object to a list for each row in the centrifuge output
+#     :param row: the row from the data frame
+#     :param classified_per_barcode: The number of reads classified for each barcode as a dictionary
+#     :return: The list of newly created objects
+#
+#     """
+#     if row["proportion_of_classified"] == "Unclassified" or row["proportion_of_classified"] == np.nan:
+#         row["proportion_of_classified"] = round(row["num_matches"] / classified_per_barcode[row["barcode_name"]], 3)
+#     # logger.info(row["proportion_of_classified"])
+#     # logger.info(row["barcode_name"])
+#     # logger.info(row["proportion_of_classified"] == np.NaN)
+#     # logger.info(row["proportion_of_classified"] == np.nan)
+#     return CentrifugeOutput(name=row["name"],
+#                             tax_id=row["tax_id"],
+#                             task=row["task"],
+#                             num_matches=row["num_matches"],
+#                             sum_unique=row["sum_unique"],
+#                             barcode_name=row["barcode_name"],
+#                             proportion_of_classified=row["proportion_of_classified"],
+#                             superkingdom=row["superkingdom"],
+#                             phylum=row["phylum"],
+#                             classy=row["class"],
+#                             order=row["order"],
+#                             family=row["family"],
+#                             genus=row["genus"],
+#                             species=row["species"])
 
 
 # def update_centrifuge_output_values(row, flowcell_job_id):
@@ -368,7 +368,7 @@ def update_mapped_red_values(row, task, flowcell):
 
 
 def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, targets_results_df,
-                       task, num_matches_target_barcoded_df, run):
+                       task, num_matches_target_barcoded_df, run, fasta_df):
     """
     Map the reads from the target data frames, after they've been grouped by species
     :param target_species_group_df: A data frame that contains reads from only one species
@@ -669,7 +669,7 @@ def calculate_num_matches_update(target_df, task, num_matches_targets_barcoded_d
     barcode_df.apply(update_targets_no_mapping, args=(task,), axis=1)
 
 
-def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targets, class_per_bar, run):
+def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targets, class_per_bar, run, fasta_df):
     """
     Map the reads is called on the dataframe of targets that have been split out, splits them into a group by name, and
     applies the map_all_the_groups function, which returns any reads that map to target areas in a data frame.
@@ -777,7 +777,7 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
     for name, group in gb:
         red_reads_df = red_reads_df.append(map_all_the_groups(group, name, flowcell,
                                                               target_regions_df, targets_df, task,
-                                                              num_matches_targets_barcoded_df, run
+                                                              num_matches_targets_barcoded_df, run, fasta_df
                                                               )
                                            )
 
@@ -927,6 +927,119 @@ def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
     # combined_df.apply(update_donut_data_models, args=(task,), axis=1)
 
 
+def create_centrifuge_models(row, classified_per_barcode):
+    """
+    Append a CentOutput object to a list for each row in the centrifuge output
+    :param row: the row from the data frame
+    :param classified_per_barcode: The number of reads classified for each barcode as a dictionary
+    :return: The list of newly created objects
+
+    """
+    if row["proportion_of_classified"] == "Unclassified" or row["proportion_of_classified"] == np.nan:
+        row["proportion_of_classified"] = round(row["num_matches"] / classified_per_barcode[row["barcode_name"]], 3)
+    # logger.info(row["proportion_of_classified"])
+    # logger.info(row["barcode_name"])
+    # logger.info(row["proportion_of_classified"] == np.NaN)
+    # logger.info(row["proportion_of_classified"] == np.nan)
+    return CentrifugeOutput(name=row["name"],
+                                  tax_id=row["tax_id"],
+                                  task=row["task"],
+                                  num_matches=row["num_matches"],
+                                  sum_unique=row["sum_unique"],
+                                  barcode_name=row["barcode_name"],
+                                  proportion_of_classified=row["proportion_of_classified"],
+                                  superkingdom=row["superkingdom"],
+                                  phylum=row["phylum"],
+                                  classy=row["class"],
+                                  order=row["order"],
+                                  family=row["family"],
+                                  genus=row["genus"],
+                                  species=row["species"],
+                                  latest=row["latest"])
+
+
+def output_parser(task, new_data_df):
+    """
+    Parse the centrifuge output data and save into a site readable format
+    :param task: The reference to the JobMaster for this metagenomics task
+    :return:
+    """
+
+    metagenomics_task = task
+
+    parsed_data = CentrifugeOutput.objects.filter(task=metagenomics_task, latest=task.latest_batch)
+
+    parsed_data_df = pd.DataFrame(list(parsed_data.values()))
+
+    if "class" in new_data_df.keys():
+        new_data_df.rename(columns={"class": "classy"}, inplace=True)
+
+    if not parsed_data_df.empty:
+        new_latest = parsed_data_df["latest"].unique().tolist()[0] + 1
+
+        merged_data_df = pd.merge(parsed_data_df, new_data_df, on=["barcode_name", "name", "superkingdom",
+                                                                   "phylum", "classy", "order", "family",
+                                                                   "genus", "species", "tax_id"],
+                                  how="outer")
+
+        values = {"num_matches_x": 0, "num_matches_y": 0, "sum_unique_x": 0, "sum_unique_y": 0}
+
+        merged_data_df.fillna(value=values, inplace=True)
+
+        merged_data_df["task"] = metagenomics_task
+
+        merged_data_df["num_matches"] = merged_data_df["num_matches_x"] + merged_data_df["num_matches_y"]
+
+        merged_data_df["sum_unique"] = merged_data_df["sum_unique_x"] + merged_data_df["sum_unique_y"]
+
+        gb_bc = merged_data_df.groupby("barcode_name")
+
+        classed_per_barcode = gb_bc["num_matches"].sum().to_dict()
+
+        barcodes = merged_data_df["barcode_name"].unique().tolist()
+
+        to_save_df = merged_data_df
+    else:
+        new_latest = 1
+
+        gb_bc = new_data_df.groupby("barcode_name")
+
+        classed_per_barcode = gb_bc["num_matches"].sum().to_dict()
+
+        barcodes = new_data_df["barcode_name"].unique().tolist()
+
+        to_save_df = new_data_df
+
+    def divd(row, cl_bar):
+        """
+        Calculate_proportion_of_classified
+        :param row: The df row
+        :param cl_bar: The number of reads classified in a barcode, in dict form keyed to the barcode_name
+        :return:
+        """
+        return round((row["num_matches"] / cl_bar[row["barcode_name"]]) * 100, 4)
+
+    to_save_df["proportion_of_classified"] = to_save_df.apply(divd, args=(classed_per_barcode,), axis=1)
+
+    to_save_df["latest"] = new_latest
+
+    to_save_df["task"] = metagenomics_task
+
+    to_save_df.rename(columns={"classy": "class"}, inplace=True)
+
+    to_save_df["proportion_of_classified"].fillna("Unclassified", inplace=True)
+
+    to_bulk_save_series = to_save_df.apply(create_centrifuge_models, args=(classed_per_barcode,), axis=1)
+
+    CentrifugeOutput.objects.bulk_create(to_bulk_save_series.values.tolist(), batch_size=20000)
+
+    metagenomics_task.latest_batch = new_latest
+
+    metagenomics_task.save()
+
+    CentrifugeOutput.objects.filter(task=metagenomics_task, latest__lt=new_latest).delete()
+
+
 def run_centrifuge(flowcell_job_id):
     """
 
@@ -1041,6 +1154,8 @@ def run_centrifuge(flowcell_job_id):
 
     fastqs_data = "".join([str(">read_id=" + c[0] + ",barcode=" + c[1] + "\n" + c[2] + "\n") for c in fastqs_list
                            if c[2] is not None])
+
+    fasta_df = pd.DataFrame(fastqs_list, columns=["read_id", "barcode_name", "sequence", "id"])
 
     # Write the generated fastq file to stdin, passing it to the command
     logger.info("Flowcell id: {} - Loading index and Centrifuging".format(flowcell.id))
@@ -1168,6 +1283,8 @@ def run_centrifuge(flowcell_job_id):
     # Include these reads in the lookup dict
     classified_per_barcode["All reads"] += df2.shape[0]
 
+    del df2
+
     barcode_df = gb_bc.apply(calculate_barcoded_values, barcode_df, classified_per_barcode)
 
     barcode_df.reset_index(inplace=True)
@@ -1186,11 +1303,10 @@ def run_centrifuge(flowcell_job_id):
     logger.info("Flowcell id: {} - The previous number of matches dataframe is {}"
                 .format(flowcell.id, num_matches_per_target_df))
 
-    ##There are some slow queries in here somewhere:
-    """
-    #SELECT `reads_fastqread`.`id`, `reads_fastqread`.`run_id`, `reads_fastqread`.`read_id`, `reads_fastqread`.`read`, `reads_fastqread`.`channel`, `reads_fastqread`.`barcode_id`, `reads_fastqread`.`barcode_name`, `reads_fastqread`.`sequence_length`, `reads_fastqread`.`quality_average`, `reads_fastqread`.`is_pass`, `reads_fastqread`.`type_id`, `reads_fastqread`.`start_time`, `reads_fastqread`.`created_date`, `reads_fastqread`.`modified_date`, `reads_fastqread`.`fastqfile_id`, `reads_fastqread`.`sequence`, `reads_fastqread`.`quality` FROM `reads_fastqread` WHERE (`reads_fastqread`.`run_id` = 5 AND `reads_fastqread`.`read_id` IN ('e2f9306f-791f-4c94-8a41-5174be4146af'));
-    """
-    map_the_reads(name_df, task, flowcell, num_matches_per_target_df, temp_targets, classified_per_barcode, run)
+
+    map_the_reads(name_df, task, flowcell, num_matches_per_target_df, temp_targets,
+                  classified_per_barcode, run, fasta_df)
+
 
     # delete these columns, no longer needed
     df.drop(columns=["readID", "seqID", "numMatches", "unique", "barcode_name", "read_id"], inplace=True)
@@ -1210,15 +1326,15 @@ def run_centrifuge(flowcell_job_id):
 
     # Include these reads in the lookup dict
     # query the index get all the objects in the database for this analysis at this point
-    queryset = CentrifugeOutput.objects.filter(task=task)
+    # queryset = CentrifugeOutput.objects.filter(task=task)
     # Get the previous tax ids in this analysis
     # prev_df_tax_ids_barcodes = list(queryset.values_list("tax_id", "barcode_name"))
 
     # ###### BULK CREATE CENTOUTPUT OBJECTS ########
     # Give each row a flowcell object cell, as part of the flowcell_id series
 
-    df["proportion_of_classified"] = df["num_matches"].div(
-        classified_per_barcode["All reads"]).mul(100).round(decimals=3)
+    # df["proportion_of_classified"] = df["num_matches"].div(
+    #     classified_per_barcode["All reads"]).mul(100).round(decimals=3)
 
     df.set_index("tax_id", inplace=True)
     # Add the barcode dataframe onto the dataframe, so now we have all reads and barcodes
@@ -1253,14 +1369,17 @@ def run_centrifuge(flowcell_job_id):
     logger.info("Flowcell id: {} - Centrifuge to lineages dataframe {}".format(flowcell.id, lineages_df.head()))
 
     cent_to_create_df = pd.merge(cent_to_create_df, lineages_df, how="inner", left_on="tax_id", right_index=True)
-    logger.info("Flowcell id: {} - Centrifuge to update dataframe {}".format(flowcell.id, cent_to_create_df.head()))
-    cent_to_create_df["task"] = task
-    cent_to_create_df["proportion_of_classified"].fillna("Unclassified", inplace=True)
-    # apply row wise to append model representation objects into a series
-    centrifuge_create_series = cent_to_create_df.apply(create_centrifuge_models, args=(classified_per_barcode,), axis=1)
 
-    # Bulk create the objects
-    CentrifugeOutput.objects.bulk_create(list(centrifuge_create_series.values))
+    cent_to_create_df["task"] = task
+
+    output_parser(task, cent_to_create_df)
+    # cent_to_create_df["proportion_of_classified"].fillna("Unclassified", inplace=True)
+    # apply row wise to append model representation objects into a series
+    # centrifuge_create_series = cent_to_create_df.apply(create_centrifuge_models,
+    # args=(classified_per_barcode,), axis=1)
+    #
+    # # Bulk create the objects
+    # CentrifugeOutput.objects.bulk_create(list(centrifuge_create_series.values))
     # Get all the results for the barcoded entries, so each species will have multiple entries under different barcodes
     # TODO Split back into one table in database, barcoded results
 
