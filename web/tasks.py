@@ -561,7 +561,7 @@ def update_run_start_time():
 
             #fastq = FastqRead.objects.filter(run=run).order_by('start_time').first()
             #run.start_time = fastq.start_time
-            fastq = FastqRead.objects.filter(run=run)
+            fastq = FastqRead.objects.filter(run=run).filter(start_time__lte=run.start_time)
             run.start_time = fastq.aggregate(Min('start_time'))['start_time__min']
 
             origin = 'Basecalled data'
@@ -724,7 +724,7 @@ def update_flowcell_details(job_master_id):
 
                 flowcell.size = 3000
 
-            elif max_channel['result'] > 128:
+            elif max_channel['result'] > 126:
 
                 flowcell.size = 512
 

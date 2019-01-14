@@ -9,6 +9,8 @@ from django.core.management.base import BaseCommand, CommandError
 from reference.models import ReferenceInfo, ReferenceLine
 
 
+## ToDo: Add ability to handle gz references.
+
 class Command(BaseCommand):
 
     help = 'Add a custom reference sequence to the minoTour database. ' \

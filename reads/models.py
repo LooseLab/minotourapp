@@ -530,9 +530,9 @@ class Run(models.Model):
         try:
             max_channel = self.max_channel()
             if max_channel != 'undefined':
-                if int(max_channel) <= 128:
-                    return 128
-                elif 128 < int(max_channel) <= 512:
+                if int(max_channel) <= 126:
+                    return 126
+                elif 126 < int(max_channel) <= 512:
                     return 512
                 elif 512 < int(max_channel) <= 3000:
                     return 3000
