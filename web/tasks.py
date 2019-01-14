@@ -561,7 +561,10 @@ def update_run_start_time():
 
             #fastq = FastqRead.objects.filter(run=run).order_by('start_time').first()
             #run.start_time = fastq.start_time
-            fastq = FastqRead.objects.filter(run=run).filter(start_time__lte=run.start_time)
+            starttime = run.start_time
+            if starttime is None:
+                starttime = 0
+            fastq = FastqRead.objects.filter(run=run).filter(start_time__lte=starttime)
             run.start_time = fastq.aggregate(Min('start_time'))['start_time__min']
 
             origin = 'Basecalled data'
