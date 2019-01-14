@@ -362,26 +362,30 @@ def all_results_table(request):
     # ascending descending
     order_dir = request.GET.get('order[0][dir]', '')
 
+    meta_task = JobMaster.objects.get(flowcell__id=flowcell_id, job_type__name="Metagenomics")
+
+    latest = meta_task.latest_batch
+
     if not search_value == "":
 
         cent_out_temp = CentrifugeOutput.objects \
-            .filter(task__flowcell_id=flowcell_id) \
+            .filter(task__flowcell_id=flowcell_id, latest=latest) \
             .filter(task__flowcell__owner=request.user) \
             .filter(species__icontains=search_value) | CentrifugeOutput.objects \
-            .filter(task__flowcell_id=flowcell_id) \
+            .filter(task__flowcell_id=flowcell_id, latest=latest) \
             .filter(task__flowcell__owner=request.user) \
             .filter(genus__icontains=search_value) | CentrifugeOutput.objects \
-            .filter(task__flowcell_id=flowcell_id) \
+            .filter(task__flowcell_id=flowcell_id, latest=latest) \
             .filter(task__flowcell__owner=request.user) \
             .filter(family__icontains=search_value) | CentrifugeOutput.objects \
-            .filter(task__flowcell_id=flowcell_id) \
+            .filter(task__flowcell_id=flowcell_id, latest=latest) \
             .filter(task__flowcell__owner=request.user) \
             .filter(order__icontains=search_value)
 
     else:
 
         cent_out_temp = CentrifugeOutput.objects \
-            .filter(task__flowcell_id=flowcell_id) \
+            .filter(task__flowcell_id=flowcell_id, latest=latest) \
             .filter(task__flowcell__owner=request.user)
 
     if order_column:
@@ -392,27 +396,40 @@ def all_results_table(request):
         else:
             cent_out_temp = cent_out_temp.order_by('{}'.format(query_columns[int(order_column)]))
 
-    species_to_return = list(cent_out_temp.values_list("species", flat=True).distinct()[start:end])
+    # species_to_return = list(cent_out_temp.values_list("species", flat=True).distinct()[start:end])
+    #
+    # df = pd.DataFrame(list(CentrifugeOutput.objects.filter(species__in=species_to_return).values()))
+    #
+    # gb = df.groupby(["barcode_name", "species"])
+    #
+    # df.set_index(["barcode_name", "species"], inplace=True)
+    #
+    # df["num_matches"] = gb["num_matches"].sum()
+    #
+    # df.reset_index(inplace=True)
+    #
+    # df.drop_duplicates(subset=["barcode_name", "species"], inplace=True)
+    #
 
-    df = pd.DataFrame(list(CentrifugeOutput.objects.filter(species__in=species_to_return).values()))
-
-    gb = df.groupby(["barcode_name", "species"])
-
-    df.set_index(["barcode_name", "species"], inplace=True)
-
-    df["num_matches"] = gb["num_matches"].sum()
-
-    df.reset_index(inplace=True)
-
-    df.drop_duplicates(subset=["barcode_name", "species"], inplace=True)
-
+    cents = cent_out_temp.values('tax_id',
+                                 'barcode_name',
+                                 'name',
+                                 'num_matches',
+                                 'proportion_of_classified',
+                                 'superkingdom',
+                                 'phylum',
+                                 'classy',
+                                 'order',
+                                 'family',
+                                 'genus',
+                                 'species',
+                                 )
     records_total = cent_out_temp.count()
-
     result = {
         'draw': draw,
         "recordsTotal": records_total,
         "recordsFiltered": records_total,
-        "data": df.to_dict(orient="records")
+        "data": list(cents[start:end])
     }
 
     return JsonResponse(result, safe=True)

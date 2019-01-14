@@ -29,6 +29,7 @@ from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowce
 from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
 from centrifuge.sankey import calculate_sankey
+from centrifuge.tasks import output_parser
 
 logger = get_task_logger(__name__)
 
@@ -126,6 +127,13 @@ def run_monitor():
                     flowcell_job.id,
                 ))
                 run_sankey(flowcell_job.id)
+
+            if flowcell_job.job_type.name == "Parser":
+                logger.info("Sending task Parser - Flowcell id: {}, job_master id: {}".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                ))
+                output_parser.delay(flowcell_job.id)
 
 @task()
 def run_sankey(flowcell_job_id):
