@@ -111,7 +111,7 @@ class JobMaster(models.Model):
         default=False
     )
     latest_batch = models.IntegerField(
-        null=True
+        null=True, default=0
     )
 
     def __str__(self):
