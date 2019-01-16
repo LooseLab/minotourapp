@@ -110,7 +110,7 @@ class JobMaster(models.Model):
     running = models.BooleanField(
         default=False
     )
-    latest_batch = models.IntegerField(
+    iteration_count = models.IntegerField(
         null=True, default=0
     )
 
