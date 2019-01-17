@@ -1698,7 +1698,9 @@ def read_list_new(request):
 
         logger.info('>>> received reads post - calling task - request.data size: {}'.format(len(request.data)))
 
+
         #save_reads.delay(request.data)
+        # save_reads.delay(request.data)
         save_reads(request.data)
 
         return Response({}, status=status.HTTP_201_CREATED)

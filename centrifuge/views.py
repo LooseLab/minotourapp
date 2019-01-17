@@ -57,9 +57,9 @@ def centrifuge_metadata(request):
 
     print(job_master.flowcell.number_reads)
 
-    # number_of_reads = job_master.flowcell.number_reads
-
+    # get the number of reads
     number_of_reads = FastqRead.objects.filter(run__flowcell__id=flowcell_id).count()
+    # Get the read count
     reads_class = job_master.read_count
     # Percentage of reads classified
     percentage = round(reads_class / number_of_reads * 100, 2)
@@ -101,20 +101,18 @@ def centrifuge_sankey(request):
     flowcell_id = request.GET.get("flowcellId", False)
     # Selected barcode, default all reads
     selected_barcode = request.GET.get("barcode", "All reads")
-
-    has_been_run = False
-
-    # The most up to dat task_id
+    # The most up to date task_id
     task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last().id
 
-    # ## Get the links for the sankey Diagram ###
+    # ## Get the jobMaster for calculate sankey
     been_run = JobMaster.objects.filter(flowcell__id=flowcell_id,
                                         job_type__name="CalculateSankey").order_by("id").last()
-
+    # If the sankey task has been run
     if been_run:
         has_been_run = True
     else:
         return Response({"message": "No Sankey data has been found", "run": False})
+    # Get the sankey links objects for this run
     queryset = SankeyLink.objects.filter(task__id=task_id, barcode_name=selected_barcode).values()
     # If the queryset is empty, return an empty object
     if not queryset:
@@ -155,23 +153,24 @@ def centrifuge_sankey(request):
     links = source_target_df.to_dict(orient="records")
 
     # ## Get the nodes ###
+
     # Get all the nodes values from superkingdom (ex. Bacteria) to species ("E. Coli")
     # Create a series of all possible nodes
     nodes = source_target_df["source"].append(source_target_df["target"])
 
     # Remove duplicates
     nodes = pd.DataFrame({"name": nodes.unique()})
-
+    # Merge the nodes and links dataframes together
     merge = pd.merge(nodes, source_target_df, how="outer", right_on="source", left_on="name")
-
+    # Get just the path and name for the nodes data
     merge = merge[["name", "path"]]
-
+    # Do the same for the targets
     merge = pd.merge(merge, source_target_df, how="outer", right_on="target", left_on="name")
-
+    # fill the missing values from not having the sources on the links with the values from merge
     merge["path_x"].fillna(merge["path_y"], inplace=True)
-
+    # get the complete set of names and paths from the dataframe
     merge = merge[["name", "path_x"]]
-
+    # Drop duplicates on name, as we need unique node names
     merge.drop_duplicates(subset="name", inplace=True, keep="first")
 
     merge.rename(columns={"path_x": "path"}, inplace=True)
@@ -181,7 +180,9 @@ def centrifuge_sankey(request):
 
     # ## Return the array # ##
     nodes = {"links": links, "nodes": nodes}
+
     return_dict = {"sankey": nodes, "run": has_been_run}
+
     return Response(return_dict, status=200)
 
 
@@ -199,8 +200,9 @@ def donut_data(request):
     flowcell_id = request.GET.get("flowcellId", 0)
 
     barcode = request.GET.get("barcode", "All reads")
-    # Get the most recent job
+    # Get the most recent metagenomics job
     task = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last()
+    # Initialise a dataframe
     results_df = pd.DataFrame()
 
     tax_rank_filter = ["superkingdom", "phylum", "classy", "order", "family", "genus", "species"]
@@ -364,7 +366,7 @@ def all_results_table(request):
 
     meta_task = JobMaster.objects.get(flowcell__id=flowcell_id, job_type__name="Metagenomics")
 
-    latest = meta_task.latest_batch
+    latest = meta_task.iteration_count
 
     if not search_value == "":
 
@@ -395,21 +397,6 @@ def all_results_table(request):
 
         else:
             cent_out_temp = cent_out_temp.order_by('{}'.format(query_columns[int(order_column)]))
-
-    # species_to_return = list(cent_out_temp.values_list("species", flat=True).distinct()[start:end])
-    #
-    # df = pd.DataFrame(list(CentrifugeOutput.objects.filter(species__in=species_to_return).values()))
-    #
-    # gb = df.groupby(["barcode_name", "species"])
-    #
-    # df.set_index(["barcode_name", "species"], inplace=True)
-    #
-    # df["num_matches"] = gb["num_matches"].sum()
-    #
-    # df.reset_index(inplace=True)
-    #
-    # df.drop_duplicates(subset=["barcode_name", "species"], inplace=True)
-    #
 
     cents = cent_out_temp.values('tax_id',
                                  'barcode_name',

@@ -312,6 +312,7 @@ class DonutData(models.Model):
     name = models.CharField(max_length=60)
     barcode_name = models.CharField(max_length=40, default="All reads")
     tax_rank = models.CharField(max_length=80, default="Species")
+    latest = models.IntegerField(null=True, default=0)
 
 
 

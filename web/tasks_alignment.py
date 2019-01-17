@@ -100,11 +100,11 @@ def align_reads(fastqs, job_master_id):
 
     read = ''
     fastq_dict = dict()
-    fastqtypedict = dict()
-    fastq_read_ispass_dict = dict()
-    fastq_read_barcode_dict = dict()
+    #fastqtypedict = dict()
+    #fastq_read_ispass_dict = dict()
+    #fastq_read_barcode_dict = dict()
 
-    fastqbarcode = dict()
+    #fastqbarcode = dict()
 
     # fastq_filename = '/home/ubuntu/logs/flowcell-{}-last-read-{}.fastq'.format(flowcell.id, job_master.last_read)
     # fastq_file = open(fastq_filename, 'w')
@@ -119,10 +119,10 @@ def align_reads(fastqs, job_master_id):
         # fastq_file.write(read)
 
         fastq_dict[fastq.read_id] = fastq
-        fastqtypedict[fastq.read_id] = fastq.type
-        fastq_read_ispass_dict[fastq.read_id] = fastq.is_pass
-        fastq_read_barcode_dict[fastq.read_id] = fastq.barcode_name
-        fastqbarcode[fastq.read_id] = fastq.barcode.name
+        #fastqtypedict[fastq.read_id] = fastq.type
+        #fastq_read_ispass_dict[fastq.read_id] = fastq.is_pass
+        #fastq_read_barcode_dict[fastq.read_id] = fastq.barcode_name
+        #fastqbarcode[fastq.read_id] = fastq.barcode.name
 
         last_read = fastq.id
 

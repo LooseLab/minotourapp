@@ -49,7 +49,6 @@ def fetchreads(runs,chunk_size,last_read):
                     break
             count += 1
     elif len(countsdict)==1:
-
         """This is risky and it breaks the logic - we end up grabbing reads"""
         mykey = list(countsdict.keys())[0]
         fastqs = FastqRead.objects.filter(run=countsdict[mykey],
