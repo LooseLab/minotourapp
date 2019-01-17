@@ -19,10 +19,53 @@ from reference.models import ReferenceInfo
 from alignment.models import PafStore
 from django.db.models import Sum
 from web.tasks_alignment import align_reads
-from web.tasks_chancalc import callfetchreads
 
 pd.options.mode.chained_assignment = None
 logger = get_task_logger(__name__)
+
+
+def callfetchreads_cent(runs,chunk_size,last_read):
+    fastq_df_barcode = pd.DataFrame()
+    while True:
+        reads, last_read, read_count = fetchreads_cent(runs, chunk_size, last_read)
+        fastq_df_barcode = fastq_df_barcode.append(reads)
+        if len(fastq_df_barcode)>=chunk_size or len(reads)==0:
+            break
+    read_count = len(fastq_df_barcode)
+    return fastq_df_barcode,last_read,read_count
+
+
+def fetchreads_cent(runs,chunk_size,last_read):
+    countsdict=dict()
+    for run in runs:
+        fastqs = FastqRead.objects.filter(run=run, id__gt=int(last_read)).first()
+        if fastqs:
+            countsdict[fastqs.id] = run
+    count = 1
+    fastq_df_barcode = pd.DataFrame()
+    if len(countsdict)>1:
+        for entry in sorted(countsdict):
+            if count < len(countsdict):
+                fastqs = FastqRead.objects.filter(run=countsdict[entry],
+                                              id__gt=int(last_read),
+                                                id__lt=int(sorted(countsdict)[count]),
+                                                         )[:chunk_size]
+                fastq_df_barcode = fastq_df_barcode.append(pd.DataFrame.from_records(
+                    fastqs.values("read_id", "barcode_name", "sequence", "id")))
+                last_read = fastq_df_barcode.id.max()
+                if len(fastq_df_barcode) >= chunk_size:
+                    break
+            count += 1
+    elif len(countsdict)==1:
+        """This is risky and it breaks the logic - we end up grabbing reads"""
+        mykey = list(countsdict.keys())[0]
+        fastqs = FastqRead.objects.filter(run=countsdict[mykey],
+                                              id__gt=int(last_read),)[:chunk_size]
+        fastq_df_barcode = fastq_df_barcode.append(pd.DataFrame.from_records(
+            fastqs.values("read_id", "barcode_name", "sequence", "id")))
+        last_read = fastq_df_barcode.id.max()
+    read_count = len(fastq_df_barcode)
+    return fastq_df_barcode,last_read,read_count
 
 
 # TODO del unused df and things
