@@ -564,21 +564,26 @@ def update_run_start_time():
 
             run.start_time = run.RunDetails.last().minKNOW_start_time
             origin = 'Live data'
-
+            run.save()
+            print('Updating start_time for run {} from {}'.format(run.runid, origin))
+        '''
         else:
-
+            ## This query is really slow - so - gonna move it out of here!
             #fastq = FastqRead.objects.filter(run=run).order_by('start_time').first()
             #run.start_time = fastq.start_time
             starttime = run.start_time
             if starttime is None:
-                starttime = 0
-            fastq = FastqRead.objects.filter(run=run).filter(start_time__lte=starttime)
+                #starttime = None
+                fastq = FastqRead.objects.filter(run=run)
+            else:
+                fastq = FastqRead.objects.filter(run=run).filter(start_time__lte=starttime)
             run.start_time = fastq.aggregate(Min('start_time'))['start_time__min']
 
             origin = 'Basecalled data'
 
         run.save()
         print('Updating start_time for run {} from {}'.format(run.runid, origin))
+        '''
 
 
 @task
