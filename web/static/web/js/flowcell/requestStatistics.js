@@ -103,7 +103,7 @@ function requestStatisticsCallback(data) {
 
     var i = 0;
     for (i = 0; i < data_keys.length; i++) {
-        console.log(data);
+        //console.log(data);
         var data_average_quality_over_time = data['data'][data_keys[i]].map(x => [x[0], x[1]]);
         var data_average_read_length_over_time = data['data'][data_keys[i]].map(x => [x[0], x[2]]);
         var data_cumulative_bases = data['data'][data_keys[i]].map(x => [x[0], x[3]]);
