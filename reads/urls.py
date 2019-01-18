@@ -162,6 +162,11 @@ urlpatterns = [
         name="flowcell-statistics"
     ),
     url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/speed/$',
+        views.flowcell_speed,
+        name="flowcell-speed"
+    ),
+    url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/histogramsummary/$',
         views.flowcell_histogram_summary,
         name="flowcellhistogramsummary-detail"

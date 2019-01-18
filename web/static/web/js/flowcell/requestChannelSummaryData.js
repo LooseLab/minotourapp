@@ -211,4 +211,44 @@ function requestChannelSummaryData(id) {
 
     });
 
+
+    var url = "/api/v1/flowcells/" + id + "/speed";
+    $.get(url, function (data) {
+        result = JSON.parse(data);
+       //console.log(result);
+       //console.log(result.length);
+       //var doesthiswork = result.map(x => [x[0], x[1]]);
+       //console.log(doesthiswork);
+       //console.log(typeof(result));
+
+        var plotdata = [];
+
+        for (key in result) {
+           plotdata.push([parseInt(key), result[key]])
+           //console.log(typeof(key));
+        }
+
+       if (!self.estimated_sequencing_speed) {
+
+        self.estimated_sequencing_speed = self.makeChart2(
+            "estimated-sequencing-speed",
+            "Estimated Sequencing Speed".toUpperCase(),
+            "Estimated speed in bases/second".toUpperCase()
+        );
+
+        }
+
+        var chart = self.estimated_sequencing_speed;
+
+
+        while (chart.series.length > 0) {
+                chart.series[0].remove();
+        }
+
+       chart.addSeries({
+            name: "All Data",
+            data: plotdata
+        });
+    });
+
 };
