@@ -44,9 +44,10 @@ def fetchreads_cent(runs,chunk_size,last_read):
     fastasm = list()
     #fastqs_list = list()
     for run in runs:
-        fastqs = FastqRead.objects.filter(run=run, id__gt=int(last_read)).first()
+        #fastqs = FastqRead.objects.filter(run=run, id__gt=int(last_read)).first()
+        fastqs = FastqRead.objects.values_list('id').filter(run=run, id__gt=int(last_read)).first()
         if fastqs:
-            countsdict[fastqs.id] = run
+            countsdict[fastqs[0]] = run
     count = 1
     fastq_df_barcode = pd.DataFrame()
     if len(countsdict)>1:

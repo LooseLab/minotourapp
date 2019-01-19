@@ -1149,6 +1149,7 @@ def flowcell_statistics(request, pk):
 @api_view(['get'])
 def flowcell_speed(request,pk):
 
+    window = 10
     flowcell = Flowcell.objects.get(pk=pk)
 
     queryset = FlowcellStatisticBarcode.objects\
@@ -1172,9 +1173,9 @@ def flowcell_speed(request,pk):
         # This gets around the fact that a channel might produce both a pass and fail read in the same one minute window
         df["chan_count"] = df["sum_channel_presence"].apply(lambda x: np.count_nonzero(x))
         # calculate the mean channel count over a 10 minute window.
-        df["mean_chan_count"] = df["chan_count"].rolling(window=2).mean()
+        df["mean_chan_count"] = df["chan_count"].rolling(window=window).mean()
         # calculate the mean read length seen in a rolling 10 minute window.
-        df["mean_total_length"] = df["sum_total_length"].rolling(window=2).mean()
+        df["mean_total_length"] = df["sum_total_length"].rolling(window=window).mean()
         # calculate the mean speed over those rolling windows in bases per second
         df["mean_speed"] = df["mean_total_length"] / df["mean_chan_count"] / 60
     elif len(df.status.unique()) == 1:
@@ -1183,8 +1184,8 @@ def flowcell_speed(request,pk):
         df = df.groupby('sample_time')[["channel_presence", "total_length"]].apply(
             lambda df: df.reset_index(drop=True))
         df["chan_count"] = df["channel_presence"].apply(lambda x: np.count_nonzero(x))
-        df["mean_chan_count"] = df["chan_count"].rolling(window=2).mean()
-        df["mean_total_length"] = df["total_length"].rolling(window=2).mean()
+        df["mean_chan_count"] = df["chan_count"].rolling(window=window).mean()
+        df["mean_total_length"] = df["total_length"].rolling(window=window).mean()
         df["mean_speed"] = df["mean_total_length"] / df["mean_chan_count"] / 60
         df.reset_index(level=1, drop=True,inplace=True)
 
