@@ -13,8 +13,70 @@ from jobs.models import JobMaster
 from reads.models import FastqRead, Flowcell
 from reference.models import ReferenceInfo, ReferenceLine
 
+
 logger = get_task_logger(__name__)
 
+
+def callfetchreads_cent(runs,chunk_size,last_read):
+    fastasm=list()
+    #fastqs_list = list()
+    fastq_df_barcode = pd.DataFrame()
+    while True:
+        #reads, last_read, read_count, fastasmchunk, fastqs_list_chunk = fetchreads_cent(runs, chunk_size, last_read)
+        reads, last_read, read_count, fastasmchunk = fetchreads_cent(runs, chunk_size, last_read)
+        fastasm+=fastasmchunk
+        #fastqs_list += fastqs_list_chunk
+        fastq_df_barcode = fastq_df_barcode.append(reads)
+        if len(fastq_df_barcode)>=chunk_size or len(reads)==0:
+            break
+    read_count = len(fastq_df_barcode)
+    return fastq_df_barcode,last_read,read_count,fastasm #,fastqs_list
+
+
+def fetchreads_cent(runs,chunk_size,last_read):
+    countsdict=dict()
+    fastasm = list()
+    #fastqs_list = list()
+    for run in runs:
+        #fastqs = FastqRead.objects.filter(run=run, id__gt=int(last_read)).first()
+        fastqs = FastqRead.objects.values_list('id').filter(run=run, id__gt=int(last_read)).first()
+        if fastqs:
+            countsdict[fastqs[0]] = run
+    count = 1
+    fastq_df_barcode = pd.DataFrame()
+    if len(countsdict)>1:
+        for entry in sorted(countsdict):
+            if count < len(countsdict):
+                fastqs = FastqRead.objects.filter(run=countsdict[entry],
+                                              id__gt=int(last_read),
+                                                id__lt=int(sorted(countsdict)[count]),
+                                                         )[:chunk_size]
+                fastq_df_barcode = fastq_df_barcode.append(pd.DataFrame.from_records(
+                    fastqs.values("read_id", "barcode_name", "sequence", "id")))
+
+                # Create a list of the fastQRead objects we will use in this objects
+                fastasm += list(fastqs)
+                # Create a list of 8000 tuples each with these 4 objects in it
+                #fastqs_list += fastqs.values_list('read_id', 'barcode_name', 'sequence', 'id')
+                last_read = fastq_df_barcode.id.max()
+                if len(fastq_df_barcode) >= chunk_size:
+                    break
+            count += 1
+    elif len(countsdict)==1:
+        """This is risky and it breaks the logic - we end up grabbing reads"""
+        mykey = list(countsdict.keys())[0]
+        fastqs = FastqRead.objects.filter(run=countsdict[mykey],
+                                              id__gt=int(last_read),)[:chunk_size]
+        fastq_df_barcode = fastq_df_barcode.append(pd.DataFrame.from_records(
+            fastqs.values("read_id", "barcode_name", "sequence", "id")))
+        # Create a list of the fastQRead objects we will use in this objects
+        fastasm += list(fastqs)
+        # Create a list of 8000 tuples each with these 4 objects in it
+        #fastqs_list += fastqs.values_list('read_id', 'barcode_name', 'sequence', 'id')
+
+        last_read = fastq_df_barcode.id.max()
+    read_count = len(fastq_df_barcode)
+    return fastq_df_barcode,last_read,read_count,fastasm#,fastqs_list
 
 @task
 def run_minimap2_alignment_by_job_master(job_master_id):
@@ -40,25 +102,31 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
     # job_master.running = True
     # job_master.save()
 
-    flowcell = Flowcell.objects.get(pk=flowcell_id)
+    flowcell = Flowcell.objects.get(pk=job_master.flowcell.id)
 
-    fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id, id__gt=int(last_read))[:1000]
+    runs = flowcell.runs.all()
+
+    chunk_size=8000
+    ## This query is going to be painfully slow on a big run... we need to lift the code from the centrifuge block
+    #fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id, id__gt=int(last_read))[:chunk_size]
+
+    fastq_df_barcode, last_read, read_count, fastasm = callfetchreads_cent(runs, chunk_size, job_master.last_read)
 
     logger.info('Flowcell id: {} - Running minimap2 on flowcell {}'.format(flowcell.id, flowcell.name))
     logger.info('Flowcell id: {} - job_master_id {}'.format(flowcell.id, job_master.id))
     logger.info('Flowcell id: {} - reference {}'.format(flowcell.id, job_master.reference.name))
     logger.info('Flowcell id: {} - last_read {}'.format(flowcell.id, job_master.last_read))
     logger.info('Flowcell id: {} - read_count {}'.format(flowcell.id, job_master.read_count))
-    logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, len(fastqs)))
+    logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, read_count))
 
-    if fastqs.count() > 0:
+    if read_count > 0:
 
-        last_read = align_reads(fastqs, job_master.id)
+        last_read = align_reads(fastasm, job_master.id)
 
     job_master = JobMaster.objects.get(pk=job_master_id)
     job_master.running = False
     job_master.last_read = last_read
-    job_master.read_count = job_master.read_count + len(fastqs)
+    job_master.read_count = job_master.read_count + read_count
     job_master.save()
 
 
