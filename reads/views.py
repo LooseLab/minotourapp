@@ -1149,7 +1149,7 @@ def flowcell_statistics(request, pk):
 @api_view(['get'])
 def flowcell_speed(request,pk):
 
-    window = 10
+    window = 2
     flowcell = Flowcell.objects.get(pk=pk)
 
     queryset = FlowcellStatisticBarcode.objects\
