@@ -659,6 +659,8 @@ def update_flowcell_details(job_master_id):
 
     for run in flowcell.runs.all():
         number_reads = number_reads + run.reads.all().count()
+        if run.has_fastq:
+            flowcell.has_fastq=True
 
     #
     # Get the job_master chancalc for this flowcell
@@ -689,8 +691,7 @@ def update_flowcell_details(job_master_id):
     if number_reads > 0:
         average_read_length = total_read_length / number_reads
 
-    else:
-        flowcell.has_fastq = False
+
 
     logger.info('Flowcell id: {} - Total read length {}'.format(flowcell.id, total_read_length))
     logger.info('Flowcell id: {} - Number reads {}'.format(flowcell.id, number_reads))

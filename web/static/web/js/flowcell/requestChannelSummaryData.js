@@ -215,11 +215,6 @@ function requestChannelSummaryData(id) {
     var url = "/api/v1/flowcells/" + id + "/speed";
     $.get(url, function (data) {
         result = JSON.parse(data);
-       console.log(result);
-       //console.log(result.length);
-       //var doesthiswork = result.map(x => [x[0], x[1]]);
-       //console.log(doesthiswork);
-       //console.log(typeof(result));
 
         var plotdata = [];
 
