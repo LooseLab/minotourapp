@@ -22,6 +22,7 @@ function requestLiveRunStats(id) {
             for (var i = 0; i < data.length; i++) {
                 //console.log(data[i]);
                 timestamp = new Date(data[i].sample_time).getTime();
+                this.livedata.colours_string = data[i].minKNOW_colours_string;
                 this.livedata.live_read_count = data[i].minKNOW_read_count;
                 this.livedata.voltage.push([timestamp, data[i].voltage_value]);
                 this.livedata.asictemp.push([timestamp, data[i].asic_temp]);

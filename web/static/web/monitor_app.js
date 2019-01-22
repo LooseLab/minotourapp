@@ -231,6 +231,7 @@ var FlowcellPageApp = {
     }, // end of init
 
     updatePoreStats: function () {
+        //console.log(this.livedata.pore_history);
         var returndata = this.parseporehist(this.livedata.colours_string, this.livedata.pore_history);
         //console.log(returndata);
         //returndata.sort(a,b){
@@ -241,7 +242,7 @@ var FlowcellPageApp = {
         //this.PoreShizzle.addSeries(returndata[4]);
         //console.log(returndata[4]);
         for (var i = 0; i < returndata.length; i++) {
-            console.log(returndata[i]);
+            //console.log(returndata[i]);
             var seriesdata = returndata[i];
             //seriesdata['data'].sort(function (a, b){
             //    return a[0] - b[0];
