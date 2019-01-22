@@ -23,6 +23,66 @@ from web.tasks_alignment import align_reads
 pd.options.mode.chained_assignment = None
 logger = get_task_logger(__name__)
 
+def callfetchreads_cent(runs,chunk_size,last_read):
+    fastasm=list()
+    #fastqs_list = list()
+    fastq_df_barcode = pd.DataFrame()
+    while True:
+        #reads, last_read, read_count, fastasmchunk, fastqs_list_chunk = fetchreads_cent(runs, chunk_size, last_read)
+        reads, last_read, read_count, fastasmchunk = fetchreads_cent(runs, chunk_size, last_read)
+        fastasm+=fastasmchunk
+        #fastqs_list += fastqs_list_chunk
+        fastq_df_barcode = fastq_df_barcode.append(reads)
+        if len(fastq_df_barcode)>=chunk_size or len(reads)==0:
+            break
+    read_count = len(fastq_df_barcode)
+    return fastq_df_barcode,last_read,read_count,fastasm #,fastqs_list
+
+
+def fetchreads_cent(runs,chunk_size,last_read):
+    countsdict=dict()
+    fastasm = list()
+    #fastqs_list = list()
+    for run in runs:
+        #fastqs = FastqRead.objects.filter(run=run, id__gt=int(last_read)).first()
+        fastqs = FastqRead.objects.values_list('id').filter(run=run, id__gt=int(last_read)).first()
+        if fastqs:
+            countsdict[fastqs[0]] = run
+    count = 1
+    fastq_df_barcode = pd.DataFrame()
+    if len(countsdict)>1:
+        for entry in sorted(countsdict):
+            if count < len(countsdict):
+                fastqs = FastqRead.objects.filter(run=countsdict[entry],
+                                              id__gt=int(last_read),
+                                                id__lt=int(sorted(countsdict)[count]),
+                                                         )[:chunk_size]
+                fastq_df_barcode = fastq_df_barcode.append(pd.DataFrame.from_records(
+                    fastqs.values("read_id", "barcode_name", "sequence", "id")))
+
+                # Create a list of the fastQRead objects we will use in this objects
+                fastasm += list(fastqs)
+                # Create a list of 8000 tuples each with these 4 objects in it
+                #fastqs_list += fastqs.values_list('read_id', 'barcode_name', 'sequence', 'id')
+                last_read = fastq_df_barcode.id.max()
+                if len(fastq_df_barcode) >= chunk_size:
+                    break
+            count += 1
+    elif len(countsdict)==1:
+        """This is risky and it breaks the logic - we end up grabbing reads"""
+        mykey = list(countsdict.keys())[0]
+        fastqs = FastqRead.objects.filter(run=countsdict[mykey],
+                                              id__gt=int(last_read),)[:chunk_size]
+        fastq_df_barcode = fastq_df_barcode.append(pd.DataFrame.from_records(
+            fastqs.values("read_id", "barcode_name", "sequence", "id")))
+        # Create a list of the fastQRead objects we will use in this objects
+        fastasm += list(fastqs)
+        # Create a list of 8000 tuples each with these 4 objects in it
+        #fastqs_list += fastqs.values_list('read_id', 'barcode_name', 'sequence', 'id')
+
+        last_read = fastq_df_barcode.id.max()
+    read_count = len(fastq_df_barcode)
+    return fastq_df_barcode,last_read,read_count,fastasm#,fastqs_list
 
 # TODO del unused df and things
 
@@ -1049,7 +1109,7 @@ def run_centrifuge(flowcell_job_id):
     # The JobMaster object
     task = JobMaster.objects.get(pk=flowcell_job_id)
     # The number of reads for this iteration
-    chunk_size = 8000
+    chunk_size = 10000
     # The flowcell the reads are from
     flowcell = task.flowcell
 
@@ -1063,7 +1123,7 @@ def run_centrifuge(flowcell_job_id):
     # The path to the Centrifuge Index
     index_path = get_env_variable("MT_CENTRIFUGE_INDEX")
     # The command to run centrifuge
-    cmd = "perl " + centrifuge_path + " -f --mm -x " + index_path + " -"
+    cmd = "perl " + centrifuge_path + " -p 2 -f --mm -x " + index_path + " -"
     logger.info('Flowcell id: {} - {}'.format(flowcell.id, cmd))
 
     # Counter for total centOut
@@ -1072,48 +1132,12 @@ def run_centrifuge(flowcell_job_id):
     # Instance of the Ncbi taxa class, for taxonomic id manipulation
     ncbi = NCBITaxa()
 
-    # ## TODO Matt is gonna fix this so no comment heres
-    proceed = False
-
     runs = flowcell.runs.all()
 
-    holderformaxreadseen = 0
+    #fastq_df_barcode, last_read, read_count, fastasm, fastqs_list = callfetchreads_cent(runs,chunk_size,task.last_read)
+    fastq_df_barcode, last_read, read_count, fastasm = callfetchreads_cent(runs,chunk_size,task.last_read)
 
-    for run in runs:
-        # This query doesn't work because it assumes that reads are entered into the database in run order
-        # And they are not. So we need a way to work around this.
-        #
-        '''
-        fastqs = FastqRead.objects.filter(run=run, id__gt=int(task.last_read)
-                                          ).order_by('id')[:chunk_size]
-
-        if fastqs.count() > 0:
-            # we have data - so go off and use it.
-            proceed = True
-            break
-        '''
-        if holderformaxreadseen > 0:
-            fastqs = FastqRead.objects.filter(run=run, id__gt=int(task.last_read),
-                                              id__lt=int(holderformaxreadseen)).order_by('id')
-        else:
-            fastqs = FastqRead.objects.filter(run=run, id__gt=int(task.last_read)).order_by('id')[:chunk_size]
-
-        if 'fastq_store' in locals():
-            fastq_store = fastq_store.union(fastqs)
-        else:
-            fastq_store = fastqs
-
-        if holderformaxreadseen == 0 and fastqs.count() > 0:
-            holderformaxreadseen = fastqs[fastqs.count() - 1].id
-
-    # May not always create fastqstore need to check.
-    if runs.count()>1:
-        fastqs = fastq_store.order_by('id')[:chunk_size]
-
-    if fastqs.count() > 0:
-        proceed = True
-
-    if not proceed:
+    if read_count == 0:
         # task.complete = True
         logger.info('Flowcell id: {} - Found 0 reads in the database, for this flowcell. Aborting...'.format(
             flowcell.id, chunk_size)
@@ -1129,7 +1153,7 @@ def run_centrifuge(flowcell_job_id):
     #            flowcell.id, chunk_size)
     #        )
 
-    logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, fastqs.count()))
+    logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, read_count))
 
     try:
         # Get the metadata object. Contains the start time, end time and runtime of the task
@@ -1144,12 +1168,18 @@ def run_centrifuge(flowcell_job_id):
 
         metadata.save()
     # Create a list of the fastQRead objects we will use in this objects
-    fastasm = list(fastqs)
+    #fastasm = list(fastqs)
     # Create a list of 8000 tuples each with these 4 objects in it
-    fastqs_list = fastqs.values_list('read_id', 'barcode_name', 'fastqreadextra__sequence', 'id')
+    #fastqs_list = fastqs.values_list('read_id', 'barcode_name', 'fastqreadextra__sequence', 'id')
+
     # Create a fastq string to pass to Centrifuge
-    fastqs_data = "".join([str(">read_id=" + c[0] + ",barcode=" + c[1] + "\n" + c[2] + "\n") for c in fastqs_list
-                           if c[2] is not None])
+
+    fastq_df_barcode["fasta"] = ">read_id=" + fastq_df_barcode["read_id"] + ",barcode=" + fastq_df_barcode[
+            "barcode_name"] + "\n" + fastq_df_barcode["sequence"]
+
+    fastqs_data = "\n".join(list(fastq_df_barcode["fasta"]))
+    #fastqs_data = "".join([str(">read_id=" + c[0] + ",barcode=" + c[1] + "\n" + c[2] + "\n") for c in fastqs_list
+    #                       if c[2] is not None])
 
     logger.info("Flowcell id: {} - Loading index and Centrifuging".format(flowcell.id))
 
@@ -1370,10 +1400,9 @@ def run_centrifuge(flowcell_job_id):
     # Set running to false
     task.running = False
     # OK - this returns the last record of all fastqs, not the last record of the chunk.
-    if holderformaxreadseen > 0:
-        task.last_read = holderformaxreadseen
+    task.last_read = last_read
     # Set the read count
-    task.read_count = task.read_count + fastqs.count()
+    task.read_count = task.read_count + read_count
     # Save the new task values
     task.save()
 

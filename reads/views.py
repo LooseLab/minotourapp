@@ -46,6 +46,9 @@ from reads.serializers import (BarcodeSerializer,
                                FlowcellTabSerializer)
 from reads.utils import get_coords
 
+import pandas as pd
+import numpy as np
+
 logger = get_task_logger(__name__)
 
 @api_view(['GET'])
@@ -1143,6 +1146,51 @@ def flowcell_statistics(request, pk):
 
     return HttpResponse(json.dumps(res, cls=DjangoJSONEncoder), content_type="application/json")
 
+@api_view(['get'])
+def flowcell_speed(request,pk):
+
+    window = 5
+    flowcell = Flowcell.objects.get(pk=pk)
+
+    queryset = FlowcellStatisticBarcode.objects\
+        .filter(flowcell=flowcell)\
+        .filter(barcode_name="All Reads")\
+        .order_by('sample_time')
+
+    df = pd.DataFrame(list(queryset.values('sample_time', 'status', 'channel_presence', 'total_length')))
+    if len(df.status.unique()) == 2:
+        # We have pass and fail reads in the dataset
+        # Convert channel presence strings to numpy array for later manipulation.
+        df["channel_presence"] = df["channel_presence"].apply(lambda x: np.asarray(list(x), dtype=int))
+        # Convert the dataframe to stack channel_presence and total_length
+        df = df.groupby('sample_time')[["channel_presence", "total_length"]].apply(
+            lambda df: df.reset_index(drop=True)).unstack()
+        # Generate the total length across both pass and fail
+        df["sum_total_length"] = df["total_length"][0] + df["total_length"][1]
+        # Add the two channel presence arrays to obtain 0 values and values greater than 1 where a channel has been used
+        df["sum_channel_presence"] = df["channel_presence"][0] + df["channel_presence"][1]
+        # Calculate our channel count by counting the number of nonzero values in the array.
+        # This gets around the fact that a channel might produce both a pass and fail read in the same one minute window
+        df["chan_count"] = df["sum_channel_presence"].apply(lambda x: np.count_nonzero(x))
+        # calculate the mean channel count over a 10 minute window.
+        df["mean_chan_count"] = df["chan_count"].rolling(window=window).mean()
+        # calculate the mean read length seen in a rolling 10 minute window.
+        df["mean_total_length"] = df["sum_total_length"].rolling(window=window).mean()
+        # calculate the mean speed over those rolling windows in bases per second
+        df["mean_speed"] = df["mean_total_length"] / df["mean_chan_count"] / 60
+    elif len(df.status.unique()) == 1:
+        # We only have either pass or fail reads in the dataset
+        df["channel_presence"] = df["channel_presence"].apply(lambda x: np.asarray(list(x), dtype=int))
+        df = df.groupby('sample_time')[["channel_presence", "total_length"]].apply(
+            lambda df: df.reset_index(drop=True))
+        df["chan_count"] = df["channel_presence"].apply(lambda x: np.count_nonzero(x))
+        df["mean_chan_count"] = df["chan_count"].rolling(window=window).mean()
+        df["mean_total_length"] = df["total_length"].rolling(window=window).mean()
+        df["mean_speed"] = df["mean_total_length"] / df["mean_chan_count"] / 60
+        df.reset_index(level=1, drop=True,inplace=True)
+
+    return Response(df['mean_speed'].to_json(orient="columns"))
+
 
 @api_view(['GET'])
 def flowcell_histogram_summary(request, pk):
@@ -1692,32 +1740,36 @@ def read_list_new(request):
 
     elif request.method == 'POST':
 
-        # serializer = FastqReadSerializer(data=request.data, many=True)
+        #serializer = FastqReadSerializer(data=request.data, many=True)
 
         # print(request.data)
 
         logger.info('>>> received reads post - calling task - request.data size: {}'.format(len(request.data)))
 
+
+        #save_reads.delay(request.data)
         # save_reads.delay(request.data)
         save_reads(request.data)
 
         return Response({}, status=status.HTTP_201_CREATED)
 
-        # if serializer.is_valid():
-        #
-        #     print('reads valid')
-        #     res = serializer.save()
-        #     print(res)
-        #
-        #     return Response({}, status=status.HTTP_201_CREATED)
-        #
-        # else:
-        #
-        #     print('reads not valid')
-        #
-        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        '''
+        if serializer.is_valid():
 
-@task
+            #print('reads valid')
+            res = serializer.save()
+            #print(res)
+
+            return Response({}, status=status.HTTP_201_CREATED)
+
+        else:
+
+            print('reads not valid')
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        '''
+
+@task(rate_limit="100/m")
 def save_reads(data):
 
     serializer = FastqReadSerializer(data=data, many=True)
@@ -1751,7 +1803,7 @@ def readextra_list(request):
                 fastq_record.channel,
                 fastq_record.read,
                 fastq_record.start_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                fastq_record.fastqreadextra.sequence
+                fastq_record.sequence
             )
 
             read = {

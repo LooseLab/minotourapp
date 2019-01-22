@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from jobs.models import JobMaster, JobType
-from reads.models import (Barcode, FastqFile, FastqRead, FastqReadExtra,
+from reads.models import (Barcode, FastqFile, FastqRead,
                           FastqReadType, MinIONControl,
                           MinIONEvent, MinIONEventType, MinionMessage,
                           MinIONRunStats, MinIONRunStatus, MinIONScripts,
@@ -151,6 +151,28 @@ class FastqReadGetSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class FastqReadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FastqRead
+        fields = (
+            'read_id',
+            'read',
+            'channel',
+            'barcode',
+            'barcode_name',
+            'sequence_length',
+            'quality_average',
+            'sequence',
+            'quality',
+            'is_pass',
+            'start_time',
+            'run',
+            'type',
+            'created_date',
+            'fastqfile'
+        )
+
+'''
+class FastqReadSerializer(serializers.ModelSerializer):
 
     sequence = serializers.CharField(allow_blank=True)
     quality = serializers.CharField(allow_blank=True)
@@ -184,6 +206,7 @@ class FastqReadSerializer(serializers.ModelSerializer):
         #start_time = validated_data['start_time']
         #start_time_truncated = datetime(start_time.year, start_time.month, start_time.day, start_time.hour, start_time.minute)
 
+
         fastqread = FastqRead(
             read_id=validated_data['read_id'],
             read=validated_data['read'],
@@ -212,7 +235,7 @@ class FastqReadSerializer(serializers.ModelSerializer):
             fastqread_extra.save()
 
         return fastqread
-
+'''
 
 class FastqReadNameSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:

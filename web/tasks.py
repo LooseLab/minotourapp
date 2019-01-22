@@ -276,7 +276,7 @@ def format_read(fastq):
         lineheader = lineheader + " start_time={}".format(fastq.start_time.replace(tzinfo=pytz.UTC).isoformat())
     if fastq.barcode.name != "No barcode":
         lineheader = lineheader + " barcode={}".format(fastq.barcode.name)
-    return ("{}\n{}\n+\n{}\n".format(lineheader,fastq.fastqreadextra.sequence,fastq.fastqreadextra.quality))
+    return ("{}\n{}\n+\n{}\n".format(lineheader,fastq.sequence,fastq.quality))
 
 
 @task()
@@ -352,12 +352,12 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
         if fastq.type not in fastqdict[fastq.barcode.barcodegroup]:
             fastqdict[fastq.barcode.barcodegroup][fastq.type] = []
 
-        fastqdict[fastq.barcode.barcodegroup][fastq.type].append([fastq.read_id, fastq.fastqreadextra.sequence])
+        fastqdict[fastq.barcode.barcodegroup][fastq.type].append([fastq.read_id, fastq.sequence])
         newfastqs += 1
-        #read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.fastqreadextra.sequence)
+        #read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
         #fastqdict[fastq.read_id]=fastq
         #fastqtypedict[fastq.read_id]=fastq.type
-        #outtemp.write('>{}\n{}\n'.format(fastq.read_id, fastq.fastqreadextra.sequence))
+        #outtemp.write('>{}\n{}\n'.format(fastq.read_id, fastq.sequence))
         last_read = fastq.id
 
     #outtemp.close()
@@ -564,18 +564,26 @@ def update_run_start_time():
 
             run.start_time = run.RunDetails.last().minKNOW_start_time
             origin = 'Live data'
-
+            run.save()
+            print('Updating start_time for run {} from {}'.format(run.runid, origin))
+        '''
         else:
-
+            ## This query is really slow - so - gonna move it out of here!
             #fastq = FastqRead.objects.filter(run=run).order_by('start_time').first()
             #run.start_time = fastq.start_time
-            fastq = FastqRead.objects.filter(run=run)
+            starttime = run.start_time
+            if starttime is None:
+                #starttime = None
+                fastq = FastqRead.objects.filter(run=run)
+            else:
+                fastq = FastqRead.objects.filter(run=run).filter(start_time__lte=starttime)
             run.start_time = fastq.aggregate(Min('start_time'))['start_time__min']
 
             origin = 'Basecalled data'
 
         run.save()
         print('Updating start_time for run {} from {}'.format(run.runid, origin))
+        '''
 
 
 @task
@@ -651,6 +659,8 @@ def update_flowcell_details(job_master_id):
 
     for run in flowcell.runs.all():
         number_reads = number_reads + run.reads.all().count()
+        if run.has_fastq:
+            flowcell.has_fastq=True
 
     #
     # Get the job_master chancalc for this flowcell
@@ -681,8 +691,7 @@ def update_flowcell_details(job_master_id):
     if number_reads > 0:
         average_read_length = total_read_length / number_reads
 
-    else:
-        flowcell.has_fastq = False
+
 
     logger.info('Flowcell id: {} - Total read length {}'.format(flowcell.id, total_read_length))
     logger.info('Flowcell id: {} - Number reads {}'.format(flowcell.id, number_reads))
@@ -695,7 +704,13 @@ def update_flowcell_details(job_master_id):
     flowcell.number_reads_processed = number_reads_processed
 
     flowcell.number_runs = len(flowcell.runs.all())
-    flowcell.number_barcodes = len(FastqRead.objects.filter(run__flowcell=flowcell).values('barcode_name').distinct())
+    ##Faster way of doing this by using the barcode table!
+    #barcode_count=0
+    #runs = flowcell.runs.all()
+    #for run in runs:
+        #barcode_count += len(FastqRead.objects.filter(run=run).values('barcode_name').distinct())
+    barcode_count = len(Barcode.objects.filter(run_id__flowcell=flowcell).values('name').distinct())-1
+    flowcell.number_barcodes = barcode_count
     flowcell.save()
 
     logger.info('Flowcell id: {} - Number runs {}'.format(flowcell.id, flowcell.number_runs))
@@ -726,7 +741,7 @@ def update_flowcell_details(job_master_id):
 
                 flowcell.size = 3000
 
-            elif max_channel['result'] > 128:
+            elif max_channel['result'] > 126:
 
                 flowcell.size = 512
 

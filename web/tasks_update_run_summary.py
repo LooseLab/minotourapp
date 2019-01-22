@@ -101,6 +101,14 @@ def update_run_summary():
                         # Get whether the new batch a smaller read, save it if so or keep old value if not
                         run_summary.min_read_length = min(run_summary.min_read_length, result['sequence_length__min'])
 
+                        if len(run.RunDetails.all()):
+                            run.start_time = run.RunDetails.last().minKNOW_start_time
+                            origin = 'Live data'
+                            run.save()
+                        else:
+                            run.start_time = min(run_summary.first_read_start_time,
+                                                                result['start_time__min'])
+                            run.save()
                         # run_summary.avg_read_length = result['sequence_length__avg']
                         # Get the date of the first read
                         run_summary.first_read_start_time = min(run_summary.first_read_start_time,
@@ -124,6 +132,18 @@ def update_run_summary():
                         run_summary.min_read_length = result['sequence_length__min']
                         # run_summary.avg_read_length = result['sequence_length__avg']
                         run_summary.first_read_start_time = result['start_time__min']
+
+
+                        if len(run.RunDetails.all()):
+                            run.start_time = run.RunDetails.last().minKNOW_start_time
+                            origin = 'Live data'
+                            run.save()
+                        else:
+                            run.start_time = result['start_time__min']
+                            origin = 'Bsecalled Data'
+                            run.save()
+
+
 
                         run_summary.last_read_start_time = result['start_time__max']
                     # Get the largest id in your set of reads, set it as a new last read
