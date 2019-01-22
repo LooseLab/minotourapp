@@ -17,4 +17,6 @@ urlpatterns = [
     url(r"^mapped_targets/$", views.get_target_mapping),
     # Return barcodes that we have metagenomics data for
     url(r'^api/v1/flowcells/(?P<pk>[0-9]+)/metagenomic_barcodes/$', views.metagenomic_barcodes),
+    # Return the data for the simple metagenomics table
+    url(r'^api/v1/metagenomics/alerts$', views.simple_target_mappings)
 ]
