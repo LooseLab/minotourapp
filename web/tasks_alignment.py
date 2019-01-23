@@ -313,8 +313,8 @@ def align_reads(fastqs, job_master_id):
                 record[3]) - int(
                 record[2]) + 1
 
-        PafStore.objects.bulk_create(bulk_paf)
-        PafRoughCov.objects.bulk_create(bulk_paf_rough)
+        PafStore.objects.bulk_create(bulk_paf, batch_size=1000)
+        PafRoughCov.objects.bulk_create(bulk_paf_rough, batch_size=1000)
 
         paf_store_list = PafStore.objects.filter(
             job_master=job_master
