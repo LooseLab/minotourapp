@@ -279,7 +279,7 @@ var FlowcellPageApp = {
     },
 
     updateLiveCumuYield: function () {
-        //console.log(this.LiveCumuYield);
+        //console.log(this.livedata);
         if (this.LiveCumuYield.series.length < 1) {
             this.LiveCumuYield.addSeries({
                 data: this.livedata.yield_history
@@ -307,12 +307,16 @@ var FlowcellPageApp = {
             this.LiveInStrand.series[0].update({name: "In Strand"}, false);
             this.LiveInStrand.addSeries({data: this.livedata.good_single});
             this.LiveInStrand.series[1].update({name: "Single Pore"}, false);
+            this.LiveInStrand.addSeries({data: this.livedata.adapter});
+            this.LiveInStrand.series[2].update({name: "Adapter"}, false);
 
         } else {
             this.LiveInStrand.series[0].setData(this.livedata.strand);
             this.LiveInStrand.series[0].update({name: "In Strand"}, false);
             this.LiveInStrand.series[1].setData(this.livedata.good_single);
             this.LiveInStrand.series[1].update({name: "Single Pore"}, false);
+            this.LiveInStrand.series[2].setData(this.livedata.adapter);
+            this.LiveInStrand.series[2].update({name: "Adapter"}, false);
         }
         this.LiveInStrand.redraw();
         this.LiveInStrand.reflow();
@@ -495,9 +499,10 @@ var FlowcellPageApp = {
         var results = [];
         var categories = [];
         //var counter = 0;
+        //console.log(readeventcountweightedhist);
         readeventcountweightedhist = readeventcountweightedhist.replace(/u(?=[^:]+')/g, "").replace(/'/g, "");
         readeventcountweightedhist = JSON.parse(readeventcountweightedhist);
-        //console.log(readeventcountweightedhist);
+        //console.log(readeventcountweightedhistbinwidth);
         var n50count = 0;
         var n50index = 0;
         var check = 0;
@@ -517,6 +522,7 @@ var FlowcellPageApp = {
             //console.log(i);
             //console.log(parseInt(i)+1);
             var category = String((parseInt(i)) * readeventcountweightedhistbinwidth) + " - " + String((parseInt(i) + 1) * readeventcountweightedhistbinwidth) + " ev";
+            //console.log(readeventcountweightedhistbinwidth);
             categories.push(category);
             if (check == 1) {
                 n50index = i;
@@ -538,6 +544,7 @@ var FlowcellPageApp = {
     },
 
     updateLiveHistogram: function (data) {
+        //console.log(data);
         returndata = this.tohistogram(data[data.length - 1].minKNOW_histogram_values, data[data.length - 1].minKNOW_histogram_bin_width, data[data.length - 1].event_yield);
         this.LiveHistogram.series[0].setData(returndata[0]);
         this.LiveHistogram.xAxis[0].setCategories(returndata[1]);
