@@ -43,6 +43,7 @@ class JobType(models.Model):
         default=True
     )
 
+
     def __str__(self):
 
         return "{}".format(self.name)
@@ -108,6 +109,9 @@ class JobMaster(models.Model):
 
     running = models.BooleanField(
         default=False
+    )
+    iteration_count = models.IntegerField(
+        null=True, default=0
     )
 
     def __str__(self):

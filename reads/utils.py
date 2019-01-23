@@ -17,7 +17,7 @@ def get_coords(channel, flowcellsize):
 
         return(column,row)
 
-    if flowcellsize==128:
+    if flowcellsize==126:
 
         return (channel//8, channel%8)
 

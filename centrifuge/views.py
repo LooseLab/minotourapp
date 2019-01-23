@@ -7,6 +7,7 @@ from centrifuge.models import CentrifugeOutput, MappingResult, Metadata, \
     SankeyLink, DonutData
 from django.utils import timezone
 from django.http import JsonResponse
+from django.db.models import Sum
 import pandas as pd
 from jobs.models import JobMaster
 from reads.models import Flowcell, FastqRead
@@ -56,9 +57,9 @@ def centrifuge_metadata(request):
 
     print(job_master.flowcell.number_reads)
 
-    # number_of_reads = job_master.flowcell.number_reads
-
+    # get the number of reads
     number_of_reads = FastqRead.objects.filter(run__flowcell__id=flowcell_id).count()
+    # Get the read count
     reads_class = job_master.read_count
     # Percentage of reads classified
     percentage = round(reads_class / number_of_reads * 100, 2)
@@ -100,20 +101,18 @@ def centrifuge_sankey(request):
     flowcell_id = request.GET.get("flowcellId", False)
     # Selected barcode, default all reads
     selected_barcode = request.GET.get("barcode", "All reads")
-
-    has_been_run = False
-
-    # The most up to dat task_id
+    # The most up to date task_id
     task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last().id
 
-    # ## Get the links for the sankey Diagram ###
+    # ## Get the jobMaster for calculate sankey
     been_run = JobMaster.objects.filter(flowcell__id=flowcell_id,
                                         job_type__name="CalculateSankey").order_by("id").last()
-
+    # If the sankey task has been run
     if been_run:
         has_been_run = True
     else:
         return Response({"message": "No Sankey data has been found", "run": False})
+    # Get the sankey links objects for this run
     queryset = SankeyLink.objects.filter(task__id=task_id, barcode_name=selected_barcode).values()
     # If the queryset is empty, return an empty object
     if not queryset:
@@ -154,23 +153,24 @@ def centrifuge_sankey(request):
     links = source_target_df.to_dict(orient="records")
 
     # ## Get the nodes ###
+
     # Get all the nodes values from superkingdom (ex. Bacteria) to species ("E. Coli")
     # Create a series of all possible nodes
     nodes = source_target_df["source"].append(source_target_df["target"])
 
     # Remove duplicates
     nodes = pd.DataFrame({"name": nodes.unique()})
-
+    # Merge the nodes and links dataframes together
     merge = pd.merge(nodes, source_target_df, how="outer", right_on="source", left_on="name")
-
+    # Get just the path and name for the nodes data
     merge = merge[["name", "path"]]
-
+    # Do the same for the targets
     merge = pd.merge(merge, source_target_df, how="outer", right_on="target", left_on="name")
-
+    # fill the missing values from not having the sources on the links with the values from merge
     merge["path_x"].fillna(merge["path_y"], inplace=True)
-
+    # get the complete set of names and paths from the dataframe
     merge = merge[["name", "path_x"]]
-
+    # Drop duplicates on name, as we need unique node names
     merge.drop_duplicates(subset="name", inplace=True, keep="first")
 
     merge.rename(columns={"path_x": "path"}, inplace=True)
@@ -180,7 +180,9 @@ def centrifuge_sankey(request):
 
     # ## Return the array # ##
     nodes = {"links": links, "nodes": nodes}
+
     return_dict = {"sankey": nodes, "run": has_been_run}
+
     return Response(return_dict, status=200)
 
 
@@ -198,20 +200,23 @@ def donut_data(request):
     flowcell_id = request.GET.get("flowcellId", 0)
 
     barcode = request.GET.get("barcode", "All reads")
-    # Get the most recent job
+    # Get the most recent metagenomics job
     task = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last()
+    # Initialise a dataframe
     results_df = pd.DataFrame()
 
     tax_rank_filter = ["superkingdom", "phylum", "classy", "order", "family", "genus", "species"]
 
     for rank in tax_rank_filter:
         data_df = pd.DataFrame(
-            list(DonutData.objects.filter(task=task, tax_rank=rank,
-                                          barcode_name=barcode).order_by("-num_matches")[:10].values()))
+            list(DonutData.objects.filter(task=task, barcode_name=barcode, tax_rank=rank).values("name", "tax_rank")
+                 .distinct().annotate(sum_value=Sum("num_matches")).order_by("-sum_value")[0:10]))
         results_df = results_df.append(data_df)
 
     if results_df.empty:
         return Response("No results", status=204)
+
+    results_df = results_df.rename(columns={"sum_value": "num_matches"})
 
     results_df = results_df[["tax_rank", "name", "num_matches"]]
 
@@ -359,26 +364,30 @@ def all_results_table(request):
     # ascending descending
     order_dir = request.GET.get('order[0][dir]', '')
 
+    meta_task = JobMaster.objects.get(flowcell__id=flowcell_id, job_type__name="Metagenomics")
+
+    latest = meta_task.iteration_count
+
     if not search_value == "":
 
         cent_out_temp = CentrifugeOutput.objects \
-            .filter(task__flowcell_id=flowcell_id) \
+            .filter(task__flowcell_id=flowcell_id, latest=latest) \
             .filter(task__flowcell__owner=request.user) \
             .filter(species__icontains=search_value) | CentrifugeOutput.objects \
-            .filter(task__flowcell_id=flowcell_id) \
+            .filter(task__flowcell_id=flowcell_id, latest=latest) \
             .filter(task__flowcell__owner=request.user) \
             .filter(genus__icontains=search_value) | CentrifugeOutput.objects \
-            .filter(task__flowcell_id=flowcell_id) \
+            .filter(task__flowcell_id=flowcell_id, latest=latest) \
             .filter(task__flowcell__owner=request.user) \
             .filter(family__icontains=search_value) | CentrifugeOutput.objects \
-            .filter(task__flowcell_id=flowcell_id) \
+            .filter(task__flowcell_id=flowcell_id, latest=latest) \
             .filter(task__flowcell__owner=request.user) \
             .filter(order__icontains=search_value)
 
     else:
 
         cent_out_temp = CentrifugeOutput.objects \
-            .filter(task__flowcell_id=flowcell_id) \
+            .filter(task__flowcell_id=flowcell_id, latest=latest) \
             .filter(task__flowcell__owner=request.user)
 
     if order_column:
@@ -402,9 +411,7 @@ def all_results_table(request):
                                  'genus',
                                  'species',
                                  )
-
     records_total = cent_out_temp.count()
-
     result = {
         'draw': draw,
         "recordsTotal": records_total,

@@ -1,5 +1,6 @@
 function requestLiveRunStats(id) {
-    //console.log('lastread ' + this.lastread);
+    console.log(this);
+    console.log('lastread ' + this.lastread);
     var url_livestats = '/api/v1/flowcells/' + id + '/runstats/' + this.lastread;
 
     $.get(url_livestats, (function (data) {
@@ -15,6 +16,7 @@ function requestLiveRunStats(id) {
 
             this.needtoupdatecharts = true;
             this.lastread = data[data.length - 1].id;
+            console.log('new lastread'+data[data.length - 1].id);
             this.lasttime = new Date(data[data.length - 1].sample_time)
             //console.log(this.rundata.start_time);
             //console.log(this.lasttime.toISOString());
@@ -22,6 +24,7 @@ function requestLiveRunStats(id) {
             for (var i = 0; i < data.length; i++) {
                 //console.log(data[i]);
                 timestamp = new Date(data[i].sample_time).getTime();
+                this.livedata.colours_string = data[i].minKNOW_colours_string;
                 this.livedata.live_read_count = data[i].minKNOW_read_count;
                 this.livedata.voltage.push([timestamp, data[i].voltage_value]);
                 this.livedata.asictemp.push([timestamp, data[i].asic_temp]);
@@ -61,7 +64,7 @@ function requestLiveRunStats(id) {
 
 
         }
-        //console.log(this.livedata);
+        console.log(this.livedata);
     }).bind(this));
 
 };
