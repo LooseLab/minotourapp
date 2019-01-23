@@ -1,4 +1,5 @@
-FROM python:3.6
+# FROM python:3.6
+FROM ubuntu:latest
 MAINTAINER Roberto Santos
 
 ENV PYTHONUNBUFFERED 1
@@ -23,19 +24,25 @@ ENV MT_BWA="~/a/opt/bwa/bwa"
 #ENV MT_DB_ENGINE="django.db.backends.mysql"
 ENV MT_DB_ENGINE="django.db.backends.postgresql"
 
-RUN mkdir -p /var/lib/minotour/apps/minotourapp
-RUN mkdir -p /var/lib/minotour/logs
-RUN mkdir -p /var/lib/minotour/data
+RUN mkdir -p /var/lib/minotour/apps/minotourapp /var/lib/minotour/logs /var/lib/minotour/data
 
 WORKDIR /var/lib/minotour/apps/minotourapp
-# ADD requirements.txt /var/lib/minotour/apps/minotourapp
-# ADD . /var/lib/minotour/apps/minotourapp
+
+COPY requirements.txt /var/lib/minotour/apps/minotourapp/
+
+RUN apt-get update && apt-get install -y python3-pip libmysqlclient-dev
+
+RUN pip3 install -r /var/lib/minotour/apps/minotourapp/requirements.txt
+
+COPY entrypoint.sh /var/lib/minotour/apps/minotourapp/
+
 COPY . /var/lib/minotour/apps/minotourapp/
-# COPY * /var/lib/minotour/apps/minotourapp/
-RUN pip3 install -r requirements.txt
 
-# RUN python manage.py makemigrations
-# RUN python manage.py migrate
+#RUN python3 manage.py makemigrations
+#RUN python3 manage.py migrate
+#RUN python3 manage.py loaddata fixtures/auxiliary_data.json
 
-# EXPOSE 8000
-# CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
+EXPOSE 8000
+
+#CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["/bin/sh", "/var/lib/minotour/apps/minotourapp/entrypoint.sh"]
