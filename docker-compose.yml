@@ -28,7 +28,6 @@ services:
         depends_on:
             - minotour_db
             - minotour_redis
-        command: ["./run_django.sh"]
         volumes:
             - ".:/var/lib/minotour/apps/minotourapp"
 networks:
