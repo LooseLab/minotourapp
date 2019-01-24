@@ -1790,7 +1790,7 @@ class FlowcellChannelSummary(models.Model):  # TODO to be deleted
 
 class HistogramSummary(models.Model):  # don't comment
 
-    BIN_WIDTH = 900
+    BIN_WIDTH = 1000
 
     run = models.ForeignKey(
         Run,
@@ -1844,7 +1844,7 @@ class FlowcellHistogramSummary(models.Model):
     :read_length: (float) Sum of the length of all reads from all runs of the flowcell
     """
 
-    BIN_WIDTH = 900
+    BIN_WIDTH = 1000
 
     flowcell = models.ForeignKey(
 

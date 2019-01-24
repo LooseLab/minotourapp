@@ -1261,7 +1261,7 @@ def flowcell_histogram_summary(request, pk):
                 }
             }
 
-    categories = list(range(1 * 900, (max_bin_index['bin_index__max'] + 1) * 900, 900))
+    categories = list(range(1 * FlowcellHistogramSummary.BIN_WIDTH, (max_bin_index['bin_index__max'] + 1) * FlowcellHistogramSummary.BIN_WIDTH, FlowcellHistogramSummary.BIN_WIDTH))
 
     return Response({'data': data_keys, 'categories': categories})
 
