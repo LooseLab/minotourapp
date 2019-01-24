@@ -434,47 +434,56 @@ def simple_target_mappings(request):
     # The barcode that is currently selected to be viewed on the page
     barcode = request.GET.get("barcode", "All reads")
 
-    flowcell = Flowcell.objects.get(pk=flowcell_id)
-
     if flowcell_id == 0:
         return Response("Flowcell id has failed to be delivered", status=402)
 
     # Get the most recent jobmaster id, although there should only be one
-    task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last().id
+    task = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last()
 
     # If the barcode is All reads, there is always four
     if barcode == "All reads":
-        queryset = MappingResult.objects.filter(task__id=task_id, barcode_name=barcode).values()
+        queryset = MappingResult.objects.filter(task=task, barcode_name=barcode).values()
         results_df = pd.DataFrame(list(queryset))
         if results_df.empty:
             return Response("No data has yet been produced for the target mappings", status=204)
 
     else:
         # Get a line for all the targets
-        map_queryset = MappingResult.objects.filter(task__id=task_id, barcode_name=barcode).values()
+        map_queryset = MappingResult.objects.filter(task=task, barcode_name=barcode).values()
 
         if not map_queryset:
             return Response("No data has yet been produced for the target mappings", status=204)
         # Create a dataframe for this barcode
         results_df = pd.DataFrame(list(map_queryset))
+
+    bins = [5000000, 2000000, 1000000, 500000, 100000, 50000, 10000, 1000]
+
+    limit_index = int(np.digitize(task.read_count, bins))
+
+    limit = bins[limit_index-1]
+
     results_df.drop(
         columns=["id", "mapped_proportion_of_classified", "num_matches", "red_reads_proportion_of_classified",
                  'sum_unique',
                  'task_id', 'tax_id'
                  ], inplace=True)
 
-    results_df["present"] = np.where(results_df["num_mapped"] > 0, True, False)
+    results_df["Detected"] = np.where(results_df["num_mapped"] > 0, True, False)
 
-    results_df["read_count"] = flowcell.number_reads
+    results_df["Not detected"] = np.where(results_df["num_mapped"] == 0, True, False)
+
+    results_df["read_count"] = task.read_count
+
+    results_df["column_index"] = limit_index
 
     results_df.rename(columns={"num_mapped": "Num. mapped",
                                "red_reads": "Target reads",
-                               "species": "Target species",
+                               "species": "Potential threats",
                                "tax_id": "Tax id",
                                }, inplace=True)
 
     results = results_df.to_dict(orient="records")
 
-    return_dict = {"table": results}
+    return_dict = {"table": results, "conf_limit": limit}
 
     return Response(return_dict)

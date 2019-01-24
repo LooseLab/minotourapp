@@ -14,6 +14,7 @@ function update_mapping_table(flowcellId) {
     let tbody;
     let rows;
     let cells;
+    let data;
     let row_count = 0;
     let columns = ["Alert level", "Species", "Num. matches", "Prop. classified (%)",
         "Sum. Unique", "Num. mapped",

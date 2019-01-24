@@ -11,7 +11,7 @@ from django.db.models import ObjectDoesNotExist
 from django.utils import timezone
 from ete3 import NCBITaxa
 from centrifuge.models import CentrifugeOutput, LineageValue, Metadata, \
-    MappingResult, MappingTarget, DonutData, CentrifugeOutputParsed
+    MappingResult, MappingTarget, DonutData
 from jobs.models import JobMaster, JobType
 from minotourapp.utils import get_env_variable
 from reads.models import FastqRead
@@ -30,16 +30,16 @@ def callfetchreads_cent(runs,chunk_size,last_read):
     while True:
         #reads, last_read, read_count, fastasmchunk, fastqs_list_chunk = fetchreads_cent(runs, chunk_size, last_read)
         reads, last_read, read_count, fastasmchunk = fetchreads_cent(runs, chunk_size, last_read)
-        fastasm+=fastasmchunk
+        fastasm += fastasmchunk
         #fastqs_list += fastqs_list_chunk
         fastq_df_barcode = fastq_df_barcode.append(reads)
-        if len(fastq_df_barcode)>=chunk_size or len(reads)==0:
+        if len(fastq_df_barcode) >= chunk_size or len(reads) == 0:
             break
     read_count = len(fastq_df_barcode)
-    return fastq_df_barcode,last_read,read_count,fastasm #,fastqs_list
+    return fastq_df_barcode, last_read, read_count, fastasm #,fastqs_list
 
 
-def fetchreads_cent(runs,chunk_size,last_read):
+def fetchreads_cent(runs, chunk_size, last_read):
     countsdict=dict()
     fastasm = list()
     #fastqs_list = list()
@@ -68,6 +68,7 @@ def fetchreads_cent(runs,chunk_size,last_read):
                 if len(fastq_df_barcode) >= chunk_size:
                     break
             count += 1
+
     elif len(countsdict)==1:
         """This is risky and it breaks the logic - we end up grabbing reads"""
         mykey = list(countsdict.keys())[0]
@@ -350,10 +351,14 @@ def update_mapped_non_dangerous(row, task):
     mapped_result = MappingResult.objects.get(task=task, species=row["name"], barcode_name=row["barcode_name"])
     # Add on the new num_mapped
     mapped_result.num_mapped += row["num_mapped"]
+    # Get the number of red reads to update the red proportion of classified
+    rr = mapped_result.red_reads
     # Get that new value
     nm = mapped_result.num_mapped
     # Calculate the number of mapped against the number of matches
     mapped_result.mapped_proportion_of_classified = round((nm / mapped_result.num_matches) * 100, 2)
+    # Update the proportion of mapped red reads
+    mapped_result.red_reads_proportion_of_classified = round((rr/nm) * 100, 2)
     # Save the new values
     mapped_result.save()
 
