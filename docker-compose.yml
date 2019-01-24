@@ -28,9 +28,19 @@ services:
         depends_on:
             - minotour_db
             - minotour_redis
-        command: ["./run_django.sh"]
         volumes:
-            - ".:/var/lib/minotour/apps/minotourapp"
+            - "d:/test:/var/lib/minotour/apps/minotourapp"
+#    minimap2:
+#        build:
+#            dockerfile: minimap2.dockerfile
+#            context: .
+#        networks:
+#            - production-network
+#        depends_on:
+#            - web
+        # command: ["./run_django.sh"]
+        # volumes:
+        #    - ".:/var/lib/minotour/apps/minotourapp"
 networks:
     production-network:
         driver: bridge
