@@ -1,45 +1,96 @@
-<div class="row">
-    <div id="chart-yield" class="col-md-12 highcharts"
-         style="height:400px; display:block;">
-        <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+<div class="panel panel-info">
+  <div class="panel-heading">
+    <h3 class="panel-title">Sequencing Yield</h3>
+  </div>
+  <div class="panel-body">
+    <div class="row">
+        <div id="chart-yield" class="col-md-12 highcharts"
+             style="height:400px; display:block;">
+            <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
+        </div>
     </div>
+      This plot reports event yield direct from MinKNOW. It will scale by some proportion to actual base count.<br>
+      Yield values are captured in real time as reported by MinKNOW and so are not cumulative if a run is interrupted.
+  </div>
 </div>
+<div class="panel panel-info">
+  <div class="panel-heading">
+    <h3 class="panel-title">Flowcell Occupancy</h3>
+  </div>
+  <div class="panel-body">
 <div class="row">
     <div id="poreshizzle" class="col-md-12 highcharts"
          style="height:400px;display:block;">
         <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
     </div>
 </div>
+      This plot mimics the Duty time plots from MinKNOW. <br>
+      However, it samples the actual occupancy at any moment as opposed to MinKNOW itself which stores time spent in each state. <br>
+      In the future we may also recover these data.
+  </div>
+</div>
 
+<div class="panel panel-info">
+  <div class="panel-heading">
+    <h3 class="panel-title">Read Length Histogrma</h3>
+  </div>
+  <div class="panel-body">
 <div class="row">
     <div id="live-histogram" class="col-md-12 highcharts-container"
          style="width:100%; height:400px;display:block;">
         <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
     </div>
 </div>
+      The histogram data are derived from the same source as the MinKNOW read length histogram. We currently report these in events, not bases.
+  </div
+</div>
+</div>
 
+
+
+<div class="panel panel-info">
+  <div class="panel-heading">
+    <h3 class="panel-title">Strand Numbers and Occupancy</h3>
+  </div>
+  <div class="panel-body">
 <div class="row">
     <div id="live-strand" class="col-md-6 highcharts"
-         style="width:50%; height:400px;display:block;">
+         style="height:400px;display:block;">
         <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Strand
     </div>
 
     <div id="live-occupancy" class="col-md-6 highcharts"
-         style="width:50%; height:400px;display:block;">
+         style="height:400px;display:block;">
         <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Occupancy
     </div>
+    The holy grail of Nanopore sequencing. You want to see a library with 90% occupancy or greater. <br>
+    If you are sequencing very short material (<500 bp) or very long (>250 kb) 90% occupancy is a challenge. <br>
+    But - if you are only seeing 10% occupancy something is wrong.
+</div>
+  </div>
 </div>
 
+
+<div class="panel panel-info">
+  <div class="panel-heading">
+    <h3 class="panel-title">Voltage and Temperature</h3>
+  </div>
+  <div class="panel-body">
 <div class="row">
     <div id="live-temperature" class="col-md-6 highcharts"
-         style="width:50%; height:400px;">
+         style="height:400px;">
         <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
         Projections
     </div>
 
     <div id="live-voltage" class="col-md-6 highcharts"
-         style="width:50%; height:400px;">
+         style="height:400px;">
         <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Yield
         Projections
     </div>
 </div>
+      These plots monitor the ASIC and flowcell temperatures along with the voltages reported by MinKNOW during a sequencing run.
+
+  </div>
+</div>
+
