@@ -1089,13 +1089,13 @@ def output_parser(task, new_data_df, donut_or_output):
         # Create a series of CentrifugeOutput objects, one for each row in the dataframe
         to_bulk_save_series = to_save_df.apply(create_centrifuge_models, args=(classed_per_barcode,), axis=1)
         # Bulk create all those objects in the series
-        CentrifugeOutput.objects.bulk_create(to_bulk_save_series.values.tolist(), batch_size=20000)
+        CentrifugeOutput.objects.bulk_create(to_bulk_save_series.values.tolist(), batch_size=1000)
     # If this is for a Donut
     else:
         # Create a series of DonutData objects, one for each row in the dataframe
         to_bulk_save_series = to_save_df.apply(create_donut_data_models, args=(task,), axis=1)
         # Bulk create all those objects in the series
-        DonutData.objects.bulk_create(to_bulk_save_series.values.tolist(), batch_size=20000)
+        DonutData.objects.bulk_create(to_bulk_save_series.values.tolist(), batch_size=1000)
     # Return the iteration count
     return new_iteration_count
 
@@ -1128,7 +1128,8 @@ def run_centrifuge(flowcell_job_id):
     # The path to the Centrifuge Index
     index_path = get_env_variable("MT_CENTRIFUGE_INDEX")
     # The command to run centrifuge
-    cmd = "perl " + centrifuge_path + " -p 2 -f --mm -x " + index_path + " -"
+    cmd = "perl " + centrifuge_path + " -f --mm -x " + index_path + " -"
+    # cmd = "perl " + centrifuge_path + " -q --mm -x /var/lib/minotour/data/centrifuge_index/p_compressed -U /tmp/FAK22332_5ae2f59554a4ad3cedbcb8a5c6db6b25afdfe6a1_10.fastq.gz"
     logger.info('Flowcell id: {} - {}'.format(flowcell.id, cmd))
 
     # Counter for total centOut

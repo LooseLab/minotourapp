@@ -1334,13 +1334,14 @@ def flowcell_run_summaries_html(request, pk):
             'experiment_name': None
         }
 
-        minion_run_status_list = MinIONRunStatus.objects.filter(run_id=run)
+        minion_run_status_list = MinIONRunStatus.objects.filter(run_id=run).order_by('minKNOW_start_time')
 
         if len(minion_run_status_list) > 0:
 
             minion_run_status = minion_run_status_list[0]
 
             element['runid'] = minion_run_status.run_id.runid
+            element['run_start_time'] = minion_run_status.minKNOW_start_time
             element['minknow_computer_name'] = minion_run_status.minKNOW_computer
             element['minion_id'] = minion_run_status.minION.minION_name
             element['asic_id'] = minion_run_status.minKNOW_asic_id
@@ -1352,7 +1353,7 @@ def flowcell_run_summaries_html(request, pk):
             element['sample_name'] = minion_run_status.minKNOW_sample_name
             element['experiment_name'] = minion_run_status.experiment_id
 
-        result.append(element)
+            result.append(element)
 
     return render(request, 'reads/flowcell_runs_summary.html', {
         'run_list': result
