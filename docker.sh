@@ -4,9 +4,9 @@ docker network create --driver bridge minotour-network;
 
 docker volume create minotour_db_datadir;
 
-docker build -f .\db.dockerfile -t robertosantos/db-minotour .
+docker build -f db.dockerfile -t robertosantos/db-minotour .
 
-docker build -f .\web.dockerfile -t robertosantos/web-minotour .
+docker build -f web.dockerfile -t robertosantos/web-minotour .
 
 docker run --name redis-minotour-instance -p 6379:6379 -d --network minotour-network redis;
 
