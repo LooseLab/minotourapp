@@ -62,13 +62,13 @@ function requestStatisticsCallback(data) {
         );
     }
 
-    if (!this.chartSequencingSpeed_new) {
-        this.chartSequencingSpeed_new = this.makeChart2(
-            "sequencing-speed-new",
-            "sequencing speed".toUpperCase(),
-            "bases/channel/second".toUpperCase()
-        );
-    }
+    //if (!this.chartSequencingSpeed_new) {
+    //    this.chartSequencingSpeed_new = this.makeChart2(
+    //        "sequencing-speed-new",
+    //        "sequencing speed".toUpperCase(),
+    //        "bases/channel/second".toUpperCase()
+    //    );
+    //}
 
     var chart = this.average_quality_overtime_new;
 
@@ -82,9 +82,10 @@ function requestStatisticsCallback(data) {
 
     var chart6 = this.chartSequencingRate_new;
 
-    var chart7 = this.chartSequencingSpeed_new;
+    //var chart7 = this.chartSequencingSpeed_new;
 
-    var charts = [chart, chart2, chart3, chart4, chart5, chart6, chart7];
+    // var charts = [chart, chart2, chart3, chart4, chart5, chart6, chart7];
+    var charts = [chart, chart2, chart3, chart4, chart5, chart6];
 
     var selected_barcode = get_selected_barcode();
 
@@ -110,7 +111,7 @@ function requestStatisticsCallback(data) {
         var data_cumulative_reads = data['data'][data_keys[i]].map(x => [x[0], x[4]]);
         var data_max_length = data['data'][data_keys[i]].map(x => [x[0], x[5]]);
         var data_sequencing_rate = data['data'][data_keys[i]].map(x => [x[0], x[6]]);
-        var data_sequencing_speed = data['data'][data_keys[i]].map(x => [x[0], x[7]]);
+        //var data_sequencing_speed = data['data'][data_keys[i]].map(x => [x[0], x[7]]);
 
         chart.addSeries({
             name: data_keys[i],
@@ -142,10 +143,10 @@ function requestStatisticsCallback(data) {
             data: data_sequencing_rate
         });
 
-        chart7.addSeries({
-            name: data_keys[i],
-            data: data_sequencing_speed
-        });
+        //chart7.addSeries({
+        //    name: data_keys[i],
+        //    data: data_sequencing_speed
+        //});
 
     }
 
@@ -197,12 +198,12 @@ function requestStatisticsCallback(data) {
             width: 2,
         });
 
-        chart7.xAxis[0].addPlotLine({
-            value: starttime,
-            color: 'black',
-            dashStyle: 'dot',
-            width: 2,
-        });
+        //chart7.xAxis[0].addPlotLine({
+        //    value: starttime,
+        //    color: 'black',
+        //    dashStyle: 'dot',
+        //    width: 2,
+        //});
     }
 }
 
