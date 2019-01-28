@@ -101,11 +101,13 @@ function requestStatisticsCallback(data) {
 
     var rundata = data['runs'];
     var data_keys = data['data_keys'];
+    //console.log(data_keys);
 
     var i = 0;
     for (i = 0; i < data_keys.length; i++) {
         //console.log(data);
         var data_average_quality_over_time = data['data'][data_keys[i]].map(x => [x[0], x[1]]);
+        //console.log(data_average_quality_over_time);
         var data_average_read_length_over_time = data['data'][data_keys[i]].map(x => [x[0], x[2]]);
         var data_cumulative_bases = data['data'][data_keys[i]].map(x => [x[0], x[3]]);
         var data_cumulative_reads = data['data'][data_keys[i]].map(x => [x[0], x[4]]);

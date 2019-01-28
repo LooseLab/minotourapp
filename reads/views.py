@@ -1056,59 +1056,85 @@ def flowcell_statistics(request, pk):
 
     data_keys = []
 
-    for (barcode_name, read_type_name, status) in key_list:
+    queryset = FlowcellStatisticBarcode.objects \
+        .filter(flowcell=flowcell) \
+        .filter(barcode_name=q) \
+        .order_by('sample_time')
 
-        queryset = FlowcellStatisticBarcode.objects\
-            .filter(flowcell=flowcell)\
-            .filter(barcode_name=barcode_name)\
-            .filter(read_type_name=read_type_name)\
-            .filter(status=status)\
-            .order_by('sample_time')
+    # for (barcode_name, read_type_name, status) in key_list:
+    #
+    #     queryset = FlowcellStatisticBarcode.objects\
+    #         .filter(flowcell=flowcell)\
+    #         .filter(barcode_name=barcode_name)\
+    #         .filter(read_type_name=read_type_name)\
+    #         .filter(status=status)\
+    #         .order_by('sample_time')
+    #
+    #     #df = pd.DataFrame.from_records(queryset.values('status','barcode_name','read_type_name','max_length','total_length','read_count','quality_sum','sample_time'))
+    #     #df["cumulative_bases"]=df.total_length.cumsum()
+    #     #df["cumulative_reads"]=df.read_count.cumsum()
+    #     #df['avg_qual']=df.quality_sum/df.read_count
+    #     #df['avg_len']=df.total_length/df.read_count
+    #     #df['seq_rate']=df.total_length/60
+    #
+    #     if len(queryset) > 0:
+    #
+    #         quality_list = []
+    #
+    #         cumulative_bases = 0
+    #         cumulative_reads = 0
+    #
+    #         for record in queryset:
+    #
+    #             if status == 'True':
+    #                 l_status = 'Pass'
+    #
+    #             else:
+    #                 l_status = 'Fail'
+    #
+    #             cumulative_bases = cumulative_bases + record.total_length
+    #             cumulative_reads = cumulative_reads + record.read_count
+    #
+    #             quality_list.append((
+    #                 record.sample_time.timestamp() * 1000,
+    #                 float(record.quality_sum/record.read_count),  # chart average quality over time
+    #                 float(record.total_length / record.read_count),  # chart average read length over time
+    #                 int(cumulative_bases),  # chart cumulative bases
+    #                 int(cumulative_reads),  # chart cumulative reads
+    #                 int(record.max_length),  # chart
+    #                 float(record.total_length/60),  # chart sequence rate
+    #                 #float(record.total_length/record.channel_count/60),  # chart sequence speed
+    #             ))
+    #
+    #         result_dict["{} - {} - {}".format(barcode_name, read_type_name, l_status)] = quality_list
+    #
+    #         data_keys.append("{} - {} - {}".format(barcode_name, read_type_name, l_status))
+    #
+    # for key in result_dict:
+    #     print (result_dict[key][0])
 
-        if len(queryset) > 0:
 
-            quality_list = []
+    df = pd.DataFrame(list(queryset.values('read_type_name','sample_time','barcode_name','status','read_count','max_length','total_length','quality_sum')))
+    df['read_type'] = np.where(df['status'] == 'True', "Pass", "Fail")
+    agg = {'max_length': 'max', 'quality_sum': 'sum', 'read_count': 'sum', 'total_length': 'sum'}
+    df2 = df.groupby(['barcode_name','read_type_name','sample_time']).agg(agg)
+    df=df.drop('status',axis=1)
+    df2['read_type'] = "All"
+    df2 = df2.reset_index()
+    df3 = pd.concat([df,df2],ignore_index=True)
+    df3['cumulative_read_count'] = df3.groupby(['barcode_name','read_type_name','read_type'])['read_count'].apply(lambda x: x.cumsum())
+    df3['cumulative_bases'] = df3.groupby(['barcode_name','read_type_name', 'read_type'])['total_length'].apply(lambda x: x.cumsum())
+    df3['key']=df3['barcode_name'].astype('str')+" - "+ df3['read_type_name'].astype('str') + " - " +df3['read_type'].astype('str')
+    df3['average_quality'] = df3['quality_sum']/df3['read_count']
+    df3['average_quality'] = df3['average_quality'].astype('float')
+    df3['average_length'] = df3['total_length']/df3['read_count']
+    df3['sequence_rate'] = df3['total_length']/60
+    df3['corrected_time'] = df3['sample_time'].astype(np.int64) // 10**6 
 
-            cumulative_bases = 0
-            cumulative_reads = 0
+    data_keys = df3['key'].unique().tolist()
 
-            for record in queryset:
+    result_dict = {k:df3[df3['key'].eq(k)][['corrected_time','average_quality','average_length','cumulative_bases','cumulative_read_count','max_length','sequence_rate']].values.tolist() for k in df3.key.unique()}
 
-                if status == 'True':
-                    l_status = 'Pass'
-
-                else:
-                    l_status = 'Fail'
-
-                cumulative_bases = cumulative_bases + record.total_length
-                cumulative_reads = cumulative_reads + record.read_count
-
-                quality_list.append((
-                    record.sample_time.timestamp() * 1000,
-                    float(record.quality_sum/record.read_count),  # chart average quality over time
-                    float(record.total_length / record.read_count),  # chart average read length over time
-                    int(cumulative_bases),  # chart cumulative bases
-                    int(cumulative_reads),  # chart cumulative reads
-                    int(record.max_length),  # chart
-                    float(record.total_length/60),  # chart sequence rate
-                    #float(record.total_length/record.channel_count/60),  # chart sequence speed
-                ))
-
-            result_dict["{} - {} - {}".format(barcode_name, read_type_name, l_status)] = quality_list
-
-            data_keys.append("{} - {} - {}".format(barcode_name, read_type_name, l_status))
-
-    for key in result_dict:
-        print (result_dict[key][0])
-
-    #data_keys.append("test - template - merge")
-    #df = pd.DataFrame(list(queryset.values('sample_time','barcode_name','status','read_count','max_length','total_length','quality_sum')))
-    #df['cumulative_read_count'] = df.groupby(['barcode_name','status'])['read_count'].apply(lambda x: x.cumsum())
-    #df['cumulative_bases'] = df.groupby(['barcode_name', 'status'])['total_length'].apply(lambda x: x.cumsum())
-    #df['average_quality'] = df['quality_sum']/df['read_count']
-    #df['average_length'] = df['total_length']/df['read_count']
-    #df['sequence_rate'] = df['total_length']/60
-    #df['corrected_time'].astype(np.int64)
 
 
     run_data = []
@@ -1131,6 +1157,7 @@ def flowcell_statistics(request, pk):
         'date_created': datetime.datetime.now()
     }
 
+    print (type(res))
 
     return HttpResponse(json.dumps(res, cls=DjangoJSONEncoder), content_type="application/json")
 
