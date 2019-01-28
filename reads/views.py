@@ -993,6 +993,17 @@ def flowcell_summary_barcode(request, pk):
 
     return Response(serializer.data)
 
+def process_summary_data(df):
+    """
+    This function expects a total_length, read_count and quality_sum in the dataframe.
+    :param df: dataframe to add percentage, avg length and avq quality
+    :return: dataframe
+    """
+    df['percentage'] = np.where(df['barcode_name'] == 'All reads', df['total_length'] / df[df["barcode_name"].eq("All reads")]['total_length'].sum() * 100, df['total_length'] / df[df["barcode_name"].ne("All reads")]['total_length'].sum() * 100)
+    df['avg_length'] = df['total_length'] / df['read_count']
+    df['avg_quality'] = df['quality_sum'] / df['read_count']
+    return(df)
+
 
 def flowcell_summary_html(request, pk):
 
@@ -1002,62 +1013,25 @@ def flowcell_summary_html(request, pk):
         .filter(flowcell=flowcell) \
         .exclude(barcode_name='No barcode')
 
-    total = 0
-    for row in qs:
-        if row.barcode_name=="All reads":
-            total+=row.total_length
+    df = pd.DataFrame.from_records(qs.values('barcode_name','max_length','min_length','quality_sum','read_count','read_type_name','status','total_length'))
+    df=process_summary_data(df)
+    df['read_type'] = np.where(df['status'] == 'True', "Pass", "Fail")
+    df = df.drop('status', axis=1)
+    agg = {'max_length': 'max', 'min_length': 'min', 'quality_sum': 'sum', 'read_count': 'sum', 'total_length': 'sum'}
+    df2 = df[df["barcode_name"].eq("All reads")].groupby(['barcode_name', 'read_type_name']).agg(agg)
+    df2 = df2.reset_index()
+    df2=process_summary_data(df2)
+    df2['read_type'] = "all"
+    dictdf = df.to_dict('records')
+    dictdf.extend(df2.to_dict('records'))
 
-    barcodedict=dict()
+    df2 = df[df["barcode_name"].ne("All reads")].groupby(['barcode_name', 'read_type_name']).agg(agg)
+    df2 = df2.reset_index()
+    df2 = process_summary_data(df2)
+    df2['read_type'] = "all"
+    dictdf.extend(df2.to_dict('records'))
 
-    for row in qs:
-        if row.read_type_name not in barcodedict:
-            barcodedict[row.read_type_name]=dict()
-        if row.barcode_name not in barcodedict[row.read_type_name]:
-            barcodedict[row.read_type_name][row.barcode_name]=dict()
-        barcodedict[row.read_type_name][row.barcode_name][row.status]=1
-        row.percentage = round(row.total_length/total*100,2)
-        if row.read_count>0:
-            row.avg_qual = round(row.quality_sum/row.read_count,2)
-        else:
-            row.avg_qual = 0
-
-    """
-    qs = list(qs)
-    tempqs = deepcopy(qs[-1])
-    for readtype in barcodedict:
-        for barcode in barcodedict[readtype]:
-            if len(barcodedict[readtype][barcode])<2:
-                #print (type(barcodedict[readtype][barcode]))
-                for status in barcodedict[readtype][barcode]:
-                    if status==True:
-                        tempqs.read_type_name=readtype
-                        tempqs.barcode_name=barcode
-                        tempqs.read_count=0
-                        tempqs.total_length=0
-                        print (tempqs.status)
-                        tempqs.status=None
-                        print (tempqs.status)
-                        qs.append(tempqs)
-                        pass
-                    else:
-                        tempqs.read_type_name=readtype
-                        tempqs.barcode_name=barcode
-                        tempqs.read_count = 0
-                        tempqs.total_length = 0
-                        print (tempqs.status)
-                        tempqs.status=None
-                        print (tempqs.status)
-                        qs.append(tempqs)
-                        pass
-
-    #qs.append(qs[-1])
-    print (qs)
-    
-    """
-
-    ### Manipulate qs to add in missing records?!
-
-    return render(request, 'reads/flowcell_summary.html', {'qs': qs})
+    return render(request, 'reads/flowcell_summary.html', {'qs': dictdf})
 
 
 @api_view(['GET'])
@@ -1117,12 +1091,25 @@ def flowcell_statistics(request, pk):
                     int(cumulative_reads),  # chart cumulative reads
                     int(record.max_length),  # chart
                     float(record.total_length/60),  # chart sequence rate
-                    float(record.total_length/record.channel_count/60),  # chart sequence speed
+                    #float(record.total_length/record.channel_count/60),  # chart sequence speed
                 ))
 
             result_dict["{} - {} - {}".format(barcode_name, read_type_name, l_status)] = quality_list
 
             data_keys.append("{} - {} - {}".format(barcode_name, read_type_name, l_status))
+
+    for key in result_dict:
+        print (result_dict[key][0])
+
+    #data_keys.append("test - template - merge")
+    #df = pd.DataFrame(list(queryset.values('sample_time','barcode_name','status','read_count','max_length','total_length','quality_sum')))
+    #df['cumulative_read_count'] = df.groupby(['barcode_name','status'])['read_count'].apply(lambda x: x.cumsum())
+    #df['cumulative_bases'] = df.groupby(['barcode_name', 'status'])['total_length'].apply(lambda x: x.cumsum())
+    #df['average_quality'] = df['quality_sum']/df['read_count']
+    #df['average_length'] = df['total_length']/df['read_count']
+    #df['sequence_rate'] = df['total_length']/60
+    #df['corrected_time'].astype(np.int64)
+
 
     run_data = []
 
@@ -1143,6 +1130,7 @@ def flowcell_statistics(request, pk):
         'data': result_dict,
         'date_created': datetime.datetime.now()
     }
+
 
     return HttpResponse(json.dumps(res, cls=DjangoJSONEncoder), content_type="application/json")
 
