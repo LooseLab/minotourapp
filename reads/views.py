@@ -999,7 +999,12 @@ def process_summary_data(df):
     :param df: dataframe to add percentage, avg length and avq quality
     :return: dataframe
     """
-    df['percentage'] = np.where(df['barcode_name'] == 'All reads', df['total_length'] / df[df["barcode_name"].eq("All reads")]['total_length'].sum() * 100, df['total_length'] / df[df["barcode_name"].ne("All reads")]['total_length'].sum() * 100)
+
+    df['percentage'] = np.where(
+        df['barcode_name'] == 'All reads',
+        df['total_length'] / df[df["barcode_name"].eq("All reads")]['total_length'].sum() * 100,
+        df['total_length'] / df[df["barcode_name"].ne("All reads")]['total_length'].sum() * 100
+    )
     df['avg_length'] = df['total_length'] / df['read_count']
     df['avg_quality'] = df['quality_sum'] / df['read_count']
     return(df)
@@ -1017,19 +1022,21 @@ def flowcell_summary_html(request, pk):
     df=process_summary_data(df)
     df['read_type'] = np.where(df['status'] == 'True', "Pass", "Fail")
     df = df.drop('status', axis=1)
-    agg = {'max_length': 'max', 'min_length': 'min', 'quality_sum': 'sum', 'read_count': 'sum', 'total_length': 'sum'}
-    df2 = df[df["barcode_name"].eq("All reads")].groupby(['barcode_name', 'read_type_name']).agg(agg)
-    df2 = df2.reset_index()
-    df2=process_summary_data(df2)
-    df2['read_type'] = "all"
     dictdf = df.to_dict('records')
-    dictdf.extend(df2.to_dict('records'))
+    agg = {'max_length': 'max', 'min_length': 'min', 'quality_sum': 'sum', 'read_count': 'sum', 'total_length': 'sum'}
 
-    df2 = df[df["barcode_name"].ne("All reads")].groupby(['barcode_name', 'read_type_name']).agg(agg)
+    df2 = df[df["barcode_name"].eq("All reads")].groupby(['barcode_name', 'read_type_name']).agg(agg)
+
     df2 = df2.reset_index()
     df2 = process_summary_data(df2)
     df2['read_type'] = "all"
     dictdf.extend(df2.to_dict('records'))
+    df2 = df[df["barcode_name"].ne("All reads")].groupby(['barcode_name', 'read_type_name']).agg(agg)
+    if len(df2) > 0:
+        df2 = df2.reset_index()
+        df2 = process_summary_data(df2)
+        df2['read_type'] = "all"
+        dictdf.extend(df2.to_dict('records'))
 
     return render(request, 'reads/flowcell_summary.html', {'qs': dictdf})
 
@@ -1061,59 +1068,6 @@ def flowcell_statistics(request, pk):
         .filter(barcode_name=q) \
         .order_by('sample_time')
 
-    # for (barcode_name, read_type_name, status) in key_list:
-    #
-    #     queryset = FlowcellStatisticBarcode.objects\
-    #         .filter(flowcell=flowcell)\
-    #         .filter(barcode_name=barcode_name)\
-    #         .filter(read_type_name=read_type_name)\
-    #         .filter(status=status)\
-    #         .order_by('sample_time')
-    #
-    #     #df = pd.DataFrame.from_records(queryset.values('status','barcode_name','read_type_name','max_length','total_length','read_count','quality_sum','sample_time'))
-    #     #df["cumulative_bases"]=df.total_length.cumsum()
-    #     #df["cumulative_reads"]=df.read_count.cumsum()
-    #     #df['avg_qual']=df.quality_sum/df.read_count
-    #     #df['avg_len']=df.total_length/df.read_count
-    #     #df['seq_rate']=df.total_length/60
-    #
-    #     if len(queryset) > 0:
-    #
-    #         quality_list = []
-    #
-    #         cumulative_bases = 0
-    #         cumulative_reads = 0
-    #
-    #         for record in queryset:
-    #
-    #             if status == 'True':
-    #                 l_status = 'Pass'
-    #
-    #             else:
-    #                 l_status = 'Fail'
-    #
-    #             cumulative_bases = cumulative_bases + record.total_length
-    #             cumulative_reads = cumulative_reads + record.read_count
-    #
-    #             quality_list.append((
-    #                 record.sample_time.timestamp() * 1000,
-    #                 float(record.quality_sum/record.read_count),  # chart average quality over time
-    #                 float(record.total_length / record.read_count),  # chart average read length over time
-    #                 int(cumulative_bases),  # chart cumulative bases
-    #                 int(cumulative_reads),  # chart cumulative reads
-    #                 int(record.max_length),  # chart
-    #                 float(record.total_length/60),  # chart sequence rate
-    #                 #float(record.total_length/record.channel_count/60),  # chart sequence speed
-    #             ))
-    #
-    #         result_dict["{} - {} - {}".format(barcode_name, read_type_name, l_status)] = quality_list
-    #
-    #         data_keys.append("{} - {} - {}".format(barcode_name, read_type_name, l_status))
-    #
-    # for key in result_dict:
-    #     print (result_dict[key][0])
-
-
     df = pd.DataFrame(list(queryset.values('read_type_name','sample_time','barcode_name','status','read_count','max_length','total_length','quality_sum')))
     df['read_type'] = np.where(df['status'] == 'True', "Pass", "Fail")
     agg = {'max_length': 'max', 'quality_sum': 'sum', 'read_count': 'sum', 'total_length': 'sum'}
@@ -1129,13 +1083,11 @@ def flowcell_statistics(request, pk):
     df3['average_quality'] = df3['average_quality'].astype('float')
     df3['average_length'] = df3['total_length']/df3['read_count']
     df3['sequence_rate'] = df3['total_length']/60
-    df3['corrected_time'] = df3['sample_time'].astype(np.int64) // 10**6 
+    df3['corrected_time'] = df3['sample_time'].astype(np.int64) // 10**6
 
     data_keys = df3['key'].unique().tolist()
 
     result_dict = {k:df3[df3['key'].eq(k)][['corrected_time','average_quality','average_length','cumulative_bases','cumulative_read_count','max_length','sequence_rate']].values.tolist() for k in df3.key.unique()}
-
-
 
     run_data = []
 
