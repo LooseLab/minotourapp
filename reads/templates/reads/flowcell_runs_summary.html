@@ -5,17 +5,17 @@
         <div class='table-responsive'>
         <table class="table">
         <thead>
-        <th>Run</th>
+        <td align="right"><strong>Run</strong></td>
         <th>Runid</th>
-        <th>Run Start Time</th>
-        <th>MinKNOW Computer Name</th>
-        <th>MinION ID</th>
-        <th>ASIC ID</th>
-        <th>Sequencing Kit</th>
-        <th>Purpose</th>
-        <th>minKNOW version</th>
-        <th>Flowcell Type</th>
-        <th>Flowcell ID</th>
+        <td align="right"><strong>Run Start Time</strong></td>
+        <td align="right"><strong>Computer Name</strong></td>
+        <td align="right"><strong>MinION ID</strong></td>
+        <td align="right"><strong>ASIC ID</strong></td>
+        <td align="right"><strong>Sequencing Kit</strong></td>
+        <td align="right"><strong>Purpose</strong></td>
+        <td align="right"><strong>minKNOW version</strong></td>
+        <td align="right"><strong>Flowcell Type</strong></td>
+        <td align="right"><strong>Flowcell ID</strong></td>
         <th>Sample Name</th>
         <th>Experiment Name</th>
         </thead>
@@ -24,17 +24,17 @@
     {% endif %}
 
     <tr>
-        <td>{{ forloop.counter }}</td>
+        <td align="right">{{ forloop.counter }}</td>
         <td>{{ record.runid }}</td>
-        <td>{{ record.run_start_time }}</td>
-        <td>{{ record.minknow_computer_name }}</td>
-        <td>{{ record.minion_id }}</td>
-        <td>{{ record.asic_id }}</td>
-        <td>{{ record.sequencing_kit }}</td>
-        <td>{{ record.purpose }}</td>
-        <td>{{ record.minknow_version }}</td>
-        <td>{{ record.flowcell_type }}</td>
-        <td>{{ record.flowcell_id }}</td>
+        <td align="right">{{ record.run_start_time }}</td>
+        <td align="right">{{ record.minknow_computer_name }}</td>
+        <td align="right">{{ record.minion_id }}</td>
+        <td align="right">{{ record.asic_id }}</td>
+        <td align="right">{{ record.sequencing_kit }}</td>
+        <td align="right">{{ record.purpose }}</td>
+        <td align="right">{{ record.minknow_version }}</td>
+        <td align="right">{{ record.flowcell_type }}</td>
+        <td align="right">{{ record.flowcell_id }}</td>
         <td>{{ record.sample_name }}</td>
         <td>{{ record.experiment_name }}</td>
     </tr>

@@ -1,5 +1,4 @@
-{#{% load humanize %}#}
-
+{% load humanize %}
 
 <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
 
@@ -22,34 +21,38 @@
                     <td align="right"><strong>Reads called</strong></td>
                     <td align="right"><strong>Yield</strong></td>
                     <td align="right"><strong>Percentage(bases)</strong></td>
+                    <td align="right"><strong>Min read length</strong></td>
                     <td align="right"><strong>Average read length</strong></td>
-                    <td align="right"><strong>Maximum read length</strong></td>
+                    <td align="right"><strong>Max read length</strong></td>
                     <td align="right"><strong>Average Quality</strong></td>
                     </thead>
                     <tbody>
-                    {% for record in qs|dictsortreversed:"status"|dictsort:"barcode_name" %}
+
+                    {% for record in qs|dictsortreversed:"read_type"|dictsort:"barcode_name" %}
                         {% if record.barcode_name == "All reads" %}
 
-                            {% if record.status == "True" %}
+                            {% if record.read_type == "Pass" %}
                                 <tr class="success">
-                                    {% else %}
+                                    {% elif record.read_type == "Fail" %}
                                 <tr class="danger">
+                                    {% else %}
+                                <tr class="info" style="font-weight:bold;font-style: italic">
                             {% endif %}
-                        <td>{{ record.barcode_name }}</td>
-                        <td>{{ record.read_type_name }}</td>
-                        <td>
-                            {% if record.status == "True" %}
-                                Pass
-                            {% else %}
-                                Fail
-                            {% endif %}
-                        </td>
-                        <td align="right">{{ record.read_count }}</td>
-                        <td align="right">{{ record.total_length }}</td>
-                        <td align="right">{{ record.percentage }}</td>
-                        <td align="right">{{ record.average_read_length|floatformat:"0" }}</td>
-                        <td align="right">{{ record.max_length }}</td>
-                        <td align="right">{{ record.avg_qual }}</td>
+                         {% if record.read_type == "all" %}
+                             <td>{{ record.barcode_name }}</td>
+                             <td>{{ record.read_type_name }}</td>
+                                    {% else %}
+                                    <td></td>
+                                    <td></td>
+                                    {%  endif %}
+                        <td>{{ record.read_type }}</td>
+                        <td align="right">{{ record.read_count|intcomma }}</td>
+                        <td align="right">{{ record.total_length|intcomma }}</td>
+                        <td align="right">{{ record.percentage|floatformat:"2" }}</td>
+                        <td align="right">{{ record.min_length|intcomma }}</td>
+                        <td align="right">{{ record.avg_length|floatformat:"0"|intcomma }}</td>
+                        <td align="right">{{ record.max_length|intcomma }}</td>
+                        <td align="right">{{ record.avg_quality|floatformat:"1" }}</td>
                         </tr>
                         {% endif %}
                     {% endfor %}
@@ -64,7 +67,7 @@
         </div>
     </div>
 
-    {% if qs|length > 2 %}
+    {% if qs|length > 3 %}
         <div class="panel panel-default">
             <div class="panel-heading" role="tab" id="headingTwo">
                 <h4 class="panel-title">
@@ -84,34 +87,37 @@
                         <td align="right"><strong>Reads called</strong></td>
                         <td align="right"><strong>Yield</strong></td>
                         <td align="right"><strong>Percentage(bases)</strong></td>
+                        <td align="right"><strong>Min read length</strong></td>
                         <td align="right"><strong>Average read length</strong></td>
-                        <td align="right"><strong>Maximum read length</strong></td>
+                        <td align="right"><strong>Max read length</strong></td>
                         <td align="right"><strong>Average Quality</strong></td>
                         </thead>
                         <tbody>
-                        {% for record in qs|dictsortreversed:"status"|dictsort:"barcode_name" %}
+                        {% for record in qs|dictsortreversed:"read_type"|dictsort:"barcode_name" %}
                             {% if record.barcode_name != "All reads" %}
 
-                                {% if record.status == "True" %}
-                                    <tr class="success">
-                                        {% else %}
-                                    <tr class="danger">
-                                {% endif %}
-                            <td>{{ record.barcode_name }}</td>
-                            <td>{{ record.read_type_name }}</td>
-                            <td>
-                                {% if record.status == "True" %}
-                                    Pass
-                                {% else %}
-                                    Fail
-                                {% endif %}
-                            </td>
-                            <td align="right">{{ record.read_count }}</td>
-                            <td align="right">{{ record.total_length }}</td>
-                            <td align="right">{{ record.percentage }}</td>
-                            <td align="right">{{ record.average_read_length|floatformat:"0" }}</td>
-                            <td align="right">{{ record.max_length }}</td>
-                            <td align="right">{{ record.avg_qual }}</td>
+                                {% if record.read_type == "Pass" %}
+                                <tr class="success">
+                                    {% elif record.read_type == "Fail" %}
+                                <tr class="danger">
+                                    {% else %}
+                                <tr class="info" style="font-weight:bold;font-style: italic">
+                            {% endif %}
+                              {% if record.read_type == "all" %}
+                             <td>{{ record.barcode_name }}</td>
+                             <td>{{ record.read_type_name }}</td>
+                                    {% else %}
+                                    <td></td>
+                                    <td></td>
+                                    {%  endif %}
+                            <td>{{ record.read_type }}</td>
+                        <td align="right">{{ record.read_count|intcomma }}</td>
+                        <td align="right">{{ record.total_length|intcomma }}</td>
+                        <td align="right">{{ record.percentage|floatformat:"2" }}</td>
+                        <td align="right">{{ record.min_length|intcomma }}</td>
+                        <td align="right">{{ record.avg_length|floatformat:"0"|intcomma}}</td>
+                        <td align="right">{{ record.max_length|intcomma }}</td>
+                        <td align="right">{{ record.avg_quality|floatformat:"1" }}</td>
                             </tr>
                             {% endif %}
                         {% endfor %}

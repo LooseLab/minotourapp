@@ -49,6 +49,7 @@ var FlowcellPageApp = {
         this.livedata.asictemp = new Array();
         this.livedata.heatsinktemp = new Array();
         this.livedata.strand = new Array();
+        this.livedata.adapter = new Array();
         this.livedata.good_single = new Array();
         this.livedata.currpercentage = null;
         this.livedata.currstrand = null;
@@ -227,7 +228,7 @@ var FlowcellPageApp = {
         this.addStartTabsEvents(flowcell_id);
         this.checkFlowcellTabs(flowcell_id);
 
-        console.log('>> calling request data');
+        //('>> calling request data');
         this.requestData(flowcell_id);
     }, // end of init
 
@@ -241,7 +242,7 @@ var FlowcellPageApp = {
         while (this.PoreShizzle.series.length > 0)
             this.PoreShizzle.series[0].remove(true);
         //this.PoreShizzle.addSeries(returndata[4]);
-        //console.log(returndata[4]);
+        //(returndata[4]);
         for (var i = 0; i < returndata.length; i++) {
             //console.log(returndata[i]);
             var seriesdata = returndata[i];

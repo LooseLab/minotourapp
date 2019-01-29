@@ -30,6 +30,7 @@ function requestLiveRunStats(id) {
                 this.livedata.asictemp.push([timestamp, data[i].asic_temp]);
                 this.livedata.heatsinktemp.push([timestamp, data[i].heat_sink_temp]);
                 this.livedata.strand.push([timestamp, data[i].strand]);
+                this.livedata.adapter.push([timestamp,data[i].adapter]);
                 this.livedata.good_single.push([timestamp, data[i].good_single]);
                 this.livedata.currpercentage = data[i].occupancy;
                 this.livedata.currstrand = data[i].strand;
@@ -64,7 +65,7 @@ function requestLiveRunStats(id) {
 
 
         }
-        console.log(this.livedata);
+        //console.log(this.livedata);
     }).bind(this));
 
 };
