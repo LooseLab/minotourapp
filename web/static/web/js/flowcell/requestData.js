@@ -13,7 +13,9 @@ function requestData(flowcell_id) {
         var barcodes = new Set();
 
         for (var i = 0; i < data.barcodes.length; i++) {
-            barcodes.add(data.barcodes[i].name);
+            if (data.barcodes[i].name != 'No barcode') {
+                barcodes.add(data.barcodes[i].name);
+            }
         }
 
         var flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');

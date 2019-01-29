@@ -44,7 +44,7 @@ class MTaskController {
 
                 } else {
 
-                    self._message.texto = 'Something wrong happened. Please check the following message. ' + this.responseText;
+                    self._message.texto = 'Something went wrong. Please check the following message. ' + this.responseText;
                     self._messageView.update(self._message);
 
                 }

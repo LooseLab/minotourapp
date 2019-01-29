@@ -50,6 +50,10 @@ class Flowcell(models.Model):
         related_name='flowcells'
     )
 
+    max_channel = models.IntegerField(
+        default = 0
+    )
+
     size = models.IntegerField(
         default=512
     )
@@ -526,9 +530,9 @@ class Run(models.Model):
         try:
             max_channel = self.max_channel()
             if max_channel != 'undefined':
-                if int(max_channel) <= 128:
-                    return 128
-                elif 128 < int(max_channel) <= 512:
+                if int(max_channel) <= 126:
+                    return 126
+                elif 126 < int(max_channel) <= 512:
                     return 512
                 elif 512 < int(max_channel) <= 3000:
                     return 3000
@@ -1410,7 +1414,7 @@ class FastqRead(models.Model):
     )
 
     read_id = models.CharField(
-
+        db_index=True,
         max_length=96
     )
 
@@ -1430,7 +1434,7 @@ class FastqRead(models.Model):
     )
 
     barcode_name = models.CharField(
-
+        db_index=True,
         max_length=32
     )
 
@@ -1455,7 +1459,7 @@ class FastqRead(models.Model):
     )
 
     start_time = models.DateTimeField(
-
+        db_index=True
     )
 
     created_date = models.DateTimeField(
@@ -1466,11 +1470,22 @@ class FastqRead(models.Model):
         auto_now=True
     )
 
+
     fastqfile = models.ForeignKey(
         FastqFile,
         on_delete=models.CASCADE,
         related_name = 'reads',
         null = True
+    )
+
+    sequence = models.TextField(
+        blank=True,
+        null=True
+    )
+    
+    quality = models.TextField(
+        blank=True,
+        null=True,
     )
 
     class Meta:
@@ -1481,7 +1496,7 @@ class FastqRead(models.Model):
         #return "1"
         return str(self.read_id)
 
-
+'''
 class FastqReadExtra(models.Model):
     """
     :purpose: If the user choose to send the read sequence and fastq quality, this is the model that is used to store it
@@ -1509,6 +1524,8 @@ class FastqReadExtra(models.Model):
 
     def __str__(self):
         return str(self.id)
+        
+'''
 
 
 class MinionMessage(models.Model):
@@ -1773,7 +1790,7 @@ class FlowcellChannelSummary(models.Model):  # TODO to be deleted
 
 class HistogramSummary(models.Model):  # don't comment
 
-    BIN_WIDTH = 900
+    BIN_WIDTH = 1000
 
     run = models.ForeignKey(
         Run,
@@ -1827,7 +1844,7 @@ class FlowcellHistogramSummary(models.Model):
     :read_length: (float) Sum of the length of all reads from all runs of the flowcell
     """
 
-    BIN_WIDTH = 900
+    BIN_WIDTH = 1000
 
     flowcell = models.ForeignKey(
 
@@ -1930,6 +1947,17 @@ class RunSummary(models.Model):
         null=True,
         blank=True
     )
+
+    last_read = models.BigIntegerField(
+
+        default=0
+    )
+
+    running = models.BooleanField(
+        default=False
+    )
+
+
 
     class Meta:
 

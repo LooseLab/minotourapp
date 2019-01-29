@@ -3,6 +3,8 @@ import pandas as pd
 from celery import task
 from celery.utils.log import get_task_logger
 
+from django.db.models import Avg, Max, Min, Sum
+
 from jobs.models import JobMaster
 from reads.models import FastqRead, HistogramSummary, Flowcell, FlowcellSummaryBarcode, FlowcellStatisticBarcode, \
     FlowcellHistogramSummary, FlowcellChannelSummary
@@ -11,24 +13,75 @@ from reads.services import save_flowcell_summary_barcode, save_flowcell_statisti
 
 logger = get_task_logger(__name__)
 
+def callfetchreads(runs,chunk_size,last_read):
+    fastq_df_barcode = pd.DataFrame()
+    while True:
+        reads, last_read, read_count = fetchreads(runs, chunk_size, last_read)
+        fastq_df_barcode = fastq_df_barcode.append(reads)
+        if len(fastq_df_barcode)>=chunk_size or len(reads)==0:
+            break
+    read_count = len(fastq_df_barcode)
+    return fastq_df_barcode,last_read,read_count
+
+
+def fetchreads(runs,chunk_size,last_read):
+    countsdict=dict()
+    for run in runs:
+        fastqs = FastqRead.objects.values_list('id').filter(run=run, id__gt=int(last_read)).first()
+        if fastqs:
+            countsdict[fastqs[0]] = run
+    count = 1
+    fastq_df_barcode = pd.DataFrame()
+    if len(countsdict)>1:
+        for entry in sorted(countsdict):
+            if count < len(countsdict):
+                fastqs = FastqRead.objects.filter(run=countsdict[entry],
+                                              id__gt=int(last_read),
+                                                id__lt=int(sorted(countsdict)[count]),
+                                                         )[:chunk_size]
+                fastq_df_barcode = fastq_df_barcode.append(pd.DataFrame.from_records(
+                    fastqs.values('id', 'start_time', 'barcode__name', 'type__name', 'is_pass', 'sequence_length',
+                              'quality_average', 'channel')))
+
+                last_read = fastq_df_barcode.id.max()
+
+                if len(fastq_df_barcode) >= chunk_size:
+                    break
+            count += 1
+    elif len(countsdict)==1:
+        """This is risky and it breaks the logic - we end up grabbing reads"""
+        mykey = list(countsdict.keys())[0]
+        fastqs = FastqRead.objects.filter(run=countsdict[mykey],
+                                              id__gt=int(last_read),)[:chunk_size]
+        fastq_df_barcode = fastq_df_barcode.append(pd.DataFrame.from_records(
+            fastqs.values('id', 'start_time', 'barcode__name', 'type__name', 'is_pass', 'sequence_length',
+                          'quality_average', 'channel')))
+        last_read = fastq_df_barcode.id.max()
+
+    read_count = len(fastq_df_barcode)
+    return fastq_df_barcode,last_read,read_count
 
 @task()
 def chancalc(flowcell_id, job_master_id, last_read):
 
+
     job_master = JobMaster.objects.get(pk=job_master_id)
-    job_master.running = True
-    job_master.save()
+    # job_master.running = True
+    # job_master.save()
 
     flowcell = Flowcell.objects.get(pk=flowcell_id)
 
-    fastqs = FastqRead.objects.filter(run__flowcell=flowcell).filter(id__gt=int(last_read))[:50000]
-    fastq_df_barcode = pd.DataFrame.from_records(
-        fastqs.values('id', 'start_time', 'barcode__name', 'type__name', 'is_pass', 'sequence_length',
-                      'quality_average', 'channel'))
+    ## This is a slow query and needs optimisation...
+
+    #fastqs = FastqRead.objects.filter(run__flowcell=flowcell).filter(id__gt=int(last_read)).order_by('id')[:50000]
+
+    runs = flowcell.runs.all()
+
+    chunk_size = 50000
+
+    fastq_df_barcode,last_read,_ = callfetchreads(runs,chunk_size,last_read)
 
     fastqlen = len(fastq_df_barcode)
-
-
 
     if fastqlen > 0:
         new_last_read = fastq_df_barcode.iloc[-1]['id']

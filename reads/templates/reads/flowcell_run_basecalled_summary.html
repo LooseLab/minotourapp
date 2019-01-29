@@ -1,3 +1,4 @@
+{% load humanize %}
 {% for record in result_basecalled_summary %}
 
     {% if forloop.first %}
@@ -5,30 +6,30 @@
         <div class='table-responsive'>
         <table class="table">
         <thead>
-        <th>Run</th>
+        <td align="right"><strong>Run</strong></td>
         <th>Runid</th>
-        <th>First Read</th>
-        <th>Last Read</th>
-        <th>Read Count</th>
-        <th>Yield</th>
-        <th>Max Read Length</th>
-        <th>Avg Read Length</th>
-        <th>Min Read Length</th>
+        <td align="right"><strong>First Read</strong></td>
+        <td align="right"><strong>Last Read</strong></td>
+        <td align="right"><strong>Read Count</strong></td>
+        <td align="right"><strong>Yield</strong></td>
+        <td align="right"><strong>Min Read Length</strong></td>
+        <td align="right"><strong>Avg Read Length</strong></td>
+        <td align="right"><strong>Max Read Length</strong></td>
         </thead>
         <tbody>
 
     {% endif %}
 
     <tr>
-        <td>{{ forloop.counter }}</td>
+        <td align="right">{{ forloop.counter }}</td>
         <td>{{ record.runid }}</td>
-        <td>{{ record.first_read_start_time }}</td>
-        <td>{{ record.last_read_start_time }}</td>
-        <td>{{ record.read_count }}</td>
-        <td>{{ record.total_read_length }}</td>
-        <td>{{ record.max_read_length }}</td>
-        <td>{{ record.avg_read_length }}</td>
-        <td>{{ record.min_read_length }}</td>
+        <td align="right">{{ record.first_read_start_time }}</td>
+        <td align="right">{{ record.last_read_start_time }}</td>
+        <td align="right">{{ record.read_count|intcomma }}</td>
+        <td align="right">{{ record.total_read_length|intcomma }}</td>
+        <td align="right">{{ record.min_read_length|intcomma }}</td>
+        <td align="right">{{ record.avg_read_length|intcomma }}</td>
+        <td align="right">{{ record.max_read_length|intcomma }}</td>
     </tr>
 
     {% if forloop.last %}

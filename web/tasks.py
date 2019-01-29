@@ -17,7 +17,7 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
-from django.db.models import Max
+from django.db.models import Max,Min
 from django_mailgun import MailgunAPIError
 from twitter import *
 
@@ -28,6 +28,8 @@ from jobs.models import JobMaster
 from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus
 from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
+from centrifuge.sankey import calculate_sankey
+from centrifuge.tasks import output_parser
 
 logger = get_task_logger(__name__)
 
@@ -61,15 +63,17 @@ def run_monitor():
     for flowcell in flowcell_list:
 
         flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False, complete=False)
+
         for flowcell_job in flowcell_job_list:
+
+            flowcell_job.running = True
+            flowcell_job.save()
 
             if flowcell_job.job_type.name == "Minimap2":
 
-                print("trying to run alignment for flowcell {} {} {} {}".format(
+                logger.info("Sending task minimap2 to server - Flowcell id: {}, job_master id: {}".format(
                     flowcell.id,
                     flowcell_job.id,
-                    flowcell_job.reference.id,
-                    flowcell_job.last_read
                 ))
 
                 run_minimap2_alignment.delay(
@@ -81,10 +85,19 @@ def run_monitor():
 
             if flowcell_job.job_type.name == "ChanCalc":
 
-                print("trying to run chancalc for flowcell {} {} {}".format(flowcell.id, flowcell_job.id, flowcell_job.last_read))
+                logger.info("Sending task chancalc to server - Flowcell id: {}, job_master id: {}".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                ))
+
                 chancalc.delay(flowcell.id, flowcell_job.id, flowcell_job.last_read)
 
             if flowcell_job.job_type.name == "Assembly":
+
+                logger.info("Sending task assembly to server - Flowcell id: {}, job_master id: {}".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                ))
 
                 inputtype = "flowcell"
 
@@ -92,26 +105,48 @@ def run_monitor():
                                            flowcell_job.read_count, inputtype)
 
             if flowcell_job.job_type.name == "Metagenomics":
-                """
-                    Run the Centrifuger class on the metagenomics data
-                """
-                print("trying to run classification for flowcell {} {} {} ".format(
+
+                logger.info("Sending task metagenomics to server - Flowcell id: {}, job_master id: {}".format(
                     flowcell.id,
                     flowcell_job.id,
-                    flowcell_job.last_read
                 ))
-                print("starting centrifuge task")
-                """
-                starts the centrifuge instance as a celery task which should return asynchronously
-                :param request:
-                :return:
-                """
-                try:
-                    run_centrifuge.delay(flowcell_job.id)
 
-                except Exception as e:
-                    e = sys.exc_info()
-                    print(e)
+                run_centrifuge.delay(flowcell_job.id)
+
+            if flowcell_job.job_type.name == "UpdateFlowcellDetails":
+
+                logger.info("Sending task updateflowcelldetails to server - Flowcell id: {}, job_master id: {}".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                ))
+
+                update_flowcell_details.delay(flowcell_job.id)
+            if flowcell_job.job_type.name == "CalculateSankey":
+                logger.info("Sending task CalculateSankey - Flowcell id: {}, job_master id: {}".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                ))
+                run_sankey(flowcell_job.id)
+
+            if flowcell_job.job_type.name == "Parser":
+                logger.info("Sending task Parser - Flowcell id: {}, job_master id: {}".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                ))
+                output_parser.delay(flowcell_job.id)
+
+@task()
+def run_sankey(flowcell_job_id):
+    """
+    Calculate sankeys for a flowcell upon demand of the user
+    :param flowcell_job_id: The pk id of this task
+    :author: Rory
+    :return:
+    """
+    job_master = JobMaster.objects.get(pk=flowcell_job_id)
+    logger.info("Flowcell id: {} - Starting Sankey calculation task".format(job_master.flowcell.id))
+    calculate_sankey(flowcell_job_id)
+
 
 @task()
 def run_centrifuge(flowcell_job_id):
@@ -241,7 +276,7 @@ def format_read(fastq):
         lineheader = lineheader + " start_time={}".format(fastq.start_time.replace(tzinfo=pytz.UTC).isoformat())
     if fastq.barcode.name != "No barcode":
         lineheader = lineheader + " barcode={}".format(fastq.barcode.name)
-    return ("{}\n{}\n+\n{}\n".format(lineheader,fastq.fastqreadextra.sequence,fastq.fastqreadextra.quality))
+    return ("{}\n{}\n+\n{}\n".format(lineheader,fastq.sequence,fastq.quality))
 
 
 @task()
@@ -279,7 +314,9 @@ def get_runidset(runid, inputtype):
 @task()
 def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
 
-    JobMaster.objects.filter(pk=id).update(running=True)
+    job_master = JobMaster.objects.get(pk=id)
+    # job_master.running = True
+    # job_master.save()
 
     if last_read is None:
         last_read = 0
@@ -315,12 +352,12 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
         if fastq.type not in fastqdict[fastq.barcode.barcodegroup]:
             fastqdict[fastq.barcode.barcodegroup][fastq.type] = []
 
-        fastqdict[fastq.barcode.barcodegroup][fastq.type].append([fastq.read_id, fastq.fastqreadextra.sequence])
+        fastqdict[fastq.barcode.barcodegroup][fastq.type].append([fastq.read_id, fastq.sequence])
         newfastqs += 1
-        #read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.fastqreadextra.sequence)
+        #read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
         #fastqdict[fastq.read_id]=fastq
         #fastqtypedict[fastq.read_id]=fastq.type
-        #outtemp.write('>{}\n{}\n'.format(fastq.read_id, fastq.fastqreadextra.sequence))
+        #outtemp.write('>{}\n{}\n'.format(fastq.read_id, fastq.sequence))
         last_read = fastq.id
 
     #outtemp.close()
@@ -527,21 +564,34 @@ def update_run_start_time():
 
             run.start_time = run.RunDetails.last().minKNOW_start_time
             origin = 'Live data'
-
+            run.save()
+            print('Updating start_time for run {} from {}'.format(run.runid, origin))
+        '''
         else:
-
-            fastq = FastqRead.objects.filter(run=run).order_by('start_time').first()
-            run.start_time = fastq.start_time
+            ## This query is really slow - so - gonna move it out of here!
+            #fastq = FastqRead.objects.filter(run=run).order_by('start_time').first()
+            #run.start_time = fastq.start_time
+            starttime = run.start_time
+            if starttime is None:
+                #starttime = None
+                fastq = FastqRead.objects.filter(run=run)
+            else:
+                fastq = FastqRead.objects.filter(run=run).filter(start_time__lte=starttime)
+            run.start_time = fastq.aggregate(Min('start_time'))['start_time__min']
 
             origin = 'Basecalled data'
 
         run.save()
         print('Updating start_time for run {} from {}'.format(run.runid, origin))
+        '''
 
 
 @task
 def update_flowcell_list_details():
-
+    """
+    
+    :return:
+    """
     flowcell_list = Flowcell.objects.filter(is_active=True)
 
     for flowcell in flowcell_list:
@@ -554,28 +604,40 @@ def update_flowcell_list_details():
 
                 if not flowcell_job.running:
 
+                    flowcell_job.running = True
+                    flowcell_job.save()
                     update_flowcell_details(flowcell.id, flowcell_job.id)
 
 
-def update_flowcell_details(flowcell_id, job_master_id):
+@task
+def update_flowcell_details(job_master_id):
     """
     This task updates the flowcell details (number of runs, number of reads, sample name)
     using the MinIONRunStatus records if they are available, otherwise reading from the
     fastq file summaries
     """
 
-    job_master = JobMaster.objects.get(pk=job_master_id)
-    job_master.running = True
-    job_master.save()
+    """
+    Refactoring this task such that:
+    1. it only runs when new reads have appeared.
+    2. it only processes reads since the last one was processed.
+    """
 
-    flowcell = Flowcell.objects.get(pk=flowcell_id)
+    job_master = JobMaster.objects.get(pk=job_master_id)
+    # job_master.running = True
+    # job_master.save()
+
+    flowcell = job_master.flowcell
 
     logger.info('Flowcell id: {} - Updating details of flowcell {}'.format(flowcell.id, flowcell.name))
 
     #
     # Get the first MinIONRunStatus for a particular flowcell
     #
-    minion_run_status_first = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell).order_by('minKNOW_start_time').first()
+
+    ## Seems fast enough.
+    minion_run_status_first = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell).order_by('minKNOW_start_time')\
+        .first()
 
     #
     # If the MinIONRunStatus exists, than update start time and sample name
@@ -597,6 +659,8 @@ def update_flowcell_details(flowcell_id, job_master_id):
 
     for run in flowcell.runs.all():
         number_reads = number_reads + run.reads.all().count()
+        if run.has_fastq:
+            flowcell.has_fastq=True
 
     #
     # Get the job_master chancalc for this flowcell
@@ -627,8 +691,7 @@ def update_flowcell_details(flowcell_id, job_master_id):
     if number_reads > 0:
         average_read_length = total_read_length / number_reads
 
-    else:
-        flowcell.has_fastq = False
+
 
     logger.info('Flowcell id: {} - Total read length {}'.format(flowcell.id, total_read_length))
     logger.info('Flowcell id: {} - Number reads {}'.format(flowcell.id, number_reads))
@@ -641,7 +704,13 @@ def update_flowcell_details(flowcell_id, job_master_id):
     flowcell.number_reads_processed = number_reads_processed
 
     flowcell.number_runs = len(flowcell.runs.all())
-    flowcell.number_barcodes = len(FastqRead.objects.filter(run__flowcell=flowcell).values('barcode_name').distinct())
+    ##Faster way of doing this by using the barcode table!
+    #barcode_count=0
+    #runs = flowcell.runs.all()
+    #for run in runs:
+        #barcode_count += len(FastqRead.objects.filter(run=run).values('barcode_name').distinct())
+    barcode_count = len(Barcode.objects.filter(run_id__flowcell=flowcell).values('name').distinct())-1
+    flowcell.number_barcodes = barcode_count
     flowcell.save()
 
     logger.info('Flowcell id: {} - Number runs {}'.format(flowcell.id, flowcell.number_runs))
@@ -650,29 +719,45 @@ def update_flowcell_details(flowcell_id, job_master_id):
     #
     # Update flowcell size
     #
-    max_channel = FastqRead.objects.filter(run__flowcell=flowcell).aggregate(result=Max('channel'))
+    ### This is a very slow query.
+    ### To solve we are going to track how many reads we have looked at in the job_master - which here is the update_flow_cell task.
 
-    if max_channel['result']:
+    runs = flowcell.runs.all()
 
-        if max_channel['result'] > 512:
+    for run in runs:
+        max_channel = FastqRead.objects.filter(run=run, id__gt=int(job_master.last_read)).aggregate(result=Max('channel'),
+                                                                                 last_read=Max('id'))
+        if max_channel['result'] != None and max_channel['result'] > 0:
+            # we have data - so go off and use it.
+            break
 
-            flowcell.size = 3000
+    # Now we need to compare the previous result with this result. To do this we need to save something else on the flowcell.
 
-        elif max_channel['result'] > 128:
+    if max_channel['result'] != None and max_channel['result'] > flowcell.max_channel:
+        flowcell.max_channel = max_channel['result']
+        if max_channel['result']:
 
-            flowcell.size = 512
+            if max_channel['result'] > 512:
+
+                flowcell.size = 3000
+
+            elif max_channel['result'] > 126:
+
+                flowcell.size = 512
+
+            else:
+
+                flowcell.size = 126
 
         else:
 
-            flowcell.size = 128
-
-    else:
-
-        flowcell.size = 512
+            flowcell.size = 512
 
     flowcell.save()
 
     job_master = JobMaster.objects.get(pk=job_master_id)
     job_master.running = False
+    if max_channel['last_read'] != None:
+        job_master.last_read = max_channel['last_read']
     job_master.save()
 

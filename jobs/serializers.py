@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
-from jobs.models import JobMaster
+from jobs.models import JobMaster, JobType
+from centrifuge.models import MappingTarget
+from reference.models import ReferenceInfo
 
 
 class JobMasterSerializer(serializers.ModelSerializer):
@@ -58,3 +60,39 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("A metagnomics task is already running for this flowcell.")
 
         return data
+
+    def create(self, validated_data):
+        """
+        Create the mapping task if the reference type is metagenoimics
+        :param validated_data:
+        :return:
+        """
+
+        job_master, created = JobMaster.objects.get_or_create(**validated_data)
+        job_master.save()
+        checklist = []
+        if created and validated_data["job_type"].name == "Metagenomics":
+
+            job_type = JobType.objects.get(name="Other")
+            reference = list(MappingTarget.objects.all().values_list("species", "name", "gff_line_type"))
+            reference.append(("Bacillus_anthracis", "", "gene"))
+            for ref in reference:
+                init = ref[0] + ref[2]
+
+                if init in checklist and ref[2] != "plasmid":
+                    continue
+                else:
+                    checklist.append(init)
+
+                if ref[2] == "plasmid":
+                    refer = ReferenceInfo.objects.get(name=ref[0].replace(" ", "_") + "_" + ref[1])
+
+                else:
+                    refer = ReferenceInfo.objects.get(name=ref[0].replace(" ", "_"))
+
+                jm = JobMaster(job_type=job_type, reference=refer, flowcell=validated_data["flowcell"],
+                               complete=True)
+                jm.save()
+
+        return job_master
+

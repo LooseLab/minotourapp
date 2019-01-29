@@ -1,4 +1,5 @@
-FROM python:3.6
+# FROM python:3.6
+FROM ubuntu:latest
 MAINTAINER Roberto Santos
 
 ENV PYTHONUNBUFFERED 1

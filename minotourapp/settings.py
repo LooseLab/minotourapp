@@ -15,6 +15,8 @@ import tempfile
 
 from celery.schedules import crontab
 
+from kombu import Exchange, Queue
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 from minotourapp.utils import get_env_variable
 
@@ -58,7 +60,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # 'whitenoise.middleware.WhiteNoiseMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -144,7 +146,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = "/home/rory/PycharmProjects/minotour_static"
+STATIC_ROOT = os.path.join(BASE_DIR, '../minotour_static/')
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -186,6 +188,31 @@ MAILGUN_SERVER_NAME = get_env_variable("MT_MAILGUN_SERVER_NAME")
     },
 }"""
 
+default_exchange = Exchange('default', type='direct')
+priority_exchange = Exchange('priority_queue', type='direct')
+
+CELERY_QUEUES = (
+    Queue('default', default_exchange, routing_key='default', consumer_arguments={'x-priority': 0}),
+    Queue('centrifuge', default_exchange, routing_key='centrifuge', consumer_arguments={'x-priority': 10}),
+    Queue('minimap2', default_exchange, routing_key='minimap2', consumer_arguments={'x-priority': 5}),
+    Queue('reads', default_exchange, routing_key='reads', consumer_arguments={'x-priority': 0}),
+)
+
+CELERY_DEFAULT_QUEUE = 'default'
+CELERY_DEFAULT_EXCHANGE = 'default'
+CELERY_DEFAULT_ROUTING_KEY = 'default'
+
+CELERY_ROUTES = ({
+    'web.tasks_alignment': {
+        'queue': 'minimap2',
+        'routing_key': 'minimap2'
+    },
+    'web.tasks_centrifuge': {
+        'queue': 'centrifuge',
+        'routing_key': 'centrifuge'
+    }
+})
+
 CELERY_IMPORTS = ('web.tasks', 'web.tasks_update_run_summary')
 # For RabbitMQ
 #CELERY_BROKER_URL = 'amqp://'
@@ -220,10 +247,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'web.tasks_update_run_summary.update_run_summary',
         'schedule': 30,
     },
-    'update_flowcell_list_details': {
-        'task': 'web.tasks.update_flowcell_list_details',
-        'schedule': 30,
-    }
+    # 'update_flowcell_list_details': {
+    #     'task': 'web.tasks.update_flowcell_list_details',
+    #     'schedule': 30,
+    # }
 }
 
 # For sending twitter messages
