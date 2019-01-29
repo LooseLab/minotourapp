@@ -364,12 +364,12 @@ def update_mapped_non_dangerous(row, task):
 
 
 def plasmid_mapping(row, species, fastq_list, flowcell, read_ids):
-    """
-    Map the reads for groups that have danger regions on plasmids
-    :param row: The row of the target dataframe for species with plasmid danger regions
-    :param species: The species name
-    :param fastq_list: The reads sequences
-    :param flowcell: The flowcell for logging by flowcell_id
+    """Map the reads for groups that have danger regions on plasmids
+
+    :param pd.Series row: The row of the target dataframe for species with plasmid danger regions
+    :param str species: The species name
+    :param list fastq_list: The reads sequences
+    :param reads.models.Flowcell flowcell: The flowcell for logging by flowcell_id
     :param read_ids: reads ids of the reads being mapped
     :return plasmid_map_df: A list of dicts containing the information about the plasmid mappings
     """
@@ -545,6 +545,8 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
             except AttributeError as e:
                 logger.info(e)
                 return
+    # Filter out low mapping qualities
+    plasmid_red_df = plasmid_red_df.query("mapping_qual >= 40 | num_residue_matches >= 200")
     # if there is mapping output (non plasmid) for the reference
     if map_output:
         # create a dataframe of the results
@@ -560,6 +562,8 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
                "target_end", "target_start", "target_seq_len", "target_seq_name"]
     # set the column name to above
     map_df.columns = columns
+    # Filter out low quality matches or the
+    map_df = map_df.query("mapping_qual >= 40 | num_residue_matches >= 200")
 
     # See whether the start or end of a mapping falls into the region
     boolean_df = species_regions_df.apply(falls_in_region, args=(map_df,), axis=1)
@@ -1128,7 +1132,7 @@ def run_centrifuge(flowcell_job_id):
     # The path to the Centrifuge Index
     index_path = get_env_variable("MT_CENTRIFUGE_INDEX")
     # The command to run centrifuge
-    cmd = "perl " + centrifuge_path + " -f --mm -x " + index_path + " -"
+    cmd = "perl " + centrifuge_path + " -f --mm -x -k 1 " + index_path + " -"
     # cmd = "perl " + centrifuge_path + " -q --mm -x /var/lib/minotour/data/centrifuge_index/p_compressed -U /tmp/FAK22332_5ae2f59554a4ad3cedbcb8a5c6db6b25afdfe6a1_10.fastq.gz"
     logger.info('Flowcell id: {} - {}'.format(flowcell.id, cmd))
 

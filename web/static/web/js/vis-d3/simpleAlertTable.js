@@ -79,8 +79,6 @@ function draw_simple_table(flowcellId) {
         }).attr("id", function (d, i) {
             return columns[i].replace(" ", "_");
         }).style("background-color", function (d, i) {
-            console.log(d.index);
-            console.log(i);
             if (i === d.index) {
                 return "rgba(0, 128, 0, 0.7)";
             } else if (d.column === "Potential threats" && d.detected === false && d.read_count < 10000) {
