@@ -189,9 +189,11 @@ MAILGUN_SERVER_NAME = get_env_variable("MT_MAILGUN_SERVER_NAME")
 CELERY_IMPORTS = ('web.tasks', 'web.tasks_update_run_summary')
 # For RabbitMQ
 #CELERY_BROKER_URL = 'amqp://'
-CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+#CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+CELERY_BROKER_URL = get_env_variable("MT_CELERY_BROKER_URL")
 #CELERY_RESULT_BACKEND = 'amqp://'
-CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+#CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+CELERY_RESULT_BACKEND = get_env_variable("MT_CELERY_RESULT_BACKEND")
 # Celery Data Format
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'

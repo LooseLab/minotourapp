@@ -17,6 +17,8 @@ export MT_TWITCONSUMER_KEY='';
 export MT_TWITCONSUMER_SECRET='';
 export MT_REFERENCE_LOCATION='/var/lib/minotour/data';
 export MT_MINIMAP2="/var/lib/minotour/minimap2/minimap2";
+export MT_CELERY_BROKER_URL='redis://redis-minotour-instance:6379/0'
+export MT_CELERY_RESULT_BACKEND='redis://redis-minotour-instance:6379/0'
 python3 manage.py makemigrations;
 python3 manage.py migrate;
 python3 manage.py loaddata fixtures/auxiliary_data.json;
