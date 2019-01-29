@@ -1048,25 +1048,23 @@ def flowcell_statistics(request, pk):
     """
 
     q = request.GET.get('barcode_name', 'All reads')
+    qlist = list()
+    qlist.append(q)
+    if q != "All reads":
+        qlist.append("All reads")
+
+    #print (qlist)
 
     flowcell = Flowcell.objects.get(pk=pk)
 
     run_list = flowcell.runs.all()
 
-    key_list = FlowcellStatisticBarcode.objects\
-        .filter(flowcell=flowcell)\
-        .filter(barcode_name=q)\
-        .values_list('barcode_name', 'read_type_name', 'status')\
-        .distinct()
-
-    result_dict = dict()
-
-    data_keys = []
-
     queryset = FlowcellStatisticBarcode.objects \
         .filter(flowcell=flowcell) \
-        .filter(barcode_name=q) \
+        .filter(barcode_name__in=qlist) \
         .order_by('sample_time')
+
+    ## We want to throw away pass and fail when we are looking at a barcoded run...
 
     df = pd.DataFrame(list(queryset.values('read_type_name','sample_time','barcode_name','status','read_count','max_length','total_length','quality_sum')))
     df['read_type'] = np.where(df['status'] == 'True', "Pass", "Fail")
@@ -1075,7 +1073,7 @@ def flowcell_statistics(request, pk):
     df=df.drop('status',axis=1)
     df2['read_type'] = "All"
     df2 = df2.reset_index()
-    df3 = pd.concat([df,df2],ignore_index=True)
+    df3 = pd.concat([df,df2],ignore_index=True,sort=True)
     df3['cumulative_read_count'] = df3.groupby(['barcode_name','read_type_name','read_type'])['read_count'].apply(lambda x: x.cumsum())
     df3['cumulative_bases'] = df3.groupby(['barcode_name','read_type_name', 'read_type'])['total_length'].apply(lambda x: x.cumsum())
     df3['key']=df3['barcode_name'].astype('str')+" - "+ df3['read_type_name'].astype('str') + " - " +df3['read_type'].astype('str')
@@ -1084,7 +1082,8 @@ def flowcell_statistics(request, pk):
     df3['average_length'] = df3['total_length']/df3['read_count']
     df3['sequence_rate'] = df3['total_length']/60
     df3['corrected_time'] = df3['sample_time'].astype(np.int64) // 10**6
-
+    if q != "All reads":
+        df3 = df3.drop(df3.index[(df3.barcode_name == 'All reads') & (df3.read_type != "All")])
     data_keys = df3['key'].unique().tolist()
 
     result_dict = {k:df3[df3['key'].eq(k)][['corrected_time','average_quality','average_length','cumulative_bases','cumulative_read_count','max_length','sequence_rate']].values.tolist() for k in df3.key.unique()}
@@ -1108,8 +1107,6 @@ def flowcell_statistics(request, pk):
         'data': result_dict,
         'date_created': datetime.datetime.now()
     }
-
-    print (type(res))
 
     return HttpResponse(json.dumps(res, cls=DjangoJSONEncoder), content_type="application/json")
 

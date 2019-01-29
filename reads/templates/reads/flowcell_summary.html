@@ -36,7 +36,7 @@
                                     {% elif record.read_type == "Fail" %}
                                 <tr class="danger">
                                     {% else %}
-                                <tr class="info" style="font-weight:bold">
+                                <tr class="info" style="font-weight:bold;font-style: italic">
                             {% endif %}
                          {% if record.read_type == "all" %}
                              <td>{{ record.barcode_name }}</td>
@@ -101,7 +101,7 @@
                                     {% elif record.read_type == "Fail" %}
                                 <tr class="danger">
                                     {% else %}
-                                <tr class="info" style="font-weight:bold">
+                                <tr class="info" style="font-weight:bold;font-style: italic">
                             {% endif %}
                               {% if record.read_type == "all" %}
                              <td>{{ record.barcode_name }}</td>
