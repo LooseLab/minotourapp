@@ -41,8 +41,10 @@
         <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
     </div>
 </div>
-      The histogram data are derived from the same source as the MinKNOW read length histogram. We currently report these in events, not bases.
-  </div
+      The histogram data are derived from the same source as the MinKNOW read length histogram.<br>
+      We currently report these in events, not bases.<br>
+      Note that the histogram will dynamically scale as does the MinKNOW histogram.<br>
+      However these results will typically be visualised at higher resolution than Native MinKNOW.
 </div>
 </div>
 
@@ -63,10 +65,11 @@
          style="height:400px;display:block;">
         <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Occupancy
     </div>
-    The holy grail of Nanopore sequencing. You want to see a library with 90% occupancy or greater. <br>
-    If you are sequencing very short material (<500 bp) or very long (>250 kb) 90% occupancy is a challenge. <br>
-    But - if you are only seeing 10% occupancy something is wrong.
 </div>
+      The holy grail of Nanopore sequencing. You want to see a library with 90% occupancy or greater. Here we calculate occupancy as (in strand)/(in strand + adapter + single)*100 <br>
+      If you are sequencing very short material (<500 bp) or very long (>250 kb) 90% occupancy is a challenge. <br>
+      But - if you are only seeing 10% occupancy on a standard Nanopore library something is wrong (and most likely with your library prep steps).<br>
+      Check the number of adapter sequences observed as well.
   </div>
 </div>
 
