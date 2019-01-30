@@ -1,9 +1,10 @@
-FROM python:3.6
+# FROM python:3.6
+FROM ubuntu:latest
 MAINTAINER Roberto Santos
 
 ENV PYTHONUNBUFFERED 1
 
-#RUN mkdir -p /var/lib/minotour/apps/minotourapp /var/lib/minotour/logs /var/lib/minotour/data
+RUN mkdir -p /var/lib/minotour/apps/minotourapp /var/lib/minotour/logs /var/lib/minotour/data
 
 WORKDIR /var/lib/minotour/apps/minotourapp
 
@@ -16,6 +17,12 @@ WORKDIR /var/lib/minotour/apps/minotourapp
 # COPY entrypoint.sh /var/lib/minotour/apps/minotourapp/
 
 COPY . /var/lib/minotour/apps/minotourapp/
+
+RUN apt-get update && apt-get install -y git build-essential libz-dev python3-pip libmysqlclient-dev
+
+RUN cd extra/centrifuge-1.0.4-beta && make && cd ..
+
+RUN cd extra/miniasm-0.3 && make && cd ..
 
 #RUN python3 manage.py makemigrations
 #RUN python3 manage.py migrate
