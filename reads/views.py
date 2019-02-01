@@ -20,6 +20,7 @@ from rest_framework.views import APIView
 
 from alignment.models import PafRoughCov
 from centrifuge.models import CentrifugeOutput
+from assembly.models import GfaStore
 from jobs.models import JobMaster, JobType
 from minotourapp import settings
 from reads.models import (Barcode, FastqFile, FastqRead, FastqReadType,
@@ -1373,8 +1374,9 @@ def flowcell_run_stats_latest(request, pk, checkid):
     else:
 
         minion_run_status = None
-
-    crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all(), id__gt=checkid)[:1000]
+    #Temporary work around to show all data.
+    #crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all(), id__gt=checkid)[:1000]
+    crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all(), id__gt=checkid)
 
     result = []
 
@@ -1557,6 +1559,14 @@ def flowcell_tabs_details(request, pk):
     if centrifuge_output_list.count() > 0:
 
         tabs.append('metagenomics')
+
+    #Check for assembly data
+
+    assembly_output_list = GfaStore.objects.filter(flowcell=pk)
+
+    if assembly_output_list.count() > 0:
+
+        tabs.append('sequence-assembly')
 
     # tabs_send = list()
     #
