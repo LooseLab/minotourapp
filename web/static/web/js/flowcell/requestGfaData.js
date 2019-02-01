@@ -3,14 +3,14 @@ function updateAssemblyCharts(chart, field) {
     while (chart.series.length > 0) {
         chart.series[0].remove();
     }
-
-    for (var barcode of Object.keys(self.assemblySummary)) {
-
-        for (var type of Object.keys(self.assemblySummary[barcode])) {
+    console.log(this.assemblySummary);
+    for (var barcode of Object.keys(this.assemblySummary)) {
+        console.log(barcode);
+        for (var type of Object.keys(this.assemblySummary[barcode])) {
 
             chart.addSeries({
                 name: barcode + " - " + type,
-                data: self.assemblySummary[barcode][type][field]
+                data: this.assemblySummary[barcode][type][field]
             });
 
         }
@@ -19,21 +19,21 @@ function updateAssemblyCharts(chart, field) {
 }
 
 function updateAssemblyBoxplot() {
-    var chart = self.ChartBoxPlotContigs;
+    var chart = this.ChartBoxPlotContigs;
 
     var barcats = [];
     var byreadtype = {};
 
-    for (var barcode of Object.keys(self.assemblyLatest)) {
+    for (var barcode of Object.keys(this.assemblyLatest)) {
 
         barcats.push(barcode);
 
-        for (var type of Object.keys(self.assemblyLatest[barcode])) {
+        for (var type of Object.keys(this.assemblyLatest[barcode])) {
 
             if (byreadtype[type] === undefined) {
                 byreadtype[type] = [];
             }
-            var contigsizelist = JSON.parse(self.assemblyLatest[barcode][type]['allcontigs']);
+            var contigsizelist = JSON.parse(this.assemblyLatest[barcode][type]['allcontigs']);
             byreadtype[type].push(contigsizelist.sort(function (a, b) {
                 return a - b;
             }));
@@ -62,19 +62,19 @@ function updateAssemblyBoxplot() {
 
 function createAssemblyTable() {
     stringtowrite = '<table class="table table-condensed"><tr><th>Barcode</th><th>ReadType</th><th>Input Reads</th><th>Contigs</th><th>Min</th><th>Max</th><th>N50</th><th>Mean</th><th>Total</th><th>Time</th></tr>';
-    for (var barcode of Object.keys(self.assemblyLatest)) {
-        for (var type of Object.keys(self.assemblyLatest[barcode])) {
+    for (var barcode of Object.keys(this.assemblyLatest)) {
+        for (var type of Object.keys(this.assemblyLatest[barcode])) {
             stringtowrite = stringtowrite + '<tr>';
             stringtowrite = stringtowrite + '<td>' + barcode + ' </td>';
             stringtowrite = stringtowrite + '<td>' + type + ' </td>';
-            stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['nreads'] + ' </td>';
-            stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['ncontigs'] + ' </td>';
-            stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['min'] + ' </td>';
-            stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['max'] + ' </td>';
-            stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['n50'] + ' </td>';
-            stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['mean'] + ' </td>';
-            stringtowrite = stringtowrite + '<td>' + self.assemblyLatest[barcode][type]['sum'] + ' </td>';
-            stringtowrite = stringtowrite + '<td><i>' + new Date(self.assemblyLatest[barcode][type]['time']) + '</i></td> ';
+            stringtowrite = stringtowrite + '<td>' + this.assemblyLatest[barcode][type]['nreads'] + ' </td>';
+            stringtowrite = stringtowrite + '<td>' + this.assemblyLatest[barcode][type]['ncontigs'] + ' </td>';
+            stringtowrite = stringtowrite + '<td>' + this.assemblyLatest[barcode][type]['min'] + ' </td>';
+            stringtowrite = stringtowrite + '<td>' + this.assemblyLatest[barcode][type]['max'] + ' </td>';
+            stringtowrite = stringtowrite + '<td>' + this.assemblyLatest[barcode][type]['n50'] + ' </td>';
+            stringtowrite = stringtowrite + '<td>' + this.assemblyLatest[barcode][type]['mean'] + ' </td>';
+            stringtowrite = stringtowrite + '<td>' + this.assemblyLatest[barcode][type]['sum'] + ' </td>';
+            stringtowrite = stringtowrite + '<td><i>' + new Date(this.assemblyLatest[barcode][type]['time']) + '</i></td> ';
             stringtowrite = stringtowrite + '</tr>';
         }
     }
@@ -83,7 +83,7 @@ function createAssemblyTable() {
 }
 
 function requestGfaDataCallback(data) {
-
+        //console.log(data);
         if (data.length > 0) {
 
             var summaries = {}
@@ -130,7 +130,7 @@ function requestGfaDataCallback(data) {
 
             this.assemblySummary = summaries;
             this.assemblyLatest = latest;
-
+            //console.log(summaries);
             this.updateAssemblyCharts(this.ChartNumContigs, 'ncontigs');
             this.updateAssemblyCharts(this.ChartN50Contigs, 'n50');
             this.updateAssemblyCharts(this.ChartSumContigs, 'sum');
