@@ -1157,6 +1157,7 @@ def flowcell_speed(request,pk):
     return Response(df['mean_speed'].to_json(orient="columns"))
 
 
+
 @api_view(['GET'])
 def flowcell_histogram_summary(request, pk):
 

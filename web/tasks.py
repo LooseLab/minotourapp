@@ -374,6 +374,35 @@ def fetchreads_assem(runs,chunk_size,last_read):
     read_count = len(fastq_df_barcode)
     return fastq_df_barcode,last_read,read_count,fastasm#,fastqs_list
 
+
+def custom_minimap2(newreads,previousreads,paf,firsttime=False,cores=4):
+    """
+    This function will run an iterative all vs all minimap2 assembly by mapping new reads to old reads, old to new and new to new.
+    :param newreads: path to file containing new reads
+    :param previousreads: path to file containing reads from previous iterations
+    :param paf: path to file containing paf data for assembly
+    :param firsttime: if True, this is the first assembly of the data
+    :param cores: number of cores to use for minimap assembly
+    :return: Nothing
+    """
+    cmd = 'minimap2 -x ava-ont -t%s %s %s >> %s ' % (cores,newreads,newreads,paf)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    (out, err) = proc.communicate()
+    status = proc.wait()
+    if not firsttime:
+        cmd = 'minimap2 -k15 -m100 -g10000 -r2000 --max-chain-skip 25 -t%s %s %s >> %s' % (cores, newreads, previousreads, paf)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        (out, err) = proc.communicate()
+        status = proc.wait()
+        cmd = 'minimap2 -k15 -m100 -g10000 -r2000 --max-chain-skip 25 -t%s %s %s  >> %s' % (cores, previousreads, newreads, paf)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        (out, err) = proc.communicate()
+        status = proc.wait()
+
+    return
+
+
+
 @task()
 def run_minimap2_assembly(job_master_id):
 
@@ -383,80 +412,108 @@ def run_minimap2_assembly(job_master_id):
 
     runs = flowcell.runs.all()
 
-    chunk_size = 8000
+    chunk_size = 25000
 
     fastq_df_barcode, last_read, read_count, fastasm = callfetchreads_assem(runs, chunk_size, job_master.last_read)
 
-    tmp = job_master.tempfile_name
 
-    if tmp == None:
-        tmp = tempfile.NamedTemporaryFile(delete=False).name
-        later = datetime.utcnow() + timedelta(days=1)
-        clean_up_assembly_files.apply_async((flowcell.id,job_master_id,tmp), eta=later)
+    if read_count > 0:
+        tmp = job_master.tempfile_name
 
-    #print (tmp)
+        if tmp == None:
+            tmp = tempfile.NamedTemporaryFile(delete=False).name
+            later = datetime.utcnow() + timedelta(days=1)
+            clean_up_assembly_files.apply_async((flowcell.id,job_master_id,tmp), eta=later)
 
-    fastqdict = dict()
+        #print (tmp)
 
-    newfastqs = 0
+        fastqdict = dict()
 
-    for fastq in fastasm:
-        if fastq.barcode not in fastqdict:
-            fastqdict[fastq.barcode] = dict()
-        if fastq.type not in fastqdict[fastq.barcode]:
-            fastqdict[fastq.barcode][fastq.type] = []
-        fastqdict[fastq.barcode][fastq.type].append([fastq.read_id, fastq.sequence])
-        newfastqs += 1
+        newfastqs = 0
 
-    for bar in fastqdict:
-        for ty in fastqdict[bar]:
-            tmpfilename = tmp + bar.name + ty.name + ".gz"
-            tmpfilename = tmpfilename.replace(" ", "_")
-            filecontent = ""
-            for fq in fastqdict[bar][ty]:
-                filecontent+=('>{}\n{}\n'.format(fq[0], fq[1]))
-            with gzip.open(tmpfilename, 'a',9) as f:
-                f.write(filecontent.encode('utf-8'))
-            cmd = 'minimap2 -x ava-ont -t6 %s %s | miniasm -f %s - ' % (tmpfilename, tmpfilename, tmpfilename)
-            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE, shell=True)
-            (out, err) = proc.communicate()
-            status = proc.wait()
-            gfa = out.decode("utf-8")
-            gfadata = gfa.splitlines()
-            seqlens = []
-            gfaall = ""
-            for line in gfadata:
-                gfaall += line
-                line = line.strip('\n')
-                record = line.split('\t')
-                if record[0] == 'S':
-                    seqlens.append(len(record[2]))
-            newgfastore = GfaStore(flowcell=flowcell, barcode=bar, readtype=ty)
-            newgfastore.nreads = job_master.read_count + read_count
-            newgfastore.gfaformat = gfaall  # string  The whole GFA file
-            newgfastore.save()
-            newgfa = GfaSummary(flowcell=flowcell, barcode=bar, readtype=ty)
-            newgfa.nreads = job_master.read_count + read_count
-            if len(seqlens) > 0:
-                nparray = np.array(seqlens)
-                newgfa.ncontigs = len(seqlens)  # int	Number of contigs
-                newgfa.maxlen = max(seqlens)  # int	Maximum contig length
-                newgfa.minlen = min(seqlens)  # int	Mininum contig length
-                newgfa.totlen = sum(seqlens)  # int	Total contig length
-                newgfa.n50len = getn50(seqlens)  # int Contig N50
-                newgfa.meanlen = sum(seqlens) / len(seqlens)  # int Mean contig length
-                newgfa.allcontigs = "[%d, %d, %d, %d, %d]" % (
-                min(seqlens), np.percentile(nparray, 25), np.percentile(nparray, 50), np.percentile(nparray, 75),
-                max(seqlens))
-            else:
-                newgfa.ncontigs = 0  # int	Number of contigs
-                newgfa.maxlen = 0  # int	Maximum contig length
-                newgfa.minlen = 0  # int	Mininum contig length
-                newgfa.totlen = 0  # int	Total contig length
-                newgfa.n50len = 0  # int Contig N50
-                newgfa.meanlen = 0  # int Mean contig length
-                newgfa.allcontigs = "[0,0,0,0,0]"
-            newgfa.save()
+        for fastq in fastasm:
+            if fastq.barcode not in fastqdict:
+                fastqdict[fastq.barcode] = dict()
+            if fastq.type not in fastqdict[fastq.barcode]:
+                fastqdict[fastq.barcode][fastq.type] = []
+            fastqdict[fastq.barcode][fastq.type].append([fastq.read_id, fastq.sequence])
+            newfastqs += 1
+
+        for bar in fastqdict:
+            for ty in fastqdict[bar]:
+                tmpfilename = tmp + bar.name + ty.name + ".gz"
+                tmpfilename = tmpfilename.replace(" ", "_")
+                tmpfilenameprevreads = tmp + "_prev_" + bar.name + ty.name + ".gz"
+                tmpfilenameprevreads = tmpfilenameprevreads.replace(" ", "_")
+                tmpfilenamepaf = tmp + bar.name + ty.name + ".paf"
+                tmpfilenamepaf =tmpfilenamepaf.replace(" ", "_")
+                filecontent = ""
+                for fq in fastqdict[bar][ty]:
+                    filecontent+=('>{}\n{}\n'.format(fq[0], fq[1]))
+                #with gzip.open(tmpfilename, 'a',9) as f:
+                with gzip.open(tmpfilename, 'w',9) as f:
+                    f.write(filecontent.encode('utf-8'))
+                    #cmd = 'minimap2 -x ava-ont -t6 %s %s | miniasm -f %s - ' % (tmpfilename, tmpfilename, tmpfilename)
+                    #proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,stderr=subprocess.PIPE, shell=True)
+                    #(out, err) = proc.communicate()
+                    #status = proc.wait()
+
+                if job_master.last_read==0:
+                    firsttime=True
+                else:
+                    firsttime=False
+
+                custom_minimap2(tmpfilename, tmpfilenameprevreads, tmpfilenamepaf, firsttime=firsttime, cores=4)
+
+                cmd = 'cat %s >> %s' % (tmpfilename, tmpfilenameprevreads)
+
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                status = proc.wait()
+                os.remove(tmpfilename)
+
+                cmd = 'miniasm -f %s %s ' % (tmpfilenameprevreads, tmpfilenamepaf)
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                (out, err) = proc.communicate()
+                status = proc.wait()
+                gfa = out.decode("utf-8")
+                gfadata = gfa.splitlines()
+                seqlens = []
+                gfaall = ""
+
+                for line in gfadata:
+                    gfaall += line
+                    line = line.strip('\n')
+                    record = line.split('\t')
+                    #print (line)
+                    if record[0] == 'S':
+                        seqlens.append(len(record[2]))
+
+                newgfastore = GfaStore(flowcell=flowcell, barcode=bar, readtype=ty)
+                newgfastore.nreads = job_master.read_count + read_count
+                newgfastore.gfaformat = gfaall  # string  The whole GFA file
+                newgfastore.save()
+                newgfa = GfaSummary(flowcell=flowcell, barcode=bar, readtype=ty)
+                newgfa.nreads = job_master.read_count + read_count
+                if len(seqlens) > 0:
+                    nparray = np.array(seqlens)
+                    newgfa.ncontigs = len(seqlens)# int Number of contigs
+                    newgfa.maxlen = max(seqlens)# int Maximum contig length
+                    newgfa.minlen = min(seqlens)  # int Mininum contig length
+                    newgfa.totlen = sum(seqlens)  # int Total contig length
+                    newgfa.n50len = getn50(seqlens)  # int Contig N50
+                    newgfa.meanlen = sum(seqlens) / len(seqlens)  # int Mean contig length
+                    newgfa.allcontigs = "[%d, %d, %d, %d, %d]" % (
+                    min(seqlens), np.percentile(nparray, 25), np.percentile(nparray, 50), np.percentile(nparray, 75),
+                    max(seqlens))
+                else:
+                    newgfa.ncontigs = 0  # int Number of contigs
+                    newgfa.maxlen = 0  # int Maximum contig length
+                    newgfa.minlen = 0  # int Mininum contig length
+                    newgfa.totlen = 0  # int Total contig length
+                    newgfa.n50len = 0  # int Contig N50
+                    newgfa.meanlen = 0  # int Mean contig length
+                    newgfa.allcontigs = "[0,0,0,0,0]"
+                newgfa.save()
 
     job_master = JobMaster.objects.get(pk=job_master_id)
     job_master.running = False
@@ -572,18 +629,18 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
                 newgfa.nreads = totfq
                 if len(seqlens) > 0:
                     nparray = np.array(seqlens)
-                    newgfa.ncontigs = len(seqlens)#	int	Number of contigs
-                    newgfa.maxlen = max(seqlens)  #	int	Maximum contig length
-                    newgfa.minlen  = min(seqlens) #	int	Mininum contig length
-                    newgfa.totlen = sum(seqlens)  #	int	Total contig length
-                    newgfa.n50len = getn50(seqlens) #    int Contig N50
+                    newgfa.ncontigs = len(seqlens)# int Number of contigs
+                    newgfa.maxlen = max(seqlens)  # int Maximum contig length
+                    newgfa.minlen  = min(seqlens) # int Mininum contig length
+                    newgfa.totlen = sum(seqlens)  # int Total contig length
+                    newgfa.n50len = getn50(seqlens) # int Contig N50
                     newgfa.meanlen = sum(seqlens)/len(seqlens) #   int Mean contig length
-                    newgfa.allcontigs = "[%d, %d, %d, %d, %d]" % (min(seqlens), np.percentile(nparray, 25), np.percentile(nparray, 50), np.percentile(nparray, 75), max(seqlens))
+                    newgfa.allcontigs = "[%d, %d, %d, %d, %d]" % (min(seqlens), np.percentile(nparray,25), np.percentile(nparray,50), np.percentile(nparray,75), max(seqlens))
                 else:
-                    newgfa.ncontigs = 0 #	int	Number of contigs
-                    newgfa.maxlen = 0   #	int	Maximum contig length
-                    newgfa.minlen  = 0  #	int	Mininum contig length
-                    newgfa.totlen = 0   #	int	Total contig length
+                    newgfa.ncontigs = 0 # int Number of contigs
+                    newgfa.maxlen = 0   # int Maximum contig length
+                    newgfa.minlen  = 0  # int Mininum contig length
+                    newgfa.totlen = 0   # int Total contig length
                     newgfa.n50len = 0   #   int Contig N50
                     newgfa.meanlen = 0  #   int Mean contig length
                     newgfa.allcontigs = "[0,0,0,0,0]"
