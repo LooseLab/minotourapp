@@ -8,9 +8,9 @@ docker build -f db.dockerfile -t robertosantos/db-minotour .
 
 docker build -f web.dockerfile -t robertosantos/web-minotour .
 
-docker build -f .\celery.dockerfile -t robertosantos/celery-minotour .
+docker build -f celery.dockerfile -t robertosantos/celery-minotour .
 
-docker build -f .\celery-worker.dockerfile -t robertosantos/celery-worker-minotour .
+docker build -f celery-worker.dockerfile -t robertosantos/celery-worker-minotour .
 
 
 docker run --name redis-minotour-instance -p 6379:6379 -d --network minotour-network redis;
