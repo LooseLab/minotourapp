@@ -1382,17 +1382,16 @@ def flowcell_run_stats_latest(request, pk, checkid):
     result = []
 
     for minion_run_stats in crazyminIONrunstats:
-
         element = {
             "id": minion_run_stats.id,
-            "minION": None,
-            "run_id": None,
+            # "minION": None,
+            # "run_id": None,
             "sample_time": minion_run_stats.sample_time,
             "event_yield": minion_run_stats.event_yield,
             "asic_temp": minion_run_stats.asic_temp,
             "heat_sink_temp": minion_run_stats.heat_sink_temp,
             "voltage_value": minion_run_stats.voltage_value,
-            "mean_ratio": minion_run_stats.mean_ratio,
+            # "mean_ratio": minion_run_stats.mean_ratio,
             "open_pore": minion_run_stats.open_pore,
             "in_strand": minion_run_stats.in_strand,
             "multiple": minion_run_stats.multiple,
@@ -1414,17 +1413,16 @@ def flowcell_run_stats_latest(request, pk, checkid):
             "minKNOW_histogram_bin_width": minion_run_stats.minKNOW_histogram_bin_width
         }
 
-        if minion_run_status:
-
-            element['minKNOW_colours_string'] = minion_run_status.minKNOW_colours_string
-
-        else:
-
-            element['minKNOW_colours_string'] = None
-
         result.append(element)
 
-    return JsonResponse(result, safe=False)
+    myresult = dict()
+    myresult['data']=result
+    if minion_run_status:
+        myresult['minKNOW_colours_string'] = minion_run_status.minKNOW_colours_string
+    else:
+        myresult['minKNOW_colours_string'] = None
+
+    return JsonResponse(myresult, safe=False)
 
 
 @api_view(['GET'])
