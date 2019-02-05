@@ -31,7 +31,7 @@ class FlowcellGfaSummarySerializer(serializers.HyperlinkedModelSerializer):
         fields = (
             'id',
             'run',
-            'barcodegroup_name',
+            'barcode_name',
             'type_name',
             'nreads',
             'ncontigs',

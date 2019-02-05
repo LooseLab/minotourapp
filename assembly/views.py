@@ -50,3 +50,6 @@ def flowcell_gfa_output_list(request, run_id):
     print (queryset)
 
     return Response(serializer.data)
+
+#@api_view(['GET'])
+#def flowcell_

@@ -38,7 +38,7 @@ class GfaSummary(models.Model):
         return self.barcode.name
 
     def barcodegroup_name(self):
-        return self.barcodegroup.name
+        return self.barcode.name
 
     def type_name(self):
         return self.readtype.name

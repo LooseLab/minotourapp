@@ -6,10 +6,10 @@ ENV PYTHONUNBUFFERED 1
 
 ENV MT_SECRET_KEY=''
 ENV MT_DJANGO_DEBUG='True'
-ENV MT_DB_USER='dba'
-ENV MT_DB_PASS='dba'
+ENV MT_DB_USER='root'
+ENV MT_DB_PASS='test'
 ENV MT_DB_HOST='minotour_db'
-ENV MT_DB_PORT='5432'
+ENV MT_DB_PORT='3306'
 ENV MT_DB_NAME='minotour'
 ENV MT_MAILGUN_ACCESS_KEY=''
 ENV MT_MAILGUN_SERVER_NAME=''
@@ -18,31 +18,17 @@ ENV MT_TWITTOKEN_SECRET=''
 ENV MT_TWITCONSUMER_KEY=''
 ENV MT_TWITCONSUMER_SECRET=''
 ENV MT_REFERENCE_LOCATION='/home/mbzros/a/data'
-ENV PATH="$HOME/a/opt/minimap2:$HOME/a/opt/bwa:$PATH"
 ENV MT_MINIMAP2="~/a/opt/minimap2/minimap2"
 ENV MT_BWA="~/a/opt/bwa/bwa"
-#ENV MT_DB_ENGINE="django.db.backends.mysql"
-ENV MT_DB_ENGINE="django.db.backends.postgresql"
+ENV MT_DB_ENGINE="django.db.backends.mysql"
+# ENV MT_DB_ENGINE="django.db.backends.postgresql"
 
 RUN mkdir -p /var/lib/minotour/apps/minotourapp /var/lib/minotour/logs /var/lib/minotour/data
 
 WORKDIR /var/lib/minotour/apps/minotourapp
 
-COPY requirements.txt /var/lib/minotour/apps/minotourapp/
-
-RUN apt-get update && apt-get install -y python3-pip libmysqlclient-dev
-
-RUN pip3 install -r /var/lib/minotour/apps/minotourapp/requirements.txt
-
-COPY entrypoint.sh /var/lib/minotour/apps/minotourapp/
-
 COPY . /var/lib/minotour/apps/minotourapp/
-
-#RUN python3 manage.py makemigrations
-#RUN python3 manage.py migrate
-#RUN python3 manage.py loaddata fixtures/auxiliary_data.json
 
 EXPOSE 8000
 
-#CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
-CMD ["/bin/sh", "/var/lib/minotour/apps/minotourapp/entrypoint.sh"]
+CMD ["sh", "entrypoint.sh"]

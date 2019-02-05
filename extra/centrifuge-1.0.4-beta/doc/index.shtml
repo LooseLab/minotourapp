@@ -1,0 +1,100 @@
+<!--#set var="Title" value="Centrifuge" -->
+<!--#set var="NoCrumbs" value="1" -->
+<!--#set var="SubTitle" value="Classifier for metagenomic sequences"-->
+<!--#set var="ExtraCSS" value="/software/centrifuge/add.css"-->
+<!--#include virtual="/iheader_r.shtml"-->
+<div id="mainContent">
+  <div id="subheader">
+    <table width="100%"><tbody><tr>
+	  <td>
+	    <strong>Centrifuge</strong> is a very rapid and memory-efficient system for the classification of DNA sequences from microbial samples, with better sensitivity than and comparable accuracy to other leading systems. The system uses a novel indexing scheme based on the Burrows-Wheeler transform (BWT) and the Ferragina-Manzini (FM) index, optimized specifically for the metagenomic classification problem. Centrifuge requires a relatively small index (e.g., 4.3 GB for ~4,100 bacterial genomes) yet provides very fast classification speed, allowing it to process a typical DNA sequencing run within an hour. Together these advances enable timely and accurate analysis of large metagenomics data sets on conventional desktop computers.
+	    <br>
+	  </td>
+	  <td valign="middle" align="right">
+	    <a href="http://opensource.org"><img alt="Open Source Software" src="images/osi-certified.gif" border="0"></a>
+	</td></tr>
+    </tbody></table>
+  </div>
+  <div id="main">
+    <div id="rightside">
+	<!--#include virtual="sidebar.inc.shtml"-->
+	</div> <!-- End of "rightside" -->
+	<div id="leftside">
+          <h2>Have a look at <a href="Pavian">https://github.com/fbreitwieser/pavian</a> for visual analysis of results generated with Centrifuge!</h2>
+
+	  <h2>Centrifuge 1.0.3-beta release 12/06/2016</h2>
+          <ul>
+              <li>Fixed Perl hash bangs (thanks to Andreas Sjödin / @druvus).</li>
+              <li>Updated nt database building to work with new accession code scheme.</li>
+              <li>Added option <tt>--tab-fmt-cols</tt> to specify output format columns.</li>
+              <li>A minor fix for traversing the hitmap up the taxonomy tree.</li>
+          </ul>
+          <br/>
+
+          <h2><a href="http://genome.cshlp.org/content/early/2016/11/16/gr.210641.116.abstract">Centrifuge</a> paper published at Genome Research 11/16/2016</h2>  
+
+	  <h2>Centrifuge 1.0.2-beta release 5/25/2016</h2>
+          <ul>
+	    <li>Fixed a runtime error during abundance analysis.</li>
+	    <li>Changed a default report file name from centrifuge_report.csv to centrifuge_report.tsv. </li>
+          </ul>
+          <br/>
+
+	  <h2>Centrifuge preprint is available <a href="http://biorxiv.org/content/early/2016/05/25/054965">here</a> at bioRxiv 5/24/2016</h2>
+	  
+	  <h2>Centrifuge 1.0.1-beta release 3/8/2016</h2>
+          <ul>
+	    <li>
+	      Centrifuge is now able to work directly with SRA data: both downloaded on demand over internet and prefetched to local disks.
+	      <ul>
+              <li>
+                For example, you can run Centrifuge with SRA data (SRR353653) as follows. <br/>
+                <i>centrifuge -x /path/to/index --sra-acc SRR353653</i>
+              </li>
+              <li> This eliminates the need to download SRA reads manually and to convert them into fasta/fastq format without affecting the run time. </li>
+            </ul>
+	    </li>
+	    <li>
+	      We provide a Centrifuge index (<i>nt</i> index) for NCBI nucleotide non-redundant sequences collected from plasmids, organelles, viruses, archaea, bacteria, and eukaryotes, totaling ~109 billion bps. Centrifuge is a very good alternative to Megablast (or Blast) for searching through this huge database.
+	    </li>
+	    <li>
+	      Fixed Centrifuge's scripts related to sequence downloading and index building.
+	    </li>
+          </ul>
+          <br/>
+	  <h2>Centrifuge 1.0.0-beta release 2/19/2016 - first release</h2>
+          <ul>
+	    <li>
+	      The first release of Centrifuge features a dramatically reduced database size,  higher classification accuracy and sensitivity, and comparably rapid classification speed.
+	    </li>
+	    <li>
+	      Please refer to the manual for details on how to run Centrifuge and interpret Centrifuge’s classification results.
+	    </li>
+	    <li>
+	      We provide several standard indexes designed to meet the needs of most users (see the side panel - Indexes)
+	      <ul>
+		<li> For compressed indexes, we first combined bacterial genomes belonging to the same species and removed redundant sequences, and built indexes using the combined sequences.
+		As a result, those compressed indexes are much smaller than uncompressed indexes.  Centrifuge classifies reads at the species level when using the compressed indexes and at the strain level (or the genome level) when using the uncompressed indexes. </li>
+	      </ul>
+	    </li>
+          </ul>
+          <br/>
+	  <h2>The Centrifuge source code is available in a <a href="https://github.com/infphilo/centrifuge">public GitHub repository</a> (7/14/2015).</h2>
+	</div>
+  </div>
+</div>
+
+<!--#include virtual="footer.inc.html"-->
+
+<!-- Google analytics code -->
+<script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+var pageTracker = _gat._getTracker("UA-6101038-1");
+pageTracker._trackPageview();
+</script>
+<!-- End google analytics code -->
+</body>
+</html>
