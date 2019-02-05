@@ -23,67 +23,102 @@ from web.tasks_alignment import align_reads
 pd.options.mode.chained_assignment = None
 logger = get_task_logger(__name__)
 
-def callfetchreads_cent(runs,chunk_size,last_read):
-    fastasm=list()
-    #fastqs_list = list()
+
+def callfetchreads_cent(runs, chunk_size, last_read):
+    """
+    Call the fetch reads function to create a fastq for the process
+    :param runs: List of all runs on the flowcell
+    :param chunk_size: The target number of reads we want
+    :param last_read: The previous last read we took
+    :return:
+    """
+    # a list of the fastqs object to pass into the mapping functionality
+    fasta_objects = list()
+    # Initialise the data frame
     fastq_df_barcode = pd.DataFrame()
     while True:
-        #reads, last_read, read_count, fastasmchunk, fastqs_list_chunk = fetchreads_cent(runs, chunk_size, last_read)
+        # Call fetchreads_cent to actually query the database
         reads, last_read, read_count, fastasmchunk = fetchreads_cent(runs, chunk_size, last_read)
-        fastasm += fastasmchunk
-        #fastqs_list += fastqs_list_chunk
+        # Add fasta_objects chunk to the list
+        fasta_objects += fastasmchunk
+        # Append the reads_df to the fastq_df
         fastq_df_barcode = fastq_df_barcode.append(reads)
+        # If we have enough reads (more than chunk_size) or no reads
         if len(fastq_df_barcode) >= chunk_size or len(reads) == 0:
             break
+    # Update the read count with the number of reads we just fetched
     read_count = len(fastq_df_barcode)
-    return fastq_df_barcode, last_read, read_count, fastasm #,fastqs_list
+    return fastq_df_barcode, last_read, read_count, fasta_objects
 
 
 def fetchreads_cent(runs, chunk_size, last_read):
-    countsdict=dict()
-    fastasm = list()
-    #fastqs_list = list()
+    """
+    Query the database for runs from a flowcell
+    :param runs: The list of runs objects for this flowcell
+    :param chunk_size: The target number of reads to have pulled back
+    :param last_read: The id of the last read
+    :return:
+    """
+    # Store the first read id and which run it's from this dict
+    countsdict = dict()
+    # The list of fastqread objects
+    fasta_objects = list()
+    # loop through the runs
     for run in runs:
-        #fastqs = FastqRead.objects.filter(run=run, id__gt=int(last_read)).first()
+        # fastqs = FastqRead.objects.filter(run=run, id__gt=int(last_read)).first()
+        # Query the database for the reads objects
         fastqs = FastqRead.objects.values_list('id').filter(run=run, id__gt=int(last_read)).first()
+        # If there are fastqs store the object
         if fastqs:
+            # Store the first id you get and the urn it's from
             countsdict[fastqs[0]] = run
+    # initialise the count
     count = 1
+    # initialise the a dataframe to append reads to
     fastq_df_barcode = pd.DataFrame()
-    if len(countsdict)>1:
+    # If you have reads from more than one run
+    if len(countsdict) > 1:
+        # Start with first read entry from this run
         for entry in sorted(countsdict):
+            # If we haven't done more iterations than we have dict entries
             if count < len(countsdict):
+                # Do the query
                 fastqs = FastqRead.objects.filter(run=countsdict[entry],
-                                              id__gt=int(last_read),
-                                                id__lt=int(sorted(countsdict)[count]),
-                                                         )[:chunk_size]
+                                                  id__gt=int(last_read),
+                                                  id__lt=int(sorted(countsdict)[count]),
+                                                  )[:chunk_size]
+                # Append new results to barcode
                 fastq_df_barcode = fastq_df_barcode.append(pd.DataFrame.from_records(
                     fastqs.values("read_id", "barcode_name", "sequence", "id")))
 
-                # Create a list of the fastQRead objects we will use in this objects
-                fastasm += list(fastqs)
-                # Create a list of 8000 tuples each with these 4 objects in it
-                #fastqs_list += fastqs.values_list('read_id', 'barcode_name', 'sequence', 'id')
+                # add to list of the fastQRead objects new objects
+                fasta_objects += list(fastqs)
+                # Set the new last read id
                 last_read = fastq_df_barcode.id.max()
+                # If we have enough reads, stop
                 if len(fastq_df_barcode) >= chunk_size:
                     break
             count += 1
-
-    elif len(countsdict)==1:
-        """This is risky and it breaks the logic - we end up grabbing reads"""
+    # If we only have one run
+    elif len(countsdict) == 1:
+        """TODO This is risky and it breaks the logic - we may end up skipping reads from other runs"""
+        # The key is the first fastqreads object retrieved
         mykey = list(countsdict.keys())[0]
+        # Get the fastq objects from the database
         fastqs = FastqRead.objects.filter(run=countsdict[mykey],
-                                              id__gt=int(last_read),)[:chunk_size]
+                                          id__gt=int(last_read), )[:chunk_size]
+        # append the results to the fastq dataframe
         fastq_df_barcode = fastq_df_barcode.append(pd.DataFrame.from_records(
             fastqs.values("read_id", "barcode_name", "sequence", "id")))
         # Create a list of the fastQRead objects we will use in this objects
-        fastasm += list(fastqs)
-        # Create a list of 8000 tuples each with these 4 objects in it
-        #fastqs_list += fastqs.values_list('read_id', 'barcode_name', 'sequence', 'id')
-
+        fasta_objects += list(fastqs)
+        # get the new last read id
         last_read = fastq_df_barcode.id.max()
+    # get the read count of the new reads pulled out to later update the job_master total
     read_count = len(fastq_df_barcode)
-    return fastq_df_barcode,last_read,read_count,fastasm#,fastqs_list
+    # Return everything to be used above
+    return fastq_df_barcode, last_read, read_count, fasta_objects
+
 
 # TODO del unused df and things
 
@@ -124,53 +159,6 @@ def calculate_barcoded_values(barcode_group_df, barcode_df, classified_per_barco
     return barcode_df
 
 
-# def create_centrifuge_models(row, classified_per_barcode):
-#     """
-#     Append a CentOutput object to a list for each row in the centrifuge output
-#     :param row: the row from the data frame
-#     :param classified_per_barcode: The number of reads classified for each barcode as a dictionary
-#     :return: The list of newly created objects
-#
-#     """
-#     if row["proportion_of_classified"] == "Unclassified" or row["proportion_of_classified"] == np.nan:
-#         row["proportion_of_classified"] = round(row["num_matches"] / classified_per_barcode[row["barcode_name"]], 3)
-#     # logger.info(row["proportion_of_classified"])
-#     # logger.info(row["barcode_name"])
-#     # logger.info(row["proportion_of_classified"] == np.NaN)
-#     # logger.info(row["proportion_of_classified"] == np.nan)
-#     return CentrifugeOutput(name=row["name"],
-#                             tax_id=row["tax_id"],
-#                             task=row["task"],
-#                             num_matches=row["num_matches"],
-#                             sum_unique=row["sum_unique"],
-#                             barcode_name=row["barcode_name"],
-#                             proportion_of_classified=row["proportion_of_classified"],
-#                             superkingdom=row["superkingdom"],
-#                             phylum=row["phylum"],
-#                             classy=row["class"],
-#                             order=row["order"],
-#                             family=row["family"],
-#                             genus=row["genus"],
-#                             species=row["species"])
-
-
-# def update_centrifuge_output_values(row, flowcell_job_id):
-#     """
-#     Update existing CentrifugeOutputBarcoded objects in the database
-#     :param flowcell_job_id: The id for the job_master for this task run
-#     :param row: The data frame row
-#     :return: The list of newly created objects
-#     """
-#     CentrifugeOutput.objects.filter(tax_id=row["tax_id"],
-#                                     barcode_name=row["barcode_name"],
-#                                     task__id=flowcell_job_id
-#                                     ).update(
-#         num_matches=row["num_matches"],
-#         sum_unique=row["sum_unique"],
-#         proportion_of_classified=row["proportion_of_classified"]
-#     )
-
-
 def convert_species_to_subspecies(name):
     """
     Centrifuge doesn't output subspecies as a rank. Checks if subsp. is in a species name, and creates the
@@ -195,35 +183,6 @@ def convert_species_to_subspecies(name):
     else:
         pass
 
-
-# def create_sankeylink_models(row):
-#     """
-#     apply to the dataframe and create sankeylinks objects for each row, return into a series
-#     :param row: The data frame row
-#     :return: The list of created objects
-#     """
-#     return SankeyLink(source=row["source"],
-#                       target=row["target"],
-#                       tax_id=row["tax_id"],
-#                       task=row["job_master"],
-#                       target_tax_level=row["target_tax_level"],
-#                       value=row["value"],
-#                       barcode_name=row["barcode_name"],
-#                       path=row["path"])
-#
-#
-# def update_sankeylink_values(row, flowcell_job_id):
-#     """
-#     Update the barcode sankey links rows in the database
-#     :param row: The data frame row
-#     :param flowcell_job_id: The Pk of the task ID
-#     :return: Nothing
-#     """
-#     SankeyLink.objects.filter(task__id=flowcell_job_id,
-#                               target_tax_level=row["target_tax_level"],
-#                               barcode_name=row["barcode_name"],
-#                               tax_id=row["tax_id"]).update(value=row["updated_value"])
-#
 
 def create_lineage_models(row):
     """
@@ -358,7 +317,7 @@ def update_mapped_non_dangerous(row, task):
     # Calculate the number of mapped against the number of matches
     mapped_result.mapped_proportion_of_classified = round((nm / mapped_result.num_matches) * 100, 2)
     # Update the proportion of mapped red reads
-    mapped_result.red_reads_proportion_of_classified = round((rr/nm) * 100, 2)
+    mapped_result.red_reads_proportion_of_classified = round((rr / nm) * 100, 2)
     # Save the new values
     mapped_result.save()
 
@@ -413,7 +372,7 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids):
 
         logger.info(
             "Flowcell id: {} - This many reads mapped evilly on this reference {} for species {}"
-            .format(flowcell.id, plasmid_map_df.shape[0], species)
+                .format(flowcell.id, plasmid_map_df.shape[0], species)
         )
         logger.info(plasmid_map_df.head())
         # return our new plasmid dataframe, annoyingly each one becomes an element in a series
@@ -545,8 +504,7 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
             except AttributeError as e:
                 logger.info(e)
                 return
-    # Filter out low mapping qualities
-    plasmid_red_df = plasmid_red_df.query("mapping_qual >= 40 | num_residue_matches >= 200")
+
     # if there is mapping output (non plasmid) for the reference
     if map_output:
         # create a dataframe of the results
@@ -574,6 +532,8 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
     logger.info("Flowcell id: {} - The target df before plasmid mapping results is {}".format(flowcell.id, red_df))
     # If there is output from the plasmid mapping, put it into the consolidated target reads containing dataframe
     if not plasmid_red_df.empty and (type(plasmid_red_df) != pd.core.series.Series):
+        # Filter out low mapping qualities
+        plasmid_red_df = plasmid_red_df.query("mapping_qual >= 40 | num_residue_matches >= 200")
         red_df = red_df.append(plasmid_red_df, sort=True)
 
     logger.info("Flowcell id: {} - The target df after plasmid mapping results is {}".format(flowcell.id, red_df))
@@ -800,7 +760,6 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
     target_set = "starting_defaults"
     # if there are no targets identified by centrifuge in this iteration
     if targets_df.empty:
-
         logger.info("Flowcell id: {} - No targets in this batch of reads".format(flowcell.id,
                                                                                  targets_df.shape))
         # Create the mapping targets
@@ -972,7 +931,7 @@ def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
     output_parser(task, donut_to_create_df, "donut")
 
 
-def create_centrifuge_models(row, classified_per_barcode):
+def create_centrifuge_models(row, classified_per_barcode, first):
     """
     Append a CentOutput object to a list for each row in the centrifuge output
     :param row: the row from the data frame
@@ -984,21 +943,39 @@ def create_centrifuge_models(row, classified_per_barcode):
     if row["proportion_of_classified"] == "Unclassified" or row["proportion_of_classified"] == np.nan:
         row["proportion_of_classified"] = round(row["num_matches"] / classified_per_barcode[row["barcode_name"]], 3)
 
-    return CentrifugeOutput(name=row["name"],
-                            tax_id=row["tax_id"],
-                            task=row["task"],
-                            num_matches=row["num_matches"],
-                            sum_unique=row["sum_unique"],
-                            barcode_name=row["barcode_name"],
-                            proportion_of_classified=row["proportion_of_classified"],
-                            superkingdom=row["superkingdom"],
-                            phylum=row["phylum"],
-                            classy=row["class"],
-                            order=row["order"],
-                            family=row["family"],
-                            genus=row["genus"],
-                            species=row["species"],
-                            latest=row["latest"])
+    if first:
+        return CentrifugeOutput(name=row["name"],
+                                tax_id=row["tax_id"],
+                                task=row["task"],
+                                num_matches=row["num_matches"],
+                                sum_unique=row["sum_unique"],
+                                barcode_name=row["barcode_name"],
+                                proportion_of_classified=row["proportion_of_classified"],
+                                superkingdom=row["superkingdom"],
+                                phylum=row["phylum"],
+                                classy=row["class"],
+                                order=row["order"],
+                                family=row["family"],
+                                genus=row["genus"],
+                                species=row["species"],
+                                latest=row["latest"])
+    else:
+
+        return CentrifugeOutput(name=row["name_x"],
+                                tax_id=row["tax_id"],
+                                task=row["task"],
+                                num_matches=row["num_matches"],
+                                sum_unique=row["sum_unique"],
+                                barcode_name=row["barcode_name"],
+                                proportion_of_classified=row["proportion_of_classified"],
+                                superkingdom=row["superkingdom_x"],
+                                phylum=row["phylum_x"],
+                                classy=row["classy_x"],
+                                order=row["order_x"],
+                                family=row["family_x"],
+                                genus=row["genus_x"],
+                                species=row["species_x"],
+                                latest=row["latest"])
 
 
 def output_parser(task, new_data_df, donut_or_output):
@@ -1017,7 +994,7 @@ def output_parser(task, new_data_df, donut_or_output):
         parsed_data = CentrifugeOutput.objects.filter(task=metagenomics_task, latest=task.iteration_count)
         # This is not for a donut
         donut = False
-    # If DonutData
+        # If DonutData
     else:
         # last Iteration Donut data values
         parsed_data = DonutData.objects.filter(task=metagenomics_task, latest=task.iteration_count)
@@ -1035,9 +1012,7 @@ def output_parser(task, new_data_df, donut_or_output):
         # If this is for CentrifugeOutput
         if not donut:
             # Merge the lsat Iterations values with this Iterations values
-            merged_data_df = pd.merge(parsed_data_df, new_data_df, on=["barcode_name", "name", "superkingdom",
-                                                                       "phylum", "classy", "order", "family",
-                                                                       "genus", "species", "tax_id"],
+            merged_data_df = pd.merge(parsed_data_df, new_data_df, on=["barcode_name", "tax_id"],
                                       how="outer")
         # If this is for a donut
         else:
@@ -1079,6 +1054,7 @@ def output_parser(task, new_data_df, donut_or_output):
         :return:
         """
         return round((row["num_matches"] / cl_bar[row["barcode_name"]]) * 100, 4)
+
     # Set latest to the updated iteration count
     to_save_df["latest"] = new_iteration_count
 
@@ -1090,8 +1066,15 @@ def output_parser(task, new_data_df, donut_or_output):
         to_save_df.rename(columns={"classy": "class"}, inplace=True)
 
         to_save_df["proportion_of_classified"].fillna("Unclassified", inplace=True)
-        # Create a series of CentrifugeOutput objects, one for each row in the dataframe
-        to_bulk_save_series = to_save_df.apply(create_centrifuge_models, args=(classed_per_barcode,), axis=1)
+
+        to_save_df.fillna("Unclassified", inplace=True)
+        logger.info(to_save_df)
+        logger.info(to_save_df.keys())
+        if parsed_data_df.empty:
+            # Create a series of CentrifugeOutput objects, one for each row in the dataframe
+            to_bulk_save_series = to_save_df.apply(create_centrifuge_models, args=(classed_per_barcode, True), axis=1)
+        else:
+            to_bulk_save_series = to_save_df.apply(create_centrifuge_models, args=(classed_per_barcode, False), axis=1)
         # Bulk create all those objects in the series
         CentrifugeOutput.objects.bulk_create(to_bulk_save_series.values.tolist(), batch_size=1000)
     # If this is for a Donut
@@ -1132,8 +1115,8 @@ def run_centrifuge(flowcell_job_id):
     # The path to the Centrifuge Index
     index_path = get_env_variable("MT_CENTRIFUGE_INDEX")
     # The command to run centrifuge
-    cmd = "perl " + centrifuge_path + " -f --mm -x -k 1 " + index_path + " -"
-    # cmd = "perl " + centrifuge_path + " -q --mm -x /var/lib/minotour/data/centrifuge_index/p_compressed -U /tmp/FAK22332_5ae2f59554a4ad3cedbcb8a5c6db6b25afdfe6a1_10.fastq.gz"
+    cmd = "perl " + centrifuge_path + " -f --mm -k 1 -x" + index_path + " -"
+
     logger.info('Flowcell id: {} - {}'.format(flowcell.id, cmd))
 
     # Counter for total centOut
@@ -1144,8 +1127,8 @@ def run_centrifuge(flowcell_job_id):
 
     runs = flowcell.runs.all()
 
-    #fastq_df_barcode, last_read, read_count, fastasm, fastqs_list = callfetchreads_cent(runs,chunk_size,task.last_read)
-    fastq_df_barcode, last_read, read_count, fastasm = callfetchreads_cent(runs,chunk_size,task.last_read)
+    # fastq_df_barcode, last_read, read_count, fasta_objects, fastqs_list = callfetchreads_cent(runs,chunk_size,task.last_read)
+    fastq_df_barcode, last_read, read_count, fasta_objects = callfetchreads_cent(runs, chunk_size, task.last_read)
 
     if read_count == 0:
         # task.complete = True
@@ -1155,13 +1138,6 @@ def run_centrifuge(flowcell_job_id):
         task.running = False
         task.save()
         return
-
-    #    if task.read_count + chunk_size > document_number:
-    #        chunk_size = fastqs.count()
-    #        task.save()
-    #        logger.info('Flowcell id: {} - Chunk size is {}, less than 2000 reads in the database'.format(
-    #            flowcell.id, chunk_size)
-    #        )
 
     logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, read_count))
 
@@ -1177,25 +1153,21 @@ def run_centrifuge(flowcell_job_id):
         )
 
         metadata.save()
-    # Create a list of the fastQRead objects we will use in this objects
-    #fastasm = list(fastqs)
-    # Create a list of 8000 tuples each with these 4 objects in it
-    #fastqs_list = fastqs.values_list('read_id', 'barcode_name', 'fastqreadextra__sequence', 'id')
 
     # Create a fastq string to pass to Centrifuge
 
     fastq_df_barcode["fasta"] = ">read_id=" + fastq_df_barcode["read_id"] + ",barcode=" + fastq_df_barcode[
-            "barcode_name"] + "\n" + fastq_df_barcode["sequence"]
+        "barcode_name"] + "\n" + fastq_df_barcode["sequence"]
 
     fastqs_data = "\n".join(list(fastq_df_barcode["fasta"]))
-    #fastqs_data = "".join([str(">read_id=" + c[0] + ",barcode=" + c[1] + "\n" + c[2] + "\n") for c in fastqs_list
+    # fastqs_data = "".join([str(">read_id=" + c[0] + ",barcode=" + c[1] + "\n" + c[2] + "\n") for c in fastqs_list
     #                       if c[2] is not None])
 
     logger.info("Flowcell id: {} - Loading index and Centrifuging".format(flowcell.id))
 
     # Write the generated fastq file to stdin, passing it to the command
     # Use Popen to run the centrifuge command
-    out, err = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE,
+    out, err = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stdin=subprocess.PIPE,
                                 stderr=subprocess.PIPE).communicate(input=str.encode(fastqs_data))
     # The standard error
     if err:
@@ -1291,10 +1263,8 @@ def run_centrifuge(flowcell_job_id):
         # set the value
         classified_per_barcode[name] += group.shape[0]
 
-    # TODO future mapping target
-
     # Unique targets in this set of regions
-    temp_targets = MappingTarget.objects.filter(target_set="starting_defaults") \
+    temp_targets = MappingTarget.objects.filter(target_set=task.target_set) \
         .values_list("species", flat=True).distinct()
 
     logger.info("Flowcell id: {} - Targets are {}".format(flowcell.id, temp_targets))
@@ -1339,7 +1309,7 @@ def run_centrifuge(flowcell_job_id):
                 .format(flowcell.id, num_matches_per_target_df))
     # Call map the reads on the targets dataframe
     map_the_reads(name_df, task, flowcell, num_matches_per_target_df, temp_targets,
-                  classified_per_barcode, fastasm)
+                  classified_per_barcode, fasta_objects)
 
     # delete these columns, no longer needed
     df.drop(columns=["readID", "seqID", "numMatches", "unique", "barcode_name", "read_id"], inplace=True)

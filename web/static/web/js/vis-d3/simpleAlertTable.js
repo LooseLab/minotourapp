@@ -21,7 +21,11 @@ function draw_simple_table(flowcellId) {
     if (flowcell_selected_tab_input.value !== "nav-metagenomics") {
         return;
     }
-    $.get("/api/v1/metagenomics/alerts", {flowcellId, barcode}, result => {
+    $.get("/api/v1/metagenomics/alerts", {flowcellId, barcode}, (result, statusText, xhr) => {
+        if (xhr.status == 204){
+            d3.select(".alert-table-simple").remove();
+            return;
+        }
         data = result.table;
         limit = result.conf_limit;
         data.sort(compare);

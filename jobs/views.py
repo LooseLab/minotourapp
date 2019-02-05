@@ -36,11 +36,12 @@ def task_list(request):
             return JsonResponse({"data": []})
 
     else:
+        if request.data["job_type"] == "10":
+            request.data["target_set"] = request.data["reference"]
+            request.data["reference"] = None
 
         serializer = JobMasterInsertSerializer(data=request.data)
-
         if serializer.is_valid():
-
             task = serializer.save()
 
             response_data = {}

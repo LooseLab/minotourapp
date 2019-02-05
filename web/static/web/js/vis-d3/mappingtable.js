@@ -36,7 +36,15 @@ function update_mapping_table(flowcellId) {
     if (flowcell_selected_tab_input.value !== "nav-metagenomics") {
         return;
     }
-    $.get("/mapped_targets", {flowcellId, barcode}, result => {
+    $.get("/mapped_targets", {flowcellId, barcode}, (result, statusText, xhr) => {
+        if (xhr.status == 204){
+            let alertTable = d3.select(".alert-table-complex");
+            d3.select(".button-row").remove();
+            d3.select("#demo").classed("in", true);
+            alertTable.remove();
+            revealMetagenomicsPage();
+            return;
+        }
         if (result.table === undefined){
             let alertTable = d3.select(".alert-table");
             alertTable.selectAll("*").remove();

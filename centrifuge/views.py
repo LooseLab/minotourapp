@@ -4,7 +4,7 @@ views.py
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from centrifuge.models import CentrifugeOutput, MappingResult, Metadata, \
-    SankeyLink, DonutData
+    SankeyLink, DonutData, MappingTarget
 from django.utils import timezone
 from django.http import JsonResponse
 from django.db.models import Sum
@@ -85,7 +85,6 @@ def centrifuge_metadata(request):
 
 @api_view(["GET"])
 def centrifuge_sankey(request):
-    # TODO refactor logic into centrifuge.py
     """
     :purpose: Query the database for the sankeyLink data, return the top 50 Lineages
     :author: Rory
@@ -316,15 +315,21 @@ def metagenomic_barcodes(request, pk):
 
     barcode_df = pd.DataFrame(list(MappingResult.objects.filter(task__id=task_id).values()))
 
-    calc_df = barcode_df[["num_matches", "num_mapped", "red_reads"]]
+    if not barcode_df.empty:
 
-    hodf = calc_df.apply(alert_level)
+        calc_df = barcode_df[["num_matches", "num_mapped", "red_reads"]]
 
-    barcode_df["alert_level"] = hodf.max(axis=1)
+        hodf = calc_df.apply(alert_level)
 
-    alert_level_results = barcode_df.groupby("barcode_name")["alert_level"].max()
+        barcode_df["alert_level"] = hodf.max(axis=1)
 
-    alert_level_results = alert_level_results.to_dict()
+        alert_level_results = barcode_df.groupby("barcode_name")["alert_level"].max()
+
+        alert_level_results = alert_level_results.to_dict()
+
+    else:
+
+        alert_level_results = {}
 
     return Response({"data": metagenomics_barcodes, "tabs": alert_level_results})
 
@@ -487,3 +492,9 @@ def simple_target_mappings(request):
     return_dict = {"table": results, "conf_limit": limit}
 
     return Response(return_dict)
+
+
+@api_view(["GET"])
+def get_target_sets(request):
+    target_sets = MappingTarget.objects.values_list("target_set", flat=True).distinct()
+    return Response(target_sets)

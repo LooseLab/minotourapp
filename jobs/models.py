@@ -113,6 +113,11 @@ class JobMaster(models.Model):
     iteration_count = models.IntegerField(
         null=True, default=0
     )
+    target_set = models.CharField(
+        default=None,
+        null=True,
+        max_length=100
+    )
 
     def __str__(self):
         if self.run is not None:
