@@ -28,8 +28,8 @@ services:
         depends_on:
             - minotour_db
             - minotour_redis
-        volumes:
-            - "d:/test:/var/lib/minotour/apps/minotourapp"
+#        volumes:
+#            - "d:/test:/var/lib/minotour/apps/minotourapp"
 #    minimap2:
 #        build:
 #            dockerfile: minimap2.dockerfile

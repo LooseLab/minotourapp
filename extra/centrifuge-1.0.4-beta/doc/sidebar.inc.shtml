@@ -1,0 +1,120 @@
+<h2>Site Map</h2>
+<div class="box">
+ <ul>
+   <li><a href="index.shtml">Home</a></li>
+   <li><a href="manual.shtml">Manual</a></li>
+   <li><a href="faq.shtml">FAQ</a></li>
+ </ul>
+</div>
+
+<!--
+<h2>News and Updates</h2>
+<div class="box">
+ <ul>
+   <table width="100%">
+	 <tbody><tr><td>New releases and related tools will be announced through the Bowtie
+     <a href="https://lists.sourceforge.net/lists/listinfo/bowtie-bio-announce"><b>mailing list</b></a>.</td></tr>
+   </tbody></table>
+ </ul>
+</div>
+-->
+
+<h2>Getting Help</h2>
+<div class="box">
+ <ul>
+   <table width="100%">
+     <tbody><tr><td>
+        Please submit an issue on <a href="https://github.com/infphilo/centrifuge/issues">GitHub</a>, or send an E-Mail to
+        <a href="mailto:centrifuge.metagenomics@gmail.com">centrifuge.metagenomics@gmail.com</a> for private communications.</td></tr>
+   </tbody></table>
+ </ul>
+</div>
+
+<a href="ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/downloads"><h2><u>Releases</u></h2></a>
+<div class="box">
+ <ul>
+   <table width="100%"><tbody><tr><td>version 1.0.3-beta</td> <td align="right">12/06/2016</td></tr>
+       <tr>
+	 <td><a href="ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/downloads/centrifuge-1.0.3-beta-source.zip" onclick="javascript: pageTracker._trackPageview('/downloads/centrifuge'); ">&nbsp;&nbsp;&nbsp;Source code</a></td>
+       </tr>
+       <tr>
+	 <td><a href="ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/downloads/centrifuge-1.0.3-beta-Linux_x86_64.zip" onclick="javascript: pageTracker._trackPageview('/downloads/centrifuge'); ">&nbsp;&nbsp;&nbsp;Linux x86_64 binary</a></td>
+       </tr>
+       <tr>
+	 <td><a href="ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/downloads/centrifuge-1.0.3-beta-OSX_x86_64.zip" onclick="javascript: pageTracker._trackPageview('/downloads/centrifuge'); ">&nbsp;&nbsp;&nbsp;Mac OS X x86_64 binary</a></td>
+       </tr>
+   </tbody></table>
+ </ul>
+</div>
+
+<a href="ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data"><h2><u>Indexes</u></h2></a> 
+  <div class="box">
+    <table width="100%"><tr><td>last updated:</td> <td align="right">12/06/2016</td></tr>
+      <tr>
+        <td>
+	  <a href="ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data/p_compressed.tar.gz"><i>&nbsp;&nbsp;&nbsp;Bacteria, Archaea (compressed)</i></a>
+        </td>
+	<td align="right" style="font-size: x-small">
+	  <b>4.4 GB</b>
+        </td>
+      </tr>
+      <tr>
+        <td>
+	  <a href="ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data/p_compressed+h+v.tar.gz"><i>&nbsp;&nbsp;&nbsp;Bacteria, Archaea, Viruses, Human (compressed)</i></a>
+        </td>
+	<td align="right" style="font-size: x-small">
+	  <b>5.4 GB</b>
+        </td>
+      </tr>
+      <tr>
+        <td>
+	  <a href="ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data/p+h+v.tar.gz"><i>&nbsp;&nbsp;&nbsp;Bacteria, Aarchaea, Viruses, Human </i></a>
+        </td>
+	<td align="right" style="font-size: x-small">
+	  <b>7.9 GB</b>
+        </td>
+      </tr>
+      <tr>
+        <td>
+	  <a href="ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data/nt.tar.gz"><i>&nbsp;&nbsp;&nbsp;NCBI nucleotide non-redundant sequences </i></a>
+        </td>
+	<td align="right" style="font-size: x-small">
+	  <b>50 GB</b>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+<h2>Related Tools</h2>
+<div class="box">
+ <ul>
+   <li><a href="https://github.com/fbreitwieser/pavian">Pavian</a>: Tool for interactive analysis of pathogen and metagenomics data</li>
+   <li><a href="http://www.ccb.jhu.edu/software/hisat2">HISAT2</a>: Graph-based alignment to a population of genomes</li>
+   <li><a href="http://bowtie-bio.sourceforge.net/bowtie2">Bowtie2</a>: Ultrafast read alignment</li>
+ </ul>
+</div>
+
+<h2>Publications</h2>
+<div class="box">
+ <ul>
+   <li><p>Kim D, Song L, Breitwieser FP, and Salzberg SL. <a href="http://genome.cshlp.org/content/early/2016/11/16/gr.210641.116.abstract"><b>Centrifuge: rapid and sensitive classification of metagenomic sequences</b></a>. <i>Genome Research</i> 2016</p></li>
+ </ul>
+</div>
+
+<h2>Contributors</h2>
+<div class="box">
+ <ul>
+   <li><a href="http://www.ccb.jhu.edu/people/infphilo">Daehwan Kim</a></li>
+   <li><a href="http://ccb.jhu.edu/people/lsong/">Li Song</a></li>
+   <li><a href="http://www.ccb.jhu.edu/people/fbreitwieser">Florian Breitwieser</a></li>
+   <li><a href="http://salzberg-lab.org/about-me/">Steven Salzberg</a></li>
+ </ul>
+</div>
+
+<h2>Links</h2>
+<div class="box">
+ <ul>
+   <li><a href="http://www.ccb.jhu.edu/">Center for Computational Biology at Johns Hopkins University </a></li>
+   <li><a href="http://www.cs.jhu.edu/">Computer Science Department at Johns Hopkins University </a></li>
+ </ul>
+</div>        

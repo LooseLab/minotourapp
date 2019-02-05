@@ -19,6 +19,7 @@ function checkFlowcellTabs(flowcell_id) {
 
         $.each(data, function (key, value) {
             items.push(value);
+            console.log(value);
         });
 
         items.sort(function (a, b) {
