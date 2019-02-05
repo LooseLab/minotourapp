@@ -3,16 +3,18 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
 from django.forms import formset_factory
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.generic import ListView, DeleteView
 from rest_framework.authtoken.models import Token
 
 from communication.models import Message
-from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell
+from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats
 from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
 
 from django.contrib import messages
+
+import pandas as pd
 
 
 def index(request):
@@ -325,3 +327,25 @@ def experiments_update(request, pk):
             'experiment_flowcell_formset': experiment_flowcell_formset,
         }
     )
+
+@login_required
+def flowcell_run_stats_download(request, pk):
+    flowcell = Flowcell.objects.get(pk=pk)
+
+    crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all())
+
+    runstats_dataframe = pd.DataFrame(list(crazyminIONrunstats.values()))
+    runstats_dataframe = runstats_dataframe.set_index('sample_time')
+    runstats_dataframe = runstats_dataframe.drop('created_date', axis=1)
+    runstats_dataframe = runstats_dataframe.drop('id', axis=1)
+    runstats_dataframe = runstats_dataframe.drop('mean_ratio', axis=1)
+    runstats_dataframe = runstats_dataframe.drop('minION_id', axis=1)
+    runstats_dataframe = runstats_dataframe.drop('run_id_id', axis=1)
+    #runstats_dataframe = runstats_dataframe.drop('mean_ratio', axis=1)
+    runstats_dataframe = runstats_dataframe.drop('in_strand', axis=1)
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename={}_live_records.csv'.format(flowcell.name)
+    column_order = ['asic_temp','heat_sink_temp','voltage_value','minKNOW_read_count','event_yield','above','adapter','below','good_single','inrange','multiple','open_pore','pending_mux_change','saturated','strand','unavailable','unblocking','unclassified','unknown','minKNOW_histogram_bin_width','minKNOW_histogram_values']
+    runstats_dataframe[column_order].to_csv(response)
+
+    return response

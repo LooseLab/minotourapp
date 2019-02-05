@@ -237,7 +237,8 @@ urlpatterns = [
     url(
         r'^flowcells/(?P<pk>[0-9]+)/summary_html/$',
         views.flowcell_summary_html,
-        name="flowcell-summary-html"),
+        name="flowcell-summary-html"
+    ),
     url(
         r'^flowcells/(?P<pk>[0-9]+)/minknow_messages_html/$',
         views.minknow_message_list_by_flowcell,
