@@ -1374,7 +1374,7 @@ def flowcell_run_stats_latest(request, pk, checkid):
 
         minion_run_status = None
 
-    crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all(), id__gt=checkid)[:1000]
+    crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all(), id__gt=checkid)
 
     result = []
 
