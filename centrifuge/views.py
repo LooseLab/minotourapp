@@ -105,7 +105,7 @@ def centrifuge_sankey(request):
 
     # ## Get the jobMaster for calculate sankey
     been_run = JobMaster.objects.filter(flowcell__id=flowcell_id,
-                                        job_type__name="CalculateSankey").order_by("id").last()
+                                        job_type__name="CalculateMetagenomicsSankey").order_by("id").last()
     # If the sankey task has been run
     if been_run:
         has_been_run = True

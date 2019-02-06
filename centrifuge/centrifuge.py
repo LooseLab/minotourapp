@@ -757,7 +757,7 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
     # get the targets dataframe
     targets_df = name_df
     # TODO currently hardcoded below
-    target_set = "starting_defaults"
+    target_set = task.target_set
     # if there are no targets identified by centrifuge in this iteration
     if targets_df.empty:
         logger.info("Flowcell id: {} - No targets in this batch of reads".format(flowcell.id,
