@@ -330,6 +330,7 @@ def experiments_update(request, pk):
 
 @login_required
 def flowcell_run_stats_download(request, pk):
+
     flowcell = Flowcell.objects.get(pk=pk)
 
     crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all())
