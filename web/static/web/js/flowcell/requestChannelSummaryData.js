@@ -221,7 +221,6 @@ function requestChannelSummaryData(id) {
 
         for (key in result) {
            plotdata.push([parseInt(key), result[key]])
-           //console.log(typeof(key));
         }
 
        if (!self.estimated_sequencing_speed) {

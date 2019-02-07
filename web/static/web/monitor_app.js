@@ -229,7 +229,9 @@ var FlowcellPageApp = {
         this.checkFlowcellTabs(flowcell_id);
 
         //('>> calling request data');
+        console.log('Calling request data from monitor_app. >>>');
         this.requestData(flowcell_id);
+        console.log('Calling request data from monitor_app. <<<');
     }, // end of init
 
     updatePoreStats: function () {

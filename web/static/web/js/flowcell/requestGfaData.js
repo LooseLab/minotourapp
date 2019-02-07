@@ -3,9 +3,7 @@ function updateAssemblyCharts(chart, field) {
     while (chart.series.length > 0) {
         chart.series[0].remove();
     }
-    console.log(this.assemblySummary);
     for (var barcode of Object.keys(this.assemblySummary)) {
-        console.log(barcode);
         for (var type of Object.keys(this.assemblySummary[barcode])) {
 
             chart.addSeries({
@@ -83,7 +81,6 @@ function createAssemblyTable() {
 }
 
 function requestGfaDataCallback(data) {
-        //console.log(data);
         if (data.length > 0) {
 
             var summaries = {}
@@ -130,7 +127,6 @@ function requestGfaDataCallback(data) {
 
             this.assemblySummary = summaries;
             this.assemblyLatest = latest;
-            //console.log(summaries);
             this.updateAssemblyCharts(this.ChartNumContigs, 'ncontigs');
             this.updateAssemblyCharts(this.ChartN50Contigs, 'n50');
             this.updateAssemblyCharts(this.ChartSumContigs, 'sum');

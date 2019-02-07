@@ -43,6 +43,11 @@ function requestData(flowcell_id) {
             this.requestChannelSummaryData(flowcell_id);
             //this.requestReference(flowcell_id);
 
+        } else if (flowcell_selected_tab_input.value == 'nav-reads') {
+
+            requestReadData(flowcell_id);
+            console.log('Inside read data');
+
         } else if (flowcell_selected_tab_input.value == 'nav-live-event-data') {
 
             this.requestRunDetails(flowcell_id);

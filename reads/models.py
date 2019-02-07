@@ -1420,10 +1420,12 @@ class FastqRead(models.Model):
 
     read = models.IntegerField(
 
+        db_index=True
     )
 
     channel = models.IntegerField(
 
+        db_index=True
     )
 
     barcode = models.ForeignKey(
@@ -1435,12 +1437,13 @@ class FastqRead(models.Model):
 
     barcode_name = models.CharField(
         db_index=True,
-        max_length=32
+        max_length=32,
     )
 
     sequence_length = models.BigIntegerField(
         null=True,
-        blank=True
+        blank=True,
+        db_index=True
     )
 
     quality_average = models.DecimalField(

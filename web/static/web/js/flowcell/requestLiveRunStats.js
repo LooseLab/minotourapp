@@ -1,10 +1,11 @@
 function requestLiveRunStats(id) {
-    console.log(this);
-    console.log('lastread ' + this.lastread);
-    var url_livestats = '/api/v1/flowcells/' + id + '/runstats/' + this.lastread;
+
+    console.log('This is lastread from flowcellcontroller: ' + flowcell_controller.lastread);
+
+    var url_livestats = '/api/v1/flowcells/' + id + '/runstats/' + flowcell_controller.lastread;
 
     $.get(url_livestats, (function (result) {
-        console.log(result);
+
         data = result["data"];
         this.livedata.colours_string = result['minKNOW_colours_string'];
         if (data.length > 0) {
@@ -17,14 +18,12 @@ function requestLiveRunStats(id) {
             });
 
             this.needtoupdatecharts = true;
-            this.lastread = data[data.length - 1].id;
-            console.log('new lastread'+data[data.length - 1].id);
+
+            flowcell_controller.lastread = data[data.length - 1].id;
+
             this.lasttime = new Date(data[data.length - 1].sample_time)
-            //console.log(this.rundata.start_time);
-            //console.log(this.lasttime.toISOString());
 
             for (var i = 0; i < data.length; i++) {
-                //console.log(data[i]);
                 timestamp = new Date(data[i].sample_time).getTime();
                 //this.livedata.colours_string = result['minKNOW_colours_string'];
                 this.livedata.live_read_count = data[i].minKNOW_read_count;
@@ -43,12 +42,9 @@ function requestLiveRunStats(id) {
                 this.livedata.openpore_history.push([timestamp, parseInt(data[i].open_pore)]);
                 var myStringArray = ["above", "adapter", "below", "good_single", "strand", "inrange", "multiple", "pending_mux_change", "saturated", "unavailable", "unblocking", "unclassified", "unknown"];
                 var arrayLength = myStringArray.length;
-                //console.log(parseInt(data[i][myStringArray[4]]));
                 for (var j = 0; j < arrayLength; j++) {
                     if (isNaN(data[i][myStringArray[j]])) {
                         this.livedata.pore_history[myStringArray[j]].push([timestamp, 0]);
-                        //console.log("found a NAN");
-                        //console.log(data[i][myStringArray[i]]);
                     } else {
                         this.livedata.pore_history[myStringArray[j]].push([timestamp, parseInt(data[i][myStringArray[j]])]);
                     }
@@ -67,7 +63,6 @@ function requestLiveRunStats(id) {
 
 
         }
-        //console.log(this.livedata);
     }).bind(this));
 
 };

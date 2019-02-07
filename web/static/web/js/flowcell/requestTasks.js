@@ -41,7 +41,6 @@ function loadTasksForm() {
                                     option.value = i;
                                     option.text = result[i];
                                     reference_select.appendChild(option);
-                                    console.log(".........................");
                                 }
                             }
                         });
@@ -73,6 +72,7 @@ function loadTasksForm() {
                 }
 
             });
+
         }
     };
 

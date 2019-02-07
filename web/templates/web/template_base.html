@@ -38,7 +38,7 @@
 
     <!-- jQuery 2.2.3 -->
     <!--<script src="{% static 'web/plugins/jQuery/jquery-2.2.3.min.js' %}"></script>-->
-    <script src="{% static 'web/js/jquery-3.3.1.js' %}"></script>
+    <script src="{% static 'web/jquery-3.3.1.js' %}"></script>
 
     <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
     <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
@@ -96,11 +96,13 @@
 <!-- Bootstrap 3.3.6 -->
 <script src="{% static 'web/bootstrap/js/bootstrap.min.js' %}"></script>
 <!-- AdminLTE App -->
+
 <script src="{% static 'web/dist/js/app.min.js' %}?dev=19"></script>
+<script src="{% static 'web/js/flowcell/requestReadData.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/flowcell/addMetaBarcodeTabs.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/libraries/d3/d3.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/libraries/d3-sankey/d3-sankey.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/libraries/moment.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/libraries/d3/d3.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/libraries/d3-sankey/d3-sankey.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/libraries/moment.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/vis-d3/sankey.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/vis-d3/donutdothat.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/vis-d3/AllResultsTable.js' %}?{% now 'c' %}"></script>

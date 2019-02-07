@@ -21,10 +21,11 @@ function updateBarcodeNavTab() {
         a.addEventListener('click', function(event) {
 
             var selected_barcode = event.target.innerText;
-            console.log('clicked on ' + selected_barcode);
             set_selected_barcode(selected_barcode);
 
+            console.log('Calling requestData from inside updateBarcodeNavTab. >>>');
             requestData(flowcell_id);
+            console.log('Calling requestData from inside updateBarcodeNavTab. <<<');
 
             var barcode_tabs = document.querySelectorAll('.barcode-tab');
             barcode_tabs.forEach(function(value) {
