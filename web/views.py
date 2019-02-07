@@ -161,34 +161,47 @@ def flowcell_reads_data(request):
     # ascending descending
     order_dir = request.GET.get('order[0][dir]', '')
 
+    run_list = Run.objects.filter(flowcell__id=flowcell_id).filter(flowcell__owner=request.user)
+
+    run_id_list = []
+
+    for run in run_list:
+
+        run_id_list.append(run.id)
+
+
     if not search_value == "":
 
         if search_value[0] == '>':
 
             reads_temp = FastqRead.objects\
-                .filter(run__flowcell_id=flowcell_id)\
-                .filter(run__flowcell__owner=request.user)\
+                .filter(run__in=run_id_list)\
                 .filter(sequence_length__gt=search_value[1:])
+                #.filter(run__flowcell_id=flowcell_id)\
+                #.filter(run__flowcell__owner=request.user)\
 
         elif search_value[0] == '<':
 
             reads_temp = FastqRead.objects\
-                .filter(run__flowcell_id=flowcell_id) \
-                .filter(run__flowcell__owner=request.user)\
+                .filter(run__in=run_id_list)\
                 .filter(sequence_length__lt=search_value[1:])
+                #.filter(run__flowcell_id=flowcell_id) \
+                #.filter(run__flowcell__owner=request.user)\
 
         else:
 
             reads_temp = FastqRead.objects \
-                .filter(run__flowcell_id=flowcell_id) \
-                .filter(run__flowcell__owner=request.user) \
+                .filter(run__in=run_id_list)\
                 .filter(read_id__contains=search_value)
+                #.filter(run__flowcell_id=flowcell_id) \
+                #.filter(run__flowcell__owner=request.user) \
 
     else:
 
         reads_temp = FastqRead.objects\
-            .filter(run__flowcell_id=flowcell_id)\
-            .filter(run__flowcell__owner=request.user)\
+            .filter(run__in=run_id_list)
+            #.filter(run__flowcell_id=flowcell_id)\
+            #.filter(run__flowcell__owner=request.user)\
 
     if order_column:
 
@@ -200,7 +213,7 @@ def flowcell_reads_data(request):
 
             reads_temp2 = reads_temp.order_by('{}'.format(query_columns[int(order_column)]))
 
-    reads = reads_temp2.values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
+    reads = reads_temp2[:20].values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
 
     records_total = reads_temp.count()
 
