@@ -209,9 +209,9 @@
   "model": "jobs.jobtype",
   "pk": 13,
   "fields": {
-    "name": "CalculateSankey",
-    "description": "Calculate Sankey",
-    "long_description": "Calculate the sankey diagram on demand",
+    "name": "CalculateMetagenomicsSankey",
+    "description": "Calculate Metagenomics Sankey",
+    "long_description": "Calculate A sankey diagram showing the lineages for the top 30 species in the sample on demand",
     "reference": false,
     "transcriptome": false,
     "readcount": false,

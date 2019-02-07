@@ -20,8 +20,9 @@ function addMetaBarcodeTabs(flowcellId, barcodes, tabs){
         var tabLevelClass = alertLevels[tabLevel];
 
         li.classList.add('barcode-meta-tab');
-
-        li.classList.add(tabLevelClass);
+        if (tabLevelClass !== undefined){
+            li.classList.add(tabLevelClass);
+        }
 
         var a = document.createElement("a");
         // a.onclick = self.updateChartsBasedOnBarcode;

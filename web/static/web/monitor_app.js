@@ -99,6 +99,7 @@ var FlowcellPageApp = {
         this.flowcellTaskHistoryTable = flowcellTaskHistoryTable;
         this.addMetaBarcodeTabs = addMetaBarcodeTabs.bind(this);
         this.update_mapping_table = update_mapping_table;
+        this.draw_simple_table = draw_simple_table;
 
         this.updatePoreChart = updatePoreChart;
 

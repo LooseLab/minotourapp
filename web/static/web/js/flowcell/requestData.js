@@ -51,7 +51,7 @@ function requestData(flowcell_id) {
         } else if (flowcell_selected_tab_input.value == 'nav-metagenomics') {
             // The intervals for updating the charts are found in the individual files in the vis-d3 directory
             // SO you are on the Metagenomics tab
-            let bants = this.addMetaBarcodeTabs.bind(this);
+            let addBarcodes = this.addMetaBarcodeTabs.bind(this);
             if (selected_barcode == '') {
                 set_selected_barcode('All reads');
             }
@@ -66,13 +66,15 @@ function requestData(flowcell_id) {
             this.getTotalReadsTable(flowcell_id);
             // Draw the alert mapping targets table;
             this.update_mapping_table(flowcell_id);
+            // draw the simplified results table
+            // this.draw_simple_table(flowcell_id);
 
             $.get(url, {}, function (result) {
                 this.barcodes = result.data.sort();
 
                 this.tabs = result.tabs;
                 // draw the sankey
-                bants(flowcell_id, this.barcodes, this.tabs);
+                addBarcodes(flowcell_id, this.barcodes, this.tabs);
                 // update the metadata header
 
             });

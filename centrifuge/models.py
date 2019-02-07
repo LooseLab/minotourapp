@@ -250,6 +250,9 @@ class MappingTarget(models.Model):
 
     gff_line_type = models.CharField(default="gene", max_length=100)
 
+    def __str__(self):
+        return "{} {} {}-{} {}".format(self.species, self.target_set, self.start, self.end, self.gff_line_type)
+
 
 class LineageValue(models.Model):
     """
@@ -314,8 +317,5 @@ class DonutData(models.Model):
     tax_rank = models.CharField(max_length=80, default="Species")
     latest = models.IntegerField(null=True, default=0)
 
-
-
-
-
-
+    def __str__(self):
+        return "{} {} {}".format(self.task, self.name, self.barcode_name)

@@ -4,7 +4,7 @@ views.py
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from centrifuge.models import CentrifugeOutput, MappingResult, Metadata, \
-    SankeyLink, DonutData
+    SankeyLink, DonutData, MappingTarget
 from django.utils import timezone
 from django.http import JsonResponse
 from django.db.models import Sum
@@ -85,7 +85,6 @@ def centrifuge_metadata(request):
 
 @api_view(["GET"])
 def centrifuge_sankey(request):
-    # TODO refactor logic into centrifuge.py
     """
     :purpose: Query the database for the sankeyLink data, return the top 50 Lineages
     :author: Rory
@@ -106,7 +105,7 @@ def centrifuge_sankey(request):
 
     # ## Get the jobMaster for calculate sankey
     been_run = JobMaster.objects.filter(flowcell__id=flowcell_id,
-                                        job_type__name="CalculateSankey").order_by("id").last()
+                                        job_type__name="CalculateMetagenomicsSankey").order_by("id").last()
     # If the sankey task has been run
     if been_run:
         has_been_run = True
@@ -269,16 +268,16 @@ def get_target_mapping(request):
         results_df = pd.DataFrame(list(map_queryset))
 
     results_df.rename(columns={"num_mapped": "Num. mapped",
-                              "red_reads": "Target reads",
-                              "red_sum_unique": "Unique Target reads",
-                              "species": "Species",
-                              "tax_id": "Tax id",
-                              "num_matches": "Num. matches",
-                              "sum_unique": "Sum. Unique",
-                              "mapped_proportion_of_classified": "Mapped prop. total (%)",
-                              "red_reads_proportion_of_classified": "Red prop. total (%)",
-                              "proportion_of_classified": "Prop. classified (%)"
-                              }, inplace=True)
+                               "red_reads": "Target reads",
+                               "red_sum_unique": "Unique Target reads",
+                               "species": "Species",
+                               "tax_id": "Tax id",
+                               "num_matches": "Num. matches",
+                               "sum_unique": "Sum. Unique",
+                               "mapped_proportion_of_classified": "Mapped prop. total (%)",
+                               "red_reads_proportion_of_classified": "Red prop. total (%)",
+                               "proportion_of_classified": "Prop. classified (%)"
+                               }, inplace=True)
 
     results = results_df.to_dict(orient="records")
 
@@ -316,15 +315,21 @@ def metagenomic_barcodes(request, pk):
 
     barcode_df = pd.DataFrame(list(MappingResult.objects.filter(task__id=task_id).values()))
 
-    calc_df = barcode_df[["num_matches", "num_mapped", "red_reads"]]
+    if not barcode_df.empty:
 
-    hodf = calc_df.apply(alert_level)
+        calc_df = barcode_df[["num_matches", "num_mapped", "red_reads"]]
 
-    barcode_df["alert_level"] = hodf.max(axis=1)
+        hodf = calc_df.apply(alert_level)
 
-    alert_level_results = barcode_df.groupby("barcode_name")["alert_level"].max()
+        barcode_df["alert_level"] = hodf.max(axis=1)
 
-    alert_level_results = alert_level_results.to_dict()
+        alert_level_results = barcode_df.groupby("barcode_name")["alert_level"].max()
+
+        alert_level_results = alert_level_results.to_dict()
+
+    else:
+
+        alert_level_results = {}
 
     return Response({"data": metagenomics_barcodes, "tabs": alert_level_results})
 
@@ -420,3 +425,76 @@ def all_results_table(request):
     }
 
     return JsonResponse(result, safe=True)
+
+
+@api_view(['GET'])
+def simple_target_mappings(request):
+    """
+        Get the target species
+        :param request:
+        :return:
+        """
+    # The id of the flowcell that produced these reads
+    flowcell_id = request.GET.get("flowcellId", 0)
+    # The barcode that is currently selected to be viewed on the page
+    barcode = request.GET.get("barcode", "All reads")
+
+    if flowcell_id == 0:
+        return Response("Flowcell id has failed to be delivered", status=402)
+
+    # Get the most recent jobmaster id, although there should only be one
+    task = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last()
+
+    # If the barcode is All reads, there is always four
+    if barcode == "All reads":
+        queryset = MappingResult.objects.filter(task=task, barcode_name=barcode).values()
+        results_df = pd.DataFrame(list(queryset))
+        if results_df.empty:
+            return Response("No data has yet been produced for the target mappings", status=204)
+
+    else:
+        # Get a line for all the targets
+        map_queryset = MappingResult.objects.filter(task=task, barcode_name=barcode).values()
+
+        if not map_queryset:
+            return Response("No data has yet been produced for the target mappings", status=204)
+        # Create a dataframe for this barcode
+        results_df = pd.DataFrame(list(map_queryset))
+
+    bins = [5000000, 2000000, 1000000, 500000, 100000, 50000, 10000, 1000]
+
+    limit_index = int(np.digitize(task.read_count, bins))
+
+    limit = bins[limit_index-1]
+
+    results_df.drop(
+        columns=["id", "mapped_proportion_of_classified", "num_matches", "red_reads_proportion_of_classified",
+                 'sum_unique',
+                 'task_id', 'tax_id'
+                 ], inplace=True)
+
+    results_df["Detected"] = np.where(results_df["num_mapped"] > 0, True, False)
+
+    results_df["Not detected"] = np.where(results_df["num_mapped"] == 0, True, False)
+
+    results_df["read_count"] = task.read_count
+
+    results_df["column_index"] = limit_index
+
+    results_df.rename(columns={"num_mapped": "Num. mapped",
+                               "red_reads": "Target reads",
+                               "species": "Potential threats",
+                               "tax_id": "Tax id",
+                               }, inplace=True)
+
+    results = results_df.to_dict(orient="records")
+
+    return_dict = {"table": results, "conf_limit": limit}
+
+    return Response(return_dict)
+
+
+@api_view(["GET"])
+def get_target_sets(request):
+    target_sets = MappingTarget.objects.values_list("target_set", flat=True).distinct()
+    return Response(target_sets)

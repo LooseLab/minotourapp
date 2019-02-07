@@ -82,3 +82,11 @@
     vertical-align: middle;
     display: table-cell;
 }
+#Potential_threats{
+    border-left: 1px solid #f4f4f4;
+    border-right: 1px solid #f4f4f4;
+}
+.simple td{
+    border-top: none !important;
+    text-align: center;
+}
