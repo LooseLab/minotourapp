@@ -27,7 +27,6 @@ function loadTasksForm() {
 
             });
 
-            // console.log('You selected task ' + selected_job_type["description"] + '.');
         }
     };
 

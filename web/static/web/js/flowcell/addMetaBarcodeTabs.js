@@ -30,8 +30,6 @@ function addMetaBarcodeTabs(flowcellId, barcodes, tabs){
 
             var selected_barcode = event.target.innerText;
 
-            console.log('clicked on ' + selected_barcode);
-
             set_selected_barcode(selected_barcode);
 
             requestData(flowcellId);
