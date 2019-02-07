@@ -58,7 +58,7 @@ def centrifuge_metadata(request):
     print(job_master.flowcell.number_reads)
 
     # get the number of reads
-    number_of_reads = FastqRead.objects.filter(run__flowcell__id=flowcell_id).count()
+    number_of_reads = Flowcell.objects.get(pk=flowcell_id).number_reads
     # Get the read count
     reads_class = job_master.read_count
     # Percentage of reads classified
