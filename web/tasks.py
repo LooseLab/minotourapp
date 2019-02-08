@@ -146,14 +146,14 @@ def run_monitor():
 @task
 def run_delete_flowcell(flowcell_job_id):
 
-    flowcell_job = Flowcell.objects.get(pk=flowcell_job_id)
+    flowcell_job = JobMaster.objects.get(pk=flowcell_job_id)
 
     flowcell = flowcell_job.flowcell
 
-    logger.info('Flowcell id: {} - Deleting flowcell {}'.format(flowcell['id'], flowcell['name']))
+    logger.info('Flowcell id: {} - Deleting flowcell {}'.format(flowcell.id, flowcell.name))
 
-    first_fastqread = FastqRead.objects.filter(run__flowcell__id=flowcell['id']).order_by('id').first()
-    last_fastqread = FastqRead.objects.filter(run__flowcell__id=flowcell['id']).order_by('id').last()
+    first_fastqread = FastqRead.objects.filter(run__flowcell=flowcell).order_by('id').first()
+    last_fastqread = FastqRead.objects.filter(run__flowcell=flowcell).order_by('id').last()
 
     if first_fastqread and last_fastqread:
 
@@ -161,22 +161,22 @@ def run_delete_flowcell(flowcell_job_id):
         last_read = last_fastqread.id
 
         logger.info(
-            'Flowcell id: {} - First and last fastqread id are {} {}'.format(flowcell['id'], first_read, last_read))
+            'Flowcell id: {} - First and last fastqread id are {} {}'.format(flowcell.id, first_read, last_read))
 
         counter = first_read
 
         while counter <= last_read:
-            counter = counter + 50
+            counter = counter + 500
 
-            logger.info('Flowcell id: {} - Deleting records with id < {}'.format(flowcell['id'], counter))
+            logger.info('Flowcell id: {} - Deleting records with id < {}'.format(flowcell.id, counter))
 
-            affected = FastqRead.objects.filter(run__flowcell__id=flowcell['id']).filter(id__lt=counter).delete()
+            affected = FastqRead.objects.filter(run__flowcell=flowcell).filter(id__lt=counter).delete()
 
-            logger.info('Flowcell id: {} - Deleted {} fastqread records'.format(flowcell['id'], affected))
+            logger.info('Flowcell id: {} - Deleted {} fastqread records'.format(flowcell.id, affected))
 
-    affected = Flowcell.objects.get(pk=flowcell['id']).delete()
+    affected = Flowcell.objects.get(pk=flowcell.id).delete()
 
-    logger.info('Flowcell id: {} - Deleted {} records'.format(flowcell['id'], affected))
+    logger.info('Flowcell id: {} - Deleted {} records'.format(flowcell.id, affected))
 
 
 @task()
