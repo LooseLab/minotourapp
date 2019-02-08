@@ -2,7 +2,7 @@
 
 ## Warning - Work in progress
 
-Minotour is a work in progress. Therefore features may change,and any bug reports/pull request would be gratefully recieved.
+Minotour is a work in progress. Therefore features may change, and any bug reports/pull request would be gratefully recieved.
 
 ## Running minoTour with Docker
 
