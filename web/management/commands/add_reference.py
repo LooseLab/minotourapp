@@ -26,12 +26,12 @@ class Command(BaseCommand):
                 print('Path to reference file and env variable MT_REFERENCE_LOCATION must be absolute.')
                 exit()
 
-            minimap2_index_path = os.path.basename(options['reference']) + ".mmi"
+            #minimap2_index_path = os.path.basename(options['reference']) + ".mmi"
 
             reference_info, created1 = ReferenceInfo.objects.update_or_create(
                 name=os.path.basename(options['reference']).split('.')[0],
                 filename=os.path.basename(options['reference']),
-                minimap2_index_file_location=minimap2_index_path,
+                #minimap2_index_file_location=minimap2_index_path,
                 length=0
             )
 
