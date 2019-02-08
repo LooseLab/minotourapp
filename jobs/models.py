@@ -116,7 +116,8 @@ class JobMaster(models.Model):
     target_set = models.CharField(
         default=None,
         null=True,
-        max_length=100
+        max_length=100,
+        blank=True
     )
 
     def __str__(self):

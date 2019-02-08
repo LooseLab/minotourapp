@@ -110,6 +110,7 @@ def set_task_detail_all(request, pk):
                 print("error")
             return Response("Job Created.", status=status.HTTP_200_OK)
 
+
 @api_view(['GET'])
 def tasks_detail_all(request, pk):
 
