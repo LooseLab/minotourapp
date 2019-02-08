@@ -4,26 +4,28 @@ from alignment import views
 
 urlpatterns = [
     url(
-        r'^api/v1/runs/(?P<run_id>[0-9]+)/pafcover/(?P<barcode_id>[0-9]+)/(?P<read_type_id>[0-9]+)/(?P<chromosome_id>[0-9]+)/$',
-        views.paf_alignment_list,
-        name="paf_alignment_list"
+        r'^api/v1/flowcells/(?P<flowcell_id>[0-9]+)/pafcover/(?P<barcodegroup_id>[0-9]+)/(?P<read_type_id>[0-9]+)/(?P<chromosome_id>[0-9]+)/(?P<start>-?[0-9]+)/(?P<end>[0-9]+)/$',
+        views.flowcell_paf_alignment_list,
+        name="flowcell_paf_alignment_list"
     ),
     url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/pafsummary/$',
-        views.paf_alignment_summary,
-        name="paf_alignment_summary"
+        r'^api/v1/flowcells/(?P<flowcell_id>[0-9]+)/pafcover/(?P<barcodegroup_id>[0-9]+)/(?P<read_type_id>[0-9]+)/(?P<chromosome_id>[0-9]+)/$',
+        views.rough_coverage_complete_chromosome_flowcell,
+        name="rough_coverage_complete_chromosome_flowcell"
     ),
     url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/pafcover/(?P<ch>[0-9]+)/$',
-        views.paf_alignment_ch_list,
-        name="paf_alignment_ch_list"
+        r'^api/v1/pafcoverage/(?P<task_id>[0-9]+)/(?P<barcode_name>[a-zA-Z0-9 ]+)/(?P<read_type_id>[0-9]+)/(?P<chromosome_id>[0-9]+)/$',
+        views.rough_coverage_complete_chromosome_flowcell,
+        name="rough_coverage_complete_chromosome_flowcell"
     ),
     url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/pafcover/barcode/(?P<bc>[0-9]+)/chromosome/(?P<ch>[0-9]+)/type/(?P<ty>[0-9]+)/pos/(?P<po>[0-9]+)/len/(?P<ln>[0-9]+)/$',
-        views.paf_test,
-        name="paf_test"
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/pafsummary/$',
+        views.flowcell_paf_summary_cov,
+        name="flowcell_paf_summary_cov"
     ),
-    #url(
-    #    r'^api/v1/runs/(?P<pk>[0-9]+)/pafcover/chromosome/$',
-    #)
+    url(
+        r'^api/v1/flowcells/(?P<flowcell_id>[0-9]+)/references/$',
+        views.flowcellreferences_used_by_run,
+        name="flowcellreferences_used_by_run"
+    ),
 ]

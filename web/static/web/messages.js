@@ -27,6 +27,4 @@ var requestMessages = function () {
 
 setInterval(function () {
     requestMessages();
-}, 5000);
-
-
+}, 60000);

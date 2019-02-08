@@ -1,0 +1,32 @@
+{% for record in message_list|dictsortreversed:"timestamp" %}
+
+    {% if forloop.first %}
+
+        <div class='table-responsive'>
+        <table class="table">
+        <thead>
+        <th>Message</th>
+        <th>Time</th>
+        </thead>
+        <tbody>
+
+    {% endif %}
+
+    <tr>
+        <td>{{ record.message }}</td>
+        <td>{{ record.timestamp }}</td>
+    </tr>
+
+    {% if forloop.last %}
+        </tbody>
+
+        </table>
+
+        </div>
+    {% endif %}
+
+{% empty %}
+
+No information available.
+
+{% endfor %}

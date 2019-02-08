@@ -1,43 +1,39 @@
-from django.shortcuts import render
-
-# Create your views here.
-
-from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from reference.models import ReferenceInfo
-from reference.models import ReferenceLine
-from reference.serializers import ReferenceInfoSerializer
-from reference.serializers import ReferenceLineSerializer
+from reference.models import ReferenceInfo, ReferenceLine
+from reference.serializers import (ReferenceInfoSerializer,
+                                   ReferenceLineSerializer)
+
 
 @api_view(['GET'])
-def reference_list(request, pk):#,bc,ch):
-    """
+def reference_list(request):
 
-    :param request:
-    :param pk:
-    :return:
-    """
-    if request.method == 'GET':
-        queryset = ReferenceInfo.objects \
-            .filter(id=pk)
+    queryset = ReferenceInfo.objects.all()
 
-        serializer = ReferenceInfoSerializer(queryset, many=True, context={'request': request})
+    serializer = ReferenceInfoSerializer(queryset, many=True, context={'request': request})
 
-        return Response(serializer.data)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+def reference_detail(request, pk):
+
+    queryset = ReferenceInfo.objects.get(pk=pk)
+
+    serializer = ReferenceInfoSerializer(queryset, context={'request': request})
+
+    return Response(serializer.data)
 
 
 @api_view(['GET'])
 def reference_line(request, pk):
-    """
 
-    :param request:
-    :param pk:
-    :return:
-    """
     if request.method == 'GET':
+
         queryset = ReferenceLine.objects.filter(pk=pk)
+
         serializer = ReferenceLineSerializer(queryset, many=True, context={'request': request})
 
         return Response(serializer.data)
+

@@ -1,0 +1,187 @@
+{% extends "web/template_private.html" %}
+{% load static %}
+
+{% block content %}
+    <div class="content-wrapper" style="background-color: white">
+
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+            <h1>Flowcells <small> - select a Flowcell for more information.</small></h1>
+        </section>
+
+        <!-- Main content -->
+        <section class="content">
+            <!-- Main top nav bar -->
+
+                <div id="messages"></div>
+
+                <div class="box-body">
+                    <table id="all-runs" class="table table-bordered table-striped table-hover" style="width:100%" cellspacing="0" >
+                    <thead>
+                    <tr>
+                        <th>Flowcell<br/>Name</th>
+                        <th>Flowcell<br/>Size</th>
+                        <th>Sample<br/>Name</th>
+                        <th>Start<br/>Time</th>
+                        <th>Number<br/>of Reads</th>
+                        <th>Number<br/>of Reads Processed</th>
+                        <th>Number<br/>of Runs</th>
+                        <th>Number<br/>of Barcodes</th>
+                        <th>Yield</th>
+                        <th>Average<br/>Read Length</th>
+                        <th>Status</th>
+                        <th>Contains<br/>sequence data</th>
+                    </tr>
+                    </thead>
+                    </table>
+                </div>
+        </section><!-- /.content -->
+    </div><!-- /.content-wrapper -->
+{% endblock %}
+
+{% block javascript %}
+<script>
+
+    var table_all_runs;
+
+    $(document).ready(function () {
+
+        table_all_runs = $('#all-runs').DataTable({
+            "scrollX": true,
+            "order": [[ 3, "desc" ]],
+            'ajax': {
+                'url': "{% url 'flowcell-list' %}",
+                'dataSrc': function(jsonData){
+                    var json = jsonData.data;
+                    var data = [];
+
+                    for (var i = 0; i < json.length; i++){
+
+                        var start_time = moment(json[i].start_time).format('YYYY-MM-DD HH:mm');
+
+                        data.push([
+                            json[i].id,
+                            json[i].name,
+                            json[i].size,
+                            json[i].sample_name,
+                            // start_time_human_format,
+                            // start_time,
+                            start_time,
+                            json[i].number_reads,
+                            json[i].number_reads_processed,
+                            json[i].number_runs,
+                            json[i].number_barcodes,
+                            json[i].total_read_length,
+                            json[i].average_read_length,
+                            json[i].is_active,
+                            json[i].has_fastq
+                        ]);
+                    }
+                    return data;
+                }
+            },
+            'columnDefs': [
+                {
+                    'targets': 0,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[1] + '</a>';
+                    }
+                },
+                {
+                    'targets': 1,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[2] + '</a>';
+                    }
+                },
+                {
+                    'targets': 2,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[3] + '</a>';
+                    }
+                },
+                {
+                    'targets': 3,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[4] + '</a>';
+                    }
+                },
+                {
+                    'targets': 4,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[5] + '</a>';
+                    }
+                },
+                {
+                    'targets': 5,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[6] + '</a>';
+                    }
+                },
+                {
+                    'targets': 6,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[7] + '</a>';
+                    }
+                },
+                {
+                    'targets': 7,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[8] + '</a>';
+                    }
+                },
+                {
+                    'targets': 8,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[9] + '</a>';
+                    }
+                },
+                {
+                    'targets': 9,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[10] + '</a>';
+                    }
+                },
+                {
+                    'targets': 10,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        if (full[11]) {
+                            return '<a href="/web/private/flowcells/' + data + '/">Active</a>';
+                        } else {
+                            return '<a href="/web/private/flowcells/' + data + '/">Inactive</a>';
+                        }
+                    }
+                },
+                {
+                    'targets': 11,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        if (full[12]) {
+                            return '<a href="/web/private/flowcells/' + data + '/">Yes</a>';
+                        } else {
+                            return '<a href="/web/private/flowcells/' + data + '/">No</a>';
+                        }
+                    }
+                },
+            ]
+        });
+
+        set_active_navbar_item(0);
+
+    });
+
+
+
+
+</script>
+{% endblock %}

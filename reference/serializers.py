@@ -1,20 +1,20 @@
 from rest_framework import serializers
 
-from reference.models import ReferenceInfo
-from reference.models import ReferenceLine
+from reference.models import ReferenceInfo, ReferenceLine
+
 
 class ReferenceInfoSerializer(serializers.HyperlinkedModelSerializer):
+
     class Meta:
+
         model = ReferenceInfo
+
         fields = (
-            #'id',
-            'reference_name',
-            'filename',
-            'bwa_index_file_location',
-            'minimap2_index_file_location',
-            'totalrefleN',
+            'id',
+            'url',
+            'name',
+            'length',
             'private',
-            'users'
         )
         read_only = (
             'id',

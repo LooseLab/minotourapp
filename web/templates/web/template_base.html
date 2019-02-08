@@ -1,17 +1,17 @@
 {% load static %}
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>minoTour | v1.0 | real time minION analysis</title>
-    <link rel="icon" type="image/png" href="{% static 'mT_images/minitour.png' %}">
+    <link rel="icon" type="image/png" href="{% static 'web/img/minitour.png' %}">
 
-    <link rel="apple-touch-icon" sizes="57x57" href="{% static 'mT_images/minitour57.png' %}">
-    <link rel="apple-touch-icon" sizes="72x72" href="{% static 'mT_images/minitour72.png' %}">
-    <link rel="apple-touch-icon" sizes="114x114" href="{% static 'mT_images/minitour114.png' %}">
-    <link rel="apple-touch-icon" sizes="144x144" href="{% static 'mT_images/minitour144.png' %}">
-    <link rel="mask-icon" href="{% static 'mT_images/minotour.svg' %}" color="yellow">
+    <link rel="apple-touch-icon" sizes="57x57" href="{% static 'web/img/minitour57.png' %}">
+    <link rel="apple-touch-icon" sizes="72x72" href="{% static 'web/img/minitour72.png' %}">
+    <link rel="apple-touch-icon" sizes="114x114" href="{% static 'web/img/minitour114.png' %}">
+    <link rel="apple-touch-icon" sizes="144x144" href="{% static 'web/img/minitour144.png' %}">
+    <link rel="mask-icon" href="{% static 'web/img/minotour.svg' %}" color="yellow">
 
     <!-- Tell the browser to be responsive to screen width -->
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
@@ -32,52 +32,37 @@
     <link rel="stylesheet" href="{% static 'web/datatables/css/jquery.dataTables.css' %}">
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
+    <!--[if lt IE 9]>-->
+    <link rel="stylesheet" href="{% static 'web/css/minotour.css' %}">
+    <link rel="stylesheet" href="{% static 'web/css/loader.css' %}">
+
+    <!-- jQuery 2.2.3 -->
+    <!--<script src="{% static 'web/plugins/jQuery/jquery-2.2.3.min.js' %}"></script>-->
+    <script src="{% static 'web/jquery-3.3.1.js' %}"></script>
+
     <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
     <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
 
-    <!-- jQuery 2.2.3 -->
-    <script src="{% static 'web/plugins/jQuery/jquery-2.2.3.min.js' %}"></script>
-    <!--<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>-->
+    <style>
+        .principal {
+            width: 100%;
+            height: 600px;
+        }
 
-    <!-- Bootstrap 3.3.6 -->
-    <script src="{% static 'web/bootstrap/js/bootstrap.min.js' %}"></script>
-
-    <!-- AdminLTE App -->
-    <script src="{% static 'web/dist/js/app.min.js' %}"></script>
-
-    <!-- Highcharts -->
-    <!--<script src="https://code.highcharts.com/highcharts.js"></script>-->
-    <script src="https://code.highcharts.com/stock/5.0.9/highstock.js"></script>
-
-    <script src="https://code.highcharts.com/5.0.9/highcharts-more.js"></script>
-    <script src="https://code.highcharts.com/5.0.9/modules/exporting.js"></script>
-
-    <script src="https://code.highcharts.com/5.0.9/modules/solid-gauge.src.js"></script>
-    <script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>
-    <script src="https://code.highcharts.com/5.0.9/modules/heatmap.js"></script>
-    <script src="http://code.highcharts.com/5.0.9/modules/no-data-to-display.js"></script>
-
-    <script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>
-
-    <script src="{% static 'web/cookie.js' %}"></script>
-    <script src="{% static 'web/ajax_setup.js' %}"></script>
-    <script src="{% static 'web/minotour.js' %}"></script>
-
-    <!-- Data tables -->
-    <script src="{% static 'web/datatables/js/jquery.dataTables.min.js' %}"></script>
-
-    <!-- Optionally, you can add Slimscroll and FastClick plugins.
-         Both of these plugins are recommended to enhance the
-         user experience. Slimscroll is required when using the
-         fixed layout. -->
-    <script src="{% static 'web/plugins/slimScroll/jquery.slimscroll.min.js' %}"></script>
-    <script src="{% static 'web/plugins/fastclick/fastclick.min.js' %}"></script>
+        .detail_chart {
+            width: 100%;
+            height: 200px;
+        }
+        .master_chart {
+            width: 100%;
+            height: 70px;
+        }
+    </style>
 </head>
 
 {% block body_tag %}
-    <body class="hold-transition skin-blue sidebar-mini">
+    <body class="hold-transition skin-blue layout-top-nav">
 {% endblock %}
 
 <div class="wrapper">
@@ -92,122 +77,104 @@
 
     <!-- Content Wrapper. Contains page content -->
     {% block content %}
-        <div class="content-wrapper">
-            <!-- Content Header (Page header) -->
-            <section class="content-header">
-                <h1>
-                    Page Header
-                    <small>Optional description</small>
-                </h1>
-                <ol class="breadcrumb">
-                    <li><a href="#"><i class="fa fa-dashboard"></i> Level</a></li>
-                    <li class="active">Here</li>
-                </ol>
-            </section>
-
-            <!-- Main content -->
-            <section class="content">
-
-                <!-- Your Page Content Here -->
-
-            </section>
-            <!-- /.content -->
-        </div>
-        <!-- /.content-wrapper -->
     {% endblock %}
 
     <!-- Main Footer -->
     <footer class="main-footer">
         <!-- To the right -->
         <div class="pull-right hidden-xs">
-            <img style="max-width:100px;" src="{% static 'mT_images/minotaurlogo.png' %}" alt="minoTour_logo">
+            <img style="max-width:100px;" src="{% static 'web/img/minotourlogo.png' %}" alt="Minotour logo">
         </div>
         <!-- Default to the left -->
-        <strong>Copyright &copy; Matt Loose 2017 <a href="www.nottingham.ac.uk">University of Nottingham</a>.</strong>
+        <strong>Copyright &copy; Loose Lab {% now 'Y' %} <a href="https://www.nottingham.ac.uk">University of Nottingham</a>.</strong>
         Contact @mattloose for more information.
     </footer>
 
-    <!-- Control Sidebar -->
-    <aside class="control-sidebar control-sidebar-dark">
-        <!-- Create the tabs -->
-        <ul class="nav nav-tabs nav-justified control-sidebar-tabs">
-            <li class="active"><a href="#control-sidebar-home-tab" data-toggle="tab"><i class="fa fa-home"></i></a></li>
-            <li><a href="#control-sidebar-settings-tab" data-toggle="tab"><i class="fa fa-gears"></i></a></li>
-        </ul>
-        <!-- Tab panes -->
-        <div class="tab-content">
-            <!-- Home tab content -->
-            <div class="tab-pane active" id="control-sidebar-home-tab">
-                <h3 class="control-sidebar-heading">Recent Activity</h3>
-                <ul class="control-sidebar-menu">
-                    <li>
-                        <a href="javascript:;">
-                            <i class="menu-icon fa fa-birthday-cake bg-red"></i>
-
-                            <div class="menu-info">
-                                <h4 class="control-sidebar-subheading">Langdon's Birthday</h4>
-
-                                <p>Will be 23 on April 24th</p>
-                            </div>
-                        </a>
-                    </li>
-                </ul>
-                <!-- /.control-sidebar-menu -->
-
-                <h3 class="control-sidebar-heading">Tasks Progress</h3>
-                <ul class="control-sidebar-menu">
-                    <li>
-                        <a href="javascript:;">
-                            <h4 class="control-sidebar-subheading">
-                                Custom Template Design
-                                <span class="pull-right-container">
-                  <span class="label label-danger pull-right">70%</span>
-                </span>
-                            </h4>
-
-                            <div class="progress progress-xxs">
-                                <div class="progress-bar progress-bar-danger" style="width: 70%"></div>
-                            </div>
-                        </a>
-                    </li>
-                </ul>
-                <!-- /.control-sidebar-menu -->
-
-            </div>
-            <!-- /.tab-pane -->
-            <!-- Stats tab content -->
-            <div class="tab-pane" id="control-sidebar-stats-tab">Stats Tab Content</div>
-            <!-- /.tab-pane -->
-            <!-- Settings tab content -->
-            <div class="tab-pane" id="control-sidebar-settings-tab">
-                <form method="post">
-                    <h3 class="control-sidebar-heading">General Settings</h3>
-
-                    <div class="form-group">
-                        <label class="control-sidebar-subheading">
-                            Report panel usage
-                            <input type="checkbox" class="pull-right" checked>
-                        </label>
-
-                        <p>
-                            Some information about this general settings option
-                        </p>
-                    </div>
-                    <!-- /.form-group -->
-                </form>
-            </div>
-            <!-- /.tab-pane -->
-        </div>
-    </aside>
-    <!-- /.control-sidebar -->
-    <!-- Add the sidebar's background. This div must be placed
-         immediately after the control sidebar -->
-    <div class="control-sidebar-bg"></div>
 </div>
 <!-- ./wrapper -->
 
+<!-- Bootstrap 3.3.6 -->
+<script src="{% static 'web/bootstrap/js/bootstrap.min.js' %}"></script>
 <!-- AdminLTE App -->
+
 <script src="{% static 'web/dist/js/app.min.js' %}?dev=19"></script>
+<script src="{% static 'web/js/flowcell/requestReadData.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/flowcell/addMetaBarcodeTabs.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/libraries/d3/d3.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/libraries/d3-sankey/d3-sankey.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/libraries/moment.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/vis-d3/sankey.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/vis-d3/donutdothat.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/vis-d3/AllResultsTable.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/vis-d3/donutoTaberu.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/vis-d3/metaheader.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/vis-d3/mappingtable.js'%}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/vis-d3/simpleAlertTable.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/models/CoverageChart.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/controllers/CoverageChartController.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/utils/checkFlowcellTabs.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/utils/selectedBarcode.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/utils/selectedFlowcell.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/utils/dynamicSort.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/flowcell/requestMinknowMessages.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/flowcell/requestTasks.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/flowcell/requestChannelSummaryData.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/flowcell/requestStatistics.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/flowcell/requestGfaData.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/flowcell/requestPafData.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/flowcell/requestData.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/flowcell/requestHistogramData.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/flowcell/requestRunDetails.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/flowcell/requestLiveRunStats.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/flowcell/requestSummaryData.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/flowcell/updateBarcodeNavTab.js' %}?{% now 'c' %}"></script>
+
+
+
+<script src="{% static 'web/js/models/Message.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/controllers/MessageController.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/services/MessageService.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/views/MessagesView.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/controllers/AppController.js' %}?{% now 'c' %}"></script>
+
+<script src="{% static 'web/js/helpers/DateHelper.js' %}?{% now 'c' %}"></script>
+
+<script src="{% static 'web/js/views/MView.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/models/FlowcellTab.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/models/FlowcellTabList.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/views/MFlowcellTabsView.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/models/Flowcell.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/models/MTask.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/models/MTaskList.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/models/MMessage.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/controllers/FlowcellController.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/controllers/FlowcellTabController.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/services/HttpService.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/services/FlowcellService.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/controllers/MTaskController.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/views/MMessageView.js' %}?{% now 'c' %}"></script>
+
+<!-- Highcharts -->
+<script src="https://code.highcharts.com/stock/highstock.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/sankey.js"></script>
+<script src="https://code.highcharts.com/highcharts-more.js"></script>
+<script src="https://code.highcharts.com/modules/boost.js"></script>
+
+<script src="https://code.highcharts.com/modules/solid-gauge.src.js"></script>
+<script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>
+<script src="https://code.highcharts.com/modules/heatmap.js"></script>
+<script src="http://code.highcharts.com/modules/no-data-to-display.js"></script>
+
+{#<script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>#}
+
+<script src="{% static 'web/cookie.js' %}"></script>
+<script src="{% static 'web/ajax_setup.js' %}"></script>
+<script src="{% static 'web/minotour.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/monitor_app.js' %}?{% now 'c' %}"></script>
+
+<!-- Data tables -->
+<script src="{% static 'web/datatables/js/jquery.dataTables.min.js' %}"></script>
 
 <!-- Optionally, you can add Slimscroll and FastClick plugins.
      Both of these plugins are recommended to enhance the
@@ -217,5 +184,7 @@
 <script src="{% static 'web/plugins/fastclick/fastclick.min.js' %}"></script>
 
 
+{% block javascript %}
+{% endblock %}
 </body>
 </html>

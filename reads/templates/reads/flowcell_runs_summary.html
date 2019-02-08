@@ -1,0 +1,54 @@
+{% for record in run_list %}
+
+    {% if forloop.first %}
+
+        <div class='table-responsive'>
+        <table class="table">
+        <thead>
+        <td align="right"><strong>Run</strong></td>
+        <th>Runid</th>
+        <td align="right"><strong>Run Start Time</strong></td>
+        <td align="right"><strong>Computer Name</strong></td>
+        <td align="right"><strong>MinION ID</strong></td>
+        <td align="right"><strong>ASIC ID</strong></td>
+        <td align="right"><strong>Sequencing Kit</strong></td>
+        <td align="right"><strong>Purpose</strong></td>
+        <td align="right"><strong>minKNOW version</strong></td>
+        <td align="right"><strong>Flowcell Type</strong></td>
+        <td align="right"><strong>Flowcell ID</strong></td>
+        <th>Sample Name</th>
+        <th>Experiment Name</th>
+        </thead>
+        <tbody>
+
+    {% endif %}
+
+    <tr>
+        <td align="right">{{ forloop.counter }}</td>
+        <td>{{ record.runid }}</td>
+        <td align="right">{{ record.run_start_time }}</td>
+        <td align="right">{{ record.minknow_computer_name }}</td>
+        <td align="right">{{ record.minion_id }}</td>
+        <td align="right">{{ record.asic_id }}</td>
+        <td align="right">{{ record.sequencing_kit }}</td>
+        <td align="right">{{ record.purpose }}</td>
+        <td align="right">{{ record.minknow_version }}</td>
+        <td align="right">{{ record.flowcell_type }}</td>
+        <td align="right">{{ record.flowcell_id }}</td>
+        <td>{{ record.sample_name }}</td>
+        <td>{{ record.experiment_name }}</td>
+    </tr>
+
+    {% if forloop.last %}
+        </tbody>
+
+        </table>
+
+        </div>
+    {% endif %}
+
+{% empty %}
+
+No information available.
+
+{% endfor %}

@@ -1,0 +1,20 @@
+<!-- metagenomicstab.html -->
+{% load visview %}
+
+
+<div id="loading-sign" style="position: fixed;left: 0;width: 100%;height: 100%; z-index: 12;">
+    <h1 style="text-align: center;transform: translateY(36vh);position: relative;">
+    Processing...
+
+    </h1>
+</div>
+<div id="loader-wrapper" style="text-align: center">
+    <div id="loader"></div>
+    <div class="loader-section section-left"></div>
+    <div class="loader-section section-right"></div>
+</div>
+
+<div class="vis-container" style="display: none">
+    {% render_vis %}
+</div>
+

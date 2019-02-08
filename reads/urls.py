@@ -8,29 +8,34 @@ urlpatterns = [
         views.run_list,
         name="run-list"),
     url(
-        r'^api/v1/currentruns/$',
-        views.current_run_list,
-        name="current-run-list"),
-    url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/$',
+        r'^api/v1/runs/(?P<pk>[0-9a-z-]+)/$',
         views.run_detail,
-        name="minionrun-detail"
+        name="run-detail"
     ),
     url(
-        #r'^api/v1/runs/(?P<pk>[0-9]+)/reads/(?P<page>[0-9]+)/$',
         r'^api/v1/runs/(?P<pk>[0-9]+)/reads/$',
         views.read_list,
         name="fastqread-list"
     ),
     url(
+        r'^api/v1/reads/(?P<pk>[0-9]+)/$',
+        views.read_detail,
+        name="fastqread-detail"
+    ),
+    url(
+        r'^api/v1/read/$',
+        views.read_list_new,
+        name="fastqread-list-new"
+    ),
+    url(
+        r'^api/v1/readsextra/$',
+        views.readextra_list,
+        name="readextra_list"
+    ),
+    url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/readnames/$',
         views.readname_list,
         name="fastqreadnames-list"
-    ),
-    url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/yield/$',
-        views.cumulative_read_count,
-        name="cumulative_read_count"
     ),
     url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/rundetails/$',
@@ -48,21 +53,6 @@ urlpatterns = [
         name="minIONrunstats_latest"
     ),
     url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/summary/$',
-        views.run_summary,
-        name="runsummary-detail"
-    ),
-    url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/summarybyminute/$',
-        views.run_summary_by_minute,
-        name="runsummarybyminute-detail"
-    ),
-    url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/summarybyminute/(?P<last>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)/$',
-        views.run_summary_by_minute,
-        name="runsummarybyminute-detail2"
-    ),
-    url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/summarybarcode/$',
         views.run_summary_barcode,
         name="runsummarybarcode-detail"
@@ -73,21 +63,19 @@ urlpatterns = [
         name="runsummarybarcodebyminute-detail"
     ),
     url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/histogramsummary/$',
-        views.run_histogram_summary,
-        name="runhistogramsummary-detail"),
+        r'^api/v1/runs/(?P<pk>[0-9A-Za-z-_]+)/files/$',
+        views.fastq_file,
+        name="fastqfile-list",
+    ),
     url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/channelsummary/$',
-        views.run_channel_summary,
-        name="runchannelsummary-list"),
+        #r'^api/v1/minions/(?P<pk>[0-9A-Za-z-_]+)/$',
+        r'^api/v1/files/(?P<pk>[0-9]+)/$',
+        views.fastq_detail,
+        name="fastqfile-detail"),
     url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/barcodes/$',
         views.barcode_list,
         name="runbarcode-list"),
-    url(
-        r'^api/v1/reads/(?P<pk>[0-9]+)/$',
-        views.read_detail,
-        name="fastqread-detail"),
     url(
         r'^api/v1/readtypes/$',
         views.read_type_list,
@@ -105,7 +93,7 @@ urlpatterns = [
         views.activeminion_list,
         name="activeminION_list"),
     url(
-        r'^api/v1/minions/(?P<pk>[0-9]+)/$',
+        r'^api/v1/minions/(?P<pk>[0-9A-Za-z-_]+)/$',
         views.minION_detail,
         name="minion-detail"),
     url(
@@ -122,15 +110,15 @@ urlpatterns = [
         name="minIONcontrol-update"),
     url(
         r'^api/v1/minions/(?P<pk>[0-9]+)/messages/$',
-        views.minION_messages_list,
+        views.minion_messages_list,
         name="minIONmessages-list"),
     url(
         r'^api/v1/minions/(?P<pk>[0-9]+)/recentmessages/$',
-        views.recentminION_messages_list,
+        views.recentminion_messages_list,
         name="recentmessages-list"),
     url(
         r'^api/v1/minions/(?P<pk>[0-9]+)/messagessince/(?P<starttime>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z)/(?P<endtime>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z)/$',
-        views.sinceminION_messages_list,
+        views.sinceminion_messages_list,
         name="sincemessages-list"),
     url(
         r'^api/v1/minions/(?P<pk>[0-9]+)/status/$',
@@ -145,15 +133,115 @@ urlpatterns = [
         views.minION_scripts_detail,
         name="minIONscripts-detail"),
     url(
-        r'^api/v1/events/$',
+        r'^api/v1/minioneventtypes/$',
         views.events_type_list,
         name="eventstype-list"),
     url(
-        r'^api/v1/events/(?P<pk>[0-9]+)/$',
+        r'^api/v1/minioneventtypes/(?P<pk>[0-9]+)/$',
         views.events_type_detail,
         name="minioneventtype-detail"),
     url(
         r'^api/v1/barcodes/(?P<pk>[0-9]+)/$',
         views.barcode_detail,
         name="barcode-detail"),
+    url(
+        r'^api/v1/flowcells/$',
+        views.flowcell_list,
+        name="flowcell-list"),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9A-Za-z-_]+)/$',
+        views.flowcell_detail,
+        name="flowcell-detail"),
+    url(  # TODO delete?
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/summarybarcode/$',
+        views.flowcell_summary_barcode,
+        name="flowcellsummarybarcode-detail"),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/statistics/$',
+        views.flowcell_statistics,
+        name="flowcell-statistics"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/speed/$',
+        views.flowcell_speed,
+        name="flowcell-speed"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/histogramsummary/$',
+        views.flowcell_histogram_summary,
+        name="flowcellhistogramsummary-detail"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/channelsummary/$',
+        views.flowcell_channel_summary,
+        name="flowcell-channel-summary"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/runstats/(?P<checkid>[0-9]+)/$',
+        views.flowcell_run_stats_latest,
+        name="flowcellrunstats_latest"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/tasks/$',
+        views.flowcell_tasks_detail_all,
+        name="flowcelltasks-detail-all"),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/tabs/$',
+        views.flowcell_tabs_details,
+        name="tabs-details"
+    ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/tabs2/$',
+        views.FlowcellTabList.as_view(),
+        name="flowcell-tab-list"
+    ),
+    url(
+        r'^api/v1/grouprun/$',
+        views.grouprun_list,
+        name="grouprun-list"
+    ),
+    url(
+        r'^api/v1/grouprun/(?P<pk>[0-9A-Za-z-_]+)/$',
+        views.grouprun_detail,
+        name="grouprun-detail"
+    ),
+    url(
+        r'^api/v1/grouprun-membership/$',
+        views.grouprun_membership_list,
+        name="grouprun-membership-list"
+    ),
+    url(
+        r'^api/v1/barcode/$',
+        views.barcode_list_new,
+        name="barcode-list-new"
+    ),
+    url(
+        r'^api/v1/version/$',
+        views.version,
+        name='version'
+    ),
+    #
+    # The links below generated html
+    #
+    url(
+        r'^flowcells/(?P<pk>[0-9]+)/run_summaries_html/$',
+        views.flowcell_run_summaries_html,
+        name="flowcell_run_summaries_html"
+    ),
+
+    url(
+        r'^flowcells/(?P<pk>[0-9]+)/flowcell_run_basecalled_summary_html/$',
+        views.flowcell_run_basecalled_summary_html,
+        name="flowcell_run_basecalled_summary_html"
+    ),
+    url(
+        r'^flowcells/(?P<pk>[0-9]+)/summary_html/$',
+        views.flowcell_summary_html,
+        name="flowcell-summary-html"
+    ),
+    url(
+        r'^flowcells/(?P<pk>[0-9]+)/minknow_messages_html/$',
+        views.minknow_message_list_by_flowcell,
+        name="minknow-message-list-by-flowcell"
+    ),
 ]

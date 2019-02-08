@@ -1,132 +1,185 @@
 import json
 
-from django.http import HttpResponse
-from django.shortcuts import render
-from django.db.models import Count, Min, Sum, Avg
-
-from rest_framework import status
+import numpy as np
+import pandas as pd
+from django.db.models import Sum
+from django.http import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view
-from rest_framework.response import Response
 
-from alignment.models import PafRoughCov
-from alignment.models import PafSummaryCov
-from alignment.serializers import PafRoughCovSerializer
-from alignment.serializers import PafRoughCovChromSerializer
-from alignment.serializers import PafRoughCovChromSerializerCount
-from alignment.serializers import PafSummaryCovSerializer
+from alignment.models import PafRoughCov, PafSummaryCov
+from alignment.utils import calculate_coverage_new
+from . import utils
 
-from reference.models import ReferenceInfo
-from reference.models import ReferenceLine
+
+class NumpyEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+
+        if isinstance(obj, np.integer):
+            return int(obj)
+
+        elif isinstance(obj, np.floating):
+            return float(obj)
+
+        else:
+            return super(MyEncoder, self).default(obj)
+
 
 @api_view(['GET'])
-def paf_alignment_list(request, run_id, barcode_id, read_type_id, chromosome_id):
+def rough_coverage_complete_chromosome_flowcell(request, task_id, barcode_name, read_type_id, chromosome_id):
 
     queryset = PafRoughCov.objects \
-        .filter(run__owner=request.user) \
-        .filter(run__id=run_id) \
-        .filter(barcode__id=barcode_id) \
+        .filter(job_master__id=task_id) \
+        .filter(flowcell__owner=request.user) \
+        .filter(barcode_name=barcode_name) \
         .filter(chromosome__id=chromosome_id) \
         .filter(read_type__id=read_type_id) \
+        .values('p') \
+        .annotate(Sum('i')) \
         .order_by('p')
 
-    result_list = []
-    position_list = []
-    coverage_list = []
-    current_coverage_sum = 0
+    queryset_df = pd.DataFrame.from_records(
+        queryset.values('p', 'i__sum')
+    )
 
-    for key, item in enumerate(queryset):
+    queryset_df['i__sum__cumsum'] = queryset_df['i__sum'].cumsum()
 
-        current_coverage_sum = current_coverage_sum + item.i
+    result = queryset_df[['p', 'i__sum__cumsum']]
 
-        position_list.append(item.p)
+    # this method return the json between double quotes and requires a JSON.parse on the client side
+    return JsonResponse(result.to_json(orient='values'), safe=False)
 
-        coverage_list.append(current_coverage_sum)
-
-        result_list.append([item.p, current_coverage_sum])
-
-    return HttpResponse(json.dumps(result_list), content_type="application/json")
 
 @api_view(['GET'])
-def paf_alignment_summary(request, pk):#,bc,ch):
-    """
+def flowcell_paf_alignment_list(request, task_id, barcode_name, read_type_id, chromosome_id, start, end):
+    # def flowcell_paf_alignment_list(request, flowcell_id, barcodegroup_id, read_type_id, chromosome_id, start, end):
 
-    :param request:
-    :param pk:
-    :return:
-    """
-    if request.method == 'GET':
-        queryset = PafSummaryCov.objects \
-            .filter(run__owner=request.user) \
-            .filter(run__id=pk)
-            #.filter(run__id=pk,barcode=bc,chromosome=ch)
+    min_extreme = request.GET.get('min', '')
+    max_extreme = request.GET.get('max', '')
 
-        serializer = PafSummaryCovSerializer(queryset, many=True, context={'request': request})
 
-        return Response(serializer.data)
+    result_list = calculate_coverage_new(task_id, barcode_name, read_type_id, chromosome_id, start, end)
+
+    return JsonResponse(json.dumps(result_list, cls=NumpyEncoder), safe=False)
+
 
 @api_view(['GET'])
-def paf_test(request, pk,bc,ch,ty,po,ln):
-    """
+def flowcell_paf_alignment_list_original(request, flowcell_id, barcodegroup_id, read_type_id, chromosome_id, start, end):
 
-    :param request:
-    :param pk:
-    :return:
-    """
-    if request.method == 'GET':
+    min_extreme = request.GET.get('min', '')
+    max_extreme = request.GET.get('max', '')
+
+    if min_extreme != '' and max_extreme != '':
+
+        print('Running query with min and max {} {}'.format(min_extreme, max_extreme))
+
+        min_extreme = int(min_extreme)
+        max_extreme = int(max_extreme)
+
+        if min_extreme < 0:
+            min_extreme = 0
+
         queryset = PafRoughCov.objects \
-            .filter(run__owner=request.user) \
-            .filter(run__id=pk) \
-            .filter(barcode__id=bc) \
-            .filter(chromosome__id=ch) \
-            .filter(read_type__id=ty) \
-            .filter(p__lte=po).values('reference').annotate(sumcount=Sum('i'))
-        # .filter(run__id=pk,barcode=bc,chromosome=ch)
-
-        #serializer = PafRoughCovSerializer(queryset, many=True, context={'request': request})
-
-        #queryset = PafRoughCov.objects.filter(run__owner=request.user).filter(run__id=pk).filter(p__lte=1000000).values('reference').annotate(sumcount = Sum('i')).order_by('sumcount')
-
-        serializer1 = PafRoughCovChromSerializerCount(queryset, many=True, context={'request': request})
-
-        queryset2 = PafRoughCov.objects \
-            .filter(run__owner=request.user) \
-            .filter(run__id=pk) \
-            .filter(barcode__id=bc) \
-            .filter(chromosome__id=ch) \
-            .filter(read_type__id=ty) \
-            .filter(p__gt=po)\
-            .filter(p__lt=(po+ln))\
+            .filter(flowcell__owner=request.user) \
+            .filter(barcodegroup__id=barcodegroup_id) \
+            .filter(chromosome__id=chromosome_id) \
+            .filter(read_type__id=read_type_id) \
+            .filter(p__gte=min_extreme) \
+            .filter(p__lte=max_extreme) \
             .order_by('p')
 
-        serializer2 = PafRoughCovChromSerializer(queryset2, many=True, context={'request': request})
+        current_incdel = get_incdel_at_position(flowcell_id, barcodegroup_id, read_type_id, chromosome_id, min_extreme, True)
 
-        Serializer_list = [serializer1.data, serializer2.data]
+    else:
 
-        content = {
-            'status': 1,
-            'responseCode': status.HTTP_200_OK,
-            'data': Serializer_list,
+        print('Running query without min and max')
 
+        queryset = PafRoughCov.objects \
+            .filter(flowcell__owner=request.user) \
+            .filter(barcodegroup__id=barcodegroup_id) \
+            .filter(chromosome__id=chromosome_id) \
+            .filter(read_type__id=read_type_id) \
+            .order_by('p')
+
+        min_extreme = 0
+        max_extreme = queryset[0].chromosome.chromosome_length
+
+        current_incdel = 0
+
+    reference_size = max_extreme - min_extreme
+
+    number_of_bins = 200
+
+    bin_width = reference_size / number_of_bins
+
+    #
+    # the size of bin_edges is the number of bins + 1
+    #
+    bin_edges = np.array([min_extreme + bin_width * i for i in range(number_of_bins + 1)])
+
+    positions = []
+    incdels = []
+
+    print("queryset length: {}".format(len(queryset)))
+    for item in queryset:
+        positions.append(item.p)
+        incdels.append(item.i)
+
+    bin_results = utils.calculate_coverage(positions, incdels, current_incdel, reference_size, number_of_bins, bin_width, bin_edges, min_extreme, max_extreme)
+
+    result_list = []
+
+    for key in bin_results.keys():
+        result_list.append((min_extreme + (key * bin_width), bin_results[key]))
+
+    return HttpResponse(json.dumps(result_list, cls=NumpyEncoder), content_type="application/json")
+
+
+@api_view(['GET'])
+def flowcell_paf_summary_cov(request, pk):
+
+    queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk)
+
+    response = []
+
+    for record in queryset:
+
+        paf_summary_cov = {
+
+            'id': record.job_master.id,
+            'barcode_name': record.barcode_name,
+            'read_type_name': 'Template',
+            'reference_line_name': record.reference_line_name,
+            'read_count': record.read_count,
+            'total_length': record.total_length,
+            'chrom_cover': record.total_length/record.reference_line_length,
+            'avg_read_len': record.total_length / record.read_count
         }
 
-        return Response(content)
+        response.append(paf_summary_cov)
+
+    return JsonResponse({'data': response})
 
 
 @api_view(['GET'])
-def paf_alignment_ch_list(request, pk,ch):#,bc,ch):
-    """
+def flowcellreferences_used_by_run(request, flowcell_id):
 
-    :param request:
-    :param pk:
-    :return:
-    """
-    if request.method == 'GET':
-        queryset = PafRoughCov.objects \
-            .filter(run__owner=request.user) \
-            .filter(run__id=pk).filter(chromosome__id=ch) \
-            .order_by('p')
-            #.filter(run__id=pk,barcode=bc,chromosome=ch)
+    references = PafRoughCov.objects.\
+        filter(flowcell_id=flowcell_id).\
+        values('job_master__id', 'chromosome__id', 'barcode_name', 'reference', 'reference__name', 'chromosome__line_name', 'read_type', 'read_type__name').distinct()
 
-        serializer = PafRoughCovChromSerializer(queryset, many=True, context={'request': request})
+    result = [
+        {
+            'task_id': r['job_master__id'],
+            'flowcell_id': flowcell_id,
+            'chromosome_id': r['chromosome__id'],
+            'chromosome_name': r['chromosome__line_name'],
+            'barcode_name': r['barcode_name'],
+            'reference_id': r['reference'],
+            'reference_name': r['reference__name'],
+            'read_type_id': r['read_type'],
+            'read_type_name': r['read_type__name']
+        } for r in references
+    ]
 
-        return Response(serializer.data)
+    return HttpResponse(json.dumps(list(result)), content_type="application/json")

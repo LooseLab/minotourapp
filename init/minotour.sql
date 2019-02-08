@@ -1,0 +1,2 @@
+CREATE USER dba WITH PASSWORD 'dba';
+CREATE DATABASE minotour OWNER dba;

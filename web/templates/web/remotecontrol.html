@@ -2,43 +2,39 @@
 {% block content %}
     <script src="https://unpkg.com/vue"></script>
 
+    <div class="content-wrapper" style="background-color: white">
 
-
-
-    <div class="content-wrapper">
         <!-- Content Header (Page header) -->
         <section class="content-header">
             <h1>
-                <span>remoteControl <small>- remote interaction with minKNOW.</small></span>
+                <span>MinKnow Control <small>- remote interaction with minKNOW.</small></span>
             </h1>
-            <ol class="breadcrumb">
-                <li><a href="#"><i class="fa fa-cloud-upload"></i> remoteControl</a></li>
-                <li class="active">Here</li>
-            </ol>
         </section>
-        <!-- Main content -->
 
+        <!-- Main content -->
         <section class="content">
             <div class="box">
                 <div class="box-header">
-                    <h3 class="box-title">minIONs Available</h3>
+                    <h2 class="box-title">Devices Available</h2>
                 </div>
 
                 <div class="box-body">
                     <div class="row">
                         <div class="col-lg-12">
-                            <p>This page allows you to remotely control minKNOW. You use it at your own risk.</p>
-                            <p>Once connected you will see the minION id below. If you have multiple minIONs connected
-                                to one account and all active, they can all be controlled from this page. Further
-                                options to implement 'Run Until' are available within the Current Sequencing Run
-                                folder.</p>
+                            <p>This page allows you to remotely control minKNOW. <b>You use it at your own risk.</b></p>
+                            <p>Once connected you will see the device (MinION, GridION, or PromethION) id below. If you have multiple minIONs connected
+                                to one account and all active, they can all be controlled from this page.
+                                <p>Further
+                                options to implement 'Run Until' will become available in future.</p>
                             <p>Note that data can take 10-20 seconds to be populated at busy times.</p>
                             <p>The pore history chart is only updated every 5 minutes to reduce page loading times.</p>
+
                             <div id="app-new">
                                 {% verbatim %}
                                 <!-- Nav tabs -->
                                 <ul class="nav nav-tabs" role="tablist">
                                     <li v-for="(keydata,minion) in minions " role="presentation"><a v-bind:href="'#' + minions[minion].name" role="tab" data-toggle="tab">
+                                        {{ minions[minion].status }}
                                         <div v-if='minions[minion].status=="processing"'>
                                             Sequencing:{{minions[minion].livedata.machine_id.result}}/{{minions[minion].name}}
                                         </div>
@@ -52,191 +48,11 @@
                                 </ul>
                                 <div class="tab-content">
                                     <div v-for="(keydata,minion) in minions" role="tabpanel" class="tab-pane" :id="minions[minion].name">
-                                        <div v-if='minions[minion].state=="active"'>
-                                            <div v-if="minions[minion].livedata.current_script.result">
-                                                <div v-if="minions[minion].livedata.current_script.result.length>0">
-                                                minION has a script currently running
-                                                    Present Graphs Here
-                                                    <div class="panel panel-info">
-                                                <div class="panel-heading">
-                                                    <h3 class="panel-title">minKNOW Details -
-                                                        {{minions[minion].livedata.dataset.result}}</h3>
-                                                </div>
-                                                <div class="panel-body">
-                                                    <div v-if="minions[minion].livedata.current_script.result.length>0">
-                                                        <div class="row">
-                                                            <div class="col-md-5">
-                                                                <div class="row">
-                                                                    <div class="col-md-8"><p><b></i>Experiment
-                                                                        Started</i>: {{minions[minion].start_time}}</b></p></div>
-                                                                    <div class="col-md-4"><p><i>(Last Update</i>: {{
-                                                                        minions[minion].last_update }}</p></div>
-                                                                </div>
-                                                                <div class="row">
-                                                                    <div class="col-md-3"><p><i>MinKNOW version</i>:
-                                                                        {{minions[minion].minKNOW_version}}</p></div>
-                                                                    <div class="col-md-3"><p><i>Flow Cell ID</i>:
-                                                                        {{minions[minion].flow_cell_id}}</p></div>
-                                                                    <div class="col-md-3"><p><i>minION ID</i>:
-                                                                        {{minions[minion].name}}</p></div>
-                                                                    <div class="col-md-3"><p><i>ASIC ID</i>:
-                                                                        {{minions[minion].asic_id}}</p></div>
-                                                                </div>
-                                                                <div class="row">
-                                                                    <div class="col-md-8"><p><i>Run Name</i>:
-                                                                        {{minions[minion].run_name}}</p></div>
-                                                                    <div class="col-md-4"><p><i>Status</i>:
-                                                                        {{minions[minion].status}}</p></div>
-                                                                </div>
-                                                                <div class="row">
-                                                                    <div class="col-md-3"><p><i>Yield</i>:
-                                                                        {{minions[minion].livedata.event_yield}}</p></div>
-                                                                    <!--<div class="col-md-3"><p><i>Channels with Reads</i>: {{minions[minion].statistics.channels_with_read_event_count}}</p></div>-->
-                                                                    <!--<div class="col-md-3"><p><i>Read Event Count</i>: {{minions[minion].statistics.read_event_count}}</p></div>-->
-                                                                    <div class="col-md-3"><p><i>Completed Read Count</i>:
-                                                                        {{minions[minion].read_count}}</p></div>
-                                                                </div>
-                                                                <div class="row">
-                                                                    <div class="col-md-3" :id="minions[minion].name">
-                                                                        <div is="container-avg" :title="minions[minion].name"
-                                                                             :keydata="keydata"
-                                                                             :datain="minions[minion].livedata.event_yield"
-                                                                             :datain2="minions[minion].read_count">Graph should appear here.</div>
-                                                                    </div>
-                                                                    <div class="col-md-3" :id="minions[minion].name">
-                                                                        <div is="container-strand" :title="minions[minion].name"
-                                                                             :keydata="keydata"
-                                                                             :datain="minions[minion].currstrand"></div>
-                                                                    </div>
-                                                                    <div class="col-md-3" :id="minions[minion].name">
-                                                                        <div is="container-perc" :title="minions[minion].name"
-                                                                             :keydata="keydata"
-                                                                             :datain="minions[minion].currpercentage"></div>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-4">
-                                                                <div class="col-md-12" :id="minions[minion].name">
-                                                                    <div is="chartporehist" :title="minions[minion].name"
-                                                                         :keydata="keydata" :datain="minions[minion].colour_stats"
-                                                                         :datain2="minions[minion].pore_history"></div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-3">
-                                                                <h5><b>Messages from MinKNOW:</b></h5>
-                                                                <div class="pre-scrollable">
-                                                                    <div v-for="message in minions[minion].messages">
-                                                                        <!--<div class="alert alert-{{message.severity}} alert-dismissible" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>{{message.message}}<br>{{message.timestamp}}</div>-->
-                                                                        <span v-bind:class="'label label-' + message.severity">{{message.severity}}</span>
-                                                                        {{message.message}}<br><i>{{message.timestamp}}</i>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="row">
-                                                            <div class="col-md-6">
-                                                                <p>The values below are estimated from the run based on
-                                                                    a scaling factor from events determined by
-                                                                    sequencing speed. The projected yield for 24 hours
-                                                                    and 48 hours will update dynamically throuhgout the
-                                                                    run.
-                                                            </div>
-                                                        </div
-                                                        <div class="row">
-                                                            <div class="col-md-2">
-                                                                <p> Set sequencing speed: </p>
-                                                                <select v-model="seqspeed">
-                                                                    <option>MegaCrazy Runs</option>
-                                                                    <option selected="selected">450 b/s</option>
-                                                                    <option>250 b/s</option>
-                                                                    <option>70 b/s</option>
-                                                                </select>
-                                                                <p><span>Selected: {{ seqspeed }}</span></p>
-                                                            </div>
-                                                            <div is="predictedvals" :seqspeed="seqspeed"
-                                                                 :currentyield="minions[minion].livedata.event_yield"
-                                                                 :compreads="minions[minion].read_count"
-                                                                 :calcurrenttime="minions[minion].start_time"
-                                                                 :calcstarttime="minions[minion].start_time"></div>
-                                                        </div>
-                                                        <div class="row">
-                                                        </div>
-                                                        <hr>
-                                                        <div class="row">
-                                                            <div class="col-lg-6" :id="minions[minion].name">
-                                                                <div is="chartyield" :title="minions[minion].name" :keydata="keydata"
-                                                                     :datain2="minions[minion].yield_history"></div>
-                                                            </div>
-                                                            <div class="col-lg-6" :id="minions[minion].name">
-                                                                <div is="porehistory" :title="minions[minion].name" :keydata="keydata"
-                                                                     :datain2="minions[minion].strand"
-                                                                     :datain3="minions[minion].good_single"></div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="row">
-                                                            <div class="col-lg-12" :id="minions[minion].name">
-                                                                <div is="projchartyield" :start_time="minions[minion].start_time"
-                                                                     :seqspeed="seqspeed" :title="minions[minion].name"
-                                                                     :keydata="keydata" :datain="minions[minion].livedata.event_yield"
-                                                                     :datain2="minions[minion].yield_history"></div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="row">
-                                                            <div class="col-lg-6" :id="minions[minion].name">
-                                                                <div is="perchistory" :title="minions[minion].name" :keydata="keydata"
-                                                                     :datain2="minions[minion].percentage"></div>
-                                                            </div>
-                                                            <div class="col-lg-6" :id="minions[minion].name">
-                                                                <div is="chartporehistdetails" :title="minions[minion].name"
-                                                                     :keydata="keydata" :datain="minions[minion].colour_stats"
-                                                                     :datain2="minions[minion].pore_history"></div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="row">
-                                                            <div class="col-lg-12" :id="minions[minion].name">
-                                                                <div is="chartreadhist" :title="minions[minion].name" :keydata="keydata"
-                                                                     :datain="minions[minion].histogram_values"
-                                                                     :datain2="minions[minion].histogram_bin_width"
-                                                                     :totalyield="minions[minion].livedata.event_yield"
-                                                                     :seqspeed="seqspeed"
-                                                                     :readcount="minions[minion].read_count"></div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="row">
-                                                            <div class="col-lg-6" :id="minions[minion].name">
-                                                                <div is="temphistory" :title="minions[minion].name" :keydata="keydata"
-                                                                     :datain2="minions[minion].asic_temp"
-                                                                     :datain3="minions[minion].heatsinktemp"></div>
-                                                            </div>
-                                                            <div class="col-lg-6" :id="minions[minion].name">
-                                                                <div is="volthistory" :title="minions[minion].name" :keydata="keydata"
-                                                                     :datain2="minions[minion].voltage"></div>
-                                                            </div>
-                                                        </div>
-                                                        <div class="row">
-                                                            <div class="col-lg-6" :id="minions[minion].name">
-                                                                <div is="porecurrents" :title="minions[minion].name" :keydata="keydata"
-                                                                     :datain="minions[minion].instrand_history"
-                                                                     :datain2="minions[minion].openpore_history"></div>
-                                                            </div>
-                                                            <div class="col-lg-6" :id="minions[minion].name">
-                                                                <div is="meanratio" :title="minions[minion].name" :keydata="keydata"
-                                                                     :datain="minions[minion].meanratio_history"></div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                        <!--{{ minions[minion].state }}-->
+                                        <!--<div v-if='minions[minion].state=="active"'>-->
+                                            <div class="panel-body">
 
 
-                                                </div>
-                                            </div>
-                                            <div v-else>
-                                                <div class="row">
-                                                    <div class="col-md-7">
-                                                        <p>This minION is not currently running.</p>
-                                                    </div>
-                                                </div>
-                                            </div>
 
                                                 <div class="col-md-4">
                                             <div class="panel panel-warning">
@@ -591,7 +407,7 @@
 
                                         </div>
                                     </div>
-                                    </div>
+                                    <!--</div>-->
                                 </div>
 
                                 {% endverbatim %}
@@ -604,10 +420,14 @@
 
 
     </div><!-- /.content-wrapper -->
-
+{% endblock %}
+{% block javascript %}
     <script>
 
         $(document).ready(function () {
+
+            set_active_navbar_item(1);
+
             function add(a, b) {
                 return a + b;
             }
@@ -823,16 +643,13 @@
             }
 
             var master_minion_list = [];
-
-            console.log(master_minion_list);
+            var tabslist = document.getElementById('tabslist');
             function start() {
-                console.log('running start');
                 $.get("{% url 'activeminION_list' %}", function (data) {
                     //$( ".result" ).html( data
                     var data2 = [];
                     var ien = data.length;
                     //var counter = 0;
-                    //console.log(data);
                     for (var i = 0; i < ien; i++) {
                         var minIONname = data[i].minION_name;
                         if ($.inArray(data[i].minION_name, master_minion_list) == -1) {
@@ -1026,7 +843,6 @@
                             })
                         }
                     }
-                    //console.log(minionsthings);
                 });
 
 
@@ -1138,8 +954,6 @@
                         this.chart.redraw();
 
                         setInterval(function () {
-                            console.log('check me out');
-                            console.log(this.start_time);
                             var timeleft = geteighthours(this.datain2.slice(-1), this.start_time);
                             var firsthour = 120;
                             [scalingfactor, difference] = projectdata(this.datain2);
@@ -1232,7 +1046,6 @@
                             var returndata = parseporehist(this.datain[0], this.datain2);
                             while (this.chart.series.length > 0)
                                 this.chart.series[0].remove(true);
-                            console.log(returndata[0]);
                             for (var i = 0; i < returndata.length; i++) {
                                 this.chart.addSeries(returndata[i]);
                             }
@@ -1518,7 +1331,6 @@
                         //this.chart = new Highcharts.Chart(this.opts);
                         this.chart.series[0].setData(this.datain2);
                         setInterval(function () {
-                            console.log(this.datain2);
                             this.chart.series[0].setData(this.datain2);
                             this.chart.redraw();
                         }.bind(this), 10000);
@@ -2694,10 +2506,6 @@
                             var returndata = tohistogram(this.datain, parseInt(this.datain2), this.totalyield);
                             this.chart.series[0].setData(returndata[0]);
                             this.chart.xAxis[0].setCategories(returndata[1]);
-                            //console.log('updating highcharts histogram');
-                            console.log(this.datain2);
-                            //console.log(returndata[2]-0.5);
-                            //console.log(typeof(returndata[2]));
                             var N50 = parseInt(returndata[2]);
                             this.chart.xAxis[0].removePlotBand('plot-band-1');
                             this.chart.xAxis[0].addPlotBand({
@@ -2979,15 +2787,11 @@
                                 "complete": 'False'
                             },
                             "beforeSend": function (xhr, settings) {
-                                console.log("before send");
                                 $.ajaxSettings.beforeSend(xhr, settings);
                             },
                             "success": function (result) {
-                                console.log(result);
                             },
                             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                console.log("Status: " + textStatus);
-                                alert("Error: " + errorThrown);
                             }
 
                         })
@@ -3022,15 +2826,11 @@
                                 "complete": 'False'
                             },
                             "beforeSend": function (xhr, settings) {
-                                console.log("before send");
                                 $.ajaxSettings.beforeSend(xhr, settings);
                             },
                             "success": function (result) {
-                                console.log(result);
                             },
                             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                console.log("Status: " + textStatus);
-                                alert("Error: " + errorThrown);
                             }
 
                         })
@@ -3066,15 +2866,11 @@
                                 "complete": 'False'
                             },
                             "beforeSend": function (xhr, settings) {
-                                console.log("before send");
                                 $.ajaxSettings.beforeSend(xhr, settings);
                             },
                             "success": function (result) {
-                                console.log(result);
                             },
                             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                console.log("Status: " + textStatus);
-                                alert("Error: " + errorThrown);
                             }
 
                         })
@@ -3117,15 +2913,11 @@
                                 "complete": 'False'
                             },
                             "beforeSend": function (xhr, settings) {
-                                console.log("before send");
                                 $.ajaxSettings.beforeSend(xhr, settings);
                             },
                             "success": function (result) {
-                                console.log(result);
                             },
                             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                console.log("Status: " + textStatus);
-                                alert("Error: " + errorThrown);
                             }
 
                         })
@@ -3161,14 +2953,11 @@
                                 "complete": 'False'
                             },
                             "beforeSend": function (xhr, settings) {
-                                console.log("before send");
                                 $.ajaxSettings.beforeSend(xhr, settings);
                             },
                             "success": function (result) {
-                                console.log(result);
                             },
                             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                console.log("Status: " + textStatus);
                                 alert("Error: " + errorThrown);
                             }
 
@@ -3198,14 +2987,11 @@
                             "url": url_mask,
                             "data": {"custom": "", "job": "stopminion", "minION": event.target.id, "complete": 'False'},
                             "beforeSend": function (xhr, settings) {
-                                console.log("before send");
                                 $.ajaxSettings.beforeSend(xhr, settings);
                             },
                             "success": function (result) {
-                                console.log(result);
                             },
                             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                console.log("Status: " + textStatus);
                                 alert("Error: " + errorThrown);
                             }
 
@@ -3239,14 +3025,11 @@
                                 "complete": 'False'
                             },
                             "beforeSend": function (xhr, settings) {
-                                console.log("before send");
                                 $.ajaxSettings.beforeSend(xhr, settings);
                             },
                             "success": function (result) {
-                                console.log(result);
                             },
                             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                console.log("Status: " + textStatus);
                                 alert("Error: " + errorThrown);
                             }
 
@@ -3279,15 +3062,11 @@
                                 "complete": 'False'
                             },
                             "beforeSend": function (xhr, settings) {
-                                console.log("before send");
                                 $.ajaxSettings.beforeSend(xhr, settings);
                             },
                             "success": function (result) {
-                                console.log(result);
                             },
                             error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                console.log("Status: " + textStatus);
-                                alert("Error: " + errorThrown);
                             }
 
                         })

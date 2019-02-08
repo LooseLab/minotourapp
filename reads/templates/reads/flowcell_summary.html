@@ -1,0 +1,140 @@
+{% load humanize %}
+
+<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+
+    <div class="panel panel-default">
+        <div class="panel-heading" role="tab" id="headingOne">
+            <h4 class="panel-title">
+                <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseOne"
+                   aria-expanded="true" aria-controls="collapseOne">
+                    All Reads Summary
+                </a>
+            </h4>
+        </div>
+        <div id="collapseOne" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
+            <div class="panel-body">
+                <table class="table table-condensed table-hover">
+                    <thead>
+                    <th>Barcode</th>
+                    <th>Read type</th>
+                    <th>Pass/Fail</th>
+                    <td align="right"><strong>Reads called</strong></td>
+                    <td align="right"><strong>Yield</strong></td>
+                    <td align="right"><strong>Percentage(bases)</strong></td>
+                    <td align="right"><strong>Min read length</strong></td>
+                    <td align="right"><strong>Average read length</strong></td>
+                    <td align="right"><strong>Max read length</strong></td>
+                    <td align="right"><strong>Average Quality</strong></td>
+                    </thead>
+                    <tbody>
+
+                    {% for record in qs|dictsortreversed:"read_type"|dictsort:"barcode_name" %}
+                        {% if record.barcode_name == "All reads" %}
+
+                            {% if record.read_type == "Pass" %}
+                                <tr class="success">
+                                    {% elif record.read_type == "Fail" %}
+                                <tr class="danger">
+                                    {% else %}
+                                <tr class="info" style="font-weight:bold;font-style: italic">
+                            {% endif %}
+                         {% if record.read_type == "all" %}
+                             <td>{{ record.barcode_name }}</td>
+                             <td>{{ record.read_type_name }}</td>
+                                    {% else %}
+                                    <td></td>
+                                    <td></td>
+                                    {%  endif %}
+                        <td>{{ record.read_type }}</td>
+                        <td align="right">{{ record.read_count|intcomma }}</td>
+                        <td align="right">{{ record.total_length|intcomma }}</td>
+                        <td align="right">{{ record.percentage|floatformat:"2" }}</td>
+                        <td align="right">{{ record.min_length|intcomma }}</td>
+                        <td align="right">{{ record.avg_length|floatformat:"0"|intcomma }}</td>
+                        <td align="right">{{ record.max_length|intcomma }}</td>
+                        <td align="right">{{ record.avg_quality|floatformat:"1" }}</td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+
+                    </tbody>
+
+
+                </table>
+
+
+            </div>
+        </div>
+    </div>
+
+    {% if qs|length > 3 %}
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="headingTwo">
+                <h4 class="panel-title">
+                    <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion"
+                       href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                        Read Summary by Barcode
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+                <div class="panel-body">
+                    <table id="barcode_table" class="table table-condensed table-hover">
+                        <thead>
+                        <th>Barcode</th>
+                        <th>Read type</th>
+                        <th>Pass/Fail</th>
+                        <td align="right"><strong>Reads called</strong></td>
+                        <td align="right"><strong>Yield</strong></td>
+                        <td align="right"><strong>Percentage(bases)</strong></td>
+                        <td align="right"><strong>Min read length</strong></td>
+                        <td align="right"><strong>Average read length</strong></td>
+                        <td align="right"><strong>Max read length</strong></td>
+                        <td align="right"><strong>Average Quality</strong></td>
+                        </thead>
+                        <tbody>
+                        {% for record in qs|dictsortreversed:"read_type"|dictsort:"barcode_name" %}
+                            {% if record.barcode_name != "All reads" %}
+
+                                {% if record.read_type == "Pass" %}
+                                <tr class="success">
+                                    {% elif record.read_type == "Fail" %}
+                                <tr class="danger">
+                                    {% else %}
+                                <tr class="info" style="font-weight:bold;font-style: italic">
+                            {% endif %}
+                              {% if record.read_type == "all" %}
+                             <td>{{ record.barcode_name }}</td>
+                             <td>{{ record.read_type_name }}</td>
+                                    {% else %}
+                                    <td></td>
+                                    <td></td>
+                                    {%  endif %}
+                            <td>{{ record.read_type }}</td>
+                        <td align="right">{{ record.read_count|intcomma }}</td>
+                        <td align="right">{{ record.total_length|intcomma }}</td>
+                        <td align="right">{{ record.percentage|floatformat:"2" }}</td>
+                        <td align="right">{{ record.min_length|intcomma }}</td>
+                        <td align="right">{{ record.avg_length|floatformat:"0"|intcomma}}</td>
+                        <td align="right">{{ record.max_length|intcomma }}</td>
+                        <td align="right">{{ record.avg_quality|floatformat:"1" }}</td>
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% block javascript %}
+        <script>
+            $(document).ready(function () {
+                $('#barcode_table').DataTable();
+            });
+
+        </script>
+    {% endblock %}

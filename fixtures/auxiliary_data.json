@@ -1,0 +1,4678 @@
+[
+{
+  "model": "reads.fastqreadtype",
+  "pk": 1,
+  "fields": {
+    "name": "Template"
+  }
+},
+{
+  "model": "reads.fastqreadtype",
+  "pk": 2,
+  "fields": {
+    "name": "Complement"
+  }
+},
+{
+  "model": "reads.fastqreadtype",
+  "pk": 3,
+  "fields": {
+    "name": "2D"
+  }
+},
+{
+  "model": "reads.fastqreadtype",
+  "pk": 4,
+  "fields": {
+    "name": "1D^2"
+  }
+},
+{
+  "model": "reads.minioneventtype",
+  "pk": 1,
+  "fields": {
+    "name": "active"
+  }
+},
+{
+  "model": "reads.minioneventtype",
+  "pk": 2,
+  "fields": {
+    "name": "inactive"
+  }
+},
+{
+  "model": "reads.minioneventtype",
+  "pk": 3,
+  "fields": {
+    "name": "sequencing"
+  }
+},
+{
+  "model": "reads.minioneventtype",
+  "pk": 4,
+  "fields": {
+    "name": "unplugged"
+  }
+},
+{
+  "model": "reads.minioneventtype",
+  "pk": 5,
+  "fields": {
+    "name": "connected"
+  }
+},
+{
+  "model": "jobs.jobtype",
+  "pk": 1,
+  "fields": {
+    "name": "ChanCalc",
+    "description": null,
+    "long_description": null,
+    "reference": false,
+    "transcriptome": false,
+    "readcount": false,
+    "private": true
+  }
+},
+{
+  "model": "jobs.jobtype",
+  "pk": 2,
+  "fields": {
+    "name": "ProcAlign",
+    "description": null,
+    "long_description": null,
+    "reference": false,
+    "transcriptome": false,
+    "readcount": false,
+    "private": true
+  }
+},
+{
+  "model": "jobs.jobtype",
+  "pk": 3,
+  "fields": {
+    "name": "Alignment",
+    "description": "",
+    "long_description": "",
+    "reference": false,
+    "transcriptome": false,
+    "readcount": false,
+    "private": true
+  }
+},
+{
+  "model": "jobs.jobtype",
+  "pk": 4,
+  "fields": {
+    "name": "Minimap2",
+    "description": "Reference Mapping",
+    "long_description": "Minimap2 can be used to map reads against a reference genome. Several genomes are already installed in minoTour. Others (less than 100 Mb in size) can be uploaded for your own use under 'admin'.",
+    "reference": true,
+    "transcriptome": false,
+    "readcount": true,
+    "private": false
+  }
+},
+{
+  "model": "jobs.jobtype",
+  "pk": 5,
+  "fields": {
+    "name": "Assembly",
+    "description": "Rapid rough assembly of reads.",
+    "long_description": "Using minimap and miniasm a rapid assembly of your data will be performed every n reads generated.",
+    "reference": false,
+    "transcriptome": false,
+    "readcount": true,
+    "private": false
+  }
+},
+{
+  "model": "jobs.jobtype",
+  "pk": 7,
+  "fields": {
+    "name": "Minimap2_trans",
+    "description": "Transcriptome Mapping",
+    "long_description": "You can use minimap2 to map your reads against a reference set of transcripts available on this minoTour server. Please note that all secondary mappings are suppressed. We also use the default map-ont parameter as we are mapping to a transcriptome collection, not a genome.",
+    "reference": true,
+    "transcriptome": true,
+    "readcount": true,
+    "private": false
+  }
+},
+{
+  "model": "jobs.jobtype",
+  "pk": 8,
+  "fields": {
+    "name": "ExportLive",
+    "description": "Export Live Data",
+    "long_description": "This service allows you to export live data collected by minoTour in a json format for analysis in other packages.<br>\r\nWhen the task is complete, you will receive an email containing a link to the json file. This link will remain active for 7 days.",
+    "reference": false,
+    "transcriptome": false,
+    "readcount": false,
+    "private": false
+  }
+},
+{
+  "model": "jobs.jobtype",
+  "pk": 9,
+  "fields": {
+    "name": "ExportReads",
+    "description": "Export Read Data",
+    "long_description": "Export fastq files split by barcode (where appropriate) from a run. Files once generated will be stored on the server for one week, then deleted.",
+    "reference": false,
+    "transcriptome": false,
+    "readcount": false,
+    "private": false
+  }
+},
+{
+  "model": "jobs.jobtype",
+  "pk": 10,
+  "fields": {
+    "name": "Metagenomics",
+    "description": "Metagenomics classification",
+    "long_description": "Metagenomics classification",
+    "reference": false,
+    "transcriptome": false,
+    "readcount": false,
+    "private": false
+  }
+},
+{
+  "model": "jobs.jobtype",
+  "pk": 11,
+  "fields": {
+    "name": "Delete_Flowcell",
+    "description": "Delete a flowcell",
+    "long_description": "Delete a flowcell from the database",
+    "reference": false,
+    "transcriptome": false,
+    "readcount": false,
+    "private": false
+  }
+},
+{
+  "model": "jobs.jobtype",
+  "pk": 12,
+  "fields": {
+    "name": "UpdateFlowcellDetails",
+    "description": "Update flowcell details",
+    "long_description": "Update flowcell details in the database",
+    "reference": false,
+    "transcriptome": false,
+    "readcount": false,
+    "private": false
+  }
+},
+{
+  "model": "jobs.jobtype",
+  "pk": 13,
+  "fields": {
+    "name": "CalculateMetagenomicsSankey",
+    "description": "Calculate Metagenomics Sankey",
+    "long_description": "Calculate A sankey diagram showing the lineages for the top 30 species in the sample on demand",
+    "reference": false,
+    "transcriptome": false,
+    "readcount": false,
+    "private": false
+  }
+},
+{
+  "model": "jobs.jobtype",
+  "pk": 14,
+  "fields": {
+    "name": "Other",
+    "description": "Extra jobtype for non specific jobs",
+    "long_description": "Used now to distinguish between the two minimaps, metagenomics and alignment",
+    "reference": true,
+    "transcriptome": false,
+    "readcount": false,
+    "private": true
+  }
+},
+{
+  "model": "reference.referenceinfo",
+  "pk": 1,
+  "fields": {
+    "name": "Ecoli",
+    "filename": "Ecoli.fa",
+    "minimap2_index_file_location": "Ecoli.fa.mmi",
+    "length": 4641652,
+    "private": false,
+    "transcripts": false,
+    "users": []
+  }
+},
+{
+  "model": "reference.referenceinfo",
+  "pk": 2,
+  "fields": {
+    "name": "Ecoli3",
+    "filename": "Ecoli3.fa",
+    "minimap2_index_file_location": "Ecoli3.fa.mmi",
+    "length": 4641652,
+    "private": false,
+    "transcripts": false,
+    "users": []
+  }
+},
+{
+  "model": "reference.referenceinfo",
+  "pk": 3,
+  "fields": {
+    "name": "hg38",
+    "filename": "hg38.fa",
+    "minimap2_index_file_location": "hg38.fa.mmi",
+    "length": 3209286105,
+    "private": false,
+    "transcripts": false,
+    "users": []
+  }
+},
+{
+  "model": "reference.referenceinfo",
+  "pk": 4,
+  "fields": {
+    "name": "Bacillus_anthracis",
+    "filename": "Bacillus_anthracis.fna",
+    "minimap2_index_file_location": "Bacillus_anthracis.fna.mmi",
+    "length": 5227293,
+    "private": false,
+    "transcripts": false,
+    "users": []
+  }
+},
+{
+  "model": "reference.referenceinfo",
+  "pk": 5,
+  "fields": {
+    "name": "Bacillus_cereus",
+    "filename": "Bacillus_cereus.fna",
+    "minimap2_index_file_location": "Bacillus_cereus.fna.mmi",
+    "length": 6010496,
+    "private": false,
+    "transcripts": false,
+    "users": []
+  }
+},
+{
+  "model": "reference.referenceinfo",
+  "pk": 6,
+  "fields": {
+    "name": "Clostridium_botulinum",
+    "filename": "Clostridium_botulinum.fna",
+    "minimap2_index_file_location": "Clostridium_botulinum.fna.mmi",
+    "length": 3903260,
+    "private": false,
+    "transcripts": false,
+    "users": []
+  }
+},
+{
+  "model": "reference.referenceinfo",
+  "pk": 7,
+  "fields": {
+    "name": "Francisella_tularensis",
+    "filename": "Francisella_tularensis.fna",
+    "minimap2_index_file_location": "Francisella_tularensis.fna.mmi",
+    "length": 1892775,
+    "private": false,
+    "transcripts": false,
+    "users": []
+  }
+},
+{
+  "model": "reference.referenceinfo",
+  "pk": 8,
+  "fields": {
+    "name": "Bacillus_anthracis_pX01",
+    "filename": "Bacillus_anthracis_pX01.fna",
+    "minimap2_index_file_location": "Bacillus_anthracis_pX01.fna.mmi",
+    "length": 181677,
+    "private": false,
+    "transcripts": false,
+    "users": []
+  }
+},
+{
+  "model": "reference.referenceinfo",
+  "pk": 9,
+  "fields": {
+    "name": "Bacillus_anthracis_pX02",
+    "filename": "Bacillus_anthracis_pX02.fna",
+    "minimap2_index_file_location": "Bacillus_anthracis_pX02.fna.mmi",
+    "length": 94830,
+    "private": false,
+    "transcripts": false,
+    "users": []
+  }
+},
+{
+  "model": "reference.referenceinfo",
+  "pk": 10,
+  "fields": {
+    "name": "Yersinia_pestis_pMT1",
+    "filename": "Yersinia_pestis_pMT1.fasta",
+    "minimap2_index_file_location": "Yersinia_pestis_pMT1.fasta.mmi",
+    "length": 96210,
+    "private": false,
+    "transcripts": false,
+    "users": []
+  }
+},
+{
+  "model": "reference.referenceinfo",
+  "pk": 11,
+  "fields": {
+    "name": "Yersinia_pestis_pPCP1",
+    "filename": "Yersinia_pestis_pPCP1.fasta",
+    "minimap2_index_file_location": "Yersinia_pestis_pPCP1.fasta.mmi",
+    "length": 9612,
+    "private": false,
+    "transcripts": false,
+    "users": []
+  }
+},
+{
+  "model": "reference.referenceinfo",
+  "pk": 12,
+  "fields": {
+    "name": "Bacillus_anthracis_ames_ancestor",
+    "filename": "Bacillus_anthracis_ames_ancestor.fna",
+    "minimap2_index_file_location": "Bacillus_anthracis_ames_ancestor.fna.mmi",
+    "length": 5227293,
+    "private": false,
+    "transcripts": false,
+    "users": []
+  }
+},
+{
+  "model": "reference.referenceinfo",
+  "pk": 13,
+  "fields": {
+    "name": "Yersinia_pestis",
+    "filename": "Yersinia_pestis.fna",
+    "minimap2_index_file_location": "Yersinia_pestis.fna.mmi",
+    "length": 4829855,
+    "private": false,
+    "transcripts": false,
+    "users": []
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 1,
+  "fields": {
+    "reference": 1,
+    "line_name": "NC_000913.3",
+    "chromosome_length": 4641652
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 2,
+  "fields": {
+    "reference": 2,
+    "line_name": "NC_000913.3a",
+    "chromosome_length": 699930
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 3,
+  "fields": {
+    "reference": 2,
+    "line_name": "NC_000913.3c",
+    "chromosome_length": 2191792
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 4,
+  "fields": {
+    "reference": 2,
+    "line_name": "NC_000913.3b",
+    "chromosome_length": 1749930
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 5,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr4_KI270788v1_alt",
+    "chromosome_length": 158965
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 6,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr7_KI270809v1_alt",
+    "chromosome_length": 209586
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 7,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270711v1_random",
+    "chromosome_length": 42210
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 8,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr9_KI270823v1_alt",
+    "chromosome_length": 439082
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 9,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_GL000216v2",
+    "chromosome_length": 176608
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 10,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8_KI270812v1_alt",
+    "chromosome_length": 282736
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 11,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_KI270731v1_random",
+    "chromosome_length": 150754
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 12,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr12_GL383553v2_alt",
+    "chromosome_length": 152874
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 13,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270364v1",
+    "chromosome_length": 2855
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 14,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_KI270769v1_alt",
+    "chromosome_length": 120616
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 15,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270316v1",
+    "chromosome_length": 1444
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 16,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_KI270784v1_alt",
+    "chromosome_length": 184404
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 17,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_GL383574v1_alt",
+    "chromosome_length": 155864
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 18,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_KI270776v1_alt",
+    "chromosome_length": 174166
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 19,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270581v1",
+    "chromosome_length": 7046
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 20,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270371v1",
+    "chromosome_length": 2805
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 21,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr7_KI270806v1_alt",
+    "chromosome_length": 158166
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 22,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2",
+    "chromosome_length": 242193529
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 23,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270743v1",
+    "chromosome_length": 210658
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 24,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr5_KI270796v1_alt",
+    "chromosome_length": 172708
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 25,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_GL383521v1_alt",
+    "chromosome_length": 143390
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 26,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270714v1_random",
+    "chromosome_length": 41717
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 27,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr11_KI270830v1_alt",
+    "chromosome_length": 177092
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 28,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270579v1",
+    "chromosome_length": 31033
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 29,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_KI270858v1_alt",
+    "chromosome_length": 235827
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 30,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_KI270907v1_alt",
+    "chromosome_length": 137721
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 31,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_GL383576v1_alt",
+    "chromosome_length": 188024
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 32,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270378v1",
+    "chromosome_length": 1048
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 33,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_GL000258v2_alt",
+    "chromosome_length": 1821992
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 34,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr5_KI270897v1_alt",
+    "chromosome_length": 1144418
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 35,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6_KI270758v1_alt",
+    "chromosome_length": 76752
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 36,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270528v1",
+    "chromosome_length": 2983
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 37,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_GL000219v1",
+    "chromosome_length": 179198
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 38,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270414v1",
+    "chromosome_length": 2489
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 39,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270587v1",
+    "chromosome_length": 2969
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 40,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270712v1_random",
+    "chromosome_length": 176043
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 41,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr15_KI270905v1_alt",
+    "chromosome_length": 5161414
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 42,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6_KI270798v1_alt",
+    "chromosome_length": 271782
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 43,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr13_KI270839v1_alt",
+    "chromosome_length": 180306
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 44,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270391v1",
+    "chromosome_length": 1484
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 45,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr4_KI270896v1_alt",
+    "chromosome_length": 378547
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 46,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8_KI270901v1_alt",
+    "chromosome_length": 136959
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 47,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270424v1",
+    "chromosome_length": 2140
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 48,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270916v1_alt",
+    "chromosome_length": 184516
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 49,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr16_KI270856v1_alt",
+    "chromosome_length": 63982
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 50,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_KI270910v1_alt",
+    "chromosome_length": 157099
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 51,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_GL949749v2_alt",
+    "chromosome_length": 1091841
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 52,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_KI270730v1_random",
+    "chromosome_length": 112551
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 53,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8_KI270818v1_alt",
+    "chromosome_length": 145606
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 54,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr18_GL383571v1_alt",
+    "chromosome_length": 198278
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 55,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr14",
+    "chromosome_length": 107043718
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 56,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8_KI270817v1_alt",
+    "chromosome_length": 158983
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 57,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr12_GL383550v2_alt",
+    "chromosome_length": 169178
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 58,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr14_GL000194v1_random",
+    "chromosome_length": 191469
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 59,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1",
+    "chromosome_length": 248956422
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 60,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270917v1_alt",
+    "chromosome_length": 190932
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 61,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270512v1",
+    "chromosome_length": 22689
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 62,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_KI270895v1_alt",
+    "chromosome_length": 162896
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 63,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270890v1_alt",
+    "chromosome_length": 184499
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 64,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270753v1",
+    "chromosome_length": 62944
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 65,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr15_KI270852v1_alt",
+    "chromosome_length": 478999
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 66,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr16_GL383556v1_alt",
+    "chromosome_length": 192462
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 67,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_KI270783v1_alt",
+    "chromosome_length": 109187
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 68,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270745v1",
+    "chromosome_length": 41891
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 69,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_GL383566v1_alt",
+    "chromosome_length": 90219
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 70,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8_KI270926v1_alt",
+    "chromosome_length": 229282
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 71,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270710v1_random",
+    "chromosome_length": 40176
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 72,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_KI270894v1_alt",
+    "chromosome_length": 214158
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 73,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr14_KI270722v1_random",
+    "chromosome_length": 194050
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 74,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_KI270934v1_alt",
+    "chromosome_length": 163458
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 75,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270312v1",
+    "chromosome_length": 998
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 76,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270518v1",
+    "chromosome_length": 2186
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 77,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_KI270781v1_alt",
+    "chromosome_length": 113034
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 78,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_GL000218v1",
+    "chromosome_length": 161147
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 79,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr12",
+    "chromosome_length": 133275309
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 80,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_KI270767v1_alt",
+    "chromosome_length": 161578
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 81,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270923v1_alt",
+    "chromosome_length": 189352
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 82,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr7_KI270805v1_alt",
+    "chromosome_length": 209988
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 83,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270756v1",
+    "chromosome_length": 79590
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 84,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270330v1",
+    "chromosome_length": 1652
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 85,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270757v1",
+    "chromosome_length": 71251
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 86,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270392v1",
+    "chromosome_length": 971
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 87,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr7_KI270808v1_alt",
+    "chromosome_length": 271455
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 88,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr12_KI270837v1_alt",
+    "chromosome_length": 40090
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 89,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270919v1_alt",
+    "chromosome_length": 170701
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 90,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270752v1",
+    "chromosome_length": 27745
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 91,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr12_KI270904v1_alt",
+    "chromosome_length": 572349
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 92,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270760v1_alt",
+    "chromosome_length": 109528
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 93,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270411v1",
+    "chromosome_length": 2646
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 94,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_GL383518v1_alt",
+    "chromosome_length": 182439
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 95,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_KB663609v1_alt",
+    "chromosome_length": 74013
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 96,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr15_KI270850v1_alt",
+    "chromosome_length": 430880
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 97,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270373v1",
+    "chromosome_length": 1451
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 98,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_GL000205v2_random",
+    "chromosome_length": 185591
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 99,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270517v1",
+    "chromosome_length": 3253
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 100,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr4_KI270787v1_alt",
+    "chromosome_length": 111943
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 101,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270754v1",
+    "chromosome_length": 40191
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 102,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270891v1_alt",
+    "chromosome_length": 170680
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 103,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270376v1",
+    "chromosome_length": 1136
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 104,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8_KI270820v1_alt",
+    "chromosome_length": 36640
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 105,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr4_KI270790v1_alt",
+    "chromosome_length": 220246
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 106,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr5",
+    "chromosome_length": 181538259
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 107,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270759v1_alt",
+    "chromosome_length": 425601
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 108,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270920v1_alt",
+    "chromosome_length": 198005
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 109,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270422v1",
+    "chromosome_length": 1445
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 110,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270384v1",
+    "chromosome_length": 1658
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 111,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8_KI270810v1_alt",
+    "chromosome_length": 374415
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 112,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr12_KI270836v1_alt",
+    "chromosome_length": 56134
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 113,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270338v1",
+    "chromosome_length": 1428
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 114,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr13_KI270843v1_alt",
+    "chromosome_length": 103832
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 115,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr11_KI270831v1_alt",
+    "chromosome_length": 296895
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 116,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr11_KI270721v1_random",
+    "chromosome_length": 100316
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 117,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr10_KI270824v1_alt",
+    "chromosome_length": 181496
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 118,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_KI270779v1_alt",
+    "chromosome_length": 205312
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 119,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270588v1",
+    "chromosome_length": 6158
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 120,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270417v1",
+    "chromosome_length": 2043
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 121,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270886v1_alt",
+    "chromosome_length": 204239
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 122,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6_KI270801v1_alt",
+    "chromosome_length": 870480
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 123,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270584v1",
+    "chromosome_length": 4513
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 124,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_GL949746v1_alt",
+    "chromosome_length": 987716
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 125,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_KI270777v1_alt",
+    "chromosome_length": 173649
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 126,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270884v1_alt",
+    "chromosome_length": 157053
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 127,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr21_KI270874v1_alt",
+    "chromosome_length": 166743
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 128,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270538v1",
+    "chromosome_length": 91309
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 129,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270887v1_alt",
+    "chromosome_length": 209512
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 130,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270438v1",
+    "chromosome_length": 112505
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 131,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270510v1",
+    "chromosome_length": 2415
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 132,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_KI270734v1_random",
+    "chromosome_length": 165050
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 133,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6_KI270802v1_alt",
+    "chromosome_length": 75005
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 134,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr21_KI270872v1_alt",
+    "chromosome_length": 82692
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 135,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr12_GL877876v1_alt",
+    "chromosome_length": 408271
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 136,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270866v1_alt",
+    "chromosome_length": 43156
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 137,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270938v1_alt",
+    "chromosome_length": 1066800
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 138,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr15_KI270849v1_alt",
+    "chromosome_length": 244917
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 139,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrY_KI270740v1_random",
+    "chromosome_length": 37240
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 140,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270511v1",
+    "chromosome_length": 8127
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 141,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr7_KI270803v1_alt",
+    "chromosome_length": 1111570
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 142,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_KI270780v1_alt",
+    "chromosome_length": 224108
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 143,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr18_GL383569v1_alt",
+    "chromosome_length": 167950
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 144,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270530v1",
+    "chromosome_length": 2168
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 145,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270749v1",
+    "chromosome_length": 158759
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 146,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr5_GL383531v1_alt",
+    "chromosome_length": 173459
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 147,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr12_GL877875v1_alt",
+    "chromosome_length": 167313
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 148,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr5_KI270898v1_alt",
+    "chromosome_length": 130957
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 149,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_KI270908v1_alt",
+    "chromosome_length": 1423190
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 150,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrM",
+    "chromosome_length": 16569
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 151,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_GL582966v2_alt",
+    "chromosome_length": 96131
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 152,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270742v1",
+    "chromosome_length": 186739
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 153,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr14_KI270725v1_random",
+    "chromosome_length": 172810
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 154,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270867v1_alt",
+    "chromosome_length": 233762
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 155,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270381v1",
+    "chromosome_length": 1930
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 156,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270521v1",
+    "chromosome_length": 7642
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 157,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr16_KI270854v1_alt",
+    "chromosome_length": 134193
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 158,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr11",
+    "chromosome_length": 135086622
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 159,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr11_KI270826v1_alt",
+    "chromosome_length": 186169
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 160,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270915v1_alt",
+    "chromosome_length": 170665
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 161,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr5_KI270793v1_alt",
+    "chromosome_length": 126136
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 162,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr16_KI270728v1_random",
+    "chromosome_length": 1872759
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 163,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8_KI270822v1_alt",
+    "chromosome_length": 624492
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 164,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3",
+    "chromosome_length": 198295559
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 165,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_GL383564v2_alt",
+    "chromosome_length": 133151
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 166,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr21_GL383579v2_alt",
+    "chromosome_length": 201197
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 167,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr18_KI270912v1_alt",
+    "chromosome_length": 174061
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 168,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_KI270937v1_alt",
+    "chromosome_length": 165607
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 169,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_KI270737v1_random",
+    "chromosome_length": 103838
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 170,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270390v1",
+    "chromosome_length": 2387
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 171,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr18_GL383568v1_alt",
+    "chromosome_length": 104552
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 172,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270933v1_alt",
+    "chromosome_length": 170537
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 173,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_GL949748v2_alt",
+    "chromosome_length": 1064304
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 174,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_KI270772v1_alt",
+    "chromosome_length": 133041
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 175,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6_KI270797v1_alt",
+    "chromosome_length": 197536
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 176,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270340v1",
+    "chromosome_length": 1428
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 177,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr10_KI270825v1_alt",
+    "chromosome_length": 188315
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 178,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270418v1",
+    "chromosome_length": 2145
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 179,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr7_KI270807v1_alt",
+    "chromosome_length": 126434
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 180,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6_KB021644v2_alt",
+    "chromosome_length": 185823
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 181,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6_KI270800v1_alt",
+    "chromosome_length": 175808
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 182,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270304v1",
+    "chromosome_length": 2165
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 183,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_KI270879v1_alt",
+    "chromosome_length": 304135
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 184,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270932v1_alt",
+    "chromosome_length": 215732
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 185,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270372v1",
+    "chromosome_length": 1650
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 186,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270467v1",
+    "chromosome_length": 3920
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 187,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270468v1",
+    "chromosome_length": 4055
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 188,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_JH636055v2_alt",
+    "chromosome_length": 173151
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 189,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_KI270893v1_alt",
+    "chromosome_length": 161218
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 190,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_KI270861v1_alt",
+    "chromosome_length": 196688
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 191,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_KI270729v1_random",
+    "chromosome_length": 280839
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 192,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270448v1",
+    "chromosome_length": 7992
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 193,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270885v1_alt",
+    "chromosome_length": 171027
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 194,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270750v1",
+    "chromosome_length": 148850
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 195,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_KI270738v1_random",
+    "chromosome_length": 99375
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 196,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270751v1",
+    "chromosome_length": 150742
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 197,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_GL383565v1_alt",
+    "chromosome_length": 223995
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 198,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270763v1_alt",
+    "chromosome_length": 911658
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 199,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270423v1",
+    "chromosome_length": 981
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 200,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270303v1",
+    "chromosome_length": 1942
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 201,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr9_GL383542v1_alt",
+    "chromosome_length": 60032
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 202,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr5_GL383532v1_alt",
+    "chromosome_length": 82728
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 203,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_KI270778v1_alt",
+    "chromosome_length": 248252
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 204,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr21_KI270873v1_alt",
+    "chromosome_length": 143900
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 205,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_GL383575v2_alt",
+    "chromosome_length": 170222
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 206,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_JH159146v1_alt",
+    "chromosome_length": 278131
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 207,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270706v1_random",
+    "chromosome_length": 175055
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 208,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270305v1",
+    "chromosome_length": 1472
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 209,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr13_KI270838v1_alt",
+    "chromosome_length": 306913
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 210,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270548v1",
+    "chromosome_length": 1599
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 211,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270363v1",
+    "chromosome_length": 1803
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 212,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_KI270875v1_alt",
+    "chromosome_length": 259914
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 213,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_KI270924v1_alt",
+    "chromosome_length": 166540
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 214,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_KI270715v1_random",
+    "chromosome_length": 161471
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 215,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr9_KI270720v1_random",
+    "chromosome_length": 39050
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 216,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270707v1_random",
+    "chromosome_length": 32032
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 217,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6_GL000253v2_alt",
+    "chromosome_length": 4677643
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 218,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270334v1",
+    "chromosome_length": 1368
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 219,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270374v1",
+    "chromosome_length": 2656
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 220,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270515v1",
+    "chromosome_length": 6361
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 221,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270516v1",
+    "chromosome_length": 1300
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 222,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr10_GL383546v1_alt",
+    "chromosome_length": 309802
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 223,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr11_KI270903v1_alt",
+    "chromosome_length": 214625
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 224,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr4_KI270785v1_alt",
+    "chromosome_length": 119912
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 225,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270394v1",
+    "chromosome_length": 970
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 226,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr20_GL383577v2_alt",
+    "chromosome_length": 128386
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 227,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270383v1",
+    "chromosome_length": 1750
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 228,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270931v1_alt",
+    "chromosome_length": 170148
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 229,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_KI270859v1_alt",
+    "chromosome_length": 108763
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 230,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270868v1_alt",
+    "chromosome_length": 61734
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 231,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr4_KI270786v1_alt",
+    "chromosome_length": 244096
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 232,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270748v1",
+    "chromosome_length": 93321
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 233,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_GL949751v2_alt",
+    "chromosome_length": 1002683
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 234,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_JH159147v1_alt",
+    "chromosome_length": 70345
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 235,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270429v1",
+    "chromosome_length": 1361
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 236,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270336v1",
+    "chromosome_length": 1026
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 237,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270762v1_alt",
+    "chromosome_length": 354444
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 238,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_GL383520v2_alt",
+    "chromosome_length": 366580
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 239,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270425v1",
+    "chromosome_length": 1884
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 240,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrX_KI270881v1_alt",
+    "chromosome_length": 144206
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 241,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270529v1",
+    "chromosome_length": 1899
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 242,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr9_GL383539v1_alt",
+    "chromosome_length": 162988
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 243,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr18_GL383567v1_alt",
+    "chromosome_length": 289831
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 244,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270766v1_alt",
+    "chromosome_length": 256271
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 245,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270335v1",
+    "chromosome_length": 1048
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 246,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270385v1",
+    "chromosome_length": 990
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 247,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270317v1",
+    "chromosome_length": 37690
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 248,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270412v1",
+    "chromosome_length": 1179
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 249,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270922v1_alt",
+    "chromosome_length": 187935
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 250,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270311v1",
+    "chromosome_length": 12399
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 251,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_GL000213v1",
+    "chromosome_length": 164239
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 252,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_KI270774v1_alt",
+    "chromosome_length": 223625
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 253,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8_KI270816v1_alt",
+    "chromosome_length": 305841
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 254,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270713v1_random",
+    "chromosome_length": 40745
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 255,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_GL383522v1_alt",
+    "chromosome_length": 123821
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 256,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6_GL000252v2_alt",
+    "chromosome_length": 4604811
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 257,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270892v1_alt",
+    "chromosome_length": 162212
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 258,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_KI270770v1_alt",
+    "chromosome_length": 136240
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 259,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_GL949747v2_alt",
+    "chromosome_length": 729520
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 260,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr15_KI270848v1_alt",
+    "chromosome_length": 327382
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 261,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr9_KI270718v1_random",
+    "chromosome_length": 38054
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 262,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr4_KI270789v1_alt",
+    "chromosome_length": 205944
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 263,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270522v1",
+    "chromosome_length": 5674
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 264,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr4",
+    "chromosome_length": 190214555
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 265,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_KI270862v1_alt",
+    "chromosome_length": 391357
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 266,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270918v1_alt",
+    "chromosome_length": 123111
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 267,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_GL383583v2_alt",
+    "chromosome_length": 96924
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 268,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_GL000209v2_alt",
+    "chromosome_length": 177381
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 269,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr4_GL383527v1_alt",
+    "chromosome_length": 164536
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 270,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrX",
+    "chromosome_length": 156040895
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 271,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrX_KI270913v1_alt",
+    "chromosome_length": 274009
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 272,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr11_KI270902v1_alt",
+    "chromosome_length": 106711
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 273,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr15_KI270727v1_random",
+    "chromosome_length": 448248
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 274,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_KI270739v1_random",
+    "chromosome_length": 73985
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 275,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_KI270857v1_alt",
+    "chromosome_length": 2877074
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 276,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6_GL000256v2_alt",
+    "chromosome_length": 4929269
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 277,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr5_GL339449v2_alt",
+    "chromosome_length": 1612928
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 278,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_KI270877v1_alt",
+    "chromosome_length": 101331
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 279,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr7_KI270899v1_alt",
+    "chromosome_length": 190869
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 280,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270580v1",
+    "chromosome_length": 1553
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 281,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr5_KI270794v1_alt",
+    "chromosome_length": 164558
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 282,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr13_KI270842v1_alt",
+    "chromosome_length": 37287
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 283,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270320v1",
+    "chromosome_length": 4416
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 284,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_GL000224v1",
+    "chromosome_length": 179693
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 285,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270582v1",
+    "chromosome_length": 6504
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 286,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_KI270735v1_random",
+    "chromosome_length": 42811
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 287,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr5_KI270791v1_alt",
+    "chromosome_length": 195710
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 288,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr12_KI270835v1_alt",
+    "chromosome_length": 238139
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 289,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270761v1_alt",
+    "chromosome_length": 165834
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 290,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_KI270716v1_random",
+    "chromosome_length": 153799
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 291,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270375v1",
+    "chromosome_length": 2378
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 292,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrX_KI270880v1_alt",
+    "chromosome_length": 284869
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 293,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270741v1",
+    "chromosome_length": 157432
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 294,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr15_KI270906v1_alt",
+    "chromosome_length": 196384
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 295,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr4_GL000008v2_random",
+    "chromosome_length": 209709
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 296,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_KI270736v1_random",
+    "chromosome_length": 181920
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 297,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_GL383563v3_alt",
+    "chromosome_length": 375691
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 298,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr9",
+    "chromosome_length": 138394717
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 299,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr18_GL383572v1_alt",
+    "chromosome_length": 159547
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 300,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270765v1_alt",
+    "chromosome_length": 185285
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 301,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8_KI270814v1_alt",
+    "chromosome_length": 141812
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 302,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270387v1",
+    "chromosome_length": 1537
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 303,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_GL000226v1",
+    "chromosome_length": 15008
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 304,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22",
+    "chromosome_length": 50818468
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 305,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr18_KI270911v1_alt",
+    "chromosome_length": 157710
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 306,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr9_KI270717v1_random",
+    "chromosome_length": 40062
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 307,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270746v1",
+    "chromosome_length": 66486
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 308,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8_KI270811v1_alt",
+    "chromosome_length": 292436
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 309,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_GL000195v1",
+    "chromosome_length": 182896
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 310,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr9_KI270719v1_random",
+    "chromosome_length": 176845
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 311,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270883v1_alt",
+    "chromosome_length": 170399
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 312,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_KI270928v1_alt",
+    "chromosome_length": 176103
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 313,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr10",
+    "chromosome_length": 133797422
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 314,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr20_KI270870v1_alt",
+    "chromosome_length": 183433
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 315,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270435v1",
+    "chromosome_length": 92983
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 316,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr18_KI270864v1_alt",
+    "chromosome_length": 111737
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 317,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6_GL383533v1_alt",
+    "chromosome_length": 124736
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 318,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_GL000220v1",
+    "chromosome_length": 161802
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 319,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17",
+    "chromosome_length": 83257441
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 320,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr11_KI270927v1_alt",
+    "chromosome_length": 218612
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 321,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270744v1",
+    "chromosome_length": 168472
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 322,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_KI270773v1_alt",
+    "chromosome_length": 70887
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 323,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270333v1",
+    "chromosome_length": 2699
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 324,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr5_KI270795v1_alt",
+    "chromosome_length": 131892
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 325,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270382v1",
+    "chromosome_length": 4215
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 326,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270889v1_alt",
+    "chromosome_length": 170698
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 327,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6_GL000250v2_alt",
+    "chromosome_length": 4672374
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 328,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr14_KI270844v1_alt",
+    "chromosome_length": 322166
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 329,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270507v1",
+    "chromosome_length": 5353
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 330,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr5_GL000208v1_random",
+    "chromosome_length": 92689
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 331,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr20",
+    "chromosome_length": 64444167
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 332,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270593v1",
+    "chromosome_length": 3041
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 333,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270888v1_alt",
+    "chromosome_length": 155532
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 334,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr9_GL383540v1_alt",
+    "chromosome_length": 71551
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 335,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr12_GL383552v1_alt",
+    "chromosome_length": 138655
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 336,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr15_GL383555v2_alt",
+    "chromosome_length": 388773
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 337,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr4_GL000257v2_alt",
+    "chromosome_length": 586476
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 338,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_GL383526v1_alt",
+    "chromosome_length": 180671
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 339,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8_KI270813v1_alt",
+    "chromosome_length": 300230
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 340,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr21_GL383578v2_alt",
+    "chromosome_length": 63917
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 341,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr4_KI270925v1_alt",
+    "chromosome_length": 555799
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 342,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270544v1",
+    "chromosome_length": 1202
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 343,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr15_GL383554v1_alt",
+    "chromosome_length": 296527
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 344,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr14_KI270847v1_alt",
+    "chromosome_length": 1511111
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 345,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8_KI270900v1_alt",
+    "chromosome_length": 318687
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 346,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr15",
+    "chromosome_length": 101991189
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 347,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr13",
+    "chromosome_length": 114364328
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 348,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270865v1_alt",
+    "chromosome_length": 52969
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 349,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_GL383519v1_alt",
+    "chromosome_length": 110268
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 350,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270302v1",
+    "chromosome_length": 2274
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 351,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr7_GL383534v2_alt",
+    "chromosome_length": 119183
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 352,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_GL000221v1_random",
+    "chromosome_length": 155397
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 353,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr7",
+    "chromosome_length": 159345973
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 354,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270747v1",
+    "chromosome_length": 198735
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 355,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr20_KI270869v1_alt",
+    "chromosome_length": 118774
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 356,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270709v1_random",
+    "chromosome_length": 66860
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 357,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_GL949750v2_alt",
+    "chromosome_length": 1066390
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 358,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr9_GL383541v1_alt",
+    "chromosome_length": 171286
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 359,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr11_JH159136v1_alt",
+    "chromosome_length": 200998
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 360,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_GL949753v2_alt",
+    "chromosome_length": 796479
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 361,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr21",
+    "chromosome_length": 46709983
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 362,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr20_KI270871v1_alt",
+    "chromosome_length": 58661
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 363,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr21_GL383581v2_alt",
+    "chromosome_length": 116689
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 364,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270591v1",
+    "chromosome_length": 5796
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 365,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270590v1",
+    "chromosome_length": 4685
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 366,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr11_GL383547v1_alt",
+    "chromosome_length": 154407
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 367,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr7_KI270804v1_alt",
+    "chromosome_length": 157952
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 368,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270395v1",
+    "chromosome_length": 1143
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 369,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr11_KI270832v1_alt",
+    "chromosome_length": 210133
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 370,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr5_KI270792v1_alt",
+    "chromosome_length": 179043
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 371,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr18",
+    "chromosome_length": 80373285
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 372,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr15_KI270851v1_alt",
+    "chromosome_length": 263054
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 373,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr16_KI270855v1_alt",
+    "chromosome_length": 232857
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 374,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr14_KI270845v1_alt",
+    "chromosome_length": 180703
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 375,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270882v1_alt",
+    "chromosome_length": 248807
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 376,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_GL949752v1_alt",
+    "chromosome_length": 987100
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 377,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_KI270876v1_alt",
+    "chromosome_length": 263666
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 378,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270929v1_alt",
+    "chromosome_length": 186203
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 379,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr5_GL383530v1_alt",
+    "chromosome_length": 101241
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 380,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr12_GL383549v1_alt",
+    "chromosome_length": 120804
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 381,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270388v1",
+    "chromosome_length": 1216
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 382,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr12_KI270833v1_alt",
+    "chromosome_length": 76061
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 383,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr18_GL383570v1_alt",
+    "chromosome_length": 164789
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 384,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270442v1",
+    "chromosome_length": 392061
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 385,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270362v1",
+    "chromosome_length": 3530
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 386,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_KI270733v1_random",
+    "chromosome_length": 179772
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 387,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr14_GL000009v2_random",
+    "chromosome_length": 201709
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 388,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrY",
+    "chromosome_length": 57227415
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 389,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr14_GL000225v1_random",
+    "chromosome_length": 211173
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 390,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8_KI270821v1_alt",
+    "chromosome_length": 985506
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 391,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr11_KI270829v1_alt",
+    "chromosome_length": 204059
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 392,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270329v1",
+    "chromosome_length": 1040
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 393,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270921v1_alt",
+    "chromosome_length": 282224
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 394,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6",
+    "chromosome_length": 170805979
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 395,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270366v1",
+    "chromosome_length": 8320
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 396,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270396v1",
+    "chromosome_length": 1880
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 397,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270519v1",
+    "chromosome_length": 138126
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 398,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270466v1",
+    "chromosome_length": 1233
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 399,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270420v1",
+    "chromosome_length": 2321
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 400,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6_GL000251v2_alt",
+    "chromosome_length": 4795265
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 401,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6_GL000255v2_alt",
+    "chromosome_length": 4606388
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 402,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270465v1",
+    "chromosome_length": 1774
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 403,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270337v1",
+    "chromosome_length": 1121
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 404,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270322v1",
+    "chromosome_length": 21476
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 405,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr13_KI270840v1_alt",
+    "chromosome_length": 191684
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 406,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_KI270768v1_alt",
+    "chromosome_length": 110099
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 407,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_KI270732v1_random",
+    "chromosome_length": 41543
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 408,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_GL383573v1_alt",
+    "chromosome_length": 385657
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 409,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270583v1",
+    "chromosome_length": 1400
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 410,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr21_GL383580v2_alt",
+    "chromosome_length": 74653
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 411,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr12_GL383551v1_alt",
+    "chromosome_length": 184319
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 412,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr16_KI270853v1_alt",
+    "chromosome_length": 2659700
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 413,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270589v1",
+    "chromosome_length": 44474
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 414,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_KI270860v1_alt",
+    "chromosome_length": 178921
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 415,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr14_KI270724v1_random",
+    "chromosome_length": 39555
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 416,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270930v1_alt",
+    "chromosome_length": 200773
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 417,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr11_KI270827v1_alt",
+    "chromosome_length": 67707
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 418,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_GL383582v2_alt",
+    "chromosome_length": 162811
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 419,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_KI270775v1_alt",
+    "chromosome_length": 138019
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 420,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270508v1",
+    "chromosome_length": 1951
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 421,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_KI270935v1_alt",
+    "chromosome_length": 197351
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 422,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6_GL000254v2_alt",
+    "chromosome_length": 4827813
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 423,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270755v1",
+    "chromosome_length": 36723
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 424,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr22_KI270878v1_alt",
+    "chromosome_length": 186262
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 425,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270419v1",
+    "chromosome_length": 1029
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 426,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270539v1",
+    "chromosome_length": 993
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 427,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270379v1",
+    "chromosome_length": 1045
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 428,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr6_KI270799v1_alt",
+    "chromosome_length": 152148
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 429,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_KI270782v1_alt",
+    "chromosome_length": 162429
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 430,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr16_GL383557v1_alt",
+    "chromosome_length": 89672
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 431,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8",
+    "chromosome_length": 145138636
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 432,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr11_JH159137v1_alt",
+    "chromosome_length": 191409
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 433,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr18_KI270863v1_alt",
+    "chromosome_length": 167999
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 434,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_KI270909v1_alt",
+    "chromosome_length": 325800
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 435,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270386v1",
+    "chromosome_length": 1788
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 436,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270389v1",
+    "chromosome_length": 1298
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 437,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr12_KI270834v1_alt",
+    "chromosome_length": 119498
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 438,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19_KI270914v1_alt",
+    "chromosome_length": 205194
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 439,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr5_GL949742v1_alt",
+    "chromosome_length": 226852
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 440,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270509v1",
+    "chromosome_length": 2318
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 441,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270315v1",
+    "chromosome_length": 2276
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 442,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr3_KI270936v1_alt",
+    "chromosome_length": 164170
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 443,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr16",
+    "chromosome_length": 90338345
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 444,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr2_KI270771v1_alt",
+    "chromosome_length": 110395
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 445,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr19",
+    "chromosome_length": 58617616
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 446,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr10_GL383545v1_alt",
+    "chromosome_length": 179254
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 447,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr4_GL383528v1_alt",
+    "chromosome_length": 376187
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 448,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr14_KI270726v1_random",
+    "chromosome_length": 43739
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 449,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270764v1_alt",
+    "chromosome_length": 50258
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 450,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr13_KI270841v1_alt",
+    "chromosome_length": 169134
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 451,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270310v1",
+    "chromosome_length": 1201
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 452,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8_KI270819v1_alt",
+    "chromosome_length": 133535
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 453,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_KI270393v1",
+    "chromosome_length": 1308
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 454,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr14_KI270846v1_alt",
+    "chromosome_length": 1351393
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 455,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr17_JH159148v1_alt",
+    "chromosome_length": 88070
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 456,
+  "fields": {
+    "reference": 3,
+    "line_name": "chrUn_GL000214v1",
+    "chromosome_length": 137718
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 457,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr14_KI270723v1_random",
+    "chromosome_length": 38115
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 458,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr1_KI270708v1_random",
+    "chromosome_length": 127682
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 459,
+  "fields": {
+    "reference": 3,
+    "line_name": "chr8_KI270815v1_alt",
+    "chromosome_length": 132244
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 460,
+  "fields": {
+    "reference": 4,
+    "line_name": "NC_003997.3",
+    "chromosome_length": 5227293
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 461,
+  "fields": {
+    "reference": 5,
+    "line_name": "NZ_UFSU01000003.1",
+    "chromosome_length": 13836
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 462,
+  "fields": {
+    "reference": 5,
+    "line_name": "NZ_UFSU01000002.1",
+    "chromosome_length": 581686
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 463,
+  "fields": {
+    "reference": 5,
+    "line_name": "NZ_UFSU01000001.1",
+    "chromosome_length": 5414974
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 464,
+  "fields": {
+    "reference": 6,
+    "line_name": "NC_009495.1",
+    "chromosome_length": 3886916
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 465,
+  "fields": {
+    "reference": 6,
+    "line_name": "NC_009496.1",
+    "chromosome_length": 16344
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 466,
+  "fields": {
+    "reference": 7,
+    "line_name": "NC_006570.2",
+    "chromosome_length": 1892775
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 467,
+  "fields": {
+    "reference": 8,
+    "line_name": "NC_007322.2",
+    "chromosome_length": 181677
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 468,
+  "fields": {
+    "reference": 9,
+    "line_name": "NC_007323.3",
+    "chromosome_length": 94830
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 469,
+  "fields": {
+    "reference": 10,
+    "line_name": "AL117211.1",
+    "chromosome_length": 96210
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 470,
+  "fields": {
+    "reference": 11,
+    "line_name": "AL109969.1",
+    "chromosome_length": 9612
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 471,
+  "fields": {
+    "reference": 12,
+    "line_name": "NC_003997.3",
+    "chromosome_length": 5227293
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 472,
+  "fields": {
+    "reference": 13,
+    "line_name": "NC_003143.1",
+    "chromosome_length": 4653728
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 473,
+  "fields": {
+    "reference": 13,
+    "line_name": "NC_003134.1",
+    "chromosome_length": 96210
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 474,
+  "fields": {
+    "reference": 13,
+    "line_name": "NC_003131.1",
+    "chromosome_length": 70305
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 475,
+  "fields": {
+    "reference": 13,
+    "line_name": "NC_003132.1",
+    "chromosome_length": 9612
+  }
+}
+]

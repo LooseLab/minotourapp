@@ -1,0 +1,22 @@
+#!/bin/bash
+export MT_DB_ENGINE='django.db.backends.mysql'
+export MT_DB_HOST='localhost'
+export MT_DB_NAME='minotour'
+export MT_DB_PASS='toor'
+export MT_DB_PORT='3306'
+export MT_DB_USER='root'
+export MT_DJANGO_DEBUG='True'
+export MT_MAILGUN_ACCESS_KEY=''
+export MT_MAILGUN_SERVER_NAME=''
+export MT_MINIMAP2='/usr/bin/minimap2'
+export MT_REFERENCE_LOCATION='/home/rory/testData/refs/'
+export MT_SECRET_KEY=''
+export MT_TWITCONSUMER_KEY=''
+export MT_TWITCONSUMER_SECRET=''
+export MT_CENTRIFUGE="~/MinoTourTools/centrifuge-1.0.4-beta/centrifuge"
+export MT_CENTRIFUGE_INDEX="/home/rory/testData/p_compressed"
+export MT_DB_ENGINE="django.db.backends.mysql"
+export MT_TWITTOKEN=''
+export MT_TWITTOKEN_SECRET=''
+export MT_GFF_LOCATION='/home/rory/data'
+export MT_LOG_FOLDER='/home/rory/data/logs'

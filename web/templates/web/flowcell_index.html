@@ -1,0 +1,147 @@
+{% extends "web/template_private.html" %}
+{% load static %}
+
+{% block content %}
+
+    <div class="content-wrapper" style="background-color: white;">
+
+        <section class="content-header">
+            <h1>Flowcell name: <strong>{{ flowcell.name }}</strong> Sample name: <strong>{{ flowcell.sample_name }}</strong></h1>
+        </section>
+
+        <section class="content">
+
+            <ul class="nav nav-pills">
+
+                <li role="presentation" id='nav-summary-data' class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('summary-data')">Summary</a>
+                </li>
+                <li role="presentation" id="nav-live-event-data" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('live-event-data')">Live Event Data</a>
+                </li>
+                <li role="presentation" id="nav-basecalled-data" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('basecalled-data')">Basecalled Data</a>
+                </li>
+                <li role="presentation" id="nav-reads" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('reads')">Read Data</a>
+                </li>
+                <li role="presentation" id="nav-sequence-mapping" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('sequence-mapping')">Sequence Mapping</a>
+                </li>
+                <li role="presentation" id="nav-sequence-assembly" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('sequence-assembly')">Assembly</a>
+                </li>
+                <li role="presentation" id="nav-metagenomics" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('metagenomics')">Metagenomics</a>
+                </li>
+                <li role="presentation" id="nav-tasks" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('tasks')">Tasks</a>
+                </li>
+            </ul>
+
+            <br/>
+
+            <div class="tab-content">
+
+                <div id="tab-summary-data" class="tab-pane">
+                    {% include "web/flowcell/summary-tab.html" %}
+                </div>
+
+                <div id="tab-live-event-data" class="tab-pane">
+                    {% include "web/flowcell/live-tab.html" %}
+                </div>
+
+                <div id="tab-reads" class="tab-pane">
+                    {% include "web/flowcell/tab-reads.html" %}
+                </div>
+
+                <div id="tab-basecalled-data" class="tab-pane">
+                    {% include "web/flowcell/basecalled-tab.html" %}
+                </div>
+
+                <div id="tab-sequence-mapping" class="tab-pane">
+                    {% include "web/flowcell/mapping-tab.html" %}
+                </div>
+
+                <div id="tab-sequence-assembly" class="tab-pane">
+                    {% include "web/flowcell/assembly-tab.html" %}
+                </div>
+
+                <div id="tab-tasks" class="tab-pane">
+                    {% include "web/flowcell/tasks-tab.html" %}
+                </div>
+
+                <div id="tab-metagenomics" class="tab-pane">
+                    {% include "web/flowcell/metagenomics.html" %}
+                </div>
+            </div>
+
+            <!-- Modal -->
+            <div class="modal fade" id="eastermodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                    aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title" id="myModalLabel">Congrats! You have hit a million base pair
+                                read!</h4>
+                        </div>
+                        <div class="modal-body">
+                            <h3>Welcome to the #1MbReadClub. If this is your first time - nice job....</h3>
+                            <!---<p><iframe src="https://giphy.com/embed/ZFGtOflRCro88" width="480" height="198" frameBorder="0" class="giphy-embed" allowFullScreen></iframe></p>-->
+                            <h4>Just remember though... length is vanity - mapping is sanity!</h4>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        <form>
+            <input id="flowcell-id" type="text" value="{{ flowcell.id }}" style="visibility: hidden;"/>
+            <input id="flowcell-selected-tab" type="text" value="Summary" style="visibility: hidden;"/>
+            <input id="flowcell-selected-barcode" type="text" value="All reads" style="visibility: hidden;"/>
+        </form>
+
+        </section><!-- /.content -->
+    </div><!-- /.content-wrapper -->
+{% endblock %}
+
+{% block javascript %}
+    <script>
+
+        var input_flowcell_id = document.querySelector("#flowcell-id");
+
+        console.log("Initialising FlowcellPageApp.");
+
+        var app = FlowcellPageApp;
+
+        app.init();
+
+        // var coverage_chart = new CoverageChart();
+
+        // coverage_chart.create_master_detail_chart('coverage_div', 'chromosome-id-select');
+
+        loadTasksForm();
+
+        var mTaskController = new MTaskController(input_flowcell_id.value);
+
+        /*document.querySelector("#nav-"+value.id).addEventListener("click", function(event){
+            flowcell_selected_tab_input.value = event.target.innerHTML;
+
+            requestData(flowcell_id);
+        });*/
+
+        let flowcell_controller = new FlowcellController(input_flowcell_id.value);
+    </script>
+{% endblock %}

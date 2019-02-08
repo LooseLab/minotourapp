@@ -1,29 +1,11 @@
 from django.contrib import admin
 
-from .models import FastqRead
-from .models import RunSummaryBarcode
-from .models import RunStatisticBarcode
-from .models import FastqReadType
-from .models import MinION
-from .models import MinIONControl
-from .models import MinIONEvent
-from .models import MinIONEventType
-from .models import MinIONRun
-from .models import MinIONRunStats
-from .models import MinIONRunStatus
-from .models import MinIONScripts
-from .models import MinIONStatus
-from .models import MinIONmessages
-from .models import JobMaster
-from .models import JobType
-from .models import ChannelSummary
-from .models import HistogramSummary
-from .models import UserOptions
-from .models import Barcode
-
-
-class MinionRunAdmin(admin.ModelAdmin):
-    list_display = ('start_time', 'active','sample_name', 'minKNOW_version', 'minKNOW_flow_cell_id', 'run_name', 'run_id', 'is_barcoded','minION', 'id', 'last_read', 'last_entry')
+from .models import (Barcode, FastqFile, FastqRead, FastqReadType,
+                     MinIONControl, MinIONEvent, MinIONEventType,
+                     MinionMessage, MinIONRunStats, MinIONRunStatus,
+                     MinIONScripts, MinIONStatus, Run, RunSummary, UserOptions, ChannelSummary, HistogramSummary,
+                     RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellHistogramSummary, FlowcellStatisticBarcode, FlowcellSummaryBarcode,
+                     FlowcellTab)
 
 
 class RunStatisticsBarcodeAdmin(admin.ModelAdmin):
@@ -39,23 +21,26 @@ class RunSummaryBarcodeAdmin(admin.ModelAdmin):
 
 
 admin.site.register(FastqRead)
+admin.site.register(FastqFile)
 admin.site.register(FastqReadType)
-admin.site.register(MinIONRun, MinionRunAdmin)
-admin.site.register(MinION)
+admin.site.register(FlowcellStatisticBarcode)
+admin.site.register(FlowcellSummaryBarcode)
+admin.site.register(FlowcellHistogramSummary)
+admin.site.register(FlowcellTab)
+admin.site.register(Run)
 admin.site.register(MinIONEventType)
 admin.site.register(MinIONEvent)
 admin.site.register(MinIONScripts)
 admin.site.register(MinIONStatus)
 admin.site.register(MinIONRunStatus)
 admin.site.register(MinIONRunStats)
-admin.site.register(MinIONmessages)
+admin.site.register(MinionMessage)
 admin.site.register(MinIONControl)
 admin.site.register(RunStatisticBarcode, RunStatisticsBarcodeAdmin)
 admin.site.register(RunSummaryBarcode, RunSummaryBarcodeAdmin)
-admin.site.register(JobMaster)
-admin.site.register(JobType)
 admin.site.register(ChannelSummary)
 admin.site.register(HistogramSummary)
 admin.site.register(UserOptions)
 admin.site.register(Barcode)
-
+admin.site.register(GroupRun)
+admin.site.register(RunSummary)

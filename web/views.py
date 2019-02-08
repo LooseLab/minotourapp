@@ -1,25 +1,47 @@
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render
+from django.forms import formset_factory
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import redirect, render
+from django.views.generic import ListView, DeleteView
 from rest_framework.authtoken.models import Token
 
 from communication.models import Message
-from reads.models import MinIONRun
-from reads.models import UserOptions
-from web.forms import UserOptionsForm
+from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats
+from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
+
+from django.contrib import messages
+
+import pandas as pd
 
 
 def index(request):
-    return render(request, 'web/index.html')
 
+    if request.user.is_authenticated:
 
-def current(request):
-    return render(request, 'web/current_run.html')
+        return redirect('flowcells')
 
+    else:
 
-def log_in(request):
-    return render(request, 'web/log_in.html')
+        return redirect('login')
+
+def signup(request):
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('username')
+            raw_password = form.cleaned_data.get('password1')
+            user = authenticate(username=username, password=raw_password)
+            login(request, user)
+            return redirect('flowcells')
+
+    else:
+        form = SignUpForm()
+
+    return render(request, 'web/signup.html', {'form': form})
 
 
 @login_required
@@ -73,11 +95,6 @@ def profile(request):
 
 
 @login_required
-def external_links(request):
-    return render(request, 'web/external_links.html')
-
-
-@login_required
 def minup(request):
     return render(request, 'web/minup.html')
 
@@ -88,20 +105,126 @@ def tutorial(request):
 
 
 @login_required
-def current_run(request):
-    return render(request, 'web/current_run2.html')
+def flowcells(request):
+    flowcells = Flowcell.objects.filter(owner=request.user)
+    return render(request, 'web/flowcells.html', context={'flowcells': flowcells})
 
 
 @login_required
-def previous_run(request):
-    minion_runs = MinIONRun.objects.filter(owner=request.user)
-    return render(request, 'web/previous_run.html', context={'minion_runs': minion_runs})
+def flowcell_index(request, pk):
+
+    flowcell = Flowcell.objects.get(pk=pk)
+    return render(request, 'web/flowcell_index.html', context={'flowcell': flowcell})
 
 
 @login_required
-def run_index(request, pk):
-    minion_run = MinIONRun.objects.get(pk=pk)
-    return render(request, 'web/run_index.html', context={'minion_run': minion_run})
+def flowcell_reads(request, pk):
+
+    flowcell = Flowcell.objects.get(pk=pk)
+
+    return render(request, 'web/flowcell_reads.html', context={'flowcell': flowcell})
+
+
+def flowcell_reads_data(request):
+
+    # column_0_data = request.GET.get('column[0][data]', '')
+    # column_0_name = request.GET.get('column[0][name]', '')
+    # column_0_searchable = request.GET.get('column[0][searchable]', '')
+    # column_0_orderable = request.GET.get('column[0][orderable]', '')
+    # column_0_search_value = request.GET.get('column[0][search][value]', '')
+    # column_0_search_regex = request.GET.get('column[0][search][regex]', '')
+
+    query_columns = [
+        'read_id',
+        'read',
+        'channel',
+        'sequence_length',
+        'run__runid',
+        'barcode__name',
+    ]
+
+    query_columns_string = ['read_id', 'read', 'channel', 'sequence_length', 'run__runid', 'barcode__name']
+
+    flowcell_id = int(request.GET.get('flowcell_id', 0))
+
+    draw = int(request.GET.get('draw', 0))
+
+    search_value = request.GET.get('search[value]', '')
+
+    start = int(request.GET.get('start', 0))
+
+    length = int(request.GET.get('length', 10))
+
+    end = start + length
+    # Which column s
+    order_column = request.GET.get('order[0][column]', '')
+    # ascending descending
+    order_dir = request.GET.get('order[0][dir]', '')
+
+    run_list = Run.objects.filter(flowcell__id=flowcell_id).filter(flowcell__owner=request.user)
+
+    run_id_list = []
+
+    for run in run_list:
+
+        run_id_list.append(run.id)
+
+
+    if not search_value == "":
+
+        if search_value[0] == '>':
+
+            reads_temp = FastqRead.objects\
+                .filter(run__in=run_id_list)\
+                .filter(sequence_length__gt=search_value[1:])
+                #.filter(run__flowcell_id=flowcell_id)\
+                #.filter(run__flowcell__owner=request.user)\
+
+        elif search_value[0] == '<':
+
+            reads_temp = FastqRead.objects\
+                .filter(run__in=run_id_list)\
+                .filter(sequence_length__lt=search_value[1:])
+                #.filter(run__flowcell_id=flowcell_id) \
+                #.filter(run__flowcell__owner=request.user)\
+
+        else:
+
+            reads_temp = FastqRead.objects \
+                .filter(run__in=run_id_list)\
+                .filter(read_id__contains=search_value)
+                #.filter(run__flowcell_id=flowcell_id) \
+                #.filter(run__flowcell__owner=request.user) \
+
+    else:
+
+        reads_temp = FastqRead.objects\
+            .filter(run__in=run_id_list)
+            #.filter(run__flowcell_id=flowcell_id)\
+            #.filter(run__flowcell__owner=request.user)\
+
+    if order_column:
+
+        if order_dir == 'desc':
+
+            reads_temp2 = reads_temp.order_by('-{}'.format(query_columns[int(order_column)]))
+
+        else:
+
+            reads_temp2 = reads_temp.order_by('{}'.format(query_columns[int(order_column)]))
+
+    reads = reads_temp2[:20].values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
+
+    records_total = reads_temp.count()
+
+    result = {
+        'draw': draw,
+        "recordsTotal": records_total,
+        "recordsFiltered": records_total,
+        "data": list(reads[start:end])
+    }
+
+    return JsonResponse(result, safe=True)
 
 
 @login_required
@@ -109,6 +232,134 @@ def remotecontrol(request):
     return render(request, 'web/remotecontrol.html')
 
 
+class ExperimentList(ListView):
+    model = Experiment
+
+
+class ExperimentDelete(DeleteView):
+    model = Experiment
+
+
 @login_required
-def prevremotecontrol(request):
-    return render(request, 'web/prevremotecontrol.html')
+def experiments_create(request):
+
+    ExperimentFlowcellFormSet = formset_factory(ExperimentFlowcellForm, extra=3)
+
+    if request.method == 'POST':
+
+        form = ExperimentForm(request.POST)
+        experiment_flowcell_formset = ExperimentFlowcellFormSet(request.POST)
+
+        if form.is_valid() and experiment_flowcell_formset.is_valid():
+
+            experiment_name = form.cleaned_data['name']
+
+            experiment = Experiment()
+            experiment.name = experiment_name.upper()
+            experiment.owner = request.user
+            experiment.save()
+
+            for experiment_flowcell_form in experiment_flowcell_formset:
+
+                flowcell = experiment_flowcell_form.cleaned_data.get('flowcell')
+
+                if flowcell:
+
+                    flowcell.experiments.add(experiment)
+
+            messages.success(request, 'The experiment {} was created with success.'.format(experiment.name))
+            return redirect('experiment-list')
+
+    else:
+
+        form = ExperimentForm()
+        experiment_flowcell_formset = ExperimentFlowcellFormSet()
+
+    experiment_list = Experiment.objects.filter(owner=request.user)
+
+    return render(
+        request,
+        'reads/experiments_create.html',
+        {
+            'form': form,
+            'experiment_flowcell_formset': experiment_flowcell_formset,
+            'experiment_list': experiment_list,
+        }
+    )
+
+@login_required
+def experiments_update(request, pk):
+
+    experiment = Experiment.objects.get(pk=pk)
+
+    ExperimentFlowcellFormSet = formset_factory(ExperimentFlowcellForm, extra=3)
+
+    if request.method == 'POST':
+
+        form = ExperimentForm(request.POST)
+        experiment_flowcell_formset = ExperimentFlowcellFormSet(request.POST)
+
+        if form.is_valid() and experiment_flowcell_formset.is_valid():
+
+            experiment_name = form.cleaned_data['name']
+
+
+            experiment.name = experiment_name.upper()
+            experiment.save()
+
+            for experiment_flowcell_form in experiment_flowcell_formset:
+
+                flowcell = experiment_flowcell_form.cleaned_data.get('flowcell')
+
+                if flowcell:
+
+                    flowcell.experiments.add(experiment)
+
+            messages.success(request, 'The experiment {} was updated with success.'.format(experiment.name))
+            return redirect('experiment-list')
+
+    else:
+
+        form = ExperimentForm(instance=experiment)
+
+        experiment_flowcell_list = experiment.flowcell_set.all()
+
+        initial_data = []
+
+        for experiment_flowcell in experiment_flowcell_list:
+
+            initial_data.append({'flowcell': experiment_flowcell})
+
+        experiment_flowcell_formset = ExperimentFlowcellFormSet(initial=initial_data)
+
+    return render(
+        request,
+        'reads/experiments_update.html',
+        {
+            'form': form,
+            'experiment_flowcell_formset': experiment_flowcell_formset,
+        }
+    )
+
+@login_required
+def flowcell_run_stats_download(request, pk):
+
+    flowcell = Flowcell.objects.get(pk=pk)
+
+    crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all())
+
+    runstats_dataframe = pd.DataFrame(list(crazyminIONrunstats.values()))
+    runstats_dataframe = runstats_dataframe.set_index('sample_time')
+    runstats_dataframe = runstats_dataframe.drop('created_date', axis=1)
+    runstats_dataframe = runstats_dataframe.drop('id', axis=1)
+    runstats_dataframe = runstats_dataframe.drop('mean_ratio', axis=1)
+    runstats_dataframe = runstats_dataframe.drop('minION_id', axis=1)
+    runstats_dataframe = runstats_dataframe.drop('run_id_id', axis=1)
+    #runstats_dataframe = runstats_dataframe.drop('mean_ratio', axis=1)
+    runstats_dataframe = runstats_dataframe.drop('in_strand', axis=1)
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename={}_live_records.csv'.format(flowcell.name)
+    column_order = ['asic_temp','heat_sink_temp','voltage_value','minKNOW_read_count','event_yield','above','adapter','below','good_single','inrange','multiple','open_pore','pending_mux_change','saturated','strand','unavailable','unblocking','unclassified','unknown','minKNOW_histogram_bin_width','minKNOW_histogram_values']
+    runstats_dataframe[column_order].to_csv(response)
+
+    return response

@@ -1,110 +1,153 @@
 {% extends "web/template_private.html" %}
 
 {% block content %}
-    <div class="content-wrapper">
+    <div class="content-wrapper" style="background-color: white">
 
         <!-- Content Header (Page header) -->
         <section class="content-header">
             <h1>
-                <span>minUP <small>- uploading data to minoTour.</small></span>
+                <span>minFQ<small> - How to upload data to minoTour.</small></span>
             </h1>
-            <ol class="breadcrumb">
-                <li><a href="#"><i class="fa fa-cloud-upload"></i> minUP Scripts</a></li>
-                <li class="active">Here</li>
-            </ol>
         </section>
 
         <!-- Main content -->
         <section class="content">
             <div class="box">
                 <div class="box-header">
-                    <h3 class="box-title">Getting Hold Of minUP</h3>
+                    <h2 class="box-title">Installation</h2>
                 </div><!-- /.box-header -->
                 <div class="box-body">
-                    <h4><u>minUP for Windows 0.70</u></h4>
-                    <p>The latest version of minUP for Windows can be downloaded below. Please note that you must
-                    download either a windows 7 or a windows 10 version now. We are trying to rectify this asap. This
-                    compressed folder includes a compiled version of the last and BWA aligners which in turn require
-                    CYGWIN to be installed on your system (available from <a href='http://www.cygwin.com/'
-                                                                             target='_blank'>www.cygwin.com</a>).</p>
+                    <h4>Installing minFQ</u></h4>
+                    <p>minFQ is available from pypi for python3. Installation in a python3 setting is simple:</p>
+                    <code>pip install minFQ</code>
+                    <p>If you have both python2 and 3 installed you may need to use:</p>
+                    <code>pip3 install minFQ</code>
+                    <p>We recommend installing minFQ in its own environment:</p>
+                    <code>python3 -m venv /path/to/your/environment<br>
+                    source /path/to/your/environment/bin/activate<br>
+                    pip install minFQ</code>
 
-                    <p>This version also allows you to use BWA and additinal alignment options will be introduced in the
-                        near future.</p>
+                    <p>The source code for minFQ will soon be available from <a href='https://github.com/LooseLab/minotourcli'>https://github.com/LooseLab/minotourcli</a></p>
 
-                    <p>A new feature for minUP version 0.6 is a GUI - a graphical user interface - to
-                        simplify data upload.</p>
+                    <p>Please note that communication between minoTour and MinKNOW is mediated through the MinKNOW API. We do not distribute this code. However, installation of minFQ on a computer with MinKNOW installed will allow minFQ to access MinKNOW. These features have to be activated by the user and are used at the users own risk.</p>
 
-                    <p>minUP 0.70 also enables remote control facilities for your minION
-                        although this is somewhat experimental!</p>
+                    <h4>Using minFQ</h4>
 
-                    <p><a href='https://github.com/minoTour/winminUP/archive/master.zip' target='_blank'><i
-                            class='fa fa-file-code-o'></i> minUP for Windows 10</a></p>
+                    <p>The minFQ package can be used in at least three different ways.</p>
 
-                    <p><a href='https://github.com/minoTour/winminUPwin7/archive/master.zip' target='_blank'><i
-                            class='fa fa-file-code-o'></i> minUP for Windows 7/8</a></p>
+                    <p>The main command, minFQ provides two means of uploading run data to minoTour. minFQ can monitor both the fastq data in nanopore fastq read files and can DIRECTLY monitors MinKNOW itself. </p>
 
-                    <p>This version of minUP utilises a configuration file to bypass entering some of the standard
-                        parameters on the command line or in the GUI. You can download custom versions of these files below.
-                        Copy both files into the minUP folder.</p>
+                    <p>To use minFQ you require an access token obtained from your own account on a minoTour server. The token can be found under your user name in the 'profile' section.</p>
 
-                    <h4><u>Windows minUP Configuration Files</u></h4>
+                    <p>To test minFQ type:</p>
 
-                    <p>This file is provided for backwards compatibility only. Click the icon below to download your
-                        personalised Windows minup configuration file. It should be saved in the folder containing the
-                        windows minup executable and you should ensure it is named minup_windows.config - some browsers may
-                        append .txt to the end of the file.</p>
+                    <code>minFQ</code>
 
-                    <p><a href='minup/GUIconfig.php?user_name=xxxxxx' target='_blank'><i
-                        class='fa fa-file-code-o'></i> minUP Gui Config</a></p>
+                    <p>This will output a basic usage message:</p>
 
-                    <p><a href='minup/minupwindowsconfig.php?user_name=xxxxxx'
-                    target='_blank'><i class='fa fa-file-code-o'></i> minUP Windows Config</a></p>
+                    <pre>usage: minFQ [-h] -w WATCHDIR [-ip IP] [-v] [-nf] [-nm] -n RUN_NAME [-f] [-e]
+             -k API_KEY [-p PORT_NUMBER] [-hn HOST_NAME]
+             [-tc TREATMENT_CONTROL] [-s] [-g]
+             [-ll {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
+minFQ: error: the following arguments are required: -w/--watch-dir, -n/--name, -k/--key</pre>
 
-                    <p>You are free to edit this file and the parameters within it can be overridden by the
-                        parameter settings on the command line. Do not distribute this file to others as it is specific to
-                        you. Within the file is a hashed out line containing your password for uploading data to the
-                        database.</p>
+                    <p>To see the full help type:</p>
 
-                    <h4><u>minUP for Linux</u></h4>
+                    <code>minFQ -h</code>
 
-                    <p>The latest version of minUP for linux can be downloaded below. This is a python script and
-                        requires several dependencies. This includes the option to run BWA or LAST. It also provides remote
-                        control facilities for your minION. This is EXPERIMENTAL now and more information will be provided
-                        soon.</p>
+                    <p>which will give:</p>
 
-                    <p><a href='https://github.com/minoTour/linminUP/archive/master.zip' target='_blank'><i
-                        class='fa fa-file-code-o'></i> minUP for Linux</a></p>
+                    <pre>usage: minFQ [-h] -w WATCHDIR [-ip IP] [-v] [-nf] [-nm] -n RUN_NAME [-f] [-e]
+             -k API_KEY [-p PORT_NUMBER] [-hn HOST_NAME]
+             [-tc TREATMENT_CONTROL] [-s] [-g]
+             [-ll {DEBUG,INFO,WARNING,ERROR,CRITICAL}]
 
-                    <h4><u>Linux minUP Configuration File</u></h4>
+minFQ: A program to analyse minION fastq files in real-time or post-run and
+monitor the activity of MinKNOW. Args that start with '--' (eg. -w) can also
+be set in a config file
+(minfq_posix.config). Config file
+syntax allows: key=value, flag=true, stuff=[a,b,c] (for details, see syntax at
+https://goo.gl/R74nmi). If an arg is specified in more than one place, then
+commandline values override config file values which override defaults.
 
-                    <p>Click the icon below to download your personalised minup configuration file. It should be
-                    saved in the same folder as your minup script and you should ensure it is called minup_posix.config
-                    - some browsers may append .txt to the end of the file.</p>
+optional arguments:
+  -h, --help            show this help message and exit
+  -w WATCHDIR, --watch-dir WATCHDIR
+                        The path to the folder containing the downloads
+                        directory with fast5 reads to analyse - e.g.
+                        C:\data\minion\downloads (for windows).
+  -ip IP, --ip-address IP
+                        The IP address of the minKNOW machine.
+  -v, --verbose         Display debugging information.
+  -nf, --no_fastq       Run minFQ without monitoring fastq files.
+  -nm, --no_minKNOW     Run minFQ without monitoring minKNOW for live
+                        activity.
+  -n RUN_NAME, --name RUN_NAME
+                        This provides a backup name for a flowcell. MinoTour
+                        will use the run names and flowcell ids it finds in
+                        reads if available.
+  -f, --is_flowcell     If you add this flag, all runs added here will be
+                        considered as a single flow cell with the name set by
+                        the name flag.
+  -e, --enable_remote_control
+                        This option allows your runs to be remotely started
+                        and stopped and for runs to be remotely renamed. As
+                        standard this is not enbabled.
+  -k API_KEY, --key API_KEY
+                        The api key for uploading data.
+  -p PORT_NUMBER, --port PORT_NUMBER
+                        The port number for the minoTour server.
+  -hn HOST_NAME, --hostname HOST_NAME
+                        The host name for the minoTour server.
+  -tc TREATMENT_CONTROL, --treatment-control TREATMENT_CONTROL
+                        Optionally split reads based in treatment and control
+                        groups based on the channel number. The integer value
+                        informed is used to mover ish read to the control
+                        group.
+  -s, --skip_sequence   If selected only read metrics, not sequence, will be
+                        uploaded to the databse.
+  -g, --gui             configure the code for GUI use.
+  -ll {DEBUG,INFO,WARNING,ERROR,CRITICAL}, --loglevel {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                        Set the logging level.</pre>
 
-                    <p><a href='minup/minupposixconfig2.php?user_name=xxxxxx'
-                    target='_blank'><i class='fa fa-file-code-o'></i> minUP Linux Config</a></p>
+                    <h4>Example Commands</h4>
 
-                    <p>You are free to edit this file and the parameters within it can be overridden by the
-                        parameter settings on the command line. Do not distribute this file to others as it is specific to
-                        you.</p>
+                    <h5>To monitor both live and fastq data.</h5>
 
-                    <p><strong>The password to upload data will have been sent to you seperately - contact the
-                    system administrator if it is lost.</strong></p>
+                    <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -ip 127.0.0.1 -hn [url_to_your_minotour_server] -p [port_for_your_server_-_eg_80] -n [name_for_your_data] </code>
+                    <p></p>
+                    <h5>To monitor just live data from minKNOW.</h5>
 
-                    <h4><u>Demo Data Set</u></h4>
+                    <code>minFQ -k [your_user_key] -ip 127.0.0.1 -hn [url_to_your_minotour_server] -p [port_for_your_server_-_eg_80] -nf</code>
+                    <p></p>
+                    <h5>To monitor live data and enable full remote control of minKNOW.</h5>
 
-                    <p>To test your installation we have created a small sample of data from the released Loman
-                        Lab dataset (<a href='http://dx.doi.org/10.5524/100102' target='_blank'>http://dx.doi.org/10.5524/100102'</a>).
-                        This sample set consists of just the first 100 or so reads from the run and some newer features of
-                        minoTour are not supported by the older dataset. Decompress the demo_data_set.zip folder to a
-                        location on your machine. The folder structure is important here. metrichor returns files to a
-                        folder called ‘downloads’ and minup looks for this folder in any location you point it at - so keep
-                        the folder structure. We also include a copy of the reference genome in this dataset.</p>
+                    <code>minFQ -k [your_user_key] -ip 127.0.0.1 -hn [url_to_your_minotour_server] -p [port_for_your_server_-_eg_80] -nf -e</code>
+                    <p></p>
+                    <h5>To monitor just fastq data.</h5>
 
-                    <p><a href='minup/demo_data_set.zip' target='_blank'><i class='fa fa-file-code-o'></i> Demo Data
-                    Set</a></p>
+                    <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -hn [url_to_your_minotour_server] -p [port_for_your_server_-_eg_80] -nm</code>
+                    <p></p>
+                    <h5>To monitor fastq statistics only. (Note you will not be able to run subsequent analysis on the server which requires sequence data).</h5>
+
+                    <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -hn [url_to_your_minotour_server] -p [port_for_your_server_-_eg_80] -nm -s</code>
+
+
+                    <h4>minFQ Gui</h4>
+
+                    <p>We are in the process of rebuilding the minFQ gui. Watch this space.</p>
+
+
                 </div>
             </div>
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
+{% endblock %}
+
+{% block javascript %}
+
+    <script>
+
+        set_active_navbar_item(2);
+    </script>
 {% endblock %}
