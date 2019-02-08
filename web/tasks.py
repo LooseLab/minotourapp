@@ -1,15 +1,16 @@
 from __future__ import absolute_import, unicode_literals
 
+import gzip
 import json
 import os
 import shutil
 import subprocess
-import sys
 import tempfile
 import zipfile
 from datetime import datetime, timedelta
 
 import numpy as np
+import pandas as pd
 import pytz
 import redis
 from celery import task
@@ -17,21 +18,18 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
-from django.db.models import Max,Min
+from django.db.models import Max
 from django_mailgun import MailgunAPIError
 from twitter import *
 
 from assembly.models import GfaStore, GfaSummary
 from centrifuge import centrifuge
+from centrifuge.sankey import calculate_sankey
 from communication.utils import *
 from jobs.models import JobMaster
 from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus
 from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
-from centrifuge.sankey import calculate_sankey
-
-import pandas as pd
-import gzip
 
 
 logger = get_task_logger(__name__)
@@ -136,6 +134,50 @@ def run_monitor():
             #         flowcell_job.id,
             #     ))
             #     output_parser.delay(flowcell_job.id)
+
+            if flowcell_job.job_type.name == "Delete_Flowcell":
+                logger.info("Sending task Delete_Flowcell - Flowcell id: {}, job_master id: {}".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                ))
+                run_delete_flowcell.delay(flowcell_job.id)
+
+
+@task
+def run_delete_flowcell(flowcell_job_id):
+
+    flowcell_job = Flowcell.objects.get(pk=flowcell_job_id)
+
+    flowcell = flowcell_job.flowcell
+
+    logger.info('Flowcell id: {} - Deleting flowcell {}'.format(flowcell['id'], flowcell['name']))
+
+    first_fastqread = FastqRead.objects.filter(run__flowcell__id=flowcell['id']).order_by('id').first()
+    last_fastqread = FastqRead.objects.filter(run__flowcell__id=flowcell['id']).order_by('id').last()
+
+    if first_fastqread and last_fastqread:
+
+        first_read = first_fastqread.id
+        last_read = last_fastqread.id
+
+        logger.info(
+            'Flowcell id: {} - First and last fastqread id are {} {}'.format(flowcell['id'], first_read, last_read))
+
+        counter = first_read
+
+        while counter <= last_read:
+            counter = counter + 50
+
+            logger.info('Flowcell id: {} - Deleting records with id < {}'.format(flowcell['id'], counter))
+
+            affected = FastqRead.objects.filter(run__flowcell__id=flowcell['id']).filter(id__lt=counter).delete()
+
+            logger.info('Flowcell id: {} - Deleted {} fastqread records'.format(flowcell['id'], affected))
+
+    affected = Flowcell.objects.get(pk=flowcell['id']).delete()
+
+    logger.info('Flowcell id: {} - Deleted {} records'.format(flowcell['id'], affected))
+
 
 @task()
 def run_sankey(flowcell_job_id):
