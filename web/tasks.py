@@ -835,23 +835,45 @@ def update_flowcell_details(job_master_id):
     #
     # Get the first MinIONRunStatus for a particular flowcell
     #
-
-    ## Seems fast enough.
     minion_run_status_first = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell).order_by('minKNOW_start_time')\
         .first()
 
     #
-    # If the MinIONRunStatus exists, than update start time and sample name
+    # If the MinIONRunStatus exists, than update start time
     #
     if minion_run_status_first:
 
         logger.info('Flowcell id: {} - There is at least one MinIONRunStatus'.format(flowcell.id))
 
         flowcell.start_time = minion_run_status_first.minKNOW_start_time
-        flowcell.sample_name = minion_run_status_first.minKNOW_sample_name
+
 
         logger.info('Flowcell id: {} - Setting start_time to {}'.format(flowcell.id, flowcell.start_time))
-        logger.info('Flowcell id: {} - Setting sample_name to {}'.format(flowcell.id, flowcell.sample_name))
+
+    #
+    # Define flowcell's sample_name
+    #
+    minion_run_status_list = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell)
+
+    if minion_run_status_list.count() > 0:
+
+        for minion_run_status in minion_run_status_list:
+
+            if minion_run_status.minKNOW_sample_name and minion_run_status.minKNOW_sample_name != 'undefined':
+
+                flowcell.sample_name = minion_run_status_first.minKNOW_sample_name
+                logger.info('Flowcell id: {} - Setting sample_name to {} - data from MinIONRunStatus.minKNOW_sample_name'.format(flowcell.id, flowcell.sample_name))
+                break
+
+    else:
+
+        for run in Run.objects.filter(flowcell=flowcell):
+
+            if run.name and run.name != 'undefined':
+
+                flowcell.sample_name = run.name
+                logger.info('Flowcell id: {} - Setting sample_name to {} - data from Run.name'.format(flowcell.id, flowcell.sample_name))
+                break
 
     #
     # Get number of fastqreads
@@ -891,8 +913,6 @@ def update_flowcell_details(job_master_id):
 
     if number_reads > 0:
         average_read_length = total_read_length / number_reads
-
-
 
     logger.info('Flowcell id: {} - Total read length {}'.format(flowcell.id, total_read_length))
     logger.info('Flowcell id: {} - Number reads {}'.format(flowcell.id, number_reads))
