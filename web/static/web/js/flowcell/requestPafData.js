@@ -156,4 +156,24 @@ function requestPafData(id) {
 
     }).bind(this));
 
+    /*
+     * Request flowcell summary
+     * This response is a HTML code that is appended to the page (no json)
+     */
+    var url = "/flowcells/" + id + "/pafsummaryhtml";
+
+    var result_mapping_summary = document.querySelector('#mapping-summary');
+
+    $.ajax({
+        url: url,
+        dataType: "html",
+        success: function(data) {
+            result_mapping_summary.innerHTML = data;
+        },
+        error: function(e)
+        {
+            console.log('Error: ' + e);
+        }
+    });
+
 }
