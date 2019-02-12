@@ -1011,6 +1011,8 @@ def process_summary_data(df):
     return(df)
 
 
+
+
 def flowcell_summary_html(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)

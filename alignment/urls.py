@@ -28,4 +28,10 @@ urlpatterns = [
         views.flowcellreferences_used_by_run,
         name="flowcellreferences_used_by_run"
     ),
+
+    url(
+        r'^flowcells/(?P<pk>[0-9]+)/pafsummaryhtml/$',
+        views.flowcell_paf_summary_html,
+        name="flowcell_paf_summary_html"
+    ),
 ]
