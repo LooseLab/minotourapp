@@ -121,7 +121,7 @@ def run_monitor():
                 ))
 
                 update_flowcell_details.delay(flowcell_job.id)
-            if flowcell_job.job_type.name == "CalculateSankey":
+            if flowcell_job.job_type.name == "CalculateMetagenomicsSankey":
                 logger.info("Sending task CalculateSankey - Flowcell id: {}, job_master id: {}".format(
                     flowcell.id,
                     flowcell_job.id,

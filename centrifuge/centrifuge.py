@@ -378,7 +378,7 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids):
         return plasmid_map_df
 
 
-def update_mapped_red_values(row, task, flowcell):
+def update_mapped_red_values(row, task):
     """
     Update the values that we have in the database for each species after getting results for this iteration
     :param row: The results_df row
@@ -833,7 +833,7 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
 
     # For each row, update the red reads value for the mappingTargets entry for any species in the dataframe,
     #  in all reads barcode
-    results_df.apply(update_mapped_red_values, args=(task, flowcell), axis=1)
+    results_df.apply(update_mapped_red_values, args=(task), axis=1)
 
     # Barcoded red reads
     # Group by the name and the barcode, so split by each species and the barcode inside that split
@@ -851,7 +851,7 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
     # Drop duplicates so a species is unique inside each barcode
     results_df_bar.drop_duplicates(subset=["species", "barcode_name"], inplace=True)
     # Update the red reads value for the MappingTargets object for the species and barcodes inside this iteration
-    results_df_bar.apply(update_mapped_red_values, args=(task, flowcell), axis=1)
+    results_df_bar.apply(update_mapped_red_values, args=(task), axis=1)
 
 
 def create_donut_data_models(row, task):

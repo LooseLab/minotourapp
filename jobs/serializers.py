@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from jobs.models import JobMaster, JobType
-from centrifuge.models import MappingTarget
+from centrifuge.models import MappingTarget, CentrifugeOutput
 from reference.models import ReferenceInfo
 
 
@@ -61,6 +61,17 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         if data["job_type"].id == 10:
             data["reference"] = None
             data["target_set"] = MappingTarget.objects.values_list("target_set", flat=True).distinct()[0]
+
+        if data["job_type"].id == 13:
+            metagenomics_task = JobMaster.objects.filter(
+                flowcell=data["flowcell"]).filter(job_type__name="Metagenomics")
+            if metagenomics_task.count() != 1:
+                raise serializers.ValidationError("No metagenomics task found for this flowcell,"
+                                                  " please start a metagenomics task before calculating"
+                                                  " a lineages diagram")
+            elif metagenomics_task.count() > 0 and CentrifugeOutput.objects.filter(task=metagenomics_task).count() < 10:
+                raise serializers.ValidationError("Not enough metagenomics data, please try again in a few minutes")
+
         return data
 
     def create(self, validated_data):
@@ -114,4 +125,3 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
                 jm.save()
 
         return job_master
-

@@ -12,8 +12,7 @@ function draw_simple_table(flowcellId) {
     let tbody;
     let rows;
     let cells;
-    let columns = ["1 in 5000000", "1 in 2000000", "1 in 1000000", "1 in 100000", "1 in 50000", "1 in 10000",
-        "1 in 1000", "Potential threats", "Detected"];
+    let columns = ["Status", "Not detected", "Detected"];
     let data;
     let limit;
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
@@ -26,8 +25,9 @@ function draw_simple_table(flowcellId) {
             d3.select(".alert-table-simple").remove();
             return;
         }
+        console.log(result);
         data = result.table;
-        limit = result.conf_limit;
+        limit = result.conf_detect_limit;
         data.sort(compare);
         if (d3.select(".simple-alert-table").classed("has-tabley?")) {
             table = d3.select(".simple-alert-table").select("table");
@@ -47,12 +47,16 @@ function draw_simple_table(flowcellId) {
             .attr("id", function (column) {
                 return column.replace(" ", "_");
             }).attr("class", function (d, i) {
-            return i;
+                return i;
+            }).style("width", function(d){
+                if (d==="Status"){
+                    return "10%";
+                }
             }).text(function (column) {
                 return column;
             });
 
-        d3.select("#Not_detected").html("Not detected at 1 in " + limit);
+        d3.select("#Not_detected").html("Not detected at 1 in " + limit + " reads");
         rows = tbody.selectAll('tr');
         rows
             .data(data)
@@ -82,19 +86,15 @@ function draw_simple_table(flowcellId) {
             });
         }).attr("id", function (d, i) {
             return columns[i].replace(" ", "_");
-        }).style("background-color", function (d, i) {
-            if (i === d.index) {
-                return "rgba(0, 128, 0, 0.7)";
-            } else if (d.column === "Potential threats" && d.detected === false && d.read_count < 10000) {
-                return "rgba(255, 255, 255, 0)";
-            } else if (d.column === "Detected" && d.detected === true) {
+        }).style("background-color", function (d) {
+            if (d.column === "Status" && d.detected === false) {
+                return "green";
+            } else if (d.column === "Status" && d.detected === true) {
                 return "rgba(255, 0, 0, 0.7)";
             }
         }).html(
             function (d) {
                 if (d.column === "Not detected" && d.value === true) {
-                    return d.species;
-                } else if (d.column === "Potential threats" && d.detected === false && d.read_count < 10000) {
                     return d.species;
                 } else if (d.column === "Detected" && d.detected === true) {
                     return d.species;

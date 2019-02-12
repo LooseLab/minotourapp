@@ -36,7 +36,16 @@ class SankeyLink(models.Model):
 
     task = models.ForeignKey(
         JobMaster,
-        related_name="sankey_link"
+        related_name="sankey_link",
+        on_delete=models.CASCADE
+    )
+
+    sankey_task = models.ForeignKey(
+        JobMaster,
+        related_name="sankey_task",
+        default=None,
+        null=True,
+        on_delete=models.CASCADE
     )
 
     target_tax_level = models.CharField(max_length=100)
@@ -73,6 +82,10 @@ class Metadata(models.Model):
     start_time = models.DateTimeField(default=timezone.now, null=True)
 
     finish_time = models.CharField(max_length=40, null=True)
+
+    classified = models.IntegerField(default=0)
+
+    unclassified = models.IntegerField(default=0)
 
 
 class CentrifugeOutput(models.Model):
@@ -123,59 +136,6 @@ class CentrifugeOutput(models.Model):
     species = models.CharField(null=True, max_length=70)
 
     latest = models.IntegerField(null=True)
-
-    def __str__(self):
-        return "{} {} {} {}".format(self.barcode_name, self.tax_id, self.name, self.task)
-
-
-class CentrifugeOutputParsed(models.Model):
-    """
-        :purpose: Store the summarised output of the metagenomics task for all reads
-        , used to draw donut chart and All reads table
-        :author: Rory
-        Fields:
-
-        :name: (str) - The name of the Species
-        :tax_id: (int) - The taxonomic ID of this species
-        :num_matches: (int) - The number of centrifuge matches to this species in this analysis
-        :sum_unique: (int) - The number of centrifuge matches that match uniquely to this species
-        :flowcell_id: (int) - The Id of the flowcell the reads came from
-        :task: (JobMaster Object) FK - the task record in the JobMaster that started this analysis
-    """
-
-    name = models.CharField(max_length=250, null=True)
-
-    tax_id = models.IntegerField(null=True)
-
-    task = models.ForeignKey(
-        JobMaster,
-        related_name="centrifuge_output_parsed",
-        on_delete=models.CASCADE,
-    )
-
-    num_matches = models.IntegerField(default=0)
-
-    sum_unique = models.IntegerField(default=0)
-
-    barcode_name = models.CharField(max_length=50)
-
-    proportion_of_classified = models.FloatField(default=0.0)
-
-    superkingdom = models.CharField(null=True, max_length=70)
-
-    phylum = models.CharField(null=True, max_length=70)
-
-    classy = models.CharField(null=True, max_length=70)
-
-    order = models.CharField(null=True, max_length=70)
-
-    family = models.CharField(null=True, max_length=70)
-
-    genus = models.CharField(null=True, max_length=70)
-
-    species = models.CharField(null=True, max_length=70)
-
-    latest = models.IntegerField(default=0)
 
     def __str__(self):
         return "{} {} {} {}".format(self.barcode_name, self.tax_id, self.name, self.task)
