@@ -120,8 +120,9 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
                 else:
                     refer = ReferenceInfo.objects.get(name=hold[0].replace(" ", "_"))
 
-                jm = JobMaster(job_type=job_type, reference=refer, flowcell=validated_data["flowcell"],
-                               complete=True)
+                jm, created = JobMaster.objects.get_or_create(job_type=job_type, reference=refer,
+                                                     flowcell=validated_data["flowcell"],
+                                                     complete=True)
                 jm.save()
 
         return job_master

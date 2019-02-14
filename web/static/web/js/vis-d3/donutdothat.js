@@ -1,6 +1,10 @@
 "use strict";
 
-
+$('#expand-button').click(function(){
+    $(this).text(function(i,old){
+        return old=='Expand data' ?  'Hide data' : 'Expand data';
+    });
+});
 // The panning and zooming function, called when you apply a call of zoom to the svg on initialisation
 function move() {
     d3.select(".badCopNoDonut").attr("transform", d3.event.transform);
@@ -57,7 +61,7 @@ function drawDonut(flowCellId) {
     // Calculate the width
     let width = ($(window).width() *0.25) -50;
     // Calculate the height
-    let height = $(window).height() * 0.35,
+    let height = $(window).height() * 0.27,
         // the radius, the smallest of the width and height /2 so it fits in hte svg
         radius = Math.min(width, height)/2;
     // The d3 zoom function

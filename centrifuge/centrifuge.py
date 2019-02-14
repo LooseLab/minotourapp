@@ -517,7 +517,7 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
     # set the column name to above
     map_df.columns = columns
     # Filter out low quality matches or the
-    map_df = map_df.query("mapping_qual >= 40 | num_residue_matches >= 200")
+    map_df = map_df.query("mapping_qual >= 40 & num_residue_matches >= 200")
 
     # See whether the start or end of a mapping falls into the region
     boolean_df = species_regions_df.apply(falls_in_region, args=(map_df,), axis=1)
@@ -529,7 +529,7 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
     # If there is output from the plasmid mapping, put it into the consolidated target reads containing dataframe
     if not plasmid_red_df.empty and (type(plasmid_red_df) != pd.core.series.Series):
         # Filter out low mapping qualities
-        plasmid_red_df = plasmid_red_df.query("mapping_qual >= 40 | num_residue_matches >= 200")
+        plasmid_red_df = plasmid_red_df.query("mapping_qual >= 40 & num_residue_matches >= 200")
         red_df = red_df.append(plasmid_red_df, sort=True)
 
     logger.info("Flowcell id: {} - The target df after plasmid mapping results is {}".format(flowcell.id, red_df))
@@ -1082,9 +1082,11 @@ def output_parser(task, new_data_df, donut_or_output, metadata):
         to_save_df.fillna("Unclassified", inplace=True)
 
         # The number of reads we have any form of classification for
-        reads_classified = to_save_df[to_save_df["tax_id"].ne(0)]["num_matches"].sum()
+        reads_classified = to_save_df[to_save_df["tax_id"].ne(0) & to_save_df["barcode_name"]
+                                      == "All reads"]["num_matches"].sum()
         # The number of reads we have completely failed to classify
-        reads_unclassified = to_save_df[to_save_df["tax_id"].eq(0)]["num_matches"].sum()
+        reads_unclassified = to_save_df[to_save_df["tax_id"].eq(0) & to_save_df["barcode_name"]
+                                        == "All reads"]["num_matches"].sum()
         # save the values
         metadata.classified = reads_classified
         metadata.unclassified = reads_unclassified

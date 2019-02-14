@@ -44,7 +44,7 @@ function drawTables(selection, dataToDraw) {
     // select the table out of one of two sides
     if (first) {
         table = d3.select("." + selection)
-            .style("width", "100%").style("height", height+"px").style("overflow-y", "scroll").append("table").attr("class", "table table-hover taxons").style("table-layout", "fixed").style("overflow", "scroll").style("margin-left", "8px");
+            .style("width", "100%").style("height", height+"px").append("table").attr("class", "table table-hover taxons").style("table-layout", "fixed").style("overflow", "scroll").style("margin-left", "8px");
         // append table head, using the data in the columns array
         thead = table.append('thead').append('tr')
             .selectAll('th')
