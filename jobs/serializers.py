@@ -86,43 +86,46 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         job_master.save()
         # If we have created a new job and it's a metagenomics job
         if created and validated_data["job_type"].name == "Metagenomics":
+            print(validated_data["target_set"])
             # Set the new target set
             # Get the jobtype for mapping target reads
             job_type = JobType.objects.get(name="Other")
             # get the target set we need
             mapping_target = list(MappingTarget.objects.filter(target_set=validated_data["target_set"])
                                   .values_list("species", "name", "gff_line_type"))
-            # Only create one gene entry per species, by counting how many are created in this dictionary,
-            # doesn't really need to be a dict
-            counts_dict = {}
-            # Set to store unique species, target type ( gene or plasmid )
-            setty = set()
-            # Holding copy is a copy of the mapping targets, to append to below
-            holding_copy = mapping_target
-            # loop through references and create a job to map any that are only plasmid targets have
-            for target in mapping_target:
-                # Get unique types of gff regions for each species
-                setty.add((target[0], target[2]))
-                # If we don't have just for the reference but have one for a plasmid,
-                # add a new gene entry to holding copy
-                if (target[0], "gene") not in setty and (target[0], "", "gene") not in mapping_target:
-                    holding_copy.append((target[0], "", "gene"))
-            # Loop through and create the mapping job masters
-            for hold in holding_copy:
-                # Check to see whether we have a gene entry for this species in the dictionary, if we do skip
-                if (hold[0], hold[2]) not in counts_dict and hold[2] == "gene":
-                    counts_dict[(hold[0], hold[2])] = 1
-                elif (hold[0], hold[2]) in counts_dict and hold[2] == "gene":
-                    continue
-                # get the correct reference for that JobMaster
-                if hold[2] == "plasmid":
-                    refer = ReferenceInfo.objects.get(name=hold[0].replace(" ", "_") + "_" + hold[1])
-                else:
-                    refer = ReferenceInfo.objects.get(name=hold[0].replace(" ", "_"))
 
-                jm, created = JobMaster.objects.get_or_create(job_type=job_type, reference=refer,
-                                                     flowcell=validated_data["flowcell"],
-                                                     complete=True)
-                jm.save()
+            if mapping_target:
+                # Only create one gene entry per species, by counting how many are created in this dictionary,
+                # doesn't really need to be a dict
+                counts_dict = {}
+                # Set to store unique species, target type ( gene or plasmid )
+                setty = set()
+                # Holding copy is a copy of the mapping targets, to append to below
+                holding_copy = mapping_target
+                # loop through references and create a job to map any that are only plasmid targets have
+                for target in mapping_target:
+                    # Get unique types of gff regions for each species
+                    setty.add((target[0], target[2]))
+                    # If we don't have just for the reference but have one for a plasmid,
+                    # add a new gene entry to holding copy
+                    if (target[0], "gene") not in setty and (target[0], "", "gene") not in mapping_target:
+                        holding_copy.append((target[0], "", "gene"))
+                # Loop through and create the mapping job masters
+                for hold in holding_copy:
+                    # Check to see whether we have a gene entry for this species in the dictionary, if we do skip
+                    if (hold[0], hold[2]) not in counts_dict and hold[2] == "gene":
+                        counts_dict[(hold[0], hold[2])] = 1
+                    elif (hold[0], hold[2]) in counts_dict and hold[2] == "gene":
+                        continue
+                    # get the correct reference for that JobMaster
+                    if hold[2] == "plasmid":
+                        refer = ReferenceInfo.objects.get(name=hold[0].replace(" ", "_") + "_" + hold[1])
+                    else:
+                        refer = ReferenceInfo.objects.get(name=hold[0].replace(" ", "_"))
+
+                    jm, created = JobMaster.objects.get_or_create(job_type=job_type, reference=refer,
+                                                         flowcell=validated_data["flowcell"],
+                                                         complete=True)
+                    jm.save()
 
         return job_master

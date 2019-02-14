@@ -11,7 +11,7 @@ function addMetaBarcodeTabs(flowcellId, barcodes, tabs){
 
     for (var i = 0; i < sortedBarcodes.length; i++) {
 
-        var alertLevels = {0: "green-alert-tab", 1 : "yellow-alert-tab", 2 : "orange-alert-tab", 3 : "red-alert-tab"};
+        var alertLevels = {0: "green-alert-tab", 1 : "green-alert-tab", 2 : "orange-alert-tab", 3 : "red-alert-tab"};
 
         var li = document.createElement("li");
 
@@ -53,7 +53,10 @@ function addMetaBarcodeTabs(flowcellId, barcodes, tabs){
         if (sortedBarcodes[i] == selected_barcode) {
             li.classList.add("active");
         }
-        li.appendChild(a);
-        ul.appendChild(li);
+        console.log(sortedBarcodes[i]);
+        if (sortedBarcodes[i] !== "No"){
+            li.appendChild(a);
+            ul.appendChild(li);
+        }
     }
 }

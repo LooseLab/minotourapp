@@ -33,7 +33,9 @@
                         <div class="col-md-12">
                             <div class="box box-primary alert-table-simple">
                                 <div class="box-header text-center">
-                                    <h3 class="box-title">Target results</h3>
+                                    <h3 class="box-title">Target results &nbsp;</h3><i
+                                        class="fa fa-question-circle masterTooltip" tooltip="Alert table for the target species. <br/>
+                                        Threats move to the left after hitting a 99% confidence of absence at less than 1 in 50000."></i>
                                 </div>
                                 <div class="box-body">
                                     <div class="row">
@@ -69,7 +71,15 @@
                                     <div class="box box-primary alert-table-complex">
                                         <!--<div class="col-md-3" style="height: 100%;"></div>-->
                                         <div class="box-header text-center">
-                                            <h3 class="box-title">Alert watch</h3>
+                                            <h3 class="box-title">Alert watch &nbsp;</h3><i
+                                                class="fa fa-question-circle masterTooltip" tooltip="More information about the threat detection.<br/>
+                                                Num mapped is the number of reads that mapped to the reference, or plasmid reference.<br/>
+                                                Num matches is the number of reads centrifuge classified as this species.<br/>
+                                                Prop classified is the percentage of reads classified against the total number of classified reads.<br/>
+                                                Sum unique is the number of reads that Centrifuge only output one classification for.<br/>
+                                                Mapped prop total is the number of the reads that mapped against the reads classified as this threat.<br/>
+                                                Target Reads is the number of reads that we mapped to regions of concern on the reference.<br/>
+                                                Red prop. total is the number of target reads against the total number of mapped reads."></i>
                                         </div>
                                         <div class="box-body">
                                             <div class="row">
@@ -88,7 +98,8 @@
                                 <div class="col-md-3 ">
                                     <div class="box box-primary donut">
                                         <div class="box-header text-center">
-                                            <h3 class="box-title">Species Breakdown</h3>
+                                            <h3 class="box-title">Species Breakdown &nbsp;</h3><i
+                                                class="fa fa-question-circle masterTooltip" tooltip="Breakdown of the top ten species in the sample, by Centrifuge classifications"></i>
                                         </div>
                                         <div class="box-body donutContainer ">
 
@@ -140,7 +151,8 @@
                                 <div class="col-md-12 all-reads-table">
                                     <div class="box box-primary">
                                         <div class="box-header text-center">
-                                            <h3 class="box-title">All Results</h3>
+                                            <h3 class="box-title">All Results &nbsp;</h3><i
+                                                class="fa fa-question-circle masterTooltip" tooltip="All the compiled results for all the reads in the sample, sortable and searchable."></i>
                                         </div>
                                         <div class="box-body" style="">
 
@@ -185,4 +197,5 @@
                 </div>
             </div>
         </div>
+    </div>
 </section>

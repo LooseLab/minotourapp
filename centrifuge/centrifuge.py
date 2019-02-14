@@ -887,10 +887,9 @@ def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
     """
     # Merge the lineages dataframe onto the centrifuge output dataframe so each species has it's lineage
     data_df = pd.merge(df, lineages_df, left_on="tax_id", right_index=True)
+    data_df.fillna("Unclassified", inplace=True)
     # Set the index to a multi index of all 7 taxonomic ranks
     data_df.set_index(tax_rank_filter, inplace=True)
-
-    logger.info('Flowcell id: {} - Calculating donut data'.format(flowcell.id))
     # group the dataframe by barcode
     gb_bc = data_df.groupby("barcode_name")
     # Initialise a dataframe to add onto
@@ -995,9 +994,7 @@ def output_parser(task, new_data_df, donut_or_output, metadata):
         # If DonutData
     else:
         # last Iteration Donut data values
-
         parsed_data = DonutData.objects.filter(task=metagenomics_task, latest=task.iteration_count)
-        logger.info("Parsed data for donut {}".format(len(parsed_data)))
         # This is for a donut!
         donut = True
     # Create a dataframe of the previous values
@@ -1029,6 +1026,7 @@ def output_parser(task, new_data_df, donut_or_output, metadata):
             # Merge the lsat Iterations values with this Iterations values
             merged_data_df = pd.merge(parsed_data_df, new_data_df, how="outer",
                                       on=["barcode_name", "name", "tax_rank"])
+
         # Set the number of matches and sum_unique NaNs to 0, NaNs present where there were missing values
         values = {"num_matches_x": 0, "num_matches_y": 0, "sum_unique_x": 0, "sum_unique_y": 0}
         # Fill those NaNs with ) so we can combine the columns
@@ -1083,10 +1081,10 @@ def output_parser(task, new_data_df, donut_or_output, metadata):
 
         # The number of reads we have any form of classification for
         reads_classified = to_save_df[to_save_df["tax_id"].ne(0) & to_save_df["barcode_name"]
-                                      == "All reads"]["num_matches"].sum()
+            .eq("All reads")]["num_matches"].sum()
         # The number of reads we have completely failed to classify
         reads_unclassified = to_save_df[to_save_df["tax_id"].eq(0) & to_save_df["barcode_name"]
-                                        == "All reads"]["num_matches"].sum()
+            .eq("All reads")]["num_matches"].sum()
         # save the values
         metadata.classified = reads_classified
         metadata.unclassified = reads_unclassified
@@ -1103,7 +1101,6 @@ def output_parser(task, new_data_df, donut_or_output, metadata):
     else:
         # Create a series of DonutData objects, one for each row in the dataframe
         to_bulk_save_series = to_save_df.apply(create_donut_data_models, args=(task,), axis=1)
-        logger.info(to_bulk_save_series)
         # Bulk create all those objects in the series
         DonutData.objects.bulk_create(to_bulk_save_series.values.tolist(), batch_size=1000)
         logger.info(" Created donut data ")
