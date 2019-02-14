@@ -12,7 +12,7 @@ function draw_simple_table(flowcellId) {
     let tbody;
     let rows;
     let cells;
-    let columns = ["Status", "Not detected", "Detected"];
+    let columns = ["Status", "Not detected", "Potential threats", "Detected"];
     let data;
     let limit;
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
@@ -56,7 +56,7 @@ function draw_simple_table(flowcellId) {
                 return column;
             });
 
-        d3.select("#Not_detected").html("Not detected at 1 in " + limit + " reads");
+        d3.select("#Not_detected").html("99% confidence not detectable at 1 in " + limit + " reads");
         rows = tbody.selectAll('tr');
         rows
             .data(data)
@@ -80,7 +80,7 @@ function draw_simple_table(flowcellId) {
             return columns.map(function (column) {
                 return {
                     column, value: row[column], read_count: row.read_count,
-                    detected: row.Detected, species: row["Potential threats"], index: row.column_index,
+                    detected: row.Detected, species: row["Potential threats"],
                     conf_limit: row.conf_limit
                 };
             });
@@ -94,9 +94,12 @@ function draw_simple_table(flowcellId) {
             }
         }).html(
             function (d) {
-                if (d.column === "Not detected" && d.value === true) {
+                if (d.column === "Not detected" && d.detected === false && d.conf_limit >= 50000) {
                     return d.species;
-                } else if (d.column === "Detected" && d.detected === true) {
+                } else if (d.column === "Potential threats" && d.detected === false && d.conf_limit < 50000){
+                    return d.species;
+                }
+                else if (d.column === "Detected" && d.detected === true) {
                     return d.species;
                 }
             }

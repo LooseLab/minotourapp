@@ -10,8 +10,9 @@ from django.http import JsonResponse
 from django.db.models import Sum
 import pandas as pd
 from jobs.models import JobMaster
-from reads.models import Flowcell, FastqRead
+from reads.models import Flowcell
 import numpy as np
+import math
 
 pd.options.mode.chained_assignment = None
 
@@ -25,6 +26,22 @@ def alert_level(col):
     alert_levels = {"num_matches": 1, "num_mapped": 2, "red_reads": 3}
     series = np.where(col > 0, alert_levels[col.name], 0)
     return series
+
+
+def rounddown(x, sigfigs=1):
+    """
+    Round down to one significant figure
+    :param x: The number to round
+    :param sigfigs: The number of significant figures to round down to
+    :return:
+    """
+    # towards -inf
+    exponent = math.floor(math.log10(math.copysign(x,1))) #we don't want to accidentally try and get an
+    #  imaginary log (it won't work anyway)
+    mantissa = x/10**exponent #get full precision mantissa
+    # change floor here to ceil or round to round up or to zero
+    mantissa = math.floor(mantissa * 10**(sigfigs-1)) / 10**(sigfigs-1) #round mantissa to sigfigs
+    return int(mantissa * 10**exponent)
 
 
 @api_view(["GET"])
@@ -56,13 +73,20 @@ def centrifuge_metadata(request):
         return Response("No Metadata. This is not the task you are looking for....", status=404)
 
     print(job_master.flowcell.number_reads)
-
+    # Number of classified reads
+    reads_actually_classified = queryset.classified
+    # Number of unclassified reads
+    reads_not_classified = queryset.unclassified
     # get the number of reads
     number_of_reads = Flowcell.objects.get(pk=flowcell_id).number_reads
     # Get the read count
     reads_class = job_master.read_count
     # Percentage of reads classified
     percentage = round(reads_class / number_of_reads * 100, 2)
+    # Classified as a percentage
+    class_percent = round(reads_actually_classified / reads_class * 100, 2)
+    # Unclassified as a percentage
+    unclass_percent = round(reads_not_classified / reads_class * 100, 2)
     # Get the start time of the task, removing the timezone info
     start_time = queryset.start_time.replace(tzinfo=None)
     # Get the current time, removing the timezone info
@@ -77,9 +101,11 @@ def centrifuge_metadata(request):
         runtime = queryset.finish_time
 
     return_list = [{"key": "Reads Sequenced: ", "value": number_of_reads},
-                   {"key": "Reads Classified: ", "value": reads_class},
-                   {"key": "Classified: ", "value": str(percentage) + "%"},
-                   {"key": "Runtime: ", "value": runtime}]
+                   {"key": "Reads Analysed: ", "value": str(reads_class) + " (" + str(percentage) + "%)"},
+                   {"key": "Runtime: ", "value": runtime},
+                   {"key": "Reads Classifiable : ", "value": str(class_percent)+"%"},
+                   {"key": "Reads Unclassifiable : ", "value": str(unclass_percent)+"%"}]
+
     return Response(return_list)
 
 
@@ -252,20 +278,10 @@ def get_target_mapping(request):
     task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last().id
 
     # If the barcode is All reads, there is always four
-    if barcode == "All reads":
-        queryset = MappingResult.objects.filter(task__id=task_id, barcode_name=barcode).values()
-        results_df = pd.DataFrame(list(queryset))
-        if results_df.empty:
-            return Response("No data has yet been produced for the target mappings", status=204)
-
-    else:
-        # Get a line for all the targets
-        map_queryset = MappingResult.objects.filter(task__id=task_id, barcode_name=barcode).values()
-
-        if not map_queryset:
-            return Response("No data has yet been produced for the target mappings", status=204)
-        # Create a dataframe for this barcode
-        results_df = pd.DataFrame(list(map_queryset))
+    queryset = MappingResult.objects.filter(task__id=task_id, barcode_name=barcode).values()
+    results_df = pd.DataFrame(list(queryset))
+    if results_df.empty:
+        return Response("No data has yet been produced for the target mappings", status=204)
 
     results_df.rename(columns={"num_mapped": "Num. mapped",
                                "red_reads": "Target reads",
@@ -452,6 +468,13 @@ def simple_target_mappings(request):
 
     confidence_detection_limit = round(1 / (1 - pow(0.01, 1/number_species_identified)))
 
+    if confidence_detection_limit > 100000:
+        sig_fig = 2
+    else:
+        sig_fig = 1
+
+    confidence_detection_limit = rounddown(confidence_detection_limit, sig_fig)
+
     # If the barcode is All reads, there is always four
     queryset = MappingResult.objects.filter(task=task, barcode_name=barcode).values()
     results_df = pd.DataFrame(list(queryset))
@@ -470,6 +493,8 @@ def simple_target_mappings(request):
 
     results_df["read_count"] = task.read_count
 
+    results_df["conf_limit"] = confidence_detection_limit
+
     results_df.rename(columns={"num_mapped": "Num. mapped",
                                "red_reads": "Target reads",
                                "species": "Potential threats",
@@ -485,5 +510,10 @@ def simple_target_mappings(request):
 
 @api_view(["GET"])
 def get_target_sets(request):
+    """
+    Return the target sets for the dropdown menu on the tasks page
+    :param request: The django rest framework request object
+    :return: A list of the names of the objects
+    """
     target_sets = MappingTarget.objects.values_list("target_set", flat=True).distinct()
     return Response(target_sets)

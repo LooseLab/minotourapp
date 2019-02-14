@@ -82,7 +82,7 @@
     vertical-align: middle;
     display: table-cell;
 }
-#Not_detected{
+#Not_detected, #Potential_threats{
     border-left: 1px solid #f4f4f4;
     border-right: 1px solid #f4f4f4;
 }

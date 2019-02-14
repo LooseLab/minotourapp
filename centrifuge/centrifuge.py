@@ -126,7 +126,7 @@ def calculate_barcoded_values(barcode_group_df, barcode_df, classified_per_barco
     """
     Return the main cent output data frame with the barcode only result concatenated on
     :param barcode_group_df: The dataframe of one barcode after a group by on all the results
-    :param barcode_df: the main results data frame that will store the ouput of this function
+    :param barcode_df: the main results data frame that will store the output of this function
     :param classified_per_barcode: The number of classified reads in a barcode
     :return: A new df with the result for barcode appended
     """
@@ -293,6 +293,10 @@ def insert_new_lineages(ncbi, df, tax_rank_filter, flowcell):
     # merge new subspecies column with existing column
     lineages_df["subspecies"].fillna(lineages_df["subStrainSpecies"], inplace=True)
 
+    unclassified_row = {key: np.NaN for key in lineages_df.keys()}
+    row = pd.DataFrame(unclassified_row, index=[0])
+    lineages_df = lineages_df.append(row, sort=True)
+
     # delete the new subspecies column
     delete_series(["subStrainSpecies"], lineages_df)
 
@@ -383,7 +387,6 @@ def update_mapped_red_values(row, task):
     Update the values that we have in the database for each species after getting results for this iteration
     :param row: The results_df row
     :param task: The task model object
-    :param flowcell: The flowcell model object
     :return:
     """
     # Get the mapping result objects for this species
@@ -833,7 +836,7 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
 
     # For each row, update the red reads value for the mappingTargets entry for any species in the dataframe,
     #  in all reads barcode
-    results_df.apply(update_mapped_red_values, args=(task), axis=1)
+    results_df.apply(update_mapped_red_values, args=(task,), axis=1)
 
     # Barcoded red reads
     # Group by the name and the barcode, so split by each species and the barcode inside that split
@@ -851,7 +854,7 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
     # Drop duplicates so a species is unique inside each barcode
     results_df_bar.drop_duplicates(subset=["species", "barcode_name"], inplace=True)
     # Update the red reads value for the MappingTargets object for the species and barcodes inside this iteration
-    results_df_bar.apply(update_mapped_red_values, args=(task), axis=1)
+    results_df_bar.apply(update_mapped_red_values, args=(task,), axis=1)
 
 
 def create_donut_data_models(row, task):
@@ -922,7 +925,7 @@ def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
     donut_to_create_df = donut_df
 
     # Call output parser to insert the results dataframe
-    output_parser(task, donut_to_create_df, "donut")
+    output_parser(task, donut_to_create_df, "donut", None)
 
 
 def create_centrifuge_models(row, classified_per_barcode, first):
@@ -972,12 +975,13 @@ def create_centrifuge_models(row, classified_per_barcode, first):
                                 latest=row["latest"])
 
 
-def output_parser(task, new_data_df, donut_or_output):
+def output_parser(task, new_data_df, donut_or_output, metadata):
     """
     Parse the centrifuge output or Donut data, update the values and save into a site readable format
     :param task: The reference to the JobMaster for this metagenomics task
     :param new_data_df: The donut or CentrifugeOutput dataframe calculated this iteration
     :param donut_or_output: Whether the data type is DonutData or CentrifugeOutput
+    :param metadata:
     :return:
     """
 
@@ -1066,6 +1070,7 @@ def output_parser(task, new_data_df, donut_or_output):
     to_save_df["latest"] = new_iteration_count
 
     to_save_df["task"] = metagenomics_task
+
     # If this is for CentrifugeOutput
     if not donut:
         to_save_df["proportion_of_classified"] = to_save_df.apply(divd, args=(classed_per_barcode,), axis=1)
@@ -1075,6 +1080,16 @@ def output_parser(task, new_data_df, donut_or_output):
         to_save_df["proportion_of_classified"].fillna("Unclassified", inplace=True)
 
         to_save_df.fillna("Unclassified", inplace=True)
+
+        # The number of reads we have any form of classification for
+        reads_classified = to_save_df[to_save_df["tax_id"].ne(0)]["num_matches"].sum()
+        # The number of reads we have completely failed to classify
+        reads_unclassified = to_save_df[to_save_df["tax_id"].eq(0)]["num_matches"].sum()
+        # save the values
+        metadata.classified = reads_classified
+        metadata.unclassified = reads_unclassified
+        metadata.save()
+
         if parsed_data_df.empty:
             # Create a series of CentrifugeOutput objects, one for each row in the dataframe
             to_bulk_save_series = to_save_df.apply(create_centrifuge_models, args=(classed_per_barcode, True), axis=1)
@@ -1084,8 +1099,6 @@ def output_parser(task, new_data_df, donut_or_output):
         CentrifugeOutput.objects.bulk_create(to_bulk_save_series.values.tolist(), batch_size=1000)
     # If this is for a Donut
     else:
-        logger.info(to_save_df.head())
-        logger.info(to_save_df.keys())
         # Create a series of DonutData objects, one for each row in the dataframe
         to_bulk_save_series = to_save_df.apply(create_donut_data_models, args=(task,), axis=1)
         logger.info(to_bulk_save_series)
@@ -1333,6 +1346,7 @@ def run_centrifuge(flowcell_job_id):
     df.reset_index(inplace=True)
 
     df = df.drop_duplicates(keep="first")
+
     # Make this the results for all reads in the centrifuge output
     df["barcode_name"] = "All reads"
 
@@ -1364,7 +1378,7 @@ def run_centrifuge(flowcell_job_id):
     # Broadcast the taskobject down the dataframe
     cent_to_create_df["task"] = task
     # Parse that dataframe, and store the results, returning the new latest iteration count
-    new_latest = output_parser(task, cent_to_create_df, "output")
+    new_latest = output_parser(task, cent_to_create_df, "output", metadata)
     # Set the iteration count on the job master
     task.iteration_count = new_latest
     # Save the new value
