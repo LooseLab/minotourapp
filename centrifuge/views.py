@@ -102,9 +102,11 @@ def centrifuge_metadata(request):
 
     return_list = [{"key": "Reads Sequenced: ", "value": number_of_reads},
                    {"key": "Reads Analysed: ", "value": str(reads_class) + " (" + str(percentage) + "%)"},
-                   {"key": "Runtime: ", "value": runtime},
-                   {"key": "Reads Classifiable : ", "value": str(class_percent)+"%"},
-                   {"key": "Reads Unclassifiable : ", "value": str(unclass_percent)+"%"}]
+                   {"key": "Reads Classified: ", "value": str(reads_actually_classified) +
+                    " (" + str(class_percent)+"%)"},
+                   {"key": "Reads Unclassified: ", "value": str(reads_not_classified) +
+                    " (" + str(unclass_percent)+"%)"},
+                   {"key": "Runtime: ", "value": runtime}]
 
     return Response(return_list)
 
@@ -229,9 +231,9 @@ def donut_data(request):
     task = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last()
     # Initialise a dataframe
     results_df = pd.DataFrame()
-
+    # The tax rank filter is the taxonomic ranks in order
     tax_rank_filter = ["superkingdom", "phylum", "classy", "order", "family", "genus", "species"]
-
+    # Get the data for each tax rank, append it to the all results results_df
     for rank in tax_rank_filter:
         data_df = pd.DataFrame(
             list(DonutData.objects.filter(task=task, barcode_name=barcode, tax_rank=rank).values("name", "tax_rank")
@@ -240,22 +242,20 @@ def donut_data(request):
 
     if results_df.empty:
         return Response("No results", status=204)
-
-    results_df = results_df.rename(columns={"sum_value": "num_matches"})
-
-    results_df = results_df[["tax_rank", "name", "num_matches"]]
-
-    results_df = results_df.rename(columns={"name": "label", "num_matches": "value"})
-
+    # We only need this data
+    results_df = results_df[["tax_rank", "name", "sum_value"]]
+    # Rename the columns again
+    results_df = results_df.rename(columns={"name": "label", "sum_value": "value"})
+    # Error trap if there are NaNs
     results_df.fillna("Unclassified", inplace=True)
-
+    # Group the results into by their taxonomic rank
     gb = results_df.groupby("tax_rank")
-
+    # A return dictionary
     return_dict = {}
-
+    # Run through the groupby by group, adding the results to the dictionary
     for name, group in gb:
         return_dict[name] = group.to_dict(orient="records")
-
+    # Return the results
     return Response(return_dict, status=200)
 
 
@@ -311,6 +311,7 @@ def metagenomic_barcodes(request, pk):
     :return:
     """
     flowcell_list = Flowcell.objects.filter(owner=request.user).filter(id=pk)
+
     metagenomics_barcodes = []
 
     if flowcell_list.count() > 0:
@@ -346,7 +347,8 @@ def metagenomic_barcodes(request, pk):
     else:
 
         alert_level_results = {}
-
+    # Metagenomics barcodes is a list of the barcode_names found in this flowcell, tabs is the alert level 0-3,
+    #  3 being target found
     return Response({"data": metagenomics_barcodes, "tabs": alert_level_results})
 
 
@@ -494,6 +496,12 @@ def simple_target_mappings(request):
     results_df["read_count"] = task.read_count
 
     results_df["conf_limit"] = confidence_detection_limit
+
+    results_df["detected_at"] = np.floor(results_df["read_count"]/results_df["num_mapped"])
+
+    results_df.replace([np.inf, -np.inf], 0, inplace=True)
+
+    results_df["detected_at"].fillna(0, inplace=True)
 
     results_df.rename(columns={"num_mapped": "Num. mapped",
                                "red_reads": "Target reads",

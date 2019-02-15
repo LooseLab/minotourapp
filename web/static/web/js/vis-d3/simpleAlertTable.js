@@ -12,7 +12,7 @@ function draw_simple_table(flowcellId) {
     let tbody;
     let rows;
     let cells;
-    let columns = ["Status", "Not detected", "Potential threats", "Detected"];
+    let columns = ["Status", "Low risk", "Potential threats", "Detected"];
     let data;
     let limit;
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
@@ -25,7 +25,6 @@ function draw_simple_table(flowcellId) {
             d3.select(".alert-table-simple").remove();
             return;
         }
-        console.log(result);
         data = result.table;
         limit = result.conf_detect_limit;
         data.sort(compare);
@@ -56,7 +55,6 @@ function draw_simple_table(flowcellId) {
                 return column;
             });
 
-        d3.select("#Not_detected").html("99% confidence not detectable at 1 in " + limit + " reads");
         rows = tbody.selectAll('tr');
         rows
             .data(data)
@@ -76,12 +74,11 @@ function draw_simple_table(flowcellId) {
             .append('td');
         cells = rows.selectAll("td");
         cells.data(function (row) {
-            console.log(row);
             return columns.map(function (column) {
                 return {
                     column, value: row[column], read_count: row.read_count,
                     detected: row.Detected, species: row["Potential threats"],
-                    conf_limit: row.conf_limit
+                    conf_limit: row.conf_limit, detected_at: row.detected_at
                 };
             });
         }).attr("id", function (d, i) {
@@ -94,13 +91,16 @@ function draw_simple_table(flowcellId) {
             }
         }).html(
             function (d) {
-                if (d.column === "Not detected" && d.detected === false && d.conf_limit >= 50000) {
+                d3.select("#Potential threats").html("Potential threats");
+                if (d.column === "Low risk" && d.detected === false && d.conf_limit >= 50000) {
+                    d3.select("#Not_detected").html("Low risk, less than 1 in " + limit + " reads");
                     return d.species;
                 } else if (d.column === "Potential threats" && d.detected === false && d.conf_limit < 50000){
+                    d3.select("#Potential_threats").html("Potential threats (< 1 in " + limit + " reads)");
                     return d.species;
                 }
                 else if (d.column === "Detected" && d.detected === true) {
-                    return d.species;
+                    return d.species + " (1 in "+ d.detected_at + " reads)";
                 }
             }
         );

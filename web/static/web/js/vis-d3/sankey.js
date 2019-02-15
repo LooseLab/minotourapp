@@ -17,28 +17,11 @@ function draw(nodesObj, sankey, g, format, color, width) {
         .data(nodesObj.links)
         .enter().append("g")
         .style("mix-blend-mode", "multiply");
-    // append the linear gradients for the colour
-    // gradient = link.append("linearGradient")
-    //     .attr("id", function (d, i) {
-    //         return i;
-    //     })
-    //     .attr("gradientUnits", "userSpaceOnUse")
-    //     .attr("x1", d => d.source.x1)
-    //     .attr("x2", d => d.target.x0);
-    // // set the start colour for the gradient (0%)
-    // gradient.append("stop")
-    //     .attr("offset", "0%")
-    //     .attr("stop-color", d => color(d.path));
-    // // set the stop colour for the gradient (100%)
-    // gradient.append("stop")
-    //     .attr("offset", "100%")
-    //     .attr("stop-color", d => color(d.target.path));
 
     // append the path for the link to rhe SVG
     link.append("path")
         .attr("d", d3.sankeyLinkHorizontal())
         .attr("stroke", function (d, i) {
-            // return "url(#" + i + ")";
             return color(d.path);
         })
         .attr("stroke-width", d => Math.max(0.5, d.width));
