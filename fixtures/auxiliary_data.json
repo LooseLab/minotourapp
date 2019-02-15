@@ -137,7 +137,7 @@
     "reference": true,
     "transcriptome": true,
     "readcount": true,
-    "private": false
+    "private": true
   }
 },
 {
@@ -150,7 +150,7 @@
     "reference": false,
     "transcriptome": false,
     "readcount": false,
-    "private": false
+    "private": true
   }
 },
 {
@@ -163,7 +163,7 @@
     "reference": false,
     "transcriptome": false,
     "readcount": false,
-    "private": false
+    "private": true
   }
 },
 {
@@ -202,16 +202,16 @@
     "reference": false,
     "transcriptome": false,
     "readcount": false,
-    "private": false
+    "private": true
   }
 },
 {
   "model": "jobs.jobtype",
   "pk": 13,
   "fields": {
-    "name": "CalculateMetagenomicsSankey",
-    "description": "Calculate Metagenomics Sankey",
-    "long_description": "Calculate A sankey diagram showing the lineages for the top 30 species in the sample on demand",
+    "name": "CalculateSankey",
+    "description": "Calculate Sankey",
+    "long_description": "Calculate the sankey diagram on demand",
     "reference": false,
     "transcriptome": false,
     "readcount": false,
@@ -395,6 +395,32 @@
     "filename": "Yersinia_pestis.fna",
     "minimap2_index_file_location": "Yersinia_pestis.fna.mmi",
     "length": 4829855,
+    "private": false,
+    "transcripts": false,
+    "users": []
+  }
+},
+{
+  "model": "reference.referenceinfo",
+  "pk": 14,
+  "fields": {
+    "name": "Test",
+    "filename": "Test.fa.gz",
+    "minimap2_index_file_location": "Test.fa.gz.mmi",
+    "length": 4641652,
+    "private": false,
+    "transcripts": false,
+    "users": []
+  }
+},
+{
+  "model": "reference.referenceinfo",
+  "pk": 15,
+  "fields": {
+    "name": "Test2",
+    "filename": "Test2.fa",
+    "minimap2_index_file_location": "Test2.fa.mmi",
+    "length": 4641652,
     "private": false,
     "transcripts": false,
     "users": []
@@ -4673,6 +4699,164 @@
     "reference": 13,
     "line_name": "NC_003132.1",
     "chromosome_length": 9612
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 476,
+  "fields": {
+    "reference": 14,
+    "line_name": "NC_000913.3a",
+    "chromosome_length": 699930
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 477,
+  "fields": {
+    "reference": 14,
+    "line_name": "NC_000913.3b",
+    "chromosome_length": 1749930
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 478,
+  "fields": {
+    "reference": 14,
+    "line_name": "NC_000913.3c",
+    "chromosome_length": 2191792
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 479,
+  "fields": {
+    "reference": 15,
+    "line_name": "NC_000913.3a",
+    "chromosome_length": 699930
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 480,
+  "fields": {
+    "reference": 15,
+    "line_name": "NC_000913.3b",
+    "chromosome_length": 1749930
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 481,
+  "fields": {
+    "reference": 15,
+    "line_name": "NC_000913.3c",
+    "chromosome_length": 2191792
+  }
+},
+{
+  "model": "centrifuge.mappingtarget",
+  "pk": 1,
+  "fields": {
+    "species": "Bacillus anthracis",
+    "tax_id": 1392,
+    "target_set": "starting_defaults",
+    "start": 0,
+    "end": 96270,
+    "name": "pX02",
+    "gff_line_type": "plasmid"
+  }
+},
+{
+  "model": "centrifuge.mappingtarget",
+  "pk": 2,
+  "fields": {
+    "species": "Bacillus anthracis",
+    "tax_id": 1392,
+    "target_set": "starting_defaults",
+    "start": 0,
+    "end": 185000,
+    "name": "pX01",
+    "gff_line_type": "plasmid"
+  }
+},
+{
+  "model": "centrifuge.mappingtarget",
+  "pk": 3,
+  "fields": {
+    "species": "Clostridium botulinum",
+    "tax_id": 1491,
+    "target_set": "starting_defaults",
+    "start": 909768,
+    "end": 913549,
+    "name": "btoxA",
+    "gff_line_type": "gene"
+  }
+},
+{
+  "model": "centrifuge.mappingtarget",
+  "pk": 4,
+  "fields": {
+    "species": "Francisella tularensis",
+    "tax_id": 263,
+    "target_set": "starting_defaults",
+    "start": 1379925,
+    "end": 1405040,
+    "name": "FPI",
+    "gff_line_type": "gene"
+  }
+},
+{
+  "model": "centrifuge.mappingtarget",
+  "pk": 5,
+  "fields": {
+    "species": "Yersinia pestis",
+    "tax_id": 632,
+    "target_set": "starting_defaults",
+    "start": 255039,
+    "end": 273457,
+    "name": "TTSS",
+    "gff_line_type": "gene"
+  }
+},
+{
+  "model": "centrifuge.mappingtarget",
+  "pk": 6,
+  "fields": {
+    "species": "Yersinia pestis",
+    "tax_id": 632,
+    "target_set": "starting_defaults",
+    "start": 2137385,
+    "end": 2171362,
+    "name": "HPI",
+    "gff_line_type": "gene"
+  }
+},
+{
+  "model": "centrifuge.mappingtarget",
+  "pk": 7,
+  "fields": {
+    "species": "Yersinia pestis",
+    "tax_id": 632,
+    "target_set": "starting_defaults",
+    "start": 0,
+    "end": 97632,
+    "name": "pMT1",
+    "gff_line_type": "plasmid"
+  }
+},
+{
+  "model": "centrifuge.mappingtarget",
+  "pk": 8,
+  "fields": {
+    "species": "Yersinia pestis",
+    "tax_id": 632,
+    "target_set": "starting_defaults",
+    "start": 0,
+    "end": 9798,
+    "name": "pPCP1",
+    "gff_line_type": "plasmid"
   }
 }
 ]
