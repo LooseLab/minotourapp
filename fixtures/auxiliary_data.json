@@ -137,7 +137,7 @@
     "reference": true,
     "transcriptome": true,
     "readcount": true,
-    "private": false
+    "private": true
   }
 },
 {
@@ -150,7 +150,7 @@
     "reference": false,
     "transcriptome": false,
     "readcount": false,
-    "private": false
+    "private": true
   }
 },
 {
@@ -163,7 +163,7 @@
     "reference": false,
     "transcriptome": false,
     "readcount": false,
-    "private": false
+    "private": true
   }
 },
 {
@@ -202,16 +202,16 @@
     "reference": false,
     "transcriptome": false,
     "readcount": false,
-    "private": false
+    "private": true
   }
 },
 {
   "model": "jobs.jobtype",
   "pk": 13,
   "fields": {
-    "name": "CalculateMetagenomicsSankey",
-    "description": "Calculate Metagenomics Sankey",
-    "long_description": "Calculate A sankey diagram showing the lineages for the top 30 species in the sample on demand",
+    "name": "CalculateSankey",
+    "description": "Calculate Sankey",
+    "long_description": "Calculate the sankey diagram on demand",
     "reference": false,
     "transcriptome": false,
     "readcount": false,
@@ -4544,5 +4544,60 @@
     "line_name": "NC_003132.1",
     "chromosome_length": 9612
   }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 476,
+  "fields": {
+    "reference": 14,
+    "line_name": "NC_000913.3a",
+    "chromosome_length": 699930
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 477,
+  "fields": {
+    "reference": 14,
+    "line_name": "NC_000913.3b",
+    "chromosome_length": 1749930
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 478,
+  "fields": {
+    "reference": 14,
+    "line_name": "NC_000913.3c",
+    "chromosome_length": 2191792
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 479,
+  "fields": {
+    "reference": 15,
+    "line_name": "NC_000913.3a",
+    "chromosome_length": 699930
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 480,
+  "fields": {
+    "reference": 15,
+    "line_name": "NC_000913.3b",
+    "chromosome_length": 1749930
+  }
+},
+{
+  "model": "reference.referenceline",
+  "pk": 481,
+  "fields": {
+    "reference": 15,
+    "line_name": "NC_000913.3c",
+    "chromosome_length": 2191792
+  }
 }
+
 ]
