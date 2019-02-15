@@ -20,7 +20,7 @@ function drawPieTables(countedData, color) {
             "Species": countedData[i]["label"],
             "# Matches": countedData[i]["value"],
             "Rank": i + 1,
-            "Key": color(countedData[i]["label"])
+            "Key": color(i)
         };
         tableData.push(obj);
     }
@@ -116,9 +116,7 @@ function drawTables(selection, dataToDraw) {
         cells = rows.selectAll('td');
         cells.data(function (row) {
             return columns.map(function (column) {
-                // if (column !== "Key"){
                 return {column: column, value: row[column]};
-                // }
             });
         }).attr("class", function (d, i) {
             return columns[i];

@@ -4401,15 +4401,7 @@
     "chromosome_length": 132244
   }
 },
-{
-  "model": "reference.referenceline",
-  "pk": 460,
-  "fields": {
-    "reference": 4,
-    "line_name": "NC_003997.3",
-    "chromosome_length": 5227293
-  }
-},
+
 {
   "model": "reference.referenceline",
   "pk": 461,
@@ -4439,15 +4431,6 @@
 },
 {
   "model": "reference.referenceline",
-  "pk": 464,
-  "fields": {
-    "reference": 6,
-    "line_name": "NC_009495.1",
-    "chromosome_length": 3886916
-  }
-},
-{
-  "model": "reference.referenceline",
   "pk": 465,
   "fields": {
     "reference": 6,
@@ -4457,65 +4440,11 @@
 },
 {
   "model": "reference.referenceline",
-  "pk": 466,
-  "fields": {
-    "reference": 7,
-    "line_name": "NC_006570.2",
-    "chromosome_length": 1892775
-  }
-},
-{
-  "model": "reference.referenceline",
-  "pk": 467,
-  "fields": {
-    "reference": 8,
-    "line_name": "NC_007322.2",
-    "chromosome_length": 181677
-  }
-},
-{
-  "model": "reference.referenceline",
-  "pk": 468,
-  "fields": {
-    "reference": 9,
-    "line_name": "NC_007323.3",
-    "chromosome_length": 94830
-  }
-},
-{
-  "model": "reference.referenceline",
-  "pk": 469,
-  "fields": {
-    "reference": 10,
-    "line_name": "AL117211.1",
-    "chromosome_length": 96210
-  }
-},
-{
-  "model": "reference.referenceline",
-  "pk": 470,
-  "fields": {
-    "reference": 11,
-    "line_name": "AL109969.1",
-    "chromosome_length": 9612
-  }
-},
-{
-  "model": "reference.referenceline",
   "pk": 471,
   "fields": {
     "reference": 12,
     "line_name": "NC_003997.3",
     "chromosome_length": 5227293
-  }
-},
-{
-  "model": "reference.referenceline",
-  "pk": 472,
-  "fields": {
-    "reference": 13,
-    "line_name": "NC_003143.1",
-    "chromosome_length": 4653728
   }
 },
 {
@@ -4599,5 +4528,4 @@
     "chromosome_length": 2191792
   }
 }
-
 ]

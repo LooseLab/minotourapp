@@ -1,4 +1,5 @@
 "use strict";
+// function actually totally unrelated to the donut, does the tooltips for the help icons
 d3.selectAll(".masterTooltip").on("mouseover", function () {
     var text = d3.select(this).attr("tooltip");
     var tooltip = d3.select("body")
@@ -12,7 +13,7 @@ d3.selectAll(".masterTooltip").on("mouseover", function () {
 }).on("mouseout", function (d) {
         d3.select(".toolTip").remove("*");
     });
-
+// Changes the hide data button to show hide based on click
 $('#expand-button').click(function () {
     $(this).text(function (i, old) {
         return old == 'Expand data' ? 'Hide data' : 'Expand data';
@@ -35,8 +36,8 @@ function drawPie(countedData, pie, arc, svg) {
     //enter your data, returned from pie(countedData, insert a path, set d to data provided by arc function)
     // Update existing donut slices
     slice.attr("class", "slice")
-        .style("fill", function (d) {
-            return color(d.data.label);
+        .style("fill", function (d, i) {
+            return color(i);
         })
         .attr("stroke", "black")
         .attr("stroke-width", 0.2)
