@@ -210,6 +210,10 @@ class MappingTarget(models.Model):
 
     gff_line_type = models.CharField(default="gene", max_length=100)
 
+    user_id = models.IntegerField(blank=True, null=True)
+
+    private = models.BooleanField(default=False)
+
     def __str__(self):
         return "{} {} {}-{} {}".format(self.species, self.target_set, self.start, self.end, self.gff_line_type)
 

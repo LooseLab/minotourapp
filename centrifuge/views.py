@@ -13,7 +13,7 @@ from jobs.models import JobMaster
 from reads.models import Flowcell
 import numpy as np
 import math
-
+from rest_framework.authtoken.models import Token
 pd.options.mode.chained_assignment = None
 
 
@@ -523,5 +523,17 @@ def get_target_sets(request):
     :param request: The django rest framework request object
     :return: A list of the names of the objects
     """
-    target_sets = MappingTarget.objects.values_list("target_set", flat=True).distinct()
+
+    cli = request.GET.get("cli", False)
+    print(request.user.id)
+    if cli:
+        api_key = request.GET.get("api_key", False)
+        if not api_key:
+            return Response("The API key is needed to list the Target sets", status=403)
+        else:
+            user_id = Token.objects.get(key=api_key).user_id
+
+    else:
+        user_id = request.user.id
+    target_sets = MappingTarget.objects.filter(user_id=user_id).values_list("target_set", flat=True).distinct()
     return Response(target_sets)
