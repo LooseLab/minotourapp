@@ -9,6 +9,7 @@ from jobs.serializers import JobMasterSerializer, JobMasterInsertSerializer
 from reads.models import Run
 from reference.models import ReferenceInfo
 from web.forms import TaskForm
+from reads.models import Flowcell
 
 
 @api_view(["GET", "POST"])
@@ -36,9 +37,13 @@ def task_list(request):
             return JsonResponse({"data": []})
 
     else:
-        if request.data["job_type"] == "10":
+        if request.data["job_type"] == "10" and not request.data["targets"]:
             request.data["target_set"] = request.data["reference"]
             request.data["reference"] = None
+
+        if type(request.data["flowcell"]) is str:
+            flowcell = Flowcell.objects.get(name=request.data["flowcell"])
+            request.data["flowcell"] = flowcell.id
 
         serializer = JobMasterInsertSerializer(data=request.data)
         if serializer.is_valid():
@@ -57,7 +62,13 @@ def task_list(request):
 
 @api_view(['GET'])
 def task_types_list(request):
-    queryset = JobType.objects.filter(private=False)
+
+    if request.GET.get("cli", False):
+        tasks = ["Metagenomics", "Assembly", "Minimap2"]
+        queryset = JobType.objects.filter(name__in=tasks)
+    else:
+        queryset = JobType.objects.filter(private=False)
+
     result = []
 
     for record in queryset:
