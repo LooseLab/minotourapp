@@ -12,7 +12,7 @@ function draw_simple_table(flowcellId) {
     let tbody;
     let rows;
     let cells;
-    let columns = ["Status", "Low risk", "Potential threats", "Detected"];
+    let columns = ["Status", "Low probability", "Potential threats", "Detected"];
     let data;
     let limit;
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
