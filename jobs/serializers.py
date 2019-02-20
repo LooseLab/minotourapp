@@ -1,5 +1,4 @@
 from rest_framework import serializers
-
 from jobs.models import JobMaster, JobType
 from centrifuge.models import MappingTarget, CentrifugeOutput
 from reference.models import ReferenceInfo
@@ -49,6 +48,7 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         """
         Check that reference exists if type is Minimap2
         """
+
         if data['job_type'].id == 4 and data['reference'] is None:
 
             raise serializers.ValidationError("Reference is mandatory for task Minimap2")
@@ -60,7 +60,6 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         # If there's a target set
         if data["job_type"].id == 10:
             data["reference"] = None
-            data["target_set"] = MappingTarget.objects.values_list("target_set", flat=True).distinct()[0]
 
         if data["job_type"].id == 13:
             metagenomics_task = JobMaster.objects.filter(
@@ -86,13 +85,15 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         job_master.save()
         # If we have created a new job and it's a metagenomics job
         if created and validated_data["job_type"].name == "Metagenomics":
-            print(validated_data["target_set"])
             # Set the new target set
             # Get the jobtype for mapping target reads
             job_type = JobType.objects.get(name="Other")
             # get the target set we need
-            mapping_target = list(MappingTarget.objects.filter(target_set=validated_data["target_set"])
-                                  .values_list("species", "name", "gff_line_type"))
+            if "target_set" in validated_data.keys():
+                mapping_target = list(MappingTarget.objects.filter(target_set=validated_data["target_set"])
+                                      .values_list("species", "name", "gff_line_type"))
+            else:
+                mapping_target = None
 
             if mapping_target:
                 # Only create one gene entry per species, by counting how many are created in this dictionary,
