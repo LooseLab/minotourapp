@@ -601,11 +601,3 @@ class FlowcellSummaryBarcodeSerializer(serializers.ModelSerializer):
         )
 
         read_only = ('id',)
-
-
-
-class FlowcellTabSerializer(serializers.ModelSerializer):
-
-    class Meta:
-         model = FlowcellTab
-         fields = '__all__'
