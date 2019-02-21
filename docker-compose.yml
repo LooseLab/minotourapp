@@ -1,25 +1,25 @@
 version: '3'
 
 services:
-    minotour_db:
-        build:
-            dockerfile: dockerfile-db
-            context: .
-        container_name: minotour_db
-        networks:
-            - production-network
-        ports:
-            - "5432:5432"
     minotour_redis:
         image: redis
         container_name: minotour_redis
         networks:
             - production-network
-        expose:
-            - 6379
+
+    minotour_db:
+        build:
+            dockerfile: docker/db.dockerfile
+            context: .
+        container_name: minotour_db
+        networks:
+            - production-network
+        volumes:
+            - ./db_data_dir:/var/lib/mysql
+
     web:
         build:
-            dockerfile: dockerfile-web
+            dockerfile: docker/web.dockerfile
             context: .
         ports:
             - 10000:8000
@@ -28,8 +28,8 @@ services:
         depends_on:
             - minotour_db
             - minotour_redis
-#        volumes:
-#            - "d:/test:/var/lib/minotour/apps/minotourapp"
+        volumes:
+            - .:/var/lib/minotour/apps/minotourapp
 #    minimap2:
 #        build:
 #            dockerfile: minimap2.dockerfile

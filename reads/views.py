@@ -3,6 +3,8 @@ import json
 from datetime import timedelta
 
 import dateutil.parser
+import numpy as np
+import pandas as pd
 from celery import task
 from celery.utils.log import get_task_logger
 from dateutil import parser
@@ -16,18 +18,18 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from django.contrib.auth.decorators import login_required
 
 from alignment.models import PafRoughCov
-from centrifuge.models import CentrifugeOutput
 from assembly.models import GfaStore
+from centrifuge.models import CentrifugeOutput
 from jobs.models import JobMaster, JobType
 from minotourapp import settings
 from reads.models import (Barcode, FastqFile, FastqRead, FastqReadType,
                           MinIONControl, MinIONEvent,
                           MinIONEventType, MinionMessage, MinIONRunStats,
                           MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun, FlowcellStatisticBarcode,
-                          FlowcellSummaryBarcode, Flowcell, MinION, FlowcellTab, RunSummary)
+                          FlowcellSummaryBarcode, Flowcell, MinION, RunSummary)
 from reads.models import FlowcellChannelSummary
 from reads.models import FlowcellHistogramSummary
 from reads.serializers import (BarcodeSerializer,
@@ -43,14 +45,11 @@ from reads.serializers import (BarcodeSerializer,
                                RunSerializer,
                                RunStatisticBarcodeSerializer,
                                RunSummaryBarcodeSerializer, ChannelSummary, RunStatisticBarcode, RunSummaryBarcode,
-                               GroupRunSerializer, FlowcellSummaryBarcodeSerializer, FastqReadGetSerializer,
-                               FlowcellTabSerializer)
+                               GroupRunSerializer, FlowcellSummaryBarcodeSerializer, FastqReadGetSerializer)
 from reads.utils import get_coords
 
-import pandas as pd
-import numpy as np
-
 logger = get_task_logger(__name__)
+
 
 @api_view(['GET'])
 def read_type_list(request):
@@ -994,6 +993,7 @@ def flowcell_summary_barcode(request, pk):
 
     return Response(serializer.data)
 
+
 def process_summary_data(df):
     """
     This function expects a total_length, read_count and quality_sum in the dataframe.
@@ -1011,8 +1011,7 @@ def process_summary_data(df):
     return(df)
 
 
-
-
+@login_required
 def flowcell_summary_html(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)
@@ -1113,6 +1112,7 @@ def flowcell_statistics(request, pk):
 
     return HttpResponse(json.dumps(res, cls=DjangoJSONEncoder), content_type="application/json")
 
+
 @api_view(['get'])
 def flowcell_speed(request,pk):
 
@@ -1157,7 +1157,6 @@ def flowcell_speed(request,pk):
         df.reset_index(level=1, drop=True,inplace=True)
 
     return Response(df['mean_speed'].to_json(orient="columns"))
-
 
 
 @api_view(['GET'])
@@ -1816,9 +1815,10 @@ def barcode_list_new(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['GET'])
 def version(request):
 
-    version = {
+    resp = {
         'server': '1.0',
         'clients': [
             '1.0'
@@ -1828,15 +1828,4 @@ def version(request):
         ]
     }
 
-    return HttpResponse(json.dumps(version), content_type="application/json")
-
-
-class FlowcellTabList(APIView):
-
-    def get(self, request, pk):
-
-        flowcell_tab_list = FlowcellTab.objects.all()
-
-        data = FlowcellTabSerializer(flowcell_tab_list, many=True).data
-
-        return Response(data)
+    return HttpResponse(json.dumps(resp), content_type="application/json")
