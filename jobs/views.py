@@ -37,8 +37,10 @@ def task_list(request):
             return JsonResponse({"data": []})
 
     else:
+        print(request.data.keys())
         print(request.data)
-        if request.data["job_type"] == "10" and "targets" not in request.data.keys():
+        if request.data["job_type"] == "10" and "target_set" not in request.data.keys():
+            print("if")
             request.data["target_set"] = request.data["reference"]
             request.data["reference"] = None
 
@@ -49,6 +51,7 @@ def task_list(request):
             except Flowcell.DoesNotExist as e:
                 print("Excpetion: {}".format(e))
                 pass
+        print(request.data)
         serializer = JobMasterInsertSerializer(data=request.data)
         if serializer.is_valid():
             task = serializer.save()

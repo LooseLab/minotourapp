@@ -41,14 +41,16 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         fields = (
             "job_type",
             "flowcell",
-            "reference"
+            "reference",
+            "target_set"
         )
 
     def validate(self, data):
         """
         Check that reference exists if type is Minimap2
         """
-
+        print("val;idate")
+        print(data)
         if data['job_type'].id == 4 and data['reference'] is None:
 
             raise serializers.ValidationError("Reference is mandatory for task Minimap2")
@@ -81,6 +83,7 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         """
 
         # Create a JobMaster
+        print(validated_data)
         job_master, created = JobMaster.objects.get_or_create(**validated_data)
         job_master.save()
         # If we have created a new job and it's a metagenomics job
@@ -94,7 +97,7 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
                                       .values_list("species", "name", "gff_line_type"))
             else:
                 mapping_target = None
-
+            print(mapping_target)
             if mapping_target:
                 # Only create one gene entry per species, by counting how many are created in this dictionary,
                 # doesn't really need to be a dict
