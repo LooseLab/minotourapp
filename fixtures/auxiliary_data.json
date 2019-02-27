@@ -129,19 +129,6 @@
 },
 {
   "model": "jobs.jobtype",
-  "pk": 7,
-  "fields": {
-    "name": "Minimap2_trans",
-    "description": "Transcriptome Mapping",
-    "long_description": "You can use minimap2 to map your reads against a reference set of transcripts available on this minoTour server. Please note that all secondary mappings are suppressed. We also use the default map-ont parameter as we are mapping to a transcriptome collection, not a genome.",
-    "reference": true,
-    "transcriptome": true,
-    "readcount": true,
-    "private": true
-  }
-},
-{
-  "model": "jobs.jobtype",
   "pk": 8,
   "fields": {
     "name": "ExportLive",
