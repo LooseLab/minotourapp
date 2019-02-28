@@ -19,21 +19,23 @@ def create_sankeylink_models(row):
     return SankeyLink(source=row["source"],
                       target=row["target"],
                       tax_id=row["tax_id"],
-                      task=row["job_master"],
+                      task=row["task"],
+                      sankey_task=row["sankey_task"],
                       target_tax_level=row["target_tax_level"],
                       value=row["value"],
                       barcode_name=row["barcode_name"],
                       path=row["path"])
 
 
-def calculate_sankey_values(lineages_df, flowcell, tax_rank_filter, metagenomics_task, barcode):
+def calculate_sankey_values(lineages_df, flowcell, tax_rank_filter, metagenomics_task, sankey_task, barcode_name):
     """
     Calculate the values for the sankey diagram and save them into the database.
     :param lineages_df: A dataframe of lineages created from the current centrifuge output
     :param flowcell: The flowcell for these reads
     :param tax_rank_filter: The taxonomic ranks in descending order
     :param metagenomics_task: The task object relating to this metagenomics analysis
-    :param barcode: The barcode that tjis sankey linkes object is running on
+    :param sankey_task: The task object relating to this sankey creation job
+    :param barcode_name: The barcode we are running this for
     :return:
     """
     # ##############  Storing snakey links and nodes ################
@@ -103,7 +105,9 @@ def calculate_sankey_values(lineages_df, flowcell, tax_rank_filter, metagenomics
     logger.info(source_target_df)
 
     # Create a series of Job_master objects through broadcasting
-    source_target_df["job_master"] = metagenomics_task
+    source_target_df["task"] = metagenomics_task
+    # Broadcast the the job_master object down the dataframe for this job
+    source_target_df["sankey_task"] = sankey_task
 
     logger.info("Flowcell id: {} - Barcodes are:".format(flowcell.id))
     logger.info(source_target_df["barcode_name"].unique())
@@ -111,7 +115,7 @@ def calculate_sankey_values(lineages_df, flowcell, tax_rank_filter, metagenomics
     # TODO DO sorting magic before the database deposition
     # Create a dataframe of the previous results for this metagenomics task
 
-    previous = SankeyLink.objects.filter(task=metagenomics_task, barcode_name=barcode)
+    previous = SankeyLink.objects.filter(task=metagenomics_task, barcode_name=barcode_name)
     if previous:
         previous.delete()
     # If there no results, i.e this is the first iteration
@@ -157,7 +161,7 @@ def calculate_sankey(flowcell_job_id):
         df.rename(columns={"classy": "class"}, inplace=True)
         logger.info(df.head())
 
-        calculate_sankey_values(df, flowcell, tax_rank_filter, metagenomics_task, barcode)
+        calculate_sankey_values(df, flowcell, tax_rank_filter, metagenomics_task, task, barcode)
     task.running = False
     task.complete = True
     task.save()

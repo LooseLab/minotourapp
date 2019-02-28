@@ -1,5 +1,24 @@
 "use strict";
-
+// function actually totally unrelated to the donut, does the tooltips for the help icons
+d3.selectAll(".masterTooltip").on("mouseover", function () {
+    var text = d3.select(this).attr("tooltip");
+    var tooltip = d3.select("body")
+        .append("div")
+        .attr("class", "toolTip");
+    tooltip
+        .style("left", d3.event.pageX + 25 + "px")
+        .style("top", d3.event.pageY - 25 + "px")
+        .style("display", "inline-block")
+        .html(text);
+}).on("mouseout", function (d) {
+        d3.select(".toolTip").remove("*");
+    });
+// Changes the hide data button to show hide based on click
+$('#expand-button').click(function () {
+    $(this).text(function (i, old) {
+        return old == 'Expand data' ? 'Hide data' : 'Expand data';
+    });
+});
 
 // The panning and zooming function, called when you apply a call of zoom to the svg on initialisation
 function move() {
@@ -17,8 +36,8 @@ function drawPie(countedData, pie, arc, svg) {
     //enter your data, returned from pie(countedData, insert a path, set d to data provided by arc function)
     // Update existing donut slices
     slice.attr("class", "slice")
-        .style("fill", function (d) {
-            return color(d.data.label);
+        .style("fill", function (d, i) {
+            return color(i);
         })
         .attr("stroke", "black")
         .attr("stroke-width", 0.2)
@@ -46,7 +65,7 @@ function drawPie(countedData, pie, arc, svg) {
 function drawDonut(flowCellId) {
     let selectedBarcode = get_selected_barcode();
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
-    if(flowcell_selected_tab_input.value !== "nav-metagenomics"){
+    if (flowcell_selected_tab_input.value !== "nav-metagenomics") {
         return;
     }
     // setup the donut chart
@@ -55,11 +74,11 @@ function drawDonut(flowCellId) {
     // the taxa titles we wish to display under the slider
     let DisplayTaxas = ["Species", "Genus", "Family", "Order", "Class", "Phylum", "Kingdom"];
     // Calculate the width
-    let width = ($(window).width() *0.25) -50;
+    let width = ($(window).width() * 0.25) - 50;
     // Calculate the height
-    let height = $(window).height() * 0.35,
+    let height = $(window).height() * 0.27,
         // the radius, the smallest of the width and height /2 so it fits in hte svg
-        radius = Math.min(width, height)/2;
+        radius = Math.min(width, height) / 2;
     // The d3 zoom function
     let zoom = d3.zoom()
         .scaleExtent([1, 10]).translateExtent([[0, 0], [width, height]])
@@ -78,7 +97,7 @@ function drawDonut(flowCellId) {
         });
     // arc is a d3 function that generates arc paths from the data provided from d3.pie
     let arc = d3.arc()
-        // \The inner and outer radius of the actual donut slices
+    // \The inner and outer radius of the actual donut slices
         .innerRadius(radius * 0.8)
         .outerRadius(radius * 0.5)
         .padAngle(0.02);
@@ -115,8 +134,8 @@ function drawDonut(flowCellId) {
             svg.select(".badCopNoDonut").selectAll("*").remove();
             svg.append("text").text("No data to display").attr("text-anchor", "middle").attr("x", "50%").attr("y", "50%");
             return;
-        } else if (result.species === undefined){
-                        console.log("no data");
+        } else if (result.species === undefined) {
+            console.log("no data");
 
             svg.select(".badCopNoDonut").selectAll("*").remove();
             svg.select(".badCopNoDonut").append("text").text("No data to display").attr("text-anchor", "middle").attr("x", "50%").attr("y", "50%");

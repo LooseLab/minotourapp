@@ -9,6 +9,7 @@ from jobs.serializers import JobMasterSerializer, JobMasterInsertSerializer
 from reads.models import Run
 from reference.models import ReferenceInfo
 from web.forms import TaskForm
+from reads.models import Flowcell
 
 
 @api_view(["GET", "POST"])
@@ -36,10 +37,21 @@ def task_list(request):
             return JsonResponse({"data": []})
 
     else:
-        if request.data["job_type"] == "10":
+        print(request.data.keys())
+        print(request.data)
+        if request.data["job_type"] == "10" and "target_set" not in request.data.keys():
+            print("if")
             request.data["target_set"] = request.data["reference"]
             request.data["reference"] = None
 
+        if type(request.data["flowcell"]) is str:
+            try:
+                flowcell = Flowcell.objects.get(name=request.data["flowcell"])
+                request.data["flowcell"] = flowcell.id
+            except Flowcell.DoesNotExist as e:
+                print("Excpetion: {}".format(e))
+                pass
+        print(request.data)
         serializer = JobMasterInsertSerializer(data=request.data)
         if serializer.is_valid():
             task = serializer.save()
@@ -57,7 +69,13 @@ def task_list(request):
 
 @api_view(['GET'])
 def task_types_list(request):
-    queryset = JobType.objects.filter(private=False)
+
+    if request.GET.get("cli", False):
+        tasks = ["Metagenomics", "Assembly", "Minimap2"]
+        queryset = JobType.objects.filter(name__in=tasks)
+    else:
+        queryset = JobType.objects.filter(private=False)
+
     result = []
 
     for record in queryset:
@@ -109,6 +127,7 @@ def set_task_detail_all(request, pk):
                 print(e)
                 print("error")
             return Response("Job Created.", status=status.HTTP_200_OK)
+
 
 @api_view(['GET'])
 def tasks_detail_all(request, pk):

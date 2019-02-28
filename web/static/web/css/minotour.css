@@ -82,11 +82,21 @@
     vertical-align: middle;
     display: table-cell;
 }
-#Potential_threats{
+#Not_detected, #Potential_threats{
     border-left: 1px solid #f4f4f4;
     border-right: 1px solid #f4f4f4;
 }
 .simple td{
     border-top: none !important;
     text-align: center;
+}
+.toolTip {
+	display:none;
+	position:absolute;
+	border:1px solid #333;
+	background-color:#161616;
+	border-radius:5px;
+	padding:10px;
+	color:#fff;
+	font-size:12px Arial;
 }

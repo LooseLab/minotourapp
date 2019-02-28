@@ -25,12 +25,12 @@ from twitter import *
 from assembly.models import GfaStore, GfaSummary
 from centrifuge import centrifuge
 from centrifuge.sankey import calculate_sankey
-from centrifuge.tasks import output_parser
 from communication.utils import *
 from jobs.models import JobMaster
 from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus
 from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
+
 
 logger = get_task_logger(__name__)
 
@@ -121,19 +121,19 @@ def run_monitor():
                 ))
 
                 update_flowcell_details.delay(flowcell_job.id)
-            if flowcell_job.job_type.name == "CalculateSankey":
+            if flowcell_job.job_type.name == "CalculateMetagenomicsSankey":
                 logger.info("Sending task CalculateSankey - Flowcell id: {}, job_master id: {}".format(
                     flowcell.id,
                     flowcell_job.id,
                 ))
                 run_sankey(flowcell_job.id)
 
-            if flowcell_job.job_type.name == "Parser":
-                logger.info("Sending task Parser - Flowcell id: {}, job_master id: {}".format(
-                    flowcell.id,
-                    flowcell_job.id,
-                ))
-                output_parser.delay(flowcell_job.id)
+            # if flowcell_job.job_type.name == "Parser":
+            #     logger.info("Sending task Parser - Flowcell id: {}, job_master id: {}".format(
+            #         flowcell.id,
+            #         flowcell_job.id,
+            #     ))
+            #     output_parser.delay(flowcell_job.id)
 
             if flowcell_job.job_type.name == "Delete_Flowcell":
                 logger.info("Sending task Delete_Flowcell - Flowcell id: {}, job_master id: {}".format(
