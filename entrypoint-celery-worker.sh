@@ -21,5 +21,7 @@ export MT_REFERENCE_LOCATION='/var/lib/minotour/data';
 export MT_MINIMAP2="/var/lib/minotour/apps/minotourapp/extra/minimap2/minimap2";
 export MT_CELERY_BROKER_URL='redis://redis-minotour-instance:6379/0'
 export MT_CELERY_RESULT_BACKEND='redis://redis-minotour-instance:6379/0'
+export MT_CENTRIFUGE="/var/lib/minotour/apps/minotourapp/extra/centrifuge-1.0.4-beta/centrifuge"
+export MT_CENTRIFUGE_INDEX="/var/lib/minotour/data/p_compressed"
 
 celery -A minotourapp worker -l info;
