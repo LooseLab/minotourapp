@@ -43,6 +43,8 @@ RUN cd extra/centrifuge-1.0.4-beta && make && cd ..
 
 RUN cd extra/miniasm-0.3 && make && cd ..
 
+RUN chmod -R 755 extra/*
+
 #RUN python3 manage.py makemigrations
 #RUN python3 manage.py migrate
 #RUN python3 manage.py loaddata fixtures/auxiliary_data.json
