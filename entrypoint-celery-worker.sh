@@ -1,8 +1,5 @@
 #!/bin/sh
 
-# pip3 install pip --upgrade;
-pip3 install -r requirements.txt;
-
 export MT_DB_ENGINE="django.db.backends.mysql";
 export MT_DB_NAME="minotour";
 export MT_DB_USER="root";
@@ -23,5 +20,7 @@ export MT_CELERY_BROKER_URL='redis://redis-minotour-instance:6379/0'
 export MT_CELERY_RESULT_BACKEND='redis://redis-minotour-instance:6379/0'
 export MT_CENTRIFUGE="/var/lib/minotour/apps/minotourapp/extra/centrifuge-1.0.4-beta/centrifuge"
 export MT_CENTRIFUGE_INDEX="/var/lib/minotour/data/p_compressed"
+
+pip3 install -r requirements.txt;
 
 celery -A minotourapp worker -l info;

@@ -15,27 +15,27 @@ docker --version
 To following commands build and start several minoTour containers (database, Redis, celery, and web app).
 
 ```bash
-docker network create --driver bridge minotour-network;
+docker network create --driver bridge minotour-network
 
 docker volume create minotour_db_datadir;
 
-docker build -f db.dockerfile -t robertosantos/db-minotour .
+docker build -f docker/db.dockerfile -t robertosantos/db-minotour .
 
-docker build -f web.dockerfile -t robertosantos/web-minotour .
+docker build -f docker/web.dockerfile -t robertosantos/web-minotour .
 
-docker build -f celery.dockerfile -t robertosantos/celery-minotour .
+docker build -f docker/celery.dockerfile -t robertosantos/celery-minotour .
 
-docker build -f celery-worker.dockerfile -t robertosantos/celery-worker-minotour .
+docker build -f docker/celery-worker.dockerfile -t robertosantos/celery-worker-minotour .
 
-docker run --name redis-minotour-instance -p 6379:6379 -d --network minotour-network redis;
+docker run --name redis-minotour-instance -d --network minotour-network redis;
 
-docker run --name db-minotour-instance -p 3307:3306 -d -v minotour_db_datadir:/var/lib/mysql --network minotour-network robertosantos/db-minotour;
+docker run --name db-minotour-instance -d -v minotour_db_datadir:/var/lib/mysql --network minotour-network robertosantos/db-minotour;
 
 docker run --name web-minotour-instance -p 10000:8000 -d --network minotour-network robertosantos/web-minotour;
 
-docker run --name celery-minotour-instance --network minotour-network robertosantos/celery-minotour
+docker run --name celery-minotour-instance -d --network minotour-network robertosantos/celery-minotour
 
-docker run --name celery-worker-minotour-instance --network minotour-network robertosantos/celery-worker-minotour
+docker run --name celery-worker-minotour-instance -d --network minotour-network robertosantos/celery-worker-minotour
 ``` 
 
 Now, you can access minoTour on http://localhost:10000.
@@ -164,18 +164,24 @@ your environment).
 
 
 ```bash
-export MT_DB_PASS="<mySQL users password>"
-export MT_DB_PORT="3363"
-export MT_DB_HOST="localhost"
-export MT_DB_USER="root or other db user, i.e minotour created above"
-export MT_DB_NAME="minotourdb"
-export MT_REFERENCE_LOCATION="~/data/minotour"
-export MT_TWITCONSUMER_KEY=""
-export MT_TWITTOKEN_SECRET=""
-export MT_TWITCONSUMER_SECRET=""
-export MT_TWITTOKEN=""
-export MT_MAILGUN_ACCESS_KEY=""
-export MT_MAILGUN_SERVER_NAME=""
+export MT_DB_ENGINE="";
+export MT_DB_NAME="";
+export MT_DB_USER="";
+export MT_DB_PASS="";
+export MT_DB_PORT="";
+export MT_DB_HOST="";
+export MT_SECRET_KEY='';
+export MT_DJANGO_DEBUG='';
+export MT_MAILGUN_ACCESS_KEY='';
+export MT_MAILGUN_SERVER_NAME='';
+export MT_TWITTOKEN='';
+export MT_TWITTOKEN_SECRET='';
+export MT_TWITCONSUMER_KEY='';
+export MT_TWITCONSUMER_SECRET='';
+export MT_REFERENCE_LOCATION='';
+export MT_MINIMAP2="";
+export MT_CELERY_BROKER_URL=''
+export MT_CELERY_RESULT_BACKEND=''
 ```
 
 * Now it is time to start the processes, and we suggest opening a new terminal
