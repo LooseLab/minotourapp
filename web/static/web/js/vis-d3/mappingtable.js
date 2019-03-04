@@ -17,9 +17,9 @@ function update_mapping_table(flowcellId) {
     let data;
     let row_count = 0;
     let columns = ["Alert level", "Species", "Num. matches", "Prop. classified (%)",
-        "Sum. Unique", "Num. mapped",
-        "Mapped prop. total (%)", "Target reads",
-        "Red prop. total (%)",
+        "Num. mapped",
+        "Mapped prop. matches (%)", "Target reads",
+        "Target prop. mapped (%)",
          ];
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     let barcode = get_selected_barcode();

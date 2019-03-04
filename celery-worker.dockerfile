@@ -18,7 +18,7 @@ ENV MT_TWITTOKEN_SECRET=''
 ENV MT_TWITCONSUMER_KEY=''
 ENV MT_TWITCONSUMER_SECRET=''
 ENV MT_REFERENCE_LOCATION='/var/lib/minotour/data'
-ENV MT_MINIMAP2="/var/lib/minotour/minimap2/minimap2"
+ENV MT_MINIMAP2="/var/lib/minotour/apps/minotourapp/extra/minimap2/minimap2"
 ENV MT_CELERY_BROKER_URL='redis://minotour_redis:6379/0'
 ENV MT_CELERY_RESULT_BACKEND='redis://minotour_redis:6379/0'
 
