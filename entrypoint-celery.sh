@@ -1,6 +1,6 @@
 #!/bin/sh
-pip install pip --upgrade;
-pip install -r requirements.txt;
+pip3 install pip --upgrade;
+pip3 install --default-timeout=100 -r requirements.txt;
 export MT_DB_ENGINE="django.db.backends.mysql";
 export MT_DB_NAME="minotour";
 export MT_DB_USER="root";
