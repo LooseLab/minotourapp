@@ -115,7 +115,7 @@ function update_mapping_table(flowcellId) {
             if (d.column === "Num. mapped" && d.value > 0) {
                 variable.classed("green-alert", false);
                 variable.classed("yellow-alert", false);
-                variable.classed("orange-alert", true);
+                variable.classed("red-alert", true);
             }
             else if (d.column === "Target reads" && d.value > 0) {
                 variable.classed("green-alert", false);
@@ -124,8 +124,7 @@ function update_mapping_table(flowcellId) {
                 variable.classed("red-alert", true);
             }
             else if (d.column === "Num. matches" && d.value > 0) {
-                variable.classed("green-alert", false);
-                variable.classed("yellow-alert", true);
+                variable.attr("class", "green-alert");
             }
             else if (d.column === "Num. matches" && d.value=== 0){
                 variable.attr("class", "green-alert");
