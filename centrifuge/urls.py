@@ -9,7 +9,7 @@ urlpatterns = [
     url(r"^sankey/$", views.centrifuge_sankey),
     # Return the data for the donut chart, in the correct form, called form donutdothat.js
     url(r"^donut/$", views.donut_data),
-    # Return the data for the total reads table, called from AllResultsTable.js
+    # Return the data for the total reads table, called from allResultsTable.js
     url(r"^api/v1/table/$", views.all_results_table),
     # Return the data for the header containing metadata at the top of the vis page
     url(r"^centrifuge_metadata/$", views.centrifuge_metadata),

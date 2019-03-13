@@ -171,6 +171,32 @@ class FastqReadSerializer(serializers.ModelSerializer):
             'fastqfile'
         )
 
+    def create(self, validated_data):
+
+        run = validated_data['run']
+
+        fastqread = FastqRead(
+            read_id=validated_data['read_id'],
+            read=validated_data['read'],
+            channel=validated_data['channel'],
+            barcode=validated_data['barcode'],
+            barcode_name=validated_data['barcode_name'],
+            sequence_length=validated_data['sequence_length'],
+            quality_average=validated_data['quality_average'],
+            sequence=validated_data['sequence'],
+            quality=validated_data['quality'],
+            is_pass=validated_data['is_pass'],
+            start_time=validated_data['start_time'],
+            run=run,
+            flowcell=run.flowcell,
+            type=validated_data['type'],
+            fastqfile=validated_data['fastqfile']
+        )
+
+        fastqread.save()
+
+        return fastqread
+
 '''
 class FastqReadSerializer(serializers.ModelSerializer):
 
@@ -575,11 +601,3 @@ class FlowcellSummaryBarcodeSerializer(serializers.ModelSerializer):
         )
 
         read_only = ('id',)
-
-
-
-class FlowcellTabSerializer(serializers.ModelSerializer):
-
-    class Meta:
-         model = FlowcellTab
-         fields = '__all__'

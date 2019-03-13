@@ -8,9 +8,9 @@ docker volume create minotour_db_datadir;
 
 # There is no need for the builds below if the images come from docker hub.
 
-docker build -f db.dockerfile -t robertosantos/db-minotour .
+docker build -f docker/db.dockerfile -t robertosantos/db-minotour .
 
-docker build -f web.dockerfile -t robertosantos/web-minotour .
+docker build -f docker/web.dockerfile -t robertosantos/web-minotour .
 
 docker build -f celery.dockerfile -t robertosantos/celery-minotour .
 

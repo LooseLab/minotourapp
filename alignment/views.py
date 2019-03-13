@@ -5,7 +5,7 @@ import pandas as pd
 from django.db.models import Sum
 from django.http import HttpResponse, JsonResponse
 from rest_framework.decorators import api_view
-
+from django.shortcuts import render
 from alignment.models import PafRoughCov, PafSummaryCov
 from alignment.utils import calculate_coverage_new
 from . import utils
@@ -133,6 +133,19 @@ def flowcell_paf_alignment_list_original(request, flowcell_id, barcodegroup_id, 
         result_list.append((min_extreme + (key * bin_width), bin_results[key]))
 
     return HttpResponse(json.dumps(result_list, cls=NumpyEncoder), content_type="application/json")
+
+
+def flowcell_paf_summary_html(request, pk):
+
+
+    queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk)
+
+    df = pd.DataFrame.from_records(queryset.values('barcode_name','job_master__id','reference_line_name','read_count','total_length','reference_line_length'))
+    df["average_read_length"]=df['total_length']/df['read_count']
+    df["coverage"]=df['total_length']/df['reference_line_length']
+    dictdf = df.to_dict('records')
+
+    return render(request, 'alignment/flowcell_paf_summary.html', {'qs': dictdf})
 
 
 @api_view(['GET'])

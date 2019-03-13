@@ -185,7 +185,6 @@ class FlowcellTabController {
                     break;
 
                 case 'metagenomics':
-                    console.log("removing metagenomics");
                     this._nav_metagenomics.classList.remove('hidden');
                     break;
 

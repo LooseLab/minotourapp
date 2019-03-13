@@ -126,7 +126,7 @@ def calculate_barcoded_values(barcode_group_df, barcode_df, classified_per_barco
     """
     Return the main cent output data frame with the barcode only result concatenated on
     :param barcode_group_df: The dataframe of one barcode after a group by on all the results
-    :param barcode_df: the main results data frame that will store the ouput of this function
+    :param barcode_df: the main results data frame that will store the output of this function
     :param classified_per_barcode: The number of classified reads in a barcode
     :return: A new df with the result for barcode appended
     """
@@ -293,6 +293,10 @@ def insert_new_lineages(ncbi, df, tax_rank_filter, flowcell):
     # merge new subspecies column with existing column
     lineages_df["subspecies"].fillna(lineages_df["subStrainSpecies"], inplace=True)
 
+    unclassified_row = {key: np.NaN for key in lineages_df.keys()}
+    row = pd.DataFrame(unclassified_row, index=[0])
+    lineages_df = lineages_df.append(row, sort=True)
+
     # delete the new subspecies column
     delete_series(["subStrainSpecies"], lineages_df)
 
@@ -372,23 +376,19 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids):
 
         logger.info(
             "Flowcell id: {} - This many reads mapped evilly on this reference {} for species {}"
-                .format(flowcell.id, plasmid_map_df.shape[0], species)
+            .format(flowcell.id, plasmid_map_df.shape[0], species)
         )
-        logger.info(plasmid_map_df.head())
         # return our new plasmid dataframe, annoyingly each one becomes an element in a series
         return plasmid_map_df
 
 
-def update_mapped_red_values(row, task, flowcell):
+def update_mapped_red_values(row, task):
     """
     Update the values that we have in the database for each species after getting results for this iteration
     :param row: The results_df row
     :param task: The task model object
-    :param flowcell: The flowcell model object
     :return:
     """
-    logger.info("Flowcell id: {} - updating the number of mapped red reads for species {}"
-                .format(flowcell.id, row["species"]))
     # Get the mapping result objects for this species
     mapped = MappingResult.objects.get(species=row["species"],
                                        task=task, barcode_name=row["barcode_name"])
@@ -417,8 +417,7 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
     :return red_df: Any reads that map to plasmids and their information as a dataframe
     """
 
-    logger.info("Flowcell id: {} - species is {}".format(flowcell.id, group_name))
-    logger.info("Flowcell id: {} - The num_matches_df is ".format(flowcell.id, num_matches_target_barcoded_df))
+    logger.info("Flowcell id: {} - species being mapped is {}".format(flowcell.id, group_name))
     # Get the target region for this species
     species_regions_df = gff3_df[gff3_df["species"] == group_name]
     # Get the species that is in this group
@@ -433,8 +432,6 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
         logger.info("Flowcell id: {} - No reference found for species {}!".format(flowcell.id, species))
 
         return
-
-    logger.info('target_species_group_df[read_id]: {}'.format(target_species_group_df['read_id']))
 
     # Get the read_ids for the reads that centrifuge has classified as target species
     read_ids = target_species_group_df["read_id"].values.tolist()
@@ -476,7 +473,6 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
         plasmid_red_series.dropna(inplace=True)
 
         logger.info("Flowcell id: {} - plasmid mapping output is {}".format(flowcell.id, plasmid_red_series.head()))
-        logger.info("Flowcell id: {} - plasmid mapping output is {}".format(flowcell.id, type(plasmid_red_series)))
         # If there are mappings to a plasmid
         if not plasmid_red_series.empty:
             try:
@@ -521,7 +517,7 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
     # set the column name to above
     map_df.columns = columns
     # Filter out low quality matches or the
-    map_df = map_df.query("mapping_qual >= 40 | num_residue_matches >= 200")
+    map_df = map_df.query("mapping_qual >= 40 & num_residue_matches >= 200")
 
     # See whether the start or end of a mapping falls into the region
     boolean_df = species_regions_df.apply(falls_in_region, args=(map_df,), axis=1)
@@ -533,7 +529,7 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
     # If there is output from the plasmid mapping, put it into the consolidated target reads containing dataframe
     if not plasmid_red_df.empty and (type(plasmid_red_df) != pd.core.series.Series):
         # Filter out low mapping qualities
-        plasmid_red_df = plasmid_red_df.query("mapping_qual >= 40 | num_residue_matches >= 200")
+        plasmid_red_df = plasmid_red_df.query("mapping_qual >= 40 & num_residue_matches >= 200")
         red_df = red_df.append(plasmid_red_df, sort=True)
 
     logger.info("Flowcell id: {} - The target df after plasmid mapping results is {}".format(flowcell.id, red_df))
@@ -840,7 +836,7 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
 
     # For each row, update the red reads value for the mappingTargets entry for any species in the dataframe,
     #  in all reads barcode
-    results_df.apply(update_mapped_red_values, args=(task, flowcell), axis=1)
+    results_df.apply(update_mapped_red_values, args=(task,), axis=1)
 
     # Barcoded red reads
     # Group by the name and the barcode, so split by each species and the barcode inside that split
@@ -858,16 +854,18 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
     # Drop duplicates so a species is unique inside each barcode
     results_df_bar.drop_duplicates(subset=["species", "barcode_name"], inplace=True)
     # Update the red reads value for the MappingTargets object for the species and barcodes inside this iteration
-    results_df_bar.apply(update_mapped_red_values, args=(task, flowcell), axis=1)
+    results_df_bar.apply(update_mapped_red_values, args=(task,), axis=1)
 
 
 def create_donut_data_models(row, task):
     """
     Create and return a series of model objects for bulk creation
     :param row: The row of the dataframe
+    :type row: pandas.core.series.Series
     :param task: The task objects for this analysis
     :return: A model objects to save into the dataframe
     """
+
     return DonutData(task=task,
                      num_matches=row["num_matches"],
                      sum_unique=row["sum_unique"],
@@ -889,10 +887,9 @@ def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
     """
     # Merge the lineages dataframe onto the centrifuge output dataframe so each species has it's lineage
     data_df = pd.merge(df, lineages_df, left_on="tax_id", right_index=True)
+    data_df.fillna("Unclassified", inplace=True)
     # Set the index to a multi index of all 7 taxonomic ranks
     data_df.set_index(tax_rank_filter, inplace=True)
-
-    logger.info('Flowcell id: {} - Calculating donut data'.format(flowcell.id))
     # group the dataframe by barcode
     gb_bc = data_df.groupby("barcode_name")
     # Initialise a dataframe to add onto
@@ -926,9 +923,8 @@ def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
 
     donut_to_create_df = donut_df
 
-    logger.info('Flowcell id: {} - Bulk inserting new species donut data {}'.format(flowcell.id, donut_to_create_df))
     # Call output parser to insert the results dataframe
-    output_parser(task, donut_to_create_df, "donut")
+    output_parser(task, donut_to_create_df, "donut", None)
 
 
 def create_centrifuge_models(row, classified_per_barcode, first):
@@ -978,12 +974,13 @@ def create_centrifuge_models(row, classified_per_barcode, first):
                                 latest=row["latest"])
 
 
-def output_parser(task, new_data_df, donut_or_output):
+def output_parser(task, new_data_df, donut_or_output, metadata):
     """
     Parse the centrifuge output or Donut data, update the values and save into a site readable format
     :param task: The reference to the JobMaster for this metagenomics task
     :param new_data_df: The donut or CentrifugeOutput dataframe calculated this iteration
     :param donut_or_output: Whether the data type is DonutData or CentrifugeOutput
+    :param metadata:
     :return:
     """
 
@@ -1008,17 +1005,28 @@ def output_parser(task, new_data_df, donut_or_output):
     # If we have previous data
     if not parsed_data_df.empty:
         # Add one to the iteration count
-        new_iteration_count = parsed_data_df["latest"].unique().tolist()[0] + 1
+        new_iteration_count = task.iteration_count + 1
+        logger.info(new_iteration_count)
         # If this is for CentrifugeOutput
         if not donut:
             # Merge the lsat Iterations values with this Iterations values
             merged_data_df = pd.merge(parsed_data_df, new_data_df, on=["barcode_name", "tax_id"],
                                       how="outer")
+
+            merged_data_df["superkingdom_x"].fillna(merged_data_df["superkingdom_y"], inplace=True)
+            merged_data_df["phylum_x"].fillna(merged_data_df["phylum_y"], inplace=True)
+            merged_data_df["classy_x"].fillna(merged_data_df["classy_y"], inplace=True)
+            merged_data_df["order_x"].fillna(merged_data_df["order_y"], inplace=True)
+            merged_data_df["family_x"].fillna(merged_data_df["family_y"], inplace=True)
+            merged_data_df["genus_x"].fillna(merged_data_df["genus_y"], inplace=True)
+            merged_data_df["species_x"].fillna(merged_data_df["species_y"], inplace=True)
+            merged_data_df["name_x"].fillna(merged_data_df["name_y"], inplace=True)
         # If this is for a donut
         else:
             # Merge the lsat Iterations values with this Iterations values
             merged_data_df = pd.merge(parsed_data_df, new_data_df, how="outer",
                                       on=["barcode_name", "name", "tax_rank"])
+
         # Set the number of matches and sum_unique NaNs to 0, NaNs present where there were missing values
         values = {"num_matches_x": 0, "num_matches_y": 0, "sum_unique_x": 0, "sum_unique_y": 0}
         # Fill those NaNs with ) so we can combine the columns
@@ -1029,6 +1037,7 @@ def output_parser(task, new_data_df, donut_or_output):
         merged_data_df["num_matches"] = merged_data_df["num_matches_x"] + merged_data_df["num_matches_y"]
         # Combine the columns to get the updated sum_unique
         merged_data_df["sum_unique"] = merged_data_df["sum_unique_x"] + merged_data_df["sum_unique_y"]
+
         # Group by barcode
         gb_bc = merged_data_df.groupby("barcode_name")
         # The number of matches per barcode as a dictionary
@@ -1059,6 +1068,7 @@ def output_parser(task, new_data_df, donut_or_output):
     to_save_df["latest"] = new_iteration_count
 
     to_save_df["task"] = metagenomics_task
+
     # If this is for CentrifugeOutput
     if not donut:
         to_save_df["proportion_of_classified"] = to_save_df.apply(divd, args=(classed_per_barcode,), axis=1)
@@ -1068,8 +1078,18 @@ def output_parser(task, new_data_df, donut_or_output):
         to_save_df["proportion_of_classified"].fillna("Unclassified", inplace=True)
 
         to_save_df.fillna("Unclassified", inplace=True)
-        logger.info(to_save_df)
-        logger.info(to_save_df.keys())
+
+        # The number of reads we have any form of classification for
+        reads_classified = to_save_df[to_save_df["tax_id"].ne(0) & to_save_df["barcode_name"]
+            .eq("All reads")]["num_matches"].sum()
+        # The number of reads we have completely failed to classify
+        reads_unclassified = to_save_df[to_save_df["tax_id"].eq(0) & to_save_df["barcode_name"]
+            .eq("All reads")]["num_matches"].sum()
+        # save the values
+        metadata.classified = reads_classified
+        metadata.unclassified = reads_unclassified
+        metadata.save()
+
         if parsed_data_df.empty:
             # Create a series of CentrifugeOutput objects, one for each row in the dataframe
             to_bulk_save_series = to_save_df.apply(create_centrifuge_models, args=(classed_per_barcode, True), axis=1)
@@ -1083,6 +1103,7 @@ def output_parser(task, new_data_df, donut_or_output):
         to_bulk_save_series = to_save_df.apply(create_donut_data_models, args=(task,), axis=1)
         # Bulk create all those objects in the series
         DonutData.objects.bulk_create(to_bulk_save_series.values.tolist(), batch_size=1000)
+        logger.info(" Created donut data ")
     # Return the iteration count
     return new_iteration_count
 
@@ -1115,7 +1136,7 @@ def run_centrifuge(flowcell_job_id):
     # The path to the Centrifuge Index
     index_path = get_env_variable("MT_CENTRIFUGE_INDEX")
     # The command to run centrifuge
-    cmd = "perl " + centrifuge_path + " -f --mm -k 1 -x" + index_path + " -"
+    cmd = "perl " + centrifuge_path + " -f --mm -k 1 -x " + index_path + " -"
 
     logger.info('Flowcell id: {} - {}'.format(flowcell.id, cmd))
 
@@ -1324,6 +1345,7 @@ def run_centrifuge(flowcell_job_id):
     df.reset_index(inplace=True)
 
     df = df.drop_duplicates(keep="first")
+
     # Make this the results for all reads in the centrifuge output
     df["barcode_name"] = "All reads"
 
@@ -1355,7 +1377,7 @@ def run_centrifuge(flowcell_job_id):
     # Broadcast the taskobject down the dataframe
     cent_to_create_df["task"] = task
     # Parse that dataframe, and store the results, returning the new latest iteration count
-    new_latest = output_parser(task, cent_to_create_df, "output")
+    new_latest = output_parser(task, cent_to_create_df, "output", metadata)
     # Set the iteration count on the job master
     task.iteration_count = new_latest
     # Save the new value

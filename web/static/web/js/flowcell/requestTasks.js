@@ -36,8 +36,12 @@ function loadTasksForm() {
                         $.get("/api/v1/metagenomics/targetsets", (result, statusText, xhr) => {
                             if (xhr.status !== 204) {
                                 label.innerHTML = "Target Sets";
+                                let option = document.createElement("option");
+                                option.value = "";
+                                option.text = "-- select an option --";
+                                reference_select.appendChild(option);
                                 for (let i = 0; i < result.length; i++) {
-                                    var option = document.createElement("option");
+                                    option = document.createElement("option");
                                     option.value = i;
                                     option.text = result[i];
                                     reference_select.appendChild(option);

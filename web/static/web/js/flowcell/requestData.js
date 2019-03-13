@@ -72,7 +72,7 @@ function requestData(flowcell_id) {
             // Draw the alert mapping targets table;
             this.update_mapping_table(flowcell_id);
             // draw the simplified results table
-            // this.draw_simple_table(flowcell_id);
+            this.draw_simple_table(flowcell_id);
 
             $.get(url, {}, function (result) {
                 this.barcodes = result.data.sort();

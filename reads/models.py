@@ -1491,6 +1491,13 @@ class FastqRead(models.Model):
         null=True,
     )
 
+    flowcell = models.ForeignKey(
+        Flowcell,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
+
     class Meta:
         verbose_name = 'FASTQ Read'
         verbose_name_plural = 'FASTQ Read'

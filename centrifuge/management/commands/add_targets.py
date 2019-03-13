@@ -9,15 +9,18 @@ from ete3 import NCBITaxa
 from centrifuge.models import MappingTarget
 from reference.models import ReferenceInfo
 import numpy as np
+from rest_framework.authtoken.models import Token
 
 
-def gff_create(row, species_name, tax_id, set_name):
+def gff_create(row, species_name, tax_id, set_name, user_id, private):
     """
     Create the model objects for the gff
     :param row: The row of the data-frame
     :param species_name: The name of the species these gff regions relate to
     :param tax_id: A dictionary with the tax_id as value, species name as key
     :param set_name: The name of the ste to include these reads in
+    :param user_id: The id of the user in the database
+    :param private: Whether or not to keep this target set private
     :return:
     """
     #
@@ -33,6 +36,8 @@ def gff_create(row, species_name, tax_id, set_name):
         start=row["start"],
         end=row["end"],
         gff_line_type=row["type"],
+        user_id=user_id,
+        private=private,
         defaults={"name": name}
     )
 
@@ -55,6 +60,10 @@ def process_file(options, file):
     reference_list = list(ReferenceInfo.objects.all().values_list("name", flat=True))
 
     set_name_list = list(MappingTarget.objects.all().values_list("target_set", flat=True))
+
+    user_id = Token.objects.get(key=options["key"]).user_id
+
+    private = options["private"]
 
     if options["species"]:
         species_name = options["species"].replace(" ", "_")
@@ -104,7 +113,7 @@ def process_file(options, file):
     # If no provided name, add this placeholder
     gff_df["name"] = gff_df["name"].fillna("no_provided_name")
     # appl the gff_create function to all rows of the dataframe
-    gff_df.apply(gff_create, args=(species_name, tax_id, set_name), axis=1)
+    gff_df.apply(gff_create, args=(species_name, tax_id, set_name, user_id, private), axis=1)
 
 
 class Command(BaseCommand):
@@ -135,6 +144,13 @@ class Command(BaseCommand):
         parser.add_argument("-R", "--recursive", action="store_true", help="Recursively add all the gff files in the "
                                                                            "current working directory. "
                                                                            "Doesn't work with the species argument.")
+        parser.add_argument("-k", "--key", type=str, required=True,
+                            help="The api key to connect this target"
+                                 " set with your account. Found in the"
+                                 " profile section of your minotour page,"
+                                 " once logged in.")
+        parser.add_argument("-p", "--private", action="store_true",
+                            help="Whether or not this target_set will be hidden from other users. Default - Off")
 
     def handle(self, *args, **options):
         """
