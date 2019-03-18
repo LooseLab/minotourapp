@@ -33,7 +33,7 @@ Minotour also makes use of a MySQL database, Celery (responsible for running ser
 
 * `[Redis] <https://redis.io/download>`_ - Minotour uses **Redis** as a cache system for the web module and also for Celery. Follow the instructions and make sure that the **redis-server** executable is available in PATH environment variable.
 
-* `[MySQL Community edition] <https://dev.mysql.com/downloads/>`_ - Minotour requires a MySQL server instance. It can run locally or on another server. Installing and configuring MySQL is not in the scope of this guide, but here is the official `documentation <https://dev.mysql.com/doc/mysql-getting-started/en/>`_ and another good tutorial can be found here [Link](https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-16-04). Once the server is up and running you can either choose to use the root user created during mySql initialisation in the below environmental variables, or create a user as follows in the mysql shell, logged in as the root user or an admin user::
+* `[MySQL Community edition] <https://dev.mysql.com/downloads/>`_ - Minotour requires a MySQL server instance. It can run locally or on another server. Installing and configuring MySQL is not in the scope of this guide, but here is the official `documentation <https://dev.mysql.com/doc/mysql-getting-started/en/>`_ and another good tutorial can be found `here <https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-16-04>`_. Once the server is up and running you can either choose to use the root user created during mySql initialisation in the below environmental variables, or create a user as follows in the mysql shell, logged in as the root user or an admin user::
 
     CREATE USER minotour;
     CREATE TABLE minotourdb;
@@ -79,7 +79,7 @@ p_compressed.4.cf
 
 - minoTour uses the ete3 package, that needs access to the internet to download the NCBI species database.
 
-To force the download (this step just need to be execured once), type the following instructions on the python interpreter.::
+To force the download (this step just need to be executed once), type the following instructions on the python interpreter::
 
     import ete3
 
@@ -91,7 +91,7 @@ To force the download (this step just need to be execured once), type the follow
 Environmental config and running
 --------------------------------
 
-* Setup environment variables - many Minotour config parameters are stored in the environment, so that we do need to hardcode database users and password, or any other information that is environment dependent. You can create a bash script file, for example envs.sh, place it in the main application directory (The directory that contains manage.py) and copy the following into it, or include them in the ~/.bash_profile or ~/.bash_rc (please check if this is the correct file in your environment).::
+* Setup environment variables - many Minotour config parameters are stored in the environment, so that we do need to hardcode database users and password, or any other information that is environment dependent. You can create a bash script file, for example envs.sh, place it in the main application directory (The directory that contains manage.py) and copy the following into it, or include them in the ~/.bash_profile or ~/.bash_rc (please check if this is the correct file in your environment)::
 
     #!/bin/bash
     export MT_DB_ENGINE='django.db.backends.mysql'
