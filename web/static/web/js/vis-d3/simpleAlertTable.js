@@ -25,6 +25,7 @@ function draw_simple_table(flowcellId) {
             d3.select(".alert-table-simple").remove();
             return;
         }
+        console.log(result);
         data = result.table;
         limit = result.conf_detect_limit;
         data.sort(compare);
@@ -92,8 +93,8 @@ function draw_simple_table(flowcellId) {
         }).html(
             function (d) {
                 d3.select("#Potential threats").html("Potential threats");
-                if (d.column === "Low risk" && d.detected === false && d.conf_limit >= 50000) {
-                    d3.select("#Not_detected").html("Low risk, less than 1 in " + limit + " reads");
+                if (d.column === "Low probability" && d.detected === false && d.conf_limit >= 50000) {
+                    d3.select("#Low_probability").html("Low risk, less than 1 in " + limit + " reads");
                     return d.species;
                 } else if (d.column === "Potential threats" && d.detected === false && d.conf_limit < 50000){
                     d3.select("#Potential_threats").html("Potential threats (< 1 in " + limit + " reads)");

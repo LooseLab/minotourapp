@@ -16,10 +16,9 @@ BioPython
 celery
 django_celery_beat
 twitter
-redis==2.10.6
+redis
 whitenoise
 django_redis
-flower
 tqdm
 requests_futures
 scipy
