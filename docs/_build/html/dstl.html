@@ -1,0 +1,139 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Threat agent analysis &mdash; Minotour 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Minotour 1.0 documentation" href="index.html" />
+    <link rel="next" title="Development environment" href="development.html" />
+    <link rel="prev" title="Minotour client" href="minfq.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="threat-agent-analysis">
+<h1>Threat agent analysis<a class="headerlink" href="#threat-agent-analysis" title="Permalink to this headline">¶</a></h1>
+<p>To start a target analysis from the client it is first necessary to add the references to the minotour web app. This is covered whilst setting up docker here - <a class="reference internal" href="docker.html"><em>Using docker</em></a></p>
+<p>The -j flags and -ts flags on the minotour client, minFQ, can be used to automatically start a job upon flowcell creation.</p>
+<p>To see which jobs, references and validation sets are available to you, after setup of the client :doc: minfq</p>
+<div class="highlight-python"><div class="highlight"><pre>source myenv/bin/activate
+minFQ --list.
+</pre></div>
+</div>
+<p>We recommend using a config file, as covered in the client setup instructions :doc: minfq.</p>
+<p>In this config file, set:</p>
+<div class="highlight-python"><div class="highlight"><pre>-j Metagenomics
+-ts &lt;Target_set_name&gt;
+</pre></div>
+</div>
+<p>Run the client upload, minFQ -n &lt;Flowcell_name&gt; -w /path/to/fastq/directory.</p>
+<div class="section" id="start-the-analysis-in-the-minotour-app">
+<h2>Start the analysis in the minotour app<a class="headerlink" href="#start-the-analysis-in-the-minotour-app" title="Permalink to this headline">¶</a></h2>
+<p>It is possible to start the task in the minotour app, by navigating into the view of the desired flowcell, switching to the tabs task and selecting the Metagenomics task.</p>
+<p>If a target set is not selected from the second drop down, no mapping will take place, and only Centrifuge based results will be shown.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">Minotour</a></h1>
+
+
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=&repo=&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="docker.html">Using docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="minfq.html">Minotour client</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Threat agent analysis</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="development.html">Development environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart use cheatsheet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faqs.html">FAQ</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="minfq.html" title="previous chapter">Minotour client</a></li>
+      <li>Next: <a href="development.html" title="next chapter">Development environment</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Matt Loose Roberto Santos Rory Munro.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      
+      |
+      <a href="_sources/dstl.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

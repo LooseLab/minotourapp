@@ -77,9 +77,11 @@ class Command(BaseCommand):
                 ".fna",
                 ".fa",
                 ".fasta",
+                ".fsa",
                 ".fna.gz",
                 ".fa.gz",
                 ".fasta.gz",
+                ".fsa.gz"
             ]
 
             for file_or_directory in options["reference"]:

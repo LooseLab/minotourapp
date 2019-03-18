@@ -18,3 +18,4 @@ centrifuge_report.tsv
 centrifuge/utils.py
 *.mysql
 env-*
+*/migrations/
