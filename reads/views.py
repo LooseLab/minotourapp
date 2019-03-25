@@ -1722,7 +1722,6 @@ def read_list_new(request):
 
         #serializer = FastqReadSerializer(data=request.data, many=True)
 
-        # print(request.data)
 
         logger.info('>>> received reads post - calling task - request.data size: {}'.format(len(request.data)))
 

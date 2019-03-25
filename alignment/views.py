@@ -199,7 +199,6 @@ def paf_summary_json(request, pk):
         "recordsFiltered": records_total,
         "data": dictdf
     }
-    print(result)
 
     return Response(result, status=200)
 
