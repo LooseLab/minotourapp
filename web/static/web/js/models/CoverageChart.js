@@ -4,7 +4,8 @@ class CoverageChart {
 
         this._div_master_name = div_name + "_master";
         this._div_detail_name = div_name + "_detail";
-
+        console.log(this._div_master_name);
+        console.log(this._div_detail_name);
         this._master_chart = this.create_master_chart();
         this._detail_chart = this.create_detail_chart();
     }
@@ -19,7 +20,7 @@ class CoverageChart {
         return this._detail_chart;
     }
 
-    create_master_chart() {
+    create_master_chart(){
 
         let self = this;
 

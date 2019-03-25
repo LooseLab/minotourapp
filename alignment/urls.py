@@ -30,8 +30,8 @@ urlpatterns = [
     ),
 
     url(
-        r'^flowcells/(?P<pk>[0-9]+)/pafsummaryhtml/$',
-        views.flowcell_paf_summary_html,
-        name="flowcell_paf_summary_html"
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/pafsummarytable/$',
+        views.paf_summary_json,
+        name="flowcell_paf_summary"
     ),
 ]

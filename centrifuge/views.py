@@ -434,7 +434,9 @@ def all_results_table(request):
                                  'genus',
                                  'species',
                                  )
+
     records_total = cent_out_temp.count()
+
     result = {
         'draw': draw,
         "recordsTotal": records_total,

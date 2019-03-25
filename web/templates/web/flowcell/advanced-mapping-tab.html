@@ -1,6 +1,6 @@
 <div class="panel panel-info">
     <div class="panel-heading">
-        <h3 class="panel-title">Mapping Data</h3>
+        <h3 class="panel-title">Advanced Mapping Data</h3>
     </div>
     <div class="panel-body">
         <div class="row">
@@ -8,32 +8,32 @@
             <div class="col-md-12 highcharts">
                 <form class="form-horizontal">
                     <div class="form-group">
-                        <label class="col-sm-2 control-label">Chromosome</label>
+                        <label class="col-sm-2 advanced-control-label">Chromosome</label>
 
                         <div class="col-sm-10 control-label" style="height: 100%; text-align: left;">
-                            <select id="chromosome-id-select"
-                                    onchange="flowcell_controller.coverage_chart_controller.reload_master_chart()"></select>
+                            <select id="advanced-chromosome-id-select"
+                                    onchange="flowcell_controller.advanced_coverage_chart_controller.reload_master_chart()"></select>
                             <a href="#" class="btn btn-primary"
-                               onclick="flowcell_controller.coverage_chart_controller.reload_master_chart()">Reset
+                               onclick="flowcell_controller.advanced_coverage_chart_controller.reload_master_chart()">Reset
                                 chart</a>
                         </div>
                     </div>
                 </form>
             </div>
 
-            <div id="coverage_div" class="col-md-12 highcharts" style="width:100%">
-                <div id="coverage_div_detail" class="detail_chart"></div>
-                <div id="coverage_div_master" class="master_chart"></div>
+            <div id="advanced-coverage_div" class="col-md-12 highcharts" style="width:100%">
+                <div id="advanced-coverage_div_detail" class="detail_chart"></div>
+                <div id="advanced-coverage_div_master" class="master_chart"></div>
             </div>
 
-            <div id="per-chrom-cov"
+            <div id="advanced-per-chrom-cov"
                  class="col-md-12 highcharts"
                  style="width:50%; height:300px;">
                 <i class="fa fa-cog fa-spin fa-3x"></i>
                 Calculating
             </div>
 
-            <div id="per-chrom-avg"
+            <div id="advanced-per-chrom-avg"
                  class="col-md-12 highcharts"
                  style="width:50%; height:300px;">
                 <i class="fa fa-cog fa-spin fa-3x"></i>
@@ -42,8 +42,8 @@
 
             <div class="row">
 
-                <div class="col-md-12" id="mapping-summary">
-                    <table class="table table-hover mapping-table" style="width: 100%">
+                <div class="col-md-12" id="advanced-mapping-summary">
+                    <table class="table table-hover advanced-mapping-table" style="width: 100%">
                         <thead>
                         <tr>
                             <th>Barcode</th>

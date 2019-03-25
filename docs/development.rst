@@ -30,7 +30,6 @@ Minotour contains three main modules:
 
 Minotour also makes use of a MySQL database, Celery (responsible for running server tasks), Redis (a database in memory similar to memcached, required by Celery as a message broker), Flower (optional - but a useful Celery task monitor tool).
 
-
 * `[Redis] <https://redis.io/download>`_ - Minotour uses **Redis** as a cache system for the web module and also for Celery. Follow the instructions and make sure that the **redis-server** executable is available in PATH environment variable.
 
 * `[MySQL Community edition] <https://dev.mysql.com/downloads/>`_ - Minotour requires a MySQL server instance. It can run locally or on another server. Installing and configuring MySQL is not in the scope of this guide, but here is the official `documentation <https://dev.mysql.com/doc/mysql-getting-started/en/>`_ and another good tutorial can be found `here <https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-16-04>`_. Once the server is up and running you can either choose to use the root user created during mySql initialisation in the below environmental variables, or create a user as follows in the mysql shell, logged in as the root user or an admin user::
@@ -125,12 +124,9 @@ Environmental config and running
 
 * Redis::
 
-
     redis-server &
 
 * Create tables and administrator account::
-
-
 
     cd /path/to/minotour/code;
     source ~/minotourenv/bin/activate;
@@ -148,11 +144,9 @@ Environmental config and running
 
 * Start Flower::
 
-
-    cd /path/to/minotour/code/ && source minotourenv/bin/activate && && flower -A minotourapp --port=5555
+    cd /path/to/minotour/code/ && source minotourenv/bin/activate && flower -A minotourapp --port=5555
 
 * Start Minotour::
-
 
     cd /path/to/minotour/code
     source minotourenv/bin/activate

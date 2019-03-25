@@ -86,8 +86,11 @@ function requestData(flowcell_id) {
 
 
         } else if (flowcell_selected_tab_input.value == 'nav-sequence-mapping') {
-
             this.requestPafData(flowcell_id);
+
+        } else if (flowcell_selected_tab_input.value == 'nav-advanced-sequence-mapping') {
+
+            this.requestAdvancedPafData(flowcell_id);
 
         } else if (flowcell_selected_tab_input.value == 'nav-sequence-assembly') {
 

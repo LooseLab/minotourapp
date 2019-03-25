@@ -33,6 +33,10 @@
                     <a class="flowcell-tab"
                        onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('sequence-mapping')">Sequence Mapping</a>
                 </li>
+                <li role="presentation" id="nav-advanced-sequence-mapping" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('advanced-sequence-mapping')">Advanced Sequence Mapping</a>
+                </li>
                 <li role="presentation" id="nav-sequence-assembly" class='hidden'>
                     <a class="flowcell-tab"
                        onclick="flowcell_controller.flowcell_tab_controller.toggle_tab_content('sequence-assembly')">Assembly</a>
@@ -69,6 +73,10 @@
 
                 <div id="tab-sequence-mapping" class="tab-pane">
                     {% include "web/flowcell/mapping-tab.html" %}
+                </div>
+
+                <div id="tab-advanced-sequence-mapping" class="tab-pane">
+                    {% include "web/flowcell/advanced-mapping-tab.html" %}
                 </div>
 
                 <div id="tab-sequence-assembly" class="tab-pane">

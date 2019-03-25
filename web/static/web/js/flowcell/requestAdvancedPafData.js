@@ -1,4 +1,4 @@
-function updateCoverageBasedCharts(chart, summarycoverage, field) {
+function updateAdvancedCoverageBasedCharts(chart, summarycoverage, field) {
 
     var series = [];
     var categories = [];
@@ -34,22 +34,22 @@ function updateCoverageBasedCharts(chart, summarycoverage, field) {
     }
 }
 
-function requestMappedChromosomes(flowcell_id) {
+function requestAdvancedMappedChromosomes(flowcell_id) {
     /*
      * Request the chromosomes that have reads mapped to using minimap2
      * and update the select box on tab Mapping
      *
      */
-    console.log("HEEELLOLOLLL");
+
     var url = '/api/v1/flowcells/' + flowcell_id + '/references';
 
     $.getJSON(url, function (data_unsorted) {
-        console.log(data_unsorted);
+
         var data = data_unsorted.sort(function (a, b) {
             return a['barcode_name'] - ['b.barcode_name'];
         });
 
-        var select = document.getElementById('chromosome-id-select');
+        var select = document.getElementById('advanced-chromosome-id-select');
         var selected_index = select.selectedIndex;
         var selected_option = select[selected_index];
 
@@ -87,15 +87,12 @@ function requestMappedChromosomes(flowcell_id) {
 
 }
 
-function drawPafSummaryTable(flowCellId) {
+function drawAdvancedPafSummaryTable(flowCellId) {
     // Get total reads table updates the total reads table at te bottom of the page
     // Get data from the api
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
-    if (flowcell_selected_tab_input.value !== "nav-sequence-mapping") {
-        return;
-    }
     // Jquery selector
-    let table = $(".mapping-table");
+    let table = $(".advanced-mapping-table");
     // If the table already exists, use the DataTable APi to update in place
     if ($.fn.DataTable.isDataTable(table)) {
         table.DataTable().clear();
@@ -125,26 +122,26 @@ function drawPafSummaryTable(flowCellId) {
     }
 }
 
-function requestPafData(id) {
+function requestAdvancedPafData(id) {
 
-    requestMappedChromosomes(id);
+    requestAdvancedMappedChromosomes(id);
 
     var pafurl = '/api/v1/flowcells/' + id + '/pafsummary/';
 
-    if (!this.chart_per_chrom_cov) {
+    if (!this.advanced_chart_per_chrom_cov) {
 
-        this.chart_per_chrom_cov = this.makeChart(
-            "per-chrom-cov",
+        this.advanced_chart_per_chrom_cov = this.makeChart(
+            "advanced-per-chrom-cov",
             "Chromosome Coverage".toUpperCase(),
             "Chromosome Coverage".toUpperCase()
         );
 
     }
 
-    if (!this.chart_per_chrom_avg) {
+    if (!this.advanced_chart_per_chrom_avg) {
 
-        this.chart_per_chrom_avg = this.makeChart(
-            "per-chrom-avg",
+        this.advanced_chart_per_chrom_avg = this.makeChart(
+            "advanced-per-chrom-avg",
             "Read Length By Chromosome".toUpperCase(),
             "Read Length By Chromosome".toUpperCase()
         );
@@ -187,13 +184,17 @@ function requestPafData(id) {
 
             }
 
-            updateCoverageBasedCharts(this.chart_per_chrom_cov, summarycoverage, "coverage");
-            updateCoverageBasedCharts(this.chart_per_chrom_avg, summarycoverage, "ave_read_len");
+            updateAdvancedCoverageBasedCharts(this.advanced_chart_per_chrom_cov, summarycoverage, "coverage");
+            updateAdvancedCoverageBasedCharts(this.advanced_chart_per_chrom_avg, summarycoverage, "ave_read_len");
 
         }
 
     }).bind(this));
-    drawPafSummaryTable(id);
 
+    /*
+     * Request flowcell summary
+     * This response is a HTML code that is appended to the page (no json)
+     */
 
+    drawAdvancedPafSummaryTable(id);
 }
