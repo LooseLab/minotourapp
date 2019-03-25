@@ -9,6 +9,7 @@ from django.shortcuts import render
 from alignment.models import PafRoughCov, PafSummaryCov
 from alignment.utils import calculate_coverage_new
 from . import utils
+from rest_framework.response import Response
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -135,17 +136,84 @@ def flowcell_paf_alignment_list_original(request, flowcell_id, barcodegroup_id, 
     return HttpResponse(json.dumps(result_list, cls=NumpyEncoder), content_type="application/json")
 
 
-def flowcell_paf_summary_html(request, pk):
+@api_view(['GET'])
+def paf_summary_json(request, pk):
 
+    query_columns = [
+        'barcode_name',
+        'reference_line_name',
+        'read_count',
+        'total_length',
+        'reference_line_length',
+        'average_read_length',
+        'coverage'
+    ]
 
-    queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk)
+    draw = int(request.GET.get('draw', 0))
 
-    df = pd.DataFrame.from_records(queryset.values('barcode_name','job_master__id','reference_line_name','read_count','total_length','reference_line_length'))
-    df["average_read_length"]=df['total_length']/df['read_count']
-    df["coverage"]=df['total_length']/df['reference_line_length']
+    start = int(request.GET.get('start', 0))
+
+    length = int(request.GET.get('length', 10))
+
+    end = start + length
+    # Which column s
+    search_value = request.GET.get('search[value]', '')
+
+    order_column = request.GET.get('order[0][column]', '')
+    # ascending descending
+    order_dir = request.GET.get('order[0][dir]', '')
+    if not search_value == "":
+
+        queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk) \
+            .filter(reference_line_name__icontains=search_value)
+
+    else:
+
+        queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk)
+
+    if order_column:
+
+        if order_dir == 'desc':
+            queryset = queryset.order_by('-{}'.format(query_columns[int(order_column)]))
+
+        else:
+            queryset = queryset.order_by('{}'.format(query_columns[int(order_column)]))
+
+    records_total = queryset.count()
+
+    queryset = queryset[start:end]
+
+    df = pd.DataFrame.from_records(
+        queryset.values('barcode_name', 'job_master__id', 'reference_line_name', 'read_count', 'total_length',
+                        'reference_line_length'))
+
+    df["average_read_length"] = df['total_length'].div(df['read_count']).round(decimals=3)
+
+    df["coverage"] = df['total_length'].div(df['reference_line_length']).round(decimals=3)
+
     dictdf = df.to_dict('records')
 
-    return render(request, 'alignment/flowcell_paf_summary.html', {'qs': dictdf})
+    result = {
+        'draw': draw,
+        "recordsTotal": records_total,
+        "recordsFiltered": records_total,
+        "data": dictdf
+    }
+    print(result)
+
+    return Response(result, status=200)
+
+
+# def flowcell_paf_summary_html(request, pk):
+#
+#     queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk)
+#
+#     df = pd.DataFrame.from_records(queryset.values('barcode_name','job_master__id','reference_line_name','read_count','total_length','reference_line_length'))
+#     df["average_read_length"]=df['total_length']/df['read_count']
+#     df["coverage"]=df['total_length']/df['reference_line_length']
+#     dictdf = df.to_dict('records')
+#
+#     return render(request, 'alignment/flowcell_paf_summary.html', {'qs': dictdf})
 
 
 @api_view(['GET'])
@@ -165,8 +233,8 @@ def flowcell_paf_summary_cov(request, pk):
             'reference_line_name': record.reference_line_name,
             'read_count': record.read_count,
             'total_length': record.total_length,
-            'chrom_cover': record.total_length/record.reference_line_length,
-            'avg_read_len': record.total_length / record.read_count
+            'chrom_cover': round(record.total_length/record.reference_line_length, 2),
+            'avg_read_len': round(record.total_length / record.read_count)
         }
 
         response.append(paf_summary_cov)

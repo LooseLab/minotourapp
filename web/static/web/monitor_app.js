@@ -117,6 +117,8 @@ var FlowcellPageApp = {
 
         this.requestPafData = requestPafData.bind(this);
 
+        this.requestAdvancedPafData = requestAdvancedPafData.bind(this);
+
         // this.liveUpdateTasks = liveUpdateTasks;
         //
         // this.updateTasks = updateTasks.bind(this);

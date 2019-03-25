@@ -7,7 +7,8 @@ class FlowcellController {
         this._flowcell = new Flowcell(flowcell_id);
 
         this._flowcell_tab_controller = new FlowcellTabController(flowcell_id);
-        this._coverage_chart_controller = new CoverageChartController('coverage_div');
+        this._coverage_chart_controller = new CoverageChartController('coverage_div', "");
+        this._advanced_coverage_chart_controller = new CoverageChartController('advanced-coverage_div', 'advanced-');
         this._lastread = 0; // TODO this is a quick fix for the problem on the live data tab. we should refactor this soon.
     }
 
@@ -19,6 +20,11 @@ class FlowcellController {
     get coverage_chart_controller() {
 
         return this._coverage_chart_controller;
+    }
+
+    get advanced_coverage_chart_controller() {
+
+        return this._advanced_coverage_chart_controller;
     }
 
     get lastread() {

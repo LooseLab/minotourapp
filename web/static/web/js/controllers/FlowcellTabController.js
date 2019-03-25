@@ -11,6 +11,7 @@ class FlowcellTabController {
         this._nav_basecalled_data = document.querySelector('#nav-basecalled-data');
         this._nav_reads_data = document.querySelector('#nav-reads');
         this._nav_sequence_mapping = document.querySelector('#nav-sequence-mapping');
+        this._nav_advanced_sequence_mapping = document.querySelector('#nav-advanced-sequence-mapping');
         this._nav_sequence_assembly = document.querySelector('#nav-sequence-assembly');
         this._nav_metagenomics = document.querySelector('#nav-metagenomics');
         this._nav_tasks = document.querySelector('#nav-tasks');
@@ -22,6 +23,7 @@ class FlowcellTabController {
             this._nav_basecalled_data,
             this._nav_reads_data,
             this._nav_sequence_mapping,
+            this._nav_advanced_sequence_mapping,
             this._nav_sequence_assembly,
             this._nav_metagenomics,
             this._nav_tasks
@@ -32,6 +34,7 @@ class FlowcellTabController {
         this._tab_basecalled_data = document.querySelector('#tab-basecalled-data');
         this._tab_reads_data = document.querySelector('#tab-reads');
         this._tab_sequence_mapping = document.querySelector('#tab-sequence-mapping');
+        this._tab_advanced_sequence_mapping = document.querySelector('#tab-advanced-sequence-mapping');
         this._tab_sequence_assembly = document.querySelector('#tab-sequence-assembly');
         this._tab_metagenomics = document.querySelector('#tab-metagenomics');
         this._tab_tasks = document.querySelector('#tab-tasks');
@@ -43,6 +46,7 @@ class FlowcellTabController {
             this._tab_basecalled_data,
             this._tab_reads_data,
             this._tab_sequence_mapping,
+            this._tab_advanced_sequence_mapping,
             this._tab_sequence_assembly,
             this._tab_metagenomics,
             this._tab_tasks
@@ -122,6 +126,11 @@ class FlowcellTabController {
                 this.toggle_content(this._nav_sequence_mapping, this._tab_sequence_mapping);
                 break;
 
+            case 'nav-advanced-sequence-mapping':
+
+                this.toggle_content(this._nav_advanced_sequence_mapping, this._tab_advanced_sequence_mapping);
+                break;
+
             case 'nav-sequence-assembly':
 
                 this.toggle_content(this._nav_sequence_assembly, this._tab_sequence_assembly);
@@ -177,6 +186,11 @@ class FlowcellTabController {
                 case 'sequence-mapping':
 
                     this._nav_sequence_mapping.classList.remove('hidden');
+                    break;
+
+                case 'advanced-sequence-mapping':
+
+                    this._nav_advanced_sequence_mapping.classList.remove('hidden');
                     break;
 
                 case 'sequence-assembly':

@@ -1,45 +1,45 @@
-{% load humanize %}
-{% for record in qs %}
-
-    {% if forloop.first %}
-
-        <div class='table-responsive'>
-        <table class="table">
-        <thead>
-
-        <th align="left">Barcode</th>
-        <td align="left"><strong>Sequence Name</strong></td>
-        <td align="right"><strong>Sequence Length</strong></td>
-        <td align="right"><strong>Read Count</strong></td>
-        <td align="right"><strong>Yield</strong></td>
-        <td align="right"><strong>Average Read Length</strong></td>
-        <td align="right"><strong>Coverage</strong></td>
-        </thead>
-        <tbody>
-
-    {% endif %}
-
-    <tr>
-        <td align="left">{{ record.barcode_name }}</td>
-        <td align="left">{{ record.reference_line_name }}</td>
-        <td align="right">{{ record.reference_line_length|intcomma }}</td>
-        <td align="right">{{ record.read_count|intcomma }}</td>
-        <td align="right">{{ record.total_length|intcomma }}</td>
-        <td align="right">{{ record.average_read_length|floatformat:"2"|intcomma }}</td>
-        <td align="right">{{ record.coverage|floatformat:"2"|intcomma }}</td>
-    </tr>
-
-    {% if forloop.last %}
-        </tbody>
-
-        </table>
-
-        </div>
-    {% endif %}
-
-
-{% empty %}
-
-No information available.
-
-{% endfor %}
+{#{% load humanize %}#}
+{#{% for record in qs %}#}
+{##}
+{#    {% if forloop.first %}#}
+{##}
+{#        <div class='table-responsive'>#}
+{#        <table class="table">#}
+{#        <thead>#}
+{##}
+{#        <th align="left">Barcode</th>#}
+{#        <td align="left"><strong>Sequence Name</strong></td>#}
+{#        <td align="right"><strong>Sequence Length</strong></td>#}
+{#        <td align="right"><strong>Read Count</strong></td>#}
+{#        <td align="right"><strong>Yield</strong></td>#}
+{#        <td align="right"><strong>Average Read Length</strong></td>#}
+{#        <td align="right"><strong>Coverage</strong></td>#}
+{#        </thead>#}
+{#        <tbody>#}
+{##}
+{#    {% endif %}#}
+{##}
+{#    <tr>#}
+{#        <td align="left">{{ record.barcode_name }}</td>#}
+{#        <td align="left">{{ record.reference_line_name }}</td>#}
+{#        <td align="right">{{ record.reference_line_length|intcomma }}</td>#}
+{#        <td align="right">{{ record.read_count|intcomma }}</td>#}
+{#        <td align="right">{{ record.total_length|intcomma }}</td>#}
+{#        <td align="right">{{ record.average_read_length|floatformat:"2"|intcomma }}</td>#}
+{#        <td align="right">{{ record.coverage|floatformat:"2"|intcomma }}</td>#}
+{#    </tr>#}
+{##}
+{#    {% if forloop.last %}#}
+{#        </tbody>#}
+{##}
+{#        </table>#}
+{##}
+{#        </div>#}
+{#    {% endif %}#}
+{##}
+{##}
+{#{% empty %}#}
+{##}
+{#No information available.#}
+{##}
+{#{% endfor %}#}
