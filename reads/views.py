@@ -1553,6 +1553,10 @@ def flowcell_tabs_details(request, pk):
     if paf_rough_cov_list.count() > 0:
 
         tabs.append('sequence-mapping')
+
+    Advanced_mapping_job = JobMaster.objects.filter(flowcell__id=pk, job_type__name="ReadUntil")
+
+    if Advanced_mapping_job:
         tabs.append('advanced-sequence-mapping')
 
     centrifuge_output_list = CentrifugeOutput.objects.filter(task__flowcell_id=pk)
