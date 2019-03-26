@@ -18,11 +18,13 @@ The client is available on PyPi::
 
     pip install minFQ
 
-A development version is also available. This version is usually more up to date. Clone the client repository::
+A development version is also available. Clone the client repository::
 
     git clone https://github.com/LooseLab/minotourcli.git
 
 Or download and unzip the code found in the github `repository <https://github.com/LooseLab/minotourcli>`_.
+
+.. TODO DO we need to source myenv, not create our own environment now??.
 
 To install the development version into the python virtual environment::
 
@@ -56,16 +58,12 @@ Config file
 
 minFQ can be preconfigured with a lot of the options that stay the same using a config file, that must be present in the Current Working Directory that minFQ is being called from.
 
-An example config file could be called minfq-posix.config, and any option can be configured using the -- name of that argument. --names are viewable by running::
+An example config file could be called minfq-posix.config, and any option can be configured using the -- name of that argument. Config file syntax allows: key=value, flag=true, stuff=[a,b,c].
 
-    minFQ -h
-
-.Config file syntax allows: key=value, flag=true, stuff=[a,b,c].
-
-The contents of a config file may look like::
+The content of a config file may look like::
 
     key=b410a0c9729d92ac989509c695cc3ee66a749ec6
-    port=10000
+    port=8000
     hostname=127.0.0.1
     ip-address=127.0.0.1
 

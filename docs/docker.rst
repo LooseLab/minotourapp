@@ -10,7 +10,7 @@ Installation
 
 First, if not already installed, install docker community edition, following the instructions found `here <https://www.docker.com/get-started>`_.
 
-Check the installation was successful, either in the terminal, or PowerShell for windows::
+Check the installation was correct, either in the terminal, or PowerShell for windows::
 
     docker --version
 
@@ -36,8 +36,6 @@ First to create a user with administrator rights::
 
     docker ps -a
 
-.. image :: _static/docker_ps-a_web.png
-
 This will show you all the containers you have installed. Copy the container ID for the web-minotour container. Run::
 
     docker exec -it <Container ID> python3 manage.py createsuperuser
@@ -53,8 +51,6 @@ Now, in order to add references to the docker container for mapping and metageno
 To do this, run the following commands::
 
     docker ps -a
-
-.. image:: _static/docker_ps-a_celery.png
 
 Copy the container ID for the celery-worker-minotour-instance container. Run::
 
@@ -73,14 +69,16 @@ To add the centrifuge index, you will need to have the files locally to copy acr
     docker cp /path/to/folder/containing/index/files/. <Container ID>:/var/lib/minotour/data
 
 ---------------------------------------
-Add the target agent validation regions
+Add the validation regions
 ---------------------------------------
 
-Finally, to add a set of target regions::
+Validation regions must be created as GFF3 files, following the universal format found `here <http://gmod.org/wiki/GFF3>`_. An example file looks like
+
+.. image:: _static/gff_gile.png
+
+Finally, to add a set of validation regions::
 
     docker ps -a
-
-.. image:: _static/docker_ps-a_celery.png
 
 Copy the container ID for the celery-worker-minotour-instance container. Then run::
 

@@ -14,7 +14,6 @@ Welcome to Minotour's documentation!
 
    docker
    minfq
-   dstl
    development
    quickstart
    faqs
