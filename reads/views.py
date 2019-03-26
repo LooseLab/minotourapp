@@ -959,6 +959,13 @@ def flowcell_detail(request, pk):
         serializer = FlowcellSerializer(flowcell, context={'request': request})
 
         data = serializer.data
+        # Add in the last read start time, to filter the MinKnow messages inside the run time
+        # Enumerate through the data["runs"] value, an array containing a dict element, one for each run
+        for i, array in enumerate(data["runs"]):
+            # Get the last read time from the run summary by doing FK relationship lookups
+            last_read_time = flowcell.runs.get(runid=data["runs"][i]["runid"]).summary.last_read_start_time
+            # Add it to the dictionary that contains information on the run
+            data["runs"][i]["last_read_time"] = last_read_time
 
         return_dict = {"data": data}
 
@@ -1325,7 +1332,6 @@ def flowcell_run_summaries_html(request, pk):
     return render(request, 'reads/flowcell_runs_summary.html', {
         'run_list': result
     })
-
 
 @api_view(['GET'])
 def flowcell_run_basecalled_summary_html(request, pk):
