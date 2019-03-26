@@ -23,6 +23,7 @@ function requestData(flowcell_id) {
         if (flowcell_selected_tab_input.value == 'nav-summary-data') {
 
             this.requestRunDetails(flowcell_id);
+            console.log(data);
             requestMinknowMessages(flowcell_id, data);
 
         } else if (flowcell_selected_tab_input.value == 'nav-tasks') {
@@ -89,8 +90,8 @@ function requestData(flowcell_id) {
             this.requestPafData(flowcell_id);
 
         } else if (flowcell_selected_tab_input.value == 'nav-advanced-sequence-mapping') {
-
             this.requestAdvancedPafData(flowcell_id);
+            this.expectedBenefitScatter(flowcell_id);
 
         } else if (flowcell_selected_tab_input.value == 'nav-sequence-assembly') {
 

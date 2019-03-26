@@ -56,7 +56,7 @@
 <div class="highlight-python"><div class="highlight"><pre>pip install minFQ
 </pre></div>
 </div>
-<p>A development version is also available. Clone the client repository:</p>
+<p>A development version is also available. This version is usually more up to date. Clone the client repository:</p>
 <div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/LooseLab/minotourcli.git
 </pre></div>
 </div>
@@ -76,22 +76,25 @@
 <div class="highlight-python"><div class="highlight"><pre>minFQ -w /path/to/directory/containing_fastq/ -n &lt;flowcell_name&gt; -k &lt;Api_key&gt; -hn &lt;Server address for minotour&gt; -ip &lt;minKNOW address&gt; -p &lt;Port number&gt;
 </pre></div>
 </div>
-<p>For docker the port is 10000. The host server address for minotour is localhost, or 127.0.0.1. The minKNOW ip address is usually 127.0.0.1. The flowcell name can be what you wish, and the watch directory is where the basecalled fastq will be appearing.</p>
-<p>minFQ scans recursively, so setting -w a top level directory for the flowcell data will find all the runs and fastqs inside that directory.</p>
+<p>For docker the port is 10000. The host server address for minotour is localhost, or 127.0.0.1. The minKNOW ip address is usually 127.0.0.1. The flowcell name can be what you wish, and the watch directory is where the basecalled Fastq will be appearing.</p>
+<p>minFQ scans recursively, so setting -w a top level directory for the flowcell data will find all the runs and Fastqs inside that directory.</p>
 <p>For the development environment, this will be similar, but the port can vary.</p>
 <p>For the minotour web server hosted by Nottingham, the host server address for minotour will be minotour.nottingham.ac.uk.</p>
 <div class="section" id="config-file">
 <h2>Config file<a class="headerlink" href="#config-file" title="Permalink to this headline">¶</a></h2>
 <p>minFQ can be preconfigured with a lot of the options that stay the same using a config file, that must be present in the Current Working Directory that minFQ is being called from.</p>
-<p>An example config file could be called minfq-posix.config, and any option that has a &#8211; can be configured. Config file syntax allows: key=value, flag=true, stuff=[a,b,c].</p>
-<p>It&#8217;s contents may look like:</p>
-<div class="highlight-python"><div class="highlight"><pre>k=b410a0c9729d92ac989509c695cc3ee66a749ec6
-p=8000
-hostname=127.0.0.1
-ip=127.0.0.1
+<p>An example config file could be called minfq-posix.config, and any option can be configured using the &#8211; name of that argument. &#8211;names are viewable by running:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">minFQ</span> <span class="o">-</span><span class="n">h</span>
 </pre></div>
 </div>
-<p>Many other options can be set!</p>
+<p>.Config file syntax allows: key=value, flag=true, stuff=[a,b,c].</p>
+<p>The contents of a config file may look like:</p>
+<div class="highlight-python"><div class="highlight"><pre>key=b410a0c9729d92ac989509c695cc3ee66a749ec6
+port=10000
+hostname=127.0.0.1
+ip-address=127.0.0.1
+</pre></div>
+</div>
 </div>
 </div>
 
@@ -125,7 +128,7 @@ ip=127.0.0.1
 <li class="toctree-l1"><a class="reference internal" href="dstl.html">Threat agent analysis</a></li>
 <li class="toctree-l1"><a class="reference internal" href="development.html">Development environment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quickstart use cheatsheet</a></li>
-<li class="toctree-l1"><a class="reference internal" href="faqs.html">Frequently asked questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faqs.html">FAQ</a></li>
 </ul>
 
 <div class="relations">

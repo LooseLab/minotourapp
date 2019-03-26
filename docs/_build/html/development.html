@@ -67,7 +67,7 @@ pip install -r requirements.txt
 <ul>
 <li><p class="first"><a class="reference external" href="https://redis.io/download">[Redis]</a> - Minotour uses <strong>Redis</strong> as a cache system for the web module and also for Celery. Follow the instructions and make sure that the <strong>redis-server</strong> executable is available in PATH environment variable.</p>
 </li>
-<li><p class="first"><a class="reference external" href="https://dev.mysql.com/downloads/">[MySQL Community edition]</a> - Minotour requires a MySQL server instance. It can run locally or on another server. Installing and configuring MySQL is not in the scope of this guide, but here is the official <a class="reference external" href="https://dev.mysql.com/doc/mysql-getting-started/en/">documentation</a> and another good tutorial can be found here [Link](<a class="reference external" href="https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-16-04">https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-16-04</a>). Once the server is up and running you can either choose to use the root user created during mySql initialisation in the below environmental variables, or create a user as follows in the mysql shell, logged in as the root user or an admin user:</p>
+<li><p class="first"><a class="reference external" href="https://dev.mysql.com/downloads/">[MySQL Community edition]</a> - Minotour requires a MySQL server instance. It can run locally or on another server. Installing and configuring MySQL is not in the scope of this guide, but here is the official <a class="reference external" href="https://dev.mysql.com/doc/mysql-getting-started/en/">documentation</a> and another good tutorial can be found <a class="reference external" href="https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-16-04">here</a>. Once the server is up and running you can either choose to use the root user created during mySql initialisation in the below environmental variables, or create a user as follows in the mysql shell, logged in as the root user or an admin user:</p>
 <div class="highlight-python"><div class="highlight"><pre>CREATE USER minotour;
 CREATE TABLE minotourdb;
 GRANT ALL PRIVILEGES ON minotourdb TO &#39;minotour&#39;@&#39;localhost&#39; IDENTIFIED BY &#39;&lt;password&gt;&#39;
@@ -76,7 +76,7 @@ GRANT ALL PRIVILEGES ON minotourdb TO &#39;minotour&#39;@&#39;localhost&#39; IDE
 </li>
 <li><p class="first"><a class="reference external" href="https://github.com/lh3/minimap2">[Minimap2]</a> - Minotour uses <strong>Minimap2</strong> to run fast alignment, and to do metagenomics target validation.</p>
 </li>
-<li><p class="first"><a class="reference external" href="https://www.python.org">[Python 3]</a> - Minotour uses <strong>Python &gt;=3.5</strong>, so make sure it is available on your system.</p>
+<li><p class="first"><a class="reference external" href="https://www.python.org">[Python 3]</a> - Minotour uses <strong>Python 3.6</strong>, so make sure that this version is available on your system.</p>
 </li>
 <li><p class="first">You will need to have the virtual environment activated to run Minotour, Celery and Flower, as well as to install the new dependencies.</p>
 </li>
@@ -111,7 +111,7 @@ export MT_CENTRIFUGE_INDEX=&quot;/home/user/centrifuge_indexes/p_compressed&quot
 <ul class="simple">
 <li>minoTour uses the ete3 package, that needs access to the internet to download the NCBI species database.</li>
 </ul>
-<p>To force the download (this step just need to be execured once), type the following instructions on the python interpreter.:</p>
+<p>To force the download (this step just need to be executed once), type the following instructions on the python interpreter:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">ete3</span>
 
 <span class="kn">from</span> <span class="nn">ete3</span> <span class="kn">import</span> <span class="n">NCBITaxa</span>
@@ -123,7 +123,7 @@ export MT_CENTRIFUGE_INDEX=&quot;/home/user/centrifuge_indexes/p_compressed&quot
 <div class="section" id="environmental-config-and-running">
 <h2>Environmental config and running<a class="headerlink" href="#environmental-config-and-running" title="Permalink to this headline">¶</a></h2>
 <ul>
-<li><p class="first">Setup environment variables - many Minotour config parameters are stored in the environment, so that we do need to hardcode database users and password, or any other information that is environment dependent. You can create a bash script file, for example envs.sh, place it in the main application directory (The directory that contains manage.py) and copy the following into it, or include in the ~/.bash_profile or ~/.bash_rc (please check if this is the correct file in your environment).:</p>
+<li><p class="first">Setup environment variables - many Minotour config parameters are stored in the environment, so that we do need to hardcode database users and password, or any other information that is environment dependent. You can create a bash script file, for example envs.sh, place it in the main application directory (The directory that contains manage.py) and copy the following into it, or include them in the ~/.bash_profile or ~/.bash_rc (please check if this is the correct file in your environment):</p>
 <div class="highlight-python"><div class="highlight"><pre>#!/bin/bash
 export MT_DB_ENGINE=&#39;django.db.backends.mysql&#39;
 export MT_DB_HOST=&#39;localhost&#39;
@@ -177,7 +177,7 @@ python3 manage.py createsuperuser
 </div>
 </li>
 <li><p class="first">Start Flower:</p>
-<div class="highlight-python"><div class="highlight"><pre>cd /path/to/minotour/code/ &amp;&amp; source minotourenv/bin/activate &amp;&amp; &amp;&amp; flower -A minotourapp --port=5555
+<div class="highlight-python"><div class="highlight"><pre>cd /path/to/minotour/code/ &amp;&amp; source minotourenv/bin/activate &amp;&amp; flower -A minotourapp --port=5555
 </pre></div>
 </div>
 </li>

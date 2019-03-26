@@ -43,7 +43,7 @@
 <div class="section" id="installation">
 <span id="link-to-meee"></span><h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <p>First, if not already installed, install docker community edition, following the instructions found <a class="reference external" href="https://www.docker.com/get-started">here</a>.</p>
-<p>Check the installation was correct, either in the terminal, or PowerShell for windows:</p>
+<p>Check the installation was successful, either in the terminal, or PowerShell for windows:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">docker</span> <span class="o">--</span><span class="n">version</span>
 </pre></div>
 </div>
@@ -67,6 +67,7 @@
 <div class="highlight-python"><div class="highlight"><pre>docker ps -a
 </pre></div>
 </div>
+<img alt="_images/docker_ps-a_web.png" src="_images/docker_ps-a_web.png" />
 <p>This will show you all the containers you have installed. Copy the container ID for the web-minotour container. Run:</p>
 <div class="highlight-python"><div class="highlight"><pre>docker exec -it &lt;Container ID&gt; python3 manage.py createsuperuser
 </pre></div>
@@ -80,6 +81,7 @@
 <div class="highlight-python"><div class="highlight"><pre>docker ps -a
 </pre></div>
 </div>
+<img alt="_images/docker_ps-a_celery.png" src="_images/docker_ps-a_celery.png" />
 <p>Copy the container ID for the celery-worker-minotour-instance container. Run:</p>
 <div class="highlight-python"><div class="highlight"><pre>docker cp /path/to/folder/containing/reference/files/. &lt;Container ID&gt;:/var/lib/minotour/data
 </pre></div>
@@ -102,6 +104,7 @@
 <div class="highlight-python"><div class="highlight"><pre>docker ps -a
 </pre></div>
 </div>
+<img alt="_images/docker_ps-a_celery.png" src="_images/docker_ps-a_celery.png" />
 <p>Copy the container ID for the celery-worker-minotour-instance container. Then run:</p>
 <div class="highlight-python"><div class="highlight"><pre>docker cp /path/to/folder/containing/gff/files/. &lt;Container ID&gt;:/var/lib/minotour/data
 </pre></div>

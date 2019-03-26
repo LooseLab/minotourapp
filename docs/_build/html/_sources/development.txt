@@ -30,10 +30,9 @@ Minotour contains three main modules:
 
 Minotour also makes use of a MySQL database, Celery (responsible for running server tasks), Redis (a database in memory similar to memcached, required by Celery as a message broker), Flower (optional - but a useful Celery task monitor tool).
 
-
 * `[Redis] <https://redis.io/download>`_ - Minotour uses **Redis** as a cache system for the web module and also for Celery. Follow the instructions and make sure that the **redis-server** executable is available in PATH environment variable.
 
-* `[MySQL Community edition] <https://dev.mysql.com/downloads/>`_ - Minotour requires a MySQL server instance. It can run locally or on another server. Installing and configuring MySQL is not in the scope of this guide, but here is the official `documentation <https://dev.mysql.com/doc/mysql-getting-started/en/>`_ and another good tutorial can be found here [Link](https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-16-04). Once the server is up and running you can either choose to use the root user created during mySql initialisation in the below environmental variables, or create a user as follows in the mysql shell, logged in as the root user or an admin user::
+* `[MySQL Community edition] <https://dev.mysql.com/downloads/>`_ - Minotour requires a MySQL server instance. It can run locally or on another server. Installing and configuring MySQL is not in the scope of this guide, but here is the official `documentation <https://dev.mysql.com/doc/mysql-getting-started/en/>`_ and another good tutorial can be found `here <https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-16-04>`_. Once the server is up and running you can either choose to use the root user created during mySql initialisation in the below environmental variables, or create a user as follows in the mysql shell, logged in as the root user or an admin user::
 
     CREATE USER minotour;
     CREATE TABLE minotourdb;
@@ -42,7 +41,7 @@ Minotour also makes use of a MySQL database, Celery (responsible for running ser
 
 * `[Minimap2] <https://github.com/lh3/minimap2>`_ - Minotour uses **Minimap2** to run fast alignment, and to do metagenomics target validation.
 
-* `[Python 3] <https://www.python.org>`_ - Minotour uses **Python >=3.5**, so make sure it is available on your system.
+* `[Python 3] <https://www.python.org>`_ - Minotour uses **Python 3.6**, so make sure that this version is available on your system.
 
 * You will need to have the virtual environment activated to run Minotour, Celery and Flower, as well as to install the new dependencies.
 
@@ -79,7 +78,7 @@ p_compressed.4.cf
 
 - minoTour uses the ete3 package, that needs access to the internet to download the NCBI species database.
 
-To force the download (this step just need to be execured once), type the following instructions on the python interpreter.::
+To force the download (this step just need to be executed once), type the following instructions on the python interpreter::
 
     import ete3
 
@@ -91,7 +90,7 @@ To force the download (this step just need to be execured once), type the follow
 Environmental config and running
 --------------------------------
 
-* Setup environment variables - many Minotour config parameters are stored in the environment, so that we do need to hardcode database users and password, or any other information that is environment dependent. You can create a bash script file, for example envs.sh, place it in the main application directory (The directory that contains manage.py) and copy the following into it, or include in the ~/.bash_profile or ~/.bash_rc (please check if this is the correct file in your environment).::
+* Setup environment variables - many Minotour config parameters are stored in the environment, so that we do need to hardcode database users and password, or any other information that is environment dependent. You can create a bash script file, for example envs.sh, place it in the main application directory (The directory that contains manage.py) and copy the following into it, or include them in the ~/.bash_profile or ~/.bash_rc (please check if this is the correct file in your environment)::
 
     #!/bin/bash
     export MT_DB_ENGINE='django.db.backends.mysql'
@@ -125,12 +124,9 @@ Environmental config and running
 
 * Redis::
 
-
     redis-server &
 
 * Create tables and administrator account::
-
-
 
     cd /path/to/minotour/code;
     source ~/minotourenv/bin/activate;
@@ -148,11 +144,9 @@ Environmental config and running
 
 * Start Flower::
 
-
-    cd /path/to/minotour/code/ && source minotourenv/bin/activate && && flower -A minotourapp --port=5555
+    cd /path/to/minotour/code/ && source minotourenv/bin/activate && flower -A minotourapp --port=5555
 
 * Start Minotour::
-
 
     cd /path/to/minotour/code
     source minotourenv/bin/activate

@@ -41,7 +41,7 @@ Minotour also makes use of a MySQL database, Celery (responsible for running ser
 
 * `[Minimap2] <https://github.com/lh3/minimap2>`_ - Minotour uses **Minimap2** to run fast alignment, and to do metagenomics target validation.
 
-* `[Python 3] <https://www.python.org>`_ - Minotour uses **Python >=3.5**, so make sure it is available on your system.
+* `[Python 3] <https://www.python.org>`_ - Minotour uses **Python 3.6**, so make sure that this version is available on your system.
 
 * You will need to have the virtual environment activated to run Minotour, Celery and Flower, as well as to install the new dependencies.
 
