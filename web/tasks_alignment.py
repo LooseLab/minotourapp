@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import os
 import subprocess
 
+import numpy as np
 import pandas as pd
 from celery import task
 from celery.utils.log import get_task_logger
@@ -12,7 +13,7 @@ from alignment.models import PafRoughCov, PafStore, PafSummaryCov
 from jobs.models import JobMaster
 from reads.models import FastqRead, Flowcell
 from reference.models import ReferenceInfo, ReferenceLine
-
+from web.utils import parse_md_cg_pafline, parseMDPAF
 
 logger = get_task_logger(__name__)
 
@@ -550,7 +551,31 @@ def calculate_expected_benefit(flowcell_id, job_master_id):
 
         for line in pafdata:
 
-            line = line.strip('\n')
+            pafline = parse_md_cg_pafline(line)
+
+            reference_line = ReferenceLine.objects.filter(reference_info=reference_info).filter(line_name=pafline.chromosome)
+
+            mismatch_hold_array = np.zeros(reference_line.chromosome_length)
+            match_hold_array = np.zeros(reference_line.chromosome_length)
+
+            mismatch_array, match_array, mapstart, runstart = parseMDPAF(line)
+            mismatch_hold_array[mapstart:mapstart + len(mismatch_array)] += mismatch_array
+            match_hold_array[mapstart:mapstart + len(match_array)] += match_array
+
+            coverage_array = np.sum([match_hold_array, mismatch_hold_array], axis=0)
+
+            filename_mismatch_hold = '{}_{}_mismatch_hold.bin'.format(flowcell.id, job_master.id)
+            filename_match_hold = '{}_{}_match_hold.bin'.format(flowcell.id, job_master.id)
+            filename_coverage = '{}_{}_coverage.bin'.format(flowcell.id, job_master.id)
+
+            with open(os.path.join(REFERENCE_LOCATION, filename_mismatch_hold), 'wb+') as fh:
+                fh.write(mismatch_hold_array.data)
+
+            with open(os.path.join(REFERENCE_LOCATION, filename_match_hold), 'wb+') as fh:
+                fh.write(match_hold_array.data)
+
+            with open(os.path.join(REFERENCE_LOCATION, filename_coverage), 'wb+') as fh:
+                fh.write(coverage_array.data)
 
     logger.info('Flowcell id: {} - Found {} paf records (CIGAR string)'.format(flowcell.id, len(pafdata)))
 

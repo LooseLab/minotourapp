@@ -1,9 +1,15 @@
 from django.test import TestCase
+from django.contrib.auth.models import User
+from rest_framework.test import APIRequestFactory
+from rest_framework.test import force_authenticate
 
+from reads.models import Flowcell, Run, FastqRead, FastqReadType
 from web.utils import parse_md_cg_pafline
 
 
 class ParsePafFile(TestCase):
+
+    fixtures = ['fixtures/auxiliary_data.json', ]
 
     def test_split_paf_line(self):
 
@@ -13,4 +19,47 @@ class ParsePafFile(TestCase):
 
         self.assertEqual(line_tuple.read_id, '3d8564a8-653e-4dbe-b301-3a2cea209bf8')
         self.assertEqual(line_tuple.chromosome, 'NC_001140')
-    
+
+    def test_advanced_mapping(self):
+
+        user = User.objects.create_user(
+            username='admin',
+            email='admin@minotour.org',
+            password='top_secret'
+        )
+
+        flowcell = Flowcell.objects.create(
+            name='Flowcell 0',
+            owner=user
+        )
+        flowcell.save()
+
+        run = Run.objects.create(
+            name='Run 0',
+            flowcell=flowcell,
+            owner=user
+        )
+        run.save()
+
+        fastq_read_type_template = FastqReadType.objects.get(pk=1)
+
+        read1 = FastqRead.objects.create(
+            run=run,
+            flowcell=flowcell,
+            owner=user,
+            read_id='8ad48b94ad4dfc75bdaf3c73485cd99f0dc71eb3',
+            read='49869',
+            channel='810',
+            barcode='',
+            barcode_name='',
+            sequence_length='',
+            quality_average='',
+            is_pass=True,
+            type=fastq_read_type_template,
+            start_time='2018-08-04T11:55:25Z',
+            sequence='TCATTTCGTTCGGACATTTATCAGTAGAGCATTAAAAGGTGGAAGATATTGACTCAAAATATTGTGGCATCGCCACGGACAATGGTTCCAGACTATTAAGTACTGATCGACGAGCAGTGTCTGGAGCATTGGTAACTACGGCGATGTTCTTTACTCTGACTACGGTAGTTTATGATGACATAAATCCAGAACAACAGGCATATCGCCAGTATTACTATTGGTATTAGATGACCAGGACAACAGTTGGTTCAATTACCAAAGTGGATAAAAGGATAATGAAAAACTGACCGGGAACTAAATTCCAACTATGCATCGGAAGGTGATAAAGCCGGATGGTGATGGATGGCAATCTGGAGTATAAAATGGTTGAGACGGAAGCGCCAACAGGTTGCACAATTAGTGATGAATATAAGACGATGCAAAAATCACGGATTTACCGCCATTTTGGTCCTAAACGTTACAATTGAAAACACCAGAGCAAATAGTGGCGCGGTTCTTTTAAAGAAGATGGTGTAACGAAGACGCTATCGCAGGGCAAATTCGAATTCAAAATGCAGACGGTACAAAAGTCGCACGAAAACTTAGTATCTAATGCAGATGGAAGCGTCAGAGTAGCAATAGCGCCAGGCGATTGCAATTTGTGAAACAAAGCGTAACTGGCTGTATATTCGTCACAGCGCCAAATTCACGATTGAATTTATTCAAAAATAACTGTATTCACAGCGAAAACTGGTGGTGGTTCCTGAACGAAAGAGATGGAGTGGCTTTCGTGTGGAATTATTCAAAACCGGAACAAAAAGTGTCAAACTTGGTGGACGCAGATGGTAGGTAAACAAACGATTTTAACTGGGAGACTACCAGTTTGCGGCTGGATGCTTCGTTGATTAGTTGTAAACAAGACTGATACGTAACCAAAGAAACTGTGGAATCTGGCGGTTCTGTAAAACAGATGATTGCAAGCTGCGTTGTCTGATGCGAATTTGTTCTGGAACTGCCACTGGAACTAAAGGTAAGGATTTAACAGATGCAAGTGGTGAGAGGATAAGTGGCTGATTTGGCACCGGGCGATTACAAGTTCATTAGAACCAAAGCACTGTGAGCTGCAATTGGATGCCACGCGGACACTTTTTACCGTCAGATTTGGCAATCGATGATCCAAGTGAACAAAGAAGTATTGAACTGGTAGTGTGGTCTTATGACTGAATGACAAATCAAAATTAACAGGTTCAGTTACAAACAAAACGGTGTGGTTTGAAAGATGAAGTAGTGAAGCGATGGTCGACTGCAGGTTGATGGCAGCGCCGGGCGACTGCAATTGAACAGAGCAGAACTCAACAGGTTGTGAGCAGTCTGGCACAGTTAATTCACCATTGAATTTAACCAAAGATGCAGTTCAAGTATTTCAAAACAAATAAAATGTCTTACTGGATCTGTTGTGTTAACTAAGGACTGATGAGCAAAAACTTGCAGACGTTTAAATTGATGAGCAGATAATAACGTCACGAAGAGTCTAACAGCTGGAATAATAATCATGTTGATTGTCGATTAATTGAGGGTTATGAACAATGCCGTTTCGGTCGATGTAATCAGTTTTAATCAAAATCAGTGGCTGGTAACCAAAACAAATATTAAACAGTTCAATGGAATATTCAATTTGTTGATACAAAGAATGTGTGGAATAAGTTCATGCAGGTTTAGTCAGGAAAATATGTAACTAAAGCCAGATCTATCGCGGGTTATAAACTAACAGAAGACCTACAGAATCGGCATACAAAGCAGATCAAAAAGTAACCTTTAACATATGAAAAATAAATCACCATTGTCTGACCCTACTAAATAATTGAAACCTTCCTATTATTAAATACAACTTCAAAACAAGCCACAGATCTTCCTTCAACGAGGAGATAATTCCTAGCTAATCTAATCGTTACGGATTATTCGCTAGTACTAGGACTTTTCTTATAAGAAAAGTCAAAAAGTAAATGATTAATAATTGGTCTTCTGCTGGATAGCGACTTTTTATCATTATATGAAAAAATTCCATATAATGCAGGAAAAGAGGGTTTCATATTGAAAAATGTACATGGTATGCTTTTGTTCACTAAAAATAATCCGCTTTTATTCTTCAAGAACATTTCGACTTCTCGACATTGATATATTATTCGGTCCGTCTTATAAACGAACACATAGGAGAAAACAGCTTAATAAATATATGGTGATGGAGTTTTTATTCGTGGTTACTCGTTTTCAAAACAATATCTTCCATATAATATGACATTGTTGATGAAAATGTAATAATGTAAAATAATCAAAGAGATAAAAGATAGAAAATCAGTAATTAACTAACATGAAATTGAAACAAAACTGGAGAAACAAAGAAGTTTCTATAACTGAACACAGGACAATTATAGAAAATTCACTTTCAGAAGAATATATTGTTAAGAGGCTCCAGGATATATTTAGACAGATGAACGTCACTGGCTGATAAGAGAACTTCTAGTTCAACAAAGAGGCAGAAACCATCATTACCAGAACAGCCTCTAAAAGGGATCTGAAGACAGTTATGTTTCAGATAATATTTTCAAGGTTAAAATGGAACTGGGAGTAGACTTGGTGCATTATGTAAAAATGGCAGACAGTAGTTCCATGAAAATGAATTTTACTTTCTCAGAACTTCTTTAAAGCTGGAGAACAGTTTACCAGATTCATTCAACTTTAGACGGCTACAGACGGAGATTCTTACCTTCAACAATACATGGCA',
+            quality="'$$&'%%((,+*/%$%(),)+)+$)%&(&'&%%),+)%&&$'&))),&.2,,++,),,*+(2(%&)'++)*$&%$&()-,0+'%$&&*%('%%%$%(%$$%$&$$%&&%%()%'(&'+,2*$((%(()+.'**,)(%%&''&&%$$&'%%'&%''('')+,'/,1.$'*+%$%%%&(*+(())*+.&('&)))-/+%&'$&&()$%&&%&&'(%&)),+&&&%&&%&(('&%&%.'*%&''''(1''&(%&&)(%*&**)%,(.-*)*(&*()'(&'%')00+($$%*(*,)&*+,/.../+%($$'%'%(&$%&()'*&'&((&'&$%$)&'$$$$$()+/)('%%%*-.)+)'$+)+*0.'&'*+/*)0//%*'(%(%'&'&().*2)%'')+',0((**,000766530/)(((*%%*-.1*((%&(*&,.*(,.,/5-31/*('&%%%*.3-)+,*-..0/,-12/-+.(*(&'),.)'&%'%&&&('*04+076..1(&,+*32(+.(*(-('*''+*)*--10.+%*'&((*.*1.%(&,)%(*..*+/),,+'&*%&''+('(($%#%%(+,*&%%%$++,.'(+*%('),+++'&(*)()%%'$%%&''%$%%&&'''*)(('+'%))+//)%&&(0.(.0'&('&(.,.,,('&'&-'+,%'&$$&&%*%&&'(0+3*%%&%+(&)(-.'%$%$*,+)%$&&$%$'$)%$%%%&%%*,,''&&%'(''(-/.-)('%%&().(&(&(/+'%&&&%$%%$&$%%$%&$$+'$'%$'(('''*-)-+*1.-+',*((,(%&(&%$$%,-.--')''&%&%%&&'.+*+.++''*32-)(&$$'*(**'(%%$%%%%$$#'$$&$$$$$$$%$$(&&%'($%)'$%'(0-)'%$%'&%&%''+*++'.,*%*)&'$$'&&()'')&('&'-5+.%+)',.)*(*,*'+%$$&%&')//.,*%(''(%&$$$)&0/*&()')%%%$%'%''%&&'*')*,10*&&()(&&%''%(&%(')*'%'&%((+*(&&&)*/.'%$&&'()-+16-(/,--3'..,,&,-&++,-/5,&(&%&'&)'--(&'$'$$&'%(''%)'(%+(),,+/0'+((&($$$&(*+*&$'((..'(&.(&''*-1/1'&%%%+,&-*&)&('*.-)%''%'%'%%&'+++,+&'()..0.')'&%%%))'&)(#'%&'&'))+)&%$$$$$()+00%&+)$%%''&*,)&%&*))*%)(0+-)+('**%('&)$&%%%)%&''+.0/..)**'+(()(1'&&%%(')+)+('&%+(()*%)&%)&$%'%&&''(('&&%'-(*)%)$/)$(&'&(%$&%#%(++.*+.3.1*4.,,,,03*,+21')&&$+('%'&%'''-++-***&%&%$/.0/..5.)*+0+('%$'((-,,/*.01-/($'$+'*(,-+'('(,))&%%%$('()&%%&&%'%%%%%*+(%&&)'%%(&&$'%'((&)($$%%''&(&&)'&&'')&&#%$$%)''*'*&')),'%%$%''$-(#&%&&+./2-%$%$$(+1%('('&%'%%&&%(-+)&),+*)*'%''%%%'+13+01,)(,,'+()%'&%%&%%'&(%&'*-+*'(+*)&')*''&).,%%$#%'&&%$%&$'&*0('-,))*%&)(''&('%(&$%((%%'''*0+,0+-'(,-44).00'.**)+,/.1+()'))*)($(%&%++./'-+&*(+-.,'''('&&((*(&**')+/.(&%%%$(*+-)*+)+.1,()&)('()344+)*+-,)((&'&)**((((&&+,-.4*)*%&%%'*(+,%)*261*)()../)..*-%(+'*)+)*&$%%$%$*(*'&%&%%%&'''--('-*%'$&$&$&()+.*)*-,+-,&%+)++.0162,1*&(/0012.-%'-00(/*%((-(*-(+.($%(%&(&''(02//.544+--)*,/(+11.&*-)/.,)$($&%'())0).+,*-(%$&&'((*%$$&&&%%%%&*(*/.-*()(%)&&(-*)*14/.,'*(+))(('&&$$%(.+10,'*)-*-30&$)%+)(,.+,&'$&$%&*')*)($&')++*-40--+,.''&%'-*-(%&)*+($))&*-%%%&&%%)+-*'&'&&)&('%))'('%''&'&'*%&&'(**,,)**+(%&&)'&%(&%$$%$$*))&,01.(''&'$)&'*//+,,'''('')%&(&&*/,)&%%$$$%&%((%%''%)+-,')*(&&'$%$'&&&%&&*(*(''%&%'('','++))(%'((('$$''&,.-(('+.-'++*+,/)'(),,,**'%'%'$),3)-.,&*%$(%&$$&'&%%&$')&+&%))('+/.(-/.-)')*'./3,&)((-14(-&/.1/200**%'$*(*%*)-0/00--3-1*5*()*,2.,&+('(+)01,03-0,.'&'%$$'+,%13++''%')(%&&%&%)&#%$$%)*&)+)../-.-**%&%$$$&&&'&+-2,(*).0)('*(('%'&%%&%&&$&&%'&'(+-))$*(+)&*+.((*())(%%&'%'&'&.(%&$'('$$(('(/**,(''%%)&%&&(+.(('*''%&')%&%'%%'$'%(&'&''*'%&%&&++*+(&%$%&(''%(%,.,)$&&$(*,**()(.44.('+,+)&&%%(&%%.%&%$')('),%%&#%**',0,'$%$&&),/,,,3,**().(%'''%(((%%&&%()+''%.((('%)(*+%%&$%+()*%'%%&%",
+        )
+        read1.save()
+
+        print(Flowcell.objects.all())
