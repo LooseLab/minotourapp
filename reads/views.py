@@ -1021,10 +1021,10 @@ def process_summary_data(df):
 @login_required
 def flowcell_summary_html(request, pk):
 
-    flowcell = Flowcell.objects.get(pk=pk)
+    dowcell = Flowcell.objects.get(pk=pk)
 
     qs = FlowcellSummaryBarcode.objects \
-        .filter(flowcell=flowcell) \
+        .filter(flowcell=dowcell) \
         .exclude(barcode_name='No barcode')
 
     df = pd.DataFrame.from_records(qs.values('barcode_name','max_length','min_length','quality_sum','read_count','read_type_name','status','total_length'))

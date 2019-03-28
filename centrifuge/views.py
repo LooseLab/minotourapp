@@ -321,7 +321,7 @@ def metagenomic_barcodes(request, pk):
         task = JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics").order_by('id').last()
 
         if task:
-            metagenomics_barcodes = CentrifugeOutput.objects.filter(task__id=task.id) \
+            metagenomics_barcodes = CentrifugeOutput.objects.filter(task__id=task.id).exclude(barcode_name="No") \
                 .values_list("barcode_name", flat=True).distinct()
 
     else:
@@ -421,7 +421,7 @@ def all_results_table(request):
         else:
             cent_out_temp = cent_out_temp.order_by('{}'.format(query_columns[int(order_column)]))
 
-    cents = cent_out_temp.values('tax_id',
+    cents = cent_out_temp.exclude(barcode_name="No").values('tax_id',
                                  'barcode_name',
                                  'name',
                                  'num_matches',
