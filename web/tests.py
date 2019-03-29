@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from rest_framework.test import APIRequestFactory
 from rest_framework.test import force_authenticate
 
-from reads.models import Flowcell, Run, FastqRead, FastqReadType
+from reads.models import Flowcell, Run, FastqRead, FastqReadType, Barcode
 from web.utils import parse_md_cg_pafline
 
 
@@ -41,19 +41,20 @@ class ParsePafFile(TestCase):
         )
         run.save()
 
+        barcode = Barcode.objects.filter(run=run, name='All reads')[0]
+
         fastq_read_type_template = FastqReadType.objects.get(pk=1)
 
         read1 = FastqRead.objects.create(
             run=run,
             flowcell=flowcell,
-            owner=user,
             read_id='8ad48b94ad4dfc75bdaf3c73485cd99f0dc71eb3',
             read='49869',
             channel='810',
-            barcode='',
-            barcode_name='',
-            sequence_length='',
-            quality_average='',
+            barcode=barcode,
+            barcode_name=barcode.name,
+            sequence_length=25,
+            quality_average=1.0,
             is_pass=True,
             type=fastq_read_type_template,
             start_time='2018-08-04T11:55:25Z',
