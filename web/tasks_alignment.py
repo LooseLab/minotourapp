@@ -565,8 +565,11 @@ def calculate_exepected_benefit_2dot0(flowcell_id, job_master_id):
             mismatcharray, matcharray, mapstart, mapend, maporientation, reference, referencelength, readlength = parseMDPAF_alex(
                 line)
 
+
+            print ("mismatcharray")
             print(mismatcharray)
             print(mismatcharray.dtype)
+            print ("Matcharray")
             print(matcharray)
             print(matcharray.dtype)
 
@@ -601,9 +604,10 @@ def calculate_exepected_benefit_2dot0(flowcell_id, job_master_id):
                 referencedict[reference]["mismatch"],
                 error=error, prior_diff=prior_diff)
             A = benefitdict[reference]
-            #mean is the mean read length at this point.
-            rollingdict[reference]["Forward"] = rolling_sum([A], n=mean, pad=True)[0]
-            rollingdict[reference]["Reverse"] = rolling_sum([A[::-1]], n=mean, pad=True)[0][::-1]
+
+            #mean is the mean read length at this point - to work for the rolling sum it has to be an integer!
+            rollingdict[reference]["Forward"] = rolling_sum([A], n=int(np.floor(mean)), pad=True)[0]
+            rollingdict[reference]["Reverse"] = rolling_sum([A[::-1]], n=int(np.floor(mean)), pad=True)[0][::-1]
             # Recalculate the mean values for the reference we are looking at.
             rollingdict[reference]["ForMean"] = rollingdict[reference]["Forward"].mean()
             rollingdict[reference]["RevMean"] = rollingdict[reference]["Reverse"].mean()
