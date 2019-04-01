@@ -88,7 +88,7 @@ def parseMDPAF_alex(pafline):
 
     Returns
     -------
-    mutArr:
+    mismatcharray:
         A numpy array of the same length as the alignment with a 1 for a mismatch and a 0 for a match to the reference.
     matArr:
         A numpy array inverse to the mutArr - so 1 for a match and 0 for a mismatch
@@ -113,14 +113,22 @@ def parseMDPAF_alex(pafline):
     mapend = int(bits[8])
     maporientation = bits[4]
     mdstr = ""
+
     for s in filter(lambda x: sub in x, bits):
         mdstr = s.split(':')[-1]
-    matArr = np.fromiter(parse_MD(mdstr), np.int)
-    mutArr = np.ones(matArr.shape) - matArr
-    return mutArr, matArr, mapstart, mapend, maporientation, reference, referencelength, readlength
+
+    matcharray = np.fromiter(parse_MD(mdstr), np.int)
+    mismatcharray = np.ones(matcharray.shape) - matcharray
+
+    return mismatcharray, matcharray, mapstart, mapend, maporientation, reference, referencelength, readlength
+
 
 
 def add_chromosome(referencedict,rollingdict,benefitdict,reference, referencelength,mean):
+
+    error = 0.10
+    prior_diff = 0.0001
+
     referencedict[reference] = dict()
     referencedict[reference]['length'] = int(referencelength)
     referencedict[reference]["mismatch"] = np.zeros(int(referencelength))

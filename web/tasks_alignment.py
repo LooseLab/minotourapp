@@ -13,7 +13,8 @@ from alignment.models import PafRoughCov, PafStore, PafSummaryCov
 from jobs.models import JobMaster
 from reads.models import FastqRead, Flowcell
 from reference.models import ReferenceInfo, ReferenceLine
-from web.utils import parse_md_cg_pafline, parseMDPAF, parseMDPAF_alex, getbenefit, rolling_sum, check_mask
+from web.utils import parse_md_cg_pafline, parseMDPAF, parseMDPAF_alex, getbenefit, rolling_sum, check_mask, \
+    add_chromosome
 
 logger = get_task_logger(__name__)
 
@@ -78,6 +79,7 @@ def fetchreads_cent(runs,chunk_size,last_read):
         last_read = fastq_df_barcode.id.max()
     read_count = len(fastq_df_barcode)
     return fastq_df_barcode,last_read,read_count,fastasm#,fastqs_list
+
 
 @task
 def run_minimap2_alignment_by_job_master(job_master_id):
@@ -341,7 +343,8 @@ def align_reads(fastqs, job_master_id):
     return last_read
 
 
-def calculate_exepected_benefit_2dot0(flowcell_id,job_master_id):
+def calculate_exepected_benefit_2dot0(flowcell_id, job_master_id):
+
     REFERENCE_LOCATION = getattr(settings, "REFERENCE_LOCATION", None)
     MINIMAP2 = getattr(settings, "MINIMAP2", None)
     CHUNK_SIZE = 2000
@@ -352,14 +355,15 @@ def calculate_exepected_benefit_2dot0(flowcell_id,job_master_id):
     reference_info_id = job_master.reference.id
     flowcell = job_master.flowcell
 
+    if last_read is None:
+        last_read = 0
+
     fastqs = FastqRead.objects.filter(flowcell_id=flowcell_id, id__gt=int(last_read))[:CHUNK_SIZE]
 
     if not MINIMAP2:
         logger.error('Can not find minimap2 executable - stopping task.')
+        print('Can not find minimap2 executable - stopping task.')
         return
-
-    if last_read is None:
-        last_read = 0
 
     reference_info = ReferenceInfo.objects.get(pk=reference_info_id)
 
@@ -386,6 +390,7 @@ def calculate_exepected_benefit_2dot0(flowcell_id,job_master_id):
     )
 
     logger.info('Flowcell id: {} - Calling minimap - {}'.format(flowcell.id, cmd))
+    print('Flowcell id: {} - Calling minimap - {}'.format(flowcell.id, cmd))
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
@@ -396,12 +401,14 @@ def calculate_exepected_benefit_2dot0(flowcell_id,job_master_id):
     status = proc.wait()
 
     logger.info('Flowcell id: {} - Finished minimap - {}'.format(flowcell.id, cmd))
+    print('Flowcell id: {} - Finished minimap - {}'.format(flowcell.id, cmd))
 
     paf = out.decode("utf-8")
 
     pafdata = paf.splitlines()
 
     logger.info('Flowcell id: {} - Found {} paf records'.format(flowcell.id, len(pafdata)))
+    print('Flowcell id: {} - Found {} paf records'.format(flowcell.id, len(pafdata)))
 
     if len(pafdata) > 0:
 
@@ -545,7 +552,6 @@ def calculate_exepected_benefit_2dot0(flowcell_id,job_master_id):
     mean = 0
     readlen = 0
 
-
     # These are parameters but might be tuned in future.
     error = 0.1
     prior_diff = 0.0001
@@ -558,6 +564,13 @@ def calculate_exepected_benefit_2dot0(flowcell_id,job_master_id):
             # readlength is the total length of the read, not the aligned length.
             mismatcharray, matcharray, mapstart, mapend, maporientation, reference, referencelength, readlength = parseMDPAF_alex(
                 line)
+
+            print(mismatcharray)
+            print(mismatcharray.dtype)
+            print(matcharray)
+            print(matcharray.dtype)
+
+
             # Calculate the length of the aligned portion we are looking at.
             readlen += len(mismatcharray)
             # Increment counter for reads processed on this loop.
@@ -572,16 +585,17 @@ def calculate_exepected_benefit_2dot0(flowcell_id,job_master_id):
             referencedict[reference]["mismatch"][mapstart:mapstart+len(mismatcharray)] += mismatcharray
             referencedict[reference]["match"][mapstart:mapstart+len(matcharray)] += matcharray
 
-
-    ### At this point we should have a dictionary for the reference with the count of matches and mismatches
-    ### Now we need to add this to any previously seen reads.
-    ### Suggest something like:
-    ### for reference in referencedict:
-    ###     fetch old coverage data
-    ###     add new coverage data to old coverage data
-    ###     now calculate getbenefit over the entire reference:
+            """
+            ### At this point we should have a dictionary for the reference with the count of matches and mismatches
+            ### Now we need to add this to any previously seen reads.
+            ### Suggest something like:
+            ### for reference in referencedict:
+            ###     fetch old coverage data
+            ###     add new coverage data to old coverage data
+            ###     now calculate getbenefit over the entire reference:
             # Here we calculate the new benefit for this reference.
             ### Somewhere we need to specify error and prior_diff - these are variables we might want to change.
+            """
             benefitdict[reference] = getbenefit(
                 referencedict[reference]["match"],
                 referencedict[reference]["mismatch"],
@@ -601,9 +615,6 @@ def calculate_exepected_benefit_2dot0(flowcell_id,job_master_id):
                                                            rollingdict[reference]["ForMean"])
             rollingdict[reference]["RevMask"] = check_mask(rollingdict[reference]["Reverse"],
                                                            rollingdict[reference]["RevMean"])
-
-
-
 
 
 def calculate_expected_benefit(flowcell_id, job_master_id):
