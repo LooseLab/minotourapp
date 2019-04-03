@@ -7,6 +7,7 @@ import collections
 from functools import lru_cache
 import math
 
+
 def _rstrip_tuple(s, chars):
     """
     Return a tuple of the initial string and the chars removed from the right
@@ -78,7 +79,7 @@ def parse_MD(s, match=1, mismatch=0):
     return x[::-1]
 
 
-def parseMDPAF_alex(pafline):
+def parse_mdpaf_alex(pafline):
     """
     This function takes a line from a paf file created by minimap2 and returns a number of outputs.
     Parameters
@@ -121,7 +122,6 @@ def parseMDPAF_alex(pafline):
     mismatcharray = np.ones(matcharray.shape) - matcharray
 
     return mismatcharray, matcharray, mapstart, mapend, maporientation, reference, referencelength, readlength
-
 
 
 def add_chromosome(referencedict,rollingdict,benefitdict,reference, referencelength,mean):
@@ -303,6 +303,7 @@ def kldistance(after, before):
         count = count + (aft_i * (math.log(aft_i) - math.log(bef_i)))
 
     return count
+
 
 def RepresentsInt(i):
     '''

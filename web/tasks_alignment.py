@@ -2,6 +2,7 @@ from __future__ import absolute_import, unicode_literals
 
 import os
 import subprocess
+import sys
 
 import numpy as np
 import pandas as pd
@@ -13,8 +14,7 @@ from alignment.models import PafRoughCov, PafStore, PafSummaryCov
 from jobs.models import JobMaster
 from reads.models import FastqRead, Flowcell
 from reference.models import ReferenceInfo, ReferenceLine
-from web.utils import parse_md_cg_pafline, parseMDPAF, parseMDPAF_alex, getbenefit, rolling_sum, check_mask, \
-    add_chromosome
+from web.utils import parse_md_cg_pafline, parseMDPAF, parse_mdpaf_alex
 
 logger = get_task_logger(__name__)
 
@@ -382,8 +382,6 @@ def calculate_exepected_benefit_2dot0(flowcell_id, job_master_id):
 
         fastq_dict[fastq.read_id] = fastq
 
-        last_read = fastq.id
-
     cmd = '{} -x map-ont -t 1 --secondary=no -c --MD {} -'.format(
         MINIMAP2,
         os.path.join(REFERENCE_LOCATION, reference_info.filename)
@@ -528,26 +526,33 @@ def calculate_exepected_benefit_2dot0(flowcell_id, job_master_id):
 
         paf_store_gb.reset_index().apply(lambda row: save_paf_store_summary(job_master.id, row), axis=1)
 
-    ### Now reprocess the pafdata and read the cigar for expected benefit.
+    #
+    # Now reprocess the pafdata and read the cigar for expected benefit.
+    #
 
     # Create dictionaries if not passed in.
     # These dictionaries somehow need to persist from one iteration to the next.
+    if last_read == 0:
 
-    # Dictionary to hold matches, mismatches and coverage per base. Structure referencedict[chromosome][match/mismatch/coverage][position]=[int]
-    referencedict = dict()
-    # Dictionary to hold benefit. Structure benefitdict[chromosome][position]=[float]
-    benefitdict = dict()
-    # Dictionary to hold rolling benefit, mean benefit and mask.
-    # This is badly structured! The Masks are stored as Bools with position. The rollingbenefit is stored as a float with position. The Means are floats but a single value per chromosome.
-    # Structure rollingdict[chromosome][Forward/Reverse/ForMean/RevMean/ForMask/RevMask][optional position]=float,float,bool
-    rollingdict = dict()
+        # Dictionary to hold matches, mismatches and coverage per base.
+        # Structure referencedict[chromosome][match/mismatch/coverage][position]=[int]
+        reference_dict = dict()
 
-    if referencedict is None:
-        referencedict = dict()
-    if benefitdict is None:
+        # Dictionary to hold benefit. Structure benefitdict[chromosome][position]=[float]
         benefitdict = dict()
-    if rollingdict is None:
+
+        # Dictionary to hold rolling benefit, mean benefit and mask.
+        # This is badly structured! The Masks are stored as Bools with position.
+        # The rollingbenefit is stored as a float with position.
+        # The Means are floats but a single value per chromosome.
+        # Structure rollingdict[chromosome][Forward/Reverse/ForMean/RevMean/ForMask/RevMask][optional position]=float,float,bool
         rollingdict = dict()
+
+    else:
+
+        raise NotImplementedError
+
+
     readcounter = 0
     mean = 0
     readlen = 0
@@ -559,66 +564,110 @@ def calculate_exepected_benefit_2dot0(flowcell_id, job_master_id):
     if len(pafdata) > 0:
 
         for line in pafdata:
-            # Get the specific arrays of matches, mismatches, start mapping position, end mapping position, mapping orientation, reference(chromosome), reference lenght, readlength
+
+            paf_record = parse_md_cg_pafline(line)
+
+            if paf_record.chromosome not in reference_dict.keys():
+
+                reference_dict[paf_record.chromosome] = {
+
+                    'match': {
+
+                    },
+                    'mismatch': {
+
+                    },
+                    'coverage': {
+
+                    },
+                }
+
+            # Get the specific arrays of matches, mismatches, start mapping position, end mapping position,
+            # mapping orientation, reference(chromosome), reference lenght, readlength
             # These values are for a single read.
             # readlength is the total length of the read, not the aligned length.
-            mismatcharray, matcharray, mapstart, mapend, maporientation, reference, referencelength, readlength = parseMDPAF_alex(
+            mismatcharray, matcharray, mapstart, mapend, maporientation, reference, referencelength, readlength = parse_mdpaf_alex(
                 line)
 
-
-            print ("mismatcharray")
             print(mismatcharray)
-            print(mismatcharray.dtype)
-            print ("Matcharray")
             print(matcharray)
-            print(matcharray.dtype)
+            print(mapstart)
+            print(mapend)
+            print(maporientation)
+            print(reference)
+            print(referencelength)
+            print(readlength)
 
+            sys.exit()
+
+            # print ("mismatcharray")
+            # print(mismatcharray)
+            # print(mismatcharray.dtype)
+            # print ("Matcharray")
+            # print(matcharray)
+            # print(matcharray.dtype)
 
             # Calculate the length of the aligned portion we are looking at.
             readlen += len(mismatcharray)
+
             # Increment counter for reads processed on this loop.
             readcounter += 1
+
             # Calculate the mean of reads seen so far.
             mean = readlen / readcounter
-            # If the chromosome we have seen is not in the reference dictionary, we need to build it and also calculate the initial mask and rolling dictionary.
+
+            # If the chromosome we have seen is not in the reference dictionary,
+            # we need to build it and also calculate the initial mask and rolling dictionary.
             if reference not in referencedict:
-                referencedict, rollingdict = add_chromosome(referencedict, rollingdict, benefitdict, reference,
-                                                            referencelength, mean)
-            # Here we add the mismatch and match scores to the existing scores in the larger reference dictionary. We only update those positions which have changed for this read.
-            referencedict[reference]["mismatch"][mapstart:mapstart+len(mismatcharray)] += mismatcharray
-            referencedict[reference]["match"][mapstart:mapstart+len(matcharray)] += matcharray
 
-            """
-            ### At this point we should have a dictionary for the reference with the count of matches and mismatches
-            ### Now we need to add this to any previously seen reads.
-            ### Suggest something like:
-            ### for reference in referencedict:
-            ###     fetch old coverage data
-            ###     add new coverage data to old coverage data
-            ###     now calculate getbenefit over the entire reference:
-            # Here we calculate the new benefit for this reference.
-            ### Somewhere we need to specify error and prior_diff - these are variables we might want to change.
-            """
-            benefitdict[reference] = getbenefit(
-                referencedict[reference]["match"],
-                referencedict[reference]["mismatch"],
-                error=error, prior_diff=prior_diff)
-            A = benefitdict[reference]
+                referencedict, rollingdict = add_chromosome(
+                    referencedict,
+                    rollingdict,
+                    benefitdict,
+                    reference,
+                    referencelength,
+                    mean
+                )
 
-            #mean is the mean read length at this point - to work for the rolling sum it has to be an integer!
-            rollingdict[reference]["Forward"] = rolling_sum([A], n=int(np.floor(mean)), pad=True)[0]
-            rollingdict[reference]["Reverse"] = rolling_sum([A[::-1]], n=int(np.floor(mean)), pad=True)[0][::-1]
-            # Recalculate the mean values for the reference we are looking at.
-            rollingdict[reference]["ForMean"] = rollingdict[reference]["Forward"].mean()
-            rollingdict[reference]["RevMean"] = rollingdict[reference]["Reverse"].mean()
-            # Update the coverage.
-            referencedict[reference]["coverage"] = np.sum(
-                [referencedict[reference]["match"], referencedict[reference]["mismatch"]], axis=0)
-            # Update the mask for sequencing
-            rollingdict[reference]["ForMask"] = check_mask(rollingdict[reference]["Forward"],
-                                                           rollingdict[reference]["ForMean"])
-            rollingdict[reference]["RevMask"] = check_mask(rollingdict[reference]["Reverse"],
-                                                           rollingdict[reference]["RevMean"])
+            # # Here we add the mismatch and match scores to the existing scores in the larger reference dictionary. We only update those positions which have changed for this read.
+            # referencedict[reference]["mismatch"][mapstart:mapstart+len(mismatcharray)] += mismatcharray
+            # referencedict[reference]["match"][mapstart:mapstart+len(matcharray)] += matcharray
+            #
+            # """
+            # ### At this point we should have a dictionary for the reference with the count of matches and mismatches
+            # ### Now we need to add this to any previously seen reads.
+            # ### Suggest something like:
+            # ### for reference in referencedict:
+            # ###     fetch old coverage data
+            # ###     add new coverage data to old coverage data
+            # ###     now calculate getbenefit over the entire reference:
+            # # Here we calculate the new benefit for this reference.
+            # ### Somewhere we need to specify error and prior_diff - these are variables we might want to change.
+            # """
+            # benefitdict[reference] = getbenefit(
+            #     referencedict[reference]["match"],
+            #     referencedict[reference]["mismatch"],
+            #     error=error, prior_diff=prior_diff)
+            # A = benefitdict[reference]
+            #
+            # #mean is the mean read length at this point - to work for the rolling sum it has to be an integer!
+            # rollingdict[reference]["Forward"] = rolling_sum([A], n=int(np.floor(mean)), pad=True)[0]
+            # rollingdict[reference]["Reverse"] = rolling_sum([A[::-1]], n=int(np.floor(mean)), pad=True)[0][::-1]
+            # # Recalculate the mean values for the reference we are looking at.
+            # rollingdict[reference]["ForMean"] = rollingdict[reference]["Forward"].mean()
+            # rollingdict[reference]["RevMean"] = rollingdict[reference]["Reverse"].mean()
+            # # Update the coverage.
+            # referencedict[reference]["coverage"] = np.sum(
+            #     [referencedict[reference]["match"], referencedict[reference]["mismatch"]], axis=0)
+            # # Update the mask for sequencing
+            # rollingdict[reference]["ForMask"] = check_mask(rollingdict[reference]["Forward"],
+            #                                                rollingdict[reference]["ForMean"])
+            # rollingdict[reference]["RevMask"] = check_mask(rollingdict[reference]["Reverse"],
+            #                                                rollingdict[reference]["RevMean"])
+
+    print(reference_dict)
+
+    last_read = fastq.id
 
 
 def calculate_expected_benefit(flowcell_id, job_master_id):
