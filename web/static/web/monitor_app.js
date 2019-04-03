@@ -101,6 +101,8 @@ var FlowcellPageApp = {
         this.update_mapping_table = update_mapping_table;
         this.draw_simple_table = draw_simple_table;
 
+        this.drawCoverageScatter = drawCoverageScatter;
+
         this.updatePoreChart = updatePoreChart;
 
         this.requestChannelSummaryData = requestChannelSummaryData;
@@ -119,7 +121,7 @@ var FlowcellPageApp = {
 
         this.requestAdvancedPafData = requestAdvancedPafData.bind(this);
 
-        this.expectedBenefitScatter = expectedBenefitScatter;
+        // this.expectedBenefitScatter = expectedBenefitScatter;
 
         // this.liveUpdateTasks = liveUpdateTasks;
         //

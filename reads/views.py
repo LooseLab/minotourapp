@@ -1560,8 +1560,8 @@ def flowcell_tabs_details(request, pk):
 
         tabs.append('sequence-mapping')
 
-    advanced_mapping_job = JobMaster.objects.filter(flowcell__id=pk, job_type__name="ReadUntil")
-    # advanced_mapping_job = True
+    # advanced_mapping_job = JobMaster.objects.filter(flowcell__id=pk, job_type__name="ReadUntil")
+    advanced_mapping_job = True
     if advanced_mapping_job:
         tabs.append('advanced-sequence-mapping')
 
@@ -1596,7 +1596,7 @@ def flowcell_tabs_details(request, pk):
     #
     #     else:
     #
-    #         print("Flowcell '" + pk + "' has JobType '" + master + "' but there is no corresponding tab defined in reads/views.py")
+    #         print("Flowcell '" + pk + "' - defined in reads/views.py")
     #
     # for tab in tabs:
     #
