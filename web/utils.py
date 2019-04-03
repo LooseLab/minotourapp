@@ -124,28 +124,34 @@ def parse_mdpaf_alex(pafline):
     return mismatcharray, matcharray, mapstart, mapend, maporientation, reference, referencelength, readlength
 
 
-def add_chromosome(referencedict,rollingdict,benefitdict,reference, referencelength,mean):
+def add_chromosome(referencedict, rollingdict, benefitdict, reference, referencelength, mean, error, prior_diff):
 
-    error = 0.10
-    prior_diff = 0.0001
+    reference_length = int(referencelength)
 
     referencedict[reference] = dict()
-    referencedict[reference]['length'] = int(referencelength)
-    referencedict[reference]["mismatch"] = np.zeros(int(referencelength))
-    referencedict[reference]["match"] = np.zeros(int(referencelength))
-    referencedict[reference]["coverage"] = np.zeros(int(referencelength))
-    benefitdict[reference] = getbenefit(referencedict[reference]["match"],
-                                             referencedict[reference]["mismatch"]
-                                       ,error=error,prior_diff=prior_diff)
+    referencedict[reference]['length'] = reference_length
+    referencedict[reference]['mismatch'] = np.zeros(reference_length)
+    referencedict[reference]['match'] = np.zeros(reference_length)
+    referencedict[reference]['coverage'] = np.zeros(reference_length)
+
+    benefitdict[reference] = getbenefit(
+        referencedict[reference]['match'],
+        referencedict[reference]['mismatch'],
+        error=error,
+        prior_diff=prior_diff
+    )
+
+    a = benefitdict[reference]
+
     rollingdict[reference] = dict()
-    A = benefitdict[reference]
-    rollingdict[reference]["Forward"] = rolling_sum([A], n=int(np.floor(mean)))[0]
-    rollingdict[reference]["Reverse"] = rolling_sum([A[::-1]], n=int(np.floor(mean)))[0][::-1]
-    rollingdict[reference]["ForMean"] = rollingdict[reference]["Forward"].mean()
-    rollingdict[reference]["RevMean"] = rollingdict[reference]["Reverse"].mean()
-    rollingdict[reference]["ForMask"] = check_mask(rollingdict[reference]["Forward"],0)
-    rollingdict[reference]["RevMask"] = check_mask(rollingdict[reference]["Reverse"],0)
-    return referencedict,rollingdict
+    rollingdict[reference]['Forward'] = rolling_sum([a], n=int(np.floor(mean)))[0] # what does it do?
+    rollingdict[reference]['Reverse'] = rolling_sum([a[::-1]], n=int(np.floor(mean)))[0][::-1]
+    rollingdict[reference]['ForMean'] = rollingdict[reference]["Forward"].mean()
+    rollingdict[reference]['RevMean'] = rollingdict[reference]["Reverse"].mean()
+    rollingdict[reference]['ForMask'] = check_mask(rollingdict[reference]["Forward"],0)
+    rollingdict[reference]['RevMask'] = check_mask(rollingdict[reference]["Reverse"],0)
+
+    return referencedict, rollingdict
 
 
 ### Helper functions to calculate expected benefit, rolling sum and the check mask.

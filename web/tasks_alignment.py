@@ -626,7 +626,9 @@ def calculate_exepected_benefit_2dot0(flowcell_id, job_master_id):
                     benefitdict,
                     reference,
                     referencelength,
-                    mean
+                    mean,
+                    error,
+                    prior_diff
                 )
 
             # # Here we add the mismatch and match scores to the existing scores in the larger reference dictionary. We only update those positions which have changed for this read.
