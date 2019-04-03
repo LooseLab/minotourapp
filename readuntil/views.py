@@ -37,10 +37,11 @@ def read_pickle(path_list):
     return listy_list
 
 
-def remove_duplicate_sequences(array):
+def remove_duplicate_sequences(array, master=False):
     """
     Remove stretches of the reference with the same values
     :param array: The array with a value for each reference location
+    :param master: Whether this data is for the master chart or not
     :return: a tuple of a list with an x,y coordinate for plotting, the max value on the x axis,
     and the max value on the y axis
     """
@@ -62,10 +63,21 @@ def remove_duplicate_sequences(array):
     # Make a list of tuple with the x axis (The index value) and the y axis value (The array value)
     x_y_values = list(zip(df.index.values, df[0]))
 
-    if len(x_y_values) > 50000:
+    if len(x_y_values) > 50000 and master:
+        print("Stormy storm storm storm")
         x_y_values = sampler(x_y_values)
 
     return x_y_values, xmax, ymax
+
+
+def get_y_axis_max(array):
+    """
+    Get the maximum value in the array
+    :param array: The array of data
+    :type array: np.nparray
+    :return:
+    """
+    return array.max()
 
 
 def sampler(array):
@@ -77,6 +89,7 @@ def sampler(array):
     step_size = int(len(array) / 50000)
     sampled_array = array[0::step_size]
     return sampled_array
+
 
 @api_view(['POST'])
 def rejectedfastqread_list(request):
@@ -112,19 +125,68 @@ def get_benefit_data(request):
 
     coverage = data_array[0]["coverage"]
 
-    matches = data_array[0]["match"]
+    x_y_cov, xmax_cov, ymax_cov = remove_duplicate_sequences(coverage, True)
 
-    mismatches = data_array[0]["mismatch"]
+    y_max_match = get_y_axis_max(data_array[0]["match"])
 
-    local_benefit = data_array[0]["local_benefit"]
+    y_max_mismatch = get_y_axis_max(data_array[0]["mismatch"])
+
+    y_max_localben = get_y_axis_max(data_array[0]["local_benefit"])
+
+    y_max_forward_roll = get_y_axis_max(data_array[0]["Forward"])
+
+    y_max_reverse_roll = get_y_axis_max(data_array[0]["Reverse"])
+
+    y_max_fwd_mask = get_y_axis_max(data_array[0]["ForMask"])
+
+    y_max_rev_mask = get_y_axis_max(data_array[0]["RevMask"])
+
+    data_dict = {"coverage": {"xmax": xmax_cov, "ymax": ymax_cov, "data": x_y_cov},
+                 "match": {"ymax": y_max_match},
+                 "mismatch": {"ymax": y_max_mismatch},
+                 "localBen": {"ymax": y_max_localben},
+                 "forwardRoll": {"ymax": y_max_forward_roll},
+                 "reverseRoll": {"ymax": y_max_reverse_roll},
+                 "fwdMask": {"ymax": y_max_fwd_mask},
+                 "revMask": {"ymax": y_max_rev_mask}}
+
+    return Response(data_dict)
+
+
+@api_view(["GET"])
+def get_benefit_data_complete(request):
+    """
+    The complete benefit data for the selected regions of the master chart
+    :param request: Contains the min and max x axis values in the body
+    :return: a dictionary of the data from the pickle for all the detail charts
+    """
+    mini = int(request.GET.get("min"))
+    maxi = int(request.GET.get("max"))
+
+    file_list = ["/home/rory/Downloads/rollingdict.p", "/home/rory/Downloads/referencedict.p",
+                 "/home/rory/Downloads/benefitdict.p"]
+
+    # file_list = ["/home/rory/Downloads/referencedict.p", "/home/rory/Downloads/benefitdict.p"]
+
+    # file_list = ["/home/rory/Downloads/benefitdict.p"]
+
+    data_array = read_pickle(file_list)
+
+    coverage = data_array[0]["coverage"][mini:maxi]
+
+    matches = data_array[0]["match"][mini:maxi]
+
+    mismatches = data_array[0]["mismatch"][mini:maxi]
+
+    local_benefit = data_array[0]["local_benefit"][mini:maxi]
     # Forward strand rolling benefit
-    forward_roll = data_array[0]["Forward"]
+    forward_roll = data_array[0]["Forward"][mini:maxi]
     # Reverse strand rolling benefit
-    reverse_roll = data_array[0]["Reverse"]
+    reverse_roll = data_array[0]["Reverse"][mini:maxi]
 
-    fwd_mask = data_array[0]["ForMask"]
+    fwd_mask = data_array[0]["ForMask"][mini:maxi]
 
-    rev_mask = data_array[0]["RevMask"]
+    rev_mask = data_array[0]["RevMask"][mini:maxi]
 
     x_y_cov, xmax_cov, ymax_cov = remove_duplicate_sequences(coverage)
 
@@ -151,16 +213,11 @@ def get_benefit_data(request):
                  "rollingBenefitRev": {"xmax": xmax_rev_rolling_ben, "ymax": ymax_fwd_rolling_ben,
                                        "data": x_y_rev_rolling_ben},
                  "forwardMask": {"xmax": xmax_fwd_mask, "ymax": ymax_fwd_mask,
-                                       "data": x_y_fwd_mask},
+                                 "data": x_y_fwd_mask},
                  "reverseMask": {"xmax": xmax_rev_mask, "ymax": ymax_rev_mask,
-                                       "data": x_y_rev_mask},
+                                 "data": x_y_rev_mask},
                  }
 
     return Response(data_dict)
-
-
-@api_view(["GET"])
-def get_benefit_data_complete(request):
-    print(request.GET)
 
 

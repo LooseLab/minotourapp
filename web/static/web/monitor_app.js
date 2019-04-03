@@ -101,7 +101,7 @@ var FlowcellPageApp = {
         this.update_mapping_table = update_mapping_table;
         this.draw_simple_table = draw_simple_table;
 
-        this.drawCoverageScatter = drawCoverageScatter;
+        this.drawReadUntilCharts = drawReadUntilCharts;
 
         this.updatePoreChart = updatePoreChart;
 
