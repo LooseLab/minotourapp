@@ -1,6 +1,7 @@
 version: '3'
 
 services:
+
     minotour_redis:
         image: redis
         container_name: minotour_redis
@@ -8,19 +9,41 @@ services:
             - production-network
 
     minotour_db:
-        build:
-            dockerfile: docker/db.dockerfile
-            context: .
+        image: mariadb
         container_name: minotour_db
+        environment:
+            MYSQL_ROOT_PASSWORD: test
+            MYSQL_DATABASE: minotour
         networks:
             - production-network
         volumes:
             - ./db_data_dir:/var/lib/mysql
 
-    web:
+    minotour_web:
         build:
             dockerfile: docker/web.dockerfile
             context: .
+        container_name: minotour_web
+        command: python manage.py runserver 0.0.0.0:8000
+        environment:
+            MT_DB_ENGINE: 'django.db.backends.mysql'
+            MT_DB_NAME: minotour
+            MT_DB_USER: root
+            MT_DB_PASS: test
+            MT_DB_PORT: 3306
+            MT_DB_HOST: minotour_db
+            MT_SECRET_KEY: ''
+            MT_DJANGO_DEBUG: 'True'
+            MT_MAILGUN_ACCESS_KEY: ''
+            MT_MAILGUN_SERVER_NAME: ''
+            MT_TWITTOKEN: ''
+            MT_TWITTOKEN_SECRET: ''
+            MT_TWITCONSUMER_KEY: ''
+            MT_TWITCONSUMER_SECRET: ''
+            MT_REFERENCE_LOCATION: '/var/lib/minotour/data'
+            MT_MINIMAP2: '/var/lib/minotour/minimap2/minimap2'
+            MT_CELERY_BROKER_URL: 'redis://minotour_redis:6379/0'
+            MT_CELERY_RESULT_BACKEND: 'redis://minotour_redis:6379/0'
         ports:
             - 10000:8000
         networks:
@@ -30,67 +53,28 @@ services:
             - minotour_redis
         volumes:
             - .:/var/lib/minotour/apps/minotourapp
-#    minimap2:
-#        build:
-#            dockerfile: minimap2.dockerfile
-#            context: .
-#        networks:
-#            - production-network
-#        depends_on:
-#            - web
-        # command: ["./run_django.sh"]
-        # volumes:
-        #    - ".:/var/lib/minotour/apps/minotourapp"
+
+    celery:
+        build:
+            dockerfile: docker/celery.dockerfile
+            context: .
+        networks:
+            - production-network
+        depends_on:
+            - minotour_db
+            - minotour_redis
+
+    celery_worker:
+        build:
+            dockerfile: docker/celery-worker.dockerfile
+            context: .
+        networks:
+            - production-network
+        depends_on:
+            - minotour_db
+            - minotour_redis
+
 networks:
     production-network:
         driver: bridge
 
-#version: '3'
-#
-#services:
-#    db:
-#        image: mysql
-#        environment:
-#            MYSQL_ROOT_PASSWORD: test
-#        volumes:
-#            - ./mysql-data:/var/lib/mysql
-#        ports:
-#            - "3307:3306"
-#        networks:
-#            - production-network
-#
-#    redis:
-#        image: redis
-#        volumes:
-#            - ./redis-data:/data
-#        ports:
-#            - "6379:6379"
-#        networks:
-#            - production-network
-#
-#    minotour:
-#        build:
-#            dockerfile: ./minotourapp.dockerfile
-#            context: .
-#        image: roberto/minotourapp
-#        container_name: minotourapp
-#        volumes:
-#            - .:/opt/minotourapp
-#        ports:
-#            - "8000:8000"
-#        networks:
-#            - production-network
-#
-#  web:
-#    build: .
-#    command: python3 manage.py runserver 0.0.0.0:8000
-#    volumes:
-#      - .:/code
-#    ports:
-#      - "8000:8000"
-#    depends_on:
-#      - db
-#
-#networks:
-#    production-network:
-#        driver: bridge

@@ -7,7 +7,7 @@ django-mailgun
 djangorestframework
 httpie 
 Markdown 
-mysqlclient==1.3.14
+mysqlclient
 python-dateutil
 pytz 
 configargparse
