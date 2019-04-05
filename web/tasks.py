@@ -78,10 +78,7 @@ def run_monitor():
                 ))
 
                 run_minimap2_alignment.delay(
-                    flowcell.id,
                     flowcell_job.id,
-                    flowcell_job.reference.id,
-                    flowcell_job.last_read
                 )
 
             if flowcell_job.job_type.name == "ChanCalc":
@@ -359,7 +356,7 @@ def callfetchreads_assem(runs,chunk_size,last_read):
     #fastqs_list = list()
     fastq_df_barcode = pd.DataFrame()
     while True:
-        #reads, last_read, read_count, fastasmchunk, fastqs_list_chunk = fetchreads_cent(runs, chunk_size, last_read)
+        #reads, last_read, read_count, fastasmchunk, fastqs_list_chunk = fetch_reads_alignment(runs, chunk_size, last_read)
         reads, last_read, read_count, fastasmchunk = fetchreads_assem(runs, chunk_size, last_read)
         fastasm+=fastasmchunk
         #fastqs_list += fastqs_list_chunk

@@ -24,7 +24,7 @@ pd.options.mode.chained_assignment = None
 logger = get_task_logger(__name__)
 
 
-def callfetchreads_cent(runs, chunk_size, last_read):
+def call_fetch_reads_cent(runs, chunk_size, last_read):
     """
     Call the fetch reads function to create a fastq for the process
     :param runs: List of all runs on the flowcell
@@ -32,13 +32,13 @@ def callfetchreads_cent(runs, chunk_size, last_read):
     :param last_read: The previous last read we took
     :return:
     """
-    # a list of the fastqs object to pass into the mapping functionality
+    # a list of the fastqs object to pass into the mapping function
     fasta_objects = list()
     # Initialise the data frame
     fastq_df_barcode = pd.DataFrame()
     while True:
-        # Call fetchreads_cent to actually query the database
-        reads, last_read, read_count, fastasmchunk = fetchreads_cent(runs, chunk_size, last_read)
+        # Call fetch_reads_cent to actually query the database
+        reads, last_read, read_count, fastasmchunk = fetch_reads_cent(runs, chunk_size, last_read)
         # Add fasta_objects chunk to the list
         fasta_objects += fastasmchunk
         # Append the reads_df to the fastq_df
@@ -51,7 +51,7 @@ def callfetchreads_cent(runs, chunk_size, last_read):
     return fastq_df_barcode, last_read, read_count, fasta_objects
 
 
-def fetchreads_cent(runs, chunk_size, last_read):
+def fetch_reads_cent(runs, chunk_size, last_read):
     """
     Query the database for runs from a flowcell
     :param runs: The list of runs objects for this flowcell
@@ -1148,8 +1148,7 @@ def run_centrifuge(flowcell_job_id):
 
     runs = flowcell.runs.all()
 
-    # fastq_df_barcode, last_read, read_count, fasta_objects, fastqs_list = callfetchreads_cent(runs,chunk_size,task.last_read)
-    fastq_df_barcode, last_read, read_count, fasta_objects = callfetchreads_cent(runs, chunk_size, task.last_read)
+    fastq_df_barcode, last_read, read_count, fasta_objects = call_fetch_reads_cent(runs, chunk_size, task.last_read)
 
     if read_count == 0:
         # task.complete = True

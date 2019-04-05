@@ -1,128 +1,163 @@
 from __future__ import absolute_import, unicode_literals
-
 import os
 import subprocess
-
 import pandas as pd
 from celery import task
 from celery.utils.log import get_task_logger
 from django.conf import settings
-
 from alignment.models import PafRoughCov, PafStore, PafSummaryCov
 from jobs.models import JobMaster
 from reads.models import FastqRead, Flowcell
 from reference.models import ReferenceInfo, ReferenceLine
 
-
+# Setup the logger for this task
 logger = get_task_logger(__name__)
 
 
-def callfetchreads_cent(runs,chunk_size,last_read):
-    fastasm=list()
-    #fastqs_list = list()
+def call_fetch_reads_alignment(runs, chunk_size, last_read):
+    """
+    Call the fetch reads function to create a fastq for the process
+    :param runs: List of all runs on the flowcell
+    :param chunk_size: The target number of reads we want
+    :param last_read: The previous last read we took
+    :return:
+    """
+    # a list of the fastqs object to pass into the mapping function
+    fasta_objects = list()
+    # Initialise the data frame
     fastq_df_barcode = pd.DataFrame()
     while True:
-        #reads, last_read, read_count, fastasmchunk, fastqs_list_chunk = fetchreads_cent(runs, chunk_size, last_read)
-        reads, last_read, read_count, fastasmchunk = fetchreads_cent(runs, chunk_size, last_read)
-        fastasm+=fastasmchunk
-        #fastqs_list += fastqs_list_chunk
+        # Call fetch_reads_alignment to actually query the database
+        reads, last_read, read_count, fastasmchunk = fetch_reads_alignment(runs, chunk_size, last_read)
+        # Add fasta_objects chunk to the list
+        fasta_objects += fastasmchunk
+        # Append the reads_df to the fastq_df
         fastq_df_barcode = fastq_df_barcode.append(reads)
-        if len(fastq_df_barcode)>=chunk_size or len(reads)==0:
+        # If we have enough reads (more than chunk_size) or no reads
+        if len(fastq_df_barcode) >= chunk_size or len(reads) == 0:
             break
+    # Update the read count with the number of reads we just fetched
     read_count = len(fastq_df_barcode)
-    return fastq_df_barcode,last_read,read_count,fastasm #,fastqs_list
+    return fastq_df_barcode, last_read, read_count, fasta_objects
 
 
-def fetchreads_cent(runs,chunk_size,last_read):
-    countsdict=dict()
-    fastasm = list()
-    #fastqs_list = list()
+def fetch_reads_alignment(runs, chunk_size, last_read):
+    """
+    Query the database for runs from a flowcell
+    :param runs: The list of runs objects for this flowcell
+    :param chunk_size: The target number of reads to have pulled back
+    :param last_read: The id of the last read
+    :return:
+    """
+    # Store the first read id and which run it's from this dict
+    countsdict = dict()
+    # The list of fastqread objects
+    fasta_objects = list()
+    # loop through the runs
     for run in runs:
-        #fastqs = FastqRead.objects.filter(run=run, id__gt=int(last_read)).first()
+        # fastqs = FastqRead.objects.filter(run=run, id__gt=int(last_read)).first()
+        # Query the database for the reads objects
         fastqs = FastqRead.objects.values_list('id').filter(run=run, id__gt=int(last_read)).first()
+        # If there are fastqs store the object
         if fastqs:
+            # Store the first id you get and the urn it's from
             countsdict[fastqs[0]] = run
+    # initialise the count
     count = 1
+    # initialise the a dataframe to append reads to
     fastq_df_barcode = pd.DataFrame()
-    if len(countsdict)>1:
+    # If you have reads from more than one run
+    if len(countsdict) > 1:
+        # Start with first read entry from this run
         for entry in sorted(countsdict):
+            # If we haven't done more iterations than we have dict entries
             if count < len(countsdict):
+                # Do the query
                 fastqs = FastqRead.objects.filter(run=countsdict[entry],
-                                              id__gt=int(last_read),
-                                                id__lt=int(sorted(countsdict)[count]),
-                                                         )[:chunk_size]
+                                                  id__gt=int(last_read),
+                                                  id__lt=int(sorted(countsdict)[count]),
+                                                  )[:chunk_size]
+                # Append new results to barcode
                 fastq_df_barcode = fastq_df_barcode.append(pd.DataFrame.from_records(
                     fastqs.values("read_id", "barcode_name", "sequence", "id")))
 
-                # Create a list of the fastQRead objects we will use in this objects
-                fastasm += list(fastqs)
-                # Create a list of 8000 tuples each with these 4 objects in it
-                #fastqs_list += fastqs.values_list('read_id', 'barcode_name', 'sequence', 'id')
+                # add to list of the fastQRead objects new objects
+                fasta_objects += list(fastqs)
+                # Set the new last read id
                 last_read = fastq_df_barcode.id.max()
+                # If we have enough reads, stop
                 if len(fastq_df_barcode) >= chunk_size:
                     break
             count += 1
-    elif len(countsdict)==1:
-        """This is risky and it breaks the logic - we end up grabbing reads"""
+    # If we only have one run
+    elif len(countsdict) == 1:
+        """TODO This is risky and it breaks the logic - we may end up skipping reads from other runs"""
+        # The key is the first fastqreads object retrieved
         mykey = list(countsdict.keys())[0]
+        # Get the fastq objects from the database
         fastqs = FastqRead.objects.filter(run=countsdict[mykey],
-                                              id__gt=int(last_read),)[:chunk_size]
+                                          id__gt=int(last_read), )[:chunk_size]
+        # append the results to the fastq dataframe
         fastq_df_barcode = fastq_df_barcode.append(pd.DataFrame.from_records(
             fastqs.values("read_id", "barcode_name", "sequence", "id")))
         # Create a list of the fastQRead objects we will use in this objects
-        fastasm += list(fastqs)
-        # Create a list of 8000 tuples each with these 4 objects in it
-        #fastqs_list += fastqs.values_list('read_id', 'barcode_name', 'sequence', 'id')
-
+        fasta_objects += list(fastqs)
+        # get the new last read id
         last_read = fastq_df_barcode.id.max()
+    # get the read count of the new reads pulled out to later update the job_master total
     read_count = len(fastq_df_barcode)
-    return fastq_df_barcode,last_read,read_count,fastasm#,fastqs_list
+    # Return everything to be used above
+    return fastq_df_barcode, last_read, read_count, fasta_objects
 
-@task
+
+@task()
 def run_minimap2_alignment_by_job_master(job_master_id):
-
+    # TODO this is currently completely unused - To Delete? Plus run_task_minimap2.py
+    """
+    The code to run the minimap alignment from the django command line
+    :param job_master_id: The id of the JobMaster for this alignment
+    :return:
+    """
+    # Get the JobMaster Django Model object
     job_master = JobMaster.objects.get(pk=job_master_id)
-
+    # If there is a reference
     if job_master.reference:
-
         run_minimap2_alignment(
-            job_master.flowcell.id,
             job_master.id,
-            job_master.reference.id,
-            job_master.last_read
         )
+    else:
+        logger.info('Flowcell id: {} - Job master {} has no reference.'.format(job_master.flowcell.id, job_master.id))
 
-    logger.info('Flowcell id: {} - Job master {} has no reference.'.format(job_master.flowcell.id, job_master.id))
 
-
-@task
-def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_read):
-
+@task()
+def run_minimap2_alignment(job_master_id):
+    """
+    :param job_master_id: The Primary key of the JobMaster object
+    :return:
+    """
+    # Get the JobMaster
     job_master = JobMaster.objects.get(pk=job_master_id)
-    # job_master.running = True
-    # job_master.save()
-
-    flowcell = Flowcell.objects.get(pk=job_master.flowcell.id)
-
+    # Get the flowcell
+    flowcell = job_master.flowcell
+    # Get all the runs attached to that Flowcell
     runs = flowcell.runs.all()
+    # The chunk size of reads from this flowcell to fetch from the database
+    chunk_size = 8000
 
-    chunk_size=8000
-    ## This query is going to be painfully slow on a big run... we need to lift the code from the centrifuge block
-    #fastqs = FastqRead.objects.filter(run__flowcell_id=flowcell_id, id__gt=int(last_read))[:chunk_size]
-
-    fastq_df_barcode, last_read, read_count, fastasm = callfetchreads_cent(runs, chunk_size, job_master.last_read)
-
+    fastq_df_barcode, last_read, read_count, fasta_objects = call_fetch_reads_alignment(runs, chunk_size,
+                                                                                  job_master.last_read)
+    logger.info(fastq_df_barcode)
     logger.info('Flowcell id: {} - Running minimap2 on flowcell {}'.format(flowcell.id, flowcell.name))
     logger.info('Flowcell id: {} - job_master_id {}'.format(flowcell.id, job_master.id))
     logger.info('Flowcell id: {} - reference {}'.format(flowcell.id, job_master.reference.name))
     logger.info('Flowcell id: {} - last_read {}'.format(flowcell.id, job_master.last_read))
     logger.info('Flowcell id: {} - read_count {}'.format(flowcell.id, job_master.read_count))
     logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, read_count))
-
+    # If we have pulled back reads, call fasta
     if read_count > 0:
+        last_read = align_reads(fasta_objects, fastq_df_barcode, job_master.id)
 
-        last_read = align_reads(fastasm, job_master.id)
-
+    # Update the JobMaster with the metadata after finishing this iteration
     job_master = JobMaster.objects.get(pk=job_master_id)
     job_master.running = False
     job_master.last_read = last_read
@@ -130,12 +165,13 @@ def run_minimap2_alignment(flowcell_id, job_master_id, reference_info_id, last_r
     job_master.save()
 
 
-def align_reads(fastqs, job_master_id):
+def align_reads(fastas, fasta_df, job_master_id):
     """
     Align reads to a reference. Requires a job_master.
     
-    :param fastqs:
-    :param job_master_id:
+    :param fastas: A list of FastqRead objects that contain the sequence we will be running alignment on
+    :param: fasta_df: A df of the Sequence, ReadID, ID and barcode_name
+    :param job_master_id: The Primary key of the JobMaster model object
     :return:
     """
 
@@ -164,37 +200,18 @@ def align_reads(fastqs, job_master_id):
     for chromosome in chromosomes:
         chromdict[chromosome.line_name] = chromosome
 
-    minimap2 = reference_info.minimap2_index_file_location
-
     read = ''
     fastq_dict = dict()
-    #fastqtypedict = dict()
-    #fastq_read_ispass_dict = dict()
-    #fastq_read_barcode_dict = dict()
 
-    #fastqbarcode = dict()
-
-    # fastq_filename = '/home/ubuntu/logs/flowcell-{}-last-read-{}.fastq'.format(flowcell.id, job_master.last_read)
-    # fastq_file = open(fastq_filename, 'w')
-
-    for fastq in fastqs:
-
-        #if not fastq.sequence:
+    for fastq in fastas:
+        # if not fastq.sequence:
         #    continue
 
         read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
 
-        # fastq_file.write(read)
-
         fastq_dict[fastq.read_id] = fastq
-        #fastqtypedict[fastq.read_id] = fastq.type
-        #fastq_read_ispass_dict[fastq.read_id] = fastq.is_pass
-        #fastq_read_barcode_dict[fastq.read_id] = fastq.barcode_name
-        #fastqbarcode[fastq.read_id] = fastq.barcode.name
 
         last_read = fastq.id
-
-    # fastq_file.close()
 
     cmd = '{} -x map-ont -t 1 --secondary=no {} -'.format(
         MINIMAP2,
@@ -341,7 +358,6 @@ def align_reads(fastqs, job_master_id):
 
 
 def save_paf_store_summary(job_master_id, row):
-
     barcode_name = row['read__barcode_name'][0]
     reference_line_name = row['tsn__line_name'][0]
     total_length = row['length']['sum']
@@ -349,7 +365,8 @@ def save_paf_store_summary(job_master_id, row):
 
     job_master = JobMaster.objects.get(pk=job_master_id)
 
-    reference_line = ReferenceLine.objects.filter(reference=job_master.reference).filter(line_name=reference_line_name)[0]
+    reference_line = ReferenceLine.objects.filter(reference=job_master.reference).filter(line_name=reference_line_name)[
+        0]
 
     paf_summary_cov, created = PafSummaryCov.objects.get_or_create(
         job_master_id=job_master_id,
