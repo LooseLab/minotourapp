@@ -1,21 +1,16 @@
 from __future__ import absolute_import, unicode_literals
-
-import os
 import subprocess
-import sys
-
-import numpy as np
-import pandas as pd
 from celery import task
 from celery.utils.log import get_task_logger
 from django.conf import settings
-
 from alignment.models import PafRoughCov, PafStore, PafSummaryCov
 from jobs.models import JobMaster
 from reads.models import FastqRead
 from reference.models import ReferenceInfo, ReferenceLine
-
-from web.utils import parse_md_cg_pafline, parseMDPAF, parse_mdpaf_alex
+from web.functions_EB import parse_PAF, parse_CIGAR, parse_MD
+import pandas as pd
+import numpy as np
+import pickle
 
 # Set up the logger to write to logging file
 logger = get_task_logger(__name__)
@@ -162,7 +157,7 @@ def run_minimap2_alignment(job_master_id):
     logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, read_count))
     # If we have pulled back reads, call fasta
     if read_count > 0:
-        last_read = align_reads(fasta_objects, fastq_df_barcode, job_master.id)
+        last_read = align_reads(fasta_objects, job_master.id)
 
     # Update the JobMaster with the metadata after finishing this iteration
     job_master = JobMaster.objects.get(pk=job_master_id)
@@ -172,98 +167,87 @@ def run_minimap2_alignment(job_master_id):
     job_master.save()
 
 
-def align_reads(fastas, fasta_df, job_master_id):
+def align_reads(fastas, job_master_id):
     """
     Align reads to a reference. Requires a job_master.
     
     :param fastas: A list of FastqRead objects that contain the sequence we will be running alignment on
-    :param fasta_df: A df of the Sequence, ReadID, ID and barcode_name
     :param job_master_id: The Primary key of the JobMaster model object
     :return:
     """
-
+    # The on disk directory where we store the references
     reference_location = getattr(settings, "REFERENCE_LOCATION", None)
+    # The location of the mimimap2 executable
     minimap2 = getattr(settings, "MINIMAP2", None)
-
+    # The JobMaster object
     job_master = JobMaster.objects.get(pk=job_master_id)
-
+    # Unpack metadata about this job
     last_read = job_master.last_read
     reference_info_id = job_master.reference.id
     flowcell = job_master.flowcell
-
+    #
     if not minimap2:
         logger.error('Can not find minimap2 executable - stopping task.')
         return
-
+    # We're starting fresh boys
     if last_read is None:
         last_read = 0
-
+    # The information about the reference for this alignment
     reference_info = ReferenceInfo.objects.get(pk=reference_info_id)
-
+    # A dictionary with all the results for each chromosome
     chromdict = dict()
-
+    # Get all the chromosomes for this reference
     chromosomes = reference_info.referencelines.all()
-
+    # For each Chromosome in the chromosomes, set the name of the chromosome as key, and the object as the value
     for chromosome in chromosomes:
         chromdict[chromosome.line_name] = chromosome
-
+    # The read string
     read = ''
     fastq_dict = dict()
-
+    # Loop through the fasta objects, creating the sequence and creating a dict with a lookup of the readId
     for fastq in fastas:
-        # if not fastq.sequence:
-        #    continue
-
         read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
 
         fastq_dict[fastq.read_id] = fastq
 
         last_read = fastq.id
-
+    # Create the minimap command
     cmd = '{} -x map-ont -t 1 --secondary=no {} -'.format(
         minimap2,
         os.path.join(reference_location, reference_info.filename)
     )
 
     logger.info('Flowcell id: {} - Calling minimap - {}'.format(flowcell.id, cmd))
-
+    # Use subprocess to run minimap
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             stdin=subprocess.PIPE, shell=True)
-
+    # Run the command and get a tuple of output
     (out, err) = proc.communicate(input=read.encode("utf-8"))
-
-    status = proc.wait()
+    if err:
+        logger.info(err)
 
     logger.info('Flowcell id: {} - Finished minimap - {}'.format(flowcell.id, cmd))
-
+    # Get the results of the Paf output
     paf = out.decode("utf-8")
-
+    # Split the lines of the paf file
     pafdata = paf.splitlines()
 
     logger.info('Flowcell id: {} - Found {} paf records'.format(flowcell.id, len(pafdata)))
-
+    # If we have paf data
     if len(pafdata) > 0:
-
-        paf_summary_cov_dict = dict()
 
         bulk_paf = []
 
         bulk_paf_rough = []
-
+        # For each line in the paf data
         for line in pafdata:
-
+            # Strip the new line char from the file
             line = line.strip('\n')
-
+            # Split the line on the tab character
             record = line.split('\t')
-
+            # Get the fastqread object to use in the Foreign key field below
             fastq_read = fastq_dict[record[0]]
-
-            typeid = fastq_read.type.id
-
-            is_pass = fastq_read.is_pass
-
-            barcode_name = fastq_read.barcode_name
 
             newpaf = PafStore(
                 job_master=job_master,
@@ -287,7 +271,7 @@ def align_reads(fastas, fasta_df, job_master_id):
             )
 
             newpaf.reference = reference_info
-
+            # Set the fields on the PafStore
             newpaf.qsn = fastq_read.read_id  # models.CharField(max_length=256)#1	string	Query sequence name
             newpaf.qsl = int(record[1])  # models.IntegerField()#2	int	Query sequence length
             newpaf.qs = int(record[2])  # models.IntegerField()#3	int	Query start (0-based)
@@ -301,11 +285,13 @@ def align_reads(fastas, fasta_df, job_master_id):
             newpaf.abl = int(record[10])  # models.IntegerField()#11	int	Alignment block length
             newpaf.mq = int(record[11])  # models.IntegerField()#12	int	Mapping quality (0-255; 255 for missing)
 
+            # Set the fields on the paf rough cov object
             newpafstart.reference = reference_info
             newpafstart.chromosome = chromdict[record[5]]
             newpafstart.p = int(record[7])
             newpafstart.i = 1
 
+            # Set the end fields
             newpafend.reference = reference_info
             newpafend.chromosome = chromdict[record[5]]
             newpafend.p = int(record[8])
@@ -316,67 +302,46 @@ def align_reads(fastas, fasta_df, job_master_id):
 
             bulk_paf.append(newpaf)
 
-            if reference_info not in paf_summary_cov_dict:
-                paf_summary_cov_dict[reference_info] = dict()
-
-            if chromdict[record[5]] not in paf_summary_cov_dict[reference_info]:
-                paf_summary_cov_dict[reference_info][chromdict[record[5]]] = dict()
-
-            if barcode_name not in paf_summary_cov_dict[reference_info][chromdict[record[5]]]:
-                paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name] = dict()
-
-            if typeid not in paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name]:
-                paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid] = dict()
-
-            if 'read' not in paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid]:
-                paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid]['read'] = set()
-                paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid]['length'] = 0
-
-            paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid]['read'].add(record[0])
-            paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid]['length'] += int(
-                record[3]) - int(
-                record[2]) + 1
-
         PafStore.objects.bulk_create(bulk_paf, batch_size=1000)
         PafRoughCov.objects.bulk_create(bulk_paf_rough, batch_size=1000)
 
-        paf_store_list = PafStore.objects.filter(
-            job_master=job_master
-        ).values(
-            'job_master__id',
+        paf_store_list = PafStore.objects.filter(job_master=job_master).values(
             'read__barcode_name',
             'tsn__line_name',
             'qsn',
             'qs',
             'qe'
         )
-
+        # Create a DataFrame of the PafStore results from above, plus previous
         paf_store_df = pd.DataFrame.from_records(paf_store_list)
-
+        # Minus the query start from the query end
         paf_store_df['length'] = paf_store_df['qe'] - paf_store_df['qs']
-
+        # Do some maths?
         paf_store_gb = paf_store_df.groupby(
-            ['job_master__id', 'read__barcode_name', 'tsn__line_name']).agg(
-            {'qsn': ['unique'], 'length': ['sum']})
-
-        paf_store_gb.reset_index().apply(lambda row: save_paf_store_summary(job_master.id, row), axis=1)
+            ['read__barcode_name', 'tsn__line_name']).agg({'qsn': ['unique'], 'length': ['sum']})
+        # Apply a saving function down the dataframe to save objects
+        paf_store_gb.reset_index().apply(lambda row: save_paf_store_summary(job_master, row), axis=1)
 
     return last_read
 
 
-def save_paf_store_summary(job_master_id, row):
+def save_paf_store_summary(job_master, row):
+    """
+    Save the Paf Store Summaries
+    :param job_master: The job master object
+    :param row: The row of the dataframe
+    :return:
+    """
+
     barcode_name = row['read__barcode_name'][0]
     reference_line_name = row['tsn__line_name'][0]
     total_length = row['length']['sum']
     read_list = row['qsn']['unique']
-
-    job_master = JobMaster.objects.get(pk=job_master_id)
-
+    # The reference line for this object
     reference_line = ReferenceLine.objects.filter(reference=job_master.reference).filter(line_name=reference_line_name)[
         0]
-
     paf_summary_cov, created = PafSummaryCov.objects.get_or_create(
-        job_master_id=job_master_id,
+        job_master_id=job_master.id,
         barcode_name=barcode_name,
         reference_line_name=reference_line_name,
         reference_line_length=reference_line.chromosome_length
@@ -388,28 +353,32 @@ def save_paf_store_summary(job_master_id, row):
     paf_summary_cov.save()
 
 
-def calculate_exepected_benefit_2dot0(flowcell_id, job_master_id):
-    REFERENCE_LOCATION = getattr(settings, "REFERENCE_LOCATION", None)
-    MINIMAP2 = getattr(settings, "MINIMAP2", None)
-    CHUNK_SIZE = 2000
+def calculate_expected_benefit_3dot0_final(task):
+    """
+    Calculate the matches, mismatches and expected benefit banter
+    :param task:
+    :return:
+    """
+    # The on disk directory where we store the references
+    reference_location = getattr(settings, "REFERENCE_LOCATION", None)
+    # The location of the mimimap2 executable
+    minimap2 = getattr(settings, "MINIMAP2", None)
 
-    job_master = JobMaster.objects.get(pk=job_master_id)
+    flowcell = task.flowcell
 
-    last_read = job_master.last_read
-    reference_info_id = job_master.reference.id
-    flowcell = job_master.flowcell
+    runs = flowcell.runs.all()
+    # The chunk size of reads from this flowcell to fetch from the database
+    chunk_size = 8000
 
-    if last_read is None:
-        last_read = 0
+    fastq_df_barcode, last_read, read_count, fasta_objects = call_fetch_reads_alignment(runs, chunk_size,
+                                                                                        task.last_read)
 
-    fastqs = FastqRead.objects.filter(flowcell_id=flowcell_id, id__gt=int(last_read))[:CHUNK_SIZE]
-
-    if not MINIMAP2:
+    if not minimap2:
         logger.error('Can not find minimap2 executable - stopping task.')
         print('Can not find minimap2 executable - stopping task.')
         return
 
-    reference_info = ReferenceInfo.objects.get(pk=reference_info_id)
+    reference_info = task.reference
 
     chromdict = dict()
 
@@ -421,66 +390,68 @@ def calculate_exepected_benefit_2dot0(flowcell_id, job_master_id):
     read = ''
     fastq_dict = dict()
 
-    for fastq in fastqs:
+    for fastq in fasta_objects:
         read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
 
         fastq_dict[fastq.read_id] = fastq
 
     cmd = '{} -x map-ont -t 1 --secondary=no -c --MD {} -'.format(
-        MINIMAP2,
-        os.path.join(REFERENCE_LOCATION, reference_info.filename)
+        minimap2,
+        os.path.join(reference_location, reference_info.filename)
     )
 
-    logger.info('Flowcell id: {} - Calling minimap - {}'.format(flowcell.id, cmd))
-    print('Flowcell id: {} - Calling minimap - {}'.format(flowcell.id, cmd))
+    logger.info('Flowcell id: {} - Calling minimap EB - {}'.format(flowcell.id, cmd))
+    print('Flowcell id: {} - Calling minimap - EB {}'.format(flowcell.id, cmd))
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             stdin=subprocess.PIPE, shell=True)
 
     (out, err) = proc.communicate(input=read.encode("utf-8"))
-
-    status = proc.wait()
 
     logger.info('Flowcell id: {} - Finished minimap - {}'.format(flowcell.id, cmd))
     print('Flowcell id: {} - Finished minimap - {}'.format(flowcell.id, cmd))
 
     paf = out.decode("utf-8")
 
-    pafdata = paf.splitlines()
-
-    logger.info('Flowcell id: {} - Found {} paf records'.format(flowcell.id, len(pafdata)))
-    print('Flowcell id: {} - Found {} paf records'.format(flowcell.id, len(pafdata)))
-
-    if len(pafdata) > 0:
-
-        paf_summary_cov_dict = dict()
+    if paf:
 
         bulk_paf = []
 
         bulk_paf_rough = []
-
-        for line in pafdata:
-
-            line = line.strip('\n')
-
-            record = line.split('\t')
-
+        # See if we have previously pickled results
+        try:
+            with open("/tmp/benefit_results.pickle", "rb") as data_store_fh:
+                benefit_results_dict = pickle.load(data_store_fh)
+        except FileNotFoundError as e:
+            print("We con't have a file yet! Creating one now...")
+            benefit_results_dict = {}
+        #########################################################
+        # ########### Parse paf update paf cov etc ############ #
+        #########################################################
+        for record in parse_PAF(paf, fields=["qsn",
+                                             "qsl",
+                                             "qs",
+                                             "qe",
+                                             "rs",
+                                             "tsn",
+                                             "tsl",
+                                             "ts",
+                                             "te",
+                                             "nrm",
+                                             "abl",
+                                             "mq", "tags"], is_file=False):
             fastq_read = fastq_dict[record[0]]
 
-            typeid = fastq_read.type.id
-
-            is_pass = fastq_read.is_pass
-
-            barcode_name = fastq_read.barcode_name
+            chromosome_name = chromdict[record.tsn]
 
             newpaf = PafStore(
-                job_master=job_master,
+                job_master=task,
                 read=fastq_read,
             )
 
             newpafstart = PafRoughCov(
-                job_master=job_master,
+                job_master=task,
                 flowcell=flowcell,
                 read_type=fastq_read.type,
                 barcode_name=fastq_read.barcode_name,
@@ -488,7 +459,7 @@ def calculate_exepected_benefit_2dot0(flowcell_id, job_master_id):
             )
 
             newpafend = PafRoughCov(
-                job_master=job_master,
+                job_master=task,
                 flowcell=flowcell,
                 read_type=fastq_read.type,
                 barcode_name=fastq_read.barcode_name,
@@ -497,27 +468,27 @@ def calculate_exepected_benefit_2dot0(flowcell_id, job_master_id):
 
             newpaf.reference = reference_info
 
-            newpaf.qsn = fastq_read.read_id  # models.CharField(max_length=256)#1	string	Query sequence name
-            newpaf.qsl = int(record[1])  # models.IntegerField()#2	int	Query sequence length
-            newpaf.qs = int(record[2])  # models.IntegerField()#3	int	Query start (0-based)
-            newpaf.qe = int(record[3])  # models.IntegerField()#4	int	Query end (0-based)
-            newpaf.rs = record[4]  # models.CharField(max_length=1)#5	char	Relative strand: "+" or "-"
-            newpaf.tsn = chromdict[record[5]]  # models.CharField(max_length=256)#6	string	Target sequence name
-            newpaf.tsl = int(record[6])  # models.IntegerField()#7	int	Target sequence length
-            newpaf.ts = int(record[7])  # models.IntegerField()#8	int	Target start on original strand (0-based)
-            newpaf.te = int(record[8])  # models.IntegerField()#9	int	Target end on original strand (0-based)
-            newpaf.nrm = int(record[9])  # models.IntegerField()#10	int	Number of residue matches
-            newpaf.abl = int(record[10])  # models.IntegerField()#11	int	Alignment block length
-            newpaf.mq = int(record[11])  # models.IntegerField()#12	int	Mapping quality (0-255; 255 for missing)
+            newpaf.qsn = record.qsn  # models.CharField(max_length=256)#1	string	Query sequence name
+            newpaf.qsl = record.qsl  # models.IntegerField()#2	int	Query sequence length
+            newpaf.qs = record.qs  # models.IntegerField()#3	int	Query start (0-based)
+            newpaf.qe = record.qe  # models.IntegerField()#4	int	Query end (0-based)
+            newpaf.rs = record.rs  # models.CharField(max_length=1)#5	char	Relative strand: "+" or "-"
+            newpaf.tsn = record.tsn  # models.CharField(max_length=256)#6	string	Target sequence name
+            newpaf.tsl = record.tsl  # models.IntegerField()#7	int	Target sequence length
+            newpaf.ts = record.ts  # models.IntegerField()#8	int	Target start on original strand (0-based)
+            newpaf.te = record.te  # models.IntegerField()#9	int	Target end on original strand (0-based)
+            newpaf.nrm = record.nrm  # models.IntegerField()#10	int	Number of residue matches
+            newpaf.abl = record.abl  # models.IntegerField()#11	int	Alignment block length
+            newpaf.mq = record.mq  # models.IntegerField()#12	int	Mapping quality (0-255; 255 for missing)
 
             newpafstart.reference = reference_info
-            newpafstart.chromosome = chromdict[record[5]]
-            newpafstart.p = int(record[7])
+            newpafstart.chromosome = chromosome_name
+            newpafstart.p = record.ts
             newpafstart.i = 1
 
             newpafend.reference = reference_info
-            newpafend.chromosome = chromdict[record[5]]
-            newpafend.p = int(record[8])
+            newpafend.chromosome = chromosome_name
+            newpafend.p = record.te
             newpafend.i = -1
 
             bulk_paf_rough.append(newpafstart)
@@ -525,32 +496,34 @@ def calculate_exepected_benefit_2dot0(flowcell_id, job_master_id):
 
             bulk_paf.append(newpaf)
 
-            if reference_info not in paf_summary_cov_dict:
-                paf_summary_cov_dict[reference_info] = dict()
+            print(record)
 
-            if chromdict[record[5]] not in paf_summary_cov_dict[reference_info]:
-                paf_summary_cov_dict[reference_info][chromdict[record[5]]] = dict()
+            #########################################################
+            # ########## Now for the parse cigar string ########### #
+            #########################################################
+            # d contains our 7 arrays in theory
+            d = parse_CIGAR(record.tags.get("cg", None), fastq_read.sequence, int(record.te) - int(record.ts))
+            # Adds the mismatch count to the temporary dict
+            d['M'] = parse_MD(record.MD)
 
-            if barcode_name not in paf_summary_cov_dict[reference_info][chromdict[record[5]]]:
-                paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name] = dict()
 
-            if typeid not in paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name]:
-                paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid] = dict()
 
-            if 'read' not in paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid]:
-                paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid]['read'] = set()
-                paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid]['length'] = 0
+            # If the chromosome is not already a key in chrom dict, add it, with a 1 by 8 multidimensinal array,
+            #  filled with zeros, the length of the reference
+            if chromosome_name not in benefit_results_dict:
+                benefit_results_dict[chromosome_name] = np.zeros(8, reference_info.length)
+            # if it is in the benefit results dict, yay! We already have an iteration
+            else:
+                benefit_results_dict[chromosome_name] 
 
-            paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid]['read'].add(record[0])
-            paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid]['length'] += int(
-                record[3]) - int(
-                record[2]) + 1
+        with open("/tmp/benefit_results_dict.pickle") as fh_to_write:
+            pickle.dump(benefit_results_dict, fh_to_write)
 
         PafStore.objects.bulk_create(bulk_paf, batch_size=1000)
         PafRoughCov.objects.bulk_create(bulk_paf_rough, batch_size=1000)
 
         paf_store_list = PafStore.objects.filter(
-            job_master=job_master
+            job_master=task
         ).values(
             'job_master__id',
             'read__barcode_name',
@@ -568,385 +541,4 @@ def calculate_exepected_benefit_2dot0(flowcell_id, job_master_id):
             ['job_master__id', 'read__barcode_name', 'tsn__line_name']).agg(
             {'qsn': ['unique'], 'length': ['sum']})
 
-        paf_store_gb.reset_index().apply(lambda row: save_paf_store_summary(job_master.id, row), axis=1)
-
-    #
-    # Now reprocess the pafdata and read the cigar for expected benefit.
-    #
-
-    # Create dictionaries if not passed in.
-    # These dictionaries somehow need to persist from one iteration to the next.
-    if last_read == 0:
-
-        # Dictionary to hold matches, mismatches and coverage per base.
-        # Structure referencedict[chromosome][match/mismatch/coverage][position]=[int]
-        reference_dict = dict()
-
-        # Dictionary to hold benefit. Structure benefitdict[chromosome][position]=[float]
-        benefitdict = dict()
-
-        # Dictionary to hold rolling benefit, mean benefit and mask.
-        # This is badly structured! The Masks are stored as Bools with position.
-        # The rollingbenefit is stored as a float with position.
-        # The Means are floats but a single value per chromosome.
-        # Structure rollingdict[chromosome][Forward/Reverse/ForMean/RevMean/ForMask/RevMask][optional position]=float,float,bool
-        rollingdict = dict()
-
-    else:
-
-        raise NotImplementedError
-
-    readcounter = 0
-    mean = 0
-    readlen = 0
-
-    # These are parameters but might be tuned in future.
-    error = 0.1
-    prior_diff = 0.0001
-
-    if len(pafdata) > 0:
-
-        for line in pafdata:
-
-            paf_record = parse_md_cg_pafline(line)
-
-            if paf_record.chromosome not in reference_dict.keys():
-                reference_dict[paf_record.chromosome] = {
-
-                    'match': {
-
-                    },
-                    'mismatch': {
-
-                    },
-                    'coverage': {
-
-                    },
-                }
-
-            # Get the specific arrays of matches, mismatches, start mapping position, end mapping position,
-            # mapping orientation, reference(chromosome), reference lenght, readlength
-            # These values are for a single read.
-            # readlength is the total length of the read, not the aligned length.
-            mismatcharray, matcharray, mapstart, mapend, maporientation, reference, referencelength, readlength = parse_mdpaf_alex(
-                line)
-
-            print(mismatcharray)
-            print(matcharray)
-            print(mapstart)
-            print(mapend)
-            print(maporientation)
-            print(reference)
-            print(referencelength)
-            print(readlength)
-
-            sys.exit()
-
-            # print ("mismatcharray")
-            # print(mismatcharray)
-            # print(mismatcharray.dtype)
-            # print ("Matcharray")
-            # print(matcharray)
-            # print(matcharray.dtype)
-
-            # Calculate the length of the aligned portion we are looking at.
-            readlen += len(mismatcharray)
-
-            # Increment counter for reads processed on this loop.
-            readcounter += 1
-
-            # Calculate the mean of reads seen so far.
-            mean = readlen / readcounter
-
-            # If the chromosome we have seen is not in the reference dictionary,
-            # we need to build it and also calculate the initial mask and rolling dictionary.
-            if reference not in referencedict:
-                referencedict, rollingdict = add_chromosome(
-                    referencedict,
-                    rollingdict,
-                    benefitdict,
-                    reference,
-                    referencelength,
-                    mean,
-                    error,
-                    prior_diff
-                )
-
-            # # Here we add the mismatch and match scores to the existing scores in the larger reference dictionary. We only update those positions which have changed for this read.
-            # referencedict[reference]["mismatch"][mapstart:mapstart+len(mismatcharray)] += mismatcharray
-            # referencedict[reference]["match"][mapstart:mapstart+len(matcharray)] += matcharray
-            #
-            # """
-            # ### At this point we should have a dictionary for the reference with the count of matches and mismatches
-            # ### Now we need to add this to any previously seen reads.
-            # ### Suggest something like:
-            # ### for reference in referencedict:
-            # ###     fetch old coverage data
-            # ###     add new coverage data to old coverage data
-            # ###     now calculate getbenefit over the entire reference:
-            # # Here we calculate the new benefit for this reference.
-            # ### Somewhere we need to specify error and prior_diff - these are variables we might want to change.
-            # """
-            # benefitdict[reference] = getbenefit(
-            #     referencedict[reference]["match"],
-            #     referencedict[reference]["mismatch"],
-            #     error=error, prior_diff=prior_diff)
-            # A = benefitdict[reference]
-            #
-            # #mean is the mean read length at this point - to work for the rolling sum it has to be an integer!
-            # rollingdict[reference]["Forward"] = rolling_sum([A], n=int(np.floor(mean)), pad=True)[0]
-            # rollingdict[reference]["Reverse"] = rolling_sum([A[::-1]], n=int(np.floor(mean)), pad=True)[0][::-1]
-            # # Recalculate the mean values for the reference we are looking at.
-            # rollingdict[reference]["ForMean"] = rollingdict[reference]["Forward"].mean()
-            # rollingdict[reference]["RevMean"] = rollingdict[reference]["Reverse"].mean()
-            # # Update the coverage.
-            # referencedict[reference]["coverage"] = np.sum(
-            #     [referencedict[reference]["match"], referencedict[reference]["mismatch"]], axis=0)
-            # # Update the mask for sequencing
-            # rollingdict[reference]["ForMask"] = check_mask(rollingdict[reference]["Forward"],
-            #                                                rollingdict[reference]["ForMean"])
-            # rollingdict[reference]["RevMask"] = check_mask(rollingdict[reference]["Reverse"],
-            #                                                rollingdict[reference]["RevMean"])
-
-    print(reference_dict)
-
-    last_read = fastq.id
-
-
-def calculate_expected_benefit(flowcell_id, job_master_id):
-    REFERENCE_LOCATION = getattr(settings, "REFERENCE_LOCATION", None)
-    MINIMAP2 = getattr(settings, "MINIMAP2", None)
-    CHUNK_SIZE = 2000
-
-    job_master = JobMaster.objects.get(pk=job_master_id)
-
-    last_read = job_master.last_read
-    reference_info_id = job_master.reference.id
-    flowcell = job_master.flowcell
-
-    fastqs = FastqRead.objects.filter(flowcell_id=flowcell_id, id__gt=int(last_read))[:CHUNK_SIZE]
-
-    if not MINIMAP2:
-        logger.error('Can not find minimap2 executable - stopping task.')
-        return
-
-    if last_read is None:
-        last_read = 0
-
-    reference_info = ReferenceInfo.objects.get(pk=reference_info_id)
-
-    chromdict = dict()
-
-    chromosomes = reference_info.referencelines.all()
-
-    for chromosome in chromosomes:
-        chromdict[chromosome.line_name] = chromosome
-
-    read = ''
-    fastq_dict = dict()
-
-    for fastq in fastqs:
-        read = read + '>{} \r\n{}\r\n'.format(fastq.read_id, fastq.sequence)
-
-        fastq_dict[fastq.read_id] = fastq
-
-        last_read = fastq.id
-
-    cmd = '{} -x map-ont -t 1 --secondary=no {} -'.format(
-        MINIMAP2,
-        os.path.join(REFERENCE_LOCATION, reference_info.filename)
-    )
-
-    logger.info('Flowcell id: {} - Calling minimap - {}'.format(flowcell.id, cmd))
-
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            stdin=subprocess.PIPE, shell=True)
-
-    (out, err) = proc.communicate(input=read.encode("utf-8"))
-
-    status = proc.wait()
-
-    logger.info('Flowcell id: {} - Finished minimap - {}'.format(flowcell.id, cmd))
-
-    paf = out.decode("utf-8")
-
-    pafdata = paf.splitlines()
-
-    logger.info('Flowcell id: {} - Found {} paf records'.format(flowcell.id, len(pafdata)))
-
-    if len(pafdata) > 0:
-
-        paf_summary_cov_dict = dict()
-
-        bulk_paf = []
-
-        bulk_paf_rough = []
-
-        for line in pafdata:
-
-            line = line.strip('\n')
-
-            record = line.split('\t')
-
-            fastq_read = fastq_dict[record[0]]
-
-            typeid = fastq_read.type.id
-
-            is_pass = fastq_read.is_pass
-
-            barcode_name = fastq_read.barcode_name
-
-            newpaf = PafStore(
-                job_master=job_master,
-                read=fastq_read,
-            )
-
-            newpafstart = PafRoughCov(
-                job_master=job_master,
-                flowcell=flowcell,
-                read_type=fastq_read.type,
-                barcode_name=fastq_read.barcode_name,
-                is_pass=fastq_read.is_pass
-            )
-
-            newpafend = PafRoughCov(
-                job_master=job_master,
-                flowcell=flowcell,
-                read_type=fastq_read.type,
-                barcode_name=fastq_read.barcode_name,
-                is_pass=fastq_read.is_pass
-            )
-
-            newpaf.reference = reference_info
-
-            newpaf.qsn = fastq_read.read_id  # models.CharField(max_length=256)#1	string	Query sequence name
-            newpaf.qsl = int(record[1])  # models.IntegerField()#2	int	Query sequence length
-            newpaf.qs = int(record[2])  # models.IntegerField()#3	int	Query start (0-based)
-            newpaf.qe = int(record[3])  # models.IntegerField()#4	int	Query end (0-based)
-            newpaf.rs = record[4]  # models.CharField(max_length=1)#5	char	Relative strand: "+" or "-"
-            newpaf.tsn = chromdict[record[5]]  # models.CharField(max_length=256)#6	string	Target sequence name
-            newpaf.tsl = int(record[6])  # models.IntegerField()#7	int	Target sequence length
-            newpaf.ts = int(record[7])  # models.IntegerField()#8	int	Target start on original strand (0-based)
-            newpaf.te = int(record[8])  # models.IntegerField()#9	int	Target end on original strand (0-based)
-            newpaf.nrm = int(record[9])  # models.IntegerField()#10	int	Number of residue matches
-            newpaf.abl = int(record[10])  # models.IntegerField()#11	int	Alignment block length
-            newpaf.mq = int(record[11])  # models.IntegerField()#12	int	Mapping quality (0-255; 255 for missing)
-
-            newpafstart.reference = reference_info
-            newpafstart.chromosome = chromdict[record[5]]
-            newpafstart.p = int(record[7])
-            newpafstart.i = 1
-
-            newpafend.reference = reference_info
-            newpafend.chromosome = chromdict[record[5]]
-            newpafend.p = int(record[8])
-            newpafend.i = -1
-
-            bulk_paf_rough.append(newpafstart)
-            bulk_paf_rough.append(newpafend)
-
-            bulk_paf.append(newpaf)
-
-            if reference_info not in paf_summary_cov_dict:
-                paf_summary_cov_dict[reference_info] = dict()
-
-            if chromdict[record[5]] not in paf_summary_cov_dict[reference_info]:
-                paf_summary_cov_dict[reference_info][chromdict[record[5]]] = dict()
-
-            if barcode_name not in paf_summary_cov_dict[reference_info][chromdict[record[5]]]:
-                paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name] = dict()
-
-            if typeid not in paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name]:
-                paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid] = dict()
-
-            if 'read' not in paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid]:
-                paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid]['read'] = set()
-                paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid]['length'] = 0
-
-            paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid]['read'].add(record[0])
-            paf_summary_cov_dict[reference_info][chromdict[record[5]]][barcode_name][typeid]['length'] += int(
-                record[3]) - int(
-                record[2]) + 1
-
-        PafStore.objects.bulk_create(bulk_paf, batch_size=1000)
-        PafRoughCov.objects.bulk_create(bulk_paf_rough, batch_size=1000)
-
-        paf_store_list = PafStore.objects.filter(
-            job_master=job_master
-        ).values(
-            'job_master__id',
-            'read__barcode_name',
-            'tsn__line_name',
-            'qsn',
-            'qs',
-            'qe'
-        )
-
-        paf_store_df = pd.DataFrame.from_records(paf_store_list)
-
-        paf_store_df['length'] = paf_store_df['qe'] - paf_store_df['qs']
-
-        paf_store_gb = paf_store_df.groupby(
-            ['job_master__id', 'read__barcode_name', 'tsn__line_name']).agg(
-            {'qsn': ['unique'], 'length': ['sum']})
-
-        paf_store_gb.reset_index().apply(lambda row: save_paf_store_summary(job_master.id, row), axis=1)
-
-    #
-    # here start the expected benefit part
-    #
-    cmd = '{} -x map-ont -t 1 --secondary=no -c {} -'.format(
-        MINIMAP2,
-        os.path.join(REFERENCE_LOCATION, reference_info.filename)
-    )
-
-    logger.info('Flowcell id: {} - Calling minimap (CIGAR string) - {}'.format(flowcell.id, cmd))
-
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE,
-                            stdin=subprocess.PIPE, shell=True)
-
-    (out, err) = proc.communicate(input=read.encode("utf-8"))
-
-    status = proc.wait()
-
-    logger.info('Flowcell id: {} - Finished minimap (CIGAR string) - {}'.format(flowcell.id, cmd))
-
-    paf = out.decode("utf-8")
-
-    pafdata = paf.splitlines()
-
-    if len(pafdata) > 0:
-
-        for line in pafdata:
-            pafline = parse_md_cg_pafline(line)
-
-            reference_line = ReferenceLine.objects.filter(reference_info=reference_info).filter(
-                line_name=pafline.chromosome)
-
-            mismatch_hold_array = np.zeros(reference_line.chromosome_length)
-            match_hold_array = np.zeros(reference_line.chromosome_length)
-
-            mismatch_array, match_array, mapstart, runstart = parseMDPAF(line)
-            mismatch_hold_array[mapstart:mapstart + len(mismatch_array)] += mismatch_array
-            match_hold_array[mapstart:mapstart + len(match_array)] += match_array
-
-            coverage_array = np.sum([match_hold_array, mismatch_hold_array], axis=0)
-
-            filename_mismatch_hold = '{}_{}_mismatch_hold.bin'.format(flowcell.id, job_master.id)
-            filename_match_hold = '{}_{}_match_hold.bin'.format(flowcell.id, job_master.id)
-            filename_coverage = '{}_{}_coverage.bin'.format(flowcell.id, job_master.id)
-
-            with open(os.path.join(REFERENCE_LOCATION, filename_mismatch_hold), 'wb+') as fh:
-                fh.write(mismatch_hold_array.data)
-
-            with open(os.path.join(REFERENCE_LOCATION, filename_match_hold), 'wb+') as fh:
-                fh.write(match_hold_array.data)
-
-            with open(os.path.join(REFERENCE_LOCATION, filename_coverage), 'wb+') as fh:
-                fh.write(coverage_array.data)
-
-    logger.info('Flowcell id: {} - Found {} paf records (CIGAR string)'.format(flowcell.id, len(pafdata)))
-
-    return last_read
+        paf_store_gb.reset_index().apply(lambda row: save_paf_store_summary(task, row), axis=1)
