@@ -1,68 +1,150 @@
+"""
+The django admin management command to add reference files locations to the database,
+for mapping and metagenomics validation
+"""
 import gzip
-import os
-
+from pathlib import Path
 from Bio import SeqIO
-from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-
 from reference.models import ReferenceInfo, ReferenceLine
 
 
-class Command(BaseCommand):
+def find_files_of_type(file_or_directory, file_extensions):
+    """Return a list of pathlib.Path of files with chosen extensions
+    Parameters
+    ----------
+    file_or_directory : str
+        filepath or a directory
+    file_extensions : list
+        A list of lowercase file extensions including '.' e.g. ['.txt', '.paf']
+    Returns
+    -------
+    list
+        If files with extension are found return list of pathlib.Path objects, otherwise return empty list
+    """
+    file_or_directory = Path(file_or_directory).expanduser()
+    if (
+        file_or_directory.is_file()
+        and "".join(file_or_directory.suffixes).lower() in file_extensions
+    ):
+        return [file_or_directory]
+    elif file_or_directory.is_dir():
+        return [
+            x
+            for x in file_or_directory.iterdir()
+            if "".join(x.suffixes).lower() in file_extensions
+        ]
+    else:
+        return []
 
-    help = 'Add a custom reference sequence to the minoTour database. ' \
-           'Pass the full path to the reference file.'
+
+class Command(BaseCommand):
+    """
+    The command class from djangos admins interface. Based on argparse
+    """
+
+    help = (
+        "Add a custom reference sequence to the minoTour database. "
+        "Pass the full path to the reference file."
+    )
 
     def add_arguments(self, parser):
-        parser.add_argument('reference', type=str)
+        """
+        Add the arguments to the base command class
+        :param parser:
+        :return:
+        """
+        parser.add_argument(
+            "reference",
+            help="Path to the input reference files or directories of references"
+            ", if a directory is given files with the extensions"
+            "'.fasta', '.fna' or '.fa' will be used. Files can be gzipped",
+            nargs="+",
+        )
 
     def handle(self, *args, **options):
+        """
+            Handle the execution of the command
+            :param args: The arguments, whether they are present or not
+            :param options: The values that have been added to the arguments
+            :return:
+            """
+
         try:
-            print("Processing Reference {}".format(options['reference']))
+            reference_files = []
+            # These should be lowercase and include the '.'
+            endings = [
+                ".fna",
+                ".fa",
+                ".fasta",
+                ".fsa",
+                ".fna.gz",
+                ".fa.gz",
+                ".fasta.gz",
+                ".fsa.gz"
+            ]
 
-            srcname = options['reference']
+            for file_or_directory in options["reference"]:
+                reference_files.extend(
+                    find_files_of_type(file_or_directory, endings)
+                )
 
-            if srcname.startswith('~') or srcname.startswith('~'):
-                print('Path to reference file and env variable MT_REFERENCE_LOCATION must be absolute.')
-                exit()
-
-            #minimap2_index_path = os.path.basename(options['reference']) + ".mmi"
-
-            reference_info, created1 = ReferenceInfo.objects.update_or_create(
-                name=os.path.basename(options['reference']).split('.')[0],
-                filename=os.path.basename(options['reference']),
-                #minimap2_index_file_location=minimap2_index_path,
-                length=0
+            # remove none from reference_files
+            reference_files = list(filter(None.__ne__, reference_files))
+            # TODO doesn't account for private references
+            previous_ref = set(
+                ReferenceInfo.objects.values_list("name", flat=True).distinct()
             )
 
-            reference_info.save()
+            for ref_file in reference_files:
+                # Get the species name of this reference, no file suffixes
+                ref_file_stem = str(ref_file.stem).partition(".")[0]
 
-            total_length = 0
+                print("Processing file: {}".format(ref_file.name))
 
-            if srcname.endswith(".gz"):
-
-                handle = gzip.open(srcname, "rt")
-
-            else:
-
-                handle = srcname
-
-            for record in SeqIO.parse(handle, "fasta"):
-
-                total_length = total_length+len(record.seq)
-
-                reference_line, created2 = ReferenceLine.objects.update_or_create(
-                    reference=reference_info,
-                    line_name=record.id,
-                    chromosome_length=len(record.seq)
+                if ref_file_stem in previous_ref:
+                    print(
+                        "A reference already exists for this species name: {}".format(
+                            ref_file_stem
+                        )
+                    )
+                    print(
+                        "If you believe this is in error, or want to add this reference anyway,"
+                        " please change the filename"
+                    )
+                    continue
+                # If the file is gzipped, unzip it
+                handle = (
+                    gzip.open(ref_file, "rt")
+                    if ref_file.suffix == ".gz"
+                    else ref_file
                 )
-                reference_line.save()
-
-            reference_info.length = total_length
-            reference_info.save()
-
-            print("Total Reference Length={}".format(total_length))
+                # Individual lines (I.E Chromosomes in the reference)
+                ref_lines = [
+                    {"line_name": rec.id, "chromosome_length": len(rec)}
+                    for rec in SeqIO.parse(handle, "fasta")
+                ]
+                # Length of the total reference
+                ref_length = sum(
+                    [
+                        v
+                        for r in ref_lines
+                        for k, v in r.items()
+                        if k == "chromosome_length"
+                    ]
+                )
+                # Create the Reference info entry in the database
+                ref_info, created = ReferenceInfo.objects.update_or_create(
+                    name=ref_file_stem,
+                    filename=ref_file.name,
+                    length=ref_length,
+                )
+                # Create a Reference line entry for each "Chromosome/line"
+                for ref_line_dict in ref_lines:
+                    ref_line = ReferenceLine(
+                        reference=ref_info, **ref_line_dict
+                    )
+                    ref_line.save()
 
         except Exception as e:
             raise CommandError(repr(e))
-

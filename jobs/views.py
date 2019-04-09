@@ -37,20 +37,30 @@ def task_list(request):
             return JsonResponse({"data": []})
 
     else:
-        print(request.data.keys())
-        print(request.data)
+        # If it's a metagenomics tasks, and it's from the web app not the client, so target set isn't in the dict keys
         if request.data["job_type"] == "10" and "target_set" not in request.data.keys():
-            print("if")
+            # Set the target set id to the provided reference ID
             request.data["target_set"] = request.data["reference"]
+            # Remove the reference ID from the request body
             request.data["reference"] = None
 
+        # Check to see if we have a string as the flowcell, not an Int for a PK based lookup
         if type(request.data["flowcell"]) is str:
             try:
                 flowcell = Flowcell.objects.get(name=request.data["flowcell"])
                 request.data["flowcell"] = flowcell.id
             except Flowcell.DoesNotExist as e:
-                print("Excpetion: {}".format(e))
-                pass
+                print("Exception: {}".format(e))
+                return JsonResponse({'error_messages': "Exception: {}".format(e)}, status=500)
+
+        if "reference" in request.data.keys() and type(request.data["reference"]) is str:
+            try:
+                reference = ReferenceInfo.objects.get(name=request.data["reference"])
+                request.data["reference"] = reference.id
+            except ReferenceInfo.DoesNotExist as e:
+                print("Exception: {}".format(e))
+                return JsonResponse({'error_messages': "Exception: {}".format(e)}, status=500)
+
         print(request.data)
         serializer = JobMasterInsertSerializer(data=request.data)
         if serializer.is_valid():

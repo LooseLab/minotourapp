@@ -40,11 +40,11 @@ function requestMappedChromosomes(flowcell_id) {
      * and update the select box on tab Mapping
      *
      */
-
+    console.log("HEEELLOLOLLL");
     var url = '/api/v1/flowcells/' + flowcell_id + '/references';
 
     $.getJSON(url, function (data_unsorted) {
-
+        console.log(data_unsorted);
         var data = data_unsorted.sort(function (a, b) {
             return a['barcode_name'] - ['b.barcode_name'];
         });
@@ -85,6 +85,44 @@ function requestMappedChromosomes(flowcell_id) {
 
     });
 
+}
+
+function drawPafSummaryTable(flowCellId) {
+    // Get total reads table updates the total reads table at te bottom of the page
+    // Get data from the api
+    let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
+    if (flowcell_selected_tab_input.value !== "nav-sequence-mapping") {
+        return;
+    }
+    // Jquery selector
+    let table = $(".mapping-table");
+    // If the table already exists, use the DataTable APi to update in place
+    if ($.fn.DataTable.isDataTable(table)) {
+        table.DataTable().clear();
+        table.DataTable().draw();
+    } else {
+        // else the databale must be initialised
+        table.DataTable({
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "url": "/api/v1/flowcells/" + flowCellId + "/pafsummarytable",
+                    "data": {
+                        "flowcell_id": flowCellId
+                    }
+                },
+                "columns": [
+                    {"data": "barcode_name"},
+                    {"data": "reference_line_name"},
+                    {"data": "reference_line_length"},
+                    {"data": "read_count"},
+                    {"data": "total_length"},
+                    {"data": "average_read_length"},
+                    {"data": "coverage"},
+                ]
+            }
+        );
+    }
 }
 
 function requestPafData(id) {
@@ -155,25 +193,7 @@ function requestPafData(id) {
         }
 
     }).bind(this));
+    drawPafSummaryTable(id);
 
-    /*
-     * Request flowcell summary
-     * This response is a HTML code that is appended to the page (no json)
-     */
-    var url = "/flowcells/" + id + "/pafsummaryhtml";
-
-    var result_mapping_summary = document.querySelector('#mapping-summary');
-
-    $.ajax({
-        url: url,
-        dataType: "html",
-        success: function(data) {
-            result_mapping_summary.innerHTML = data;
-        },
-        error: function(e)
-        {
-            console.log('Error: ' + e);
-        }
-    });
 
 }

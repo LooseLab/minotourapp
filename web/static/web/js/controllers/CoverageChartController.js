@@ -1,8 +1,7 @@
 class CoverageChartController {
 
-    constructor(div_name) {
-
-        this._chromossome_select = document.querySelector('#chromosome-id-select');
+    constructor(div_name, advanced) {
+        this._chromossome_select = document.querySelector('#' + advanced + 'chromosome-id-select');
         this._coverage_chart = new CoverageChart(div_name);
     }
 
@@ -49,14 +48,11 @@ class CoverageChartController {
 
         let self = this;
 
-        $.getJSON(url, (function (datax) {
-
-            var data = JSON.parse(datax);
-
-            self._coverage_chart.master_chart.series[0].setData(data);
-            self._coverage_chart.detail_chart.series[0].setData(data);
+        $.getJSON(url, (function (data) {
+            var parsedData = JSON.parse(data);
+            self._coverage_chart.master_chart.series[0].setData(parsedData);
+            self._coverage_chart.detail_chart.series[0].setData(parsedData);
             self._coverage_chart.master_chart.xAxis[0].removePlotBand('mask-before');
-
             return data;
         }));
     }

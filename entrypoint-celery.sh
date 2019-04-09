@@ -1,6 +1,6 @@
 #!/bin/sh
-pip install pip --upgrade;
-pip install -r requirements.txt;
+pip3 install pip --upgrade;
+pip3 install --default-timeout=100 -r requirements.txt;
 export MT_DB_ENGINE="django.db.backends.mysql";
 export MT_DB_NAME="minotour";
 export MT_DB_USER="root";
@@ -16,7 +16,7 @@ export MT_TWITTOKEN_SECRET='';
 export MT_TWITCONSUMER_KEY='';
 export MT_TWITCONSUMER_SECRET='';
 export MT_REFERENCE_LOCATION='/var/lib/minotour/data';
-export MT_MINIMAP2="/var/lib/minotour/minimap2/minimap2";
+export MT_MINIMAP2="/var/lib/minotour/apps/minotourapp/extra/minimap2/minimap2";
 export MT_CELERY_BROKER_URL='redis://redis-minotour-instance:6379/0'
 export MT_CELERY_RESULT_BACKEND='redis://redis-minotour-instance:6379/0'
 exec celery -A minotourapp beat -l info;

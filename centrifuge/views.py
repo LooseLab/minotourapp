@@ -7,7 +7,7 @@ from centrifuge.models import CentrifugeOutput, MappingResult, Metadata, \
     SankeyLink, DonutData, MappingTarget
 from django.utils import timezone
 from django.http import JsonResponse
-from django.db.models import Sum
+from django.db.models import Sum, Q
 import pandas as pd
 from jobs.models import JobMaster
 from reads.models import Flowcell
@@ -290,8 +290,8 @@ def get_target_mapping(request):
                                "tax_id": "Tax id",
                                "num_matches": "Num. matches",
                                "sum_unique": "Sum. Unique",
-                               "mapped_proportion_of_classified": "Mapped prop. total (%)",
-                               "red_reads_proportion_of_classified": "Red prop. total (%)",
+                               "mapped_proportion_of_classified": "Mapped prop. matches (%)",
+                               "red_reads_proportion_of_classified": "Target prop. mapped (%)",
                                "proportion_of_classified": "Prop. classified (%)"
                                }, inplace=True)
 
@@ -321,7 +321,7 @@ def metagenomic_barcodes(request, pk):
         task = JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics").order_by('id').last()
 
         if task:
-            metagenomics_barcodes = CentrifugeOutput.objects.filter(task__id=task.id) \
+            metagenomics_barcodes = CentrifugeOutput.objects.filter(task__id=task.id).exclude(barcode_name="No") \
                 .values_list("barcode_name", flat=True).distinct()
 
     else:
@@ -421,7 +421,7 @@ def all_results_table(request):
         else:
             cent_out_temp = cent_out_temp.order_by('{}'.format(query_columns[int(order_column)]))
 
-    cents = cent_out_temp.values('tax_id',
+    cents = cent_out_temp.exclude(barcode_name="No").values('tax_id',
                                  'barcode_name',
                                  'name',
                                  'num_matches',
@@ -434,7 +434,9 @@ def all_results_table(request):
                                  'genus',
                                  'species',
                                  )
+
     records_total = cent_out_temp.count()
+
     result = {
         'draw': draw,
         "recordsTotal": records_total,
@@ -519,13 +521,12 @@ def simple_target_mappings(request):
 @api_view(["GET"])
 def get_target_sets(request):
     """
-    Return the target sets for the dropdown menu on the tasks page
+    Return the target sets for the dropdown menu on the tasks page, for either the client or the task tab
     :param request: The django rest framework request object
     :return: A list of the names of the objects
     """
 
     cli = request.GET.get("cli", False)
-    print(request.user.id)
     if cli:
         api_key = request.GET.get("api_key", False)
         if not api_key:
@@ -535,5 +536,5 @@ def get_target_sets(request):
 
     else:
         user_id = request.user.id
-    target_sets = MappingTarget.objects.filter(user_id=user_id).values_list("target_set", flat=True).distinct()
+    target_sets = MappingTarget.objects.filter(Q(user_id=user_id) | Q(private=False)).values_list("target_set", flat=True).distinct()
     return Response(target_sets)

@@ -19,7 +19,7 @@ class CoverageChart {
         return this._detail_chart;
     }
 
-    create_master_chart() {
+    create_master_chart(){
 
         let self = this;
 

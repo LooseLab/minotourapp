@@ -7,7 +7,8 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.generic import ListView, DeleteView
 from rest_framework.authtoken.models import Token
-
+from jobs.models import JobMaster, JobType
+from centrifuge.models import CentrifugeOutput
 from communication.models import Message
 from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats
 from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
@@ -364,3 +365,31 @@ def flowcell_run_stats_download(request, pk):
     runstats_dataframe[column_order].to_csv(response)
 
     return response
+
+
+@login_required
+def metagenomics_data_download(request, pk):
+    """
+    Send the Metagenomics data back in CSV format, used by the download button found on the metagenomics tab
+    centrifuge/templates/centrifuge/visualisation.html
+    :param request:
+    :return:
+    """
+
+    flowcell_id = request.GET.get("flowcellId", 0)
+    flowcell = Flowcell.objects.get(pk=pk)
+    job_type = JobType.objects.get(name="Metagenomics")
+    metagenomics_task = JobMaster.objects.get(flowcell=flowcell, job_type=job_type)
+    centrifuge_df = pd.DataFrame(list(CentrifugeOutput.objects.filter(task=metagenomics_task)
+                                      .exclude(barcode_name="No").values()))
+    centrifuge_df.rename(columns={'classy': 'class'}, inplace=True)
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename={}_centrifuge_output.csv'.format(flowcell.name)
+    column_order = ['barcode_name', 'tax_id', 'superkingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species',
+                    'num_matches', 'proportion_of_classified']
+    centrifuge_df[column_order].to_csv(response)
+    return response
+
+
+
+

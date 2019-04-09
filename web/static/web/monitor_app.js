@@ -1,6 +1,6 @@
 function set_active_navbar_item(item_index) {
 
-    var nav_bar = document.querySelectorAll('.nav li')
+    var nav_bar = document.querySelectorAll('.nav li');
 
     nav_bar.forEach(function(element, index){
 
@@ -116,6 +116,10 @@ var FlowcellPageApp = {
         this.requestGfaData = requestGfaData;
 
         this.requestPafData = requestPafData.bind(this);
+
+        this.requestAdvancedPafData = requestAdvancedPafData.bind(this);
+
+        this.expectedBenefitScatter = expectedBenefitScatter;
 
         // this.liveUpdateTasks = liveUpdateTasks;
         //

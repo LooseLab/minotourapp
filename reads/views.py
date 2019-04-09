@@ -959,6 +959,13 @@ def flowcell_detail(request, pk):
         serializer = FlowcellSerializer(flowcell, context={'request': request})
 
         data = serializer.data
+        # Add in the last read start time, to filter the MinKnow messages inside the run time
+        # Enumerate through the data["runs"] value, an array containing a dict element, one for each run
+        for i, array in enumerate(data["runs"]):
+            # Get the last read time from the run summary by doing FK relationship lookups
+            last_read_time = flowcell.runs.get(runid=data["runs"][i]["runid"]).summary.last_read_start_time
+            # Add it to the dictionary that contains information on the run
+            data["runs"][i]["last_read_time"] = last_read_time
 
         return_dict = {"data": data}
 
@@ -1014,10 +1021,10 @@ def process_summary_data(df):
 @login_required
 def flowcell_summary_html(request, pk):
 
-    flowcell = Flowcell.objects.get(pk=pk)
+    dowcell = Flowcell.objects.get(pk=pk)
 
     qs = FlowcellSummaryBarcode.objects \
-        .filter(flowcell=flowcell) \
+        .filter(flowcell=dowcell) \
         .exclude(barcode_name='No barcode')
 
     df = pd.DataFrame.from_records(qs.values('barcode_name','max_length','min_length','quality_sum','read_count','read_type_name','status','total_length'))
@@ -1078,11 +1085,11 @@ def flowcell_statistics(request, pk):
     df3 = pd.concat([df,df2],ignore_index=True,sort=True)
     df3['cumulative_read_count'] = df3.groupby(['barcode_name','read_type_name','read_type'])['read_count'].apply(lambda x: x.cumsum())
     df3['cumulative_bases'] = df3.groupby(['barcode_name','read_type_name', 'read_type'])['total_length'].apply(lambda x: x.cumsum())
-    df3['key']=df3['barcode_name'].astype('str')+" - "+ df3['read_type_name'].astype('str') + " - " +df3['read_type'].astype('str')
-    df3['average_quality'] = df3['quality_sum']/df3['read_count']
+    df3['key']=df3['barcode_name'].astype('str') + " - " + df3['read_type_name'].astype('str') + " - " + df3['read_type'].astype('str')
+    df3['average_quality'] = df3['quality_sum'].div(df3['read_count']).astype('float').round(decimals=0)
     df3['average_quality'] = df3['average_quality'].astype('float')
-    df3['average_length'] = df3['total_length']/df3['read_count']
-    df3['sequence_rate'] = df3['total_length']/60
+    df3['average_length'] = df3['total_length'].div(df3['read_count']).round(decimals=0)
+    df3['sequence_rate'] = df3['total_length'].div(60).round(decimals=0)
     df3['corrected_time'] = df3['sample_time'].astype(np.int64) // 10**6
     if q != "All reads":
         df3 = df3.drop(df3.index[(df3.barcode_name == 'All reads') & (df3.read_type != "All")])
@@ -1144,7 +1151,7 @@ def flowcell_speed(request,pk):
         # calculate the mean read length seen in a rolling 10 minute window.
         df["mean_total_length"] = df["sum_total_length"].rolling(window=window).mean()
         # calculate the mean speed over those rolling windows in bases per second
-        df["mean_speed"] = df["mean_total_length"] / df["mean_chan_count"] / 60
+        df["mean_speed"] = df["mean_total_length"].div(df["mean_chan_count"]).div(60).round(decimals=0)
     elif len(df.status.unique()) == 1:
         # We only have either pass or fail reads in the dataset
         df["channel_presence"] = df["channel_presence"].apply(lambda x: np.asarray(list(x), dtype=int))
@@ -1153,7 +1160,7 @@ def flowcell_speed(request,pk):
         df["chan_count"] = df["channel_presence"].apply(lambda x: np.count_nonzero(x))
         df["mean_chan_count"] = df["chan_count"].rolling(window=window).mean()
         df["mean_total_length"] = df["total_length"].rolling(window=window).mean()
-        df["mean_speed"] = df["mean_total_length"] / df["mean_chan_count"] / 60
+        df["mean_speed"] = df["mean_total_length"].div(df["mean_chan_count"]).div().round(decimals=0)
         df.reset_index(level=1, drop=True,inplace=True)
 
     return Response(df['mean_speed'].to_json(orient="columns"))
@@ -1325,7 +1332,6 @@ def flowcell_run_summaries_html(request, pk):
     return render(request, 'reads/flowcell_runs_summary.html', {
         'run_list': result
     })
-
 
 @api_view(['GET'])
 def flowcell_run_basecalled_summary_html(request, pk):
@@ -1503,14 +1509,14 @@ def flowcell_tabs_details(request, pk):
             "title": "Sequence Mapping",
             "position": 4
         },
+        "Advanced_Minimap2": {
+            "id": "tab-advanced-sequence-mapping",
+            "title": "Advanced Sequence Mapping",
+            "position": 5
+        },
         "Assembly": {
             "id": "tab-sequence-assembly",
             "title": "Assembly",
-            "position": 5
-        },
-        "Minimap2_trans": {
-            "id": "tab-transcriptome-mapping",
-            "title": "Transcriptome Mapping",
             "position": 6
         },
         "ExportReads": {
@@ -1553,6 +1559,11 @@ def flowcell_tabs_details(request, pk):
     if paf_rough_cov_list.count() > 0:
 
         tabs.append('sequence-mapping')
+
+    advanced_mapping_job = JobMaster.objects.filter(flowcell__id=pk, job_type__name="ReadUntil")
+    # advanced_mapping_job = True
+    if advanced_mapping_job:
+        tabs.append('advanced-sequence-mapping')
 
     centrifuge_output_list = CentrifugeOutput.objects.filter(task__flowcell_id=pk)
 
@@ -1717,7 +1728,6 @@ def read_list_new(request):
 
         #serializer = FastqReadSerializer(data=request.data, many=True)
 
-        # print(request.data)
 
         logger.info('>>> received reads post - calling task - request.data size: {}'.format(len(request.data)))
 

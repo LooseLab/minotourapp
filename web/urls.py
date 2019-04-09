@@ -17,7 +17,7 @@ urlpatterns = [
     url(r'^private/experiments/(?P<pk>[0-9]+)/$', views.experiments_update, name='experiment-update'),
     url(r'^private/experiments/create/$', views.experiments_create, name='experiment-create'),
     url(r'^private/experiments/(?P<pk>[0-9]+)/delete/$', views.ExperimentDelete.as_view(), name='experiment-delete'),
-#
+    #
     # The links below generate CSV
     #
     url(
@@ -25,4 +25,7 @@ urlpatterns = [
         views.flowcell_run_stats_download,
         name="flowcell_run_stats_download"
     ),
+    # Return the netagenomics data in CSV format
+    url(r'^private/flowcells/(?P<pk>[0-9]+)/flowcell_metagenomics_csv/$', views.metagenomics_data_download,
+        name="metagenomics_data_download")
 ]

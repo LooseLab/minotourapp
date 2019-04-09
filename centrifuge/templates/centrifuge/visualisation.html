@@ -3,6 +3,13 @@
 </section>
 <section class="content">
     <div id="content">
+        <script>
+            var flowcell = {id:4};
+            var flowcell2 = "{{ flowcell_id }}";
+            console.log(flowcell.id);
+            console.log("Looool");
+            console.log(typeof flowcell2);
+        </script>
         <div class="container-fluid" style=" width: 100%;">
             <div class="row " style="padding-bottom: 20px">
                 <div class="panel panel-info">
@@ -13,17 +20,6 @@
                     </div>
                     <div class="panel-body">
 
-                        <div class="col-md-2">
-
-                        </div>
-                        <div class="col-md-8 meta_taberu">
-
-                        </div>
-
-
-                        <div class="col-md-2">
-
-                        </div>
                         <div class="col-md-12">
                             <div class="nav-tabs-custom">
                                 <ul class="nav nav-tabs" id="nav-tabs-meta-barcodes"></ul>
@@ -35,13 +31,25 @@
                                 <div class="box-header text-center">
                                     <h3 class="box-title">Target results &nbsp;</h3><i
                                         class="fa fa-question-circle masterTooltip" tooltip="Alert table for the target species. <br/>
-                                        Threats move to the left after hitting a 99% confidence of absence at less than 1 in 50000."></i>
+                                        Threats move to the left after hitting a 99% confidence of absence at less than 1 in 50000 reads. <br/>
+                                        Otherwise they remain in the middle, showing the number of reads that aren't present at."></i>
                                 </div>
                                 <div class="box-body">
                                     <div class="row">
                                         <div class="col-md-12 simple-alert-table">
 
                                         </div>
+                                    </div>
+                                    <div class="col-md-2">
+
+                                    </div>
+                                    <div class="col-md-8 meta_taberu">
+
+                                    </div>
+
+
+                                    <div class="col-md-2">
+
                                     </div>
                                 </div>
 
@@ -73,13 +81,12 @@
                                         <div class="box-header text-center">
                                             <h3 class="box-title">Alert watch &nbsp;</h3><i
                                                 class="fa fa-question-circle masterTooltip" tooltip="More information about the threat detection.<br/>
-                                                Num mapped is the number of reads that mapped to the reference, or plasmid reference.<br/>
                                                 Num matches is the number of reads centrifuge classified as this species.<br/>
+                                                Num mapped is the number of reads that mapped to the reference, or plasmid reference.<br/>
                                                 Prop classified is the percentage of reads classified against the total number of classified reads.<br/>
-                                                Sum unique is the number of reads that Centrifuge only output one classification for.<br/>
-                                                Mapped prop total is the number of the reads that mapped against the reads classified as this threat.<br/>
+                                                Mapped prop matches is the number of the reads that mapped against the reads classified as this threat.<br/>
                                                 Target Reads is the number of reads that we mapped to regions of concern on the reference.<br/>
-                                                Red prop. total is the number of target reads against the total number of mapped reads."></i>
+                                                Target prop. mapped is the number of target reads against the total number of mapped reads."></i>
                                         </div>
                                         <div class="box-body">
                                             <div class="row">
@@ -99,7 +106,8 @@
                                     <div class="box box-primary donut">
                                         <div class="box-header text-center">
                                             <h3 class="box-title">Species Breakdown &nbsp;</h3><i
-                                                class="fa fa-question-circle masterTooltip" tooltip="Breakdown of the top ten species in the sample, by Centrifuge classifications"></i>
+                                                class="fa fa-question-circle masterTooltip"
+                                                tooltip="Breakdown of the top ten species in the sample, by Centrifuge classifications"></i>
                                         </div>
                                         <div class="box-body donutContainer ">
 
@@ -152,7 +160,8 @@
                                     <div class="box box-primary">
                                         <div class="box-header text-center">
                                             <h3 class="box-title">All Results &nbsp;</h3><i
-                                                class="fa fa-question-circle masterTooltip" tooltip="All the compiled results for all the reads in the sample, sortable and searchable."></i>
+                                                class="fa fa-question-circle masterTooltip"
+                                                tooltip="All the compiled results for all the reads in the sample, sortable and searchable."></i>
                                         </div>
                                         <div class="box-body" style="">
 
@@ -193,6 +202,11 @@
                             </div>
 
                         </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <a href="flowcell_metagenomics_csv/" class="btn btn-primary meta-download">Download CSV of these data.</a>
                     </div>
                 </div>
             </div>

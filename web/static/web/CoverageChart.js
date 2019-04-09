@@ -65,7 +65,7 @@ CoverageChart.prototype.create_url = function () {
 }
 
 CoverageChart.prototype.load_chart_data = function (url, div_main_name) {
-
+    console.log(div_main_name);
     $.getJSON(url, (function (data) {
 
         if (this.master_chart.series[0].data.length === 0) {
@@ -245,7 +245,7 @@ CoverageChart.prototype.create_master_chart = function () {
 }
 
 CoverageChart.prototype.create_master_detail_chart = function (div_name, select_id) {
-
+    console.log("div name is" + div_name);
     var div_main_name = div_name;
 
     this.div_master_name = div_main_name + "_master";
