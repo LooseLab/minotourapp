@@ -99,3 +99,4 @@ class ParsePafFile(TestCase):
         print(mismatcharray.dtype)
         print(matcharray)
         print(matcharray.dtype)
+
