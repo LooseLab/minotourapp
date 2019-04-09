@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
+import logging
 import os
 import subprocess
 import sys
@@ -16,7 +17,8 @@ from reads.models import FastqRead, Flowcell
 from reference.models import ReferenceInfo, ReferenceLine
 from web.utils import parse_md_cg_pafline, parseMDPAF, parse_mdpaf_alex
 
-logger = get_task_logger(__name__)
+# logger = get_task_logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def callfetchreads_cent(runs,chunk_size,last_read):
@@ -615,7 +617,7 @@ def calculate_exepected_benefit_2dot0(flowcell_id, job_master_id):
 
             # Calculate the mean of reads seen so far.
             mean = readlen / readcounter
-            mean = FlowcellSummary...average read length
+            # mean = FlowcellSummary...average read length
 
             # If the chromosome we have seen is not in the reference dictionary,
             # we need to build it and also calculate the initial mask and rolling dictionary.
