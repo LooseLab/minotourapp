@@ -9,11 +9,14 @@ import time
 import gzip
 import pandas as pd
 
-import pickle
-
-from tqdm import tqdm_notebook
-
 from collections import namedtuple
+
+from celery.utils.log import get_task_logger
+
+logger = get_task_logger(__name__)
+
+
+# Set up the logger to write to logging file
 
 
 def setup_chromosome(reference_length):
@@ -150,13 +153,13 @@ def _format_records(record):
     return [_conv_type(x, int) for x in record]
 
 
-def _paf_generator(filepath, fields=None, is_file=True):
+def _paf_generator(file_like, fields=None):
     """Generator that returns namedtuples from a PAF file
 
     Parameters
     ----------
-    filepath : str
-        Filepath to a PAF file
+    file_like : file-like object
+        File-like object
     fields : list
         List of field names to use for records, must have 13 entries.
 
@@ -176,35 +179,29 @@ def _paf_generator(filepath, fields=None, is_file=True):
             )
         )
     PAF = namedtuple("PAF", fields)
-    if is_file:
-
-        #  TODO: test for compression and set open_func
-        fh = open(filepath, "r")
-
-    else:
-        fh = filepath.split("\n")
-
-    for record in fh:
+    for record in file_like:
+        logger.info(f"paf line is {record}")
         record = record.strip().split("\t")
         yield PAF(
             *_format_records(record[:12]),
             _parse_tags(record[12:])
         )
-    if is_file:
-        fh.close()
 
 
-def parse_PAF(filepath, fields=None, dataframe=False, is_file=True):
+def parse_PAF(file_like, fields=None, dataframe=False):
     """Read a minimap2 PAF file as either an iterator or a pandas.DataFrame
 
     Parameters
     ----------
-    filepath : str
-        Path to the PAF file
+    file_like : file-like object
+        Object with a read() method, such as a file handler or io.StringIO.
     fields : list
-        List of field names to use for records, must have 13 entries. Default: ["read_name", "query_length", "query_start", "query_end", "strand", "target_name", "target_length", "target_start", "target_end", "residue_matches", "alignment_block_length", "mapping_quality", "tags"]
+        List of field names to use for records, must have 13 entries. Default:
+        ["read_name", "query_length", "query_start", "query_end", "strand", "target_name", "target_length",
+        "target_start", "target_end", "residue_matches", "alignment_block_length", "mapping_quality", "tags"]
     dataframe : bool
-        When True a pandas.DataFrame is returned with Series named as the `fields` parameter. SAM tags are expanded into Series as well and given their specified types.
+        When True a pandas.DataFrame is returned with Series named as the `fields` parameter. SAM tags are expanded
+        into Series as well and given their specified types.
 
     Returns
     -------
@@ -229,13 +226,12 @@ def parse_PAF(filepath, fields=None, dataframe=False, is_file=True):
     if dataframe:
         return _expand_dict_in_series(
             pd.DataFrame(
-                _paf_generator(filepath, fields=fields, is_file=is_file)
+                _paf_generator(file_like, fields=fields)
             ),
             fields[-1],
         )
     else:
-        return _paf_generator(filepath, fields=fields, is_file=is_file)
-
+        return _paf_generator(file_like, fields=fields)
 
 
 def _lstrip_tuple(s, chars):
@@ -265,8 +261,8 @@ def _cg_generator(s):
         yield _conv_type(c, int), _conv_type(o, int)
 
 
-def parse_CIGAR(cigar_string, read_string, chunk_length):
-    """Return a dictionary of arrays
+def parse_CIGAR(cigar_string, read_string, alignment_length):
+    """Return an array and dictionary
 
     Parameters
     ----------
@@ -274,55 +270,52 @@ def parse_CIGAR(cigar_string, read_string, chunk_length):
         A CIGAR string
     read_string : str
         Read that the CIGAR string describes
-    chunk_length : int
-        Length of the reference covered by the alignment.
+    alignment_length : int
+        Length of the alignment
 
     Returns
     -------
     array
     dict
     """
-    d = {}
     # Array of insertions
-    d['I'] = np.zeros(chunk_length)
     # Array of insertion counts
-    d['IC'] = np.zeros(chunk_length)
+    d = {"I": np.zeros(alignment_length),
+         "IC": np.zeros(alignment_length)}
+
     query_pos = 0
+
     query_array = []
+
     read_bases = tuple(read_string)
 
     for count, operation in _cg_generator(cigar_string):
-        # print (operation,count)
         # Not aligned read section
         if operation is 'S':
-            # print ("skipping")
             pass
 
         # Not a deletion or insertion. Its 0:M
         elif operation is 'M':
             # Extend query_array with bases from read
-            # print ("match")
             query_array.extend(read_bases[query_pos:query_pos + count])
 
         elif operation is 'I':
-            # print ("insertion")
             # Extend query_array with bases from read
             # query_array.extend(read_bases[query_pos:query_pos + count])
-            d['I'][query_pos] += 1
-            d["IC"][query_pos] += count
-            count = 1
-
+            query_array_len = len(query_array) - 1
+            d['I'][query_array_len] += 1
+            d["IC"][query_array_len] += count
+        #             count=1
         elif operation is 'D':
-            # print ("deletion")
             query_array.extend(["D"] * count)
-            continue
         else:
             print("Operation: '{}' not accounted for.".format(operation))
         # Increment query position by count
-        query_pos += count
+        if operation is not "D":
+            query_pos += count
 
     query_array = np.fromiter(query_array, "U1")
     for base in np.unique(query_array):
         d[base] = np.zeros(len(query_array))
         np.add.at(d[base], np.argwhere(query_array == base), 1)
-    return d
+    return query_array, d

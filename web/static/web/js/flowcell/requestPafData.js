@@ -38,7 +38,7 @@ function requestMappedChromosomes(flowcell_id) {
     /*
      * Request the chromosomes that have reads mapped to using minimap2
      * and update the select box on tab Mapping
-     *
+     * TODO THIS NEEDS STREAMLINING
      */
     console.log("HEEELLOLOLLL");
     var url = '/api/v1/flowcells/' + flowcell_id + '/references';

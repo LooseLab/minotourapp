@@ -122,6 +122,6 @@ class JobMaster(models.Model):
 
     def __str__(self):
         if self.run is not None:
-            return "{} {} {}".format(self.run, self.job_type, self.run.id)
+            return "{} {} {} {}".format(self.run, self.job_type, self.run.id, self.id)
         else:
-            return "{} {} {}".format(self.flowcell, self.job_type, self.flowcell.id)
+            return "{} {} {} {}".format(self.flowcell, self.job_type, self.flowcell.id, self.id)

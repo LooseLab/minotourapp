@@ -326,7 +326,7 @@ def update_mapped_non_dangerous(row, task):
     mapped_result.save()
 
 
-def plasmid_mapping(row, species, fastq_list, flowcell, read_ids):
+def plasmid_mapping(row, species, fastq_list, flowcell, read_ids, fasta_df):
     """Map the reads for groups that have danger regions on plasmids
 
     :param pd.Series row: The row of the target dataframe for species with plasmid danger regions
@@ -334,6 +334,8 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids):
     :param list fastq_list: The reads sequences
     :param reads.models.Flowcell flowcell: The flowcell for logging by flowcell_id
     :param read_ids: reads ids of the reads being mapped
+    :param fasta_df: dataframe containing the sequence data for the centrifuge classified reads that have filtered to
+    target reads
     :return plasmid_map_df: A list of dicts containing the information about the plasmid mappings
     """
     read_ids = read_ids
@@ -351,7 +353,7 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids):
     mapping_task, created = JobMaster.objects.get_or_create(job_type=map_job_type, flowcell=flowcell,
                                                             reference=references)
     # Call the align reads function from the web tasks-alignment file so we can map the reads against the reference
-    align_reads(fastq_list, mapping_task.id)
+    align_reads(fastq_list, mapping_task.id, fasta_df)
     # Get the output of the align reads function
     map_output = PafStore.objects.filter(job_master=mapping_task, qsn__in=read_ids)
 
@@ -403,7 +405,7 @@ def update_mapped_red_values(row, task):
 
 
 def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, targets_results_df,
-                       task, num_matches_target_barcoded_df, fastas):
+                       task, fastas):
     """
     Map the reads from the target data frames, after they've been grouped by species
     :param target_species_group_df: A data frame that contains reads from only one species
@@ -412,11 +414,11 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
     :param gff3_df: The data frame containing the target regions
     :param targets_results_df: The data frame containing the new targets mapping against reference
     :param task: The task object
-    :param num_matches_target_barcoded_df: The number of matches per barcode for each target species in a dataframe
     :param fastas: A list of the fastqread objects that we used in this iteration
     :return red_df: Any reads that map to plasmids and their information as a dataframe
     """
-
+    logger.info("Target species df is :")
+    logger.info(target_species_group_df)
     logger.info("Flowcell id: {} - species being mapped is {}".format(flowcell.id, group_name))
     # Get the target region for this species
     species_regions_df = gff3_df[gff3_df["species"] == group_name]
@@ -449,7 +451,7 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
     )
 
     # Call the align_reads function to perform the mapping, funciton found in web tasks_alignment
-    align_reads(fastqs, mapping_task.id)
+    align_reads(fastqs, mapping_task.id, target_species_group_df)
 
     # Get the output for this mapping (if any) from the database
     map_output = PafStore.objects.filter(job_master=mapping_task, qsn__in=read_ids)
@@ -467,7 +469,8 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
 
         logger.info("Flowcell id: {} - Mapping reads to plasmids for species {} ".format(flowcell.id, species))
         # Map the reads against the target regions
-        plasmid_red_series = plasmid_df.apply(plasmid_mapping, args=(species, fastas, flowcell, read_ids), axis=1)
+        plasmid_red_series = plasmid_df.apply(plasmid_mapping, args=(species, fastas, flowcell, read_ids,
+                                                                     target_species_group_df), axis=1)
         # If a plasmid has no mappings, it results in a nan being returned into the series, so drop it so we only have
         # mapping results. IF no plasmids have mappings, the series becomes empty
         plasmid_red_series.dropna(inplace=True)
@@ -804,7 +807,7 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
         # append the return value of map_all_the_groups to red reads_df, from each species in group
         red_reads_df = red_reads_df.append(map_all_the_groups(group, name, flowcell,
                                                               target_regions_df, targets_df, task,
-                                                              num_matches_targets_barcoded_df, fastas
+                                                              fastas
                                                               )
                                            )
 
@@ -932,6 +935,7 @@ def create_centrifuge_models(row, classified_per_barcode, first):
     Append a CentOutput object to a list for each row in the centrifuge output
     :param row: the row from the data frame
     :param classified_per_barcode: The number of reads classified for each barcode as a dictionary
+    :param first: Boolean saying if this is the first iteration, if it isn't a pandas merge adds a suffix onto the code
     :return: The list of newly created objects
 
     """
@@ -1081,10 +1085,10 @@ def output_parser(task, new_data_df, donut_or_output, metadata):
 
         # The number of reads we have any form of classification for
         reads_classified = to_save_df[to_save_df["tax_id"].ne(0) & to_save_df["barcode_name"]
-            .eq("All reads")]["num_matches"].sum()
+                                      .eq("All reads")]["num_matches"].sum()
         # The number of reads we have completely failed to classify
         reads_unclassified = to_save_df[to_save_df["tax_id"].eq(0) & to_save_df["barcode_name"]
-            .eq("All reads")]["num_matches"].sum()
+                                        .eq("All reads")]["num_matches"].sum()
         # save the values
         metadata.classified = reads_classified
         metadata.unclassified = reads_unclassified

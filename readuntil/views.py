@@ -225,6 +225,7 @@ def get_benefit_data_complete(request):
                                  "data": x_y_rev_mask},
                  }
 
-    return Response(data_dict)
+    # return Response(data_dict)
+    return Response({"response":"Psyche"})
 
 

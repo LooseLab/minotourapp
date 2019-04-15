@@ -29,7 +29,8 @@ from communication.utils import *
 from jobs.models import JobMaster
 from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus
 from web.tasks_chancalc import chancalc
-from .tasks_alignment import run_minimap2_alignment, calculate_expected_benefit
+from .tasks_alignment import run_minimap2_alignment
+from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
 
 logger = get_task_logger(__name__)
 
@@ -134,14 +135,14 @@ def run_monitor():
 
                 run_delete_flowcell.delay(flowcell_job.id)
 
-            if flowcell_job.job_type.name == "ReadUntil":
+            if flowcell_job.job_type.name == "ExpectedBenefit":
 
                 logger.info("Sending task ReadUntil - Flowcell id: {}, job_master id: {}".format(
                     flowcell.id,
                     flowcell_job.id,
                 ))
 
-                calculate_expected_benefit.delay(flowcell_job.id)
+                calculate_expected_benefit_3dot0_final.delay(flowcell_job.id)
 
 
 @task
