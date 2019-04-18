@@ -1,6 +1,6 @@
 from django.db import models
 
-from reads.models import Run, GroupRun, Flowcell
+from reads.models import Run, Flowcell
 from reference.models import ReferenceInfo
 
 
@@ -8,20 +8,20 @@ class JobType(models.Model):
 
     name = models.CharField(
 
-        max_length=256
+        max_length=256,
     )
 
     description = models.TextField(
 
         max_length=256,
         blank=True,
-        null=True
+        null=True,
     )
 
     long_description = models.TextField(
 
         blank=True,
-        null=True
+        null=True,
     )
 
     reference = models.BooleanField(
@@ -40,9 +40,9 @@ class JobType(models.Model):
     )
 
     private = models.BooleanField(
-        default=True
-    )
 
+        default=True,
+    )
 
     def __str__(self):
 
@@ -50,78 +50,85 @@ class JobType(models.Model):
 
 
 class JobMaster(models.Model):
-    
 
     run = models.ForeignKey(
+
         Run,
-        on_delete=models.CASCADE,
+        on_delete=models.DO_NOTHING,
         related_name='runjobs',
         null=True,
-        blank=True
+        blank=True,
     )
 
     flowcell = models.ForeignKey(
+
         Flowcell,
-        on_delete=models.CASCADE,
+        on_delete=models.DO_NOTHING,
         related_name='flowcelljobs',
         null=True,
-        blank=True
-    )
-
-    grouprun = models.ForeignKey(
-        GroupRun,
-        on_delete=models.CASCADE,
-        related_name='jobs',
-        null=True,
-        blank=True
+        blank=True,
     )
 
     job_type = models.ForeignKey(
+
         JobType,
-        related_name='taskname'
+        on_delete=models.DO_NOTHING,
+        related_name='taskname',
     )
 
     reference = models.ForeignKey(
+
         ReferenceInfo,
+        on_delete=models.DO_NOTHING,
         related_name='referencejob',
         null=True,
-        blank=True
+        blank=True,
     )
 
     last_read = models.BigIntegerField(
 
-        default=0
+        default=0,
     )
 
     tempfile_name = models.CharField(
+
         max_length=256,
         blank=True,
-        null=True
+        null=True,
     )
 
     read_count = models.BigIntegerField(
+
         default=0
     )
 
     complete = models.BooleanField(
-        default=False
+
+        default=False,
     )
 
     running = models.BooleanField(
-        default=False
+
+        default=False,
     )
+
     iteration_count = models.IntegerField(
-        null=True, default=0
+
+        null=True,
+        default=0,
     )
+
     target_set = models.CharField(
+
         default=None,
         null=True,
         max_length=100,
-        blank=True
+        blank=True,
     )
 
     def __str__(self):
+
         if self.run is not None:
             return "{} {} {}".format(self.run, self.job_type, self.run.id)
-        else:
-            return "{} {} {}".format(self.flowcell, self.job_type, self.flowcell.id)
+
+        return "{} {} {}".format(self.flowcell, self.job_type, self.flowcell.id)

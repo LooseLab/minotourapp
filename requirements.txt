@@ -1,7 +1,7 @@
 numpy
 wheel
 watchdog
-Django<2
+django
 django-filter
 django-mailgun 
 djangorestframework

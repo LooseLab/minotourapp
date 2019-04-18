@@ -77,6 +77,7 @@ class Metadata(models.Model):
     task = models.ForeignKey(
         JobMaster,
         related_name="metadata",
+        on_delete=models.DO_NOTHING,
     )
 
     start_time = models.DateTimeField(default=timezone.now, null=True)

@@ -28,13 +28,15 @@ class PafStore(models.Model):
     read = models.ForeignKey(
 
         FastqRead,
-        related_name='pafreadalignment'
+        related_name='pafreadalignment',
+        on_delete=models.DO_NOTHING,
     )
 
     reference = models.ForeignKey(  # TODO delete - read from job_master.reference
 
         ReferenceInfo,
-        related_name='pafstorereference'
+        related_name='pafstorereference',
+        on_delete=models.DO_NOTHING,
     )
 
     # PAF File Format:
@@ -131,7 +133,8 @@ class PafRoughCov(models.Model):
 
     read_type = models.ForeignKey(
         FastqReadType,
-        related_name='prc_type'
+        related_name='prc_type',
+        on_delete=models.DO_NOTHING,
     )
 
     is_pass = models.BooleanField(
@@ -141,7 +144,8 @@ class PafRoughCov(models.Model):
     barcode = models.ForeignKey(
         Barcode,
         related_name='prc_barcode',
-        null=True
+        null=True,
+        on_delete=models.DO_NOTHING,
     )
 
     barcode_name = models.CharField(
@@ -151,12 +155,14 @@ class PafRoughCov(models.Model):
 
     reference = models.ForeignKey(
         ReferenceInfo,
-        related_name='pafreference'
+        related_name='pafreference',
+        on_delete=models.DO_NOTHING,
     )
 
     chromosome = models.ForeignKey(
         ReferenceLine,
-        related_name='pafchromosome'
+        related_name='pafchromosome',
+        on_delete=models.DO_NOTHING,
     )
 
     p = models.IntegerField(
