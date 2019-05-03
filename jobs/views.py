@@ -19,7 +19,7 @@ def task_list(request):
     :param request:
     :return:
     """
-
+    print(request.GET)
     if request.method == 'GET':
 
         search_criteria = request.GET.get('search_criteria', 'flowcell')
@@ -43,25 +43,31 @@ def task_list(request):
             request.data["target_set"] = request.data["reference"]
             # Remove the reference ID from the request body
             request.data["reference"] = None
-
+        print(request.data)
+        print(request.data["flowcell"])
         # Check to see if we have a string as the flowcell, not an Int for a PK based lookup
         if type(request.data["flowcell"]) is str:
             try:
                 flowcell = Flowcell.objects.get(name=request.data["flowcell"])
                 request.data["flowcell"] = flowcell.id
             except Flowcell.DoesNotExist as e:
-                print("Exception: {}".format(e))
-                return JsonResponse({'error_messages': "Exception: {}".format(e)}, status=500)
+                try:
+                    flowcell = Flowcell.objects.get(pk=int(request.data["flowcell"]))
+                except Flowcell.DoesNotExist as e1:
+                    print("Exception: {}".format(e))
+                    return JsonResponse({'error_messages': "Exception: {}".format(e)}, status=500)
 
         if "reference" in request.data.keys() and type(request.data["reference"]) is str:
             try:
                 reference = ReferenceInfo.objects.get(name=request.data["reference"])
                 request.data["reference"] = reference.id
             except ReferenceInfo.DoesNotExist as e:
-                print("Exception: {}".format(e))
-                return JsonResponse({'error_messages': "Exception: {}".format(e)}, status=500)
+                try:
+                    reference = ReferenceInfo.objects.get(pk=int(request.data["reference"]))
+                except ReferenceInfo.DoesNotExist as e1:
+                    print("Exception: {}".format(e))
+                    return JsonResponse({'error_messages': "Exception: {}".format(e)}, status=500)
 
-        print(request.data)
         serializer = JobMasterInsertSerializer(data=request.data)
         if serializer.is_valid():
             task = serializer.save()
