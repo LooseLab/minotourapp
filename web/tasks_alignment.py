@@ -900,18 +900,28 @@ def calculate_expected_benefit(flowcell_id, job_master_id):
 
             coverage_array = np.sum([match_hold_array, mismatch_hold_array], axis=0)
 
-            filename_mismatch_hold = '{}_{}_mismatch_hold.bin'.format(flowcell.id, job_master.id)
-            filename_match_hold = '{}_{}_match_hold.bin'.format(flowcell.id, job_master.id)
-            filename_coverage = '{}_{}_coverage.bin'.format(flowcell.id, job_master.id)
+            filename_mismatch_hold = os.path.join(REFERENCE_LOCATION, '{}_{}_mismatch_hold.bin'.format(flowcell.id, job_master.id))
+            filename_match_hold = os.path.join(REFERENCE_LOCATION, '{}_{}_match_hold.bin'.format(flowcell.id, job_master.id))
+            filename_coverage = os.path.join(REFERENCE_LOCATION, '{}_{}_coverage.bin'.format(flowcell.id, job_master.id))
 
-            with open(os.path.join(REFERENCE_LOCATION, filename_mismatch_hold), 'wb+') as fh:
-                fh.write(mismatch_hold_array.data)
+            try:
+                logger.info('Flowcell id: {} - Loading previous data arrays'.format(flowcell.id))
 
-            with open(os.path.join(REFERENCE_LOCATION, filename_match_hold), 'wb+') as fh:
-                fh.write(match_hold_array.data)
+                previous_mismatch_hold = np.load(filename_mismatch_hold + '.npy')
+                previous_match_hold = np.load(filename_match_hold + '.npy')
+                previous_coverage = np.load(filename_coverage + '.npy')
 
-            with open(os.path.join(REFERENCE_LOCATION, filename_coverage), 'wb+') as fh:
-                fh.write(coverage_array.data)
+                mismatch_hold_array = mismatch_hold_array + previous_mismatch_hold
+                match_hold_array = match_hold_array + previous_match_hold
+                coverage_array = coverage_array + previous_coverage
+
+            except FileNotFoundError as err:
+                logger.exception(err)
+                logger.info('Flowcell id: {} - Previous data arrays not found'.format(flowcell.id))
+
+            np.save(filename_mismatch_hold, mismatch_hold_array)
+            np.save(filename_match_hold, match_hold_array)
+            np.save(filename_coverage, coverage_array)
 
     logger.info('Flowcell id: {} - Found {} paf records (CIGAR string)'.format(flowcell.id, len(pafdata)))
 
