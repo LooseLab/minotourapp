@@ -41,7 +41,6 @@ def calculate_expected_benefit_3dot0_final(task_id):
 
     if not minimap2:
         logger.error('Can not find minimap2 executable - stopping task.')
-        print('Can not find minimap2 executable - stopping task.')
         return
 
     reference_info = task.reference
@@ -104,8 +103,6 @@ def calculate_expected_benefit_3dot0_final(task_id):
                                              "nrm",
                                              "abl",
                                              "mq", "tags"])):
-            logger.info(f"line number {i}")
-            logger.info(f"record is : {record}")
             # Get the read information from the fasta dict
             fastq_read = fastq_dict[record[0]]
 

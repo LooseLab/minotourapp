@@ -35,6 +35,10 @@ class ReferenceInfo(models.Model):
         default=False
     )
 
+    owner = models.IntegerField(
+        default=0
+    )
+
     users = models.ManyToManyField(
 
         settings.AUTH_USER_MODEL,

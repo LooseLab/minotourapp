@@ -40,14 +40,6 @@ class SankeyLink(models.Model):
         on_delete=models.CASCADE
     )
 
-    sankey_task = models.ForeignKey(
-        JobMaster,
-        related_name="sankey_task",
-        default=None,
-        null=True,
-        on_delete=models.CASCADE
-    )
-
     target_tax_level = models.CharField(max_length=100)
 
     path = models.IntegerField(default=0)
@@ -77,6 +69,7 @@ class Metadata(models.Model):
     task = models.ForeignKey(
         JobMaster,
         related_name="metadata",
+        on_delete=models.CASCADE
     )
 
     start_time = models.DateTimeField(default=timezone.now, null=True)

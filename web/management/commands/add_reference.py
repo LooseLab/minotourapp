@@ -7,6 +7,7 @@ from pathlib import Path
 from Bio import SeqIO
 from django.core.management.base import BaseCommand, CommandError
 from reference.models import ReferenceInfo, ReferenceLine
+from rest_framework.authtoken.models import Token
 
 
 def find_files_of_type(file_or_directory, file_extensions):
@@ -61,6 +62,21 @@ class Command(BaseCommand):
             "'.fasta', '.fna' or '.fa' will be used. Files can be gzipped",
             nargs="+",
         )
+        parser.add_argument(
+            "-k",
+            "--key",
+            type=str,
+            help="The api key to connect this target"
+                 " set with your account. Found in the"
+                 " profile section of your minotour page,"
+                 " once logged in.",
+        )
+        parser.add_argument(
+            "-p",
+            "--private",
+            action="store_true",
+            help="Whether or not this target_set will be hidden from other users. Default - false",
+        )
 
     def handle(self, *args, **options):
         """
@@ -83,6 +99,11 @@ class Command(BaseCommand):
                 ".fasta.gz",
                 ".fsa.gz"
             ]
+
+            if options["private"] and not options["key"]:
+                print("To add private references, your minotour api_key is required. "
+                      "This can be found on the profile page of your account.")
+                return
 
             for file_or_directory in options["reference"]:
                 reference_files.extend(
@@ -133,11 +154,22 @@ class Command(BaseCommand):
                         if k == "chromosome_length"
                     ]
                 )
+
+                private = False
+                user_id = 0
+
+                # If we want private references
+                if options["private"]:
+                    private = True
+                    user_id = Token.objects.get(key=options["key"]).user_id
+
                 # Create the Reference info entry in the database
                 ref_info, created = ReferenceInfo.objects.update_or_create(
                     name=ref_file_stem,
                     filename=ref_file.name,
                     length=ref_length,
+                    private=private,
+                    owner=user_id
                 )
                 # Create a Reference line entry for each "Chromosome/line"
                 for ref_line_dict in ref_lines:

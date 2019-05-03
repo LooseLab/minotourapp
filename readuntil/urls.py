@@ -4,10 +4,6 @@ from readuntil import views
 
 urlpatterns = [
     url(
-        r'^api/v1/rejectedfastread/$',
-        views.rejectedfastqread_list,
-        name="rejectedfastqread-list"),
-    url(
         r'^api/v1/readuntil/benefitdata/master$',
         views.get_benefit_data,
         name="benefit-data"

@@ -180,7 +180,6 @@ def _paf_generator(file_like, fields=None):
         )
     PAF = namedtuple("PAF", fields)
     for record in file_like:
-        logger.info(f"paf line is {record}")
         record = record.strip().split("\t")
         yield PAF(
             *_format_records(record[:12]),

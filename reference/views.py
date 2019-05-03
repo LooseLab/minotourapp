@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -9,7 +10,7 @@ from reference.serializers import (ReferenceInfoSerializer,
 @api_view(['GET'])
 def reference_list(request):
 
-    queryset = ReferenceInfo.objects.all()
+    queryset = ReferenceInfo.objects.filter(Q(private=False) | Q(owner=request.user.id))
 
     serializer = ReferenceInfoSerializer(queryset, many=True, context={'request': request})
 
@@ -19,7 +20,7 @@ def reference_list(request):
 @api_view(['GET'])
 def reference_detail(request, pk):
 
-    queryset = ReferenceInfo.objects.get(pk=pk)
+    queryset = ReferenceInfo.objects.filter(Q(private=False) | Q(owner=request.user.id), pk=pk)[0]
 
     serializer = ReferenceInfoSerializer(queryset, context={'request': request})
 

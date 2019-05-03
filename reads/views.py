@@ -134,8 +134,6 @@ def events_type_detail(request, pk): # TODO consider removing
     serializer = MinIONEventTypeSerializer(event_, context={'request': request})
     return Response(serializer.data)
 
-
-
 @api_view(['GET'])
 def fastq_detail(request,pk):
     """
