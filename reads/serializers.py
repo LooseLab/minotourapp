@@ -49,6 +49,7 @@ class ChannelSummarySerializer(serializers.ModelSerializer):
         )
 
 
+#class MinIONRunStatsSerializer(serializers.HyperlinkedModelSerializer):
 class MinIONRunStatsSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = MinIONRunStats
@@ -77,6 +78,9 @@ class MinIONRunStatsSerializer(serializers.HyperlinkedModelSerializer):
             'saturated',
             'inrange',
             'strand',
+            'pore',
+            'no_pore',
+            'zero',
             'occupancy',
             'minKNOW_read_count',
             'minKNOW_histogram_values',

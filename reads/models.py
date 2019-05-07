@@ -952,6 +952,21 @@ class MinIONRunStats(models.Model):  # Todo consider merging in to one object wi
         default=0
     )
 
+    no_pore = models.IntegerField(
+
+        default=0
+    )
+
+    zero = models.IntegerField(
+
+        default=0
+    )
+
+    pore = models.IntegerField(
+
+        default=0
+    )
+
     minKNOW_read_count = models.IntegerField(
 
         default=0
@@ -981,8 +996,8 @@ class MinIONRunStats(models.Model):  # Todo consider merging in to one object wi
 
     ## This is something to look at for optimisation
     def occupancy(self):
-        if (self.strand > 0 and self.inrange > 0):
-            occupancy = round(((self.strand + self.adapter) / (self.strand + self.adapter + self.good_single)) * 100)
+        if (self.strand > 0 and (self.inrange > 0 or self.pore > 0)):
+            occupancy = round(((self.strand + self.adapter) / (self.strand + self.adapter + self.good_single + self.pore)) * 100)
         else:
             occupancy = 0
         return occupancy

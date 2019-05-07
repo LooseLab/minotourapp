@@ -51,6 +51,7 @@ var FlowcellPageApp = {
         this.livedata.strand = new Array();
         this.livedata.adapter = new Array();
         this.livedata.good_single = new Array();
+        this.livedata.pore = new Array();
         this.livedata.currpercentage = null;
         this.livedata.currstrand = null;
         this.livedata.percentage = new Array();
@@ -59,7 +60,8 @@ var FlowcellPageApp = {
         this.livedata.instrand_history = new Array();
         this.livedata.openpore_history = new Array();
 
-        var myStringArray = ["above", "adapter", "below", "good_single", "strand", "inrange", "multiple", "pending_mux_change", "saturated", "unavailable", "unblocking", "unclassified", "unknown"];
+
+        var myStringArray = ["above", "adapter", "below", "good_single", "strand", "inrange", "multiple", "pending_mux_change", "saturated", "unavailable", "unblocking", "unclassified", "unknown", "pore","no_pore","zero"];
         var arrayLength = myStringArray.length;
 
         this.livedata.pore_history = new Array();
@@ -317,6 +319,8 @@ var FlowcellPageApp = {
             this.LiveInStrand.series[1].update({name: "Single Pore"}, false);
             this.LiveInStrand.addSeries({data: this.livedata.adapter});
             this.LiveInStrand.series[2].update({name: "Adapter"}, false);
+            this.LiveInStrand.addSeries({data: this.livedata.pore});
+            this.LiveInStrand.series[3].update({name: "Pore"}, false);
 
         } else {
             this.LiveInStrand.series[0].setData(this.livedata.strand);
@@ -325,6 +329,8 @@ var FlowcellPageApp = {
             this.LiveInStrand.series[1].update({name: "Single Pore"}, false);
             this.LiveInStrand.series[2].setData(this.livedata.adapter);
             this.LiveInStrand.series[2].update({name: "Adapter"}, false);
+            this.LiveInStrand.series[3].setData(this.livedata.pore);
+            this.LiveInStrand.series[3].update({name: "Pore"}, false);
         }
         this.LiveInStrand.redraw();
         this.LiveInStrand.reflow();
