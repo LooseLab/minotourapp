@@ -514,8 +514,15 @@ var FlowcellPageApp = {
         var categories = [];
         //var counter = 0;
         //console.log(readeventcountweightedhist);
+        //console.log(totalyield);
         readeventcountweightedhist = readeventcountweightedhist.replace(/u(?=[^:]+')/g, "").replace(/'/g, "");
         readeventcountweightedhist = JSON.parse(readeventcountweightedhist);
+        //This will allow us in future to switch between estimted bases, events and real bases.
+        var totalyield = 0;
+        for (var i = 0; i < readeventcountweightedhist.length; i++) {
+            totalyield += readeventcountweightedhist[i];
+        }
+        //console.log(totalyield);
         //console.log(readeventcountweightedhistbinwidth);
         var n50count = 0;
         var n50index = 0;
@@ -558,7 +565,7 @@ var FlowcellPageApp = {
     },
 
     updateLiveHistogram: function (data) {
-        //console.log(data);
+        //console.log(data
         returndata = this.tohistogram(data[data.length - 1].minKNOW_histogram_values, data[data.length - 1].minKNOW_histogram_bin_width, data[data.length - 1].event_yield);
         this.LiveHistogram.series[0].setData(returndata[0]);
         this.LiveHistogram.xAxis[0].setCategories(returndata[1]);
