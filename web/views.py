@@ -361,7 +361,7 @@ def flowcell_run_stats_download(request, pk):
     runstats_dataframe = runstats_dataframe.drop('in_strand', axis=1)
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename={}_live_records.csv'.format(flowcell.name)
-    column_order = ['asic_temp','heat_sink_temp','voltage_value','minKNOW_read_count','event_yield','above','adapter','below','good_single','inrange','multiple','open_pore','pending_mux_change','saturated','strand','unavailable','unblocking','unclassified','unknown','minKNOW_histogram_bin_width','minKNOW_histogram_values']
+    column_order = ['asic_temp','heat_sink_temp','voltage_value','minKNOW_read_count','event_yield','above','adapter','below','good_single','inrange','multiple','open_pore','pore','zero','no_pore','pending_mux_change','saturated','strand','unavailable','unblocking','unclassified','unknown','minKNOW_histogram_bin_width','minKNOW_histogram_values']
     runstats_dataframe[column_order].to_csv(response)
 
     return response
