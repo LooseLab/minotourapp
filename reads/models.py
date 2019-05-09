@@ -401,7 +401,7 @@ class Run(models.Model):
 
         Flowcell,
         related_name='runs',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
 
     )
 
