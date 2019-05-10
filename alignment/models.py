@@ -29,7 +29,7 @@ class PafStore(models.Model):
 
         FastqRead,
         related_name='pafreadalignment',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
     )
 
     reference = models.ForeignKey(  # TODO delete - read from job_master.reference
