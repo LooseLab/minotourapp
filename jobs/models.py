@@ -63,7 +63,7 @@ class JobMaster(models.Model):
     flowcell = models.ForeignKey(
 
         Flowcell,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name='flowcelljobs',
         null=True,
         blank=True,
