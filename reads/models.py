@@ -1095,7 +1095,7 @@ class MinIONRunStatus(models.Model):
 
         Run,
         related_name='RunDetails',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
 
     )
 
