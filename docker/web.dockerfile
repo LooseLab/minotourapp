@@ -18,4 +18,4 @@ COPY ./entrypoint.sh /var/lib/minotour/apps/minotourapp/
 COPY . /var/lib/minotour/apps/minotourapp/
 
 # CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
-# CMD ["sh", "entrypoint.sh"]
+CMD ["sh", "entrypoint.sh"]
