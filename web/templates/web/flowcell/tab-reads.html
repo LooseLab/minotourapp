@@ -1,9 +1,9 @@
-<div class="alert alert-primary" role="alert">
-    This search tool - please be aware that search and ordering involve processing large amounts of data, and might affect the user experience. To start working with the table, please click on any column header.
-</div>
-
 <div class="row">
+
     <div class="col-md-12">
+
+        <div class="alert alert-warning text-center" role="alert">Please be aware that searching and ordering involve processing large amounts of data, and might affect the user experience. To start working with the table, please click on any column header.</div>
+
         <div class='panel panel-info'>
             <div class='panel-heading'>
                 <h3 class='panel-title'>Reads</h3>
@@ -66,50 +66,4 @@
 
         return div;
     }
-
-    /*$(document).ready(function () {
-
-        var table = $('#example').DataTable({
-            "processing": true,
-            "serverSide": true,
-            "pagingType": 'simple',
-            "ajax": {
-                "url": '/web/private/flowcells_reads_data/',
-                "data": {
-                    "flowcell_id": {{ flowcell.id }}
-                },
-            },
-            "columns": [
-                {"data": "read_id"},
-                {"data": "read"},
-                {"data": "channel"},
-                {"data": "sequence_length"},
-                {"data": "run__runid"},
-                {"data": "barcode__name"},
-                {
-                    'className': 'details-control',
-                    'sortable': false,
-                    'data': null,
-                    'defaultContent': "<button class=\"btn btn-primary\" type=\"button\">Show sequence</button>"
-                },
-            ]
-        });
-
-        $('#example').on('click', 'td.details-control', function () {
-
-            var tr = $(this).closest('tr');
-            var row = table.row(tr);
-
-            if (row.child.isShown()) {
-                row.child.hide();
-                tr.removeClass('shown');
-            }
-            else {
-                row.child(format(row.data())).show();
-                tr.addClass('shown');
-            }
-        });
-
-    });*/
-
 </script>
