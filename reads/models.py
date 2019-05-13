@@ -843,7 +843,7 @@ class MinIONRunStats(models.Model):  # Todo consider merging in to one object wi
 
         Run,
         related_name='RunStats',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
 
     )
 
