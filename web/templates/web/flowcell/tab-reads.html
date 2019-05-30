@@ -1,7 +1,3 @@
-<div class="alert alert-primary" role="alert">
-    This search tool - please be aware that search and ordering involve processing large amounts of data, and might affect the user experience. To start working with the table, please click on any column header.
-</div>
-
 <div class="row">
     <div class="col-md-12">
         <div class='panel panel-info'>
@@ -39,6 +35,19 @@
     </div>
 
 </div>
+<div class="row">
+    <div class="col-md-12">
+        <div class='panel panel-info'>
+            <div class='panel-heading'>
+                <h3 class='panel-title'>Heads up!</h3>
+            </div>
+            <div class='panel-body'>
+                To populate the table, please click on a column header. Be patient, a lot of data is being sorted in the
+                background!
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 
@@ -66,50 +75,5 @@
 
         return div;
     }
-
-    /*$(document).ready(function () {
-
-        var table = $('#example').DataTable({
-            "processing": true,
-            "serverSide": true,
-            "pagingType": 'simple',
-            "ajax": {
-                "url": '/web/private/flowcells_reads_data/',
-                "data": {
-                    "flowcell_id": {{ flowcell.id }}
-                },
-            },
-            "columns": [
-                {"data": "read_id"},
-                {"data": "read"},
-                {"data": "channel"},
-                {"data": "sequence_length"},
-                {"data": "run__runid"},
-                {"data": "barcode__name"},
-                {
-                    'className': 'details-control',
-                    'sortable': false,
-                    'data': null,
-                    'defaultContent': "<button class=\"btn btn-primary\" type=\"button\">Show sequence</button>"
-                },
-            ]
-        });
-
-        $('#example').on('click', 'td.details-control', function () {
-
-            var tr = $(this).closest('tr');
-            var row = table.row(tr);
-
-            if (row.child.isShown()) {
-                row.child.hide();
-                tr.removeClass('shown');
-            }
-            else {
-                row.child(format(row.data())).show();
-                tr.addClass('shown');
-            }
-        });
-
-    });*/
 
 </script>
