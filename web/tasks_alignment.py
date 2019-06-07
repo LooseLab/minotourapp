@@ -735,6 +735,9 @@ def calculate_expected_benefit(flowcell_id, job_master_id):
 
     logger.info('Flowcell id: {} - Finished minimap - {}'.format(flowcell.id, cmd))
 
+    if not out:
+        logger.info('Flowcell id: {} - No mappings found'.format(flowcell.id))
+
     paf = out.decode("utf-8")
 
     pafdata = paf.splitlines()
