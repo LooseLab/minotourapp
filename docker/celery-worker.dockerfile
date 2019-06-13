@@ -27,7 +27,9 @@ WORKDIR /var/lib/minotour/apps/minotourapp
 
 COPY . /var/lib/minotour/apps/minotourapp/
 
-RUN apt-get update && apt-get install -y git build-essential libz-dev python3-pip libmysqlclient-dev
+RUN apt-get update && apt-get install -y git build-essential libz-dev python3 python3-pip libmysqlclient-dev
+
+RUN pip3 install -r requirements.txt
 
 RUN cd extra/centrifuge-1.0.4-beta && make && cd ..
 

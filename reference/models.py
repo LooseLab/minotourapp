@@ -34,6 +34,9 @@ class ReferenceInfo(models.Model):
 
         default=False
     )
+    owner = models.IntegerField(
+        default=0
+    )
 
     owner = models.IntegerField(
         default=0

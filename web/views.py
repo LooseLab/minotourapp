@@ -158,7 +158,7 @@ def flowcell_reads_data(request):
     length = int(request.GET.get('length', 10))
 
     end = start + length
-    # Which column s
+    # Which column is ordering
     order_column = request.GET.get('order[0][column]', '')
     # ascending descending
     order_dir = request.GET.get('order[0][dir]', '')
@@ -204,9 +204,10 @@ def flowcell_reads_data(request):
             .filter(run__in=run_id_list)
             #.filter(run__flowcell_id=flowcell_id)\
             #.filter(run__flowcell__owner=request.user)\
-
+    print(order_column)
     if order_column:
 
+        print("ITS TRUE")
         if order_dir == 'desc':
 
             reads_temp2 = reads_temp.order_by('-{}'.format(query_columns[int(order_column)]))
@@ -215,7 +216,12 @@ def flowcell_reads_data(request):
 
             reads_temp2 = reads_temp.order_by('{}'.format(query_columns[int(order_column)]))
 
-    reads = reads_temp2[:20].values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
+    else:
+        reads_temp2 = reads_temp
+    print(start, end)
+    reads = reads_temp2[start:end]\
+        .values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
+    print(reads)
 
     records_total = reads_temp.count()
 
@@ -223,7 +229,7 @@ def flowcell_reads_data(request):
         'draw': draw,
         "recordsTotal": records_total,
         "recordsFiltered": records_total,
-        "data": list(reads[start:end])
+        "data": list(reads)
     }
 
     return JsonResponse(result, safe=True)
@@ -361,7 +367,7 @@ def flowcell_run_stats_download(request, pk):
     runstats_dataframe = runstats_dataframe.drop('in_strand', axis=1)
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename={}_live_records.csv'.format(flowcell.name)
-    column_order = ['asic_temp','heat_sink_temp','voltage_value','minKNOW_read_count','event_yield','above','adapter','below','good_single','inrange','multiple','open_pore','pending_mux_change','saturated','strand','unavailable','unblocking','unclassified','unknown','minKNOW_histogram_bin_width','minKNOW_histogram_values']
+    column_order = ['asic_temp','heat_sink_temp','voltage_value','minKNOW_read_count','event_yield','above','adapter','below','good_single','inrange','multiple','open_pore','pore','zero','no_pore','pending_mux_change','saturated','strand','unavailable','unblocking','unclassified','unknown','minKNOW_histogram_bin_width','minKNOW_histogram_values']
     runstats_dataframe[column_order].to_csv(response)
 
     return response

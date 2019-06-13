@@ -217,18 +217,5 @@
     "readcount": false,
     "private": true
   }
-},
-{
-  "model": "jobs.jobtype",
-  "pk": 15,
-  "fields": {
-    "name": "ReadUntil",
-    "description": "The is the advanced mapping task",
-    "long_description": "",
-    "reference": false,
-    "transcriptome": false,
-    "readcount": false,
-    "private": true
-  }
 }
 ]

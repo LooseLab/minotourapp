@@ -1,23 +1,18 @@
 from __future__ import absolute_import, unicode_literals
 
 import gzip
-import json
 import os
-import shutil
-import subprocess
 import tempfile
-import zipfile
-from datetime import datetime, timedelta
 
 import numpy as np
 import pandas as pd
 import pytz
-import redis
+import subprocess
 from celery import task
 from celery.utils.log import get_task_logger
+from datetime import datetime, timedelta
 from django.conf import settings
 from django.core.mail import send_mail
-from django.core.paginator import Paginator
 from django.db.models import Max
 from django_mailgun import MailgunAPIError
 from twitter import *
@@ -28,28 +23,13 @@ from centrifuge.sankey import calculate_sankey
 from communication.utils import *
 from jobs.models import JobMaster
 from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus
+from reads.utils import getn50
 from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
 from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
 
 logger = get_task_logger(__name__)
-
-
-def utcnow():
-    return datetime.now(tz=pytz.utc)
-
-
-def findbin(x, bin_width=900):
-    return (x - x % bin_width) / bin_width
-
-
-def getn50(lens):
-    h = sum(lens)/2
-    t = 0
-    for l in lens:
-        t += l
-        if t >= h:
-            return l
+# logger = logging.getLogger(__name__)
 
 
 @task()
@@ -205,127 +185,6 @@ def run_centrifuge(flowcell_job_id):
 
 
 @task()
-def export_reads(runid,id,tmp,last_read,inputtype):
-    """
-    Function to write out fastq data to known temporary file, compress it,
-    and enable it for export. File will be set to self destruct after 7 days or
-    1 day after downloading.
-    Function should check to see if the file already exists somewhere.
-    Also should split data out by barcode and - preferably read type.
-    :param runid:
-    :param id:
-    :param tmp:
-    :param last_read:
-    :param inputtype:
-    :return:
-    """
-    JobMaster.objects.filter(pk=id).update(running=True)
-    runidset = get_runidset(runid,inputtype)
-    barcodeset,barcoded=get_barcodes(runidset)
-    # fetch all the reads from the run
-    fastqs = FastqRead.objects.filter(run_id__id__in=runidset)
-    dirpath = tempfile.mkdtemp()
-    filedict={}
-    if barcoded==True:
-        for barcode in barcodeset:
-            filehandle = os.path.join(dirpath,barcode+"_pass"+".fastq")
-            filedict.setdefault(filehandle, open(filehandle, 'w'))
-            filehandle = os.path.join(dirpath,barcode+"_fail"+".fastq")
-            filedict.setdefault(filehandle, open(filehandle, 'w'))
-            #files_dict[filename].write("test")
-    else:
-        filehandle = os.path.join(dirpath,"AllReads_pass.fastq")
-        filedict.setdefault(filehandle, open(filehandle, 'w'))
-        filehandle = os.path.join(dirpath,"AllReads_fail.fastq")
-        filedict.setdefault(filehandle, open(filehandle, 'w'))
-
-    if barcoded==True:
-        for fastq in fastqs:
-            if fastq.is_pass:
-                filehandle = os.path.join(dirpath,fastq.barcode.name+"_pass"+".fastq")
-            else:
-                filehandle = os.path.join(dirpath, fastq.barcode.name + "_fail" + ".fastq")
-            filedict[filehandle].write(format_read(fastq))
-    else:
-        for fastq in fastqs:
-            if fastq.is_pass:
-                filehandle = os.path.join(dirpath,"AllReads_pass"+".fastq")
-            else:
-                filehandle = os.path.join(dirpath, "AllReads_fail" + ".fastq")
-            filedict[filehandle].write(format_read(fastq))
-    archive_zip = zipfile.ZipFile(os.path.join(dirpath,'archive.zip'), 'w')
-    for folder, subfolders, files in os.walk(dirpath):
-        for file in files:
-            if file.endswith('.fastq'):
-                archive_zip.write(os.path.join(folder, file),
-                                  os.path.relpath(os.path.join(folder, file), dirpath),
-                                  compress_type=zipfile.ZIP_DEFLATED)
-                try:
-                    os.remove(os.path.join(folder, file))
-                except OSError:
-                    pass
-    archive_zip.close()
-    JobMaster.objects.filter(pk=id).update(tempfile_name=dirpath,complete=1)
-    later = datetime.utcnow() + timedelta(minutes=5)
-    delete_folder.apply_async((id), eta=later)
-    send_message([JobMaster.objects.filter(pk=id).flowcell.owner], "Read Export Complete",
-                 "Your reads have been exported and can be found here: {}.".format(dirpath))
-    JobMaster.objects.filter(pk=id).update(running=False)
-
-@task
-def delete_folder(id):
-    """
-    This task will delete a specific folder based on the tempfile_name in a specific job.
-    It will then delete the jobmaster.
-    :param id:
-    :return:
-    """
-    jobtoprocess = JobMaster.objects.get(pk=id)
-    dirpath = jobtoprocess.tempfile_name
-    shutil.rmtree(dirpath)
-    jobtoprocess.delete()
-
-
-def get_barcodes(runidset):
-    """
-    Given a set of runs, returns all the barcodes within them.
-    :param runidset:
-    :return:
-    """
-    barcodeset = set()
-    barcodes = Barcode.objects.filter(run_id__in=runidset)
-    for barcode in barcodes:
-        if barcode.name != "All reads" and barcode.name != "No barcode":
-            barcodeset.add(barcode.name)
-    barcoded=False
-    if len(barcodeset)>0:
-        barcoded=True
-    return (barcodeset,barcoded)
-
-
-def format_read(fastq):
-    """
-    This function takes a fastq database object and returns a formatted string for writing
-    to a file
-    :param fastq: fastq object from the database
-    :return: string formatted version of fastq sequence to write to a file.
-    """
-    lineheader = ">"+str(fastq)
-    if len(fastq.run_id.run_id) > 0:
-        lineheader = lineheader + " runid={}".format(fastq.run_id.run_id)
-    if len(str(fastq.read)) > 0:
-        lineheader = lineheader + " read={}".format(fastq.read)
-    if len(str(fastq.channel)) > 0:
-        lineheader = lineheader + " channel={}".format(fastq.channel)
-    ##This output format needs checking
-    if len(str(fastq.start_time)) > 0:
-        lineheader = lineheader + " start_time={}".format(fastq.start_time.replace(tzinfo=pytz.UTC).isoformat())
-    if fastq.barcode.name != "No barcode":
-        lineheader = lineheader + " barcode={}".format(fastq.barcode.name)
-    return ("{}\n{}\n+\n{}\n".format(lineheader,fastq.sequence,fastq.quality))
-
-
-@task()
 def clean_up_assembly_files(runid,id,tmp):
     """
     This task will automatically delete a temporary file at some given time period after creation.
@@ -337,24 +196,6 @@ def clean_up_assembly_files(runid,id,tmp):
     os.remove(tmp)
     JobMaster.objects.filter(pk=id).update(tempfile_name="")
 
-
-def get_runidset(runid, inputtype):
-
-    run_set = set()
-
-    if inputtype == "flowcell":
-
-        flowcell = Flowcell.objects.get(pk=runid)
-
-        for run in flowcell.runs.all():
-
-            run_set.add(run.id)
-
-    else:
-
-        run_set.add(runid)
-
-    return run_set
 
 def callfetchreads_assem(runs,chunk_size,last_read):
     fastasm=list()
@@ -445,7 +286,6 @@ def custom_minimap2(newreads,previousreads,paf,firsttime=False,cores=4):
     return
 
 
-
 @task()
 def run_minimap2_assembly(job_master_id):
 
@@ -458,7 +298,6 @@ def run_minimap2_assembly(job_master_id):
     chunk_size = 25000
 
     fastq_df_barcode, last_read, read_count, fastasm = callfetchreads_assem(runs, chunk_size, job_master.last_read)
-
 
     if read_count > 0:
         tmp = job_master.tempfile_name
@@ -564,8 +403,6 @@ def run_minimap2_assembly(job_master_id):
     job_master.tempfile_name=tmp
     job_master.read_count = job_master.read_count + read_count
     job_master.save()
-
-
 
 
 @task()
@@ -689,41 +526,7 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
                     newgfa.allcontigs = "[0,0,0,0,0]"
                 newgfa.save()
 
-
         JobMaster.objects.filter(pk=id).update(running=False, last_read=last_read, tempfile_name=tmp, read_count=totreads)
-
-
-@task
-def updateReadNamesOnRedis():
-    print('>>> running updateReadNamesOnRedis')
-    r = redis.StrictRedis(host='localhost', port=6379, db=0)
-
-    runs = Run.objects.all()
-
-    for run in runs:
-        print('>>> run: {}'.format(run.id))
-
-        reads = FastqRead.objects.filter(run_id=run).order_by('id')
-
-        paginator = Paginator(reads, 25)
-
-        key = 'run.{}.reads.number_pages'.format(run.id)
-
-        r.set(key, paginator.num_pages)
-
-        for page in range(1, paginator.num_pages + 1):
-            print('>>> run {}, page {} of {}'.format(run.id, page, paginator.num_pages))
-
-            key = 'run.{}.reads.page.{}'.format(run.id, page)
-
-            result = paginator.page(page)
-
-            result2 = set()
-
-            for key in result:
-                result2.add(key.read_id)
-
-            r.set(key, json.dumps(list(result2)))
 
 
 @task
@@ -790,7 +593,7 @@ def send_messages():
 
         if message_sent:
             print('inside message_sent')
-            new_message.delivered_date = utcnow()
+            new_message.delivered_date = datetime.now(tz=pytz.utc)
             new_message.save()
 
 @task
@@ -868,8 +671,8 @@ def update_flowcell_details(job_master_id):
     """
 
     job_master = JobMaster.objects.get(pk=job_master_id)
-    # job_master.running = True
-    # job_master.save()
+    job_master.running = True
+    job_master.save()
 
     flowcell = job_master.flowcell
 
@@ -890,7 +693,6 @@ def update_flowcell_details(job_master_id):
 
         flowcell.start_time = minion_run_status_first.minKNOW_start_time
 
-
         logger.info('Flowcell id: {} - Setting start_time to {}'.format(flowcell.id, flowcell.start_time))
 
     #
@@ -905,7 +707,9 @@ def update_flowcell_details(job_master_id):
             if minion_run_status.minKNOW_sample_name and minion_run_status.minKNOW_sample_name != 'undefined':
 
                 flowcell.sample_name = minion_run_status_first.minKNOW_sample_name
+
                 logger.info('Flowcell id: {} - Setting sample_name to {} - data from MinIONRunStatus.minKNOW_sample_name'.format(flowcell.id, flowcell.sample_name))
+
                 break
 
     else:
@@ -915,7 +719,9 @@ def update_flowcell_details(job_master_id):
             if run.name and run.name != 'undefined':
 
                 flowcell.sample_name = run.name
+
                 logger.info('Flowcell id: {} - Setting sample_name to {} - data from Run.name'.format(flowcell.id, flowcell.sample_name))
+
                 break
 
     #
@@ -923,9 +729,14 @@ def update_flowcell_details(job_master_id):
     #
     number_reads = 0
 
-    for run in flowcell.runs.all():
-        number_reads = number_reads + run.reads.all().count()
+    for run in Run.objects.filter(flowcell=flowcell):
+
+        reads = FastqRead.objects.filter(run=run)
+
+        number_reads = number_reads + reads.count()
+
         if run.has_fastq:
+
             flowcell.has_fastq=True
 
     #
@@ -945,16 +756,17 @@ def update_flowcell_details(job_master_id):
     flowcell_summary_list = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).filter(barcode_name='All reads')
 
     average_read_length = 0
+
     total_read_length = 0
-    # number_reads_processed = 0
 
     logger.info('Flowcell id: {} - There is/are {} FlowcellSummaryBarcode records'.format(flowcell.id, len(flowcell_summary_list)))
 
     for flowcell_summary in flowcell_summary_list:
+
         total_read_length += flowcell_summary.total_length
-        # number_reads_processed += flowcell_summary.read_count
 
     if number_reads > 0:
+
         average_read_length = total_read_length / number_reads
 
     logger.info('Flowcell id: {} - Total read length {}'.format(flowcell.id, total_read_length))
@@ -967,14 +779,12 @@ def update_flowcell_details(job_master_id):
     flowcell.number_reads = number_reads
     flowcell.number_reads_processed = number_reads_processed
 
-    flowcell.number_runs = len(flowcell.runs.all())
-    ##Faster way of doing this by using the barcode table!
-    #barcode_count=0
-    #runs = flowcell.runs.all()
-    #for run in runs:
-        #barcode_count += len(FastqRead.objects.filter(run=run).values('barcode_name').distinct())
+    flowcell.number_runs = Run.objects.filter(flowcell=flowcell).count()
+
     barcode_count = len(Barcode.objects.filter(run_id__flowcell=flowcell).values('name').distinct())-1
+
     flowcell.number_barcodes = barcode_count
+
     flowcell.save()
 
     logger.info('Flowcell id: {} - Number runs {}'.format(flowcell.id, flowcell.number_runs))
@@ -983,22 +793,15 @@ def update_flowcell_details(job_master_id):
     #
     # Update flowcell size
     #
-    ### This is a very slow query.
-    ### To solve we are going to track how many reads we have looked at in the job_master - which here is the update_flow_cell task.
+    max_channel = FastqRead.objects.filter(
+        flowcell=flowcell,
+        id__gt=int(job_master.last_read)
+    ).aggregate(result=Max('channel'), last_read=Max('id'))
 
-    runs = flowcell.runs.all()
+    if max_channel['result'] is not None and max_channel['result'] > flowcell.max_channel:
 
-    for run in runs:
-        max_channel = FastqRead.objects.filter(run=run, id__gt=int(job_master.last_read)).aggregate(result=Max('channel'),
-                                                                                 last_read=Max('id'))
-        if max_channel['result'] != None and max_channel['result'] > 0:
-            # we have data - so go off and use it.
-            break
-
-    # Now we need to compare the previous result with this result. To do this we need to save something else on the flowcell.
-
-    if max_channel['result'] != None and max_channel['result'] > flowcell.max_channel:
         flowcell.max_channel = max_channel['result']
+
         if max_channel['result']:
 
             if max_channel['result'] > 512:
@@ -1020,8 +823,12 @@ def update_flowcell_details(job_master_id):
     flowcell.save()
 
     job_master = JobMaster.objects.get(pk=job_master_id)
+
     job_master.running = False
-    if max_channel['last_read'] != None:
+
+    if max_channel['last_read'] is not None:
+
         job_master.last_read = max_channel['last_read']
+
     job_master.save()
 

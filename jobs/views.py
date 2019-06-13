@@ -43,8 +43,10 @@ def task_list(request):
             request.data["target_set"] = request.data["reference"]
             # Remove the reference ID from the request body
             request.data["reference"] = None
-        print(request.data)
-        print(request.data["flowcell"])
+
+        if request.data["job_type"] == "11":
+            request.data["reference"] = None
+
         # Check to see if we have a string as the flowcell, not an Int for a PK based lookup
         if type(request.data["flowcell"]) is str:
             try:

@@ -14,6 +14,7 @@ class RejectedFastqRead(models.Model):
     run = models.ForeignKey(
 
         Run,
+        on_delete=models.CASCADE,
     )
 
     read_id = models.CharField(

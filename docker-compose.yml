@@ -14,22 +14,24 @@ services:
         environment:
             MYSQL_ROOT_PASSWORD: test
             MYSQL_DATABASE: minotour
+            MYSQL_USER: dba
+            MYSQL_PASSWORD: dba
         networks:
             - production-network
         volumes:
-            - ./db_data_dir:/var/lib/mysql
+            - ../db_data_dir:/var/lib/mysql
 
     minotour_web:
         build:
             dockerfile: docker/web.dockerfile
             context: .
         container_name: minotour_web
-        command: python manage.py runserver 0.0.0.0:8000
+        # command: python manage.py runserver 0.0.0.0:8000
         environment:
             MT_DB_ENGINE: 'django.db.backends.mysql'
             MT_DB_NAME: minotour
-            MT_DB_USER: root
-            MT_DB_PASS: test
+            MT_DB_USER: dba
+            MT_DB_PASS: dba
             MT_DB_PORT: 3306
             MT_DB_HOST: minotour_db
             MT_SECRET_KEY: ''
@@ -53,21 +55,43 @@ services:
             - minotour_redis
         volumes:
             - .:/var/lib/minotour/apps/minotourapp
+        restart: always
 
-    celery:
+    minotour_celery:
         build:
             dockerfile: docker/celery.dockerfile
             context: .
+        container_name: minotour_celery
         networks:
             - production-network
         depends_on:
             - minotour_db
             - minotour_redis
 
-    celery_worker:
+    minotour_celery_worker:
         build:
             dockerfile: docker/celery-worker.dockerfile
             context: .
+        container_name: minotour_celery_worker
+        environment:
+            MT_DB_ENGINE: 'django.db.backends.mysql'
+            MT_DB_NAME: minotour
+            MT_DB_USER: root
+            MT_DB_PASS: test
+            MT_DB_PORT: 3306
+            MT_DB_HOST: minotour_db
+            MT_SECRET_KEY: ''
+            MT_DJANGO_DEBUG: 'True'
+            MT_MAILGUN_ACCESS_KEY: ''
+            MT_MAILGUN_SERVER_NAME: ''
+            MT_TWITTOKEN: ''
+            MT_TWITTOKEN_SECRET: ''
+            MT_TWITCONSUMER_KEY: ''
+            MT_TWITCONSUMER_SECRET: ''
+            MT_REFERENCE_LOCATION: '/var/lib/minotour/data'
+            MT_MINIMAP2: '/var/lib/minotour/minimap2/minimap2'
+            MT_CELERY_BROKER_URL: 'redis://minotour_redis:6379/0'
+            MT_CELERY_RESULT_BACKEND: 'redis://minotour_redis:6379/0'
         networks:
             - production-network
         depends_on:

@@ -167,7 +167,7 @@ def run_minimap2_alignment(job_master_id):
 def align_reads(fastas, job_master_id, fasta_df):
     """
     Align reads to a reference. Requires a job_master.
-    
+
     :param fastas: A list of FastqRead objects that contain the sequence we will be running alignment on
     :param job_master_id: The Primary key of the JobMaster model object
     :return:

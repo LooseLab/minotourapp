@@ -21,7 +21,8 @@ class Experiment(models.Model):
     owner = models.ForeignKey(
 
         settings.AUTH_USER_MODEL,
-        related_name='experiments'
+        related_name='experiments',
+        on_delete=models.DO_NOTHING,
     )
 
     created_date = models.DateTimeField(
@@ -47,7 +48,8 @@ class Flowcell(models.Model):
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        related_name='flowcells'
+        related_name='flowcells',
+        on_delete=models.DO_NOTHING,
     )
 
     max_channel = models.IntegerField(
@@ -137,7 +139,8 @@ class MinION(models.Model):
     owner = models.ForeignKey(
 
         settings.AUTH_USER_MODEL,
-        related_name='minIONs'
+        related_name='minIONs',
+        on_delete=models.DO_NOTHING,
     )
 
     class Meta:
@@ -258,7 +261,8 @@ class GroupRun(models.Model):  # TODO don't document
     owner = models.ForeignKey(
 
         settings.AUTH_USER_MODEL,
-        related_name='groupruns'
+        related_name='groupruns',
+        on_delete=models.DO_NOTHING,
     )
 
     name = models.CharField(
@@ -304,8 +308,12 @@ class MinIONControl(models.Model):
     :created_date: The date that the job was created
     :modified_date: The date that this as last modified
     """
-    minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minioncontrol')
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='controlcontrol')
+    minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minioncontrol',
+                               on_delete=models.DO_NOTHING,
+                               )
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='controlcontrol',
+                              on_delete=models.DO_NOTHING,
+                              )
     job = models.CharField(max_length=256, blank=False, null=False)
     custom = models.CharField(max_length=256, blank=True, null=True)
     # setdate = models.DateTimeField(blank=False,null=False)
@@ -338,7 +346,8 @@ class UserOptions(models.Model):
     owner = models.OneToOneField(
 
         settings.AUTH_USER_MODEL,
-        related_name='extendedopts'
+        related_name='extendedopts',
+        on_delete=models.DO_NOTHING,
     )
 
     twitterhandle = models.CharField(
@@ -384,19 +393,24 @@ class Run(models.Model):
         MinION,
         blank=True,
         null=True,
-        related_name='runs'
+        related_name='runs',
+        on_delete=models.DO_NOTHING,
     )
 
     flowcell = models.ForeignKey(
 
         Flowcell,
         related_name='runs',
+        on_delete=models.CASCADE,
+
     )
 
     owner = models.ForeignKey(
 
         settings.AUTH_USER_MODEL,
-        related_name='runs'
+        related_name='runs',
+        on_delete=models.DO_NOTHING,
+
     )
 
     groupruns = models.ManyToManyField(
@@ -583,7 +597,9 @@ class FastqFile(models.Model):
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        related_name='fastqfiles'
+        related_name='fastqfiles',
+        on_delete=models.DO_NOTHING,
+
     )
 
     md5 = models.CharField(
@@ -660,7 +676,8 @@ class MinIONStatus(models.Model):  # TODO Rename class for logical consistency
     minION = models.OneToOneField(
 
         MinION,
-        related_name='currentdetails'
+        related_name='currentdetails',
+        on_delete=models.DO_NOTHING,
 
     )
 
@@ -817,13 +834,17 @@ class MinIONRunStats(models.Model):  # Todo consider merging in to one object wi
     minION = models.ForeignKey(
 
         MinION,
-        related_name='currentrunstats'
+        related_name='currentrunstats',
+        on_delete=models.DO_NOTHING,
+
     )
 
     run_id = models.ForeignKey(
 
         Run,
-        related_name='RunStats'
+        related_name='RunStats',
+        on_delete=models.CASCADE,
+
     )
 
     sample_time = models.DateTimeField(
@@ -931,6 +952,21 @@ class MinIONRunStats(models.Model):  # Todo consider merging in to one object wi
         default=0
     )
 
+    no_pore = models.IntegerField(
+
+        default=0
+    )
+
+    zero = models.IntegerField(
+
+        default=0
+    )
+
+    pore = models.IntegerField(
+
+        default=0
+    )
+
     minKNOW_read_count = models.IntegerField(
 
         default=0
@@ -960,8 +996,8 @@ class MinIONRunStats(models.Model):  # Todo consider merging in to one object wi
 
     ## This is something to look at for optimisation
     def occupancy(self):
-        if (self.strand > 0 and self.inrange > 0):
-            occupancy = round(((self.strand + self.adapter) / (self.strand + self.adapter + self.good_single)) * 100)
+        if (self.strand > 0 and (self.inrange > 0 or self.pore > 0)):
+            occupancy = round(((self.strand + self.adapter) / (self.strand + self.adapter + self.good_single + self.pore)) * 100)
         else:
             occupancy = 0
         return occupancy
@@ -1008,7 +1044,9 @@ class MinIONRunStatus(models.Model):
     minION = models.ForeignKey(
 
         MinION,
-        related_name='currentrundetails'
+        related_name='currentrundetails',
+        on_delete=models.DO_NOTHING,
+
     )
 
     minKNOW_current_script = models.CharField(
@@ -1056,7 +1094,9 @@ class MinIONRunStatus(models.Model):
     run_id = models.ForeignKey(
 
         Run,
-        related_name='RunDetails'
+        related_name='RunDetails',
+        on_delete=models.CASCADE,
+
     )
 
     minKNOW_hash_run_id = models.CharField(
@@ -1252,12 +1292,15 @@ class MinIONEvent(models.Model):
 
     minION = models.ForeignKey(
 
-        MinION, related_name='events'
+        MinION, related_name='events',
+        on_delete=models.DO_NOTHING,
+
     )
 
     event = models.ForeignKey(
 
-        MinIONEventType
+        MinIONEventType,
+        on_delete=models.DO_NOTHING,
     )
 
     datetime = models.DateTimeField(
@@ -1303,7 +1346,8 @@ class MinIONScripts(models.Model):
     minION = models.ForeignKey(
 
         MinION,
-        related_name='scripts'
+        related_name='scripts',
+        on_delete=models.DO_NOTHING,
     )
 
     identifier = models.CharField(
@@ -1432,7 +1476,8 @@ class FastqRead(models.Model):
         Barcode,
         # on_delete=models.CASCADE,
         related_name='reads',
-        null=True
+        null=True,
+        on_delete=models.DO_NOTHING,
     )
 
     barcode_name = models.CharField(
@@ -1458,7 +1503,8 @@ class FastqRead(models.Model):
     )  # pass = true, fail = false
 
     type = models.ForeignKey(
-        FastqReadType
+        FastqReadType,
+        on_delete=models.DO_NOTHING,
     )
 
     start_time = models.DateTimeField(
@@ -1477,8 +1523,8 @@ class FastqRead(models.Model):
     fastqfile = models.ForeignKey(
         FastqFile,
         on_delete=models.CASCADE,
-        related_name = 'reads',
-        null = True
+        related_name='reads',
+        null=True,
     )
 
     sequence = models.TextField(
@@ -1552,14 +1598,16 @@ class MinionMessage(models.Model):
     """
     minion = models.ForeignKey(
         MinION,
-        related_name='messages'
+        related_name='messages',
+        on_delete=models.DO_NOTHING,
     )
 
     run = models.ForeignKey(
         Run,
         related_name='runmessages',
         blank=True,
-        null=True
+        null=True,
+        on_delete=models.CASCADE,
     )
 
     message = models.CharField(
@@ -1602,7 +1650,8 @@ class RunStatisticBarcode(models.Model):  # TODO to be removed
     )
 
     type = models.ForeignKey(
-        FastqReadType
+        FastqReadType,
+        on_delete=models.DO_NOTHING,
     )
 
     barcode = models.ForeignKey(
@@ -1813,7 +1862,8 @@ class HistogramSummary(models.Model):  # don't comment
     )
 
     read_type = models.ForeignKey(
-        FastqReadType
+        FastqReadType,
+        on_delete=models.DO_NOTHING,
     )
 
     is_pass = models.BooleanField(
@@ -1989,7 +2039,8 @@ class RunSummaryBarcode(models.Model):  # TODO to be deleted
     )
 
     type = models.ForeignKey(
-        FastqReadType
+        FastqReadType,
+        on_delete=models.DO_NOTHING,
     )
 
     barcode = models.ForeignKey(
@@ -2208,7 +2259,6 @@ class FlowcellTab(models.Model):
 
     def __str__(self):
         return '{} - {}'.format(self.flowcell.id, self.tab)
-
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)

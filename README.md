@@ -15,27 +15,11 @@ docker --version
 To following commands build and start several minoTour containers (database, Redis, celery, and web app).
 
 ```bash
-docker network create --driver bridge minotour-network
+git checkout https://github.com/LooseLab/minotourapp.git
 
-docker volume create minotour_db_datadir;
+cd minotourapp
 
-docker build -f docker/db.dockerfile -t robertosantos/db-minotour .
-
-docker build -f docker/web.dockerfile -t robertosantos/web-minotour .
-
-docker build -f docker/celery.dockerfile -t robertosantos/celery-minotour .
-
-docker build -f docker/celery-worker.dockerfile -t robertosantos/celery-worker-minotour .
-
-docker run --name redis-minotour-instance -d --network minotour-network redis;
-
-docker run --name db-minotour-instance -d -v minotour_db_datadir:/var/lib/mysql --network minotour-network robertosantos/db-minotour;
-
-docker run --name web-minotour-instance -p 10000:8000 -d --network minotour-network robertosantos/web-minotour;
-
-docker run --name celery-minotour-instance -d --network minotour-network robertosantos/celery-minotour
-
-docker run --name celery-worker-minotour-instance -d --network minotour-network robertosantos/celery-worker-minotour
+docker-compose up
 ``` 
 
 Now, you can access minoTour on http://localhost:10000.

@@ -134,3 +134,12 @@ def UTC_time_to_epoch(timestamp):
     dt = parser.parse(timestamp)
 
     return dt.timestamp()*1000
+
+
+def getn50(lens):
+    h = sum(lens)/2
+    t = 0
+    for l in lens:
+        t += l
+        if t >= h:
+            return l
