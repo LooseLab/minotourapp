@@ -37,7 +37,7 @@ def run_monitor():
     logger.info('Running run_monitor celery task.')
     logger.info('--------------------------------')
 
-    flowcell_list = Flowcell.objects.filter(active=True)
+    flowcell_list = [x for x in Flowcell.objects.all() if x.active()]
 
     for flowcell in flowcell_list:
 
