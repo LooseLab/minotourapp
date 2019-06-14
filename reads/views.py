@@ -906,7 +906,7 @@ def flowcell_list(request):
                 'number_barcodes': record.number_barcodes,
                 'total_read_length': record.total_read_length,
                 'average_read_length': record.average_read_length,
-                'is_active': record.active,
+                'is_active': record.active(),
                 'sample_name': record.sample_name,
                 'has_fastq': record.has_fastq,
             }
