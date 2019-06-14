@@ -51,7 +51,7 @@ function requestData(flowcell_id) {
 
         } else if (flowcell_selected_tab_input.value == 'nav-live-event-data') {
 
-            this.requestRunDetails(flowcell_id);
+            // this.requestRunDetails(flowcell_id);
             this.requestLiveRunStats(flowcell_id);
 
         } else if (flowcell_selected_tab_input.value == 'nav-metagenomics') {
