@@ -35,7 +35,6 @@ class Experiment(models.Model):
         auto_now=True
     )
 
-
 class Flowcell(models.Model):
 
     name = models.CharField(
@@ -110,6 +109,17 @@ class Flowcell(models.Model):
         default=True
     )
 
+    last_activity_date = models.DateTimeField(
+
+        auto_now_add=True
+    )
+
+    last_activity_message = models.CharField(
+
+        max_length=256,
+        default='Created flowcell.'
+    )
+
     def barcodes(self):
 
         barcode_set = set()
@@ -123,6 +133,16 @@ class Flowcell(models.Model):
 
     def __str__(self):
         return "{} {}".format(self.name, self.id)
+
+    def active(self):
+
+        delta = datetime.timedelta(days=2)
+
+        if (datetime.datetime.now(datetime.timezone.utc) - delta) > self.last_activity_date:
+
+            return False
+
+        return True
 
 
 class MinION(models.Model):

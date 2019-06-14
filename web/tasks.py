@@ -2,15 +2,15 @@ from __future__ import absolute_import, unicode_literals
 
 import gzip
 import os
+import subprocess
 import tempfile
+from datetime import datetime, timedelta
 
 import numpy as np
 import pandas as pd
 import pytz
-import subprocess
 from celery import task
 from celery.utils.log import get_task_logger
-from datetime import datetime, timedelta
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db.models import Max
@@ -28,7 +28,6 @@ from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment, calculate_expected_benefit
 
 logger = get_task_logger(__name__)
-# logger = logging.getLogger(__name__)
 
 
 @task()
@@ -38,7 +37,7 @@ def run_monitor():
     logger.info('Running run_monitor celery task.')
     logger.info('--------------------------------')
 
-    flowcell_list = Flowcell.objects.filter(is_active=True)
+    flowcell_list = Flowcell.objects.filter(active=True)
 
     for flowcell in flowcell_list:
 
