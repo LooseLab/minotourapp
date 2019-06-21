@@ -1,5 +1,5 @@
 function updateCoverageBasedCharts(chart, summarycoverage, field) {
-
+    // TODO What is this exactly?
     var series = [];
     var categories = [];
     for (var barcode of Object.keys(summarycoverage)) {
@@ -40,7 +40,6 @@ function requestMappedChromosomes(flowcell_id) {
      * and update the select box on tab Mapping
      * TODO THIS NEEDS STREAMLINING
      */
-    console.log("HEEELLOLOLLL");
     var url = '/api/v1/flowcells/' + flowcell_id + '/references';
 
     $.getJSON(url, function (data_unsorted) {

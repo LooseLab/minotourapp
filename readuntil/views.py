@@ -3,78 +3,92 @@ Read Until views that do the work
 """
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from pathlib import Path
+from jobs.models import JobMaster
+import numpy as np
+from readuntil.utils import make_results_directory
+from readuntil.models import ExpectedBenefitChromosomes
 
-import pickle as picklerick
-import pandas as pd
 
-
-def read_pickle(path_list):
+def find_files_of_type(file_or_directory, file_extensions):
+    """Return a list of pathlib.Path of files with chosen extensions
+    Parameters
+    ----------
+    file_or_directory : str
+        filepath or a directory
+    file_extensions : list
+        A list of lowercase file extensions including '.' e.g. ['.txt', '.paf']
+    Returns
+    -------
+    list
+        If files with extension are found return list of pathlib.Path objects, otherwise return empty list
     """
-    Read the pickled data
-    :param path_list: List of paths to pickle files containing data
-    :return:
-    """
-    # List for returning the data in
-    listy_list = []
-    # Loop through the paths to each pickle object
-    for path in path_list:
-        # Open the pickle files
-        with open(path, "rb") as fh:
-            benefit_dict = picklerick.load(fh)
-            # Get the chromosome, which are the keys
-            chromosomes = list(benefit_dict.keys())
-            # See what chromosomes we have
-            print(chromosomes)
-            # Loop through them to get the data for each chromosome
-            for chromsome in chromosomes:
-                # This is the dict, with what arrays we have in it and the arrays
-                a = benefit_dict[chromsome]
-                if type(a) is dict:
-                    print("dict")
-                else:
-                    benefit_dict[chromsome] = {"local_benefit": a}
-                # If listy list already has a dict in it, add new values/keys to it?
-                if listy_list:
-                    listy_list[0].update(benefit_dict[chromsome])
-                # Otherwise add the first dictionary
-                else:
-                    listy_list.append(benefit_dict[chromsome])
-    return listy_list
+    file_or_directory = Path(file_or_directory).expanduser()
+    if (
+        file_or_directory.is_file()
+        and "".join(file_or_directory.suffixes).lower() in file_extensions
+    ):
+        return [file_or_directory]
+    elif file_or_directory.is_dir():
+        return [
+            x
+            for x in file_or_directory.iterdir()
+            if "".join(x.suffixes).lower() in file_extensions
+        ]
+    else:
+        return []
 
 
-def remove_duplicate_sequences(array, master=False, minimum=None):
+def remove_duplicate_sequences_numpy(array, master=False, minimum=None):
     """
-    Remove stretches of the reference with the same values
-    :param array: The array with a value for each reference location
-    :param master: Whether this data is for the master chart or not
-    :param minimum: The minimum data value on the x axis
-    :return: a tuple of a list with an x,y coordinate for plotting, the max value on the x axis,
-    and the max value on the y axis
+        Remove stretches of the reference with the same values
+        :param array: The array with a value for each reference location
+        :param master: Whether this data is for the master chart or not - if it is and
+        the array is longer than 50000 elements we want to downsample it until it matches 50000,
+        which is the number of points we're happy to draw
+        :param minimum: The minimum data value on the x axis
+        :return: a tuple of a list with an x,y coordinate for plotting, the max value on the x axis,
+        and the max value on the y axis
     """
-    # max on the y value
-    ymax = array.max()
+    # Check we haven't accidentally sent a list
+    if not isinstance(array, np.ndarray):
+        array = np.array(array)
 
-    df = pd.DataFrame(array)
+    # get width of selected window, starting at x coord and finishing at x coord + window width
     if minimum is not None:
-        df.index = df.index + minimum
+        # We aren't starting at x = 0 so add the values on
+        xmax = minimum + array.size
+        index_start = minimum
+    else:
+        xmax = array.size
+        index_start = 1
 
-    if pd.api.types.is_bool_dtype(df[0]):
-        df[0] = df[0].astype(int)
-    # max on the x axis, i.e the final base of the reference
-    xmax = df.index.values.max()
-    # Off set the sequence by one
-    df[1] = df[0].shift()
-    # Set the new extra value to 0 instead of NaN
-    df[1].iloc[0] = 0
-    # Remove any values that are the same
-    df = df[df[0] != df[1]]
-    # Make a list of tuple with the x axis (The index value) and the y axis value (The array value)
-    x_y_values = list(zip(df.index.values, df[0]))
-    # For the master chart if there is more than 50000 points, call sampler, to get the array down to 50000
+    # Get largest value
+    ymax = array.max()
+    # the last element, which we need to append onto our array with deleted duplicates
+    last_element = array[-1]
+
+    a = array
+    # we're going to cut this off below, so we have to keep it to add it back on
+    last_index = a.size
+    # create an index position, so we can draw the point above the correct base on the graph
+    index_position = np.arange(index_start, index_start + a.size, dtype=np.uint32)
+    # Remove all the indexes where there is duplicated numbers in sequence
+    index_position = index_position[:-1][a[1:] != a[:-1]]
+    # Add the removed last element back on
+    index_position = np.append(index_position, last_index)
+    # remove all the duplicate sequential values from the array of actual data values
+    a = a[:-1][a[1:] != a[:-1]]
+    # Add the truncated last element back on
+    a = np.append(a, last_element)
+    # Create a list of tuples, with the x coord as first tuple element and the y value as second
+    x_y_values = list(zip(index_position, a))
+
+    # if this is for the coverage master chart we need 50000 values or less for the sake of the browser
     if len(x_y_values) > 50000 and master:
-        print("Stormy storm storm storm")
+        print("Down sampling for master")
         x_y_values = sampler(x_y_values)
-    # Return the XY coordinates, the maximum x value and y value
+
     return x_y_values, xmax, ymax
 
 
@@ -102,112 +116,140 @@ def sampler(array):
 
 
 @api_view(["GET"])
-def get_benefit_data(request):
+def get_benefit_data_master(request):
     """
     Return data for mock master plot, and the yAxis maximum for the detail charts
     :param request:
     :return:
     """
-    # The file list for the expected benefit pickle
-    file_list = ["/home/rory/Downloads/rollingdict.p", "/home/rory/Downloads/referencedict.p",
-                 "/home/rory/Downloads/benefitdict.p"]
+    flowcell_id = request.GET.get("flowcellId")
 
-    # Get a list with a dictionary of all the numpy arrays
-    data_array = read_pickle(file_list)
-    # Get the coverage array
-    coverage = data_array[0]["coverage"]
+    latest_eb_task = JobMaster.objects.filter(job_type__name="ExpectedBenefit", flowcell_id=flowcell_id).last().id
+
+    basepath = make_results_directory(flowcell_id, latest_eb_task)
+
+    chromosome = request.GET.get("chromosome", "NC_003210.1")
+
+    # The path to the coverage array for this chromosome
+    coverage_path = Path(f"{basepath}/coverage_{chromosome}_{flowcell_id}_{latest_eb_task}.dat")
+
+    try:
+        with open(coverage_path, "rb") as fh:
+            coverage = np.fromfile(fh, dtype=np.uint16)
+
+    except FileNotFoundError as e:
+        Response("File not found", status=404)
+        raise e
     # Remove duplicate elements in series
-    x_y_cov, xmax_cov, ymax_cov = remove_duplicate_sequences(coverage, True)
-    # Get all the maximum Y values, as they are needed for the plot to appear with no data
-    y_max_match = get_y_axis_max(data_array[0]["match"])
+    x_y_cov, xmax_cov, ymax_cov = remove_duplicate_sequences_numpy(coverage, True)
 
-    y_max_mismatch = get_y_axis_max(data_array[0]["mismatch"])
-
-    y_max_localben = get_y_axis_max(data_array[0]["local_benefit"])
-
-    y_max_forward_roll = get_y_axis_max(data_array[0]["Forward"])
-
-    y_max_reverse_roll = get_y_axis_max(data_array[0]["Reverse"])
-
-    y_max_fwd_mask = get_y_axis_max(data_array[0]["ForMask"])
-
-    y_max_rev_mask = get_y_axis_max(data_array[0]["RevMask"])
     # The return dictionary
     data_dict = {"coverage": {"xmax": xmax_cov, "ymax": ymax_cov, "data": x_y_cov},
-                 "match": {"ymax": y_max_match},
-                 "mismatch": {"ymax": y_max_mismatch},
-                 "localBen": {"ymax": y_max_localben},
-                 "forwardRoll": {"ymax": y_max_forward_roll},
-                 "reverseRoll": {"ymax": y_max_reverse_roll},
-                 "fwdMask": {"ymax": y_max_fwd_mask},
-                 "revMask": {"ymax": y_max_rev_mask}}
+                 }
 
     return Response(data_dict)
 
 
 @api_view(["GET"])
-def get_benefit_data_complete(request):
+def get_benefit_data_detail(request):
     """
     The complete benefit data for the detail chart from the selected regions of the master chart
     :param request: Contains the min and max x axis values in the body
     :return: a dictionary of the data from the pickle for all the detail charts
     """
+    # TODO just for one chromsome at the moment
     # The min and max values of the x axis
+    # the minimum and maxiumum x coordinates for the detail graph
     mini = int(request.GET.get("min"))
     maxi = int(request.GET.get("max"))
 
-    file_list = ["/home/rory/Downloads/rollingdict.p", "/home/rory/Downloads/referencedict.p",
-                 "/home/rory/Downloads/benefitdict.p"]
+    flowcell_id = request.GET.get("flowcellId")
+
+    chromosome = request.GET.get("chromosome", "NC_003210.1")
+
+    latest_eb_task = JobMaster.objects.filter(job_type__name="ExpectedBenefit", flowcell_id=flowcell_id).last().id
+    # the base path to the directory that we have stored the binary files in
+    basepath = make_results_directory(flowcell_id, latest_eb_task)
+    # the paths to each array
+    coverage_path = Path(
+        f"{basepath}/coverage_{chromosome}_{flowcell_id}_{latest_eb_task}.dat")
+
+    counts_path = Path(
+        f"{basepath}/counts_{chromosome}_{flowcell_id}_{latest_eb_task}.dat")
+
+    benefits_path = Path(
+        f"{basepath}/benefits_{chromosome}_{flowcell_id}_{latest_eb_task}.dat")
+
+    mask_path_forward = Path(
+        f"{basepath}/mask_forward_{chromosome}_{flowcell_id}_{latest_eb_task}.dat")
+
+    mask_path_reverse = Path(
+        f"{basepath}/mask_reverse_{chromosome}_{flowcell_id}_{latest_eb_task}.dat")
+
+    # the file path and data type we need as a tuple
+    file_path_list = [(coverage_path, np.uint16), (counts_path, [("A", np.uint16), ("C", np.uint16),
+                                                                 ("G", np.uint16), ("T", np.uint16), ("D", np.uint16,),
+                                                                 ("I", np.uint16), ("IC", np.uint16),
+                                                                 ("M", np.uint16), ("U", np.bool)]),
+                      (benefits_path, np.float64),
+                      (mask_path_forward, np.bool),
+                      (mask_path_reverse, np.bool)]
+    # use these strings as a key
+    file_contents = ["coverage", "counts", "benefits", "mask_forward", "mask_reverse"]
     # Get a list with a dictionary of all the numpy arrays
-    data_array = read_pickle(file_list)
-    # Unpack each array
-    coverage = data_array[0]["coverage"][mini:maxi]
+    data_dict = {}
 
-    matches = data_array[0]["match"][mini:maxi]
+    # We're gonna use the numpy memmap to read only the part of the array we need
+    for index, file_path_or_dtype in enumerate(file_path_list):
+        # Create a key matching the contents of this value
+        data_dict[file_contents[index]] = np.memmap(file_path_or_dtype[0],
+                                                    dtype=file_path_or_dtype[1])[mini:maxi]
+        print()
 
-    mismatches = data_array[0]["mismatch"][mini:maxi]
-
-    local_benefit = data_array[0]["local_benefit"][mini:maxi]
-    # Forward strand rolling benefit
-    forward_roll = data_array[0]["Forward"][mini:maxi]
-    # Reverse strand rolling benefit
-    reverse_roll = data_array[0]["Reverse"][mini:maxi]
-
-    fwd_mask = data_array[0]["ForMask"][mini:maxi]
-
-    rev_mask = data_array[0]["RevMask"][mini:maxi]
+    # # Remove the duplicate values until a change in the array
+    x_y_cov, xmax_cov, ymax_cov = remove_duplicate_sequences_numpy(data_dict["coverage"],
+                                                                   minimum=mini)
+    # # Remove the duplicate values until a change in the array, on array with numpy nans removed
+    x_y_benefit, xmax_benefit, ymax_benefit = remove_duplicate_sequences_numpy(
+        np.nan_to_num(data_dict["benefits"], copy=False),
+        minimum=mini)
+    # # Remove the duplicate values until a change in the array
+    x_y_fwd_mask, xmax_fwd_mask, ymax_fwd_mask = remove_duplicate_sequences_numpy(data_dict["mask_forward"],
+                                                                                  minimum=mini)
+    print(xmax_cov)
     # Remove the duplicate values until a change in the array
-    x_y_cov, xmax_cov, ymax_cov = remove_duplicate_sequences(coverage, minimum=mini)
-    # Remove the duplicate values until a change in the array
-    x_y_match, xmax_match, ymax_match = remove_duplicate_sequences(matches, minimum=mini)
-    # Remove the duplicate values until a change in the array
-    x_y_mismatch, xmax_mismatch, ymax_mismatch = remove_duplicate_sequences(mismatches, minimum=mini)
-    # Remove the duplicate values until a change in the array
-    x_y_local_ben, xmax_local_ben, ymax_local_ben = remove_duplicate_sequences(local_benefit, minimum=mini)
-    # Remove the duplicate values until a change in the array
-    x_y_fwd_rolling_ben, xmax_fwd_rolling_ben, ymax_fwd_rolling_ben = remove_duplicate_sequences(forward_roll, minimum=mini)
-    # Remove the duplicate values until a change in the array
-    x_y_rev_rolling_ben, xmax_rev_rolling_ben, ymax_rev_rolling_ben = remove_duplicate_sequences(reverse_roll, minimum=mini)
-    # Remove the duplicate values until a change in the array
-    x_y_fwd_mask, xmax_fwd_mask, ymax_fwd_mask = remove_duplicate_sequences(fwd_mask, minimum=mini)
-    # Remove the duplicate values until a change in the array
-    x_y_rev_mask, xmax_rev_mask, ymax_rev_mask = remove_duplicate_sequences(rev_mask, minimum=mini)
+    x_y_rev_mask, xmax_rev_mask, ymax_rev_mask = remove_duplicate_sequences_numpy(data_dict["mask_reverse"],
+                                                                                  minimum=mini)
 
     data_dict = {"coverage": {"xmax": xmax_cov, "ymax": ymax_cov, "data": x_y_cov},
-                 "match": {"xmax": xmax_match, "ymax": ymax_match, "data": x_y_match},
-                 "mismatch": {"xmax": xmax_mismatch, "ymax": ymax_mismatch, "data": x_y_mismatch},
-                 "localBenefit": {"xmax": xmax_local_ben, "ymax": ymax_local_ben, "data": x_y_local_ben},
-                 "rollingBenefitFwd": {"xmax": xmax_fwd_rolling_ben, "ymax": ymax_fwd_rolling_ben,
-                                       "data": x_y_fwd_rolling_ben},
-                 "rollingBenefitRev": {"xmax": xmax_rev_rolling_ben, "ymax": ymax_fwd_rolling_ben,
-                                       "data": x_y_rev_rolling_ben},
+
                  "forwardMask": {"xmax": xmax_fwd_mask, "ymax": ymax_fwd_mask,
                                  "data": x_y_fwd_mask},
                  "reverseMask": {"xmax": xmax_rev_mask, "ymax": ymax_rev_mask,
                                  "data": x_y_rev_mask},
+                 "benefits": {"xmax": xmax_benefit, "ymax": ymax_benefit,
+                              "data": x_y_benefit}
                  }
 
-    # return Response(data_dict)
-    return Response({"response":"Psyche"})
+    return Response(data_dict)
+
+
+@api_view(["GET"])
+def get_chromosomes(request):
+    """
+    Get a list of the chromosome we have EB results for
+    :param request: The DRF request object from the web client
+    :return:
+    """
+    flowcell_id = request.GET.get("flowcellId")
+    # get the django ORM object for the latest EB task
+    latest_eb_task = JobMaster.objects.filter(job_type__name="ExpectedBenefit", flowcell_id=flowcell_id).last()
+    # Get all the chromosome names we have attached to this task that we have results for
+    chromosome_names = ExpectedBenefitChromosomes.objects.filter(
+        task=latest_eb_task).values_list(
+        "chromosome__line_name", flat=True)
+
+    return Response(list(chromosome_names))
+
 
 

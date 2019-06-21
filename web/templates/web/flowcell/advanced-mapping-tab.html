@@ -3,6 +3,15 @@
         <h3 class="panel-title">Advanced Mapping Data</h3>
     </div>
     <div class="panel-body">
+        <div class="row" style="text-align: center">
+            <div class="col-md-12">
+                <div class="sel sel--black-panther" style="display: none">
+                    <select name="select-chromsome" id="select-chromosome">
+
+                    </select>
+                </div>
+            </div>
+        </div>
         <div class="row">
             <div class="col-md-12">
                 <div id="coverageScatterDetail" style="height: 400px">
@@ -21,6 +30,10 @@
                 </div>
             </div>
             <div class="col-md-12">
+                <div id="benefitDetail">
+                </div>
+            </div>
+            <div class="col-md-12">
                 <div id="localBenScatterDetail">
                 </div>
             </div>
@@ -36,7 +49,15 @@
                 <div id="maskStepLineRevDetail">
                 </div>
             </div>
-
+        </div>
+    </div>
+</div>
+<div class="panel panel-info">
+    <div class="panel-heading">
+        <h3 class="panel-title">Simple Mapping Data</h3>
+    </div>
+    <div class="panel-body">
+        <div>
             <div class="row">
 
                 <div class="col-md-12 highcharts">
@@ -63,15 +84,13 @@
                 <div id="advanced-per-chrom-cov"
                      class="col-md-12 highcharts"
                      style="width:50%; height:300px;">
-                    <i class="fa fa-cog fa-spin fa-3x"></i>
-                    Calculating
+
                 </div>
 
                 <div id="advanced-per-chrom-avg"
                      class="col-md-12 highcharts"
                      style="width:50%; height:300px;">
-                    <i class="fa fa-cog fa-spin fa-3x"></i>
-                    Calculating
+
                 </div>
 
                 <div class="row">
@@ -102,9 +121,7 @@
                             </tfoot>
                         </table>
                     </div>
-
                 </div>
-
             </div>
         </div>
     </div>

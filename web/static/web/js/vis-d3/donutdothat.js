@@ -15,8 +15,10 @@ d3.selectAll(".masterTooltip").on("mouseover", function () {
     });
 // Changes the hide data button to show hide based on click
 $('#expand-button').click(function () {
+    console.log($(this).text);
     $(this).text(function (i, old) {
-        return old == 'Expand data' ? 'Hide data' : 'Expand data';
+        console.log(old.replace(/(\r\n|\n|\r|\s)/gm, ""));
+        return old.replace(/(\r\n|\n|\r|\s)/gm, "") === 'Expanddata' ? 'Hide data' : 'Expand data';
     });
 });
 

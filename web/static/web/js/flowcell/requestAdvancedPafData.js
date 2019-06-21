@@ -149,7 +149,7 @@ function requestAdvancedPafData(id) {
     }
 
     $.get(pafurl, (function (data_obj) {
-
+        // TODO WHAT IS THIS TRASH
         var data = data_obj.data;
 
         if (data.length > 0) {
