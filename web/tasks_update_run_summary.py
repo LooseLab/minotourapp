@@ -18,7 +18,10 @@ def update_run_summary():
     """
     logger.info("Updating run summaries")
     # For each active flowcell in all flowcells
-    for flowcell in Flowcell.objects.filter(is_active=True):
+
+    flowcell_list = [x for x in Flowcell.objects.all() if x.active()]
+
+    for flowcell in flowcell_list:
         # For all the runs under that flowcell
         logger.info("Flowcell id {} - Updating run summaries for flowcell {}".format(flowcell.id, flowcell.id))
 
