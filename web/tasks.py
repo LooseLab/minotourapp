@@ -25,7 +25,8 @@ from jobs.models import JobMaster
 from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus
 from reads.utils import getn50
 from web.tasks_chancalc import chancalc
-from .tasks_alignment import run_minimap2_alignment, calculate_expected_benefit
+from .tasks_alignment import run_minimap2_alignment
+from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
 
 logger = get_task_logger(__name__)
 
@@ -56,10 +57,7 @@ def run_monitor():
                 ))
 
                 run_minimap2_alignment.delay(
-                    flowcell.id,
                     flowcell_job.id,
-                    flowcell_job.reference.id,
-                    flowcell_job.last_read
                 )
 
             if flowcell_job.job_type.name == "ChanCalc":
@@ -116,14 +114,14 @@ def run_monitor():
 
                 run_delete_flowcell.delay(flowcell_job.id)
 
-            if flowcell_job.job_type.name == "ReadUntil":
+            if flowcell_job.job_type.name == "ExpectedBenefit":
 
                 logger.info("Sending task ReadUntil - Flowcell id: {}, job_master id: {}".format(
                     flowcell.id,
                     flowcell_job.id,
                 ))
 
-                calculate_expected_benefit.delay(flowcell_job.id)
+                calculate_expected_benefit_3dot0_final.delay(flowcell_job.id)
 
 
 @task
@@ -203,7 +201,7 @@ def callfetchreads_assem(runs,chunk_size,last_read):
     #fastqs_list = list()
     fastq_df_barcode = pd.DataFrame()
     while True:
-        #reads, last_read, read_count, fastasmchunk, fastqs_list_chunk = fetchreads_cent(runs, chunk_size, last_read)
+        #reads, last_read, read_count, fastasmchunk, fastqs_list_chunk = fetch_reads_alignment(runs, chunk_size, last_read)
         reads, last_read, read_count, fastasmchunk = fetchreads_assem(runs, chunk_size, last_read)
         fastasm+=fastasmchunk
         #fastqs_list += fastqs_list_chunk

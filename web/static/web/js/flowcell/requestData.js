@@ -55,7 +55,7 @@ function requestData(flowcell_id) {
 
         } else if (flowcell_selected_tab_input.value == 'nav-metagenomics') {
             // The intervals for updating the charts are found in the individual files in the vis-d3 directory
-            // SO you are on the Metagenomics tab
+            // SO you are on the Metagenomics tab, congratulations!
             let addBarcodes = this.addMetaBarcodeTabs.bind(this);
             if (selected_barcode == '') {
                 set_selected_barcode('All reads');
@@ -90,7 +90,7 @@ function requestData(flowcell_id) {
 
         } else if (flowcell_selected_tab_input.value == 'nav-advanced-sequence-mapping') {
             this.requestAdvancedPafData(flowcell_id);
-            this.expectedBenefitScatter(flowcell_id);
+            this.drawReadUntilCharts();
 
         } else if (flowcell_selected_tab_input.value == 'nav-sequence-assembly') {
 

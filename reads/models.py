@@ -110,7 +110,6 @@ class Flowcell(models.Model):
     )
 
     last_activity_date = models.DateTimeField(
-
         auto_now_add=True
     )
 

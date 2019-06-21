@@ -94,11 +94,19 @@
 
 </div>
 <!-- ./wrapper -->
+<script src="{% static 'web/libraries/highstock.js' %}"></script>
+<script src="{% static 'web/libraries/exporting.js' %}"></script>
+<script src="{% static 'web/libraries/highcharts-more.js' %}"></script>
+<script src="{% static 'web/libraries/boost.js' %}"></script>
 
+<script src="{% static 'web/libraries/solid-gauge.src.js' %}"></script>
+<script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>
+<script src="{% static 'web/libraries/heatmap.src.js' %}"></script>
+<script src="{% static 'web/libraries/no-data-to-display.js' %}"></script>
+{#<script type="module" src="{% static 'web/libraries/themes/js/dark-unica.js' %}"></script>#}
 <!-- Bootstrap 3.3.6 -->
 <script src="{% static 'web/bootstrap/js/bootstrap.min.js' %}"></script>
 <!-- AdminLTE App -->
-
 <script src="{% static 'web/dist/js/app.min.js' %}?dev=19"></script>
 <script src="{% static 'web/js/flowcell/requestReadData.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/flowcell/addMetaBarcodeTabs.js' %}?{% now 'c' %}"></script>
@@ -112,7 +120,7 @@
 <script src="{% static 'web/js/vis-d3/metaheader.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/vis-d3/mappingtable.js'%}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/vis-d3/simpleAlertTable.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/vis-d3/mappingScatter.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/vis-d3/masterDetailEB.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/models/CoverageChart.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/controllers/CoverageChartController.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/utils/checkFlowcellTabs.js' %}?{% now 'c' %}"></script>
@@ -165,15 +173,7 @@
 {#<script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>#}
 {#<script src="https://code.highcharts.com/modules/heatmap.js"></script>#}
 {#<script src="http://code.highcharts.com/modules/no-data-to-display.js"></script>#}
-<script src="{% static 'web/libraries/highstock.js' %}"></script>
-<script src="{% static 'web/libraries/exporting.js' %}"></script>
-<script src="{% static 'web/libraries/highcharts-more.js' %}"></script>
-<script src="{% static 'web/libraries/boost.js' %}"></script>
 
-<script src="{% static 'web/libraries/solid-gauge.src.js' %}"></script>
-<script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>
-<script src="{% static 'web/libraries/heatmap.src.js' %}"></script>
-<script src="{% static 'web/libraries/no-data-to-display.js' %}"></script>
 
 {#<script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>#}
 
@@ -191,6 +191,7 @@
      fixed layout. -->
 <script src="{% static 'web/plugins/slimScroll/jquery.slimscroll.min.js' %}"></script>
 <script src="{% static 'web/plugins/fastclick/fastclick.min.js' %}"></script>
+
 
 
 {% block javascript %}

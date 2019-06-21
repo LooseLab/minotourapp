@@ -152,5 +152,4 @@ function flowcellTaskHistoryTable(flowcellId) {
             ]
         });
     }
-    setTimeout(flowcellTaskHistoryTable, 30000, flowcellId);
 }
