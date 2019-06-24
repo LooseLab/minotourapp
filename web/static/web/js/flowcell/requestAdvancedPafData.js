@@ -130,7 +130,7 @@ function requestAdvancedPafData(id) {
 
     if (!this.advanced_chart_per_chrom_cov) {
 
-        this.advanced_chart_per_chrom_cov = this.makeChart(
+        this.advanced_chart_per_chrom_cov = this.makeColumnChart(
             "advanced-per-chrom-cov",
             "Chromosome Coverage".toUpperCase(),
             "Chromosome Coverage".toUpperCase()
@@ -140,7 +140,7 @@ function requestAdvancedPafData(id) {
 
     if (!this.advanced_chart_per_chrom_avg) {
 
-        this.advanced_chart_per_chrom_avg = this.makeChart(
+        this.advanced_chart_per_chrom_avg = this.makeColumnChart(
             "advanced-per-chrom-avg",
             "Read Length By Chromosome".toUpperCase(),
             "Read Length By Chromosome".toUpperCase()

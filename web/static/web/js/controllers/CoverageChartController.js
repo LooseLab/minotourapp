@@ -1,7 +1,7 @@
 class CoverageChartController {
 
     constructor(div_name, advanced) {
-        this._chromossome_select = document.querySelector('#' + advanced + 'chromosome-id-select');
+        this._chromosome_select = document.querySelector('#' + advanced + 'chromosome-id-select');
         this._coverage_chart = new CoverageChart(div_name);
     }
 
@@ -19,14 +19,13 @@ class CoverageChartController {
     create_url() {
 
         // var selected_index = this.select_container.selectedIndex;
-        var selected_option = this._chromossome_select.value;
+        var selected_option = this._chromosome_select.value;
 
         if (parseInt(selected_option) < 0) {
 
             return "/api/v1/pafcoverage/0/0/0/1/";
         }
 
-        // var value_combination = data[i]['task_id'] + '_' + data[i]['barcode_name'] + '_' + data[i]['read_type_id'] + '_' + '_' + data[i]['chromosome_id'];
 
         var value_combination = selected_option.split('_');
         var task_id = value_combination[0];
@@ -38,7 +37,6 @@ class CoverageChartController {
         var chromosome_id = value_combination[3];
         // var chromosome_id = value_combination[4];
 
-        // var url = "/api/v1/flowcells/pafcoverage/" + task_id + "/" + barcode_name + "/" + read_type_id + "/" + chromosome_id + "/";
         var url = "/api/v1/pafcoverage/" + task_id + "/" + barcode_name + "/" + read_type_id + "/" + chromosome_id + "/";
 
         return url;

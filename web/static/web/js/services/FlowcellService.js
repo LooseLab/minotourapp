@@ -1,7 +1,6 @@
 class FlowcellService {
 
     constructor() {
-
         this._http = new HttpService();
     }
 

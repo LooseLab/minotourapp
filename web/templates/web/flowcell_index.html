@@ -136,19 +136,7 @@
 
         app.init();
 
-        // var coverage_chart = new CoverageChart();
-
-        // coverage_chart.create_master_detail_chart('coverage_div', 'chromosome-id-select');
-
-        loadTasksForm();
-
         var mTaskController = new MTaskController(input_flowcell_id.value);
-
-        /*document.querySelector("#nav-"+value.id).addEventListener("click", function(event){
-            flowcell_selected_tab_input.value = event.target.innerHTML;
-
-            requestData(flowcell_id);
-        });*/
 
         let flowcell_controller = new FlowcellController(input_flowcell_id.value);
     </script>

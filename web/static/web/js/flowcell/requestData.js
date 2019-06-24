@@ -7,11 +7,11 @@ function requestData(flowcell_id) {
     var url_run = '/api/v1/flowcells/' + flowcell_id + '/';
 
     $.get(url_run, (function (result) {
-
+        // Get data about teflowcell including barcode and number of runs
         let data = result.data;
-        // let meta_barcodes= result.meta_barcodes;
-        var barcodes = new Set();
 
+        var barcodes = new Set();
+        // For each of the barcodes, add it to the set to be used to draw and select the barcode tabs later
         for (var i = 0; i < data.barcodes.length; i++) {
             if (data.barcodes[i].name != 'No barcode') {
                 barcodes.add(data.barcodes[i].name);
@@ -21,22 +21,28 @@ function requestData(flowcell_id) {
         var flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
 
         if (flowcell_selected_tab_input.value == 'nav-summary-data') {
-
+            // if we are on the summary page - cal l requestRunDetail from the monitor app scope
+            // appends the Run summary table HTML onto the summary page
             this.requestRunDetails(flowcell_id);
-            console.log(data);
+            //// append a messages html tableonto the messages div of the summaries tab
             requestMinknowMessages(flowcell_id, data);
 
         } else if (flowcell_selected_tab_input.value == 'nav-tasks') {
+            // If we are on the tasks tab
+            // Load the tasks form for selecting a task and reference and submitting a ne wtask
+            loadTasksForm();
+            // Load the flowcell tasks history table
 
             this.flowcellTaskHistoryTable(flowcell_id);
 
         } else if (flowcell_selected_tab_input.value == 'nav-basecalled-data') {
-
+            // If there is not selected barcode, so we're on the tab for the first time since loading the site
             if (selected_barcode == '') {
                 set_selected_barcode('All reads');
             }
-
+            // Sort the barcode in Alphabeticla order
             this.barcodes = Array.from(barcodes).sort();
+            // Update the barcode nav tabs found in updateBarcodeNavTab.js
             this.updateBarcodeNavTab();
             this.requestSummaryData(flowcell_id);
             this.requestHistogramData(flowcell_id);

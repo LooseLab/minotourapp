@@ -937,11 +937,11 @@ def flowcell_detail(request, pk):
 
         if search_criteria == 'id':
 
-            flowcell_list = Flowcell.objects.filter(owner=request.user).filter(id=pk)
+            flowcell_list = Flowcell.objects.filter(owner=request.user, id=pk)
 
         elif search_criteria == 'name':
 
-            flowcell_list = Flowcell.objects.filter(owner=request.user).filter(name=pk)
+            flowcell_list = Flowcell.objects.filter(owner=request.user, name=pk)
 
         else:
 
@@ -951,11 +951,9 @@ def flowcell_detail(request, pk):
 
             return Response({'data': {}})
 
-
-        # TODO updated this, check with Roberto that this is cool
-
+        # get the matching flowcell
         flowcell = flowcell_list[0]
-
+        # deserialise the flowcell data
         serializer = FlowcellSerializer(flowcell, context={'request': request})
 
         data = serializer.data

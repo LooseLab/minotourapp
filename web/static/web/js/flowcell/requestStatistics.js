@@ -6,7 +6,7 @@ function requestStatisticsCallback(data) {
 
     if (!this.average_quality_overtime_new) {
 
-        this.average_quality_overtime_new = this.makeChart2(
+        this.average_quality_overtime_new = this.makeSplineChart(
             "average-quality-overtime-new",
             "average quality over time".toUpperCase(),
             "average read quality score".toUpperCase()
@@ -16,7 +16,7 @@ function requestStatisticsCallback(data) {
 
     if (!this.average_read_lengths_overtime_new) {
 
-        this.average_read_lengths_overtime_new = this.makeChart2(
+        this.average_read_lengths_overtime_new = this.makeSplineChart(
             "average-read-lengths-overtime-new",
             "average read length over time".toUpperCase(),
             "average read length".toUpperCase()
@@ -26,7 +26,7 @@ function requestStatisticsCallback(data) {
 
     if (!this.chart_cumulative_yield_overtime_new) {
 
-        this.chart_cumulative_yield_overtime_new = this.makeChart2(
+        this.chart_cumulative_yield_overtime_new = this.makeSplineChart(
             "cumulative-yield-overtime-new",
             "cumulative bases".toUpperCase(),
             "cumulative bases".toUpperCase()
@@ -36,7 +36,7 @@ function requestStatisticsCallback(data) {
 
     if (!this.chart_cumulative_number_reads_overtime_new) {
 
-        this.chart_cumulative_number_reads_overtime_new = this.makeChart2(
+        this.chart_cumulative_number_reads_overtime_new = this.makeSplineChart(
             "cumulative-number-reads-overtime-new",
             "cumulative reads".toUpperCase(),
             "cumulative reads".toUpperCase()
@@ -46,7 +46,7 @@ function requestStatisticsCallback(data) {
 
     if (!this.max_read_lengths_overtime_new) {
 
-        this.max_read_lengths_overtime_new = this.makeChart2(
+        this.max_read_lengths_overtime_new = this.makeSplineChart(
             "max-read-lengths-overtime-new",
             "max read length over time".toUpperCase(),
             "max read length".toUpperCase()
@@ -55,7 +55,7 @@ function requestStatisticsCallback(data) {
     }
 
     if (!this.chartSequencingRate_new) {
-        this.chartSequencingRate_new = this.makeChart2(
+        this.chartSequencingRate_new = this.makeSplineChart(
             "sequencing-rate-new",
             "sequencing rate".toUpperCase(),
             "bases/second".toUpperCase()
@@ -63,7 +63,7 @@ function requestStatisticsCallback(data) {
     }
 
     //if (!this.chartSequencingSpeed_new) {
-    //    this.chartSequencingSpeed_new = this.makeChart2(
+    //    this.chartSequencingSpeed_new = this.makeSplineChart(
     //        "sequencing-speed-new",
     //        "sequencing speed".toUpperCase(),
     //        "bases/channel/second".toUpperCase()
