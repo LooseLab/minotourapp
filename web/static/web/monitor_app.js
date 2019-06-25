@@ -12,10 +12,6 @@ function set_active_navbar_item(item_index) {
 
 var FlowcellPageApp = {
 
-    constructor () {
-
-    },
-
     init: function () {
         console.log("initialising flowcellpageapp");
         this.chart_reads_called = null;
@@ -79,19 +75,15 @@ var FlowcellPageApp = {
         this.coveragedata = new Array();
         this.coveragedata.read_type = new Array();
 
-        this.makeChart = makeChart;
-        this.makeChart2 = makeChart2;
-        this.makeChart3 = makeChart3;
-        this.makeChart4 = makeChart4;
+        this.makeColumnChart = makeColumnChart;
+        this.makeSplineChart = makeSplineChart;
+        this.makeSplineChartNonDatetime = makeSplineChartNonDatetime;
         this.makeBoxPlot = makeBoxPlot;
-        this.makeChartlabels = makeChartlabels;
         this.makeLiveHistogram = makeLiveHistogram;
-        this.makeYieldProjection = makeYieldProjection;
         this.makeLiveChart = makeLiveChart;
         this.makeAreaPlot = makeAreaPlot;
 
         this.lastread = 0;
-        this.needtoupdatecharts = false;
 
         this.drawSankey = drawSankey;
         this.metaHeader = metaHeader;
@@ -123,14 +115,6 @@ var FlowcellPageApp = {
 
         this.requestAdvancedPafData = requestAdvancedPafData.bind(this);
 
-        // this.expectedBenefitScatter = expectedBenefitScatter;
-
-        // this.liveUpdateTasks = liveUpdateTasks;
-        //
-        // this.updateTasks = updateTasks.bind(this);
-
-        // this.requestTasks = requestTasks.bind(this);
-
         this.requestRunDetails = requestRunDetails.bind(this);
 
         this.requestLiveRunStats = requestLiveRunStats;
@@ -138,6 +122,7 @@ var FlowcellPageApp = {
         this.requestSummaryData = requestSummaryData;
 
         this.requestData = requestData;
+
         var flowcell_id = get_selected_flowcell();
 
         this.requestStatistics = requestStatistics.bind(this);
@@ -146,21 +131,21 @@ var FlowcellPageApp = {
         this.addStartTabsEvents = addStartTabsEvents.bind(this);
         this.updateBarcodeNavTab = updateBarcodeNavTab.bind(this);
 
-        this.ChartNumContigs = this.makeChart4(
+        this.ChartNumContigs = this.makeSplineChartNonDatetime(
             "num-contigs",
             "Number of Contigs Assembled".toUpperCase(),
             "Number of Contigs".toUpperCase(),
             "Number of input Reads".toUpperCase()
         );
 
-        this.ChartN50Contigs = this.makeChart4(
+        this.ChartN50Contigs = this.makeSplineChartNonDatetime(
             "n50-contigs",
             "Assembly N50".toUpperCase(),
             "Assembly N50".toUpperCase(),
             "Number of input Reads".toUpperCase()
         );
 
-        this.ChartSumContigs = this.makeChart4(
+        this.ChartSumContigs = this.makeSplineChartNonDatetime(
             "sum-contigs",
             "Total length of Assembly".toUpperCase(),
             "Total length".toUpperCase(),
@@ -207,21 +192,6 @@ var FlowcellPageApp = {
             "Voltage Over Time",
             "mV"
         );
-        /*
-        this.LivePoreState = this.makeLiveChart(
-            "live-porestate",
-            "Pore State Currents",
-            "Current pA"
-        );
-        */
-
-        /*
-        this.LiveCurrentRatio = this.makeLiveChart(
-            "live-currentratio",
-            "Current Ratio In Strand/Open Pore",
-            "Current Ratio"
-        );
-        */
 
         this.PoreShizzle = this.makeAreaPlot(
             "poreshizzle",
@@ -229,9 +199,6 @@ var FlowcellPageApp = {
             "Pore States".toUpperCase()
         );
 
-        // var inputFlowcellId = document.querySelector("#flowcell-id");
-        //
-        // this.flowcellId = inputFlowcellId.value;
 
         this.addStartTabsEvents(flowcell_id);
         this.checkFlowcellTabs(flowcell_id);
@@ -241,13 +208,6 @@ var FlowcellPageApp = {
         this.requestData(flowcell_id);
         console.log('Calling request data from monitor_app. <<<');
     }, // end of init
-
-
-
-
-
-
-
 
     projectdata: function (data) {
         var results = [];
@@ -374,9 +334,4 @@ var FlowcellPageApp = {
         //console.log("returning estimated scaling factor");
         return scaleddata;
     },
-
-
-
-
-
 };

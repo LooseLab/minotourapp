@@ -17,7 +17,6 @@ d3.selectAll(".masterTooltip").on("mouseover", function () {
 $('#expand-button').click(function () {
     console.log($(this).text);
     $(this).text(function (i, old) {
-        console.log(old.replace(/(\r\n|\n|\r|\s)/gm, ""));
         return old.replace(/(\r\n|\n|\r|\s)/gm, "") === 'Expanddata' ? 'Hide data' : 'Expand data';
     });
 });

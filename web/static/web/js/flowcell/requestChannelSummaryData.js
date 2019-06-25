@@ -225,7 +225,7 @@ function requestChannelSummaryData(id) {
 
        if (!self.estimated_sequencing_speed) {
 
-        self.estimated_sequencing_speed = self.makeChart2(
+        self.estimated_sequencing_speed = self.makeSplineChart(
             "estimated-sequencing-speed",
             "Estimated Sequencing Speed".toUpperCase(),
             "Estimated speed in bases/second".toUpperCase()

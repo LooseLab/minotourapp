@@ -10,7 +10,7 @@ from reference.serializers import (ReferenceInfoSerializer,
 @api_view(['GET'])
 def reference_list(request):
 
-    queryset = ReferenceInfo.objects.filter(Q(private=False) | Q(owner=request.user.id))
+    queryset = ReferenceInfo.objects.filter(Q(private=False) | Q(owner=request.user))
 
     serializer = ReferenceInfoSerializer(queryset, many=True, context={'request': request})
 

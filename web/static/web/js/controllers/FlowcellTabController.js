@@ -1,5 +1,7 @@
 class FlowcellTabController {
-
+    /*
+    Once a flowcell has been selected, this class is constructed to take charge of the tab switchng
+     */
     constructor(flowcell_id) {
 
         this._flowcell_id = flowcell_id;

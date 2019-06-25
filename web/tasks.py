@@ -28,18 +28,28 @@ from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
 from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
 
+
 logger = get_task_logger(__name__)
 
 
 @task()
 def run_monitor():
+    """
+    Run monitor is the task that is run every 30 seconds by Django celery beat -
+    (minotourapp/settings.py for beat config)
+    It iterates all the flowcells for flowcells that are active, getting all the attached JobMaster for jobs
+    that are not running and not complete, and starts celery tasks for them.
+
+    :return:
+    """
 
     logger.info('--------------------------------')
     logger.info('Running run_monitor celery task.')
     logger.info('--------------------------------')
 
+    # Create a list of all flowcells that have been active in the last 48 hours
     flowcell_list = [x for x in Flowcell.objects.all() if x.active()]
-
+    #
     for flowcell in flowcell_list:
 
         flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False, complete=False)
@@ -114,6 +124,7 @@ def run_monitor():
 
                 run_delete_flowcell.delay(flowcell_job.id)
 
+
             if flowcell_job.job_type.name == "ExpectedBenefit":
 
                 logger.info("Sending task ReadUntil - Flowcell id: {}, job_master id: {}".format(
@@ -122,6 +133,7 @@ def run_monitor():
                 ))
 
                 calculate_expected_benefit_3dot0_final.delay(flowcell_job.id)
+
 
 
 @task

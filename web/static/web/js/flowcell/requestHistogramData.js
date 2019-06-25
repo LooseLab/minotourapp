@@ -13,7 +13,7 @@ function requestHistogramData(id) {
             var categories = dataObj['categories'];
 
             if (!this.chartHistogramBasesSequencedByReadLength) {
-                this.chartHistogramBasesSequencedByReadLength = this.makeChart2(
+                this.chartHistogramBasesSequencedByReadLength = this.makeSplineChart(
                     "histogram-bases-sequenced-by-read-length",
                     "Histogram of Bases Sequenced by Read Length".toUpperCase(),
                     "Number of bases".toUpperCase()
@@ -23,7 +23,7 @@ function requestHistogramData(id) {
             var chart_read_length = this.chartHistogramBasesSequencedByReadLength;
 
             if (!this.chartHistogramReadLength) {
-                this.chartHistogramReadLength = this.makeChart2(
+                this.chartHistogramReadLength = this.makeSplineChart(
                     "histogram-read-lengths",
                     "Histogram of Read Lengths".toUpperCase(),
                     "Number of reads".toUpperCase()

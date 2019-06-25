@@ -13,69 +13,100 @@ from reads.models import Flowcell
 
 
 @api_view(["GET", "POST"])
-def task_list(request):
+def get_or_create_tasks(request):
     """
-    return aLL the tasks active under one flowcell
-    :param request:
-    :return:
+    API endpoint for dealing with fetching or creating new JobMasters
+    :param request: The django rest framework request body - if a GET request should contain
+    search_criteria and search_value params
+    :return: A dictionary containing all the matching JobMasters on this flowcell
     """
-    print(request.GET)
+
     if request.method == 'GET':
 
         search_criteria = request.GET.get('search_criteria', 'flowcell')
 
         if search_criteria == 'flowcell':
-            flowcell_id = request.GET.get("search_value", "")  # TODO have to test for empty search value
-            task_list = JobMaster.objects.filter(flowcell__id=int(flowcell_id)).exclude(job_type__name="Other")
-            serializer = JobMasterSerializer(task_list, many=True)
+
+            flowcell_id = request.GET.get("search_value", -1)
+            # If there was no flowcell ID provided
+            if flowcell_id == -1:
+                return Response("No flowcell ID provided", status=status.HTTP_400_BAD_REQUEST)
+            # Get all the JobMasters for this flowcell, excluding job type other - which are for background sub tasks
+            tasks_list = JobMaster.objects.filter(flowcell__id=int(flowcell_id)).exclude(job_type__name="Other")
+            # Serialise the data to a python object
+            serializer = JobMasterSerializer(tasks_list, many=True)
+            print(serializer.data)
+
             result = {
                 "data": serializer.data
             }
+
             return JsonResponse(result)
 
         else:
-            return JsonResponse({"data": []})
 
+            return Response("Bad search criteria provided", status=status.HTTP_400_BAD_REQUEST)
+
+    # Its a post request to create a new task
     else:
-        # If it's a metagenomics tasks, and it's from the web app not the client, so target set isn't in the dict keys
-        if request.data["job_type"] == "10" and "target_set" not in request.data.keys():
-            # Set the target set id to the provided reference ID
-            request.data["target_set"] = request.data["reference"]
-            # Remove the reference ID from the request body
-            request.data["reference"] = None
-
-        if request.data["job_type"] == "11":
-            request.data["reference"] = None
-
         # Check to see if we have a string as the flowcell, not an Int for a PK based lookup
+        # This is for starting a job from the client
         if type(request.data["flowcell"]) is str:
+
             try:
+                # Get the flowcell by name
                 flowcell = Flowcell.objects.get(name=request.data["flowcell"])
+
                 request.data["flowcell"] = flowcell.id
+            # If that doesn't work
             except Flowcell.DoesNotExist as e:
+
                 try:
+                    # Get the flowcell by pk but change the string number to an int
                     flowcell = Flowcell.objects.get(pk=int(request.data["flowcell"]))
-                except Flowcell.DoesNotExist as e1:
+
+                    request.data["flowcell"] = flowcell.id
+
+                except Flowcell.DoesNotExist:
+
                     print("Exception: {}".format(e))
+
                     return JsonResponse({'error_messages': "Exception: {}".format(e)}, status=500)
 
+        # For client side job starting, check if we have a reference and it's a string
         if "reference" in request.data.keys() and type(request.data["reference"]) is str:
-            try:
-                reference = ReferenceInfo.objects.get(name=request.data["reference"])
-                request.data["reference"] = reference.id
-            except ReferenceInfo.DoesNotExist as e:
-                try:
-                    reference = ReferenceInfo.objects.get(pk=int(request.data["reference"]))
-                except ReferenceInfo.DoesNotExist as e1:
-                    print("Exception: {}".format(e))
-                    return JsonResponse({'error_messages': "Exception: {}".format(e)}, status=500)
 
+            try:
+                # Try to get the reference by name
+                reference = ReferenceInfo.objects.get(name=request.data["reference"])
+
+                request.data["reference"] = reference.id
+
+            except ReferenceInfo.DoesNotExist as e:
+
+                try:
+
+                    reference = ReferenceInfo.objects.get(pk=int(request.data["reference"]))
+
+                    request.data["reference"] = reference.id
+
+                except ReferenceInfo.DoesNotExist:
+
+                    print("Exception: {}".format(e))
+
+                    return JsonResponse({'error_messages': "Exception: {}".format(e)}, status=500)
+        # Serialise the data to a Django savable object
         serializer = JobMasterInsertSerializer(data=request.data)
+
+        # If the serialiser is valid
         if serializer.is_valid():
+
             task = serializer.save()
 
             response_data = {}
-            response_data['message'] = "Create task successful!"
+
+            response_data['message'] = "Task created successfully!"
+
             response_data['pk'] = task.id
 
             return JsonResponse(response_data)
@@ -87,23 +118,30 @@ def task_list(request):
 
 @api_view(['GET'])
 def task_types_list(request):
+    """
+    Get the list of task types to display for Job creation options
+    :param request: The request body object
+    :return: A list of dictionaries containing the task id, name and description.
+    """
 
+    # If it's a request from the client
     if request.GET.get("cli", False):
+        # These are the available tasks
         tasks = ["Metagenomics", "Assembly", "Minimap2"]
+        # Get the tasks
         queryset = JobType.objects.filter(name__in=tasks)
+
     else:
+        # Otherwise it's for the site, so make all that are public available
         queryset = JobType.objects.filter(private=False)
 
-    result = []
-
-    for record in queryset:
-        task = {
-            'id': record.id,
-            'name': record.name,
-            'description': record.description
-        }
-
-        result.append(task)
+    # Create the result list
+    result = [{
+        'id': record.id,
+        'name': record.name,
+        'description': record.description
+    } for record in queryset
+    ]
 
     return JsonResponse({
         'data': result
@@ -112,6 +150,7 @@ def task_types_list(request):
 
 @api_view(['POST'])
 def set_task_detail_all(request, pk):
+    # TODO ARE WE USING THIS AT ALL
     """We need to check if a job type already exists - if so we are not going to add another."""
     if request.method == 'POST':
         jobtype = JobType.objects.get(name=request.data["job"])

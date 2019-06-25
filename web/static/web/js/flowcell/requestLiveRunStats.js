@@ -249,7 +249,7 @@ function calculatereadtoeventscaling() { // TODO is it still being used?
 
 function requestLiveRunStats(id) {
 
-    console.log('This is lastread from flowcellcontroller: ' + flowcell_controller.lastread);
+    console.log('This is lastread from flowcellcontroller: ' + flowcellController.lastread);
 
     // var url_livestats = '/api/v1/flowcells/' + id + '/runstats/' + flowcell_controller.lastread;
     var url_livestats = '/api/v1/flowcells/' + id + '/runstats/0';
