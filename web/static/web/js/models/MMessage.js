@@ -1,5 +1,5 @@
 class MMessage {
-
+    // A message instance - getter and setter for that text
     constructor(texto='') {
 
         this._texto = texto;

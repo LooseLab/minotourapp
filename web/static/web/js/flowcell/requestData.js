@@ -67,7 +67,9 @@ function requestData(flowcell_id) {
                 set_selected_barcode('All reads');
             }
             let url = "/api/v1/flowcells/" + flowcell_id + "/metagenomic_barcodes";
+
             this.drawSankey(flowcell_id);
+
             this.metaHeader(flowcell_id);
             // Draw the donut rank table
             this.drawDonutRankTable(flowcell_id);

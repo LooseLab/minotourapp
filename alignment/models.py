@@ -156,13 +156,13 @@ class PafRoughCov(models.Model):
     reference = models.ForeignKey(
         ReferenceInfo,
         related_name='pafreference',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
     )
 
     chromosome = models.ForeignKey(
         ReferenceLine,
         related_name='pafchromosome',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
     )
 
     p = models.IntegerField(

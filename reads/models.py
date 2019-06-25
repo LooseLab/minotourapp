@@ -35,8 +35,12 @@ class Experiment(models.Model):
         auto_now=True
     )
 
-class Flowcell(models.Model):
 
+class Flowcell(models.Model):
+    """
+        The model for the django ORM that deals with the creation and retrieval of Flowcells.
+        Flowcells are top level organisers under users.
+    """
     name = models.CharField(
         max_length=256,
     )
@@ -52,15 +56,11 @@ class Flowcell(models.Model):
     )
 
     max_channel = models.IntegerField(
-        default = 0
+        default=0
     )
 
     size = models.IntegerField(
         default=512
-    )
-
-    is_active = models.BooleanField(
-        default=True
     )
 
     start_time = models.DateTimeField(
@@ -120,26 +120,40 @@ class Flowcell(models.Model):
     )
 
     def barcodes(self):
+        """
+        Return all the barcodes in runs contained under this flowcell.
+        :return:
+        """
 
         barcode_set = set()
-
+        # for each run in all the runs foreign keyed to this flowcell
         for run in self.runs.all():
-
+            # for all the barcodes foreign keyed to this run
             for barcode in run.barcodes.all():
+                # add the barcode to the set - guarantees uniqueness
                 barcode_set.add(barcode)
 
         return barcode_set
 
     def __str__(self):
+        """
+        Format the string returned when models are inspected in the shell or by admin
+        :return:
+        """
         return "{} {}".format(self.name, self.id)
 
     def active(self):
-
+        """
+        Determine whether this flowcell has been active in the 48 hours
+        :return:
+        """
+        # time deltas are pythons measurement of time difference
         delta = datetime.timedelta(days=2)
-
+        # If the current time minus two days is more than the last activity date, there has been no activity in 48 hours
         if (datetime.datetime.now(datetime.timezone.utc) - delta) > self.last_activity_date:
 
             return False
+        # Activity in the last 48 hours
 
         return True
 

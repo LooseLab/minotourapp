@@ -8,7 +8,7 @@
             </div>
             <div class='panel-body'>
 
-                <form method="post" id="post-form-task-create" onsubmit="mTaskController.add(event)">
+                <form method="post" id="post-form-task-create" onsubmit="mTaskController.create_new_job(event)">
                     {% csrf_token %}
                     <input type="hidden" name="flowcell" value="{{ flowcell.id }}"/>
                     <div class="form-group">
@@ -44,6 +44,7 @@
                         <th>Read count</th>
                         <th>Running</th>
                         <th>Complete</th>
+                        <th>Reference</th>
                     </tr>
                     </thead>
                     <tfoot>
@@ -54,6 +55,7 @@
                         <th>Read count</th>
                         <th>Running</th>
                         <th>Complete</th>
+                        <th>Reference</th>
                     </tr>
                     </tfoot>
                 </table>

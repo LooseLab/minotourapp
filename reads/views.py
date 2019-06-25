@@ -887,15 +887,18 @@ def barcode_detail(request, pk):
 
 @api_view(['GET', 'POST'])
 def flowcell_list(request):
-
+    """
+    API endpoint for either GETting a list of all the flowcells for a given user (The request maker)
+    Or for POSTing a new flowcells data to create a database entry
+    :param request: Django rest framework request object
+    :return:  A list of each flowcell details in dictionary form
+    """
     if request.method == 'GET':
 
         queryset = Flowcell.objects.filter(owner=request.user)
 
-        flowcells = []
-
-        for record in queryset:
-            flowcell = {
+        flowcells = [
+            {
                 'id': record.id,
                 'name': record.name,
                 'size': record.size,
@@ -910,21 +913,21 @@ def flowcell_list(request):
                 'sample_name': record.sample_name,
                 'has_fastq': record.has_fastq,
             }
-
-            flowcells.append(flowcell)
+            for record in queryset
+        ]
 
         return JsonResponse({'data': flowcells})
-
+    # If the method is not GET, it must be post
     else:
-
+        # Serialise the data inside the request
         serializer = FlowcellSerializer(data=request.data, context={'request': request})
-
+        # If the serialiser is valid
         if serializer.is_valid():
-
+            # Save the data, creating the new flowcell
             serializer.save(owner=request.user)
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
+        # If the serialiser data is not valid, return bad request
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

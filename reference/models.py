@@ -34,8 +34,12 @@ class ReferenceInfo(models.Model):
 
         default=False
     )
-    owner = models.IntegerField(
-        default=0
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='user_references',
+        on_delete=models.CASCADE,
+        null=True
     )
 
     users = models.ManyToManyField(

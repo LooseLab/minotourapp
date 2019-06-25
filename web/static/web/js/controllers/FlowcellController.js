@@ -1,5 +1,8 @@
 class FlowcellController {
-
+/*
+This controller is the top level controller, initialised when the flowcell index page is loaded,
+it contains references to the other controllers
+ */
     constructor(flowcell_id) {
 
         console.log('Initialising FlowcellController.');

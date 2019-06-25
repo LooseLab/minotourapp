@@ -17,7 +17,7 @@ urlpatterns = [
         name="set-task-detail-all"),
     url(
         r'^api/v1/tasks/$',
-        views.task_list,
+        views.get_or_create_tasks,
         name='task_list'
     )
 ]
