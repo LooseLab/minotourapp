@@ -16,7 +16,7 @@ class PafStore(models.Model):
         related_name='pafstore_list'
     )
 
-    flowcell = models.ForeignKey(  # TODO dele - read from job_master.flowcell
+    flowcell = models.ForeignKey(  # TODO delete - read from job_master.flowcell
 
         Flowcell,
         on_delete=models.CASCADE,
@@ -36,7 +36,7 @@ class PafStore(models.Model):
 
         ReferenceInfo,
         related_name='pafstorereference',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
     )
 
     # PAF File Format:

@@ -26,7 +26,12 @@ from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowce
 from reads.utils import getn50
 from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
+
 from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
+
+
+from web.delete_tasks import delete_alignment_task, delete_metagenomics_task
+# from web.utils import update_last_activity_time
 
 
 logger = get_task_logger(__name__)
@@ -49,7 +54,7 @@ def run_monitor():
 
     # Create a list of all flowcells that have been active in the last 48 hours
     flowcell_list = [x for x in Flowcell.objects.all() if x.active()]
-    #
+    # iterate them
     for flowcell in flowcell_list:
 
         flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False, complete=False)
@@ -80,6 +85,8 @@ def run_monitor():
                 chancalc.delay(flowcell.id, flowcell_job.id, flowcell_job.last_read)
 
             if flowcell_job.job_type.name == "Assembly":
+                # update the last activity time
+                # update_last_activity_time(flowcell)
 
                 logger.info("Sending task assembly to server - Flowcell id: {}, job_master id: {}".format(
                     flowcell.id,
@@ -124,7 +131,6 @@ def run_monitor():
 
                 run_delete_flowcell.delay(flowcell_job.id)
 
-
             if flowcell_job.job_type.name == "ExpectedBenefit":
 
                 logger.info("Sending task ReadUntil - Flowcell id: {}, job_master id: {}".format(
@@ -134,36 +140,67 @@ def run_monitor():
 
                 calculate_expected_benefit_3dot0_final.delay(flowcell_job.id)
 
+            if flowcell_job.job_type.name == "Delete_Task":
+
+                logger.info("Sending task Delete task - Flowcell id: {}, job_master id: {}".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                ))
+
+                if flowcell_job.job_type.name is "Minimap2":
+
+                    delete_alignment_task.delay(flowcell_job.id)
+
+                elif flowcell_job.job_type.name is "Metagenomics":
+
+                    delete_metagenomics_task.delay(flowcell_job.id)
+
+                else:
+
+                    flowcell_job.delete()
+                    logger.info(f"Finished deleting task {flowcell_job.id}")
+
+
 
 
 @task
 def run_delete_flowcell(flowcell_job_id):
+    """
+    The function called in monitorapp to delete a flowcell
+    :param flowcell_job_id: The ID of the JobMaster database entry
+    :return:
+    """
 
+    # Get the flowcell jobMaster entry
     flowcell_job = JobMaster.objects.get(pk=flowcell_job_id)
-
+    # Get the flowcell
     flowcell = flowcell_job.flowcell
 
     logger.info('Flowcell id: {} - Deleting flowcell {}'.format(flowcell.id, flowcell.name))
 
-    first_fastqread = FastqRead.objects.filter(run__flowcell=flowcell).order_by('id').first()
-    last_fastqread = FastqRead.objects.filter(run__flowcell=flowcell).order_by('id').last()
-
+    # Get the first FastQRead object
+    first_fastqread = FastqRead.objects.filter(flowcell=flowcell).order_by('id').first()
+    # Get the last FastQRead object
+    last_fastqread = FastqRead.objects.filter(flowcell=flowcell).order_by('id').last()
+    # if we have both a first and last read PK
     if first_fastqread and last_fastqread:
-
+        # Get the first fastqread primary key
         first_read = first_fastqread.id
+        # Get the last fastqread primary key
         last_read = last_fastqread.id
 
         logger.info(
             'Flowcell id: {} - First and last fastqread id are {} {}'.format(flowcell.id, first_read, last_read))
-
+        # Counter is the first read primary key
         counter = first_read
 
+        # Whilst we still have reads left
         while counter <= last_read:
             counter = counter + 500
 
             logger.info('Flowcell id: {} - Deleting records with id < {}'.format(flowcell.id, counter))
 
-            affected = FastqRead.objects.filter(run__flowcell=flowcell).filter(id__lt=counter).delete()
+            affected = FastqRead.objects.filter(flowcell=flowcell).filter(id__lt=counter).delete()
 
             logger.info('Flowcell id: {} - Deleted {} fastqread records'.format(flowcell.id, affected))
 

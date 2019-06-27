@@ -79,7 +79,7 @@ class JobMaster(models.Model):
     reference = models.ForeignKey(
 
         ReferenceInfo,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name='referencejob',
         null=True,
         blank=True,

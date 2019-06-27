@@ -146,6 +146,7 @@ def run_minimap2_alignment(job_master_id):
 
     fasta_df_barcode, last_read, read_count, fasta_objects = call_fetch_reads_alignment(runs, chunk_size,
                                                                                         job_master.last_read)
+
     logger.info('Flowcell id: {} - Running minimap2 on flowcell {}'.format(flowcell.id, flowcell.name))
     logger.info('Flowcell id: {} - job_master_id {}'.format(flowcell.id, job_master.id))
     logger.info('Flowcell id: {} - reference {}'.format(flowcell.id, job_master.reference.name))

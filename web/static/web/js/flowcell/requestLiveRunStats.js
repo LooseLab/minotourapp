@@ -102,9 +102,6 @@ function updateLiveCumuYield(liveCumuYield, liveOccupancy, liveInStrand, liveTem
     } else {
         liveTemperature.series[0].setData(livedata.asictemp);
         liveTemperature.series[1].setData(livedata.heatsinktemp);
-        liveTemperature.series[1].setData(livedata.heatsinktemp);
-        liveTemperature.series[1].setData(livedata.heatsinktemp);
-        liveTemperature.series[1].setData(livedata.heatsinktemp);
     }
 
     liveTemperature.series[0].update({name: "Asic Temp"}, false);
@@ -255,12 +252,6 @@ function requestLiveRunStats(id) {
     var url_livestats = '/api/v1/flowcells/' + id + '/runstats/0';
 
     $.get(url_livestats, (function (result) {
-
-        console.log('>>>> result');
-
-        console.log(result);
-
-        console.log('<<<< result');
 
         var liveHistogram = makeLiveHistogram(
             "live-histogram",

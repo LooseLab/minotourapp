@@ -166,7 +166,8 @@ function flowcellTaskHistoryTable(flowcellId) {
                 {"data": "read_count"},
                 {"data": "running"},
                 {"data": "complete"},
-                {"data": "reference_name"}
+                {"data": "reference_name"},
+                {"data": "server_initiated"}
             ]
         });
     }

@@ -1,6 +1,7 @@
 """models.py
 
 """
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from jobs.models import JobMaster
@@ -203,7 +204,12 @@ class MappingTarget(models.Model):
 
     gff_line_type = models.CharField(default="gene", max_length=100)
 
-    user_id = models.IntegerField(blank=True, null=True)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='mapping_targets',
+        on_delete=models.CASCADE,
+        null=True
+    )
 
     private = models.BooleanField(default=False)
 

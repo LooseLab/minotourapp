@@ -6,6 +6,17 @@ import numpy as np
 import collections
 from functools import lru_cache
 import math
+import datetime
+
+
+def update_last_activity_time(flowcell):
+    """
+    Update the last activity date on the flowcell
+    :param flowcell: The flowcell to be updated
+    :return:
+    """
+    flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
+    flowcell.save()
 
 
 def _rstrip_tuple(s, chars):

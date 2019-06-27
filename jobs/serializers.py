@@ -6,6 +6,8 @@ from jobs.models import JobMaster, JobType
 from centrifuge.models import MappingTarget, CentrifugeOutput
 from reference.models import ReferenceInfo
 import datetime
+from pathlib import Path
+from django.conf import settings
 
 
 class JobMasterSerializer(serializers.ModelSerializer):
@@ -20,6 +22,9 @@ class JobMasterSerializer(serializers.ModelSerializer):
         default="N/A",
         source="reference.name"
     )
+    server_initiated = serializers.ReadOnlyField(
+        source="job_type.private"
+    )
 
     class Meta:
 
@@ -33,7 +38,8 @@ class JobMasterSerializer(serializers.ModelSerializer):
             "last_read",
             "read_count",
             "running",
-            "complete"
+            "complete",
+            "server_initiated"
         )
 
 
@@ -60,6 +66,11 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         if data['job_type'].id == 4 and data['reference'] is None:
 
             raise serializers.ValidationError("Reference is mandatory for task Minimap2")
+
+        if data['job_type'].id == 4:
+            if not Path.exists(Path(getattr(settings, "MINIMAP2", None))):
+                raise serializers.ValidationError("Minimap2 executable not found."
+                                                  " Please configure in the environmental variables file.")
 
         # If it is not metagenomics double check the target set is None
         if data["job_type"].id != 10:
