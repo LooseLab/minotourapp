@@ -137,6 +137,7 @@ def run_monitor():
             #     calculate_expected_benefit_3dot0_final.delay(flowcell_job.id)
 
             if flowcell_job.job_type.name == "Delete_Task":
+                # Delete a task
 
                 logger.info("Sending task Delete task - Flowcell id: {}, job_master id: {}".format(
                     flowcell.id,
