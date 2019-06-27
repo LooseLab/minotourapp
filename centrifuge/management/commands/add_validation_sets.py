@@ -3,6 +3,7 @@ add_gff3_set - add a set of locations from a gff file as target regions for the 
 """
 import pandas as pd
 from django.core.management.base import BaseCommand, CommandError
+from django.db.models import Q
 from ete3 import NCBITaxa
 from centrifuge.models import MappingTarget
 from reference.models import ReferenceInfo
@@ -40,14 +41,14 @@ def find_files_of_type(file_or_directory, file_extensions):
         return []
 
 
-def gff_create(row, species_name, tax_id, set_name, user_id, private):
+def gff_create(row, species_name, tax_id, set_name, user, private):
     """
     Create the model objects for the gff
     :param row: The row of the data-frame
     :param species_name: The name of the species these gff regions relate to
     :param tax_id: A dictionary with the tax_id as value, species name as key
     :param set_name: The name of the ste to include these reads in
-    :param user_id: The id of the user in the database
+    :param user: The model of the user in the database
     :param private: Whether or not to keep this target set private
     :return:
     """
@@ -64,7 +65,7 @@ def gff_create(row, species_name, tax_id, set_name, user_id, private):
         start=row["start"],
         end=row["end"],
         gff_line_type=row["type"],
-        user_id=user_id,
+        owner=user,
         private=private,
         defaults={"name": name},
     )
@@ -154,20 +155,19 @@ class Command(BaseCommand):
             # remove none from gff_files
             gff_files = list(filter(None.__ne__, gff_files))
 
+            user = Token.objects.get(key=options["key"]).user
+
             reference_list = list(
-                ReferenceInfo.objects.all().values_list("name", flat=True)
+                ReferenceInfo.objects.filter(Q(private=False) | Q(owner=user)).values_list("name", flat=True)
             )
 
             set_name_list = list(
                 MappingTarget.objects.all().values_list("target_set", flat=True)
             )
-
-            user_id = Token.objects.get(key=options["key"]).user_id
-
+            # Whether to make this target set visible to everyone
             private = options["private"]
 
             for gff_file in gff_files:
-                # Otherwise use the name of the Gff file
 
                 species_name = str(gff_file.stem).partition(".")[0].replace(" ", "_")
                 # If we have a set name provided
@@ -246,10 +246,10 @@ class Command(BaseCommand):
                 )
                 # If no provided name, add this placeholder
                 gff_df["name"] = gff_df["name"].fillna("no_provided_name")
-                # appl the gff_create function to all rows of the dataframe
+                # apply the gff_create function to all rows of the dataframe
                 gff_df.apply(
                     gff_create,
-                    args=(species_name, tax_id, set_name, user_id, private),
+                    args=(species_name, tax_id, set_name, user, private),
                     axis=1,
                 )
 

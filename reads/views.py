@@ -1169,7 +1169,12 @@ def flowcell_speed(request,pk):
 
 @api_view(['GET'])
 def flowcell_histogram_summary(request, pk):
-
+    """
+    TODO Document
+    :param request:
+    :param pk:
+    :return:
+    """
     barcode_name = request.GET.get('barcode_name', 'All reads')
 
     flowcell = Flowcell.objects.get(pk=pk)
@@ -1370,21 +1375,25 @@ def flowcell_run_basecalled_summary_html(request, pk):
 @api_view(['GET'])
 def flowcell_run_stats_latest(request, pk, checkid):
     """
-    TODO describe function
+    API endpoint for getting the live events chart data.
+    :param request: DRF request body
+    :param pk: The flowcell ID
+    :param checkid: Check ID is defaulted to 0 at this time
+    :return:
     """
     flowcell = Flowcell.objects.get(pk=pk)
-
+    # Get all the Minion Run status objects for this flowcell
     minion_run_status_list = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell)
-
+    # If we have more than 0
     if minion_run_status_list.count() > 0:
-
+        # Take the first entry to be the run status
         minion_run_status = minion_run_status_list[0]
 
     else:
 
         minion_run_status = None
+
     #Temporary work around to show all data.
-    #crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all(), id__gt=checkid)[:1000]
     crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all(), id__gt=checkid)
 
     result = []
@@ -1396,8 +1405,8 @@ def flowcell_run_stats_latest(request, pk, checkid):
             # "run_id": None,
             "sample_time": minion_run_stats.sample_time,
             "event_yield": minion_run_stats.event_yield,
-            "asic_temp": minion_run_stats.asic_temp,
-            "heat_sink_temp": minion_run_stats.heat_sink_temp,
+            "asic_temp": round(minion_run_stats.asic_temp, 2),
+            "heat_sink_temp": round(minion_run_stats.heat_sink_temp, 2),
             "voltage_value": minion_run_stats.voltage_value,
             # "mean_ratio": minion_run_stats.mean_ratio,
             "open_pore": minion_run_stats.open_pore,
@@ -1427,9 +1436,12 @@ def flowcell_run_stats_latest(request, pk, checkid):
         result.append(element)
 
     myresult = dict()
-    myresult['data']=result
+
+    myresult['data'] = result
+
     if minion_run_status:
         myresult['minKNOW_colours_string'] = minion_run_status.minKNOW_colours_string
+
     else:
         myresult['minKNOW_colours_string'] = None
 

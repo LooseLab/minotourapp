@@ -35,7 +35,6 @@ def get_or_create_tasks(request):
             tasks_list = JobMaster.objects.filter(flowcell__id=int(flowcell_id)).exclude(job_type__name="Other")
             # Serialise the data to a python object
             serializer = JobMasterSerializer(tasks_list, many=True)
-            print(serializer.data)
 
             result = {
                 "data": serializer.data
@@ -51,6 +50,12 @@ def get_or_create_tasks(request):
     else:
         # Check to see if we have a string as the flowcell, not an Int for a PK based lookup
         # This is for starting a job from the client
+
+        # If the job isn't EB or minimap2
+        if int(request.data["job_type"]) not in [4, 15]:
+
+            request.data["reference"] = None
+
         if type(request.data["flowcell"]) is str:
 
             try:
@@ -71,12 +76,17 @@ def get_or_create_tasks(request):
 
                     print("Exception: {}".format(e))
 
-                    return JsonResponse({'error_messages': "Exception: {}".format(e)}, status=500)
+                    return Response("Flowcell not found. Please contact server admin.", status=500)
 
         # For client side job starting, check if we have a reference and it's a string
         if "reference" in request.data.keys() and type(request.data["reference"]) is str:
 
             try:
+                # If a reference hasn't been selected.
+                if request.data["reference"] is "":
+                    return Response("Reference does not exist - Please select a reference",
+                                        status=500)
+
                 # Try to get the reference by name
                 reference = ReferenceInfo.objects.get(name=request.data["reference"])
 
@@ -94,7 +104,7 @@ def get_or_create_tasks(request):
 
                     print("Exception: {}".format(e))
 
-                    return JsonResponse({'error_messages': "Exception: {}".format(e)}, status=500)
+                    return Response("Reference not found Please contact server admin", status=500)
         # Serialise the data to a Django savable object
         serializer = JobMasterInsertSerializer(data=request.data)
 

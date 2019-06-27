@@ -69,6 +69,7 @@ class MTaskController {
                     taskTable.DataTable().ajax.reload();
 
                 } else {
+                    console.log(this);
                     // something went wrong
                     self._message.texto = 'Something went wrong. Please check the following message. ' + this.responseText;
                     // update the message element to show the error text
