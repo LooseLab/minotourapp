@@ -13,6 +13,18 @@ let benefitDetail;
 // showWidth is the maximum number of bases we can select to view on the master chart
 let showWidth = 250000;
 
+function draw_selected_chromsome(flowcellId, chromosome_chosen){
+    /*
+    Reload a new chromosomes data
+    */
+    $.getJSON('/api/v1/readuntil/benefitdata/master', {flowcellId, chromosome_chosen}, function (data) {
+        coverageScatterMaster.yAxis[0].setExtremes(0, data.coverage.ymax);
+        updateExistingChart(coverageScatterMaster, data.coverage.data, 0);
+
+    });
+}
+
+
 function create_eb_selection_box(flowcellId) {
     // For all the sel objects that finding the element by the sel class returned
     $('.sel').each(function () {
@@ -24,31 +36,33 @@ function create_eb_selection_box(flowcellId) {
         $.get("/api/v1/readuntil/benefitdata/chromosomes", {flowcellId}, function (chromosomes, statusText, xhr) {
             // if it's the first options clause
             if (xhr.status != 200) console.log("Error");
-            // add choose chromosome to start of array to be the placeholder
-
+            // If we're on our first drawing of the select spans
             let first_iteration = !document.getElementById("eb-placeholder");
-            console.log("first iteration is ");
-            console.log(first_iteration);
+            // The chromosomes we have that are already present
             let alreadyPresentChromo = [];
-
+            // If it is not our first drawing of it
             if (!first_iteration) {
+                // The already present chromosomes html elements
                 alreadyPresentChromo = [...$(".sel__box")[0].children];
+                // for each of the elements
                 alreadyPresentChromo.forEach(function(presChrom){
+                    // if the chromsome in already present chromsome is in the list of chromosomes fetched from the server
                     if (chromosomes.includes(presChrom.textContent)){
+                        // get the index,
                         let index = chromosomes.indexOf(presChrom.textContent);
+                        // remove it from the freshly fetched chromosomes
                         chromosomes.splice(index, 1);
-                    };
+                    }
                 });
-
+                // If there are no new chromosomes
                 if (!chromosomes.length){
-                    console.log("No new chromosomes");
                     return;
                 }
+            // if it is our first iteration
             } else {
+                // unshift choose chromosomes
                 chromosomes.unshift("Choose Chromosome");
             }
-                            console.log("chromosomes are ");
-                console.log(chromosomes);
 
 
             chromosomes.forEach(function (chromosome, index) {
@@ -89,12 +103,15 @@ function create_eb_selection_box(flowcellId) {
                 var txt = $(this).text();
                 var index = $(this).index();
 
+
                 $(this).siblings('.sel__box__options').removeClass('selected');
                 $(this).addClass('selected');
 
                 var $currentSel = $(this).closest('.sel');
                 $currentSel.children('.sel__placeholder').text(txt);
                 $currentSel.children('select').prop('selectedIndex', index + 1);
+
+                draw_selected_chromsome(flowcellId, txt);
 
 
             });
@@ -107,6 +124,7 @@ function create_eb_selection_box(flowcellId) {
 function updateExistingChart(chart, newSeries, index) {
     // Set the data on an existing series on a chart, either master or detail
     chart.series[index].setData(newSeries);
+
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -159,7 +177,12 @@ function createChart(targetDivId, ymax, title, chartType = "scatter", stepped = 
         legend: {
             enabled: legend
         },
-
+        tooltip: {
+            formatter: function () {
+            return 'The value for base <b>' + this.x +
+                '</b> is <b>' + this.y + '</b>';
+        }
+        },
         exporting: {"enabled": false},
 
         series: [{
@@ -347,12 +370,11 @@ function afterSelection(event) {
 
         // if successful request, set the detail charts to show the newly retrieve data
         if (xhr.status === 200) {
-            console.log(min, max);
-            console.log(Number.isInteger(min));
+
             coverageScatterDetail.xAxis[0].setExtremes(min, max);
+            coverageScatterDetail.yAxis[0].setExtremes(0, newSeriesDict.coverage.ymax);
             // coverageScatterDetail.xAxis[0].min = min;
             coverageScatterDetail.series[0].setData(newSeriesDict.coverage.data);
-            coverageScatterDetail.xAxis[0].max = max;
             coverageScatterDetail.hideLoading();
 
             // check if we have a reverse line already or not on the rolling benefit detail chart
@@ -366,6 +388,7 @@ function afterSelection(event) {
             // }
 
             benefitDetail.xAxis[0].setExtremes(min, max);
+            benefitDetail.yAxis[0].setExtremes(0, newSeriesDict.benefits.ymax);
             benefitDetail.series[0].setData(newSeriesDict.benefits.data);
             benefitDetail.hideLoading();
 
@@ -387,51 +410,53 @@ function afterSelection(event) {
 }
 
 // draw the charts, this is the function that is called in request data every 60 seconds
-function drawReadUntilCharts(chromsome) {
+function drawReadUntilCharts() {
     let flowcellId = document.querySelector("#flowcell-id").value;
     create_eb_selection_box(flowcellId);
-    $.getJSON('/api/v1/readuntil/benefitdata/master', {flowcellId}, function (data) {
-        if (!Highcharts.Series.prototype.renderCanvas) {
-            throw "Module not loaded";
+
+    if (!Highcharts.Series.prototype.renderCanvas) {
+        throw "Module not loaded";
+    }
+
+    // Select the coverage detail chart to see if it already exists
+    let coverageDetail = $("#coverageScatterDetail").highcharts();
+
+    let min, max;
+    // Wake up, Neo....
+    // The matrix has you
+    // Follow the white rabbit
+    console.time("scatter");
+
+    let startData = {"coverage": {"ymax": 1, "data":[0,1]}};
+    // If the coverage detail chart doesn't exist, draw it for the first time by calling the create master chart which has a callback that draws the other charts
+    if (coverageDetail === undefined) {
+        createCoverageMaster(startData, flowcellId);
+    } else {
+        // If the coverage detail chart does exist, update the existing charts
+        // Get the minimum and maximum values of the xAxis
+        min = coverageDetail.min;
+        max = coverageDetail.max;
+        // If min is not undefined, the charts are already displaying data, so update thew, otherwise we're good
+        if (min !== undefined) {
+            $.getJSON('/api/v1/readuntil/benefitdata/detail', {
+                min,
+                max,
+                flowcellId
+            }, function (newSeriesDict, statusText, xhr) {
+                updateExistingChart(coverageScatterMaster, data.coverage.data, 0);
+                updateExistingChart(coverageDetail, newSeriesDict.coverage.data, 0);
+                // updateExistingChart(matchScatterDetail, newSeriesDict.match.data, 0);
+                // updateExistingChart(mismatchScatterDetail, newSeriesDict.mismatch.data, 0);
+                // updateExistingChart(localBenefitDetail, newSeriesDict.localBenefit.data, 0);
+                // updateExistingChart(rollingBenefitLineDetail, newSeriesDict.rollingBenefitFwd.data, 0);
+                // updateExistingChart(rollingBenefitLineDetail, newSeriesDict.rollingBenefitRev.data, 1);
+                updateExistingChart(forwardMaskDetail, newSeriesDict.forwardMask.data, 0);
+                updateExistingChart(revMaskDetail, newSeriesDict.reverseMask.data, 0);
+            });
         }
 
-        // Select the coverage detail chart to see if it already exists
-        let coverageDetail = $("#coverageScatterDetail").highcharts();
-        let min, max;
-        // Wake up, Neo....
-        // The matrix has you
-        // Follow the white rabbit
-        console.time("scatter");
-        // If the coverage detail chart doesn't exist, draw it for the first time by calling the create master chart which has a callback that draws the other charts
-        if (coverageDetail === undefined) {
-            createCoverageMaster(data, flowcellId);
-        } else {
-            // If the coverage detail chart does exist, update the existing charts
-            // Get the minimum and maximum values of the xAxis
-            min = coverageDetail.min;
-            max = coverageDetail.max;
-            // If min is not undefined, the charts are already displaying data, so update the, otherwise we're good
-            if (min !== undefined) {
-                $.getJSON('/api/v1/readuntil/benefitdata/detail', {
-                    min,
-                    max,
-                    flowcellId
-                }, function (newSeriesDict, statusText, xhr) {
-                    updateExistingChart(coverageScatterMaster, data.coverage.data, 0);
-                    updateExistingChart(coverageDetail, newSeriesDict.coverage.data, 0);
-                    // updateExistingChart(matchScatterDetail, newSeriesDict.match.data, 0);
-                    // updateExistingChart(mismatchScatterDetail, newSeriesDict.mismatch.data, 0);
-                    // updateExistingChart(localBenefitDetail, newSeriesDict.localBenefit.data, 0);
-                    // updateExistingChart(rollingBenefitLineDetail, newSeriesDict.rollingBenefitFwd.data, 0);
-                    // updateExistingChart(rollingBenefitLineDetail, newSeriesDict.rollingBenefitRev.data, 1);
-                    updateExistingChart(forwardMaskDetail, newSeriesDict.forwardMask.data, 0);
-                    updateExistingChart(revMaskDetail, newSeriesDict.reverseMask.data, 0);
-                });
-            }
 
+    }
+    console.timeEnd("scatter");
 
-        }
-        console.timeEnd("scatter");
-
-    });
 }

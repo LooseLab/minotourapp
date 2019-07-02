@@ -37,7 +37,7 @@ def call_fetch_reads_alignment(runs, chunk_size, last_read):
         if len(fastq_df_barcode) >= chunk_size or len(reads) == 0:
             break
     # Update the read count with the number of reads we just fetched
-    read_count = len(fastq_df_barcode)
+    read_count = fastq_df_barcode.shape[0]
     return fastq_df_barcode, last_read, read_count, fasta_objects
 
 
