@@ -157,7 +157,7 @@ def get_benefit_data_detail(request):
     :param request: Contains the min and max x axis values in the body
     :return: a dictionary of the data from the pickle for all the detail charts
     """
-    # TODO just for one chromsome at the moment
+    # TODO just for one chromosome at the moment
     # The min and max values of the x axis
     # the minimum and maxiumum x coordinates for the detail graph
     mini = int(request.GET.get("min"))

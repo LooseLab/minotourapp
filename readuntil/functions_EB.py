@@ -369,9 +369,16 @@ def parse_cigar(cigar_string, read_string, chunk_length):
 
 
 def multi_array_results(ref_length):
+    """
+    Create a structured array to contain the counts of the nucleotide bases mapped to each position on the reference
+    :param ref_length: The length of the reference chromosome
+    :type ref_length: int
+    :return: A filled multi dimensional array, the length of the reference chromosome
+    """
     # multiply out a list to create as many copies as there are bases
     a = [tuple(0 for i in range(9))] * ref_length
-    # Create a structure data array with named data types - create 9 copies of the above list in a list, and make the structured array with them
+    # Create a structure data array with named data types - create 9 copies of the above list in a list,
+    # and make the structured array with them
     multi_arr = np.array([a for i in range(8)][0],
                          dtype=[("A", np.uint16), ("C", np.uint16), ("G", np.uint16), ("T", np.uint16), ("D", np.uint16,),
                                 ("I", np.uint16), ("IC", np.uint16), ("M", np.uint16), ("U", np.bool)])
@@ -380,6 +387,15 @@ def multi_array_results(ref_length):
 
 
 def initialise_priors_rory(reference, genotypes, theta=0.009, r=0.11, model="DNAhaplo"):
+    """
+
+    :param reference:
+    :param genotypes:
+    :param theta:
+    :param r:
+    :param model:
+    :return:
+    """
     if theta * (1.0 + r) > 1.0:
         print(
             "PROBLEM: theta too high or indel rate too high, almost all genome expected to be different from the reference"

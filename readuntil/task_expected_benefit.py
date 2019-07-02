@@ -18,7 +18,6 @@ from readuntil.models import ExpectedBenefitChromosomes
 logger = get_task_logger(__name__)
 
 
-@task()
 def run_eb_by_job_master(job_master_id):
     """
     The code to run the eb from the django command line
@@ -36,7 +35,19 @@ def run_eb_by_job_master(job_master_id):
         logger.info('Flowcell id: {} - Job master {} has no reference.'.format(job_master.flowcell.id, job_master.id))
 
 
-def populate_priors_dict(reference_count_dict, priors_dict, fp, genotypes, phi):
+def populate_priors_dict(reference_count_dict, priors_dict, fp, genotypes):
+    """
+    Populate the priors dictionary using the reference fasta file
+    :param reference_count_dict: The counts dictionary for each base
+    :type reference_count_dict: dict
+    :param priors_dict: The dictionary that contains the priors for each chromosome in the reference
+    :type priors_dict: dict
+    :param fp: The file handle for the reference fasta file
+    :type fp: file
+    :param genotypes: The nucleotide bases we want to include - namely A, C, G, T and D
+    :type genotypes: list
+    :return: tuple of filled priors_dict and reference_count_dict
+    """
     # # Use the reference to populate the priors dict
     for desc, name, seq, qual in readfq(fp):
         # Call multi array results to create a structured array of zeros the lneght of the reference,
@@ -71,8 +82,8 @@ def calculate_expected_benefit_3dot0_final(task_id):
     errWeird = 0.05
     theta = 0.009
     r = 0.11
-    lam = 4
-    m = 2
+    lam = 200
+    m = 198
     rho = 0.2
     alpha = 0.5
 
@@ -182,11 +193,11 @@ def calculate_expected_benefit_3dot0_final(task_id):
         if reference_info.filename.endswith(".gz"):
             with gzip.open(reference_path, "rt") as fp:
                 priors_dict, reference_count_dict = populate_priors_dict(reference_count_dict, priors_dict, fp,
-                                                                         genotypes, phi)
+                                                                         genotypes)
         else:
             with open(reference_path, "r") as fp:
                 priors_dict, reference_count_dict = populate_priors_dict(reference_count_dict, priors_dict, fp,
-                                                                         genotypes, phi)
+                                                                         genotypes)
 
         for i, record in enumerate(parse_PAF(StringIO(paf), fields=["qsn",
                                                                     "qsl",
@@ -488,12 +499,12 @@ def calculate_expected_benefit_3dot0_final(task_id):
         chromosomes_seen_now = chromosomes_seen_now - previously_known_chromosomes
 
         for chromosome_name in chromosomes_seen_now:
-            eb_chromosome = ExpectedBenefitChromosomes(task, chromdict[chromosome_name])
+            eb_chromosome = ExpectedBenefitChromosomes(task=task, chromosome=chromdict[chromosome_name])
             eb_chromosome.save()
 
-        task.running = False
-        task.last_read = last_read
-        task.read_count += chunk_size
-        task.iteration_count += 1
-        task.tempfile_name = "/tmp/benefit_results_dict.pickle"
-        task.save()
+    task.running = False
+    task.last_read = last_read
+    task.read_count += read_count
+    task.iteration_count += 1
+    task.tempfile_name = "/tmp/benefit_results_dict.pickle"
+    task.save()
