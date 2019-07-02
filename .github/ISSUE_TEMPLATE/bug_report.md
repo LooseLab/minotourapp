@@ -17,13 +17,13 @@ Steps to reproduce the behaviour:
 3. Scroll down to '....'
 4. See error
 
-**Expected behavior**
+**Expected behaviour**
 A clear and concise description of what you expected to happen.
 
 **Desktop (please complete the following information):**
  - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+ - Browser: [e.g. chrome, safari]
+ - Version: [e.g. 22]
 
 **Additional context**
 Add any other notes about the bug here.
