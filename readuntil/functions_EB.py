@@ -535,25 +535,25 @@ def calculate_read_benefits_fixed_read_length_rory(benefits_rory, lam, m):
     # Add the 0 array onto the end of the results array!
     read_benefits_rory_forward = np.concatenate((read_benefits_rory_forward, zero_benefit), axis=0)
 
-    ######### READ BENEFITS REVERSE ########
+    # ####### READ BENEFITS REVERSE ########
     # Create zeros for hard cut off at start, not enough read length?
-    read_benefits_rory_rev = np.zeros(m - 1)
-    # sum the first element as m is 2
-    partialS_rory_rev = benefits_rory[:m - 1].sum()
+    read_benefits_rory_rev = np.zeros(m-1)
+    # sum the elements that proceed m
+    partialS_rory_rev = benefits_rory[:m-1].sum()
     # Create the array that contains the elemnts that would have been in the for loop
-    rory_test_bens_rev = benefits_rory[m - 1:]
+    rory_test_bens_rev = benefits_rory[m-1:]
     # Prepend our partialS value to the start of the array
     rory_test_bens_rev = np.insert(rory_test_bens_rev, 0, partialS_rory_rev, axis=0)
     # Cumulatively sum the array
     partials1_rev = np.cumsum(rory_test_bens_rev)
     # Drop the first value
     partials1_rev = partials1_rev[1:]
-    # Get the values that met the condition in Nics for loop
-    cond_bens_rev = benefits_rory[:-1 - lam + m - 1]
+    # Get the values that met the condition in Nics 2nd for loop, excluding the m-1 zeros we have at the front
+    cond_bens_rev = benefits_rory[lam-m+1 + (m-1):]
     # Cumulataively sum them
     cond_bens_rev = np.cumsum(cond_bens_rev)
     # Subtract them from the array at the correct postion (In this case at the end)
-    partials1_rev[lam - 1:lam - 1 + cond_bens_rev.size] -= cond_bens_rev
+    partials1_rev[lam-m+1:lam-m+1+cond_bens_rev.size] -= cond_bens_rev
     # Concat our results to the results array
     read_benefits_rory_rev = np.concatenate((read_benefits_rory_rev, partials1_rev), axis=0)
 

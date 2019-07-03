@@ -375,7 +375,7 @@ def calculate_expected_benefit_3dot0_final(task_id):
                 remainder -= chunk_size
                 # if we have a remainder of 0 or less, we've covered the entire reference
                 if remainder <= 0:
-                    print("finished")
+                    print("finished this chromosome")
                     # Set the end slice for this final iteration as the last element index
                     end_slice = start_slice + -remainder
                     # No more chunks left, so break out of loop after this iteration
