@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from pathlib import Path
 from jobs.models import JobMaster
 import numpy as np
-from readuntil.utils import make_results_directory
+from readuntil.utils import get_or_create_results_directory
 from readuntil.models import ExpectedBenefitChromosomes
 
 
@@ -52,6 +52,10 @@ def remove_duplicate_sequences_numpy(array, master=False, minimum=None):
     """
     # Check we haven't accidentally sent a list
     if not isinstance(array, np.ndarray):
+        print(
+            f"Expecting Numpy array, received {type(array)}, converting "
+            f"to np.ndarray and removing duplicate sequences."
+        )
         array = np.array(array)
 
     # get width of selected window, starting at x coord and finishing at x coord + window width
@@ -65,22 +69,21 @@ def remove_duplicate_sequences_numpy(array, master=False, minimum=None):
 
     # Get largest value
     ymax = array.max()
-    # the last element, which we need to append onto our array with deleted duplicates
-    last_element = array[-1]
 
     a = array
-    # we're going to cut this off below, so we have to keep it to add it back on
-    last_index = a.size
     # create an index position, so we can draw the point above the correct base on the graph
-    index_position = np.arange(index_start, index_start + a.size, dtype=np.uint32)
+    index_position = np.arange(
+        index_start, index_start + a.size, dtype=np.uint32
+    )
     # Remove all the indexes where there is duplicated numbers in sequence
-    index_position = index_position[:-1][a[1:] != a[:-1]]
-    # Add the removed last element back on
-    index_position = np.append(index_position, last_index)
+
+    a = np.insert(a, 0, -1)
+
+    a = np.append(a, -1)
+
+    index_position = index_position[a[2:] != a[:-2]]
     # remove all the duplicate sequential values from the array of actual data values
-    a = a[:-1][a[1:] != a[:-1]]
-    # Add the truncated last element back on
-    a = np.append(a, last_element)
+    a = array[a[2:] != a[:-2]]
     # Create a list of tuples, with the x coord as first tuple element and the y value as second
     x_y_values = list(zip(index_position, a))
 
@@ -124,14 +127,22 @@ def get_benefit_data_master(request):
     """
     flowcell_id = request.GET.get("flowcellId")
 
-    latest_eb_task = JobMaster.objects.filter(job_type__name="ExpectedBenefit", flowcell_id=flowcell_id).last().id
+    latest_eb_task = (
+        JobMaster.objects.filter(
+            job_type__name="ExpectedBenefit", flowcell_id=flowcell_id
+        )
+        .last()
+        .id
+    )
 
-    basepath = make_results_directory(flowcell_id, latest_eb_task)
+    basepath = get_or_create_results_directory(flowcell_id, latest_eb_task)
 
     chromosome = request.GET.get("chromosome", "NC_003210.1")
 
     # The path to the coverage array for this chromosome
-    coverage_path = Path(f"{basepath}/coverage_{chromosome}_{flowcell_id}_{latest_eb_task}.dat")
+    coverage_path = Path(
+        f"{basepath}/coverage_{chromosome}_{flowcell_id}_{latest_eb_task}.dat"
+    )
 
     try:
         with open(coverage_path, "rb") as fh:
@@ -141,11 +152,14 @@ def get_benefit_data_master(request):
         Response("File not found", status=404)
         raise e
     # Remove duplicate elements in series
-    x_y_cov, xmax_cov, ymax_cov = remove_duplicate_sequences_numpy(coverage, True)
+    x_y_cov, xmax_cov, ymax_cov = remove_duplicate_sequences_numpy(
+        coverage, True
+    )
 
     # The return dictionary
-    data_dict = {"coverage": {"xmax": xmax_cov, "ymax": ymax_cov, "data": x_y_cov},
-                 }
+    data_dict = {
+        "coverage": {"xmax": xmax_cov, "ymax": ymax_cov, "data": x_y_cov}
+    }
 
     return Response(data_dict)
 
@@ -157,7 +171,7 @@ def get_benefit_data_detail(request):
     :param request: Contains the min and max x axis values in the body
     :return: a dictionary of the data from the pickle for all the detail charts
     """
-    # TODO just for one chromosome at the moment
+    # TODO Refactor to be in for loop so it's DRYER
     # The min and max values of the x axis
     # the minimum and maxiumum x coordinates for the detail graph
     mini = int(request.GET.get("min"))
@@ -167,69 +181,202 @@ def get_benefit_data_detail(request):
 
     chromosome = request.GET.get("chromosome", "NC_003210.1")
 
-    latest_eb_task = JobMaster.objects.filter(job_type__name="ExpectedBenefit", flowcell_id=flowcell_id).last().id
+    latest_eb_task = (
+        JobMaster.objects.filter(
+            job_type__name="ExpectedBenefit", flowcell_id=flowcell_id
+        )
+        .last()
+        .id
+    )
     # the base path to the directory that we have stored the binary files in
-    basepath = make_results_directory(flowcell_id, latest_eb_task)
+    basepath = get_or_create_results_directory(flowcell_id, latest_eb_task)
     # the paths to each array
     coverage_path = Path(
-        f"{basepath}/coverage_{chromosome}_{flowcell_id}_{latest_eb_task}.dat")
+        f"{basepath}/coverage_{chromosome}_{flowcell_id}_{latest_eb_task}.dat"
+    )
 
     counts_path = Path(
-        f"{basepath}/counts_{chromosome}_{flowcell_id}_{latest_eb_task}.dat")
+        f"{basepath}/counts_{chromosome}_{flowcell_id}_{latest_eb_task}.dat"
+    )
 
     benefits_path = Path(
-        f"{basepath}/benefits_{chromosome}_{flowcell_id}_{latest_eb_task}.dat")
+        f"{basepath}/benefits_{chromosome}_{flowcell_id}_{latest_eb_task}.dat"
+    )
 
     mask_path_forward = Path(
-        f"{basepath}/mask_forward_{chromosome}_{flowcell_id}_{latest_eb_task}.dat")
+        f"{basepath}/mask_forward_{chromosome}_{flowcell_id}_{latest_eb_task}.dat"
+    )
 
     mask_path_reverse = Path(
-        f"{basepath}/mask_reverse_{chromosome}_{flowcell_id}_{latest_eb_task}.dat")
+        f"{basepath}/mask_reverse_{chromosome}_{flowcell_id}_{latest_eb_task}.dat"
+    )
+
+    scores_forward_path = Path(
+        f"{basepath}/scores_forward_{chromosome}_{flowcell_id}_{latest_eb_task}.dat"
+    )
+
+    scores_reverse_path = Path(
+        f"{basepath}/scores_reverse_{chromosome}_{flowcell_id}_{latest_eb_task}.dat"
+    )
+
+    cost_forward_path = Path(
+        f"{basepath}/cost_forward_{chromosome}_{flowcell_id}_{latest_eb_task}.dat"
+    )
+
+    cost_reverse_path = Path(
+        f"{basepath}/cost_reverse_{chromosome}_{flowcell_id}_{latest_eb_task}.dat"
+    )
+
+    fixed_ben_forward_path = Path(
+        f"{basepath}/fixed_benefits_forward{chromosome}_{flowcell_id}_{latest_eb_task}.dat"
+    )
+
+    fixed_ben_reverse_path = Path(
+        f"{basepath}/fixed_benefits_reverse{chromosome}_{flowcell_id}_{latest_eb_task}.dat"
+    )
 
     # the file path and data type we need as a tuple
-    file_path_list = [(coverage_path, np.uint16), (counts_path, [("A", np.uint16), ("C", np.uint16),
-                                                                 ("G", np.uint16), ("T", np.uint16), ("D", np.uint16,),
-                                                                 ("I", np.uint16), ("IC", np.uint16),
-                                                                 ("M", np.uint16), ("U", np.bool)]),
-                      (benefits_path, np.float64),
-                      (mask_path_forward, np.bool),
-                      (mask_path_reverse, np.bool)]
+    file_path_list = [
+        (coverage_path, np.uint16),
+        (
+            counts_path,
+            [
+                ("A", np.uint16),
+                ("C", np.uint16),
+                ("G", np.uint16),
+                ("T", np.uint16),
+                ("D", np.uint16),
+                ("I", np.uint16),
+                ("IC", np.uint16),
+                ("M", np.uint16),
+                ("U", np.bool),
+            ],
+        ),
+        (benefits_path, np.float64),
+        (mask_path_forward, np.int8),
+        (mask_path_reverse, np.int8),
+        (scores_forward_path, np.float64),
+        (scores_reverse_path, np.float64),
+        (cost_forward_path, np.float64),
+        (cost_reverse_path, np.float64),
+        (fixed_ben_forward_path, np.float64),
+        (fixed_ben_reverse_path, np.float64),
+    ]
     # use these strings as a key
-    file_contents = ["coverage", "counts", "benefits", "mask_forward", "mask_reverse"]
+    file_contents = [
+        "coverage",
+        "counts",
+        "benefits",
+        "mask_forward",
+        "mask_reverse",
+        "scores_forward",
+        "scores_reverse",
+        "costs_forward",
+        "costs_reverse",
+        "fixed_ben_forward",
+        "fixed_ben_reverse",
+    ]
     # Get a list with a dictionary of all the numpy arrays
     data_dict = {}
 
     # We're gonna use the numpy memmap to read only the part of the array we need
     for index, file_path_or_dtype in enumerate(file_path_list):
         # Create a key matching the contents of this value
-        data_dict[file_contents[index]] = np.memmap(file_path_or_dtype[0],
-                                                    dtype=file_path_or_dtype[1])[mini:maxi]
+        data_dict[file_contents[index]] = np.memmap(
+            file_path_or_dtype[0], dtype=file_path_or_dtype[1]
+        )[mini:maxi]
         print()
 
     # # Remove the duplicate values until a change in the array
-    x_y_cov, xmax_cov, ymax_cov = remove_duplicate_sequences_numpy(data_dict["coverage"],
-                                                                   minimum=mini)
+    x_y_cov, xmax_cov, ymax_cov = remove_duplicate_sequences_numpy(
+        data_dict["coverage"], minimum=mini
+    )
     # # Remove the duplicate values until a change in the array, on array with numpy nans removed
     x_y_benefit, xmax_benefit, ymax_benefit = remove_duplicate_sequences_numpy(
-        np.nan_to_num(data_dict["benefits"], copy=False),
-        minimum=mini)
+        np.nan_to_num(data_dict["benefits"], copy=False), minimum=mini
+    )
     # # Remove the duplicate values until a change in the array
-    x_y_fwd_mask, xmax_fwd_mask, ymax_fwd_mask = remove_duplicate_sequences_numpy(data_dict["mask_forward"],
-                                                                                  minimum=mini)
+    x_y_fwd_mask, xmax_fwd_mask, ymax_fwd_mask = remove_duplicate_sequences_numpy(
+        data_dict["mask_forward"], minimum=mini
+    )
     print(xmax_cov)
     # Remove the duplicate values until a change in the array
-    x_y_rev_mask, xmax_rev_mask, ymax_rev_mask = remove_duplicate_sequences_numpy(data_dict["mask_reverse"],
-                                                                                  minimum=mini)
+    x_y_rev_mask, xmax_rev_mask, ymax_rev_mask = remove_duplicate_sequences_numpy(
+        data_dict["mask_reverse"], minimum=mini
+    )
 
-    data_dict = {"coverage": {"xmax": xmax_cov, "ymax": ymax_cov, "data": x_y_cov},
+    x_y_fwd_scores, xmax_fwd_scores, ymax_fwd_scores = remove_duplicate_sequences_numpy(
+        np.nan_to_num(data_dict["scores_forward"], copy=False), minimum=mini
+    )
 
-                 "forwardMask": {"xmax": xmax_fwd_mask, "ymax": ymax_fwd_mask,
-                                 "data": x_y_fwd_mask},
-                 "reverseMask": {"xmax": xmax_rev_mask, "ymax": ymax_rev_mask,
-                                 "data": x_y_rev_mask},
-                 "benefits": {"xmax": xmax_benefit, "ymax": ymax_benefit,
-                              "data": x_y_benefit}
-                 }
+    x_y_rev_scores, xmax_rev_scores, ymax_rev_scores = remove_duplicate_sequences_numpy(
+        np.nan_to_num(data_dict["scores_reverse"], copy=False), minimum=mini
+    )
+
+    x_y_fwd_costs, xmax_fwd_costs, ymax_fwd_costs = remove_duplicate_sequences_numpy(
+        np.nan_to_num(data_dict["costs_forward"], copy=False), minimum=mini
+    )
+
+    x_y_rev_costs, xmax_rev_costs, ymax_rev_costs = remove_duplicate_sequences_numpy(
+        np.nan_to_num(data_dict["costs_reverse"], copy=False), minimum=mini
+    )
+
+    x_y_fwd_fix_ben, xmax_fwd_fix_ben, ymax_fwd_fix_ben = remove_duplicate_sequences_numpy(
+        np.nan_to_num(data_dict["fixed_ben_forward"], copy=False), minimum=mini
+    )
+
+    x_y_rev_fix_ben, xmax_rev_fix_ben, ymax_rev_fix_ben = remove_duplicate_sequences_numpy(
+        np.nan_to_num(data_dict["fixed_ben_reverse"], copy=False), minimum=mini
+    )
+
+    data_dict = {
+        "coverage": {"xmax": xmax_cov, "ymax": ymax_cov, "data": x_y_cov},
+        "forwardMask": {
+            "xmax": xmax_fwd_mask,
+            "ymax": ymax_fwd_mask,
+            "data": x_y_fwd_mask,
+        },
+        "reverseMask": {
+            "xmax": xmax_rev_mask,
+            "ymax": ymax_rev_mask,
+            "data": x_y_rev_mask,
+        },
+        "benefits": {
+            "xmax": xmax_benefit,
+            "ymax": ymax_benefit,
+            "data": x_y_benefit,
+        },
+        "scoresFwd": {
+            "xmax": xmax_fwd_scores,
+            "ymax": ymax_fwd_scores,
+            "data": x_y_fwd_scores,
+        },
+        "scoresRev": {
+            "xmax": xmax_rev_scores,
+            "ymax": ymax_rev_scores,
+            "data": x_y_rev_scores,
+        },
+        "costsFwd": {
+            "xmax": xmax_fwd_costs,
+            "ymax": ymax_fwd_costs,
+            "data": x_y_fwd_costs,
+        },
+        "costsRev": {
+            "xmax": xmax_rev_costs,
+            "ymax": ymax_rev_costs,
+            "data": x_y_rev_costs,
+        },
+        "fixBenFwd": {
+            "xmax": xmax_fwd_fix_ben,
+            "ymax": ymax_fwd_fix_ben,
+            "data": x_y_fwd_fix_ben,
+        },
+        "fixBenRev": {
+            "xmax": xmax_rev_fix_ben,
+            "ymax": ymax_rev_fix_ben,
+            "data": x_y_rev_fix_ben,
+        },
+    }
 
     return Response(data_dict)
 
@@ -243,13 +390,12 @@ def get_chromosomes(request):
     """
     flowcell_id = request.GET.get("flowcellId")
     # get the django ORM object for the latest EB task
-    latest_eb_task = JobMaster.objects.filter(job_type__name="ExpectedBenefit", flowcell_id=flowcell_id).last()
+    latest_eb_task = JobMaster.objects.filter(
+        job_type__name="ExpectedBenefit", flowcell_id=flowcell_id
+    ).last()
     # Get all the chromosome names we have attached to this task that we have results for
     chromosome_names = ExpectedBenefitChromosomes.objects.filter(
-        task=latest_eb_task).values_list(
-        "chromosome__line_name", flat=True)
+        task=latest_eb_task
+    ).values_list("chromosome__line_name", flat=True)
 
     return Response(list(chromosome_names))
-
-
-

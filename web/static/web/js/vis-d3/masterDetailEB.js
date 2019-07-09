@@ -1,10 +1,12 @@
 // Initialise the plots so they are global variables
 let coverageScatterDetail;
 let coverageScatterMaster;
-let matchScatterDetail;
-let mismatchScatterDetail;
-let localBenefitDetail;
-let rollingBenefitLineDetail;
+let costForwardScatterDetail;
+let costReverseScatterDetail;
+let fixedBenefitForwardDetail;
+let fixedBenefitReverseDetail;
+let scoresReverseDetail;
+let scoresForwardDetail;
 let forwardMaskDetail;
 let revMaskDetail;
 let benefitDetail;
@@ -22,6 +24,29 @@ function draw_selected_chromsome(flowcellId, chromosome_chosen){
         updateExistingChart(coverageScatterMaster, data.coverage.data, 0);
 
     });
+}
+
+function update_axes_and_data(chart, min, max, data, ymax){
+    // Set the xAxis extremes to the newly selected values
+    chart.xAxis[0].setExtremes(min, max);
+    // if we need to update the yaxis as well
+    if(ymax && data.ymax < 0){
+        // if we have a ymax below 0 we need to flip the yaxis so negative at x axis and 0 at top
+        console.log(chart);
+        console.log(data.ymax-1);
+        chart.yAxis[0].setExtremes(data.ymax, 0);
+    }
+    else if (ymax){
+        // set the yAxisextremes
+        chart.yAxis[0].setExtremes(0, data.ymax);
+    }
+    // set the data for the chart to display
+    chart.series[0].setData(data.data);
+    // update the axes
+    chart.xAxis[0].update();
+
+    // hide the loading screen
+    chart.hideLoading();
 }
 
 
@@ -299,10 +324,10 @@ function createCoverageMaster(data, flowcellId) {
         ////////////////////////////////////////////////////////////
         coverageScatterDetail = createChart("coverageScatterDetail", data.coverage.ymax, "Coverage");
         benefitDetail = createChart("benefitDetail", 1, "Benefits");
-        // matchScatterDetail = createChart("matchScatterDetail", data.match.ymax, "Matches");
-        // mismatchScatterDetail = createChart("mismatchScatterDetail", data.mismatch.ymax, "Mismatches");
-        // localBenefitDetail = createChart("localBenScatterDetail", data.localBen.ymax, "Local benefit");
-        // rollingBenefitLineDetail = createChart("rollingBenefitLineDetail", data.forwardRoll.ymax, "Rolling benefit", "line", false, true);
+        costForwardScatterDetail = createChart("costForwardScatterDetail", 1, "Forward cost", "line");
+        costReverseScatterDetail = createChart("costReverseScatterDetail", 1, "Reverse cost", "line");
+        scoresForwardDetail = createChart("scoresForwardDetail", 1, "Forward scores");
+        scoresReverseDetail = createChart("scoresReverseDetail", 1, "Reverse scores");
         forwardMaskDetail = createChart("maskStepLineFwdDetail", 1, "Forward mask", "line", true);
         revMaskDetail = createChart("maskStepLineRevDetail", 1, "Reverse mask", "line", true);
     });
@@ -352,14 +377,13 @@ function afterSelection(event) {
     });
 
     // Show the loading screen on the detail charts
-    coverageScatterDetail.showLoading('Fetching data from the server');
-    benefitDetail.showLoading('Fetching data from the server');
-    // matchScatterDetail.showLoading('Fetching data from the server');
-    // mismatchScatterDetail.showLoading('Fetching data from the server');
-    // localBenefitDetail.showLoading('Fetching data from the server');
-    // rollingBenefitLineDetail.showLoading('Fetching data from the server');
-    forwardMaskDetail.showLoading('Fetching data from the server');
-    revMaskDetail.showLoading('Fetching data from the server');
+    let charts = [coverageScatterDetail, benefitDetail, costForwardScatterDetail,
+        costReverseScatterDetail,forwardMaskDetail, forwardMaskDetail,
+        scoresForwardDetail, scoresReverseDetail];
+
+    charts.forEach(function (chart) {
+        chart.showLoading('Fetching data from the server');
+    });
 
     // Get the detail chart data for the zoom selection from the server
     $.getJSON('/api/v1/readuntil/benefitdata/detail', {
@@ -371,35 +395,21 @@ function afterSelection(event) {
         // if successful request, set the detail charts to show the newly retrieve data
         if (xhr.status === 200) {
 
-            coverageScatterDetail.xAxis[0].setExtremes(min, max);
-            coverageScatterDetail.yAxis[0].setExtremes(0, newSeriesDict.coverage.ymax);
-            // coverageScatterDetail.xAxis[0].min = min;
-            coverageScatterDetail.series[0].setData(newSeriesDict.coverage.data);
-            coverageScatterDetail.hideLoading();
+            update_axes_and_data(coverageScatterDetail, min, max, newSeriesDict.coverage, true);
 
-            // check if we have a reverse line already or not on the rolling benefit detail chart
-            // if (rollingBenefitLineDetail.series[1] === undefined){
-            //     // if there is no line, add a new series to the forward reverse rolling benefit line for the reverse line data
-            //     rollingBenefitLineDetail.addSeries({name: "Reverse rolling benefit",
-            //     data:newSeriesDict.rollingBenefitRev.data, "color": "gold"});
-            // } else {
-            //     // if there is a line, update the already existing series on the forward line chart
-            //     rollingBenefitLineDetail.series[1].setData(newSeriesDict.rollingBenefitRev.data);
-            // }
+            update_axes_and_data(benefitDetail, min, max, newSeriesDict.benefits, true);
 
-            benefitDetail.xAxis[0].setExtremes(min, max);
-            benefitDetail.yAxis[0].setExtremes(0, newSeriesDict.benefits.ymax);
-            benefitDetail.series[0].setData(newSeriesDict.benefits.data);
-            benefitDetail.hideLoading();
+            update_axes_and_data(forwardMaskDetail, min, max, newSeriesDict.forwardMask, false);
 
+            update_axes_and_data(revMaskDetail, min, max, newSeriesDict.reverseMask, false);
 
-            forwardMaskDetail.xAxis[0].setExtremes(min, max);
-            forwardMaskDetail.series[0].setData(newSeriesDict.forwardMask.data);
-            forwardMaskDetail.hideLoading();
+            update_axes_and_data(costForwardScatterDetail, min, max, newSeriesDict.costsFwd, true);
 
-            revMaskDetail.series[0].setData(newSeriesDict.reverseMask.data);
-            revMaskDetail.xAxis[0].setExtremes(min, max);
-            revMaskDetail.hideLoading();
+            update_axes_and_data(costReverseScatterDetail, min, max, newSeriesDict.costsRev, true);
+
+            update_axes_and_data(scoresForwardDetail, min, max, newSeriesDict.scoresFwd, true);
+
+            update_axes_and_data(scoresReverseDetail, min, max, newSeriesDict.scoresRev, true);
 
         } else {
             throw "Request error";
@@ -445,7 +455,11 @@ function drawReadUntilCharts() {
             }, function (newSeriesDict, statusText, xhr) {
                 updateExistingChart(coverageScatterMaster, data.coverage.data, 0);
                 updateExistingChart(coverageDetail, newSeriesDict.coverage.data, 0);
-                // updateExistingChart(matchScatterDetail, newSeriesDict.match.data, 0);
+                updateExistingChart(costForwardScatterDetail, newSeriesDict.costsFwd.data, 0);
+                updateExistingChart(costReverseScatterDetail, newSeriesDict.costsRev.data, 0);
+                updateExistingChart(scoresForwardDetail, newSeriesDict.scoresFwd.data, 0);
+                updateExistingChart(scoresReverseDetail, newSeriesDict.scoresRev.data, 0);
+                // updateExistingChart(costScatterDetail, newSeriesDict.match.data, 0);
                 // updateExistingChart(mismatchScatterDetail, newSeriesDict.mismatch.data, 0);
                 // updateExistingChart(localBenefitDetail, newSeriesDict.localBenefit.data, 0);
                 // updateExistingChart(rollingBenefitLineDetail, newSeriesDict.rollingBenefitFwd.data, 0);

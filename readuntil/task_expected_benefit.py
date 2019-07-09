@@ -284,7 +284,7 @@ def calculate_expected_benefit_3dot0_final(task_id):
                 record.tags.get("cg", None), fastq_read.sequence, mapping_length
             )
             # Adds the mismatch count to the temporary dict, parsing the MD string
-            d["M"] = np.fromiter(parse_MD(record.tags.get("MD", None)), np.int16)
+            d["M"] = np.fromiter(parse_MD(record.tags.get("MD", None)), np.uint16)
 
             # If the chromosome is not already a key in chrom dict, add it, with a 1 by 9 multidimensinal array,
             #  filled with zeros, the length of the reference, it should be there already but best to check
@@ -321,6 +321,10 @@ def calculate_expected_benefit_3dot0_final(task_id):
             cost_forward_path = Path(f"{base_result_dir_path}/cost_forward_{chrom_key}_{flowcell.id}_{task.id}.dat")
             cost_reverse_path = Path(f"{base_result_dir_path}/cost_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat")
             benefit_path = Path(f"{base_result_dir_path}/benefits_{chrom_key}_{flowcell.id}_{task.id}.dat")
+            fixed_ben_forward_path = Path(f"{base_result_dir_path}/fixed_benefits_forward{chrom_key}"
+                                          f"_{flowcell.id}_{task.id}.dat")
+            fixed_ben_reverse_path = Path(f"{base_result_dir_path}/fixed_benefits_reverse{chrom_key}"
+                                          f"_{flowcell.id}_{task.id}.dat")
 
             ############################################################################
             # ###################### read in the Counts ############################ #
@@ -384,6 +388,7 @@ def calculate_expected_benefit_3dot0_final(task_id):
                 else:
                     # Set the end slice plus how many bases we have in this iteration
                     end_slice = start_slice + chunk_size
+
                 # Get the posteriors for this chunk of the reference in a numpy array
                 posteriors_chunk = priors_dict[chrom_key]["posteriors"][
                                    start_slice:end_slice
@@ -397,16 +402,31 @@ def calculate_expected_benefit_3dot0_final(task_id):
                 priors_dict[chrom_key]["posteriors"][
                 start_slice:end_slice
                 ] = update_posteriors_notts(posteriors_chunk, counts_chunk, phi)
+                # update start size to index of the beginning of the next chunk
+                start_slice += chunk_size
 
             # we have update all the chromosome in the while loop, so now we update the benefits
             priors_dict[chrom_key]["benefits"] = position_benefit_rory(
                 priors_dict[chrom_key]["posteriors"], phi
             )
+            # print(f"Benefits {priors_dict[chrom_key]['benefits']}")
+            # print_a = priors_dict[chrom_key]['benefits']
+            # print(f"Benefits zero size is {print_a[print_a==0].size}")
+            # print(f"Benefits NaN size is {print_a[print_a==np.NaN].size} \n")
 
             # Calculate the fixed read lengths benefit - could use some clarification on how this works
             read_benefits_f, read_benefits_r = calculate_read_benefits_fixed_read_length_rory(
                 priors_dict[chrom_key]["benefits"], lam, m
             )
+            # print(f"Benefits fixed forward {read_benefits_f}")
+            # print_a = read_benefits_f
+            # print(f"Benefits fixed zero size is {print_a[print_a==0].size}")
+            # print(f"Benefits fixed NaN size is {print_a[print_a==np.NaN].size} \n")
+            #
+            # print(f"Benefits fixed rev {read_benefits_r}")
+            # print_a = read_benefits_r
+            # print(f"Benefits fixed zero size is {print_a[print_a==0].size}")
+            # print(f"Benefits fixed NaN size is {print_a[print_a==np.NaN].size} \n")
             # Calculate the m part of the read benefits of read lengths
             m_read_benefits_f, m_read_benefits_r = calculate_read_benefits_fixed_read_length_rory(
                 priors_dict[chrom_key]["benefits"], m, m
@@ -436,18 +456,18 @@ def calculate_expected_benefit_3dot0_final(task_id):
 
             with open(coverage_path, "wb") as fh:
                 fh.write(coverage.data)
-
+            #del coverage
             # ################################################################ #
             # ################### Write out mask arrays ################## #
             ####################################################################
             # Forward ##########################################################
             with open(mask_path_forward, "wb") as fhm:
                 fhm.write(accept_f.data)
-
+            #del accept_f
             # Reverse ##########################################################
             with open(mask_path_reverse, "wb") as fhm:
                 fhm.write(accept_r.data)
-
+            #del accept_r
             ####################################################################
 
             # ################################################################ #
@@ -463,8 +483,44 @@ def calculate_expected_benefit_3dot0_final(task_id):
 
             with open(benefit_path, "wb") as fhb:
                 fhb.write(priors_dict[chrom_key]["benefits"].data)
-
+            #del priors_dict[chrom_key]["benefits"]
             ####################################################################
+
+            # ################################################################ #
+            # ################### Write out costs arrays ##################### #
+            ####################################################################
+
+            with open(cost_forward_path, "wb") as fhcost:
+                fhcost.write(costs_f.data)
+            #del costs_f
+            # Reverse ##########################################################
+
+            with open(cost_reverse_path, "wb") as fhcost:
+                fhcost.write(costs_r.data)
+            #del costs_r
+            # ################################################################ #
+            # ################### Write out scores arrays #################### #
+            ####################################################################
+
+            with open(scores_forward_path, "wb") as fhscores:
+                fhscores.write(scores_f.data)
+
+            # Reverse ##########################################################
+
+            with open(scores_reverse_path, "wb") as fhscores:
+                fhscores.write(scores_r.data)
+
+            # ################################################################ #
+            # ################### Write out fixed benefit #################### #
+            ####################################################################
+
+            with open(fixed_ben_forward_path, "wb") as fhbf:
+                fhbf.write(read_benefits_f.data)
+
+            # Reverse ##########################################################
+
+            with open(fixed_ben_reverse_path, "wb") as fhbr:
+                fhbr.write(read_benefits_r.data)
 
         with open(Path("/home/rory/data/test_dict.pickle"), "wb") as fh:
             pickle.dump(priors_dict, fh, pickle.HIGHEST_PROTOCOL)

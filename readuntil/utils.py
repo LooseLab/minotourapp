@@ -4,7 +4,7 @@ Useful functions for this app
 from pathlib import Path
 
 
-def make_results_directory(flowcell_id, task_id):
+def get_or_create_results_directory(flowcell_id, task_id):
     """
     Make directory to store results of this task
     :param flowcell_id: The ID of the flowcell that produced these fastqs
