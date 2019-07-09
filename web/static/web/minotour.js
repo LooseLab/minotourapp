@@ -39,25 +39,6 @@ function check_minotour_version() {
 }
 
 
-function check_user_runs() {
-    var url = "/api/v1/runs/";
-
-    $.getJSON(url, function (data) {
-        var items = [];
-        $.each(data, function (key, val) {
-            items.push("<li id=" + key + "><a href='/web/private/runs/" + val.id + "'>" + val.run_name + "</a></li>");
-        });
-
-        var text = "<span>You have " + data.length + " minION runs available to view.</span>";
-        text += "<ul>";
-        text += items.join("");
-        text += "</ul>";
-
-        $("#div-user-runs").html(text);
-    });
-}
-
-
 function makeColumnChart(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.chart(divName, {
         chart: {
