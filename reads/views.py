@@ -51,6 +51,29 @@ from reads.utils import get_coords
 logger = get_task_logger(__name__)
 
 
+@api_view(["POST"])
+def reactivate_flowcell(request):
+    """
+    reactivate a flowcell manually - sent form the tasks tab via the mTaskController
+    :param request: the post request body
+    :return:
+    """
+
+    flowcell_id = request.data["flowcell"]
+
+    flowcell = Flowcell.objects.get(pk=flowcell_id)
+
+    if flowcell.active():
+
+        return Response("Error - Flowcell already active", status=405)
+
+    flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
+
+    flowcell.save()
+
+    return Response("Flowcell last activity date successfully updated", status=200)
+
+
 @api_view(['GET'])
 def read_type_list(request):
     """
@@ -232,6 +255,7 @@ def run_list(request):
         if serializer.is_valid():
 
             serializer.save(owner=request.user)
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

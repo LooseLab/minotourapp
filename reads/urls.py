@@ -149,7 +149,7 @@ urlpatterns = [
         views.flowcell_list,
         name="flowcell-list"),
     url(
-        r'^api/v1/flowcells/(?P<pk>[0-9A-Za-z-_]+)/$',
+        r'^api/v1/flowcells/(?P<pk>[0-9-_]+)/$',
         views.flowcell_detail,
         name="flowcell-detail"),
     url(  # TODO delete?
@@ -238,5 +238,10 @@ urlpatterns = [
         r'^flowcells/(?P<pk>[0-9]+)/minknow_messages_html/$',
         views.minknow_message_list_by_flowcell,
         name="minknow-message-list-by-flowcell"
+    ),
+    url(
+        r'^api/v1/flowcells/reactivate/$',
+        views.reactivate_flowcell,
+        name="reactivate_flowcell"
     ),
 ]
