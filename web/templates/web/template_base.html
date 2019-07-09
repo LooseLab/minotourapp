@@ -22,7 +22,6 @@
     <!-- Ionicons -->
 {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css">#}
     <link rel="stylesheet" href="{% static 'web/libraries/ionicons-master/docs/v2/css/ionicons.min.css' %}">
-{#    TODO find serveable ioncicons library#}
     <!-- Theme style -->
     <link rel="stylesheet" href="{% static 'web/dist/css/AdminLTE.min.css' %}">
     <!-- AdminLTE Skins. We have chosen the skin-blue for this starter
@@ -39,8 +38,7 @@
     <link rel="stylesheet" href="{% static 'web/css/loader.css' %}">
 
     <!-- jQuery 2.2.3 -->
-    <!--<script src="{% static 'web/plugins/jQuery/jquery-2.2.3.min.js' %}"></script>-->
-    <script src="{% static 'web/libraries/jquery-3.3.1.js' %}"></script>
+    <script src="{% static 'web/libraries/jquery-3.3.1.min.js' %}?{% now 'c' %}"></script>
 
 {#    <script src="{% static 'web/libraries/html5shiv-master ' %}"></script>#}
 {#    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>#}
