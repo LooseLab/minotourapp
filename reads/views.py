@@ -158,7 +158,6 @@ def events_type_detail(request, pk): # TODO consider removing
     return Response(serializer.data)
 
 
-
 @api_view(['GET'])
 def fastq_detail(request,pk):
     """
@@ -1799,6 +1798,7 @@ def read_list_new(request):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         '''
+
 
 @task(rate_limit="100/m")
 def save_reads(data):

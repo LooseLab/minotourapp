@@ -1,20 +1,4 @@
 <div class="row">
-    <div id="messageViewReactivate"></div>
-    <div class="col-md-12">
-        <div class='panel panel-info'>
-            <div class='panel-heading'>
-                <h3 class='panel-title'>Reactivate flowcell</h3>
-            </div>
-            <div class='panel-body'>
-                <button name="reactivate_flowcell" class="btn button" onclick="mTaskController.reactivateFlowcell(event)">Reactivate</button>
-
-            </div>
-        </div>
-    </div>
-
-</div>
-
-<div class="row">
     <div id="messageView"></div>
 
     <div class="col-md-12">
@@ -77,6 +61,23 @@
                     </tr>
                     </tfoot>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div id="messageViewReactivate"></div>
+    <div class="col-md-12">
+        <div class='panel panel-info'>
+            <div class='panel-heading'>
+                <h3 class='panel-title'>Reactivate flowcell</h3>
+            </div>
+            <div class='panel-body'>
+                <button name="reactivate_flowcell" class="btn button" onclick="mTaskController.reactivateFlowcell(event)">Reactivate</button>
+
+                <p><br>We don't expect manually reactivating a flowcell to be necessary, as starting a task should reactivate an inactivated flowcell.
+                    However if for some reason you need to reactivate a flowcell to start a task running again, hit this button.</p>
             </div>
         </div>
     </div>

@@ -158,8 +158,6 @@ def run_monitor():
                     logger.info(f"Finished deleting task {flowcell_job.id}")
 
 
-
-
 @task
 def run_delete_flowcell(flowcell_job_id):
     """
