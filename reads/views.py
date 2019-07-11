@@ -1190,7 +1190,7 @@ def flowcell_speed(request,pk):
         df["chan_count"] = df["channel_presence"].apply(lambda x: np.count_nonzero(x))
         df["mean_chan_count"] = df["chan_count"].rolling(window=window).mean()
         df["mean_total_length"] = df["total_length"].rolling(window=window).mean()
-        df["mean_speed"] = df["mean_total_length"].div(df["mean_chan_count"]).div().round(decimals=0)
+        df["mean_speed"] = df["mean_total_length"].div(df["mean_chan_count"]).round(decimals=0)
         df.reset_index(level=1, drop=True,inplace=True)
 
     return Response(df['mean_speed'].to_json(orient="columns"))

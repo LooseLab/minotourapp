@@ -46,6 +46,7 @@
                         <th>Complete</th>
                         <th>Reference</th>
                         <th>Automatic</th>
+                        <th>Actions</th>
                     </tr>
                     </thead>
                     <tfoot>
@@ -58,6 +59,7 @@
                         <th>Complete</th>
                         <th>Reference</th>
                         <th>Automatic</th>
+                        <th>Actions</th>
                     </tr>
                     </tfoot>
                 </table>
@@ -67,13 +69,15 @@
 </div>
 
 <div class="row">
-    <div id="messageViewReactivate"></div>
     <div class="col-md-12">
         <div class='panel panel-info'>
             <div class='panel-heading'>
                 <h3 class='panel-title'>Reactivate flowcell</h3>
             </div>
             <div class='panel-body'>
+
+                <div id="messageViewReactivate"></div>
+
                 <button name="reactivate_flowcell" class="btn button" onclick="mTaskController.reactivateFlowcell(event)">Reactivate</button>
 
                 <p><br>We don't expect manually reactivating a flowcell to be necessary, as starting a task should reactivate an inactivated flowcell.

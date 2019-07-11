@@ -127,4 +127,56 @@ class MTaskController {
         }));
     }
 
+    deleteTask(event, flowcellJobId){
+        console.log(flowcellJobId);
+    }
+
+    pauseTask(event, flowcellJobId) {
+        console.log(flowcellJobId);
+    }
+
+    restartTask(event, flowcellJobId) {
+
+        let csrftoken = getCookie('csrftoken');
+        // new request
+        let xhr = new XMLHttpRequest();
+
+        // Open the request for editing
+        xhr.open('POST', '/api/v1/tasks/reset');
+
+        // set the request headers
+        xhr.setRequestHeader('X-CSRFToken', csrftoken);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("Accept", "application/json");
+
+        let self = this;
+
+        xhr.onreadystatechange = function() {
+            // event handler called in the readyState changing - when the request is submitted and returned
+            if(this.readyState === XMLHttpRequest.DONE) {
+                // if successful
+                if(this.status === 200) {
+                    // change the message to
+                    self._message.texto = this.responseText;
+                    // update the message element to show the text
+                    self._messageView.update(self._message);
+
+                } else {
+                    console.log(this);
+                    // something went wrong
+                    self._message.texto = 'Something went wrong. Please check the following message. ' + this.responseText;
+                    // update the message element to show the error text
+                    self._messageView.update(self._message);
+
+                }
+            }
+        };
+        // Send the xhr, with the data we need stringified
+        xhr.send(JSON.stringify({
+
+            flowcellJobId:flowcellJobId
+
+        }));
+    }
+
 }

@@ -167,7 +167,23 @@ function flowcellTaskHistoryTable(flowcellId) {
                 {"data": "running"},
                 {"data": "complete"},
                 {"data": "reference_name"},
-                {"data": "server_initiated"}
+                {"data": "server_initiated"},
+                {
+                    "data": null,
+                    "orderable": false,
+                    "width" : "15%",
+                    "render": function (data, type, full) {
+                        console.log(data);
+                        if (!data["server_initiated"]) {
+                            return [`<a class="btn delete" onclick="mTaskController.pauseTask(event, ${data.id})" ><i class="fa fa-pause"></i> Pause </a>`,
+                                `<a class="btn delete" onclick="mTaskController.restartTask(event, ${data.id})"><i class="fa fa-recycle"></i> Restart </a>`,
+                                `<a class="btn delete" onclick="mTaskController.deleteTask(event, ${data.id})"><i class="fa fa-times"></i> Delete </a>`];
+                        }
+                        else {
+                            return '<a class="btn delete" onclick="mTaskController.restartTask(event, '+data.id+')"><i class="fa fa-recycle"></i> Restart </a>';
+                        }
+                    }
+                }
             ]
         });
     }

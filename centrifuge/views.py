@@ -536,5 +536,5 @@ def get_target_sets(request):
 
     else:
         user_id = request.user.id
-    target_sets = MappingTarget.objects.filter(Q(user_id=user_id) | Q(private=False)).values_list("target_set", flat=True).distinct()
+    target_sets = MappingTarget.objects.filter(Q(owner_id=user_id) | Q(private=False)).values_list("target_set", flat=True).distinct()
     return Response(target_sets)

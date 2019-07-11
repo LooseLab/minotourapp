@@ -27,8 +27,9 @@ def delete_rows(first_row_object, rows_to_delete, job_master_object, reverse_loo
 
     print('Flowcell id: {} - Deleted {} fastqread records'.format(job_master_object.flowcell.id, affected))
 
+
 @task()
-def delete_alignment_task(flowcell_job_id):
+def delete_alignment_task(flowcell_job_id, restart=False):
     """
         The function called in monitor app to delete an alignment task,
         :param flowcell_job_id: The ID of the JobMaster database entry to be deleted
@@ -37,6 +38,9 @@ def delete_alignment_task(flowcell_job_id):
 
     # Get the flowcell jobMaster entry
     flowcell_job = JobMaster.objects.get(pk=flowcell_job_id)
+
+    # set to complete so we don't generate new data
+    flowcell_job.complete = True
     # Get the flowcell
     flowcell = flowcell_job.flowcell
 
@@ -81,18 +85,29 @@ def delete_alignment_task(flowcell_job_id):
 
             if not paf_rough_cov_remaining and not pafstore_remaining:
                 # We've deleted all the super large data
+                print(f"finished! {finshed}")
+
                 finshed = flowcell_job.delete()
 
-                print(f"finiehsed! {finshed}")
+                # if we are restarting the task
+                if restart:
+                    flowcell_job.last_read = 0
+                    flowcell_job.read_count = 0
+                    flowcell_job.complete = False
+                    flowcell_job.save()
 
                 delete = False
 
 
 @task()
-def delete_metagenomics_task(flowcell_job_id):
+def delete_metagenomics_task(flowcell_job_id, restart=False):
     """
     Delete the data from a metagenomics task, and then the database entry
     :param flowcell_job_id: The PK of the JobMaster database entry to be deleted
+    :type flowcell_job_id: int
+    :param restart: If this task is being restarted, we will clear all the data, delete the JobMaster from the
+    database and reinsert it
+    :type restart: bool
     :return:
     """
 
@@ -100,6 +115,10 @@ def delete_metagenomics_task(flowcell_job_id):
     flowcell_job = JobMaster.objects.get(pk=flowcell_job_id)
     # Get the flowcell
     flowcell = flowcell_job.flowcell
+
+    # Set complete to True so no new data is generated
+    flowcell_job.complete = True
+    flowcell_job.save()
 
     logger.info('Flowcell id: {} - Deleting alignment data from flowcell {}'.format(flowcell.id, flowcell.name))
     # keep looping
@@ -148,11 +167,23 @@ def delete_metagenomics_task(flowcell_job_id):
 
                 print(f"Finished deleting Task data for metagenomics {finished}")
 
+                # if we are resetting the task reinsert a new fresh JobMaster
+                if restart:
+                    flowcell_job.last_read = 0
+                    flowcell_job.read_count = 0
+                    flowcell_job.iteration_count = 0
+                    flowcell_job.complete = False
+                    flowcell_job.save()
+
+
                 delete = False
 
+@task()
 def delete_expected_benefit_task(flowcell_job_id):
     """
     Delete an expected benefit task along with the binary files it writes out
     :param flowcell_job_id: The Id of the JobMaster object to be deleted
     :return:
     """
+
+    delete_alignment_task(flowcell_job_id)

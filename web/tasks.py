@@ -639,6 +639,7 @@ def send_messages():
             new_message.delivered_date = datetime.now(tz=pytz.utc)
             new_message.save()
 
+
 @task
 def update_run_start_time():
     """
