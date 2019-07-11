@@ -148,7 +148,7 @@ class Flowcell(models.Model):
         :return:
         """
         # time deltas are pythons measurement of time difference
-        delta = datetime.timedelta(days=2)
+        delta = datetime.timedelta(days=7)
         # If the current time minus two days is more than the last activity date, there has been no activity in 48 hours
         if (datetime.datetime.now(datetime.timezone.utc) - delta) > self.last_activity_date:
 

@@ -21,7 +21,10 @@ class MTaskController {
         this._messageView = new MMessageView(document.querySelector('#messageView'));
         // update the element with this._message
         this._messageView.update(this._message);
-
+        // create a message view for reactivating the flowcell
+        this._reactivatemessageView = new MMessageView(document.querySelector('#messageViewReactivate'), "warning");
+        // update reactivate message
+        this._reactivatemessageView.update(this._message);
     }
     // Create a new event handler for when we submit a new job
     create_new_job(event){
@@ -87,4 +90,93 @@ class MTaskController {
             target_set: task_new.target_set_id
         }));
     }
+
+    reactivateFlowcell(event) {
+        event.preventDefault();
+
+        let csrftoken = getCookie('csrftoken');
+// new request
+        let xhr = new XMLHttpRequest();
+
+// Open the request for editing
+        xhr.open('POST', '/api/v1/flowcells/reactivate/');
+// set the request headers
+        xhr.setRequestHeader('X-CSRFToken', csrftoken);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("Accept", "application/json");
+        let self = this;
+        xhr.onreadystatechange = function () {
+            // event handler called in the readyState changing - when the request is submitted and returned
+            if (this.readyState === XMLHttpRequest.DONE) {
+                // if successful
+                if (this.status === 200) {
+                    // change the message to
+                    self._message.texto = "Flowcell successfully reactivated";
+                    self._reactivatemessageView.update(self._message);
+                } else {
+                    self._message.texto = this.responseText;
+                    self._reactivatemessageView.update(self._message);
+                }
+            }
+        };
+
+        xhr.send(JSON.stringify({
+
+            flowcell: this._flowcell_id,
+
+        }));
+    }
+
+    deleteTask(event, flowcellJobId){
+        console.log(flowcellJobId);
+    }
+
+    pauseTask(event, flowcellJobId) {
+        console.log(flowcellJobId);
+    }
+
+    restartTask(event, flowcellJobId) {
+
+        let csrftoken = getCookie('csrftoken');
+        // new request
+        let xhr = new XMLHttpRequest();
+
+        // Open the request for editing
+        xhr.open('POST', '/api/v1/tasks/reset');
+
+        // set the request headers
+        xhr.setRequestHeader('X-CSRFToken', csrftoken);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("Accept", "application/json");
+
+        let self = this;
+
+        xhr.onreadystatechange = function() {
+            // event handler called in the readyState changing - when the request is submitted and returned
+            if(this.readyState === XMLHttpRequest.DONE) {
+                // if successful
+                if(this.status === 200) {
+                    // change the message to
+                    self._message.texto = this.responseText;
+                    // update the message element to show the text
+                    self._messageView.update(self._message);
+
+                } else {
+                    console.log(this);
+                    // something went wrong
+                    self._message.texto = 'Something went wrong. Please check the following message. ' + this.responseText;
+                    // update the message element to show the error text
+                    self._messageView.update(self._message);
+
+                }
+            }
+        };
+        // Send the xhr, with the data we need stringified
+        xhr.send(JSON.stringify({
+
+            flowcellJobId:flowcellJobId
+
+        }));
+    }
+
 }

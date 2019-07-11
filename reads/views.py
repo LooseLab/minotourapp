@@ -51,6 +51,29 @@ from reads.utils import get_coords
 logger = get_task_logger(__name__)
 
 
+@api_view(["POST"])
+def reactivate_flowcell(request):
+    """
+    reactivate a flowcell manually - sent form the tasks tab via the mTaskController
+    :param request: the post request body
+    :return:
+    """
+
+    flowcell_id = request.data["flowcell"]
+
+    flowcell = Flowcell.objects.get(pk=flowcell_id)
+
+    if flowcell.active():
+
+        return Response("Error - Flowcell already active", status=405)
+
+    flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
+
+    flowcell.save()
+
+    return Response("Flowcell last activity date successfully updated", status=200)
+
+
 @api_view(['GET'])
 def read_type_list(request):
     """
@@ -133,6 +156,7 @@ def events_type_detail(request, pk): # TODO consider removing
 
     serializer = MinIONEventTypeSerializer(event_, context={'request': request})
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 def fastq_detail(request,pk):
@@ -228,6 +252,13 @@ def run_list(request):
         )
 
         if serializer.is_valid():
+            print(request.data)
+
+            flowcell = Flowcell.objects.get(name=request.data["name"])
+
+            flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
+
+            flowcell.save()
 
             serializer.save(owner=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -1159,7 +1190,7 @@ def flowcell_speed(request,pk):
         df["chan_count"] = df["channel_presence"].apply(lambda x: np.count_nonzero(x))
         df["mean_chan_count"] = df["chan_count"].rolling(window=window).mean()
         df["mean_total_length"] = df["total_length"].rolling(window=window).mean()
-        df["mean_speed"] = df["mean_total_length"].div(df["mean_chan_count"]).div().round(decimals=0)
+        df["mean_speed"] = df["mean_total_length"].div(df["mean_chan_count"]).round(decimals=0)
         df.reset_index(level=1, drop=True,inplace=True)
 
     return Response(df['mean_speed'].to_json(orient="columns"))
@@ -1767,6 +1798,7 @@ def read_list_new(request):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         '''
+
 
 @task(rate_limit="100/m")
 def save_reads(data):

@@ -162,8 +162,6 @@ def run_monitor():
                     logger.info(f"Finished deleting task {flowcell_job.id}")
 
 
-
-
 @task
 def run_delete_flowcell(flowcell_job_id):
     """
@@ -644,6 +642,7 @@ def send_messages():
             print('inside message_sent')
             new_message.delivered_date = datetime.now(tz=pytz.utc)
             new_message.save()
+
 
 @task
 def update_run_start_time():

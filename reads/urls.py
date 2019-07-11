@@ -4,6 +4,11 @@ from reads import views
 
 urlpatterns = [
     url(
+        r'^api/v1/flowcells/reactivate/$',
+        views.reactivate_flowcell,
+        name="reactivate_flowcell"
+    ),
+    url(
         r'^api/v1/runs/$',
         views.run_list,
         name="run-list"),
@@ -239,4 +244,5 @@ urlpatterns = [
         views.minknow_message_list_by_flowcell,
         name="minknow-message-list-by-flowcell"
     ),
+
 ]

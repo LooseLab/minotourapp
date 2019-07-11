@@ -18,7 +18,7 @@ def callfetchreads(runs,chunk_size,last_read):
     while True:
         reads, last_read, read_count = fetchreads(runs, chunk_size, last_read)
         fastq_df_barcode = fastq_df_barcode.append(reads)
-        if len(fastq_df_barcode)>=chunk_size or len(reads)==0:
+        if len(fastq_df_barcode) >= chunk_size or len(reads)==0:
             break
     read_count = len(fastq_df_barcode)
     return fastq_df_barcode,last_read,read_count
@@ -82,6 +82,7 @@ def chancalc(flowcell_id, job_master_id, last_read):
     fastqlen = len(fastq_df_barcode)
 
     if fastqlen > 0:
+
         new_last_read = fastq_df_barcode.iloc[-1]['id']
         #
         # if read_count = 0, then delete summaries
@@ -103,6 +104,7 @@ def chancalc(flowcell_id, job_master_id, last_read):
         #fastq_df_barcode = pd.DataFrame.from_records(fastqs.values('id', 'start_time', 'barcode__name', 'type__name', 'is_pass', 'sequence_length', 'quality_average', 'channel'))
 
         fastq_df_barcode['status'] = np.where(fastq_df_barcode['is_pass'] == False, 'Fail', 'Pass')
+
         fastq_df_barcode['start_time_truncate'] = np.array(fastq_df_barcode['start_time'], dtype='datetime64[m]')
 
         logger.info('Flowcell id: {} - The new last read is {}'.format(flowcell.id, new_last_read))
