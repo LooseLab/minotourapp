@@ -4,8 +4,8 @@ from jobs import views
 
 urlpatterns = [
     url(
-        r'^api/v1/tasks/reset$',
-        views.reset_task,
+        r'^api/v1/tasks/action$',
+        views.task_control,
         name="restart-task",
     ),
     url(

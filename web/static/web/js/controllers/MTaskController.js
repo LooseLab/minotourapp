@@ -33,9 +33,13 @@ class MTaskController {
 
         this._reference_id = this._select_reference.value;
 
+        console.log(this._select_job_type.value);
+
         // If this is metagenomics - set the reference value to null and the target set id instead
-        if (this._select_job_type.value === 10){
-            this._target_set = this._select_reference.value;
+        if (this._select_job_type.value === "10"){
+            console.log("conditional");
+            // the target set text
+            this._target_set = this._select_reference[this._select_reference.selectedIndex].text;
             this._reference_id = null;
         }
 
@@ -127,22 +131,14 @@ class MTaskController {
         }));
     }
 
-    deleteTask(event, flowcellJobId){
-        console.log(flowcellJobId);
-    }
-
-    pauseTask(event, flowcellJobId) {
-        console.log(flowcellJobId);
-    }
-
-    restartTask(event, flowcellJobId) {
+    performActionOnTask(event, flowcellJobId, actionType) {
 
         let csrftoken = getCookie('csrftoken');
         // new request
         let xhr = new XMLHttpRequest();
 
         // Open the request for editing
-        xhr.open('POST', '/api/v1/tasks/reset');
+        xhr.open('POST', '/api/v1/tasks/action');
 
         // set the request headers
         xhr.setRequestHeader('X-CSRFToken', csrftoken);
@@ -173,9 +169,8 @@ class MTaskController {
         };
         // Send the xhr, with the data we need stringified
         xhr.send(JSON.stringify({
-
-            flowcellJobId:flowcellJobId
-
+            flowcellJobId,
+            actionType
         }));
     }
 

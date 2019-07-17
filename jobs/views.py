@@ -105,6 +105,7 @@ def get_or_create_tasks(request):
 
                     return Response("Reference not found Please contact server admin", status=500)
         # Serialise the data to a Django savable object
+        print(request.data)
         serializer = JobMasterInsertSerializer(data=request.data)
 
         # If the serialiser is valid
@@ -242,7 +243,7 @@ def tasks_detail_all(request, pk):
 
 
 @api_view(["POST"])
-def reset_task(request):
+def task_control(request):
     """
     Endpoint for clearing a task and resetting it to start form the beginning
     :param request: Request object, contains the Id of the task keyed to flowcellJobId
@@ -251,39 +252,104 @@ def reset_task(request):
     # Get the task object from django ORM
     job_master = JobMaster.objects.get(pk=request.data["flowcellJobId"])
 
+    action_type = request.data["actionType"]
+
+    lookup_action_type = {1: "Reset", 2: "Pause", 3: "Delete"}
+
+    action = lookup_action_type[action_type]
+
+    unrecognised_action_message = "Apologies, but this action type was not recognised." \
+                                  " It may have not been implemented yet."
+
     if job_master.job_type.name == "ChanCalc":
-        # reset the values, skips existing values
-        job_master.read_count = 0
-        job_master.last_read = 0
-        job_master.save()
-        # set a return message
-        return_message = f"Successfully reset ChanCalc task, id: {job_master.id}"
+        if action == "Reset":
+            # reset the values, skips existing values
+            job_master.read_count = 0
+            job_master.last_read = 0
+            job_master.save()
+            # set a return message
+            return_message = f"Successfully reset ChanCalc task, id: {job_master.id}"
+
+        elif action == "Pause":
+            job_master.paused = True
+            job_master.save()
+            return_message = f"Successfully paused ChanCalc task, id: {job_master.id}"
+
+        else:
+            return Response(unrecognised_action_message, status=500)
 
     elif job_master.job_type.name == "UpdateFlowcellDetails":
-        # reset the values, skips existing values
-        job_master.read_count = 0
-        job_master.last_read = 0
-        job_master.save()
-        # set a return message
-        return_message = f"Successfully reset UpdateFlowcellDetails task, id: {job_master.id}"
+        if action == "Reset":
+            # reset the values, skips existing values
+            job_master.read_count = 0
+            job_master.last_read = 0
+            job_master.save()
+            # set a return message
+            return_message = f"Successfully reset UpdateFlowcellDetails task, id: {job_master.id}"
+
+        elif action == "Pause":
+
+            job_master.paused = True
+            job_master.save()
+            return_message = f"Successfully paused UpdateFlowcellDetails task, id: {job_master.id}"
+
+        else:
+
+            return Response(unrecognised_action_message, status=500)
 
     elif job_master.job_type.name == "Metagenomics":
-        delete_metagenomics_task.delay(job_master.id, True)
+        if action == "Reset":
+            delete_metagenomics_task.delay(job_master.id, True)
 
-        return_message = f"Successfully reset metagenomics task, id: {job_master.id}." \
-                         f" Clearing previous data may take a while, please be patient!"
+            return_message = f"Successfully started to reset this metagenomics task, id: {job_master.id}." \
+                             f" Clearing previous data may take a while, please be patient!"
+
+        elif action == "Pause":
+            job_master.paused = True
+            job_master.save()
+            return_message = f"Successfully paused metagenomics task reset, id: {job_master.id}."
+
+        elif action == "Delete":
+            delete_metagenomics_task.delay(job_master.id)
+            return_message = f"Successfully started deletion of this metagenomics task, id: {job_master.id}." \
+                             f" Clearing previous data may take a while, please be patient!"
+
+        else:
+            return Response(unrecognised_action_message, status=500)
 
     elif job_master.job_type.name == "Minimap2":
-        delete_alignment_task.delay(job_master.id, True)
-        return_message = f"Successfully reset minimap2 task, id: {job_master.id}" \
-                         f" Clearing previous data may take a while, please be patient!"
+        if action == "Reset":
+            delete_alignment_task.delay(job_master.id, True)
+            return_message = f"Successfully began reset of minimap2 task, id: {job_master.id}" \
+                             f" Clearing previous data may take a while, please be patient!"
 
+        elif action == "Pause":
+            job_master.paused = True
+            job_master.save()
+            return_message = f"Successfully paused minimap2 task, id: {job_master.id}"
 
+        elif action == "Delete":
+            delete_alignment_task.delay(job_master.id)
+            return_message = f"Successfully began deletion of minimap2 task, id: {job_master.id}" \
+                             f" Clearing previous data may take a while, please be patient!"
+        else:
+            return Response(unrecognised_action_message, status=500)
 
     elif job_master.job_type.name == "ExpectedBenefit":
-        print("deleting EB data")
-        print(f"restarting EB task {job_master.id}")
-        return_message = f"Successfully reset this UpdateFlowcellDetails task, id: {job_master.id}"
+        if action == "Reset":
+            print(f"restarting EB task {job_master.id}")
+            return_message = f"Successfully reset this UpdateFlowcellDetails task, id: {job_master.id}"
+
+        elif action == "Pause":
+            job_master.paused = True
+            return_message = f"Successfully paused this UpdateFlowcellDetails task, id: {job_master.id}"
+
+        elif action == "Delete":
+            return_message = f"Successfully deleted this UpdateFlowcellDetails task, id: {job_master.id}"
+
+        else:
+            return Response(unrecognised_action_message, status=500)
+
     else:
         raise NotImplementedError
 

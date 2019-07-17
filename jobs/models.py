@@ -112,6 +112,10 @@ class JobMaster(models.Model):
         default=False,
     )
 
+    paused = models.BooleanField(
+        default=False
+    )
+
     iteration_count = models.IntegerField(
 
         null=True,

@@ -211,6 +211,10 @@ class MappingTarget(models.Model):
         null=True
     )
 
+    # reference = models.ForeignKey(
+    #
+    # )
+
     private = models.BooleanField(default=False)
 
     def __str__(self):

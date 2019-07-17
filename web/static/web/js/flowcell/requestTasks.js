@@ -175,12 +175,13 @@ function flowcellTaskHistoryTable(flowcellId) {
                     "render": function (data, type, full) {
                         console.log(data);
                         if (!data["server_initiated"]) {
-                            return [`<a class="btn delete" onclick="mTaskController.pauseTask(event, ${data.id})" ><i class="fa fa-pause"></i> Pause </a>`,
-                                `<a class="btn delete" onclick="mTaskController.restartTask(event, ${data.id})"><i class="fa fa-recycle"></i> Restart </a>`,
-                                `<a class="btn delete" onclick="mTaskController.deleteTask(event, ${data.id})"><i class="fa fa-times"></i> Delete </a>`];
+                            return [`<a class="btn pause" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-pause"></i> Pause </a>`,
+                                `<a class="btn reset" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Restart </a>`,
+                                `<a class="btn delete" onclick="mTaskController.performActionOnTask(event, ${data.id}, 3)"><i class="fa fa-times"></i> Delete </a>`];
                         }
                         else {
-                            return '<a class="btn delete" onclick="mTaskController.restartTask(event, '+data.id+')"><i class="fa fa-recycle"></i> Restart </a>';
+                            return [`<a class="btn reset" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Restart </a>`,
+                            `<a class="btn pause" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-pause"></i> Pause </a>`];
                         }
                     }
                 }
