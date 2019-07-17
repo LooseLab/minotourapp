@@ -7,7 +7,7 @@ from io import StringIO
 import numpy as np
 import pandas as pd
 from celery.utils.log import get_task_logger
-from django.db.models import ObjectDoesNotExist
+from django.db.models import ObjectDoesNotExist, Q
 from django.utils import timezone
 from ete3 import NCBITaxa
 from centrifuge.models import CentrifugeOutput, LineageValue, Metadata, \
@@ -19,6 +19,7 @@ from reference.models import ReferenceInfo
 from alignment.models import PafStore
 from django.db.models import Sum
 from web.tasks_alignment import align_reads
+import os
 
 pd.options.mode.chained_assignment = None
 logger = get_task_logger(__name__)
@@ -407,7 +408,7 @@ def update_mapped_red_values(row, task):
 def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, targets_results_df,
                        task, fastas):
     """
-    Map the reads from the target data frames, after they've been grouped by species
+    Map the reads from the target data frames, after they've been grouped by species, so this is run once fpor each species
     :param target_species_group_df: A data frame that contains reads from only one species
     :param group_name: The name of the species in this group
     :param flowcell: The flowcell model from where these reads came from
@@ -425,9 +426,11 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
     # Get the species that is in this group
     species = group_name.replace(" ", "_")
 
+    user_id = task.flowcell.owner
+
     try:
         # Get the reference for this species
-        references = ReferenceInfo.objects.get(name=species)
+        references = ReferenceInfo.objects.filter(Q(owner_id=user_id) | Q(private=False)).filter(name=species)[0]
 
     except ObjectDoesNotExist:
 
@@ -450,8 +453,12 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
         reference=references
     )
 
+    b = [{"read_id": fastq.read_id, "sequence": fastq.sequence} for fastq in fastqs]
+    
+    fasta_df = pd.DataFrame(b)
+
     # Call the align_reads function to perform the mapping, funciton found in web tasks_alignment
-    align_reads(fastqs, mapping_task.id, target_species_group_df)
+    align_reads(fastqs, mapping_task.id, fasta_df)
 
     # Get the output for this mapping (if any) from the database
     map_output = PafStore.objects.filter(job_master=mapping_task, qsn__in=read_ids)
@@ -470,7 +477,7 @@ def map_all_the_groups(target_species_group_df, group_name, flowcell, gff3_df, t
         logger.info("Flowcell id: {} - Mapping reads to plasmids for species {} ".format(flowcell.id, species))
         # Map the reads against the target regions
         plasmid_red_series = plasmid_df.apply(plasmid_mapping, args=(species, fastas, flowcell, read_ids,
-                                                                     target_species_group_df), axis=1)
+                                                                     fasta_df), axis=1)
         # If a plasmid has no mappings, it results in a nan being returned into the series, so drop it so we only have
         # mapping results. IF no plasmids have mappings, the series becomes empty
         plasmid_red_series.dropna(inplace=True)
@@ -703,7 +710,7 @@ def calculate_num_matches_update(target_df, task, num_matches_targets_barcoded_d
     barcode_df.apply(update_targets_no_mapping, args=(task,), axis=1)
 
 
-def create_mapping_targets(task, flowcell, target_set):
+def create_mapping_results_objects(task, flowcell, target_set):
     """
     Create Mapping result objects for each target species in the database, one set for each barcode
     :param task: The metagenomics task
@@ -762,7 +769,7 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
         logger.info("Flowcell id: {} - No targets in this batch of reads".format(flowcell.id,
                                                                                  targets_df.shape))
         # Create the mapping targets
-        create_mapping_targets(task, flowcell, target_set)
+        create_mapping_results_objects(task, flowcell, target_set)
 
         return
 
@@ -772,7 +779,7 @@ def map_the_reads(name_df, task, flowcell, num_matches_targets_barcoded_df, targ
     logger.info("Flowcell id: {} - targets_df shape is {}".format(flowcell.id, targets_df.shape))
 
     # Create the mapping targets, calls get or create so they are only created once
-    target_regions_df = create_mapping_targets(task, flowcell, target_set)
+    target_regions_df = create_mapping_results_objects(task, flowcell, target_set)
     # Get the barcodes from this dataframe, only one value for each barcode
     barcodes = targets_df["barcode_name"].unique()
     # initialise the NCBITaxa from ete3 for species lookup
@@ -1191,8 +1198,14 @@ def run_centrifuge(flowcell_job_id):
 
     # Write the generated fastq file to stdin, passing it to the command
     # Use Popen to run the centrifuge command
-    out, err = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stdin=subprocess.PIPE,
-                                stderr=subprocess.PIPE).communicate(input=str.encode(fastqs_data))
+    try:
+        out, err = subprocess.Popen(cmd.split(), preexec_fn=lambda: os.nice(-10), stdout=subprocess.PIPE,
+                                    stdin=subprocess.PIPE,
+                                    stderr=subprocess.PIPE).communicate(input=str.encode(fastqs_data))
+    except subprocess.SubprocessError as e:
+        print(f"{e}, running with standard niceness index.")
+        out, err = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stdin=subprocess.PIPE,
+                                    stderr=subprocess.PIPE).communicate(input=str.encode(fastqs_data))
     # The standard error
     if err:
         logger.info("Flowcell id: {} - Centrifuge error!! {}".format(flowcell.id, err))
@@ -1331,7 +1344,22 @@ def run_centrifuge(flowcell_job_id):
 
     logger.info("Flowcell id: {} - The previous number of matches dataframe is {}"
                 .format(flowcell.id, num_matches_per_target_df))
+
+    already_created_barcodes = list(MappingResult.objects.filter(task=task).values_list(
+        "barcode_name", flat=True).distinct())
+
+    # for each barcode in the target_df
+    for barcode in barcodes:
+        # Check if barcode has mapping result objects created for it already
+        if barcode not in already_created_barcodes:
+            # for each target, create a Mapping result
+            for target in temp_targets:
+                # get the tax_id for this target
+                tax_id = ncbi.get_name_translator([target])[target][0]
+                mr = MappingResult(task=task, barcode_name=barcode, species=target, tax_id=tax_id)
+                mr.save()
     # Call map the reads on the targets dataframe
+
     map_the_reads(name_df, task, flowcell, num_matches_per_target_df, temp_targets,
                   classified_per_barcode, fasta_objects)
 

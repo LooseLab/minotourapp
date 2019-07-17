@@ -128,7 +128,6 @@ def run_minimap2_alignment_by_job_master(job_master_id):
     else:
         logger.info('Flowcell id: {} - Job master {} has no reference.'.format(job_master.flowcell.id, job_master.id))
 
-
 @task()
 def run_minimap2_alignment(job_master_id):
     """
@@ -171,8 +170,10 @@ def align_reads(fastas, job_master_id, fasta_df):
 
     :param fastas: A list of FastqRead objects that contain the sequence we will be running alignment on
     :param job_master_id: The Primary key of the JobMaster model object
+    :param fasta_df: A dataframe of fastq sequences
     :return:
     """
+
     # The on disk directory where we store the references
     reference_location = getattr(settings, "REFERENCE_LOCATION", None)
     # The location of the mimimap2 executable

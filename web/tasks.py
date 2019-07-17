@@ -53,7 +53,9 @@ def run_monitor():
     # iterate them
     for flowcell in flowcell_list:
 
-        flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False, complete=False)
+        flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False,
+                                                                               complete=False,
+                                                                               paused=False)
 
         for flowcell_job in flowcell_job_list:
 
@@ -81,8 +83,6 @@ def run_monitor():
                 chancalc.delay(flowcell.id, flowcell_job.id, flowcell_job.last_read)
 
             if flowcell_job.job_type.name == "Assembly":
-                # update the last activity time
-                # update_last_activity_time(flowcell)
 
                 logger.info("Sending task assembly to server - Flowcell id: {}, job_master id: {}".format(
                     flowcell.id,

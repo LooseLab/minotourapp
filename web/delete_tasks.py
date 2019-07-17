@@ -25,7 +25,7 @@ def delete_rows(first_row_object, rows_to_delete, job_master_object, reverse_loo
     # delete them
     affected = getattr(job_master_object, reverse_lookup).filter(pk__lte=last_row_to_be_deleted).delete()
 
-    print('Flowcell id: {} - Deleted {} fastqread records'.format(job_master_object.flowcell.id, affected))
+    print('Flowcell id: {} - Deleted {} records'.format(job_master_object.flowcell.id, affected))
 
 
 @task()
@@ -33,6 +33,9 @@ def delete_alignment_task(flowcell_job_id, restart=False):
     """
         The function called in monitor app to delete an alignment task,
         :param flowcell_job_id: The ID of the JobMaster database entry to be deleted
+        :type flowcell_job_id: int
+        :param restart: Restart the task after the deletion has occurred
+        :type restart: bool
         :return:
     """
 
@@ -128,11 +131,23 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
 
     donut_data_remaining = True
 
+    print(f"Flowcell job type {flowcell_job.job_type.name}")
+    print(flowcell_job.job_type.name == "Metagenomics")
+
     if flowcell_job.job_type.name == "Metagenomics":
 
         # ## delete the alignment data from the target set validation ## #
 
-        delete_alignment_task(flowcell_job_id)
+        metagenomics_mapping_jobs = JobMaster.objects.filter(flowcell=flowcell, job_type__name="Other")
+        print(metagenomics_mapping_jobs)
+        # if there are mapping jobs
+        if metagenomics_mapping_jobs:
+            for mapping_job in metagenomics_mapping_jobs:
+                print(f"deletin alignment data for {mapping_job.reference.name}")
+                delete_alignment_task(mapping_job.id)
+
+        else:
+            print("no mapping data found for this metagenomics run")
         # while we have data left
         while delete:
 
@@ -161,6 +176,7 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
 
                     delete_rows(donut_data_first_row, 1000, flowcell_job, "donut_data")
 
+            print()
             if not centrifuge_output_remaining and not donut_data_remaining:
 
                 finished = flowcell_job.delete()
@@ -186,4 +202,4 @@ def delete_expected_benefit_task(flowcell_job_id):
     :return:
     """
 
-    delete_alignment_task(flowcell_job_id)
+    pass
