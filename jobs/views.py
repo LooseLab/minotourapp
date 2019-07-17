@@ -8,7 +8,7 @@ from jobs.serializers import JobMasterSerializer, JobMasterInsertSerializer
 from reads.models import Run
 from reference.models import ReferenceInfo
 from reads.models import Flowcell
-from web.delete_tasks import delete_metagenomics_task, delete_alignment_task
+from web.delete_tasks import delete_metagenomics_task, delete_alignment_task, delete_expected_benefit_task
 
 
 @api_view(["GET", "POST"])
@@ -337,7 +337,6 @@ def task_control(request):
 
     elif job_master.job_type.name == "ExpectedBenefit":
         if action == "Reset":
-            print(f"restarting EB task {job_master.id}")
             return_message = f"Successfully reset this UpdateFlowcellDetails task, id: {job_master.id}"
 
         elif action == "Pause":

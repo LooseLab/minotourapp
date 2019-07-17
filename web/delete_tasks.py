@@ -4,9 +4,25 @@ Functionality to delete a previously run task with a celery task
 from jobs.models import JobMaster
 from celery import task
 from celery.utils.log import get_task_logger
-
+from pathlib import Path
+import time
+import datetime
+# from readuntil.models import ExpectedBenefitChromosomes
 
 logger = get_task_logger(__name__)
+
+
+def get_or_create_results_directory(flowcell_id, task_id):
+    """
+    Make directory to store results of this task
+    :param flowcell_id: The ID of the flowcell that produced these fastqs
+    :param task_id: The ID of the Jobmaster that corresponds to this EB task
+    :return: The path into this directory
+    """
+    results_dir = Path(f"readuntil/Temp_results/EB{flowcell_id}_{task_id}")
+    if not results_dir.exists():
+        Path.mkdir(results_dir)
+    return results_dir
 
 
 def delete_rows(first_row_object, rows_to_delete, job_master_object, reverse_lookup):
@@ -44,6 +60,14 @@ def delete_alignment_task(flowcell_job_id, restart=False):
 
     # set to complete so we don't generate new data
     flowcell_job.complete = True
+    flowcell_job.save()
+    
+    # If the task is running,it might be producing new data, so wait until it's finished
+    running = flowcell_job.running
+    while running:
+        running = flowcell_job.running
+        time.sleep(3)
+    
     # Get the flowcell
     flowcell = flowcell_job.flowcell
 
@@ -92,12 +116,17 @@ def delete_alignment_task(flowcell_job_id, restart=False):
 
                 finshed = flowcell_job.delete()
 
-                # if we are restarting the task
+                # if we are restarting the task, reset all the jobmaster fields to 0 and save them
                 if restart:
                     flowcell_job.last_read = 0
                     flowcell_job.read_count = 0
                     flowcell_job.complete = False
+                    flowcell_job.running = False
                     flowcell_job.save()
+                    
+                    # We're restarting so set a new activity data so flowcell becomes active
+                    flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
+                    flowcell.save()
 
                 delete = False
 
@@ -122,6 +151,12 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
     # Set complete to True so no new data is generated
     flowcell_job.complete = True
     flowcell_job.save()
+    
+    # If the task is running,it might be producing new data, so wait until it's finished
+    running = flowcell_job.running
+    while running:
+        running = flowcell_job.running
+        time.sleep(3)
 
     logger.info('Flowcell id: {} - Deleting alignment data from flowcell {}'.format(flowcell.id, flowcell.name))
     # keep looping
@@ -190,16 +225,63 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
                     flowcell_job.iteration_count = 0
                     flowcell_job.complete = False
                     flowcell_job.save()
-
-
+                    
+                    # We're restarting so set a new activity data so flowcell becomes active
+                    flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
+                    flowcell.save()
+                    
                 delete = False
 
+
 @task()
-def delete_expected_benefit_task(flowcell_job_id):
+def delete_expected_benefit_task(flowcell_job_id, restart=False):
     """
     Delete an expected benefit task along with the binary files it writes out
     :param flowcell_job_id: The Id of the JobMaster object to be deleted
+    :param restart: Whether to begin the task again after deletion
     :return:
     """
 
-    pass
+    task = JobMaster.objects.get(pk=flowcell_job_id)
+    # Set to complete so no new data is produced
+    task.complete = True
+    running = task.running
+    # TODO do we wait until runnning is false so we don't have new data created or crash a running task?
+    while running:
+        running = task.running
+        time.sleep(3)
+
+    task.save()
+    # Get the flowcell
+    flowcell = task.flowcell
+
+    # chromosomes = ExpectedBenefitChromosomes.objects.filter(task=task).values_list("chromosome__line_name", flat=True)
+
+    base_result_dir_path = get_or_create_results_directory(flowcell.id, flowcell_job_id)
+
+    # for chrom_key in chromosomes:
+    #     # Write out the coverage
+    #     Path(f"{base_result_dir_path}/coverage_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+    #     Path(f"{base_result_dir_path}/counts_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+    #     Path(f"{base_result_dir_path}/mask_forward_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+    #     Path(f"{base_result_dir_path}/mask_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+    #     Path(f"{base_result_dir_path}/scores_forward_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+    #     Path(f"{base_result_dir_path}/scores_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+    #     Path(f"{base_result_dir_path}/cost_forward_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+    #     Path(f"{base_result_dir_path}/cost_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+    #     Path(f"{base_result_dir_path}/benefits_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+    #     Path(f"{base_result_dir_path}/fixed_benefits_forward{chrom_key}"
+    #          f"_{flowcell.id}_{task.id}.dat").unlink()
+    #     Path(f"{base_result_dir_path}/fixed_benefits_reverse{chrom_key}"
+    #          f"_{flowcell.id}_{task.id}.dat").unlink()
+
+    if restart:
+        task.running = False
+        task.complete = False
+        task.last_read = 0
+        task.read_count = 0
+        task.iteration_count = 0
+        
+        task.save()
+        flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
+        flowcell.save()
