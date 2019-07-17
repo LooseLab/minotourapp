@@ -112,9 +112,9 @@ def delete_alignment_task(flowcell_job_id, restart=False):
 
             if not paf_rough_cov_remaining and not pafstore_remaining:
                 # We've deleted all the super large data
-                print(f"finished! {finshed}")
 
                 finshed = flowcell_job.delete()
+                print(f"finished! {finshed}")
 
                 # if we are restarting the task, reset all the jobmaster fields to 0 and save them
                 if restart:
@@ -274,6 +274,9 @@ def delete_expected_benefit_task(flowcell_job_id, restart=False):
     #          f"_{flowcell.id}_{task.id}.dat").unlink()
     #     Path(f"{base_result_dir_path}/fixed_benefits_reverse{chrom_key}"
     #          f"_{flowcell.id}_{task.id}.dat").unlink()
+    finished = task.delete()
+
+    print(f"Finished deleting Task data for expected benefit {finished}")
 
     if restart:
         task.running = False
