@@ -25,6 +25,10 @@
                     <a class="flowcell-tab"
                        onclick="flowcellController.flowcell_tab_controller.toggle_tab_content('basecalled-data')">Basecalled Data</a>
                 </li>
+                <li role="presentation" id="nav-rejected-basecalled-data" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcellController.flowcell_tab_controller.toggle_tab_content('rebasecalled-data')">Basecalled Data</a>
+                </li>
                 <li role="presentation" id="nav-reads" class='hidden'>
                     <a class="flowcell-tab"
                        onclick="flowcellController.flowcell_tab_controller.toggle_tab_content('reads')">Read Data</a>
@@ -69,6 +73,10 @@
 
                 <div id="tab-basecalled-data" class="tab-pane">
                     {% include "web/flowcell/basecalled-tab.html" %}
+                </div>
+
+                <div id="tab-rejected-basecalled-data" class="tab-pane">
+                    {% include "web/flowcell/rejected-basecalled-tab.html" %}
                 </div>
 
                 <div id="tab-sequence-mapping" class="tab-pane">

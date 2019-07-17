@@ -50,6 +50,21 @@ function requestData(flowcell_id) {
             this.requestChannelSummaryData(flowcell_id);
             //this.requestReference(flowcell_id);
 
+        } else if (flowcell_selected_tab_input.value == 'nav-rejected-basecalled-data') {
+            // If there is not selected barcode, so we're on the tab for the first time since loading the site
+            if (selected_barcode == '') {
+                set_selected_barcode('All reads');
+            }
+            // Sort the barcode in Alphabeticla order
+            this.barcodes = Array.from(barcodes).sort();
+            // Update the barcode nav tabs found in updateBarcodeNavTab.js
+            this.updateBarcodeNavTab();
+            this.requestSummaryData(flowcell_id);
+            this.requestHistogramData(flowcell_id);
+            this.requestStatistics(flowcell_id);
+            this.requestChannelSummaryData(flowcell_id);
+            //this.requestReference(flowcell_id);
+
         } else if (flowcell_selected_tab_input.value == 'nav-reads') {
 
             requestReadData(flowcell_id);
