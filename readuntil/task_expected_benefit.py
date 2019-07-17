@@ -3,13 +3,11 @@ import subprocess
 from celery import task
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from alignment.models import PafRoughCov, PafStore
 from readuntil.functions_EB import *
 from jobs.models import JobMaster
-import pandas as pd
 import numpy as np
 import pickle
-from web.tasks_alignment import call_fetch_reads_alignment, save_paf_store_summary
+from web.tasks_alignment import call_fetch_reads_alignment
 from io import StringIO
 from pathlib import Path
 from readuntil.models import ExpectedBenefitChromosomes
@@ -218,57 +216,6 @@ def calculate_expected_benefit_3dot0_final(task_id):
             chromosome_name = chromdict[record.tsn]
 
             chromosomes_seen_now.add(chromosome_name.line_name)
-
-            newpaf = PafStore(
-                job_master=task,
-                read=fastq_read,
-            )
-
-            newpafstart = PafRoughCov(
-                job_master=task,
-                flowcell=flowcell,
-                read_type=fastq_read.type,
-                barcode_name=fastq_read.barcode_name,
-                is_pass=fastq_read.is_pass
-            )
-
-            newpafend = PafRoughCov(
-                job_master=task,
-                flowcell=flowcell,
-                read_type=fastq_read.type,
-                barcode_name=fastq_read.barcode_name,
-                is_pass=fastq_read.is_pass
-            )
-
-            newpaf.reference = reference_info
-
-            newpaf.qsn = record.qsn  # models.CharField(max_length=256)#1	string	Query sequence name
-            newpaf.qsl = record.qsl  # models.IntegerField()#2	int	Query sequence length
-            newpaf.qs = record.qs  # models.IntegerField()#3	int	Query start (0-based)
-            newpaf.qe = record.qe  # models.IntegerField()#4	int	Query end (0-based)
-            newpaf.rs = record.rs  # models.CharField(max_length=1)#5	char	Relative strand: "+" or "-"
-            newpaf.tsn = chromosome_name  # models.CharField(max_length=256)#6	Foreign key	Target sequence name
-            newpaf.tsl = record.tsl  # models.IntegerField()#7	int	Target sequence length
-            newpaf.ts = record.ts  # models.IntegerField()#8	int	Target start on original strand (0-based)
-            newpaf.te = record.te  # models.IntegerField()#9	int	Target end on original strand (0-based)
-            newpaf.nrm = record.nrm  # models.IntegerField()#10	int	Number of residue matches
-            newpaf.abl = record.abl  # models.IntegerField()#11	int	Alignment block length
-            newpaf.mq = record.mq  # models.IntegerField()#12	int	Mapping quality (0-255; 255 for missing)
-
-            newpafstart.reference = reference_info
-            newpafstart.chromosome = chromosome_name
-            newpafstart.p = record.ts
-            newpafstart.i = 1
-
-            newpafend.reference = reference_info
-            newpafend.chromosome = chromosome_name
-            newpafend.p = record.te
-            newpafend.i = -1
-
-            bulk_paf_rough.append(newpafstart)
-            bulk_paf_rough.append(newpafend)
-
-            bulk_paf.append(newpaf)
 
             #########################################################
             # ########## Now for the parse cigar string ########### #
@@ -524,31 +471,6 @@ def calculate_expected_benefit_3dot0_final(task_id):
 
         with open(Path("/home/rory/data/test_dict.pickle"), "wb") as fh:
             pickle.dump(priors_dict, fh, pickle.HIGHEST_PROTOCOL)
-
-        PafStore.objects.bulk_create(bulk_paf, batch_size=1000)
-
-        PafRoughCov.objects.bulk_create(bulk_paf_rough, batch_size=1000)
-
-        paf_store_list = PafStore.objects.filter(
-            job_master=task
-        ).values(
-            'job_master__id',
-            'read__barcode_name',
-            'tsn__line_name',
-            'qsn',
-            'qs',
-            'qe'
-        )
-
-        paf_store_df = pd.DataFrame.from_records(paf_store_list)
-
-        paf_store_df['length'] = paf_store_df['qe'] - paf_store_df['qs']
-
-        paf_store_gb = paf_store_df.groupby(
-            ['job_master__id', 'read__barcode_name', 'tsn__line_name']).agg(
-            {'qsn': ['unique'], 'length': ['sum']})
-
-        paf_store_gb.reset_index().apply(lambda row: save_paf_store_summary(task, row), axis=1)
 
         # this time we have seen these chromosomes for the first time, if any
 
