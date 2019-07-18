@@ -34,6 +34,14 @@ def get_or_create_tasks(request):
             tasks_list = JobMaster.objects.filter(flowcell__id=int(flowcell_id)).exclude(job_type__name="Other")
             # Serialise the data to a python object
             serializer = JobMasterSerializer(tasks_list, many=True)
+            # Check the icon required on the pause control part of the table
+            for data in serializer.data:
+                if data["paused"]:
+                    data["icon"] = "play"
+                    data["iconText"] = "Play"
+                else:
+                    data["icon"] = "pause"
+                    data["iconText"] = "Pause"
 
             result = {
                 "data": serializer.data
