@@ -171,17 +171,17 @@ function flowcellTaskHistoryTable(flowcellId) {
                 {
                     "data": null,
                     "orderable": false,
-                    "width" : "15%",
+                    "width": "15%",
                     "render": function (data, type, full) {
                         console.log(data);
                         if (!data["server_initiated"]) {
-                            return [`<a class="btn pause" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-pause"></i> Pause </a>`,
+                            return [`<a class="btn pause" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>`,
                                 `<a class="btn reset" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Restart </a>`,
                                 `<a class="btn delete" onclick="mTaskController.performActionOnTask(event, ${data.id}, 3)"><i class="fa fa-times"></i> Delete </a>`];
                         }
                         else {
-                            return [`<a class="btn reset" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Restart </a>`,
-                            `<a class="btn pause" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-pause"></i> Pause </a>`];
+                            return [`<a class="btn pause" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>`,
+                                `<a class="btn reset" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Restart </a>`];
                         }
                     }
                 }

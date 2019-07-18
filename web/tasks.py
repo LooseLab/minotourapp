@@ -27,11 +27,9 @@ from reads.utils import getn50
 from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
 
+
 from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
 
-
-from web.delete_tasks import delete_alignment_task, delete_metagenomics_task
-# from web.utils import update_last_activity_time
 
 
 logger = get_task_logger(__name__)
@@ -139,27 +137,6 @@ def run_monitor():
                 ))
 
                 calculate_expected_benefit_3dot0_final.delay(flowcell_job.id)
-
-            if flowcell_job.job_type.name == "Delete_Task":
-                # Delete a task
-
-                logger.info("Sending task Delete task - Flowcell id: {}, job_master id: {}".format(
-                    flowcell.id,
-                    flowcell_job.id,
-                ))
-
-                if flowcell_job.job_type.name is "Minimap2":
-
-                    delete_alignment_task.delay(flowcell_job.id)
-
-                elif flowcell_job.job_type.name is "Metagenomics":
-
-                    delete_metagenomics_task.delay(flowcell_job.id)
-
-                else:
-
-                    flowcell_job.delete()
-                    logger.info(f"Finished deleting task {flowcell_job.id}")
 
 
 @task

@@ -8,7 +8,7 @@ from jobs.serializers import JobMasterSerializer, JobMasterInsertSerializer
 from reads.models import Run
 from reference.models import ReferenceInfo
 from reads.models import Flowcell
-from web.delete_tasks import delete_metagenomics_task, delete_alignment_task
+from web.delete_tasks import delete_metagenomics_task, delete_alignment_task, delete_expected_benefit_task
 
 
 @api_view(["GET", "POST"])
@@ -34,6 +34,14 @@ def get_or_create_tasks(request):
             tasks_list = JobMaster.objects.filter(flowcell__id=int(flowcell_id)).exclude(job_type__name="Other")
             # Serialise the data to a python object
             serializer = JobMasterSerializer(tasks_list, many=True)
+            # Check the icon required on the pause control part of the table
+            for data in serializer.data:
+                if data["paused"]:
+                    data["icon"] = "play"
+                    data["iconText"] = "Play"
+                else:
+                    data["icon"] = "pause"
+                    data["iconText"] = "Pause"
 
             result = {
                 "data": serializer.data
@@ -337,7 +345,6 @@ def task_control(request):
 
     elif job_master.job_type.name == "ExpectedBenefit":
         if action == "Reset":
-            print(f"restarting EB task {job_master.id}")
             return_message = f"Successfully reset this UpdateFlowcellDetails task, id: {job_master.id}"
 
         elif action == "Pause":
