@@ -16,4 +16,4 @@ from whitenoise import WhiteNoise
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "minotourapp.settings")
 
 application = get_wsgi_application()
-application = WhiteNoise(application, root='/var/lib/minotour/apps/minotour_static')
+# application = WhiteNoise(application, root='/var/lib/minotour/apps/minotour_static')
