@@ -64,10 +64,17 @@ def delete_alignment_task(flowcell_job_id, restart=False):
     
     # If the task is running,it might be producing new data, so wait until it's finished
     running = flowcell_job.running
+
+    seconds_counter = 0
+
     while running:
         running = flowcell_job.running
-        time.sleep(3)
-    
+        time.sleep(1)
+        seconds_counter += 1
+        if seconds_counter is 60:
+            flowcell_job.running = False
+            flowcell_job.save()
+
     # Get the flowcell
     flowcell = flowcell_job.flowcell
 
@@ -154,9 +161,16 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
     
     # If the task is running,it might be producing new data, so wait until it's finished
     running = flowcell_job.running
+
+    seconds_counter = 0
+
     while running:
         running = flowcell_job.running
-        time.sleep(3)
+        time.sleep(1)
+        seconds_counter += 1
+        if seconds_counter is 120:
+            flowcell_job.running = False
+            flowcell_job.save()
 
     logger.info('Flowcell id: {} - Deleting alignment data from flowcell {}'.format(flowcell.id, flowcell.name))
     # keep looping
@@ -244,12 +258,18 @@ def delete_expected_benefit_task(flowcell_job_id, restart=False):
 
     task = JobMaster.objects.get(pk=flowcell_job_id)
     # Set to complete so no new data is produced
-    task.complete = True
     running = task.running
-    # TODO do we wait until runnning is false so we don't have new data created or crash a running task?
+
+    seconds_counter = 0
+
     while running:
+
         running = task.running
-        time.sleep(3)
+        time.sleep(1)
+        seconds_counter += 1
+        if seconds_counter is 140:
+            task.running = False
+            task.save()
 
     task.save()
     # Get the flowcell

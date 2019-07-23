@@ -1,25 +1,43 @@
+"""
+Services to help run some of the tasks in the web app. Why is this not stored there?
+"""
 import pytz
 
-from reads.models import FlowcellStatisticBarcode, FlowcellSummaryBarcode, FlowcellHistogramSummary, FlowcellChannelSummary
+from reads.models import (
+    FlowcellStatisticBarcode,
+    FlowcellSummaryBarcode,
+    FlowcellHistogramSummary,
+    FlowcellChannelSummary,
+)
 
 
 def save_flowcell_summary_barcode(flowcell_id, row):
-
-    barcode_name = row['barcode__name'][0]
-    type_name = row['type__name'][0]
-    status = row['is_pass'][0]
-    sequence_length_sum = row['sequence_length']['sum']
-    sequence_length_max = row['sequence_length']['max']
-    sequence_length_min = row['sequence_length']['min']
-    quality_average_sum = row['quality_average']['sum']
-    read_count = row['sequence_length']['count']
-    channels = row['channel']['unique']
+    """
+    Save flowcell summary barcode rows, applied to a pandas dataframe
+    :param flowcell_id: Primary key of the flowcell database entry
+    :type flowcell_id: int
+    :param row: a pandas dataframe row
+    :type row: pandas.core.series.Series
+    :return: None
+    """
+    barcode_name = row["barcode__name"][0]
+    type_name = row["type__name"][0]
+    status = row["is_pass"][0]
+    rejection_status = row["rejected_barcode__name"][0]
+    sequence_length_sum = row["sequence_length"]["sum"]
+    sequence_length_max = row["sequence_length"]["max"]
+    sequence_length_min = row["sequence_length"]["min"]
+    quality_average_sum = row["quality_average"]["sum"]
+    read_count = row["sequence_length"]["count"]
+    channels = row["channel"]["unique"]
 
     flowcellSummaryBarcode, created = FlowcellSummaryBarcode.objects.get_or_create(
         flowcell_id=flowcell_id,
         barcode_name=barcode_name,
+        rejection_status=rejection_status,
         read_type_name=type_name,
-        status=status)
+        status=status,
+    )
 
     flowcellSummaryBarcode.total_length += sequence_length_sum
     flowcellSummaryBarcode.quality_sum += quality_average_sum
@@ -35,34 +53,46 @@ def save_flowcell_summary_barcode(flowcell_id, row):
 
     for c in channels:
 
-        channel_list[c - 1] = '1'
+        channel_list[c - 1] = "1"
 
-    flowcellSummaryBarcode.channel_presence = ''.join(channel_list)
+    flowcellSummaryBarcode.channel_presence = "".join(channel_list)
     flowcellSummaryBarcode.channel_count = len(channels)
     flowcellSummaryBarcode.save()
 
 
 def save_flowcell_statistic_barcode(flowcell_id, row):
+    """
+    Save flowcell statistic barcode objects into the database row-wise on a pandas dataframe.
+    Data for the flowcell statistics on y
+    :param flowcell_id: The primary key of the flowcell database entry
+    :type flowcell_id: int
+    :param row: a pandas dataframe row
+    :type row: pandas.core.series.Series
+    :return: None
+    """
 
     utc = pytz.utc
 
-    start_time = utc.localize(row['start_time_truncate'][0])
-    barcode_name = row['barcode__name'][0]
-    type_name = row['type__name'][0]
-    status = row['is_pass'][0]
-    sequence_length_sum = row['sequence_length']['sum']
-    sequence_length_max = row['sequence_length']['max']
-    sequence_length_min = row['sequence_length']['min']
-    quality_average_sum = row['quality_average']['sum']
-    read_count = row['sequence_length']['count']
-    channels = row['channel']['unique']
+    start_time = utc.localize(row["start_time_truncate"][0])
+    barcode_name = row["barcode__name"][0]
+    rejection_status = row["rejected_barcode__name"][0]
+    type_name = row["type__name"][0]
+    status = row["is_pass"][0]
+    sequence_length_sum = row["sequence_length"]["sum"]
+    sequence_length_max = row["sequence_length"]["max"]
+    sequence_length_min = row["sequence_length"]["min"]
+    quality_average_sum = row["quality_average"]["sum"]
+    read_count = row["sequence_length"]["count"]
+    channels = row["channel"]["unique"]
 
     flowcellStatisticBarcode, created = FlowcellStatisticBarcode.objects.get_or_create(
         flowcell_id=flowcell_id,
         sample_time=start_time,
         barcode_name=barcode_name,
+        rejection_status=rejection_status,
         read_type_name=type_name,
-        status=status)
+        status=status,
+    )
 
     flowcellStatisticBarcode.total_length += sequence_length_sum
     flowcellStatisticBarcode.quality_sum += quality_average_sum
@@ -78,29 +108,40 @@ def save_flowcell_statistic_barcode(flowcell_id, row):
 
     for c in channels:
 
-        channel_list[c - 1] = '1'
+        channel_list[c - 1] = "1"
 
-        flowcellStatisticBarcode.channel_presence = ''.join(channel_list)
+        flowcellStatisticBarcode.channel_presence = "".join(channel_list)
         flowcellStatisticBarcode.channel_count = len(channels)
 
     flowcellStatisticBarcode.save()
 
 
 def save_flowcell_histogram_summary(flowcell_id, row):
-
-    barcode_name = row['barcode__name'][0]
-    read_type_name = row['type__name'][0]
-    status = row['is_pass'][0]
-    bin_index = row['bin_index'][0]
-    sequence_length_sum = row['sequence_length']['sum']
-    read_count = row['sequence_length']['count']
+    """
+    Save flowcell histogram barcode objects into the database row-wise on a pandas dataframe.
+    Data for the histograms on the chancalc page.
+    :param flowcell_id: Primary key of the flowcell database entry
+    :type flowcell_id: int
+    :param row: a pandas dataframe row
+    :type row: pandas.core.series.Series
+    :return: None
+    """
+    barcode_name = row["barcode__name"][0]
+    read_type_name = row["type__name"][0]
+    rejection_status = row["rejected_barcode__name"][0]
+    status = row["is_pass"][0]
+    bin_index = row["bin_index"][0]
+    sequence_length_sum = row["sequence_length"]["sum"]
+    read_count = row["sequence_length"]["count"]
 
     flowcellHistogramSummary, created = FlowcellHistogramSummary.objects.get_or_create(
         flowcell_id=flowcell_id,
         barcode_name=barcode_name,
+        rejection_status=rejection_status,
         read_type_name=read_type_name,
         status=status,
-        bin_index=bin_index)
+        bin_index=bin_index,
+    )
 
     flowcellHistogramSummary.read_length += sequence_length_sum
     flowcellHistogramSummary.read_count += read_count
@@ -109,14 +150,21 @@ def save_flowcell_histogram_summary(flowcell_id, row):
 
 
 def save_flowcell_channel_summary(flowcell_id, row):
-
-    channel = row['channel'][0]
-    sequence_length_sum = row['sequence_length']['sum']
-    read_count = row['sequence_length']['count']
+    """
+    Save flowcell channel summary into the database row-wise on a pandas dataframe. Used for the channel visualisations.
+    :param flowcell_id: Primary key of the flowcell database entry
+    :type flowcell_id: int
+    :param row: a pandas dataframe row
+    :type row: pandas.core.series.Series
+    :return: None
+    """
+    channel = row["channel"][0]
+    sequence_length_sum = row["sequence_length"]["sum"]
+    read_count = row["sequence_length"]["count"]
 
     flowcellChannelSummary, created = FlowcellChannelSummary.objects.get_or_create(
-        flowcell_id=flowcell_id,
-        channel=channel)
+        flowcell_id=flowcell_id, channel=channel
+    )
 
     flowcellChannelSummary.read_length += sequence_length_sum
     flowcellChannelSummary.read_count += read_count

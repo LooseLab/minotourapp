@@ -25,27 +25,55 @@ from assembly.models import GfaStore
 from centrifuge.models import CentrifugeOutput
 from jobs.models import JobMaster, JobType
 from minotourapp import settings
-from reads.models import (Barcode, FastqFile, FastqRead, FastqReadType,
-                          MinIONControl, MinIONEvent,
-                          MinIONEventType, MinionMessage, MinIONRunStats,
-                          MinIONRunStatus, MinIONScripts, MinIONStatus, Run, GroupRun, FlowcellStatisticBarcode,
-                          FlowcellSummaryBarcode, Flowcell, MinION, RunSummary)
+from reads.models import (
+    Barcode,
+    FastqFile,
+    FastqRead,
+    FastqReadType,
+    MinIONControl,
+    MinIONEvent,
+    MinIONEventType,
+    MinionMessage,
+    MinIONRunStats,
+    MinIONRunStatus,
+    MinIONScripts,
+    MinIONStatus,
+    Run,
+    GroupRun,
+    FlowcellStatisticBarcode,
+    FlowcellSummaryBarcode,
+    Flowcell,
+    MinION,
+    RunSummary,
+)
 from reads.models import FlowcellChannelSummary
 from reads.models import FlowcellHistogramSummary
-from reads.serializers import (BarcodeSerializer,
-                               ChannelSummarySerializer, FastqFileSerializer, FastqReadSerializer,
-                               FastqReadTypeSerializer, FlowcellSerializer, MinIONControlSerializer,
-                               MinIONEventSerializer,
-                               MinIONEventTypeSerializer,
-                               MinionMessageSerializer,
-                               MinIONRunStatsSerializer,
-                               MinIONRunStatusSerializer,
-                               MinIONScriptsSerializer, MinIONSerializer,
-                               MinIONStatusSerializer,
-                               RunSerializer,
-                               RunStatisticBarcodeSerializer,
-                               RunSummaryBarcodeSerializer, ChannelSummary, RunStatisticBarcode, RunSummaryBarcode,
-                               GroupRunSerializer, FlowcellSummaryBarcodeSerializer, FastqReadGetSerializer)
+from reads.serializers import (
+    BarcodeSerializer,
+    ChannelSummarySerializer,
+    FastqFileSerializer,
+    FastqReadSerializer,
+    FastqReadTypeSerializer,
+    FlowcellSerializer,
+    MinIONControlSerializer,
+    MinIONEventSerializer,
+    MinIONEventTypeSerializer,
+    MinionMessageSerializer,
+    MinIONRunStatsSerializer,
+    MinIONRunStatusSerializer,
+    MinIONScriptsSerializer,
+    MinIONSerializer,
+    MinIONStatusSerializer,
+    RunSerializer,
+    RunStatisticBarcodeSerializer,
+    RunSummaryBarcodeSerializer,
+    ChannelSummary,
+    RunStatisticBarcode,
+    RunSummaryBarcode,
+    GroupRunSerializer,
+    FlowcellSummaryBarcodeSerializer,
+    FastqReadGetSerializer,
+)
 from reads.utils import get_coords
 
 logger = get_task_logger(__name__)
@@ -1043,38 +1071,63 @@ def process_summary_data(df):
         df['total_length'] / df[df["barcode_name"].eq("All reads")]['total_length'].sum() * 100,
         df['total_length'] / df[df["barcode_name"].ne("All reads")]['total_length'].sum() * 100
     )
+
     df['avg_length'] = df['total_length'] / df['read_count']
+
     df['avg_quality'] = df['quality_sum'] / df['read_count']
-    return(df)
+
+    return df
 
 
 @login_required
 def flowcell_summary_html(request, pk):
+    """
+    Returns a html table to the top of the chancalc page
+    :param request: The Get request body
+    :type request: rest_framework.request.Request
+    :param pk: Primary key of the flowcell
+    :type pk: int
+    :return: application/html table
+    """
 
-    dowcell = Flowcell.objects.get(pk=pk)
-
+    flowcell = Flowcell.objects.get(pk=pk)
+    # Get the flowcell summary barcodes for this flowcell, generated during the task
     qs = FlowcellSummaryBarcode.objects \
-        .filter(flowcell=dowcell) \
+        .filter(flowcell=flowcell) \
         .exclude(barcode_name='No barcode')
+    # Create a dataframe of the fetched data
+    df = pd.DataFrame.from_records(qs.values('barcode_name', 'rejection_status','max_length','min_length','quality_sum','read_count','read_type_name','status','total_length'))
+    # calculate the percentage of reads in a barcode
+    df = process_summary_data(df)
 
-    df = pd.DataFrame.from_records(qs.values('barcode_name','max_length','min_length','quality_sum','read_count','read_type_name','status','total_length'))
-    df=process_summary_data(df)
     df['read_type'] = np.where(df['status'] == 'True', "Pass", "Fail")
+    # remove status column
     df = df.drop('status', axis=1)
+    # Create a record oriented dictionary from the dataframe
     dictdf = df.to_dict('records')
+    # aggregations to be calculated
     agg = {'max_length': 'max', 'min_length': 'min', 'quality_sum': 'sum', 'read_count': 'sum', 'total_length': 'sum'}
-
-    df2 = df[df["barcode_name"].eq("All reads")].groupby(['barcode_name', 'read_type_name']).agg(agg)
+    # Group by All reads and pass fail read type, perform the above aggregations
+    # and creating the columns for the results
+    df2 = df[df["barcode_name"].eq("All reads")].groupby(['barcode_name', 'read_type_name', 'rejection_status']).agg(agg)
 
     df2 = df2.reset_index()
+
     df2 = process_summary_data(df2)
+
     df2['read_type'] = "all"
+    # Append results to the dictionary
     dictdf.extend(df2.to_dict('records'))
-    df2 = df[df["barcode_name"].ne("All reads")].groupby(['barcode_name', 'read_type_name']).agg(agg)
-    if len(df2) > 0:
+    # Same aggregations on other barcodes
+    df2 = df[df["barcode_name"].ne("All reads")].groupby(['barcode_name', 'read_type_name', 'rejection_status']).agg(agg)
+
+    if df2.shape[0] > 0:
         df2 = df2.reset_index()
+
         df2 = process_summary_data(df2)
+
         df2['read_type'] = "all"
+
         dictdf.extend(df2.to_dict('records'))
 
     return render(request, 'reads/flowcell_summary.html', {'qs': dictdf})
@@ -1083,71 +1136,149 @@ def flowcell_summary_html(request, pk):
 @api_view(['GET'])
 def flowcell_statistics(request, pk):
     """
-    Return a prepared set of summaries for reads quality over time grouped by minute.
+    Return a prepared set of summaries for reads quality over time grouped by minute. Used in the
+    rest of the charts on the basecalled data tab - except pore charts
+    :param request: The Get request body
+    :type request: rest_framework.request.Request
+    :param pk: Primary key of the flowcell the read data is attached to
+    :type pk: int
+    :return: (HttpResponse) json of all sorts of data
     """
 
-    q = request.GET.get('barcode_name', 'All reads')
-    qlist = list()
-    qlist.append(q)
-    if q != "All reads":
-        qlist.append("All reads")
+    barcode_name = request.GET.get("barcode_name", "All reads")
 
-    #print (qlist)
+    barcodes_list = [barcode_name]
+
+    if barcode_name != "All reads":
+        barcodes_list.append("All reads")
 
     flowcell = Flowcell.objects.get(pk=pk)
-
+    # Reverse lookup a queryset of all the runs in this flowcell
     run_list = flowcell.runs.all()
 
-    queryset = FlowcellStatisticBarcode.objects \
-        .filter(flowcell=flowcell) \
-        .filter(barcode_name__in=qlist) \
-        .order_by('sample_time')
+    queryset = (
+        FlowcellStatisticBarcode.objects.filter(flowcell=flowcell)
+        .filter(barcode_name__in=barcodes_list)
+        .order_by("sample_time")
+    )
 
-    ## We want to throw away pass and fail when we are looking at a barcoded run...
+    df = pd.DataFrame(
+        list(
+            queryset.values(
+                "read_type_name",
+                "sample_time",
+                "barcode_name",
+                "status",
+                "read_count",
+                "max_length",
+                "total_length",
+                "quality_sum",
+                "rejection_status"
+            )
+        )
+    )
 
-    df = pd.DataFrame(list(queryset.values('read_type_name','sample_time','barcode_name','status','read_count','max_length','total_length','quality_sum')))
-    df['read_type'] = np.where(df['status'] == 'True', "Pass", "Fail")
-    agg = {'max_length': 'max', 'quality_sum': 'sum', 'read_count': 'sum', 'total_length': 'sum'}
-    df2 = df.groupby(['barcode_name','read_type_name','sample_time']).agg(agg)
-    df=df.drop('status',axis=1)
-    df2['read_type'] = "All"
+    df["read_type"] = np.where(df["status"] == "True", "Pass", "Fail")
+
+    agg = {
+        "max_length": "max",
+        "quality_sum": "sum",
+        "read_count": "sum",
+        "total_length": "sum",
+    }
+
+    df2 = df.groupby(["barcode_name", "read_type_name", "sample_time", "rejection_status"]).agg(
+        agg
+    )
+
+    df = df.drop("status", axis=1)
+
+    df2["read_type"] = "All"
+
     df2 = df2.reset_index()
-    df3 = pd.concat([df,df2],ignore_index=True,sort=True)
-    df3['cumulative_read_count'] = df3.groupby(['barcode_name','read_type_name','read_type'])['read_count'].apply(lambda x: x.cumsum())
-    df3['cumulative_bases'] = df3.groupby(['barcode_name','read_type_name', 'read_type'])['total_length'].apply(lambda x: x.cumsum())
-    df3['key']=df3['barcode_name'].astype('str') + " - " + df3['read_type_name'].astype('str') + " - " + df3['read_type'].astype('str')
-    df3['average_quality'] = df3['quality_sum'].div(df3['read_count']).astype('float').round(decimals=0)
-    df3['average_quality'] = df3['average_quality'].astype('float')
-    df3['average_length'] = df3['total_length'].div(df3['read_count']).round(decimals=0)
-    df3['sequence_rate'] = df3['total_length'].div(60).round(decimals=0)
-    df3['corrected_time'] = df3['sample_time'].astype(np.int64) // 10**6
-    if q != "All reads":
-        df3 = df3.drop(df3.index[(df3.barcode_name == 'All reads') & (df3.read_type != "All")])
-    data_keys = df3['key'].unique().tolist()
 
-    result_dict = {k:df3[df3['key'].eq(k)][['corrected_time','average_quality','average_length','cumulative_bases','cumulative_read_count','max_length','sequence_rate']].values.tolist() for k in df3.key.unique()}
+    df3 = pd.concat([df, df2], ignore_index=True, sort=True)
+
+    df3["cumulative_read_count"] = df3.groupby(
+        ["barcode_name", "read_type_name", "read_type", "rejection_status"]
+    )["read_count"].apply(lambda x: x.cumsum())
+
+    df3["cumulative_bases"] = df3.groupby(
+        ["barcode_name", "read_type_name", "read_type", "rejection_status"]
+    )["total_length"].apply(lambda x: x.cumsum())
+
+    df3["key"] = (
+        df3["barcode_name"].astype("str")
+        + " - "
+        + df3["read_type_name"].astype("str")
+        + " - "
+        + df3["read_type"].astype("str") + " - " + df3["rejection_status"].astype("str")
+    )
+
+    df3["average_quality"] = (
+        df3["quality_sum"]
+        .div(df3["read_count"])
+        .astype("float")
+        .round(decimals=0)
+    )
+
+    df3["average_quality"] = df3["average_quality"].astype("float")
+
+    df3["average_length"] = (
+        df3["total_length"].div(df3["read_count"]).round(decimals=0)
+    )
+
+    df3["sequence_rate"] = df3["total_length"].div(60).round(decimals=0)
+
+    df3["corrected_time"] = df3["sample_time"].astype(np.int64) // 10 ** 6
+
+    if barcode_name != "All reads":
+        df3 = df3.drop(
+            df3.index[
+                (df3.barcode_name == "All reads") & (df3.read_type != "All")
+            ]
+        )
+
+    data_keys = df3["key"].unique().tolist()
+    # Todo sorry what
+    result_dict = {
+        k: df3[df3["key"].eq(k)][
+            [
+                "corrected_time",
+                "average_quality",
+                "average_length",
+                "cumulative_bases",
+                "cumulative_read_count",
+                "max_length",
+                "sequence_rate",
+            ]
+        ].values.tolist()
+        for k in df3.key.unique()
+    }
 
     run_data = []
 
     for run in run_list:
         run_dict = {
-            'id': run.id,
-            'name': run.name,
-            'runid': run.runid,
-            'start_time': run.start_time,
-            'last_read': run.last_read(),
+            "id": run.id,
+            "name": run.name,
+            "runid": run.runid,
+            "start_time": run.start_time,
+            "last_read": run.last_read(),
         }
 
         run_data.append(run_dict)
 
     res = {
-        'runs': run_data,
-        'data_keys': data_keys,
-        'data': result_dict,
-        'date_created': datetime.datetime.now()
+        "runs": run_data,
+        "data_keys": data_keys,
+        "data": result_dict,
+        "date_created": datetime.datetime.now(),
     }
 
-    return HttpResponse(json.dumps(res, cls=DjangoJSONEncoder), content_type="application/json")
+    return HttpResponse(
+        json.dumps(res, cls=DjangoJSONEncoder), content_type="application/json"
+    )
 
 
 @api_view(['get'])
@@ -1199,80 +1330,102 @@ def flowcell_speed(request,pk):
 @api_view(['GET'])
 def flowcell_histogram_summary(request, pk):
     """
-    TODO Document
-    :param request:
-    :param pk:
-    :return:
+    Return the data for histograms on the basecalled data page
+    :param request: Get request body
+    :type request: rest_framework.request.Request
+    :param pk: The primary key of the flowcell that the basecalled data metrics are attached to
+    :type pk: int
+    :return: (rest_framework.response.Response) containing a
+
     """
-    barcode_name = request.GET.get('barcode_name', 'All reads')
-
+    # Get the barcode we are doing this for, default to all reads
+    barcode_name = request.GET.get("barcode_name", "All reads")
+    # Get the information for the flowcell the data is attached to
     flowcell = Flowcell.objects.get(pk=pk)
-
-    max_bin_index = FlowcellHistogramSummary.objects \
-        .filter(flowcell=flowcell) \
-        .filter(barcode_name=barcode_name) \
-        .aggregate(Max('bin_index'))
-
-    key_list = FlowcellHistogramSummary.objects\
-        .filter(flowcell=flowcell)\
-        .filter(barcode_name=barcode_name)\
-        .values_list('barcode_name', 'read_type_name', 'status')\
+    # The largest bin
+    max_bin_index = (
+        FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
+        .filter(barcode_name=barcode_name)
+        .aggregate(Max("bin_index"))
+    )
+    # A list of tuples, distinct on barcode name, pass/fail, template
+    key_list = (
+        FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
+        .filter(barcode_name=barcode_name)
+        .values_list("barcode_name", "read_type_name", "status", "rejection_status")
         .distinct()
+    )
 
     data_keys = {}
+    # unpack the tuple and create data using it, for each tuple
+    for (barcode_name, read_type_name, status, rejection_status) in key_list:
+        # query flowcell Histogram summary objects for all of the combinations under this barcode
+        queryset = (
+            FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
+            .filter(barcode_name=barcode_name)
+            .filter(read_type_name=read_type_name)
+            .filter(status=status)
+            .filter(rejection_status=rejection_status)
+            .order_by("bin_index")
+        )
+        # make a list of 0s one element for each bin
+        result_read_count_sum = np.zeros(max_bin_index["bin_index__max"] + 1, dtype=int).tolist()
+        # duplicate it into a new copy
+        result_read_length_sum = result_read_count_sum.copy()
+        # if there is more than one histogram summary, there should be one for each bin
+        if queryset.count() > 0:
 
-    for (barcode_name, read_type_name, status) in key_list:
-
-        queryset = FlowcellHistogramSummary.objects\
-            .filter(flowcell=flowcell)\
-            .filter(barcode_name=barcode_name)\
-            .filter(read_type_name=read_type_name)\
-            .filter(status=status)\
-            .order_by('bin_index')
-
-        result_read_count_sum = [0] * (max_bin_index['bin_index__max'] + 1)
-        result_read_length_sum = [0] * (max_bin_index['bin_index__max'] + 1)
-
-        if len(queryset) > 0:
-
-            if status == 'True':
-                l_is_pass = 'Pass'
+            if status == "True":
+                l_is_pass = "Pass"
             else:
-                l_is_pass = 'Fail'
-
-            l_key = ("{} - {} - {}".format(barcode_name, read_type_name, l_is_pass))
+                l_is_pass = "Fail"
+            # The text for the chart legend
+            l_key = "{} - {} - {} - {}".format(
+                barcode_name, read_type_name, l_is_pass, rejection_status
+            )
 
             for r in queryset:
-
+                # get the index to lookup in the list
                 l_bin_index = r.bin_index
+                # get the read count fo that bin
                 l_read_count_sum = r.read_count
+                # get the sum of the read lengths of that bin
                 l_read_length_sum = r.read_length
-
+                # set the element value to this bins read count sum
                 result_read_count_sum[l_bin_index] = l_read_count_sum
+                # set the element value for this bins read length sum
                 result_read_length_sum[l_bin_index] = l_read_length_sum
 
+            # create a key in the data keys return dictionary for the barcode - if it isn't already there
             if barcode_name not in data_keys.keys():
-
+                # create a value of a dictionary
                 data_keys[barcode_name] = {}
-
+            # nest another dictionary in it with the read type as a key (template, 1d^2) - if it isn't already there
             if read_type_name not in data_keys[barcode_name].keys():
 
                 data_keys[barcode_name][read_type_name] = {}
+            # nest another dictionary with the rejection status as its key -
+            #  (unblocked/sequenced) - if it isn't already there
+            if rejection_status not in data_keys[barcode_name][read_type_name].keys():
 
-            data_keys[barcode_name][read_type_name][l_is_pass] = {
-                'read_count': {
-                    'name': l_key,
-                    'data': result_read_count_sum
-                },
-                'read_length': {
-                    'name': l_key,
-                    'data': result_read_length_sum
-                }
+                data_keys[barcode_name][read_type_name][rejection_status] = {}
+            # populate this lowest level dictionary with a dictionary of the results
+            data_keys[barcode_name][read_type_name][rejection_status][l_is_pass] = {
+                "read_count": {"name": l_key, "data": result_read_count_sum},
+                "read_length": {"name": l_key, "data": result_read_length_sum},
             }
+    # create a list with a range beginning at 1000 and stepping
+    # in 1000 to the maximum bin width, used for x axis labels
+    categories = list(
+        range(
+            1 * FlowcellHistogramSummary.BIN_WIDTH,
+            (max_bin_index["bin_index__max"] + 1)
+            * FlowcellHistogramSummary.BIN_WIDTH,
+            FlowcellHistogramSummary.BIN_WIDTH,
+        )
+    )
 
-    categories = list(range(1 * FlowcellHistogramSummary.BIN_WIDTH, (max_bin_index['bin_index__max'] + 1) * FlowcellHistogramSummary.BIN_WIDTH, FlowcellHistogramSummary.BIN_WIDTH))
-
-    return Response({'data': data_keys, 'categories': categories})
+    return Response({"data": data_keys, "categories": categories})
 
 
 @api_view(['GET'])
