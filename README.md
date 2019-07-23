@@ -1,7 +1,5 @@
 # minoTour
 
-## Warning - Work in progress
-
 Minotour is a work in progress. Therefore features may change, and any bug reports/pull request would be gratefully recieved.
 
 ## Running minoTour with Docker
@@ -15,14 +13,18 @@ docker --version
 To following commands build and start several minoTour containers (database, Redis, celery, and web app).
 
 ```bash
-git checkout https://github.com/LooseLab/minotourapp.git
-
-cd minotourapp
-
-docker-compose up
+git clone https://github.com/LooseLab/minotourapp.git;
 ``` 
 
-Now, you can access minoTour on http://localhost:10000.
+```bash
+cd minotourapp;
+``` 
+
+```bash
+docker-compose up;
+``` 
+
+After a few seconds, you can access minoTour on http://localhost:10000/
 
 ## Development environment
 
