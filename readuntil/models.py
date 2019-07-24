@@ -1,6 +1,6 @@
 from django.db import models
 
-from reads.models import Run
+from reads.models import Run, Flowcell
 from jobs.models import JobMaster
 from reference.models import ReferenceLine
 
@@ -12,6 +12,43 @@ class RejectedFastqRead(models.Model):
 
     1) This model can contain reads that don't exist in the reads.FastqRead model.
     """
+    flowcell = models.ForeignKey(
+        Flowcell,
+        null=True,
+        default=None,
+        on_delete=models.CASCADE,
+        related_name="rejected_read_flowcell"
+    )
+
+    run = models.ForeignKey(
+        Run,
+        null=True,
+        default=None,
+        on_delete=models.CASCADE,
+    )
+
+    read_id = models.CharField(
+
+        max_length=96
+    )
+
+    def __str__(self):
+
+        return "{} - {}".format(self.read_id, self.run.runid)
+
+
+class AcceptedFastqRead(models.Model):
+
+    """
+    It holds information about reads rejected by the read until algorithm.
+
+    1) This model can contain reads that don't exist in the reads.FastqRead model.
+    """
+    flowcell = models.ForeignKey(
+        Flowcell,
+        on_delete=models.CASCADE,
+        related_name="accepted_read_flowcell"
+    )
 
     run = models.ForeignKey(
 
