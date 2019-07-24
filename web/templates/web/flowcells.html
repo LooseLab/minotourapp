@@ -31,6 +31,8 @@
                         <th>Average<br/>Read Length</th>
                         <th>Status</th>
                         <th>Contains<br/>sequence data</th>
+                        <th>Is Owner</th>
+                        <th>Permission</th>
                     </tr>
                     </thead>
                     </table>
@@ -74,7 +76,9 @@
                             json[i].total_read_length,
                             json[i].average_read_length,
                             json[i].is_active,
-                            json[i].has_fastq
+                            json[i].has_fastq,
+                            json[i].owner,
+                            json[i].permission,
                         ]);
                     }
                     return data;
@@ -171,6 +175,24 @@
                         } else {
                             return '<a href="/web/private/flowcells/' + data + '/">No</a>';
                         }
+                    }
+                },
+                {
+                    'targets': 12,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        if (full[13]) {
+                            return '<a href="/web/private/flowcells/' + data + '/">Yes</a>';
+                        } else {
+                            return '<a href="/web/private/flowcells/' + data + '/">No</a>';
+                        }
+                    }
+                },
+                {
+                    'targets': 13,
+                    'data': 0,
+                    'render': function(data, type, full, meta) {
+                        return '<a href="/web/private/flowcells/' + data + '/">' + full[14] + '</a>';
                     }
                 },
             ]

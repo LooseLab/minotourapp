@@ -158,6 +158,29 @@ class Flowcell(models.Model):
         return True
 
 
+class FlowcellUserPermission(models.Model):
+
+    PERMISSIONS = (
+        ('READ_ONLY', 'Read-only'),
+        ('READ_WRITE', 'Read-write')
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.DO_NOTHING,
+    )
+
+    flowcell = models.ForeignKey(
+        Flowcell,
+        on_delete=models.CASCADE,
+    )
+
+    permission = models.CharField(
+        max_length=10,
+        choices=PERMISSIONS,
+        default='READ_ONLY',
+    )
+
 class MinION(models.Model):
     minION_name = models.CharField(
         max_length=64

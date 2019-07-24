@@ -8,6 +8,7 @@ import pandas as pd
 from celery import task
 from celery.utils.log import get_task_logger
 from dateutil import parser
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Max
@@ -18,7 +19,6 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.contrib.auth.decorators import login_required
 
 from alignment.models import PafRoughCov
 from assembly.models import GfaStore
@@ -32,6 +32,7 @@ from reads.models import (Barcode, FastqFile, FastqRead, FastqReadType,
                           FlowcellSummaryBarcode, Flowcell, MinION, RunSummary)
 from reads.models import FlowcellChannelSummary
 from reads.models import FlowcellHistogramSummary
+from reads.models import FlowcellUserPermission
 from reads.serializers import (BarcodeSerializer,
                                ChannelSummarySerializer, FastqFileSerializer, FastqReadSerializer,
                                FastqReadTypeSerializer, FlowcellSerializer, MinIONControlSerializer,
@@ -895,10 +896,13 @@ def flowcell_list(request):
     """
     if request.method == 'GET':
 
+        flowcells = []
+
         queryset = Flowcell.objects.filter(owner=request.user)
 
-        flowcells = [
-            {
+        for record in queryset:
+
+            obj = {
                 'id': record.id,
                 'name': record.name,
                 'size': record.size,
@@ -912,9 +916,37 @@ def flowcell_list(request):
                 'is_active': record.active(),
                 'sample_name': record.sample_name,
                 'has_fastq': record.has_fastq,
+                'owner': True,
+                'permission': 'READ_WRITE',
             }
-            for record in queryset
-        ]
+
+            flowcells.append(obj)
+
+        permissions = FlowcellUserPermission.objects.filter(user=request.user)
+
+        for permission in permissions:
+
+            record = permission.flowcell
+
+            obj = {
+                'id': record.id,
+                'name': record.name,
+                'size': record.size,
+                'start_time': record.start_time,
+                'number_reads': record.number_reads,
+                'number_reads_processed': record.number_reads_processed,
+                'number_runs': record.number_runs,
+                'number_barcodes': record.number_barcodes,
+                'total_read_length': record.total_read_length,
+                'average_read_length': record.average_read_length,
+                'is_active': record.active(),
+                'sample_name': record.sample_name,
+                'has_fastq': record.has_fastq,
+                'owner': False,
+                'permission': permission.permission,
+            }
+
+            flowcells.append(obj)
 
         return JsonResponse({'data': flowcells})
     # If the method is not GET, it must be post
