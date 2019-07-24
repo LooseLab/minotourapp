@@ -413,27 +413,19 @@ def get_chromosomes(request):
 
 
 @api_view(["GET", "POST"])
-def get_or_create_readuntil_reads(request):
+def get_or_create_rejected_reads(request):
     """
     Get or create the read ids for rejected fastq reads in a read until experiment
-    :param request: Django rest framework request object
+    :param request: Django rest framework HTTP request object
     :type request: rest_framework.request.Request
     :return: Response of all reject fastq reads for a certain flowcell
     """
 
     # Lookup for whether we are fetching Accepted or rejected data
-    type_of_reads = {0: AcceptedFastqRead, 1: RejectedFastqRead}
 
     if request.method is "GET":
         # get the flowcell id we are using in this request, sent by the browser
         flowcell_id = request.query_params.get("flowcell_id", -1)
-
-        type_of_read_to_be_saved = request.query_params.get("type", -1)
-
-        if type_of_read_to_be_saved is -1:
-            return Response(
-                "Unrecognised type of read to be stored. Accepted values are 0 - Accepted, or 1 - Rejected"
-            )
 
         # no flowcell Id was provided
         if flowcell_id == -1:
@@ -464,9 +456,7 @@ def get_or_create_readuntil_reads(request):
         if not run_id:
             return Response("No run was found matching that ID", status=404)
 
-        type_of_read_to_be_created = type_of_reads[type_of_read_to_be_saved]
-
-        rejected_read_ids = type_of_read_to_be_created.objects.filter(
+        rejected_read_ids = RejectedFastqRead.objects.filter(
             run=run
         ).values_list("read_id", flat=True)
 
@@ -478,20 +468,13 @@ def get_or_create_readuntil_reads(request):
 
         run_id = request.DATA["run_id"]
 
-        type_of_read_to_be_saved = request.DATA.get("type", -1)
-
-        if type_of_read_to_be_saved is -1:
-            return Response(
-                "Unrecognised type of read to be stored. Accepted values are 0 - Accepted, or 1 - Rejected"
-            )
-
         flowcell = Flowcell.objects.get(
             Q(name=flowcell_id) | Q(pk=flowcell_id)
         )
 
         if not flowcell:
             return Response(
-                "No flowcell was found mathcing that name or ID", status=404
+                "No flowcell was found matching that name or ID", status=404
             )
 
         run = Run.objects.get(runid=run_id)
@@ -499,6 +482,7 @@ def get_or_create_readuntil_reads(request):
         if not run:
             return Response("No run was found matching that ID", status=404)
 
+        # if it's a list, we are saving both accepted and rejected read ids
         fastq_reads = request.DATA["read_ids"]
 
         if not fastq_reads:
@@ -514,10 +498,100 @@ def get_or_create_readuntil_reads(request):
 
         del df
 
-        type_of_read_to_be_created = type_of_reads[type_of_read_to_be_saved]
+        # bulk create them
+        reads_saved = RejectedFastqRead.objects.bulk_create(
+            [RejectedFastqRead(**item) for item in saving_dict],
+            batch_size=2000,
+        )
+
+
+@api_view(["GET", "POST"])
+def get_or_create_accepted_reads(request):
+    """
+    Get or create the read ids for Accepted fastq reads in a read until experiment
+    :param request: Django rest framework HTTP request object
+    :type request: rest_framework.request.Request
+    :return:
+    """
+    # Lookup for whether we are fetching Accepted or rejected data
+
+    if request.method is "GET":
+        # get the flowcell id we are using in this request, sent by the browser
+        flowcell_id = request.query_params.get("flowcell_id", -1)
+
+        # no flowcell Id was provided
+        if flowcell_id == -1:
+            return Response(
+                "No flowcell id was provided. Please provide a flowcell ID.",
+                status=404,
+            )
+
+        flowcell = Flowcell.objects.get(
+            Q(name=flowcell_id) | Q(pk=flowcell_id)
+        )
+        # no flowcell found
+        if not flowcell_id:
+            return Response(
+                "No flowcell was found mathcing that name or ID", status=404
+            )
+
+        run_id = request.query_params.get("run_id", -1)
+
+        if run_id == -1:
+            return Response(
+                "No run_id was provided. Please provide a flowcell ID.",
+                status=404,
+            )
+
+        run = Run.objects.get(runid=run_id)
+
+        if not run_id:
+            return Response("No run was found matching that ID", status=404)
+
+        accepted_read_ids = AcceptedFastqRead.objects.filter(
+            run=run
+        ).values_list("read_id", flat=True)
+
+        return Response(accepted_read_ids, status=200)
+    # it's a post so we're getting data from the readUntil client
+    else:
+
+        flowcell_id = request.DATA["flowcell_id"]
+
+        run_id = request.DATA["run_id"]
+
+        flowcell = Flowcell.objects.get(
+            Q(name=flowcell_id) | Q(pk=flowcell_id)
+        )
+
+        if not flowcell:
+            return Response(
+                "No flowcell was found matching that name or ID", status=404
+            )
+
+        run = Run.objects.get(runid=run_id)
+
+        if not run:
+            return Response("No run was found matching that ID", status=404)
+
+        # if it's a list, we are saving both accepted and rejected read ids
+        fastq_reads = request.DATA["read_ids"]
+
+        if not fastq_reads:
+            return Response("No fastq read ids provided", status=500)
+        # Create a dataframe of the new read_ids
+        df = pd.DataFrame(fastq_reads, columns=["read_id"])
+        # broadcast the flowcell objects down the dataframe
+        df["flowcell"] = flowcell
+        # broadcast the run objects down the dataframe
+        df["run"] = run
+        # transform to list of dictionaries row wise, keyed by column names
+        saving_dict = df.to_dict(orient="records")
+
+        del df
 
         # bulk create them
-        reads_saved = type_of_read_to_be_created.objects.bulk_create(
-            [RejectedFastqRead(**item) for item in saving_dict],
+        reads_saved = AcceptedFastqRead.objects.bulk_create(
+            [AcceptedFastqRead(**item) for item in saving_dict],
             batch_size=2000,
         )

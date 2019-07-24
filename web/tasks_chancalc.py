@@ -3,13 +3,16 @@ import pandas as pd
 from celery import task
 from celery.utils.log import get_task_logger
 
-from django.db.models import Avg, Max, Min, Sum
+from django.db.models import Avg, Max, Min, Sum, Q
 
 from jobs.models import JobMaster
 from reads.models import FastqRead, HistogramSummary, Flowcell, FlowcellSummaryBarcode, FlowcellStatisticBarcode, \
     FlowcellHistogramSummary, FlowcellChannelSummary
 from reads.services import save_flowcell_summary_barcode, save_flowcell_statistic_barcode, \
     save_flowcell_histogram_summary, save_flowcell_channel_summary
+from readuntil.models import RejectedFastqRead, AcceptedFastqRead
+from reads.models import Barcode
+
 
 logger = get_task_logger(__name__)
 
@@ -64,6 +67,34 @@ def fetchreads(runs,chunk_size,last_read):
     return fastq_df_barcode,last_read,read_count
 
 
+def compare_read_ids(flowcell, runs):
+    """
+    Compare read ids in the rejected fastqread table and attach a barcode to the rejected read ID table
+    :param flowcell: The flowcell the read ids are attached to
+    :type flowcell: reads.models.Flowcell
+    :param runs: A queryset of the runs so we can create the rejected/accepted barcodes
+    :type runs: django.db.models.query.QuerySet
+    :return:
+    """
+
+    # A list of tuples, with the model for the read_ids to be looked up
+    # and the name of the barcode to add to the FastQRead
+    tupley_listy = [(RejectedFastqRead, "Rejected"), (AcceptedFastqRead, "Accepted")]
+
+    # loop through the runs
+    for run in runs:
+        for read_type in tupley_listy:
+            rejected_barcode = Barcode.objects.get(run=run, name=read_type[1])
+
+            rejected_ids = read_type[0].objects.filter(
+                flowcell=flowcell
+            ).values_list("read_id", flat=True)
+
+            FastqRead.objects.exclude(barcode=rejected_barcode).filter(
+                run=run, read_id__in=rejected_ids
+            ).update(barcode=rejected_barcode)
+
+
 @task()
 def chancalc(flowcell_id, job_master_id, last_read):
     """
@@ -82,6 +113,8 @@ def chancalc(flowcell_id, job_master_id, last_read):
     flowcell = Flowcell.objects.get(pk=flowcell_id)
 
     runs = flowcell.runs.all()
+
+    compare_read_ids(flowcell, runs)
 
     chunk_size = 50000
     # Get the fastq data
