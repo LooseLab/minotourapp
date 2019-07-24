@@ -21,6 +21,7 @@ services:
         build:
             dockerfile: docker/web.dockerfile
             context: .
+        command: bash -c "python3 manage.py makemigrations && python3 manage.py migrate && python3 manage.py loaddata fixtures/auxiliary_data.json && python3 manage.py runserver 0.0.0.0:8000"
         container_name: web
         environment:
             MT_DB_ENGINE: 'django.db.backends.mysql'
@@ -42,13 +43,13 @@ services:
             MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
             MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
         ports:
-            - 10020:8000
+            - 8000:8000
         depends_on:
             - db
             - redis
         volumes:
             - .:/var/lib/minotour/apps/minotourapp
-        restart: always
+        restart: on-failure
 
     celery:
         build:
@@ -77,6 +78,7 @@ services:
         depends_on:
             - db
             - redis
+            - web
 
     celery_worker:
         build:
@@ -105,3 +107,4 @@ services:
         depends_on:
             - db
             - redis
+            - web

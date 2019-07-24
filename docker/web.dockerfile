@@ -16,5 +16,3 @@ RUN pip3 install -r /var/lib/minotour/apps/minotourapp/requirements.txt
 COPY ./docker/entrypoint.sh /var/lib/minotour/apps/minotourapp/docker/
 
 COPY . /var/lib/minotour/apps/minotourapp/
-
-CMD ["sh", "./docker/entrypoint.sh"]

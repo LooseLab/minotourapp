@@ -18,13 +18,35 @@ git clone https://github.com/LooseLab/minotourapp.git;
 
 ```bash
 cd minotourapp;
+
+git checkout develop;
 ``` 
 
 ```bash
-docker-compose up;
+docker-compose build;
+
+docker-compose up -d db redis;
 ``` 
 
-After a few seconds, you can access minoTour on http://localhost:10000/
+After a few seconds (give it 30 to 60 seconds), run the following commands:
+
+```bash
+docker-compose up -d web;
+``` 
+
+After a few seconds (give it 30 to 60 seconds), run the following commands:
+
+```bash
+docker-compose up -d celery celery_worker;
+``` 
+
+Create an admin user:
+
+```bash
+docker-compose exec web python manage.py createsuperuser
+``` 
+
+After a few seconds, you can access minoTour on http://localhost:8000/
 
 ## Development environment
 
