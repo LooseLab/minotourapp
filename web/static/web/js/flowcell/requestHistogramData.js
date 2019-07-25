@@ -26,7 +26,7 @@ function requestHistogramData(id) {
                 this.collectchartHistogramBasesSequencedByReadLength = this.makeSplineChart(
                     "collect-histogram-bases-sequenced-by-read-length",
                     "Collect Histogram of Bases Sequenced by Read Length".toUpperCase(),
-                    "Number of bases".toUpperCase()
+                    "Proportion of bases longer than x".toUpperCase()
                 );
             }
 
@@ -36,7 +36,7 @@ function requestHistogramData(id) {
                 this.chartHistogramReadLength = this.makeSplineChart(
                     "histogram-read-lengths",
                     "Histogram of Read Lengths".toUpperCase(),
-                    "Number of reads".toUpperCase()
+                    "Number of Reads".toUpperCase()
                 );
             }
 
@@ -46,7 +46,7 @@ function requestHistogramData(id) {
                 this.collectchartHistogramReadLength = this.makeSplineChart(
                     "collect-histogram-read-lengths",
                     "Collect Histogram of Read Lengths".toUpperCase(),
-                    "Number of reads".toUpperCase()
+                    "Proportion of data longer than x".toUpperCase()
                 );
             }
 
@@ -91,10 +91,28 @@ function requestHistogramData(id) {
                 }
             };
 
+            var options2  = {
+                plotOptions: {
+                    column: {
+                        stacking: 'normal'
+                    }
+                },
+                chart: {
+                    type: 'column'
+                },
+                xAxis: {
+                    type: 'category',
+                    categories: categories
+                },
+                yAxis: {
+                    max: 100
+                }
+            }
+
             chart_read_count.update(options);
-            collect_chart_read_count.update(options);
+            collect_chart_read_count.update(options2);
             chart_read_length.update(options);
-            collect_chart_read_length.update(options);
+            collect_chart_read_length.update(options2);
 
             Object.keys(data).forEach(function (barcode_name) {
 
