@@ -21,7 +21,7 @@ services:
         build:
             dockerfile: docker/web.dockerfile
             context: .
-        command: bash -c "python3 manage.py makemigrations && python3 manage.py migrate && python3 manage.py loaddata fixtures/auxiliary_data.json && python3 manage.py runserver 0.0.0.0:8000"
+        command: bash -c "python3 manage.py makemigrations && python3 manage.py migrate && python3 manage.py loaddata fixtures/auxiliary_data.json && python3 manage.py runserver 0.0.0.0:8100"
         container_name: web
         environment:
             MT_DB_ENGINE: 'django.db.backends.mysql'
@@ -43,7 +43,7 @@ services:
             MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
             MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
         ports:
-            - 8000:8000
+            - 8100:8100
         depends_on:
             - db
             - redis
