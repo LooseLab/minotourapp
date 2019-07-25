@@ -252,15 +252,14 @@ def run_list(request):
         )
 
         if serializer.is_valid():
-            print(request.data)
+            run = serializer.save(owner=request.user)
 
-            flowcell = Flowcell.objects.get(name=request.data["name"])
+            flowcell = run.flowcell
 
             flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
 
             flowcell.save()
 
-            serializer.save(owner=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
