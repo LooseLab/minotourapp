@@ -22,6 +22,16 @@ function requestHistogramData(id) {
 
             var chart_read_length = this.chartHistogramBasesSequencedByReadLength;
 
+            if (!this.collectchartHistogramBasesSequencedByReadLength) {
+                this.collectchartHistogramBasesSequencedByReadLength = this.makeSplineChart(
+                    "collect-histogram-bases-sequenced-by-read-length",
+                    "Collect Histogram of Bases Sequenced by Read Length".toUpperCase(),
+                    "Number of bases".toUpperCase()
+                );
+            }
+
+            var collect_chart_read_length = this.collectchartHistogramBasesSequencedByReadLength;
+
             if (!this.chartHistogramReadLength) {
                 this.chartHistogramReadLength = this.makeSplineChart(
                     "histogram-read-lengths",
@@ -32,15 +42,37 @@ function requestHistogramData(id) {
 
             var chart_read_count = this.chartHistogramReadLength;
 
+            if (!this.collectchartHistogramReadLength) {
+                this.collectchartHistogramReadLength = this.makeSplineChart(
+                    "collect-histogram-read-lengths",
+                    "Collect Histogram of Read Lengths".toUpperCase(),
+                    "Number of reads".toUpperCase()
+                );
+            }
+
+            var collect_chart_read_count = this.collectchartHistogramReadLength;
+
             if (chart_read_count.series) {
                 while (chart_read_count.series.length > 0) {
                     chart_read_count.series[0].remove();
                 }
             }
 
+            if (collect_chart_read_count.series) {
+                while (collect_chart_read_count.series.length > 0) {
+                    collect_chart_read_count.series[0].remove();
+                }
+            }
+
             if (chart_read_length.series) {
                 while (chart_read_length.series.length > 0) {
                     chart_read_length.series[0].remove();
+                }
+            }
+
+            if (collect_chart_read_length.series) {
+                while (collect_chart_read_length.series.length > 0) {
+                    collect_chart_read_length.series[0].remove();
                 }
             }
 
@@ -60,7 +92,9 @@ function requestHistogramData(id) {
             };
 
             chart_read_count.update(options);
+            collect_chart_read_count.update(options);
             chart_read_length.update(options);
+            collect_chart_read_length.update(options);
 
             Object.keys(data).forEach(function (barcode_name) {
 
@@ -72,8 +106,16 @@ function requestHistogramData(id) {
                             data[barcode_name][read_type_name][status]["read_count"]
                         );
 
+                        collect_chart_read_count.addSeries(
+                            data[barcode_name][read_type_name][status]["collect_read_count"]
+                        );
+
                         chart_read_length.addSeries(
                             data[barcode_name][read_type_name][status]["read_length"]
+                        );
+
+                        collect_chart_read_length.addSeries(
+                            data[barcode_name][read_type_name][status]["collect_read_length"]
                         );
                     });
                 });

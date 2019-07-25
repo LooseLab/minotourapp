@@ -1231,6 +1231,8 @@ def flowcell_histogram_summary(request, pk):
 
         result_read_count_sum = [0] * (max_bin_index['bin_index__max'] + 1)
         result_read_length_sum = [0] * (max_bin_index['bin_index__max'] + 1)
+        result_collect_read_count_sum = [0] * (max_bin_index['bin_index__max'] + 1)
+        result_collect_read_length_sum = [0] * (max_bin_index['bin_index__max'] + 1)
 
         if len(queryset) > 0:
 
@@ -1240,15 +1242,20 @@ def flowcell_histogram_summary(request, pk):
                 l_is_pass = 'Fail'
 
             l_key = ("{} - {} - {}".format(barcode_name, read_type_name, l_is_pass))
-
+            l_collect_read_count_sum = 0
+            l_collect_read_length_sum = 0
             for r in queryset:
 
                 l_bin_index = r.bin_index
                 l_read_count_sum = r.read_count
                 l_read_length_sum = r.read_length
+                l_collect_read_count_sum += r.read_count
+                l_collect_read_length_sum += r.read_length
 
                 result_read_count_sum[l_bin_index] = l_read_count_sum
                 result_read_length_sum[l_bin_index] = l_read_length_sum
+                result_collect_read_count_sum[l_bin_index] = l_collect_read_count_sum
+                result_collect_read_length_sum[l_bin_index] = l_collect_read_length_sum
 
             if barcode_name not in data_keys.keys():
 
@@ -1258,6 +1265,13 @@ def flowcell_histogram_summary(request, pk):
 
                 data_keys[barcode_name][read_type_name] = {}
 
+
+
+            result_collect_read_count_sum = list(
+                pd.Series(result_collect_read_count_sum).replace(to_replace=0, method='ffill'))
+            result_collect_read_length_sum = list(
+                pd.Series(result_collect_read_length_sum).replace(to_replace=0, method='ffill'))
+
             data_keys[barcode_name][read_type_name][l_is_pass] = {
                 'read_count': {
                     'name': l_key,
@@ -1266,7 +1280,15 @@ def flowcell_histogram_summary(request, pk):
                 'read_length': {
                     'name': l_key,
                     'data': result_read_length_sum
-                }
+                },
+                'collect_read_count': {
+                    'name': l_key,
+                    'data': result_collect_read_count_sum
+                },
+                'collect_read_length': {
+                    'name': l_key,
+                    'data': result_collect_read_length_sum
+                },
             }
 
     categories = list(range(1 * FlowcellHistogramSummary.BIN_WIDTH, (max_bin_index['bin_index__max'] + 1) * FlowcellHistogramSummary.BIN_WIDTH, FlowcellHistogramSummary.BIN_WIDTH))
