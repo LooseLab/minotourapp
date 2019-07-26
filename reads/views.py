@@ -980,7 +980,7 @@ def flowcell_detail(request, pk):
 
         if len(flowcell_list) != 1:
 
-            return Response({'data': {}})
+            return Response({'data': {}}, status=status.HTTP_403_FORBIDDEN)
 
         # get the matching flowcell
         flowcell = flowcell_list[0]

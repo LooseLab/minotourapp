@@ -114,8 +114,21 @@ def flowcells(request):
 
 @login_required
 def flowcell_index(request, pk):
+    """
+    Return the HTML for a flowcells own page after selecting it from the flowcell table.
+    :param request: HTTP request object
+    :param pk: The primary key of the flowcell
+    :type pk: int
+    :return: The base HTMl page for looking at a flowcell.
+    """
+    user = request.GET.get("user")
+    print(user)
 
-    flowcell = Flowcell.objects.get(pk=pk)
+    try:
+        flowcell = Flowcell.objects.get(pk=pk, owner=user)
+    except Flowcell.DoesNotExist as e:
+
+        return render(request, 'web/no.html')
     return render(request, 'web/flowcell_index.html', context={'flowcell': flowcell})
 
 
