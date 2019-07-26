@@ -247,7 +247,7 @@ def fastq_file(request,pk):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET', 'POST'])
@@ -1008,7 +1008,7 @@ def flowcell_detail(request, pk):
 
         if len(flowcell_list) != 1:
 
-            return Response({'data': {}})
+            return Response({'data': {}}, status=status.HTTP_403_FORBIDDEN)
 
         # get the matching flowcell
         flowcell = flowcell_list[0]
@@ -1239,8 +1239,9 @@ def flowcell_statistics(request, pk):
         )
 
     data_keys = df3["key"].unique().tolist()
-    # Todo sorry what
+
     result_dict = {
+
         k: df3[df3["key"].eq(k)][
             [
                 "corrected_time",
@@ -1254,7 +1255,6 @@ def flowcell_statistics(request, pk):
         ].values.tolist()
         for k in df3.key.unique()
     }
-
     run_data = []
 
     for run in run_list:
@@ -1326,7 +1326,7 @@ def flowcell_speed(request,pk):
     return Response(df['mean_speed'].to_json(orient="columns"))
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 def flowcell_histogram_summary(request, pk):
     """
     Return the data for histograms on the basecalled data page
@@ -1351,7 +1351,9 @@ def flowcell_histogram_summary(request, pk):
     key_list = (
         FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
         .filter(barcode_name=barcode_name)
-        .values_list("barcode_name", "read_type_name", "status", "rejection_status")
+        .values_list(
+            "barcode_name", "read_type_name", "status", "rejection_status"
+        )
         .distinct()
     )
 
@@ -1368,9 +1370,19 @@ def flowcell_histogram_summary(request, pk):
             .order_by("bin_index")
         )
         # make a list of 0s one element for each bin
-        result_read_count_sum = np.zeros(max_bin_index["bin_index__max"] + 1, dtype=int).tolist()
+        result_read_count_sum = np.zeros(
+            max_bin_index["bin_index__max"] + 1, dtype=int
+        ).tolist()
         # duplicate it into a new copy
         result_read_length_sum = result_read_count_sum.copy()
+
+        result_collect_read_count_sum = [0] * (
+            max_bin_index["bin_index__max"] + 1
+        )
+
+        result_collect_read_length_sum = [0] * (
+            max_bin_index["bin_index__max"] + 1
+        )
         # if there is more than one histogram summary, there should be one for each bin
         if queryset.count() > 0:
 
@@ -1378,53 +1390,105 @@ def flowcell_histogram_summary(request, pk):
                 l_is_pass = "Pass"
             else:
                 l_is_pass = "Fail"
-            # The text for the chart legend
-            l_key = "{} - {} - {} - {}".format(
-                barcode_name, read_type_name, l_is_pass, rejection_status
+
+            l_key = "{} - {} - {}".format(
+                barcode_name, read_type_name, l_is_pass
+            )
+            l_collect_read_count_sum = 0
+            l_collect_read_length_sum = 0
+            for r in queryset:
+                l_bin_index = r.bin_index
+                l_read_count_sum = r.read_count
+                l_read_length_sum = r.read_length
+                l_collect_read_count_sum += r.read_count
+                l_collect_read_length_sum += r.read_length
+
+                result_read_count_sum[l_bin_index] = l_read_count_sum
+                result_read_length_sum[l_bin_index] = l_read_length_sum
+                result_collect_read_count_sum[
+                    l_bin_index
+                ] = l_collect_read_count_sum
+                result_collect_read_length_sum[
+                    l_bin_index
+                ] = l_collect_read_length_sum
+
+            if barcode_name not in data_keys.keys():
+                data_keys[barcode_name] = {}
+
+            if rejection_status not in data_keys.keys():
+                data_keys[barcode_name][rejection_status] = {}
+
+            if (
+                read_type_name
+                not in data_keys[barcode_name][rejection_status].keys()
+            ):
+                data_keys[barcode_name][rejection_status][read_type_name] = {}
+
+            result_collect_read_count_sum = list(
+                (
+                    -pd.concat(
+                        [
+                            pd.Series([0]),
+                            pd.Series(result_collect_read_count_sum).replace(
+                                to_replace=0, method="ffill"
+                            ),
+                        ]
+                    )
+                    + pd.Series(result_collect_read_count_sum)
+                    .replace(to_replace=0, method="ffill")
+                    .max()
+                )
+                / pd.Series(result_collect_read_count_sum)
+                .replace(to_replace=0, method="ffill")
+                .max()
+                * 50
+            )
+            result_collect_read_length_sum = list(
+                (
+                    -pd.concat(
+                        [
+                            pd.Series([0]),
+                            pd.Series(result_collect_read_length_sum).replace(
+                                to_replace=0, method="ffill"
+                            ),
+                        ]
+                    )
+                    + pd.Series(result_collect_read_length_sum)
+                    .replace(to_replace=0, method="ffill")
+                    .max()
+                )
+                / pd.Series(result_collect_read_length_sum)
+                .replace(to_replace=0, method="ffill")
+                .max()
+                * 50
             )
 
-            for r in queryset:
-                # get the index to lookup in the list
-                l_bin_index = r.bin_index
-                # get the read count fo that bin
-                l_read_count_sum = r.read_count
-                # get the sum of the read lengths of that bin
-                l_read_length_sum = r.read_length
-                # set the element value to this bins read count sum
-                result_read_count_sum[l_bin_index] = l_read_count_sum
-                # set the element value for this bins read length sum
-                result_read_length_sum[l_bin_index] = l_read_length_sum
-
-            # create a key in the data keys return dictionary for the barcode - if it isn't already there
-            if barcode_name not in data_keys.keys():
-                # create a value of a dictionary
-                data_keys[barcode_name] = {}
-            # nest another dictionary in it with the read type as a key (template, 1d^2) - if it isn't already there
-            if read_type_name not in data_keys[barcode_name].keys():
-
-                data_keys[barcode_name][read_type_name] = {}
-            # nest another dictionary with the rejection status as its key -
-            #  (unblocked/sequenced) - if it isn't already there
-            if rejection_status not in data_keys[barcode_name][read_type_name].keys():
-
-                data_keys[barcode_name][read_type_name][rejection_status] = {}
-            # populate this lowest level dictionary with a dictionary of the results
-            data_keys[barcode_name][read_type_name][rejection_status][l_is_pass] = {
+            data_keys[barcode_name][read_type_name][rejection_status][
+                l_is_pass
+            ] = {
                 "read_count": {"name": l_key, "data": result_read_count_sum},
                 "read_length": {"name": l_key, "data": result_read_length_sum},
+                "collect_read_count": {
+                    "name": l_key,
+                    "data": result_collect_read_count_sum,
+                },
+                "collect_read_length": {
+                    "name": l_key,
+                    "data": result_collect_read_length_sum,
+                },
             }
-    # create a list with a range beginning at 1000 and stepping
-    # in 1000 to the maximum bin width, used for x axis labels
-    categories = list(
-        range(
-            1 * FlowcellHistogramSummary.BIN_WIDTH,
-            (max_bin_index["bin_index__max"] + 1)
-            * FlowcellHistogramSummary.BIN_WIDTH,
-            FlowcellHistogramSummary.BIN_WIDTH,
-        )
-    )
 
-    return Response({"data": data_keys, "categories": categories})
+        categories = list(
+            range(
+                1 * FlowcellHistogramSummary.BIN_WIDTH,
+                (max_bin_index["bin_index__max"] + 1)
+                * FlowcellHistogramSummary.BIN_WIDTH,
+                FlowcellHistogramSummary.BIN_WIDTH,
+            )
+        )
+
+        return Response({"data": data_keys, "categories": categories})
+
 
 
 @api_view(['GET'])
