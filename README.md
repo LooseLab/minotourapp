@@ -1,7 +1,5 @@
 # minoTour
 
-## Warning - Work in progress
-
 Minotour is a work in progress. Therefore features may change, and any bug reports/pull request would be gratefully recieved.
 
 ## Running minoTour with Docker
@@ -12,17 +10,31 @@ Firstly, make sure Docker is installed and running. You can check this running t
 docker --version
 ```
 
-To following commands build and start several minoTour containers (database, Redis, celery, and web app).
+To following commands build and start several minoTour containers and create an admin user.
 
 ```bash
-git checkout https://github.com/LooseLab/minotourapp.git
-
-cd minotourapp
-
-docker-compose up
+git clone https://github.com/LooseLab/minotourapp.git;
 ``` 
 
-Now, you can access minoTour on http://localhost:10000.
+```bash
+cd minotourapp;
+
+git checkout develop;
+``` 
+
+```bash
+docker-compose build;
+
+docker-compose up -d;
+``` 
+
+Create an admin user:
+
+```bash
+docker-compose exec web python manage.py createsuperuser
+``` 
+
+After a few seconds, you can access minoTour on http://localhost:8000/
 
 ## Development environment
 
@@ -186,11 +198,3 @@ Environmental config and running
     ```
 
 * Time to test - if everything worked well, you should be able to access the web interface on http://localhost:8100.
-
-
-
-
-
-
-
-

@@ -9,13 +9,10 @@ WORKDIR /var/lib/minotour/apps/minotourapp
 
 COPY requirements.txt /var/lib/minotour/apps/minotourapp/
 
-RUN apt-get update && apt-get install -y python3-pip mariadb-client-10.1
+RUN apt-get update && apt-get install -y python3-pip mariadb-client
 
 RUN pip3 install -r /var/lib/minotour/apps/minotourapp/requirements.txt
 
-COPY ./entrypoint.sh /var/lib/minotour/apps/minotourapp/
+COPY ./docker/entrypoint.sh /var/lib/minotour/apps/minotourapp/docker/
 
 COPY . /var/lib/minotour/apps/minotourapp/
-
-# CMD ["python3", "manage.py", "runserver", "0.0.0.0:8000"]
-CMD ["sh", "entrypoint.sh"]

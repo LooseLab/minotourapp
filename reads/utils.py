@@ -4,8 +4,6 @@ import math
 
 from dateutil import parser
 
-from reads.models import Flowcell
-
 
 def get_coords(channel, flowcellsize):
 
@@ -148,10 +146,3 @@ def getn50(lens):
         if t >= h:
             return l
 
-
-def activate_flowcell(flowcell_id, msg='No message informed.'):
-
-    flowcell = Flowcell.objects.get(pk=flowcell_id)
-    flowcell.last_activity_date=timezone.now
-    flowcell.last_activity_message=msg
-    flowcell.save()
