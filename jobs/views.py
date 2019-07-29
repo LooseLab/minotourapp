@@ -399,6 +399,8 @@ def task_control(request):
         elif action == "Delete":
             return_message = f"Successfully deleted this Expected benefit task, id: {job_master.id}"
 
+            delete_expected_benefit_task.delay(job_master.id)
+
         else:
             return Response(unrecognised_action_message, status=500)
 
