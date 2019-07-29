@@ -1001,14 +1001,14 @@ def flowcell_detail(request, pk):
         elif search_criteria == 'name':
 
             flowcell_list = Flowcell.objects.filter(owner=request.user, name=pk)
-
         else:
 
             flowcell_list = Flowcell.objects.none()
+        # TODO look at the logic here, a user with two identical flowcells would crash this
 
         if len(flowcell_list) != 1:
 
-            return Response({'data': {}}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'data': {}}, status=404)
 
         # get the matching flowcell
         flowcell = flowcell_list[0]
