@@ -89,39 +89,6 @@ function requestHistogramData(id) {
                     }
                 }
 
-                var options = {
-                    plotOptions: {
-                        column: {
-                            stacking: 'normal'
-                        }
-                    },
-                    chart: {
-                        type: 'column'
-                    },
-                    xAxis: {
-                        type: 'category',
-                        categories: categories
-                    }
-                };
-
-                var options2 = {
-                    plotOptions: {
-                        column: {
-                            stacking: 'normal'
-                        }
-                    },
-                    chart: {
-                        type: 'column'
-                    },
-                    xAxis: {
-                        type: 'category',
-                        categories: categories
-                    },
-                    yAxis: {
-                        max: 100
-                    }
-                }
-
                 chart_read_count.update(options);
                 collect_chart_read_count.update(options2);
                 chart_read_length.update(options);
