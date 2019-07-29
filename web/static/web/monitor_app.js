@@ -198,8 +198,8 @@ var FlowcellPageApp = {
         );
 
 
-        this.addStartTabsEvents(flowcell_id);
-        this.checkFlowcellTabs(flowcell_id);
+        // this.addStartTabsEvents(flowcell_id);
+        // this.checkFlowcellTabs(flowcell_id);
 
         //('>> calling request data');
         console.log('Calling request data from monitor_app. >>>');

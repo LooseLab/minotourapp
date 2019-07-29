@@ -1632,10 +1632,15 @@ def flowcell_tabs_details(request, pk):
             "id": "tab-metagenomics",
             "title": "Metagenomics",
             "position": 9
+        },
+        "Sharing": {
+            "id": "tab-sharing",
+            "title": "Sharing",
+            "position": 10
         }
     }
 
-    tabs = ['summary-data', 'tasks']
+    tabs = ['summary-data', 'tasks', 'sharing']
 
     #
     # Check for basecalled data
