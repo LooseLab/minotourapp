@@ -387,17 +387,17 @@ def task_control(request):
 
     elif job_master.job_type.name == "ExpectedBenefit":
         if action == "Reset":
-            return_message = f"Successfully reset this UpdateFlowcellDetails task, id: {job_master.id}"
+            return_message = f"Successfully reset this Expected benefit task, id: {job_master.id}"
 
         elif action == "Pause":
             if job_master.paused:
                 job_master.paused = False
             else:
                 job_master.paused = True
-            return_message = f"Successfully paused this UpdateFlowcellDetails task, id: {job_master.id}"
+            return_message = f"Successfully paused this Expected benefit task, id: {job_master.id}"
 
         elif action == "Delete":
-            return_message = f"Successfully deleted this UpdateFlowcellDetails task, id: {job_master.id}"
+            return_message = f"Successfully deleted this Expected benefit task, id: {job_master.id}"
 
         else:
             return Response(unrecognised_action_message, status=500)
