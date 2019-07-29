@@ -121,12 +121,14 @@ def flowcell_index(request, pk):
     :type pk: int
     :return: The base HTMl page for looking at a flowcell.
     """
-    user = request.GET.get("user")
+    user = request.user
     print(user)
-
+    print("..........")
+    print(pk)
     try:
         flowcell = Flowcell.objects.get(pk=pk, owner=user)
     except Flowcell.DoesNotExist as e:
+        print("NO Flowcell")
 
         return render(request, 'web/no.html')
     return render(request, 'web/flowcell_index.html', context={'flowcell': flowcell})
