@@ -3,14 +3,14 @@
   "model": "reads.fastqreadtype",
   "pk": 1,
   "fields": {
-    "name": "Template"
+    "name": "T"
   }
 },
 {
   "model": "reads.fastqreadtype",
   "pk": 2,
   "fields": {
-    "name": "Complement"
+    "name": "C"
   }
 },
 {
