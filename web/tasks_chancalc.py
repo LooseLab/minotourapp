@@ -84,13 +84,15 @@ def compare_read_ids(flowcell, runs):
     # loop through the runs
     for run in runs:
         for read_type in tupley_listy:
-            rejected_barcode = Barcode.objects.get(run=run, name=read_type[1])
-
+            # get the rejected / accepted barcode
+            rejected_barcode, created = Barcode.objects.get_or_create(run=run, name=read_type[1])
+            # Get the readIds from the rejected / accepted tables
             rejected_ids = read_type[0].objects.filter(
                 flowcell=flowcell
             ).values_list("read_id", flat=True)
-
-            FastqRead.objects.exclude(barcode=rejected_barcode).filter(
+            # update the matching fastqread objects with whichever type of Read the for loop
+            # is on (Accepted or Rejected)
+            FastqRead.objects.exclude(rejected_barcode=rejected_barcode).filter(
                 run=run, read_id__in=rejected_ids
             ).update(barcode=rejected_barcode)
 
@@ -159,9 +161,11 @@ def chancalc(flowcell_id, job_master_id, last_read):
         fastq_df_allreads["barcode__name"] = "All reads"
 
         fastq_df = fastq_df_barcode.append(fastq_df_allreads)
+        logger.info(f"fastq_df_barcode is {fastq_df_barcode.head()}")
+        logger.info(f"fastq_df is {fastq_df.head()}")
 
         #
-        # Calculates statistics for RunSummaryBarcode
+        # Calculates statistics for flowcellSummaryBarcode
         #
         fastq_df_result = fastq_df.groupby(
             [
@@ -177,14 +181,15 @@ def chancalc(flowcell_id, job_master_id, last_read):
                 "channel": ["unique"],
             }
         )
-
+        logger.info(fastq_df_result.head())
+        logger.info(f"keys is {fastq_df_result.keys()}")
         fastq_df_result.reset_index().apply(
             lambda row: save_flowcell_summary_barcode(flowcell_id, row), axis=1
         )
 
         # fastq_df['start_time']=fastq_df['start_time'].values.astype('<M8[m]')
         #
-        # Calculates statistics for RunStatisticsBarcode
+        # Calculates statistics for FlowcellStatisticsBarcode
         #
         fastq_df_result = fastq_df.groupby(
             [
