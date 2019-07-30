@@ -75,6 +75,8 @@ from reads.serializers import (
     FastqReadGetSerializer,
 )
 from reads.utils import get_coords
+from readuntil.utils import check_results_exist
+from readuntil.models import ExpectedBenefitChromosomes
 
 logger = get_task_logger(__name__)
 
@@ -1831,15 +1833,15 @@ def flowcell_tabs_details(request, pk):
 
         tabs.append('live-event-data')
 
-    paf_rough_cov_list = PafRoughCov.objects.filter(job_master__flowcell_id=pk)
+    paf_rough_cov_list = PafRoughCov.objects.filter(flowcell_id=pk)
 
     if paf_rough_cov_list.count() > 0:
 
         tabs.append('sequence-mapping')
 
-    # advanced_mapping_job = JobMaster.objects.filter(flowcell__id=pk, job_type__name="ReadUntil")
-    advanced_mapping_job = True
-    if advanced_mapping_job:
+    chromosome = ExpectedBenefitChromosomes.objects.filter(task__flowcell__id=pk).last()
+
+    if chromosome is not None:
         tabs.append('advanced-sequence-mapping')
 
     centrifuge_output_list = CentrifugeOutput.objects.filter(task__flowcell_id=pk)
