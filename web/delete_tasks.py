@@ -113,7 +113,7 @@ def delete_alignment_task(flowcell_job_id, restart=False):
                     logger.info(f"Deleted all Paf Store data. Job ID {flowcell_job.id}")
 
                 else:
-                    delete_rows(first_pafstore_row, 1000, flowcell_job, "paf_store_list")
+                    delete_rows(first_pafstore_row, 1000, flowcell_job, "pafstore_list")
 
             if not paf_rough_cov_remaining and not pafstore_remaining:
                 # We've deleted all the super large data
