@@ -79,7 +79,7 @@ def compare_read_ids(flowcell, runs):
 
     # A list of tuples, with the model for the read_ids to be looked up
     # and the name of the barcode to add to the FastQRead
-    tupley_listy = [(RejectedFastqRead, "Rejected"), (AcceptedFastqRead, "Accepted")]
+    tupley_listy = [(RejectedFastqRead, "U"), (AcceptedFastqRead, "S")]
 
     # loop through the runs
     for run in runs:
@@ -134,7 +134,7 @@ def chancalc(flowcell_id, job_master_id, last_read):
         #
         if job_master.read_count == 0 and job_master.last_read == 0:
 
-            logger.info(
+            print(
                 "Flowcell id: {} - Deleting summaries".format(flowcell.id)
             )
 
@@ -151,7 +151,7 @@ def chancalc(flowcell_id, job_master_id, last_read):
             fastq_df_barcode["start_time"], dtype="datetime64[m]"
         )
 
-        logger.info(
+        print(
             "Flowcell id: {} - The new last read is {}".format(
                 flowcell.id, new_last_read
             )
@@ -161,8 +161,8 @@ def chancalc(flowcell_id, job_master_id, last_read):
         fastq_df_allreads["barcode__name"] = "All reads"
 
         fastq_df = fastq_df_barcode.append(fastq_df_allreads)
-        logger.info(f"fastq_df_barcode is {fastq_df_barcode.head()}")
-        logger.info(f"fastq_df is {fastq_df.head()}")
+        print(f"fastq_df_barcode is {fastq_df_barcode.head()}")
+        print(f"fastq_df is {fastq_df.head()}")
 
         #
         # Calculates statistics for flowcellSummaryBarcode
