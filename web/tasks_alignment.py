@@ -154,7 +154,7 @@ def run_minimap2_alignment(job_master_id):
     logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, read_count))
     # If we have pulled back reads, call fasta
     if read_count > 0:
-        last_read = align_reads(fasta_objects, job_master.id, fasta_df_barcode)
+        align_reads(fasta_objects, job_master.id, fasta_df_barcode)
 
     # Update the JobMaster with the metadata after finishing this iteration
     job_master = JobMaster.objects.get(pk=job_master_id)
