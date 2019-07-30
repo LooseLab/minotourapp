@@ -15,3 +15,26 @@ def get_or_create_results_directory(flowcell_id, task_id):
     if not results_dir.exists():
         Path.mkdir(results_dir)
     return results_dir
+
+
+def check_results_exist(flowcell_id, task_id, chromosome):
+    """
+    Check if we have results files present.
+    :param flowcell_id: The primary of key of the flowcell database entry
+    :type flowcell_id: int
+    :param task_id: The primary key of the task database entry
+    :type task_id: int
+    :param chromosome: The name of a chromosome we have performed the readUntil task on.
+    :type chromosome: str
+    :return: boolean confirming if we have a results file or not
+    """
+
+    results_dir = get_or_create_results_directory(flowcell_id, task_id)
+
+    coverage_path = Path(
+        f"{results_dir}/coverage_{chromosome}_{flowcell_id}_{task_id}.dat"
+    )
+
+    exists = coverage_path.exists()
+
+    return exists
