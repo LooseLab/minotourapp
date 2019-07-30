@@ -252,6 +252,10 @@ def delete_expected_benefit_task(flowcell_job_id, restart=False):
     """
 
     task = JobMaster.objects.get(pk=flowcell_job_id)
+
+    if task is None:
+        logger.error("Did not find JobMaster. Perhaps it has already been deleted?")
+        return
     # Set to complete so no new data is produced
     running = task.running
 
