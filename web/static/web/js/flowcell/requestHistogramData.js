@@ -89,6 +89,40 @@ function requestHistogramData(id) {
                     }
                 }
 
+
+                var options = {
+                    plotOptions: {
+                        column: {
+                            stacking: 'normal'
+                        }
+                    },
+                    chart: {
+                        type: 'column'
+                    },
+                    xAxis: {
+                        type: 'category',
+                        categories: categories
+                    }
+                };
+
+                var options2 = {
+                    plotOptions: {
+                        column: {
+                            stacking: 'normal'
+                        }
+                    },
+                    chart: {
+                        type: 'column'
+                    },
+                    xAxis: {
+                        type: 'category',
+                        categories: categories
+                    },
+                    yAxis: {
+                        max: 100
+                    }
+                }
+
                 chart_read_count.update(options);
                 collect_chart_read_count.update(options2);
                 chart_read_length.update(options);
@@ -96,25 +130,28 @@ function requestHistogramData(id) {
 
                 Object.keys(data).forEach(function (barcode_name) {
 
-                    Object.keys(data[barcode_name]).forEach(function (read_type_name) {
+                    Object.keys(data[barcode_name]).forEach(function(read_type_name){
 
-                        Object.keys(data[barcode_name][read_type_name]).forEach(function (status) {
+                        Object.keys(data[barcode_name][read_type_name]).forEach(function (rejection_status) {
 
-                            chart_read_count.addSeries(
-                                data[barcode_name][read_type_name][rejection_status][status]["read_count"]
-                            );
+                            Object.keys(data[barcode_name][read_type_name][rejection_status]).forEach(function (status) {
 
-                            collect_chart_read_count.addSeries(
-                                data[barcode_name][read_type_name][status]["collect_read_count"]
-                            );
+                                chart_read_count.addSeries(
+                                    data[barcode_name][read_type_name][rejection_status][status]["read_count"]
+                                );
 
-                            chart_read_length.addSeries(
-                                data[barcode_name][read_type_name][rejection_status][status]["read_length"]
-                            );
+                                collect_chart_read_count.addSeries(
+                                    data[barcode_name][read_type_name][rejection_status][status]["collect_read_count"]
+                                );
 
-                            collect_chart_read_length.addSeries(
-                                data[barcode_name][read_type_name][status]["collect_read_length"]
-                            );
+                                chart_read_length.addSeries(
+                                    data[barcode_name][read_type_name][rejection_status][status]["read_length"]
+                                );
+
+                                collect_chart_read_length.addSeries(
+                                    data[barcode_name][read_type_name][rejection_status][status]["collect_read_length"]
+                                );
+                            });
                         });
                     });
                 });
