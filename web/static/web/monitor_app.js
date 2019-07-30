@@ -304,7 +304,7 @@ var FlowcellPageApp = {
         this.LiveYield.series[2].setData(this.converttobases(newarray1, seqspeed));
         this.LiveYield.series[3].setData(this.converttobases(newarray2, seqspeed));
         this.LiveYield.redraw();
-        this.LiveYield.reflow()
+        this.LiveYield.reflow();
     },
 
     converttobases: function (data, seqspeed) {
