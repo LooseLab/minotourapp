@@ -281,12 +281,20 @@ def run_list(request):
 
         if serializer.is_valid():
             run = serializer.save(owner=request.user)
-
+            # Change the flowcell to active
             flowcell = run.flowcell
 
             flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
 
             flowcell.save()
+            # Create the rejected accepted barcodes
+            accepted_barcode = Barcode(run=run, name="S")
+
+            rejected_barcode = Barcode(run=run, name="U")
+
+            accepted_barcode.save()
+
+            rejected_barcode.save()
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -1352,14 +1360,14 @@ def flowcell_histogram_summary(request, pk):
         FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
         .filter(barcode_name=barcode_name)
         .values_list(
-            "barcode_name", "read_type_name", "status", "rejection_status"
+            "barcode_name", "read_type_name", "rejection_status", "status"
         )
         .distinct()
     )
 
     data_keys = {}
     # unpack the tuple and create data using it, for each tuple
-    for (barcode_name, read_type_name, status, rejection_status) in key_list:
+    for (barcode_name, read_type_name, rejection_status, status) in key_list:
         # query flowcell Histogram summary objects for all of the combinations under this barcode
         queryset = (
             FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
@@ -1385,29 +1393,39 @@ def flowcell_histogram_summary(request, pk):
         )
         # if there is more than one histogram summary, there should be one for each bin
         if queryset.count() > 0:
-
             if status == "True":
                 l_is_pass = "Pass"
             else:
                 l_is_pass = "Fail"
 
-            l_key = "{} - {} - {}".format(
-                barcode_name, read_type_name, l_is_pass
+            l_key = "{} - {} - {} - {}".format(
+                barcode_name, read_type_name, rejection_status, l_is_pass
             )
+
             l_collect_read_count_sum = 0
+
             l_collect_read_length_sum = 0
+
             for r in queryset:
+
                 l_bin_index = r.bin_index
+
                 l_read_count_sum = r.read_count
+
                 l_read_length_sum = r.read_length
+
                 l_collect_read_count_sum += r.read_count
+
                 l_collect_read_length_sum += r.read_length
 
                 result_read_count_sum[l_bin_index] = l_read_count_sum
+
                 result_read_length_sum[l_bin_index] = l_read_length_sum
+
                 result_collect_read_count_sum[
                     l_bin_index
                 ] = l_collect_read_count_sum
+
                 result_collect_read_length_sum[
                     l_bin_index
                 ] = l_collect_read_length_sum
@@ -1415,14 +1433,12 @@ def flowcell_histogram_summary(request, pk):
             if barcode_name not in data_keys.keys():
                 data_keys[barcode_name] = {}
 
-            if rejection_status not in data_keys.keys():
-                data_keys[barcode_name][rejection_status] = {}
+            if read_type_name not in data_keys[barcode_name].keys():
+                data_keys[barcode_name][read_type_name] = {}
 
-            if (
-                read_type_name
-                not in data_keys[barcode_name][rejection_status].keys()
-            ):
-                data_keys[barcode_name][rejection_status][read_type_name] = {}
+            if rejection_status not in data_keys[barcode_name][read_type_name].keys():
+                data_keys[barcode_name][read_type_name][rejection_status] = {}
+
 
             result_collect_read_count_sum = list(
                 (
@@ -1462,7 +1478,6 @@ def flowcell_histogram_summary(request, pk):
                 .max()
                 * 50
             )
-
             data_keys[barcode_name][read_type_name][rejection_status][
                 l_is_pass
             ] = {
@@ -1478,16 +1493,17 @@ def flowcell_histogram_summary(request, pk):
                 },
             }
 
-        categories = list(
-            range(
-                1 * FlowcellHistogramSummary.BIN_WIDTH,
-                (max_bin_index["bin_index__max"] + 1)
-                * FlowcellHistogramSummary.BIN_WIDTH,
-                FlowcellHistogramSummary.BIN_WIDTH,
-            )
-        )
 
-        return Response({"data": data_keys, "categories": categories})
+    categories = list(
+        range(
+            1 * FlowcellHistogramSummary.BIN_WIDTH,
+            (max_bin_index["bin_index__max"] + 1)
+            * FlowcellHistogramSummary.BIN_WIDTH,
+            FlowcellHistogramSummary.BIN_WIDTH,
+        )
+    )
+
+    return Response({"data": data_keys, "categories": categories})
 
 
 
@@ -1957,6 +1973,13 @@ def read_detail(request,pk):
 
 @api_view(['GET', 'POST'])
 def read_list_new(request):
+    """
+    API endpoint for either getting a list of reads to display in the read data table,
+    or Posting new reads from the client.
+    :param request: Django rest framework request object
+    :type request: rest_framework.request.Request
+    :return:
+    """
 
     search_criteria = request.GET.get('search_criteria', 'name')
 
@@ -1987,37 +2010,23 @@ def read_list_new(request):
 
     elif request.method == 'POST':
 
-        #serializer = FastqReadSerializer(data=request.data, many=True)
-
+        # serializer = FastqReadSerializer(data=request.data, many=True)
 
         logger.info('>>> received reads post - calling task - request.data size: {}'.format(len(request.data)))
 
-
-        #save_reads.delay(request.data)
         # save_reads.delay(request.data)
         save_reads(request.data)
 
         return Response({}, status=status.HTTP_201_CREATED)
 
-        '''
-        if serializer.is_valid():
-
-            #print('reads valid')
-            res = serializer.save()
-            #print(res)
-
-            return Response({}, status=status.HTTP_201_CREATED)
-
-        else:
-
-            print('reads not valid')
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        '''
-
 
 @task(rate_limit="100/m")
 def save_reads(data):
+    """
+    Save fastqreads sent by the client
+    :param data:
+    :return:
+    """
 
     serializer = FastqReadSerializer(data=data, many=True)
 
