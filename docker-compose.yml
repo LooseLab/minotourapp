@@ -39,7 +39,7 @@ services:
             MT_TWITCONSUMER_KEY: ''
             MT_TWITCONSUMER_SECRET: ''
             MT_REFERENCE_LOCATION: '/var/lib/minotour/data'
-            MT_MINIMAP2: '/var/lib/minotour/minimap2/minimap2'
+            MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2/minimap2'
             MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
             MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
         ports:
@@ -73,7 +73,7 @@ services:
             MT_TWITCONSUMER_KEY: ''
             MT_TWITCONSUMER_SECRET: ''
             MT_REFERENCE_LOCATION: '/var/lib/minotour/data'
-            MT_MINIMAP2: '/var/lib/minotour/minimap2/minimap2'
+            MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2/minimap2'
             MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
             MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
         depends_on:
@@ -104,7 +104,7 @@ services:
             MT_TWITCONSUMER_KEY: ''
             MT_TWITCONSUMER_SECRET: ''
             MT_REFERENCE_LOCATION: '/var/lib/minotour/data'
-            MT_MINIMAP2: '/var/lib/minotour/minimap2/minimap2'
+            MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2/minimap2'
             MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
             MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
         depends_on:

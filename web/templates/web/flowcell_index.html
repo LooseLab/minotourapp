@@ -49,6 +49,10 @@
                     <a class="flowcell-tab"
                        onclick="flowcellController.flowcell_tab_controller.toggle_tab_content('tasks')">Tasks</a>
                 </li>
+                <li role="presentation" id="nav-sharing" class='hidden'>
+                    <a class="flowcell-tab"
+                       onclick="flowcellController.flowcell_tab_controller.toggle_tab_content('sharing')">Sharing</a>
+                </li>
             </ul>
 
             <br/>
@@ -89,6 +93,10 @@
 
                 <div id="tab-metagenomics" class="tab-pane">
                     {% include "web/flowcell/metagenomics.html" %}
+                </div>
+
+                <div id="tab-sharing" class="tab-pane">
+                    {% include "web/flowcell/sharing.html" %}
                 </div>
             </div>
 
