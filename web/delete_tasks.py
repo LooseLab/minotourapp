@@ -41,7 +41,7 @@ def delete_rows(first_row_object, rows_to_delete, job_master_object, reverse_loo
     # delete them
     affected = getattr(job_master_object, reverse_lookup).filter(pk__lte=last_row_to_be_deleted).delete()
 
-    print('Flowcell id: {} - Deleted {} records'.format(job_master_object.flowcell.id, affected))
+    logger.info('Flowcell id: {} - Deleted {} records'.format(job_master_object.flowcell.id, affected))
 
 
 @task()
@@ -57,17 +57,23 @@ def delete_alignment_task(flowcell_job_id, restart=False):
 
     # Get the flowcell jobMaster entry
     flowcell_job = JobMaster.objects.get(pk=flowcell_job_id)
-
     # set to complete so we don't generate new data
     flowcell_job.complete = True
     flowcell_job.save()
     
     # If the task is running,it might be producing new data, so wait until it's finished
     running = flowcell_job.running
+
+    seconds_counter = 0
+
     while running:
         running = flowcell_job.running
-        time.sleep(3)
-    
+        time.sleep(1)
+        seconds_counter += 1
+        if seconds_counter is 60:
+            flowcell_job.running = False
+            flowcell_job.save()
+
     # Get the flowcell
     flowcell = flowcell_job.flowcell
 
@@ -81,7 +87,7 @@ def delete_alignment_task(flowcell_job_id, restart=False):
 
     while delete:
 
-        if flowcell_job.job_type.name == "Minimap2":
+        if flowcell_job.job_type.name == "Minimap2" or flowcell_job.job_type.name == "Other":
 
             # If it's minimap2, we have tonnnes of alignment data, so delete it in batches of 1000
 
@@ -91,10 +97,10 @@ def delete_alignment_task(flowcell_job_id, restart=False):
                 first_paf_rough_cov_row = flowcell_job.pafroughcov_list.first()
                 # if there isn't one we've deleted all the pafroughcov entries
                 if not first_paf_rough_cov_row:
-
                     paf_rough_cov_remaining = False
-
+                    logger.info(f"Deleted all Paf Rough Cov data. Job ID {flowcell_job.id}")
                 else:
+
                     delete_rows(first_paf_rough_cov_row, 1000, flowcell_job, "pafroughcov_list")
 
             # ####### Paf Store ###### #
@@ -103,18 +109,17 @@ def delete_alignment_task(flowcell_job_id, restart=False):
                 first_pafstore_row = flowcell_job.pafstore_list.first()
                 # If there is no data left
                 if not first_pafstore_row:
-                    print(f"finished deleting pafstore data")
                     pafstore_remaining = False
+                    logger.info(f"Deleted all Paf Store data. Job ID {flowcell_job.id}")
 
                 else:
-
-                    delete_rows(first_pafstore_row, 1000, flowcell_job, "paf_store_list")
+                    delete_rows(first_pafstore_row, 1000, flowcell_job, "pafstore_list")
 
             if not paf_rough_cov_remaining and not pafstore_remaining:
                 # We've deleted all the super large data
 
                 finshed = flowcell_job.delete()
-                print(f"finished! {finshed}")
+                logger.info(f"Finished! {finshed}")
 
                 # if we are restarting the task, reset all the jobmaster fields to 0 and save them
                 if restart:
@@ -154,9 +159,16 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
     
     # If the task is running,it might be producing new data, so wait until it's finished
     running = flowcell_job.running
+
+    seconds_counter = 0
+
     while running:
         running = flowcell_job.running
-        time.sleep(3)
+        time.sleep(1)
+        seconds_counter += 1
+        if seconds_counter is 120:
+            flowcell_job.running = False
+            flowcell_job.save()
 
     logger.info('Flowcell id: {} - Deleting alignment data from flowcell {}'.format(flowcell.id, flowcell.name))
     # keep looping
@@ -166,23 +178,21 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
 
     donut_data_remaining = True
 
-    print(f"Flowcell job type {flowcell_job.job_type.name}")
-    print(flowcell_job.job_type.name == "Metagenomics")
+    logger.info(f"Flowcell job type {flowcell_job.job_type.name}")
 
     if flowcell_job.job_type.name == "Metagenomics":
 
         # ## delete the alignment data from the target set validation ## #
 
         metagenomics_mapping_jobs = JobMaster.objects.filter(flowcell=flowcell, job_type__name="Other")
-        print(metagenomics_mapping_jobs)
         # if there are mapping jobs
         if metagenomics_mapping_jobs:
             for mapping_job in metagenomics_mapping_jobs:
-                print(f"deletin alignment data for {mapping_job.reference.name}")
+                logger.info(f"Deleting alignment data for {mapping_job.reference.name}")
                 delete_alignment_task(mapping_job.id)
 
         else:
-            print("no mapping data found for this metagenomics run")
+            logger.info("No mapping data found for this metagenomics run")
         # while we have data left
         while delete:
 
@@ -211,12 +221,11 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
 
                     delete_rows(donut_data_first_row, 1000, flowcell_job, "donut_data")
 
-            print()
             if not centrifuge_output_remaining and not donut_data_remaining:
 
                 finished = flowcell_job.delete()
 
-                print(f"Finished deleting Task data for metagenomics {finished}")
+                logger.info(f"Finished deleting Task data for metagenomics {finished}")
 
                 # if we are resetting the task reinsert a new fresh JobMaster
                 if restart:
@@ -243,40 +252,51 @@ def delete_expected_benefit_task(flowcell_job_id, restart=False):
     """
 
     task = JobMaster.objects.get(pk=flowcell_job_id)
-    # Set to complete so no new data is produced
-    task.complete = True
-    running = task.running
-    # TODO do we wait until runnning is false so we don't have new data created or crash a running task?
-    while running:
-        running = task.running
-        time.sleep(3)
 
-    task.save()
+    if task is None:
+        logger.error("Did not find JobMaster. Perhaps it has already been deleted?")
+        return
+    # Set to complete so no new data is produced
+    running = task.running
+
+    seconds_counter = 0
+
+    while running:
+
+        running = task.running
+        time.sleep(1)
+        seconds_counter += 1
+        if seconds_counter is 140:
+            task.running = False
+            task.save()
+
+    # task.save()
     # Get the flowcell
     flowcell = task.flowcell
 
-    # chromosomes = ExpectedBenefitChromosomes.objects.filter(task=task).values_list("chromosome__line_name", flat=True)
+    chromosomes = task.expectedBenefitTask.all()
 
-    base_result_dir_path = get_or_create_results_directory(flowcell.id, flowcell_job_id)
+    base_result_dir_path = get_or_create_results_directory(flowcell.id, task.id)
 
-    # for chrom_key in chromosomes:
-    #     # Write out the coverage
-    #     Path(f"{base_result_dir_path}/coverage_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-    #     Path(f"{base_result_dir_path}/counts_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-    #     Path(f"{base_result_dir_path}/mask_forward_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-    #     Path(f"{base_result_dir_path}/mask_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-    #     Path(f"{base_result_dir_path}/scores_forward_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-    #     Path(f"{base_result_dir_path}/scores_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-    #     Path(f"{base_result_dir_path}/cost_forward_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-    #     Path(f"{base_result_dir_path}/cost_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-    #     Path(f"{base_result_dir_path}/benefits_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-    #     Path(f"{base_result_dir_path}/fixed_benefits_forward{chrom_key}"
-    #          f"_{flowcell.id}_{task.id}.dat").unlink()
-    #     Path(f"{base_result_dir_path}/fixed_benefits_reverse{chrom_key}"
-    #          f"_{flowcell.id}_{task.id}.dat").unlink()
+    for chromosome in chromosomes:
+        chrom_key = chromosome.chromosome.line_name
+        Path(f"{base_result_dir_path}/coverage_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+        Path(f"{base_result_dir_path}/counts_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+        Path(f"{base_result_dir_path}/mask_forward_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+        Path(f"{base_result_dir_path}/mask_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+        Path(f"{base_result_dir_path}/scores_forward_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+        Path(f"{base_result_dir_path}/scores_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+        Path(f"{base_result_dir_path}/cost_forward_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+        Path(f"{base_result_dir_path}/cost_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+        Path(f"{base_result_dir_path}/benefits_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
+        Path(f"{base_result_dir_path}/fixed_benefits_forward{chrom_key}"
+             f"_{flowcell.id}_{task.id}.dat").unlink()
+        Path(f"{base_result_dir_path}/fixed_benefits_reverse{chrom_key}"
+             f"_{flowcell.id}_{task.id}.dat").unlink()
+
     finished = task.delete()
 
-    print(f"Finished deleting Task data for expected benefit {finished}")
+    logger.info(f"Finished deleting Task data for expected benefit - {finished}")
 
     if restart:
         task.running = False

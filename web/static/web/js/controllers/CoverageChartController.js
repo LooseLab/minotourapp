@@ -3,7 +3,9 @@ class CoverageChartController {
     constructor(div_name, advanced) {
         // constructs new Coverage chart class, and link to chromosome select field
         this._chromosome_select = document.querySelector('#' + advanced + 'chromosome-id-select');
-        this._coverage_chart = new CoverageChart(div_name);
+        if(advanced === ""){
+            this._coverage_chart = new CoverageChart(div_name);
+        }
     }
 
     get coverage_chart() {

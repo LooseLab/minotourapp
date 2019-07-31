@@ -9,7 +9,7 @@ from reads.models import Run
 from reference.models import ReferenceInfo
 from reads.models import Flowcell
 from web.delete_tasks import delete_metagenomics_task, delete_alignment_task, delete_expected_benefit_task
-
+import time
 
 @api_view(["GET", "POST"])
 def get_or_create_tasks(request):
@@ -271,6 +271,21 @@ def task_control(request):
 
     if job_master.job_type.name == "ChanCalc":
         if action == "Reset":
+
+            running = job_master.running
+
+            seconds_counter = 0
+
+            while running:
+
+                running = job_master.running
+                time.sleep(1)
+                seconds_counter += 1
+
+                if seconds_counter is 25:
+                    job_master.running = False
+                    job_master.save()
+
             # reset the values, skips existing values
             job_master.read_count = 0
             job_master.last_read = 0
@@ -279,7 +294,12 @@ def task_control(request):
             return_message = f"Successfully reset ChanCalc task, id: {job_master.id}"
 
         elif action == "Pause":
-            job_master.paused = True
+
+            if job_master.paused:
+                job_master.paused = False
+            if not job_master.paused:
+                job_master.paused = True
+
             job_master.save()
             return_message = f"Successfully paused ChanCalc task, id: {job_master.id}"
 
@@ -289,6 +309,18 @@ def task_control(request):
     elif job_master.job_type.name == "UpdateFlowcellDetails":
         if action == "Reset":
             # reset the values, skips existing values
+            running = job_master.running
+
+            seconds_counter = 0
+
+            while running:
+                running = job_master.running
+                time.sleep(1)
+                seconds_counter += 1
+                if seconds_counter is 30:
+                    job_master.running = False
+                    job_master.save()
+
             job_master.read_count = 0
             job_master.last_read = 0
             job_master.save()
@@ -296,8 +328,11 @@ def task_control(request):
             return_message = f"Successfully reset UpdateFlowcellDetails task, id: {job_master.id}"
 
         elif action == "Pause":
+            if job_master.paused:
+                job_master.paused = False
+            else:
+                job_master.paused = True
 
-            job_master.paused = True
             job_master.save()
             return_message = f"Successfully paused UpdateFlowcellDetails task, id: {job_master.id}"
 
@@ -313,7 +348,11 @@ def task_control(request):
                              f" Clearing previous data may take a while, please be patient!"
 
         elif action == "Pause":
-            job_master.paused = True
+            if job_master.paused:
+                job_master.paused = False
+            else:
+                job_master.paused = True
+
             job_master.save()
             return_message = f"Successfully paused metagenomics task reset, id: {job_master.id}."
 
@@ -332,7 +371,10 @@ def task_control(request):
                              f" Clearing previous data may take a while, please be patient!"
 
         elif action == "Pause":
-            job_master.paused = True
+            if job_master.paused:
+                job_master.paused = False
+            else:
+                job_master.paused = True
             job_master.save()
             return_message = f"Successfully paused minimap2 task, id: {job_master.id}"
 
@@ -345,14 +387,19 @@ def task_control(request):
 
     elif job_master.job_type.name == "ExpectedBenefit":
         if action == "Reset":
-            return_message = f"Successfully reset this UpdateFlowcellDetails task, id: {job_master.id}"
+            return_message = f"Successfully reset this Expected benefit task, id: {job_master.id}"
 
         elif action == "Pause":
-            job_master.paused = True
-            return_message = f"Successfully paused this UpdateFlowcellDetails task, id: {job_master.id}"
+            if job_master.paused:
+                job_master.paused = False
+            else:
+                job_master.paused = True
+            return_message = f"Successfully paused this Expected benefit task, id: {job_master.id}"
 
         elif action == "Delete":
-            return_message = f"Successfully deleted this UpdateFlowcellDetails task, id: {job_master.id}"
+            return_message = f"Successfully deleted this Expected benefit task, id: {job_master.id}"
+
+            delete_expected_benefit_task.delay(job_master.id)
 
         else:
             return Response(unrecognised_action_message, status=500)

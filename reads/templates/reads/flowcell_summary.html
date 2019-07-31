@@ -17,6 +17,7 @@
                     <thead>
                     <th>Barcode</th>
                     <th>Read type</th>
+                    <th>Rejection</th>
                     <th>Pass/Fail</th>
                     <td align="right"><strong>Reads called</strong></td>
                     <td align="right"><strong>Yield</strong></td>
@@ -38,13 +39,14 @@
                                     {% else %}
                                 <tr class="info" style="font-weight:bold;font-style: italic">
                             {% endif %}
-                         {% if record.read_type == "all" %}
-                             <td>{{ record.barcode_name }}</td>
-                             <td>{{ record.read_type_name }}</td>
-                                    {% else %}
-                                    <td></td>
-                                    <td></td>
-                                    {%  endif %}
+                        {% if record.read_type == "all" %}
+                            <td>{{ record.barcode_name }}</td>
+                            <td>{{ record.read_type_name }}</td>
+                        {% else %}
+                            <td></td>
+                            <td></td>
+                        {% endif %}
+                        <td>{{ record.rejection_status }}</td>
                         <td>{{ record.read_type }}</td>
                         <td align="right">{{ record.read_count|intcomma }}</td>
                         <td align="right">{{ record.total_length|intcomma }}</td>
@@ -83,6 +85,7 @@
                         <thead>
                         <th>Barcode</th>
                         <th>Read type</th>
+                        <th>Rejection</th>
                         <th>Pass/Fail</th>
                         <td align="right"><strong>Reads called</strong></td>
                         <td align="right"><strong>Yield</strong></td>
@@ -97,27 +100,29 @@
                             {% if record.barcode_name != "All reads" %}
 
                                 {% if record.read_type == "Pass" %}
-                                <tr class="success">
-                                    {% elif record.read_type == "Fail" %}
-                                <tr class="danger">
-                                    {% else %}
-                                <tr class="info" style="font-weight:bold;font-style: italic">
+                                    <tr class="success">
+                                        {% elif record.read_type == "Fail" %}
+                                    <tr class="danger">
+                                        {% else %}
+                                    <tr class="info" style="font-weight:bold;font-style: italic">
+                                {% endif %}
+                            {% if record.read_type == "all" %}
+                                <td>{{ record.barcode_name }}</td>
+                                <td>{{ record.read_type_name }}</td>
+                            {% else %}
+                                <td></td>
+                                <td></td>
                             {% endif %}
-                              {% if record.read_type == "all" %}
-                             <td>{{ record.barcode_name }}</td>
-                             <td>{{ record.read_type_name }}</td>
-                                    {% else %}
-                                    <td></td>
-                                    <td></td>
-                                    {%  endif %}
+                            <td>{{ record.rejection_status }}</td>
+
                             <td>{{ record.read_type }}</td>
-                        <td align="right">{{ record.read_count|intcomma }}</td>
-                        <td align="right">{{ record.total_length|intcomma }}</td>
-                        <td align="right">{{ record.percentage|floatformat:"2" }}</td>
-                        <td align="right">{{ record.min_length|intcomma }}</td>
-                        <td align="right">{{ record.avg_length|floatformat:"0"|intcomma}}</td>
-                        <td align="right">{{ record.max_length|intcomma }}</td>
-                        <td align="right">{{ record.avg_quality|floatformat:"1" }}</td>
+                            <td align="right">{{ record.read_count|intcomma }}</td>
+                            <td align="right">{{ record.total_length|intcomma }}</td>
+                            <td align="right">{{ record.percentage|floatformat:"2" }}</td>
+                            <td align="right">{{ record.min_length|intcomma }}</td>
+                            <td align="right">{{ record.avg_length|floatformat:"0"|intcomma }}</td>
+                            <td align="right">{{ record.max_length|intcomma }}</td>
+                            <td align="right">{{ record.avg_quality|floatformat:"1" }}</td>
                             </tr>
                             {% endif %}
                         {% endfor %}

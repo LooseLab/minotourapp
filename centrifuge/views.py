@@ -230,7 +230,7 @@ def donut_data(request):
     visType  - Whether this is a a request for donut chart or results table data
     :return:
     """
-
+    print(type(request))
     flowcell_id = request.GET.get("flowcellId", 0)
 
     barcode = request.GET.get("barcode", "All reads")

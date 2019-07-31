@@ -1,9 +1,9 @@
 function requestStatisticsCallback(data) {
-
+    // if we don't have any data
     if (!data && data.length <= 0) {
         return;
     }
-
+    // if we don't already have this chart, initialise it
     if (!this.average_quality_overtime_new) {
 
         this.average_quality_overtime_new = this.makeSplineChart(
@@ -13,7 +13,7 @@ function requestStatisticsCallback(data) {
         );
 
     }
-
+// if we don't already have this chart, initialise it
     if (!this.average_read_lengths_overtime_new) {
 
         this.average_read_lengths_overtime_new = this.makeSplineChart(
@@ -23,7 +23,7 @@ function requestStatisticsCallback(data) {
         );
 
     }
-
+// if we don't already have this chart, initialise it
     if (!this.chart_cumulative_yield_overtime_new) {
 
         this.chart_cumulative_yield_overtime_new = this.makeSplineChart(
@@ -33,7 +33,7 @@ function requestStatisticsCallback(data) {
         );
 
     }
-
+// if we don't already have this chart, initialise it
     if (!this.chart_cumulative_number_reads_overtime_new) {
 
         this.chart_cumulative_number_reads_overtime_new = this.makeSplineChart(
@@ -43,7 +43,7 @@ function requestStatisticsCallback(data) {
         );
 
     }
-
+// if we don't already have this chart, initialise it
     if (!this.max_read_lengths_overtime_new) {
 
         this.max_read_lengths_overtime_new = this.makeSplineChart(
@@ -53,7 +53,7 @@ function requestStatisticsCallback(data) {
         );
 
     }
-
+// if we don't already have this chart, initialise it
     if (!this.chartSequencingRate_new) {
         this.chartSequencingRate_new = this.makeSplineChart(
             "sequencing-rate-new",
@@ -62,33 +62,28 @@ function requestStatisticsCallback(data) {
         );
     }
 
-    //if (!this.chartSequencingSpeed_new) {
-    //    this.chartSequencingSpeed_new = this.makeSplineChart(
-    //        "sequencing-speed-new",
-    //        "sequencing speed".toUpperCase(),
-    //        "bases/channel/second".toUpperCase()
-    //    );
-    //}
 
-    var chart = this.average_quality_overtime_new;
+    var average_quality_chart = this.average_quality_overtime_new;
 
-    var chart2 = this.average_read_lengths_overtime_new;
+    var average_read_length_chart = this.average_read_lengths_overtime_new;
 
-    var chart3 = this.chart_cumulative_yield_overtime_new;
+    var cumulative_yield_chart = this.chart_cumulative_yield_overtime_new;
 
-    var chart4 = this.chart_cumulative_number_reads_overtime_new;
+    var cumulative_reads_chart = this.chart_cumulative_number_reads_overtime_new;
 
-    var chart5 = this.max_read_lengths_overtime_new;
+    var max_read_length_chart = this.max_read_lengths_overtime_new;
 
-    var chart6 = this.chartSequencingRate_new;
+    var sequencing_rate_chart = this.chartSequencingRate_new;
 
     //var chart7 = this.chartSequencingSpeed_new;
 
-    // var charts = [chart, chart2, chart3, chart4, chart5, chart6, chart7];
-    var charts = [chart, chart2, chart3, chart4, chart5, chart6];
+    // var charts = [chart, chart2, chart3, chart4, chart5, sequencing_rate_chart, chart7];
+    var charts = [average_quality_chart, average_read_length_chart, cumulative_yield_chart,
+        cumulative_reads_chart, max_read_length_chart, sequencing_rate_chart];
 
     var selected_barcode = get_selected_barcode();
 
+    // for each chart, remove any existing data
     charts.forEach(function(value) {
 
         if (value) {
@@ -100,6 +95,7 @@ function requestStatisticsCallback(data) {
     });
 
     var rundata = data['runs'];
+
     var data_keys = data['data_keys'];
 
     var i = 0;
@@ -112,32 +108,32 @@ function requestStatisticsCallback(data) {
         var data_sequencing_rate = data['data'][data_keys[i]].map(x => [x[0], x[6]]);
         //var data_sequencing_speed = data['data'][data_keys[i]].map(x => [x[0], x[7]]);
 
-        chart.addSeries({
+        average_quality_chart.addSeries({
             name: data_keys[i],
             data: data_average_quality_over_time
         });
 
-        chart2.addSeries({
+        average_read_length_chart.addSeries({
             name: data_keys[i],
             data: data_average_read_length_over_time
         });
 
-        chart3.addSeries({
+        cumulative_yield_chart.addSeries({
             name: data_keys[i],
             data: data_cumulative_bases
         });
 
-        chart4.addSeries({
+        cumulative_reads_chart.addSeries({
             name: data_keys[i],
             data: data_cumulative_reads
         });
 
-        chart5.addSeries({
+        max_read_length_chart.addSeries({
             name: data_keys[i],
             data: data_max_length
         });
 
-        chart6.addSeries({
+        sequencing_rate_chart.addSeries({
             name: data_keys[i],
             data: data_sequencing_rate
         });
@@ -155,42 +151,42 @@ function requestStatisticsCallback(data) {
         var endtime = new Date(Date.parse(rundata[i]['last_read']));
         var name = rundata[i]['id'];
 
-        chart.xAxis[0].addPlotLine({
+        average_quality_chart.xAxis[0].addPlotLine({
             value: starttime,
             color: 'black',
             dashStyle: 'dot',
             width: 2,
         });
 
-        chart2.xAxis[0].addPlotLine({
+        average_read_length_chart.xAxis[0].addPlotLine({
             value: starttime,
             color: 'black',
             dashStyle: 'dot',
             width: 2,
         });
 
-        chart3.xAxis[0].addPlotLine({
+        cumulative_yield_chart.xAxis[0].addPlotLine({
             value: starttime,
             color: 'black',
             dashStyle: 'dot',
             width: 2,
         });
 
-        chart4.xAxis[0].addPlotLine({
+        cumulative_reads_chart.xAxis[0].addPlotLine({
             value: starttime,
             color: 'black',
             dashStyle: 'dot',
             width: 2,
         });
 
-        chart5.xAxis[0].addPlotLine({
+        max_read_length_chart.xAxis[0].addPlotLine({
             value: starttime,
             color: 'black',
             dashStyle: 'dot',
             width: 2,
         });
 
-        chart6.xAxis[0].addPlotLine({
+        sequencing_rate_chart.xAxis[0].addPlotLine({
             value: starttime,
             color: 'black',
             dashStyle: 'dot',

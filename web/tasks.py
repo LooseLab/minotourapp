@@ -26,9 +26,11 @@ from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowce
 from reads.utils import getn50
 from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
-from web.delete_tasks import delete_alignment_task, delete_metagenomics_task, delete_expected_benefit_task
-# from web.utils import update_last_activity_time
-# from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
+
+
+from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
+
+
 
 logger = get_task_logger(__name__)
 
@@ -126,15 +128,15 @@ def run_monitor():
                 ))
 
                 run_delete_flowcell.delay(flowcell_job.id)
-            #
-            # if flowcell_job.job_type.name == "ExpectedBenefit":
-            #
-                # logger.info("Sending task ReadUntil - Flowcell id: {}, job_master id: {}".format(
-                #     flowcell.id,
-                #     flowcell_job.id,
-                # ))
-            #
-            #     calculate_expected_benefit_3dot0_final.delay(flowcell_job.id)
+
+            if flowcell_job.job_type.name == "ExpectedBenefit":
+
+                logger.info("Sending task ReadUntil - Flowcell id: {}, job_master id: {}".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                ))
+
+                calculate_expected_benefit_3dot0_final.delay(flowcell_job.id)
 
 
 @task

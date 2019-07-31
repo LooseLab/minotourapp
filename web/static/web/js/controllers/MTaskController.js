@@ -146,6 +146,11 @@ class MTaskController {
         xhr.setRequestHeader("Accept", "application/json");
 
         let self = this;
+        let lookup_action_type = {1: "Reset", 2: "Pause", 3: "Delete"};
+        let action = lookup_action_type[actionType];
+
+        self._message.texto = `${action}ing task with ID ${flowcellJobId} - please wait for confirmation`;
+        self._messageView.update(self._message);
 
         xhr.onreadystatechange = function() {
             // event handler called in the readyState changing - when the request is submitted and returned

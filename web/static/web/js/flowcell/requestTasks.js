@@ -29,7 +29,7 @@ function loadTasksForm() {
                     // If it's metagenomics chosen
                     if (element["name"] == "Metagenomics") {
                         // Remove all the reference select options
-                        while (reference_select.length > 0) {
+                        while (reference_select.options.length > 0) {
                             reference_select.remove(0);
                         }
                         // Fetch the target sets from the database
@@ -59,7 +59,7 @@ function loadTasksForm() {
                         // if it's not for the metagenomics task we label the second dropdown reference
                         label.innerHTML = "Reference";
                         // remove all the current references
-                        while (reference_select.length > 0) {
+                        while (reference_select.options.length > 0) {
                             reference_select.remove(0);
                         }
                         // Url to fetch available references
@@ -96,23 +96,46 @@ function loadTasksForm() {
     // url to fetch all the available task types
     var url_task_type_list = "/api/v1/tasktypes/";
     // fetch all available references
-    $.get(url_task_type_list, function (dataObj) {
+    $.get(url_task_type_list, function (dataObj, statusText, xhr) {
+        if (xhr.status != 200) console.log(`Error ${statusText}`);
         // get the data
         var data = dataObj['data'];
-        // remove all current job types
-        while (job_type_select.length > 0) {
 
-            job_type_select.remove(0);
-        }
+        console.log(data);
         // create option placeholder
         var option = document.createElement("option");
-        option.value = "";
-        // set placeholder text
-        option.text = "-- select an option --";
-        // add the option to the job select element
-        job_type_select.appendChild(option);
-        // set this attribute on the elect box
-        job_type_select.minotour_job_type_list = data; // OO rocks
+
+        let alreadyPresentJobs = [...$("#id_job_type")[0].children];
+
+        if (!alreadyPresentJobs.length){
+            option.value = "";
+            // set placeholder text
+            option.text = "-- select an option --";
+            // add the option to the job select element
+            job_type_select.appendChild(option);
+            // set this attribute on the elect box
+            job_type_select.minotour_job_type_list = data; // OO rocks
+        }
+
+        console.log(alreadyPresentJobs);
+        // for each of the elements
+        alreadyPresentJobs.forEach(function (presentJob) {
+            // if the chromsome in already present chromsome is in the list of chromosomes fetched from the server
+            if (data.some(e => e.description === presentJob.textContent)){
+                console.log(presentJob.textContent);
+                // get the index,
+                let index = data.map(function(x) {return x.description; }).indexOf(presentJob.textContent);
+
+                console.log(index);
+                // remove it from the freshly fetched chromosomes
+                data.splice(index, 1);
+            }
+        });
+
+        console.log(data);
+
+        if (!data.length) {return;}
+
         // for each job type
         for (var i = 0; i < data.length; i++) {
             // create an option
@@ -128,15 +151,33 @@ function loadTasksForm() {
     // Do the same with the reference
     var url_reference_list = "/api/v1/reference/";
 
-    $.get(url_reference_list, function (data) {
+    $.get(url_reference_list, data => {
 
         let option = document.createElement("option");
-        option.value = "";
-        option.text = "-- select an option --";
 
-        reference_select.appendChild(option);
+        let references = data;
 
-        for (var i = 0; i < data.length; i++) {
+        let alreadyPresentRefs = [...$("#id_reference")[0].children];
+
+        if (!alreadyPresentRefs.length){
+            option.value = "";
+            option.text = "-- select an option --";
+            reference_select.appendChild(option);
+        }
+        // for each of the elements
+        alreadyPresentRefs.forEach(function (presentRef) {
+            // if the chromsome in already present chromsome is in the list of chromosomes fetched from the server
+            if (references.some(e => e.name === presentRef.textContent)) {
+                // get the index,
+                let index = references.map(function(x) {return x.name; }).indexOf(presentRef.textContent);
+                // remove it from the freshly fetched chromosomes
+                references.splice(index, 1);
+            }
+        });
+
+        if (!references.length) {return;}
+
+        for (var i = 0; i < references.length; i++) {
 
             option = document.createElement("option");
             option.value = data[i].id;
@@ -173,7 +214,6 @@ function flowcellTaskHistoryTable(flowcellId) {
                     "orderable": false,
                     "width": "15%",
                     "render": function (data, type, full) {
-                        console.log(data);
                         if (!data["server_initiated"]) {
                             return [`<a class="btn pause" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>`,
                                 `<a class="btn reset" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Restart </a>`,

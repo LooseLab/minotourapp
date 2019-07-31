@@ -68,7 +68,7 @@ class PafStore(models.Model):
         ReferenceLine,
         on_delete=models.CASCADE,
         related_name='pafstore_list'
-    )  # 6	string	Target sequence name
+    )  # 6	Foreign key Target sequence name
 
     tsl = models.IntegerField(
 
