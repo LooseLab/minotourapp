@@ -173,6 +173,7 @@ class FlowcellUserPermission(models.Model):
     flowcell = models.ForeignKey(
         Flowcell,
         on_delete=models.CASCADE,
+        related_name="flowcell_user_permision"
     )
 
     permission = models.CharField(

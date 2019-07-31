@@ -76,7 +76,7 @@ from reads.serializers import (
     FlowcellSummaryBarcodeSerializer,
     FastqReadGetSerializer,
 )
-from reads.utils import get_coords
+from reads.utils import get_coords, return_shared_flowcells
 from readuntil.models import ExpectedBenefitChromosomes
 
 logger = get_task_logger(__name__)
@@ -1031,7 +1031,14 @@ def flowcell_list(request):
 
 @api_view(['GET', 'POST'])
 def flowcell_detail(request, pk):
-
+    """
+    Get the details for a single flowcell
+    :param request: The django rest framework request object
+    :type request: rest_framework.request.Request
+    :param pk: The primary key of the flowcell database row
+    :type pk: int
+    :return:
+    """
     if request.method == 'GET':
 
         search_criteria = request.GET.get('search_criteria', 'id')
@@ -1046,6 +1053,9 @@ def flowcell_detail(request, pk):
         else:
 
             flowcell_list = Flowcell.objects.none()
+
+        if not flowcell_list:
+            flowcell_list = return_shared_flowcells(pk, request)
         # TODO look at the logic here, a user with two identical flowcells would crash this
 
         if len(flowcell_list) != 1:

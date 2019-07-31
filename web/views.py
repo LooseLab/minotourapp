@@ -10,8 +10,9 @@ from rest_framework.authtoken.models import Token
 from jobs.models import JobMaster, JobType
 from centrifuge.models import CentrifugeOutput
 from communication.models import Message
-from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats
+from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats, FlowcellUserPermission
 from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
+from reads.utils import return_shared_flowcells
 
 from django.contrib import messages
 
@@ -122,15 +123,24 @@ def flowcell_index(request, pk):
     :return: The base HTMl page for looking at a flowcell.
     """
     user = request.user
-    print(user)
-    print("..........")
-    print(pk)
-    try:
-        flowcell = Flowcell.objects.get(pk=pk, owner=user)
-    except Flowcell.DoesNotExist as e:
-        print("NO Flowcell")
 
-        return render(request, 'web/no.html')
+    flowcell_list = Flowcell.objects.filter(pk=pk, owner=user)
+    # # Check the flowcell isn't shared
+    if not flowcell_list:
+
+        flowcell_list = return_shared_flowcells(pk, request)
+
+        if flowcell_list:
+
+            flowcell = flowcell_list[0]
+
+        else:
+
+            return render(request, 'web/no.html')
+
+    else:
+
+        flowcell = flowcell_list[0]
     return render(request, 'web/flowcell_index.html', context={'flowcell': flowcell})
 
 

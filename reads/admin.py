@@ -33,7 +33,6 @@ class FlowcellAdmin(admin.ModelAdmin):
 
 
 admin.site.register(FastqRead)
-admin.site.register(Flowcell)
 admin.site.register(FastqFile)
 admin.site.register(FastqReadType)
 admin.site.register(FlowcellStatisticBarcode)
