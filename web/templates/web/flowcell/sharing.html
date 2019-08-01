@@ -1,1 +1,55 @@
-<span>Sharing</span>
+<div class="row">
+
+    <div class="col-md-12">
+        <div class='panel panel-info'>
+            <div class='panel-heading'>
+                <h3 class='panel-title'>Share flowcell</h3>
+            </div>
+            <div class='panel-body'>
+
+                <form method="post" id="post-form-task-create" onsubmit="mTaskController.create_new_job(event)">
+                    {% csrf_token %}
+                    <input type="hidden" name="flowcell" value="{{ flowcell.id }}"/>
+                    <div class="form-group">
+                        <label for="id_username">Username</label>
+                        <input type="text" class="form-control" name="username" id="id_username"/>
+                    </div>
+                    <div class="form-group">
+                        <label id="select-label" for="reference_id">Permission</label>
+                        <select class="form-control" name="permission" id="id_permission"></select>
+                    </div>
+
+                    <input type="submit" value="Create" class="btn btn-primary">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class='panel panel-info'>
+            <div class='panel-heading'>
+                <h3 class='panel-title'>Current users with access to this flowcell</h3>
+            </div>
+            <div class='panel-body'>
+                <table class="table table-hover tasktable display" style="width: 100%;">
+                    <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Permision</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tfoot>
+                    <tr>
+                        <th>Username</th>
+                        <th>Permision</th>
+                        <th>Actions</th>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
