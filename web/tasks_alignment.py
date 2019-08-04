@@ -37,7 +37,7 @@ def call_fetch_reads_alignment(runs, chunk_size, last_read):
         if len(fastq_df_barcode) >= chunk_size or len(reads) == 0:
             break
     # Update the read count with the number of reads we just fetched
-    read_count = len(fastq_df_barcode)
+    read_count = fastq_df_barcode.shape[0]
     return fastq_df_barcode, last_read, read_count, fasta_objects
 
 
@@ -128,7 +128,6 @@ def run_minimap2_alignment_by_job_master(job_master_id):
     else:
         logger.info('Flowcell id: {} - Job master {} has no reference.'.format(job_master.flowcell.id, job_master.id))
 
-
 @task()
 def run_minimap2_alignment(job_master_id):
     """
@@ -155,7 +154,7 @@ def run_minimap2_alignment(job_master_id):
     logger.info('Flowcell id: {} - number of reads found {}'.format(flowcell.id, read_count))
     # If we have pulled back reads, call fasta
     if read_count > 0:
-        last_read = align_reads(fasta_objects, job_master.id, fasta_df_barcode)
+        align_reads(fasta_objects, job_master.id, fasta_df_barcode)
 
     # Update the JobMaster with the metadata after finishing this iteration
     job_master = JobMaster.objects.get(pk=job_master_id)
@@ -171,8 +170,10 @@ def align_reads(fastas, job_master_id, fasta_df):
 
     :param fastas: A list of FastqRead objects that contain the sequence we will be running alignment on
     :param job_master_id: The Primary key of the JobMaster model object
+    :param fasta_df: A dataframe of fastq sequences
     :return:
     """
+
     # The on disk directory where we store the references
     reference_location = getattr(settings, "REFERENCE_LOCATION", None)
     # The location of the mimimap2 executable

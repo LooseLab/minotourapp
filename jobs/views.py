@@ -1,16 +1,15 @@
 from django.http import JsonResponse, HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
-from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 
 from jobs.models import JobType, JobMaster
 from jobs.serializers import JobMasterSerializer, JobMasterInsertSerializer
 from reads.models import Run
 from reference.models import ReferenceInfo
-from web.forms import TaskForm
 from reads.models import Flowcell
-
+from web.delete_tasks import delete_metagenomics_task, delete_alignment_task, delete_expected_benefit_task
+import time
 
 @api_view(["GET", "POST"])
 def get_or_create_tasks(request):
@@ -35,6 +34,14 @@ def get_or_create_tasks(request):
             tasks_list = JobMaster.objects.filter(flowcell__id=int(flowcell_id)).exclude(job_type__name="Other")
             # Serialise the data to a python object
             serializer = JobMasterSerializer(tasks_list, many=True)
+            # Check the icon required on the pause control part of the table
+            for data in serializer.data:
+                if data["paused"]:
+                    data["icon"] = "play"
+                    data["iconText"] = "Play"
+                else:
+                    data["icon"] = "pause"
+                    data["iconText"] = "Pause"
 
             result = {
                 "data": serializer.data
@@ -106,6 +113,7 @@ def get_or_create_tasks(request):
 
                     return Response("Reference not found Please contact server admin", status=500)
         # Serialise the data to a Django savable object
+        print(request.data)
         serializer = JobMasterInsertSerializer(data=request.data)
 
         # If the serialiser is valid
@@ -158,42 +166,42 @@ def task_types_list(request):
     })
 
 
-@api_view(['POST'])
-def set_task_detail_all(request, pk):
-    # TODO ARE WE USING THIS AT ALL
-    """We need to check if a job type already exists - if so we are not going to add another."""
-    if request.method == 'POST':
-        jobtype = JobType.objects.get(name=request.data["job"])
-        print(jobtype)
-        reference = ""
-        if request.data["reference"] != "null":
-            reference = ReferenceInfo.objects.get(reference_name=request.data["reference"])
-            print(reference)
-        minionrun = Run.objects.get(id=pk)
-        print(minionrun)
-        print(request.data)
-        print(jobtype, reference, minionrun)
-        jobmasters = JobMaster.objects.filter(run=minionrun).filter(job_type=jobtype)
-        print("Jobmasters", jobmasters)
-        if len(jobmasters) > 0:
-            # return Response("Duplicate Job attempted. Not allowed.", status=status.HTTP_400_BAD_REQUEST)
-            return Response("Duplicate Job attempted. Not allowed.", status=status.HTTP_200_OK)
-        else:
-            newjob = JobMaster(run=minionrun, job_type=jobtype, last_read=0, read_count=0, complete=False,
-                               running=False)
-
-            print("trying to make a job", newjob)
-
-            if request.data["reference"] != "null":
-                # if len(reference)>0:
-                newjob.reference = reference
-            try:
-                newjob.save()
-                print("job created")
-            except Exception as e:
-                print(e)
-                print("error")
-            return Response("Job Created.", status=status.HTTP_200_OK)
+# @api_view(['POST'])
+# def set_task_detail_all(request, pk):
+#     # TODO ARE WE USING THIS AT ALL
+#     """We need to check if a job type already exists - if so we are not going to add another."""
+#     if request.method == 'POST':
+#         jobtype = JobType.objects.get(name=request.data["job"])
+#         print(jobtype)
+#         reference = ""
+#         if request.data["reference"] != "null":
+#             reference = ReferenceInfo.objects.get(reference_name=request.data["reference"])
+#             print(reference)
+#         minionrun = Run.objects.get(id=pk)
+#         print(minionrun)
+#         print(request.data)
+#         print(jobtype, reference, minionrun)
+#         jobmasters = JobMaster.objects.filter(run=minionrun).filter(job_type=jobtype)
+#         print("Jobmasters", jobmasters)
+#         if len(jobmasters) > 0:
+#             # return Response("Duplicate Job attempted. Not allowed.", status=status.HTTP_400_BAD_REQUEST)
+#             return Response("Duplicate Job attempted. Not allowed.", status=status.HTTP_200_OK)
+#         else:
+#             newjob = JobMaster(run=minionrun, job_type=jobtype, last_read=0, read_count=0, complete=False,
+#                                running=False)
+#
+#             print("trying to make a job", newjob)
+#
+#             if request.data["reference"] != "null":
+#                 # if len(reference)>0:
+#                 newjob.reference = reference
+#             try:
+#                 newjob.save()
+#                 print("job created")
+#             except Exception as e:
+#                 print(e)
+#                 print("error")
+#             return Response("Job Created.", status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -240,4 +248,164 @@ def tasks_detail_all(request, pk):
         result.append(obj)
 
     return HttpResponse(json.dumps(result), content_type="application/json")
+
+
+@api_view(["POST"])
+def task_control(request):
+    """
+    Endpoint for clearing a task and resetting it to start form the beginning
+    :param request: Request object, contains the Id of the task keyed to flowcellJobId
+    :return: A status reflecting the state of the executed code
+    """
+    # Get the task object from django ORM
+    job_master = JobMaster.objects.get(pk=request.data["flowcellJobId"])
+
+    action_type = request.data["actionType"]
+
+    lookup_action_type = {1: "Reset", 2: "Pause", 3: "Delete"}
+
+    action = lookup_action_type[action_type]
+
+    unrecognised_action_message = "Apologies, but this action type was not recognised." \
+                                  " It may have not been implemented yet."
+
+    if job_master.job_type.name == "ChanCalc":
+        if action == "Reset":
+
+            running = job_master.running
+
+            seconds_counter = 0
+
+            while running:
+
+                running = job_master.running
+                time.sleep(1)
+                seconds_counter += 1
+
+                if seconds_counter is 25:
+                    job_master.running = False
+                    job_master.save()
+
+            # reset the values, skips existing values
+            job_master.read_count = 0
+            job_master.last_read = 0
+            job_master.save()
+            # set a return message
+            return_message = f"Successfully reset ChanCalc task, id: {job_master.id}"
+
+        elif action == "Pause":
+
+            if job_master.paused:
+                job_master.paused = False
+            if not job_master.paused:
+                job_master.paused = True
+
+            job_master.save()
+            return_message = f"Successfully paused ChanCalc task, id: {job_master.id}"
+
+        else:
+            return Response(unrecognised_action_message, status=500)
+
+    elif job_master.job_type.name == "UpdateFlowcellDetails":
+        if action == "Reset":
+            # reset the values, skips existing values
+            running = job_master.running
+
+            seconds_counter = 0
+
+            while running:
+                running = job_master.running
+                time.sleep(1)
+                seconds_counter += 1
+                if seconds_counter is 30:
+                    job_master.running = False
+                    job_master.save()
+
+            job_master.read_count = 0
+            job_master.last_read = 0
+            job_master.save()
+            # set a return message
+            return_message = f"Successfully reset UpdateFlowcellDetails task, id: {job_master.id}"
+
+        elif action == "Pause":
+            if job_master.paused:
+                job_master.paused = False
+            else:
+                job_master.paused = True
+
+            job_master.save()
+            return_message = f"Successfully paused UpdateFlowcellDetails task, id: {job_master.id}"
+
+        else:
+
+            return Response(unrecognised_action_message, status=500)
+
+    elif job_master.job_type.name == "Metagenomics":
+        if action == "Reset":
+            delete_metagenomics_task.delay(job_master.id, True)
+
+            return_message = f"Successfully started to reset this metagenomics task, id: {job_master.id}." \
+                             f" Clearing previous data may take a while, please be patient!"
+
+        elif action == "Pause":
+            if job_master.paused:
+                job_master.paused = False
+            else:
+                job_master.paused = True
+
+            job_master.save()
+            return_message = f"Successfully paused metagenomics task reset, id: {job_master.id}."
+
+        elif action == "Delete":
+            delete_metagenomics_task.delay(job_master.id)
+            return_message = f"Successfully started deletion of this metagenomics task, id: {job_master.id}." \
+                             f" Clearing previous data may take a while, please be patient!"
+
+        else:
+            return Response(unrecognised_action_message, status=500)
+
+    elif job_master.job_type.name == "Minimap2":
+        if action == "Reset":
+            delete_alignment_task.delay(job_master.id, True)
+            return_message = f"Successfully began reset of minimap2 task, id: {job_master.id}" \
+                             f" Clearing previous data may take a while, please be patient!"
+
+        elif action == "Pause":
+            if job_master.paused:
+                job_master.paused = False
+            else:
+                job_master.paused = True
+            job_master.save()
+            return_message = f"Successfully paused minimap2 task, id: {job_master.id}"
+
+        elif action == "Delete":
+            delete_alignment_task.delay(job_master.id)
+            return_message = f"Successfully began deletion of minimap2 task, id: {job_master.id}" \
+                             f" Clearing previous data may take a while, please be patient!"
+        else:
+            return Response(unrecognised_action_message, status=500)
+
+    elif job_master.job_type.name == "ExpectedBenefit":
+        if action == "Reset":
+            return_message = f"Successfully reset this Expected benefit task, id: {job_master.id}"
+
+        elif action == "Pause":
+            if job_master.paused:
+                job_master.paused = False
+            else:
+                job_master.paused = True
+            return_message = f"Successfully paused this Expected benefit task, id: {job_master.id}"
+
+        elif action == "Delete":
+            return_message = f"Successfully deleted this Expected benefit task, id: {job_master.id}"
+
+            delete_expected_benefit_task.delay(job_master.id)
+
+        else:
+            return Response(unrecognised_action_message, status=500)
+
+    else:
+        raise NotImplementedError
+
+    return Response(return_message, status=200)
 

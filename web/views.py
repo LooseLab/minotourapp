@@ -10,8 +10,9 @@ from rest_framework.authtoken.models import Token
 from jobs.models import JobMaster, JobType
 from centrifuge.models import CentrifugeOutput
 from communication.models import Message
-from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats
+from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats, FlowcellUserPermission
 from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
+from reads.utils import return_shared_flowcells
 
 from django.contrib import messages
 
@@ -114,8 +115,32 @@ def flowcells(request):
 
 @login_required
 def flowcell_index(request, pk):
+    """
+    Return the HTML for a flowcells own page after selecting it from the flowcell table.
+    :param request: HTTP request object
+    :param pk: The primary key of the flowcell
+    :type pk: int
+    :return: The base HTMl page for looking at a flowcell.
+    """
+    user = request.user
 
-    flowcell = Flowcell.objects.get(pk=pk)
+    flowcell_list = Flowcell.objects.filter(pk=pk, owner=user)
+    # # Check the flowcell isn't shared
+    if not flowcell_list:
+
+        flowcell_list = return_shared_flowcells(pk, request)
+
+        if flowcell_list:
+
+            flowcell = flowcell_list[0]
+
+        else:
+
+            return render(request, 'web/no.html')
+
+    else:
+
+        flowcell = flowcell_list[0]
     return render(request, 'web/flowcell_index.html', context={'flowcell': flowcell})
 
 

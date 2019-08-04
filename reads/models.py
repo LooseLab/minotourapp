@@ -158,6 +158,30 @@ class Flowcell(models.Model):
         return True
 
 
+class FlowcellUserPermission(models.Model):
+
+    PERMISSIONS = (
+        ('READ_ONLY', 'Read-only'),
+        ('READ_WRITE', 'Read-write')
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.DO_NOTHING,
+    )
+
+    flowcell = models.ForeignKey(
+        Flowcell,
+        on_delete=models.CASCADE,
+        related_name="flowcell_user_permision"
+    )
+
+    permission = models.CharField(
+        max_length=10,
+        choices=PERMISSIONS,
+        default='READ_ONLY',
+    )
+
 class MinION(models.Model):
     minION_name = models.CharField(
         max_length=64
@@ -1513,6 +1537,13 @@ class FastqRead(models.Model):
         on_delete=models.DO_NOTHING,
     )
 
+    rejected_barcode = models.ForeignKey(
+        Barcode,
+        on_delete=models.DO_NOTHING,
+        related_name="rejection_status",
+        null=True
+    )
+
     barcode_name = models.CharField(
         db_index=True,
         max_length=32,
@@ -1751,6 +1782,9 @@ class RunStatisticBarcode(models.Model):  # TODO to be removed
 
 
 class FlowcellStatisticBarcode(models.Model):
+    """
+    model to contain the flowcell statistic barcodes data for the chancalc page
+    """
     flowcell = models.ForeignKey(
 
         Flowcell,
@@ -1767,6 +1801,11 @@ class FlowcellStatisticBarcode(models.Model):
     barcode_name = models.CharField(
 
         max_length=32
+    )
+
+    rejection_status = models.CharField(
+        max_length=32,
+        default="Accepted"
     )
 
     status = models.CharField(
@@ -1854,7 +1893,9 @@ class ChannelSummary(models.Model):  # don't document
 
 
 class FlowcellChannelSummary(models.Model):  # TODO to be deleted
-
+    """
+    The flowcell channel model for the channel visualistions on te chancalc page
+    """
     flowcell = models.ForeignKey(
         Flowcell,
         on_delete=models.CASCADE,
@@ -1953,6 +1994,11 @@ class FlowcellHistogramSummary(models.Model):
     barcode_name = models.CharField(
 
         max_length=32
+    )
+
+    rejection_status = models.CharField(
+        max_length=32,
+        default="Accepted"
     )
 
     status = models.CharField(
@@ -2142,13 +2188,15 @@ class RunSummaryBarcode(models.Model):  # TODO to be deleted
 
 class FlowcellSummaryBarcode(models.Model):
     """
-    :purpose: Summarise information from runs by flowcell, barcode name, fastq read type, and status (pass or fail). There is one record per flowcell. Most of the charts in the flowcell page use this data.
+    :purpose: Summarise information from runs by flowcell, barcode name, fastq read type, and status (pass or fail).
+     There is one record per flowcell. Most of the charts in the flowcell page use this data.
 
     Fields:
 
     :flowcell: (Flowcell) Foreign key to Flowcell
     :read_type_name: (FastReadType) FastqReadType name
     :barcode_name: (Barcode) Barcode name
+    ;rejection_status: (Barcode) Foreign key to whether the read was accepted or unblocked
     :status: (boolean) Pass or Fail; originates from FastqRead is_pass attribute
     :quality_sum: (float) # TODO
     :read_count: (float) Total number of all reads from all runs of the flowcell
@@ -2174,6 +2222,11 @@ class FlowcellSummaryBarcode(models.Model):
     barcode_name = models.CharField(
 
         max_length=32
+    )
+
+    rejection_status = models.CharField(
+        max_length=32,
+        default="Accepted"
     )
 
     status = models.CharField(

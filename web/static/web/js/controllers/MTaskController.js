@@ -33,9 +33,13 @@ class MTaskController {
 
         this._reference_id = this._select_reference.value;
 
+        console.log(this._select_job_type.value);
+
         // If this is metagenomics - set the reference value to null and the target set id instead
-        if (this._select_job_type.value === 10){
-            this._target_set = this._select_reference.value;
+        if (this._select_job_type.value === "10"){
+            console.log("conditional");
+            // the target set text
+            this._target_set = this._select_reference[this._select_reference.selectedIndex].text;
             this._reference_id = null;
         }
 
@@ -124,6 +128,54 @@ class MTaskController {
 
             flowcell: this._flowcell_id,
 
+        }));
+    }
+
+    performActionOnTask(event, flowcellJobId, actionType) {
+
+        let csrftoken = getCookie('csrftoken');
+        // new request
+        let xhr = new XMLHttpRequest();
+
+        // Open the request for editing
+        xhr.open('POST', '/api/v1/tasks/action');
+
+        // set the request headers
+        xhr.setRequestHeader('X-CSRFToken', csrftoken);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.setRequestHeader("Accept", "application/json");
+
+        let self = this;
+        let lookup_action_type = {1: "Reset", 2: "Pause", 3: "Delete"};
+        let action = lookup_action_type[actionType];
+
+        self._message.texto = `${action}ing task with ID ${flowcellJobId} - please wait for confirmation`;
+        self._messageView.update(self._message);
+
+        xhr.onreadystatechange = function() {
+            // event handler called in the readyState changing - when the request is submitted and returned
+            if(this.readyState === XMLHttpRequest.DONE) {
+                // if successful
+                if(this.status === 200) {
+                    // change the message to
+                    self._message.texto = this.responseText;
+                    // update the message element to show the text
+                    self._messageView.update(self._message);
+
+                } else {
+                    console.log(this);
+                    // something went wrong
+                    self._message.texto = 'Something went wrong. Please check the following message. ' + this.responseText;
+                    // update the message element to show the error text
+                    self._messageView.update(self._message);
+
+                }
+            }
+        };
+        // Send the xhr, with the data we need stringified
+        xhr.send(JSON.stringify({
+            flowcellJobId,
+            actionType
         }));
     }
 

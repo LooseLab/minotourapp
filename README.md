@@ -81,11 +81,11 @@ Minotour also makes use of a MySQL database, Celery (responsible for running ser
 
 * [Minimap2](https://github.com/lh3/minimap2) - Minotour uses **Minimap2** to run fast alignment, and to do metagenomics target validation.
 
-* [Python 3](https://www.python.org) - Minotour uses **Python >=3.5**, so make sure it is available on your system.
+* [Python 3](https://www.python.org) - Minotour uses **Python >=3.6**, so make sure it is available on your system.
 
 * You will need to have the virtual environment activated to run Minotour, Celery and Flower, as well as to install the new dependencies.
 
-* Create Minotour data directory - currently, Minotour uses this folder to keep track of the genome references available::
+* Create Minotour data directory - currently, Minotour uses this folder to keep track of the genome references available:
 
     mkdir -p ~/data/minotour;
 
@@ -118,7 +118,7 @@ Before creating new metagenomics tasks, there are a few requirements that need t
 
 - minoTour uses the ete3 package, that needs access to the internet to download the NCBI species database.
 
-To force the download (this step just need to be executed once), type the following instructions on the python interpreter:
+To force the download (this step just need to be executed once), type the following instructions into the python interpreter:
 ```bash
     import ete3
 
@@ -126,6 +126,82 @@ To force the download (this step just need to be executed once), type the follow
 
     n = NCBITaxa()
 ```
+
+If you are operating on a server, you may wish to raise the priority of the centrifuge process, as otherwise it may not be allocated free RAM in a workable timeframe.
+
+In order to do this you'll need to edit the /etc/security/limits.conf file to allow non root users to set a processes niceness index to less than 0.
+
+To do this you will need root permissions. Run the following terminal commands:
+
+```bash
+sudo vim /etc/security/limits.conf
+``` 
+Which will show you a that looks like this:
+```bash
+    #
+#/etc/security/limits.conf
+#
+#Each line describes a limit for a user in the form:
+#
+#<domain>        <type>  <item>  <value>
+#
+#Where:
+#<domain> can be:
+#        - a user name
+#        - a group name, with @group syntax
+#        - the wildcard *, for default entry
+#        - the wildcard %, can be also used with %group syntax,
+#                 for maxlogin limit
+#        - NOTE: group and wildcard limits are not applied to root.
+#          To apply a limit to the root user, <domain> must be
+#          the literal username root.
+#
+#<type> can have the two values:
+#        - "soft" for enforcing the soft limits
+#        - "hard" for enforcing hard limits
+#
+#<item> can be one of the following:
+#        - core - limits the core file size (KB)
+#        - data - max data size (KB)
+#        - fsize - maximum filesize (KB)
+#        - memlock - max locked-in-memory address space (KB)
+#        - nofile - max number of open files
+#        - rss - max resident set size (KB)
+#        - stack - max stack size (KB)
+#        - cpu - max CPU time (MIN)
+#        - nproc - max number of processes
+#        - as - address space limit (KB)
+#        - maxlogins - max number of logins for this user
+#        - maxsyslogins - max number of logins on the system
+#        - priority - the priority to run user process with
+#        - locks - max number of file locks the user can hold
+#        - sigpending - max number of pending signals
+#        - msgqueue - max memory used by POSIX message queues (bytes)
+#        - nice - max nice priority allowed to raise to values: [-20, 19]
+#        - rtprio - max realtime priority
+#        - chroot - change root to directory (Debian-specific)
+#
+#<domain>      <type>  <item>         <value>
+#
+
+#*               soft    core            0
+#root            hard    core            100000
+#*               hard    rss             10000
+#@student        hard    nproc           20
+#@faculty        soft    nproc           20
+#@faculty        hard    nproc           50
+#ftp             hard    nproc           0
+```
+
+Add the following line to the file, which will allow non root users to set a limit of -10 to the niceness index, giving the process a higher priority.
+
+```bash
+    *	-	nice	-10
+```
+
+This step isn't necessary, but it might be useful if the centrifuge index is taking a long time to load. 
+
+
     
 
 --------------------------------

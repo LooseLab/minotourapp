@@ -95,6 +95,8 @@ var FlowcellPageApp = {
         this.update_mapping_table = update_mapping_table;
         this.draw_simple_table = draw_simple_table;
 
+        this.drawReadUntilCharts = drawReadUntilCharts;
+
         this.updatePoreChart = updatePoreChart;
 
         this.requestChannelSummaryData = requestChannelSummaryData;
@@ -111,7 +113,7 @@ var FlowcellPageApp = {
 
         this.requestPafData = requestPafData.bind(this);
 
-        this.requestAdvancedPafData = requestAdvancedPafData.bind(this);
+        // this.requestAdvancedPafData = requestAdvancedPafData.bind(this);
 
         this.requestRunDetails = requestRunDetails.bind(this);
 
@@ -198,8 +200,8 @@ var FlowcellPageApp = {
         );
 
 
-        this.addStartTabsEvents(flowcell_id);
-        this.checkFlowcellTabs(flowcell_id);
+        // this.addStartTabsEvents(flowcell_id);
+        // this.checkFlowcellTabs(flowcell_id);
 
         //('>> calling request data');
         console.log('Calling request data from monitor_app. >>>');
@@ -302,7 +304,7 @@ var FlowcellPageApp = {
         this.LiveYield.series[2].setData(this.converttobases(newarray1, seqspeed));
         this.LiveYield.series[3].setData(this.converttobases(newarray2, seqspeed));
         this.LiveYield.redraw();
-        this.LiveYield.reflow()
+        this.LiveYield.reflow();
     },
 
     converttobases: function (data, seqspeed) {

@@ -112,6 +112,10 @@ class JobMaster(models.Model):
         default=False,
     )
 
+    paused = models.BooleanField(
+        default=False
+    )
+
     iteration_count = models.IntegerField(
 
         null=True,
@@ -129,6 +133,9 @@ class JobMaster(models.Model):
     def __str__(self):
 
         if self.run is not None:
-            return "{} {} {}".format(self.run, self.job_type, self.run.id)
+
+            return "{} {} {} {}".format(self.run, self.job_type, self.run.id, self.id)
+
 
         return "{} {} {}".format(self.flowcell, self.job_type, self.flowcell.id)
+

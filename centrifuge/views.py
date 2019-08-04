@@ -100,13 +100,20 @@ def centrifuge_metadata(request):
     else:
         runtime = queryset.finish_time
 
-    return_list = [{"key": "Reads Sequenced: ", "value": number_of_reads},
+    # this bool tells the javascript whether not to place the metadata in the validation
+    #  set panel or the analysis results panel
+    if job_master.target_set:
+        validation_table_present = True
+    else:
+        validation_table_present = False
+
+    return_list = {"validation": validation_table_present, "result": [{"key": "Reads Sequenced: ", "value": number_of_reads},
                    {"key": "Reads Analysed: ", "value": str(reads_class) + " (" + str(percentage) + "%)"},
                    {"key": "Reads Classified: ", "value": str(reads_actually_classified) +
                     " (" + str(class_percent)+"%)"},
                    {"key": "Reads Unclassified: ", "value": str(reads_not_classified) +
                     " (" + str(unclass_percent)+"%)"},
-                   {"key": "Runtime: ", "value": runtime}]
+                   {"key": "Runtime: ", "value": runtime}]}
 
     return Response(return_list)
 
@@ -223,7 +230,7 @@ def donut_data(request):
     visType  - Whether this is a a request for donut chart or results table data
     :return:
     """
-
+    print(type(request))
     flowcell_id = request.GET.get("flowcellId", 0)
 
     barcode = request.GET.get("barcode", "All reads")
@@ -479,11 +486,12 @@ def simple_target_mappings(request):
 
     confidence_detection_limit = rounddown(confidence_detection_limit, sig_fig)
 
+    if not task.target_set:
+        return Response("Metagenomics task has no validation set", status=204)
+
     # If the barcode is All reads, there is always four
     queryset = MappingResult.objects.filter(task=task, barcode_name=barcode).values()
     results_df = pd.DataFrame(list(queryset))
-    if results_df.empty:
-        return Response("No data has yet been produced for the target mappings", status=204)
 
     results_df.drop(
         columns=["id", "mapped_proportion_of_classified", "num_matches", "red_reads_proportion_of_classified",
@@ -507,7 +515,7 @@ def simple_target_mappings(request):
 
     results_df.rename(columns={"num_mapped": "Num. mapped",
                                "red_reads": "Target reads",
-                               "species": "Potential threats",
+                               "species": "Validation species",
                                "tax_id": "Tax id",
                                }, inplace=True)
 
@@ -536,5 +544,5 @@ def get_target_sets(request):
 
     else:
         user_id = request.user.id
-    target_sets = MappingTarget.objects.filter(Q(user_id=user_id) | Q(private=False)).values_list("target_set", flat=True).distinct()
+    target_sets = MappingTarget.objects.filter(Q(owner_id=user_id) | Q(private=False)).values_list("target_set", flat=True).distinct()
     return Response(target_sets)

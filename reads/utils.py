@@ -4,6 +4,25 @@ import math
 
 from dateutil import parser
 
+from reads.models import FlowcellUserPermission
+
+
+def return_shared_flowcells(pk, request):
+    """
+    Return whether this user has access to a flowcell via it being shared with them
+    :param pk: The primary key of the row of the flowcell database entry
+    :type pk: int
+    :param request: The django rest framework request object
+    :type request: rest_framework.request.Request
+    :return: A flowcell Django ORM object if this flowcell has been shared with the user
+    """
+    users_shared_flowcells = FlowcellUserPermission.objects.filter(user=request.user, flowcell__id=pk)
+    if users_shared_flowcells:
+        flowcell = [users_shared_flowcells[0].flowcell]
+    else:
+        flowcell = []
+    return flowcell
+
 
 def get_coords(channel, flowcellsize):
 

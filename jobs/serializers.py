@@ -39,6 +39,7 @@ class JobMasterSerializer(serializers.ModelSerializer):
             "read_count",
             "running",
             "complete",
+            "paused",
             "server_initiated"
         )
 
