@@ -1247,23 +1247,6 @@ def flowcell_statistics(request, pk):
     df2["read_type"] = "All"
 
     df2 = df2.reset_index()
-<<<<<<< HEAD
-    df3 = pd.concat([df,df2],ignore_index=True,sort=True)
-    df3['cumulative_read_count'] = df3.groupby(['barcode_name','read_type_name','read_type'])['read_count'].apply(lambda x: x.cumsum())
-    df3['cumulative_bases'] = df3.groupby(['barcode_name','read_type_name', 'read_type'])['total_length'].apply(lambda x: x.cumsum())
-    df3['key']=df3['barcode_name'].astype('str') + " - " + df3['read_type_name'].astype('str') + " - " + df3['read_type'].astype('str')
-    df3['average_quality'] = df3['quality_sum'].div(df3['read_count']).astype('float').round(decimals=1)
-    df3['average_quality'] = df3['average_quality'].astype('float')
-    df3['average_length'] = df3['total_length'].div(df3['read_count']).round(decimals=0)
-    df3['sequence_rate'] = df3['total_length'].div(60).round(decimals=0)
-    df3['corrected_time'] = df3['sample_time'].astype(np.int64) // 10**6
-    if q != "All reads":
-        df3 = df3.drop(df3.index[(df3.barcode_name == 'All reads') & (df3.read_type != "All")])
-    data_keys = df3['key'].unique().tolist()
-
-    result_dict = {k:df3[df3['key'].eq(k)][['corrected_time','average_quality','average_length','cumulative_bases','cumulative_read_count','max_length','sequence_rate']].values.tolist() for k in df3.key.unique()}
-=======
->>>>>>> fafeb06895d9cac5264060841b77dab0d81c1e78
 
     df3 = pd.concat([df, df2], ignore_index=True, sort=True)
 
@@ -1287,7 +1270,7 @@ def flowcell_statistics(request, pk):
         df3["quality_sum"]
         .div(df3["read_count"])
         .astype("float")
-        .round(decimals=0)
+        .round(decimals=2)
     )
 
     df3["average_quality"] = df3["average_quality"].astype("float")
@@ -1503,26 +1486,23 @@ def flowcell_histogram_summary(request, pk):
             if rejection_status not in data_keys[barcode_name][read_type_name].keys():
                 data_keys[barcode_name][read_type_name][rejection_status] = {}
 
-
+            ### This is wrong.
             result_collect_read_count_sum = list(
                 (
                     -pd.concat(
                         [
                             pd.Series([0]),
                             pd.Series(result_collect_read_count_sum).replace(
-                                to_replace=0, method="ffill"
-                            ),
+                                to_replace=0,method='ffill'
+                            )
                         ]
                     )
                     + pd.Series(result_collect_read_count_sum)
-                    .replace(to_replace=0, method="ffill")
+                        .replace(to_replace=0,method='ffill')
                     .max()
                 )
-                / pd.Series(result_collect_read_count_sum)
-                .replace(to_replace=0, method="ffill")
-                .max()
-                * 50
-            )
+                / total_reads_count * 100)
+
             result_collect_read_length_sum = list(
                 (
                     -pd.concat(
@@ -1534,13 +1514,11 @@ def flowcell_histogram_summary(request, pk):
                         ]
                     )
                     + pd.Series(result_collect_read_length_sum)
-                    .replace(to_replace=0, method="ffill")
+                        .replace(to_replace=0, method="ffill")
                     .max()
                 )
-                / pd.Series(result_collect_read_length_sum)
-                .replace(to_replace=0, method="ffill")
-                .max()
-                * 50
+                / total_reads_length * 100
+
             )
             data_keys[barcode_name][read_type_name][rejection_status][
                 l_is_pass
