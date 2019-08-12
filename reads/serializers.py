@@ -206,71 +206,6 @@ class FastqReadSerializer(serializers.ModelSerializer):
 
         return fastqread
 
-'''
-class FastqReadSerializer(serializers.ModelSerializer):
-
-    sequence = serializers.CharField(allow_blank=True)
-    quality = serializers.CharField(allow_blank=True)
-
-    class Meta:
-        model = FastqRead
-        fields = (
-            'read_id',
-            'read',
-            'channel',
-            'barcode',
-            'barcode_name',
-            'sequence_length',
-            'quality_average',
-            'sequence',
-            'quality',
-            'is_pass',
-            'start_time',
-            'run',
-            'type',
-            'created_date',
-            'fastqfile'
-        )
-
-    def create(self, validated_data):
-
-        #
-        # The next two lines of code truncate the datetime information.
-        # The RunStatisticsBarcode aggregates the date on minute level.
-        #
-        #start_time = validated_data['start_time']
-        #start_time_truncated = datetime(start_time.year, start_time.month, start_time.day, start_time.hour, start_time.minute)
-
-
-        fastqread = FastqRead(
-            read_id=validated_data['read_id'],
-            read=validated_data['read'],
-            channel=validated_data['channel'],
-            barcode=validated_data['barcode'],
-            barcode_name=validated_data['barcode_name'],
-            sequence_length=validated_data['sequence_length'],
-            quality_average=validated_data['quality_average'],
-            is_pass=validated_data['is_pass'],
-            start_time=validated_data['start_time'],
-            run=validated_data['run'],
-            type=validated_data['type'],
-            fastqfile=validated_data['fastqfile']
-        )
-
-        fastqread.save()
-
-        if fastqread.run.has_fastq:
-
-            fastqread_extra = FastqReadExtra(
-                fastqread=fastqread,
-                sequence=validated_data['sequence'],
-                quality=validated_data['quality']
-            )
-
-            fastqread_extra.save()
-
-        return fastqread
-'''
 
 class FastqReadNameSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -613,6 +548,10 @@ class FlowcellSummaryBarcodeSerializer(serializers.ModelSerializer):
 
 
 class FlowcellUserPermissionSerializer(serializers.ModelSerializer):
+
+    username = serializers.ReadOnlyField(
+        source="user.username"
+    )
 
     class Meta:
         model = FlowcellUserPermission
