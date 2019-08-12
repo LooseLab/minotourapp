@@ -1,5 +1,7 @@
 <div class="row">
 
+    <div id="sharing-messages" class="col-md-12"></div>
+
     <div class="col-md-12">
         <div class='panel panel-info'>
             <div class='panel-heading'>
@@ -7,7 +9,7 @@
             </div>
             <div class='panel-body'>
 
-                <form method="post" id="post-form-task-create" onsubmit="mTaskController.create_new_job(event)">
+                <form method="post" id="post-form-task-create" onsubmit="mSharingController.create(event)">
                     {% csrf_token %}
                     <input type="hidden" name="flowcell" value="{{ flowcell.id }}"/>
                     <div class="form-group">
@@ -15,8 +17,11 @@
                         <input type="text" class="form-control" name="username" id="id_username"/>
                     </div>
                     <div class="form-group">
-                        <label id="select-label" for="reference_id">Permission</label>
-                        <select class="form-control" name="permission" id="id_permission"></select>
+                        <label id="select-label" for="id_permission">Permission</label>
+                        <select class="form-control" name="permission" id="id_permission">
+                            <option value='READ_ONLY'>READ ONLY</option>
+                            <option value='READ_WRITE'>READ WRITE</option>
+                        </select>
                     </div>
 
                     <input type="submit" value="Create" class="btn btn-primary">
@@ -33,21 +38,14 @@
                 <h3 class='panel-title'>Current users with access to this flowcell</h3>
             </div>
             <div class='panel-body'>
-                <table class="table table-hover tasktable display" style="width: 100%;">
+                <table id='sharing_table' class="table table-hover display" style="width: 100%;">
                     <thead>
                     <tr>
                         <th>Username</th>
-                        <th>Permision</th>
+                        <th>Permission</th>
                         <th>Actions</th>
                     </tr>
                     </thead>
-                    <tfoot>
-                    <tr>
-                        <th>Username</th>
-                        <th>Permision</th>
-                        <th>Actions</th>
-                    </tr>
-                    </tfoot>
                 </table>
             </div>
         </div>

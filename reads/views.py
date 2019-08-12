@@ -9,6 +9,7 @@ from celery import task
 from celery.utils.log import get_task_logger
 from dateutil import parser
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Max
@@ -75,6 +76,7 @@ from reads.serializers import (
     GroupRunSerializer,
     FlowcellSummaryBarcodeSerializer,
     FastqReadGetSerializer,
+    FlowcellUserPermissionSerializer,
 )
 from reads.utils import get_coords, return_shared_flowcells
 from readuntil.models import ExpectedBenefitChromosomes
@@ -2159,3 +2161,44 @@ def version(request):
     }
 
     return HttpResponse(json.dumps(resp), content_type="application/json")
+
+@api_view(['GET', 'POST'])
+def flowcell_sharing(request, pk):
+    """
+    list and add user permissions on a flowcell
+    """
+
+    flowcell = Flowcell.objects.get(pk=pk)
+
+    if request.method == 'POST':
+
+        try:
+            user =  User.objects.get(username=request.data['username'])
+
+        except User.DoesNotExist:
+
+            return Response({"message": "User does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+        data = request.data
+
+        data['user'] = user.id
+
+        serializer = FlowcellUserPermissionSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
+        if serializer.is_valid():
+            permission = serializer.save(flowcell=flowcell)
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    else:
+
+        permission_list = FlowcellUserPermission.objects.filter(flowcell=flowcell)
+
+        serializer = FlowcellUserPermissionSerializer(permission_list, many=True, context={'request': request})
+
+        return Response(serializer.data)

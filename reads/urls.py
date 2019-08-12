@@ -191,6 +191,11 @@ urlpatterns = [
         views.flowcell_tasks_detail_all,
         name="flowcelltasks-detail-all"),
     url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/sharing/$',
+        views.flowcell_sharing,
+        name="flowcell-sharing"),
+
+    url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/tabs/$',
         views.flowcell_tabs_details,
         name="tabs-details"
