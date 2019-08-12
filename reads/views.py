@@ -1270,7 +1270,7 @@ def flowcell_statistics(request, pk):
         df3["quality_sum"]
         .div(df3["read_count"])
         .astype("float")
-        .round(decimals=0)
+        .round(decimals=2)
     )
 
     df3["average_quality"] = df3["average_quality"].astype("float")
@@ -1393,12 +1393,15 @@ def flowcell_histogram_summary(request, pk):
     barcode_name = request.GET.get("barcode_name", "All reads")
     # Get the information for the flowcell the data is attached to
     flowcell = Flowcell.objects.get(pk=pk)
-    # The largest bin
-    max_bin_index = (
-        FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-        .filter(barcode_name=barcode_name)
-        .aggregate(Max("bin_index"))
-    )
+
+    total_reads_length = flowcell.total_read_length
+    total_reads_count = flowcell.number_reads
+
+    max_bin_index = FlowcellHistogramSummary.objects \
+        .filter(flowcell=flowcell) \
+        .filter(barcode_name=barcode_name) \
+        .aggregate(Max('bin_index'))
+
     # A list of tuples, distinct on barcode name, pass/fail, template
     key_list = (
         FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
@@ -1483,26 +1486,23 @@ def flowcell_histogram_summary(request, pk):
             if rejection_status not in data_keys[barcode_name][read_type_name].keys():
                 data_keys[barcode_name][read_type_name][rejection_status] = {}
 
-
+            ### This is wrong.
             result_collect_read_count_sum = list(
                 (
                     -pd.concat(
                         [
                             pd.Series([0]),
                             pd.Series(result_collect_read_count_sum).replace(
-                                to_replace=0, method="ffill"
-                            ),
+                                to_replace=0,method='ffill'
+                            )
                         ]
                     )
                     + pd.Series(result_collect_read_count_sum)
-                    .replace(to_replace=0, method="ffill")
+                        .replace(to_replace=0,method='ffill')
                     .max()
                 )
-                / pd.Series(result_collect_read_count_sum)
-                .replace(to_replace=0, method="ffill")
-                .max()
-                * 50
-            )
+                / total_reads_count * 100)
+
             result_collect_read_length_sum = list(
                 (
                     -pd.concat(
@@ -1514,13 +1514,11 @@ def flowcell_histogram_summary(request, pk):
                         ]
                     )
                     + pd.Series(result_collect_read_length_sum)
-                    .replace(to_replace=0, method="ffill")
+                        .replace(to_replace=0, method="ffill")
                     .max()
                 )
-                / pd.Series(result_collect_read_length_sum)
-                .replace(to_replace=0, method="ffill")
-                .max()
-                * 50
+                / total_reads_length * 100
+
             )
             data_keys[barcode_name][read_type_name][rejection_status][
                 l_is_pass
