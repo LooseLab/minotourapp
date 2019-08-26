@@ -185,6 +185,7 @@ class Command(BaseCommand):
                         "a reference with"
                         " the exact species name" % species_name
                     )
+
                 # If we do have a reference, proceed
                 else:
                     print(
@@ -192,6 +193,16 @@ class Command(BaseCommand):
                             species_name
                         )
                     )
+
+                    # reference = ReferenceInfo.objects.filter(name=species_name)
+                    #
+                    # if len(reference > 1):
+                    #     for refer in reference:
+                    #         if refer.private
+                    # print(
+                    #     f"\033[1;35;1m setting this Reference - {reference.name}"
+                    # )
+
                 # Check if the set already exists
                 if set_name in set_name_list:
                     print(

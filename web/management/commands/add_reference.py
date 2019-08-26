@@ -10,6 +10,20 @@ from reference.models import ReferenceInfo, ReferenceLine
 from rest_framework.authtoken.models import Token
 
 
+def validate_reference_checks(file_path):
+    """
+    Perform all the checks that we need to do to.
+    1. If the reference filename exists in any of the references available to the user, reject it
+    2. Check if the md5 of the gzipped file matches any references, if it does, silently backref to that rather
+     than add a new file.
+    3. If the md5 exists then rename the file to a uuid, move it to the right location and create a md5 checksum for it
+    :param file_path: The file path to the reference
+    :type file_path: pathlib.Path
+    :return:
+    """
+    pass
+
+
 def find_files_of_type(file_or_directory, file_extensions):
     """Return a list of pathlib.Path of files with chosen extensions
     Parameters

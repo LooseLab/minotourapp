@@ -7,6 +7,7 @@ from django.utils import timezone
 from jobs.models import JobMaster
 from reads.models import Barcode
 from reads.models import Flowcell
+from reference.models import ReferenceInfo
 
 
 class SankeyLink(models.Model):
@@ -211,9 +212,12 @@ class MappingTarget(models.Model):
         null=True
     )
 
-    # reference = models.ForeignKey(
-    #
-    # )
+    reference = models.ForeignKey(
+        ReferenceInfo,
+        related_name="mapping_target_reference",
+        on_delete=models.CASCADE,
+        null=True
+    )
 
     private = models.BooleanField(default=False)
 
