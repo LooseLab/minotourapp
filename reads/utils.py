@@ -165,3 +165,8 @@ def getn50(lens):
         if t >= h:
             return l
 
+
+def get_flowcell_user_permission(flowcell_id, user_id):
+    """Return the list of permissions an user has on a flowcell"""
+
+    pass
