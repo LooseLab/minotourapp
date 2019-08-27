@@ -19,4 +19,4 @@ centrifuge/utils.py
 *.mysql
 env-*
 */migrations/
-*/Temp_results/
+*/Temp_results/*

@@ -3,6 +3,7 @@ from datetime import timezone
 import math
 
 from dateutil import parser
+from django.db.models import Q
 
 from reads.models import FlowcellUserPermission
 
@@ -16,11 +17,25 @@ def return_shared_flowcells(pk, request):
     :type request: rest_framework.request.Request
     :return: A flowcell Django ORM object if this flowcell has been shared with the user
     """
-    users_shared_flowcells = FlowcellUserPermission.objects.filter(user=request.user, flowcell__id=pk)
+    if isinstance(pk, str):
+        users_shared_flowcells = FlowcellUserPermission.objects.filter(user=request.user).filter(
+            flowcell__name=pk
+        )
+
+    elif isinstance(pk, int):
+        users_shared_flowcells = FlowcellUserPermission.objects.filter(user=request.user).filter(
+            flowcell__id=pk
+        )
+
+    else:
+        users_shared_flowcells = []
+
     if users_shared_flowcells:
         flowcell = [users_shared_flowcells[0].flowcell]
+
     else:
         flowcell = []
+
     return flowcell
 
 
