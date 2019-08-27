@@ -486,11 +486,12 @@ def simple_target_mappings(request):
 
     confidence_detection_limit = rounddown(confidence_detection_limit, sig_fig)
 
-    if not task.target_set:
-        return Response("Metagenomics task has no validation set", status=204)
-
     # If the barcode is All reads, there is always four
     queryset = MappingResult.objects.filter(task=task, barcode_name=barcode).values()
+
+    if not queryset:
+        return Response("Metagenomics task has no validation set", status=204)
+
     results_df = pd.DataFrame(list(queryset))
 
     results_df.drop(

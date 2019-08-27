@@ -1675,7 +1675,7 @@ class MinionMessage(models.Model):
     )
 
     message = models.CharField(
-        max_length=256,
+        max_length=2000,
         blank=True,
         null=True
     )
