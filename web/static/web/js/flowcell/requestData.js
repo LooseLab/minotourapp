@@ -13,7 +13,7 @@ function requestData(flowcell_id) {
         var barcodes = new Set();
         // For each of the barcodes, add it to the set to be used to draw and select the barcode tabs later
         for (var i = 0; i < data.barcodes.length; i++) {
-            if (data.barcodes[i].name != 'No barcode') {
+            if (!['No barcode','S','U'].includes(data.barcodes[i].name)) {
                 barcodes.add(data.barcodes[i].name);
             }
         }
