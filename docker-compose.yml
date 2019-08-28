@@ -38,7 +38,7 @@ services:
             MT_TWITTOKEN_SECRET: ''
             MT_TWITCONSUMER_KEY: ''
             MT_TWITCONSUMER_SECRET: ''
-            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/minotourapp/localdata'
+            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/localdata'
 #            MT_REFERENCE_LOCATION: '/var/lib/minotour/data'
             MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2/minimap2'
             MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
@@ -73,7 +73,7 @@ services:
             MT_TWITTOKEN_SECRET: ''
             MT_TWITCONSUMER_KEY: ''
             MT_TWITCONSUMER_SECRET: ''
-            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/minotourapp/localdata'
+            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/localdata'
             MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2/minimap2'
             MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
             MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
@@ -104,12 +104,12 @@ services:
             MT_TWITTOKEN_SECRET: ''
             MT_TWITCONSUMER_KEY: ''
             MT_TWITCONSUMER_SECRET: ''
-            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/minotourapp/localdata'
+            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/localdata'
             MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2/minimap2'
             MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
             MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
             MT_CENTRIFUGE: "/var/lib/minotour/apps/minotourapp/extra/centrifuge-1.0.4-beta/centrifuge"
-            MT_CENTRIFUGE_INDEX: "/var/lib/minotour/apps/minotourapp/localdata/centrifuge_files/p_compressed"
+            MT_CENTRIFUGE_INDEX: "/var/lib/minotour/apps/localdata/centrifuge_files/p_compressed"
         depends_on:
             - db
             - redis
@@ -117,4 +117,5 @@ services:
             - celery
         restart: on-failure
         volumes:
-            - ./localdata:/var/lib/minotour/apps/minotourapp/localdata
+            - ../localdata:/var/lib/minotour/apps/localdata
+            - .:/var/lib/minotour/apps/minotourapp
