@@ -162,6 +162,11 @@ class MTaskController {
                     // update the message element to show the text
                     self._messageView.update(self._message);
 
+                    // reload the task table to include the new task
+                    let taskTable = $(".tasktable");
+
+                    taskTable.DataTable().ajax.reload();
+
                 } else {
                     console.log(this);
                     // something went wrong

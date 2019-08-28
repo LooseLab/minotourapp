@@ -347,7 +347,7 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids, fasta_df):
 
     reference_name = species + "_" + row["name"]
 
-    references = ReferenceInfo.objects.get(name=reference_name)
+    references = ReferenceInfo.objects.filter(name=reference_name).first()
     # Get the jobtype for this target species mapping, so we can find the mapping job
     map_job_type = JobType.objects.get(name="Other")
     # Create or get the mapping job for this target species mapping
