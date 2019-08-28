@@ -11,6 +11,7 @@ from web.tasks_alignment import call_fetch_reads_alignment
 from io import StringIO
 from pathlib import Path
 from readuntil.models import ExpectedBenefitChromosomes
+import gzip
 
 # Set up the logger to write to logging file
 logger = get_task_logger(__name__)
