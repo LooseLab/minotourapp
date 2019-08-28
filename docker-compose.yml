@@ -118,4 +118,4 @@ services:
         restart: on-failure
         volumes:
             - ../localdata:/var/lib/minotour/apps/localdata
-            - .:/var/lib/minotour/apps/minotourapp
+            #- .:/var/lib/minotour/apps/minotourapp
