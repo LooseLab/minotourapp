@@ -34,9 +34,11 @@ def run_eb_by_job_master(job_master_id):
         logger.info('Flowcell id: {} - Job master {} has no reference.'.format(job_master.flowcell.id, job_master.id))
 
 
-def populate_priors_dict(reference_count_dict, priors_dict, fp, genotypes):
+def populate_priors_dict(master_priors_path,master_reference_path,reference_count_dict, priors_dict, fp, genotypes):
     """
     Populate the priors dictionary using the reference fasta file
+    :param master_priors_path: Path to a previously calculated set of priors for this reference.
+    :param master_reference_path: Path to a previously calculated reference count for this reference.
     :param reference_count_dict: The counts dictionary for each base
     :type reference_count_dict: dict
     :param priors_dict: The dictionary that contains the priors for each chromosome in the reference
@@ -48,22 +50,37 @@ def populate_priors_dict(reference_count_dict, priors_dict, fp, genotypes):
     :return: tuple of filled priors_dict and reference_count_dict
     """
     # # Use the reference to populate the priors dict
-    for desc, name, seq, qual in readfq(fp):
-        # Call multi array results to create a structured array of zeros the length of the reference,
-        #  with 9 fields, A,C,G,T,D,I,IC,M,U
-        reference_count_dict[name] = multi_array_results(len(seq))
-        # create a dictionary under the priors dict, keyed to the reference name
-        priors_dict[name] = {}
-        # add a priors key to this nested dictionary, then create and fill the priors for this reference,
-        #  there's one prior for each reference position
-        priors_dict[name]["priors"] = initialise_priors_rory(
-            seq.upper(), genotypes
-        )
-        # add a posteriors key to this nested dictionary, then create and fill the posteriors array
-        priors_dict[name]["posteriors"] = initialise_posteriors_mod(
-            priors_dict[name]["priors"]
-        )
+    ## If priors_dict and reference_count_dict for this dataset ALREADY EXISTS load them from archive
+    ## This is sole
 
+    if master_priors_path.exists():
+        with open(master_priors_path, 'rb') as f:
+            priors_dict = pickle.load(f)
+        with open(master_reference_path,'rb') as f2:
+            reference_count_dict = pickle.load(f2)
+    else:
+        for desc, name, seq, qual in readfq(fp):
+            # Call multi array results to create a structured array of zeros the length of the reference,
+            #  with 9 fields, A,C,G,T,D,I,IC,M,U
+            reference_count_dict[name] = multi_array_results(len(seq))
+            # create a dictionary under the priors dict, keyed to the reference name
+            priors_dict[name] = {}
+            # add a priors key to this nested dictionary, then create and fill the priors for this reference,
+            #  there's one prior for each reference position
+            priors_dict[name]["priors"] = initialise_priors_rory(
+                seq.upper(), genotypes
+            )
+            # add a posteriors key to this nested dictionary, then create and fill the posteriors array
+            priors_dict[name]["posteriors"] = initialise_posteriors_mod(
+                priors_dict[name]["priors"]
+            )
+
+        ##Save priors_dict and reference_count_dict for next use
+
+        with open(master_priors_path, "wb") as fh:
+            pickle.dump(priors_dict, fh, pickle.HIGHEST_PROTOCOL)
+        with open(master_reference_path, "wb") as fh2:
+            pickle.dump(reference_count_dict, fh2, pickle.HIGHEST_PROTOCOL)
     return priors_dict, reference_count_dict
 
 
@@ -189,13 +206,20 @@ def calculate_expected_benefit_3dot0_final(task_id):
 
         reference_path = Path(reference_location) / reference_info.filename
 
+        base_result_dir_path = make_results_directory(flowcell.id, task.id)
+
+        current_working_directory = Path.cwd()
+
+        master_priors_path = Path(f"{current_working_directory}/readuntil/Temp_results/priors_dict_{reference_info.filename}")
+        master_reference_path = Path(f"{current_working_directory}/readuntil/Temp_results/reference_dict_{reference_info.filename}")
+
         if reference_info.filename.endswith(".gz"):
             with gzip.open(reference_path, "rt") as fp:
-                priors_dict, reference_count_dict = populate_priors_dict(reference_count_dict, priors_dict, fp,
+                priors_dict, reference_count_dict = populate_priors_dict(master_priors_path,master_reference_path,reference_count_dict, priors_dict, fp,
                                                                          genotypes)
         else:
             with open(reference_path, "r") as fp:
-                priors_dict, reference_count_dict = populate_priors_dict(reference_count_dict, priors_dict, fp,
+                priors_dict, reference_count_dict = populate_priors_dict(master_priors_path,master_reference_path,reference_count_dict, priors_dict, fp,
                                                                          genotypes)
 
         for i, record in enumerate(parse_PAF(StringIO(paf), fields=["qsn",
@@ -255,7 +279,7 @@ def calculate_expected_benefit_3dot0_final(task_id):
         # Get how many chromsomes there are
         chromosome_total = len(reference_count_dict.keys()) - 1
 
-        base_result_dir_path = make_results_directory(flowcell.id, task.id)
+
 
         for chrom_key in reference_count_dict:
 
@@ -470,17 +494,18 @@ def calculate_expected_benefit_3dot0_final(task_id):
             with open(fixed_ben_reverse_path, "wb") as fhbr:
                 fhbr.write(read_benefits_r.data)
 
-        with open(Path("/home/rory/data/test_dict.pickle"), "wb") as fh:
-            pickle.dump(priors_dict, fh, pickle.HIGHEST_PROTOCOL)
+        #with open(Path("/home/rory/data/test_dict.pickle"), "wb") as fh:
+        #    pickle.dump(priors_dict, fh, pickle.HIGHEST_PROTOCOL)
 
         # this time we have seen these chromosomes for the first time, if any
 
         chromosomes_seen_now = chromosomes_seen_now - previously_known_chromosomes
-
+        task = JobMaster.objects.get(pk=task_id)
         for chromosome_name in chromosomes_seen_now:
             eb_chromosome = ExpectedBenefitChromosomes(task=task, chromosome=chromdict[chromosome_name])
             eb_chromosome.save()
 
+    task = JobMaster.objects.get(pk=task_id)
     task.running = False
     task.last_read = last_read
     task.read_count += read_count
