@@ -109,7 +109,7 @@ services:
             MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
             MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
             MT_CENTRIFUGE: "/var/lib/minotour/apps/minotourapp/extra/centrifuge-1.0.4-beta/centrifuge"
-            MT_CENTRIFUGE_INDEX: "/var/lib/minotour/data/p_compressed"
+            MT_CENTRIFUGE_INDEX: "/var/lib/minotour/apps/minotourapp/localdata/centrifuge_files/p_compressed"
         depends_on:
             - db
             - redis
