@@ -49,7 +49,7 @@ def populate_priors_dict(reference_count_dict, priors_dict, fp, genotypes):
     """
     # # Use the reference to populate the priors dict
     for desc, name, seq, qual in readfq(fp):
-        # Call multi array results to create a structured array of zeros the lneght of the reference,
+        # Call multi array results to create a structured array of zeros the length of the reference,
         #  with 9 fields, A,C,G,T,D,I,IC,M,U
         reference_count_dict[name] = multi_array_results(len(seq))
         # create a dictionary under the priors dict, keyed to the reference name
@@ -64,7 +64,7 @@ def populate_priors_dict(reference_count_dict, priors_dict, fp, genotypes):
             priors_dict[name]["priors"]
         )
 
-        return priors_dict, reference_count_dict
+    return priors_dict, reference_count_dict
 
 
 @task()
