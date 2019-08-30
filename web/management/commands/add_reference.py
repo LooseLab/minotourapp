@@ -144,7 +144,6 @@ class Command(BaseCommand):
             if options["private"]:
                 previous_ref = previous_ref.union(set(ReferenceInfo.objects.filter(private=True, owner=user)
                                                       .values_list("name", flat=True).distinct()))
-            print(previous_ref)
 
             for ref_file in reference_files:
                 # Get the species name of this reference, no file suffixes
