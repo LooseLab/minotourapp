@@ -410,7 +410,7 @@ def task_control(request):
             else:
                 job_master.paused = True
                 paused_status = "paused"
-
+            job_master.save()
             return_message = f"Successfully {paused_status} this Expected benefit task, id: {job_master.id}"
 
         elif action == "Delete":
