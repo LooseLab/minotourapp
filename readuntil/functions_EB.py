@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from collections import namedtuple
+from django.conf import settings
 
 
 def make_results_directory(flowcell_id, task_id):
@@ -11,11 +12,14 @@ def make_results_directory(flowcell_id, task_id):
     :param task_id: The ID of the Jobmaster that corresponds to this EB task
     :return: The path into this directory
     """
-    current_working_directory = Path.cwd()
+    #current_working_directory = Path.cwd()
+    current_working_directory = getattr(settings, "REFERENCE_LOCATION", None)
 
     results_dir = Path(
         f"{current_working_directory}/readuntil/Temp_results/EB{flowcell_id}_{task_id}"
     )
+
+    #print (results_dir)
     if not results_dir.exists():
         Path.mkdir(results_dir)
     return results_dir
