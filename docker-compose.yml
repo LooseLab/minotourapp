@@ -50,6 +50,7 @@ services:
             - redis
         volumes:
             - .:/var/lib/minotour/apps/minotourapp
+            - ../localdata:/var/lib/minotour/apps/localdata
         restart: on-failure
 
     celery:
