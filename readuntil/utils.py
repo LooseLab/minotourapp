@@ -2,7 +2,7 @@
 Useful functions for this app
 """
 from pathlib import Path
-
+from django.conf import settings
 
 def get_or_create_results_directory(flowcell_id, task_id):
     """
@@ -11,7 +11,8 @@ def get_or_create_results_directory(flowcell_id, task_id):
     :param task_id: The ID of the Jobmaster that corresponds to this EB task
     :return: The path into this directory
     """
-    results_dir = Path(f"readuntil/Temp_results/EB{flowcell_id}_{task_id}")
+    current_working_directory = getattr(settings, "REFERENCE_LOCATION", None)
+    results_dir = Path(f"{current_working_directory}/readuntil/Temp_results/EB{flowcell_id}_{task_id}")
     if not results_dir.exists():
         Path.mkdir(results_dir)
     return results_dir
