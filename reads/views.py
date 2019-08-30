@@ -1046,6 +1046,7 @@ def flowcell_detail(request, pk):
         search_criteria = request.GET.get('search_criteria', 'id')
 
         if search_criteria == 'id':
+            pk = int(pk)
 
             flowcell_list = Flowcell.objects.filter(owner=request.user, id=pk)
 
