@@ -124,11 +124,13 @@ def flowcell_index(request, pk):
     """
     user = request.user
 
+    web_index = True
+
     flowcell_list = Flowcell.objects.filter(pk=pk, owner=user)
     # # Check the flowcell isn't shared
     if not flowcell_list:
 
-        flowcell_list = return_shared_flowcells(pk, request)
+        flowcell_list = return_shared_flowcells(pk, request, web_index)
 
         if flowcell_list:
 
