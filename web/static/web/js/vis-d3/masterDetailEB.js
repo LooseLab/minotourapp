@@ -15,6 +15,8 @@ let benefitDetail;
 // showWidth is the maximum number of bases we can select to view on the master chart
 let showWidth = 250000;
 
+let chromosome_chosen;
+
 function draw_selected_chromsome(flowcellId, chromosome_chosen){
     /*
     Reload a new chromosomes data
@@ -126,6 +128,7 @@ function create_eb_selection_box(flowcellId) {
             // Toggling the `.selected` state on the options.
             $('.sel__box__options').click(function () {
                 var txt = $(this).text();
+                chromosome_chosen = txt;
                 var index = $(this).index();
 
 
@@ -389,6 +392,7 @@ function afterSelection(event) {
     $.getJSON('/api/v1/readuntil/benefitdata/detail', {
         min,
         max,
+        chromosome_chosen,
         flowcellId
     }, function (newSeriesDict, statusText, xhr) {
 
@@ -451,6 +455,7 @@ function drawReadUntilCharts() {
             $.getJSON('/api/v1/readuntil/benefitdata/detail', {
                 min,
                 max,
+                chromosome_chosen,
                 flowcellId
             }, function (newSeriesDict, statusText, xhr) {
                 updateExistingChart(coverageScatterMaster, data.coverage.data, 0);
