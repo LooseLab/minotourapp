@@ -146,7 +146,7 @@ def get_benefit_data_master(request):
 
     basepath = get_or_create_results_directory(flowcell_id, latest_eb_task)
 
-    chromosome = request.GET.get("chromosome", "NC_003210.1")
+    chromosome = request.GET.get("chromosome_chosen", "NC_003210.1")
 
     # The path to the coverage array for this chromosome
     coverage_path = Path(
@@ -189,7 +189,10 @@ def get_benefit_data_detail(request):
 
     flowcell_id = request.GET.get("flowcellId")
 
-    chromosome = request.GET.get("chromosome", "NC_003210.1")
+    print ("REQUEST {}".format(request.GET))
+    #print (request.GET.get("chromosome_chosen"))
+
+    chromosome = request.GET.get("chromosome_chosen", "NC_003210.1")
 
     latest_eb_task = (
         JobMaster.objects.filter(
