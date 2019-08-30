@@ -27,14 +27,23 @@ def run_eb_by_job_master(job_master_id):
     job_master = JobMaster.objects.get(pk=job_master_id)
     # If there is a reference
     if job_master.reference:
-        calculate_expected_benefit_3dot0_final(
-            job_master.id,
-        )
+        calculate_expected_benefit_3dot0_final(job_master.id)
     else:
-        logger.info('Flowcell id: {} - Job master {} has no reference.'.format(job_master.flowcell.id, job_master.id))
+        logger.info(
+            "Flowcell id: {} - Job master {} has no reference.".format(
+                job_master.flowcell.id, job_master.id
+            )
+        )
 
 
-def populate_priors_dict(master_priors_path,master_reference_path,reference_count_dict, priors_dict, fp, genotypes):
+def populate_priors_dict(
+    master_priors_path,
+    master_reference_path,
+    reference_count_dict,
+    priors_dict,
+    fp,
+    genotypes,
+):
     """
     Populate the priors dictionary using the reference fasta file
     :param master_priors_path: Path to a previously calculated set of priors for this reference.
@@ -54,9 +63,9 @@ def populate_priors_dict(master_priors_path,master_reference_path,reference_coun
     ## This is sole
 
     if master_priors_path.exists():
-        with open(master_priors_path, 'rb') as f:
+        with open(master_priors_path, "rb") as f:
             priors_dict = pickle.load(f)
-        with open(master_reference_path,'rb') as f2:
+        with open(master_reference_path, "rb") as f2:
             reference_count_dict = pickle.load(f2)
     else:
         for desc, name, seq, qual in readfq(fp):
@@ -126,7 +135,7 @@ def calculate_expected_benefit_3dot0_final(task_id):
             phi[-1].append(errWeird / (G - 1))
         phi[-1].append(1.0 - errWeird)
     else:
-        print("model not recognized or implemented yet")
+        logger.info("model not recognized or implemented yet")
 
         # Change phi to np array rather than list
     phi = np.array(phi)
@@ -143,15 +152,16 @@ def calculate_expected_benefit_3dot0_final(task_id):
     # The chunk size of reads from this flowcell to fetch from the database
     chunk_size = 8000
     # Get the fastq objects
-    fasta_df_barcode, last_read, read_count, fasta_objects = call_fetch_reads_alignment(runs, chunk_size,
-                                                                                        task.last_read)
+    fasta_df_barcode, last_read, read_count, fasta_objects = call_fetch_reads_alignment(
+        runs, chunk_size, task.last_read
+    )
 
     ###Check if read_count is > 0 otherwise exit
     ###We might want to check the minimum number of reads or the time since the last read was entered to do a smaller chunk?
 
     if read_count > 0:
         if not minimap2:
-            logger.error('Can not find minimap2 executable - stopping task.')
+            logger.error("Can not find minimap2 executable - stopping task.")
             # This won't reset the tast?
             return
 
@@ -165,26 +175,42 @@ def calculate_expected_benefit_3dot0_final(task_id):
             chromdict[chromosome.line_name] = chromosome
 
         # Create the series that contains the read_id and sequence as a correctly formatted fasta string
-        fasta_df_barcode["fasta"] = ">" + fasta_df_barcode["read_id"] + "\n" + fasta_df_barcode["sequence"]
+        fasta_df_barcode["fasta"] = (
+            ">"
+            + fasta_df_barcode["read_id"]
+            + "\n"
+            + fasta_df_barcode["sequence"]
+        )
         # Create one string formatted correctly for fasta with input data
         fasta_data = "\n".join(list(fasta_df_barcode["fasta"]))
         # dict where we will be storing the fastq objects keyed to read ID
         fastq_dict = {fasta.read_id: fasta for fasta in fasta_objects}
         # create the command we are calling minimap with
-        cmd = '{} -x map-ont -t 1 --secondary=no -c --MD {} -'.format(
-            minimap2,
-            Path(reference_location) / reference_info.filename
+        cmd = "{} -x map-ont -t 1 --secondary=no -c --MD {} -".format(
+            minimap2, Path(reference_location) / reference_info.filename
         )
 
-        logger.info('Flowcell id: {} - Calling minimap EB - {}'.format(flowcell.id, cmd))
+        logger.info(
+            "Flowcell id: {} - Calling minimap EB - {}".format(
+                flowcell.id, cmd
+            )
+        )
         # Setup minimap call
-        proc = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                stdin=subprocess.PIPE, universal_newlines=True)
+        proc = subprocess.Popen(
+            cmd.split(),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            universal_newlines=True,
+        )
         # SubProcess communicate actually calls the function
         (out, err) = proc.communicate(input=fasta_data)
 
-        logger.info('Flowcell id: {} - Finished minimap EB - {}'.format(flowcell.id, cmd))
+        logger.info(
+            "Flowcell id: {} - Finished minimap EB - {}".format(
+                flowcell.id, cmd
+            )
+        )
         # decode output from byte string
         paf = out
         logger.info("")
@@ -206,8 +232,11 @@ def calculate_expected_benefit_3dot0_final(task_id):
 
             chromosomes_seen_now = set()
 
-            previously_known_chromosomes = set(ExpectedBenefitChromosomes.objects
-                                                  .filter(task=task).values_list("chromosome__line_name", flat=True))
+            previously_known_chromosomes = set(
+                ExpectedBenefitChromosomes.objects.filter(
+                    task=task
+                ).values_list("chromosome__line_name", flat=True)
+            )
 
             reference_path = Path(reference_location) / reference_info.filename
 
@@ -215,8 +244,12 @@ def calculate_expected_benefit_3dot0_final(task_id):
 
             current_working_directory = Path.cwd()
 
-            master_priors_path = Path(f"{current_working_directory}/readuntil/Temp_results/priors_dict_{reference_info.filename}")
-            master_reference_path = Path(f"{current_working_directory}/readuntil/Temp_results/reference_dict_{reference_info.filename}")
+            master_priors_path = Path(
+                f"{current_working_directory}/readuntil/Temp_results/priors_dict_{reference_info.filename}"
+            )
+            master_reference_path = Path(
+                f"{current_working_directory}/readuntil/Temp_results/reference_dict_{reference_info.filename}"
+            )
 
             #### Spit this into two functions. One will write the file, the second will read it.
             #### The code here writes the file.
@@ -225,25 +258,45 @@ def calculate_expected_benefit_3dot0_final(task_id):
 
             if reference_info.filename.endswith(".gz"):
                 with gzip.open(reference_path, "rt") as fp:
-                    priors_dict, reference_count_dict = populate_priors_dict(master_priors_path,master_reference_path,reference_count_dict, priors_dict, fp,
-                                                                             genotypes)
+                    priors_dict, reference_count_dict = populate_priors_dict(
+                        master_priors_path,
+                        master_reference_path,
+                        reference_count_dict,
+                        priors_dict,
+                        fp,
+                        genotypes,
+                    )
             else:
                 with open(reference_path, "r") as fp:
-                    priors_dict, reference_count_dict = populate_priors_dict(master_priors_path,master_reference_path,reference_count_dict, priors_dict, fp,
-                                                                             genotypes)
+                    priors_dict, reference_count_dict = populate_priors_dict(
+                        master_priors_path,
+                        master_reference_path,
+                        reference_count_dict,
+                        priors_dict,
+                        fp,
+                        genotypes,
+                    )
 
-            for i, record in enumerate(parse_PAF(StringIO(paf), fields=["qsn",
-                                                                        "qsl",
-                                                                        "qs",
-                                                                        "qe",
-                                                                        "rs",
-                                                                        "tsn",
-                                                                        "tsl",
-                                                                        "ts",
-                                                                        "te",
-                                                                        "nrm",
-                                                                        "abl",
-                                                                        "mq", "tags"])):
+            for i, record in enumerate(
+                parse_PAF(
+                    StringIO(paf),
+                    fields=[
+                        "qsn",
+                        "qsl",
+                        "qs",
+                        "qe",
+                        "rs",
+                        "tsn",
+                        "tsl",
+                        "ts",
+                        "te",
+                        "nrm",
+                        "abl",
+                        "mq",
+                        "tags",
+                    ],
+                )
+            ):
                 # Get the read information from the fasta dict
 
                 fastq_read = fastq_dict[record.qsn]
@@ -263,54 +316,85 @@ def calculate_expected_benefit_3dot0_final(task_id):
                 mapping_length = mapping_end - mapping_start
                 # Parse the cigar string, on the path file record, returns a dictionary of bases, with numpy arrays
                 d = parse_cigar(
-                    record.tags.get("cg", None), fastq_read.sequence, mapping_length
+                    record.tags.get("cg", None),
+                    fastq_read.sequence,
+                    mapping_length,
                 )
                 # Adds the mismatch count to the temporary dict, parsing the MD string
-                d["M"] = np.fromiter(parse_MD(record.tags.get("MD", None)), np.uint16)
+                d["M"] = np.fromiter(
+                    parse_MD(record.tags.get("MD", None)), np.uint16
+                )
 
                 # If the chromosome is not already a key in chrom dict, add it, with a 1 by 9 multidimensinal array,
                 #  filled with zeros, the length of the reference, it should be there already but best to check
 
-                #Here check if reference_count_dict[record.tsn] exists - if NOT then load that from the file and populate  priors_dict for this chromosome from the file.
+                # Here check if reference_count_dict[record.tsn] exists - if NOT then load that from the file and populate  priors_dict for this chromosome from the file.
 
                 if record.tsn not in reference_count_dict:
-                    reference_count_dict[record.tsn] = multi_array_results(record.tsl)
+                    reference_count_dict[record.tsn] = multi_array_results(
+                        record.tsl
+                    )
                 # Loop through the dictionary of results, through each base
                 for base in d:
                     # add the counts for that base to the array that exists in the reference count dict for that base,
                     # at the correct location
                     reference_count_dict[record.tsn][base][
-                    mapping_start:mapping_end
-                    ] += d[base].astype(reference_count_dict[record.tsn][base].dtype)
+                        mapping_start:mapping_end
+                    ] += d[base].astype(
+                        reference_count_dict[record.tsn][base].dtype
+                    )
 
                 # TODO this needs to be reset, here we set the U to True to indicate that a count at this position
                 # ToDO has been changed this iteration
-                reference_count_dict[record.tsn]["U"][mapping_start:mapping_end] = True
+                reference_count_dict[record.tsn]["U"][
+                    mapping_start:mapping_end
+                ] = True
 
                 # For each chromosome in the reference
             iteration_counter = 0
             # Get how many chromsomes there are
             chromosome_total = len(reference_count_dict.keys()) - 1
 
-
             ## Change code to only process data for chromosomes we have seen
-            #for chrom_key in reference_count_dict:
+            # for chrom_key in reference_count_dict:
             for chrom_key in chromosomes_seen_now:
 
                 # Write out the coverage
-                coverage_path = Path(f"{base_result_dir_path}/coverage_{chrom_key}_{flowcell.id}_{task.id}.dat")
-                counts_path = Path(f"{base_result_dir_path}/counts_{chrom_key}_{flowcell.id}_{task.id}.dat")
-                mask_path_forward = Path(f"{base_result_dir_path}/mask_forward_{chrom_key}_{flowcell.id}_{task.id}.dat")
-                mask_path_reverse = Path(f"{base_result_dir_path}/mask_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat")
-                scores_forward_path = Path(f"{base_result_dir_path}/scores_forward_{chrom_key}_{flowcell.id}_{task.id}.dat")
-                scores_reverse_path = Path(f"{base_result_dir_path}/scores_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat")
-                cost_forward_path = Path(f"{base_result_dir_path}/cost_forward_{chrom_key}_{flowcell.id}_{task.id}.dat")
-                cost_reverse_path = Path(f"{base_result_dir_path}/cost_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat")
-                benefit_path = Path(f"{base_result_dir_path}/benefits_{chrom_key}_{flowcell.id}_{task.id}.dat")
-                fixed_ben_forward_path = Path(f"{base_result_dir_path}/fixed_benefits_forward{chrom_key}"
-                                              f"_{flowcell.id}_{task.id}.dat")
-                fixed_ben_reverse_path = Path(f"{base_result_dir_path}/fixed_benefits_reverse{chrom_key}"
-                                              f"_{flowcell.id}_{task.id}.dat")
+                coverage_path = Path(
+                    f"{base_result_dir_path}/coverage_{chrom_key}_{flowcell.id}_{task.id}.dat"
+                )
+                counts_path = Path(
+                    f"{base_result_dir_path}/counts_{chrom_key}_{flowcell.id}_{task.id}.dat"
+                )
+                mask_path_forward = Path(
+                    f"{base_result_dir_path}/mask_forward_{chrom_key}_{flowcell.id}_{task.id}.dat"
+                )
+                mask_path_reverse = Path(
+                    f"{base_result_dir_path}/mask_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat"
+                )
+                scores_forward_path = Path(
+                    f"{base_result_dir_path}/scores_forward_{chrom_key}_{flowcell.id}_{task.id}.dat"
+                )
+                scores_reverse_path = Path(
+                    f"{base_result_dir_path}/scores_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat"
+                )
+                cost_forward_path = Path(
+                    f"{base_result_dir_path}/cost_forward_{chrom_key}_{flowcell.id}_{task.id}.dat"
+                )
+                cost_reverse_path = Path(
+                    f"{base_result_dir_path}/cost_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat"
+                )
+                benefit_path = Path(
+                    f"{base_result_dir_path}/benefits_{chrom_key}_{flowcell.id}_{task.id}.dat"
+                )
+                fixed_ben_forward_path = Path(
+                    f"{base_result_dir_path}/fixed_benefits_forward{chrom_key}"
+                    f"_{flowcell.id}_{task.id}.dat"
+                )
+                fixed_ben_reverse_path = Path(
+                    f"{base_result_dir_path}/fixed_benefits_reverse{chrom_key}"
+                    f"_{flowcell.id}_{task.id}.dat"
+                )
 
                 ############################################################################
                 # ###################### read in the Counts ############################ #
@@ -322,15 +406,29 @@ def calculate_expected_benefit_3dot0_final(task_id):
 
                     with open(counts_path, "rb") as fh:
 
-                        old_counts_array = np.fromfile(fh, dtype=[("A", np.uint16), ("C", np.uint16),
-                                                                  ("G", np.uint16), ("T", np.uint16), ("D", np.uint16,),
-                                                                  ("I", np.uint16), ("IC", np.uint16),
-                                                                  ("M", np.uint16), ("U", np.bool)])
+                        old_counts_array = np.fromfile(
+                            fh,
+                            dtype=[
+                                ("A", np.uint16),
+                                ("C", np.uint16),
+                                ("G", np.uint16),
+                                ("T", np.uint16),
+                                ("D", np.uint16),
+                                ("I", np.uint16),
+                                ("IC", np.uint16),
+                                ("M", np.uint16),
+                                ("U", np.bool),
+                            ],
+                        )
                         # Add the sum of each position counts to the old array, by each base type
-                        for name in reference_count_dict[chrom_key].dtype.names:
+                        for name in reference_count_dict[
+                            chrom_key
+                        ].dtype.names:
                             # Don't update U as True + True = 2, which would ruin everything
                             if name is not "U":
-                                reference_count_dict[chrom_key][name] += old_counts_array[name]
+                                reference_count_dict[chrom_key][
+                                    name
+                                ] += old_counts_array[name]
                                 a = reference_count_dict[chrom_key][name].max()
                                 if a > max_values:
                                     max_values = a
@@ -340,12 +438,22 @@ def calculate_expected_benefit_3dot0_final(task_id):
                 ############################################################################
 
                 # Add the sum of each position counts
-                coverage = np.sum(np.array(reference_count_dict[chrom_key][["A", "C", "G", "T"]].tolist(),
-                                           dtype=np.int16), axis=1, dtype=np.uint16)
+                coverage = np.sum(
+                    np.array(
+                        reference_count_dict[chrom_key][
+                            ["A", "C", "G", "T"]
+                        ].tolist(),
+                        dtype=np.int16,
+                    ),
+                    axis=1,
+                    dtype=np.uint16,
+                )
 
                 ############################################################################
 
-                print(f"iteration is {iteration_counter} of {chromosome_total}")
+                logger.info(
+                    f"iteration is {iteration_counter} of {chromosome_total}"
+                )
 
                 iteration_counter += 1
 
@@ -365,7 +473,7 @@ def calculate_expected_benefit_3dot0_final(task_id):
                     remainder -= chunk_size
                     # if we have a remainder of 0 or less, we've covered the entire reference
                     if remainder <= 0:
-                        print("finished this chromosome")
+                        logger.info("finished this chromosome")
                         # Set the end slice for this final iteration as the last element index
                         end_slice = start_slice + -remainder
                         # No more chunks left, so break out of loop after this iteration
@@ -377,17 +485,19 @@ def calculate_expected_benefit_3dot0_final(task_id):
 
                     # Get the posteriors for this chunk of the reference in a numpy array
                     posteriors_chunk = priors_dict[chrom_key]["posteriors"][
-                                       start_slice:end_slice
-                                       ]
+                        start_slice:end_slice
+                    ]
                     # Get the counts of the number of each of the 5 bases that are
                     # mapped to the positions in this reference chunk
                     counts_chunk = reference_count_dict[chrom_key][
-                                       ["A", "C", "G", "T", "D"]
-                                   ][start_slice:end_slice]
+                        ["A", "C", "G", "T", "D"]
+                    ][start_slice:end_slice]
                     # Update the posteriors in this chunk
                     priors_dict[chrom_key]["posteriors"][
-                    start_slice:end_slice
-                    ] = update_posteriors_notts(posteriors_chunk, counts_chunk, phi)
+                        start_slice:end_slice
+                    ] = update_posteriors_notts(
+                        posteriors_chunk, counts_chunk, phi
+                    )
                     # update start size to index of the beginning of the next chunk
                     start_slice += chunk_size
 
@@ -395,24 +505,24 @@ def calculate_expected_benefit_3dot0_final(task_id):
                 priors_dict[chrom_key]["benefits"] = position_benefit_rory(
                     priors_dict[chrom_key]["posteriors"], phi
                 )
-                # print(f"Benefits {priors_dict[chrom_key]['benefits']}")
-                # print_a = priors_dict[chrom_key]['benefits']
-                # print(f"Benefits zero size is {print_a[print_a==0].size}")
-                # print(f"Benefits NaN size is {print_a[print_a==np.NaN].size} \n")
+                # logger.info(f"Benefits {priors_dict[chrom_key]['benefits']}")
+                # logger.info_a = priors_dict[chrom_key]['benefits']
+                # logger.info(f"Benefits zero size is {logger.info_a[logger.info_a==0].size}")
+                # logger.info(f"Benefits NaN size is {logger.info_a[logger.info_a==np.NaN].size} \n")
 
                 # Calculate the fixed read lengths benefit - could use some clarification on how this works
                 read_benefits_f, read_benefits_r = calculate_read_benefits_fixed_read_length_rory(
                     priors_dict[chrom_key]["benefits"], lam, m
                 )
-                # print(f"Benefits fixed forward {read_benefits_f}")
-                # print_a = read_benefits_f
-                # print(f"Benefits fixed zero size is {print_a[print_a==0].size}")
-                # print(f"Benefits fixed NaN size is {print_a[print_a==np.NaN].size} \n")
+                # logger.info(f"Benefits fixed forward {read_benefits_f}")
+                # logger.info_a = read_benefits_f
+                # logger.info(f"Benefits fixed zero size is {logger.info_a[logger.info_a==0].size}")
+                # logger.info(f"Benefits fixed NaN size is {logger.info_a[logger.info_a==np.NaN].size} \n")
                 #
-                # print(f"Benefits fixed rev {read_benefits_r}")
-                # print_a = read_benefits_r
-                # print(f"Benefits fixed zero size is {print_a[print_a==0].size}")
-                # print(f"Benefits fixed NaN size is {print_a[print_a==np.NaN].size} \n")
+                # logger.info(f"Benefits fixed rev {read_benefits_r}")
+                # logger.info_a = read_benefits_r
+                # logger.info(f"Benefits fixed zero size is {logger.info_a[logger.info_a==0].size}")
+                # logger.info(f"Benefits fixed NaN size is {logger.info_a[logger.info_a==np.NaN].size} \n")
                 # Calculate the m part of the read benefits of read lengths
                 m_read_benefits_f, m_read_benefits_r = calculate_read_benefits_fixed_read_length_rory(
                     priors_dict[chrom_key]["benefits"], m, m
@@ -423,17 +533,27 @@ def calculate_expected_benefit_3dot0_final(task_id):
                 )
                 # Scores are updated for whole reference
                 scores_f, scores_r = calculate_scores_rory(
-                    read_benefits_f, read_benefits_r, m_read_benefits_f, m_read_benefits_r, costs_f, costs_r
+                    read_benefits_f,
+                    read_benefits_r,
+                    m_read_benefits_f,
+                    m_read_benefits_r,
+                    costs_f,
+                    costs_r,
                 )
                 # Accept F and accept R are the mask
-                accept_f, accept_r = find_strategy_uniform(scores_f,
-                                                           scores_r,
-                                                           read_benefits_f,
-                                                           read_benefits_r,
-                                                           m_read_benefits_f,
-                                                           m_read_benefits_r,
-                                                           costs_f, costs_r,
-                                                           rho, m, alpha)
+                accept_f, accept_r = find_strategy_uniform(
+                    scores_f,
+                    scores_r,
+                    read_benefits_f,
+                    read_benefits_r,
+                    m_read_benefits_f,
+                    m_read_benefits_r,
+                    costs_f,
+                    costs_r,
+                    rho,
+                    m,
+                    alpha,
+                )
 
                 # ################################################################ #
                 # ################# Write out coverage array ################ #
@@ -442,18 +562,18 @@ def calculate_expected_benefit_3dot0_final(task_id):
 
                 with open(coverage_path, "wb") as fh:
                     fh.write(coverage.data)
-                #del coverage
+                # del coverage
                 # ################################################################ #
                 # ################### Write out mask arrays ################## #
                 ####################################################################
                 # Forward ##########################################################
                 with open(mask_path_forward, "wb") as fhm:
                     fhm.write(accept_f.data)
-                #del accept_f
+                # del accept_f
                 # Reverse ##########################################################
                 with open(mask_path_reverse, "wb") as fhm:
                     fhm.write(accept_r.data)
-                #del accept_r
+                # del accept_r
                 ####################################################################
 
                 # ################################################################ #
@@ -469,7 +589,7 @@ def calculate_expected_benefit_3dot0_final(task_id):
 
                 with open(benefit_path, "wb") as fhb:
                     fhb.write(priors_dict[chrom_key]["benefits"].data)
-                #del priors_dict[chrom_key]["benefits"]
+                # del priors_dict[chrom_key]["benefits"]
                 ####################################################################
 
                 # ################################################################ #
@@ -478,12 +598,12 @@ def calculate_expected_benefit_3dot0_final(task_id):
 
                 with open(cost_forward_path, "wb") as fhcost:
                     fhcost.write(costs_f.data)
-                #del costs_f
+                # del costs_f
                 # Reverse ##########################################################
 
                 with open(cost_reverse_path, "wb") as fhcost:
                     fhcost.write(costs_r.data)
-                #del costs_r
+                # del costs_r
                 # ################################################################ #
                 # ################### Write out scores arrays #################### #
                 ####################################################################
@@ -508,17 +628,20 @@ def calculate_expected_benefit_3dot0_final(task_id):
                 with open(fixed_ben_reverse_path, "wb") as fhbr:
                     fhbr.write(read_benefits_r.data)
 
-            #with open(Path("/home/rory/data/test_dict.pickle"), "wb") as fh:
+            # with open(Path("/home/rory/data/test_dict.pickle"), "wb") as fh:
             #    pickle.dump(priors_dict, fh, pickle.HIGHEST_PROTOCOL)
 
             # this time we have seen these chromosomes for the first time, if any
 
-            chromosomes_seen_now = chromosomes_seen_now - previously_known_chromosomes
+            chromosomes_seen_now = (
+                chromosomes_seen_now - previously_known_chromosomes
+            )
             task = JobMaster.objects.get(pk=task_id)
             for chromosome_name in chromosomes_seen_now:
-                eb_chromosome = ExpectedBenefitChromosomes(task=task, chromosome=chromdict[chromosome_name])
+                eb_chromosome = ExpectedBenefitChromosomes(
+                    task=task, chromosome=chromdict[chromosome_name]
+                )
                 eb_chromosome.save()
-
 
     task = JobMaster.objects.get(pk=task_id)
     task.running = False
