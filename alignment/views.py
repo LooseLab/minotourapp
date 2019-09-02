@@ -171,14 +171,6 @@ def paf_summary_json(request, pk):
 
         queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk)
 
-    if order_column:
-
-        if order_dir == 'desc':
-            queryset = queryset.order_by('-{}'.format(query_columns[int(order_column)]))
-
-        else:
-            queryset = queryset.order_by('{}'.format(query_columns[int(order_column)]))
-
     records_total = queryset.count()
 
     queryset = queryset[start:end]
@@ -190,6 +182,15 @@ def paf_summary_json(request, pk):
     df["average_read_length"] = df['total_length'].div(df['read_count']).round(decimals=3)
 
     df["coverage"] = df['total_length'].div(df['reference_line_length']).round(decimals=3)
+
+    if order_column:
+
+        if order_dir == 'desc':
+            df = df.sort_values(query_columns[int(order_column)], ascending=False)
+
+        else:
+            df = df.sort_values(query_columns[int(order_column)], ascending=True)
+
 
     dictdf = df.to_dict('records')
 
