@@ -217,18 +217,6 @@
     "readcount": true,
     "private": true
   }
-},
-{
-    "model": "jobs.jobtype",
-    "pk": 15,
-    "fields": {
-      "name": "ExpectedBenefit",
-      "description": "Calculate expected benefit",
-      "long_description": "Run expected benefit for a given reference for a flowcell",
-      "reference": true,
-      "transcriptome": false,
-      "readcount": false,
-      "private": false
-    }
 }
+
 ]

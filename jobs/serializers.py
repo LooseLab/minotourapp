@@ -170,9 +170,11 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
                             continue
                         # get the correct reference for that JobMaster
                         if hold[2] == "plasmid":
-                            refer = ReferenceInfo.objects.get(name=hold[0].replace(" ", "_") + "_" + hold[1])
+                            # TODO temporary fix
+                            refer = ReferenceInfo.objects.filter(name=hold[0].replace(" ", "_") + "_" + hold[1]).first()
                         else:
-                            refer = ReferenceInfo.objects.get(name=hold[0].replace(" ", "_"))
+                            # TODO temporary fix
+                            refer = ReferenceInfo.objects.filter(name=hold[0].replace(" ", "_")).first()
 
                         jm, created = JobMaster.objects.get_or_create(job_type=job_type, reference=refer,
                                                              flowcell=validated_data["flowcell"],

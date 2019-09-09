@@ -266,6 +266,9 @@ def task_control(request):
 
     action = lookup_action_type[action_type]
 
+    print(action)
+    print(job_master)
+
     unrecognised_action_message = "Apologies, but this action type was not recognised." \
                                   " It may have not been implemented yet."
 
@@ -297,11 +300,13 @@ def task_control(request):
 
             if job_master.paused:
                 job_master.paused = False
-            if not job_master.paused:
+                paused_status = "un-paused"
+            elif not job_master.paused:
                 job_master.paused = True
+                paused_status = "paused"
 
             job_master.save()
-            return_message = f"Successfully paused ChanCalc task, id: {job_master.id}"
+            return_message = f"Successfully {paused_status} ChanCalc task, id: {job_master.id}"
 
         else:
             return Response(unrecognised_action_message, status=500)
@@ -330,11 +335,13 @@ def task_control(request):
         elif action == "Pause":
             if job_master.paused:
                 job_master.paused = False
+                paused_status = "un-paused"
             else:
                 job_master.paused = True
+                paused_status = "paused"
 
             job_master.save()
-            return_message = f"Successfully paused UpdateFlowcellDetails task, id: {job_master.id}"
+            return_message = f"Successfully {paused_status} UpdateFlowcellDetails task, id: {job_master.id}"
 
         else:
 
@@ -350,11 +357,13 @@ def task_control(request):
         elif action == "Pause":
             if job_master.paused:
                 job_master.paused = False
+                paused_status = "un-paused"
             else:
                 job_master.paused = True
+                paused_status = "paused"
 
             job_master.save()
-            return_message = f"Successfully paused metagenomics task reset, id: {job_master.id}."
+            return_message = f"Successfully {paused_status} metagenomics task reset, id: {job_master.id}."
 
         elif action == "Delete":
             delete_metagenomics_task.delay(job_master.id)
@@ -371,12 +380,16 @@ def task_control(request):
                              f" Clearing previous data may take a while, please be patient!"
 
         elif action == "Pause":
+
             if job_master.paused:
                 job_master.paused = False
+                paused_status = "un-paused"
             else:
                 job_master.paused = True
+                paused_status = "paused"
+
             job_master.save()
-            return_message = f"Successfully paused minimap2 task, id: {job_master.id}"
+            return_message = f"Successfully {paused_status} minimap2 task, id: {job_master.id}"
 
         elif action == "Delete":
             delete_alignment_task.delay(job_master.id)
@@ -390,11 +403,15 @@ def task_control(request):
             return_message = f"Successfully reset this Expected benefit task, id: {job_master.id}"
 
         elif action == "Pause":
+
             if job_master.paused:
                 job_master.paused = False
+                paused_status = "un-paused"
             else:
                 job_master.paused = True
-            return_message = f"Successfully paused this Expected benefit task, id: {job_master.id}"
+                paused_status = "paused"
+            job_master.save()
+            return_message = f"Successfully {paused_status} this Expected benefit task, id: {job_master.id}"
 
         elif action == "Delete":
             return_message = f"Successfully deleted this Expected benefit task, id: {job_master.id}"
