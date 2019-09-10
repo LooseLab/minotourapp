@@ -161,8 +161,8 @@ class Flowcell(models.Model):
 class FlowcellUserPermission(models.Model):
 
     PERMISSIONS = (
-        ('READ_ONLY', 'Read-only'),
-        ('READ_WRITE', 'Read-write')
+        ('VIEW_DATA', 'View data'),
+        ('RUN_ANALYSIS', 'Run analysis')
     )
 
     user = models.ForeignKey(
@@ -179,7 +179,7 @@ class FlowcellUserPermission(models.Model):
     permission = models.CharField(
         max_length=10,
         choices=PERMISSIONS,
-        default='READ_ONLY',
+        default='VIEW_DATA',
     )
 
 class MinION(models.Model):
