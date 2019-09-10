@@ -2178,7 +2178,7 @@ def flowcell_sharing(request, pk):
 
             return Response({"message": "User does not exist."}, status=status.HTTP_404_NOT_FOUND)
 
-        existing_permissions = FlowcellUserPermission.objects.filter(user=user)
+        existing_permissions = FlowcellUserPermission.objects.filter(user=user, flowcell=flowcell)
 
         if len(existing_permissions) > 0:
 
@@ -2230,7 +2230,7 @@ def flowcell_sharing_delete(request, pk):
 
         return Response({"message": "User does not exist."}, status=status.HTTP_404_NOT_FOUND)
 
-    permissions = FlowcellUserPermission.objects.filter(user=user)
+    permissions = FlowcellUserPermission.objects.filter(user=user, flowcell=flowcell)
 
     for i in range(len(permissions)):
 
