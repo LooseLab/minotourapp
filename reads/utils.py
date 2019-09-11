@@ -190,5 +190,17 @@ def getn50(lens):
 
 def get_flowcell_user_permission(flowcell_id, user_id):
     """Return the list of permissions an user has on a flowcell"""
+    return FlowcellUserPermission.objects.filter(flowcell__id=flowcell_id, user__id=user_id)
 
-    pass
+
+def has_perm(permission, flowcell_id, user_id):
+    """Return True/False if user has the permission on the flowcell"""
+    permission_list = get_flowcell_user_permission(flowcell_id, user_id)
+    
+    response = False
+
+    for record in permission_list:
+        if record.permission == permission:
+            return True
+
+    return False

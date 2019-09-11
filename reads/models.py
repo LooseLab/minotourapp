@@ -177,7 +177,7 @@ class FlowcellUserPermission(models.Model):
     )
 
     permission = models.CharField(
-        max_length=10,
+        max_length=12,
         choices=PERMISSIONS,
         default='VIEW_DATA',
     )
