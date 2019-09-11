@@ -264,3 +264,35 @@ def flowcellreferences_used_by_run(request, flowcell_id):
     ]
 
     return HttpResponse(json.dumps(list(result)), content_type="application/json")
+
+
+@api_view(['GET'])
+def get_coverage_summary(request, pk):
+    """
+    Simple Coverage endpoint
+    :param request: The rest framework request object
+    :type request: rest_framework.request.Request
+    :param pk: The primary key of the flowcell
+    :type pk: int
+    :return:
+    """
+
+    queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk)
+
+    df = pd.DataFrame.from_records(
+        queryset.values('barcode_name', 'reference_line_name', 'total_length',
+                        'reference_line_length'))
+
+    df["coverage"] = df['total_length'].div(df['reference_line_length']).round(decimals=3)
+
+    df = df.drop(columns=["reference_line_length", "total_length"])
+
+    df.set_index("reference_line_name", inplace=True)
+
+    dictdf = df.to_dict('index')
+
+    result = {
+        "data": dictdf
+    }
+
+    return Response(result, status=200)

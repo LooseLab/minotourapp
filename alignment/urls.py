@@ -34,4 +34,9 @@ urlpatterns = [
         views.paf_summary_json,
         name="flowcell_paf_summary"
     ),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/chromosomecoverage/$',
+        views.get_coverage_summary,
+        name="get_coverage_summary"
+    )
 ]
