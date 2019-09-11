@@ -116,9 +116,8 @@ class MinionMessageSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = MinionMessage
         fields = (
-        'minion', 'run', 'message', 'severity', 'timestamp', 'identifier',)
+        'minion', 'run', 'message', 'severity', 'timestamp', 'identifier', 'full_text')
         read_only = ('id',)
-
 
 class MinIONControlSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
