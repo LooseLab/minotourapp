@@ -1675,7 +1675,7 @@ class MinionMessage(models.Model):
     )
 
     message = models.CharField(
-        max_length=2000,
+        max_length=256,
         blank=True,
         null=True
     )
@@ -1689,7 +1689,11 @@ class MinionMessage(models.Model):
     )
 
     timestamp = models.DateTimeField(
+    )
 
+    full_text = models.TextField(
+        blank=True,
+        default=""
     )
 
     class Meta:
