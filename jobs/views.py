@@ -80,10 +80,10 @@ def get_or_create_tasks(request):
 
                     return Response("Flowcell not found. Please contact server admin.", status=500)
 
+        if not has_perm('RUN_ANALYSIS', flowcell.id, request.user.id) and not request.user == flowcell.owner:
 
-        if not has_perm('RUN_ANALYSIS', flowcell.id, request.user.id):
-
-            return Response({"message": "Permission deleted - you do not the RUN_ANALYSIS permission."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"message": "Permission deleted - you do not the RUN_ANALYSIS permission."},
+                            status=status.HTTP_401_UNAUTHORIZED)
             
         # Check to see if we have a string as the flowcell, not an Int for a PK based lookup
         # This is for starting a job from the client
