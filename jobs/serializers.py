@@ -68,6 +68,7 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
 
             raise serializers.ValidationError("Reference is mandatory for task Minimap2")
 
+        # If the job type is minimap check we can find the minimap2 executable
         if data['job_type'].id == 4:
             if not Path.exists(Path(getattr(settings, "MINIMAP2", None))):
                 raise serializers.ValidationError("Minimap2 executable not found."
@@ -103,8 +104,7 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
                                                   " a lineages diagram")
 
             # If we don't have enough data to generate a sankey
-            elif metagenomics_task.count() > 0 and CentrifugeOutput.objects.filter(
-                    task=metagenomics_task)[:20].count() < 10:
+            elif CentrifugeOutput.objects.filter(task=metagenomics_task[0]).count() < 10:
 
                 raise serializers.ValidationError("Not enough metagenomics data, please try again in a few minutes")
 
