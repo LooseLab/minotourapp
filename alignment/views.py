@@ -10,6 +10,7 @@ from alignment.models import PafRoughCov, PafSummaryCov
 from alignment.utils import calculate_coverage_new
 from . import utils
 from rest_framework.response import Response
+from rest_framework import status
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -276,8 +277,12 @@ def get_coverage_summary(request, pk):
     :type pk: int
     :return:
     """
+    print(pk)
+    queryset = PafSummaryCov.objects.filter(job_master__flowcell__id=pk)
+    print(queryset)
 
-    queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk)
+    if not queryset:
+        return Response("No alignment results found for this flowcell", status=status.HTTP_204_NO_CONTENT)
 
     df = pd.DataFrame.from_records(
         queryset.values('barcode_name', 'reference_line_name', 'total_length',
