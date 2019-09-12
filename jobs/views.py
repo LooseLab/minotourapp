@@ -10,6 +10,8 @@ from reference.models import ReferenceInfo
 from reads.models import Flowcell
 from web.delete_tasks import delete_metagenomics_task, delete_alignment_task, delete_expected_benefit_task
 import time
+from reads.utils import has_perm
+
 
 @api_view(["GET", "POST"])
 def get_or_create_tasks(request):
@@ -55,15 +57,8 @@ def get_or_create_tasks(request):
 
     # Its a post request to create a new task
     else:
-        # Check to see if we have a string as the flowcell, not an Int for a PK based lookup
-        # This is for starting a job from the client
 
-        # If the job isn't EB or minimap2
-        if int(request.data["job_type"]) not in [4, 15]:
-
-            request.data["reference"] = None
-
-        if type(request.data["flowcell"]) is str:
+        if type(request.data["flowcell"]) is str:  # TODO this could be removed because on this point (creating tasks) the client knows the flowcell id
 
             try:
                 # Get the flowcell by name
@@ -84,6 +79,19 @@ def get_or_create_tasks(request):
                     print("Exception: {}".format(e))
 
                     return Response("Flowcell not found. Please contact server admin.", status=500)
+
+        if not has_perm('RUN_ANALYSIS', flowcell.id, request.user.id) and not request.user == flowcell.owner:
+
+            return Response({"message": "Permission deleted - you do not the RUN_ANALYSIS permission."},
+                            status=status.HTTP_401_UNAUTHORIZED)
+            
+        # Check to see if we have a string as the flowcell, not an Int for a PK based lookup
+        # This is for starting a job from the client
+
+        # If the job isn't EB or minimap2
+        if int(request.data["job_type"]) not in [4, 15]:
+
+            request.data["reference"] = None
 
         # For client side job starting, check if we have a reference and it's a string
         if "reference" in request.data.keys() and type(request.data["reference"]) is str:

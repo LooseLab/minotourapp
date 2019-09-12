@@ -161,8 +161,8 @@ class Flowcell(models.Model):
 class FlowcellUserPermission(models.Model):
 
     PERMISSIONS = (
-        ('READ_ONLY', 'Read-only'),
-        ('READ_WRITE', 'Read-write')
+        ('VIEW_DATA', 'View data'),
+        ('RUN_ANALYSIS', 'Run analysis')
     )
 
     user = models.ForeignKey(
@@ -177,9 +177,9 @@ class FlowcellUserPermission(models.Model):
     )
 
     permission = models.CharField(
-        max_length=10,
+        max_length=12,
         choices=PERMISSIONS,
-        default='READ_ONLY',
+        default='VIEW_DATA',
     )
 
 class MinION(models.Model):
@@ -1675,7 +1675,7 @@ class MinionMessage(models.Model):
     )
 
     message = models.CharField(
-        max_length=2000,
+        max_length=256,
         blank=True,
         null=True
     )
@@ -1689,7 +1689,11 @@ class MinionMessage(models.Model):
     )
 
     timestamp = models.DateTimeField(
+    )
 
+    full_text = models.TextField(
+        blank=True,
+        default=""
     )
 
     class Meta:

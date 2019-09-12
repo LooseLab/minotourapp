@@ -78,8 +78,9 @@ from reads.serializers import (
     FastqReadGetSerializer,
     FlowcellUserPermissionSerializer,
 )
-from reads.utils import get_coords, return_shared_flowcells
+from reads.utils import get_coords, return_shared_flowcells, return_temp_empty_summary
 from readuntil.models import ExpectedBenefitChromosomes
+import hashlib
 
 logger = get_task_logger(__name__)
 
@@ -404,11 +405,25 @@ def minion_messages_list(request, pk):
     """
 
     if request.method == 'GET':
+
         queryset = MinionMessage.objects.filter(minION=pk)
+
         serializer = MinionMessageSerializer(queryset, many=True, context={'request': request})
+
+        for message in serializer.data:
+            if message["full_text"] is not "":
+                message["message"] = message["full_text"]
+
         return Response(serializer.data)
 
     elif request.method == 'POST':
+
+        if len(request.data["message"]) > 256:
+
+            request.data["full_text"] = request.data["message"]
+
+            request.data["message"] = request.data["message"][:256]
+
         serializer = MinionMessageSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
@@ -1075,7 +1090,12 @@ def flowcell_detail(request, pk):
         # Enumerate through the data["runs"] value, an array containing a dict element, one for each run
         for i, array in enumerate(data["runs"]):
             # Get the last read time from the run summary by doing FK relationship lookups
-            last_read_time = flowcell.runs.get(runid=data["runs"][i]["runid"]).summary.last_read_start_time
+            run = flowcell.runs.get(runid=data["runs"][i]["runid"])
+
+            if hasattr(run, "summary"):
+                last_read_time = run.summary.last_read_start_time
+            else:
+                last_read_time = datetime.datetime.now(datetime.timezone.utc)
             # Add it to the dictionary that contains information on the run
             data["runs"][i]["last_read_time"] = last_read_time
 
@@ -1654,7 +1674,7 @@ def flowcell_run_basecalled_summary_html(request, pk):
 
     for run in flowcell.runs.all():
 
-        try:
+        if hasattr(run, "summary"):
 
             run_summary = {
                 'runid': run.summary.run.runid,
@@ -1667,11 +1687,24 @@ def flowcell_run_basecalled_summary_html(request, pk):
                 'last_read_start_time': run.summary.last_read_start_time
             }
 
-            result_basecalled_summary.append(run_summary)
-
-        except RunSummary.DoesNotExist:
+        else:
 
             print('RunSummary does not exist for run {}'.format(run.id))
+
+            run_summary_obj = return_temp_empty_summary(run)
+            
+            run_summary = {
+                'runid': "Unavailable",
+                'read_count': "Unavailable",
+                'total_read_length': "Unavailable",
+                'max_read_length': "Unavailable",
+                'min_read_length': "Unavailable",
+                'avg_read_length': "Unavailable",
+                'first_read_start_time': "Unavailable",
+                'last_read_start_time': "Unavailable"
+            }
+
+        result_basecalled_summary.append(run_summary)
 
     return render(request, 'reads/flowcell_run_basecalled_summary.html', {
         'result_basecalled_summary': result_basecalled_summary
@@ -2178,7 +2211,7 @@ def flowcell_sharing(request, pk):
 
             return Response({"message": "User does not exist."}, status=status.HTTP_404_NOT_FOUND)
 
-        existing_permissions = FlowcellUserPermission.objects.filter(user=user)
+        existing_permissions = FlowcellUserPermission.objects.filter(user=user, flowcell=flowcell)
 
         if len(existing_permissions) > 0:
 
@@ -2224,13 +2257,13 @@ def flowcell_sharing_delete(request, pk):
     data = request.data
 
     try:
-        user =  User.objects.get(pk=data['user_id'])
+        user = User.objects.get(pk=data['user_id'])
 
     except User.DoesNotExist:
 
         return Response({"message": "User does not exist."}, status=status.HTTP_404_NOT_FOUND)
 
-    permissions = FlowcellUserPermission.objects.filter(user=user)
+    permissions = FlowcellUserPermission.objects.filter(user=user, flowcell=flowcell)
 
     for i in range(len(permissions)):
 

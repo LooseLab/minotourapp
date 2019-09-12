@@ -43,7 +43,7 @@ class MSharingController {
     create(event) {
         event.preventDefault();
 
-        self = this;
+        let self = this;
 
         let csrftoken = getCookie('csrftoken');
 
@@ -68,6 +68,8 @@ class MSharingController {
     delete(user_id) {
         let csrftoken = getCookie('csrftoken');
 
+        let self = this;
+
         const axios_instance = axios.create({
             headers: {'X-CSRFToken': csrftoken}
         });
@@ -77,6 +79,7 @@ class MSharingController {
         axios_instance.post(url, {
             user_id: user_id
         }).then(function(response) {
+            console.log(response);
             self.getAll();
             self._message.texto = 'Permission deleted!';
             self._messageView.update(self._message);
