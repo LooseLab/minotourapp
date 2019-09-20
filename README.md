@@ -1,6 +1,6 @@
 # minoTour
 
-Minotour is a work in progress. Therefore features may change, and any bug reports/feature requests and pull requests will be gratefully recieved.
+Minotour is a work in progress, therefore features may change, and any bug reports/feature requests and pull requests will be gratefully recieved.
 
 ## Running minoTour with Docker
 
