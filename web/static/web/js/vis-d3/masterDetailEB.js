@@ -29,14 +29,21 @@ function draw_selected_chromsome(flowcellId, chromosome_chosen){
 }
 
 function update_axes_and_data(chart, min, max, data, ymax){
+    // Y max let's us know we need to change the yAxis
     // Set the xAxis extremes to the newly selected values
     chart.xAxis[0].setExtremes(min, max);
+    console.log(data.ymax);
+    console.log(chart);
     // if we need to update the yaxis as well
-    if(ymax && data.ymax < 0){
-        // if we have a ymax below 0 we need to flip the yaxis so negative at x axis and 0 at top
+    if(ymax && chart.title.textStr.toLowerCase().includes("scores")){
+        // if we have a ymax  below 0 we need to flip the yaxis so negative at x axis and 0 at top
         console.log(chart);
-        console.log(data.ymax-1);
-        chart.yAxis[0].setExtremes(data.ymax, 0);
+        console.log(data.ymin-1);
+        chart.yAxis[0].setExtremes(data.ymin-0.1, data.ymax+0.1);
+    }
+    else if (ymax && chart.title.textStr.toLowerCase().includes("cost")){
+        console.log(data.ymax, data.ymin);
+        chart.yAxis[0].setExtremes(data.ymin-0.1, data.ymax+0.1);
     }
     else if (ymax){
         // set the yAxisextremes
@@ -191,7 +198,7 @@ function createChart(targetDivId, ymax, title, chartType = "scatter", stepped = 
 
         yAxis: {
             // Renders faster when we don"t have to compute min and max
-            min: 0,
+            softMin: 0,
             max: ymax,
             title: {
                 text: null
@@ -327,10 +334,10 @@ function createCoverageMaster(data, flowcellId) {
         ////////////////////////////////////////////////////////////
         coverageScatterDetail = createChart("coverageScatterDetail", data.coverage.ymax, "Coverage");
         benefitDetail = createChart("benefitDetail", 1, "Benefits");
-        costForwardScatterDetail = createChart("costForwardScatterDetail", 1, "Forward cost", "line");
-        costReverseScatterDetail = createChart("costReverseScatterDetail", 1, "Reverse cost", "line");
-        scoresForwardDetail = createChart("scoresForwardDetail", 1, "Forward scores");
-        scoresReverseDetail = createChart("scoresReverseDetail", 1, "Reverse scores");
+        costForwardScatterDetail = createChart("costForwardScatterDetail", 1, "Forward cost", "line", true);
+        costReverseScatterDetail = createChart("costReverseScatterDetail", 1, "Reverse cost", "line", true);
+        scoresForwardDetail = createChart("scoresForwardDetail", 1, "Forward scores", "line", true);
+        scoresReverseDetail = createChart("scoresReverseDetail", 1, "Reverse scores", "line", true);
         forwardMaskDetail = createChart("maskStepLineFwdDetail", 1, "Forward mask", "line", true);
         revMaskDetail = createChart("maskStepLineRevDetail", 1, "Reverse mask", "line", true);
     });
@@ -415,9 +422,12 @@ function afterSelection(event) {
 
             update_axes_and_data(scoresReverseDetail, min, max, newSeriesDict.scoresRev, true);
 
-        } else {
-            throw "Request error";
-        }
+        } else if (xhr.status === 404){
+
+        }else {
+                throw "Request error";
+            }
+
     });
 
 
