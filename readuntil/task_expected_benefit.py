@@ -76,7 +76,7 @@ def populate_priors_dict(
             priors_dict[name] = {}
             # add a priors key to this nested dictionary, then create and fill the priors for this reference,
             #  there's one prior for each reference position
-            priors_dict[name]["priors"] = initialise_priors_rory(
+            priors_dict[name]["priors"] = initialise_priors(
                 seq.upper(), genotypes
             )
             # add a posteriors key to this nested dictionary, then create and fill the posteriors array
@@ -107,8 +107,8 @@ def calculate_expected_benefit_3dot0_final(task_id):
     errWeird = 0.05
     theta = 0.009
     r = 0.11
-    lam = 200
-    m = 198
+    lam = 4500
+    m = 95
     rho = 0.2
     alpha = 0.5
 
@@ -205,6 +205,9 @@ def calculate_expected_benefit_3dot0_final(task_id):
         )
         # SubProcess communicate actually calls the function
         (out, err) = proc.communicate(input=fasta_data)
+
+        if err:
+            logger.error(err)
 
         logger.info(
             "Flowcell id: {} - Finished minimap EB - {}".format(
@@ -495,14 +498,14 @@ def calculate_expected_benefit_3dot0_final(task_id):
                     # Update the posteriors in this chunk
                     priors_dict[chrom_key]["posteriors"][
                         start_slice:end_slice
-                    ] = update_posteriors_notts(
+                    ] = update_posteriors(
                         posteriors_chunk, counts_chunk, phi
                     )
                     # update start size to index of the beginning of the next chunk
                     start_slice += chunk_size
 
                 # we have update all the chromosome in the while loop, so now we update the benefits
-                priors_dict[chrom_key]["benefits"] = position_benefit_rory(
+                priors_dict[chrom_key]["benefits"] = position_benefit(
                     priors_dict[chrom_key]["posteriors"], phi
                 )
                 # logger.info(f"Benefits {priors_dict[chrom_key]['benefits']}")
@@ -511,7 +514,7 @@ def calculate_expected_benefit_3dot0_final(task_id):
                 # logger.info(f"Benefits NaN size is {logger.info_a[logger.info_a==np.NaN].size} \n")
 
                 # Calculate the fixed read lengths benefit - could use some clarification on how this works
-                read_benefits_f, read_benefits_r = calculate_read_benefits_fixed_read_length_rory(
+                read_benefits_f, read_benefits_r = calculate_read_benefits_fixed_read_length(
                     priors_dict[chrom_key]["benefits"], lam, m
                 )
                 # logger.info(f"Benefits fixed forward {read_benefits_f}")
@@ -524,15 +527,15 @@ def calculate_expected_benefit_3dot0_final(task_id):
                 # logger.info(f"Benefits fixed zero size is {logger.info_a[logger.info_a==0].size}")
                 # logger.info(f"Benefits fixed NaN size is {logger.info_a[logger.info_a==np.NaN].size} \n")
                 # Calculate the m part of the read benefits of read lengths
-                m_read_benefits_f, m_read_benefits_r = calculate_read_benefits_fixed_read_length_rory(
+                m_read_benefits_f, m_read_benefits_r = calculate_read_benefits_fixed_read_length(
                     priors_dict[chrom_key]["benefits"], m, m
                 )
                 # Costs of reading the read
-                costs_f, costs_r = calculate_costs_fixed_read_length_rory(
+                costs_f, costs_r = calculate_costs_fixed_read_length(
                     reference_length, rho, m, lam
                 )
                 # Scores are updated for whole reference
-                scores_f, scores_r = calculate_scores_rory(
+                scores_f, scores_r = calculate_scores(
                     read_benefits_f,
                     read_benefits_r,
                     m_read_benefits_f,
