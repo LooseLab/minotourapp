@@ -425,25 +425,6 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids, fasta_df):
         )
     )
     # The column names for the dataframe created by the align reads output
-    columns = [
-        "alignment_block_length",
-        "flowcell_id",
-        "id",
-        "job_master_id",
-        "mapping_qual",
-        "num_residue_matches",
-        "query_end",
-        "query_start",
-        "query_seq_len",
-        "read_id",
-        "read_pk",
-        "reference_id",
-        "rel_strand",
-        "target_end",
-        "target_start",
-        "target_seq_len",
-        "target_seq_name",
-    ]
     # If there is no mapping output from the align reads function
     if not map_output:
         logger.info(
@@ -457,7 +438,23 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids, fasta_df):
         # Create a dataframe
         plasmid_map_df = pd.DataFrame(list(map_output.values()))
         # Set the column names
-        plasmid_map_df.columns = columns
+        plasmid_map_df.rename(
+        columns={
+            "qsn": "query_seq_name",
+            "qsl": "query_seq_len",
+            "qs": "query_start",
+            "qe": "query_end",
+            "rs": "rel_strand",
+            "tsn_id": "target_seq_name",
+            "tsl": "target_seq_length",
+            "ts": "target_start",
+            "te": "target_end",
+            "nrm": "num_residue_matches",
+            "abl": "alignment_block_length",
+            "mq": "mapping_qual",
+        },
+        inplace=True,
+    )
 
         # TODO NOTE that atm, we're just counting any map that reads to a plasmid as a red read
 
@@ -700,20 +697,6 @@ def map_all_the_groups(
         inplace=True,
     )
 
-    logger.info(map_df.columns)
-
-    logger.info(map_df.head())
-
-    logger.info(map_df["mapping_qual"].dtype)
-
-    logger.info(map_df["num_residue_matches"].dtype)
-
-    logger.info
-
-    logger.info(map_df["mapping_qual"].head())
-
-    logger.info(map_df["num_residue_matches"].head())
-
     map_df["num_residue_matches"] = map_df["num_residue_matches"].astype(
         np.int64
     )
@@ -767,7 +750,7 @@ def map_all_the_groups(
         map_df,
         how="inner",
         left_on="read_id",
-        right_on="read_id",
+        right_on="query_seq_name",
     )
     # Deep copy the dataframe so we can edit it without the changes being reflected in the original, one
     # to split by barcode, one to be all reads
@@ -1142,7 +1125,7 @@ def map_the_reads(
         red_reads_df,
         how="inner",
         left_on="read_id",
-        right_on="read_id",
+        right_on="query_seq_name",
     )
     # Deep copy the results df, so changes not reflected in original , one df for barcoded, one df for all reads
     results_df_bar = results_df.copy(deep=True)
@@ -1356,7 +1339,6 @@ def output_parser(task, new_data_df, donut_or_output, metadata):
     if not parsed_data_df.empty:
         # Add one to the iteration count
         new_iteration_count = task.iteration_count + 1
-        logger.info(new_iteration_count)
         # If this is for CentrifugeOutput
         if not donut:
             # Merge the lsat Iterations values with this Iterations values
