@@ -981,9 +981,15 @@ def flowcell_list(request):
 
         flowcells = []
 
-        queryset = Flowcell.objects.filter(owner=request.user)
+        permissions = FlowcellUserPermission.objects.filter(user=request.user)
+
+        queryset = list(Flowcell.objects.filter(owner=request.user))
+
+        # for permission in permissions:
+        #     queryset.append(permission.flowcell)
 
         for record in queryset:
+
 
             obj = {
                 'id': record.id,
@@ -996,16 +1002,16 @@ def flowcell_list(request):
                 'number_barcodes': record.number_barcodes,
                 'total_read_length': record.total_read_length,
                 'average_read_length': record.average_read_length,
-                'is_active': record.active(),
+                'is_active': {True: "Active", False: "Inactive"}.get(record.active(), False),
                 'sample_name': record.sample_name,
-                'has_fastq': record.has_fastq,
-                'owner': True,
-                'permission': 'READ_WRITE',
+                'has_fastq': {True: "Yes", False: "No"}.get(record.has_fastq),
+                'owner': {True: "Yes", False: "No"}.get(True),
+                'permission': 'RUN_ANALYSIS',
             }
 
             flowcells.append(obj)
 
-        permissions = FlowcellUserPermission.objects.filter(user=request.user)
+
 
         for permission in permissions:
 
@@ -1022,10 +1028,10 @@ def flowcell_list(request):
                 'number_barcodes': record.number_barcodes,
                 'total_read_length': record.total_read_length,
                 'average_read_length': record.average_read_length,
-                'is_active': record.active(),
+                'is_active': {True: "Active", False: "Inactive"}.get(record.active(), False),
                 'sample_name': record.sample_name,
-                'has_fastq': record.has_fastq,
-                'owner': False,
+                'has_fastq': {True: "Yes", False: "No"}.get(record.has_fastq),
+                'owner': {True: "Yes", False: "No"}.get(True),
                 'permission': permission.permission,
             }
 
