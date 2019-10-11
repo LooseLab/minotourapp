@@ -20,6 +20,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.generics import ListCreateAPIView
 
 from alignment.models import PafRoughCov
 from assembly.models import GfaStore
@@ -2200,6 +2201,35 @@ def version(request):
 
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
+
+class ListFlowcellSharing(ListCreateAPIView):
+    """
+    View to list and add user permissions on a flowcell
+
+    * Requires token authentication.
+    * Only admin users are able to access this view.
+    """
+
+    # authentication_classes = [authentication.TokenAuthentication]
+    # permission_classes = [permissions.IsAdminUser]
+    # lookup_url_kwarg = 'flowcell_id'
+
+    def get(self, request, format=None):
+
+        print(self.kwargs)
+
+        # print('flowcell id: {}'.format(self.kwargs.get('flowcell_id')))
+
+        # permission_list = FlowcellUserPermission.objects.filter(flowcell=flowcell)
+        
+        permission_list = FlowcellUserPermission.objects.all()
+
+        serializer = FlowcellUserPermissionSerializer(permission_list, many=True, context={'request': request})
+
+        return Response(serializer.data)
+
+
+
 @api_view(['GET', 'POST'])
 def flowcell_sharing(request, pk):
     """
@@ -2216,6 +2246,10 @@ def flowcell_sharing(request, pk):
         except User.DoesNotExist:
 
             return Response({"message": "User does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+        if flowcell.owner.id != request.user.id:
+
+            return Response({"message": "You are not authorised to share this flowcell."}, status=status.HTTP_404_NOT_FOUND)
 
         existing_permissions = FlowcellUserPermission.objects.filter(user=user, flowcell=flowcell)
 
