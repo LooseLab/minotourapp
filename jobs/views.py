@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.http import JsonResponse, HttpResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -7,7 +8,7 @@ from jobs.models import JobType, JobMaster
 from jobs.serializers import JobMasterSerializer, JobMasterInsertSerializer
 from reads.models import Run
 from reference.models import ReferenceInfo
-from reads.models import Flowcell
+from reads.models import Flowcell, FlowcellUserPermission
 from web.delete_tasks import delete_metagenomics_task, delete_alignment_task, delete_expected_benefit_task
 import time
 from reads.utils import has_perm
@@ -62,7 +63,7 @@ def get_or_create_tasks(request):
 
             try:
                 # Get the flowcell by name
-                flowcell = Flowcell.objects.get(name=request.data["flowcell"])
+                flowcell = Flowcell.objects.get(Q(name=request.data["flowcell"]) | Q(pk=int(request.data["flowcell"])))
 
                 request.data["flowcell"] = flowcell.id
             # If that doesn't work
@@ -79,6 +80,19 @@ def get_or_create_tasks(request):
                     print("Exception: {}".format(e))
 
                     return Response("Flowcell not found. Please contact server admin.", status=500)
+
+            print(flowcell)
+            print(request.data)
+            print(request.data["flowcell"])
+
+            if flowcell is None:
+                return Response("Flowcell not found. Please contact server admin.", status=500)
+
+        else:
+            flowcell = Flowcell.objects.get(Q(name=request.data["flowcell"]) | Q(pk=int(request.data["flowcell"])))
+            print(flowcell)
+            print(request.data)
+            print(request.data["flowcell"])
 
         if not has_perm('RUN_ANALYSIS', flowcell.id, request.user.id) and not request.user == flowcell.owner:
 
@@ -174,44 +188,6 @@ def task_types_list(request):
     })
 
 
-# @api_view(['POST'])
-# def set_task_detail_all(request, pk):
-#     # TODO ARE WE USING THIS AT ALL
-#     """We need to check if a job type already exists - if so we are not going to add another."""
-#     if request.method == 'POST':
-#         jobtype = JobType.objects.get(name=request.data["job"])
-#         print(jobtype)
-#         reference = ""
-#         if request.data["reference"] != "null":
-#             reference = ReferenceInfo.objects.get(reference_name=request.data["reference"])
-#             print(reference)
-#         minionrun = Run.objects.get(id=pk)
-#         print(minionrun)
-#         print(request.data)
-#         print(jobtype, reference, minionrun)
-#         jobmasters = JobMaster.objects.filter(run=minionrun).filter(job_type=jobtype)
-#         print("Jobmasters", jobmasters)
-#         if len(jobmasters) > 0:
-#             # return Response("Duplicate Job attempted. Not allowed.", status=status.HTTP_400_BAD_REQUEST)
-#             return Response("Duplicate Job attempted. Not allowed.", status=status.HTTP_200_OK)
-#         else:
-#             newjob = JobMaster(run=minionrun, job_type=jobtype, last_read=0, read_count=0, complete=False,
-#                                running=False)
-#
-#             print("trying to make a job", newjob)
-#
-#             if request.data["reference"] != "null":
-#                 # if len(reference)>0:
-#                 newjob.reference = reference
-#             try:
-#                 newjob.save()
-#                 print("job created")
-#             except Exception as e:
-#                 print(e)
-#                 print("error")
-#             return Response("Job Created.", status=status.HTTP_200_OK)
-
-
 @api_view(['GET'])
 def tasks_detail_all(request, pk):
 
@@ -266,7 +242,38 @@ def task_control(request):
     :return: A status reflecting the state of the executed code
     """
     # Get the task object from django ORM
+
     job_master = JobMaster.objects.get(pk=request.data["flowcellJobId"])
+    # The below code checks the user has permission to perform action on tasks.
+    if request.user:
+
+        unauthorised_message = "You do not have permission to perform this action."
+        # Check if the User is the owner - owners do not have a Flowcell User Permission objects created
+        # for them, so we need to check the Flowcell itself.
+        if Flowcell.objects.filter(owner=request.user, pk=job_master.flowcell_id).first() is not None:
+            # Owner check
+            # Check if the FLowcell has been shared back with the owner, and if the have a View Data permission
+            if FlowcellUserPermission.objects.filter(user=request.user, flowcell=job_master.flowcell):
+                user_permission = FlowcellUserPermission.objects.get(user=request.user, flowcell=job_master.flowcell)
+                if user_permission.permission == "VIEW_DATA":
+                    return Response("You are somehow the owner and yet also possess a permission level of "
+                                    "VIEW DATA on this instance of a flowcell. Please contact the system admin,"
+                                    "Matthew Loose.  ¯\\_(ツ)_/¯.")
+            pass
+        # If the user isn't the owner, check if they have the correct permission levels for this.
+        elif FlowcellUserPermission.objects.filter(user=request.user, flowcell=job_master.flowcell):
+            # Run analysis check
+            user_permission = FlowcellUserPermission.objects.get(user=request.user, flowcell=job_master.flowcell)
+
+            if not user_permission.permission == "RUN_ANALYSIS":
+                print("NOT RUN_ANALYSIS")
+                return Response(unauthorised_message, status=403)
+        # THis User is somehow on a flowcell that hasn't been shared with them and that they don't own
+        else:
+            print("SHouldn't be here")
+            return Response(unauthorised_message, status=403)
+
+
 
     action_type = request.data["actionType"]
 
