@@ -412,5 +412,8 @@ def metagenomics_data_download(request, pk):
     return response
 
 
+def flowcell_manager(request):
+    # flowcells = Flowcell.objects.filter(owner=request.user)
+    return render(request, 'reads/flowcell_manager.html', context={'flowcell_manager': flowcell_manager})
 
 

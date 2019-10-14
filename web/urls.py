@@ -1,7 +1,6 @@
 from django.conf.urls import url
 
 from . import views
-
 urlpatterns = [
     url(r'^signup/$', views.signup, name='signup'),
     url(r'^private/index/$', views.private_index, name='private-index'),
@@ -17,6 +16,7 @@ urlpatterns = [
     url(r'^private/experiments/(?P<pk>[0-9]+)/$', views.experiments_update, name='experiment-update'),
     url(r'^private/experiments/create/$', views.experiments_create, name='experiment-create'),
     url(r'^private/experiments/(?P<pk>[0-9]+)/delete/$', views.ExperimentDelete.as_view(), name='experiment-delete'),
+    url(r'^private/flowcell_manager/$', views.flowcell_manager, name='flowcell_manager'),
     #
     # The links below generate CSV
     #
@@ -28,4 +28,6 @@ urlpatterns = [
     # Return the netagenomics data in CSV format
     url(r'^private/flowcells/(?P<pk>[0-9]+)/flowcell_metagenomics_csv/$', views.metagenomics_data_download,
         name="metagenomics_data_download")
+
+
 ]
