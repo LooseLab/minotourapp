@@ -2270,3 +2270,5 @@ def flowcell_sharing_delete(request, pk):
         permissions[i].delete()
 
     return Response({"message": "Permission deleted"}, status=status.HTTP_200_OK)
+
+

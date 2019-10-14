@@ -253,4 +253,6 @@ urlpatterns = [
         name="minknow-message-list-by-flowcell"
     ),
 
+    url(r'^private/flowcell_manager/$', views.flowcell_manager, name='flowcell_manager'),
+
 ]
