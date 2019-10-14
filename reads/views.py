@@ -22,6 +22,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.generics import ListCreateAPIView
 
+from guardian.shortcuts import assign_perm, remove_perm
+
 from alignment.models import PafRoughCov
 from assembly.models import GfaStore
 from centrifuge.models import CentrifugeOutput
@@ -50,7 +52,6 @@ from reads.models import (
 )
 from reads.models import FlowcellChannelSummary
 from reads.models import FlowcellHistogramSummary
-from reads.models import FlowcellUserPermission
 
 from reads.serializers import (
     BarcodeSerializer,
@@ -77,9 +78,8 @@ from reads.serializers import (
     GroupRunSerializer,
     FlowcellSummaryBarcodeSerializer,
     FastqReadGetSerializer,
-    FlowcellUserPermissionSerializer,
 )
-from reads.utils import get_coords, return_shared_flowcells, return_temp_empty_summary
+from reads.utils import get_coords, return_temp_empty_summary
 from readuntil.models import ExpectedBenefitChromosomes
 import hashlib
 
@@ -982,55 +982,75 @@ def flowcell_list(request):
 
         flowcells = []
 
-        queryset = Flowcell.objects.filter(owner=request.user)
+        # queryset = Flowcell.objects.filter(owner=request.user)
+        queryset = Flowcell.objects.all()
 
         for record in queryset:
 
-            obj = {
-                'id': record.id,
-                'name': record.name,
-                'size': record.size,
-                'start_time': record.start_time,
-                'number_reads': record.number_reads,
-                'number_reads_processed': record.number_reads_processed,
-                'number_runs': record.number_runs,
-                'number_barcodes': record.number_barcodes,
-                'total_read_length': record.total_read_length,
-                'average_read_length': record.average_read_length,
-                'is_active': record.active(),
-                'sample_name': record.sample_name,
-                'has_fastq': record.has_fastq,
-                'owner': True,
-                'permission': 'READ_WRITE',
-            }
+            obj = None
 
-            flowcells.append(obj)
+            if request.user == record.owner:
 
-        permissions = FlowcellUserPermission.objects.filter(user=request.user)
+                obj = {
+                    'id': record.id,
+                    'name': record.name,
+                    'size': record.size,
+                    'start_time': record.start_time,
+                    'number_reads': record.number_reads,
+                    'number_reads_processed': record.number_reads_processed,
+                    'number_runs': record.number_runs,
+                    'number_barcodes': record.number_barcodes,
+                    'total_read_length': record.total_read_length,
+                    'average_read_length': record.average_read_length,
+                    'is_active': record.active(),
+                    'sample_name': record.sample_name,
+                    'has_fastq': record.has_fastq,
+                    'owner': True,
+                    'permission': 'OWNER',
+                }
 
-        for permission in permissions:
+            elif request.user.has_perm('view_data', record):
 
-            record = permission.flowcell
+                obj = {
+                    'id': record.id,
+                    'name': record.name,
+                    'size': record.size,
+                    'start_time': record.start_time,
+                    'number_reads': record.number_reads,
+                    'number_reads_processed': record.number_reads_processed,
+                    'number_runs': record.number_runs,
+                    'number_barcodes': record.number_barcodes,
+                    'total_read_length': record.total_read_length,
+                    'average_read_length': record.average_read_length,
+                    'is_active': record.active(),
+                    'sample_name': record.sample_name,
+                    'has_fastq': record.has_fastq,
+                    'owner': False,
+                    'permission': 'VIEW DATA',
+                }
 
-            obj = {
-                'id': record.id,
-                'name': record.name,
-                'size': record.size,
-                'start_time': record.start_time,
-                'number_reads': record.number_reads,
-                'number_reads_processed': record.number_reads_processed,
-                'number_runs': record.number_runs,
-                'number_barcodes': record.number_barcodes,
-                'total_read_length': record.total_read_length,
-                'average_read_length': record.average_read_length,
-                'is_active': record.active(),
-                'sample_name': record.sample_name,
-                'has_fastq': record.has_fastq,
-                'owner': False,
-                'permission': permission.permission,
-            }
+            elif request.user.has_perm('run_analysis', record):
 
-            flowcells.append(obj)
+                obj = {
+                    'id': record.id,
+                    'name': record.name,
+                    'size': record.size,
+                    'start_time': record.start_time,
+                    'number_reads': record.number_reads,
+                    'number_reads_processed': record.number_reads_processed,
+                    'number_runs': record.number_runs,
+                    'number_barcodes': record.number_barcodes,
+                    'total_read_length': record.total_read_length,
+                    'average_read_length': record.average_read_length,
+                    'is_active': record.active(),
+                    'sample_name': record.sample_name,
+                    'has_fastq': record.has_fastq,
+                    'owner': False,
+                    'permission': 'RUN ANALYSIS',
+                }
+
+            if obj:
+                flowcells.append(obj)
 
         return JsonResponse({'data': flowcells})
     # If the method is not GET, it must be post
@@ -1074,7 +1094,18 @@ def flowcell_detail(request, pk):
             flowcell_list = Flowcell.objects.none()
 
         if not flowcell_list:
-            flowcell_list = return_shared_flowcells(pk, request)
+
+            # flowcell_list = return_shared_flowcells(pk, request)
+            flowcell_list = []
+
+            all_flowcell_list = Flowcell.objects.exclude(owner=request.user)
+
+            for f in all_flowcell_list:
+                
+                if request.user.has_perm('view_data', f) or request.user.has_perm('run_analysis', f):
+
+                    flowcell_list.append(f)
+
         # TODO look at the logic here, a user with two identical flowcells would crash this
 
         if len(flowcell_list) != 1:
@@ -2196,34 +2227,6 @@ def version(request):
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
 
-class ListFlowcellSharing(ListCreateAPIView):
-    """
-    View to list and add user permissions on a flowcell
-
-    * Requires token authentication.
-    * Only admin users are able to access this view.
-    """
-
-    # authentication_classes = [authentication.TokenAuthentication]
-    # permission_classes = [permissions.IsAdminUser]
-    # lookup_url_kwarg = 'flowcell_id'
-
-    def get(self, request, format=None):
-
-        print(self.kwargs)
-
-        # print('flowcell id: {}'.format(self.kwargs.get('flowcell_id')))
-
-        # permission_list = FlowcellUserPermission.objects.filter(flowcell=flowcell)
-        
-        permission_list = FlowcellUserPermission.objects.all()
-
-        serializer = FlowcellUserPermissionSerializer(permission_list, many=True, context={'request': request})
-
-        return Response(serializer.data)
-
-
-
 @api_view(['GET', 'POST'])
 def flowcell_sharing(request, pk):
     """
@@ -2245,35 +2248,47 @@ def flowcell_sharing(request, pk):
 
             return Response({"message": "You are not authorised to share this flowcell."}, status=status.HTTP_404_NOT_FOUND)
 
-        existing_permissions = FlowcellUserPermission.objects.filter(user=user, flowcell=flowcell)
+        permission = request.data['permission'].lower()
 
-        if len(existing_permissions) > 0:
+        if user.has_perm(permission, flowcell):
 
             return Response({"message": "User already has permission. If you want to change the permission level, delete the current permission first."}, status=status.HTTP_404_NOT_FOUND)
 
-        data = request.data
+        else:
 
-        data['user'] = user.id
+            assign_perm(permission, user, flowcell)
 
-        serializer = FlowcellUserPermissionSerializer(
-            data=request.data,
-            context={'request': request}
-        )
-
-        if serializer.is_valid():
-            permission = serializer.save(flowcell=flowcell)
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({}, status=status.HTTP_201_CREATED)
 
     else:
 
-        permission_list = FlowcellUserPermission.objects.filter(flowcell=flowcell)
+        users = User.objects.all()
 
-        serializer = FlowcellUserPermissionSerializer(permission_list, many=True, context={'request': request})
+        permission_list = []
 
-        return Response(serializer.data)
+        for user in users:
+
+            if user != flowcell.owner:
+
+                if user.has_perm('view_data', flowcell):
+
+                    permission_list.append({
+                        "username": user.username, 
+                        'permission': 'VIEW DATA',
+                        'permission_code': 'view_data',
+                        'user': user.id,
+                        'flowcell': flowcell.id})
+
+                if user.has_perm('run_analysis', flowcell):
+
+                    permission_list.append({
+                        "username": user.username, 
+                        'permission': 'RUN ANALYSIS',
+                        'permission_code': 'run_analysis',
+                        'user': user.id,
+                        'flowcell': flowcell.id})
+
+        return Response(permission_list)
 
 
 @api_view(['POST'])
@@ -2297,10 +2312,8 @@ def flowcell_sharing_delete(request, pk):
 
         return Response({"message": "User does not exist."}, status=status.HTTP_404_NOT_FOUND)
 
-    permissions = FlowcellUserPermission.objects.filter(user=user, flowcell=flowcell)
-
-    for i in range(len(permissions)):
-
-        permissions[i].delete()
+    permission = data['permission']
+    
+    remove_perm(permission, user, flowcell)
 
     return Response({"message": "Permission deleted"}, status=status.HTTP_200_OK)

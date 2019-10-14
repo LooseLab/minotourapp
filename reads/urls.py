@@ -252,9 +252,4 @@ urlpatterns = [
         views.minknow_message_list_by_flowcell,
         name="minknow-message-list-by-flowcell"
     ),
-    url(
-        r'^flowcells/(?P<flowcell_id>[0-9]+)/sharing2/$',
-        views.ListFlowcellSharing.as_view()
-    ),
-
 ]

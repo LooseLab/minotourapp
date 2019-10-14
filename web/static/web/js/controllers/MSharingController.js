@@ -32,7 +32,7 @@ class MSharingController {
                     'targets': 2,
                     'data': 2,
                     'render': function(data, type, full, meta) {
-                        return '<a href="#" onclick="mSharingController.delete(' + data + ')">DELETE</a>';
+                        return '<a href="#" onclick="mSharingController.delete(\'' + full['permission_code'] + '\', ' + full['user'] + ', ' + full['flowcell'] + ')">DELETE</a>';
                     }
                 },]
         });
@@ -65,7 +65,8 @@ class MSharingController {
         });
     }
 
-    delete(user_id) {
+    delete(permission, user_id, flowcell) {
+
         let csrftoken = getCookie('csrftoken');
 
         let self = this;
@@ -77,7 +78,8 @@ class MSharingController {
         var url = '/api/v1/flowcells/' + this._flowcell_id + '/sharing/delete/';
 
         axios_instance.post(url, {
-            user_id: user_id
+            user_id: user_id,
+            permission: permission,
         }).then(function(response) {
             console.log(response);
             self.getAll();

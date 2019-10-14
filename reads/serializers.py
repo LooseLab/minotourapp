@@ -8,7 +8,6 @@ from reads.models import (Barcode, FastqFile, FastqRead,
                           MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
                           RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellSummaryBarcode, Flowcell, MinION,
                           FlowcellTab)
-from reads.models import FlowcellUserPermission
 
 
 class FastqFileSerializer(serializers.HyperlinkedModelSerializer):
@@ -542,19 +541,5 @@ class FlowcellSummaryBarcodeSerializer(serializers.ModelSerializer):
             'channel_count',
             'average_read_length',
         )
-
-        read_only = ('id',)
-
-
-class FlowcellUserPermissionSerializer(serializers.ModelSerializer):
-
-    username = serializers.ReadOnlyField(
-        source="user.username"
-    )
-
-    class Meta:
-        model = FlowcellUserPermission
-
-        fields = '__all__'
 
         read_only = ('id',)

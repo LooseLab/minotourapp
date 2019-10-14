@@ -5,7 +5,7 @@ import math
 from dateutil import parser
 from django.db.models import Q
 
-from reads.models import FlowcellUserPermission, RunSummary
+from reads.models import Flowcell, RunSummary
 
 
 def return_temp_empty_summary(run):
@@ -28,43 +28,6 @@ def return_temp_empty_summary(run):
         running=False,
     )
     return run_summary
-
-
-def return_shared_flowcells(pk, request, web_index=False):
-    """
-    Return whether this user has access to a flowcell via it being shared with them
-    :param pk: The primary key of the row of the flowcell database entry
-    :type pk: int
-    :param request: The django rest framework request object
-    :type request: rest_framework.request.Request
-    :param web_index: Whether this looking up shared flowcells for the web app or the reads app -
-    the web app doesn't have search criteria
-    :type web_index: bool
-    :return: A flowcell Django ORM object if this flowcell has been shared with the user
-    """
-    if web_index:
-        pk = int(pk)
-
-    if isinstance(pk, str):
-        users_shared_flowcells = FlowcellUserPermission.objects.filter(
-            user=request.user.id
-        ).filter(flowcell__name=pk)
-
-    elif isinstance(pk, int):
-        users_shared_flowcells = FlowcellUserPermission.objects.filter(
-            user=request.user
-        ).filter(flowcell__id=pk)
-
-    else:
-        users_shared_flowcells = []
-
-    if users_shared_flowcells:
-        flowcell = [users_shared_flowcells[0].flowcell]
-
-    else:
-        flowcell = []
-
-    return flowcell
 
 
 def get_coords(channel, flowcellsize):
@@ -655,16 +618,3 @@ def get_flowcell_user_permission(flowcell_id, user_id):
     return FlowcellUserPermission.objects.filter(
         flowcell__id=flowcell_id, user__id=user_id
     )
-
-
-def has_perm(permission, flowcell_id, user_id):
-    """Return True/False if user has the permission on the flowcell"""
-    permission_list = get_flowcell_user_permission(flowcell_id, user_id)
-
-    response = False
-
-    for record in permission_list:
-        if record.permission == permission:
-            return True
-
-    return False

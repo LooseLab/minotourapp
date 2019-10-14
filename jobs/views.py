@@ -10,7 +10,6 @@ from reference.models import ReferenceInfo
 from reads.models import Flowcell
 from web.delete_tasks import delete_metagenomics_task, delete_alignment_task, delete_expected_benefit_task
 import time
-from reads.utils import has_perm
 
 
 @api_view(["GET", "POST"])
@@ -80,9 +79,9 @@ def get_or_create_tasks(request):
 
                     return Response("Flowcell not found. Please contact server admin.", status=500)
 
-        if not has_perm('RUN_ANALYSIS', flowcell.id, request.user.id) and not request.user == flowcell.owner:
+        if not request.user.has_perm('run_analysis', flowcell) and not request.user == flowcell.owner:
 
-            return Response({"message": "Permission deleted - you do not the RUN_ANALYSIS permission."},
+            return Response({"message": "Permission deleted - you do not the RUN ANALYSIS permission."},
                             status=status.HTTP_401_UNAUTHORIZED)
             
         # Check to see if we have a string as the flowcell, not an Int for a PK based lookup

@@ -10,9 +10,8 @@ from rest_framework.authtoken.models import Token
 from jobs.models import JobMaster, JobType
 from centrifuge.models import CentrifugeOutput
 from communication.models import Message
-from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats, FlowcellUserPermission
+from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats
 from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
-from reads.utils import return_shared_flowcells
 
 from django.contrib import messages
 
@@ -124,26 +123,15 @@ def flowcell_index(request, pk):
     """
     user = request.user
 
-    web_index = True
+    flowcell = Flowcell.objects.get(pk=pk)
 
-    flowcell_list = Flowcell.objects.filter(pk=pk, owner=user)
-    # # Check the flowcell isn't shared
-    if not flowcell_list:
+    if user == flowcell.owner or user.has_perm('view_data', flowcell) or user.has_perm('run_analysis', flowcell):
 
-        flowcell_list = return_shared_flowcells(pk, request, web_index)
-
-        if flowcell_list:
-
-            flowcell = flowcell_list[0]
-
-        else:
-
-            return render(request, 'web/no.html')
+        return render(request, 'web/flowcell_index.html', context={'flowcell': flowcell})
 
     else:
 
-        flowcell = flowcell_list[0]
-    return render(request, 'web/flowcell_index.html', context={'flowcell': flowcell})
+        return render(request, 'web/no.html')
 
 
 @login_required

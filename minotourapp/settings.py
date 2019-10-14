@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'jobs',
     'centrifuge',
     'readuntil',
+    'guardian',
 ]
 
 MIDDLEWARE = [
@@ -276,6 +277,11 @@ USE_X_FORWARDED_HOST = True
 # SECURITY WARNING: don't run with debug turned on in production!
 
 DEBUG = get_env_variable("MT_DJANGO_DEBUG")
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend', # default
+    'guardian.backends.ObjectPermissionBackend',
+)
 
 # if DEBUG:
 #    INTERNAL_IPS = ('127.0.0.1', 'localhost',)

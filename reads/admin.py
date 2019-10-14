@@ -9,7 +9,7 @@ from .models import (Barcode, FastqFile, FastqRead, FastqReadType,
                      MinIONScripts, MinIONStatus, Run, RunSummary, UserOptions, ChannelSummary, HistogramSummary,
                      RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellHistogramSummary, FlowcellStatisticBarcode,
                      FlowcellSummaryBarcode, Flowcell, MinION,
-                     FlowcellTab, FlowcellUserPermission)
+                     FlowcellTab)
 
 
 class RunStatisticsBarcodeAdmin(admin.ModelAdmin):
@@ -24,10 +24,6 @@ class RunSummaryBarcodeAdmin(admin.ModelAdmin):
     ordering = ('run_id', 'barcode', 'type')
 
 
-class FlowcellUserPermissionAdmin(admin.ModelAdmin):
-    list_display = ('flowcell', 'user', 'permission')
-
-
 class FlowcellAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'sample_name')
 
@@ -38,7 +34,6 @@ admin.site.register(FastqReadType)
 admin.site.register(FlowcellStatisticBarcode)
 admin.site.register(FlowcellSummaryBarcode)
 admin.site.register(FlowcellHistogramSummary)
-admin.site.register(FlowcellUserPermission, FlowcellUserPermissionAdmin)
 admin.site.register(FlowcellTab)
 admin.site.register(Run)
 admin.site.register(MinIONEventType)

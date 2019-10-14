@@ -29,3 +29,4 @@ psycopg2-binary
 django-debug-toolbar
 ete3
 gunicorn
+django-guardian
