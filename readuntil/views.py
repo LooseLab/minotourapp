@@ -77,7 +77,10 @@ def remove_duplicate_sequences_numpy(array, master=False, minimum=None):
     # Get largest value
     ymax = array.max()
 
+    ymin = array.min()
+
     a = array
+
     # create an index position, so we can draw the point above the correct base on the graph
     index_position = np.arange(
         index_start, index_start + a.size, dtype=np.uint32
@@ -91,6 +94,11 @@ def remove_duplicate_sequences_numpy(array, master=False, minimum=None):
     index_position = index_position[a[2:] != a[:-2]]
     # remove all the duplicate sequential values from the array of actual data values
     a = array[a[2:] != a[:-2]]
+
+    a[a == np.inf] = 0
+
+    a[a == 1.7976931348623157e+308] = 0
+
     # Create a list of tuples, with the x coord as first tuple element and the y value as second
     x_y_values = list(zip(index_position, a))
 
@@ -99,7 +107,7 @@ def remove_duplicate_sequences_numpy(array, master=False, minimum=None):
         print("Down sampling for master")
         x_y_values = sampler(x_y_values)
 
-    return x_y_values, xmax, ymax
+    return x_y_values, xmax, ymax, ymin
 
 
 def get_y_axis_max(array):
@@ -161,7 +169,7 @@ def get_benefit_data_master(request):
         Response("File not found", status=404)
         raise e
     # Remove duplicate elements in series
-    x_y_cov, xmax_cov, ymax_cov = remove_duplicate_sequences_numpy(
+    x_y_cov, xmax_cov, ymax_cov, ymin_cov = remove_duplicate_sequences_numpy(
         coverage, True
     )
 
@@ -189,17 +197,20 @@ def get_benefit_data_detail(request):
 
     flowcell_id = request.GET.get("flowcellId")
 
-    print ("REQUEST {}".format(request.GET))
+    print("REQUEST {}".format(request.GET))
     #print (request.GET.get("chromosome_chosen"))
 
     chromosome = request.GET.get("chromosome_chosen", "NC_003210.1")
 
+    jm = JobMaster.objects.filter(
+        job_type__name="ExpectedBenefit", flowcell_id=flowcell_id
+    ).last()
+
+    if jm is None:
+        return Response("Expected Benefit task not found", status=404)
+
     latest_eb_task = (
-        JobMaster.objects.filter(
-            job_type__name="ExpectedBenefit", flowcell_id=flowcell_id
-        )
-        .last()
-        .id
+        jm.id
     )
     # the base path to the directory that we have stored the binary files in
     basepath = get_or_create_results_directory(flowcell_id, latest_eb_task)
@@ -301,44 +312,44 @@ def get_benefit_data_detail(request):
         print()
 
     # # Remove the duplicate values until a change in the array
-    x_y_cov, xmax_cov, ymax_cov = remove_duplicate_sequences_numpy(
+    x_y_cov, xmax_cov, ymax_cov, ymin_cov = remove_duplicate_sequences_numpy(
         data_dict["coverage"], minimum=mini
     )
     # # Remove the duplicate values until a change in the array, on array with numpy nans removed
-    x_y_benefit, xmax_benefit, ymax_benefit = remove_duplicate_sequences_numpy(
+    x_y_benefit, xmax_benefit, ymax_benefit, ymin_benefit = remove_duplicate_sequences_numpy(
         np.nan_to_num(data_dict["benefits"], copy=False), minimum=mini
     )
     # # Remove the duplicate values until a change in the array
-    x_y_fwd_mask, xmax_fwd_mask, ymax_fwd_mask = remove_duplicate_sequences_numpy(
+    x_y_fwd_mask, xmax_fwd_mask, ymax_fwd_mask, ymin_fwd_mask = remove_duplicate_sequences_numpy(
         data_dict["mask_forward"], minimum=mini
     )
     print(xmax_cov)
     # Remove the duplicate values until a change in the array
-    x_y_rev_mask, xmax_rev_mask, ymax_rev_mask = remove_duplicate_sequences_numpy(
+    x_y_rev_mask, xmax_rev_mask, ymax_rev_mask, ymin_fwd_mask = remove_duplicate_sequences_numpy(
         data_dict["mask_reverse"], minimum=mini
     )
 
-    x_y_fwd_scores, xmax_fwd_scores, ymax_fwd_scores = remove_duplicate_sequences_numpy(
-        np.nan_to_num(data_dict["scores_forward"], copy=False), minimum=mini
+    x_y_fwd_scores, xmax_fwd_scores, ymax_fwd_scores, ymin_fwd_scores = remove_duplicate_sequences_numpy(
+        np.nan_to_num(data_dict["scores_forward"], posinf=1), minimum=mini
     )
 
-    x_y_rev_scores, xmax_rev_scores, ymax_rev_scores = remove_duplicate_sequences_numpy(
-        np.nan_to_num(data_dict["scores_reverse"], copy=False), minimum=mini
+    x_y_rev_scores, xmax_rev_scores, ymax_rev_scores, ymin_rev_scores = remove_duplicate_sequences_numpy(
+        np.nan_to_num(data_dict["scores_reverse"], posinf=1), minimum=mini
     )
 
-    x_y_fwd_costs, xmax_fwd_costs, ymax_fwd_costs = remove_duplicate_sequences_numpy(
+    x_y_fwd_costs, xmax_fwd_costs, ymax_fwd_costs, ymin_fwd_costs = remove_duplicate_sequences_numpy(
         np.nan_to_num(data_dict["costs_forward"], copy=False), minimum=mini
     )
 
-    x_y_rev_costs, xmax_rev_costs, ymax_rev_costs = remove_duplicate_sequences_numpy(
+    x_y_rev_costs, xmax_rev_costs, ymax_rev_costs, ymin_rev_costs = remove_duplicate_sequences_numpy(
         np.nan_to_num(data_dict["costs_reverse"], copy=False), minimum=mini
     )
 
-    x_y_fwd_fix_ben, xmax_fwd_fix_ben, ymax_fwd_fix_ben = remove_duplicate_sequences_numpy(
+    x_y_fwd_fix_ben, xmax_fwd_fix_ben, ymax_fwd_fix_ben, ymin_fwd_fix_ben = remove_duplicate_sequences_numpy(
         np.nan_to_num(data_dict["fixed_ben_forward"], copy=False), minimum=mini
     )
 
-    x_y_rev_fix_ben, xmax_rev_fix_ben, ymax_rev_fix_ben = remove_duplicate_sequences_numpy(
+    x_y_rev_fix_ben, xmax_rev_fix_ben, ymax_rev_fix_ben, ymin_fwd_fix_ben = remove_duplicate_sequences_numpy(
         np.nan_to_num(data_dict["fixed_ben_reverse"], copy=False), minimum=mini
     )
 
@@ -362,21 +373,25 @@ def get_benefit_data_detail(request):
         "scoresFwd": {
             "xmax": xmax_fwd_scores,
             "ymax": ymax_fwd_scores,
+            "ymin": ymin_fwd_scores,
             "data": x_y_fwd_scores,
         },
         "scoresRev": {
             "xmax": xmax_rev_scores,
             "ymax": ymax_rev_scores,
+            "ymin": ymin_rev_scores,
             "data": x_y_rev_scores,
         },
         "costsFwd": {
             "xmax": xmax_fwd_costs,
             "ymax": ymax_fwd_costs,
+            "ymin": ymin_fwd_costs,
             "data": x_y_fwd_costs,
         },
         "costsRev": {
             "xmax": xmax_rev_costs,
             "ymax": ymax_rev_costs,
+            "ymin": ymin_rev_costs,
             "data": x_y_rev_costs,
         },
         "fixBenFwd": {

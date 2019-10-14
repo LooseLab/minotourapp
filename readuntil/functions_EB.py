@@ -12,8 +12,8 @@ def make_results_directory(flowcell_id, task_id):
     :param task_id: The ID of the Jobmaster that corresponds to this EB task
     :return: The path into this directory
     """
-    #current_working_directory = Path.cwd()
-    current_working_directory = getattr(settings, "REFERENCE_LOCATION", None)
+    current_working_directory = Path.cwd()
+    # current_working_directory = getattr(settings, "REFERENCE_LOCATION", None)
 
     results_dir = Path(
         f"{current_working_directory}/readuntil/Temp_results/EB{flowcell_id}_{task_id}"
@@ -389,7 +389,7 @@ def multi_array_results(ref_length):
     return multi_arr
 
 
-def initialise_priors_rory(
+def initialise_priors(
     reference, genotypes, theta=0.009, r=0.11
 ):
     """
@@ -440,7 +440,7 @@ def initialise_posteriors_mod(priors):
     return posteriors
 
 
-def position_benefit_rory(posterior_array, phi):
+def position_benefit(posterior_array, phi):
     # Shannon entropy of the current posterior distribution
     entropies = -np.sum(
         posterior_array * np.log(posterior_array, where=posterior_array != 0),
@@ -501,36 +501,36 @@ def position_benefit_rory(posterior_array, phi):
     return entropies - new_entropies
 
 
-def update_posteriors_notts(
-    rory_test_posteriors, rory_test_counts, rory_testphi
+def update_posteriors(
+    test_posteriors, test_counts, testphi
 ):
     # Check your phis aren't too high
-    # rory_test_posteriors array is a nested array the length of the reference,
+    # test_posteriors array is a nested array the length of the reference,
     # there are 5 elements in each nest, one for each base plus deletions
-    # rory_test_counts is the counts structured data array, as many elements
+    # test_counts is the counts structured data array, as many elements
     # as there are reference bases, 9 elements in each array
-    # rory test phi, is the phis
+    # test phi, is the phis
 
     # Get total count of bases
-    reference_length = rory_test_posteriors.shape[0]
+    reference_length = test_posteriors.shape[0]
 
-    # Expand rory test counts in 2d array, with 5 copies of each of each test count element
+    # Expand test counts in 2d array, with 5 copies of each of each test count element
     d = np.resize(
-        np.repeat(rory_testphi[None, ...], 5, axis=0),
+        np.repeat(testphi[None, ...], 5, axis=0),
         (reference_length * 5, 5),
     )
-    # Expand rory test counts in 2d array, with 5 copies of each of each test count element
+    # Expand test counts in 2d array, with 5 copies of each of each test count element
 
     # Do in place exponentials, memory efficient
     d **= np.repeat(
-        np.array(rory_test_counts.tolist()),
-        rory_test_posteriors.shape[1],
+        np.array(test_counts.tolist()),
+        test_posteriors.shape[1],
         axis=0,
     )
 
     # Get all the posteriors as 1d array
-    # insert_test_posteriors = np.resize(np.repeat(rory_test_posteriors, 5), (reference_length*5,5)).T[0]
-    insert_test_posteriors = rory_test_posteriors.ravel()
+    # insert_test_posteriors = np.resize(np.repeat(test_posteriors, 5), (reference_length*5,5)).T[0]
+    insert_test_posteriors = test_posteriors.ravel()
 
     # Create an array of zeros with as many rows as there positions, with 6 elements in each row
     arr = np.zeros((d.shape[0], 6))
@@ -560,56 +560,61 @@ def update_posteriors_notts(
     return posteriors
 
 
-def calculate_read_benefits_fixed_read_length_rory(benefits_rory, lam, m):
+def calculate_read_benefits_fixed_read_length(benefits, lam, m):
     # Forward Benefits
     # Number of reference positions, as there is one element in benefits array for each position
-    N = benefits_rory.shape[0]
+    N = benefits.shape[0]
     # Get the partials value to start with, sum of the first 4 benfits values
-    partialS_rory = benefits_rory[: min(lam, N)].sum()
+    partialS = benefits[: min(lam, N)].sum()
     # Get the number of elements that would have been in Nics for loop
-    benefits_rory_test = benefits_rory[: N - m]
+    benefits_test = benefits[: N - m]
     # Add the first partials into start of array, so we can use it for cumulative sum
-    benefits_rory_test = np.insert(
-        benefits_rory_test, 0, partialS_rory, axis=0
+    benefits_test = np.insert(
+        benefits_test, 0, partialS, axis=0
     )
     # Make all but the first element it's negative, as it is cumulative subtraction
-    benefits_rory_test[1:] = -benefits_rory_test[1:]
+    benefits_test[1:] = -benefits_test[1:]
     # Cumulative sum the array
-    partials_1 = np.cumsum(benefits_rory_test)
+    partials_1 = np.cumsum(benefits_test)
     # Return array to original negative/positive
-    benefits_rory_test[1:] = -benefits_rory_test[1:]
+    benefits_test[1:] = -benefits_test[1:]
     # Get the values that would have met the if condition in nics function
-    cond_bens = benefits_rory[N - (N - lam) :]
+    cond_bens = benefits[N - (N - lam):]
+    print(f"N is {N}")
+    print(f"m is {m}")
+    print(f"benefits_test size is {benefits_test.size}")
+    print(f"cond bens size is {cond_bens.size}")
+    print(f"partilas 1 size is {partials_1.size}")
     # Add the cumulative sum array of those values where they would have been added in for loop
     partials_1[1 : 1 + cond_bens.size] += np.cumsum(cond_bens)
     # Add the sum of those values to every element after where they would have been to make up for their absence
     partials_1[1 + cond_bens.size :] += cond_bens.sum()
     # rename to results array
-    read_benefits_rory_forward = partials_1
+    read_benefits_forward = partials_1
     # Get the hard truncation end value of 0
     zero_benefit = np.zeros(m - 1, dtype=np.int8)
     # Add the 0 array onto the end of the results array!
-    read_benefits_rory_forward = np.concatenate(
-        (read_benefits_rory_forward, zero_benefit), axis=0
+    read_benefits_forward = np.concatenate(
+        (read_benefits_forward, zero_benefit), axis=0
     )
 
     # ####### READ BENEFITS REVERSE ########
     # Create zeros for hard cut off at start, not enough read length?
-    read_benefits_rory_rev = np.zeros(m - 1)
+    read_benefits_rev = np.zeros(m - 1)
     # sum the elements that proceed m
-    partialS_rory_rev = benefits_rory[: m - 1].sum()
+    partialS_rev = benefits[: m - 1].sum()
     # Create the array that contains the elemnts that would have been in the for loop
-    rory_test_bens_rev = benefits_rory[m - 1 :]
+    bens_rev = benefits[m - 1:]
     # Prepend our partialS value to the start of the array
-    rory_test_bens_rev = np.insert(
-        rory_test_bens_rev, 0, partialS_rory_rev, axis=0
+    bens_rev = np.insert(
+        bens_rev, 0, partialS_rev, axis=0
     )
     # Cumulatively sum the array
-    partials1_rev = np.cumsum(rory_test_bens_rev)
+    partials1_rev = np.cumsum(bens_rev)
     # Drop the first value
     partials1_rev = partials1_rev[1:]
     # Get the values that met the condition in Nics 2nd for loop, excluding the m-1 zeros we have at the front
-    cond_bens_rev = benefits_rory[lam - m + 1 + (m - 1) :]
+    cond_bens_rev = benefits[lam - m + 1 + (m - 1):]
     # Cumulataively sum them
     cond_bens_rev = np.cumsum(cond_bens_rev)
     # Subtract them from the array at the correct postion (In this case at the end)
@@ -617,58 +622,58 @@ def calculate_read_benefits_fixed_read_length_rory(benefits_rory, lam, m):
         lam - m + 1 : lam - m + 1 + cond_bens_rev.size
     ] -= cond_bens_rev
     # Concat our results to the results array
-    read_benefits_rory_rev = np.concatenate(
-        (read_benefits_rory_rev, partials1_rev), axis=0
+    read_benefits_rev = np.concatenate(
+        (read_benefits_rev, partials1_rev), axis=0
     )
 
-    return read_benefits_rory_forward, read_benefits_rory_rev
+    return read_benefits_forward, read_benefits_rev
 
 
-def calculate_costs_fixed_read_length_rory(N, rho, m, lam):
+def calculate_costs_fixed_read_length(N, rho, m, lam):
     # Create empty array of zeros correct length
-    read_costs_rory_forward = np.zeros(N)
+    read_costs_forward = np.zeros(N)
     # Add lam to it where lam is smaller than N - index
-    read_costs_rory_forward[:lam] += lam
+    read_costs_forward[:lam] += lam
     # The value of N minus the index where it is smaller than lam
-    read_costs_rory_forward[-lam + 1 :] += np.arange(lam - 1, 0, -1)
+    read_costs_forward[-lam + 1 :] += np.arange(lam - 1, 0, -1)
     # Where m is smaller than the reference minus the element index, subtract m+rho
-    read_costs_rory_forward[:-m] -= m + rho
+    read_costs_forward[:-m] -= m + rho
     # Where m is larger than the reference minus the element index, subtract the reference lenght - index +rho
-    read_costs_rory_forward[-m:] -= np.arange(m, 0, -1) + rho
+    read_costs_forward[-m:] -= np.arange(m, 0, -1) + rho
     # Reverse it for the costs
-    read_costs_rory_reverse = read_costs_rory_forward[::-1].copy()
+    read_costs_reverse = read_costs_forward[::-1].copy()
 
-    return read_costs_rory_forward, read_costs_rory_reverse
+    return read_costs_forward, read_costs_reverse
 
 
-def calculate_scores_rory(
-    read_benefits_rory_forward,
-    read_benefits_rory_reverse,
-    m_benefits_rory_forward,
-    m_benefits_rory_reverse,
-    read_costs_rory_forward,
-    read_costs_rory_reverse,
+def calculate_scores(
+    read_benefits_forward,
+    read_benefits_reverse,
+    m_benefits_forward,
+    m_benefits_reverse,
+    read_costs_forward,
+    read_costs_reverse,
 ):
     # Create an array of correct length, with the length of the reference
-    N = read_benefits_rory_forward.size
+    N = read_benefits_forward.size
     scores_F = np.zeros(N)
     # Just list infinity if the cost is negative or too small
-    index = read_costs_rory_forward <= 0.0000001
+    index = read_costs_forward <= 0.0000001
     scores_F[index] = np.inf
     # If it is bigger than 0.0000001 do that simple calculation
 
     scores_F[~index] = (
-        read_benefits_rory_forward[~index] - m_benefits_rory_forward[~index]
-    ) / read_costs_rory_forward[~index]
+                               read_benefits_forward[~index] - m_benefits_forward[~index]
+    ) / read_costs_forward[~index]
     # Do the same for reverse
     scores_R = np.zeros(N)
     # Infinity for something that's too small
-    index = read_costs_rory_reverse <= 0.0000001
+    index = read_costs_reverse <= 0.0000001
     scores_R[index] = np.inf
     # Do the same calculation as above with the reverse values
     scores_R[~index] = (
-        read_benefits_rory_reverse[~index] - m_benefits_rory_reverse[~index]
-    ) / read_costs_rory_reverse[~index]
+                               read_benefits_reverse[~index] - m_benefits_reverse[~index]
+    ) / read_costs_reverse[~index]
 
     return scores_F, scores_R
 
