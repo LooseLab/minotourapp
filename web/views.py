@@ -138,7 +138,7 @@ def flowcell_index(request, pk):
 
         else:
 
-            return render(request, 'web/no.html')
+            return render(request, 'web/404.html')
 
     else:
 
