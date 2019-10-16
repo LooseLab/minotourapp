@@ -2319,3 +2319,7 @@ def flowcell_sharing_delete(request, pk):
     return Response({"message": "Permission deleted"}, status=status.HTTP_200_OK)
 
 
+def flowcell_manager(request):
+    # flowcells = Flowcell.objects.filter(owner=request.user)
+    return render(request, 'reads/flowcell_manager.html', context={'flowcell_manager': flowcell_manager})
+
