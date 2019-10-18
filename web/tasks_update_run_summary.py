@@ -157,4 +157,3 @@ def update_run_summary():
                 run_summary.running = False
                 # save the results
                 run_summary.save()
-

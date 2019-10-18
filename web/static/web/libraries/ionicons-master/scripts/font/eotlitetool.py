@@ -220,6 +220,7 @@
 import optparse
 import struct
 
+
 class FontError(Exception):
     """Error related to font handling"""
     pass
@@ -462,5 +463,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
-    

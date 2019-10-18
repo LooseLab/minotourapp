@@ -1,12 +1,13 @@
-import re,sys,os
-
+import collections
+import datetime
+import math
+import os
+import re
+import sys
 import time
+from functools import lru_cache
 
 import numpy as np
-import collections
-from functools import lru_cache
-import math
-import datetime
 
 
 def update_last_activity_time(flowcell):

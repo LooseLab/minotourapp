@@ -1,14 +1,17 @@
 from __future__ import absolute_import, unicode_literals
+
+import os
 import subprocess
+
+import pandas as pd
 from celery import task
 from celery.utils.log import get_task_logger
 from django.conf import settings
+
 from alignment.models import PafRoughCov, PafStore, PafSummaryCov
 from jobs.models import JobMaster
 from reads.models import FastqRead
 from reference.models import ReferenceInfo, ReferenceLine
-import pandas as pd
-import os
 
 # Set up the logger to write to logging file
 logger = get_task_logger(__name__)

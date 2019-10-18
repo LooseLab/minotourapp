@@ -2,17 +2,17 @@ import numpy as np
 import pandas as pd
 from celery import task
 from celery.utils.log import get_task_logger
-
-from django.db.models import Avg, Max, Min, Sum, Q
+from django.db.models import Avg, Max, Min, Q, Sum
 
 from jobs.models import JobMaster
-from reads.models import FastqRead, HistogramSummary, Flowcell, FlowcellSummaryBarcode, FlowcellStatisticBarcode, \
-    FlowcellHistogramSummary, FlowcellChannelSummary
-from reads.services import save_flowcell_summary_barcode, save_flowcell_statistic_barcode, \
-    save_flowcell_histogram_summary, save_flowcell_channel_summary
-from readuntil.models import RejectedFastqRead, AcceptedFastqRead
-from reads.models import Barcode
-
+from reads.models import (Barcode, FastqRead, Flowcell, FlowcellChannelSummary,
+                          FlowcellHistogramSummary, FlowcellStatisticBarcode,
+                          FlowcellSummaryBarcode, HistogramSummary)
+from reads.services import (save_flowcell_channel_summary,
+                            save_flowcell_histogram_summary,
+                            save_flowcell_statistic_barcode,
+                            save_flowcell_summary_barcode)
+from readuntil.models import AcceptedFastqRead, RejectedFastqRead
 
 logger = get_task_logger(__name__)
 

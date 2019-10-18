@@ -1,12 +1,15 @@
 """
 Functionality to delete a previously run task with a celery task
 """
-from jobs.models import JobMaster
+import datetime
+import time
+from pathlib import Path
+
 from celery import task
 from celery.utils.log import get_task_logger
-from pathlib import Path
-import time
-import datetime
+
+from jobs.models import JobMaster
+
 # from readuntil.models import ExpectedBenefitChromosomes
 
 logger = get_task_logger(__name__)

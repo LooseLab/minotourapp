@@ -4,10 +4,12 @@ for mapping and metagenomics validation
 """
 import gzip
 from pathlib import Path
+
 from Bio import SeqIO
 from django.core.management.base import BaseCommand, CommandError
-from reference.models import ReferenceInfo, ReferenceLine
 from rest_framework.authtoken.models import Token
+
+from reference.models import ReferenceInfo, ReferenceLine
 
 
 def validate_reference_checks(file_path):

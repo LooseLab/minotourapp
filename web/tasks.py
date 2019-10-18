@@ -22,15 +22,14 @@ from centrifuge import centrifuge
 from centrifuge.sankey import calculate_sankey
 from communication.utils import *
 from jobs.models import JobMaster
-from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus
+from reads.models import (Barcode, FastqRead, Flowcell, FlowcellSummaryBarcode,
+                          MinIONRunStatus, Run)
 from reads.utils import getn50
+from readuntil.task_expected_benefit import \
+    calculate_expected_benefit_3dot0_final
 from web.tasks_chancalc import chancalc
+
 from .tasks_alignment import run_minimap2_alignment
-
-
-from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
-
-
 
 logger = get_task_logger(__name__)
 
@@ -856,4 +855,3 @@ def update_flowcell_details(job_master_id):
         job_master.last_read = max_channel['last_read']
 
     job_master.save()
-

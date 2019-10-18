@@ -4,7 +4,7 @@ import os
 from django.core.management import BaseCommand, CommandError
 
 from jobs.models import JobMaster
-from reads.models import Flowcell, FastqRead
+from reads.models import FastqRead, Flowcell
 
 log_folder = os.environ.get('MT_LOG_FOLDER')
 

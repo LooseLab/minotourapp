@@ -1,3 +1,5 @@
+import pandas as pd
+from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -5,17 +7,16 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.forms import formset_factory
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
-from django.views.generic import ListView, DeleteView
+from django.views.generic import DeleteView, ListView
 from rest_framework.authtoken.models import Token
-from jobs.models import JobMaster, JobType
+
 from centrifuge.models import CentrifugeOutput
 from communication.models import Message
-from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats
-from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
-
-from django.contrib import messages
-
-import pandas as pd
+from jobs.models import JobMaster, JobType
+from reads.models import (Experiment, FastqRead, Flowcell, MinIONRunStats, Run,
+                          UserOptions)
+from web.forms import (ExperimentFlowcellForm, ExperimentForm, SignUpForm,
+                       UserOptionsForm)
 
 
 def index(request):
@@ -415,5 +416,3 @@ def metagenomics_data_download(request, pk):
 def flowcell_manager(request):
     # flowcells = Flowcell.objects.filter(owner=request.user)
     return render(request, 'reads/flowcell_manager.html', context={'flowcell_manager': flowcell_manager})
-
-

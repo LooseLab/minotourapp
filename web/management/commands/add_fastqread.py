@@ -7,8 +7,10 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
 
-from reads.models import Flowcell, Run, Barcode, FastqRead, FastqFile, FastqReadType, FastqReadExtra
+from reads.models import (Barcode, FastqFile, FastqRead, FastqReadExtra,
+                          FastqReadType, Flowcell, Run)
 from reference.models import ReferenceInfo, ReferenceLine
+
 
 def parse_fastq_description(description):
 

@@ -2,8 +2,8 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
-from reads.models import Flowcell, Experiment
 from jobs.models import JobMaster
+from reads.models import Experiment, Flowcell
 
 
 class UserOptionsForm(forms.Form):

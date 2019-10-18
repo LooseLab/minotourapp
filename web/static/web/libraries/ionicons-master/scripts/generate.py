@@ -1,12 +1,12 @@
-from subprocess import call
-import os, errno
+import codecs
+import errno
+import hashlib
+import json
+import os
 import shutil
 import subprocess
-import json
-import codecs
 from collections import OrderedDict
-import hashlib
-
+from subprocess import call
 
 SCRIPTS_PATH = os.path.dirname(os.path.abspath(__file__))
 ROOT_PATH = os.path.join(SCRIPTS_PATH, '..')

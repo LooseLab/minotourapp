@@ -2,8 +2,8 @@ import logging
 
 from django.test import TestCase
 
-from jobs.models import JobType, JobMaster
-from reads.models import Flowcell, Run, FastqRead
+from jobs.models import JobMaster, JobType
+from reads.models import FastqRead, Flowcell, Run
 from web.tasks import update_flowcell_details
 
 logger = logging.getLogger(__name__)
@@ -41,4 +41,3 @@ class UpdateFlowcellDetails(TestCase):
 
         # self.assertEqual(line_tuple.read_id, '3d8564a8-653e-4dbe-b301-3a2cea209bf8')
         # self.assertEqual(line_tuple.chromosome, 'NC_001140')
-
