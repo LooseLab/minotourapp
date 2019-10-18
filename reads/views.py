@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import json
 from datetime import timedelta
 
@@ -12,76 +13,46 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import Max
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
-from rest_framework.response import Response
 from rest_framework.generics import ListCreateAPIView
-
-from guardian.shortcuts import assign_perm, remove_perm
+from rest_framework.response import Response
 
 from alignment.models import PafRoughCov
 from assembly.models import GfaStore
 from centrifuge.models import CentrifugeOutput
+from guardian.shortcuts import assign_perm, remove_perm
 from jobs.models import JobMaster, JobType
 from minotourapp import settings
-from reads.models import (
-    Barcode,
-    FastqFile,
-    FastqRead,
-    FastqReadType,
-    MinIONControl,
-    MinIONEvent,
-    MinIONEventType,
-    MinionMessage,
-    MinIONRunStats,
-    MinIONRunStatus,
-    MinIONScripts,
-    MinIONStatus,
-    Run,
-    GroupRun,
-    FlowcellStatisticBarcode,
-    FlowcellSummaryBarcode,
-    Flowcell,
-    MinION,
-    RunSummary,
-)
-from reads.models import FlowcellChannelSummary
-from reads.models import FlowcellHistogramSummary
-
-from reads.serializers import (
-    BarcodeSerializer,
-    ChannelSummarySerializer,
-    FastqFileSerializer,
-    FastqReadSerializer,
-    FastqReadTypeSerializer,
-    FlowcellSerializer,
-    MinIONControlSerializer,
-    MinIONEventSerializer,
-    MinIONEventTypeSerializer,
-    MinionMessageSerializer,
-    MinIONRunStatsSerializer,
-    MinIONRunStatusSerializer,
-    MinIONScriptsSerializer,
-    MinIONSerializer,
-    MinIONStatusSerializer,
-    RunSerializer,
-    RunStatisticBarcodeSerializer,
-    RunSummaryBarcodeSerializer,
-    ChannelSummary,
-    RunStatisticBarcode,
-    RunSummaryBarcode,
-    GroupRunSerializer,
-    FlowcellSummaryBarcodeSerializer,
-    FastqReadGetSerializer,
-)
+from reads.models import (Barcode, FastqFile, FastqRead, FastqReadType,
+                          Flowcell, FlowcellChannelSummary,
+                          FlowcellHistogramSummary, FlowcellStatisticBarcode,
+                          FlowcellSummaryBarcode, GroupRun, MinION,
+                          MinIONControl, MinIONEvent, MinIONEventType,
+                          MinionMessage, MinIONRunStats, MinIONRunStatus,
+                          MinIONScripts, MinIONStatus, Run, RunSummary)
+from reads.serializers import (BarcodeSerializer, ChannelSummary,
+                               ChannelSummarySerializer, FastqFileSerializer,
+                               FastqReadGetSerializer, FastqReadSerializer,
+                               FastqReadTypeSerializer, FlowcellSerializer,
+                               FlowcellSummaryBarcodeSerializer,
+                               GroupRunSerializer, MinIONControlSerializer,
+                               MinIONEventSerializer,
+                               MinIONEventTypeSerializer,
+                               MinionMessageSerializer,
+                               MinIONRunStatsSerializer,
+                               MinIONRunStatusSerializer,
+                               MinIONScriptsSerializer, MinIONSerializer,
+                               MinIONStatusSerializer, RunSerializer,
+                               RunStatisticBarcode,
+                               RunStatisticBarcodeSerializer,
+                               RunSummaryBarcode, RunSummaryBarcodeSerializer)
 from reads.utils import get_coords, return_temp_empty_summary
 from readuntil.models import ExpectedBenefitChromosomes
-import hashlib
 
 logger = get_task_logger(__name__)
 
@@ -2322,4 +2293,3 @@ def flowcell_sharing_delete(request, pk):
 def flowcell_manager(request):
     # flowcells = Flowcell.objects.filter(owner=request.user)
     return render(request, 'reads/flowcell_manager.html', context={'flowcell_manager': flowcell_manager})
-

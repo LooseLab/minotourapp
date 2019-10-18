@@ -13,10 +13,11 @@
         <section class="content">
             <!-- Main top nav bar -->
 
-                <div id="messages"></div>
+            <div id="messages"></div>
 
-                <div class="box-body">
-                    <table id="all-runs" class="table table-bordered table-striped table-hover" style="width:100%" cellspacing="0" >
+            <div class="box-body">
+                <table id="all-runs" class="table table-bordered table-striped table-hover" style="width:100%"
+                       cellspacing="0">
                     <thead>
                     <tr>
                         <th>Flowcell<br/>Name</th>
@@ -35,175 +36,139 @@
                         <th>Permission</th>
                     </tr>
                     </thead>
-                    </table>
-                </div>
+                </table>
+            </div>
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 {% endblock %}
 
 {% block javascript %}
-<script>
+    <script>
 
-    var table_all_runs;
+        var table_all_runs;
 
-    $(document).ready(function () {
+        $(document).ready(function () {
+            $.fn.dataTable.render.format_link = function () {
+                return function (data, type, full, meta) {
 
-        table_all_runs = $('#all-runs').DataTable({
-            "scrollX": true,
-            "order": [[ 3, "desc" ]],
-            'ajax': {
-                'url': "{% url 'flowcell-list' %}",
-                'dataSrc': function(jsonData){
-                    var json = jsonData.data;
-                    var data = [];
+                    return `<a href="/web/private/flowcells/${full["id"]}/">${data}</a>`;
+                };
+            };
 
-                    for (var i = 0; i < json.length; i++){
+            table_all_runs = $('#all-runs').DataTable({
+                "scrollX": true,
+                "order": [[3, "desc"]],
+                'ajax': {
+                    'url': "{% url 'flowcell-list' %}",
 
-                        var start_time = moment(json[i].start_time).format('YYYY-MM-DD HH:mm');
+                },
+                'columnDefs': [
+                    {
+                        'targets': 0,
+                        'data': "name",
+                        'render': $.fn.dataTable.render.format_link()
 
-                        data.push([
-                            json[i].id,
-                            json[i].name,
-                            json[i].size,
-                            json[i].sample_name,
-                            // start_time_human_format,
-                            // start_time,
-                            start_time,
-                            json[i].number_reads,
-                            json[i].number_reads_processed,
-                            json[i].number_runs,
-                            json[i].number_barcodes,
-                            json[i].total_read_length,
-                            json[i].average_read_length,
-                            json[i].is_active,
-                            json[i].has_fastq,
-                            json[i].owner,
-                            json[i].permission,
-                        ]);
-                    }
-                    return data;
-                }
-            },
-            'columnDefs': [
-                {
-                    'targets': 0,
-                    'data': 0,
-                    'render': function(data, type, full, meta) {
-                        return '<a href="/web/private/flowcells/' + data + '/">' + full[1] + '</a>';
-                    }
-                },
-                {
-                    'targets': 1,
-                    'data': 0,
-                    'render': function(data, type, full, meta) {
-                        return '<a href="/web/private/flowcells/' + data + '/">' + full[2] + '</a>';
-                    }
-                },
-                {
-                    'targets': 2,
-                    'data': 0,
-                    'render': function(data, type, full, meta) {
-                        return '<a href="/web/private/flowcells/' + data + '/">' + full[3] + '</a>';
-                    }
-                },
-                {
-                    'targets': 3,
-                    'data': 0,
-                    'render': function(data, type, full, meta) {
-                        return '<a href="/web/private/flowcells/' + data + '/">' + full[4] + '</a>';
-                    }
-                },
-                {
-                    'targets': 4,
-                    'data': 0,
-                    'render': function(data, type, full, meta) {
-                        return '<a href="/web/private/flowcells/' + data + '/">' + full[5] + '</a>';
-                    }
-                },
-                {
-                    'targets': 5,
-                    'data': 0,
-                    'render': function(data, type, full, meta) {
-                        return '<a href="/web/private/flowcells/' + data + '/">' + full[6] + '</a>';
-                    }
-                },
-                {
-                    'targets': 6,
-                    'data': 0,
-                    'render': function(data, type, full, meta) {
-                        return '<a href="/web/private/flowcells/' + data + '/">' + full[7] + '</a>';
-                    }
-                },
-                {
-                    'targets': 7,
-                    'data': 0,
-                    'render': function(data, type, full, meta) {
-                        return '<a href="/web/private/flowcells/' + data + '/">' + full[8] + '</a>';
-                    }
-                },
-                {
-                    'targets': 8,
-                    'data': 0,
-                    'render': function(data, type, full, meta) {
-                        return '<a href="/web/private/flowcells/' + data + '/">' + full[9] + '</a>';
-                    }
-                },
-                {
-                    'targets': 9,
-                    'data': 0,
-                    'render': function(data, type, full, meta) {
-                        return '<a href="/web/private/flowcells/' + data + '/">' + full[10] + '</a>';
-                    }
-                },
-                {
-                    'targets': 10,
-                    'data': 0,
-                    'render': function(data, type, full, meta) {
-                        if (full[11]) {
-                            return '<a href="/web/private/flowcells/' + data + '/">Active</a>';
-                        } else {
-                            return '<a href="/web/private/flowcells/' + data + '/">Inactive</a>';
+                    },
+                    {
+                        'targets': 1,
+                        'data': "size",
+                        'render': $.fn.dataTable.render.format_link()
+                    },
+                    {
+                        'targets': 2,
+                        'data': "sample_name",
+                        'render': $.fn.dataTable.render.format_link()
+                    },
+                    {
+                        'targets': 3,
+                        'data': "start_time",
+                        'render': function (data, type, full, meta) {
+                            return `<a href="/web/private/flowcells/${full["id"]}/">${moment(data).format('YYYY-MM-DD HH:mm')}</a>`;
                         }
-                    }
-                },
-                {
-                    'targets': 11,
-                    'data': 0,
-                    'render': function(data, type, full, meta) {
-                        if (full[12]) {
-                            return '<a href="/web/private/flowcells/' + data + '/">Yes</a>';
-                        } else {
-                            return '<a href="/web/private/flowcells/' + data + '/">No</a>';
+                    },
+                    {
+                        'targets': 4,
+                        'data': "number_reads",
+                        'render': $.fn.dataTable.render.format_link()
+                    },
+                    {
+                        'targets': 5,
+                        'data': "number_reads_processed",
+                        'render': $.fn.dataTable.render.format_link()
+                    },
+                    {
+                        'targets': 6,
+                        'data': "number_runs",
+                        'render': $.fn.dataTable.render.format_link()
+                    },
+                    {
+                        'targets': 7,
+                        'data': "number_barcodes",
+                        'render': $.fn.dataTable.render.format_link()
+                    },
+                    {
+                        'targets': 8,
+                        'data': "total_read_length",
+                        render: function (data, type, row) {
+                            console.log(typeof data);
+                            if (type === "display" || type === "filter") {
+                                {#var data = data;#}
+                                var UNITS = ["", "k", "M", "G", "T", "P", "E", "Z"];
+                                var factor = 1000;
+                                var suffix = "b";
+                                for (var i = 0; i < UNITS.length; i++) {
+                                    console.log(UNITS[i]);
+                                    if (Math.abs(data) < factor) {
+                                        console.log("factor");
+                                        data = data.toFixed(2);
+                                        if (/\.00$/.test(data)) {
+                                            data = data.substr(0, data.length - 3);
+                                        }
+                                        return `<a href="/web/private/flowcells/${row["id"]}/">${`${data} ${UNITS[i]}${suffix}`}</a>`;
+                                    }
+                                    data /= factor;
+                                }
+                                data = data.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                                if (/\.00$/.test(data))
+                                    data = data.substr(0, data.length - 3);
+                                return `<a href="/web/private/flowcells/${row["id"]}/">${`${data} Y${suffix}`}</a>`;
+                            } else {
+                                return data
+                            }
                         }
-                    }
-                },
-                {
-                    'targets': 12,
-                    'data': 0,
-                    'render': function(data, type, full, meta) {
-                        if (full[13]) {
-                            return '<a href="/web/private/flowcells/' + data + '/">Yes</a>';
-                        } else {
-                            return '<a href="/web/private/flowcells/' + data + '/">No</a>';
-                        }
-                    }
-                },
-                {
-                    'targets': 13,
-                    'data': 0,
-                    'render': function(data, type, full, meta) {
-                        return '<a href="/web/private/flowcells/' + data + '/">' + full[14] + '</a>';
-                    }
-                },
-            ]
+                    },
+                    {
+                        'targets': 9,
+                        'data': "average_read_length",
+                        'render': $.fn.dataTable.render.format_link()
+                    },
+                    {
+                        'targets': 10,
+                        'data': "is_active",
+                        'render': $.fn.dataTable.render.format_link()
+                    },
+                    {
+                        'targets': 11,
+                        'data': "has_fastq",
+                        'render': $.fn.dataTable.render.format_link()
+                    },
+                    {
+                        'targets': 12,
+                        'data': "owner",
+                        'render': $.fn.dataTable.render.format_link()
+                    },
+                    {
+                        'targets': 13,
+                        'data': "permission",
+                        'render': $.fn.dataTable.render.format_link()
+                    },
+                ]
+            });
+
+            set_active_navbar_item(0);
+
         });
 
-        set_active_navbar_item(0);
 
-    });
-
-
-
-
-</script>
+    </script>
 {% endblock %}

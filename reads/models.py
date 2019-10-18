@@ -164,30 +164,6 @@ class Flowcell(models.Model):
         )
 
 
-# class FlowcellUserPermission(models.Model):
-
-#     PERMISSIONS = (
-#         ('VIEW_DATA', 'View data'),
-#         ('RUN_ANALYSIS', 'Run analysis')
-#     )
-
-#     user = models.ForeignKey(
-#         settings.AUTH_USER_MODEL,
-#         on_delete=models.DO_NOTHING,
-#     )
-
-#     flowcell = models.ForeignKey(
-#         Flowcell,
-#         on_delete=models.CASCADE,
-#         related_name="flowcell_user_permision"
-#     )
-
-#     permission = models.CharField(
-#         max_length=12,
-#         choices=PERMISSIONS,
-#         default='VIEW_DATA',
-#     )
-
 class MinION(models.Model):
     minION_name = models.CharField(
         max_length=64

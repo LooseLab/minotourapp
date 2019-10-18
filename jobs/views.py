@@ -1,15 +1,18 @@
-from django.http import JsonResponse, HttpResponse
+import time
+
+from django.db.models import Q
+from django.http import HttpResponse, JsonResponse
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from jobs.models import JobType, JobMaster
-from jobs.serializers import JobMasterSerializer, JobMasterInsertSerializer
-from reads.models import Run
+from jobs.models import JobMaster, JobType
+from jobs.serializers import JobMasterInsertSerializer, JobMasterSerializer
+from reads.models import Flowcell, Run
 from reference.models import ReferenceInfo
-from reads.models import Flowcell
-from web.delete_tasks import delete_metagenomics_task, delete_alignment_task, delete_expected_benefit_task
-import time
+from web.delete_tasks import (delete_alignment_task,
+                              delete_expected_benefit_task,
+                              delete_metagenomics_task)
 
 
 @api_view(["GET", "POST"])
@@ -61,7 +64,7 @@ def get_or_create_tasks(request):
 
             try:
                 # Get the flowcell by name
-                flowcell = Flowcell.objects.get(name=request.data["flowcell"])
+                flowcell = Flowcell.objects.get(Q(name=request.data["flowcell"]) | Q(pk=int(request.data["flowcell"])))
 
                 request.data["flowcell"] = flowcell.id
             # If that doesn't work
@@ -81,7 +84,7 @@ def get_or_create_tasks(request):
 
         if not request.user.has_perm('run_analysis', flowcell) and not request.user == flowcell.owner:
 
-            return Response({"message": "Permission deleted - you do not the RUN ANALYSIS permission."},
+            return Response({"message": "Permission denied - you do not have the RUN ANALYSIS permission."},
                             status=status.HTTP_401_UNAUTHORIZED)
             
         # Check to see if we have a string as the flowcell, not an Int for a PK based lookup
@@ -173,44 +176,6 @@ def task_types_list(request):
     })
 
 
-# @api_view(['POST'])
-# def set_task_detail_all(request, pk):
-#     # TODO ARE WE USING THIS AT ALL
-#     """We need to check if a job type already exists - if so we are not going to add another."""
-#     if request.method == 'POST':
-#         jobtype = JobType.objects.get(name=request.data["job"])
-#         print(jobtype)
-#         reference = ""
-#         if request.data["reference"] != "null":
-#             reference = ReferenceInfo.objects.get(reference_name=request.data["reference"])
-#             print(reference)
-#         minionrun = Run.objects.get(id=pk)
-#         print(minionrun)
-#         print(request.data)
-#         print(jobtype, reference, minionrun)
-#         jobmasters = JobMaster.objects.filter(run=minionrun).filter(job_type=jobtype)
-#         print("Jobmasters", jobmasters)
-#         if len(jobmasters) > 0:
-#             # return Response("Duplicate Job attempted. Not allowed.", status=status.HTTP_400_BAD_REQUEST)
-#             return Response("Duplicate Job attempted. Not allowed.", status=status.HTTP_200_OK)
-#         else:
-#             newjob = JobMaster(run=minionrun, job_type=jobtype, last_read=0, read_count=0, complete=False,
-#                                running=False)
-#
-#             print("trying to make a job", newjob)
-#
-#             if request.data["reference"] != "null":
-#                 # if len(reference)>0:
-#                 newjob.reference = reference
-#             try:
-#                 newjob.save()
-#                 print("job created")
-#             except Exception as e:
-#                 print(e)
-#                 print("error")
-#             return Response("Job Created.", status=status.HTTP_200_OK)
-
-
 @api_view(['GET'])
 def tasks_detail_all(request, pk):
 
@@ -265,16 +230,19 @@ def task_control(request):
     :return: A status reflecting the state of the executed code
     """
     # Get the task object from django ORM
+
     job_master = JobMaster.objects.get(pk=request.data["flowcellJobId"])
+
+    if not (request.user == job_master.flowcell.owner or 
+            request.user.has_perm('run_analysis', job_master.flowcell)):
+
+        return Response("You do not have permission to perform this action.", status=403)
 
     action_type = request.data["actionType"]
 
     lookup_action_type = {1: "Reset", 2: "Pause", 3: "Delete"}
 
     action = lookup_action_type[action_type]
-
-    print(action)
-    print(job_master)
 
     unrecognised_action_message = "Apologies, but this action type was not recognised." \
                                   " It may have not been implemented yet."
@@ -432,4 +400,3 @@ def task_control(request):
         raise NotImplementedError
 
     return Response(return_message, status=200)
-
