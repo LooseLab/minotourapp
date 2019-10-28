@@ -2270,10 +2270,6 @@ def flowcell_sharing_delete(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)
 
-    if request.user != flowcell.owner:
-
-        return Response({"message": "You do not have the permission to execute this action."}, status=status.HTTP_400_BAD_REQUEST)
-
     data = request.data
 
     try:
@@ -2285,9 +2281,23 @@ def flowcell_sharing_delete(request, pk):
 
     permission = data['permission']
     
-    remove_perm(permission, user, flowcell)
+    # if request.user != flowcell.owner and request.user != user:
 
-    return Response({"message": "Permission deleted"}, status=status.HTTP_200_OK)
+    #     return Response({"message": "You do not have the permission to execute this action."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if request.user == user and user.has_perm(permission, flowcell):
+
+        remove_perm(permission, user, flowcell)
+        return Response({"message": "Permission deleted"}, status=status.HTTP_200_OK)
+
+    elif request.user == flowcell.owner:
+
+        remove_perm(permission, user, flowcell)
+        return Response({"message": "Permission deleted"}, status=status.HTTP_200_OK)
+
+    else:
+
+        return Response({"message": "You do not have the permission to execute this action."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 def flowcell_manager(request):
