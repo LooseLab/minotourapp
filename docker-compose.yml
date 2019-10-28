@@ -57,7 +57,7 @@ services:
         build:
             dockerfile: docker/celery.dockerfile
             context: .
-        command: bash -c "celery -A minotourapp beat -l info"
+        command: bash -c "celery -A minotourapp beat --pidfile=/opt/celeryd.pid -l info"
         container_name: celery
         environment:
             MT_DB_ENGINE: 'django.db.backends.mysql'
@@ -88,7 +88,7 @@ services:
         build:
             dockerfile: docker/celery-worker.dockerfile
             context: .
-        command: "celery -A minotourapp worker -l info"
+        command: "celery -A minotourapp worker --pidfile=/opt/celeryd.pid -l info"
         container_name: celery_worker
         environment:
             MT_DB_ENGINE: 'django.db.backends.mysql'
