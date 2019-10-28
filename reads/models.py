@@ -1523,7 +1523,8 @@ class FastqRead(models.Model):
         Barcode,
         on_delete=models.DO_NOTHING,
         related_name="rejection_status",
-        null=True
+        null=True,
+        blank=True,
     )
 
     barcode_name = models.CharField(
@@ -1791,7 +1792,9 @@ class FlowcellStatisticBarcode(models.Model):
 
     rejection_status = models.CharField(
         max_length=32,
-        default="Accepted"
+        default="Accepted",
+        null=True,
+        blank=True,
     )
 
     status = models.CharField(
@@ -1984,7 +1987,9 @@ class FlowcellHistogramSummary(models.Model):
 
     rejection_status = models.CharField(
         max_length=32,
-        default="Accepted"
+        default="Accepted",
+        null=True,
+        blank=True,
     )
 
     status = models.CharField(
@@ -2212,7 +2217,9 @@ class FlowcellSummaryBarcode(models.Model):
 
     rejection_status = models.CharField(
         max_length=32,
-        default="Accepted"
+        default="Accepted",
+        null=True,
+        blank=True,
     )
 
     status = models.CharField(
