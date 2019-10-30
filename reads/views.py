@@ -1088,10 +1088,17 @@ def flowcell_detail(request, pk):
             all_flowcell_list = Flowcell.objects.exclude(owner=request.user)
 
             for f in all_flowcell_list:
-                
+
                 if request.user.has_perm('view_data', f) or request.user.has_perm('run_analysis', f):
 
-                    flowcell_list.append(f)
+                    if search_criteria == 'id':
+                        pk = int(pk)
+                        if f.id == pk:
+                            flowcell_list.append(f)
+                    elif search_criteria == 'name':
+                        if f.name == pk:
+                            flowcell_list.append(f)
+
 
         # TODO look at the logic here, a user with two identical flowcells would crash this
 
@@ -2116,12 +2123,12 @@ def read_list_new(request):
 
         if serializer.is_valid():
 
-            print(serializer.validated_data)
+            #print(serializer.validated_data)
 
             logger.info('>>> received reads post - calling task - request.data size: {}'.format(len(request.data)))
 
             # save_reads.delay(request.data)
-            # save_reads(request.data)
+            save_reads(request.data)
 
             return Response({}, status=status.HTTP_201_CREATED)
 

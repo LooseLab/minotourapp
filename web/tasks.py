@@ -26,7 +26,7 @@ from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowce
 from reads.utils import getn50
 from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
-
+from reads.serializers import FastqReadSerializer
 
 from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
 
