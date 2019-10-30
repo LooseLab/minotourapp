@@ -53,6 +53,8 @@ from reads.serializers import (BarcodeSerializer, ChannelSummary,
                                RunSummaryBarcode, RunSummaryBarcodeSerializer)
 from reads.utils import get_coords, return_temp_empty_summary
 from readuntil.models import ExpectedBenefitChromosomes
+from web.tasks import save_reads
+
 
 logger = get_task_logger(__name__)
 
@@ -245,7 +247,15 @@ def run_list(request):
 
     if request.method == 'GET':
 
-        queryset = Run.objects.filter(owner=request.user).filter(to_delete=False)
+        flowcell_list = []
+
+        for flowcell in Flowcell.objects.all():
+            if request.user == flowcell.owner or request.user.has_perm('view_data', flowcell) or request.user.has_perm('run_analysis', flowcell):
+                flowcell_list.append(flowcell)
+
+        print(flowcell_list)
+
+        queryset = Run.objects.filter(flowcell__in=flowcell_list).filter(to_delete=False)
         serializer = RunSerializer(queryset, many=True, context={'request': request})
 
         return Response(serializer.data)
@@ -287,13 +297,19 @@ def run_detail(request, pk):
 
     search_criteria = request.GET.get('search_criteria', 'id')
 
+    flowcell_list = []  # TODO move the next 3 lines to a function
+
+    for flowcell in Flowcell.objects.all():
+        if request.user == flowcell.owner or request.user.has_perm('view_data', flowcell) or request.user.has_perm('run_analysis', flowcell):
+            flowcell_list.append(flowcell)
+
     if search_criteria == 'runid':
 
-        run_list = Run.objects.filter(owner=request.user).filter(runid=pk)
+        run_list = Run.objects.filter(flowcell__in=flowcell_list).filter(runid=pk)
 
     elif search_criteria == 'id':
 
-        run_list = Run.objects.filter(owner=request.user).filter(id=pk)
+        run_list = Run.objects.filter(flowcell__in=flowcell_list).filter(id=pk)
 
     else:
 
@@ -2096,32 +2112,24 @@ def read_list_new(request):
 
     elif request.method == 'POST':
 
-        # serializer = FastqReadSerializer(data=request.data, many=True)
+        serializer = FastqReadSerializer(data=request.data, many=True)
 
-        logger.info('>>> received reads post - calling task - request.data size: {}'.format(len(request.data)))
+        if serializer.is_valid():
 
-        # save_reads.delay(request.data)
-        save_reads(request.data)
+            print(serializer.validated_data)
 
-        return Response({}, status=status.HTTP_201_CREATED)
+            logger.info('>>> received reads post - calling task - request.data size: {}'.format(len(request.data)))
 
+            # save_reads.delay(request.data)
+            # save_reads(request.data)
 
-@task(rate_limit="100/m")
-def save_reads(data):
-    """
-    Save fastqreads sent by the client
-    :param data:
-    :return:
-    """
+            return Response({}, status=status.HTTP_201_CREATED)
 
-    serializer = FastqReadSerializer(data=data, many=True)
+        else:
 
-    if serializer.is_valid():
-        serializer.save()
-        logger.info('Saving reads with success')
+            logger.info('>>> received reads post - no valid data')
+            return Response({'message': 'no valid data'}, status=status.HTTP_400_BAD_REQUEST)
 
-    else:
-        logger.info('Saving reads with failure')
 
 
 @api_view(['GET'])

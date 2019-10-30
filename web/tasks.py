@@ -857,3 +857,21 @@ def update_flowcell_details(job_master_id):
 
     job_master.save()
 
+
+@task(rate_limit="100/m")
+def save_reads(data):
+    """
+    Save fastqreads sent by the client
+    :param data:
+    :return:
+    """
+
+    serializer = FastqReadSerializer(data=data, many=True)
+
+    if serializer.is_valid():
+        serializer.save()
+        logger.info('Saving reads with success')
+
+    else:
+        logger.info('Saving reads with failure')
+        
