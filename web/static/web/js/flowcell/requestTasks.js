@@ -215,13 +215,13 @@ function flowcellTaskHistoryTable(flowcellId) {
                     "width": "15%",
                     "render": function (data, type, full) {
                         if (!data["server_initiated"]) {
-                            return [`<a class="btn pause" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>`,
-                                `<a class="btn reset" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Restart </a>`,
-                                `<a class="btn delete" onclick="mTaskController.performActionOnTask(event, ${data.id}, 3)"><i class="fa fa-times"></i> Delete </a>`];
+                            return [`<a class="btn" id="pause_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>`,
+                                `<a class="btn" id="reset_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Reset </a>`,
+                                `<a class="btn" id="delete_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 3)"><i class="fa fa-times"></i> Delete </a>`];
                         }
                         else {
-                            return [`<a class="btn pause" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>`,
-                                `<a class="btn reset" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Restart </a>`];
+                            return [`<a class="btn" id="pause_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>`,
+                                `<a class="btn" id="reset_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Reset </a>`];
                         }
                     }
                 }
