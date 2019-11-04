@@ -47,7 +47,7 @@ Once a instance is up and running, a local data folder should have appeared alon
  make them available to minoTour.
  
  ```bash 
-docker exec python3 manage.py add_reference /var/lib/minotour/apps/localdata
+docker exec celery_worker python3 manage.py add_reference /var/lib/minotour/apps/localdata
 ```
 
 To add the centrifuge index to the docker container, create a folder called centrifuge_files in the localdata folder on your host system.
