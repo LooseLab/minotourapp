@@ -30,7 +30,7 @@ git checkout develop
 ``` 
  
 Use the following commands to build and start docker services 
-- <!-- Use docker-compose up web to fire up the web server if celere is not running -->-
+- <!-- Use 'docker-compose up web' if celere is not running -->-
 
 ```bash
 docker-compose build
@@ -47,8 +47,7 @@ docker-compose exec web python manage.py createsuperuser
 After a few seconds, you should be able to access minoTour at <http://localhost:8100/>
 
 
-## Development environment
-
+## Setting up development environment
 
 To set up a development environment, first clone or download the code from [our github page](https://github.com/LooseLab/minotourapp.git "Looselab's github page").
 
