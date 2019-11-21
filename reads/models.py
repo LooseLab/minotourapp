@@ -1792,7 +1792,7 @@ class FlowcellStatisticBarcode(models.Model):
 
     rejection_status = models.CharField(
         max_length=32,
-        default="Accepted",
+        default="Sequenced",
         null=True,
         blank=True,
     )
@@ -1987,7 +1987,7 @@ class FlowcellHistogramSummary(models.Model):
 
     rejection_status = models.CharField(
         max_length=32,
-        default="Accepted",
+        default="Sequenced",
         null=True,
         blank=True,
     )
@@ -2217,7 +2217,7 @@ class FlowcellSummaryBarcode(models.Model):
 
     rejection_status = models.CharField(
         max_length=32,
-        default="Accepted",
+        default="Sequenced",
         null=True,
         blank=True,
     )
