@@ -1,5 +1,6 @@
 function loadTasksForm() {
-    /*
+    /**
+     * @function
      * Loads create task's form and add event listeners
      */
     // Select the div for the dropdown
@@ -29,6 +30,8 @@ function loadTasksForm() {
                     // If it's metagenomics chosen
                     if (element["name"] == "Metagenomics") {
                         // Remove all the reference select options
+                        document.getElementById("id_reference").disabled = false;
+
                         while (reference_select.options.length > 0) {
                             reference_select.remove(0);
                         }
@@ -55,8 +58,11 @@ function loadTasksForm() {
                                 }
                             }
                         });
+                    } else if (element["name"] === "Reference Mapping"){
+                        document.getElementById("id_reference").disabled = false;
                     } else {
                         // if it's not for the metagenomics task we label the second dropdown reference
+                        document.getElementById("id_reference").disabled = true;
                         label.innerHTML = "Reference";
                         // remove all the current references
                         while (reference_select.options.length > 0) {
@@ -95,7 +101,7 @@ function loadTasksForm() {
     };
     // url to fetch all the available task types
     var url_task_type_list = "/api/v1/tasktypes/";
-    // fetch all available references
+    // fetch all available tasks types
     $.get(url_task_type_list, function (dataObj, statusText, xhr) {
         if (xhr.status != 200) console.log(`Error ${statusText}`);
         // get the data
@@ -149,6 +155,11 @@ function loadTasksForm() {
         }
     });
     // Do the same with the reference
+
+    if (document.getElementById("id_job_type").value !== "4"){
+        document.getElementById("id_reference").disabled=true;
+    }
+
     var url_reference_list = "/api/v1/reference/";
 
     $.get(url_reference_list, data => {
