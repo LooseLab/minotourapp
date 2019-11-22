@@ -246,7 +246,7 @@
   }
 }
 
-.ul.nav.nav-pills > li{
+ul.nav.nav-pills > li{
     cursor: pointer;
 }
 
