@@ -58,7 +58,8 @@ function loadTasksForm() {
                                 }
                             }
                         });
-                    } else if (element["name"] === "Reference Mapping"){
+                    } else if (element["name"] === "Minimap2"){
+                        console.log("Reference mappong");
                         document.getElementById("id_reference").disabled = false;
                     } else {
                         // if it's not for the metagenomics task we label the second dropdown reference
@@ -106,8 +107,6 @@ function loadTasksForm() {
         if (xhr.status != 200) console.log(`Error ${statusText}`);
         // get the data
         var data = dataObj['data'];
-
-        console.log(data);
         // create option placeholder
         var option = document.createElement("option");
 
@@ -130,7 +129,6 @@ function loadTasksForm() {
                 // get the index,
                 let index = data.map(function(x) {return x.description; }).indexOf(presentJob.textContent);
 
-                console.log(index);
                 // remove it from the freshly fetched chromosomes
                 data.splice(index, 1);
             }
