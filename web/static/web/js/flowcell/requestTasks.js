@@ -123,12 +123,10 @@ function loadTasksForm() {
             job_type_select.minotour_job_type_list = data; // OO rocks
         }
 
-        console.log(alreadyPresentJobs);
         // for each of the elements
         alreadyPresentJobs.forEach(function (presentJob) {
             // if the chromsome in already present chromsome is in the list of chromosomes fetched from the server
             if (data.some(e => e.description === presentJob.textContent)){
-                console.log(presentJob.textContent);
                 // get the index,
                 let index = data.map(function(x) {return x.description; }).indexOf(presentJob.textContent);
 
@@ -138,7 +136,6 @@ function loadTasksForm() {
             }
         });
 
-        console.log(data);
 
         if (!data.length) {return;}
 
