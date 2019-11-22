@@ -560,6 +560,12 @@ def delete_runs():
 
 @task
 def send_messages():
+    """
+    Send messages through the twitter API
+    Returns
+    -------
+
+    """
     new_messages = Message.objects.filter(delivered_date=None)
 
     for new_message in new_messages:
