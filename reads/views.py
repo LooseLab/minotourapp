@@ -1258,7 +1258,7 @@ def flowcell_statistics(request, pk):
 
     queryset = (
         FlowcellStatisticBarcode.objects.filter(flowcell=flowcell)
-        .filter(barcode_name__in=barcodes_list)
+        .filter(Q(barcode_name__in=barcodes_list) | Q(rejection_status__in=barcodes_list))
         .order_by("sample_time")
     )
 
@@ -1448,13 +1448,13 @@ def flowcell_histogram_summary(request, pk):
 
     max_bin_index = FlowcellHistogramSummary.objects \
         .filter(flowcell=flowcell) \
-        .filter(barcode_name=barcode_name) \
+        .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name)) \
         .aggregate(Max('bin_index'))
 
     # A list of tuples, distinct on barcode name, pass/fail, template
     key_list = (
         FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-        .filter(barcode_name=barcode_name)
+        .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
         .values_list(
             "barcode_name", "read_type_name", "rejection_status", "status"
         )
@@ -1467,7 +1467,7 @@ def flowcell_histogram_summary(request, pk):
         # query flowcell Histogram summary objects for all of the combinations under this barcode
         queryset = (
             FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-            .filter(barcode_name=barcode_name)
+            .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
             .filter(read_type_name=read_type_name)
             .filter(status=status)
             .filter(rejection_status=rejection_status)
