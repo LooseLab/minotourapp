@@ -1,12 +1,10 @@
 import datetime
-import hashlib
 import json
 from datetime import timedelta
 
 import dateutil.parser
 import numpy as np
 import pandas as pd
-from celery import task
 from celery.utils.log import get_task_logger
 from dateutil import parser
 from django.contrib.auth.decorators import login_required
@@ -19,7 +17,6 @@ from django.shortcuts import render
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
-from rest_framework.generics import ListCreateAPIView
 from rest_framework.response import Response
 
 from alignment.models import PafRoughCov
@@ -34,7 +31,7 @@ from reads.models import (Barcode, FastqFile, FastqRead, FastqReadType,
                           FlowcellSummaryBarcode, GroupRun, MinION,
                           MinIONControl, MinIONEvent, MinIONEventType,
                           MinionMessage, MinIONRunStats, MinIONRunStatus,
-                          MinIONScripts, MinIONStatus, Run, RunSummary)
+                          MinIONScripts, MinIONStatus, Run)
 from reads.serializers import (BarcodeSerializer, ChannelSummary,
                                ChannelSummarySerializer, FastqFileSerializer,
                                FastqReadGetSerializer, FastqReadSerializer,
