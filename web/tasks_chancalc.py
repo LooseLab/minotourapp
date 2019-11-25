@@ -21,8 +21,6 @@ from reads.services import (
     save_flowcell_histogram_summary,
     save_flowcell_channel_summary,
 )
-from readuntil.models import RejectedFastqRead, AcceptedFastqRead
-from reads.models import Barcode
 
 
 logger = get_task_logger(__name__)
@@ -159,8 +157,6 @@ def chancalc(flowcell_id, job_master_id, last_read):
     flowcell = Flowcell.objects.get(pk=flowcell_id)
 
     runs = flowcell.runs.all()
-
-    compare_read_ids(flowcell, runs)
 
     chunk_size = 50000
     # Get the fastq data
