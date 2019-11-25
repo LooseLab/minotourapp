@@ -44,7 +44,6 @@
 
 {% block javascript %}
     <script>
-
         var table_all_runs;
 
         $(document).ready(function () {
@@ -56,12 +55,18 @@
             };
 
             table_all_runs = $('#all-runs').DataTable({
+                // callback for each created row, add styling class so cursor is pointer showing it's a link
+                "createdRow": function (row, data, index) {
+                    $(row).addClass("stylable");
+                },
+
                 "scrollX": true,
                 "order": [[3, "desc"]],
                 'ajax': {
                     'url': "{% url 'flowcell-list' %}",
 
                 },
+
                 'columnDefs': [
                     {
                         'targets': 0,
@@ -110,16 +115,16 @@
                         'targets': 8,
                         'data': "total_read_length",
                         render: function (data, type, row) {
-                            console.log(typeof data);
+                            {#console.log(typeof data);#}
+                            console.log("read lenght");
+                            // The below function returns the read length in a human readable format
                             if (type === "display" || type === "filter") {
                                 {#var data = data;#}
                                 var UNITS = ["", "k", "M", "G", "T", "P", "E", "Z"];
                                 var factor = 1000;
                                 var suffix = "b";
                                 for (var i = 0; i < UNITS.length; i++) {
-                                    console.log(UNITS[i]);
                                     if (Math.abs(data) < factor) {
-                                        console.log("factor");
                                         data = data.toFixed(2);
                                         if (/\.00$/.test(data)) {
                                             data = data.substr(0, data.length - 3);
@@ -164,10 +169,25 @@
                     },
                 ]
             });
+            // When we've drawn the table, make the whole row clickable, links to it's flowcell
+            table_all_runs.on("draw", function () {
+
+                // create a fake element
+                // add the rows HTML
+                // Get the href from the Cell
+                table_all_runs.on("click", "tbody tr", function () {
+                    let el = $('<div></div>');
+                    el.html($(this)[0].outerHTML);
+
+                    window.location.href = $('a', el)[0].href
+                });
+            });
+
 
             set_active_navbar_item(0);
 
-        });
+        })
+        ;
 
 
     </script>

@@ -20,7 +20,7 @@
 
                 <!-- Collect the nav links, forms, and other content for toggling -->
                 <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-                    <ul class="nav navbar-nav">
+                    <ul class="nav h navbar-nav">
                         <li class="active">
                             <a href="{% url 'flowcells' %}">
                                 <i class="fa fa-table fa-fw"></i><span> Flowcells</span>
@@ -36,8 +36,14 @@
                                 <i class="fa fa-cloud-upload-alt fa-fw"></i><span> Client </span>
                             </a>
                         </li>
-                         <li>
-                            <a href="{% url 'minup' %}">
+                        <li>
+                            <a href="{% url 'messages' %}">
+                                <i class="fa fa-envelope fa-fw"></i>
+                                <span> Messages </span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'flowcell_manager' %}">
                                 <i class="fa fa-cloud-upload-alt fa-fw"></i><span> Flow Cell Manager </span>
                             </a>
                         </li>
