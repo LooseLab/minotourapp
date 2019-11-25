@@ -38,7 +38,6 @@ class MTaskController {
 
         // If this is metagenomics - set the reference value to null and the target set id instead
         if (this._select_job_type.value === "10") {
-            console.log("conditional");
             // the target set text
             this._target_set = this._select_reference[this._select_reference.selectedIndex].text;
             this._reference_id = null;
@@ -67,6 +66,11 @@ class MTaskController {
             if (this.readyState === XMLHttpRequest.DONE) {
                 // if successful
                 if (this.status === 200) {
+
+                    // If we have succesfully started a Delete flowcell task, return to the flowcell page
+                    if (self._select_job_type.value === "11"){
+                        window.location.href="/";
+                    }
                     // change the message to
                     self._message.texto = 'Task successfully created!';
                     // update the message element to show the text
@@ -133,7 +137,6 @@ class MTaskController {
     }
 
     performActionOnTask(event, flowcellJobId, actionType) {
-        console.log("Perofmring action");
         let csrftoken = getCookie('csrftoken');
         // new request
         let xhr = new XMLHttpRequest();
@@ -151,8 +154,6 @@ class MTaskController {
         let action = lookup_action_type[actionType];
 
         if (action === "Delete") {
-            console.log("Removing delete button");
-            console.log(`${action.toLowerCase()}_${flowcellJobId}`);
             let element = document.getElementById(`${action.toLowerCase()}_${flowcellJobId}`);
             element.style.visibility = "hidden";
         }
@@ -182,7 +183,6 @@ class MTaskController {
 
 
                 } else {
-                    console.log(this);
                     // something went wrong
                     self._message.texto = 'Something went wrong. Please check the following message. ' + this.responseText;
                     // update the message element to show the error text

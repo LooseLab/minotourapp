@@ -48,7 +48,7 @@ def signup(request):
 
 @login_required
 def private_index(request):
-    return render(request, 'web/private_index.html')
+    return render(request, 'web/about_nav.html')
 
 
 @login_required
@@ -103,7 +103,7 @@ def minup(request):
 
 @login_required
 def tutorial(request):
-    return render(request, 'web/tutorial.html')
+    return render(request, 'web/help.html')
 
 
 @login_required
@@ -413,7 +413,33 @@ def metagenomics_data_download(request, pk):
 
 
 def flowcell_manager(request):
-    # flowcells = Flowcell.objects.filter(owner=request.user)
-    return render(request, 'reads/flowcell_manager.html', context={'flowcell_manager': flowcell_manager})
+    """
+    Returns the flowcell manager HTML
+    Parameters
+    ----------
+    request: django.core.handlers.wsgi.WSGIRequest
 
+    Returns
+    -------
+    The flowcell manager page HTML template
+    """
+    # flowcells = Flowcell.objects.filter(owner=request.user)
+    return render(request, 'web/flowcell_manager.html', context={'flowcell_manager': flowcell_manager})
+
+
+def render_messages(request):
+    """
+    Return the messages html to display messages on the profile tab.
+    Parameters
+    ----------
+    request: django.core.handlers.wsgi.WSGIRequest
+        The request object for this AJAX call
+
+    Returns
+    -------
+    The messages page HTML template
+    """
+    messages = Message.objects.filter(recipient=request.user).order_by('-created_date')
+
+    return render(request, 'web/messages.html', context={"messages": messages})
 
