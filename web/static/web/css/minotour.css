@@ -255,3 +255,7 @@ ul.nav.nav-pills > li{
     border-top: none;
     margin-top: 3px ;
 }
+
+tr.stylable {
+    cursor: pointer;
+}
