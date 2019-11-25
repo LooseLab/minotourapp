@@ -2313,8 +2313,3 @@ def flowcell_sharing_delete(request, pk):
     else:
 
         return Response({"message": "You do not have the permission to execute this action."}, status=status.HTTP_400_BAD_REQUEST)
-
-
-def flowcell_manager(request):
-    # flowcells = Flowcell.objects.filter(owner=request.user)
-    return render(request, 'reads/flowcell_manager.html', context={'flowcell_manager': flowcell_manager})
