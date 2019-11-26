@@ -102,10 +102,12 @@ def centrifuge_metadata(request):
 
     # this bool tells the javascript whether not to place the metadata in the validation
     #  set panel or the analysis results panel
-    if job_master.target_set:
-        validation_table_present = True
-    else:
+    print(job_master.target_set)
+    if job_master.target_set == "-- select an option --" or job_master.target_set is "" or job_master.target_set is None:
         validation_table_present = False
+    else:
+        print("Showing validation table")
+        validation_table_present = True
 
     return_list = {"validation": validation_table_present, "result": [{"key": "Reads Sequenced: ", "value": number_of_reads},
                    {"key": "Reads Analysed: ", "value": str(reads_class) + " (" + str(percentage) + "%)"},

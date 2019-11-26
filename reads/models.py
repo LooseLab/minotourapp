@@ -348,7 +348,7 @@ class MinIONControl(models.Model):
     :modified_date: The date that this as last modified
     """
     minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minioncontrol',
-                               on_delete=models.DO_NOTHING,
+                               on_delete=models.CASCADE,
                                )
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='controlcontrol',
                               on_delete=models.DO_NOTHING,
@@ -716,7 +716,7 @@ class MinIONStatus(models.Model):  # TODO Rename class for logical consistency
 
         MinION,
         related_name='currentdetails',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
 
     )
 
@@ -1332,7 +1332,7 @@ class MinIONEvent(models.Model):
     minION = models.ForeignKey(
 
         MinION, related_name='events',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
 
     )
 
@@ -1386,7 +1386,7 @@ class MinIONScripts(models.Model):
 
         MinION,
         related_name='scripts',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
     )
 
     identifier = models.CharField(
@@ -1523,7 +1523,8 @@ class FastqRead(models.Model):
         Barcode,
         on_delete=models.DO_NOTHING,
         related_name="rejection_status",
-        null=True
+        null=True,
+        blank=True,
     )
 
     barcode_name = models.CharField(
@@ -1645,7 +1646,7 @@ class MinionMessage(models.Model):
     minion = models.ForeignKey(
         MinION,
         related_name='messages',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
     )
 
     run = models.ForeignKey(
@@ -1791,7 +1792,9 @@ class FlowcellStatisticBarcode(models.Model):
 
     rejection_status = models.CharField(
         max_length=32,
-        default="Accepted"
+        default="Sequenced",
+        null=True,
+        blank=True,
     )
 
     status = models.CharField(
@@ -1984,7 +1987,9 @@ class FlowcellHistogramSummary(models.Model):
 
     rejection_status = models.CharField(
         max_length=32,
-        default="Accepted"
+        default="Sequenced",
+        null=True,
+        blank=True,
     )
 
     status = models.CharField(
@@ -2212,7 +2217,9 @@ class FlowcellSummaryBarcode(models.Model):
 
     rejection_status = models.CharField(
         max_length=32,
-        default="Accepted"
+        default="Sequenced",
+        null=True,
+        blank=True,
     )
 
     status = models.CharField(
