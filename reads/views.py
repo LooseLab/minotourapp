@@ -1,12 +1,10 @@
 import datetime
-import hashlib
 import json
 from datetime import timedelta
 
 import dateutil.parser
 import numpy as np
 import pandas as pd
-from celery import task
 from celery.utils.log import get_task_logger
 from dateutil import parser
 from django.contrib.auth.decorators import login_required
@@ -19,7 +17,6 @@ from django.shortcuts import render
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
-from rest_framework.generics import ListCreateAPIView
 from rest_framework.response import Response
 
 from alignment.models import PafRoughCov
@@ -34,7 +31,7 @@ from reads.models import (Barcode, FastqFile, FastqRead, FastqReadType,
                           FlowcellSummaryBarcode, GroupRun, MinION,
                           MinIONControl, MinIONEvent, MinIONEventType,
                           MinionMessage, MinIONRunStats, MinIONRunStatus,
-                          MinIONScripts, MinIONStatus, Run, RunSummary)
+                          MinIONScripts, MinIONStatus, Run)
 from reads.serializers import (BarcodeSerializer, ChannelSummary,
                                ChannelSummarySerializer, FastqFileSerializer,
                                FastqReadGetSerializer, FastqReadSerializer,
@@ -1718,7 +1715,7 @@ def flowcell_run_basecalled_summary_html(request, pk):
             print('RunSummary does not exist for run {}'.format(run.id))
 
             run_summary_obj = return_temp_empty_summary(run)
-            
+
             run_summary = {
                 'runid': "Unavailable",
                 'read_count': "Unavailable",
@@ -2254,12 +2251,12 @@ def flowcell_sharing(request, pk):
 
         for user in users:
 
-            if user != flowcell.owner:
+            if user != flowcell.owner and not user.is_superuser:
 
                 if user.has_perm('view_data', flowcell):
 
                     permission_list.append({
-                        "username": user.username, 
+                        "username": user.username,
                         'permission': 'VIEW DATA',
                         'permission_code': 'view_data',
                         'user': user.id,
@@ -2268,7 +2265,7 @@ def flowcell_sharing(request, pk):
                 if user.has_perm('run_analysis', flowcell):
 
                     permission_list.append({
-                        "username": user.username, 
+                        "username": user.username,
                         'permission': 'RUN ANALYSIS',
                         'permission_code': 'run_analysis',
                         'user': user.id,
@@ -2295,7 +2292,7 @@ def flowcell_sharing_delete(request, pk):
         return Response({"message": "User does not exist."}, status=status.HTTP_404_NOT_FOUND)
 
     permission = data['permission']
-    
+
     # if request.user != flowcell.owner and request.user != user:
 
     #     return Response({"message": "You do not have the permission to execute this action."}, status=status.HTTP_400_BAD_REQUEST)
