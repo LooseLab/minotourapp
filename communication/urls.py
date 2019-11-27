@@ -1,15 +1,20 @@
 from django.conf.urls import url
-
 from communication import views
 
 urlpatterns = [
     url(
-        r'^api/v1/messages/$',
-        views.new_messages_list,
-        name="messages-list"),
-    url(
-        r'^messages/(?P<pk>[0-9]+)/$',
-        views.message_details,
-        name="message-detail"
+        r'^api/v1/messages/create_conditions$',
+        views.get_or_create_conditions,
+        name="create_conditions"
     ),
+    url(
+        r'^api/v1/messages/retrieve_messages',
+        views.retrieve_messages,
+        name="retrieve_messages"
+    ),
+    url(
+        r'^api/v1/messages/retrieve_conditions$',
+        views.get_or_create_conditions,
+        name="retrieve_conditions"
+    )
 ]
