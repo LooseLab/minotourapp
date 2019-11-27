@@ -1527,6 +1527,10 @@ class FastqRead(models.Model):
         blank=True,
     )
 
+    archived = models.BooleanField(
+        default=False
+    )
+
     barcode_name = models.CharField(
         db_index=True,
         max_length=32,
@@ -1598,37 +1602,6 @@ class FastqRead(models.Model):
     def __str__(self):
         #return "1"
         return str(self.read_id)
-
-'''
-class FastqReadExtra(models.Model):
-    """
-    :purpose: If the user choose to send the read sequence and fastq quality, this is the model that is used to store it
-
-    Fields:
-    :fastqread: One to One field linking each fastqread object to its fastqreadextra counterpart
-    :sequence: The read Sequence
-    :quality: The fastq quality chars
-    """
-    fastqread = models.OneToOneField(
-        FastqRead,
-        on_delete=models.CASCADE,
-        related_name='fastqreadextra'
-    )
-
-    sequence = models.TextField(
-        blank=True,
-        null=True
-    )
-
-    quality = models.TextField(
-        blank=True,
-        null=True,
-    )
-
-    def __str__(self):
-        return str(self.id)
-        
-'''
 
 
 class MinionMessage(models.Model):
