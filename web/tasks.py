@@ -143,7 +143,7 @@ def run_monitor():
 def run_delete_flowcell(flowcell_job_id):
     """
     The function called in monitorapp to delete a flowcell
-    :param flowcell_job_id: The ID of the JobMaster database entry
+    :param flowcell_job_id: The primary key of the JobMaster database entry
     :return:
     """
 
