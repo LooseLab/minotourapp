@@ -57,6 +57,10 @@
                     <a class="flowcell-tab"
                        onclick="flowcellController.flowcell_tab_controller.toggle_tab_content('sharing')">Sharing</a>
                 </li>
+                <li role="presentation" class="nav_flowcell hidden" id="nav-notifications" >
+                    <a class="flowcell-tab"
+                       onclick="flowcellController.flowcell_tab_controller.toggle_tab_content('notifications')">Notifications</a>
+                </li>
             </ul>
 
             <br/>
@@ -105,6 +109,10 @@
 
                 <div id="tab-sharing" class="tab-pane">
                     {% include "web/flowcell/sharing.html" %}
+                </div>
+
+                <div id="tab-notifications" class="tab-pane">
+                    {% include "web/flowcell/notification-manager.html" %}
                 </div>
             </div>
 
@@ -157,5 +165,7 @@
         var mSharingController = new MSharingController(input_flowcell_id.value);
 
         var flowcellController = new FlowcellController(input_flowcell_id.value);
+
+        var notificationsController = new FlowcellNotificationController(input_flowcell_id.value);
     </script>
 {% endblock %}

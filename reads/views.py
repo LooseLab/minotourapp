@@ -1916,10 +1916,16 @@ def flowcell_tabs_details(request, pk):
             "id": "tab-sharing",
             "title": "Sharing",
             "position": 10
+        },
+        "Notifications": {
+            "id": "tab-notifications",
+            "title": "Notifications",
+            "position": 11
         }
+
     }
 
-    tabs = ['summary-data', 'tasks', 'sharing']
+    tabs = ['summary-data', 'tasks', 'sharing', "notifications"]
 
     #
     # Check for basecalled data

@@ -18,6 +18,7 @@ class FlowcellTabController {
         this._nav_metagenomics = document.querySelector('#nav-metagenomics');
         this._nav_tasks = document.querySelector('#nav-tasks');
         this._nav_sharing = document.querySelector('#nav-sharing');
+        this._nav_notifications = document.querySelector('#nav-notifications');
 
         this._all_navs = [
 
@@ -30,7 +31,8 @@ class FlowcellTabController {
             this._nav_sequence_assembly,
             this._nav_metagenomics,
             this._nav_tasks,
-            this._nav_sharing
+            this._nav_sharing,
+            this._nav_notifications
         ];
 
         this._tab_summary_data = document.querySelector('#tab-summary-data');
@@ -43,6 +45,7 @@ class FlowcellTabController {
         this._tab_metagenomics = document.querySelector('#tab-metagenomics');
         this._tab_tasks = document.querySelector('#tab-tasks');
         this._tab_sharing = document.querySelector('#tab-sharing');
+        this._tab_notifications = document.querySelector('#tab-notifications');
 
         this._all_tabs = [
 
@@ -55,7 +58,8 @@ class FlowcellTabController {
             this._tab_sequence_assembly,
             this._tab_metagenomics,
             this._tab_tasks,
-            this._tab_sharing
+            this._tab_sharing,
+            this._tab_notifications
         ];
 
         this._tabs = new FlowcellTabList();
@@ -153,13 +157,16 @@ class FlowcellTabController {
 
                 this.toggle_content(this._nav_tasks, this._tab_tasks);
                 break;
-    
+
             case 'nav-sharing':
 
                 this.toggle_content(this._nav_sharing, this._tab_sharing);
                 break;
 
-            }
+            case 'nav-notifications':
+                this.toggle_content(this._nav_notifications, this._tab_notifications);
+                break;
+        }
     }
 
     toggle_content(nav, tab) {
@@ -223,7 +230,12 @@ class FlowcellTabController {
                 case 'sharing':
 
                     this._nav_sharing.classList.remove('hidden');
-                    break;                    
+                    break;
+
+                case 'notifications':
+
+                    this._nav_notifications.classList.remove("hidden");
+                    break;
             }
         });
     }
