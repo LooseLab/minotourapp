@@ -2,7 +2,17 @@
     This is a trial/ work in progress
     so for now you can only choose coverage and an amount, and see what notifications you're waiting for
 
-    <form method="post" id="post-form-task-create" onsubmit="mTaskController.create_new_job(event)>
-
+    <form method="post" id="post-form-task-create" onsubmit="">
+         {% csrf_token %}
+        <label>
+            <input value="coverage" type="checkbox" name="coverage">
+            <input value="coverageAmount" type="text" name="voaverageAmount">
+        </label> Coverage
+        <label>
+            <input value="mux" type="checkbox" name="coverage">
+        </label> Mux Results
+        <label>
+            <input value="targetAdded" type="checkbox" name="newTarget">
+        </label> New Target
     </form>
 </div>
