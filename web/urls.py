@@ -16,7 +16,9 @@ urlpatterns = [
     url(r'^private/experiments/(?P<pk>[0-9]+)/$', views.experiments_update, name='experiment-update'),
     url(r'^private/experiments/create/$', views.experiments_create, name='experiment-create'),
     url(r'^private/experiments/(?P<pk>[0-9]+)/delete/$', views.ExperimentDelete.as_view(), name='experiment-delete'),
-    url(r'^private/flowcell_manager/$', views.flowcell_manager, name='flowcell_manager'),
+    url(r'^private/flowcell_manager/$', views.flowcell_manager, name='flowcell-manager'),
+    url(r'^private/flowcell_manager/(?P<pk>[0-9]+)/$', views.flowcell_manager_runs, name='flowcell-manager-runs'),
+    url(r'^private/flowcell_manager/(?P<pk>[0-9]+)/split/$', views.flowcell_manager_runs_split, name='flowcell-manager-runs-split'),
     #
     # The links below generate CSV
     #

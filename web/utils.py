@@ -1,12 +1,14 @@
-import re,sys,os
-
-import time
-
-import numpy as np
-import collections
-from functools import lru_cache
-import math
 import datetime
+import math
+import re
+import sys
+import time
+from functools import lru_cache
+
+import collections
+import numpy as np
+
+from reads.models import Flowcell, MinIONRunStatus, Run
 
 
 def update_last_activity_time(flowcell):
@@ -414,35 +416,136 @@ def parseMDPAF(pafline):
     return mutArr, matArr, mapstart, t1 - t0
 
 
-def readpaf(lines, paffile='allreadscigar.paf', reflen=5528445):
-    paffile = '/Users/mbzros/FAK22471_5ca607ebedbc205cbd837ceb6937de2bfd07e760_0.fastq_output_cigar_md.paf'
-    # open file containing example reads
-    file = open(paffile, "r")
-    # simple counter to limit processing time
-    counter = 0
-    # line limit
-    lines = lines
+def get_run_details(run_id):
 
-    # Zero array to hold counts for mismatches and matches of same length as reference
-    mismatchholdarray = np.zeros(reflen)
-    matchholdarray = np.zeros(reflen)
+    flowcell = Flowcell.objects.get(pk=run_id)
 
-    # Array to hold information on total coverage of genome
-    coveragearray = np.zeros(reflen)
+    result = {}
 
-    # Loop through file to read in paf file output and parse MD flag
-    for line in file:
-        mismatcharray, matcharray, mapstart, runstart = parseMDPAF(line)
-        mismatchholdarray[mapstart:mapstart + len(mismatcharray)] += mismatcharray
-        matchholdarray[mapstart:mapstart + len(matcharray)] += matcharray
-        counter += 1
-        # Escape when we have processed max reads for this test.
-        if counter >= lines:
-            break
+    for run in flowcell.runs.all():
 
-    coveragearray = np.sum([matchholdarray, mismatchholdarray], axis=0)
+        element = {
+            'id': None,
+            'runid': None,
+            'run_start_time': None,
+            'first_read': None,
+            'last_read': None,
+            'minknow_computer_name': None,
+            'minion_id': None,
+            'asic_id': None,
+            'sequencing_kit': None,
+            'purpose': None,
+            'minknow_version': None,
+            'flowcell_type': None,
+            'flowcell_id': None,
+            'sample_name': None,
+            'experiment_name': None,
+            'read_count': None,
+            'total_read_length': None,
+            'max_read_length': None,
+            'min_read_length': None,
+            'avg_read_length': None,
+            'first_read_start_time': None,
+            'last_read_start_time': None,
+        }
 
-    # print (mismatchholdarray[0:100])
-    # print (matchholdarray[0:100])
-    # print (coveragearray[0:100])
-    return coveragearray, matchholdarray, mismatchholdarray
+        minion_run_status_list = MinIONRunStatus.objects.filter(run_id=run).order_by('minKNOW_start_time')
+
+        if len(minion_run_status_list) > 0:
+
+            minion_run_status = minion_run_status_list[0]
+
+            element['id'] = minion_run_status.run_id.id
+            element['runid'] = minion_run_status.run_id.runid
+            element['run_start_time'] = minion_run_status.minKNOW_start_time
+            element['minknow_computer_name'] = minion_run_status.minKNOW_computer
+            element['minion_id'] = minion_run_status.minION.minION_name
+            element['asic_id'] = minion_run_status.minKNOW_asic_id
+            element['sequencing_kit'] = minion_run_status.sequencing_kit
+            element['purpose'] = minion_run_status.minKNOW_exp_script_purpose
+            element['minknow_version'] = minion_run_status.minKNOW_version
+            element['flowcell_type'] = minion_run_status.flowcell_type
+            element['flowcell_id'] = minion_run_status.minKNOW_flow_cell_id
+            element['sample_name'] = minion_run_status.minKNOW_sample_name
+            element['experiment_name'] = minion_run_status.experiment_id
+
+            result[element['runid']] = element
+
+    result_basecalled_summary = []
+
+    for run in flowcell.runs.all():
+
+        if hasattr(run, "summary"):
+
+            runid = run.summary.run.runid
+
+            if runid in result.keys():
+
+                result[runid]['read_count'] = run.summary.read_count
+                result[runid]['total_read_length'] = run.summary.total_read_length
+                result[runid]['max_read_length'] = run.summary.max_read_length
+                result[runid]['min_read_length'] = run.summary.min_read_length
+                result[runid]['avg_read_length'] = run.summary.avg_read_length
+                result[runid]['first_read_start_time'] = run.summary.first_read_start_time
+                result[runid]['last_read_start_time'] = run.summary.last_read_start_time
+
+            else:
+
+                element = {
+                    'runid': None,
+                    'run_start_time': None,
+                    'first_read': None,
+                    'last_read': None,
+                    'minknow_computer_name': None,
+                    'minion_id': None,
+                    'asic_id': None,
+                    'sequencing_kit': None,
+                    'purpose': None,
+                    'minknow_version': None,
+                    'flowcell_type': None,
+                    'flowcell_id': None,
+                    'sample_name': None,
+                    'experiment_name': None,
+                    'read_count': None,
+                    'total_read_length': None,
+                    'max_read_length': None,
+                    'min_read_length': None,
+                    'avg_read_length': None,
+                    'first_read_start_time': None,
+                    'last_read_start_time': None,
+                }
+
+                element['id'] = run.id
+                element['runid'] = run.summary.run.runid
+                element['read_count'] = run.summary.read_count
+                element['total_read_length'] = run.summary.total_read_length
+                element['max_read_length'] = run.summary.max_read_length
+                element['min_read_length'] = run.summary.min_read_length
+                element['avg_read_length'] = run.summary.avg_read_length
+                element['first_read_start_time'] = run.summary.first_read_start_time
+                element['last_read_start_time'] = run.summary.last_read_start_time
+
+                result[element['runid']] = element
+
+    return result.values()
+
+
+def split_flowcell(existing_or_new_flowcell, from_flowcell_id, to_flowcell_id, to_flowcell_name, run_id):
+    """
+    Split the flowcell in two flowcells
+    """
+
+    print('existing_or_new_flowcell: {}'.format(existing_or_new_flowcell))
+    print('from_flowcell_id: {}'.format(from_flowcell_id))
+    print('to_flowcell_id: {}'.format(to_flowcell_id))
+    print('to_flowcell_name: {}'.format(to_flowcell_name))
+    print('run_id: {}'.format(run_id))
+
+    flowcell = Flowcell.objects.get(pk=from_flowcell_id)
+    run = Run.objects.get(pk=run_id)
+
+    if existing_or_new_flowcell == 'new':
+        pass
+
+    else:
+        pass

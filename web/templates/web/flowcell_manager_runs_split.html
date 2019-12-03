@@ -1,0 +1,38 @@
+{% extends "web/template_private.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+
+    <div class="content-wrapper" style="background-color: white">
+
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+            <h1>Flowcell Management
+                <small> - select a Run.</small>
+            </h1>
+        </section>
+
+        <!-- Main content -->
+        <section class="content">
+
+            <div class="row">
+                <div class="col-md-12">
+
+                    Thanks
+                </div>
+            </div>
+        </section>
+    </div>
+{% endblock %}
+
+{% block javascript %}
+    <script>
+
+        $(document).ready(function () {
+
+            set_active_navbar_item(3);
+
+        });
+    </script>
+{% endblock %}
