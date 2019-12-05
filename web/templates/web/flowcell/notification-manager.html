@@ -6,12 +6,20 @@
          {% csrf_token %}
         <label for="coverage"> Coverage
             <input id="coverage" value="coverage" type="checkbox" name="coverage">
-        </label> <br>
-        <label> Coverage Depth
+        </label>
+        <label for="coverageAmount"> Coverage Depth
             <input id="coverageAmount" value="coverageAmount" type="text" name="coverageAmount">
-        </label> <br>
+        </label>
+        <label for="reference"> Reference mapped against
+            <select name="reference" id="reference" multiple data-select="false"></select>
+        </label>
+        <label for="notification_barcodes"> Barcodes
+            <select name="barcode" id="notification_barcodes" multiple data-select="false">
+            </select>
+        </label>
+        <br>
         <label for="mux"> Mux Results
-            <input id="mux" value="mux" type="checkbox" name="coverage">
+            <input id="mux" value="mux" type="checkbox" name="mux">
         </label><br>
         <label for="targets">New Target
             <input id="targets" value="targetAdded" type="checkbox" name="newTarget">
