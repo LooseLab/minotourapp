@@ -5,6 +5,7 @@ class FlowcellTabController {
     constructor(flowcell_id) {
 
         this._flowcell_id = flowcell_id;
+        sessionStorage.setItem("flowcellID", this._flowcell_id);
 
         this._flowcell_selected_tab = document.querySelector('#flowcell-selected-tab');
 
@@ -68,7 +69,6 @@ class FlowcellTabController {
 
         this.draw_tabs();
 
-
         this._redraw_interval = setInterval(() => this.redraw_tabs(), 30000);
     }
 
@@ -79,7 +79,10 @@ class FlowcellTabController {
         promise1.then((tabs) => {
 
             this.show_tabs(tabs);
-            this.toggle_tab_content("summary-data");
+            let storedFlowcellId = sessionStorage.getItem("flowcellID");
+            let seshTab = sessionStorage.getItem("tabName");
+            let activeTab = (seshTab !== null) ? seshTab : "summary-data";
+            this.toggle_tab_content(activeTab);
         });
     }
 
@@ -174,6 +177,8 @@ class FlowcellTabController {
         nav.classList.add('active');
         tab.classList.remove('hidden');
         tab.classList.add('show');
+        console.log(tab);
+        sessionStorage.setItem("tabName", tab.id.substr(4));
         app.requestData(this._flowcell_id);
     }
 
