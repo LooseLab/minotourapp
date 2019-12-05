@@ -119,6 +119,9 @@ function requestData(flowcell_id) {
 
             this.requestGfaData(flowcell_id);
 
+        } else if (flowcell_selected_tab_input.value == "nav-notifications") {
+            notificationsController.getReferencesForDataList();
         }
+
     }).bind(this));
 };
