@@ -58,8 +58,8 @@ function loadTasksForm() {
                                 }
                             }
                         });
+                        // if it's a minimap2 task, make the reference select box to be usable.
                     } else if (element["name"] === "Minimap2"){
-                        console.log("Reference mappong");
                         document.getElementById("id_reference").disabled = false;
                     } else {
                         // if it's not for the metagenomics task we label the second dropdown reference
