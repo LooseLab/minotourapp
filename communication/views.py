@@ -2,9 +2,9 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from communication.models import NotificationConditions
 from communication.models import Message
 from communication.serializers import MessageSerializer
-
 
 # @api_view(['GET'])
 # def new_messages_list(request):
@@ -25,6 +25,7 @@ from communication.serializers import MessageSerializer
 #            'message': message,
 #         }
 #     )
+from reads.models import Flowcell
 
 
 @api_view(["GET", "POST"])
@@ -34,16 +35,22 @@ def get_or_create_conditions(request):
     Create the conditions that the user will be notified about if they are met. Chosen from notifications-manager.html.
     Parameters
     ----------
-    request: django.core.handlers.wsgi.WSGIRequest
+    request: rest_framework.request.Request
+        The django rest framework request object. Contains the flowcell PK and a list of the conditions.
 
     Returns
     -------
-
+    rest_framework.response.Response
     """
+    condition_lookup = {"coverage": "cov", "newTarget": "targ", "mux": "mux"}
+
     if request.method == "POST":
         print(request.data)
+        print(type(request))
 
-        flowcell = request.data.get("flowcell", None)
+        flowcell_pk = request.data.get("flowcell", None)
+
+        flowcell = Flowcell.objects.get(pk=flowcell_pk)
 
         conditions = request.data.get("conditions", None)
 
@@ -52,12 +59,22 @@ def get_or_create_conditions(request):
         if conditions is None:
             return Response("No conditions submitted", status=400)
 
-        for condition in conditions:
-            pass
+        for condition, value in conditions.items():
 
+            repeat = False
 
+            if condition is not "coverage":
+                repeat = True
 
-        return Response("Hello", status=200)
+            cond = NotificationConditions(notification_type=condition_lookup[condition],
+                                          flowcell=flowcell,
+                                          creating_user=request.user,
+                                          repeat=repeat,
+                                          coverage_target=value
+                                          )
+            cond.save()
+
+        return Response("Successfully saved notification conditions.", status=200)
 
 
 @api_view(["GET"])
