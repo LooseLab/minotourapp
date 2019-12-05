@@ -10,89 +10,52 @@ from reference.models import ReferenceInfo, ReferenceLine
 class PafStore(models.Model):
 
     job_master = models.ForeignKey(
-
-        JobMaster,
-        on_delete=models.CASCADE,
-        related_name='pafstore_list'
+        JobMaster, on_delete=models.CASCADE, related_name="pafstore_list"
     )
 
     flowcell = models.ForeignKey(  # TODO delete - read from job_master.flowcell
-
         Flowcell,
         on_delete=models.CASCADE,
-        related_name='flowcellpafalignemnts',
+        related_name="flowcellpafalignemnts",
         null=True,
-        blank=True
+        blank=True,
     )
 
     read = models.ForeignKey(
-
-        FastqRead,
-        related_name='pafreadalignment',
-        on_delete=models.CASCADE,
+        FastqRead, related_name="pafreadalignment", on_delete=models.CASCADE,
     )
 
     reference = models.ForeignKey(  # TODO delete - read from job_master.reference
-
-        ReferenceInfo,
-        related_name='pafstorereference',
-        on_delete=models.CASCADE,
+        ReferenceInfo, related_name="pafstorereference", on_delete=models.CASCADE,
     )
 
     # PAF File Format:
 
-    qsn = models.CharField(
+    qsn = models.CharField(max_length=256)  # 1	string	Query sequence name
 
-        max_length=256
-    )  # 1	string	Query sequence name
+    qsl = models.IntegerField()  # 2	int	Query sequence length
 
-    qsl = models.IntegerField(
+    qs = models.IntegerField()  # 3	int	Query start (0-based)
 
-    )  # 2	int	Query sequence length
+    qe = models.IntegerField()  # 4	int	Query end (0-based)
 
-    qs = models.IntegerField(
-
-    )  # 3	int	Query start (0-based)
-
-    qe = models.IntegerField(
-
-    )  # 4	int	Query end (0-based)
-
-    rs = models.CharField(
-
-        max_length=1
-    )  # 5	char	Relative strand: "+" or "-"
+    rs = models.CharField(max_length=1)  # 5	char	Relative strand: "+" or "-"
 
     tsn = models.ForeignKey(
-
-        ReferenceLine,
-        on_delete=models.CASCADE,
-        related_name='pafstore_list'
+        ReferenceLine, on_delete=models.CASCADE, related_name="pafstore_list"
     )  # 6	Foreign key Target sequence name
 
-    tsl = models.IntegerField(
+    tsl = models.IntegerField()  # 7	int	Target sequence length
 
-    )  # 7	int	Target sequence length
+    ts = models.IntegerField()  # 8	int	Target start on original strand (0-based)
 
-    ts = models.IntegerField(
+    te = models.IntegerField()  # 9	int	Target end on original strand (0-based)
 
-    )  # 8	int	Target start on original strand (0-based)
+    nrm = models.IntegerField()  # 10	int	Number of residue matches
 
-    te = models.IntegerField(
+    abl = models.IntegerField()  # 11	int	Alignment block length
 
-    )  # 9	int	Target end on original strand (0-based)
-
-    nrm = models.IntegerField(
-
-    )  # 10	int	Number of residue matches
-
-    abl = models.IntegerField(
-
-    )  # 11	int	Alignment block length
-
-    mq = models.IntegerField(
-
-    )  # 12	int	Mapping quality (0-255; 255 for missing)
+    mq = models.IntegerField()  # 12	int	Mapping quality (0-255; 255 for missing)
 
     def __str__(self):
         return "{}".format(self.qsn)
@@ -101,117 +64,90 @@ class PafStore(models.Model):
 class PafRoughCov(models.Model):
 
     job_master = models.ForeignKey(
-
-        JobMaster,
-        on_delete=models.CASCADE,
-        related_name='pafroughcov_list'
+        JobMaster, on_delete=models.CASCADE, related_name="pafroughcov_list"
     )
 
     run = models.ForeignKey(
-        Run,
-        on_delete=models.CASCADE,
-        related_name='prc_run',
-        null=True,
-        blank=True
+        Run, on_delete=models.CASCADE, related_name="prc_run", null=True, blank=True
     )
 
     flowcell = models.ForeignKey(
         Flowcell,
         on_delete=models.CASCADE,
-        related_name='flowcell_prc_run',
+        related_name="flowcell_prc_run",
         null=True,
-        blank=True
+        blank=True,
     )
 
     grouprun = models.ForeignKey(
         GroupRun,
         on_delete=models.CASCADE,
-        related_name='pafroughcovs',
+        related_name="pafroughcovs",
         null=True,
-        blank=True
+        blank=True,
     )
 
     read_type = models.ForeignKey(
-        FastqReadType,
-        related_name='prc_type',
-        on_delete=models.DO_NOTHING,
+        FastqReadType, related_name="prc_type", on_delete=models.DO_NOTHING,
     )
 
-    is_pass = models.BooleanField(
-
-    )  # pass = true, fail = false
+    is_pass = models.BooleanField()  # pass = true, fail = false
 
     barcode = models.ForeignKey(
-        Barcode,
-        related_name='prc_barcode',
-        null=True,
-        on_delete=models.DO_NOTHING,
+        Barcode, related_name="prc_barcode", null=True, on_delete=models.DO_NOTHING,
     )
 
-    barcode_name = models.CharField(
-
-        max_length=32
-    )
+    barcode_name = models.CharField(max_length=32)
 
     reference = models.ForeignKey(
-        ReferenceInfo,
-        related_name='pafreference',
-        on_delete=models.CASCADE,
+        ReferenceInfo, related_name="pafreference", on_delete=models.CASCADE,
     )
 
     chromosome = models.ForeignKey(
-        ReferenceLine,
-        related_name='pafchromosome',
-        on_delete=models.CASCADE,
+        ReferenceLine, related_name="pafchromosome", on_delete=models.CASCADE,
     )
 
-    p = models.IntegerField(
+    p = models.IntegerField()  # position
 
-    )  # position
-
-    i = models.IntegerField(
-        default=0
-    )  # incdel
+    i = models.IntegerField(default=0)  # incdel
 
     def to_chart_data(self):
 
-        return [ self.p, self.i]
+        return [self.p, self.i]
 
     def __str__(self):
         return "{} {}".format(self.run, self.p)
 
 
 class PafSummaryCov(models.Model):
+    """
+    Store the aggregated results of the PafStore
+    """
 
     job_master = models.ForeignKey(
+        JobMaster, on_delete=models.CASCADE, related_name="paf_summary_cov_list"
+    )
 
-        JobMaster,
+    barcode_name = models.CharField(max_length=32)
+
+    chromosome = models.ForeignKey(
+        ReferenceLine,
+        related_name="paf_summary_chromosome",
         on_delete=models.CASCADE,
-        related_name='paf_summary_cov_list'
+        null=True,
     )
 
-    barcode_name = models.CharField(
+    reference_line_length = models.BigIntegerField()
 
-        max_length=32
-    )
+    read_count = models.BigIntegerField(default=0)
 
-    reference_line_name = models.CharField(
+    total_length = models.BigIntegerField(default=0)
 
-        max_length=512
-    )
-
-    reference_line_length = models.BigIntegerField(
-
-    )
-
-    read_count = models.BigIntegerField(
-
-        default=0
-    )
-
-    total_length = models.BigIntegerField(
-
-        default=0
+    read_type = models.ForeignKey(
+        FastqReadType,
+        related_name="paf_summary_read_type",
+        on_delete=models.SET_NULL,
+        null=True,
     )
 
 
@@ -225,7 +161,7 @@ def updatePafRoughCov(instance, sender, **kwargs):
             barcode=pafline.read.barcode,
             reference=pafline.reference,
             chromosome=pafline.tsn,
-            p=pafline.ts  # position
+            p=pafline.ts,  # position
         )
         pafstart.i += 1
         pafstart.save()
@@ -235,7 +171,7 @@ def updatePafRoughCov(instance, sender, **kwargs):
             barcode=pafline.read.barcode,
             reference=pafline.reference,
             chromosome=pafline.tsn,
-            p=(pafline.te) + 1  # position
+            p=(pafline.te) + 1,  # position
         )
         pafend.i -= 1
         pafend.save()
@@ -246,7 +182,7 @@ def updatePafRoughCov(instance, sender, **kwargs):
             barcode=pafline.read.barcode,
             reference=pafline.reference,
             chromosome=pafline.tsn,
-            p=pafline.ts  # position
+            p=pafline.ts,  # position
         )
         pafstart.i += 1
         pafstart.save()
@@ -256,7 +192,7 @@ def updatePafRoughCov(instance, sender, **kwargs):
             barcode=pafline.read.barcode,
             reference=pafline.reference,
             chromosome=pafline.tsn,
-            p=(pafline.te) + 1  # position
+            p=(pafline.te) + 1,  # position
         )
         pafend.i -= 1
         pafend.save()
