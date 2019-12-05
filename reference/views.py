@@ -9,12 +9,27 @@ from reference.serializers import (ReferenceInfoSerializer,
 
 @api_view(['GET'])
 def reference_list(request):
+    """
+    Get a list of all references available to the User making the request.
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        Query params - names. Whether we only want the names and IDs of the references.
+    Returns
+    -------
+    rest_framework.response.Response
+    """
 
-    queryset = ReferenceInfo.objects.filter(Q(private=False) | Q(owner=request.user))
+    if request.GET.get("names", False):
+        data = ReferenceInfo.objects.filter(Q(private=False) | Q(owner=request.user)).values_list("name", "id")
+    else:
+        queryset = ReferenceInfo.objects.filter(Q(private=False) | Q(owner=request.user))
 
-    serializer = ReferenceInfoSerializer(queryset, many=True, context={'request': request})
+        serializer = ReferenceInfoSerializer(queryset, many=True, context={'request': request})
 
-    return Response(serializer.data)
+        data = serializer.data
+
+    return Response(data)
 
 
 @api_view(['GET'])
