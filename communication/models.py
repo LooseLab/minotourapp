@@ -1,9 +1,9 @@
 import uuid
-
 from django.conf import settings
 from django.db import models
 
 from reads.models import Flowcell
+from reference.models import ReferenceInfo
 
 
 class Message(models.Model):
@@ -16,7 +16,9 @@ class Message(models.Model):
     recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name='messages_recipient',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
+        blank=True,
+        default=True
     )
 
     sender = models.ForeignKey(
@@ -24,7 +26,7 @@ class Message(models.Model):
         related_name='messages_sender',
         null=True,
         blank=True,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
     )
 
     title = models.CharField(
@@ -50,7 +52,7 @@ class Message(models.Model):
     )
 
     is_read = models.BooleanField(
-        default = False,
+        default=False,
     )
 
     def __str__(self):
@@ -94,10 +96,22 @@ class NotificationConditions(models.Model):
 
     last_minKnow_message_id = models.IntegerField(
         blank=True,
+        null=True,
+        default=0
+    )
+
+    coverage_target = models.IntegerField(
+        blank=True,
         null=True
     )
 
-    coverage = models.IntegerField(
-        blank=True,
+    date_created = models.DateField(
+        auto_now_add=True
+    )
+
+    reference_file = models.ForeignKey(
+        ReferenceInfo,
+        on_delete=models.SET_NULL,
+        name="conditional_reference",
         null=True
     )

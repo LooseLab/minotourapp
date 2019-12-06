@@ -1,5 +1,4 @@
 function updateCoverageBasedCharts(chart, summarycoverage, field) {
-    // TODO What is this exactly?
     var series = [];
     var categories = [];
     for (var barcode of Object.keys(summarycoverage)) {
@@ -35,7 +34,7 @@ function updateCoverageBasedCharts(chart, summarycoverage, field) {
 }
 
 function requestMappedChromosomes(flowcell_id) {
-    /*
+    /**
      * Request the chromosomes that have reads mapped to using minimap2
      * and update the select box on tab Mapping
      * TODO THIS NEEDS STREAMLINING
@@ -62,6 +61,7 @@ function requestMappedChromosomes(flowcell_id) {
         select.add(option);
 
         for (var i = 0; i < data.length; i++) {
+
             var option = document.createElement('option');
 
             var value_combination = data[i]['task_id'] + '_' + data[i]['barcode_name'] + '_' + data[i]['read_type_id'] + '_' + data[i]['chromosome_id'];
@@ -73,7 +73,7 @@ function requestMappedChromosomes(flowcell_id) {
 
             } else {
 
-                if (value_combination == selected_option.value) {
+                if (option.text === selected_option.text) {
                     option.selected = 'selected';
                 }
 
@@ -112,7 +112,7 @@ function drawPafSummaryTable(flowCellId) {
                 },
                 "columns": [
                     {"data": "barcode_name"},
-                    {"data": "reference_line_name"},
+                    {"data": "chromosome__line_name"},
                     {"data": "reference_line_length"},
                     {"data": "read_count"},
                     {"data": "total_length"},

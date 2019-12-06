@@ -53,7 +53,8 @@ function makeColumnChart(divName, chartTitle, yAxisTitle) {
         chart: {
             type: "column",
             animation: Highcharts.svg, // don"t animate in old IE
-            marginRight: 10
+            marginRight: 10,
+            zoomType: "xy"
         },
         title: {
             text: chartTitle
