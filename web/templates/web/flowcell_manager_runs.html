@@ -100,7 +100,7 @@
                             <div class="form-group">
                                 <select class="form-control" name="existing_flowcell_id">
                                     {% for flowcell in flowcell_list %}
-                                        <option value="{{ flowcell.id }}">{{ flowcell.name }}</option>
+                                        <option value="{{ flowcell.id }}">{{ flowcell.name }} - {{ flowcell.sample_name }}</option>
                                     {% endfor %}
                                 </select>
                             </div>

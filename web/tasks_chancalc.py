@@ -5,7 +5,6 @@ from celery.utils.log import get_task_logger
 
 from django.db.models import Avg, Max, Min, Sum, Q
 
-from jobs.models import JobMaster
 from reads.models import (
     FastqRead,
     HistogramSummary,
@@ -14,7 +13,7 @@ from reads.models import (
     FlowcellStatisticBarcode,
     FlowcellHistogramSummary,
     FlowcellChannelSummary,
-)
+    JobMaster)
 from reads.services import (
     save_flowcell_summary_barcode,
     save_flowcell_statistic_barcode,

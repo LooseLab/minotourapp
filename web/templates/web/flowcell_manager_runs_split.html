@@ -19,7 +19,30 @@
             <div class="row">
                 <div class="col-md-12">
 
-                    Thanks
+                    <div class="alert alert-success text-center" role="alert">
+                        Thanks. The splitting process has started.
+                        Links for the origin and destination flowcells are below.
+                        This process can take some time to finish, in particular with large flowcells.
+                    </div>
+
+                    <div class='panel panel-info'>
+                        <div class='panel-heading'>
+                            <h3 class='panel-title'>Origin</h3>
+                        </div>
+                        <div class='panel-body'>
+                            Run {{ run.runid }}, Flowcell <a href="{% url 'flowcell-index' from_flowcell.id %}">{{ from_flowcell.name }} ({{ from_flowcell.sample_name }})</a>
+                        </div>
+                    </div>
+
+                    <div class='panel panel-info'>
+                        <div class='panel-heading'>
+                            <h3 class='panel-title'>Destination</h3>
+                        </div>
+                        <div class='panel-body'>
+                            Flowcell <a href="{% url 'flowcell-index' to_flowcell.id %}">{{ to_flowcell.name }} ({{ to_flowcell.sample_name }})</a>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </section>

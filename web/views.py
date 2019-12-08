@@ -12,8 +12,7 @@ from rest_framework.authtoken.models import Token
 
 from centrifuge.models import CentrifugeOutput
 from communication.models import Message
-from jobs.models import JobMaster, JobType
-from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats
+from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats, JobType, JobMaster
 from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
 from web.utils import get_run_details, split_flowcell
 
@@ -449,7 +448,7 @@ def flowcell_manager_runs(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)
     run_list = get_run_details(pk)
-    flowcell_list = Flowcell.objects.filter(owner=request.user)
+    flowcell_list = Flowcell.objects.filter(owner=request.user).exclude(id=flowcell.id)
 
     return render(request,
                   'web/flowcell_manager_runs.html',
@@ -460,22 +459,20 @@ def flowcell_manager_runs(request, pk):
 @login_required
 def flowcell_manager_runs_split(request, pk):
     """
-    This view shows the a list of runs of a specific flowcell
-    in the flowcell maintenance second page
+    This view calls the split_flowcell function and
+    shows a status page for the user
     """
 
-    print(request.POST)
     flowcell_id = request.POST.get('flowcell_id', None)
     run_id = request.POST.get('run_id', None)
     new_flowcell_name = request.POST.get('new_flowcell_name', None)
     new_or_existing_flowcell = request.POST.get('new_or_existing_flowcell', None)
     existing_flowcell_id = request.POST.get('existing_flowcell_id', None)
 
-    split_flowcell(new_or_existing_flowcell, flowcell_id, existing_flowcell_id, new_flowcell_name, run_id)
-    run_list = get_run_details(pk)
-    flowcell_list = Flowcell.objects.filter(owner=request.user)
+    run, from_flowcell, to_flowcell = split_flowcell(new_or_existing_flowcell, flowcell_id, existing_flowcell_id, new_flowcell_name, run_id)
 
     return render(request,
                   'web/flowcell_manager_runs_split.html',
-                  context={'run_list': run_list,
-                           'flowcell_list': flowcell_list})
+                  context={'run': run,
+                           'from_flowcell': from_flowcell,
+                           'to_flowcell': to_flowcell})

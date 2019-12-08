@@ -9,6 +9,7 @@ import collections
 import numpy as np
 
 from reads.models import Flowcell, MinIONRunStatus, Run
+from web.tasks_move_reads_to_flowcell import move_reads_to_flowcell
 
 
 def update_last_activity_time(flowcell):
@@ -541,11 +542,36 @@ def split_flowcell(existing_or_new_flowcell, from_flowcell_id, to_flowcell_id, t
     print('to_flowcell_name: {}'.format(to_flowcell_name))
     print('run_id: {}'.format(run_id))
 
-    flowcell = Flowcell.objects.get(pk=from_flowcell_id)
     run = Run.objects.get(pk=run_id)
 
     if existing_or_new_flowcell == 'new':
-        pass
+        from_flowcell = Flowcell.objects.get(pk=from_flowcell_id)
+        to_flowcell = Flowcell.objects.create(
+            name=to_flowcell_name,
+            sample_name=to_flowcell_name,
+            owner=from_flowcell.owner,
+        )
+
+        print('Moving run {} from flowcell {} to flowcell {}'.format(
+            run.id,
+            from_flowcell.id,
+            to_flowcell.id))
+
+        run.flowcell = to_flowcell
+        run.save()
 
     else:
-        pass
+        from_flowcell = Flowcell.objects.get(pk=from_flowcell_id)
+        to_flowcell = Flowcell.objects.get(pk=to_flowcell_id)
+
+        print('Moving run {} from flowcell {} to flowcell {}'.format(
+            run.id,
+            from_flowcell.id,
+            to_flowcell.id))
+
+        run.flowcell = to_flowcell
+        run.save()
+
+    move_reads_to_flowcell.delay(run.id, to_flowcell.id)
+
+    return run, from_flowcell, to_flowcell

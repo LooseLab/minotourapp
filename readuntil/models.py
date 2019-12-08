@@ -1,7 +1,6 @@
 from django.db import models
 
-from reads.models import Run, Flowcell
-from jobs.models import JobMaster
+from reads.models import Run, Flowcell, JobMaster
 from reference.models import ReferenceLine
 
 

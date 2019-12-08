@@ -31,5 +31,4 @@ urlpatterns = [
     url(r'^private/flowcells/(?P<pk>[0-9]+)/flowcell_metagenomics_csv/$', views.metagenomics_data_download,
         name="metagenomics_data_download")
 
-
 ]
