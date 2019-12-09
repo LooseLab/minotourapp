@@ -20,7 +20,6 @@ from twitter import *
 from assembly.models import GfaStore, GfaSummary
 from centrifuge import centrifuge
 from centrifuge.sankey import calculate_sankey
-from communication.utils import *
 from jobs.models import JobMaster
 from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus
 from reads.utils import getn50
@@ -558,73 +557,73 @@ def delete_runs():
     Run.objects.filter(to_delete=True).delete()
 
 
-@task
-def send_messages():
-    """
-    Send messages through the twitter API
-    Returns
-    -------
-
-    """
-    new_messages = Message.objects.filter(delivered_date=None)
-
-    for new_message in new_messages:
-
-        # print('Sending message: {}'.format(new_message))
-
-        message_sent = False
-
-        if new_message.recipient.extendedopts.email:
-
-            try:
-
-                if new_message.sender:
-
-                    sender = new_message.sender.email
-
-                else:
-
-                    sender = 'contact@minotour.org'
-
-                send_mail(
-                    new_message.title,
-                    new_message.content,
-                    sender,
-                    [new_message.recipient.email],
-                    fail_silently=False,
-                )
-
-                message_sent = True
-
-            except MailgunAPIError as e:
-                print(e)
-
-        if new_message.recipient.extendedopts.tweet \
-                and new_message.recipient.extendedopts.twitterhandle != '':
-            TWITTOKEN = settings.TWITTOKEN
-            TWITTOKEN_SECRET = settings.TWITTOKEN_SECRET
-            TWITCONSUMER_KEY = settings.TWITCONSUMER_KEY
-            TWITCONSUMER_SECRET = settings.TWITCONSUMER_SECRET
-
-            t = Twitter(
-                auth=OAuth(TWITTOKEN, TWITTOKEN_SECRET, TWITCONSUMER_KEY, TWITCONSUMER_SECRET)
-            )
-
-            t.direct_messages.new(
-                user=new_message.recipient.extendedopts.twitterhandle,
-                text=new_message.title
-            )
-            # status = '@{} {}'.format(new_message.recipient.extendedopts.twitterhandle,new_message.title)
-            # t.statuses.update(
-            #    status=status
-            # )
-
-            message_sent = True
-
-        if message_sent:
-            print('inside message_sent')
-            new_message.delivered_date = datetime.now(tz=pytz.utc)
-            new_message.save()
+# @task
+# def send_messages():
+#     """
+#     Send messages through the twitter API.
+#     Returns
+#     -------
+#
+#     """
+#     new_messages = Message.objects.filter(delivered_date=None)
+#
+#     for new_message in new_messages:
+#
+#         # print('Sending message: {}'.format(new_message))
+#
+#         message_sent = False
+#
+#         if new_message.recipient.extendedopts.email:
+#
+#             try:
+#
+#                 if new_message.sender:
+#
+#                     sender = new_message.sender.email
+#
+#                 else:
+#
+#                     sender = 'contact@minotour.org'
+#
+#                 send_mail(
+#                     new_message.title,
+#                     new_message.content,
+#                     sender,
+#                     [new_message.recipient.email],
+#                     fail_silently=False,
+#                 )
+#
+#                 message_sent = True
+#
+#             except MailgunAPIError as e:
+#                 print(e)
+#
+#         if new_message.recipient.extendedopts.tweet \
+#                 and new_message.recipient.extendedopts.twitterhandle != '':
+#             TWITTOKEN = settings.TWITTOKEN
+#             TWITTOKEN_SECRET = settings.TWITTOKEN_SECRET
+#             TWITCONSUMER_KEY = settings.TWITCONSUMER_KEY
+#             TWITCONSUMER_SECRET = settings.TWITCONSUMER_SECRET
+#
+#             t = Twitter(
+#                 auth=OAuth(TWITTOKEN, TWITTOKEN_SECRET, TWITCONSUMER_KEY, TWITCONSUMER_SECRET)
+#             )
+#
+#             t.direct_messages.new(
+#                 user=new_message.recipient.extendedopts.twitterhandle,
+#                 text=new_message.title
+#             )
+#             # status = '@{} {}'.format(new_message.recipient.extendedopts.twitterhandle,new_message.title)
+#             # t.statuses.update(
+#             #    status=status
+#             # )
+#
+#             message_sent = True
+#
+#         if message_sent:
+#             print('inside message_sent')
+#             new_message.delivered_date = datetime.now(tz=pytz.utc)
+#             new_message.save()
 
 
 @task

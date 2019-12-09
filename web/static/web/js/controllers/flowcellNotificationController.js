@@ -6,7 +6,10 @@ class FlowcellNotificationController {
     constructor(flowcellId) {
         this._conditions = {};
         this._flowcellId = flowcellId;
-        this._referencesList = [];
+        this._referencesSet = new Set();
+        this._contigSet = new Set();
+        this._contigsObj = {};
+        this._contigsShown = new Set();
         this.addHandlerToSelect();
         this._barcodesObj = {};
         this._barcodesShown = new Set();
@@ -17,10 +20,11 @@ class FlowcellNotificationController {
      * @function Submit our notification choices to the server to create tasks to create objects to pick them up
      */
     submitNotificationChoices(event, data) {
-
+        console.log(data);
         event.preventDefault();
 
         // Loop through the input fields and create a dictionary of conditions
+        $(#"notificationChoices")
         for (const property in Object.keys($("input", data))) {
             // Get the input element
             let input = $("input", data)[property];
@@ -74,14 +78,23 @@ class FlowcellNotificationController {
         axiosInstance.get(`/api/v1/flowcells/${self._flowcellId}/chromosomecoverage`, {
             params: {names: true}
         }).then(function (names) {
+            console.log(names.data);
             // loop through the returned reference names
             Object.entries(names.data).forEach(([key, value]) => {
-                if (!(self._referencesList.includes(key))) {
+                console.log(value);
+                if (!(self._referencesSet.has(key))) {
                     $("#reference").append(`<option>${key}</option>`);
-                    self._referencesList.push(key);
+                    self._referencesSet.add(key);
+                    // loop through contig dictionary
+                    self._contigsObj[key] = Object.keys(value);
+                    Object.entries(value).forEach(function ([key, value]) {
+                        if (!(self._contigSet.has(key))){
+                            self._contigSet.add(key);
+                            self._barcodesObj[key] = value;
 
+                        }
+                    });
                     // add the barcodes for this contig
-                    self._barcodesObj[key] = value;
                 }
             });
         }).catch(function (error) {
@@ -104,14 +117,60 @@ class FlowcellNotificationController {
             }
         });
         $("#reference").on('change', function (e) {
+            let notificationContigs = $("#contig");
+            notificationContigs.append(`<option>Select All</option>`);
             var optionSelected = $("option:selected", this);
+            console.log("optionSelected");
             console.log(optionSelected);
+            self._contigsObj[optionSelected[0].innerHTML].forEach(function(element){
+                self._contigsShown = new Set([...self._contigsShown, ...self._contigsObj[optionSelected[0].innerHTML]]);
+                notificationContigs.append(`<option>${element}</option>`);
+            });
+
+            let referenceSelected = new Set();
+            // for each of our selected contigs
+            console.log(Object.entries(optionSelected));
+            Object.entries(optionSelected).forEach(([key, value]) => {
+                if (value.innerHTML !== undefined){
+                    referenceSelected.add(value.innerHTML);
+                    console.log(referenceSelected);
+                    console.log(value.innerHTML);
+                    console.log(self._contigsObj[value.innerHTML]);
+                    self._contigsShown.add(...self._contigsObj[value.innerHTML]);
+                    // if it's not already in thered
+                    self._contigsObj = new Set([...self._contigsShown].filter(x => !referenceSelected.has(x)));
+                }
+
+
+            });
+        });
+
+        $("#contig").on('change', function (e) {
+
+            let notificationBarcodes = $("#notification_barcodes");
+            notificationBarcodes.append(`<option>Select All</option>`);
+            var optionSelected = $("option:selected", this);
+            console.log("optionSelected");
+            console.log(optionSelected);
+            console.log(self._barcodesObj[optionSelected[0].innerHTML]);
+            self._barcodesObj[optionSelected[0].innerHTML].forEach(function(element){
+                self._barcodesShown = new Set([...self._barcodesShown, ...self._barcodesObj[optionSelected[0].innerHTML]]);
+                notificationBarcodes.append(`<option>${element}</option>`);
+            });
+
             let contigsSelected = new Set();
             // for each of our selected contigs
+            console.log(Object.entries(optionSelected));
             Object.entries(optionSelected).forEach(([key, value]) => {
-                contigsSelected.add(value.innerHTML);
-                self._barcodesShown.add(value.innerHTML);
-                self._barcodesShown = new Set([...self._barcodesShown].filter(x => !contigsSelected.has(x)));
+                if (value.innerHTML !== undefined){
+                    contigsSelected.add(value.innerHTML);
+                    console.log(contigsSelected);
+                    console.log(value.innerHTML);
+                    console.log(self._barcodesObj[value.innerHTML]);
+                    self._barcodesShown.add(...self._barcodesObj[value.innerHTML]);
+                    // if it's not already in thered
+                    self._barcodesShown = new Set([...self._barcodesShown].filter(x => !contigsSelected.has(x)));
+                }
 
 
             });

@@ -11,6 +11,8 @@ from alignment.utils import calculate_coverage_new
 from rest_framework.response import Response
 from rest_framework import status
 
+from jobs.models import JobMaster
+
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -30,7 +32,7 @@ def rough_coverage_complete_chromosome_flowcell(
     request, task_id, barcode_name, read_type_id, chromosome_id
 ):
     """
-    Fecth data for coverage master charts
+    Fetch data for coverage master charts
     Parameters
     ----------
     request: rest_framework.request.Request
@@ -291,16 +293,21 @@ def get_coverage_summary(request, pk):
     :return:
     """
     print(request.GET)
+    # if the request is from the Dropdown for notifications
     if request.GET.get("names", False):
-        queryset = PafSummaryCov.objects.filter(
-            job_master__flowcell__id=pk
-        ).values_list("chromosome__line_name", "barcode_name")
+        queryset = JobMaster.objects.filter(flowcell__id=9, job_type__name="minimap2").values_list(
+            "reference__name", "reference__referencelines__line_name", "flowcell__runs__barcodes__name")
+        # queryset = PafSummaryCov.objects.filter(
+        #     job_master__flowcell__id=pk
+        # ).values_list("chromosome__line_name", "barcode_name")
 
-        contig_barcode_dict = defaultdict(list)
+        reference_to_contig_dict = defaultdict(dict)
+        contig_to_barcode_dict = defaultdict(list)
         for contig in queryset:
-            contig_barcode_dict[contig[0]].append(contig[1])
-
-        return Response(contig_barcode_dict, status=200)
+            contig_to_barcode_dict[contig[1]].append(contig[2])
+            reference_to_contig_dict[contig[0]] = contig_to_barcode_dict
+        print(reference_to_contig_dict)
+        return Response(reference_to_contig_dict, status=200)
 
     queryset = PafSummaryCov.objects.filter(job_master__flowcell__id=pk)
 
