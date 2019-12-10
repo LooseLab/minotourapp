@@ -108,7 +108,7 @@ DATABASES = {
         'HOST': get_env_variable("MT_DB_HOST"),
         'PORT': get_env_variable("MT_DB_PORT"),
         'NAME': get_env_variable("MT_DB_NAME"),
-        'CONN_MAX_AGE': None,
+        'CONN_MAX_AGE': 0,
     }
 }
 

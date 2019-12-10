@@ -295,7 +295,7 @@ def get_coverage_summary(request, pk):
     print(request.GET)
     # if the request is from the Dropdown for notifications
     if request.GET.get("names", False):
-        queryset = JobMaster.objects.filter(flowcell__id=9, job_type__name="minimap2").values_list(
+        queryset = JobMaster.objects.filter(flowcell__id=pk, job_type__name="minimap2").values_list(
             "reference__name", "reference__referencelines__line_name", "flowcell__runs__barcodes__name")
         # queryset = PafSummaryCov.objects.filter(
         #     job_master__flowcell__id=pk

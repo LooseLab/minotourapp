@@ -167,7 +167,7 @@ def run_minimap2_alignment(job_master_id):
     # Get all the runs attached to that Flowcell
     runs = flowcell.runs.all()
     # The chunk size of reads from this flowcell to fetch from the database
-    chunk_size = 8000
+    chunk_size = 1000
 
     fasta_df_barcode, last_read, read_count, fasta_objects = call_fetch_reads_alignment(
         runs, chunk_size, job_master.last_read
@@ -256,8 +256,14 @@ def align_reads(fastas, job_master_id, fasta_df):
     # dict where we will be storing the fastq objects keyed to read ID
     fastq_dict = {fasta.read_id: fasta for fasta in fastas}
     # Create the minimap command
-    cmd = "{} -x map-ont -t 1 --secondary=no {} -".format(
-        minimap2, os.path.join(reference_location, reference_info.filename)
+    # If we have a minimap2 index we want to use it.
+    if reference_info.minimap2_index_file_location:
+        referencefile = reference_info.minimap2_index_file_location
+    else:
+        referencefile = reference_info.filename
+    cmd = '{} -x map-ont -t 4 --secondary=no {} -'.format(
+        minimap2,
+        os.path.join(reference_location, referencefile)
     )
 
     logger.info("Flowcell id: {} - Calling minimap - {}".format(flowcell.id, cmd))
@@ -286,6 +292,9 @@ def align_reads(fastas, job_master_id, fasta_df):
     # If we have paf data
     if len(pafdata) > 0:
 
+        from django.db import close_old_connections
+        close_old_connections()
+
         bulk_paf = []
 
         bulk_paf_rough = []
@@ -300,7 +309,7 @@ def align_reads(fastas, job_master_id, fasta_df):
 
             newpaf = PafStore(job_master=job_master, read=fastq_read,)
 
-            fastq_read.barcode_name = "All barcodes" if fastq_read.barcode_name == "No barcode" else fastq_read.barcode_name
+            fastq_read.barcode_name = "All reads" if fastq_read.barcode_name == "No barcode" else fastq_read.barcode_name
 
             newpafstart = PafRoughCov(
                 job_master=job_master,
@@ -397,7 +406,7 @@ def align_reads(fastas, job_master_id, fasta_df):
 
             paf_store_df_all_reads = paf_store_df.copy(deep=True)
 
-            paf_store_df_all_reads["read__barcode_name"] = "All barcodes"
+            paf_store_df_all_reads["read__barcode_name"] = "All reads"
 
             paf_store_df_all_reads["length"] = (
                 paf_store_df_all_reads["qe"] - paf_store_df_all_reads["qs"]

@@ -116,7 +116,7 @@ class PafRoughCov(models.Model):
         return [self.p, self.i]
 
     def __str__(self):
-        return "{} {}".format(self.run, self.p)
+        return "{} {}".format(self.flowcell, self.p)
 
 
 class PafSummaryCov(models.Model):
