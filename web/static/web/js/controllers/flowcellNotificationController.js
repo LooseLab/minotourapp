@@ -13,6 +13,7 @@ class FlowcellNotificationController {
         this.addHandlerToSelect();
         this._barcodesObj = {};
         this._barcodesShown = new Set();
+        this._optionsSelected = {};
     }
 
 
@@ -24,7 +25,23 @@ class FlowcellNotificationController {
         event.preventDefault();
 
         // Loop through the input fields and create a dictionary of conditions
-        $(#"notificationChoices")
+        let refSelect = $("#reference")[0].selectedOptions;
+        let contigSelect = $("#contig")[0].selectedOptions;
+        let barcSelect = $("#notification_barcodes")[0].selectedOptions;
+        let selects = [refSelect, contigSelect, barcSelect];
+        let self = this;
+        selects.forEach(function (selected) {
+            if (selected.length > 1) {
+                console.log(selected);
+                console.log("!!!!!!!!!!!!");
+                Object.entries(refSelect, function ([key, value]) {
+                    console.log(key, value);
+                });
+            } else {
+                self._optionsSelected[1] = selected[0].innerHTML;
+            }
+        });
+
         for (const property in Object.keys($("input", data))) {
             // Get the input element
             let input = $("input", data)[property];
@@ -88,7 +105,7 @@ class FlowcellNotificationController {
                     // loop through contig dictionary
                     self._contigsObj[key] = Object.keys(value);
                     Object.entries(value).forEach(function ([key, value]) {
-                        if (!(self._contigSet.has(key))){
+                        if (!(self._contigSet.has(key))) {
                             self._contigSet.add(key);
                             self._barcodesObj[key] = value;
 
@@ -108,21 +125,24 @@ class FlowcellNotificationController {
      */
     addHandlerToSelect() {
         let self = this;
-        $("#notification_barcodes").on("click", function () {
-            if ($(this).find(":selected").text() == "Select All") {
-                if ($(this).attr("data-select") == "false")
-                    $(this).attr("data-select", "true").find("option").prop("selected", true);
-                else
-                    $(this).attr("data-select", "false").find("option").prop("selected", false);
-            }
+        [$("#notification_barcodes"), $("#contig")].forEach(function (a) {
+            a.on("click", function () {
+                if ($(this).find(":selected").text() == "Select All") {
+                    if ($(this).attr("data-select") == "false")
+                        $(this).attr("data-select", "true").find("option").prop("selected", true);
+                    else
+                        $(this).attr("data-select", "false").find("option").prop("selected", false);
+                }
+            });
         });
+
         $("#reference").on('change', function (e) {
             let notificationContigs = $("#contig");
             notificationContigs.append(`<option>Select All</option>`);
             var optionSelected = $("option:selected", this);
             console.log("optionSelected");
             console.log(optionSelected);
-            self._contigsObj[optionSelected[0].innerHTML].forEach(function(element){
+            self._contigsObj[optionSelected[0].innerHTML].forEach(function (element) {
                 self._contigsShown = new Set([...self._contigsShown, ...self._contigsObj[optionSelected[0].innerHTML]]);
                 notificationContigs.append(`<option>${element}</option>`);
             });
@@ -131,7 +151,7 @@ class FlowcellNotificationController {
             // for each of our selected contigs
             console.log(Object.entries(optionSelected));
             Object.entries(optionSelected).forEach(([key, value]) => {
-                if (value.innerHTML !== undefined){
+                if (value.innerHTML !== undefined) {
                     referenceSelected.add(value.innerHTML);
                     console.log(referenceSelected);
                     console.log(value.innerHTML);
@@ -146,23 +166,42 @@ class FlowcellNotificationController {
         });
 
         $("#contig").on('change', function (e) {
-
+            e.preventDefault();
             let notificationBarcodes = $("#notification_barcodes");
-            notificationBarcodes.append(`<option>Select All</option>`);
+            self._barcodesShown.add("Select All");
             var optionSelected = $("option:selected", this);
             console.log("optionSelected");
             console.log(optionSelected);
-            console.log(self._barcodesObj[optionSelected[0].innerHTML]);
-            self._barcodesObj[optionSelected[0].innerHTML].forEach(function(element){
-                self._barcodesShown = new Set([...self._barcodesShown, ...self._barcodesObj[optionSelected[0].innerHTML]]);
-                notificationBarcodes.append(`<option>${element}</option>`);
-            });
+            if (optionSelected[0].innerHTML === "Select All") {
+                console.log("conditionsal");
+                optionSelected = $("#contig")[0].selectedOptions;
+                console.log(optionSelected);
+            }
+            console.log(optionSelected);
+            // console.log(Object.entries(optionSelected));
+
+            for (let value of optionSelected) {
+                console.log(value);
+                if (!value.innerHTML === "Select All") {
+                    console.log("No seletc all");
+                    continue;
+                    console.log(self._barcodesObj);
+                    console.log(value);
+                    console.log(self._barcodesObj[value.innerHTML]);
+                    self._barcodesObj[value.innerHTML].forEach(function (element) {
+                        self._barcodesShown = new Set([...self._barcodesShown, ...self._barcodesObj[value.innerHTML]]);
+                        notificationBarcodes.append(`<option>${element}</option>`);
+                    });
+                }
+
+            }
+
 
             let contigsSelected = new Set();
             // for each of our selected contigs
             console.log(Object.entries(optionSelected));
             Object.entries(optionSelected).forEach(([key, value]) => {
-                if (value.innerHTML !== undefined){
+                if (value.innerHTML !== undefined && value.innerHTML !== "Select All") {
                     contigsSelected.add(value.innerHTML);
                     console.log(contigsSelected);
                     console.log(value.innerHTML);
