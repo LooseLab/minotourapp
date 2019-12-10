@@ -309,7 +309,7 @@ def align_reads(fastas, job_master_id, fasta_df):
 
             newpaf = PafStore(job_master=job_master, read=fastq_read,)
 
-            fastq_read.barcode_name = "All barcodes" if fastq_read.barcode_name == "No barcode" else fastq_read.barcode_name
+            fastq_read.barcode_name = "All reads" if fastq_read.barcode_name == "No barcode" else fastq_read.barcode_name
 
             newpafstart = PafRoughCov(
                 job_master=job_master,
@@ -406,7 +406,7 @@ def align_reads(fastas, job_master_id, fasta_df):
 
             paf_store_df_all_reads = paf_store_df.copy(deep=True)
 
-            paf_store_df_all_reads["read__barcode_name"] = "All barcodes"
+            paf_store_df_all_reads["read__barcode_name"] = "All reads"
 
             paf_store_df_all_reads["length"] = (
                 paf_store_df_all_reads["qe"] - paf_store_df_all_reads["qs"]
