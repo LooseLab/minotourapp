@@ -24,7 +24,7 @@ class FlowcellNotificationController {
         event.preventDefault();
 
         // Loop through the input fields and create a dictionary of conditions
-        $(#"notificationChoices")
+        $("#notificationChoices")
         for (const property in Object.keys($("input", data))) {
             // Get the input element
             let input = $("input", data)[property];
