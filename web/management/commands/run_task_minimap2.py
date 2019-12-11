@@ -3,8 +3,7 @@ import os
 
 from django.core.management.base import BaseCommand, CommandError
 
-from jobs.models import JobMaster
-from reads.models import Flowcell
+from reads.models import Flowcell, JobMaster
 from web.tasks_alignment import run_minimap2_alignment_by_job_master
 
 log_folder = os.environ.get('MT_LOG_FOLDER')

@@ -1,0 +1,133 @@
+{% extends "web/template_private.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+
+    <div class="content-wrapper" style="background-color: white">
+
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+            <h1>Flowcell Management
+                <small> - select a Run.</small>
+            </h1>
+        </section>
+
+        <!-- Main content -->
+        <section class="content">
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class='panel panel-info'>
+                        <div class='panel-heading'>
+                            <h3 class='panel-title'>Split a flowcell</h3>
+                        </div>
+                        <div class='panel-body'>
+
+                            {% for record in run_list %}
+
+                                {% if forloop.first %}
+
+                                    <div class='table-responsive'>
+                                    <form method="POST" action="{% url 'flowcell-manager-runs-split' 1 %}">
+                                    <input type="hidden" name="flowcell_id" value="{{ flowcell.id }}" />
+                                    {% csrf_token %}
+
+                                    <table class="table">
+                                    <thead>
+                                    <th colspan="2"></th>
+                                    <th colspan="4" align="center">Live data</th>
+                                    <th colspan="7" align="center">Basecalled data</th>
+                                    </thead>
+                                    <thead>
+                                    <th>Run</th>
+                                    <th>Runid</th>
+                                    <th>Run Start Time</th>
+                                    <th align="right">Flowcell ID</th>
+                                    <th>Sample Name</th>
+                                    <th>Experiment Name</th>
+                                    <th align="right">First Read</th>
+                                    <th align="right">Last Read</th>
+                                    <th align="right">Read Count</th>
+                                    <th align="right">Yield</th>
+                                    <th align="right">Min Read Length</th>
+                                    <th align="right">Avg Read Length</th>
+                                    <th align="right">Max Read Length</th>
+                                    </thead>
+                                    <tbody>
+
+                                {% endif %}
+
+                                <tr>
+                                    <td><input type="radio" name="run_id" value="{{ record.id }}"></td>
+                                    <td>{{ record.runid }}</td>
+                                    <td align="right">{{ record.run_start_time }}</td>
+                                    <td align="right">{{ record.flowcell_id }}</td>
+                                    <td>{{ record.sample_name }}</td>
+                                    <td>{{ record.experiment_name }}</td>
+                                    <td align="right">{{ record.first_read_start_time }}</td>
+                                    <td align="right">{{ record.last_read_start_time }}</td>
+                                    <td align="right">{{ record.read_count|intcomma }}</td>
+                                    <td align="right">{{ record.total_read_length|intcomma }}</td>
+                                    <td align="right">{{ record.min_read_length|intcomma }}</td>
+                                    <td align="right">{{ record.avg_read_length|intcomma }}</td>
+                                    <td align="right">{{ record.max_read_length|intcomma }}</td>
+                                </tr>
+
+                            {% endfor %}
+
+                            </tbody>
+                            </table>
+
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="new_or_existing_flowcell" value="new">
+                                    Move to new flowcell
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <input class="form-control" type="text" name="new_flowcell_name">
+                            </div>
+
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="new_or_existing_flowcell" value="existing">
+                                    Move to existing flowcell
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <select class="form-control" name="existing_flowcell_id">
+                                    {% for flowcell in flowcell_list %}
+                                        <option value="{{ flowcell.id }}">{{ flowcell.name }} - {{ flowcell.sample_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <input type="submit" value="Split flowcell" class="btn btn-primary" id="btn_task_create">
+
+                            </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Main top nav bar -->
+
+
+        </section><!-- /.content -->
+    </div><!-- /.content-wrapper -->
+{% endblock %}
+
+{% block javascript %}
+    <script>
+
+        var table_all_runs;
+
+        $(document).ready(function () {
+
+            set_active_navbar_item(3);
+
+        });
+    </script>
+{% endblock %}

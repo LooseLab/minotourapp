@@ -4,8 +4,7 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from jobs.models import JobMaster
-from reads.models import Barcode
+from reads.models import Barcode, JobMaster
 from reads.models import Flowcell
 from reference.models import ReferenceInfo
 

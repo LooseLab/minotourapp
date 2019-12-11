@@ -7,9 +7,10 @@ from .models import (Barcode, FastqFile, FastqRead, FastqReadType,
                      MinIONControl, MinIONEvent, MinIONEventType,
                      MinionMessage, MinIONRunStats, MinIONRunStatus,
                      MinIONScripts, MinIONStatus, Run, RunSummary, UserOptions, ChannelSummary, HistogramSummary,
-                     RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellHistogramSummary, FlowcellStatisticBarcode,
+                     RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellHistogramSummary,
+                     FlowcellStatisticBarcode,
                      FlowcellSummaryBarcode, Flowcell, MinION,
-                     FlowcellTab)
+                     FlowcellTab, JobMaster, JobType)
 
 
 class RunStatisticsBarcodeAdmin(admin.ModelAdmin):
@@ -54,3 +55,5 @@ admin.site.register(GroupRun)
 admin.site.register(RunSummary)
 admin.site.register(Flowcell, FlowcellAdmin)
 admin.site.register(MinION)
+admin.site.register(JobMaster)
+admin.site.register(JobType)
