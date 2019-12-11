@@ -9,8 +9,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 from django.db.models import Sum, Q
 import pandas as pd
-from jobs.models import JobMaster
-from reads.models import Flowcell
+from reads.models import Flowcell, JobMaster
 import numpy as np
 import math
 from rest_framework.authtoken.models import Token

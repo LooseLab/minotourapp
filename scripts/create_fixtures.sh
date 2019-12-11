@@ -1,5 +1,34 @@
 python ../manage.py dumpdata --indent 2 \
-    reads.fastqreadtype \
-    jobs.jobtype \
-    reads.minioneventtype \
+    reads.Barcode \
+    reads.ChannelSummary \
+    reads.Experiment \
+    reads.FastqFile \
+    reads.FastqReadType \
+    reads.Flowcell \
+    reads.FlowcellChannelSummary \
+    reads.FlowcellHistogramSummary \
+    reads.FlowcellStatisticBarcode \
+    reads.FlowcellSummaryBarcode \
+    reads.FlowcellTab \
+    reads.GroupRun \
+    reads.HistogramSummary \
+    reads.MinION \
+    reads.MinIONControl \
+    reads.MinIONEvent \
+    reads.MinIONEventType \
+    reads.MinIONRunStats \
+    reads.MinIONRunStatus \
+    reads.MinIONScripts \
+    reads.MinIONStatus \
+    reads.MinionMessage \
+    reads.Run \
+    reads.RunStatisticBarcode \
+    reads.RunSummary \
+    reads.RunSummaryBarcode \
+    reads.UserOptions \
+    communication.Message \
+    jobs.JobType \
+    jobs.JobMaster \
+    reference.ReferenceInfo \
+    reference.ReferenceLine \
     > ../fixtures/auxiliary_data.json

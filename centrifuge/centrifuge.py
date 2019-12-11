@@ -18,9 +18,8 @@ from centrifuge.models import (
     MappingTarget,
     DonutData,
 )
-from jobs.models import JobMaster, JobType
 from minotourapp.utils import get_env_variable
-from reads.models import FastqRead
+from reads.models import FastqRead, JobType, JobMaster
 from reference.models import ReferenceInfo
 from alignment.models import PafStore
 from django.db.models import Sum

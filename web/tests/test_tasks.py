@@ -2,8 +2,7 @@ import logging
 
 from django.test import TestCase
 
-from jobs.models import JobType, JobMaster
-from reads.models import Flowcell, Run, FastqRead
+from reads.models import Flowcell, Run, FastqRead, JobType, JobMaster
 from web.tasks import update_flowcell_details
 
 logger = logging.getLogger(__name__)

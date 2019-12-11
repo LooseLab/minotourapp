@@ -2,8 +2,7 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from jobs.models import JobMaster
-from reads.models import Barcode, FastqRead, FastqReadType, Run, GroupRun, Flowcell
+from reads.models import Barcode, FastqRead, FastqReadType, Run, GroupRun, Flowcell, JobMaster
 from reference.models import ReferenceInfo, ReferenceLine
 
 

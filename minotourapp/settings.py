@@ -53,7 +53,6 @@ INSTALLED_APPS = [
     'communication',
     'assembly',
     'devices',
-    'jobs',
     'centrifuge',
     'readuntil',
     'guardian',
