@@ -83,6 +83,7 @@ def get_or_create_conditions(request):
                                           )
             cond.save()
         if "coverage" in conditions:
+            pass
             # a = {"barcodes": (ConditionalBarcodes, Barcode, ), "chromosome": (ConditionalChromosomes, ReferenceLine)}
             # for name, settings in coverage_settings.items():
             #     if isinstance(settings, list):
