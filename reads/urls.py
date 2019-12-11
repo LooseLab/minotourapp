@@ -253,6 +253,7 @@ urlpatterns = [
         name="minknow-message-list-by-flowcell"
     ),
 
+
     url(
         r'^private/flowcell_manager/$',
         views.flowcell_manager,
@@ -278,4 +279,5 @@ urlpatterns = [
         views.get_or_create_tasks,
         name='task_list'
     )
+
 ]
