@@ -2,9 +2,30 @@ import uuid
 from django.conf import settings
 from django.db import models
 
-from reads.models import Flowcell
-from reference.models import ReferenceInfo
+from reads.models import Flowcell, Barcode
+from reference.models import ReferenceInfo, ReferenceLine
 
+
+class ConditionalBarcodes(models.Model):
+    """
+    store the conditional Barcodes
+    """
+    barcode = models.ForeignKey(
+        Barcode,
+        on_delete=models.CASCADE,
+        related_name="chosen_barcodes"
+    )
+
+
+class ConditionalChromosomes(models.Model):
+    """
+    Store the conditionalChromosomes
+    """
+    chromosome = models.ForeignKey(
+        ReferenceLine,
+        on_delete=models.CASCADE,
+        related_name="chosen_chromosomes"
+    )
 
 class Message(models.Model):
 
@@ -114,4 +135,20 @@ class NotificationConditions(models.Model):
         on_delete=models.SET_NULL,
         name="conditional_reference",
         null=True
+    )
+
+    chromosomes = models.ForeignKey(
+        ConditionalChromosomes,
+        on_delete=models.CASCADE,
+        related_name="to_chosen_chromosomes",
+        null=True,
+        default=None
+    )
+
+    barcodes = models.ForeignKey(
+        ConditionalBarcodes,
+        on_delete=models.CASCADE,
+        related_name="to_chosen_barcodes",
+        null=True,
+        default=None
     )
