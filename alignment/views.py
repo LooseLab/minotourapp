@@ -11,7 +11,6 @@ from alignment.utils import calculate_coverage_new
 from rest_framework.response import Response
 from rest_framework import status
 
-from jobs.models import JobMaster
 
 
 class NumpyEncoder(json.JSONEncoder):
