@@ -3,7 +3,6 @@ import pandas as pd
 from celery import task
 from celery.utils.log import get_task_logger
 
-from django.db.models import Avg, Max, Min, Sum, Q
 
 from reads.models import (
     FastqRead,
@@ -102,40 +101,6 @@ def fetchreads(runs, chunk_size, last_read):
 
     read_count = len(fastq_df_barcode)
     return fastq_df_barcode, last_read, read_count
-
-#
-# def compare_read_ids(flowcell, runs):
-#     """
-#     Compare read ids in the rejected fastqread table and attach a barcode to the rejected read ID table
-#     :param flowcell: The flowcell the read ids are attached to
-#     :type flowcell: reads.models.Flowcell
-#     :param runs: A queryset of the runs so we can create the rejected/accepted barcodes
-#     :type runs: django.db.models.query.QuerySet
-#     :return:
-#     """
-#
-#     # A list of tuples, with the model for the read_ids to be looked up
-#     # and the name of the barcode to add to the FastQRead
-#     tupley_listy = [(RejectedFastqRead, "U"), (AcceptedFastqRead, "S")]
-#
-#     # loop through the runs
-#     for run in runs:
-#         for read_type in tupley_listy:
-#             # get the rejected / accepted barcode
-#             rejected_barcode, created = Barcode.objects.get_or_create(
-#                 run=run, name=read_type[1]
-#             )
-#             # Get the readIds from the rejected / accepted tables
-#             rejected_ids = (
-#                 read_type[0]
-#                 .objects.filter(flowcell=flowcell)
-#                 .values_list("read_id", flat=True)
-#             )
-#             # update the matching fastqread objects with whichever type of Read the for loop
-#             # is on (Accepted or Rejected)
-#             FastqRead.objects.exclude(rejected_barcode=rejected_barcode).filter(
-#                 run=run, read_id__in=rejected_ids
-#             ).update(barcode=rejected_barcode)
 
 
 @task()
