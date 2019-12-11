@@ -11,6 +11,7 @@ from alignment.utils import calculate_coverage_new
 from rest_framework.response import Response
 from rest_framework import status
 
+from reads.models import JobMaster
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -284,12 +285,17 @@ def flowcellreferences_used_by_run(request, flowcell_id):
 @api_view(["GET"])
 def get_coverage_summary(request, pk):
     """
-    Simple Coverage endpoint, to display the coverage reached on all chromosomes on a flowcell.
-    :param request: The rest framework request object
-    :type request: rest_framework.request.Request
-    :param pk: The primary key of the flowcell
-    :type pk: int
-    :return:
+    Get a list of all the
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        Django rest framework object
+    pk: int
+        The primary key of the flowcell
+    Returns
+    -------
+    If names is True - Dict of Reference to Contig, Contig to Barcodes, else return coverage per contig
+
     """
     print(request.GET)
     # if the request is from the Dropdown for notifications
