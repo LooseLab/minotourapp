@@ -4,7 +4,7 @@ from celery import task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from readuntil.functions_EB import *
-from jobs.models import JobMaster
+from reads.models import JobMaster
 import numpy as np
 import pickle
 from web.tasks_alignment import call_fetch_reads_alignment

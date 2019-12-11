@@ -8,20 +8,15 @@ from datetime import datetime, timedelta
 
 import numpy as np
 import pandas as pd
-import pytz
 from celery import task
 from celery.utils.log import get_task_logger
-from django.conf import settings
-from django.core.mail import send_mail
 from django.db.models import Max
-from django_mailgun import MailgunAPIError
 from twitter import *
 
 from assembly.models import GfaStore, GfaSummary
 from centrifuge import centrifuge
 from centrifuge.sankey import calculate_sankey
-from jobs.models import JobMaster
-from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus
+from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus, JobMaster
 from reads.utils import getn50
 from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
@@ -131,6 +126,15 @@ def run_monitor():
             if flowcell_job.job_type.name == "ExpectedBenefit":
 
                 logger.info("Sending task ReadUntil - Flowcell id: {}, job_master id: {}".format(
+                    flowcell.id,
+                    flowcell_job.id,
+                ))
+
+                calculate_expected_benefit_3dot0_final.delay(flowcell_job.id)
+
+            if flowcell_job.job_type.name == "MoveReadsToFlowcell":
+
+                logger.info("Sending task MoveReadsToFlowcell - Flowcell id: {}, job_master id: {}".format(
                     flowcell.id,
                     flowcell_job.id,
                 ))

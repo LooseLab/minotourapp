@@ -36,7 +36,7 @@ urlpatterns = [
     url(r'^', include('reference.urls')),
     url(r'^', include('communication.urls')),
     url(r'^', include('centrifuge.urls')),
-    url(r'^', include('jobs.urls')),
+    #url(r'^', include('jobs.urls')),
     url(r'^', include('readuntil.urls')),
     # url(r'^$', auth_views.LoginView.as_view(template_name="registration/login.html")),
     url(r'^$', index),

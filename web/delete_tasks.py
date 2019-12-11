@@ -1,7 +1,7 @@
 """
 Functionality to delete a previously run task with a celery task
 """
-from jobs.models import JobMaster
+from reads.models import JobMaster
 from celery import task
 from celery.utils.log import get_task_logger
 from pathlib import Path

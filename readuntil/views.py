@@ -5,8 +5,7 @@ from django.db.models import Q
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from pathlib import Path
-from jobs.models import JobMaster
-from reads.models import Flowcell, Run
+from reads.models import Flowcell, Run, JobMaster
 import numpy as np
 from readuntil.utils import get_or_create_results_directory
 from readuntil.models import (
