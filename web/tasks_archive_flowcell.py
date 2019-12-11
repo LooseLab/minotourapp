@@ -1,7 +1,6 @@
 from celery import task
 from celery.utils.log import get_task_logger
-from jobs.models import JobMaster
-from reads.models import FastqRead
+from reads.models import FastqRead, JobMaster
 
 logger = get_task_logger(__name__)
 

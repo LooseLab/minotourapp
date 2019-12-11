@@ -134,6 +134,7 @@ class NotificationConditions(models.Model):
         ReferenceInfo,
         on_delete=models.SET_NULL,
         name="conditional_reference",
+        related_name="to_chosen_reference",
         null=True
     )
 

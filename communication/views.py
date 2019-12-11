@@ -79,7 +79,7 @@ def get_or_create_conditions(request):
                                           creating_user=request.user,
                                           repeat=repeat,
                                           coverage_target=cov_targ,
-                                          reference_file=reference
+                                          conditional_reference=reference
                                           )
             cond.save()
         if "coverage" in conditions:

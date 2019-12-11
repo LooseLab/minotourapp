@@ -2,13 +2,15 @@
 Services to help run some of the tasks in the web app. Why is this not stored there?
 """
 import pytz
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from reads.models import (
     FlowcellStatisticBarcode,
     FlowcellSummaryBarcode,
     FlowcellHistogramSummary,
     FlowcellChannelSummary,
-)
+    Flowcell, JobMaster, JobType)
 
 
 def save_flowcell_summary_barcode(flowcell_id, row):
@@ -171,3 +173,33 @@ def save_flowcell_channel_summary(flowcell_id, row):
     flowcellChannelSummary.read_count += read_count
 
     flowcellChannelSummary.save()
+
+
+# @receiver(post_save, sender=Flowcell)
+# def create_flowcell_jobs(sender, instance=None, created=False, **kwargs):
+#     """
+#     Create the flowcell jobs automatically on flowcell creation
+#     Parameters
+#     ----------
+#     sender
+#     instance: reads.models.Flowcell
+#         The flowcell database model
+#     created: bool
+#         Whether the flowcell has been created
+#     kwargs
+#
+#     Returns
+#     -------
+#
+#     """
+#
+#     if created:
+#
+#         job_name_list = ['ChanCalc', 'UpdateFlowcellDetails']
+#
+#         for job_name in job_name_list:
+#
+#             JobMaster.objects.get_or_create(
+#                 job_type=JobType.objects.get(name=job_name),
+#                 flowcell=instance,
+#             )

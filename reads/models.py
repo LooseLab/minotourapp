@@ -2477,26 +2477,3 @@ def create_run_barcodes(sender, instance=None, created=False, **kwargs):
             name='No barcode'
         )
 
-
-@receiver(post_save, sender=Flowcell)
-def create_flowcell_jobs(sender, instance=None, created=False, **kwargs):
-    """
-    This function is executed after a flowcell is created. It creates the
-    default jobs chancalc and updateflowcelldetails.
-
-    :param sender:
-    :param instance:
-    :param created:
-    :param kwargs:
-    :return:
-    """
-
-    if created:
-        job_name_list = ['ChanCalc', 'UpdateFlowcellDetails']
-
-        for job_name in job_name_list:
-
-            JobMaster.objects.create(
-                job_type=JobType.objects.get(name=job_name),
-                flowcell=instance,
-            )
