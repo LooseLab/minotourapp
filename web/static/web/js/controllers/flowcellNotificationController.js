@@ -28,17 +28,28 @@ class FlowcellNotificationController {
         let refSelect = $("#reference")[0].selectedOptions;
         let contigSelect = $("#contig")[0].selectedOptions;
         let barcSelect = $("#notification_barcodes")[0].selectedOptions;
-        let selects = [refSelect, contigSelect, barcSelect];
+        let selects = [[refSelect, "reference"], [contigSelect, "chromosome"], [barcSelect, "barcodes"]];
         let self = this;
+        // loop through the select boxes
         selects.forEach(function (selected) {
-            if (selected.length > 1) {
+            let selections = selected[0];
+            let key = selected[1];
+            if (!self._optionsSelected.hasOwnProperty(key)) {
+                self._optionsSelected[key] = [];
+            }
+            // this is banter
+            if (selections.length > 1) {
                 console.log(selected);
                 console.log("!!!!!!!!!!!!");
-                Object.entries(refSelect, function ([key, value]) {
+                Object.entries(selections).forEach(function ([_key, value]) {
                     console.log(key, value);
+                    self._optionsSelected[key].push(value.innerHTML);
                 });
             } else {
-                self._optionsSelected[1] = selected[0].innerHTML;
+                console.log(selections);
+
+                self._optionsSelected[key] = selections[0].innerHTML;
+                console.log(self._optionsSelected);
             }
         });
 
@@ -72,7 +83,8 @@ class FlowcellNotificationController {
 
         axiosInstance.post('/api/v1/messages/create_conditions', {
             flowcell: this._flowcellId,
-            conditions: this._conditions
+            conditions: this._conditions,
+            coverage_sets: this._optionsSelected
         }).then(function (response) {
         }).catch(function (error) {
             alert("Failed to create conditions.");
@@ -138,7 +150,7 @@ class FlowcellNotificationController {
 
         $("#reference").on('change', function (e) {
             let notificationContigs = $("#contig");
-            notificationContigs.append(`<option>Select All</option>`);
+            // notificationContigs.append(`<option>Select All</option>`);
             var optionSelected = $("option:selected", this);
             console.log("optionSelected");
             console.log(optionSelected);
@@ -168,7 +180,12 @@ class FlowcellNotificationController {
         $("#contig").on('change', function (e) {
             e.preventDefault();
             let notificationBarcodes = $("#notification_barcodes");
-            self._barcodesShown.add("Select All");
+            // Add select all to the dropdown barcode
+            if (!self._barcodesShown.has("Select All")) {
+                notificationBarcodes.append(`<option>Select All</option>`);
+                self._barcodesShown.add("Select All");
+            }
+            // Get the selected options of the drop downs
             var optionSelected = $("option:selected", this);
             console.log("optionSelected");
             console.log(optionSelected);
@@ -180,27 +197,30 @@ class FlowcellNotificationController {
             console.log(optionSelected);
             // console.log(Object.entries(optionSelected));
 
-            for (let value of optionSelected) {
-                console.log(value);
-                if (!value.innerHTML === "Select All") {
-                    console.log("No seletc all");
-                    continue;
-                    console.log(self._barcodesObj);
-                    console.log(value);
-                    console.log(self._barcodesObj[value.innerHTML]);
-                    self._barcodesObj[value.innerHTML].forEach(function (element) {
-                        self._barcodesShown = new Set([...self._barcodesShown, ...self._barcodesObj[value.innerHTML]]);
-                        notificationBarcodes.append(`<option>${element}</option>`);
-                    });
-                }
-
-            }
+            // for (let value of optionSelected) {
+            //     console.log(value);
+            //     if (!value.innerHTML === "Select All") {
+            //         console.log("No seletc all");
+            //         continue;
+            //         console.log(self._barcodesObj);
+            //         console.log(value);
+            //         console.log(self._barcodesObj[value.innerHTML]);
+            //         self._barcodesObj[value.innerHTML].forEach(function (element) {
+            //             self._barcodesShown = new Set([...self._barcodesShown, ...self._barcodesObj[value.innerHTML]]);
+            //             notificationBarcodes.append(`<option>${element}</option>`);
+            //         });
+            //     }
+            //
+            // }
 
 
             let contigsSelected = new Set();
             // for each of our selected contigs
             console.log(Object.entries(optionSelected));
-            Object.entries(optionSelected).forEach(([key, value]) => {
+            for (let i = 0; i < optionSelected.length; i++) {
+                let key = i;
+                let value = optionSelected[i];
+                console.log(key, value);
                 if (value.innerHTML !== undefined && value.innerHTML !== "Select All") {
                     contigsSelected.add(value.innerHTML);
                     console.log(contigsSelected);
@@ -209,10 +229,14 @@ class FlowcellNotificationController {
                     self._barcodesShown.add(...self._barcodesObj[value.innerHTML]);
                     // if it's not already in thered
                     self._barcodesShown = new Set([...self._barcodesShown].filter(x => !contigsSelected.has(x)));
+                    self._barcodesObj[value.innerHTML].forEach(function (element) {
+                        self._barcodesShown = new Set([...self._barcodesShown, ...self._barcodesObj[value.innerHTML]]);
+                        notificationBarcodes.append(`<option>${element}</option>`);
+                    });
                 }
 
 
-            });
+            }
         });
     }
 }
