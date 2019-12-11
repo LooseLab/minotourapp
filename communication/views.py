@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from communication.models import NotificationConditions
+from communication.models import NotificationConditions, ConditionalChromosomes, ConditionalBarcodes
 from communication.models import Message
 from communication.serializers import MessageSerializer
 
@@ -25,7 +25,8 @@ from communication.serializers import MessageSerializer
 #            'message': message,
 #         }
 #     )
-from reads.models import Flowcell
+from reads.models import Flowcell, Barcode
+from reference.models import ReferenceInfo, ReferenceLine
 
 
 @api_view(["GET", "POST"])
@@ -54,25 +55,44 @@ def get_or_create_conditions(request):
 
         conditions = request.data.get("conditions", None)
 
+        coverage_settings = request.data.get("coverage_sets", {})
+
         if flowcell is None:
             return Response("No flowcell submitted", status=400)
         if conditions is None:
             return Response("No conditions submitted", status=400)
-
+        # Create conditions for each contained in the request body
         for condition, value in conditions.items():
 
-            repeat = False
+            cov_targ = value if condition is "coverage" else None
 
-            if condition is not "coverage":
-                repeat = True
+            repeat = True
+
+            reference = None
+
+            if condition is "coverage" and coverage_settings:
+                repeat = False
+                reference = ReferenceInfo.objects.get(name=coverage_settings["reference"])
 
             cond = NotificationConditions(notification_type=condition_lookup[condition],
                                           flowcell=flowcell,
                                           creating_user=request.user,
                                           repeat=repeat,
-                                          coverage_target=value
+                                          coverage_target=cov_targ,
+                                          reference_file=reference
                                           )
             cond.save()
+        if "coverage" in conditions:
+            # a = {"barcodes": (ConditionalBarcodes, Barcode, ), "chromosome": (ConditionalChromosomes, ReferenceLine)}
+            # for name, settings in coverage_settings.items():
+            #     if isinstance(settings, list):
+            #         for itemy in settings:
+            #             foreign = a[name][1].objects.get(re)
+            #             a[name][0](
+            #
+            #             )
+
+
 
         return Response("Successfully saved notification conditions.", status=200)
 
