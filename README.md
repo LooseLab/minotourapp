@@ -3,31 +3,39 @@
 Minotour is a work in progress, therefore features may change, and any bug reports/feature requests and pull requests will be gratefully recieved.
 
 ## Running minoTour with Docker
+minoTour is developed on docker so docker must be installed and rightly set up to develop and test miniTour
 
-If Docker is not installed - instructions for installing it can be found here <https://docs.docker.com/install/>
+Docker is a set of platform as a service products that use OS-level virtualization to deliver software in packages called containers. 
+Containers are isolated from one another and bundle their own software, libraries and configuration files;
+they can communicate with each other through well-defined channels.
 
-Make sure Docker is installed and running. You can check this by running the command below:
+If Docker is not installed - instructions for installing can be found here <https://docs.docker.com/install/>
+Make sure Docker is installed and running at the end of the installation. You can check this by running the command below:
 
 ```bash
 docker --version
 ```
-
+## Building and starting Docker containers
 The following commands build and start several minoTour docker containers and create an admin user.
-
+clone the minoTour repository unto your local machine 
 ```bash
-git clone https://github.com/LooseLab/minotourapp.git;
+git clone https://github.com/LooseLab/minotourapp.git
 ``` 
 
+Change to the minotourapp directory and then use the git checkout command to switch to the develop branch
 ```bash
-cd minotourapp;
+cd minotourapp
 
-git checkout develop;
+git checkout develop
 ``` 
+ 
+Use the following commands to build and start docker services 
+- <!-- Use 'docker-compose up web' if celere is not running -->-
 
 ```bash
-docker-compose build;
+docker-compose build
 
-docker-compose up -d;
+docker-compose up -d 
 ``` 
 
 Create an admin user:
@@ -37,6 +45,7 @@ docker-compose exec web python manage.py createsuperuser
 ``` 
 
 After a few seconds, you should be able to access minoTour at <http://localhost:8100/>
+
 
 ### Uploading references and other files
 
@@ -56,6 +65,8 @@ Place the 4 .cf files in the newly created folder.
 
 ## Development environment
 
+
+## Setting up development environment
 
 To set up a development environment, first clone or download the code from [our github page](https://github.com/LooseLab/minotourapp.git "Looselab's github page").
 
