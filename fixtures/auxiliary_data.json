@@ -63,7 +63,7 @@
   }
 },
 {
-  "model": "jobs.jobtype",
+  "model": "reads.jobtype",
   "pk": 1,
   "fields": {
     "name": "ChanCalc",
@@ -76,7 +76,7 @@
   }
 },
 {
-  "model": "jobs.jobtype",
+  "model": "reads.jobtype",
   "pk": 2,
   "fields": {
     "name": "ProcAlign",
@@ -89,7 +89,7 @@
   }
 },
 {
-  "model": "jobs.jobtype",
+  "model": "reads.jobtype",
   "pk": 3,
   "fields": {
     "name": "Alignment",
@@ -102,7 +102,7 @@
   }
 },
 {
-  "model": "jobs.jobtype",
+  "model": "reads.jobtype",
   "pk": 4,
   "fields": {
     "name": "Minimap2",
@@ -115,7 +115,7 @@
   }
 },
 {
-  "model": "jobs.jobtype",
+  "model": "reads.jobtype",
   "pk": 5,
   "fields": {
     "name": "Assembly",
@@ -128,7 +128,7 @@
   }
 },
 {
-  "model": "jobs.jobtype",
+  "model": "reads.jobtype",
   "pk": 8,
   "fields": {
     "name": "ExportLive",
@@ -141,7 +141,7 @@
   }
 },
 {
-  "model": "jobs.jobtype",
+  "model": "reads.jobtype",
   "pk": 9,
   "fields": {
     "name": "ExportReads",
@@ -154,7 +154,7 @@
   }
 },
 {
-  "model": "jobs.jobtype",
+  "model": "reads.jobtype",
   "pk": 10,
   "fields": {
     "name": "Metagenomics",
@@ -167,7 +167,7 @@
   }
 },
 {
-  "model": "jobs.jobtype",
+  "model": "reads.jobtype",
   "pk": 11,
   "fields": {
     "name": "Delete_Flowcell",
@@ -180,7 +180,7 @@
   }
 },
 {
-  "model": "jobs.jobtype",
+  "model": "reads.jobtype",
   "pk": 12,
   "fields": {
     "name": "UpdateFlowcellDetails",
@@ -193,7 +193,7 @@
   }
 },
 {
-  "model": "jobs.jobtype",
+  "model": "reads.jobtype",
   "pk": 13,
   "fields": {
     "name": "CalculateMetagenomicsSankey",
@@ -206,7 +206,7 @@
   }
 },
 {
-  "model": "jobs.jobtype",
+  "model": "reads.jobtype",
   "pk": 14,
   "fields": {
     "name": "Other",
@@ -219,7 +219,7 @@
   }
 },
   {
-    "model": "jobs.jobtype",
+    "model": "reads.jobtype",
     "pk": 15,
     "fields": {
       "name": "Archive Flowcell",
