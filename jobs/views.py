@@ -338,7 +338,7 @@ def task_control(request):
                 paused_status = "paused"
 
             job_master.save()
-            return_message = f"Successfully {paused_status} metagenomics task reset, id: {job_master.id}."
+            return_message = f"Successfully {paused_status} metagenomics task, id: {job_master.id}."
 
         elif action == "Delete":
             delete_metagenomics_task.delay(job_master.id)

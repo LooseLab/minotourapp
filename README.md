@@ -47,6 +47,25 @@ docker-compose exec web python manage.py createsuperuser
 After a few seconds, you should be able to access minoTour at <http://localhost:8100/>
 
 
+### Uploading references and other files
+
+Once a instance is up and running, a local data folder should have appeared alongside the minotourapp directory. This is for any reference files and the centrifuge index (if you want to run real).
+ We do not distribute this index, it can be dowloaded from [JHU](ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data/p_compressed_2018_4_15.tar.gz).
+ 
+ After placing any files into the localdata folder on you host system, run the following the commands to
+ make them available to minoTour.
+ 
+ ```bash 
+docker exec celery_worker python3 manage.py add_reference /var/lib/minotour/apps/localdata
+```
+
+To add the centrifuge index to the docker container, create a folder called centrifuge_files in the localdata folder on your host system.
+Place the 4 .cf files in the newly created folder. 
+ 
+
+## Development environment
+
+
 ## Setting up development environment
 
 To set up a development environment, first clone or download the code from [our github page](https://github.com/LooseLab/minotourapp.git "Looselab's github page").

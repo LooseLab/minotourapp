@@ -1,12 +1,10 @@
 import datetime
-import hashlib
 import json
 from datetime import timedelta
 
 import dateutil.parser
 import numpy as np
 import pandas as pd
-from celery import task
 from celery.utils.log import get_task_logger
 from dateutil import parser
 from django.contrib.auth.decorators import login_required
@@ -19,7 +17,6 @@ from django.shortcuts import render
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import api_view
-from rest_framework.generics import ListCreateAPIView
 from rest_framework.response import Response
 
 from alignment.models import PafRoughCov
@@ -34,7 +31,7 @@ from reads.models import (Barcode, FastqFile, FastqRead, FastqReadType,
                           FlowcellSummaryBarcode, GroupRun, MinION,
                           MinIONControl, MinIONEvent, MinIONEventType,
                           MinionMessage, MinIONRunStats, MinIONRunStatus,
-                          MinIONScripts, MinIONStatus, Run, RunSummary)
+                          MinIONScripts, MinIONStatus, Run)
 from reads.serializers import (BarcodeSerializer, ChannelSummary,
                                ChannelSummarySerializer, FastqFileSerializer,
                                FastqReadGetSerializer, FastqReadSerializer,
@@ -53,6 +50,8 @@ from reads.serializers import (BarcodeSerializer, ChannelSummary,
                                RunSummaryBarcode, RunSummaryBarcodeSerializer)
 from reads.utils import get_coords, return_temp_empty_summary
 from readuntil.models import ExpectedBenefitChromosomes
+from web.tasks import save_reads
+
 
 logger = get_task_logger(__name__)
 
@@ -245,7 +244,15 @@ def run_list(request):
 
     if request.method == 'GET':
 
-        queryset = Run.objects.filter(owner=request.user).filter(to_delete=False)
+        flowcell_list = []
+
+        for flowcell in Flowcell.objects.all():
+            if request.user == flowcell.owner or request.user.has_perm('view_data', flowcell) or request.user.has_perm('run_analysis', flowcell):
+                flowcell_list.append(flowcell)
+
+        print(flowcell_list)
+
+        queryset = Run.objects.filter(flowcell__in=flowcell_list).filter(to_delete=False)
         serializer = RunSerializer(queryset, many=True, context={'request': request})
 
         return Response(serializer.data)
@@ -287,13 +294,19 @@ def run_detail(request, pk):
 
     search_criteria = request.GET.get('search_criteria', 'id')
 
+    flowcell_list = []  # TODO move the next 3 lines to a function
+
+    for flowcell in Flowcell.objects.all():
+        if request.user == flowcell.owner or request.user.has_perm('view_data', flowcell) or request.user.has_perm('run_analysis', flowcell):
+            flowcell_list.append(flowcell)
+
     if search_criteria == 'runid':
 
-        run_list = Run.objects.filter(owner=request.user).filter(runid=pk)
+        run_list = Run.objects.filter(flowcell__in=flowcell_list).filter(runid=pk)
 
     elif search_criteria == 'id':
 
-        run_list = Run.objects.filter(owner=request.user).filter(id=pk)
+        run_list = Run.objects.filter(flowcell__in=flowcell_list).filter(id=pk)
 
     else:
 
@@ -1072,10 +1085,17 @@ def flowcell_detail(request, pk):
             all_flowcell_list = Flowcell.objects.exclude(owner=request.user)
 
             for f in all_flowcell_list:
-                
+
                 if request.user.has_perm('view_data', f) or request.user.has_perm('run_analysis', f):
 
-                    flowcell_list.append(f)
+                    if search_criteria == 'id':
+                        pk = int(pk)
+                        if f.id == pk:
+                            flowcell_list.append(f)
+                    elif search_criteria == 'name':
+                        if f.name == pk:
+                            flowcell_list.append(f)
+
 
         # TODO look at the logic here, a user with two identical flowcells would crash this
 
@@ -1235,7 +1255,7 @@ def flowcell_statistics(request, pk):
 
     queryset = (
         FlowcellStatisticBarcode.objects.filter(flowcell=flowcell)
-        .filter(barcode_name__in=barcodes_list)
+        .filter(Q(barcode_name__in=barcodes_list) | Q(rejection_status__in=barcodes_list))
         .order_by("sample_time")
     )
 
@@ -1425,13 +1445,13 @@ def flowcell_histogram_summary(request, pk):
 
     max_bin_index = FlowcellHistogramSummary.objects \
         .filter(flowcell=flowcell) \
-        .filter(barcode_name=barcode_name) \
+        .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name)) \
         .aggregate(Max('bin_index'))
 
     # A list of tuples, distinct on barcode name, pass/fail, template
     key_list = (
         FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-        .filter(barcode_name=barcode_name)
+        .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
         .values_list(
             "barcode_name", "read_type_name", "rejection_status", "status"
         )
@@ -1444,7 +1464,7 @@ def flowcell_histogram_summary(request, pk):
         # query flowcell Histogram summary objects for all of the combinations under this barcode
         queryset = (
             FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-            .filter(barcode_name=barcode_name)
+            .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
             .filter(read_type_name=read_type_name)
             .filter(status=status)
             .filter(rejection_status=rejection_status)
@@ -1695,7 +1715,7 @@ def flowcell_run_basecalled_summary_html(request, pk):
             print('RunSummary does not exist for run {}'.format(run.id))
 
             run_summary_obj = return_temp_empty_summary(run)
-            
+
             run_summary = {
                 'runid': "Unavailable",
                 'read_count': "Unavailable",
@@ -2096,32 +2116,24 @@ def read_list_new(request):
 
     elif request.method == 'POST':
 
-        # serializer = FastqReadSerializer(data=request.data, many=True)
+        serializer = FastqReadSerializer(data=request.data, many=True)
 
-        logger.info('>>> received reads post - calling task - request.data size: {}'.format(len(request.data)))
+        if serializer.is_valid():
 
-        # save_reads.delay(request.data)
-        save_reads(request.data)
+            #print(serializer.validated_data)
 
-        return Response({}, status=status.HTTP_201_CREATED)
+            logger.info('>>> received reads post - calling task - request.data size: {}'.format(len(request.data)))
 
+            # save_reads.delay(request.data)
+            save_reads(request.data)
 
-@task(rate_limit="100/m")
-def save_reads(data):
-    """
-    Save fastqreads sent by the client
-    :param data:
-    :return:
-    """
+            return Response({}, status=status.HTTP_201_CREATED)
 
-    serializer = FastqReadSerializer(data=data, many=True)
+        else:
 
-    if serializer.is_valid():
-        serializer.save()
-        logger.info('Saving reads with success')
+            logger.info('>>> received reads post - no valid data')
+            return Response({'message': 'no valid data'}, status=status.HTTP_400_BAD_REQUEST)
 
-    else:
-        logger.info('Saving reads with failure')
 
 
 @api_view(['GET'])
@@ -2239,12 +2251,12 @@ def flowcell_sharing(request, pk):
 
         for user in users:
 
-            if user != flowcell.owner:
+            if user != flowcell.owner and not user.is_superuser:
 
                 if user.has_perm('view_data', flowcell):
 
                     permission_list.append({
-                        "username": user.username, 
+                        "username": user.username,
                         'permission': 'VIEW DATA',
                         'permission_code': 'view_data',
                         'user': user.id,
@@ -2253,7 +2265,7 @@ def flowcell_sharing(request, pk):
                 if user.has_perm('run_analysis', flowcell):
 
                     permission_list.append({
-                        "username": user.username, 
+                        "username": user.username,
                         'permission': 'RUN ANALYSIS',
                         'permission_code': 'run_analysis',
                         'user': user.id,
@@ -2270,10 +2282,6 @@ def flowcell_sharing_delete(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)
 
-    if request.user != flowcell.owner:
-
-        return Response({"message": "You do not have the permission to execute this action."}, status=status.HTTP_400_BAD_REQUEST)
-
     data = request.data
 
     try:
@@ -2284,10 +2292,24 @@ def flowcell_sharing_delete(request, pk):
         return Response({"message": "User does not exist."}, status=status.HTTP_404_NOT_FOUND)
 
     permission = data['permission']
-    
-    remove_perm(permission, user, flowcell)
 
-    return Response({"message": "Permission deleted"}, status=status.HTTP_200_OK)
+    # if request.user != flowcell.owner and request.user != user:
+
+    #     return Response({"message": "You do not have the permission to execute this action."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if request.user == user and user.has_perm(permission, flowcell):
+
+        remove_perm(permission, user, flowcell)
+        return Response({"message": "Permission deleted"}, status=status.HTTP_200_OK)
+
+    elif request.user == flowcell.owner:
+
+        remove_perm(permission, user, flowcell)
+        return Response({"message": "Permission deleted"}, status=status.HTTP_200_OK)
+
+    else:
+
+        return Response({"message": "You do not have the permission to execute this action."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 def flowcell_manager(request):

@@ -245,3 +245,13 @@
     opacity: 0;
   }
 }
+
+ul.nav.nav-pills > li{
+    cursor: pointer;
+}
+
+.nav-pills > li.active > a{
+    /*border-radius: 3px;*/
+    border-top: none;
+    margin-top: 3px ;
+}

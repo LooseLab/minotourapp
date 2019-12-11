@@ -92,10 +92,10 @@ class Command(BaseCommand):
 
     help = (
         "Add a custom Gff3 file to the minoTour database. "
-        "Contains the regions for the metagenomics mapping."
-        "Please namee the file after the species."
-        "It is necessary to have a reference for the species already uploaded,"
-        " with the exact name as the gff file name. If not already present, please add one with "
+        "Contains the regions for the metagenomics mapping. "
+        "Please name the file after the species. "
+        "It is necessary to have a reference for the species already uploaded, "
+        "with the exact name as the gff file name. If not already present, please add one with "
         "python manage.py add_reference."
     )
 
@@ -110,7 +110,7 @@ class Command(BaseCommand):
             help="Path to the input gff files or a directory of gffs"
             ", if a directory is given files with the extensions"
             "'.gff' or '.gff3' will be used. Files can be Gzipped. The species name used is the name of the file."
-            " Please seperate with  an underscore",
+            " Please seperate with  an underscore.",
             nargs="+",
         )
         parser.add_argument(
@@ -118,7 +118,7 @@ class Command(BaseCommand):
             "--set",
             type=str,
             help="The name of the target set to include the gff regions "
-            "for the species in",
+            "for the species in.",
         )
 
         parser.add_argument(
@@ -135,7 +135,7 @@ class Command(BaseCommand):
             "-p",
             "--private",
             action="store_true",
-            help="Whether or not this target_set will be hidden from other users. Default - false",
+            help="Whether or not this target_set will be hidden from other users. Default - false.",
         )
 
     def handle(self, *args, **options):

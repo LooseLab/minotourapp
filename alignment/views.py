@@ -139,13 +139,30 @@ def flowcell_paf_alignment_list_original(request, flowcell_id, barcodegroup_id, 
 
 @api_view(['GET'])
 def paf_summary_json(request, pk):
+    """
+    Return the data for the minimap2 coverage summary table
+    Parameters
+    ----------
+    request: rest_framework.Request.request
+        The request object that the table sends with the parameters for this data.
+    pk: int
+        The primary key of the flowcell.
+
+    Returns:
+    -------
+    Response: rest_framework.Response.response
+        The Response object, containing response data, status code.
+    result: dict
+        The resultant data, contain the values for each column in the DataTables table.
+
+    """
 
     query_columns = [
         'barcode_name',
         'reference_line_name',
+        'reference_line_length',
         'read_count',
         'total_length',
-        'reference_line_length',
         'average_read_length',
         'coverage'
     ]
@@ -191,7 +208,6 @@ def paf_summary_json(request, pk):
 
         else:
             df = df.sort_values(query_columns[int(order_column)], ascending=True)
-
 
     dictdf = df.to_dict('records')
 

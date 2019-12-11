@@ -405,12 +405,17 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids, fasta_df):
 
     reference_name = species + "_" + row["name"]
 
-    references = ReferenceInfo.objects.filter(name=reference_name).first()
+    logger.info(reference_name)
+
+    reference = ReferenceInfo.objects.filter(name=reference_name).first()
+    logger.info(f"refernce not first is {ReferenceInfo.objects.filter(name=reference_name)}\n")
+
+    logger.info(f"reference is {reference}\n")
     # Get the jobtype for this target species mapping, so we can find the mapping job
     map_job_type = JobType.objects.get(name="Other")
     # Create or get the mapping job for this target species mapping
     mapping_task, created = JobMaster.objects.get_or_create(
-        job_type=map_job_type, flowcell=flowcell, reference=references
+        job_type=map_job_type, flowcell=flowcell, reference=reference
     )
     # Call the align reads function from the web tasks-alignment file so we can map the reads against the reference
     align_reads(fastq_list, mapping_task.id, fasta_df)
@@ -529,7 +534,9 @@ def map_all_the_groups(
         references = ReferenceInfo.objects.filter(
             Q(owner_id=user_id) | Q(private=False)
         ).filter(name=species)[0]
-
+        logger.info("References for this metganomics")
+        logger.info(references)
+        logger.info("\n")
     except ObjectDoesNotExist:
 
         logger.info(
@@ -554,6 +561,8 @@ def map_all_the_groups(
     mapping_task, created = JobMaster.objects.get_or_create(
         job_type=map_job_type, flowcell=flowcell, reference=references
     )
+    if created:
+        logger.info(f"Created mapping target object for reference {references}")
 
     b = [
         {"read_id": fastq.read_id, "sequence": fastq.sequence}
@@ -591,6 +600,9 @@ def map_all_the_groups(
             )
         )
         # Map the reads against the target regions
+        logger.info("plasmid df is")
+        logger.info(plasmid_df)
+
         plasmid_red_series = plasmid_df.apply(
             plasmid_mapping,
             args=(species, fastas, flowcell, read_ids, fasta_df),
@@ -1558,6 +1570,10 @@ def run_centrifuge(flowcell_job_id):
                 flowcell.id, chunk_size
             )
         )
+        task = JobMaster.objects.filter(pk=flowcell_job_id).first()
+        if task.first() is None:
+            logger.error("Task appears to have been deleted.")
+            pass
         task.running = False
         task.save()
         return
@@ -1880,6 +1896,8 @@ def run_centrifuge(flowcell_job_id):
     df["flowcell"] = flowcell
 
     # same with task from Jobmaster
+    # Get the task again so we don't over write the paused status
+    task = JobMaster.objects.get(pk=task.id)
     df["task"] = task
 
     df.reset_index(inplace=True)
@@ -1912,6 +1930,8 @@ def run_centrifuge(flowcell_job_id):
     cent_to_create_df["task"] = task
     # Parse that dataframe, and store the results, returning the new latest iteration count
     new_latest = output_parser(task, cent_to_create_df, "output", metadata)
+    # Get the task again so we don't over write the paused status
+    task = JobMaster.objects.get(pk=task.id)
     # Set the iteration count on the job master
     task.iteration_count = new_latest
     # Save the new value
