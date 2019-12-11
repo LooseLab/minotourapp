@@ -6,36 +6,36 @@ function getTotalReadsTable(flowCellId) {
     if (flowcell_selected_tab_input.value !== "nav-metagenomics") {
         return;
     }
-        // Jquery selector
-        let table = $(".tableLand");
-        // If the table already exists, use the DataTable APi to update in place
-        if ($.fn.DataTable.isDataTable(table)) {
-            table.DataTable().clear();
-            table.DataTable().draw();
-        } else {
-            // else the databale must be initialised
-            table.DataTable({
-                    "processing": true,
-                    "serverSide": true,
-                    "ajax": {
-                        "url": '/api/v1/table/',
-                        "data": {
-                            "flowcell_id": flowCellId
-                        }
-                    },
-                    "columns": [
-                        {"data": "barcode_name"},
-                        {"data": "superkingdom"},
-                        {"data": "phylum"},
-                        {"data": "classy"},
-                        {"data": "order"},
-                        {"data": "family"},
-                        {"data": "genus"},
-                        {"data": "species"},
-                        {"data": "num_matches"},
-                        {"data": "proportion_of_classified"},
-                    ]
-                }
-            );
-        }
+    // Jquery selector
+    let table = $(".tableLand");
+    // If the table already exists, use the DataTable APi to update in place
+    if ($.fn.DataTable.isDataTable(table)) {
+        table.DataTable().clear();
+        table.DataTable().draw();
+    } else {
+        // else the databale must be initialised
+        table.DataTable({
+                "processing": true,
+                "serverSide": true,
+                "ajax": {
+                    "url": '/api/v1/table/',
+                    "data": {
+                        "flowcell_id": flowCellId
+                    }
+                },
+                "columns": [
+                    {"data": "barcode_name"},
+                    {"data": "superkingdom"},
+                    {"data": "phylum"},
+                    {"data": "classy"},
+                    {"data": "order"},
+                    {"data": "family"},
+                    {"data": "genus"},
+                    {"data": "species"},
+                    {"data": "num_matches"},
+                    {"data": "proportion_of_classified"},
+                ]
+            }
+        );
+    }
 }

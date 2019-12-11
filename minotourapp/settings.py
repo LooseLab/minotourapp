@@ -53,9 +53,9 @@ INSTALLED_APPS = [
     'communication',
     'assembly',
     'devices',
-    'jobs',
     'centrifuge',
     'readuntil',
+    'guardian',
 ]
 
 MIDDLEWARE = [
@@ -107,6 +107,7 @@ DATABASES = {
         'HOST': get_env_variable("MT_DB_HOST"),
         'PORT': get_env_variable("MT_DB_PORT"),
         'NAME': get_env_variable("MT_DB_NAME"),
+        'CONN_MAX_AGE': None,
     }
 }
 
@@ -275,6 +276,11 @@ USE_X_FORWARDED_HOST = True
 # SECURITY WARNING: don't run with debug turned on in production!
 
 DEBUG = get_env_variable("MT_DJANGO_DEBUG")
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend', # default
+    'guardian.backends.ObjectPermissionBackend',
+)
 
 # if DEBUG:
 #    INTERNAL_IPS = ('127.0.0.1', 'localhost',)

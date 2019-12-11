@@ -2,8 +2,8 @@ import datetime
 
 import pytz
 from django.contrib.auth.models import User
+from django.test import TestCase
 from rest_framework import status
-from rest_framework.authtoken.models import Token
 from rest_framework.test import APITestCase
 
 from .models import Barcode, FastqRead, FastqReadType, Run, Flowcell
@@ -101,3 +101,52 @@ class MinionRunTestCase(APITestCase):
         self.client.credentials(HTTP_AUTHORIZATION='Token a4ef48961c860e72a68534e29dc4ec8f2aea344f')
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class FlowcellTestCase(TestCase):
+
+    def setUp(self):
+
+        user_john = User.objects.create_user('john', 'john@test.com', 'passasdf')
+
+        Flowcell.objects.create(
+            name='Test1',
+            owner=user_john
+        )
+
+        Flowcell.objects.create(
+            name='Test2',
+            owner=user_john
+        )
+
+        Flowcell.objects.create(
+            name='Test3',
+            owner=user_john
+        )
+
+    def test_flowcell_older_than_48hours_is_inactive(self):
+
+        delta_1day = datetime.timedelta(days=1)
+        delta_2days = datetime.timedelta(days=2)
+        delta_3days = datetime.timedelta(days=3)
+
+        date1 = datetime.datetime.now(datetime.timezone.utc) - delta_1day
+        date2 = datetime.datetime.now(datetime.timezone.utc) - delta_2days
+        date3 = datetime.datetime.now(datetime.timezone.utc) - delta_3days
+
+        flowcell1 = Flowcell.objects.get(name='Test1')
+        flowcell1.last_activity_date = date1
+        flowcell1.save()
+
+        flowcell2 = Flowcell.objects.get(name='Test2')
+        flowcell2.last_activity_date = date2
+        flowcell2.save()
+
+        flowcell3 = Flowcell.objects.get(name='Test3')
+        flowcell3.last_activity_date = date3
+        flowcell3.save()
+
+        self.assertEqual(flowcell1.active(), True)
+        self.assertEqual(flowcell2.active(), False)
+        self.assertEqual(flowcell3.active(), False)
+

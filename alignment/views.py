@@ -10,6 +10,7 @@ from alignment.models import PafRoughCov, PafSummaryCov
 from alignment.utils import calculate_coverage_new
 from . import utils
 from rest_framework.response import Response
+from rest_framework import status
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -138,13 +139,30 @@ def flowcell_paf_alignment_list_original(request, flowcell_id, barcodegroup_id, 
 
 @api_view(['GET'])
 def paf_summary_json(request, pk):
+    """
+    Return the data for the minimap2 coverage summary table
+    Parameters
+    ----------
+    request: rest_framework.Request.request
+        The request object that the table sends with the parameters for this data.
+    pk: int
+        The primary key of the flowcell.
+
+    Returns:
+    -------
+    Response: rest_framework.Response.response
+        The Response object, containing response data, status code.
+    result: dict
+        The resultant data, contain the values for each column in the DataTables table.
+
+    """
 
     query_columns = [
         'barcode_name',
         'reference_line_name',
+        'reference_line_length',
         'read_count',
         'total_length',
-        'reference_line_length',
         'average_read_length',
         'coverage'
     ]
@@ -171,14 +189,6 @@ def paf_summary_json(request, pk):
 
         queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk)
 
-    if order_column:
-
-        if order_dir == 'desc':
-            queryset = queryset.order_by('-{}'.format(query_columns[int(order_column)]))
-
-        else:
-            queryset = queryset.order_by('{}'.format(query_columns[int(order_column)]))
-
     records_total = queryset.count()
 
     queryset = queryset[start:end]
@@ -190,6 +200,14 @@ def paf_summary_json(request, pk):
     df["average_read_length"] = df['total_length'].div(df['read_count']).round(decimals=3)
 
     df["coverage"] = df['total_length'].div(df['reference_line_length']).round(decimals=3)
+
+    if order_column:
+
+        if order_dir == 'desc':
+            df = df.sort_values(query_columns[int(order_column)], ascending=False)
+
+        else:
+            df = df.sort_values(query_columns[int(order_column)], ascending=True)
 
     dictdf = df.to_dict('records')
 
@@ -263,3 +281,39 @@ def flowcellreferences_used_by_run(request, flowcell_id):
     ]
 
     return HttpResponse(json.dumps(list(result)), content_type="application/json")
+
+
+@api_view(['GET'])
+def get_coverage_summary(request, pk):
+    """
+    Simple Coverage endpoint
+    :param request: The rest framework request object
+    :type request: rest_framework.request.Request
+    :param pk: The primary key of the flowcell
+    :type pk: int
+    :return:
+    """
+    print(pk)
+    queryset = PafSummaryCov.objects.filter(job_master__flowcell__id=pk)
+    print(queryset)
+
+    if not queryset:
+        return Response("No alignment results found for this flowcell", status=status.HTTP_204_NO_CONTENT)
+
+    df = pd.DataFrame.from_records(
+        queryset.values('barcode_name', 'reference_line_name', 'total_length',
+                        'reference_line_length'))
+
+    df["coverage"] = df['total_length'].div(df['reference_line_length']).round(decimals=3)
+
+    df = df.drop(columns=["reference_line_length", "total_length"])
+
+    df.set_index("reference_line_name", inplace=True)
+
+    dictdf = df.to_dict('index')
+
+    result = {
+        "data": dictdf
+    }
+
+    return Response(result, status=200)

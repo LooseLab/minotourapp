@@ -11,7 +11,7 @@ envs.sh
 minotour.log
 .env
 minUPfastq/*
-minUPfastq
+minUPfastqi
 logfile
 celerybeat*
 centrifuge_report.tsv
@@ -19,3 +19,4 @@ centrifuge/utils.py
 *.mysql
 env-*
 */migrations/
+*/Temp_results/*

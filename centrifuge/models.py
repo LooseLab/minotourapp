@@ -1,11 +1,12 @@
 """models.py
 
 """
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
-from jobs.models import JobMaster
-from reads.models import Barcode
+from reads.models import Barcode, JobMaster
 from reads.models import Flowcell
+from reference.models import ReferenceInfo
 
 
 class SankeyLink(models.Model):
@@ -40,14 +41,6 @@ class SankeyLink(models.Model):
         on_delete=models.CASCADE
     )
 
-    sankey_task = models.ForeignKey(
-        JobMaster,
-        related_name="sankey_task",
-        default=None,
-        null=True,
-        on_delete=models.CASCADE
-    )
-
     target_tax_level = models.CharField(max_length=100)
 
     path = models.IntegerField(default=0)
@@ -77,6 +70,7 @@ class Metadata(models.Model):
     task = models.ForeignKey(
         JobMaster,
         related_name="metadata",
+        on_delete=models.CASCADE
     )
 
     start_time = models.DateTimeField(default=timezone.now, null=True)
@@ -210,7 +204,19 @@ class MappingTarget(models.Model):
 
     gff_line_type = models.CharField(default="gene", max_length=100)
 
-    user_id = models.IntegerField(blank=True, null=True)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='mapping_targets',
+        on_delete=models.CASCADE,
+        null=True
+    )
+
+    reference = models.ForeignKey(
+        ReferenceInfo,
+        related_name="mapping_target_reference",
+        on_delete=models.CASCADE,
+        null=True
+    )
 
     private = models.BooleanField(default=False)
 

@@ -1,5 +1,5 @@
 <div class="row">
-    <div id="messageView"></div>
+    <div id="messageView" class="col-md-12"></div>
 
     <div class="col-md-12">
         <div class='panel panel-info'>
@@ -8,7 +8,7 @@
             </div>
             <div class='panel-body'>
 
-                <form method="post" id="post-form-task-create" onsubmit="mTaskController.add(event)">
+                <form method="post" id="post-form-task-create" onsubmit="mTaskController.create_new_job(event)">
                     {% csrf_token %}
                     <input type="hidden" name="flowcell" value="{{ flowcell.id }}"/>
                     <div class="form-group">
@@ -44,6 +44,9 @@
                         <th>Read count</th>
                         <th>Running</th>
                         <th>Complete</th>
+                        <th>Reference</th>
+                        <th>Automatic</th>
+                        <th>Actions</th>
                     </tr>
                     </thead>
                     <tfoot>
@@ -54,9 +57,31 @@
                         <th>Read count</th>
                         <th>Running</th>
                         <th>Complete</th>
+                        <th>Reference</th>
+                        <th>Automatic</th>
+                        <th>Actions</th>
                     </tr>
                     </tfoot>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class='panel panel-info'>
+            <div class='panel-heading'>
+                <h3 class='panel-title'>Reactivate flowcell</h3>
+            </div>
+            <div class='panel-body'>
+
+                <div id="messageViewReactivate"></div>
+
+                <button name="reactivate_flowcell" class="btn button" onclick="mTaskController.reactivateFlowcell(event)">Reactivate</button>
+
+                <p><br>We don't expect manually reactivating a flowcell to be necessary, as starting a task should reactivate an inactivated flowcell.
+                    However if for some reason you need to reactivate a flowcell to start a task running again, hit this button.</p>
             </div>
         </div>
     </div>

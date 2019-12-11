@@ -2,8 +2,7 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from jobs.models import JobMaster
-from reads.models import Barcode, FastqRead, FastqReadType, Run, GroupRun, Flowcell
+from reads.models import Barcode, FastqRead, FastqReadType, Run, GroupRun, Flowcell, JobMaster
 from reference.models import ReferenceInfo, ReferenceLine
 
 
@@ -16,7 +15,7 @@ class PafStore(models.Model):
         related_name='pafstore_list'
     )
 
-    flowcell = models.ForeignKey(  # TODO dele - read from job_master.flowcell
+    flowcell = models.ForeignKey(  # TODO delete - read from job_master.flowcell
 
         Flowcell,
         on_delete=models.CASCADE,
@@ -28,13 +27,15 @@ class PafStore(models.Model):
     read = models.ForeignKey(
 
         FastqRead,
-        related_name='pafreadalignment'
+        related_name='pafreadalignment',
+        on_delete=models.CASCADE,
     )
 
     reference = models.ForeignKey(  # TODO delete - read from job_master.reference
 
         ReferenceInfo,
-        related_name='pafstorereference'
+        related_name='pafstorereference',
+        on_delete=models.CASCADE,
     )
 
     # PAF File Format:
@@ -66,7 +67,7 @@ class PafStore(models.Model):
         ReferenceLine,
         on_delete=models.CASCADE,
         related_name='pafstore_list'
-    )  # 6	string	Target sequence name
+    )  # 6	Foreign key Target sequence name
 
     tsl = models.IntegerField(
 
@@ -131,7 +132,8 @@ class PafRoughCov(models.Model):
 
     read_type = models.ForeignKey(
         FastqReadType,
-        related_name='prc_type'
+        related_name='prc_type',
+        on_delete=models.DO_NOTHING,
     )
 
     is_pass = models.BooleanField(
@@ -141,7 +143,8 @@ class PafRoughCov(models.Model):
     barcode = models.ForeignKey(
         Barcode,
         related_name='prc_barcode',
-        null=True
+        null=True,
+        on_delete=models.DO_NOTHING,
     )
 
     barcode_name = models.CharField(
@@ -151,12 +154,14 @@ class PafRoughCov(models.Model):
 
     reference = models.ForeignKey(
         ReferenceInfo,
-        related_name='pafreference'
+        related_name='pafreference',
+        on_delete=models.CASCADE,
     )
 
     chromosome = models.ForeignKey(
         ReferenceLine,
-        related_name='pafchromosome'
+        related_name='pafchromosome',
+        on_delete=models.CASCADE,
     )
 
     p = models.IntegerField(

@@ -1,11 +1,16 @@
+"""
+Register models with the admin interface
+"""
 from django.contrib import admin
 
 from .models import (Barcode, FastqFile, FastqRead, FastqReadType,
                      MinIONControl, MinIONEvent, MinIONEventType,
                      MinionMessage, MinIONRunStats, MinIONRunStatus,
                      MinIONScripts, MinIONStatus, Run, RunSummary, UserOptions, ChannelSummary, HistogramSummary,
-                     RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellHistogramSummary, FlowcellStatisticBarcode, FlowcellSummaryBarcode,
-                     FlowcellTab)
+                     RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellHistogramSummary,
+                     FlowcellStatisticBarcode,
+                     FlowcellSummaryBarcode, Flowcell, MinION,
+                     FlowcellTab, JobMaster, JobType)
 
 
 class RunStatisticsBarcodeAdmin(admin.ModelAdmin):
@@ -18,6 +23,10 @@ class RunSummaryBarcodeAdmin(admin.ModelAdmin):
     list_display = ('run_id', 'barcode', 'type')
     list_filter = ('run_id', )
     ordering = ('run_id', 'barcode', 'type')
+
+
+class FlowcellAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'sample_name')
 
 
 admin.site.register(FastqRead)
@@ -44,3 +53,7 @@ admin.site.register(UserOptions)
 admin.site.register(Barcode)
 admin.site.register(GroupRun)
 admin.site.register(RunSummary)
+admin.site.register(Flowcell, FlowcellAdmin)
+admin.site.register(MinION)
+admin.site.register(JobMaster)
+admin.site.register(JobType)

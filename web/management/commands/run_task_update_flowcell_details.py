@@ -3,8 +3,7 @@ import os
 
 from django.core.management import BaseCommand, CommandError
 
-from reads.models import Flowcell
-from jobs.models import JobMaster
+from reads.models import Flowcell, JobMaster
 from web.tasks import update_flowcell_details
 
 

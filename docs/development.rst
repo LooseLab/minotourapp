@@ -41,7 +41,7 @@ Minotour also makes use of a MySQL database, Celery (responsible for running ser
 
 * `[Minimap2] <https://github.com/lh3/minimap2>`_ - Minotour uses **Minimap2** to run fast alignment, and to do metagenomics target validation.
 
-* `[Python 3] <https://www.python.org>`_ - Minotour uses **Python 3.6**, so make sure that this version is available on your system.
+* `[Python 3] <https://www.python.org>`_ - Minotour uses **Python >=3.5**, so make sure it is available on your system.
 
 * You will need to have the virtual environment activated to run Minotour, Celery and Flower, as well as to install the new dependencies.
 
@@ -153,4 +153,14 @@ Environmental config and running
     python manage.py runserver 8100
 
 * Time to test - if everything worked well, you should be able to access the web interface on http://localhost:8100.
+
+* To add references and validation sets::
+
+    python3 manage.py add_references /path/to/reference/files/directory
+
+* Finally, to add a set of validation regions, in the format of gff3::
+
+    python3 manage.py add_validation_sets -S <desired_set_name> -k <api_key> /var/lib/minotour/data
+
+The api key can be found on the profile section of a logged in account on the minotour page, under the drop down of the username in the top nav bar.
 

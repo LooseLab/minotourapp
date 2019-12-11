@@ -1,96 +1,122 @@
 version: '3'
 
 services:
-    minotour_redis:
-        image: redis
-        container_name: minotour_redis
-        networks:
-            - production-network
 
-    minotour_db:
-        build:
-            dockerfile: docker/db.dockerfile
-            context: .
-        container_name: minotour_db
-        networks:
-            - production-network
+    redis:
+        image: redis
+        container_name: redis
+
+    db:
+        image: mariadb
+        container_name: db
+        environment:
+            MYSQL_ROOT_PASSWORD: test
+            MYSQL_DATABASE: minotour
+            MYSQL_USER: dba
+            MYSQL_PASSWORD: dba
         volumes:
-            - ./db_data_dir:/var/lib/mysql
+            - ../db_data_dir:/var/lib/mysql
 
     web:
         build:
             dockerfile: docker/web.dockerfile
             context: .
+        command: bash -c "python3 manage.py makemigrations && python3 manage.py migrate && python3 manage.py loaddata fixtures/auxiliary_data.json && python3 manage.py runserver 0.0.0.0:8100"
+        container_name: web
+        environment:
+            MT_DB_ENGINE: 'django.db.backends.mysql'
+            MT_DB_NAME: minotour
+            MT_DB_USER: dba
+            MT_DB_PASS: dba
+            MT_DB_PORT: 3306
+            MT_DB_HOST: db
+            MT_SECRET_KEY: ''
+            MT_DJANGO_DEBUG: 'True'
+            MT_MAILGUN_ACCESS_KEY: ''
+            MT_MAILGUN_SERVER_NAME: ''
+            MT_TWITTOKEN: ''
+            MT_TWITTOKEN_SECRET: ''
+            MT_TWITCONSUMER_KEY: ''
+            MT_TWITCONSUMER_SECRET: ''
+            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/localdata'
+#            MT_REFERENCE_LOCATION: '/var/lib/minotour/data'
+            MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2/minimap2'
+            MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
+            MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
         ports:
-            - 10000:8000
-        networks:
-            - production-network
+            - 8100:8100
         depends_on:
-            - minotour_db
-            - minotour_redis
+            - db
+            - redis
         volumes:
             - .:/var/lib/minotour/apps/minotourapp
-#    minimap2:
-#        build:
-#            dockerfile: minimap2.dockerfile
-#            context: .
-#        networks:
-#            - production-network
-#        depends_on:
-#            - web
-        # command: ["./run_django.sh"]
-        # volumes:
-        #    - ".:/var/lib/minotour/apps/minotourapp"
-networks:
-    production-network:
-        driver: bridge
+            - ../localdata:/var/lib/minotour/apps/localdata
+        restart: on-failure
 
-#version: '3'
-#
-#services:
-#    db:
-#        image: mysql
-#        environment:
-#            MYSQL_ROOT_PASSWORD: test
-#        volumes:
-#            - ./mysql-data:/var/lib/mysql
-#        ports:
-#            - "3307:3306"
-#        networks:
-#            - production-network
-#
-#    redis:
-#        image: redis
-#        volumes:
-#            - ./redis-data:/data
-#        ports:
-#            - "6379:6379"
-#        networks:
-#            - production-network
-#
-#    minotour:
-#        build:
-#            dockerfile: ./minotourapp.dockerfile
-#            context: .
-#        image: roberto/minotourapp
-#        container_name: minotourapp
-#        volumes:
-#            - .:/opt/minotourapp
-#        ports:
-#            - "8000:8000"
-#        networks:
-#            - production-network
-#
-#  web:
-#    build: .
-#    command: python3 manage.py runserver 0.0.0.0:8000
-#    volumes:
-#      - .:/code
-#    ports:
-#      - "8000:8000"
-#    depends_on:
-#      - db
-#
-#networks:
-#    production-network:
-#        driver: bridge
+    celery:
+        build:
+            dockerfile: docker/celery.dockerfile
+            context: .
+        command: bash -c "celery -A minotourapp beat --pidfile=/opt/celeryd.pid -l info"
+        container_name: celery
+        environment:
+            MT_DB_ENGINE: 'django.db.backends.mysql'
+            MT_DB_NAME: minotour
+            MT_DB_USER: dba
+            MT_DB_PASS: dba
+            MT_DB_PORT: 3306
+            MT_DB_HOST: db
+            MT_SECRET_KEY: ''
+            MT_DJANGO_DEBUG: 'True'
+            MT_MAILGUN_ACCESS_KEY: ''
+            MT_MAILGUN_SERVER_NAME: ''
+            MT_TWITTOKEN: ''
+            MT_TWITTOKEN_SECRET: ''
+            MT_TWITCONSUMER_KEY: ''
+            MT_TWITCONSUMER_SECRET: ''
+            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/localdata'
+            MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2/minimap2'
+            MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
+            MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
+        depends_on:
+            - db
+            - redis
+            - web
+        restart: on-failure
+
+    celery_worker:
+        build:
+            dockerfile: docker/celery-worker.dockerfile
+            context: .
+        command: "celery -A minotourapp worker --pidfile=/opt/celeryd.pid -l info"
+        container_name: celery_worker
+        environment:
+            MT_DB_ENGINE: 'django.db.backends.mysql'
+            MT_DB_NAME: minotour
+            MT_DB_USER: dba
+            MT_DB_PASS: dba
+            MT_DB_PORT: 3306
+            MT_DB_HOST: db
+            MT_SECRET_KEY: ''
+            MT_DJANGO_DEBUG: 'True'
+            MT_MAILGUN_ACCESS_KEY: ''
+            MT_MAILGUN_SERVER_NAME: ''
+            MT_TWITTOKEN: ''
+            MT_TWITTOKEN_SECRET: ''
+            MT_TWITCONSUMER_KEY: ''
+            MT_TWITCONSUMER_SECRET: ''
+            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/localdata'
+            MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2/minimap2'
+            MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
+            MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
+            MT_CENTRIFUGE: "/var/lib/minotour/apps/minotourapp/extra/centrifuge-1.0.4-beta/centrifuge"
+            MT_CENTRIFUGE_INDEX: "/var/lib/minotour/apps/localdata/centrifuge_files/p_compressed"
+        depends_on:
+            - db
+            - redis
+            - web
+            - celery
+        restart: on-failure
+        volumes:
+            - ../localdata:/var/lib/minotour/apps/localdata
+            #- .:/var/lib/minotour/apps/minotourapp

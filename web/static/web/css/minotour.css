@@ -100,3 +100,158 @@
 	color:#fff;
 	font-size:12px Arial;
 }
+
+/* ===== Horizontal Rule ===== */
+.rule {
+  margin: 10px 0;
+  border: none;
+  height: 1.5px;
+  background-image: linear-gradient(left, #f0f0f0, #c9bbae, #f0f0f0);
+}
+
+/* ===== Select Box ===== */
+.sel {
+  font-size: 1rem;
+  display: inline-block;
+  margin: 3em 2em;
+  width: 350px;
+  background-color: transparent;
+  position: relative;
+  cursor: pointer;
+}
+
+.sel::before {
+  position: absolute;
+  content: '\f063';
+  font-family: 'FontAwesome';
+  font-size: 2em;
+  color: #00a65a;
+  right: 20px;
+  top: calc(50% - 0.5em);
+}
+
+.sel.active::before {
+  transform: rotateX(-180deg);
+}
+
+.sel__placeholder {
+  display: block;
+  font-family: 'Quicksand';
+  font-size: 2.3em;
+  color: #838e95;
+  padding: 0.2em 0.5em;
+  text-align: left;
+  pointer-events: none;
+  user-select: none;
+  visibility: visible;
+}
+
+.sel.active .sel__placeholder {
+  visibility: hidden;
+}
+
+.sel__placeholder::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.2em 0.5em;
+  content: attr(data-placeholder);
+  visibility: hidden;
+}
+
+.sel.active .sel__placeholder::before {
+  visibility: visible;
+}
+
+.sel__box {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: -4px;
+  display: none;
+  list-style-type: none;
+  text-align: left;
+  font-size: 1em;
+  background-color: #FFF;
+  width: calc(100% + 8px);
+  box-sizing: border-box;
+}
+
+.sel.active .sel__box {
+  display: block;
+  animation: fadeInUp 500ms;
+}
+
+.sel__box__options {
+  display: list-item;
+  font-family: 'Quicksand';
+  font-size: 1.5em;
+  color: #838e95;
+  padding: 0.5em 1em;
+  user-select: none;
+}
+
+.sel__box__options::after {
+  content: '\f00c';
+  font-family: 'FontAwesome';
+  font-size: 0.5em;
+  margin-left: 5px;
+  display: none;
+}
+
+.sel__box__options.selected::after {
+  display: inline;
+}
+
+.sel__box__options:hover {
+  background-color: #ebedef;
+}
+
+/* ----- Select Box Black Panther ----- */
+.sel {
+  border-bottom: 4px solid rgba(0, 0, 0, 0.3);
+}
+
+.sel--black-panther {
+  z-index: 3;
+}
+
+/* ----- Select Box Superman ----- */
+.sel--superman {
+/*   display: none; */
+  z-index: 2;
+}
+
+/* ===== Keyframes ===== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+ul.nav.nav-pills > li{
+    cursor: pointer;
+}
+
+.nav-pills > li.active > a{
+    /*border-radius: 3px;*/
+    border-top: none;
+    margin-top: 3px ;
+}

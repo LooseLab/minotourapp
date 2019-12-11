@@ -2,7 +2,7 @@
 sankey.py
 """
 from centrifuge.models import CentrifugeOutput, SankeyLink
-from jobs.models import JobMaster
+from reads.models import JobMaster
 import pandas as pd
 from celery.utils.log import get_task_logger
 import numpy as np
@@ -20,7 +20,6 @@ def create_sankeylink_models(row):
                       target=row["target"],
                       tax_id=row["tax_id"],
                       task=row["task"],
-                      sankey_task=row["sankey_task"],
                       target_tax_level=row["target_tax_level"],
                       value=row["value"],
                       barcode_name=row["barcode_name"],
@@ -147,21 +146,32 @@ def calculate_sankey(flowcell_job_id):
     :return:
     """
     task = JobMaster.objects.get(pk=flowcell_job_id)
+
     flowcell = task.flowcell
+
     task.running = True
+
     task.save()
+
     metagenomics_task = JobMaster.objects.get(flowcell=flowcell, job_type__name="Metagenomics")
+
     tax_rank_filter = ["superkingdom", "phylum", "class", "order", "family", "genus", "species"]
+
     barcodes = CentrifugeOutput.objects.filter(task=metagenomics_task).values_list("barcode_name", flat=True).distinct()
 
     for barcode in barcodes:
 
         df = pd.DataFrame(list(CentrifugeOutput.objects.filter(
             task=metagenomics_task, barcode_name=barcode).order_by("-num_matches").values()[:30]))
+
         df.rename(columns={"classy": "class"}, inplace=True)
+
         logger.info(df.head())
 
         calculate_sankey_values(df, flowcell, tax_rank_filter, metagenomics_task, task, barcode)
+
     task.running = False
+
     task.complete = True
+
     task.save()

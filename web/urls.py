@@ -1,7 +1,6 @@
 from django.conf.urls import url
 
 from . import views
-
 urlpatterns = [
     url(r'^signup/$', views.signup, name='signup'),
     url(r'^private/index/$', views.private_index, name='private-index'),
@@ -17,7 +16,14 @@ urlpatterns = [
     url(r'^private/experiments/(?P<pk>[0-9]+)/$', views.experiments_update, name='experiment-update'),
     url(r'^private/experiments/create/$', views.experiments_create, name='experiment-create'),
     url(r'^private/experiments/(?P<pk>[0-9]+)/delete/$', views.ExperimentDelete.as_view(), name='experiment-delete'),
-#
+
+    url(r'^private/flowcell_manager/$', views.flowcell_manager, name='flowcell-manager'),
+    url(r'^private/flowcell_manager/(?P<pk>[0-9]+)/$', views.flowcell_manager_runs, name='flowcell-manager-runs'),
+    url(r'^private/flowcell_manager/(?P<pk>[0-9]+)/split/$', views.flowcell_manager_runs_split, name='flowcell-manager-runs-split'),
+
+    url(r'^private/flowcell_list/$', views.flowcell_list, name='flowcell_list'),
+
+    #
     # The links below generate CSV
     #
     url(
@@ -25,4 +31,8 @@ urlpatterns = [
         views.flowcell_run_stats_download,
         name="flowcell_run_stats_download"
     ),
+    # Return the netagenomics data in CSV format
+    url(r'^private/flowcells/(?P<pk>[0-9]+)/flowcell_metagenomics_csv/$', views.metagenomics_data_download,
+        name="metagenomics_data_download")
+
 ]

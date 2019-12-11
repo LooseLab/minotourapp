@@ -9,8 +9,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 from django.db.models import Sum, Q
 import pandas as pd
-from jobs.models import JobMaster
-from reads.models import Flowcell
+from reads.models import Flowcell, JobMaster
 import numpy as np
 import math
 from rest_framework.authtoken.models import Token
@@ -100,13 +99,22 @@ def centrifuge_metadata(request):
     else:
         runtime = queryset.finish_time
 
-    return_list = [{"key": "Reads Sequenced: ", "value": number_of_reads},
+    # this bool tells the javascript whether not to place the metadata in the validation
+    #  set panel or the analysis results panel
+    print(job_master.target_set)
+    if job_master.target_set == "-- select an option --" or job_master.target_set is "" or job_master.target_set is None:
+        validation_table_present = False
+    else:
+        print("Showing validation table")
+        validation_table_present = True
+
+    return_list = {"validation": validation_table_present, "result": [{"key": "Reads Sequenced: ", "value": number_of_reads},
                    {"key": "Reads Analysed: ", "value": str(reads_class) + " (" + str(percentage) + "%)"},
                    {"key": "Reads Classified: ", "value": str(reads_actually_classified) +
                     " (" + str(class_percent)+"%)"},
                    {"key": "Reads Unclassified: ", "value": str(reads_not_classified) +
                     " (" + str(unclass_percent)+"%)"},
-                   {"key": "Runtime: ", "value": runtime}]
+                   {"key": "Runtime: ", "value": runtime}]}
 
     return Response(return_list)
 
@@ -223,7 +231,7 @@ def donut_data(request):
     visType  - Whether this is a a request for donut chart or results table data
     :return:
     """
-
+    print(type(request))
     flowcell_id = request.GET.get("flowcellId", 0)
 
     barcode = request.GET.get("barcode", "All reads")
@@ -321,7 +329,7 @@ def metagenomic_barcodes(request, pk):
         task = JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics").order_by('id').last()
 
         if task:
-            metagenomics_barcodes = CentrifugeOutput.objects.filter(task__id=task.id) \
+            metagenomics_barcodes = CentrifugeOutput.objects.filter(task__id=task.id).exclude(barcode_name="No") \
                 .values_list("barcode_name", flat=True).distinct()
 
     else:
@@ -421,7 +429,7 @@ def all_results_table(request):
         else:
             cent_out_temp = cent_out_temp.order_by('{}'.format(query_columns[int(order_column)]))
 
-    cents = cent_out_temp.values('tax_id',
+    cents = cent_out_temp.exclude(barcode_name="No").values('tax_id',
                                  'barcode_name',
                                  'name',
                                  'num_matches',
@@ -481,9 +489,11 @@ def simple_target_mappings(request):
 
     # If the barcode is All reads, there is always four
     queryset = MappingResult.objects.filter(task=task, barcode_name=barcode).values()
+
+    if not queryset:
+        return Response("Metagenomics task has no validation set", status=204)
+
     results_df = pd.DataFrame(list(queryset))
-    if results_df.empty:
-        return Response("No data has yet been produced for the target mappings", status=204)
 
     results_df.drop(
         columns=["id", "mapped_proportion_of_classified", "num_matches", "red_reads_proportion_of_classified",
@@ -507,7 +517,7 @@ def simple_target_mappings(request):
 
     results_df.rename(columns={"num_mapped": "Num. mapped",
                                "red_reads": "Target reads",
-                               "species": "Potential threats",
+                               "species": "Validation species",
                                "tax_id": "Tax id",
                                }, inplace=True)
 
@@ -536,5 +546,5 @@ def get_target_sets(request):
 
     else:
         user_id = request.user.id
-    target_sets = MappingTarget.objects.filter(Q(user_id=user_id) | Q(private=False)).values_list("target_set", flat=True).distinct()
+    target_sets = MappingTarget.objects.filter(Q(owner_id=user_id) | Q(private=False)).values_list("target_set", flat=True).distinct()
     return Response(target_sets)

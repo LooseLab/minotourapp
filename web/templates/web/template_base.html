@@ -22,7 +22,6 @@
     <!-- Ionicons -->
 {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css">#}
     <link rel="stylesheet" href="{% static 'web/libraries/ionicons-master/docs/v2/css/ionicons.min.css' %}">
-{#    TODO find serveable ioncicons library#}
     <!-- Theme style -->
     <link rel="stylesheet" href="{% static 'web/dist/css/AdminLTE.min.css' %}">
     <!-- AdminLTE Skins. We have chosen the skin-blue for this starter
@@ -39,8 +38,7 @@
     <link rel="stylesheet" href="{% static 'web/css/loader.css' %}">
 
     <!-- jQuery 2.2.3 -->
-    <!--<script src="{% static 'web/plugins/jQuery/jquery-2.2.3.min.js' %}"></script>-->
-    <script src="{% static 'web/jquery-3.3.1.js' %}"></script>
+    <script src="{% static 'web/libraries/jquery-3.3.1.min.js' %}?{% now 'c' %}"></script>
 
 {#    <script src="{% static 'web/libraries/html5shiv-master ' %}"></script>#}
 {#    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>#}
@@ -94,11 +92,19 @@
 
 </div>
 <!-- ./wrapper -->
+<script src="{% static 'web/libraries/highstock.js' %}"></script>
+<script src="{% static 'web/libraries/exporting.js' %}"></script>
+<script src="{% static 'web/libraries/highcharts-more.js' %}"></script>
+<script src="{% static 'web/libraries/boost.js' %}"></script>
 
+<script src="{% static 'web/libraries/solid-gauge.src.js' %}"></script>
+<script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>
+<script src="{% static 'web/libraries/heatmap.src.js' %}"></script>
+<script src="{% static 'web/libraries/no-data-to-display.js' %}"></script>
+{#<script type="module" src="{% static 'web/libraries/themes/js/dark-unica.js' %}"></script>#}
 <!-- Bootstrap 3.3.6 -->
 <script src="{% static 'web/bootstrap/js/bootstrap.min.js' %}"></script>
 <!-- AdminLTE App -->
-
 <script src="{% static 'web/dist/js/app.min.js' %}?dev=19"></script>
 <script src="{% static 'web/js/flowcell/requestReadData.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/flowcell/addMetaBarcodeTabs.js' %}?{% now 'c' %}"></script>
@@ -112,7 +118,7 @@
 <script src="{% static 'web/js/vis-d3/metaheader.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/vis-d3/mappingtable.js'%}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/vis-d3/simpleAlertTable.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/vis-d3/mappingScatter.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/vis-d3/masterDetailEB.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/models/CoverageChart.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/controllers/CoverageChartController.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/utils/checkFlowcellTabs.js' %}?{% now 'c' %}"></script>
@@ -125,7 +131,6 @@
 <script src="{% static 'web/js/flowcell/requestStatistics.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/flowcell/requestGfaData.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/flowcell/requestPafData.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/flowcell/requestAdvancedPafData.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/flowcell/requestData.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/flowcell/requestHistogramData.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/flowcell/requestRunDetails.js' %}?{% now 'c' %}"></script>
@@ -145,6 +150,8 @@
 <script src="{% static 'web/js/models/FlowcellTabList.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/views/MFlowcellTabsView.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/models/Flowcell.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/models/FlowcellUserPermission.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/models/FlowcellUserPermissionList.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/models/MTask.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/models/MTaskList.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/models/MMessage.js' %}?{% now 'c' %}"></script>
@@ -153,6 +160,7 @@
 <script src="{% static 'web/js/services/HttpService.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/services/FlowcellService.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/controllers/MTaskController.js' %}?{% now 'c' %}"></script>
+<script src="{% static 'web/js/controllers/MSharingController.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/views/MMessageView.js' %}?{% now 'c' %}"></script>
 
 <!-- Highcharts -->
@@ -165,20 +173,12 @@
 {#<script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>#}
 {#<script src="https://code.highcharts.com/modules/heatmap.js"></script>#}
 {#<script src="http://code.highcharts.com/modules/no-data-to-display.js"></script>#}
-<script src="{% static 'web/libraries/highstock.js' %}"></script>
-<script src="{% static 'web/libraries/exporting.js' %}"></script>
-<script src="{% static 'web/libraries/highcharts-more.js' %}"></script>
-<script src="{% static 'web/libraries/boost.js' %}"></script>
 
-<script src="{% static 'web/libraries/solid-gauge.src.js' %}"></script>
-<script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>
-<script src="{% static 'web/libraries/heatmap.src.js' %}"></script>
-<script src="{% static 'web/libraries/no-data-to-display.js' %}"></script>
 
 {#<script src="{% static 'web/highcharts/js/themes/grid-light-custom.js' %}"></script>#}
 
-<script src="{% static 'web/cookie.js' %}"></script>
-<script src="{% static 'web/ajax_setup.js' %}"></script>
+<script src="{% static 'web/libraries/cookie.js' %}"></script>
+<script src="{% static 'web/libraries/ajax_setup.js' %}"></script>
 <script src="{% static 'web/minotour.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/monitor_app.js' %}?{% now 'c' %}"></script>
 
@@ -192,6 +192,7 @@
 <script src="{% static 'web/plugins/slimScroll/jquery.slimscroll.min.js' %}"></script>
 <script src="{% static 'web/plugins/fastclick/fastclick.min.js' %}"></script>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js"></script>
 
 {% block javascript %}
 {% endblock %}

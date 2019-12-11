@@ -1,7 +1,11 @@
 class CoverageChart {
+    /*
+    Create a new coverage chart, which is a highcharts stepped line chart
+    returns a getter, and defines the master chart detail chart after selection event
+     */
 
     constructor(div_name) {
-
+        // the chart
         this._div_master_name = div_name + "_master";
         this._div_detail_name = div_name + "_detail";
 

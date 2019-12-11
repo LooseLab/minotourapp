@@ -1,3 +1,5 @@
+import pandas as pd
+from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -8,13 +10,18 @@ from django.shortcuts import redirect, render
 from django.views.generic import ListView, DeleteView
 from rest_framework.authtoken.models import Token
 
+from centrifuge.models import CentrifugeOutput
 from communication.models import Message
-from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats
+from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats, JobType, JobMaster
 from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
 
+from web.utils import get_run_details, split_flowcell
+
+from reads.views import flowcell_list
 from django.contrib import messages
 
 import pandas as pd
+
 
 
 def index(request):
@@ -23,14 +30,15 @@ def index(request):
 
         return redirect('flowcells')
 
-    else:
-
-        return redirect('login')
+    return redirect('login')
 
 
 def signup(request):
+
     if request.method == 'POST':
+
         form = SignUpForm(request.POST)
+
         if form.is_valid():
             form.save()
             username = form.cleaned_data.get('username')
@@ -113,9 +121,24 @@ def flowcells(request):
 
 @login_required
 def flowcell_index(request, pk):
+    """
+    Return the HTML for a flowcells own page after selecting it from the flowcell table.
+    :param request: HTTP request object
+    :param pk: The primary key of the flowcell
+    :type pk: int
+    :return: The base HTMl page for looking at a flowcell.
+    """
+    user = request.user
 
     flowcell = Flowcell.objects.get(pk=pk)
-    return render(request, 'web/flowcell_index.html', context={'flowcell': flowcell})
+
+    if user == flowcell.owner or user.has_perm('view_data', flowcell) or user.has_perm('run_analysis', flowcell):
+
+        return render(request, 'web/flowcell_index.html', context={'flowcell': flowcell})
+
+    else:
+
+        return render(request, 'web/no.html')
 
 
 @login_required
@@ -126,8 +149,12 @@ def flowcell_reads(request, pk):
     return render(request, 'web/flowcell_reads.html', context={'flowcell': flowcell})
 
 
-def flowcell_reads_data(request):
+def flowcell_list(request):
+    flowcell_list = Flowcell.objects.filter(owner=request.user)
+    return render(request, 'web/flowcell_list.html', context={'access_flowcell': flowcell_list})
 
+
+def flowcell_reads_data(request):
     # column_0_data = request.GET.get('column[0][data]', '')
     # column_0_name = request.GET.get('column[0][name]', '')
     # column_0_searchable = request.GET.get('column[0][searchable]', '')
@@ -144,8 +171,6 @@ def flowcell_reads_data(request):
         'barcode__name',
     ]
 
-    query_columns_string = ['read_id', 'read', 'channel', 'sequence_length', 'run__runid', 'barcode__name']
-
     flowcell_id = int(request.GET.get('flowcell_id', 0))
 
     draw = int(request.GET.get('draw', 0))
@@ -157,7 +182,7 @@ def flowcell_reads_data(request):
     length = int(request.GET.get('length', 10))
 
     end = start + length
-    # Which column s
+    # Which column is ordering
     order_column = request.GET.get('order[0][column]', '')
     # ascending descending
     order_dir = request.GET.get('order[0][dir]', '')
@@ -169,7 +194,6 @@ def flowcell_reads_data(request):
     for run in run_list:
 
         run_id_list.append(run.id)
-
 
     if not search_value == "":
 
@@ -214,7 +238,11 @@ def flowcell_reads_data(request):
 
             reads_temp2 = reads_temp.order_by('{}'.format(query_columns[int(order_column)]))
 
-    reads = reads_temp2[:20].values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
+    else:
+        reads_temp2 = reads_temp
+
+    reads = reads_temp2[start:end]\
+        .values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
 
     records_total = reads_temp.count()
 
@@ -222,7 +250,7 @@ def flowcell_reads_data(request):
         'draw': draw,
         "recordsTotal": records_total,
         "recordsFiltered": records_total,
-        "data": list(reads[start:end])
+        "data": list(reads)
     }
 
     return JsonResponse(result, safe=True)
@@ -347,20 +375,115 @@ def flowcell_run_stats_download(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)
 
-    crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all())
+    minionrunstats_list = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all())
 
-    runstats_dataframe = pd.DataFrame(list(crazyminIONrunstats.values()))
+    runstats_dataframe = pd.DataFrame(list(minionrunstats_list.values()))
     runstats_dataframe = runstats_dataframe.set_index('sample_time')
     runstats_dataframe = runstats_dataframe.drop('created_date', axis=1)
     runstats_dataframe = runstats_dataframe.drop('id', axis=1)
     runstats_dataframe = runstats_dataframe.drop('mean_ratio', axis=1)
     runstats_dataframe = runstats_dataframe.drop('minION_id', axis=1)
     runstats_dataframe = runstats_dataframe.drop('run_id_id', axis=1)
-    #runstats_dataframe = runstats_dataframe.drop('mean_ratio', axis=1)
     runstats_dataframe = runstats_dataframe.drop('in_strand', axis=1)
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename={}_live_records.csv'.format(flowcell.name)
-    column_order = ['asic_temp','heat_sink_temp','voltage_value','minKNOW_read_count','event_yield','above','adapter','below','good_single','inrange','multiple','open_pore','pending_mux_change','saturated','strand','unavailable','unblocking','unclassified','unknown','minKNOW_histogram_bin_width','minKNOW_histogram_values']
+    column_order = ['asic_temp',
+                    'heat_sink_temp',
+                    'voltage_value',
+                    'minKNOW_read_count',
+                    'event_yield',
+                    'above',
+                    'adapter',
+                    'below',
+                    'good_single',
+                    'inrange',
+                    'multiple',
+                    'open_pore',
+                    'pore',
+                    'zero',
+                    'no_pore',
+                    'pending_mux_change',
+                    'saturated',
+                    'strand',
+                    'unavailable',
+                    'unblocking',
+                    'unclassified',
+                    'unknown',
+                    'minKNOW_histogram_bin_width',
+                    'minKNOW_histogram_values']
     runstats_dataframe[column_order].to_csv(response)
 
     return response
+
+
+@login_required
+def metagenomics_data_download(request, pk):
+    """
+    Send the Metagenomics data back in CSV format, used by the download button found on the metagenomics tab
+    centrifuge/templates/centrifuge/visualisation.html
+    :param request:
+    :return:
+    """
+
+    flowcell = Flowcell.objects.get(pk=pk)
+    job_type = JobType.objects.get(name="Metagenomics")
+    metagenomics_task = JobMaster.objects.get(flowcell=flowcell, job_type=job_type)
+    centrifuge_df = pd.DataFrame(list(CentrifugeOutput.objects.filter(task=metagenomics_task)
+                                      .exclude(barcode_name="No").values()))
+    centrifuge_df.rename(columns={'classy': 'class'}, inplace=True)
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename={}_centrifuge_output.csv'.format(flowcell.name)
+    column_order = ['barcode_name', 'tax_id', 'superkingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species',
+                    'num_matches', 'proportion_of_classified']
+    centrifuge_df[column_order].to_csv(response)
+    return response
+
+
+@login_required
+def flowcell_manager(request):
+    """
+    This view shows the a list of flowcells in the flowcell maintenance first page
+    """
+
+    return render(request,
+                  'web/flowcell_manager.html',
+                  context={'flowcell_manager': flowcell_manager})
+
+
+@login_required
+def flowcell_manager_runs(request, pk):
+    """
+    This view shows the a list of runs of a specific flowcell
+    in the flowcell maintenance second page
+    """
+
+    flowcell = Flowcell.objects.get(pk=pk)
+    run_list = get_run_details(pk)
+    flowcell_list = Flowcell.objects.filter(owner=request.user).exclude(id=flowcell.id)
+
+    return render(request,
+                  'web/flowcell_manager_runs.html',
+                  context={'run_list': run_list,
+                           'flowcell_list': flowcell_list,
+                           'flowcell': flowcell})
+
+@login_required
+def flowcell_manager_runs_split(request, pk):
+    """
+    This view calls the split_flowcell function and
+    shows a status page for the user
+    """
+
+    flowcell_id = request.POST.get('flowcell_id', None)
+    run_id = request.POST.get('run_id', None)
+    new_flowcell_name = request.POST.get('new_flowcell_name', None)
+    new_or_existing_flowcell = request.POST.get('new_or_existing_flowcell', None)
+    existing_flowcell_id = request.POST.get('existing_flowcell_id', None)
+
+    run, from_flowcell, to_flowcell = split_flowcell(new_or_existing_flowcell, flowcell_id, existing_flowcell_id, new_flowcell_name, run_id)
+
+    return render(request,
+                  'web/flowcell_manager_runs_split.html',
+                  context={'run': run,
+                           'from_flowcell': from_flowcell,
+                           'to_flowcell': to_flowcell})

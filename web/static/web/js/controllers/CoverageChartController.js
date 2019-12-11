@@ -1,44 +1,44 @@
 class CoverageChartController {
-
+    // controller for coverage chart
     constructor(div_name, advanced) {
-        this._chromossome_select = document.querySelector('#' + advanced + 'chromosome-id-select');
-        this._coverage_chart = new CoverageChart(div_name);
+        // constructs new Coverage chart class, and link to chromosome select field
+        this._chromosome_select = document.querySelector('#' + advanced + 'chromosome-id-select');
+        if(advanced === ""){
+            this._coverage_chart = new CoverageChart(div_name);
+        }
     }
 
     get coverage_chart() {
-
         return this._coverage_chart;
     }
 
     reload_master_chart() {
-
+        // reload the data on click to reset or chromosome change
         let url = this.create_url();
         this.load_chart_data(url);
     }
 
     create_url() {
 
-        // var selected_index = this.select_container.selectedIndex;
-        var selected_option = this._chromossome_select.value;
+        // create the url to query for data
+        var selected_option = this._chromosome_select.value;
 
         if (parseInt(selected_option) < 0) {
 
             return "/api/v1/pafcoverage/0/0/0/1/";
         }
 
-        // var value_combination = data[i]['task_id'] + '_' + data[i]['barcode_name'] + '_' + data[i]['read_type_id'] + '_' + '_' + data[i]['chromosome_id'];
-
+        // get the selected option to view coverage
         var value_combination = selected_option.split('_');
+        // get the task id for the jobmaster
         var task_id = value_combination[0];
-        // var run_id = value_combination[0];
+        // get the barcode name
         var barcode_name = value_combination[1];
-        // var barcode_id = value_combination[1];
+        // template
         var read_type_id = value_combination[2];
-        // var reference_id = value_combination[3];
+        // get the chromosome name
         var chromosome_id = value_combination[3];
-        // var chromosome_id = value_combination[4];
-
-        // var url = "/api/v1/flowcells/pafcoverage/" + task_id + "/" + barcode_name + "/" + read_type_id + "/" + chromosome_id + "/";
+        // create the url
         var url = "/api/v1/pafcoverage/" + task_id + "/" + barcode_name + "/" + read_type_id + "/" + chromosome_id + "/";
 
         return url;

@@ -38,28 +38,18 @@ function check_minotour_version() {
     });
 }
 
+/**
+ * @function makeColumnChart
+ * @param {string} divName ID of the div we want to draw the charts in
+ * @param {string} chartTitle
+ * @param {string} yAxisTitle
+ * Creates an empty highCharts column chart at the provided divName,
+ * with divName being the Id if the div we want to draw in.
+ */
+function makeColumnChart(divName, chartTitle, yAxisTitle) {
 
-function check_user_runs() {
-    var url = "/api/v1/runs/";
-
-    $.getJSON(url, function (data) {
-        var items = [];
-        $.each(data, function (key, val) {
-            items.push("<li id=" + key + "><a href='/web/private/runs/" + val.id + "'>" + val.run_name + "</a></li>");
-        });
-
-        var text = "<span>You have " + data.length + " minION runs available to view.</span>";
-        text += "<ul>";
-        text += items.join("");
-        text += "</ul>";
-
-        $("#div-user-runs").html(text);
-    });
-}
-
-
-function makeChart(divName, chartTitle, yAxisTitle) {
-    var chart = Highcharts.chart(divName, {
+    var chart;
+    chart = Highcharts.chart(divName, {
         chart: {
             type: "column",
             animation: Highcharts.svg, // don"t animate in old IE
@@ -90,50 +80,8 @@ function makeChart(divName, chartTitle, yAxisTitle) {
     return chart;
 }
 
-function makeChartlabels(divName, chartTitle, yAxisTitle) {
-    var chart = Highcharts.chart(divName, {
-        chart: {
-            type: "column",
-            animation: Highcharts.svg, // don"t animate in old IE
-            marginRight: 10,
-            zoomType: "x"
-        },
-        title: {
-            text: chartTitle
-        },
-        xAxis: {
-            type: 'category',
-            labels: {
-                rotation: -90,
-                style: {
-                    fontSize: '9px',
-                    fontFamily: 'Verdana, sans-serif'
-                }
-            }
-        },
-        yAxis: {
-            title: {
-                text: yAxisTitle
-            },
-            plotLines: [{
-                value: 0,
-                width: 1,
-                color: "#808080"
-            }]
-        },
-        legend: {
-            enabled: true
-        },
-        exporting: {
-            enabled: true
-        },
-        series: []
-    });
 
-    return chart;
-}
-
-function makeChart2(divName, chartTitle, yAxisTitle) {
+function makeSplineChart(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.chart(divName, {
         chart: {
             type: "spline",
@@ -175,39 +123,7 @@ function makeChart2(divName, chartTitle, yAxisTitle) {
 }
 
 
-function makeChart3(divName, chartTitle, yAxisTitle, xAxisTitle) {
-    var chart = Highcharts.chart(divName, {
-        chart: {
-            type: "scatter",
-            marginRight: 10,
-            animation: false,
-            zoomType: "xy"
-        },
-        title: {
-            text: chartTitle
-        },
-        xAxis: {
-            title: {
-                text: xAxisTitle
-            }
-        },
-        yAxis: {
-            title: {
-                text: yAxisTitle
-            },
-        },
-        legend: {
-            enabled: true
-        },
-        exporting: {
-            enabled: true
-        }
-    });
-
-    return chart;
-}
-
-function makeChart4(divName, chartTitle, yAxisTitle, xAxisTitle) {
+function makeSplineChartNonDatetime(divName, chartTitle, yAxisTitle, xAxisTitle) {
     var chart = Highcharts.chart(divName, {
         chart: {
             type: "spline",
@@ -358,61 +274,6 @@ function makeAreaPlot(divName, chartTitle, yAxisTitle) {
     return chart;
 }
 
-function makeYieldProjection(divName, chartTitle, yAxisTitle) {
-    var chart = Highcharts.chart(divName, {
-        chart: {
-            type: 'spline',
-            zoomType: 'x',
-            height: 350,
-        },
-        boost: {
-            useGPUTranslations: true
-        },
-        title: {
-            text: chartTitle,
-        },
-        xAxis: {
-            type: 'datetime',
-            tickPixelInterval: 150
-        },
-        yAxis: {
-            title: {
-                text: 'Cumulative Predicted Bases'
-            },
-            plotLines: [{
-                value: 0,
-                width: 1,
-                color: '#808080'
-            }],
-            min: 0,
-        },
-        credits: {
-            enabled: false
-        },
-        series: [{
-            name: 'Original Data',
-            data: []
-        },
-            {
-                name: 'Current Projected Data',
-                dashStyle: 'longdash',
-                data: []
-            },
-            {
-                name: 'First Hour Projected Data',
-                dashStyle: 'shortdash',
-                data: []
-            },
-            {
-                name: 'Ideal Results',
-                dashStyle: 'Dot',
-                data: []
-            }
-        ]
-
-    });
-    return chart;
-}
 
 function makeLiveChart(divName, chartTitle, yAxisTitle) {
     var chart = Highcharts.stockChart(divName, {

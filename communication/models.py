@@ -7,20 +7,22 @@ from django.db import models
 class Message(models.Model):
 
     uuid = models.UUIDField(
-        default = uuid.uuid4,
-        editable = False
+        default=uuid.uuid4,
+        editable=False
     )
 
     recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name='messages_recipient',
+        on_delete=models.DO_NOTHING,
     )
 
     sender = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name='messages_sender',
         null=True,
-        blank=True
+        blank=True,
+        on_delete=models.DO_NOTHING,
     )
 
     title = models.CharField(

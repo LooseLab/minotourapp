@@ -1,0 +1,32 @@
+<div>
+    <style>
+
+body {
+  background-color: #353b48;
+  color: #dcdde1;
+}
+
+.wrapper {
+  max-width: 728px;
+}
+.rainbow-text {
+  background-image: repeating-linear-gradient(45deg, violet, indigo, blue, green, yellow, orange, red, violet);
+  text-align: center;
+  background-size: 800% 800%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 24px;
+  animation: rainbow 8s ease infinite;
+}
+
+@keyframes rainbow {
+    0%{background-position:0% 50%}
+    50%{background-position:100% 25%}
+    100%{background-position:0% 50%}
+}
+    </style>
+    <p style="font-size: 200px;" class="rainbow-text">This is not the flowcell you are looking for</p>
+    <p style="font-size: 100px" class="rainbow-text">404 NOT FOUND</p>
+    <p style="font-size: 50px" class="rainbow-text" ><a href="/">Home</a></p>
+
+</div>

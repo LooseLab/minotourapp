@@ -3,14 +3,14 @@
   "model": "reads.fastqreadtype",
   "pk": 1,
   "fields": {
-    "name": "Template"
+    "name": "T"
   }
 },
 {
   "model": "reads.fastqreadtype",
   "pk": 2,
   "fields": {
-    "name": "Complement"
+    "name": "C"
   }
 },
 {
@@ -214,8 +214,9 @@
     "long_description": "Used now to distinguish between the two minimaps, metagenomics and alignment",
     "reference": true,
     "transcriptome": false,
-    "readcount": false,
+    "readcount": true,
     "private": true
   }
 }
+
 ]

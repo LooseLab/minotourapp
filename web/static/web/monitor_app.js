@@ -1,6 +1,6 @@
 function set_active_navbar_item(item_index) {
 
-    var nav_bar = document.querySelectorAll('.nav li')
+    var nav_bar = document.querySelectorAll('.nav li');
 
     nav_bar.forEach(function(element, index){
 
@@ -11,10 +11,6 @@ function set_active_navbar_item(item_index) {
 
 
 var FlowcellPageApp = {
-
-    constructor () {
-
-    },
 
     init: function () {
         console.log("initialising flowcellpageapp");
@@ -51,6 +47,7 @@ var FlowcellPageApp = {
         this.livedata.strand = new Array();
         this.livedata.adapter = new Array();
         this.livedata.good_single = new Array();
+        this.livedata.pore = new Array();
         this.livedata.currpercentage = null;
         this.livedata.currstrand = null;
         this.livedata.percentage = new Array();
@@ -59,7 +56,8 @@ var FlowcellPageApp = {
         this.livedata.instrand_history = new Array();
         this.livedata.openpore_history = new Array();
 
-        var myStringArray = ["above", "adapter", "below", "good_single", "strand", "inrange", "multiple", "pending_mux_change", "saturated", "unavailable", "unblocking", "unclassified", "unknown"];
+
+        var myStringArray = ["above", "adapter", "below", "good_single", "strand", "inrange", "multiple", "pending_mux_change", "saturated", "unavailable", "unblocking", "unclassified", "unknown", "pore","no_pore","zero"];
         var arrayLength = myStringArray.length;
 
         this.livedata.pore_history = new Array();
@@ -77,19 +75,15 @@ var FlowcellPageApp = {
         this.coveragedata = new Array();
         this.coveragedata.read_type = new Array();
 
-        this.makeChart = makeChart;
-        this.makeChart2 = makeChart2;
-        this.makeChart3 = makeChart3;
-        this.makeChart4 = makeChart4;
+        this.makeColumnChart = makeColumnChart;
+        this.makeSplineChart = makeSplineChart;
+        this.makeSplineChartNonDatetime = makeSplineChartNonDatetime;
         this.makeBoxPlot = makeBoxPlot;
-        this.makeChartlabels = makeChartlabels;
         this.makeLiveHistogram = makeLiveHistogram;
-        this.makeYieldProjection = makeYieldProjection;
         this.makeLiveChart = makeLiveChart;
         this.makeAreaPlot = makeAreaPlot;
 
         this.lastread = 0;
-        this.needtoupdatecharts = false;
 
         this.drawSankey = drawSankey;
         this.metaHeader = metaHeader;
@@ -100,6 +94,8 @@ var FlowcellPageApp = {
         this.addMetaBarcodeTabs = addMetaBarcodeTabs.bind(this);
         this.update_mapping_table = update_mapping_table;
         this.draw_simple_table = draw_simple_table;
+
+        this.drawReadUntilCharts = drawReadUntilCharts;
 
         this.updatePoreChart = updatePoreChart;
 
@@ -117,15 +113,7 @@ var FlowcellPageApp = {
 
         this.requestPafData = requestPafData.bind(this);
 
-        this.requestAdvancedPafData = requestAdvancedPafData.bind(this);
-
-        this.expectedBenefitScatter = expectedBenefitScatter;
-
-        // this.liveUpdateTasks = liveUpdateTasks;
-        //
-        // this.updateTasks = updateTasks.bind(this);
-
-        // this.requestTasks = requestTasks.bind(this);
+        // this.requestAdvancedPafData = requestAdvancedPafData.bind(this);
 
         this.requestRunDetails = requestRunDetails.bind(this);
 
@@ -134,6 +122,7 @@ var FlowcellPageApp = {
         this.requestSummaryData = requestSummaryData;
 
         this.requestData = requestData;
+
         var flowcell_id = get_selected_flowcell();
 
         this.requestStatistics = requestStatistics.bind(this);
@@ -142,21 +131,21 @@ var FlowcellPageApp = {
         this.addStartTabsEvents = addStartTabsEvents.bind(this);
         this.updateBarcodeNavTab = updateBarcodeNavTab.bind(this);
 
-        this.ChartNumContigs = this.makeChart4(
+        this.ChartNumContigs = this.makeSplineChartNonDatetime(
             "num-contigs",
             "Number of Contigs Assembled".toUpperCase(),
             "Number of Contigs".toUpperCase(),
             "Number of input Reads".toUpperCase()
         );
 
-        this.ChartN50Contigs = this.makeChart4(
+        this.ChartN50Contigs = this.makeSplineChartNonDatetime(
             "n50-contigs",
             "Assembly N50".toUpperCase(),
             "Assembly N50".toUpperCase(),
             "Number of input Reads".toUpperCase()
         );
 
-        this.ChartSumContigs = this.makeChart4(
+        this.ChartSumContigs = this.makeSplineChartNonDatetime(
             "sum-contigs",
             "Total length of Assembly".toUpperCase(),
             "Total length".toUpperCase(),
@@ -203,21 +192,6 @@ var FlowcellPageApp = {
             "Voltage Over Time",
             "mV"
         );
-        /*
-        this.LivePoreState = this.makeLiveChart(
-            "live-porestate",
-            "Pore State Currents",
-            "Current pA"
-        );
-        */
-
-        /*
-        this.LiveCurrentRatio = this.makeLiveChart(
-            "live-currentratio",
-            "Current Ratio In Strand/Open Pore",
-            "Current Ratio"
-        );
-        */
 
         this.PoreShizzle = this.makeAreaPlot(
             "poreshizzle",
@@ -225,157 +199,15 @@ var FlowcellPageApp = {
             "Pore States".toUpperCase()
         );
 
-        // var inputFlowcellId = document.querySelector("#flowcell-id");
-        //
-        // this.flowcellId = inputFlowcellId.value;
 
-        this.addStartTabsEvents(flowcell_id);
-        this.checkFlowcellTabs(flowcell_id);
+        // this.addStartTabsEvents(flowcell_id);
+        // this.checkFlowcellTabs(flowcell_id);
 
         //('>> calling request data');
         console.log('Calling request data from monitor_app. >>>');
         this.requestData(flowcell_id);
         console.log('Calling request data from monitor_app. <<<');
     }, // end of init
-
-    updatePoreStats: function () {
-        //console.log(this.livedata.pore_history);
-        var returndata = this.parseporehist(this.livedata.colours_string, this.livedata.pore_history);
-        //console.log(returndata);
-        //returndata.sort(a,b){
-
-        //}
-        while (this.PoreShizzle.series.length > 0)
-            this.PoreShizzle.series[0].remove(true);
-        //this.PoreShizzle.addSeries(returndata[4]);
-        //(returndata[4]);
-        for (var i = 0; i < returndata.length; i++) {
-            //console.log(returndata[i]);
-            var seriesdata = returndata[i];
-            //seriesdata['data'].sort(function (a, b){
-            //    return a[0] - b[0];
-            //});
-            this.PoreShizzle.addSeries(seriesdata);
-        }
-    },
-
-    parseporehist: function (descriptions, counts) {
-        var results = [];
-        var colors = [];
-        var categories = [];
-        var datam = [];
-        var colorlookup = [];
-        //console.log(descriptions);
-        descriptions = JSON.parse(descriptions);
-        for (var thing in descriptions["groups"]) {
-            //console.log(thing);
-            if (descriptions["groups"].hasOwnProperty(thing)) {
-                if (descriptions["groups"][thing].hasOwnProperty("style")) {
-                    //console.log(descriptions["groups"][thing]["states"]);
-                    for (var state in descriptions["groups"][thing]["states"]){
-                        //console.log(descriptions["groups"][thing]["states"][state]["name"]);
-                        colorlookup[descriptions["groups"][thing]["states"][state]["name"]]=descriptions["groups"][thing]["states"][state]["style"]["colour"];
-                    }
-                    //colorlookup[descriptions["groups"][thing]["name"]] = descriptions["groups"][thing]["style"]["colour"];
-                }
-            }
-        }
-        for (var pore in counts) {
-            results.push({"name": pore, "color": "#" + colorlookup[pore], "data": counts[pore]})//,"color":"#121212"]});
-        }
-        return results
-    },
-
-    updateLiveCumuYield: function () {
-        //console.log(this.livedata);
-        if (this.LiveCumuYield.series.length < 1) {
-            this.LiveCumuYield.addSeries({
-                data: this.livedata.yield_history
-            });
-            this.LiveCumuYield.series[0].update({name: "Events"}, false);
-        } else {
-            this.LiveCumuYield.series[0].setData(this.livedata.yield_history);
-            this.LiveCumuYield.series[0].update({name: "Events"}, false);
-        }
-        this.LiveCumuYield.redraw();
-        this.LiveCumuYield.reflow();
-        if (this.LiveOccupancy.series.length < 1) {
-            this.LiveOccupancy.addSeries({
-                data: this.livedata.percentage
-            });
-            this.LiveOccupancy.series[0].update({name: "% Occupancy"}, false);
-        } else {
-            this.LiveOccupancy.series[0].setData(this.livedata.percentage);
-            this.LiveOccupancy.series[0].update({name: "% Occupancy"}, false);
-        }
-        this.LiveOccupancy.redraw();
-        this.LiveOccupancy.reflow();
-        if (this.LiveInStrand.series.length < 2) {
-            this.LiveInStrand.addSeries({data: this.livedata.strand});
-            this.LiveInStrand.series[0].update({name: "In Strand"}, false);
-            this.LiveInStrand.addSeries({data: this.livedata.good_single});
-            this.LiveInStrand.series[1].update({name: "Single Pore"}, false);
-            this.LiveInStrand.addSeries({data: this.livedata.adapter});
-            this.LiveInStrand.series[2].update({name: "Adapter"}, false);
-
-        } else {
-            this.LiveInStrand.series[0].setData(this.livedata.strand);
-            this.LiveInStrand.series[0].update({name: "In Strand"}, false);
-            this.LiveInStrand.series[1].setData(this.livedata.good_single);
-            this.LiveInStrand.series[1].update({name: "Single Pore"}, false);
-            this.LiveInStrand.series[2].setData(this.livedata.adapter);
-            this.LiveInStrand.series[2].update({name: "Adapter"}, false);
-        }
-        this.LiveInStrand.redraw();
-        this.LiveInStrand.reflow();
-
-        /*
-        if (this.LivePoreState.series.length < 1) {
-            this.LivePoreState.addSeries({data: this.livedata.instrand_history});
-            this.LivePoreState.addSeries({data: this.livedata.openpore_history});
-        } else {
-            this.LivePoreState.series[0].setData(this.livedata.instrand_history);
-            this.LivePoreState.series[1].setData(this.livedata.openpore_history);
-        }
-        this.LivePoreState.series[0].update({name: "In Strand"}, false);
-        this.LivePoreState.series[1].update({name: "Open Pore"}, false);
-        this.LivePoreState.redraw();
-        this.LivePoreState.reflow();
-        */
-
-        /*
-        if (this.LiveCurrentRatio.series.length < 1) {
-            this.LiveCurrentRatio.addSeries({data: this.livedata.meanratio_history});
-        } else {
-            this.LiveCurrentRatio.series[0].setData(this.livedata.meanratio_history);
-        }
-        this.LiveCurrentRatio.series[0].update({name: "Current Ratio"}, false);
-        this.LiveCurrentRatio.redraw();
-        this.LiveCurrentRatio.reflow();
-        */
-        
-        if (this.LiveTemperature.series.length < 1) {
-            this.LiveTemperature.addSeries({data: this.livedata.asictemp});
-            this.LiveTemperature.addSeries({data: this.livedata.heatsinktemp});
-        } else {
-            this.LiveTemperature.series[0].setData(this.livedata.asictemp);
-            this.LiveTemperature.series[1].setData(this.livedata.heatsinktemp);
-        }
-        this.LiveTemperature.series[0].update({name: "Asic Temp"}, false);
-        this.LiveTemperature.series[1].update({name: "HeatSink Temp"}, false);
-        this.LiveTemperature.redraw();
-        this.LiveTemperature.reflow();
-        if (this.LiveVoltage.series.length < 1) {
-            this.LiveVoltage.addSeries({data: this.livedata.voltage});
-        } else {
-            this.LiveVoltage.series[0].setData(this.livedata.voltage);
-        }
-        this.LiveVoltage.series[0].update({name: "Voltage"}, false);
-        this.LiveVoltage.redraw();
-        this.LiveVoltage.reflow();
-
-    },
-
 
     projectdata: function (data) {
         var results = [];
@@ -472,7 +304,7 @@ var FlowcellPageApp = {
         this.LiveYield.series[2].setData(this.converttobases(newarray1, seqspeed));
         this.LiveYield.series[3].setData(this.converttobases(newarray2, seqspeed));
         this.LiveYield.redraw();
-        this.LiveYield.reflow()
+        this.LiveYield.reflow();
     },
 
     converttobases: function (data, seqspeed) {
@@ -502,116 +334,4 @@ var FlowcellPageApp = {
         //console.log("returning estimated scaling factor");
         return scaleddata;
     },
-
-    tohistogram: function (readeventcountweightedhist, readeventcountweightedhistbinwidth, totalyield) {
-        var results = [];
-        var categories = [];
-        //var counter = 0;
-        //console.log(readeventcountweightedhist);
-        readeventcountweightedhist = readeventcountweightedhist.replace(/u(?=[^:]+')/g, "").replace(/'/g, "");
-        readeventcountweightedhist = JSON.parse(readeventcountweightedhist);
-        //console.log(readeventcountweightedhistbinwidth);
-        var n50count = 0;
-        var n50index = 0;
-        var check = 0;
-        //console.log(readeventcountweightedhist);
-        for (i in readeventcountweightedhist) {
-            //if (readeventcountweightedhist[i] > 0){
-            //counter+=1;
-            //console.log(readeventcountweightedhistbinwidth);
-            //console.log(i);
-
-            //console.log(i*readeventcountweightedhistbinwidth, readeventcountweightedhist[i]);
-            n50count += parseInt(readeventcountweightedhist[i]);
-            if (n50count >= (parseInt(totalyield) / 2)) {
-                //console.log("n50",(i+1)*readeventcountweightedhistbinwidth, n50count);
-                check += 1;
-            }
-            //console.log(i);
-            //console.log(parseInt(i)+1);
-            var category = String((parseInt(i)) * readeventcountweightedhistbinwidth) + " - " + String((parseInt(i) + 1) * readeventcountweightedhistbinwidth) + " ev";
-            //console.log(readeventcountweightedhistbinwidth);
-            categories.push(category);
-            if (check == 1) {
-                n50index = i;
-                results.push({"name": category, "y": parseInt(readeventcountweightedhist[i]), "color": "red"});
-                check += 1;
-            } else {
-                results.push({"name": category, "y": parseInt(readeventcountweightedhist[i]), "color": "blue"});
-            }
-
-            //}
-        }
-        categories.push(">> max ev");
-        var missed = 0;
-        //var missed = totalyield - readeventcountweightedhist.reduce(add,0);
-        results.push({"name": ">> max ev", "y": missed});
-        //console.log(n50index);
-        return [results, categories, n50index];
-
-    },
-
-    updateLiveHistogram: function (data) {
-        //console.log(data);
-        returndata = this.tohistogram(data[data.length - 1].minKNOW_histogram_values, data[data.length - 1].minKNOW_histogram_bin_width, data[data.length - 1].event_yield);
-        this.LiveHistogram.series[0].setData(returndata[0]);
-        this.LiveHistogram.xAxis[0].setCategories(returndata[1]);
-        var N50 = parseInt(returndata[2]);
-        this.LiveHistogram.xAxis[0].removePlotBand("plot-band-1");
-        this.LiveHistogram.xAxis[0].addPlotBand({
-            from: N50 - 0.5,
-            to: N50 + 0.5,
-            color: "#FCFFC5",
-            id: "plot-band-1",
-        });
-        this.LiveHistogram.xAxis[0].removePlotBand("plot-band-2");
-        this.LiveHistogram.xAxis[0].addPlotBand({
-            color: "black",
-            width: 2,
-            dashStyle: "longdashdot",
-            value: returndata[2],
-            label: {
-                text: "Estimated Read N50",
-                align: "left",
-                rotation: 0,
-                x: +10 // Amount of pixels the label will be repositioned according to the alignment.
-            },
-            id: "plot-band-2",
-        });
-        this.LiveHistogram.xAxis[0].removePlotBand("plot-band-3");
-        this.LiveHistogram.xAxis[0].addPlotBand({
-            color: "black",
-            width: 2,
-            dashStyle: "longdashdot",
-            value: (Math.floor(this.totalyield / this.readcount / this.datain2)),
-            label: {
-                text: "Estimated Read Average - " + Math.round(this.totalyield / this.readcount / 1000 * 100) / 100 + " K events",
-                align: "left",
-                rotation: 0,
-                x: +10,
-                y: +30, // Amount of pixels the label will be repositioned according to the alignment.
-            },
-            id: "plot-band-3",
-        });
-        this.LiveHistogram.reflow();
-    },
-
-
-    calculatereadtoeventscaling: function () {
-        var totalyield = 0;
-        var readcount = 0;
-        if (this.summary !== null) {
-            //if ("All reads" in this.summary) {
-            for (var readtype in this.summary["All reads"]) {
-                //console.log(this.summary["All reads"][readtype]);
-                totalyield = totalyield + parseInt(this.summary["All reads"][readtype]["yield"]["data"]);
-                readcount = readcount + parseInt(this.summary["All reads"][readtype]["read_count"]["data"]);
-            }
-            //console.log("yieldhistory length");
-            //console.log("test" + this.livedata.live_read_count);
-            if (this.livedata.yield_history.length > 1) {
-                this.livedata.scalingfactor = (totalyield / readcount) / (this.livedata.yield_history[this.livedata.yield_history.length - 1][1] / this.livedata.live_read_count);
-            }
-        }
-    }
 };

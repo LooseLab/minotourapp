@@ -4,6 +4,11 @@ from reads import views
 
 urlpatterns = [
     url(
+        r'^api/v1/flowcells/reactivate/$',
+        views.reactivate_flowcell,
+        name="reactivate_flowcell"
+    ),
+    url(
         r'^api/v1/runs/$',
         views.run_list,
         name="run-list"),
@@ -186,6 +191,14 @@ urlpatterns = [
         views.flowcell_tasks_detail_all,
         name="flowcelltasks-detail-all"),
     url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/sharing/$',
+        views.flowcell_sharing,
+        name="flowcell-sharing"),
+    url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/sharing/delete/$',
+        views.flowcell_sharing_delete,
+        name="flowcell-sharing-delete"),
+    url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/tabs/$',
         views.flowcell_tabs_details,
         name="tabs-details"
@@ -239,4 +252,32 @@ urlpatterns = [
         views.minknow_message_list_by_flowcell,
         name="minknow-message-list-by-flowcell"
     ),
+
+
+    url(
+        r'^private/flowcell_manager/$',
+        views.flowcell_manager,
+        name='flowcell_manager'
+    ),
+
+    url(
+        r'^api/v1/tasks/action$',
+        views.task_control,
+        name="restart-task",
+    ),
+
+    url(
+        r'^api/v1/tasktypes/$',
+        views.task_types_list,
+        name="task-types-list"),
+    # url(  # to be refactored
+    #     r'^api/v1/runs/(?P<pk>[0-9]+)/settask/$',
+    #     views.set_task_detail_all,
+    #     name="set-task-detail-all"),
+    url(
+        r'^api/v1/tasks/$',
+        views.get_or_create_tasks,
+        name='task_list'
+    )
+
 ]

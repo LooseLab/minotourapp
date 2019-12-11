@@ -7,6 +7,8 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
+from reference.models import ReferenceInfo
+
 
 class Experiment(models.Model):
     """
@@ -21,7 +23,8 @@ class Experiment(models.Model):
     owner = models.ForeignKey(
 
         settings.AUTH_USER_MODEL,
-        related_name='experiments'
+        related_name='experiments',
+        on_delete=models.DO_NOTHING,
     )
 
     created_date = models.DateTimeField(
@@ -36,7 +39,10 @@ class Experiment(models.Model):
 
 
 class Flowcell(models.Model):
-
+    """
+        The model for the django ORM that deals with the creation and retrieval of Flowcells.
+        Flowcells are top level organisers under users.
+    """
     name = models.CharField(
         max_length=256,
     )
@@ -47,19 +53,16 @@ class Flowcell(models.Model):
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        related_name='flowcells'
+        related_name='flowcells',
+        on_delete=models.DO_NOTHING,
     )
 
     max_channel = models.IntegerField(
-        default = 0
+        default=0
     )
 
     size = models.IntegerField(
         default=512
-    )
-
-    is_active = models.BooleanField(
-        default=True
     )
 
     start_time = models.DateTimeField(
@@ -108,19 +111,59 @@ class Flowcell(models.Model):
         default=True
     )
 
+    last_activity_date = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    last_activity_message = models.CharField(
+
+        max_length=256,
+        default='Created flowcell.'
+    )
+
     def barcodes(self):
+        """
+        Return all the barcodes in runs contained under this flowcell.
+        :return:
+        """
 
         barcode_set = set()
-
+        # for each run in all the runs foreign keyed to this flowcell
         for run in self.runs.all():
-
+            # for all the barcodes foreign keyed to this run
             for barcode in run.barcodes.all():
+                # add the barcode to the set - guarantees uniqueness
                 barcode_set.add(barcode)
 
         return barcode_set
 
     def __str__(self):
+        """
+        Format the string returned when models are inspected in the shell or by admin
+        :return:
+        """
         return "{} {}".format(self.name, self.id)
+
+    def active(self):
+        """
+        Determine whether this flowcell has been active in the 48 hours
+        :return:
+        """
+        # time deltas are pythons measurement of time difference
+        delta = datetime.timedelta(days=7)
+        # If the current time minus two days is more than the last activity date, there has been no activity in 48 hours
+        if (datetime.datetime.now(datetime.timezone.utc) - delta) > self.last_activity_date:
+
+            return False
+        # Activity in the last 48 hours
+
+        return True
+
+    class Meta:
+        permissions = (
+            ('view_data', 'View data'),
+            ('run_analysis', 'Run analysis'),
+        )
 
 
 class MinION(models.Model):
@@ -137,7 +180,8 @@ class MinION(models.Model):
     owner = models.ForeignKey(
 
         settings.AUTH_USER_MODEL,
-        related_name='minIONs'
+        related_name='minIONs',
+        on_delete=models.DO_NOTHING,
     )
 
     class Meta:
@@ -258,7 +302,8 @@ class GroupRun(models.Model):  # TODO don't document
     owner = models.ForeignKey(
 
         settings.AUTH_USER_MODEL,
-        related_name='groupruns'
+        related_name='groupruns',
+        on_delete=models.DO_NOTHING,
     )
 
     name = models.CharField(
@@ -304,8 +349,12 @@ class MinIONControl(models.Model):
     :created_date: The date that the job was created
     :modified_date: The date that this as last modified
     """
-    minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minioncontrol')
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='controlcontrol')
+    minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minioncontrol',
+                               on_delete=models.CASCADE,
+                               )
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='controlcontrol',
+                              on_delete=models.DO_NOTHING,
+                              )
     job = models.CharField(max_length=256, blank=False, null=False)
     custom = models.CharField(max_length=256, blank=True, null=True)
     # setdate = models.DateTimeField(blank=False,null=False)
@@ -338,7 +387,8 @@ class UserOptions(models.Model):
     owner = models.OneToOneField(
 
         settings.AUTH_USER_MODEL,
-        related_name='extendedopts'
+        related_name='extendedopts',
+        on_delete=models.DO_NOTHING,
     )
 
     twitterhandle = models.CharField(
@@ -384,19 +434,24 @@ class Run(models.Model):
         MinION,
         blank=True,
         null=True,
-        related_name='runs'
+        related_name='runs',
+        on_delete=models.DO_NOTHING,
     )
 
     flowcell = models.ForeignKey(
 
         Flowcell,
         related_name='runs',
+        on_delete=models.CASCADE,
+
     )
 
     owner = models.ForeignKey(
 
         settings.AUTH_USER_MODEL,
-        related_name='runs'
+        related_name='runs',
+        on_delete=models.DO_NOTHING,
+
     )
 
     groupruns = models.ManyToManyField(
@@ -583,7 +638,9 @@ class FastqFile(models.Model):
 
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        related_name='fastqfiles'
+        related_name='fastqfiles',
+        on_delete=models.DO_NOTHING,
+
     )
 
     md5 = models.CharField(
@@ -660,7 +717,8 @@ class MinIONStatus(models.Model):  # TODO Rename class for logical consistency
     minION = models.OneToOneField(
 
         MinION,
-        related_name='currentdetails'
+        related_name='currentdetails',
+        on_delete=models.CASCADE,
 
     )
 
@@ -817,13 +875,17 @@ class MinIONRunStats(models.Model):  # Todo consider merging in to one object wi
     minION = models.ForeignKey(
 
         MinION,
-        related_name='currentrunstats'
+        related_name='currentrunstats',
+        on_delete=models.DO_NOTHING,
+
     )
 
     run_id = models.ForeignKey(
 
         Run,
-        related_name='RunStats'
+        related_name='RunStats',
+        on_delete=models.CASCADE,
+
     )
 
     sample_time = models.DateTimeField(
@@ -931,6 +993,21 @@ class MinIONRunStats(models.Model):  # Todo consider merging in to one object wi
         default=0
     )
 
+    no_pore = models.IntegerField(
+
+        default=0
+    )
+
+    zero = models.IntegerField(
+
+        default=0
+    )
+
+    pore = models.IntegerField(
+
+        default=0
+    )
+
     minKNOW_read_count = models.IntegerField(
 
         default=0
@@ -960,8 +1037,8 @@ class MinIONRunStats(models.Model):  # Todo consider merging in to one object wi
 
     ## This is something to look at for optimisation
     def occupancy(self):
-        if (self.strand > 0 and self.inrange > 0):
-            occupancy = round(((self.strand + self.adapter) / (self.strand + self.adapter + self.good_single)) * 100)
+        if (self.strand > 0 and (self.inrange > 0 or self.pore > 0)):
+            occupancy = round(((self.strand + self.adapter) / (self.strand + self.adapter + self.good_single + self.pore)) * 100)
         else:
             occupancy = 0
         return occupancy
@@ -1008,7 +1085,9 @@ class MinIONRunStatus(models.Model):
     minION = models.ForeignKey(
 
         MinION,
-        related_name='currentrundetails'
+        related_name='currentrundetails',
+        on_delete=models.DO_NOTHING,
+
     )
 
     minKNOW_current_script = models.CharField(
@@ -1056,7 +1135,9 @@ class MinIONRunStatus(models.Model):
     run_id = models.ForeignKey(
 
         Run,
-        related_name='RunDetails'
+        related_name='RunDetails',
+        on_delete=models.CASCADE,
+
     )
 
     minKNOW_hash_run_id = models.CharField(
@@ -1252,12 +1333,15 @@ class MinIONEvent(models.Model):
 
     minION = models.ForeignKey(
 
-        MinION, related_name='events'
+        MinION, related_name='events',
+        on_delete=models.CASCADE,
+
     )
 
     event = models.ForeignKey(
 
-        MinIONEventType
+        MinIONEventType,
+        on_delete=models.DO_NOTHING,
     )
 
     datetime = models.DateTimeField(
@@ -1303,7 +1387,8 @@ class MinIONScripts(models.Model):
     minION = models.ForeignKey(
 
         MinION,
-        related_name='scripts'
+        related_name='scripts',
+        on_delete=models.CASCADE,
     )
 
     identifier = models.CharField(
@@ -1432,7 +1517,16 @@ class FastqRead(models.Model):
         Barcode,
         # on_delete=models.CASCADE,
         related_name='reads',
-        null=True
+        null=True,
+        on_delete=models.DO_NOTHING,
+    )
+
+    rejected_barcode = models.ForeignKey(
+        Barcode,
+        on_delete=models.DO_NOTHING,
+        related_name="rejection_status",
+        null=True,
+        blank=True,
     )
 
     barcode_name = models.CharField(
@@ -1458,7 +1552,8 @@ class FastqRead(models.Model):
     )  # pass = true, fail = false
 
     type = models.ForeignKey(
-        FastqReadType
+        FastqReadType,
+        on_delete=models.DO_NOTHING,
     )
 
     start_time = models.DateTimeField(
@@ -1477,8 +1572,8 @@ class FastqRead(models.Model):
     fastqfile = models.ForeignKey(
         FastqFile,
         on_delete=models.CASCADE,
-        related_name = 'reads',
-        null = True
+        related_name='reads',
+        null=True,
     )
 
     sequence = models.TextField(
@@ -1552,14 +1647,16 @@ class MinionMessage(models.Model):
     """
     minion = models.ForeignKey(
         MinION,
-        related_name='messages'
+        related_name='messages',
+        on_delete=models.CASCADE,
     )
 
     run = models.ForeignKey(
         Run,
         related_name='runmessages',
         blank=True,
-        null=True
+        null=True,
+        on_delete=models.CASCADE,
     )
 
     message = models.CharField(
@@ -1577,7 +1674,11 @@ class MinionMessage(models.Model):
     )
 
     timestamp = models.DateTimeField(
+    )
 
+    full_text = models.TextField(
+        blank=True,
+        default=""
     )
 
     class Meta:
@@ -1602,7 +1703,8 @@ class RunStatisticBarcode(models.Model):  # TODO to be removed
     )
 
     type = models.ForeignKey(
-        FastqReadType
+        FastqReadType,
+        on_delete=models.DO_NOTHING,
     )
 
     barcode = models.ForeignKey(
@@ -1669,6 +1771,9 @@ class RunStatisticBarcode(models.Model):  # TODO to be removed
 
 
 class FlowcellStatisticBarcode(models.Model):
+    """
+    model to contain the flowcell statistic barcodes data for the chancalc page
+    """
     flowcell = models.ForeignKey(
 
         Flowcell,
@@ -1685,6 +1790,13 @@ class FlowcellStatisticBarcode(models.Model):
     barcode_name = models.CharField(
 
         max_length=32
+    )
+
+    rejection_status = models.CharField(
+        max_length=32,
+        default="Sequenced",
+        null=True,
+        blank=True,
     )
 
     status = models.CharField(
@@ -1772,7 +1884,9 @@ class ChannelSummary(models.Model):  # don't document
 
 
 class FlowcellChannelSummary(models.Model):  # TODO to be deleted
-
+    """
+    The flowcell channel model for the channel visualistions on te chancalc page
+    """
     flowcell = models.ForeignKey(
         Flowcell,
         on_delete=models.CASCADE,
@@ -1813,7 +1927,8 @@ class HistogramSummary(models.Model):  # don't comment
     )
 
     read_type = models.ForeignKey(
-        FastqReadType
+        FastqReadType,
+        on_delete=models.DO_NOTHING,
     )
 
     is_pass = models.BooleanField(
@@ -1870,6 +1985,13 @@ class FlowcellHistogramSummary(models.Model):
     barcode_name = models.CharField(
 
         max_length=32
+    )
+
+    rejection_status = models.CharField(
+        max_length=32,
+        default="Sequenced",
+        null=True,
+        blank=True,
     )
 
     status = models.CharField(
@@ -1989,7 +2111,8 @@ class RunSummaryBarcode(models.Model):  # TODO to be deleted
     )
 
     type = models.ForeignKey(
-        FastqReadType
+        FastqReadType,
+        on_delete=models.DO_NOTHING,
     )
 
     barcode = models.ForeignKey(
@@ -2058,13 +2181,15 @@ class RunSummaryBarcode(models.Model):  # TODO to be deleted
 
 class FlowcellSummaryBarcode(models.Model):
     """
-    :purpose: Summarise information from runs by flowcell, barcode name, fastq read type, and status (pass or fail). There is one record per flowcell. Most of the charts in the flowcell page use this data.
+    :purpose: Summarise information from runs by flowcell, barcode name, fastq read type, and status (pass or fail).
+     There is one record per flowcell. Most of the charts in the flowcell page use this data.
 
     Fields:
 
     :flowcell: (Flowcell) Foreign key to Flowcell
     :read_type_name: (FastReadType) FastqReadType name
     :barcode_name: (Barcode) Barcode name
+    ;rejection_status: (Barcode) Foreign key to whether the read was accepted or unblocked
     :status: (boolean) Pass or Fail; originates from FastqRead is_pass attribute
     :quality_sum: (float) # TODO
     :read_count: (float) Total number of all reads from all runs of the flowcell
@@ -2090,6 +2215,13 @@ class FlowcellSummaryBarcode(models.Model):
     barcode_name = models.CharField(
 
         max_length=32
+    )
+
+    rejection_status = models.CharField(
+        max_length=32,
+        default="Sequenced",
+        null=True,
+        blank=True,
     )
 
     status = models.CharField(
@@ -2210,6 +2342,140 @@ class FlowcellTab(models.Model):
         return '{} - {}'.format(self.flowcell.id, self.tab)
 
 
+class JobType(models.Model):
+
+    name = models.CharField(
+
+        max_length=256,
+    )
+
+    description = models.TextField(
+
+        max_length=256,
+        blank=True,
+        null=True,
+    )
+
+    long_description = models.TextField(
+
+        blank=True,
+        null=True,
+    )
+
+    reference = models.BooleanField(
+
+        default=False,
+    )
+
+    transcriptome = models.BooleanField(
+
+        default=False,
+    )
+
+    readcount = models.BooleanField(
+
+        default=False,
+    )
+
+    private = models.BooleanField(
+
+        default=True,
+    )
+
+    def __str__(self):
+
+        return "{}".format(self.name)
+
+
+class JobMaster(models.Model):
+
+    run = models.ForeignKey(
+
+        Run,
+        on_delete=models.DO_NOTHING,
+        related_name='runjobs',
+        null=True,
+        blank=True,
+    )
+
+    flowcell = models.ForeignKey(
+
+        Flowcell,
+        on_delete=models.CASCADE,
+        related_name='flowcelljobs',
+        null=True,
+        blank=True,
+    )
+
+    job_type = models.ForeignKey(
+
+        JobType,
+        on_delete=models.DO_NOTHING,
+        related_name='taskname',
+    )
+
+    reference = models.ForeignKey(
+
+        ReferenceInfo,
+        on_delete=models.CASCADE,
+        related_name='referencejob',
+        null=True,
+        blank=True,
+    )
+
+    last_read = models.BigIntegerField(
+
+        default=0,
+    )
+
+    tempfile_name = models.CharField(
+
+        max_length=256,
+        blank=True,
+        null=True,
+    )
+
+    read_count = models.BigIntegerField(
+
+        default=0
+    )
+
+    complete = models.BooleanField(
+
+        default=False,
+    )
+
+    running = models.BooleanField(
+
+        default=False,
+    )
+
+    paused = models.BooleanField(
+        default=False
+    )
+
+    iteration_count = models.IntegerField(
+
+        null=True,
+        default=0,
+    )
+
+    target_set = models.CharField(
+
+        default=None,
+        null=True,
+        max_length=100,
+        blank=True,
+    )
+
+    def __str__(self):
+
+        if self.run is not None:
+
+            return "{} {} {} {}".format(self.run, self.job_type, self.run.id, self.id)
+
+        return "{} {} {}".format(self.flowcell, self.job_type, self.flowcell.id)
+
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_auth_token(sender, instance=None, created=False, **kwargs):
@@ -2237,3 +2503,27 @@ def create_run_barcodes(sender, instance=None, created=False, **kwargs):
             run=instance,
             name='No barcode'
         )
+
+
+@receiver(post_save, sender=Flowcell)
+def create_flowcell_jobs(sender, instance=None, created=False, **kwargs):
+    """
+    This function is executed after a flowcell is created. It creates the
+    default jobs chancalc and updateflowcelldetails.
+
+    :param sender:
+    :param instance:
+    :param created:
+    :param kwargs:
+    :return:
+    """
+
+    if created:
+        job_name_list = ['ChanCalc', 'UpdateFlowcellDetails']
+
+        for job_name in job_name_list:
+
+            JobMaster.objects.create(
+                job_type=JobType.objects.get(name=job_name),
+                flowcell=instance,
+            )

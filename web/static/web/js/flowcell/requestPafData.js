@@ -1,5 +1,5 @@
 function updateCoverageBasedCharts(chart, summarycoverage, field) {
-
+    // TODO What is this exactly?
     var series = [];
     var categories = [];
     for (var barcode of Object.keys(summarycoverage)) {
@@ -38,9 +38,8 @@ function requestMappedChromosomes(flowcell_id) {
     /*
      * Request the chromosomes that have reads mapped to using minimap2
      * and update the select box on tab Mapping
-     *
+     * TODO THIS NEEDS STREAMLINING
      */
-    console.log("HEEELLOLOLLL");
     var url = '/api/v1/flowcells/' + flowcell_id + '/references';
 
     $.getJSON(url, function (data_unsorted) {
@@ -126,14 +125,14 @@ function drawPafSummaryTable(flowCellId) {
 }
 
 function requestPafData(id) {
-
+    // Get the data for the mapping tabs coverage bar charts
     requestMappedChromosomes(id);
 
     var pafurl = '/api/v1/flowcells/' + id + '/pafsummary/';
 
     if (!this.chart_per_chrom_cov) {
 
-        this.chart_per_chrom_cov = this.makeChart(
+        this.chart_per_chrom_cov = this.makeColumnChart(
             "per-chrom-cov",
             "Chromosome Coverage".toUpperCase(),
             "Chromosome Coverage".toUpperCase()
@@ -143,10 +142,10 @@ function requestPafData(id) {
 
     if (!this.chart_per_chrom_avg) {
 
-        this.chart_per_chrom_avg = this.makeChart(
+        this.chart_per_chrom_avg = this.makeColumnChart(
             "per-chrom-avg",
-            "Read Length By Chromosome".toUpperCase(),
-            "Read Length By Chromosome".toUpperCase()
+            "Mean Read Length By Chromosome".toUpperCase(),
+            "Mean Read Length By Chromosome".toUpperCase()
         );
 
     }
