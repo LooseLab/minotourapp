@@ -179,14 +179,12 @@ class FastqReadSerializer(serializers.ModelSerializer):
 
         run = validated_data['run']
 
-        default_rejection_barcode = Barcode.objects.get(run=run, name="S")
-
         fastqread = FastqRead(
             read_id=validated_data['read_id'],
             read=validated_data['read'],
             channel=validated_data['channel'],
             barcode=validated_data['barcode'],
-            rejected_barcode=default_rejection_barcode,
+            rejected_barcode=validated_data['rejected_barcode'],
             barcode_name=validated_data['barcode_name'],
             sequence_length=validated_data['sequence_length'],
             quality_average=validated_data['quality_average'],

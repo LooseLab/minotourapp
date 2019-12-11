@@ -125,7 +125,7 @@ function drawPafSummaryTable(flowCellId) {
 }
 
 function requestPafData(id) {
-
+    // Get the data for the mapping tabs coverage bar charts
     requestMappedChromosomes(id);
 
     var pafurl = '/api/v1/flowcells/' + id + '/pafsummary/';
@@ -144,8 +144,8 @@ function requestPafData(id) {
 
         this.chart_per_chrom_avg = this.makeColumnChart(
             "per-chrom-avg",
-            "Read Length By Chromosome".toUpperCase(),
-            "Read Length By Chromosome".toUpperCase()
+            "Mean Read Length By Chromosome".toUpperCase(),
+            "Mean Read Length By Chromosome".toUpperCase()
         );
 
     }

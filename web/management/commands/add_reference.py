@@ -199,6 +199,7 @@ class Command(BaseCommand):
                         reference=ref_info, **ref_line_dict
                     )
                     ref_line.save()
+                print("Successfully handled file.")
 
         except Exception as e:
             raise CommandError(repr(e))

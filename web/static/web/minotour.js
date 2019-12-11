@@ -38,9 +38,18 @@ function check_minotour_version() {
     });
 }
 
-
+/**
+ * @function makeColumnChart
+ * @param {string} divName ID of the div we want to draw the charts in
+ * @param {string} chartTitle
+ * @param {string} yAxisTitle
+ * Creates an empty highCharts column chart at the provided divName,
+ * with divName being the Id if the div we want to draw in.
+ */
 function makeColumnChart(divName, chartTitle, yAxisTitle) {
-    var chart = Highcharts.chart(divName, {
+
+    var chart;
+    chart = Highcharts.chart(divName, {
         chart: {
             type: "column",
             animation: Highcharts.svg, // don"t animate in old IE

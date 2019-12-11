@@ -1,5 +1,6 @@
 function loadTasksForm() {
-    /*
+    /**
+     * @function
      * Loads create task's form and add event listeners
      */
     // Select the div for the dropdown
@@ -29,6 +30,8 @@ function loadTasksForm() {
                     // If it's metagenomics chosen
                     if (element["name"] == "Metagenomics") {
                         // Remove all the reference select options
+                        document.getElementById("id_reference").disabled = false;
+
                         while (reference_select.options.length > 0) {
                             reference_select.remove(0);
                         }
@@ -55,8 +58,12 @@ function loadTasksForm() {
                                 }
                             }
                         });
+                    } else if (element["name"] === "Minimap2"){
+                        console.log("Reference mappong");
+                        document.getElementById("id_reference").disabled = false;
                     } else {
                         // if it's not for the metagenomics task we label the second dropdown reference
+                        document.getElementById("id_reference").disabled = true;
                         label.innerHTML = "Reference";
                         // remove all the current references
                         while (reference_select.options.length > 0) {
@@ -95,13 +102,11 @@ function loadTasksForm() {
     };
     // url to fetch all the available task types
     var url_task_type_list = "/api/v1/tasktypes/";
-    // fetch all available references
+    // fetch all available tasks types
     $.get(url_task_type_list, function (dataObj, statusText, xhr) {
         if (xhr.status != 200) console.log(`Error ${statusText}`);
         // get the data
         var data = dataObj['data'];
-
-        console.log(data);
         // create option placeholder
         var option = document.createElement("option");
 
@@ -117,22 +122,18 @@ function loadTasksForm() {
             job_type_select.minotour_job_type_list = data; // OO rocks
         }
 
-        console.log(alreadyPresentJobs);
         // for each of the elements
         alreadyPresentJobs.forEach(function (presentJob) {
             // if the chromsome in already present chromsome is in the list of chromosomes fetched from the server
             if (data.some(e => e.description === presentJob.textContent)){
-                console.log(presentJob.textContent);
                 // get the index,
                 let index = data.map(function(x) {return x.description; }).indexOf(presentJob.textContent);
 
-                console.log(index);
                 // remove it from the freshly fetched chromosomes
                 data.splice(index, 1);
             }
         });
 
-        console.log(data);
 
         if (!data.length) {return;}
 
@@ -149,6 +150,11 @@ function loadTasksForm() {
         }
     });
     // Do the same with the reference
+
+    if (document.getElementById("id_job_type").value !== "4"){
+        document.getElementById("id_reference").disabled=true;
+    }
+
     var url_reference_list = "/api/v1/reference/";
 
     $.get(url_reference_list, data => {
@@ -215,13 +221,13 @@ function flowcellTaskHistoryTable(flowcellId) {
                     "width": "15%",
                     "render": function (data, type, full) {
                         if (!data["server_initiated"]) {
-                            return [`<a class="btn pause" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>`,
-                                `<a class="btn reset" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Restart </a>`,
-                                `<a class="btn delete" onclick="mTaskController.performActionOnTask(event, ${data.id}, 3)"><i class="fa fa-times"></i> Delete </a>`];
+                            return [`<a class="btn" id="pause_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>`,
+                                `<a class="btn" id="reset_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Reset </a>`,
+                                `<a class="btn" id="delete_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 3)"><i class="fa fa-times"></i> Delete </a>`];
                         }
                         else {
-                            return [`<a class="btn pause" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>`,
-                                `<a class="btn reset" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Restart </a>`];
+                            return [`<a class="btn" id="pause_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>`,
+                                `<a class="btn" id="reset_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Reset </a>`];
                         }
                     }
                 }
