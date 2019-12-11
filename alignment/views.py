@@ -296,17 +296,19 @@ def get_coverage_summary(request, pk):
     # if the request is from the Dropdown for notifications
     if request.GET.get("names", False):
         queryset = JobMaster.objects.filter(flowcell__id=pk, job_type__name="minimap2").values_list(
-            "reference__name", "reference__referencelines__line_name", "flowcell__runs__barcodes__name")
-        # queryset = PafSummaryCov.objects.filter(
-        #     job_master__flowcell__id=pk
-        # ).values_list("chromosome__line_name", "barcode_name")
+            "reference__name", "reference__referencelines__line_name", "flowcell__runs__barcodes__name",
+            "reference__id", "reference__referencelines__id", "flowcell__runs__barcodes__id")
 
         reference_to_contig_dict = defaultdict(dict)
+
         contig_to_barcode_dict = defaultdict(list)
+
         for contig in queryset:
             contig_to_barcode_dict[contig[1]].append(contig[2])
             reference_to_contig_dict[contig[0]] = contig_to_barcode_dict
+
         print(reference_to_contig_dict)
+
         return Response(reference_to_contig_dict, status=200)
 
     queryset = PafSummaryCov.objects.filter(job_master__flowcell__id=pk)
