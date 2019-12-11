@@ -12,7 +12,7 @@ from centrifuge.models import CentrifugeOutput
 from communication.models import Message
 from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats
 from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
-
+from reads.views import flowcell_list
 from django.contrib import messages
 
 import pandas as pd
@@ -142,8 +142,12 @@ def flowcell_reads(request, pk):
     return render(request, 'web/flowcell_reads.html', context={'flowcell': flowcell})
 
 
-def flowcell_reads_data(request):
+def flowcell_list(request):
+    flowcell_list = Flowcell.objects.filter(owner=request.user)
+    return render(request, 'web/flowcell_list.html', context={'access_flowcell': flowcell_list})
 
+
+def flowcell_reads_data(request):
     # column_0_data = request.GET.get('column[0][data]', '')
     # column_0_name = request.GET.get('column[0][name]', '')
     # column_0_searchable = request.GET.get('column[0][searchable]', '')

@@ -252,4 +252,5 @@ urlpatterns = [
         views.minknow_message_list_by_flowcell,
         name="minknow-message-list-by-flowcell"
     ),
+
 ]
