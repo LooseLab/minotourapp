@@ -10,7 +10,7 @@ logger = get_task_logger(__name__)
 
 
 @task()
-def move_reads_to_flowcell(run_id, flowcell_id):
+def move_reads_to_flowcell(run_id, flowcell_id, fromflowcell_id):
     """
     Moves the reads from flowcell A to flowcell B
     The split flowcell function calls this task
@@ -18,13 +18,26 @@ def move_reads_to_flowcell(run_id, flowcell_id):
 
     flowcell = Flowcell.objects.get(pk=flowcell_id)
 
+    flowcellold = Flowcell.objects.get(pk=fromflowcell_id)
+
     run = Run.objects.get(pk=run_id)
 
-    reads = FastqRead.objects.filter(run=run)[:10000]
+    #reads = FastqRead.objects.filter(run=run)[:10000]
+    chunksize = 10000
 
-    reads_len = len(reads)
+    totalreads = FastqRead.objects.filter(run=run).count()
 
-    while reads_len > 0:
+    steps = int((totalreads - totalreads%chunksize)/chunksize + 1)
+
+    for i in range(0, steps):
+
+        modstart = i*chunksize
+
+        modend = (i+1) * chunksize
+
+        reads = FastqRead.objects.filter(run=run)[modstart:modend]
+
+        reads_len = FastqRead.objects.filter(run=run)[modstart:modend].count()
 
         logger.info('Moving {} reads from run {} to flowcell {}'.format(
             reads_len,
@@ -42,9 +55,6 @@ def move_reads_to_flowcell(run_id, flowcell_id):
             read.flowcell = flowcell
             read.save()
 
-        reads = FastqRead.objects.filter(run=run)[:10000]
-
-        reads_len = len(reads)
 
     logger.info('Finished reads from run {} to flowcell {}'.format(
         run.runid,
@@ -55,3 +65,11 @@ def move_reads_to_flowcell(run_id, flowcell_id):
         run.runid,
         flowcell.name
     ))
+
+    ##Update tasks on old flowcell
+
+    chancalcjob = flowcellold.flowcelljobs.get(job_type__name="ChanCalc")
+
+    chancalcjob.last_read=0
+    chancalcjob.read_count=0
+    chancalcjob.save()

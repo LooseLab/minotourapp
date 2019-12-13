@@ -572,6 +572,6 @@ def split_flowcell(existing_or_new_flowcell, from_flowcell_id, to_flowcell_id, t
         run.flowcell = to_flowcell
         run.save()
 
-    move_reads_to_flowcell.delay(run.id, to_flowcell.id)
+    move_reads_to_flowcell.delay(run.id, to_flowcell.id, from_flowcell.id)
 
     return run, from_flowcell, to_flowcell
