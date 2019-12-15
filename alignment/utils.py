@@ -6,8 +6,8 @@ from alignment.models import PafRoughCov
 
 def calculate_coverage(positions, incdels, current_incdel, reference_size, number_of_bins, bin_width, bin_edges, min_extreme, max_extreme):
 
-    print(positions)
-    print(incdels)
+    #print(positions)
+    #print(incdels)
 
     q = np.array([
         positions,
@@ -131,12 +131,14 @@ def calculate_coverage(positions, incdels, current_incdel, reference_size, numbe
 
 def get_incdel_at_position(task_id, barcode_name, read_type_id, chromosome_id, position):
 
+    """
     print('>>> get_incdel_at_position')
     print('>>> task_id: {}'.format(task_id))
     print('>>> barcode_name: {}'.format(barcode_name))
     print('>>> read_type_id: {}'.format(read_type_id))
     print('>>> chromosome_id: {}'.format(chromosome_id))
     print('>>> position: {}'.format(position))
+    """
 
     queryset = PafRoughCov.objects \
         .filter(job_master__id=task_id) \
@@ -216,7 +218,7 @@ def calculate_coverage_new(user, task_id, barcode_name, read_type_id, chromosome
     positions = []
     incdels = []
 
-    print("queryset length: {}".format(len(queryset)))
+    #print("queryset length: {}".format(len(queryset)))
     for item in queryset:
         positions.append(item.p)
         incdels.append(item.i)
