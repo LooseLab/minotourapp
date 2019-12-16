@@ -388,7 +388,7 @@ class UserOptions(models.Model):
 
         settings.AUTH_USER_MODEL,
         related_name='extendedopts',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
     )
 
     twitterhandle = models.CharField(
