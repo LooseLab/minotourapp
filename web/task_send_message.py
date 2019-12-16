@@ -10,6 +10,7 @@ from communication.models import NotificationConditions, Message
 import datetime
 from django.conf import settings
 
+from reads.models import MinionMessage
 
 
 def return_tweet(tweet_type, target_coverage=None, reference_file_name=None, mux_pores_left=None, target_added=None):
@@ -122,10 +123,10 @@ def send_messages():
             new_message.save()
 
 @task()
-def send_tweet_upon_condition():
+def check_condition_is_met():
     """
     This function is executed by django beat. It checks the database for a set of conditions the user has chosen, and
-    if the conditions are met, sends the user a tweet alerting them.
+    if the conditions are met, creates a message to be sent to them.
 
     Returns
     -------
@@ -136,10 +137,19 @@ def send_tweet_upon_condition():
     # Get conditions created in the last 7 days and conditions that are incomplete
     active_conditions = NotificationConditions.objects.filter(completed=False, date_created__gte=seven_day_date_limit)
 
-
     for condition in active_conditions:
         print(condition.notification_type)
-        if condition.notification_type is "cov":
+
+        if condition.notification_type is "mux":
+            # TODO check with Myatt that this the best behaviour
+            run = condition.flowcell.runs.last()
+            queryset = MinionMessage.objects.filter(id__gt=condition.last_minKnow_message_id, run=run)
+            words = ["mux", "pore"]
+            for message in queryset:
+                if all(word in message.message for word in words):
+                    Message()
+
+
 
 
 
