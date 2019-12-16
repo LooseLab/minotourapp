@@ -214,7 +214,7 @@ CELERY_ROUTES = ({
     }
 })
 
-CELERY_IMPORTS = ('web.tasks', 'web.tasks_update_run_summary')
+CELERY_IMPORTS = ('web.tasks', 'web.tasks_update_run_summary', 'web.tasks_send_message')
 # For RabbitMQ
 #CELERY_BROKER_URL = 'amqp://'
 #CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
