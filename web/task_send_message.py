@@ -10,7 +10,7 @@ from communication.models import NotificationConditions, Message
 import datetime
 from django.conf import settings
 
-from reads.models import MinionMessage
+from reads.models import MinionMessage, UserOptions
 
 
 def return_tweet(tweet_type, target_coverage=None, reference_file_name=None, mux_pores_left=None, target_added=None):
@@ -86,6 +86,7 @@ def send_messages():
     Send any unsent Messages stored in the database to the destined user using the Twitter API
     Returns
     -------
+    none
 
     """
     new_messages = Message.objects.filter(delivered_date=None)
@@ -138,16 +139,24 @@ def check_condition_is_met():
     active_conditions = NotificationConditions.objects.filter(completed=False, date_created__gte=seven_day_date_limit)
 
     for condition in active_conditions:
-        print(condition.notification_type)
+
+        twitter_details = UserOptions.objects.get(owner=condition.creating_user)
+
+        users_handle = twitter_details.twitterhandle
+
+        twitter_permission = twitter_details.tweet
 
         if condition.notification_type is "mux":
             # TODO check with Myatt that this the best behaviour
             run = condition.flowcell.runs.last()
-            queryset = MinionMessage.objects.filter(id__gt=condition.last_minKnow_message_id, run=run)
+            minion_message_set = MinionMessage.objects.filter(id__gt=condition.last_minKnow_message_id, run=run)
             words = ["mux", "pore"]
-            for message in queryset:
+            for message in minion_message_set:
                 if all(word in message.message for word in words):
-                    Message()
+                    message_text = message.message
+                    # message_text = return_tweet("mux")
+                    Message(recipient=condition.creating_user, sender=condition.creating_user,
+                            title=message_text, )
 
 
 
