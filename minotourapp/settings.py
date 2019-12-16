@@ -232,10 +232,6 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'web.tasks.run_monitor',
         'schedule': 30,
     },
-    'send-messages': {
-        'task': 'web.tasks.send_messages',
-        'schedule': 600,
-    },
     'delete-runs': {
         'task': 'web.tasks.delete_runs',
         'schedule': 600,

@@ -82,7 +82,7 @@ def check_coverage(flowcell_id, target_coverage, reference_line):
 
     pass
 
-@task
+@task()
 def send_messages():
     """
     Send any unsent Messages stored in the database to the destined user using the Twitter API
