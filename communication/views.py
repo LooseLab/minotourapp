@@ -25,7 +25,7 @@ from communication.serializers import MessageSerializer
 #            'message': message,
 #         }
 #     )
-from reads.models import Flowcell, Barcode
+from reads.models import Flowcell, Barcode, UserOptions
 from reference.models import ReferenceInfo, ReferenceLine
 
 
@@ -93,18 +93,24 @@ def get_or_create_conditions(request):
 
         coverage_settings = request.data.get("coverage_sets", {})
 
+        twitter_settings = UserOptions.objects.get(owner=request.user)
+
+        tweet = twitter_settings.tweet
+
+        handle = twitter_settings.twitterhandle
+
         if flowcell is None:
             return Response("No flowcell submitted", status=400)
         if conditions is None:
             return Response("No conditions submitted", status=400)
+        if not tweet and bool(handle):
+            return Response("Please provide Twitter permission in the profile section, and set a handle.", status=400)
         # Create conditions for each contained in the request body
         for condition, value in conditions.items():
 
             print(f"Condtion is {condition}")
 
             cov_targ = value if condition is "coverage" else None
-
-            repeat = True
 
             condition_name = condition_lookup[condition]
 
