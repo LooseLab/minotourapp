@@ -181,8 +181,8 @@ def chancalc(flowcell_id, job_master_id, last_read):
                 "channel": ["unique"],
             }
         )
-        logger.info(fastq_df_result.head())
-        logger.info(f"keys is {fastq_df_result.keys()}")
+        logger.debug(fastq_df_result.head())
+        logger.debug(f"keys is {fastq_df_result.keys()}")
         fastq_df_result.reset_index().apply(
             lambda row: save_flowcell_summary_barcode(flowcell_id, row), axis=1
         )
