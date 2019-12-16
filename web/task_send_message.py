@@ -80,6 +80,8 @@ def check_coverage(flowcell_id, target_coverage, reference_line):
 
     ref_df[ref_df["barcode_name"]]
 
+    pass
+
 @task
 def send_messages():
     """
@@ -107,10 +109,16 @@ def send_messages():
                 auth=OAuth(TWITTOKEN, TWITTOKEN_SECRET, TWITCONSUMER_KEY, TWITCONSUMER_SECRET)
             )
 
-            t.direct_messages.new(
-                user=new_message.recipient.extendedopts.twitterhandle,
-                text=new_message.title
-            )
+            t.direct_messages.events.new(
+                _json={
+                    "event": {
+                        "type": "message_create",
+                        "message_create": {
+                            "target": {
+                                "recipient_id": t.users.show(
+                                    screen_name=new_message.recipient.extendedopts.twitterhandle)["id"]},
+                            "message_data": {
+                                "text": new_message.title}}}})
             # status = '@{} {}'.format(new_message.recipient.extendedopts.twitterhandle,new_message.title)
             # t.statuses.update(
             #    status=status
