@@ -128,7 +128,7 @@ def send_messages():
 
         if message_sent:
             print('inside message_sent')
-            new_message.delivered_date = datetime.now(tz=pytz.utc)
+            new_message.delivered_date = datetime.datetime.now(tz=datetime.timezone.utc)
             new_message.save()
 
 @task()
