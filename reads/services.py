@@ -2,6 +2,7 @@
 Services to help run some of the tasks in the web app. Why is this not stored there?
 """
 import pytz
+import datetime
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -10,7 +11,9 @@ from reads.models import (
     FlowcellSummaryBarcode,
     FlowcellHistogramSummary,
     FlowcellChannelSummary,
-    Flowcell, JobMaster, JobType)
+    Flowcell, JobMaster, JobType, Run)
+
+from communication.models import Message
 
 
 def save_flowcell_summary_barcode(flowcell_id, row):
@@ -173,6 +176,38 @@ def save_flowcell_channel_summary(flowcell_id, row):
 
     flowcellChannelSummary.save()
 
+
+@receiver(post_save, sender=Flowcell)
+def new_flowcell_message(sender, instance=None, created=False, **kwargs):
+    """
+    Log a message in the system if a new flowcell is created.
+    :param sender:
+    :param instance:
+    :param created:
+    :param kwargs:
+    :return:
+    """
+
+    if created:
+        myuser = instance.owner
+        new_flowcell_message = Message(recipient=myuser,sender=myuser,title="New flowcell {} created with sample name {} at {}.".format(instance.name, instance.sample_name, datetime.datetime.now()))
+        new_flowcell_message.save()
+
+
+@receiver(post_save, sender=Run)
+def new_run_message(sender, instance=None, created=False, **kwargs):
+    """
+
+    :param sender:
+    :param instance:
+    :param created:
+    :param kwargs:
+    :return:
+    """
+    if created:
+        myuser = instance.owner
+        new_run_message = Message(recipient=myuser,sender=myuser,title="New run {} created on flowcell {} at {}.".format(instance.name,instance.flowcell.name,datetime.datetime.now()))
+        new_run_message.save()
 
 # @receiver(post_save, sender=Flowcell)
 # def create_flowcell_jobs(sender, instance=None, created=False, **kwargs):
