@@ -2,7 +2,7 @@
     This is a trial/ work in progress
     so for now you can only choose coverage and an amount, and see what notifications you're waiting for
 
-    <form method="post" id="post-form-task-create" onsubmit="notificationsController.submitNotificationChoices(event, this)">
+    <form method="post" id="post-form-notification-create" onsubmit="notificationsController.submitNotificationChoices(event, this)">
          {% csrf_token %}
         <label for="coverage"> Coverage
             <input id="coverage" value="coverage" type="checkbox" name="coverage">
@@ -11,10 +11,14 @@
             <input id="coverageAmount" value="coverageAmount" type="text" name="coverageAmount">
         </label>
         <label for="reference"> Reference mapped against
-            <select name="reference" id="reference" multiple data-select="false"></select>
+            <select name="reference" id="reference" data-select="false">
+                <option value="" disabled selected hidden>Please Select...</option>
+            </select>
         </label>
         <label for="contig"> Specific Contig
-            <select name="contig" id="contig" multiple data-select="false"></select>
+            <select name="contig" id="contig" disabled data-select="false">
+                <option value="" disabled selected hidden>Please Select...</option>
+            </select>
         </label>
         <label for="notification_barcodes"> Barcodes
             <select name="barcode" id="notification_barcodes" multiple data-select="false">
