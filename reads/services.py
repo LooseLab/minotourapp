@@ -22,7 +22,6 @@ def save_flowcell_summary_barcode(flowcell_id, row):
     :type row: pandas.core.series.Series
     :return: None
     """
-    print(row)
     barcode_name = row["barcode__name"][0]
     type_name = row["type__name"][0]
     status = row["is_pass"][0]
