@@ -304,15 +304,26 @@ def get_coverage_summary(request, pk):
             "reference__name", "reference__referencelines__line_name", "flowcell__runs__barcodes__name",
             "reference__id", "reference__referencelines__id", "flowcell__runs__barcodes__id")
 
-        reference_to_contig_dict = defaultdict(dict)
+        reference_to_contig_dict = defaultdict(list)
 
-        contig_to_barcode_dict = defaultdict(list)
-
+        # create a dict of string keys and values to create the conditional drop downs
+        # contig[0] - reference name
+        # contig[1] - contig names
+        # contig[2] - barcode names
+        # contig[3] - reference pk
+        # contig[4] - contig id
+        # contig[5] - barcodes id
         for contig in queryset:
-            contig_to_barcode_dict[contig[1]].append(contig[2])
-            reference_to_contig_dict[contig[0]] = contig_to_barcode_dict
 
-        print(reference_to_contig_dict)
+            contig_to_barcode_dict = defaultdict(list)
+
+            reference_to_contig_dict[contig[0]] = [contig_to_barcode_dict, contig[3]]
+
+            if not contig_to_barcode_dict[contig[1]]:
+
+                contig_to_barcode_dict[contig[1]].append(contig[4])
+
+            contig_to_barcode_dict[contig[1]].append((contig[2], contig[5]))
 
         return Response(reference_to_contig_dict, status=200)
 
