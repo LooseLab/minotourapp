@@ -29,7 +29,29 @@ from reference.models import ReferenceInfo, ReferenceLine
 
 
 class Message(models.Model):
-
+    """
+    Helpful docstring for bad names for the messages
+    Fields
+    ------
+    uuid: uuid4
+        A unique identifier for this message
+    recipient: django.contrib.auth.models.User
+        The recipient of the tweet
+    sender: django.contrib.auth.models.User
+        The sending User/ so the owner?
+    title: str
+        Twitter DM text content somehow
+    content: str
+        Nothing. Presumably for emails
+    created_date: datetime.datetime
+        The date this message was created
+    delivered_date: datetime.datetime
+        Date message was sent
+    read_date: datetime.datetime
+        No idea. Presumably when the user read it, but don't see when this was set
+    is_read: bool
+        Whether read or not. No idea where this is used either
+    """
     uuid = models.UUIDField(
         default=uuid.uuid4,
         editable=False
@@ -52,11 +74,13 @@ class Message(models.Model):
     )
 
     title = models.CharField(
-        max_length=128,
+        max_length=256,
     )
 
     content = models.TextField(
-
+        null=True,
+        blank=True,
+        default=""
     )
 
     created_date = models.DateTimeField(
