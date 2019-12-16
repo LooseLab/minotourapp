@@ -6,26 +6,27 @@ from reads.models import Flowcell, Barcode
 from reference.models import ReferenceInfo, ReferenceLine
 
 
-class ConditionalBarcodes(models.Model):
-    """
-    store the conditional Barcodes
-    """
-    barcode = models.ForeignKey(
-        Barcode,
-        on_delete=models.CASCADE,
-        related_name="chosen_barcodes"
-    )
+# class ConditionalBarcodes(models.Model):
+#     """
+#     store the conditional Barcodes
+#     """
+#     link = models.ForeignKey(
+#         Barcode,
+#         on_delete=models.CASCADE,
+#         related_name="chosen_barcodes"
+#     )
+#
+#
+# class ConditionalChromosomes(models.Model):
+#     """
+#     Store the conditionalChromosomes
+#     """
+#     link = models.ForeignKey(
+#         ReferenceLine,
+#         on_delete=models.CASCADE,
+#         related_name="chosen_chromosomes"
+#     )
 
-
-class ConditionalChromosomes(models.Model):
-    """
-    Store the conditionalChromosomes
-    """
-    chromosome = models.ForeignKey(
-        ReferenceLine,
-        on_delete=models.CASCADE,
-        related_name="chosen_chromosomes"
-    )
 
 class Message(models.Model):
 
@@ -39,7 +40,7 @@ class Message(models.Model):
         related_name='messages_recipient',
         on_delete=models.CASCADE,
         blank=True,
-        default=True
+        null=True
     )
 
     sender = models.ForeignKey(
@@ -138,18 +139,28 @@ class NotificationConditions(models.Model):
         null=True
     )
 
-    chromosomes = models.ForeignKey(
-        ConditionalChromosomes,
+    chromosome = models.ForeignKey(
+        ReferenceLine,
         on_delete=models.CASCADE,
-        related_name="to_chosen_chromosomes",
+        related_name="conditional_chromosome",
         null=True,
         default=None
     )
 
-    barcodes = models.ForeignKey(
-        ConditionalBarcodes,
+    barcode = models.ForeignKey(
+        Barcode,
         on_delete=models.CASCADE,
-        related_name="to_chosen_barcodes",
+        related_name="conditional_barcode",
         null=True,
         default=None
     )
+
+    def __str__(self):
+        """
+
+        Returns
+        -------
+        str
+            The string representation of the object
+        """
+        return f"{self.flowcell} {self.notification_type}"
