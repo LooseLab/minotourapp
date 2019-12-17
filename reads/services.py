@@ -6,6 +6,8 @@ import datetime
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from textwrap import wrap
+
 from reads.models import (
     FlowcellStatisticBarcode,
     FlowcellSummaryBarcode,
@@ -224,19 +226,27 @@ def new_minion_message(sender, instance=None, created=False, **kwargs):
     if created:
         myuser = instance.minion.owner
         if int(instance.severity) > 1:
-            new_message_message = Message(recipient=myuser,sender=myuser,title="{} from computer {} at {}".format(instance.message, instance.minion.computer(),datetime.datetime.now()))
-            new_message_message.save()
+            title = "{} from computer {} at {}".format(instance.message, instance.minion.computer(),
+                                                       datetime.datetime.now())
+            chunks = wrap(title,512)
+            for chunk in chunks:
+                new_message_message = Message(recipient=myuser,sender=myuser,title=chunk)
+                new_message_message.save()
         elif instance.message.startswith("Flow cell"):
-            new_message_message = Message(recipient=myuser, sender=myuser,
-                                          title="{} from computer {} at {}".format(instance.message,
-                                                                             instance.minion.computer(),datetime.datetime.now()))
-            new_message_message.save()
+            title = "{} from computer {} at {}".format(instance.message,
+                                                       instance.minion.computer(), datetime.datetime.now())
+            chunks = wrap(title, 512)
+            for chunk in chunks:
+                new_message_message = Message(recipient=myuser, sender=myuser, title=chunk)
+                new_message_message.save()
         elif instance.message.startswith("minoTour"):
-            new_message_message = Message(recipient=myuser, sender=myuser,
-                                          title="{} from computer {} at {}".format(instance.message,
-                                                                                   instance.minion.computer(),
-                                                                                   datetime.datetime.now()))
-            new_message_message.save()
+            title = "{} from computer {} at {}".format(instance.message,
+                                                       instance.minion.computer(),
+                                                       datetime.datetime.now())
+            chunks = wrap(title, 512)
+            for chunk in chunks:
+                new_message_message = Message(recipient=myuser, sender=myuser, title=chunk)
+                new_message_message.save()
 
 # @receiver(post_save, sender=Flowcell)
 # def create_flowcell_jobs(sender, instance=None, created=False, **kwargs):
