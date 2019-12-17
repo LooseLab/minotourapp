@@ -74,7 +74,7 @@ class Message(models.Model):
     )
 
     title = models.CharField(
-        max_length=256,
+        max_length=512,
     )
 
     content = models.TextField(
