@@ -11,7 +11,7 @@ from reads.models import (
     FlowcellSummaryBarcode,
     FlowcellHistogramSummary,
     FlowcellChannelSummary,
-    Flowcell, JobMaster, JobType, Run)
+    Flowcell, JobMaster, JobType, Run,MinionMessage)
 
 from communication.models import Message
 
@@ -208,6 +208,29 @@ def new_run_message(sender, instance=None, created=False, **kwargs):
         myuser = instance.owner
         new_run_message = Message(recipient=myuser,sender=myuser,title="New run {} created on flowcell {} at {}.".format(instance.name,instance.flowcell.name,datetime.datetime.now()))
         new_run_message.save()
+
+
+@receiver(post_save,sender=MinionMessage)
+def new_minion_message(sender, instance=None, created=False, **kwargs):
+    """
+
+    :param sender:
+    :param instance:
+    :param created:
+    :param kwargs:
+    :return:
+    """
+
+    if created:
+        myuser = instance.minion.owner
+        if int(instance.severity) > 1:
+            new_message_message = Message(recipient=myuser,sender=myuser,title="{} from computer {} at {}".format(instance.message, instance.minion.computer(),datetime.datetime.now()))
+            new_message_message.save()
+        elif instance.message.startswith("Flow cell"):
+            new_message_message = Message(recipient=myuser, sender=myuser,
+                                          title="{} from computer {} at {}".format(instance.message,
+                                                                             instance.minion.computer(),datetime.datetime.now()))
+            new_message_message.save()
 
 # @receiver(post_save, sender=Flowcell)
 # def create_flowcell_jobs(sender, instance=None, created=False, **kwargs):
