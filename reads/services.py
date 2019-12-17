@@ -231,6 +231,12 @@ def new_minion_message(sender, instance=None, created=False, **kwargs):
                                           title="{} from computer {} at {}".format(instance.message,
                                                                              instance.minion.computer(),datetime.datetime.now()))
             new_message_message.save()
+        elif instance.message.startswith("minoTour"):
+            new_message_message = Message(recipient=myuser, sender=myuser,
+                                          title="{} from computer {} at {}".format(instance.message,
+                                                                                   instance.minion.computer(),
+                                                                                   datetime.datetime.now()))
+            new_message_message.save()
 
 # @receiver(post_save, sender=Flowcell)
 # def create_flowcell_jobs(sender, instance=None, created=False, **kwargs):
