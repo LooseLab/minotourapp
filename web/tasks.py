@@ -331,7 +331,6 @@ def run_minimap2_assembly(job_master_id):
             later = datetime.utcnow() + timedelta(days=1)
             clean_up_assembly_files.apply_async((flowcell.id,job_master_id,tmp), eta=later)
 
-        #print (tmp)
 
         fastqdict = dict()
 
@@ -390,7 +389,6 @@ def run_minimap2_assembly(job_master_id):
                     gfaall += line
                     line = line.strip('\n')
                     record = line.split('\t')
-                    #print (line)
                     if record[0] == 'S':
                         seqlens.append(len(record[2]))
 
@@ -453,7 +451,6 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
         flowcell_runs = realflowcell.runs.all()
         for flowcell_run in flowcell_runs:
             runidset.add(flowcell_run.id)
-            # print (flowcell_run.run_id)
             # we need to get the runids that make up this run
     else:
         runidset.add(runid)
@@ -486,11 +483,10 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
     else:
 
         totreads = read_count + newfastqs
-        #print(fastqdict)
         for bar in fastqdict:
-            #print(bar.name)
+
             for ty in fastqdict[bar]:
-                #print(ty.name)
+
                 tmpfilename = tmp+bar.name+ty.name
                 tmpfilename = tmpfilename.replace(" ","_")
                 outtemp = open(tmpfilename, 'a')
@@ -506,7 +502,7 @@ def run_minimap_assembly(runid, id, tmp, last_read, read_count,inputtype):
                 status = proc.wait()
                 gfa = out.decode("utf-8")
                 gfadata = gfa.splitlines()
-                print(gfadata)
+
                 if inputtype == "flowcell":
                     instance = Flowcell.objects.get(pk=runid)
                 else:
@@ -563,8 +559,6 @@ def send_messages():
     new_messages = Message.objects.filter(delivered_date=None)
 
     for new_message in new_messages:
-
-        # print('Sending message: {}'.format(new_message))
 
         message_sent = False
 

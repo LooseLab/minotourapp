@@ -19,7 +19,7 @@ def make_results_directory(flowcell_id, task_id):
         f"{current_working_directory}/readuntil/Temp_results/EB{flowcell_id}_{task_id}"
     )
 
-    #print (results_dir)
+
     if not results_dir.exists():
         Path.mkdir(results_dir)
     return results_dir
@@ -39,7 +39,7 @@ def add_chromosome(s_store, reference, reference_length):
 def sum_dictionaries(s_store, d, reference, mapstart, mapend):
     # dictkeys = d.keys()
     for dictkey in d.keys():
-        # print (dictkey,len(d[dictkey]))
+
         s_store[reference][dictkey][mapstart:mapend] += d[dictkey]
     return s_store
 

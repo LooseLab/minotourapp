@@ -32,8 +32,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        print("Processing filename {} for flowcell {}".format(options['filename'], options['flowcell']))
-
         user = User.objects.get(username=options['user'])
 
         flowcell, created = Flowcell.objects.get_or_create(
@@ -109,4 +107,3 @@ class Command(BaseCommand):
 
             # fastq_read['fastqfile'] = fastqfile["url"]
 
-            print(record.id, len(record.seq))

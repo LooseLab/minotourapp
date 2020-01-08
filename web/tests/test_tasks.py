@@ -17,7 +17,6 @@ class UpdateFlowcellDetails(TestCase):
 
     def test_update_flowcell_details(self):
 
-        print('Test 122')
 
         flowcell_list = Flowcell.objects.all()
         flowcell = flowcell_list[0]
@@ -36,8 +35,6 @@ class UpdateFlowcellDetails(TestCase):
         )
 
         update_flowcell_details(job_master.id)
-
-        print('End')
 
         # self.assertEqual(line_tuple.read_id, '3d8564a8-653e-4dbe-b301-3a2cea209bf8')
         # self.assertEqual(line_tuple.chromosome, 'NC_001140')

@@ -6,9 +6,6 @@ from alignment.models import PafRoughCov
 
 def calculate_coverage(positions, incdels, current_incdel, reference_size, number_of_bins, bin_width, bin_edges, min_extreme, max_extreme):
 
-    print(positions)
-    print(incdels)
-
     q = np.array([
         positions,
         incdels
@@ -59,18 +56,8 @@ def calculate_coverage(positions, incdels, current_incdel, reference_size, numbe
             if i == 0:
                 length = positions[0] - begin_bin
 
-                # print('>>> current_contribution: {}'.format(current_contribution))
-                # print('>>> current_incdel: {}'.format(current_incdel))
-                # print('>>> length: {}'.format(length))
 
                 current_contribution = current_contribution + current_incdel * length
-
-                # print(
-                # 'bin: {}, i: -, position: {}, incdel: -, current_incdel: {}, length: {}, contribution: {}'.format(b,
-                #                                                                                                   begin_bin,
-                #                                                                                                   current_incdel,
-                #                                                                                                   length,
-                #                                                                                                   current_incdel * length))
 
             #
             # if it is the last individual, length is calculated from its position to
@@ -94,49 +81,25 @@ def calculate_coverage(positions, incdels, current_incdel, reference_size, numbe
             #
             current_contribution = current_contribution + current_incdel * length
 
-            # print(
-            # 'bin: {}, i: {}, position: {}, incdel: {}, current_incdel: {}, length: {}, contribution: {}'.format(b, i,
-            #                                                                                                     positions[
-            #                                                                                                         i],
-            #                                                                                                     incdels[
-            #                                                                                                         i],
-            #                                                                                                     current_incdel,
-            #                                                                                                     length,
-            #                                                                                                     current_incdel * length))
-
         #
         # if there are individuals, bin average is the sum of the contributions divided by bin width
         #
         if number_of_individuals > 0:
             bin_average = current_contribution / bin_width
-            # print('bin average: {}, number of individuals: {}, current contribution: {}'.format(bin_average, number_of_individuals, current_contribution))
 
         #
         # if bin is empty, then bin average is the value of current incdel (last individual) divided by bin width
         #
         else:
             bin_average = current_incdel
-            # print('bin average: {}'.format(bin_average))
 
 
         bin_results[b] = bin_average
 
-        # print('bin: {}, average: {:.2f}'.format(b, bin_average))
-
-    # print('bin_width: {}'.format(bin_width))
-    # print('bin averages: ')
-    # print(bin_results)
     return bin_results
 
 
 def get_incdel_at_position(task_id, barcode_name, read_type_id, chromosome_id, position):
-
-    print('>>> get_incdel_at_position')
-    print('>>> task_id: {}'.format(task_id))
-    print('>>> barcode_name: {}'.format(barcode_name))
-    print('>>> read_type_id: {}'.format(read_type_id))
-    print('>>> chromosome_id: {}'.format(chromosome_id))
-    print('>>> position: {}'.format(position))
 
     queryset = PafRoughCov.objects \
         .filter(job_master__id=task_id) \
@@ -161,8 +124,6 @@ def calculate_coverage_new(user, task_id, barcode_name, read_type_id, chromosome
 
     if min_extreme != '' and max_extreme != '':
 
-        print('Running query with min and max {} {}'.format(min_extreme, max_extreme))
-
         min_extreme = int(min_extreme)
         max_extreme = int(max_extreme)
 
@@ -184,8 +145,6 @@ def calculate_coverage_new(user, task_id, barcode_name, read_type_id, chromosome
         # current_incdel = get_incdel_at_position(flowcell_id, barcodegroup_id, read_type_id, chromosome_id, min_extreme, True)
 
     else:
-
-        print('Running query without min and max')
 
         queryset = PafRoughCov.objects \
             .filter(flowcell__owner=user) \
@@ -216,7 +175,6 @@ def calculate_coverage_new(user, task_id, barcode_name, read_type_id, chromosome
     positions = []
     incdels = []
 
-    print("queryset length: {}".format(len(queryset)))
     for item in queryset:
         positions.append(item.p)
         incdels.append(item.i)

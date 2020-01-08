@@ -44,11 +44,6 @@ def flowcell_gfa_output_list(request, run_id):
         .order_by('nreads')
 
     serializer = FlowcellGfaSummarySerializer(queryset, many=True, context={'request': request})
-    print (serializer.data)
-    print (run_id)
-    print (request.user)
-    print (queryset)
-
     return Response(serializer.data)
 
 #@api_view(['GET'])

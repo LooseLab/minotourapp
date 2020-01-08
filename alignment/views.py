@@ -73,8 +73,6 @@ def flowcell_paf_alignment_list_original(request, flowcell_id, barcodegroup_id, 
 
     if min_extreme != '' and max_extreme != '':
 
-        print('Running query with min and max {} {}'.format(min_extreme, max_extreme))
-
         min_extreme = int(min_extreme)
         max_extreme = int(max_extreme)
 
@@ -93,8 +91,6 @@ def flowcell_paf_alignment_list_original(request, flowcell_id, barcodegroup_id, 
         current_incdel = get_incdel_at_position(flowcell_id, barcodegroup_id, read_type_id, chromosome_id, min_extreme, True)
 
     else:
-
-        print('Running query without min and max')
 
         queryset = PafRoughCov.objects \
             .filter(flowcell__owner=request.user) \
@@ -122,7 +118,6 @@ def flowcell_paf_alignment_list_original(request, flowcell_id, barcodegroup_id, 
     positions = []
     incdels = []
 
-    print("queryset length: {}".format(len(queryset)))
     for item in queryset:
         positions.append(item.p)
         incdels.append(item.i)
@@ -277,9 +272,8 @@ def get_coverage_summary(request, pk):
     :type pk: int
     :return:
     """
-    print(pk)
+
     queryset = PafSummaryCov.objects.filter(job_master__flowcell__id=pk)
-    print(queryset)
 
     if not queryset:
         return Response("No alignment results found for this flowcell", status=status.HTTP_204_NO_CONTENT)

@@ -215,7 +215,6 @@ def rolling_sum(a, n=100, pad=True):
     """
 
     if pad:
-        # print ("Padding with n={}".format(n))
         a[0] = np.concatenate((a[0], np.zeros(n - 1)))
     ret = np.cumsum(a, axis=1, dtype=float)
     ret[:, n:] = ret[:, n:] - ret[:, :-n]
@@ -376,9 +375,7 @@ def parseMDPAF(pafline):
     # Split MD String at every single [ACGT] or ^:
     mdSub = re.sub(r'([\\^]*[ACGT]+)[0]*', ' \\1 ', mdstr)
     mdSplit = re.split('[ ]+', mdSub)
-    # print (mdstr)
-    # print (mdSub)
-    # print (mdSplit)
+
 
     mutArr = np.array([]).astype(int)  # array to hold counts of mismatches
     matArr = np.array([]).astype(int)  # array to hold counts of matches
@@ -442,7 +439,4 @@ def readpaf(lines, paffile='allreadscigar.paf', reflen=5528445):
 
     coveragearray = np.sum([matchholdarray, mismatchholdarray], axis=0)
 
-    # print (mismatchholdarray[0:100])
-    # print (matchholdarray[0:100])
-    # print (coveragearray[0:100])
     return coveragearray, matchholdarray, mismatchholdarray

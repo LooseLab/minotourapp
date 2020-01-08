@@ -219,7 +219,6 @@ def flowcell_reads_data(request):
             .filter(run__in=run_id_list)
             #.filter(run__flowcell_id=flowcell_id)\
             #.filter(run__flowcell__owner=request.user)\
-    print(order_column)
     if order_column:
 
         print("ITS TRUE")

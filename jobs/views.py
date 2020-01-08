@@ -123,7 +123,7 @@ def get_or_create_tasks(request):
 
                     return Response("Reference not found Please contact server admin", status=500)
         # Serialise the data to a Django savable object
-        print(request.data)
+
         serializer = JobMasterInsertSerializer(data=request.data)
 
         # If the serialiser is valid
@@ -183,9 +183,9 @@ def tasks_detail_all(request, pk):
     minionrun = Run.objects.get(pk=pk)
 
     result = []
-    # print (queryset)
+
     for jobtype in queryset:
-        # print (jobtype.type_name.all())
+
         obj = {}
         obj.update({
             'name': jobtype.name,

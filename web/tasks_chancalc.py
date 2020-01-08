@@ -161,8 +161,6 @@ def chancalc(flowcell_id, job_master_id, last_read):
         fastq_df_allreads["barcode__name"] = "All reads"
 
         fastq_df = fastq_df_barcode.append(fastq_df_allreads)
-        print(f"fastq_df_barcode is {fastq_df_barcode.head()}")
-        print(f"fastq_df is {fastq_df.head()}")
 
         #
         # Calculates statistics for flowcellSummaryBarcode

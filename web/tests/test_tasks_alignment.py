@@ -64,8 +64,6 @@ class ParsePafFile(TestCase):
         )
         read1.save()
 
-        print(Flowcell.objects.all())
-
     def test_advanced_mapping2(self):
 
         JOB_TYPE_READUNTIL=15

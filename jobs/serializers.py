@@ -116,16 +116,16 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         :param validated_data: Sent validated form data from MTask Controller to jobs.views task_list
         :return:
         """
-        print(validated_data)
+
         # Create a JobMaster
         job_master, created = JobMaster.objects.get_or_create(**validated_data)
         job_master.save()
-        print(created)
+
         # If we have created a new job
         if created:
             # Get the flowcell that the JobMaster is for
             flowcell_to_update_activity = validated_data["flowcell"]
-            print(flowcell_to_update_activity)
+
             # Update the last activity date
             flowcell_to_update_activity.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
             # save the changes
