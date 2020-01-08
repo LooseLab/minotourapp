@@ -261,11 +261,13 @@ Starting the server
     ```
     
 * If you created the environment variable bash file, add the following to the beginning of the celery, flower and minoTour commands to set the environment variables:
+   
     ```bash
       . envs.sh &&
     ```
 
 * Start Celery::
+
     ```bash
         cd /path/to/minotour/code/ 
         source minotourenv/bin/activate
@@ -273,6 +275,7 @@ Starting the server
     ```
 
 * Start Flower::
+
     ```bash
         cd /path/to/minotour/code/
         source minotourenv/bin/activate
@@ -280,6 +283,7 @@ Starting the server
     ```
 
 * Start Minotour::
+
     ```bash
         cd /path/to/minotour/code
         source minotourenv/bin/activate
