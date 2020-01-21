@@ -155,7 +155,7 @@ def check_condition_is_met():
         twitter_permission = twitter_details.tweet
 
         if condition.notification_type is "mux":
-            # TODO check with Myatt that this the best behaviour
+            # TODO check with Matt that this the best behaviour
             run = condition.flowcell.runs.last()
             minion_message_set = MinionMessage.objects.filter(id__gt=condition.last_minKnow_message_id, run=run)
             words = ["mux", "pore"]
