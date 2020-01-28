@@ -15,6 +15,28 @@ class FlowcellNotificationController {
         this._barcodesShown = new Set();
         this._optionsSelected = {};
         this._addFormClearOnReload();
+        this._autoOptionsSelected = {};
+        this.options = {
+            'backdrop': 'true'
+        };
+        this._voltageOccuChosen = {};
+        this._table = null;
+        this.getNotificationsForTable(flowcellId);
+    }
+
+    _getRangeChoices(event, data) {
+        let self = this;
+        event.preventDefault();
+        const lowerLimit = data[0].value;
+        const upperLimit = data[1].value;
+        const modal = $("#inputModal")
+        console.log(data);
+        if (modal.hasClass("Voltage")) {
+            self._voltageOccuChosen["Voltage"] = {"lower": lowerLimit, "upper": upperLimit}
+        } else if (modal.hasClass("Occupancy")) {
+            self._voltageOccuChosen["Occupancy"] = {"lower": lowerLimit, "upper": upperLimit}
+        }
+        modal.modal("hide")
     }
 
     /**
@@ -27,6 +49,19 @@ class FlowcellNotificationController {
         });
     }
 
+    disableCoverageFields(event, data) {
+        event.preventDefault();
+        // console.log(event);
+        // console.log(this);
+        if (document.getElementById("coverage").checked) {
+            document.getElementById("coverageAmount").disabled = false;
+            document.getElementById("reference").disabled = false;
+        } else {
+            document.getElementById("coverageAmount").disabled = true;
+            document.getElementById("reference").disabled = true;
+            document.getElementById("contig").disabled = true;
+        }
+    }
 
     /**
      * @function Submit our notification choices to the server to create tasks to create objects to pick them up
@@ -36,6 +71,8 @@ class FlowcellNotificationController {
         event.preventDefault();
 
         // Loop through the input fields and create a dictionary of conditions
+        const multiInput = document.getElementById("barcodeMulti");
+        const multiInputAuto = document.getElementById("autoMulti");
         let refSelect = $("#reference");
         let contigSelect = $("#contig");
         let barcSelect = $("#notification_barcodes");
@@ -44,6 +81,7 @@ class FlowcellNotificationController {
         let barcSelectOptions = barcSelect[0].selectedOptions;
         let justElements = [refSelect, contigSelect, barcSelect];
         let selects = [[refSelectOptions, "reference"], [contigSelectOptions, "chromosome"], [barcSelectOptions, "barcodes"]];
+        let selectedAutoNotifications = multiInputAuto.getValues();
         let self = this;
         // loop through the select boxes
 
@@ -79,15 +117,22 @@ class FlowcellNotificationController {
                 }
                 // If it's the barcodes
                 if (key === "barcodes") {
+                    console.log(self._barcodesShown);
+                    console.log(self._barcodesObj);
                     console.log(selected);
-                    console.log("!!!!!!!!!!!!");
+                    // console.log("!!!!!!!!!!!!");
                     // Go through the selected options,
-                    Object.entries(selections).forEach(function ([_key, value]) {
-                        if (value.value !== "Select All"){
-                            console.log(key, value.value);
-                            self._optionsSelected[key].push(value.value);
-                        }
-
+                    let chosen_barcodes = multiInput.getValues();
+                    chosen_barcodes.forEach(function (barcode) {
+                        self._barcodesShown.forEach(function (elementInSet) {
+                            // Get id for barcode to create condition
+                            if (typeof elementInSet === "object") {
+                                if (elementInSet[0] === barcode) {
+                                    // element in set[1] should be the barcode PK
+                                    self._optionsSelected[key].push(elementInSet[1]);
+                                }
+                            }
+                        });
                     });
                 } else {
                     console.log(selections);
@@ -100,6 +145,7 @@ class FlowcellNotificationController {
                 }
             });
         }
+        this._autoOptionsSelected = selectedAutoNotifications;
 
         let csrftoken = getCookie('csrftoken');
 
@@ -110,20 +156,53 @@ class FlowcellNotificationController {
         axiosInstance.post('/api/v1/messages/create_conditions', {
             flowcell: this._flowcellId,
             conditions: this._conditions,
-            coverage_sets: this._optionsSelected
+            coverage_sets: this._optionsSelected,
+            autoChoices: this._autoOptionsSelected,
+            rangeValues: this._voltageOccuChosen
         }).then(function (response) {
             // reset the form
+            self._optionsSelected["barcodes"] = [];
             document.getElementById("post-form-notification-create").reset();
+            // self.getReferencesForDataList();
+            multiInput.deleteAllItems();
+            multiInputAuto.deleteAllItems();
             // Set select boxes back to base state
             justElements.forEach(function (selectBox, index) {
-                selectBox.empty();
                 if ([0, 1].includes(index)) {
                     selectBox.append('<option value="" disabled selected hidden>Please Select...</option>');
                 }
             });
+            // Update the notifications table
+            $(".extantNotif").DataTable().ajax.reload();
+
+            // add event handler for success moda
+            $('#basicModal').on('show.bs.modal', function (event) {
+                console.log("hide");
+                const modal = $(this);
+                modal.find('.modal-title').text("Success!");
+                let stringy = response.data;
+
+                modal.find('.modal-body h3').html(stringy);
+                console.log("hidden")
+
+            });
+            $('#basicModal').modal(self.options);
+
         }).catch(function (error) {
             console.log(error);
-            alert("Failed to create conditions.");
+            $('#basicModal').on('show.bs.modal', function (event) {
+                console.log("hide");
+                const modal = $(this);
+                modal.find('.modal-title').text("Failed!");
+                modal.find('.modal-body h3').text("Failed to create conditions.");
+                console.log("hidden")
+
+            });
+            $('#basicModal').modal(self.options);
+            setTimeout(function () {
+                $('#myModal').modal('hide');
+            }, 5000);
+
         });
     }
 
@@ -240,7 +319,9 @@ class FlowcellNotificationController {
             let notificationBarcodes = $("#notification_barcodes");
             notificationBarcodes.empty();
             // Add select all to the dropdown barcode
-            notificationBarcodes.append(`<option>Select All</option>`);
+            // notificationBarcodes.append(`<option>Select All</option>`);
+            // make the barcodes select valid
+            document.getElementById("notification_barcodesy").disabled = false;
             // Get the selected options of the drop downs
             var optionSelected = $("option:selected", this);
             console.log("optionSelected");
@@ -269,12 +350,46 @@ class FlowcellNotificationController {
                     self._barcodesShown = new Set([...self._barcodesShown].filter(x => !contigsSelected.has(x)));
                     self._barcodesObj[value.innerHTML].slice(1).forEach(function (element) {
                         self._barcodesShown = new Set([...self._barcodesShown, ...self._barcodesObj[value.innerHTML]]);
-                        notificationBarcodes.append(`<option value="${element[1]}">${element[0]}</option>`);
+                        notificationBarcodes.append(`<option value="${element[0]}" id="${element[1]}"></option>`);
                     });
                 }
-
-
             }
+        });
+    }
+
+
+    /**
+     * @function Get all the Notifications we have already created for this flowcell.
+     */
+    getNotificationsForTable(flowcellId) {
+        let table = $(".extantNotif");
+        console.log(table);
+        table.DataTable({
+            ajax: {
+                url: "/api/v1/messages/retrieve_conditions",
+                method: "GET",
+                data: {flowcellId}
+            },
+            columns: [
+                {"data": "id"},
+                {"data": "notification_type"},
+                {"data": "upper_limit"},
+                {"data": "lower_limit"},
+                {"data": "completed"},
+                {"data": "ref_name"},
+                {"data": "chrom_line_name"},
+                {"data": "coverage_target"},
+                {
+                    "data": null,
+                    "orderable": false,
+                    "width": "15%",
+                    "render": function (data, type, full) {
+                        console.log(data);
+                        return `<a class="btn" id="delete_${data.id}" onclick=""><i class="fa fa-times"></i> Delete </a>`;
+
+                    }
+                }
+            ]
         });
     }
 }
