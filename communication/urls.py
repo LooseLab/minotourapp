@@ -16,5 +16,5 @@ urlpatterns = [
         r'^api/v1/messages/retrieve_conditions$',
         views.get_or_create_conditions,
         name="retrieve_conditions"
-    )
+    ),
 ]
