@@ -6,28 +6,6 @@ from reads.models import Flowcell, Barcode
 from reference.models import ReferenceInfo, ReferenceLine
 
 
-# class ConditionalBarcodes(models.Model):
-#     """
-#     store the conditional Barcodes
-#     """
-#     link = models.ForeignKey(
-#         Barcode,
-#         on_delete=models.CASCADE,
-#         related_name="chosen_barcodes"
-#     )
-#
-#
-# class ConditionalChromosomes(models.Model):
-#     """
-#     Store the conditionalChromosomes
-#     """
-#     link = models.ForeignKey(
-#         ReferenceLine,
-#         on_delete=models.CASCADE,
-#         related_name="chosen_chromosomes"
-#     )
-
-
 class Message(models.Model):
     """
     Helpful docstring for bad names for the messages
@@ -113,7 +91,9 @@ class NotificationConditions(models.Model):
         The conditions that the User has chosen to be notified about via twitter once fulfilled.
     """
 
-    NOTIFICATION_CHOICES = [("cov", "Coverage"), ("mux", "Mux Scan Results"), ("targ", "New Target Added")]
+    NOTIFICATION_CHOICES = [("cov", "Coverage"), ("mux", "Mux Scan Results"), ("targ", "New Target Added"),
+                            ("volt", "Voltage"), ("temp", "Temperature"),
+                            ("occu", "Occupancy"), ("w/e", "Warnings/Errors"), ("mino", "MinoTour")]
 
     notification_type = models.CharField(
         max_length=4,
@@ -149,6 +129,18 @@ class NotificationConditions(models.Model):
     coverage_target = models.IntegerField(
         blank=True,
         null=True
+    )
+
+    upper_limit = models.IntegerField(
+        blank=True,
+        null=True,
+        default=None
+    )
+
+    lower_limit = models.IntegerField(
+        blank=True,
+        null=True,
+        default=None
     )
 
     date_created = models.DateField(
