@@ -129,7 +129,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.11/topics/i18n/
 
@@ -151,7 +150,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, '../minotour_static/')
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        #'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+        # 'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
         'rest_framework.permissions.IsAuthenticated'
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -216,11 +215,11 @@ CELERY_ROUTES = ({
 
 CELERY_IMPORTS = ('web.tasks', 'web.tasks_update_run_summary', 'web.tasks_send_message')
 # For RabbitMQ
-#CELERY_BROKER_URL = 'amqp://'
-#CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
+# CELERY_BROKER_URL = 'amqp://'
+# CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
 CELERY_BROKER_URL = get_env_variable("MT_CELERY_BROKER_URL")
-#CELERY_RESULT_BACKEND = 'amqp://'
-#CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
+# CELERY_RESULT_BACKEND = 'amqp://'
+# CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
 CELERY_RESULT_BACKEND = get_env_variable("MT_CELERY_RESULT_BACKEND")
 # Celery Data Format
 CELERY_ACCEPT_CONTENT = ['application/json']
@@ -247,6 +246,10 @@ CELERY_BEAT_SCHEDULE = {
     'send_messages': {
         'task': 'web.tasks_send_message.send_messages',
         'schedule': 30,
+    },
+    'check_condition_is_met': {
+        'task': 'web.tasks_send_message.check_condition_is_met',
+        'schedule': 30,
     }
     # 'update_flowcell_list_details': {
     #     'task': 'web.tasks.update_flowcell_list_details',
@@ -256,9 +259,9 @@ CELERY_BEAT_SCHEDULE = {
 
 # For sending twitter messages
 TWITTOKEN = get_env_variable("MT_TWITTOKEN")
-TWITTOKEN_SECRET=get_env_variable("MT_TWITTOKEN_SECRET")
-TWITCONSUMER_KEY=get_env_variable("MT_TWITCONSUMER_KEY")
-TWITCONSUMER_SECRET=get_env_variable("MT_TWITCONSUMER_SECRET")
+TWITTOKEN_SECRET = get_env_variable("MT_TWITTOKEN_SECRET")
+TWITCONSUMER_KEY = get_env_variable("MT_TWITCONSUMER_KEY")
+TWITCONSUMER_SECRET = get_env_variable("MT_TWITCONSUMER_SECRET")
 
 # Variables for storing additonal files
 # References
@@ -278,7 +281,7 @@ USE_X_FORWARDED_HOST = True
 DEBUG = get_env_variable("MT_DJANGO_DEBUG")
 
 AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend', # default
+    'django.contrib.auth.backends.ModelBackend',  # default
     'guardian.backends.ObjectPermissionBackend',
 )
 
