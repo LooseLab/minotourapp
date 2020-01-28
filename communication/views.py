@@ -9,7 +9,7 @@ from reads.models import Flowcell, Barcode, UserOptions
 from reference.models import ReferenceInfo, ReferenceLine
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 def new_messages_list(request):
     """
     Get all the messages that have been sent by the twitter API
@@ -23,11 +23,9 @@ def new_messages_list(request):
 
     """
 
-    queryset = Message.objects.filter(recipient=request.user).order_by('-created_date')
-    serializer = MessageSerializer(queryset, many=True, context={'request': request})
+    queryset = Message.objects.filter(recipient=request.user).order_by("-created_date")
+    serializer = MessageSerializer(queryset, many=True, context={"request": request})
     return Response(serializer.data)
-
-
 
 
 def message_details(request, pk):
@@ -44,14 +42,7 @@ def message_details(request, pk):
     """
     message = Message.objects.get(pk=pk)
 
-    return render(
-        request,
-        'communication/message.html',
-        context={
-           'message': message,
-        }
-    )
-
+    return render(request, "communication/message.html", context={"message": message,})
 
 
 def create_notification_conditions(flowcell, user, **kwargs):
@@ -81,28 +72,28 @@ def create_notification_conditions(flowcell, user, **kwargs):
 
     # Check for my uniqueness
 
-    check = NotificationConditions.objects.filter(flowcell=flowcell,
-                                                  creating_user=user,
-                                                  **kwargs)
+    check = NotificationConditions.objects.filter(
+        flowcell=flowcell, creating_user=user, **kwargs
+    )
     if check:
         return f"An identical Condition already exists for the {kwargs.get('notification_type')} condition you are trying to create."
 
     check_not_excess = 0
     if not kwargs.get("notification_type") == "cov":
-        check_not_excess = NotificationConditions.objects.filter(flowcell=flowcell,
-                                                                 creating_user=user,
-                                                                 notification_type=kwargs.get("notification_type")).count()
-
-    if check_not_excess > 2:
-        return f"Two many conditions of type {kwargs.get('notification_type')} already exist on this flowcell." \
-               f" Please delete an existing one."
-
-    if not check or not check_not_excess > 2:
-        cond = NotificationConditions(
+        check_not_excess = NotificationConditions.objects.filter(
             flowcell=flowcell,
             creating_user=user,
-            **kwargs
+            notification_type=kwargs.get("notification_type"),
+        ).count()
+
+    if check_not_excess > 2:
+        return (
+            f"Two many conditions of type {kwargs.get('notification_type')} already exist on this flowcell."
+            f" Please delete an existing one."
         )
+
+    if not check or not check_not_excess > 2:
+        cond = NotificationConditions(flowcell=flowcell, creating_user=user, **kwargs)
         cond.save()
 
 
@@ -170,7 +161,6 @@ def get_or_create_conditions(request):
 
             cov_targ = value if condition == "coverage" else None
 
-
             condition_name = condition_lookup[condition]
 
             if condition == "coverage" and bool(coverage_settings) and value:
@@ -204,8 +194,12 @@ def get_or_create_conditions(request):
             lower_limit = None
             defaults = {"Occupancy": [40, 100], "Voltage": [-180, -160]}
             if condition in ["Occupancy", "Voltage"]:
-                upper_limit = auto_values.get(condition, {}).get("upper", defaults[condition][1])
-                lower_limit = auto_values.get(condition, {}).get("lower", defaults[condition][0])
+                upper_limit = auto_values.get(condition, {}).get(
+                    "upper", defaults[condition][1]
+                )
+                lower_limit = auto_values.get(condition, {}).get(
+                    "lower", defaults[condition][0]
+                )
             condition_name = condition_lookup[condition]
             kwargs = {
                 "notification_type": condition_name,
@@ -229,7 +223,9 @@ def get_or_create_conditions(request):
         if flowcell_id == -1:
             return Response("Flowcell ID not provided.", status=400)
 
-        queryset = NotificationConditions.objects.filter(creating_user=request.user, flowcell_id=flowcell_id)
+        queryset = NotificationConditions.objects.filter(
+            creating_user=request.user, flowcell_id=flowcell_id
+        )
 
         notifications_serialiser = NotificationSerialiser(queryset, many=True)
         print(notifications_serialiser.data)

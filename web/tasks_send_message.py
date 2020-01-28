@@ -16,16 +16,16 @@ logger = get_task_logger(__name__)
 
 
 def return_tweet(
-        tweet_type,
-        target_coverage=None,
-        reference_file_name=None,
-        chromosome_name=None,
-        observed_coverage=None,
-        target_added=None,
-        limit=None,
-        volt_occu=None,
-        flowcell=None,
-        last_value=None
+    tweet_type,
+    target_coverage=None,
+    reference_file_name=None,
+    chromosome_name=None,
+    observed_coverage=None,
+    target_added=None,
+    limit=None,
+    volt_occu=None,
+    flowcell=None,
+    last_value=None,
 ):
     """
     Return the tweet to be sent for the
@@ -62,7 +62,7 @@ def return_tweet(
 
     text_lookup = {
         "coverage": f"Target coverage: {target_coverage}x reached against reference file:"
-                    f" {reference_file_name}, chromosome name: {chromosome_name}. Recorded coverage is: {observed_coverage}x.",
+        f" {reference_file_name}, chromosome name: {chromosome_name}. Recorded coverage is: {observed_coverage}x.",
         "new_target": f"New Target added on Read Until iteralign run: {target_added}",
         "volt_occu": f"Limit breached for {volt_occu} on Flowcell {flowcell}. Limit set was {limit}.",
     }
@@ -95,7 +95,9 @@ def check_coverage(flowcell, target_coverage, reference_line_id, barcode):
     queryset = PafSummaryCov.objects.filter(job_master__flowcell=flowcell)
 
     if not queryset:
-        logger.warning(f"No PafSummaryCov objects found for flowcell with id {flowcell.id}.")
+        logger.warning(
+            f"No PafSummaryCov objects found for flowcell with id {flowcell.id}."
+        )
         return
 
     df = pd.DataFrame.from_records(
@@ -146,8 +148,8 @@ def send_messages():
         message_sent = False
 
         if (
-                new_message.recipient.extendedopts.tweet
-                and new_message.recipient.extendedopts.twitterhandle != ""
+            new_message.recipient.extendedopts.tweet
+            and new_message.recipient.extendedopts.twitterhandle != ""
         ):
             TWITTOKEN = settings.TWITTOKEN
             TWITTOKEN_SECRET = settings.TWITTOKEN_SECRET
@@ -252,17 +254,18 @@ def check_condition_is_met():
                 if reached.get("coverage_reached", None):
                     # Let's create a message
                     message_text = return_tweet(
-                        "coverage", target_coverage=int(condition.coverage_target),
+                        "coverage",
+                        target_coverage=int(condition.coverage_target),
                         reference_file_name=reference.name,
                         chromosome_name=chromosome.line_name,
-                        observed_coverage=reached.get("coverage", "Undefined")
+                        observed_coverage=reached.get("coverage", "Undefined"),
                     )
                     print(message_text)
 
                     message = Message(
                         recipient=condition.creating_user,
                         sender=condition.creating_user,
-                        title=message_text
+                        title=message_text,
                     )
 
                     message.save()
@@ -273,19 +276,26 @@ def check_condition_is_met():
 
         if condition.notification_type in ["occu", "volt"]:
             # Count for indexing as no negative indexing
-            num_entries = MinIONRunStats.objects.filter(run_id__flowcell=condition.flowcell).count()
+            num_entries = MinIONRunStats.objects.filter(
+                run_id__flowcell=condition.flowcell
+            ).count()
             # Limit for condition
             upper_limit = condition.upper_limit
             lower_limit = condition.lower_limit
 
             if condition.notification_type == "volt":
-                queryset = MinIONRunStats.objects.filter(run_id__flowcell=condition.flowcell)[num_entries-10:num_entries]\
-                    .values_list("voltage_value", flat=True)
+                queryset = MinIONRunStats.objects.filter(
+                    run_id__flowcell=condition.flowcell
+                )[num_entries - 10 : num_entries].values_list(
+                    "voltage_value", flat=True
+                )
             else:
                 # Else occupancy
-                queryset = MinIONRunStats.objects.filter(run_id__flowcell=condition.flowcell)[
-                           num_entries - 10:num_entries] \
-                    .values_list("voltage_value", flat=True)
+                queryset = MinIONRunStats.objects.filter(
+                    run_id__flowcell=condition.flowcell
+                )[num_entries - 10 : num_entries].values_list(
+                    "voltage_value", flat=True
+                )
                 occupancy_list = []
                 for run_stat in queryset:
                     occupancy_list.append(run_stat.occupancy())
@@ -296,20 +306,31 @@ def check_condition_is_met():
             lower_list = filter(lambda x: x <= lower_limit, queryset)
 
             if len(upper_list) > 6:
-                text = return_tweet("volt_occu", upper_limit, "Voltage", condition.flowcell.name, queryset[len(queryset)])
+                text = return_tweet(
+                    "volt_occu",
+                    upper_limit,
+                    "Voltage",
+                    condition.flowcell.name,
+                    queryset[len(queryset)],
+                )
                 message = Message(
                     recipient=condition.creating_user,
                     sender=condition.creating_user,
-                    title=text
+                    title=text,
                 )
                 message.save()
 
             elif len(lower_list) > 6:
-                text = return_tweet("volt_occu", lower_limit, "Voltage", condition.flowcell.name,
-                                    queryset[len(queryset)])
+                text = return_tweet(
+                    "volt_occu",
+                    lower_limit,
+                    "Voltage",
+                    condition.flowcell.name,
+                    queryset[len(queryset)],
+                )
                 message = Message(
                     recipient=condition.creating_user,
                     sender=condition.creating_user,
-                    title=text
+                    title=text,
                 )
                 message.save()
