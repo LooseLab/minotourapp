@@ -285,7 +285,7 @@ def flowcellreferences_used_by_run(request, flowcell_id):
 @api_view(["GET"])
 def get_coverage_summary(request, pk):
     """
-    Get a list of all the
+    Get a list of all the chromosomes and their coverage.
     Parameters
     ----------
     request: rest_framework.request.Request
