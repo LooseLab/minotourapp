@@ -1615,8 +1615,8 @@ class MinionMessage(models.Model):
     :run: FK linking to the Run detail
     :message: The message things like run started etc.
     :identifier: TODO matt
-    :severity: TODO matt
-    :timestamp:  The timestamp of when nthemessagewassent
+    :severity: Severity level of the message, provided by minKnow. 1 - normal , 2 - warning, 3 - error
+    :timestamp:  The timestamp of whenn the message was sent
     """
     minion = models.ForeignKey(
         MinION,
