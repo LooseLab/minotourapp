@@ -308,7 +308,7 @@ select:disabled:hover{
 h1 {
   color: #f1c40f;
   font-size: 4rem;
-  text-transform: uppercase;
+  /*text-transform: uppercase;*/
   display: block;
   width: 100%;
   text-align: center;
@@ -449,4 +449,19 @@ p {
 .sixth:hover {
   color: #fff;
   background-position: 0 100%;
+}
+
+.table > tbody > tr > td{
+  vertical-align: middle;
+}
+
+.icon-task{
+  padding: 2px 6px 2px 6px;
+}
+
+.disallowed{
+  color: red;
+}
+.allowed{
+  color: limegreen;
 }
