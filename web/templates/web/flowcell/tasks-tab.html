@@ -40,7 +40,6 @@
                     <tr>
                         <th>Id</th>
                         <th>Task type</th>
-                        <th>Last read</th>
                         <th>Read count</th>
                         <th>Running</th>
                         <th>Complete</th>
@@ -53,7 +52,6 @@
                     <tr>
                         <th>Id</th>
                         <th>Task type</th>
-                        <th>Last read</th>
                         <th>Read count</th>
                         <th>Running</th>
                         <th>Complete</th>
@@ -78,10 +76,38 @@
 
                 <div id="messageViewReactivate"></div>
 
-                <button name="reactivate_flowcell" class="btn button" onclick="mTaskController.reactivateFlowcell(event)">Reactivate</button>
+                <button name="reactivate_flowcell" class="btn button"
+                        onclick="mTaskController.reactivateFlowcell(event)">Reactivate
+                </button>
 
-                <p><br>We don't expect manually reactivating a flowcell to be necessary, as starting a task should reactivate an inactivated flowcell.
-                    However if for some reason you need to reactivate a flowcell to start a task running again, hit this button.</p>
+                <p><br>We don't expect manually reactivating a flowcell to be necessary, as starting a task should
+                    reactivate an inactivated flowcell.
+                    However if for some reason you need to reactivate a flowcell to start a task running again, hit this
+                    button.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirm-submit" tabindex="-1" role="dialog"
+     aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div style="border-radius: 25px"  class="modal-content" >
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="exampleModalLabel">Confirm Submit - Are you sure you wish to delete this
+                    flowcell?
+                </h4>
+            </div>
+            <div class="modal-body">
+                <label for="flowcell-name">Please enter flowcell name as confirmation.</label>
+                <input type="text" id="flowcell-name"> <i class="fab fa-galactic-republic disallowed"></i>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <a href="#" id="submit-task" class="btn btn-success success" disabled>Submit</a>
             </div>
         </div>
     </div>
