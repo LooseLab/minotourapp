@@ -573,7 +573,6 @@ class JobMasterSerializer(serializers.ModelSerializer):
             "flowcell",
             "task_type_name",
             "reference_name",
-            "last_read",
             "read_count",
             "running",
             "complete",
