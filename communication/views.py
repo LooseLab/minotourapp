@@ -70,13 +70,19 @@ def create_notification_conditions(flowcell, user, **kwargs):
     # set_repeat = kwargs.get("set_repeat", False)
     # coverage_target = kwargs.get("coverage_target", 0)
 
+    lookup_dict = dict(NotificationConditions.NOTIFICATION_CHOICES)
+
+    # Lookup the human readable notification type
+    noti_type = lookup_dict[kwargs.get("notification_type")]
+
     # Check for my uniqueness
 
     check = NotificationConditions.objects.filter(
         flowcell=flowcell, creating_user=user, **kwargs
     )
     if check:
-        return f"An identical Condition already exists for the {kwargs.get('notification_type')} condition you are trying to create."
+        return f"An identical Condition already exists for the {noti_type}" \
+               f" condition you are trying to create."
 
     check_not_excess = 0
     if not kwargs.get("notification_type") == "cov":
@@ -87,8 +93,9 @@ def create_notification_conditions(flowcell, user, **kwargs):
         ).count()
 
     if check_not_excess > 2:
+
         return (
-            f"Two many conditions of type {kwargs.get('notification_type')} already exist on this flowcell."
+            f"Too many conditions of type {noti_type} already exist on this flowcell."
             f" Please delete an existing one."
         )
 
@@ -97,8 +104,8 @@ def create_notification_conditions(flowcell, user, **kwargs):
         cond.save()
 
 
-@api_view(["GET", "POST"])
-def get_or_create_conditions(request):
+@api_view(["GET", "POST", "DELETE"])
+def get_create_delete_conditions(request):
     """
     Get all the condition for a specific flowcell that a User has created
     Create the conditions that the user will be notified about if they are met. Chosen from notifications-manager.html.
@@ -156,9 +163,6 @@ def get_or_create_conditions(request):
         # Create conditions for each contained in the request body
         for condition, value in conditions.items():
 
-            print(f"Condition is {condition}")
-            print(f"Value is {value}")
-
             cov_targ = value if condition == "coverage" else None
 
             condition_name = condition_lookup[condition]
@@ -210,10 +214,12 @@ def get_or_create_conditions(request):
             cond = create_notification_conditions(flowcell, request.user, **kwargs)
             errors_list.append(cond)
         return_list = ["Successfully created notification conditions.", "Issues:"]
+        # If we have no errors
+        if not errors_list:
+            return_list[1] = "Issues: None."
         return_list.extend(errors_list)
         return_list = list(filter(None, return_list))
         return_string = "<br/><br/>".join(return_list)
-        print(return_string)
         return Response(return_string, status=200)
 
     elif request.method == "GET":
@@ -228,21 +234,18 @@ def get_or_create_conditions(request):
         )
 
         notifications_serialiser = NotificationSerialiser(queryset, many=True)
-        print(notifications_serialiser.data)
 
         return Response({"data": notifications_serialiser.data}, status=200)
 
+    elif request.method == "DELETE":
 
-@api_view(["GET"])
-def retrieve_messages(request):
-    """
-    Retrieve all the messages that have been sent to a user for display.
-    Parameters
-    ----------
-    request: rest_framework.request.Request
+        notification_pk = request.GET["ntpk"]
 
-    Returns
-    -------
+        try:
 
-    """
-    pass
+            deleted = NotificationConditions.objects.get(pk=int(notification_pk)).delete()
+            return Response(f"Deleted {deleted}", status=200)
+
+        except Exception as e:
+            return Response(e, status=500)
+
