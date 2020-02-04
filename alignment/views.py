@@ -304,6 +304,9 @@ def get_coverage_summary(request, pk):
             "reference__name", "reference__referencelines__line_name", "flowcell__runs__barcodes__name",
             "reference__id", "reference__referencelines__id", "flowcell__runs__barcodes__id")
 
+        if not queryset:
+            return Response("No mapping tasks available on this flowcell.", status=400)
+
         reference_to_contig_dict = defaultdict(list)
 
         # create a dict of string keys and values to create the conditional drop downs
