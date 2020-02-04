@@ -294,9 +294,7 @@ label {
   margin: 0 20px 20px 0;
 }
 
-p {
-  text-align: center;
-}
+
 input:disabled:hover{
     cursor: not-allowed;
 }
@@ -311,7 +309,7 @@ h1 {
   /*text-transform: uppercase;*/
   display: block;
   width: 100%;
-  text-align: center;
+  /*text-align: center;*/
 }
 @media screen and (max-width: 600px) {
   h1 {
@@ -324,7 +322,7 @@ p {
   font-size: 1.2rem;
   width: 100%;
   padding: 20px;
-  text-align: center;
+  /*text-align: center;*/
 }
 
 .btn-cust {
@@ -464,4 +462,8 @@ p {
 }
 .allowed{
   color: limegreen;
+}
+
+#post-form-notification-create{
+  padding: 10px 0 0 10px;
 }
