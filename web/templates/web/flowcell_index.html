@@ -156,16 +156,17 @@
 
         console.log("Initialising FlowcellPageApp.");
 
-        var app = FlowcellPageApp;
+        const app = FlowcellPageApp;
 
         app.init();
 
-        var mTaskController = new MTaskController(input_flowcell_id.value);
+        const mTaskController = new MTaskController(input_flowcell_id.value);
 
-        var mSharingController = new MSharingController(input_flowcell_id.value);
+        const mSharingController = new MSharingController(input_flowcell_id.value);
 
-        var flowcellController = new FlowcellController(input_flowcell_id.value);
+        const flowcellController = new FlowcellController(input_flowcell_id.value);
 
-        var notificationsController = new FlowcellNotificationController(input_flowcell_id.value);
+        const notificationsController = new FlowcellNotificationController(input_flowcell_id.value);
+
     </script>
 {% endblock %}
