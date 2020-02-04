@@ -24,12 +24,18 @@ class FlowcellNotificationController {
         this.getNotificationsForTable(flowcellId);
     }
 
+    /**
+     * @function Get the range choices from the range modal for Occuoancy and Voltage.
+     * @param event
+     * @param data
+     * @private
+     */
     _getRangeChoices(event, data) {
         let self = this;
         event.preventDefault();
         const lowerLimit = data[0].value;
         const upperLimit = data[1].value;
-        const modal = $("#inputModal")
+        const modal = $("#inputModal");
         console.log(data);
         if (modal.hasClass("Voltage")) {
             self._voltageOccuChosen["Voltage"] = {"lower": lowerLimit, "upper": upperLimit}
@@ -49,6 +55,11 @@ class FlowcellNotificationController {
         });
     }
 
+    /**
+     * @function Disable or enable the fields on the Coverage part of the notification form, based on whether the checkbox is ticked or not.
+     * @param event HTML event object
+     * @param data The data recovered form the checkbox
+     */
     disableCoverageFields(event, data) {
         event.preventDefault();
         // console.log(event);
@@ -153,7 +164,7 @@ class FlowcellNotificationController {
             headers: {"X-CSRFToken": csrftoken}
         });
 
-        axiosInstance.post('/api/v1/messages/create_conditions', {
+        axiosInstance.post('/api/v1/messages/conditions', {
             flowcell: this._flowcellId,
             conditions: this._conditions,
             coverage_sets: this._optionsSelected,
@@ -173,7 +184,7 @@ class FlowcellNotificationController {
                 }
             });
             // Update the notifications table
-            $(".extantNotif").DataTable().ajax.reload();
+            $(".extantNotif").DataTable().ajax.reload(null, false);
 
             // add event handler for success moda
             $('#basicModal').on('show.bs.modal', function (event) {
@@ -222,7 +233,10 @@ class FlowcellNotificationController {
         axiosInstance.get(`/api/v1/flowcells/${self._flowcellId}/chromosomecoverage`, {
             params: {names: true}
         }).then(function (names) {
-            console.log(names.data);
+            $("#coverageFormPart").css({
+                "visibility": "visible",
+                "display": "block"
+            });
             // loop through the returned reference names
             Object.entries(names.data).forEach(([key, value]) => {
                 console.log(key);
@@ -248,7 +262,9 @@ class FlowcellNotificationController {
                 }
             });
         }).catch(function (error) {
-
+            if (error.response.status === 400) {
+                $("#coverageFormPart").remove();
+            }
         });
 
     }
@@ -365,8 +381,11 @@ class FlowcellNotificationController {
         let table = $(".extantNotif");
         console.log(table);
         table.DataTable({
+            language: {
+                infoEmpty: "No records available - Got it?",
+            },
             ajax: {
-                url: "/api/v1/messages/retrieve_conditions",
+                url: "/api/v1/messages/conditions",
                 method: "GET",
                 data: {flowcellId}
             },
@@ -385,11 +404,32 @@ class FlowcellNotificationController {
                     "width": "15%",
                     "render": function (data, type, full) {
                         console.log(data);
-                        return `<a class="btn" id="delete_${data.id}" onclick=""><i class="fa fa-times"></i> Delete </a>`;
+                        return `<a class="btn" id="delete_${data.id}" onclick=notificationsController.deleteNotification(${data.id})><i class="fa fa-times"></i> Delete </a>`;
 
                     }
                 }
             ]
         });
+    }
+
+
+    /**
+     * @function Delete a notification
+     * @param notificationID - The PK of the notification to be deleted
+     */
+    deleteNotification(notificationID) {
+        let csrftoken = getCookie('csrftoken');
+
+        const axiosInstance = axios.create({
+            headers: {"X-CSRFToken": csrftoken}
+        });
+        console.log(notificationID);
+
+        axiosInstance.delete("/api/v1/messages/conditions", {params:{ntpk: notificationID}}).then(response => {
+            console.log(response);
+            $(".extantNotif").DataTable().ajax.reload(null, false);
+        }).catch(error => {
+
+        })
     }
 }
