@@ -2,7 +2,7 @@ import uuid
 from django.conf import settings
 from django.db import models
 
-from reads.models import Flowcell, Barcode
+from reads.models import Flowcell, Barcode, Run
 from reference.models import ReferenceInfo, ReferenceLine
 
 
@@ -49,6 +49,20 @@ class Message(models.Model):
         null=True,
         blank=True,
         on_delete=models.CASCADE,
+    )
+
+    run = models.ForeignKey(
+        Run,
+        null=True,
+        default=None,
+        on_delete=models.CASCADE
+    )
+
+    flowcell = models.ForeignKey(
+        Flowcell,
+        null=True,
+        default=None,
+        on_delete=models.CASCADE
     )
 
     title = models.CharField(
