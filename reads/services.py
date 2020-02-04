@@ -207,8 +207,9 @@ def new_flowcell_message(sender, instance=None, created=False, **kwargs):
         new_flowcell_message = Message(
             recipient=myuser,
             sender=myuser,
+            flowcell=instance,
             title=f"New flowcell {instance.name} created with sample name {instance.sample_name} "
-                  f"at {datetime.datetime.now()}."
+            f"at {datetime.datetime.now()}.",
         )
         new_flowcell_message.save()
 
@@ -239,6 +240,8 @@ def new_run_message(sender, instance=None, created=False, **kwargs):
             recipient=myuser,
             sender=myuser,
             title=f"New run {instance.name} created on flowcell {instance.flowcell.name} at {datetime.datetime.now()}.",
+            run=instance,
+            flowcell=instance.flowcell
         )
         new_run_message.save()
 
@@ -268,19 +271,27 @@ def new_minion_message(sender, instance=None, created=False, **kwargs):
         myuser = instance.minion.owner
         # Messages sent as Warnings (Severity 2), Messages sent as Errors (Severity 3)
         flowcell = instance.run.flowcell
-        queryset = NotificationConditions.objects.filter(flowcell=flowcell, completed=False)
+        queryset = NotificationConditions.objects.filter(
+            flowcell=flowcell, completed=False
+        )
 
         if int(instance.severity) > 1:
             # Check if we have notifications switched on for this
             queryset = queryset.filter(notification_type="w/e")
             if queryset:
                 title = "{} from computer {} at {}".format(
-                    instance.message, instance.minion.computer(), datetime.datetime.now()
+                    instance.message,
+                    instance.minion.computer(),
+                    datetime.datetime.now(),
                 )
                 chunks = wrap(title, 512)
                 for chunk in chunks:
                     new_message_message = Message(
-                        recipient=myuser, sender=myuser, title=chunk
+                        recipient=myuser,
+                        sender=myuser,
+                        title=chunk,
+                        run=instance.run,
+                        flowcell=instance.run.flowcell,
                     )
                     new_message_message.save()
         # Mux messages me thinks
@@ -288,12 +299,18 @@ def new_minion_message(sender, instance=None, created=False, **kwargs):
             queryset = queryset.filter(notification_type="mux")
             if queryset:
                 title = "{} from computer {} at {}".format(
-                    instance.message, instance.minion.computer(), datetime.datetime.now()
+                    instance.message,
+                    instance.minion.computer(),
+                    datetime.datetime.now(),
                 )
                 chunks = wrap(title, 512)
                 for chunk in chunks:
                     new_message_message = Message(
-                        recipient=myuser, sender=myuser, title=chunk
+                        recipient=myuser,
+                        sender=myuser,
+                        title=chunk,
+                        run=instance.run,
+                        flowcell=instance.run.flowcell,
                     )
                     new_message_message.save()
         # Messages sent by minotTour
@@ -301,11 +318,17 @@ def new_minion_message(sender, instance=None, created=False, **kwargs):
             queryset = queryset.filter(notification_type="mino")
             if queryset:
                 title = "{} from computer {} at {}".format(
-                    instance.message, instance.minion.computer(), datetime.datetime.now()
+                    instance.message,
+                    instance.minion.computer(),
+                    datetime.datetime.now(),
                 )
                 chunks = wrap(title, 512)
                 for chunk in chunks:
                     new_message_message = Message(
-                        recipient=myuser, sender=myuser, title=chunk
+                        recipient=myuser,
+                        sender=myuser,
+                        title=chunk,
+                        run=instance.run,
+                        flowcell=instance.run.flowcell,
                     )
                     new_message_message.save()
