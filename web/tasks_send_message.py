@@ -266,6 +266,8 @@ def check_condition_is_met():
                         recipient=condition.creating_user,
                         sender=condition.creating_user,
                         title=message_text,
+                        flowcell=flowcell,
+
                     )
 
                     message.save()
@@ -286,14 +288,14 @@ def check_condition_is_met():
             if condition.notification_type == "volt":
                 queryset = MinIONRunStats.objects.filter(
                     run_id__flowcell=condition.flowcell
-                )[num_entries - 10 : num_entries].values_list(
+                )[::-1][:10].values_list(
                     "voltage_value", flat=True
                 )
             else:
                 # Else occupancy
                 queryset = MinIONRunStats.objects.filter(
                     run_id__flowcell=condition.flowcell
-                )[num_entries - 10 : num_entries].values_list(
+                )[::-1][:10].values_list(
                     "voltage_value", flat=True
                 )
                 occupancy_list = []
@@ -317,6 +319,7 @@ def check_condition_is_met():
                     recipient=condition.creating_user,
                     sender=condition.creating_user,
                     title=text,
+                    flowcell=condition.flowcell
                 )
                 message.save()
 
@@ -332,5 +335,6 @@ def check_condition_is_met():
                     recipient=condition.creating_user,
                     sender=condition.creating_user,
                     title=text,
+                    flowcell=condition.flowcell
                 )
                 message.save()
