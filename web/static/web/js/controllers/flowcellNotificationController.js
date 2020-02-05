@@ -87,74 +87,76 @@ class FlowcellNotificationController {
         let refSelect = $("#reference");
         let contigSelect = $("#contig");
         let barcSelect = $("#notification_barcodes");
-        let refSelectOptions = refSelect[0].selectedOptions;
-        let contigSelectOptions = contigSelect[0].selectedOptions;
-        let barcSelectOptions = barcSelect[0].selectedOptions;
-        let justElements = [refSelect, contigSelect, barcSelect];
-        let selects = [[refSelectOptions, "reference"], [contigSelectOptions, "chromosome"], [barcSelectOptions, "barcodes"]];
         let selectedAutoNotifications = multiInputAuto.getValues();
+        let justElements = [refSelect, contigSelect, barcSelect];
+
         let self = this;
         // loop through the select boxes
-
-        for (const property in Object.keys($("input", data))) {
-            // Get the input element
-            let input = $("input", data)[property];
-            console.log(input);
-            if (input === undefined) {
-                continue;
-            }
-            // If it's a checkbox;
-            if (input.type === "checkbox") {
-                if (input.checked === true) {
-                    if (!(input.name in this._conditions)) {
-                        this._conditions[input.name] = null;
+        if (refSelect[0] !== undefined) {
+            let refSelectOptions = refSelect[0].selectedOptions;
+            let contigSelectOptions = contigSelect[0].selectedOptions;
+            let barcSelectOptions = barcSelect[0].selectedOptions;
+            let selects = [[refSelectOptions, "reference"], [contigSelectOptions, "chromosome"], [barcSelectOptions, "barcodes"]];
+            for (const property in Object.keys($("input", data))) {
+                // Get the input element
+                let input = $("input", data)[property];
+                console.log(input);
+                if (input === undefined) {
+                    continue;
+                }
+                // If it's a checkbox;
+                if (input.type === "checkbox") {
+                    if (input.checked === true) {
+                        if (!(input.name in this._conditions)) {
+                            this._conditions[input.name] = null;
+                        }
                     }
                 }
-            }
-            // Else if it's the coverage amount we are aiming for
-            if (input.name === "coverageAmount" && "coverage" in this._conditions) {
-                this._conditions.coverage = input.value;
-            }
-
-        }
-        if ("coverage" in this._conditions) {
-
-            selects.forEach(function (selected) {
-                let selections = selected[0];
-                // Name of the dict key
-                let key = selected[1];
-                if (!self._optionsSelected.hasOwnProperty(key)) {
-                    self._optionsSelected[key] = [];
+                // Else if it's the coverage amount we are aiming for
+                if (input.name === "coverageAmount" && "coverage" in this._conditions) {
+                    this._conditions.coverage = input.value;
                 }
-                // If it's the barcodes
-                if (key === "barcodes") {
-                    console.log(self._barcodesShown);
-                    console.log(self._barcodesObj);
-                    console.log(selected);
-                    // console.log("!!!!!!!!!!!!");
-                    // Go through the selected options,
-                    let chosen_barcodes = multiInput.getValues();
-                    chosen_barcodes.forEach(function (barcode) {
-                        self._barcodesShown.forEach(function (elementInSet) {
-                            // Get id for barcode to create condition
-                            if (typeof elementInSet === "object") {
-                                if (elementInSet[0] === barcode) {
-                                    // element in set[1] should be the barcode PK
-                                    self._optionsSelected[key].push(elementInSet[1]);
+
+            }
+            if ("coverage" in this._conditions) {
+
+                selects.forEach(function (selected) {
+                    let selections = selected[0];
+                    // Name of the dict key
+                    let key = selected[1];
+                    if (!self._optionsSelected.hasOwnProperty(key)) {
+                        self._optionsSelected[key] = [];
+                    }
+                    // If it's the barcodes
+                    if (key === "barcodes") {
+                        console.log(self._barcodesShown);
+                        console.log(self._barcodesObj);
+                        console.log(selected);
+                        // console.log("!!!!!!!!!!!!");
+                        // Go through the selected options,
+                        let chosen_barcodes = multiInput.getValues();
+                        chosen_barcodes.forEach(function (barcode) {
+                            self._barcodesShown.forEach(function (elementInSet) {
+                                // Get id for barcode to create condition
+                                if (typeof elementInSet === "object") {
+                                    if (elementInSet[0] === barcode) {
+                                        // element in set[1] should be the barcode PK
+                                        self._optionsSelected[key].push(elementInSet[1]);
+                                    }
                                 }
-                            }
+                            });
                         });
-                    });
-                } else {
-                    console.log(selections);
-                    // Check we have the values from the selection drop downs
-                    if (selections.length === 0) {
-                        throw alert(`Please select a value for ${key}.`);
+                    } else {
+                        console.log(selections);
+                        // Check we have the values from the selection drop downs
+                        if (selections.length === 0) {
+                            throw alert(`Please select a value for ${key}.`);
+                        }
+                        self._optionsSelected[key] = selections[0].value;
+                        console.log(self._optionsSelected);
                     }
-                    self._optionsSelected[key] = selections[0].value;
-                    console.log(self._optionsSelected);
-                }
-            });
+                });
+            }
         }
         this._autoOptionsSelected = selectedAutoNotifications;
 
@@ -174,8 +176,10 @@ class FlowcellNotificationController {
             // reset the form
             self._optionsSelected["barcodes"] = [];
             document.getElementById("post-form-notification-create").reset();
-            // self.getReferencesForDataList();
-            multiInput.deleteAllItems();
+            // check this is not null, which it is if there is no coverage form
+            if (multiInput != null){
+                multiInput.deleteAllItems();
+            }
             multiInputAuto.deleteAllItems();
             // Set select boxes back to base state
             justElements.forEach(function (selectBox, index) {
@@ -262,7 +266,7 @@ class FlowcellNotificationController {
                 }
             });
         }).catch(function (error) {
-            if (error.response.status === 400) {
+            if (error.response.status === 404) {
                 $("#coverageFormPart").remove();
             }
         });
@@ -403,9 +407,7 @@ class FlowcellNotificationController {
                     "orderable": false,
                     "width": "15%",
                     "render": function (data, type, full) {
-                        console.log(data);
                         return `<a class="btn" id="delete_${data.id}" onclick=notificationsController.deleteNotification(${data.id})><i class="fa fa-times"></i> Delete </a>`;
-
                     }
                 }
             ]
