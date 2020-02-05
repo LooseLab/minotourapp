@@ -288,24 +288,25 @@ def check_condition_is_met():
             if condition.notification_type == "volt":
                 queryset = MinIONRunStats.objects.filter(
                     run_id__flowcell=condition.flowcell
-                )[::-1][:10].values_list(
+                ).order_by("-id")[:10].values_list(
                     "voltage_value", flat=True
                 )
             else:
                 # Else occupancy
                 queryset = MinIONRunStats.objects.filter(
                     run_id__flowcell=condition.flowcell
-                )[::-1][:10].values_list(
+                ).order_by("-id")[:10].values_list(
                     "voltage_value", flat=True
                 )
                 occupancy_list = []
+                # Get the occupancy
                 for run_stat in queryset:
                     occupancy_list.append(run_stat.occupancy())
 
                 queryset = occupancy_list
 
-            upper_list = filter(lambda x: x >= upper_limit, queryset)
-            lower_list = filter(lambda x: x <= lower_limit, queryset)
+            upper_list = list(filter(lambda x: x >= upper_limit, queryset))
+            lower_list = list(filter(lambda x: x <= lower_limit, queryset))
 
             if len(upper_list) > 6:
                 text = return_tweet(
