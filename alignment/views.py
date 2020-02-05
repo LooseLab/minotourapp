@@ -305,7 +305,7 @@ def get_coverage_summary(request, pk):
             "reference__id", "reference__referencelines__id", "flowcell__runs__barcodes__id")
 
         if not queryset:
-            return Response("No mapping tasks available on this flowcell.", status=400)
+            return Response("No mapping tasks available on this flowcell.", status=404)
 
         reference_to_contig_dict = defaultdict(list)
 

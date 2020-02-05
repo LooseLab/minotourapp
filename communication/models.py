@@ -103,6 +103,35 @@ class Message(models.Model):
 class NotificationConditions(models.Model):
     """
         The conditions that the User has chosen to be notified about via twitter once fulfilled.
+
+        Attributes
+        ---------
+        notification_type: str
+            A choicefield of notification type
+        flowcell: reads.models.Flowcell
+            The flowcell that this condition is created against
+        creating_user: django.contrib.auth.models.User
+            The user that created this notification. Could be linked from flowcell...
+        completed: bool
+            Whether the condition has been completed or not. Completed conditions are not checked again.
+        repeat: bool
+            Whether the condition needs to be checked even after it has been met, to see if it has been met again.
+        last_minKnow_message_id: int
+            The last minknow message id that we have stored.
+        coverage_target: int
+            If the instance is of type coverage, how much coverage we are aiming for.
+        upper_limit: int
+            The upper limit of the occupancy or voltage conditions.
+        lower_limit: int
+            The lower limit of the occupancy or voltage conditions.
+        date_created: datetime.datetime
+            The time the notification was created.
+        reference_file: reference.models.ReferenceInfo
+            The reference file that we are looking for coverage against.
+        chromosome: reference.models.ReferenceLine
+            The contig or chromosome from the reference that we are mapping against.
+        barcode: reads.models.Barcode
+            The barcode that we are mapping against. 
     """
 
     NOTIFICATION_CHOICES = [("cov", "Coverage"), ("mux", "Mux Scan Results"), ("targ", "New Target Added"),
