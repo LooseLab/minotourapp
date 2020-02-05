@@ -5,6 +5,7 @@ from django.conf import settings
 from rest_framework import serializers
 
 from centrifuge.models import CentrifugeOutput, MappingTarget
+from communication.models import NotificationConditions
 from reads.models import (Barcode, FastqFile, FastqRead,
                           FastqReadType, MinIONControl,
                           MinIONEvent, MinIONEventType, MinionMessage,
@@ -493,6 +494,7 @@ class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
         #
         flowcell, created = Flowcell.objects.get_or_create(**validated_data)
         flowcell.save()
+        print(validated_data)
 
         if created:
 
@@ -509,6 +511,14 @@ class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
                 job_type=JobType.objects.filter(name="UpdateFlowcellDetails")[0],
                 last_read=0
             )
+            # If user has allowed us to tweet them
+            if UserOptions.objects.get(owner=flowcell.owner).tweet:
+                # Auto create a Warnings and error notification
+                NotificationConditions(notification_type="w/e", flowcell=flowcell,
+                                       creating_user=flowcell.owner).save()
+                # Auto create a mux notification
+                NotificationConditions(notification_type="mux", flowcell=flowcell,
+                                       creating_user=flowcell.owner).save()
 
         return flowcell
 
