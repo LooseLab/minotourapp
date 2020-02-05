@@ -469,7 +469,6 @@ def render_messages(request):
     messages = Message.objects.filter(recipient=request.user).order_by('-created_date')
     flowcells = Message.objects.all().values_list("sender__flowcells__name", flat=True).distinct()
 
-
     return render(request, 'web/messages.html', context={"messages": messages, "flowcells": flowcells})
 
 
