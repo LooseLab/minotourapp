@@ -5,13 +5,16 @@ from reads.models import FastqRead, JobMaster
 logger = get_task_logger(__name__)
 
 @task()
-def archive_flowcell(task_id):
+def archive_flowcell(task_id, archive=True):
     """
-    Asynchronous celery task to archive a flowcell, removing all fastq and rendering it permanently inactive. Data cannot be added to it.
+    Asynchronous celery task to archive a flowcell, removing all fastq and rendering it permanently inactive.
+        Data cannot be added to it.
     Parameters
     ----------
     task_id: int
         The primary key of the task (JobMaster)
+    archive: bool
+        Whether we archive the flowcell, or keep it but without the fastq, for new data to be re-uploaded later
 
     Returns
     -------
