@@ -267,6 +267,7 @@ def run_list(request):
             context={'request': request}
         )
 
+
         if serializer.is_valid():
             run = serializer.save(owner=request.user)
             # Change the flowcell to active
@@ -276,13 +277,13 @@ def run_list(request):
 
             flowcell.save()
             # Create the rejected accepted barcodes
-            accepted_barcode = Barcode(run=run, name="S")
+            # accepted_barcode = Barcode(run=run, name="S")
 
-            rejected_barcode = Barcode(run=run, name="U")
+            # rejected_barcode = Barcode(run=run, name="U")
 
-            accepted_barcode.save()
+            # accepted_barcode.save()
 
-            rejected_barcode.save()
+            # rejected_barcode.save()
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -405,7 +406,6 @@ def minion_messages_list(request, pk):
         return Response(serializer.data)
 
     elif request.method == 'POST':
-
         if len(request.data["message"]) > 256:
 
             request.data["full_text"] = request.data["message"]
@@ -462,69 +462,72 @@ def minknow_message_list_by_flowcell(request, pk):
     :param pk: (int) Flowcell id
     :return: (str) Json format
     """
-    form_start_time = request.GET.get('start_time', None)
-    form_end_time = request.GET.get('end_time', None)
-
-    start_time = None
-    end_time = None
-
-    if form_start_time:
-
-        try:
-
-            start_time = dateutil.parser.parse(form_start_time)
-
-        except ValueError:
-
-            print('Error when parsing start_time')
-
-    if form_end_time:
-
-        try:
-
-            end_time = dateutil.parser.parse(form_end_time)
-
-        except ValueError:
-
-            print('Error when parsing end_time')
-
     flowcell = Flowcell.objects.get(pk=pk)
+    runs = Run.objects.filter(flowcell=flowcell)
 
-    minion_list = []
+    # form_start_time = request.GET.get('start_time', None)
+    # form_end_time = request.GET.get('end_time', None)
+    #
+    # start_time = None
+    # end_time = None
+    #
+    # if form_start_time:
+    #
+    #     try:
+    #
+    #         start_time = dateutil.parser.parse(form_start_time)
+    #
+    #     except ValueError:
+    #
+    #         print('Error when parsing start_time')
+    #
+    # if form_end_time:
+    #
+    #     try:
+    #
+    #         end_time = dateutil.parser.parse(form_end_time)
+    #
+    #     except ValueError:
+    #
+    #         print('Error when parsing end_time')
+    #
+    # flowcell = Flowcell.objects.get(pk=pk)
+    #
+    # minion_list = []
+    #
+    # for run in flowcell.runs.all():
+    #
+    #     if run.minion:
+    #
+    #         minion_list.append(run.minion)
 
-    for run in flowcell.runs.all():
+    # if start_time and end_time:
+    #
+    #     messages = MinionMessage.objects\
+    #         .filter(minion__in=minion_list)\
+    #         .filter(timestamp__gt=start_time)\
+    #         .filter(timestamp__lt=end_time) \
+    #         .order_by('-timestamp')
+    #
+    # elif start_time:
+    #
+    #     messages = MinionMessage.objects\
+    #         .filter(minion__in=minion_list)\
+    #         .filter(timestamp__gt=start_time) \
+    #         .order_by('-timestamp')
+    #
+    # elif end_time:
+    #
+    #     messages = MinionMessage.objects\
+    #         .filter(minion__in=minion_list)\
+    #         .filter(timestamp__lt=end_time) \
+    #         .order_by('-timestamp')
+    #
+    # else:
 
-        if run.minion:
-
-            minion_list.append(run.minion)
-
-    if start_time and end_time:
-
-        messages = MinionMessage.objects\
-            .filter(minion__in=minion_list)\
-            .filter(timestamp__gt=start_time)\
-            .filter(timestamp__lt=end_time) \
-            .order_by('-timestamp')
-
-    elif start_time:
-
-        messages = MinionMessage.objects\
-            .filter(minion__in=minion_list)\
-            .filter(timestamp__gt=start_time) \
-            .order_by('-timestamp')
-
-    elif end_time:
-
-        messages = MinionMessage.objects\
-            .filter(minion__in=minion_list)\
-            .filter(timestamp__lt=end_time) \
-            .order_by('-timestamp')
-
-    else:
-
-        messages = MinionMessage.objects\
-            .filter(minion__in=minion_list) \
-            .order_by('-timestamp')[:10]
+    messages = MinionMessage.objects\
+        .filter(run__in=runs) \
+        .order_by('-timestamp')
 
     return render(request, 'reads/minknow_messages.html', {'message_list': messages})
 
