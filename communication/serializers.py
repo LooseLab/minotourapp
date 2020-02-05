@@ -18,6 +18,8 @@ class MessageSerializer(serializers.ModelSerializer):
             'title',
             'is_read',
             'created_date',
+            'flowcell',
+            'run'
         )
 
 
