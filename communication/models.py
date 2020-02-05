@@ -131,7 +131,7 @@ class NotificationConditions(models.Model):
         chromosome: reference.models.ReferenceLine
             The contig or chromosome from the reference that we are mapping against.
         barcode: reads.models.Barcode
-            The barcode that we are mapping against. 
+            The barcode that we are mapping against.
     """
 
     NOTIFICATION_CHOICES = [("cov", "Coverage"), ("mux", "Mux Scan Results"), ("targ", "New Target Added"),
