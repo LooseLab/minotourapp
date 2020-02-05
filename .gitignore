@@ -20,3 +20,4 @@ centrifuge/utils.py
 env-*
 */migrations/
 */Temp_results/*
+db_changes
