@@ -270,6 +270,8 @@ def new_minion_message(sender, instance=None, created=False, **kwargs):
     if created:
         myuser = instance.minion.owner
         # Messages sent as Warnings (Severity 2), Messages sent as Errors (Severity 3)
+        print(instance)
+        print(instance.run)
         flowcell = instance.run.flowcell
         queryset = NotificationConditions.objects.filter(
             flowcell=flowcell, completed=False
@@ -291,7 +293,7 @@ def new_minion_message(sender, instance=None, created=False, **kwargs):
                         sender=myuser,
                         title=chunk,
                         run=instance.run,
-                        flowcell=instance.run.flowcell,
+                        flowcell=flowcell
                     )
                     new_message_message.save()
         # Mux messages me thinks
@@ -310,7 +312,7 @@ def new_minion_message(sender, instance=None, created=False, **kwargs):
                         sender=myuser,
                         title=chunk,
                         run=instance.run,
-                        flowcell=instance.run.flowcell,
+                        flowcell=flowcell,
                     )
                     new_message_message.save()
         # Messages sent by minotTour
