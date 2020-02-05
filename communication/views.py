@@ -84,6 +84,8 @@ def create_notification_conditions(flowcell, user, **kwargs):
         return f"An identical Condition already exists for the {noti_type}" \
                f" condition you are trying to create."
 
+    # Now we check we don't have more than 2 non unique notifications of the same type, as long as they aren't Coverage
+    # As many coverages as the user wants are allowed
     check_not_excess = 0
     if not kwargs.get("notification_type") == "cov":
         check_not_excess = NotificationConditions.objects.filter(
@@ -214,6 +216,8 @@ def get_create_delete_conditions(request):
             cond = create_notification_conditions(flowcell, request.user, **kwargs)
             errors_list.append(cond)
         return_list = ["Successfully created notification conditions.", "Issues:"]
+        # Remove None, as successfully create notification conditions function returns none.
+        errors_list = list(filter(None, errors_list))
         # If we have no errors
         if not errors_list:
             return_list[1] = "Issues: None."
