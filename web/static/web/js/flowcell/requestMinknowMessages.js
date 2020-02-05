@@ -15,7 +15,7 @@ function requestMinknowMessages(id, data) {
         // TODO needs testing with multiple runs, as I'm not sure runs will be in the right order
 
         // If there is no last read time (end time)
-        data:{start_time: data.runs[0].start_time, end_time:data.runs[data.runs.length-1].last_read_time},
+        data:{},
         error: function(e)
         {
             console.log('Error: ' + e);
