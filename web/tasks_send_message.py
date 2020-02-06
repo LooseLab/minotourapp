@@ -295,9 +295,7 @@ def check_condition_is_met():
                 # Else occupancy
                 queryset = MinIONRunStats.objects.filter(
                     run_id__flowcell=condition.flowcell
-                ).order_by("-id")[:10].values_list(
-                    "voltage_value", flat=True
-                )
+                ).order_by("-id")[:10]
                 occupancy_list = []
                 # Get the occupancy
                 for run_stat in queryset:
