@@ -31,3 +31,5 @@ ete3
 gunicorn
 django-guardian
 pylint-django
+ipython
+ptpython
