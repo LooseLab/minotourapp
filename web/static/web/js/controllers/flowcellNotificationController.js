@@ -306,11 +306,6 @@ class FlowcellNotificationController {
             console.log(optionSelected);
             console.log(self._contigsObj);
             console.log(optionSelected[0].innerHTML);
-            // self._contigsObj[optionSelected[0].innerHTML].forEach(function (element) {
-            //     console.log(element);
-            //     self._contigsShown = new Set([...self._contigsShown, ...self._contigsObj[optionSelected[0].innerHTML]]);
-            //     // notificationContigs.append(`<option value="${element[0]}">${element[1]}</option>`);
-            // });
 
             let referenceSelected = new Set();
             // for each of our selected contigs

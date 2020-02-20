@@ -1,6 +1,6 @@
 {% extends "web/template_private.html" %}
 {% block content %}
-{#    <script src="https://unpkg.com/vue"></script>#}
+    {#    <script src="https://unpkg.com/vue"></script>#}
 
     <div class="content-wrapper" style="background-color: white">
 
@@ -22,18 +22,19 @@
                     <div class="row">
                         <div class="col-lg-12">
                             <p>This page allows you to remotely control minKNOW. <b>You use it at your own risk.</b>
-                            <br>Once connected you will see the device (MinION, GridION, or PromethION) id below.
+                                <br>Once connected you will see the device (MinION, GridION, or PromethION) id below.
                                 <br>If you have multiple minIONs connected
                                 to one account and all active, they can all be controlled from this page.<br>
                                 Further
                                 options to implement 'Run Until' will become available in future.<br>
-                            Note that data can take 10-20 seconds to be populated at busy times.</p>
+                                Note that data can take 10-20 seconds to be populated at busy times.</p>
 
                             <div id="app-new">
                                 {% verbatim %}
                                 <!-- Nav tabs -->
                                 <ul class="nav nav-tabs" role="tablist">
-                                    <li v-for="(keydata,minion) in minions " role="presentation"><a v-bind:href="'#' + minions[minion].name" role="tab" data-toggle="tab">
+                                    <li v-for="(keydata,minion) in minions " role="presentation"><a
+                                            v-bind:href="'#' + minions[minion].name" role="tab" data-toggle="tab">
                                         {{ minions[minion].status }}
                                         <div v-if='minions[minion].status=="processing"'>
                                             Sequencing:{{minions[minion].livedata.machine_id.result}}/{{minions[minion].name}}
@@ -47,363 +48,413 @@
                                     </a></li>
                                 </ul>
                                 <div class="tab-content">
-                                    <div v-for="(keydata,minion) in minions" role="tabpanel" class="tab-pane" :id="minions[minion].name">
+                                    <div v-for="(keydata,minion) in minions" role="tabpanel" class="tab-pane"
+                                         :id="minions[minion].name">
                                         <!--{{ minions[minion].state }}-->
                                         <!--<div v-if='minions[minion].state=="active"'>-->
-                                            <div class="panel-body">
+                                        <div class="panel-body">
 
 
-
-                                                <div class="col-md-4">
-                                            <div class="panel panel-warning">
-                                                <div class="panel-heading">
-                                                    <h3 class="panel-title">minKNOW Control options</h3>
-                                                </div>
-                                                <div class="panel-body">
-                                                    <h5>To test if you have a connection to minKNOW:</h5>
-                                                    <button v-on:click="testmessage" :id='minions[minion].url' type='button'
-                                                            class='btn btn-info btn-sm'><i class='fa fa-magic'></i> Test
-                                                        Communication
-                                                    </button>
-                                                    <br>
-
-
-                                                    <h5>Log Custom Message:</h5>
-                                                    <!--<button id='renamerun' type='button' class='btn btn-info btn-sm'><i class='fa fa-magic'></i> Rename Run</button>-->
-                                                    <!-- Indicates a dangerous or potentially negative action -->
-                                                    <!-- Button trigger modal -->
-                                                    <button id='custommessage' class='btn btn-info btn-sm'
-                                                            data-toggle='modal'
-                                                            v-bind:data-target="'#' + minions[minion].name + 'custommessage'">
-                                                        <i class='fa fa-magic'></i> Send Message
-                                                    </button>
-                                                    <!-- Modal -->
-                                                    <div class='modal fade' v-bind:id="minions[minion].name+'custommessage'"
-                                                         tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
-                                                         aria-hidden='true'>
-                                                        <div class='modal-dialog'>
-                                                            <div class='modal-content'>
-                                                                <div class='modal-header'>
-                                                                    <button type='button' class='close'
-                                                                            data-dismiss='modal' aria-hidden='true'>
-                                                                        &times;
-                                                                    </button>
-                                                                    <h4 class='modal-title' id='myModalLabel'>Send a
-                                                                        custom message to MinKNOW</h4>
-                                                                </div>
-                                                                <div class='modal-body'>
-                                                                    <div v-bind:id="minions[minion].name + 'custommessage'">
-                                                                        <p>You can log a custom message into minKNOW to
-                                                                            document things such as addition of library
-                                                                            or other event. This will then be written
-                                                                            into the log files for this run.</p>
-                                                                        <input type="text"
-                                                                               v-bind:id="minions[minion].name+'custommessagefield'"
-                                                                               class="form-control" placeholder="">
-                                                                    </div>
-                                                                    <div class='modal-footer'>
-                                                                        <button type='button' class='btn btn-default'
-                                                                                data-dismiss='modal'>Close
-                                                                        </button>
-                                                                        <button v-on:click="custommessage"
-                                                                                :id='minions[minion].url' :name='minions[minion].name'
-                                                                                type='button' class='btn btn-danger'
-                                                                                data-dismiss='modal'>Send Message
-                                                                        </button>
-                                                                    </div>
-                                                                </div><!-- /.modal-content -->
-                                                            </div><!-- /.modal-dialog -->
-                                                        </div><!-- /.modal -->
+                                            <div class="col-md-4">
+                                                <div class="panel panel-warning">
+                                                    <div class="panel-heading">
+                                                        <h3 class="panel-title">minKNOW Control options</h3>
                                                     </div>
+                                                    <div class="panel-body">
+                                                        <h5>To test if you have a connection to minKNOW:</h5>
+                                                        <button v-on:click="testmessage" :id='minions[minion].url'
+                                                                type='button'
+                                                                class='btn btn-info btn-sm'><i class='fa fa-magic'></i>
+                                                            Test
+                                                            Communication
+                                                        </button>
+                                                        <br>
 
 
-                                                    <h5>Rename Your Run:</h5>
-                                                    <!--<button id='renamerun' type='button' class='btn btn-info btn-sm'><i class='fa fa-magic'></i> Rename Run</button>-->
-                                                    <!-- Indicates a dangerous or potentially negative action -->
-                                                    <!-- Button trigger modal -->
-                                                    <button id='renamerun' class='btn btn-info btn-sm'
-                                                            data-toggle='modal'
-                                                            v-bind:data-target="'#' + minions[minion].name + 'renamemodal'">
-                                                        <i class='fa fa-magic'></i> Rename Run
-                                                    </button>
-                                                    <!-- Modal -->
-                                                    <div class='modal fade' v-bind:id="minions[minion].name+'renamemodal'"
-                                                         tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
-                                                         aria-hidden='true'>
-                                                        <div class='modal-dialog'>
-                                                            <div class='modal-content'>
-                                                                <div class='modal-header'>
-                                                                    <button type='button' class='close'
-                                                                            data-dismiss='modal' aria-hidden='true'>
-                                                                        &times;
-                                                                    </button>
-                                                                    <h4 class='modal-title' id='myModalLabel'>Rename
-                                                                        Your Run</h4>
-                                                                </div>
-                                                                <div class='modal-body'>
-                                                                    <div v-bind:id="minions[minion].url+'renameinfo'">
-                                                                        <p>You can rename a run if you wish to do so.
-                                                                            Note there is no need to do this unless you
-                                                                            wish to change the sample ID for some
-                                                                            reason.</p>
-                                                                        <input type="text"
-                                                                               v-bind:id="minions[minion].name+'newname'"
-                                                                               class="form-control"
-                                                                               placeholder="New Run Name">
-                                                                        <p>If you are sure you wish to do this enter
-                                                                            your new name above and click 'Rename Run'
-                                                                            below. Otherwise close this window.</p>
-                                                                        <p> We dont recommend doing this when a run is
-                                                                            in progress!</p>
-                                                                    </div>
-                                                                    <div class='modal-footer'>
-                                                                        <button type='button' class='btn btn-default'
-                                                                                data-dismiss='modal'>Close
+                                                        <h5>Log Custom Message:</h5>
+                                                        <!--<button id='renamerun' type='button' class='btn btn-info btn-sm'><i class='fa fa-magic'></i> Rename Run</button>-->
+                                                        <!-- Indicates a dangerous or potentially negative action -->
+                                                        <!-- Button trigger modal -->
+                                                        <button id='custommessage' class='btn btn-info btn-sm'
+                                                                data-toggle='modal'
+                                                                v-bind:data-target="'#' + minions[minion].name + 'custommessage'">
+                                                            <i class='fa fa-magic'></i> Send Message
+                                                        </button>
+                                                        <!-- Modal -->
+                                                        <div class='modal fade'
+                                                             v-bind:id="minions[minion].name+'custommessage'"
+                                                             tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
+                                                             aria-hidden='true'>
+                                                            <div class='modal-dialog'>
+                                                                <div class='modal-content'>
+                                                                    <div class='modal-header'>
+                                                                        <button type='button' class='close'
+                                                                                data-dismiss='modal' aria-hidden='true'>
+                                                                            &times;
                                                                         </button>
-                                                                        <button v-on:click="renamenow" :id='minions[minion].url'
-                                                                                :name='minions[minion].name' type='button'
-                                                                                class='btn btn-danger'
-                                                                                data-dismiss='modal'>Rename Run
-                                                                        </button>
+                                                                        <h4 class='modal-title' id='myModalLabel'>Send a
+                                                                            custom message to MinKNOW</h4>
                                                                     </div>
-                                                                </div><!-- /.modal-content -->
-                                                            </div><!-- /.modal-dialog -->
-                                                        </div><!-- /.modal -->
-                                                    </div>
-                                                    <h5>Rename Flow Cell:</h5>
-                                                    <!--<button id='renamerun' type='button' class='btn btn-info btn-sm'><i class='fa fa-magic'></i> Rename Run</button>-->
-                                                    <!-- Indicates a dangerous or potentially negative action -->
-                                                    <!-- Button trigger modal -->
-                                                    <button id='renameflowcell' class='btn btn-info btn-sm'
-                                                            data-toggle='modal'
-                                                            v-bind:data-target="'#' + minions[minion].name + 'renameflowcell'">
-                                                        <i class='fa fa-magic'></i> Rename Flowcell
-                                                    </button>
-                                                    <!-- Modal -->
-                                                    <div class='modal fade' v-bind:id="minions[minion].name+'renameflowcell'"
-                                                         tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
-                                                         aria-hidden='true'>
-                                                        <div class='modal-dialog'>
-                                                            <div class='modal-content'>
-                                                                <div class='modal-header'>
-                                                                    <button type='button' class='close'
-                                                                            data-dismiss='modal' aria-hidden='true'>
-                                                                        &times;
-                                                                    </button>
-                                                                    <h4 class='modal-title' id='myModalLabel'>Rename
-                                                                        Your Flowcell</h4>
-                                                                </div>
-                                                                <div class='modal-body'>
-                                                                    <div v-bind:id="minions[minion].name+'renameflowcellinfo'">
-                                                                        <p>You can rename a flowcell if you wish to do
-                                                                            so. Note there is no need to do this unless
-                                                                            you wish to change the Flowcell ID for some
-                                                                            reason.</p>
-                                                                        <input type="text"
-                                                                               v-bind:id="minions[minion].name+'newflowcellname'"
-                                                                               class="form-control"
-                                                                               placeholder="New Flowcell ID">
-                                                                        <p>If you are sure you wish to do this enter
-                                                                            your new Flowcell ID above and click 'Rename
-                                                                            Run' below. Otherwise close this window.</p>
-                                                                        <p> We dont recommend doing this when a run is
-                                                                            in progress!</p>
-                                                                    </div>
-                                                                    <div class='modal-footer'>
-                                                                        <button type='button' class='btn btn-default'
-                                                                                data-dismiss='modal'>Close
-                                                                        </button>
-                                                                        <button v-on:click="renameflowcellnow"
-                                                                                :id='minions[minion].url' :name='minions[minion].name'
-                                                                                type='button' class='btn btn-danger'
-                                                                                data-dismiss='modal'>Rename Flowcell
-                                                                        </button>
-                                                                    </div>
-                                                                </div><!-- /.modal-content -->
-                                                            </div><!-- /.modal-dialog -->
-                                                        </div><!-- /.modal -->
-                                                    </div>
-
-
-                                                    <br>
-                                                    <h5>Remote Start/Stop Sequencing:</h5>
-
-                                                    <!-- Indicates a dangerous or potentially negative action -->
-                                                    <!-- Button trigger modal -->
-                                                    <button id='stopminion' class='btn btn-danger btn-sm'
-                                                            data-toggle='modal'
-                                                            v-bind:data-target="'#' + minions[minion].name + 'stopminionmodal'">
-                                                        <i class='fa fa-stop'></i> Stop minION
-                                                    </button>
-
-                                                    <!-- Modal -->
-                                                    <div class='modal fade' v-bind:id="minions[minion].name+'stopminionmodal'"
-                                                         tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
-                                                         aria-hidden='true'>
-                                                        <div class='modal-dialog'>
-                                                            <div class='modal-content'>
-                                                                <div class='modal-header'>
-                                                                    <button type='button' class='close'
-                                                                            data-dismiss='modal' aria-hidden='true'>
-                                                                        &times;
-                                                                    </button>
-                                                                    <h4 class='modal-title' id='myModalLabel'>Stop your
-                                                                        minION</h4>
-                                                                </div>
-                                                                <div class='modal-body'>
-                                                                    <div v-bind:id="minions[minion].name+'stopminioninfo'">
-                                                                        <p>This will attempt to stop your minION
-                                                                            sequencer remotely. It should be possible to
-                                                                            restart sequencing remotely but software
-                                                                            crashes on the minION controlling device may
-                                                                            cause problems. You should only stop your
-                                                                            minION device remotely if you are certain
-                                                                            you wish to do so and <strong> at your own
-                                                                                risk</strong>.</p>
-
-                                                                        <p>If you are sure you wish to do this, click
-                                                                            'Stop minION' below. Otherwise close this
-                                                                            window.</p>
-                                                                    </div>
-                                                                    <div class='modal-footer'>
-                                                                        <button type='button' class='btn btn-default'
-                                                                                data-dismiss='modal'>Close
-                                                                        </button>
-                                                                        <button v-on:click="stopminion" :id='minions[minion].url'
-                                                                                type='button' class='btn btn-danger'
-                                                                                data-dismiss='modal'>Stop minION
-                                                                        </button>
-                                                                    </div>
-                                                                </div><!-- /.modal-content -->
-                                                            </div><!-- /.modal-dialog -->
-                                                        </div><!-- /.modal -->
-                                                    </div>
-
-
-                                                    <!-- Indicates a dangerous or potentially negative action -->
-                                                    <!-- Button trigger modal -->
-                                                    <button id='startminion' class='btn btn-success btn-sm'
-                                                            data-toggle='modal'
-                                                            v-bind:data-target="'#' + minions[minion].name + 'startminionmodal'">
-                                                        <i class='fa fa-play'></i> Start minION
-                                                    </button>
-
-                                                    <!-- Modal -->
-                                                    <div class='modal fade' v-bind:id="minions[minion].name+'startminionmodal'"
-                                                         tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
-                                                         aria-hidden='true'>
-                                                        <div class='modal-dialog'>
-                                                            <div class='modal-content'>
-                                                                <div class='modal-header'>
-                                                                    <button type='button' class='close'
-                                                                            data-dismiss='modal' aria-hidden='true'>
-                                                                        &times;
-                                                                    </button>
-                                                                    <h4 class='modal-title' id='myModalLabel'>Start your
-                                                                        minION</h4>
-                                                                </div>
-                                                                <div class='modal-body'>
-                                                                    <div v-bind:id="minions[minion].name+'startminioninfo'">
-                                                                        <p>This will attempt to restart your minION
-                                                                            sequencer remotely.</p>
-
-                                                                        <p>If you are sure you wish to do this select an
-                                                                            available run script and click 'Start
-                                                                            minION' below. Otherwise close this
-                                                                            window.</p>
-                                                                        <div v-for="script in minions[minion].scripts"
-                                                                             class='radio'>
-                                                                            <label>
-                                                                                <input type='radio' name='scriptRadios'
-                                                                                       :id='script.name'
-                                                                                       :value='script.identifier'>{{script.name}}.py</label>
+                                                                    <div class='modal-body'>
+                                                                        <div v-bind:id="minions[minion].name + 'custommessage'">
+                                                                            <p>You can log a custom message into minKNOW
+                                                                                to
+                                                                                document things such as addition of
+                                                                                library
+                                                                                or other event. This will then be
+                                                                                written
+                                                                                into the log files for this run.</p>
+                                                                            <input type="text"
+                                                                                   v-bind:id="minions[minion].name+'custommessagefield'"
+                                                                                   class="form-control" placeholder="">
                                                                         </div>
-                                                                    </div>
-                                                                    <div class='modal-footer'>
-                                                                        <button type='button'
-                                                                                class='btn btn-default btn-sm'
-                                                                                data-dismiss='modal'>Close
+                                                                        <div class='modal-footer'>
+                                                                            <button type='button'
+                                                                                    class='btn btn-default'
+                                                                                    data-dismiss='modal'>Close
+                                                                            </button>
+                                                                            <button v-on:click="custommessage"
+                                                                                    :id='minions[minion].url'
+                                                                                    :name='minions[minion].name'
+                                                                                    type='button' class='btn btn-danger'
+                                                                                    data-dismiss='modal'>Send Message
+                                                                            </button>
+                                                                        </div>
+                                                                    </div><!-- /.modal-content -->
+                                                                </div><!-- /.modal-dialog -->
+                                                            </div><!-- /.modal -->
+                                                        </div>
+
+
+                                                        <h5>Rename Your Run:</h5>
+                                                        <!--<button id='renamerun' type='button' class='btn btn-info btn-sm'><i class='fa fa-magic'></i> Rename Run</button>-->
+                                                        <!-- Indicates a dangerous or potentially negative action -->
+                                                        <!-- Button trigger modal -->
+                                                        <button id='renamerun' class='btn btn-info btn-sm'
+                                                                data-toggle='modal'
+                                                                v-bind:data-target="'#' + minions[minion].name + 'renamemodal'">
+                                                            <i class='fa fa-magic'></i> Rename Run
+                                                        </button>
+                                                        <!-- Modal -->
+                                                        <div class='modal fade'
+                                                             v-bind:id="minions[minion].name+'renamemodal'"
+                                                             tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
+                                                             aria-hidden='true'>
+                                                            <div class='modal-dialog'>
+                                                                <div class='modal-content'>
+                                                                    <div class='modal-header'>
+                                                                        <button type='button' class='close'
+                                                                                data-dismiss='modal' aria-hidden='true'>
+                                                                            &times;
                                                                         </button>
-                                                                        <button v-on:click="startminion"
-                                                                                :id='minions[minion].url' type='button'
-                                                                                class='btn btn-success'
-                                                                                data-dismiss='modal'>Start minION
-                                                                        </button>
+                                                                        <h4 class='modal-title' id='myModalLabel'>Rename
+                                                                            Your Run</h4>
                                                                     </div>
-                                                                </div><!-- /.modal-content -->
-                                                            </div><!-- /.modal-dialog -->
-                                                        </div><!-- /.modal -->
-                                                    </div>
-                                                    <br><br>
-                                                    <button class="btn btn-primary" type="button" data-toggle="collapse"
-                                                            v-bind:data-target="'#collapseExample' + minions[minion].name"
-                                                            aria-expanded="false" aria-controls="collapseExample">
-                                                        Available Scripts:
-                                                    </button>
-                                                    <div class="collapse" v-bind:id="'collapseExample' + minions[minion].name">
-                                                        <div class="well">
-                                                            <div v-for="script in minions[minion].scripts">{{script.name}}</div>
+                                                                    <div class='modal-body'>
+                                                                        <div v-bind:id="minions[minion].url+'renameinfo'">
+                                                                            <p>You can rename a run if you wish to do
+                                                                                so.
+                                                                                Note there is no need to do this unless
+                                                                                you
+                                                                                wish to change the sample ID for some
+                                                                                reason.</p>
+                                                                            <input type="text"
+                                                                                   v-bind:id="minions[minion].name+'newname'"
+                                                                                   class="form-control"
+                                                                                   placeholder="New Run Name">
+                                                                            <p>If you are sure you wish to do this enter
+                                                                                your new name above and click 'Rename
+                                                                                Run'
+                                                                                below. Otherwise close this window.</p>
+                                                                            <p> We dont recommend doing this when a run
+                                                                                is
+                                                                                in progress!</p>
+                                                                        </div>
+                                                                        <div class='modal-footer'>
+                                                                            <button type='button'
+                                                                                    class='btn btn-default'
+                                                                                    data-dismiss='modal'>Close
+                                                                            </button>
+                                                                            <button v-on:click="renamenow"
+                                                                                    :id='minions[minion].url'
+                                                                                    :name='minions[minion].name'
+                                                                                    type='button'
+                                                                                    class='btn btn-danger'
+                                                                                    data-dismiss='modal'>Rename Run
+                                                                            </button>
+                                                                        </div>
+                                                                    </div><!-- /.modal-content -->
+                                                                </div><!-- /.modal-dialog -->
+                                                            </div><!-- /.modal -->
+                                                        </div>
+                                                        <h5>Rename Flow Cell:</h5>
+                                                        <!--<button id='renamerun' type='button' class='btn btn-info btn-sm'><i class='fa fa-magic'></i> Rename Run</button>-->
+                                                        <!-- Indicates a dangerous or potentially negative action -->
+                                                        <!-- Button trigger modal -->
+                                                        <button id='renameflowcell' class='btn btn-info btn-sm'
+                                                                data-toggle='modal'
+                                                                v-bind:data-target="'#' + minions[minion].name + 'renameflowcell'">
+                                                            <i class='fa fa-magic'></i> Rename Flowcell
+                                                        </button>
+                                                        <!-- Modal -->
+                                                        <div class='modal fade'
+                                                             v-bind:id="minions[minion].name+'renameflowcell'"
+                                                             tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
+                                                             aria-hidden='true'>
+                                                            <div class='modal-dialog'>
+                                                                <div class='modal-content'>
+                                                                    <div class='modal-header'>
+                                                                        <button type='button' class='close'
+                                                                                data-dismiss='modal' aria-hidden='true'>
+                                                                            &times;
+                                                                        </button>
+                                                                        <h4 class='modal-title' id='myModalLabel'>Rename
+                                                                            Your Flowcell</h4>
+                                                                    </div>
+                                                                    <div class='modal-body'>
+                                                                        <div v-bind:id="minions[minion].name+'renameflowcellinfo'">
+                                                                            <p>You can rename a flowcell if you wish to
+                                                                                do
+                                                                                so. Note there is no need to do this
+                                                                                unless
+                                                                                you wish to change the Flowcell ID for
+                                                                                some
+                                                                                reason.</p>
+                                                                            <input type="text"
+                                                                                   v-bind:id="minions[minion].name+'newflowcellname'"
+                                                                                   class="form-control"
+                                                                                   placeholder="New Flowcell ID">
+                                                                            <p>If you are sure you wish to do this enter
+                                                                                your new Flowcell ID above and click
+                                                                                'Rename
+                                                                                Run' below. Otherwise close this
+                                                                                window.</p>
+                                                                            <p> We dont recommend doing this when a run
+                                                                                is
+                                                                                in progress!</p>
+                                                                        </div>
+                                                                        <div class='modal-footer'>
+                                                                            <button type='button'
+                                                                                    class='btn btn-default'
+                                                                                    data-dismiss='modal'>Close
+                                                                            </button>
+                                                                            <button v-on:click="renameflowcellnow"
+                                                                                    :id='minions[minion].url'
+                                                                                    :name='minions[minion].name'
+                                                                                    type='button' class='btn btn-danger'
+                                                                                    data-dismiss='modal'>Rename Flowcell
+                                                                            </button>
+                                                                        </div>
+                                                                    </div><!-- /.modal-content -->
+                                                                </div><!-- /.modal-dialog -->
+                                                            </div><!-- /.modal -->
+                                                        </div>
+
+
+                                                        <br>
+                                                        <h5>Remote Start/Stop Sequencing:</h5>
+
+                                                        <!-- Indicates a dangerous or potentially negative action -->
+                                                        <!-- Button trigger modal -->
+                                                        <button id='stopminion' class='btn btn-danger btn-sm'
+                                                                data-toggle='modal'
+                                                                v-bind:data-target="'#' + minions[minion].name + 'stopminionmodal'">
+                                                            <i class='fa fa-stop'></i> Stop minION
+                                                        </button>
+
+                                                        <!-- Modal -->
+                                                        <div class='modal fade'
+                                                             v-bind:id="minions[minion].name+'stopminionmodal'"
+                                                             tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
+                                                             aria-hidden='true'>
+                                                            <div class='modal-dialog'>
+                                                                <div class='modal-content'>
+                                                                    <div class='modal-header'>
+                                                                        <button type='button' class='close'
+                                                                                data-dismiss='modal' aria-hidden='true'>
+                                                                            &times;
+                                                                        </button>
+                                                                        <h4 class='modal-title' id='myModalLabel'>Stop
+                                                                            your
+                                                                            minION</h4>
+                                                                    </div>
+                                                                    <div class='modal-body'>
+                                                                        <div v-bind:id="minions[minion].name+'stopminioninfo'">
+                                                                            <p>This will attempt to stop your minION
+                                                                                sequencer remotely. It should be
+                                                                                possible to
+                                                                                restart sequencing remotely but software
+                                                                                crashes on the minION controlling device
+                                                                                may
+                                                                                cause problems. You should only stop
+                                                                                your
+                                                                                minION device remotely if you are
+                                                                                certain
+                                                                                you wish to do so and <strong> at your
+                                                                                    own
+                                                                                    risk</strong>.</p>
+
+                                                                            <p>If you are sure you wish to do this,
+                                                                                click
+                                                                                'Stop minION' below. Otherwise close
+                                                                                this
+                                                                                window.</p>
+                                                                        </div>
+                                                                        <div class='modal-footer'>
+                                                                            <button type='button'
+                                                                                    class='btn btn-default'
+                                                                                    data-dismiss='modal'>Close
+                                                                            </button>
+                                                                            <button v-on:click="stopminion"
+                                                                                    :id='minions[minion].url'
+                                                                                    type='button' class='btn btn-danger'
+                                                                                    data-dismiss='modal'>Stop minION
+                                                                            </button>
+                                                                        </div>
+                                                                    </div><!-- /.modal-content -->
+                                                                </div><!-- /.modal-dialog -->
+                                                            </div><!-- /.modal -->
+                                                        </div>
+
+
+                                                        <!-- Indicates a dangerous or potentially negative action -->
+                                                        <!-- Button trigger modal -->
+                                                        <button id='startminion' class='btn btn-success btn-sm'
+                                                                data-toggle='modal'
+                                                                v-bind:data-target="'#' + minions[minion].name + 'startminionmodal'">
+                                                            <i class='fa fa-play'></i> Start minION
+                                                        </button>
+
+                                                        <!-- Modal -->
+                                                        <div class='modal fade'
+                                                             v-bind:id="minions[minion].name+'startminionmodal'"
+                                                             tabindex='-1' role='dialog' aria-labelledby='myModalLabel'
+                                                             aria-hidden='true'>
+                                                            <div class='modal-dialog'>
+                                                                <div class='modal-content'>
+                                                                    <div class='modal-header'>
+                                                                        <button type='button' class='close'
+                                                                                data-dismiss='modal' aria-hidden='true'>
+                                                                            &times;
+                                                                        </button>
+                                                                        <h4 class='modal-title' id='myModalLabel'>Start
+                                                                            your
+                                                                            minION</h4>
+                                                                    </div>
+                                                                    <div class='modal-body'>
+                                                                        <div v-bind:id="minions[minion].name+'startminioninfo'">
+                                                                            <p>This will attempt to restart your minION
+                                                                                sequencer remotely.</p>
+
+                                                                            <p>If you are sure you wish to do this
+                                                                                select an
+                                                                                available run script and click 'Start
+                                                                                minION' below. Otherwise close this
+                                                                                window.</p>
+                                                                            <div v-for="script in minions[minion].scripts"
+                                                                                 class='radio'>
+                                                                                <label>
+                                                                                    <input type='radio'
+                                                                                           name='scriptRadios'
+                                                                                           :id='script.name'
+                                                                                           :value='script.identifier'>{{script.name}}.py</label>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class='modal-footer'>
+                                                                            <button type='button'
+                                                                                    class='btn btn-default btn-sm'
+                                                                                    data-dismiss='modal'>Close
+                                                                            </button>
+                                                                            <button v-on:click="startminion"
+                                                                                    :id='minions[minion].url'
+                                                                                    type='button'
+                                                                                    class='btn btn-success'
+                                                                                    data-dismiss='modal'>Start minION
+                                                                            </button>
+                                                                        </div>
+                                                                    </div><!-- /.modal-content -->
+                                                                </div><!-- /.modal-dialog -->
+                                                            </div><!-- /.modal -->
+                                                        </div>
+                                                        <br><br>
+                                                        <button class="btn btn-primary" type="button"
+                                                                data-toggle="collapse"
+                                                                v-bind:data-target="'#collapseExample' + minions[minion].name"
+                                                                aria-expanded="false" aria-controls="collapseExample">
+                                                            Available Scripts:
+                                                        </button>
+                                                        <div class="collapse"
+                                                             v-bind:id="'collapseExample' + minions[minion].name">
+                                                            <div class="well">
+                                                                <div v-for="script in minions[minion].scripts">
+                                                                    {{script.name}}
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                                </div>
-                                        <div class="col-md-4">
-                                            <div class='panel panel-info'>
-                                                <div class='panel-heading'>
-                                                    <h3 class='panel-title'>minKNOW real time data</h3>
-                                                </div>
-                                                <div class='panel-body'>
-                                                    <div class='table-responsive'>
-                                                        <table class='table table-condensed'>
-                                                            <tr>
-                                                                <th>Category
-                                                                </td>
-                                                                <th>Info
-                                                                </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>minKNOW computer name</td>
-                                                                <td>{{minions[minion].livedata.machine_id.result}}</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>minKNOW Status</td>
-                                                                <td>{{minions[minion].status}}</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Current Script</td>
-                                                                <td>{{minions[minion].livedata.current_script.result}}</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Sample Name</td>
-                                                                <td>{{minions[minion].sample_id}}</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Flow Cell ID</td>
-                                                                <td>{{minions[minion].flow_cell_id}}</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Run Name</td>
-                                                                <td>{{minions[minion].run_name}}</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Voltage Offset</td>
-                                                                <td>{{minions[minion].livedata.voltage_value}} mV</td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td>Yield</td>
-                                                                <td>{{minions[minion].livedata.event_yield}}</td>
-                                                            </tr>
-                                                        </table>
+                                            <div class="col-md-4">
+                                                <div class='panel panel-info'>
+                                                    <div class='panel-heading'>
+                                                        <h3 class='panel-title'>minKNOW real time data</h3>
                                                     </div>
-                                                </div>
+                                                    <div class='panel-body'>
+                                                        <div class='table-responsive'>
+                                                            <table class='table table-condensed'>
+                                                                <tr>
+                                                                    <th>Category
+                                                                    </td>
+                                                                    <th>Info
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>minKNOW computer name</td>
+                                                                    <td>{{minions[minion].livedata.machine_id.result}}
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>minKNOW Status</td>
+                                                                    <td>{{minions[minion].status}}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Current Script</td>
+                                                                    <td>
+                                                                        {{minions[minion].livedata.current_script.result}}
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Sample Name</td>
+                                                                    <td>{{minions[minion].sample_id}}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Flow Cell ID</td>
+                                                                    <td>{{minions[minion].flow_cell_id}}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Run Name</td>
+                                                                    <td>{{minions[minion].run_name}}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Voltage Offset</td>
+                                                                    <td>{{minions[minion].livedata.voltage_value}} mV
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Yield</td>
+                                                                    <td>{{minions[minion].livedata.event_yield}}</td>
+                                                                </tr>
+                                                            </table>
+                                                        </div>
+                                                    </div>
 
+                                                </div>
                                             </div>
-                                                    </div>
                                             <div class="col-lg-4" :id="minions[minion].name">
-                                            <div is="diskusage" :title="minions[minion].livedata.machine_id.result" :keydata="keydata"
-                                                 :datain="minions[minion].livedata.disk_space.result"></div>
-                                        </div>
+                                                <div is="diskusage" :title="minions[minion].livedata.machine_id.result"
+                                                     :keydata="keydata"
+                                                     :datain="minions[minion].livedata.disk_space.result"></div>
+                                            </div>
 
                                         </div>
                                     </div>
@@ -422,10 +473,13 @@
     </div><!-- /.content-wrapper -->
 {% endblock %}
 {% block javascript %}
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+
     <script>
 
         $(document).ready(function () {
-
+            const topPadding = $(".main-header").height() + 16;
+            $(".content-wrapper").css("padding-top", `${topPadding}px`);
             set_active_navbar_item(1);
 
             function add(a, b) {
@@ -521,11 +575,11 @@
                 }
                 //console.log(diffholder/(holder.length - 1));
                 if (diffholder / (holder.length - 1) > 1) {
-                    return [1, meanholder / (holder.length - 1 )];
+                    return [1, meanholder / (holder.length - 1)];
                 } else if (diffholder / (holder.length - 1) < 0.999) {
-                    return ([0.999, meanholder / (holder.length - 1 )]);
+                    return ([0.999, meanholder / (holder.length - 1)]);
                 } else {
-                    return ([diffholder / (holder.length - 1), meanholder / (holder.length - 1 )]);
+                    return ([diffholder / (holder.length - 1), meanholder / (holder.length - 1)]);
                 }
 
             }
@@ -587,7 +641,6 @@
             }
 
 
-
             function formatBytes(bytes, decimals) {
                 if (bytes == 0) return '0 Byte';
                 var k = 1000;
@@ -644,9 +697,11 @@
 
             var master_minion_list = [];
             var tabslist = document.getElementById('tabslist');
+
             function start() {
                 $.get("{% url 'activeminION_list' %}", function (data) {
                     //$( ".result" ).html( data
+                    console.log(data);
                     var data2 = [];
                     var ien = data.length;
                     //var counter = 0;
@@ -673,7 +728,7 @@
                                     machine_id: {
                                         result: data[i].computer
                                     },
-                                    dataset:{
+                                    dataset: {
                                         result: ''
                                     },
                                     current_script: {
@@ -852,7 +907,6 @@
             setInterval(start, 20000);
 
 
-            {% verbatim %}
 
 
             Vue.filter('currencyDisplay', {
@@ -1154,7 +1208,7 @@
                         }.bind(this), 10000);
                     });
                 }
-            })
+            });
 
             Vue.component('meanratio', {
                 template: '<div v-bind:id="\'meanratio\'+title" style="margin: 0 auto"></div>',
@@ -1919,8 +1973,8 @@
                                 data: [0],
                                 dataLabels: {
                                     format: '<div style="text-align:center"><span style="font-size:15px;color:' +
-                                    ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
-                                    '<span style="font-size:12px;color:silver"> Avg event len</span></div>'
+                                        ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
+                                        '<span style="font-size:12px;color:silver"> Avg event len</span></div>'
                                 },
                                 tooltip: {
                                     valueSuffix: ' events'
@@ -2035,8 +2089,8 @@
                                     data: [0],
                                     dataLabels: {
                                         format: '<div style="text-align:center"><span style="font-size:15px;color:' +
-                                        ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
-                                        '<span style="font-size:12px;color:silver"> Used Channels</span></div>'
+                                            ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
+                                            '<span style="font-size:12px;color:silver"> Used Channels</span></div>'
                                     },
                                     tooltip: {
                                         valueSuffix: ' Channel Count'
@@ -2162,8 +2216,8 @@
                                     data: [0],
                                     dataLabels: {
                                         format: '<div style="text-align:center"><span style="font-size:15px;color:' +
-                                        ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
-                                        '<span style="font-size:12px;color:silver"> In Strand</span></div>'
+                                            ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
+                                            '<span style="font-size:12px;color:silver"> In Strand</span></div>'
                                     },
                                     tooltip: {
                                         valueSuffix: ' In Strand'
@@ -2278,8 +2332,8 @@
                                     data: [0],
                                     dataLabels: {
                                         format: '<div style="text-align:center"><span style="font-size:15px;color:' +
-                                        ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
-                                        '<span style="font-size:12px;color:silver"> % Occupancy</span></div>'
+                                            ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
+                                            '<span style="font-size:12px;color:silver"> % Occupancy</span></div>'
                                     },
                                     tooltip: {
                                         valueSuffix: ' % Occupancy'
@@ -2418,11 +2472,8 @@
                     }
                 })
 
-            {% endverbatim %}
 
 
-
-            {% verbatim %}
 
             Vue.component('diskusage', {
                 template: "<div class='panel panel-info'><div class='panel-heading'><h3 class='panel-title'>Disk Space</h3></div><div class='panel-body'><div class='table-responsive'><table class='table table-condensed' ><tr><td>Category</td><td>Info</td></tr><tr><td>minKNOW computer name</td><td>{{title}}</td></tr><tr><td>Total Drive Capacity</td><td>{{capacity}}</td></tr><tr><td>Free Drive Space</td><td>{{space}} / {{percent}}%</td></tr><tr><td>Disk Space till Shutdown</td><td>{{bytealert}}</td></tr><tr><td>Warnings?</td><td>{{recalert}}</td></tr></table></div></div></div>",
@@ -2495,7 +2546,7 @@
                     }
                 }
                 ,
-                mounted : function () {
+                mounted: function () {
 
                     this.$nextTick(function () {
                         this.chart = new Highcharts.Chart(this.opts);
@@ -2624,8 +2675,8 @@
                                 data: [0],
                                 dataLabels: {
                                     format: '<div style="text-align:center"><span style="font-size:15px;color:' +
-                                    ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
-                                    '<span style="font-size:12px;color:silver"> Predicted Yield</span></div>'
+                                        ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
+                                        '<span style="font-size:12px;color:silver"> Predicted Yield</span></div>'
                                 },
                                 tooltip: {
                                     valueSuffix: ' events'
@@ -2704,379 +2755,379 @@
                     });
                 }
             })
-        })
+        });
 
 
-        {% endverbatim %}
 
 
         function getCookie(name) {
-                var cookieValue = null;
-                if (document.cookie && document.cookie !== '') {
-                    var cookies = document.cookie.split(';');
-                    for (var i = 0; i < cookies.length; i++) {
-                        var cookie = jQuery.trim(cookies[i]);
-                        // Does this cookie string begin with the name we want?
-                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                            break;
-                        }
+            var cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
                     }
                 }
-                return cookieValue;
             }
+            return cookieValue;
+        }
 
         var minionsthings = new Vue({
-                el: '#app-new',
-                data: {
-                    minions: [],
-                    message: '',
-                    seqspeed:'450 b/s',
-                },
-                computed: {
-                    speedresult: function () {
-                        switch (this.seqspeed) {
-                            case "MegaCrazy Runs":
-                                scaling = 3.5;
-                                break;
-                            case "450 b/s":
-                                scaling = 1.8;
-                                break;
-                            case "250 b/s":
-                                scaling = 1.1;
-                                break;
-                            case "70 b/s":
-                                scaling = 1.0;
-                                break;
-                        }
-                        return this.currentyield;
+            el: '#app-new',
+            data: {
+                minions: [],
+                message: '',
+                seqspeed: '450 b/s',
+            },
+            computed: {
+                speedresult: function () {
+                    switch (this.seqspeed) {
+                        case "MegaCrazy Runs":
+                            scaling = 3.5;
+                            break;
+                        case "450 b/s":
+                            scaling = 1.8;
+                            break;
+                        case "250 b/s":
+                            scaling = 1.1;
+                            break;
+                        case "70 b/s":
+                            scaling = 1.0;
+                            break;
                     }
-                },
-                methods: {
-                    testmessage: function (event) {
-
-                        var instructionmessage = {
-                            "INSTRUCTION": {
-                                "USER": "<?php echo $_SESSION['user_name'];?>",
-                                "minion": event.target.id,
-                                "JOB": "testmessage"
-                            }
-                        };
-                        var minionid = event.target.id.split("/");
-                        //var csrftoken = getCookie('csrftoken');
-                        function csrfSafeMethod(method) {
-                            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-                        }
-
-                        $.ajaxSetup({
-                            beforeSend: function (xhr, settings) {
-                                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                                    xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
-                                }
-                            }
-                        });
-                        var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
-                        $.ajax({
-                            "type": "POST",
-                            "dataType": "json",
-                            "url": url_mask,
-                            "data": {
-                                "custom": "",
-                                "job": "testmessage",
-                                "minION": event.target.id,
-                                "complete": 'False'
-                            },
-                            "beforeSend": function (xhr, settings) {
-                                $.ajaxSettings.beforeSend(xhr, settings);
-                            },
-                            "success": function (result) {
-                            },
-                            error: function (XMLHttpRequest, textStatus, errorThrown) {
-                            }
-
-                        })
-                        //ws.send(JSON.stringify(instructionmessage));
-                    },
-
-                    renamenow: function (event) {
-                        var minionid = event.target.id.split("/");
-
-                        function csrfSafeMethod(method) {
-                            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-                        }
-
-                        $.ajaxSetup({
-                            beforeSend: function (xhr, settings) {
-                                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                                    xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
-                                }
-                            }
-                        });
-                        var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
-                        var stringthing = event.target.name;
-                        var message = $("#" + stringthing + "newname").val();
-                        $.ajax({
-                            "type": "POST",
-                            "dataType": "json",
-                            "url": url_mask,
-                            "data": {
-                                "custom": message,
-                                "job": "rename",
-                                "minION": event.target.id,
-                                "complete": 'False'
-                            },
-                            "beforeSend": function (xhr, settings) {
-                                $.ajaxSettings.beforeSend(xhr, settings);
-                            },
-                            "success": function (result) {
-                            },
-                            error: function (XMLHttpRequest, textStatus, errorThrown) {
-                            }
-
-                        })
-                        //ws.send(JSON.stringify(instructionmessage));
-                        //$('#renamemodal').modal('hide');
-                    },
-                    renameflowcellnow: function (event) {
-                        //var instructionmessage={"INSTRUCTION":{"USER":"<?php echo $_SESSION['user_name'];?>","minion":event.target.id,"JOB":"nameflowcell","NAME":$("#"+event.target.id+"newflowcellname").val()}};
-                        var minionid = event.target.id.split("/");
-
-                        function csrfSafeMethod(method) {
-                            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-                        }
-
-                        $.ajaxSetup({
-                            beforeSend: function (xhr, settings) {
-                                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                                    xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
-                                }
-                            }
-                        });
-                        var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
-                        var stringthing = event.target.name;
-                        var message = $("#" + stringthing + "newflowcellname").val();
-                        $.ajax({
-                            "type": "POST",
-                            "dataType": "json",
-                            "url": url_mask,
-                            "data": {
-                                "custom": message,
-                                "job": "nameflowcell",
-                                "minION": event.target.id,
-                                "complete": 'False'
-                            },
-                            "beforeSend": function (xhr, settings) {
-                                $.ajaxSettings.beforeSend(xhr, settings);
-                            },
-                            "success": function (result) {
-                            },
-                            error: function (XMLHttpRequest, textStatus, errorThrown) {
-                            }
-
-                        })
-
-
-                    },
-                    startminion: function (event) {
-                        var script = $("input[type='radio'][name='scriptRadios']:checked").val();
-                        //alert(script);
-                        var instructionmessage = {
-                            "INSTRUCTION": {
-                                "USER": "<?php echo $_SESSION['user_name'];?>",
-                                "minion": event.target.id,
-                                "JOB": "startminion",
-                                "SCRIPT": script
-                            }
-                        };
-                        var minionid = event.target.id.split("/");
-
-                        function csrfSafeMethod(method) {
-                            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-                        }
-
-                        $.ajaxSetup({
-                            beforeSend: function (xhr, settings) {
-                                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                                    xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
-                                }
-                            }
-                        });
-                        var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
-                        $.ajax({
-                            "type": "POST",
-                            "dataType": "json",
-                            "url": url_mask,
-                            "data": {
-                                "custom": script,
-                                "job": "startminion",
-                                "minION": event.target.id,
-                                "complete": 'False'
-                            },
-                            "beforeSend": function (xhr, settings) {
-                                $.ajaxSettings.beforeSend(xhr, settings);
-                            },
-                            "success": function (result) {
-                            },
-                            error: function (XMLHttpRequest, textStatus, errorThrown) {
-                            }
-
-                        })
-                    },
-                    custommessage: function (event) {
-                        //var script = $("input[type='radio'][name='scriptRadios']:checked").val();
-                        //alert($("#"+event.target.id+"custommessagefield").val());
-                        //var instructionmessage={"INSTRUCTION":{"USER":"<?php echo $_SESSION['user_name'];?>","minion":event.target.id,"JOB":"custommessage","SCRIPT":$("#"+event.target.id+"custommessagefield").val()}};
-                        var minionid = event.target.id.split("/");
-
-                        function csrfSafeMethod(method) {
-                            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-                        }
-
-                        $.ajaxSetup({
-                            beforeSend: function (xhr, settings) {
-                                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                                    xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
-                                }
-                            }
-                        });
-                        var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
-                        var stringthing = event.target.name;
-                        var message = $("#" + stringthing + "custommessagefield").val();
-                        $.ajax({
-                            "type": "POST",
-                            "dataType": "json",
-                            "url": url_mask,
-                            "data": {
-                                "custom": message,
-                                "job": "custommessage",
-                                "minION": event.target.id,
-                                "complete": 'False'
-                            },
-                            "beforeSend": function (xhr, settings) {
-                                $.ajaxSettings.beforeSend(xhr, settings);
-                            },
-                            "success": function (result) {
-                            },
-                            error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                alert("Error: " + errorThrown);
-                            }
-
-                        })
-
-                        //$('#startminionmodal').modal('hide');
-                    },
-                    stopminion: function (event) {
-                        //$('#stopminionmodal').modal('hide');
-                        var minionid = event.target.id.split("/");
-
-                        function csrfSafeMethod(method) {
-                            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-                        }
-
-                        $.ajaxSetup({
-                            beforeSend: function (xhr, settings) {
-                                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                                    xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
-                                }
-                            }
-                        });
-                        var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
-                        $.ajax({
-                            "type": "POST",
-                            "dataType": "json",
-                            "url": url_mask,
-                            "data": {"custom": "", "job": "stopminion", "minION": event.target.id, "complete": 'False'},
-                            "beforeSend": function (xhr, settings) {
-                                $.ajaxSettings.beforeSend(xhr, settings);
-                            },
-                            "success": function (result) {
-                            },
-                            error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                alert("Error: " + errorThrown);
-                            }
-
-                        })
-                    },
-                    inactivateminion: function (event) {
-                        //alert("hello");
-                        //$('#stopminionmodal').modal('hide');
-                        var minionid = event.target.id.split("/");
-
-                        function csrfSafeMethod(method) {
-                            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-                        }
-
-                        $.ajaxSetup({
-                            beforeSend: function (xhr, settings) {
-                                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                                    xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
-                                }
-                            }
-                        });
-                        var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
-                        $.ajax({
-                            "type": "POST",
-                            "dataType": "json",
-                            "url": url_mask,
-                            "data": {
-                                "custom": "",
-                                "job": "shutdownminion",
-                                "minION": event.target.id,
-                                "complete": 'False'
-                            },
-                            "beforeSend": function (xhr, settings) {
-                                $.ajaxSettings.beforeSend(xhr, settings);
-                            },
-                            "success": function (result) {
-                            },
-                            error: function (XMLHttpRequest, textStatus, errorThrown) {
-                                alert("Error: " + errorThrown);
-                            }
-
-                        })
-
-                    },
-                    initminion: function (event) {
-                        var minionid = event.target.id.split("/");
-
-                        function csrfSafeMethod(method) {
-                            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-                        }
-
-                        $.ajaxSetup({
-                            beforeSend: function (xhr, settings) {
-                                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                                    xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
-                                }
-                            }
-                        });
-                        var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
-                        $.ajax({
-                            "type": "POST",
-                            "dataType": "json",
-                            "url": url_mask,
-                            "data": {
-                                "custom": "",
-                                "job": "initialiseminion",
-                                "minION": event.target.id,
-                                "complete": 'False'
-                            },
-                            "beforeSend": function (xhr, settings) {
-                                $.ajaxSettings.beforeSend(xhr, settings);
-                            },
-                            "success": function (result) {
-                            },
-                            error: function (XMLHttpRequest, textStatus, errorThrown) {
-                            }
-
-                        })
-
-                    },
-
+                    return this.currentyield;
                 }
+            },
+            methods: {
+                testmessage: function (event) {
+
+                    var instructionmessage = {
+                        "INSTRUCTION": {
+                            "USER": "<?php echo $_SESSION['user_name'];?>",
+                            "minion": event.target.id,
+                            "JOB": "testmessage"
+                        }
+                    };
+                    var minionid = event.target.id.split("/");
+
+                    //var csrftoken = getCookie('csrftoken');
+                    function csrfSafeMethod(method) {
+                        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+                    }
+
+                    $.ajaxSetup({
+                        beforeSend: function (xhr, settings) {
+                            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                                xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                            }
+                        }
+                    });
+                    var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
+                    $.ajax({
+                        "type": "POST",
+                        "dataType": "json",
+                        "url": url_mask,
+                        "data": {
+                            "custom": "",
+                            "job": "testmessage",
+                            "minION": event.target.id,
+                            "complete": 'False'
+                        },
+                        "beforeSend": function (xhr, settings) {
+                            $.ajaxSettings.beforeSend(xhr, settings);
+                        },
+                        "success": function (result) {
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                        }
+
+                    })
+                    //ws.send(JSON.stringify(instructionmessage));
+                },
+
+                renamenow: function (event) {
+                    var minionid = event.target.id.split("/");
+
+                    function csrfSafeMethod(method) {
+                        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+                    }
+
+                    $.ajaxSetup({
+                        beforeSend: function (xhr, settings) {
+                            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                                xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                            }
+                        }
+                    });
+                    var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
+                    var stringthing = event.target.name;
+                    var message = $("#" + stringthing + "newname").val();
+                    $.ajax({
+                        "type": "POST",
+                        "dataType": "json",
+                        "url": url_mask,
+                        "data": {
+                            "custom": message,
+                            "job": "rename",
+                            "minION": event.target.id,
+                            "complete": 'False'
+                        },
+                        "beforeSend": function (xhr, settings) {
+                            $.ajaxSettings.beforeSend(xhr, settings);
+                        },
+                        "success": function (result) {
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                        }
+
+                    })
+                    //ws.send(JSON.stringify(instructionmessage));
+                    //$('#renamemodal').modal('hide');
+                },
+                renameflowcellnow: function (event) {
+                    //var instructionmessage={"INSTRUCTION":{"USER":"<?php echo $_SESSION['user_name'];?>","minion":event.target.id,"JOB":"nameflowcell","NAME":$("#"+event.target.id+"newflowcellname").val()}};
+                    var minionid = event.target.id.split("/");
+
+                    function csrfSafeMethod(method) {
+                        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+                    }
+
+                    $.ajaxSetup({
+                        beforeSend: function (xhr, settings) {
+                            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                                xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                            }
+                        }
+                    });
+                    var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
+                    var stringthing = event.target.name;
+                    var message = $("#" + stringthing + "newflowcellname").val();
+                    $.ajax({
+                        "type": "POST",
+                        "dataType": "json",
+                        "url": url_mask,
+                        "data": {
+                            "custom": message,
+                            "job": "nameflowcell",
+                            "minION": event.target.id,
+                            "complete": 'False'
+                        },
+                        "beforeSend": function (xhr, settings) {
+                            $.ajaxSettings.beforeSend(xhr, settings);
+                        },
+                        "success": function (result) {
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                        }
+
+                    })
 
 
-            });
+                },
+                startminion: function (event) {
+                    var script = $("input[type='radio'][name='scriptRadios']:checked").val();
+                    //alert(script);
+                    var instructionmessage = {
+                        "INSTRUCTION": {
+                            "USER": "<?php echo $_SESSION['user_name'];?>",
+                            "minion": event.target.id,
+                            "JOB": "startminion",
+                            "SCRIPT": script
+                        }
+                    };
+                    var minionid = event.target.id.split("/");
+
+                    function csrfSafeMethod(method) {
+                        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+                    }
+
+                    $.ajaxSetup({
+                        beforeSend: function (xhr, settings) {
+                            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                                xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                            }
+                        }
+                    });
+                    var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
+                    $.ajax({
+                        "type": "POST",
+                        "dataType": "json",
+                        "url": url_mask,
+                        "data": {
+                            "custom": script,
+                            "job": "startminion",
+                            "minION": event.target.id,
+                            "complete": 'False'
+                        },
+                        "beforeSend": function (xhr, settings) {
+                            $.ajaxSettings.beforeSend(xhr, settings);
+                        },
+                        "success": function (result) {
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                        }
+
+                    })
+                },
+                custommessage: function (event) {
+                    //var script = $("input[type='radio'][name='scriptRadios']:checked").val();
+                    //alert($("#"+event.target.id+"custommessagefield").val());
+                    //var instructionmessage={"INSTRUCTION":{"USER":"<?php echo $_SESSION['user_name'];?>","minion":event.target.id,"JOB":"custommessage","SCRIPT":$("#"+event.target.id+"custommessagefield").val()}};
+                    var minionid = event.target.id.split("/");
+
+                    function csrfSafeMethod(method) {
+                        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+                    }
+
+                    $.ajaxSetup({
+                        beforeSend: function (xhr, settings) {
+                            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                                xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                            }
+                        }
+                    });
+                    var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
+                    var stringthing = event.target.name;
+                    var message = $("#" + stringthing + "custommessagefield").val();
+                    $.ajax({
+                        "type": "POST",
+                        "dataType": "json",
+                        "url": url_mask,
+                        "data": {
+                            "custom": message,
+                            "job": "custommessage",
+                            "minION": event.target.id,
+                            "complete": 'False'
+                        },
+                        "beforeSend": function (xhr, settings) {
+                            $.ajaxSettings.beforeSend(xhr, settings);
+                        },
+                        "success": function (result) {
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            alert("Error: " + errorThrown);
+                        }
+
+                    })
+
+                    //$('#startminionmodal').modal('hide');
+                },
+                stopminion: function (event) {
+                    //$('#stopminionmodal').modal('hide');
+                    var minionid = event.target.id.split("/");
+
+                    function csrfSafeMethod(method) {
+                        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+                    }
+
+                    $.ajaxSetup({
+                        beforeSend: function (xhr, settings) {
+                            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                                xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                            }
+                        }
+                    });
+                    var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
+                    $.ajax({
+                        "type": "POST",
+                        "dataType": "json",
+                        "url": url_mask,
+                        "data": {"custom": "", "job": "stopminion", "minION": event.target.id, "complete": 'False'},
+                        "beforeSend": function (xhr, settings) {
+                            $.ajaxSettings.beforeSend(xhr, settings);
+                        },
+                        "success": function (result) {
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            alert("Error: " + errorThrown);
+                        }
+
+                    })
+                },
+                inactivateminion: function (event) {
+                    //alert("hello");
+                    //$('#stopminionmodal').modal('hide');
+                    var minionid = event.target.id.split("/");
+
+                    function csrfSafeMethod(method) {
+                        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+                    }
+
+                    $.ajaxSetup({
+                        beforeSend: function (xhr, settings) {
+                            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                                xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                            }
+                        }
+                    });
+                    var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
+                    $.ajax({
+                        "type": "POST",
+                        "dataType": "json",
+                        "url": url_mask,
+                        "data": {
+                            "custom": "",
+                            "job": "shutdownminion",
+                            "minION": event.target.id,
+                            "complete": 'False'
+                        },
+                        "beforeSend": function (xhr, settings) {
+                            $.ajaxSettings.beforeSend(xhr, settings);
+                        },
+                        "success": function (result) {
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                            alert("Error: " + errorThrown);
+                        }
+
+                    })
+
+                },
+                initminion: function (event) {
+                    var minionid = event.target.id.split("/");
+
+                    function csrfSafeMethod(method) {
+                        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+                    }
+
+                    $.ajaxSetup({
+                        beforeSend: function (xhr, settings) {
+                            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                                xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                            }
+                        }
+                    });
+                    var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
+                    $.ajax({
+                        "type": "POST",
+                        "dataType": "json",
+                        "url": url_mask,
+                        "data": {
+                            "custom": "",
+                            "job": "initialiseminion",
+                            "minION": event.target.id,
+                            "complete": 'False'
+                        },
+                        "beforeSend": function (xhr, settings) {
+                            $.ajaxSettings.beforeSend(xhr, settings);
+                        },
+                        "success": function (result) {
+                        },
+                        error: function (XMLHttpRequest, textStatus, errorThrown) {
+                        }
+
+                    })
+
+                },
+
+            }
+
+
+        });
 
     </script>
 {% endblock %}

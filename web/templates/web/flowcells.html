@@ -45,7 +45,10 @@
 {% block javascript %}
     <script>
         const flowcellTableController = new FlowcellTableController();
-
+        //TODO this is a bad way of doing this, do better way
+        // Css is mean, so super hacky way to set the content div below the header by 16px
+        const topPadding = $(".main-header").height() + 16;
+        $(".content-wrapper").css("padding-top", `${topPadding}px`);
         flowcellTableController.drawTable();
         set_active_navbar_item(0);
     </script>

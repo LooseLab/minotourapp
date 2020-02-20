@@ -191,6 +191,20 @@ class MinION(models.Model):
     def __str__(self):
         return self.minION_name
 
+    def start_time(self):
+        """
+        Fetch the run start time according to MinKnow from the linked minionrunstatus model.
+        Returns
+        -------
+        starttime: datetime.datetime
+        """
+        try:
+            start_time = self.currentrundetails.minKNOW_start_time
+        except AttributeError:
+            start_time = "Unknown"
+
+        return start_time
+
     def status(self):
         try:
             status = self.events.order_by('datetime').last().event.name
@@ -200,7 +214,7 @@ class MinION(models.Model):
 
     def last_run(self):
         try:
-            return self.minionrun.last().id
+            return self.currentrundetails.last().id
             # return reverse('minIONrunstats_list', args=[self.minionrun.last().id])
         except AttributeError:
             last_run = "undefined"
@@ -221,7 +235,7 @@ class MinION(models.Model):
 
     def minKNOW_version(self):
         try:
-            return self.currentrundetails.minKNOW_version
+            return self.currentrundetails.last().minKNOW_version
         except AttributeError:
             return "undefined"
 
@@ -336,42 +350,6 @@ class GroupRun(models.Model):  # TODO don't document
     #     return barcode_list
 
 
-class MinIONControl(models.Model):
-    """
-    :purpose: Store a new job for the minion to pickup and perform  TODO could probably be expanded with example job, why it exists
-
-    Fields:
-    :minion: The minion name as stored in the Minion table
-    :owner: The Owner as the user
-    :job: The Job that you want the minion to perform
-    :custom: TODO to be completed
-    :complete: Whether the job is complete or not
-    :created_date: The date that the job was created
-    :modified_date: The date that this as last modified
-    """
-    minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minioncontrol',
-                               on_delete=models.CASCADE,
-                               )
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='controlcontrol',
-                              on_delete=models.DO_NOTHING,
-                              )
-    job = models.CharField(max_length=256, blank=False, null=False)
-    custom = models.CharField(max_length=256, blank=True, null=True)
-    # setdate = models.DateTimeField(blank=False,null=False)
-    # completedate = models.DateTimeField(blank=True,null=True)
-    complete = models.BooleanField(default=False)
-    created_date = models.DateTimeField(auto_now_add=True)
-    modified_date = models.DateTimeField(
-        auto_now=True)  # These last two fields added to enable auto cleanup of event status for a minION incase of disconnect of client.
-
-    class Meta:
-        verbose_name = 'MinION Control'
-        verbose_name_plural = 'MinION Controls'
-
-    def __str__(self):
-        return self.job
-
-
 class UserOptions(models.Model):
     """
     :purpose: Store information about the user options
@@ -412,7 +390,7 @@ class UserOptions(models.Model):
 
 class Run(models.Model):
     """
-    :purpose: Store information about each Run generated during the sequencing process in a flowcell. A flowcell can contain multiple runs, usually alternating short ones (muxscan) with long ones (real sequence data). 
+    :purpose: Store information about each Run generated during the sequencing process in a flowcell. A flowcell can contain multiple runs, usually alternating short ones (muxscan) with long ones (real sequence data).
 
     Fields:
 
@@ -689,7 +667,43 @@ class Barcode(models.Model):
         return "{} {} {}".format(self.run, self.run.runid, self.name)
 
 
-class MinIONStatus(models.Model):  # TODO Rename class for logical consistency
+class MinionControl(models.Model):
+    """
+    :purpose: Store a new job for the minion to pickup and perform  TODO could probably be expanded with example job, why it exists
+
+    Fields:
+    :minion: The minion name as stored in the Minion table
+    :owner: The Owner as the user
+    :job: The Job that you want the minion to perform
+    :custom: TODO to be completed
+    :complete: Whether the job is complete or not
+    :created_date: The date that the job was created
+    :modified_date: The date that this as last modified
+    """
+    minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minioncontrol',
+                               on_delete=models.CASCADE,
+                               )
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='controlcontrol',
+                              on_delete=models.DO_NOTHING,
+                              )
+    job = models.CharField(max_length=256, blank=False, null=False)
+    custom = models.CharField(max_length=256, blank=True, null=True)
+    # setdate = models.DateTimeField(blank=False,null=False)
+    # completedate = models.DateTimeField(blank=True,null=True)
+    complete = models.BooleanField(default=False)
+    created_date = models.DateTimeField(auto_now_add=True)
+    modified_date = models.DateTimeField(
+        auto_now=True)  # These last two fields added to enable auto cleanup of event status for a minION incase of disconnect of client.
+
+    class Meta:
+        verbose_name = 'MinION Control'
+        verbose_name_plural = 'MinION Controls'
+
+    def __str__(self):
+        return self.job
+
+
+class MinionInfo(models.Model):
     """
     :purpose: To store data on the current status of a specific MinION at a given moment in time.
               This includes detailed pon the connected computer, the space available and other key run details.
@@ -710,7 +724,7 @@ class MinIONStatus(models.Model):  # TODO Rename class for logical consistency
     :minKNOW_total_drive_space: The total hard drive space available to the currently sequencing computer.
     :minKNOW_disk_space_till_shutdown: How much space is left till the sequencer shuts down.
     :minKNOW_disk_available: The total amount of space left on the device.
-    :minKNOW_warnings: If minKNOW is about to shutdown a warning is added here. #todo Contact the user if the computer is about to shut down.
+    :minKNOW_warnings: If minKNOW is about to shutdown a warning is added here.
 
     """
 
@@ -829,6 +843,12 @@ class MinIONStatus(models.Model):  # TODO Rename class for logical consistency
 
     )
 
+    read_length_type = models.CharField(
+        default="ESTIMATED BASES",
+        max_length=32,
+        null=True
+    )
+
     class Meta:
         verbose_name = 'MinION Status'
         verbose_name_plural = 'MinION Status'
@@ -837,39 +857,41 @@ class MinIONStatus(models.Model):  # TODO Rename class for logical consistency
         return "{} {}".format(self.minION, self.minKNOW_status)
 
 
-class MinIONRunStats(models.Model):  # Todo consider merging in to one object with
+class MinionRunStats(models.Model):
     """
-    :purpose: ???
+    Model to store all the stratistics about flowcell and MinKNOW that change during a run. Monitered once a minute, 
+    provides historical record of the flowcell. 
 
-    Fields:
+    Fields
+    ------
 
-    :minion: Foreign key to link to a specific MinION run.
-    :run_id: Foreign key to link to a specific run id.
-    :sample_time: Date Time field identifying the moment of data collection.
-    :event_yield: Sequencing yield as approximated in events by MinKNOW.
-    :asic_temp: Current temperature of the ASIC.
-    :heat_sink_temp: Current temperature of the heat sink.
-    :voltage_value: Current set voltage on the device.
-    :mean_ratio: A ratio of currents for in strand versus open pore. #ToDO not currently reported.
-    :open_pore: Count of pore classification type (as named)
-    :in_strand: Count of pore classification type (as named)
-    :multiple: Count of pore classification type (as named)
-    :unavailable: Count of pore classification type (as named)
-    :unknown: Count of pore classification type (as named)
-    :adapater: Count of pore classification type (as named)
-    :pending_mux_change: Count of pore classification type (as named)
-    :unclassified: Count of pore classification type (as named)
-    :below: Count of pore classification type (as named)
-    :unblocking: Count of pore classification type (as named)
-    :above: Count of pore classification type (as named)
-    :good_single: Count of pore classification type (as named)
-    :saturated: Count of pore classification type (as named)
-    :inrange: Count of pore classification type (as named)
-    :strand: Count of pore classification type (as named)
-    :minKNOW_read_count: Count of reads seen at this point.
-    :minKNOW_histogram_values: Reporting the values of the histogram from MinKNOW
-    :minKNOW_histogram_bin_width: Measure of the bin width for the above histogram.
-    :created_date: Created Date.
+    minion: Foreign key to link to a specific MinION run.
+    run_id: Foreign key to link to a specific run id.
+    sample_time: Date Time field identifying the moment of data collection.
+    event_yield: Sequencing yield as approximated in events by MinKNOW.
+    asic_temp: Current temperature of the ASIC.
+    heat_sink_temp: Current temperature of the heat sink.
+    voltage_value: Current set voltage on the device.
+    mean_ratio: A ratio of currents for in strand versus open pore.
+    open_pore: Count of pore classification type (as named)
+    in_strand: Count of pore classification type (as named)
+    multiple: Count of pore classification type (as named)
+    unavailable: Count of pore classification type (as named)
+    unknown: Count of pore classification type (as named)
+    adapater: Count of pore classification type (as named)
+    pending_mux_change: Count of pore classification type (as named)
+    unclassified: Count of pore classification type (as named)
+    below: Count of pore classification type (as named)
+    unblocking: Count of pore classification type (as named)
+    above: Count of pore classification type (as named)
+    good_single: Count of pore classification type (as named)
+    saturated: Count of pore classification type (as named)
+    inrange: Count of pore classification type (as named)
+    strand: Count of pore classification type (as named)
+    minKNOW_read_count: Count of reads seen at this point.
+    minKNOW_histogram_values: Reporting the values of the histogram from MinKNOW
+    minKNOW_histogram_bin_width: Measure of the bin width for the above histogram.
+    created_date: Created Date.
     """
 
     minION = models.ForeignKey(
@@ -1019,13 +1041,23 @@ class MinIONRunStats(models.Model):  # Todo consider merging in to one object wi
     )
 
     minKNOW_histogram_bin_width = models.IntegerField(
-
         default=900
     )
 
     created_date = models.DateTimeField(
 
         auto_now_add=True
+    )
+
+    actual_max_val = models.IntegerField(
+        default=0,
+        null=True
+    )
+
+    read_length_type = models.CharField(
+        max_length=20,
+        default="EVENTS",
+        null=True
     )
 
     class Meta:
@@ -1044,44 +1076,44 @@ class MinIONRunStats(models.Model):  # Todo consider merging in to one object wi
         return occupancy
 
 
-class MinIONRunStatus(models.Model):
+class MinionRunInfo(models.Model):
     """
-    :purpose: To store data on the current status of a specific MinION at a given moment in time.
-              This includes detailed pon the connected computer, the space available and other key run details.
-
-    Fields:
-
-    :minION:
-    :minKNOW_current_script:
-    :minKNOW_sample_name:
-    :minKNOW_exp_script_purpose:
-    :minKNOW_flow_cell_id:
-    :minKNOW_version:
-    :minKNOW_run_name:
-    :run_id:
-    :minKNOW_hash_run_id:
-    :minKNOW_script_run_id:
-    :minKNOW_real_sample_rate:
-    :minKNOW_asic_id:
-    :minKNOW_start_time:
-    :minKNOW_colours_string:
-    :minKNOW_computer:
-    :experiment_type:
-    :experiment_id:
-    :fast5_output_fastq_in_hdf:
-    :fast5_raw:
-    :fast5_reads_per_folder:
-    :fastq_enabled:
-    :fastq_reads_per_file:
-    :filename:
-    :flowcell_type:
-    :kit_classification:
-    :local_basecalling:
-    :sample_frequency:
-    :sequencing_kit:
-    :user_filename_input:
+    Model to store the data for a Run if we are monitoring MinKNOW using minFQ. Created on Run creation. Contains all
+    metadata that is fixed during a run.
+    
+    Fields
+    ------
+    minION
+    minKNOW_current_script
+    minKNOW_sample_name
+    minKNOW_exp_script_purpose
+    minKNOW_flow_cell_id
+    minKNOW_version
+    minKNOW_run_name
+    run_id
+    minKNOW_hash_run_id
+    minKNOW_script_run_id
+    minKNOW_real_sample_rate
+    minKNOW_asic_id
+    minKNOW_start_time
+    minKNOW_colours_string
+    minKNOW_computer
+    experiment_type
+    experiment_id
+    fast5_output_fastq_in_hdf
+    fast5_raw
+    fast5_reads_per_folder
+    fastq_enabled
+    fastq_reads_per_file
+    filename
+    flowcell_type
+    kit_classification
+    local_basecalling
+    sample_frequency
+    sequencing_kit
+    user_filename_input
+    wells_per_channel 
     """
-
     minION = models.ForeignKey(
 
         MinION,
@@ -1277,6 +1309,11 @@ class MinIONRunStatus(models.Model):
         null=True
     )
 
+    wells_per_channel = models.IntegerField(
+        default=4,
+        null=True
+    )
+
     class Meta:
         unique_together = ("minION", "minKNOW_hash_run_id", "minKNOW_exp_script_purpose")
         verbose_name = 'MinION Run Status'
@@ -1289,7 +1326,7 @@ class MinIONRunStatus(models.Model):
         return self.minION.minION_name
 
 
-class MinIONEventType(models.Model):
+class MinionEventType(models.Model):
     """
     :purpose: Provides a list of states that a MinION can be in at any moment in time.
 
@@ -1311,7 +1348,7 @@ class MinIONEventType(models.Model):
         return self.name
 
 
-class MinIONEvent(models.Model):
+class MinionEvent(models.Model):
     """
     :purpose: Report the specific history of events occurring to a minION.
 
@@ -1340,7 +1377,7 @@ class MinIONEvent(models.Model):
 
     event = models.ForeignKey(
 
-        MinIONEventType,
+        MinionEventType,
         on_delete=models.DO_NOTHING,
     )
 
@@ -1366,7 +1403,7 @@ class MinIONEvent(models.Model):
         return "{} {} {} {}".format(self.computer_name, self.minION, self.event, self.datetime)
 
 
-class MinIONScripts(models.Model):
+class MinionScripts(models.Model):
     """
     :purpose: Collect all scripts that are available to run in the used version of minKnow and store them in
     the database

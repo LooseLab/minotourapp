@@ -44,6 +44,8 @@
 
 {% block javascript %}
     <script>
+        const topPadding = $(".main-header").height() + 16;
+        $(".content-wrapper").css("padding-top", `${topPadding}px`);
 
         var table_all_runs;
 
@@ -166,6 +168,7 @@
             });
 
             set_active_navbar_item(4);
+
 
         });
     </script>

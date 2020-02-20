@@ -8,7 +8,7 @@ from functools import lru_cache
 import collections
 import numpy as np
 
-from reads.models import Flowcell, MinIONRunStatus, Run
+from reads.models import Flowcell, MinionRunInfo, Run
 from web.tasks_move_reads_to_flowcell import move_reads_to_flowcell
 
 
@@ -450,7 +450,7 @@ def get_run_details(run_id):
             'last_read_start_time': None,
         }
 
-        minion_run_status_list = MinIONRunStatus.objects.filter(run_id=run).order_by('minKNOW_start_time')
+        minion_run_status_list = MinionRunInfo.objects.filter(run_id=run).order_by('minKNOW_start_time')
 
         if len(minion_run_status_list) > 0:
 

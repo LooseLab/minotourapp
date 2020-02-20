@@ -14,7 +14,8 @@
         <section class="content">
             <div class="box box-info">
                 <div class="box-header with-border">
-                    <h3 class="box-title">Overview - Below are your registered user details. Your access token is required to upload data to
+                    <h3 class="box-title">Overview - Below are your registered user details. Your access token is
+                        required to upload data to
                         minoTour</h3>
                 </div>
                 <!-- /.box-header -->
@@ -36,7 +37,8 @@
 
                             <div class="col-sm-10">
                                 {{ form.email.errors }}
-                                <input class="form-control" type="email" name="email" id="id_email" maxlength="120" required
+                                <input class="form-control" type="email" name="email" id="id_email" maxlength="120"
+                                       required
                                        value="{{ request.user.email }}">
                             </div>
                         </div>
@@ -44,7 +46,9 @@
                             <label class="col-sm-2 control-label">Access Token</label>
 
                             <div class="col-sm-10 control-label" style="height: 100%; text-align: left;">
-                                <span id="token">{{ authToken }}</span>&nbsp;<button id="btn-copy-token" class="btn btn-info btn-sm">Copy</button>
+                                <span id="token">{{ authToken }}</span>&nbsp;<button id="btn-copy-token"
+                                                                                     class="btn btn-info btn-sm">Copy
+                            </button>
                                 <span id="msg"></span><br>
                             </div>
 
@@ -54,7 +58,8 @@
 
                             <div class="col-sm-10">
                                 {{ form.twitter_handle.errors }}
-                                <input class="form-control" type="text" name="twitter_handle" id="id_twitter_handle" maxlength="32"
+                                <input class="form-control" type="text" name="twitter_handle" id="id_twitter_handle"
+                                       maxlength="32"
                                        value="{{ userDetails.twitterhandle }}">
                             </div>
                         </div>
@@ -64,9 +69,11 @@
                                     <label>
                                         {{ form.receive_emails.errors }}
                                         {% if userDetails.email %}
-                                            <input type="checkbox" name="receive_emails" id="id_receive_emails" checked> Receive Emails
+                                            <input type="checkbox" name="receive_emails" id="id_receive_emails" checked>
+                                            Receive Emails
                                         {% else %}
-                                            <input type="checkbox" name="receive_emails" id="id_receive_emails"> Receive Emails
+                                            <input type="checkbox" name="receive_emails" id="id_receive_emails"> Receive
+                                            Emails
                                         {% endif %}
                                     </label>
                                 </div>
@@ -78,9 +85,11 @@
                                     <label>
                                         {{ form.receive_tweets.errors }}
                                         {% if userDetails.tweet %}
-                                            <input type="checkbox" name="receive_tweets" id="id_receive_tweets" checked> Receive Tweets
+                                            <input type="checkbox" name="receive_tweets" id="id_receive_tweets" checked>
+                                            Receive Tweets
                                         {% else %}
-                                            <input type="checkbox" name="receive_tweets" id="id_receive_tweets"> Receive Tweets
+                                            <input type="checkbox" name="receive_tweets" id="id_receive_tweets"> Receive
+                                            Tweets
                                         {% endif %}
                                     </label>
                                 </div>
@@ -96,7 +105,6 @@
             </div>
 
 
-
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 
@@ -106,10 +114,12 @@
 
     <script>
 
-        document.getElementById("btn-copy-token").addEventListener("click", function() {
+        document.getElementById("btn-copy-token").addEventListener("click", function () {
             copyToClipboardMsg(document.getElementById("token"), "msg");
         });
 
+        const topPadding = $(".main-header").height() + 16;
+        $(".content-wrapper").css("padding-top", `${topPadding}px`);
 
         set_active_navbar_item(7);
     </script>

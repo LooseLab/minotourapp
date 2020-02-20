@@ -1,10 +1,342 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "web/template_private.html" %}
+{% load static %}
+{% block content %}
+    <div class="content-wrapper" style="background-color: white">
+        <section class="content">
+            {#            <div id="app">#}
 
-</body>
-</html>
+            <div id="app">
+                {% verbatim %}
+                <template>
+                    <v-app>
+                        <v-container
+                                class="fill-height"
+                                fluid
+                        >
+
+                            <v-row
+                                    align="center"
+                                    justify="center"
+                            >
+                                Currently Running Devices:
+                            </v-row>
+                            <v-row
+                                    align="center"
+                                    justify="center"
+                            >
+                                <template>
+                                    <v-simple-table dense>
+
+                                        <!--
+                                        read_count 267851
+                                  selected_raw_samples 12575862438
+                                  selected_events 684462434
+                                  estimated_selected_bases 1232032384
+                                  written_read_count 0
+                                  basecalled_pass_read_count 0
+                                  basecalled_fail_read_count 0
+                                  basecalled_skipped_read_count 0
+                                  basecalled_bases 0
+                                  basecalled_samples 0
+                                  bytes_to_write_produced 0
+                                  bytes_to_write_failed 0
+                                  bytes_to_write_completed 0
+                                  -->
+                                        <template v-slot:default>
+                                            <thead>
+                                            <tr>
+                                                <th class="text-left">Computer Name<br>Device<br>Experiment<br>Sample
+                                                </th>
+                                                <th class="text-left">Run Start</th>
+                                                <th class="text-left">Flowcell ID<br>Type<br>Script</th>
+                                                <th class="text-left">Channels<br>Mux</th>
+                                                <th class="text-left">Live Bases?</th>
+                                                <th class="text-left">N50<br>Mean (Est.)</th>
+                                                <th class="text-left">Max Read</th>
+                                                <th class="text-left">Read Count<br>Num Called<br>%</th>
+                                                <th class="text-left">Pass %</th>
+                                                <th class="text-left">Bases (Real/Est.)</th>
+                                                <th class="text-left">Occupancy</th>
+                                                <th class="text-left">Strand %<br>Adapter %<br>Pore %</th>
+                                                <th class="text-left">Voltage</th>
+                                                <th class="text-left">Temp/Target</th>
+                                                <th class="text-left">ASIC Temp</th>
+                                                <th class="text-left">Speed</th>
+                                                <th class="text-left">Quality</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr v-for="item in activedevices" :key="item.device">
+                                                <td>{{ item.computer }}<br>{{ item.name }}<br>{{
+                                                    item.sample_name
+                                                    }}<br>{{ item.sample_name }}
+                                                </td>
+                                                <td>{{ item.start_time }}</td>
+                                                <td>{{ item.flow_cell_id }}<br>{{ item.product_code }}<br>
+                                                    {{item.protocol_id}}
+                                                </td>
+                                                <td>{{ item.channel_count }}<br>{{item.wells_per_channel}}</td>
+                                                <td>
+                                                    <div v-if="item.read_length_type == 'BASECALLED_BASES'">
+                                                        <v-icon>mdi-checkbox-marked-circle-outline</v-icon>
+                                                    </div>
+                                                    <div v-else>
+                                                        <v-icon>mdi-checkbox-blank-circle-outline</v-icon>
+                                                    </div>
+                                                </td>
+                                                <td>{{ item.n50_value | humnum}}<br>{{ (item.basecalled_bases /
+                                                    item.read_count)
+                                                    | humnum}} ({{ (item.estimated_selected_bases /
+                                                    item.read_count)
+                                                    |
+                                                    humnum}})
+                                                </td>
+                                                <td>{{ item.actual_max_val | humnum}}</td>
+                                                <td>{{ item.read_count | humnum}} <br> {{
+                                                    (parseInt(item.basecalled_pass_read_count)+parseInt(item.basecalled_fail_read_count))
+                                                    | humnum}} <br> {{
+                                                    (parseInt(item.basecalled_pass_read_count)+parseInt(item.basecalled_fail_read_count))
+                                                    / item.read_count *100 | humnum}}%
+                                                </td>
+                                                <td>{{ item.basecalled_pass_read_count / item.read_count * 100 |
+                                                    humnum}}%
+                                                </td>
+                                                <td>{{item.basecalled_bases | humnum }}b<br>{{
+                                                    item.estimated_selected_bases
+                                                    |
+                                                    humnum}}b
+                                                </td>
+                                                <td>
+                                                    <v-chip :color="testvalue(((item.strand + item.adapter)/ (item.strand + item.adapter + item.pore) * 100) , 'occupancy')">
+                                                        {{ (item.strand + item.adapter)/ (item.strand +
+                                                        item.adapter
+                                                        +
+                                                        item.pore) * 100 | humnum}}%
+                                                    </v-chip>
+                                                </td>
+                                                <td>
+                                                    <v-chip :color="testvalue(item.strand , 'strand')" small
+                                                            outlined>{{
+                                                        item.strand }}%
+                                                    </v-chip>
+                                                    <br>
+                                                    <v-chip :color="testvalue(item.adapter , 'adapter')" small
+                                                            outlined>{{
+                                                        item.adapter }}%
+                                                    </v-chip>
+                                                    <br>
+                                                    <v-chip :color="testvalue(item.pore , 'pore')" small
+                                                            outlined>{{
+                                                        item.pore
+                                                        }}%
+                                                    </v-chip>
+                                                </td>
+                                                <td>
+                                                    <v-chip :color="testvalue(item.bias_voltage , 'voltage')">{{
+                                                        item.bias_voltage}}
+                                                    </v-chip>
+                                                </td>
+                                                <td>{{item.heatsink_temperature | humnum}}&#8451; <br>
+                                                    {{item.target_temperature
+                                                    | humnum}}&#8451;
+                                                </td>
+                                                <td>{{item.asic_temperature |humnum}}&#8451;</td>
+                                                <td>{{item.speed_q50 | humnum}} b/s</td>
+                                                <td>{{item.QUALITY_q50 | humnum}}</td>
+                                            </tr>
+                                            </tbody>
+                                        </template>
+                                    </v-simple-table>
+                                </template>
+                            </v-row>
+                            <v-row
+                                    align="center"
+                                    justify="center"
+                            >
+                                Currently Inactive Devices:
+                            </v-row>
+                            <v-row
+                                    align="center"
+                                    justify="center"
+                            >
+                                <template>
+                                    <v-simple-table dense>
+                                        <template v-slot:default>
+                                            <thead>
+                                            <tr>
+                                                <th class="text-left">Computer Name</th>
+                                                <th class="text-left">Device</th>
+                                                <th class="text-left">Flowcell ID/Type</th>
+                                                <th class="text-left">Channels/Mux</th>
+
+                                            </tr>
+                                            </thead>
+                                            <tbody>
+                                            <tr v-for="item in inactivedevices" :key="item.device">
+                                                <td>{{ item.computer }}</td>
+                                                <td>{{ item.minION_name }}</td>
+                                                <td>{{ item.flow_cell_id }}/{{ item.product_code }}</td>
+                                                <td>{{ item.channel_count }}/{{item.wells_per_channel}}</td>
+
+                                            </tr>
+                                            </tbody>
+                                        </template>
+                                    </v-simple-table>
+                                </template>
+                            </v-row>
+                        </v-container>
+                    </v-app>
+                </template>
+                {% endverbatim %}
+            </div>
+
+            <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+            <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+
+            <script>
+                const topPadding = $(".main-header").height() + 16;
+                $(".content-wrapper").css("padding-top", `${topPadding}px`);
+                const vuetify = new Vuetify({
+                    theme: {
+                        themes: {
+                            light: {
+                                primary: "#E53935",
+                                secondary: "#FFCDD2",
+                                accent: "#3F51B5"
+                            },
+                        },
+                    },
+                });
+                // TODO move to a getter on RemoteControlController
+                const vm = new Vue({
+                    vuetify,
+                    el: "#app",
+                    name: 'App',
+                    methods: {
+                        testvalue(value, type) {
+                            /* eslint-disable no-console */
+                            switch (type) {
+                                case "occupancy":
+                                    if (value === 100) {
+                                        return "red"
+                                    } else if (value <= 80) {
+                                        return "orange"
+                                    } else if (value <= 50) {
+                                        return "red"
+                                    } else if (isNaN(value)) {
+                                        return "red"
+                                    } else {
+                                        return "green"
+                                    }
+                                case "voltage": {
+                                    if (value >= -220 && value <= -160) {
+                                        return "green"
+                                    } else {
+                                        return "red"
+                                    }
+                                }
+                                case "strand": {
+                                    if (value <= 50) {
+                                        return "red"
+                                    } else {
+                                        return "green"
+                                    }
+                                }
+                                case "adapter": {
+                                    if (value >= 50) {
+                                        return "red"
+                                    } else {
+                                        return "green"
+                                    }
+
+                                }
+                                case "pore": {
+                                    if (value >= 50) {
+                                        return "red"
+                                    } else {
+                                        return "green"
+                                    }
+                                }
+                            }
+                        },
+                    },
+                    computed: {
+                        activedevices() {
+                            if (typeof this.devices === 'undefined') {
+                                return
+                            } else {
+                                return this.devices.filter(function (devices) {
+                                    return devices.status.match(/^(PROCESSING|STARTING|FINISHING|RUNNING|sequencing)$/) //("PROCESSING","STARTING","FINISHING")
+                                })
+                            }
+                        },
+                        inactivedevices() {
+                            if (typeof this.devices === 'undefined') {
+                                return
+                            } else {
+                                return this.devices.filter(function (devices) {
+                                    return devices.status.match(/^(active|COMPLETED)$/)
+                                })
+                            }
+                        },
+                        numactive() {
+                            return this.activedevices.length
+                        },
+                        numinactive() {
+                            return this.inactivedevices.length
+                        },
+                    },
+                    filters: {
+                        humnum(num) {
+                            var si = [
+                                {value: 1, symbol: ""},
+                                {value: 1E3, symbol: "k"},
+                                {value: 1E6, symbol: "M"},
+                                {value: 1E9, symbol: "G"},
+                                {value: 1E12, symbol: "T"},
+                                {value: 1E15, symbol: "P"},
+                                {value: 1E18, symbol: "E"}
+                            ];
+                            var rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
+                            var i;
+                            for (i = si.length - 1; i > 0; i--) {
+                                if (num >= si[i].value) {
+                                    break;
+                                }
+                            }
+                            return (num / si[i].value).toFixed(2).replace(rx, "$1") + si[i].symbol;
+                        }
+                    },
+                    data: {
+                        CustomAlertType: "warning",
+                        GeneralResponseAlert: false,
+                        add_computer: false,
+                        ip_to_add: null,
+                        computer_info: {
+                            number: 0,
+                            message: "You need to add a Computer!",
+                            alert_type: "danger"
+                        },
+                        alert: true,
+                        itemsPerPageOptions: [3, 6, 9, 12],
+                        itemsPerPage: 3,
+                        computers: [],
+                        devices: [],
+
+                        //
+                    }
+                    {#render: h => h(App)#}
+                });
+                const remoteControlController = new RemoteControlController(vm);
+                remoteControlController.getActiveMinions();
+
+                // NOW TO RAM SOME DATA IN
+                {#vm.computers.append(remoteControlController.getActiveMinions())#}
+
+
+            </script>
+            {#    </div>#}
+        </section>
+    </div>
+{% endblock %}
+{#    </div>#}

@@ -12,7 +12,7 @@ from rest_framework.authtoken.models import Token
 
 from centrifuge.models import CentrifugeOutput
 from communication.models import Message
-from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats, JobType, JobMaster
+from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinionRunStats, JobType, JobMaster
 from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
 
 from web.utils import get_run_details, split_flowcell
@@ -373,7 +373,7 @@ def flowcell_run_stats_download(request, pk):
 
     flowcell = Flowcell.objects.get(pk=pk)
 
-    minionrunstats_list = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all())
+    minionrunstats_list = MinionRunStats.objects.filter(run_id__in=flowcell.runs.all())
 
     runstats_dataframe = pd.DataFrame(list(minionrunstats_list.values()))
     runstats_dataframe = runstats_dataframe.set_index('sample_time')
@@ -509,3 +509,18 @@ def flowcell_manager_runs_split(request, pk):
                   context={'run': run,
                            'from_flowcell': from_flowcell,
                            'to_flowcell': to_flowcell})
+
+@login_required
+def electric_boogaloo(request):
+    """
+    Returns the web control vue page, maybe
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+
+    Returns
+    -------
+
+    """
+    print("Helleo")
+    return render(request, 'web/remote_control_2_electric_boogaloo.html')

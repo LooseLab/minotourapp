@@ -23,11 +23,6 @@ urlpatterns = [
         name="fastqread-list"
     ),
     url(
-        r'^api/v1/reads/(?P<pk>[0-9]+)/$',
-        views.read_detail,
-        name="fastqread-detail"
-    ),
-    url(
         r'^api/v1/read/$',
         views.read_list_new,
         name="fastqread-list-new"
@@ -44,17 +39,17 @@ urlpatterns = [
     ),
     url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/rundetails/$',
-        views.minION_run_status_list,
+        views.list_minion_run_status,
         name="minIONrunstatus_list"
     ),
     url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/runstats/$',
-        views.minION_run_stats_list,
+        views.minion_run_stats_list,
         name="minIONrunstats_list"
     ),
     url(
         r'^api/v1/runs/(?P<pk>[0-9]+)/runstats/(?P<checkid>[0-9]+)/$',
-        views.minION_run_stats_latest,
+        views.minion_run_stats_latest,
         name="minIONrunstats_latest"
     ),
     url(
@@ -95,7 +90,7 @@ urlpatterns = [
         name="minION_list"),
     url(
         r'^api/v1/activeminions/$',
-        views.activeminion_list,
+        views.active_minion_list,
         name="activeminION_list"),
     url(
         r'^api/v1/minions/(?P<pk>[0-9A-Za-z-_]+)/$',
@@ -127,8 +122,8 @@ urlpatterns = [
         name="sincemessages-list"),
     url(
         r'^api/v1/minions/(?P<pk>[0-9]+)/status/$',
-        views.minION_status_list,
-        name="minIONstatus-list"),
+        views.list_minion_info,
+        name="minion-info-list"),
     url(
         r'^api/v1/minions/(?P<pk>[0-9]+)/scripts/$',
         views.minION_scripts_list,
@@ -267,6 +262,12 @@ urlpatterns = [
         r'^api/v1/tasks/$',
         views.get_or_create_tasks,
         name='task_list'
+    ),
+    # TODO web only
+    url(
+        r'^api/v1/remote_control_run_stats/$',
+        views.remote_control_run_stats,
+        name="remote-control-run_stats"
     )
 
 ]

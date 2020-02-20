@@ -18,7 +18,8 @@
                 <div class="box-body">
                     <div id="notice">minoTour is a platform in development. We are re-releasing it now but it may
                         contain <strong>errors</strong> and <strong>bugs</strong>.<br><br>
-                        Bug reports and issues should be logged on our github project - <a href="https://github.com/LooseLab/minotourapp" target="_blank">https://github.com/LooseLab/minotourapp</a>
+                        Bug reports and issues should be logged on our github project - <a
+                                href="https://github.com/LooseLab/minotourapp" target="_blank">https://github.com/LooseLab/minotourapp</a>
 
                         <br><br>
                     </div>
@@ -33,7 +34,8 @@
 {% block javascript %}
 
     <script>
-
+        const topPadding = $(".main-header").height() + 16;
+        $(".content-wrapper").css("padding-top", `${topPadding}px`);
         set_active_navbar_item(5);
     </script>
 {% endblock %}

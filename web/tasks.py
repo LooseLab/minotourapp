@@ -16,7 +16,7 @@ from twitter import *
 from assembly.models import GfaStore, GfaSummary
 from centrifuge import centrifuge
 from centrifuge.sankey import calculate_sankey
-from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus, JobMaster
+from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowcell, MinionRunInfo, JobMaster
 from reads.utils import getn50
 from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
@@ -715,7 +715,7 @@ def update_flowcell_details(job_master_id):
     #
     # Get the first MinIONRunStatus for a particular flowcell
     #
-    minion_run_status_first = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell).order_by('minKNOW_start_time')\
+    minion_run_status_first = MinionRunInfo.objects.filter(run_id__flowcell=flowcell).order_by('minKNOW_start_time')\
         .first()
 
     #
@@ -732,7 +732,7 @@ def update_flowcell_details(job_master_id):
     #
     # Define flowcell's sample_name
     #
-    minion_run_status_list = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell)
+    minion_run_status_list = MinionRunInfo.objects.filter(run_id__flowcell=flowcell)
 
     if minion_run_status_list.count() > 0:
 

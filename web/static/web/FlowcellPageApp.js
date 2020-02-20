@@ -132,8 +132,6 @@ var FlowcellPageApp = {
 
         this.requestStatistics = requestStatistics.bind(this);
 
-        this.checkFlowcellTabs = checkFlowcellTabs.bind(this);
-        this.addStartTabsEvents = addStartTabsEvents.bind(this);
         this.updateBarcodeNavTab = updateBarcodeNavTab.bind(this);
 
         this.ChartNumContigs = this.makeSplineChartNonDatetime(

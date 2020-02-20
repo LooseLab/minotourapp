@@ -10,7 +10,7 @@ from communication.models import NotificationConditions, Message
 import datetime
 from django.conf import settings
 from celery.utils.log import get_task_logger
-from reads.models import UserOptions, MinIONRunStats
+from reads.models import UserOptions, MinionRunStats
 
 logger = get_task_logger(__name__)
 
@@ -278,7 +278,7 @@ def check_condition_is_met():
 
         if condition.notification_type in ["occu", "volt"]:
             # Count for indexing as no negative indexing
-            num_entries = MinIONRunStats.objects.filter(
+            num_entries = MinionRunStats.objects.filter(
                 run_id__flowcell=condition.flowcell
             ).count()
             # Limit for condition
@@ -286,14 +286,14 @@ def check_condition_is_met():
             lower_limit = condition.lower_limit
 
             if condition.notification_type == "volt":
-                queryset = MinIONRunStats.objects.filter(
+                queryset = MinionRunStats.objects.filter(
                     run_id__flowcell=condition.flowcell
                 ).order_by("-id")[:10].values_list(
                     "voltage_value", flat=True
                 )
             else:
                 # Else occupancy
-                queryset = MinIONRunStats.objects.filter(
+                queryset = MinionRunStats.objects.filter(
                     run_id__flowcell=condition.flowcell
                 ).order_by("-id")[:10]
                 occupancy_list = []

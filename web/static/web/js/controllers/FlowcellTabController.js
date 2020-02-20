@@ -173,7 +173,8 @@ class FlowcellTabController {
     }
 
     toggle_content(nav, tab) {
-
+        const topPadding = $(".main-header").height() + 16;
+        $(".content-wrapper").css("padding-top", `${topPadding}px`);
         nav.classList.add('active');
         tab.classList.remove('hidden');
         tab.classList.add('show');
