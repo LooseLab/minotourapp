@@ -121,6 +121,10 @@ class Flowcell(models.Model):
         default='Created flowcell.'
     )
 
+    archived = models.BooleanField(
+        default=False
+    )
+
     def barcodes(self):
         """
         Return all the barcodes in runs contained under this flowcell.
@@ -166,7 +170,7 @@ class Flowcell(models.Model):
         )
 
 
-class MinION(models.Model):
+class Minion(models.Model):
     minION_name = models.CharField(
         max_length=64
     )
@@ -199,7 +203,7 @@ class MinION(models.Model):
         starttime: datetime.datetime
         """
         try:
-            start_time = self.currentrundetails.minKNOW_start_time
+            start_time = self.currentrundetails.last().minKNOW_start_time
         except AttributeError:
             start_time = "Unknown"
 
@@ -298,6 +302,42 @@ class MinION(models.Model):
             return self.currentrunstats.order_by('sample_time').last().voltage_value
         except AttributeError:
             return 0
+
+    def actual_max_value(self):
+        """
+        Fetch the actual longest read from minKnow by reverse looking up the last MinionRunInfo entry.
+        Returns
+        -------
+        int
+        """
+        try:
+            return self.currentrunstats.order_by('sample_time').last().actual_max_value
+        except AttributeError:
+            return "Unknown"
+
+    def wells_per_channel(self):
+        """
+        Fetch the number of wells per channel by looking up the last Minion run info entry.
+        Returns
+        -------
+
+        """
+        try:
+            return self.currentrundetails.last().wells_per_channel
+        except AttributeError:
+            return "Unknown"
+
+    def read_length_type(self):
+        """
+        Fetch the read length type of the current run on the minion from Minion run info entry.
+        Returns
+        -------
+
+        """
+        try:
+            return self.currentrundetails.last().read_length_type
+        except AttributeError:
+            return  "Unknown"
 
 
 class GroupRun(models.Model):  # TODO don't document
@@ -409,11 +449,11 @@ class Run(models.Model):
 
     minion = models.ForeignKey(
 
-        MinION,
+        Minion,
         blank=True,
         null=True,
         related_name='runs',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
     )
 
     flowcell = models.ForeignKey(
@@ -680,7 +720,7 @@ class MinionControl(models.Model):
     :created_date: The date that the job was created
     :modified_date: The date that this as last modified
     """
-    minION = models.ForeignKey(MinION, blank=True, null=True, related_name='minioncontrol',
+    minION = models.ForeignKey(Minion, blank=True, null=True, related_name='minioncontrol',
                                on_delete=models.CASCADE,
                                )
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='controlcontrol',
@@ -705,7 +745,7 @@ class MinionControl(models.Model):
 
 class MinionInfo(models.Model):
     """
-    :purpose: To store data on the current status of a specific MinION at a given moment in time.
+    :purpose: To store data on the current status of a specific MinION at a given moment in time. Doesn't matter about whether or not we have a run on.
               This includes detailed pon the connected computer, the space available and other key run details.
 
     Fields:
@@ -728,9 +768,9 @@ class MinionInfo(models.Model):
 
     """
 
-    minION = models.OneToOneField(
+    minion = models.OneToOneField(
 
-        MinION,
+        Minion,
         related_name='currentdetails',
         on_delete=models.CASCADE,
 
@@ -843,23 +883,17 @@ class MinionInfo(models.Model):
 
     )
 
-    read_length_type = models.CharField(
-        default="ESTIMATED BASES",
-        max_length=32,
-        null=True
-    )
-
     class Meta:
-        verbose_name = 'MinION Status'
-        verbose_name_plural = 'MinION Status'
+        verbose_name = 'MinION Info'
+        verbose_name_plural = 'MinION Info'
 
     def __str__(self):
-        return "{} {}".format(self.minION, self.minKNOW_status)
+        return "{} {}".format(self.minion, self.minKNOW_status)
 
 
 class MinionRunStats(models.Model):
     """
-    Model to store all the stratistics about flowcell and MinKNOW that change during a run. Monitered once a minute, 
+    Model to store all the statistics about flowcell and MinKNOW that change during a run. Monitored once a minute,
     provides historical record of the flowcell. 
 
     Fields
@@ -894,15 +928,15 @@ class MinionRunStats(models.Model):
     created_date: Created Date.
     """
 
-    minION = models.ForeignKey(
+    minion = models.ForeignKey(
 
-        MinION,
+        Minion,
         related_name='currentrunstats',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
 
     )
 
-    run_id = models.ForeignKey(
+    run = models.ForeignKey(
 
         Run,
         related_name='RunStats',
@@ -1054,18 +1088,12 @@ class MinionRunStats(models.Model):
         null=True
     )
 
-    read_length_type = models.CharField(
-        max_length=20,
-        default="EVENTS",
-        null=True
-    )
-
     class Meta:
         verbose_name = 'MinION Run Stats'
         verbose_name_plural = 'MinION Run Stats'
 
     def __str__(self):
-        return "{} {} {}".format(self.minION, self.run_id, self.sample_time)
+        return "{} {} {}".format(self.minion, self.run_id, self.sample_time)
 
     ## This is something to look at for optimisation
     def occupancy(self):
@@ -1078,7 +1106,7 @@ class MinionRunStats(models.Model):
 
 class MinionRunInfo(models.Model):
     """
-    Model to store the data for a Run if we are monitoring MinKNOW using minFQ. Created on Run creation. Contains all
+    Model to store the data for a Run if we are monitoring MinKNOW using minFQ. Created once on Run creation. Contains all
     metadata that is fixed during a run.
     
     Fields
@@ -1114,11 +1142,11 @@ class MinionRunInfo(models.Model):
     user_filename_input
     wells_per_channel 
     """
-    minION = models.ForeignKey(
+    minion = models.ForeignKey(
 
-        MinION,
+        Minion,
         related_name='currentrundetails',
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
 
     )
 
@@ -1314,16 +1342,21 @@ class MinionRunInfo(models.Model):
         null=True
     )
 
+    read_length_type = models.CharField(
+        default="ESTIMATED BASES",
+        max_length=32,
+        null=True
+    )
     class Meta:
-        unique_together = ("minION", "minKNOW_hash_run_id", "minKNOW_exp_script_purpose")
-        verbose_name = 'MinION Run Status'
-        verbose_name_plural = 'MinION Run Status'
+        unique_together = ("minion", "minKNOW_hash_run_id", "minKNOW_exp_script_purpose")
+        verbose_name = 'MinION Run Information'
+        verbose_name_plural = 'MinION Run Information'
 
     def __str__(self):
-        return "{} {} {}".format(self.minION, self.minKNOW_current_script, self.run_id)
+        return "{} {} {}".format(self.minion, self.minKNOW_current_script, self.run_id)
 
     def minION_name(self):
-        return self.minION.minION_name
+        return self.minion.minION_name
 
 
 class MinionEventType(models.Model):
@@ -1370,7 +1403,7 @@ class MinionEvent(models.Model):
 
     minION = models.ForeignKey(
 
-        MinION, related_name='events',
+        Minion, related_name='events',
         on_delete=models.CASCADE,
 
     )
@@ -1378,7 +1411,7 @@ class MinionEvent(models.Model):
     event = models.ForeignKey(
 
         MinionEventType,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
     )
 
     datetime = models.DateTimeField(
@@ -1423,7 +1456,7 @@ class MinionScripts(models.Model):
     """
     minION = models.ForeignKey(
 
-        MinION,
+        Minion,
         related_name='scripts',
         on_delete=models.CASCADE,
     )
@@ -1566,10 +1599,6 @@ class FastqRead(models.Model):
         blank=True,
     )
 
-    archived = models.BooleanField(
-        default=False
-    )
-
     barcode_name = models.CharField(
         db_index=True,
         max_length=32,
@@ -1656,7 +1685,7 @@ class MinionMessage(models.Model):
     :timestamp:  The timestamp of whenn the message was sent
     """
     minion = models.ForeignKey(
-        MinION,
+        Minion,
         related_name='messages',
         on_delete=models.CASCADE,
     )

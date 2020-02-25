@@ -9,7 +9,7 @@ from .models import (Barcode, FastqFile, FastqRead, FastqReadType,
                      MinionScripts, MinionInfo, Run, RunSummary, UserOptions, ChannelSummary, HistogramSummary,
                      RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellHistogramSummary,
                      FlowcellStatisticBarcode,
-                     FlowcellSummaryBarcode, Flowcell, MinION,
+                     FlowcellSummaryBarcode, Flowcell, Minion,
                      FlowcellTab, JobMaster, JobType)
 
 
@@ -54,6 +54,6 @@ admin.site.register(Barcode)
 admin.site.register(GroupRun)
 admin.site.register(RunSummary)
 admin.site.register(Flowcell, FlowcellAdmin)
-admin.site.register(MinION)
+admin.site.register(Minion)
 admin.site.register(JobMaster)
 admin.site.register(JobType)

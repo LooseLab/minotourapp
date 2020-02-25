@@ -11,7 +11,7 @@ from reads.models import (Barcode, FastqFile, FastqRead,
                           MinionEvent, MinionEventType, MinionMessage,
                           MinionRunStats, MinionRunInfo, MinionScripts,
                           MinionInfo, Run, UserOptions, ChannelSummary, HistogramSummary,
-                          RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellSummaryBarcode, Flowcell, MinION,
+                          RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellSummaryBarcode, Flowcell, Minion,
                           JobType, JobMaster)
 from reference.models import ReferenceInfo
 
@@ -63,8 +63,8 @@ class MinionRunStatsSerializer(serializers.HyperlinkedModelSerializer):
         model = MinionRunStats
         fields = (
             'id',
-            'minION',
-            'run_id',
+            'minion',
+            'run',
             'sample_time',
             'event_yield',
             'asic_temp',
@@ -97,12 +97,15 @@ class MinionRunStatsSerializer(serializers.HyperlinkedModelSerializer):
         read_only = ('id', 'occupancy',)
 
 
-class MinIONSerializer(serializers.HyperlinkedModelSerializer):
+class MinionSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    Serialiser for the Minion model.
+    """
     channel_count = serializers.SerializerMethodField()
     flow_cell_id = serializers.SerializerMethodField()
-    class Meta:
 
-        model = MinION
+    class Meta:
+        model = Minion
         fields = (
         'url', 'id', 'name', 'minION_name', 'space_available', 'minKNOW_version', 'status', 'computer', 'sample_name', 'run_status',
         'flow_cell_id', 'run_name', 'total_drive_space', 'space_till_shutdown', 'warnings', 'last_run', 'currentscript',
@@ -122,6 +125,7 @@ class MinIONSerializer(serializers.HyperlinkedModelSerializer):
             return obj.currentrundetails.last().run_id.flowcell.name
         except AttributeError as e:
             return "Unknown"
+
 
 class FastqReadTypeSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
@@ -250,7 +254,7 @@ class MinionInfoSerializer(serializers.HyperlinkedModelSerializer):
         model = MinionInfo
         fields = (
             'id',
-            'minION',
+            'minion',
             'minKNOW_status',
             'minKNOW_current_script',
             'minKNOW_sample_name',
@@ -274,7 +278,7 @@ class MinionRunInfoSerializer(serializers.HyperlinkedModelSerializer):
         model = MinionRunInfo
         fields = (
             'id',
-            'minION',
+            'minion',
             'minION_name',
             # 'minKNOW_status',
             'minKNOW_current_script',

@@ -1,8 +1,6 @@
 import datetime
 import json
 import time
-from datetime import timedelta
-
 import numpy as np
 import pandas as pd
 from celery.utils.log import get_task_logger
@@ -35,7 +33,7 @@ from reads.models import (
     FlowcellStatisticBarcode,
     FlowcellSummaryBarcode,
     GroupRun,
-    MinION,
+    Minion,
     MinionControl,
     MinionEvent,
     MinionEventType,
@@ -66,7 +64,7 @@ from reads.serializers import (
     MinionRunStatsSerializer,
     MinionRunInfoSerializer,
     MinIONScriptsSerializer,
-    MinIONSerializer,
+    MinionSerializer,
     MinionInfoSerializer,
     RunSerializer,
     RunStatisticBarcode,
@@ -386,12 +384,14 @@ def minion_list(request):
     List of all minIONs by user, or create a new minION.
     """
     if request.method == "GET":
-        queryset = MinION.objects.filter(owner=request.user)
-        serializer = MinIONSerializer(queryset, many=True, context={"request": request})
+        queryset = Minion.objects.filter(owner=request.user)
+        serializer = MinionSerializer(queryset, many=True, context={"request": request})
         return Response(serializer.data)
 
     elif request.method == "POST":
-        serializer = MinIONSerializer(data=request.data, context={"request": request})
+        print(f"request data for minion POST is:")
+        print(request.data)
+        serializer = MinionSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             serializer.save(owner=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -412,8 +412,47 @@ def active_minion_list(request):
 
     """
     active_minion_list = []
+
     extra_data = {}
-    for minion in MinION.objects.filter(owner=request.user):
+
+    blank_stats = {'id': -1,
+ 'minion_id': -1,
+ 'run_id': -1,
+ 'sample_time': datetime.datetime.now(),
+ 'event_yield': "Unknown",
+ 'asic_temp': "Unknown",
+ 'heat_sink_temp': "Unknown",
+ 'voltage_value': "Unknown",
+ 'mean_ratio': "Unknown",
+ 'open_pore': "Unknown",
+ 'in_strand': "Unknown",
+ 'multiple': "Unknown",
+ 'unavailable': "Unknown",
+ 'unknown': "Unknown",
+ 'adapter': "Unknown",
+ 'pending_mux_change': "Unknown",
+ 'unclassified': "Unknown",
+ 'below': "Unknown",
+ 'unblocking': "Unknown",
+ 'above': "Unknown",
+ 'good_single': "Unknown",
+ 'saturated': "Unknown",
+ 'inrange': "Unknown",
+ 'strand': "Unknown",
+ 'no_pore': "Unknown",
+ 'zero': "Unknown",
+ 'pore': "Unknown",
+ 'minKNOW_read_count': "Unknown",
+ 'minKNOW_histogram_values': "[]",
+ 'minKNOW_histogram_bin_width': "Unknown",
+ 'created_date': datetime.datetime.now(),
+ 'actual_max_val': "Unknown"}
+
+
+
+    data = {}
+
+    for minion in Minion.objects.filter(owner=request.user):
         # Store extra data about actively sequencing minions here
         extra_data[minion.name] = {}
 
@@ -434,14 +473,34 @@ def active_minion_list(request):
                 ]:
                     # Get the run start time
                     extra_data[minion.name]["start_time"] = minion.start_time()
+                    extra_data[minion.name]["wells_per_channel"] = minion.wells_per_channel()
+                    extra_data[minion.name]["read_length_type"] = minion.read_length_type()
+                    extra_data[minion.name]["actual_max_value"] = minion.actual_max_value()
+
+                    mrs = MinionRunStats.objects.filter(minion=minion).last()
+
+                    if mrs:
+                        print("Whale hello there")
+                        mrs_serialiser = MinionRunStatsSerializer(mrs, context={"request": request})
+
+                        data[minion.name] = mrs_serialiser.data
+
+
+
                     # Get the
 
                 active_minion_list.append(minion)
 
-    serializer = MinIONSerializer(
+    serializer = MinionSerializer(
         active_minion_list, many=True, context={"request": request}
     )
-    print(serializer.data)
+
+    return_data = list(serializer.data)
+
+    for active_minion in return_data:
+        if active_minion.get("name", -2) in data:
+            active_minion.update(data.get(active_minion["name"], blank_stats))
+            active_minion.update(extra_data[active_minion["name"]])
     return Response(serializer.data)
 
 
@@ -494,9 +553,9 @@ def minion_messages_list(request, pk):
 @api_view(["GET"],)
 def sinceminion_messages_list(request, pk, starttime, endtime):
 
-    correctedstart = parser.parse(starttime) - timedelta(minutes=180)
+    correctedstart = parser.parse(starttime) - datetime.timedelta(minutes=180)
 
-    correctedend = parser.parse(endtime) + timedelta(minutes=180)
+    correctedend = parser.parse(endtime) + datetime.timedelta(minutes=180)
 
     queryset = (
         MinionMessage.objects.filter(minION=pk)
@@ -523,7 +582,7 @@ def sinceminion_messages_list(request, pk, starttime, endtime):
 def recentminion_messages_list(request, pk):
 
     queryset = MinionMessage.objects.filter(minION=pk).filter(
-        minKNOW_message_timestamp__gte=timezone.now() - timedelta(hours=24)
+        minKNOW_message_timestamp__gte=timezone.now() - datetime.timedelta(hours=24)
     )
 
     serializer = MinionMessageSerializer(
@@ -552,65 +611,6 @@ def minknow_message_list_by_flowcell(request, pk):
     flowcell = Flowcell.objects.get(pk=pk)
     runs = Run.objects.filter(flowcell=flowcell)
 
-    # form_start_time = request.GET.get('start_time', None)
-    # form_end_time = request.GET.get('end_time', None)
-    #
-    # start_time = None
-    # end_time = None
-    #
-    # if form_start_time:
-    #
-    #     try:
-    #
-    #         start_time = dateutil.parser.parse(form_start_time)
-    #
-    #     except ValueError:
-    #
-    #         print('Error when parsing start_time')
-    #
-    # if form_end_time:
-    #
-    #     try:
-    #
-    #         end_time = dateutil.parser.parse(form_end_time)
-    #
-    #     except ValueError:
-    #
-    #         print('Error when parsing end_time')
-    #
-    # flowcell = Flowcell.objects.get(pk=pk)
-    #
-    # minion_list = []
-    #
-    # for run in flowcell.runs.all():
-    #
-    #     if run.minion:
-    #
-    #         minion_list.append(run.minion)
-
-    # if start_time and end_time:
-    #
-    #     messages = MinionMessage.objects\
-    #         .filter(minion__in=minion_list)\
-    #         .filter(timestamp__gt=start_time)\
-    #         .filter(timestamp__lt=end_time) \
-    #         .order_by('-timestamp')
-    #
-    # elif start_time:
-    #
-    #     messages = MinionMessage.objects\
-    #         .filter(minion__in=minion_list)\
-    #         .filter(timestamp__gt=start_time) \
-    #         .order_by('-timestamp')
-    #
-    # elif end_time:
-    #
-    #     messages = MinionMessage.objects\
-    #         .filter(minion__in=minion_list)\
-    #         .filter(timestamp__lt=end_time) \
-    #         .order_by('-timestamp')
-    #
-    # else:
 
     messages = MinionMessage.objects.filter(run__in=runs).order_by("-timestamp")
 
@@ -674,12 +674,12 @@ def minION_currentrun_list(request, pk):
     TODO describe function
     """
     try:
-        minion = MinION.objects.get(pk=pk)
-    except MinION.DoesNotExist:
+        minion = Minion.objects.get(pk=pk)
+    except Minion.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     if request.method == "GET":
-        serializer = MinIONSerializer(minion, context={"request": request})
+        serializer = MinionSerializer(minion, context={"request": request})
         return Response(serializer.data)
 
 
@@ -746,6 +746,8 @@ def list_minion_info(request, pk):
 
     """
 
+    print(f"request.method is {request.method}")
+    print(request.data)
     if request.method == "POST":
         serializer = MinionInfoSerializer(
             data=request.data, context={"request": request}
@@ -753,10 +755,11 @@ def list_minion_info(request, pk):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        minion_info = MinionInfo.objects.get(minION=pk)
+        minion_info = MinionInfo.objects.get(minion=pk)
 
     except MinionInfo.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
@@ -885,9 +888,27 @@ def remote_control_run_stats(request):
         List of dictionaries. Key minion device ID, value run stats.
     """
 
+    data = {}
+
     minions = request.GET.get("activeMinions", [])
 
-    MinionRunStats.objects.filter(run__owner=request.user,)
+    if minions:
+        minions = json.loads(minions)
+
+        for minion in minions:
+
+            queryset = MinionRunStats.objects.filter(minion__owner=request.user, minion__name=minion).values()
+            
+
+            if queryset:
+
+                last_runs_stat = queryset[::-1][0]
+
+                data[minion] = last_runs_stat
+
+        return Response(data, status=200)
+
+    return Response(status=400)
 
 
 @api_view(["GET", "PUT", "POST", "DELETE"])
@@ -908,7 +929,7 @@ def list_minion_run_status(request, pk):
     """
     if request.method == "POST":
         print("minion run stat")
-        
+        print(request.data)
         serializer = MinionRunInfoSerializer(
             data=request.data, context={"request": request}
         )
@@ -1002,6 +1023,10 @@ def minION_detail(request, pk):
     # """
     # TODO describe function
     # """
+    print(request.user)
+    print(type(request.user))
+    print(request.GET.get("search_criteria", "LOLNO"))
+    print(pk)
 
     if request.method == "GET":
 
@@ -1009,30 +1034,32 @@ def minION_detail(request, pk):
 
         if search_criteria == "id":
 
-            minion_list = MinION.objects.filter(owner=request.user).filter(id=pk)
+            minion_list = Minion.objects.filter(owner=request.user, id=pk)
 
         elif search_criteria == "name":
 
-            minion_list = MinION.objects.filter(owner=request.user).filter(name=pk)
+            minion_list = Minion.objects.filter(owner=request.user, name=pk)
 
         else:
 
-            minion_list = MinION.objects.none()
+            minion_list = Minion.objects.none()
 
-        if len(minion_list) != 1:
+        print(minion_list)
+
+        if len(minion_list) == 0:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
         minion = minion_list[0]
 
-        serializer = MinIONSerializer(minion, context={"request": request})
+        serializer = MinionSerializer(minion, context={"request": request})
 
         return Response(serializer.data)
 
     elif request.method == "POST":
 
-        minion = MinION.objects.get(pk=pk)
+        minion = Minion.objects.get(pk=pk)
 
-        serializer = MinIONSerializer(
+        serializer = MinionSerializer(
             minion, data=request.data, partial=True, context={"request": request}
         )
 
@@ -1929,7 +1956,7 @@ def flowcell_run_summaries_html(request, pk):
             element["runid"] = minion_run_status.run_id.runid
             element["run_start_time"] = minion_run_status.minKNOW_start_time
             element["minknow_computer_name"] = minion_run_status.minKNOW_computer
-            element["minion_id"] = minion_run_status.minION.minION_name
+            element["minion_id"] = minion_run_status.minion.minION_name
             element["asic_id"] = minion_run_status.minKNOW_asic_id
             element["sequencing_kit"] = minion_run_status.sequencing_kit
             element["purpose"] = minion_run_status.minKNOW_exp_script_purpose

@@ -1,5 +1,6 @@
 class FlowcellNotificationController {
     /**
+     * Straight up just sorry about the code below
      * Summary. Controller to handle the display of sent messages and the creation of conditions for messages
      * @class flowcellID
      */

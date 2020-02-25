@@ -89,7 +89,7 @@ urlpatterns = [
         views.minion_list,
         name="minION_list"),
     url(
-        r'^api/v1/activeminions/$',
+        r'^api/v1/active_minions/$',
         views.active_minion_list,
         name="activeminION_list"),
     url(
@@ -265,7 +265,7 @@ urlpatterns = [
     ),
     # TODO web only
     url(
-        r'^api/v1/remote_control_run_stats/$',
+        r'^api/v1/active_minions/run_stats/$',
         views.remote_control_run_stats,
         name="remote-control-run_stats"
     )

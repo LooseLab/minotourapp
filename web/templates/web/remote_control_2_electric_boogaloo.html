@@ -66,7 +66,7 @@
                                             </tr>
                                             </thead>
                                             <tbody>
-                                            <tr v-for="item in activedevices" :key="item.device">
+                                            <tr v-for="item in activeDevices" :key="item.device">
                                                 <td>{{ item.computer }}<br>{{ item.name }}<br>{{
                                                     item.sample_name
                                                     }}<br>{{ item.sample_name }}
@@ -84,14 +84,14 @@
                                                         <v-icon>mdi-checkbox-blank-circle-outline</v-icon>
                                                     </div>
                                                 </td>
-                                                <td>{{ item.n50_value | humnum}}<br>{{ (item.basecalled_bases /
+                                                <td>{{ item.n50_value}}<br>{{ (item.basecalled_bases /
                                                     item.read_count)
                                                     | humnum}} ({{ (item.estimated_selected_bases /
                                                     item.read_count)
                                                     |
                                                     humnum}})
                                                 </td>
-                                                <td>{{ item.actual_max_val | humnum}}</td>
+                                                <td>{{ item.actual_max_value}}</td>
                                                 <td>{{ item.read_count | humnum}} <br> {{
                                                     (parseInt(item.basecalled_pass_read_count)+parseInt(item.basecalled_fail_read_count))
                                                     | humnum}} <br> {{
@@ -132,15 +132,15 @@
                                                     </v-chip>
                                                 </td>
                                                 <td>
-                                                    <v-chip :color="testvalue(item.bias_voltage , 'voltage')">{{
-                                                        item.bias_voltage}}
+                                                    <v-chip :color="testvalue(item.voltage_value , 'voltage')">{{
+                                                        item.voltage_value}}
                                                     </v-chip>
                                                 </td>
-                                                <td>{{item.heatsink_temperature | humnum}}&#8451; <br>
+                                                <td>{{item.heat_sink_temp | humnum}}&#8451; <br>
                                                     {{item.target_temperature
                                                     | humnum}}&#8451;
                                                 </td>
-                                                <td>{{item.asic_temperature |humnum}}&#8451;</td>
+                                                <td>{{item.asic_temp |humnum}}&#8451;</td>
                                                 <td>{{item.speed_q50 | humnum}} b/s</td>
                                                 <td>{{item.QUALITY_q50 | humnum}}</td>
                                             </tr>
@@ -159,7 +159,6 @@
                                             justify="center"
                                     >
                                         <v-alert
-                                                :type="computer_info.alert_type"
                                                 prominent
                                                 border="left"
                                                 elevation="2"
@@ -167,64 +166,13 @@
                                                 icon="mdi-desktop-classic">
                                             <v-row align="center">
                                                 <v-col class="grow">
-                                                    You have <strong>{{ computer_info.number }}</strong> computer
+                                                    You have <strong>{{ computer_info.number }}</strong> computer(s)
                                                     connected.<br>
                                                     There are <strong>{{ numactive }}</strong> active and <strong>{{numinactive}}</strong>
                                                     inactive positions.<br>
                                                     {{ computer_info.message }}
                                                 </v-col>
-                                                <v-col class="shrink">
-                                                    <v-dialog v-model="add_computer" persistent max-width="600px">
-                                                        <template v-slot:activator="{ on }">
-                                                            <v-btn dark v-on="on">Add Computer</v-btn>
-                                                        </template>
-                                                        <v-card>
-                                                            <v-card-title>
-                                                                <span class="headline">Add Computer</span>
-                                                            </v-card-title>
-                                                            <v-card-text>
-                                                                <v-container>
-                                                                    <v-row>
-                                                                        <v-col cols="12" sm="6" md="4">
-                                                                            <v-text-field label="IP Address"
-                                                                                          v-model="ip_to_add"></v-text-field>
-                                                                        </v-col>
-                                                                    </v-row>
-                                                                </v-container>
-                                                                <small>*indicates required field</small>
-                                                            </v-card-text>
-                                                            <v-card-actions>
-                                                                <v-spacer></v-spacer>
-                                                                <v-btn color="blue darken-1" text
-                                                                       @click="add_computer = false">
-                                                                    Cancel
-                                                                </v-btn>
-                                                                <v-btn color="blue darken-1" text
-                                                                       @click.prevent="add_computer_meth()">Save
-                                                                </v-btn>
-                                                            </v-card-actions>
-                                                        </v-card>
-                                                    </v-dialog>
-                                                    <v-btn @click="testing">Test socket!</v-btn>
-                                                </v-col>
                                             </v-row>
-                                        </v-alert>
-                                    </v-row>
-                                    <v-row
-                                            align="center"
-                                            justify="center"
-                                    >
-                                        <v-alert
-                                                v-model="GeneralResponseAlert"
-                                                dense
-                                                colored-border
-                                                dismissible
-                                                border="left"
-                                                elevation="2"
-                                                :type="CustomAlertType"
-                                                :message="CustomMessage"
-                                        >
-                                            {{ CustomMessage}}
                                         </v-alert>
                                     </v-row>
                                 </v-col>
@@ -391,14 +339,17 @@
                                 }
                             }
                         },
+
+
                     },
                     computed: {
-                        activedevices() {
+                        activeDevices() {
                             if (typeof this.devices === 'undefined') {
                                 return
                             } else {
+                                console.log("Looking for shizz");
                                 return this.devices.filter(function (devices) {
-                                    return devices.status.match(/^(PROCESSING|STARTING|FINISHING|RUNNING|sequencing)$/) //("PROCESSING","STARTING","FINISHING")
+                                    return devices.status.match(/^(PROCESSING|STARTING|FINISHING|RUNNING|sequencing|active)$/) //("PROCESSING","STARTING","FINISHING")
                                 })
                             }
                         },
@@ -412,7 +363,7 @@
                             }
                         },
                         numactive() {
-                            return this.activedevices.length
+                            return this.activeDevices.length
                         },
                         numinactive() {
                             return this.inactivedevices.length
@@ -421,6 +372,7 @@
                     filters: {
                         humnum(num) {
                             var si = [
+                                {value: 0, symbol: ""},
                                 {value: 1, symbol: ""},
                                 {value: 1E3, symbol: "k"},
                                 {value: 1E6, symbol: "M"},
@@ -432,7 +384,7 @@
                             var rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
                             var i;
                             for (i = si.length - 1; i > 0; i--) {
-                                if (num >= si[i].value) {
+                                if (num >= si[i].value && num !== 0) {
                                     break;
                                 }
                             }
@@ -460,7 +412,7 @@
                     {#render: h => h(App)#}
                 });
                 const remoteControlController = new RemoteControlController(vm);
-                remoteControlController.getActiveMinions();
+                remoteControlController.getActiveMinionsAndStats();
 
                 // NOW TO RAM SOME DATA IN
                 {#vm.computers.append(remoteControlController.getActiveMinions())#}
