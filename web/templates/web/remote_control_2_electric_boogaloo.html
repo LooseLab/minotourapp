@@ -1,6 +1,7 @@
 {% extends "web/template_private.html" %}
 {% load static %}
 {% block content %}
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
     <div class="content-wrapper" style="background-color: white">
         <section class="content">
             {#            <div id="app">#}
@@ -404,8 +405,9 @@
                         alert: true,
                         itemsPerPageOptions: [3, 6, 9, 12],
                         itemsPerPage: 3,
-                        computers: [],
+                            computers: [],
                         devices: [],
+                        humnum:""
 
                         //
                     }
