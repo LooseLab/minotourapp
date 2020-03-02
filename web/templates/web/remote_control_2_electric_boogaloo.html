@@ -72,8 +72,8 @@
                                                     }}<br>{{ item.sample_name }}
                                                 </td>
                                                 <td>{{ item.start_time }}</td>
-                                                <td>{{ item.flow_cell_id }}<br>{{ item.product_code }}<br>
-                                                    {{item.protocol_id}}
+                                                <td>{{ item.flow_cell_id }}<br>{{ item.flowcell_type }}<br>
+                                                    {{item.current_script}}
                                                 </td>
                                                 <td>{{ item.channel_count }}<br>{{item.wells_per_channel}}</td>
                                                 <td>
@@ -84,15 +84,15 @@
                                                         <v-icon>mdi-checkbox-blank-circle-outline</v-icon>
                                                     </div>
                                                 </td>
-                                                <td>{{ item.n50_value}}<br>{{ (item.basecalled_bases /
-                                                    item.read_count)
+                                                <td>{{ item.n50_data | humnum}}<br>{{ (item.basecalled_bases /
+                                                    item.minKNOW_read_count)
                                                     | humnum}} ({{ (item.estimated_selected_bases /
-                                                    item.read_count)
+                                                    item.minKNOW_read_count)
                                                     |
                                                     humnum}})
                                                 </td>
-                                                <td>{{ item.actual_max_value}}</td>
-                                                <td>{{ item.read_count | humnum}} <br> {{
+                                                <td>{{ item.actual_max_val | humnum}}</td>
+                                                <td>{{ item.minKNOW_read_count | humnum}} <br> {{
                                                     (parseInt(item.basecalled_pass_read_count)+parseInt(item.basecalled_fail_read_count))
                                                     | humnum}} <br> {{
                                                     (parseInt(item.basecalled_pass_read_count)+parseInt(item.basecalled_fail_read_count))
@@ -137,7 +137,7 @@
                                                     </v-chip>
                                                 </td>
                                                 <td>{{item.heat_sink_temp | humnum}}&#8451; <br>
-                                                    {{item.target_temperature
+                                                    {{item.target_temp
                                                     | humnum}}&#8451;
                                                 </td>
                                                 <td>{{item.asic_temp |humnum}}&#8451;</td>
@@ -197,26 +197,26 @@
                                                         >
                                                             <v-card>
                                                                 <v-card-text dense>
-                                                                    <h3>{{ item.computer_name }}</h3>
+                                                                    <h3>{{ item.computer }}</h3>
                                                                     Device Type:{{ item.device_type}}<br>
                                                                     MinKNOW Version:{{item.minknow_version}}<br>
                                                                     <div v-if="item.warning">
                                                                         <v-alert
                                                                                 dense
                                                                                 type="error">
-                                                                            Space Free:{{item.freespace}}%<br>Stops:{{item.spacetillstop}}%<br>
+                                                                            Space Free:{{item.space_available | humnum}}%<br>Stops:{{item.space_till_shutdown | humnum}}%<br>
                                                                         </v-alert>
                                                                     </div>
                                                                     <div v-else>
                                                                         <v-alert
                                                                                 dense
                                                                                 type="success">
-                                                                            Space Free:{{item.freespace}}%<br>Stops:{{item.spacetillstop}}%<br>
+                                                                            Space Free:{{item.space_available | humnum}}<br>Stops:{{item.space_till_shutdown | humnum}}<br>
                                                                         </v-alert>
                                                                     </div>
                                                                     <v-btn x-small dark
-                                                                           @click="removeme(item.ipaddress)">Stop
-                                                                        Monitoring
+                                                                           @click="removeme(item.ipaddress)">
+                                                                        Refresh.
                                                                     </v-btn>
                                                                 </v-card-text>
                                                             </v-card>
@@ -349,7 +349,8 @@
                             } else {
                                 console.log("Looking for shizz");
                                 return this.devices.filter(function (devices) {
-                                    return devices.status.match(/^(PROCESSING|STARTING|FINISHING|RUNNING|sequencing|active)$/) //("PROCESSING","STARTING","FINISHING")
+                                    console.log(devices);
+                                    return devices.run_status.match(/^(PROCESSING|STARTING|FINISHING|ACQUISITION_RUNNING|)$/) //("PROCESSING","STARTING","FINISHING")
                                 })
                             }
                         },
@@ -358,7 +359,7 @@
                                 return
                             } else {
                                 return this.devices.filter(function (devices) {
-                                    return devices.status.match(/^(active|COMPLETED)$/)
+                                    return devices.run_status.match(/^(active|COMPLETED|No Run)$/)
                                 })
                             }
                         },
@@ -398,7 +399,7 @@
                         ip_to_add: null,
                         computer_info: {
                             number: 0,
-                            message: "You need to add a Computer!",
+                            message: "",
                             alert_type: "danger"
                         },
                         alert: true,
@@ -406,6 +407,7 @@
                         itemsPerPage: 3,
                         computers: [],
                         devices: [],
+                        humnum: null
 
                         //
                     }

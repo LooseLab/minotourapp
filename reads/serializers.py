@@ -93,6 +93,12 @@ class MinionRunStatsSerializer(serializers.HyperlinkedModelSerializer):
             'minKNOW_read_count',
             'minKNOW_histogram_values',
             'minKNOW_histogram_bin_width',
+            'actual_max_val',
+            'n50_data',
+            'estimated_selected_bases',
+            'basecalled_bases',
+            'basecalled_fail_read_count',
+            'basecalled_pass_read_count'
         )
         read_only = ('id', 'occupancy',)
 
@@ -107,12 +113,12 @@ class MinionSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Minion
         fields = (
-        'url', 'id', 'name', 'minION_name', 'space_available', 'minKNOW_version', 'status', 'computer', 'sample_name', 'run_status',
-        'flow_cell_id', 'run_name', 'total_drive_space', 'space_till_shutdown', 'warnings', 'last_run', 'currentscript',
+        'url', 'id', 'name', 'minION_name', 'space_available', 'status', 'computer', 'sample_name', 'run_status',
+        'flow_cell_id', 'run_name', 'total_drive_space', 'space_till_shutdown', 'warnings', 'last_run', 'current_script',
         'event_yield', 'voltage_value', 'channel_count', 'flow_cell_id')
         read_only = (
-        'status', 'space_available', 'minKNOW_version', 'computer', 'sample_name', 'run_status', 'flow_cell_id',
-        'run_name', 'total_drive_space', 'space_till_shutdown', 'warnings', 'last_run', 'currentscript', 'event_yield',
+        'status', 'space_available', 'computer', 'sample_name', 'run_status', 'flow_cell_id',
+        'run_name', 'total_drive_space', 'space_till_shutdown', 'warnings', 'last_run', 'current_script', 'event_yield',
         'voltage_value',)
 
     def get_channel_count(self, obj):
@@ -269,6 +275,7 @@ class MinionInfoSerializer(serializers.HyperlinkedModelSerializer):
             'minKNOW_disk_space_till_shutdown',
             'minKNOW_disk_available',
             'minKNOW_warnings',
+            'minknow_version'
         )
         read_only = ('id',)
 
@@ -309,8 +316,8 @@ class MinionRunInfoSerializer(serializers.HyperlinkedModelSerializer):
             'sample_frequency',
             'sequencing_kit',
             'user_filename_input',
-            'wells_per_channel'
-
+            'wells_per_channel',
+            'target_temp'
         )
         read_only = ('id', 'minION_name')
 

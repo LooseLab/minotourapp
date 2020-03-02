@@ -156,6 +156,7 @@ def send_messages():
             TWITCONSUMER_KEY = settings.TWITCONSUMER_KEY
             TWITCONSUMER_SECRET = settings.TWITCONSUMER_SECRET
 
+
             t = Twitter(
                 auth=OAuth(
                     TWITTOKEN, TWITTOKEN_SECRET, TWITCONSUMER_KEY, TWITCONSUMER_SECRET
@@ -177,6 +178,8 @@ def send_messages():
                     }
                 }
             )
+
+
             # status = '@{} {}'.format(new_message.recipient.extendedopts.twitterhandle,new_message.title)
             # t.statuses.update(
             #    status=status

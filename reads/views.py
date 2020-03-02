@@ -381,7 +381,14 @@ def run_detail(request, pk):
 @api_view(["GET", "POST"])
 def minion_list(request):
     """
-    List of all minIONs by user, or create a new minION.
+    Get returns a list of all minions for a given user. Post creates a new Minion for a given user.
+    Parameters
+    ----------
+    request
+
+    Returns
+    -------
+
     """
     if request.method == "GET":
         queryset = Minion.objects.filter(owner=request.user)
@@ -401,7 +408,7 @@ def minion_list(request):
 @api_view(["GET"])
 def active_minion_list(request):
     """
-    Get all active minions for a given user.
+    Get all active minions for a given user. Displays for the remote control page.
     Parameters
     ----------
     request: rest_framework.request.Request
@@ -460,22 +467,30 @@ def active_minion_list(request):
             "datetime"
         )
 
+        extra_data[minion.name]["freespace"] = minion.space_available()
+        extra_data[minion.name]["space_till_shutdown"] = minion.space_till_shutdown()
+        extra_data[minion.name]["minknow_version"] = minion.minknow_version()
+
         if minion_event_list.count() > 0:
 
             last_minion_event = minion_event_list.last()
 
             if last_minion_event.event.name != "unplugged":
 
-                if last_minion_event.event.name in [
-                    "sequencing",
-                    "starting",
-                    "processing",
+
+
+                if minion.currentdetails.minKNOW_status in [
+                    "ACQUISITION_RUNNING",
+                    "ACQUISITION_PROCESSING",
+                    "ACQUISITION_FINISHING",
                 ]:
                     # Get the run start time
-                    extra_data[minion.name]["start_time"] = minion.start_time()
+                    extra_data[minion.name]["start_time"] = str(minion.start_time())
                     extra_data[minion.name]["wells_per_channel"] = minion.wells_per_channel()
                     extra_data[minion.name]["read_length_type"] = minion.read_length_type()
-                    extra_data[minion.name]["actual_max_value"] = minion.actual_max_value()
+                    extra_data[minion.name]["actual_max_val"] = minion.actual_max_val()
+                    extra_data[minion.name]["target_temp"] = minion.target_temp()
+                    extra_data[minion.name]["flowcell_type"] = minion.flowcell_type()
 
                     mrs = MinionRunStats.objects.filter(minion=minion).last()
 
@@ -484,10 +499,6 @@ def active_minion_list(request):
                         mrs_serialiser = MinionRunStatsSerializer(mrs, context={"request": request})
 
                         data[minion.name] = mrs_serialiser.data
-
-
-
-                    # Get the
 
                 active_minion_list.append(minion)
 
@@ -498,10 +509,25 @@ def active_minion_list(request):
     return_data = list(serializer.data)
 
     for active_minion in return_data:
+        active_minion.update(extra_data[active_minion["name"]])
         if active_minion.get("name", -2) in data:
             active_minion.update(data.get(active_minion["name"], blank_stats))
             active_minion.update(extra_data[active_minion["name"]])
     return Response(serializer.data)
+
+
+@api_view(["GET"])
+def computers_list(request):
+    """
+    Get the computer information for remote control connected computers
+    Parameters
+    ----------
+    request: rest_framework:request.Request
+        Request body.
+    Returns
+    -------
+
+    """
 
 
 @api_view(["GET", "POST"])
@@ -746,13 +772,11 @@ def list_minion_info(request, pk):
 
     """
 
-    print(f"request.method is {request.method}")
-    print(request.data)
     if request.method == "POST":
         serializer = MinionInfoSerializer(
             data=request.data, context={"request": request}
         )
-        if serializer.is_valid():
+        if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         print(serializer.errors)
@@ -927,9 +951,9 @@ def list_minion_run_status(request, pk):
     -------
 
     """
+    print(request.data)
+    print("minion tun info")
     if request.method == "POST":
-        print("minion run stat")
-        print(request.data)
         serializer = MinionRunInfoSerializer(
             data=request.data, context={"request": request}
         )
@@ -1276,7 +1300,7 @@ def flowcell_list(request):
             if obj:
                 flowcells.append(obj)
 
-        return JsonResponse({"data": flowcells})
+        return Response({"data": flowcells})
     # If the method is not GET, it must be post
     else:
         # Serialise the data inside the request

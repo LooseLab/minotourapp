@@ -237,10 +237,11 @@ class Minion(models.Model):
         except AttributeError:
             return "undefined"
 
-    def minKNOW_version(self):
+    def minknow_version(self):
         try:
-            return self.currentrundetails.last().minKNOW_version
-        except AttributeError:
+            return self.currentdetails.minknow_version
+        except AttributeError as e:
+            print(e)
             return "undefined"
 
     def flow_cell_id(self):
@@ -285,7 +286,7 @@ class Minion(models.Model):
         except AttributeError:
             return "undefined"
 
-    def currentscript(self):
+    def current_script(self):
         try:
             return self.currentdetails.minKNOW_current_script
         except AttributeError:
@@ -303,7 +304,7 @@ class Minion(models.Model):
         except AttributeError:
             return 0
 
-    def actual_max_value(self):
+    def actual_max_val(self):
         """
         Fetch the actual longest read from minKnow by reverse looking up the last MinionRunInfo entry.
         Returns
@@ -311,7 +312,7 @@ class Minion(models.Model):
         int
         """
         try:
-            return self.currentrunstats.order_by('sample_time').last().actual_max_value
+            return self.currentrunstats.order_by('sample_time').last().actual_max_val
         except AttributeError:
             return "Unknown"
 
@@ -337,8 +338,32 @@ class Minion(models.Model):
         try:
             return self.currentrundetails.last().read_length_type
         except AttributeError:
-            return  "Unknown"
+            return "Unknown"
 
+    def target_temp(self):
+        """
+        Fetch the target temperature of the Minion device.
+        Returns
+        -------
+        int
+        """
+        try:
+            return self.currentrundetails.last().target_temp
+        except AttributeError:
+            return 0
+
+    def flowcell_type(self):
+        """
+        Fetch the flowcell product type name
+        Returns
+        -------
+        str
+
+        """
+        try:
+            return self.currentrundetails.last().flowcell_type
+        except AttributeError:
+            return "Unknown"
 
 class GroupRun(models.Model):  # TODO don't document
 
@@ -765,7 +790,7 @@ class MinionInfo(models.Model):
     :minKNOW_disk_space_till_shutdown: How much space is left till the sequencer shuts down.
     :minKNOW_disk_available: The total amount of space left on the device.
     :minKNOW_warnings: If minKNOW is about to shutdown a warning is added here.
-
+    :minknow_version: Version of minknow
     """
 
     minion = models.OneToOneField(
@@ -883,6 +908,11 @@ class MinionInfo(models.Model):
 
     )
 
+    minknow_version = models.CharField(
+        max_length=64,
+        null=True
+    )
+
     class Meta:
         verbose_name = 'MinION Info'
         verbose_name_plural = 'MinION Info'
@@ -926,6 +956,13 @@ class MinionRunStats(models.Model):
     minKNOW_histogram_values: Reporting the values of the histogram from MinKNOW
     minKNOW_histogram_bin_width: Measure of the bin width for the above histogram.
     created_date: Created Date.
+    actual_max_val: Maximum read length
+    n50_data: Estimated N50
+    estimated_selected_bases: int
+    basecalled_bases
+    basecalled_fail_read_count
+    basecalled_pass_read_count
+
     """
 
     minion = models.ForeignKey(
@@ -933,6 +970,7 @@ class MinionRunStats(models.Model):
         Minion,
         related_name='currentrunstats',
         on_delete=models.CASCADE,
+
 
     )
 
@@ -1088,6 +1126,31 @@ class MinionRunStats(models.Model):
         null=True
     )
 
+    n50_data = models.IntegerField(
+        default=0,
+        null=True
+    )
+
+    estimated_selected_bases = models.IntegerField(
+        default=0,
+        null=True
+    )
+
+    basecalled_bases = models.IntegerField(
+        default=0,
+        null=True
+    )
+
+    basecalled_fail_read_count = models.IntegerField(
+        default=0,
+        null=True
+    )
+
+    basecalled_pass_read_count = models.IntegerField(
+        default=0,
+        null=True
+    )
+
     class Meta:
         verbose_name = 'MinION Run Stats'
         verbose_name_plural = 'MinION Run Stats'
@@ -1128,6 +1191,7 @@ class MinionRunInfo(models.Model):
     minKNOW_computer
     experiment_type
     experiment_id
+    TODO UNTIL WELLS PER CHANNEL NONE OF THESE ARE UPLOADED
     fast5_output_fastq_in_hdf
     fast5_raw
     fast5_reads_per_folder
@@ -1140,7 +1204,8 @@ class MinionRunInfo(models.Model):
     sample_frequency
     sequencing_kit
     user_filename_input
-    wells_per_channel 
+    wells_per_channel
+    target_temp: Target temperature of minion device
     """
     minion = models.ForeignKey(
 
@@ -1346,6 +1411,11 @@ class MinionRunInfo(models.Model):
         default="ESTIMATED BASES",
         max_length=32,
         null=True
+    )
+
+    target_temp = models.IntegerField(
+        default=35,
+        null=-True
     )
     class Meta:
         unique_together = ("minion", "minKNOW_hash_run_id", "minKNOW_exp_script_purpose")
