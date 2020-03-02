@@ -8,7 +8,7 @@ from functools import lru_cache
 import collections
 import numpy as np
 
-from reads.models import Flowcell, MinionRunInfo, Run
+from reads.models import Flowcell, MinionRunInfo, Run, JobMaster, JobType
 from web.tasks_move_reads_to_flowcell import move_reads_to_flowcell
 
 
@@ -550,6 +550,17 @@ def split_flowcell(existing_or_new_flowcell, from_flowcell_id, to_flowcell_id, t
             name=to_flowcell_name,
             sample_name=to_flowcell_name,
             owner=from_flowcell.owner,
+        )
+        JobMaster.objects.create(
+            flowcell=to_flowcell,
+            job_type=JobType.objects.filter(name="ChanCalc")[0],
+            last_read=0
+        )
+
+        JobMaster.objects.create(
+            flowcell=to_flowcell,
+            job_type=JobType.objects.filter(name="UpdateFlowcellDetails")[0],
+            last_read=0
         )
 
         print('Moving run {} from flowcell {} to flowcell {}'.format(
