@@ -474,9 +474,9 @@ def active_minion_list(request):
         if minion_event_list.count() > 0:
 
             last_minion_event = minion_event_list.last()
+            five_minute_check = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=5)
 
-            if last_minion_event.event.name != "unplugged":
-
+            if last_minion_event.event.name != "unplugged" and minion.currentdetails.last_modified > five_minute_check:
 
 
                 if minion.currentdetails.minKNOW_status in [
@@ -491,6 +491,7 @@ def active_minion_list(request):
                     extra_data[minion.name]["actual_max_val"] = minion.actual_max_val()
                     extra_data[minion.name]["target_temp"] = minion.target_temp()
                     extra_data[minion.name]["flowcell_type"] = minion.flowcell_type()
+                    extra_data[minion.name]["experiment_name"] = minion.experiment_name()
 
                     mrs = MinionRunStats.objects.filter(minion=minion).last()
 
