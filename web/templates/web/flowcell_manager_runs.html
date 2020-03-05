@@ -19,9 +19,10 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class='panel panel-info'>
-                        <div class='panel-heading'>
-                            <h3 class='panel-title'>Split a flowcell: - {{ flowcell.name }}</h3>
-                        </div>
+                        <section class="content-header">
+                            <h1>Flowcell name: <strong id="name-flowcell">{{ flowcell.name }}</strong> Sample name:
+                                <strong>{{ flowcell.sample_name }}</strong></h1>
+                        </section>
                         <div class='panel-body'>
 
                             {% for record in run_list %}
@@ -30,7 +31,7 @@
 
                                     <div class='table-responsive'>
                                     <form method="POST" action="{% url 'flowcell-manager-runs-split' 1 %}">
-                                    <input type="hidden" name="flowcell_id" value="{{ flowcell.id }}" />
+                                    <input type="hidden" name="flowcell_id" value="{{ flowcell.id }}"/>
                                     {% csrf_token %}
 
                                     <table class="table">
@@ -100,7 +101,8 @@
                             <div class="form-group">
                                 <select class="form-control" name="existing_flowcell_id">
                                     {% for flowcell in flowcell_list %}
-                                        <option value="{{ flowcell.id }}">{{ flowcell.name }} - {{ flowcell.sample_name }}</option>
+                                        <option value="{{ flowcell.id }}">{{ flowcell.name }}
+                                            - {{ flowcell.sample_name }}</option>
                                     {% endfor %}
                                 </select>
                             </div>

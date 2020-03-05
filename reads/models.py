@@ -1274,7 +1274,7 @@ class MinionRunInfo(models.Model):
         null=True
     )
 
-    run_id = models.ForeignKey(
+    run = models.ForeignKey(
 
         Run,
         related_name='RunDetails',

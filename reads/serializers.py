@@ -294,7 +294,7 @@ class MinionRunInfoSerializer(serializers.HyperlinkedModelSerializer):
             'minKNOW_flow_cell_id',
             'minKNOW_run_name',
             'minKNOW_version',
-            'run_id',
+            'run',
             'minKNOW_hash_run_id',
             'minKNOW_script_run_id',
             'minKNOW_real_sample_rate',
