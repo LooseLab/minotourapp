@@ -577,32 +577,32 @@ def minion_messages_list(request, pk):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(["GET"],)
-def sinceminion_messages_list(request, pk, starttime, endtime):
-
-    correctedstart = parser.parse(starttime) - datetime.timedelta(minutes=180)
-
-    correctedend = parser.parse(endtime) + datetime.timedelta(minutes=180)
-
-    queryset = (
-        MinionMessage.objects.filter(minION=pk)
-        .filter(
-            minKNOW_message_timestamp__gte=correctedstart.isoformat().replace(
-                "+00:00", "Z"
-            )
-        )
-        .filter(
-            minKNOW_message_timestamp__lte=correctedend.isoformat().replace(
-                "+00:00", "Z"
-            )
-        )
-    )
-
-    serializer = MinionMessageSerializer(
-        queryset, many=True, context={"request": request}
-    )
-
-    return Response(serializer.data)
+# @api_view(["GET"],)
+# def sinceminion_messages_list(request, pk, starttime, endtime):
+#
+#     correctedstart = parser.parse(starttime) - datetime.timedelta(minutes=180)
+#
+#     correctedend = parser.parse(endtime) + datetime.timedelta(minutes=180)
+#
+#     queryset = (
+#         MinionMessage.objects.filter(minION=pk)
+#         .filter(
+#             minKNOW_message_timestamp__gte=correctedstart.isoformat().replace(
+#                 "+00:00", "Z"
+#             )
+#         )
+#         .filter(
+#             minKNOW_message_timestamp__lte=correctedend.isoformat().replace(
+#                 "+00:00", "Z"
+#             )
+#         )
+#     )
+#
+#     serializer = MinionMessageSerializer(
+#         queryset, many=True, context={"request": request}
+#     )
+#
+#     return Response(serializer.data)
 
 
 @api_view(["GET"],)
@@ -1978,7 +1978,7 @@ def flowcell_run_summaries_html(request, pk):
 
             minion_run_status = minion_run_status_list[0]
 
-            element["runid"] = minion_run_status.run_id.runid
+            element["runid"] = minion_run_status.run.runid
             element["run_start_time"] = minion_run_status.minKNOW_start_time
             element["minknow_computer_name"] = minion_run_status.minKNOW_computer
             element["minion_id"] = minion_run_status.minion.minION_name
