@@ -456,8 +456,8 @@ def get_run_details(run_id):
 
             minion_run_status = minion_run_status_list[0]
 
-            element['id'] = minion_run_status.run_id.id
-            element['runid'] = minion_run_status.run_id.runid
+            element['id'] = minion_run_status.run.id
+            element['runid'] = minion_run_status.run.runid
             element['run_start_time'] = minion_run_status.minKNOW_start_time
             element['minknow_computer_name'] = minion_run_status.minKNOW_computer
             element['minion_id'] = minion_run_status.minion.minION_name
