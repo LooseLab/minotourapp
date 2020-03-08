@@ -70,7 +70,7 @@
                                             <tr v-for="item in activeDevices" :key="item.device">
                                                 <td>{{ item.computer }}<br>{{ item.name }}<br>{{
                                                     item.sample_name
-                                                    }}<br>{{ item.sample_name }}
+                                                    }}<br>{{ item.experiment_name }}
                                                 </td>
                                                 <td>{{ item.start_time }}</td>
                                                 <td>{{ item.flow_cell_id }}<br>{{ item.flowcell_type }}<br>
@@ -97,9 +97,9 @@
                                                     (parseInt(item.basecalled_pass_read_count)+parseInt(item.basecalled_fail_read_count))
                                                     | humnum}} <br> {{
                                                     (parseInt(item.basecalled_pass_read_count)+parseInt(item.basecalled_fail_read_count))
-                                                    / item.read_count *100 | humnum}}%
+                                                    / item.minKNOW_read_count *100 | humnum}}%
                                                 </td>
-                                                <td>{{ item.basecalled_pass_read_count / item.read_count * 100 |
+                                                <td>{{ item.basecalled_pass_read_count / item.minKNOW_read_count * 100 |
                                                     humnum}}%
                                                 </td>
                                                 <td>{{item.basecalled_bases | humnum }}b<br>{{
@@ -348,10 +348,9 @@
                             if (typeof this.devices === 'undefined') {
                                 return
                             } else {
-                                console.log("Looking for shizz");
                                 return this.devices.filter(function (devices) {
                                     console.log(devices);
-                                    return devices.run_status.match(/^(PROCESSING|STARTING|FINISHING|ACQUISITION_RUNNING|)$/) //("PROCESSING","STARTING","FINISHING")
+                                    return devices.run_status.match(/^(ACQUISITION_PROCESSING|STARTING|FINISHING|ACQUISITION_RUNNING|)$/) //("PROCESSING","STARTING","FINISHING")
                                 })
                             }
                         },
@@ -415,6 +414,7 @@
                 });
                 const remoteControlController = new RemoteControlController(vm);
                 remoteControlController.getActiveMinionsAndStats();
+
 
                 // NOW TO RAM SOME DATA IN
                 {#vm.computers.append(remoteControlController.getActiveMinions())#}

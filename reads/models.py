@@ -365,6 +365,18 @@ class Minion(models.Model):
         except AttributeError:
             return "Unknown"
 
+    def experiment_name(self):
+        """
+        Return the experiment id in string format
+        Returns
+        -------
+
+        """
+        try:
+            return self.currentrundetails.last().experiment_id
+        except AttributeError:
+            return  "Unknown"
+
 class GroupRun(models.Model):  # TODO don't document
 
     MINION = 'MINION'
@@ -913,6 +925,10 @@ class MinionInfo(models.Model):
         null=True
     )
 
+    last_modified = models.DateTimeField(
+        auto_now=True
+    )
+
     class Meta:
         verbose_name = 'MinION Info'
         verbose_name_plural = 'MinION Info'
@@ -970,6 +986,7 @@ class MinionRunStats(models.Model):
         Minion,
         related_name='currentrunstats',
         on_delete=models.CASCADE,
+        null=True
 
 
     )
@@ -1257,7 +1274,7 @@ class MinionRunInfo(models.Model):
         null=True
     )
 
-    run_id = models.ForeignKey(
+    run = models.ForeignKey(
 
         Run,
         related_name='RunDetails',

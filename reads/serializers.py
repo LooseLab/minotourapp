@@ -123,12 +123,12 @@ class MinionSerializer(serializers.HyperlinkedModelSerializer):
 
     def get_channel_count(self, obj):
         if hasattr(obj.currentrundetails.last(), "run_id"):
-            return obj.currentrundetails.last().run_id.flowcell.size
+            return obj.currentrundetails.last().run.flowcell.size
         return "Unknown"
 
     def get_flow_cell_id(self, obj):
         try:
-            return obj.currentrundetails.last().run_id.flowcell.name
+            return obj.currentrundetails.last().run.flowcell.name
         except AttributeError as e:
             return "Unknown"
 
@@ -294,7 +294,7 @@ class MinionRunInfoSerializer(serializers.HyperlinkedModelSerializer):
             'minKNOW_flow_cell_id',
             'minKNOW_run_name',
             'minKNOW_version',
-            'run_id',
+            'run',
             'minKNOW_hash_run_id',
             'minKNOW_script_run_id',
             'minKNOW_real_sample_rate',

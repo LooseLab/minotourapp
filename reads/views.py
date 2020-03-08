@@ -474,9 +474,9 @@ def active_minion_list(request):
         if minion_event_list.count() > 0:
 
             last_minion_event = minion_event_list.last()
+            five_minute_check = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=5)
 
-            if last_minion_event.event.name != "unplugged":
-
+            if last_minion_event.event.name != "unplugged" and minion.currentdetails.last_modified > five_minute_check:
 
 
                 if minion.currentdetails.minKNOW_status in [
@@ -491,6 +491,7 @@ def active_minion_list(request):
                     extra_data[minion.name]["actual_max_val"] = minion.actual_max_val()
                     extra_data[minion.name]["target_temp"] = minion.target_temp()
                     extra_data[minion.name]["flowcell_type"] = minion.flowcell_type()
+                    extra_data[minion.name]["experiment_name"] = minion.experiment_name()
 
                     mrs = MinionRunStats.objects.filter(minion=minion).last()
 
@@ -576,32 +577,32 @@ def minion_messages_list(request, pk):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(["GET"],)
-def sinceminion_messages_list(request, pk, starttime, endtime):
-
-    correctedstart = parser.parse(starttime) - datetime.timedelta(minutes=180)
-
-    correctedend = parser.parse(endtime) + datetime.timedelta(minutes=180)
-
-    queryset = (
-        MinionMessage.objects.filter(minION=pk)
-        .filter(
-            minKNOW_message_timestamp__gte=correctedstart.isoformat().replace(
-                "+00:00", "Z"
-            )
-        )
-        .filter(
-            minKNOW_message_timestamp__lte=correctedend.isoformat().replace(
-                "+00:00", "Z"
-            )
-        )
-    )
-
-    serializer = MinionMessageSerializer(
-        queryset, many=True, context={"request": request}
-    )
-
-    return Response(serializer.data)
+# @api_view(["GET"],)
+# def sinceminion_messages_list(request, pk, starttime, endtime):
+#
+#     correctedstart = parser.parse(starttime) - datetime.timedelta(minutes=180)
+#
+#     correctedend = parser.parse(endtime) + datetime.timedelta(minutes=180)
+#
+#     queryset = (
+#         MinionMessage.objects.filter(minION=pk)
+#         .filter(
+#             minKNOW_message_timestamp__gte=correctedstart.isoformat().replace(
+#                 "+00:00", "Z"
+#             )
+#         )
+#         .filter(
+#             minKNOW_message_timestamp__lte=correctedend.isoformat().replace(
+#                 "+00:00", "Z"
+#             )
+#         )
+#     )
+#
+#     serializer = MinionMessageSerializer(
+#         queryset, many=True, context={"request": request}
+#     )
+#
+#     return Response(serializer.data)
 
 
 @api_view(["GET"],)
@@ -1977,7 +1978,7 @@ def flowcell_run_summaries_html(request, pk):
 
             minion_run_status = minion_run_status_list[0]
 
-            element["runid"] = minion_run_status.run_id.runid
+            element["runid"] = minion_run_status.run.runid
             element["run_start_time"] = minion_run_status.minKNOW_start_time
             element["minknow_computer_name"] = minion_run_status.minKNOW_computer
             element["minion_id"] = minion_run_status.minion.minION_name
