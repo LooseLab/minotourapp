@@ -205,19 +205,22 @@
                                                                         <v-alert
                                                                                 dense
                                                                                 type="error">
-                                                                            Space Free:{{item.space_available | humnum}}%<br>Stops:{{item.space_till_shutdown | humnum}}%<br>
+                                                                            Space Free:{{item.space_available |
+                                                                            humnum}}%<br>Stops:{{item.space_till_shutdown
+                                                                            | humnum}}%<br>
                                                                         </v-alert>
                                                                     </div>
                                                                     <div v-else>
                                                                         <v-alert
                                                                                 dense
                                                                                 type="success">
-                                                                            Space Free:{{item.space_available | humnum}}<br>Stops:{{item.space_till_shutdown | humnum}}<br>
+                                                                            Space Free:{{item.space_available | humnum}}<br>Stops:{{item.space_till_shutdown
+                                                                            | humnum}}<br>
                                                                         </v-alert>
                                                                     </div>
                                                                     <v-btn x-small dark
                                                                            @click="removeme(item.ipaddress)">
-                                                                        Refresh.
+                                                                        Refresh
                                                                     </v-btn>
                                                                 </v-card-text>
                                                             </v-card>
@@ -293,6 +296,10 @@
                     vuetify,
                     el: "#app",
                     name: 'App',
+                    created() {
+                        this.getData();
+                        this.timer = setInterval(this.getData, 15000)
+                    },
                     methods: {
                         testvalue(value, type) {
                             /* eslint-disable no-console */
@@ -340,8 +347,42 @@
                                 }
                             }
                         },
-
-
+                        getData() {
+                            axios
+                                .get('/api/v1/active_minions')
+                                .then(response => {
+                                    this.devices = response.data;
+                                    this.parseComputerData()
+                                })
+                                .catch(error => console.log(error))
+                        },
+                        cancelAutoUpdate() {
+                            clearInterval(this.timer)
+                        },
+                        parseComputerData() {
+                            // Add computers temp here
+                            let tempComputerList = [];
+                            this.devices.forEach(minion => {
+                                if (!tempComputerList.some(e => e.computer === minion.computer)) {
+                                    tempComputerList.push((
+                                            (
+                                                {computer, space_available, space_till_shutdown, minknow_version}) => (
+                                                {
+                                                    computer,
+                                                    space_available,
+                                                    space_till_shutdown,
+                                                    minknow_version
+                                                }
+                                            )
+                                        )
+                                        (minion)
+                                    );
+                                }
+                            });
+                            // Get number unique computers
+                            this.computer_info.number = tempComputerList.length;
+                            this.computers = tempComputerList
+                        },
                     },
                     computed: {
                         activeDevices() {
@@ -369,6 +410,8 @@
                         numinactive() {
                             return this.inactivedevices.length
                         },
+
+
                     },
                     filters: {
                         humnum(num) {
@@ -392,6 +435,9 @@
                             return (num / si[i].value).toFixed(2).replace(rx, "$1") + si[i].symbol;
                         }
                     },
+                    destroyed() {
+                        this.cancelAutoUpdate()
+                    },
                     data: {
                         CustomAlertType: "warning",
                         GeneralResponseAlert: false,
@@ -402,18 +448,19 @@
                             message: "",
                             alert_type: "danger"
                         },
+                        timer: null,
                         alert: true,
                         itemsPerPageOptions: [3, 6, 9, 12],
                         itemsPerPage: 3,
-                            computers: [],
+                        computers: [],
                         devices: [],
                         humnum: null
                         //
                     }
                     {#render: h => h(App)#}
                 });
-                const remoteControlController = new RemoteControlController(vm);
-                remoteControlController.getActiveMinionsAndStats();
+                {#const remoteControlController = new RemoteControlController(vm);#}
+                {#remoteControlController.getActiveMinionsAndStats();#}
 
 
                 // NOW TO RAM SOME DATA IN

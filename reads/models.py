@@ -200,7 +200,7 @@ class Minion(models.Model):
         Fetch the run start time according to MinKnow from the linked minionrunstatus model.
         Returns
         -------
-        starttime: datetime.datetime
+        start_time: datetime.datetime
         """
         try:
             start_time = self.currentrundetails.last().minKNOW_start_time
