@@ -1,6 +1,8 @@
 import datetime
 import json
 import time
+from pprint import pprint
+
 import numpy as np
 import pandas as pd
 from celery.utils.log import get_task_logger
@@ -423,39 +425,37 @@ def active_minion_list(request):
     extra_data = {}
 
     blank_stats = {'id': -1,
- 'minion_id': -1,
- 'run_id': -1,
- 'sample_time': datetime.datetime.now(),
- 'event_yield': "Unknown",
- 'asic_temp': "Unknown",
- 'heat_sink_temp': "Unknown",
- 'voltage_value': "Unknown",
- 'mean_ratio': "Unknown",
- 'open_pore': "Unknown",
- 'in_strand': "Unknown",
- 'multiple': "Unknown",
- 'unavailable': "Unknown",
- 'unknown': "Unknown",
- 'adapter': "Unknown",
- 'pending_mux_change': "Unknown",
- 'unclassified': "Unknown",
- 'below': "Unknown",
- 'unblocking': "Unknown",
- 'above': "Unknown",
- 'good_single': "Unknown",
- 'saturated': "Unknown",
- 'inrange': "Unknown",
- 'strand': "Unknown",
- 'no_pore': "Unknown",
- 'zero': "Unknown",
- 'pore': "Unknown",
- 'minKNOW_read_count': "Unknown",
- 'minKNOW_histogram_values': "[]",
- 'minKNOW_histogram_bin_width': "Unknown",
- 'created_date': datetime.datetime.now(),
- 'actual_max_val': "Unknown"}
-
-
+                   'minion_id': -1,
+                   'run_id': -1,
+                   'sample_time': datetime.datetime.now(),
+                   'event_yield': "Unknown",
+                   'asic_temp': "Unknown",
+                   'heat_sink_temp': "Unknown",
+                   'voltage_value': "Unknown",
+                   'mean_ratio': "Unknown",
+                   'open_pore': "Unknown",
+                   'in_strand': "Unknown",
+                   'multiple': "Unknown",
+                   'unavailable': "Unknown",
+                   'unknown': "Unknown",
+                   'adapter': "Unknown",
+                   'pending_mux_change': "Unknown",
+                   'unclassified': "Unknown",
+                   'below': "Unknown",
+                   'unblocking': "Unknown",
+                   'above': "Unknown",
+                   'good_single': "Unknown",
+                   'saturated': "Unknown",
+                   'inrange': "Unknown",
+                   'strand': "Unknown",
+                   'no_pore': "Unknown",
+                   'zero': "Unknown",
+                   'pore': "Unknown",
+                   'minKNOW_read_count': "Unknown",
+                   'minKNOW_histogram_values': "[]",
+                   'minKNOW_histogram_bin_width': "Unknown",
+                   'created_date': datetime.datetime.now(),
+                   'actual_max_val': "Unknown"}
 
     data = {}
 
@@ -484,7 +484,7 @@ def active_minion_list(request):
                     "ACQUISITION_PROCESSING",
                     "ACQUISITION_FINISHING",
                 ]:
-                    # Get the run start time
+                    # Get the run start time and other deets
                     extra_data[minion.name]["start_time"] = str(minion.start_time())
                     extra_data[minion.name]["wells_per_channel"] = minion.wells_per_channel()
                     extra_data[minion.name]["read_length_type"] = minion.read_length_type()
@@ -496,7 +496,6 @@ def active_minion_list(request):
                     mrs = MinionRunStats.objects.filter(minion=minion).last()
 
                     if mrs:
-                        print("Whale hello there")
                         mrs_serialiser = MinionRunStatsSerializer(mrs, context={"request": request})
 
                         data[minion.name] = mrs_serialiser.data
@@ -511,9 +510,13 @@ def active_minion_list(request):
 
     for active_minion in return_data:
         active_minion.update(extra_data[active_minion["name"]])
-        if active_minion.get("name", -2) in data:
+        if active_minion.get("name", 0) in data:
+            print("Hello")
+            pprint(extra_data)
             active_minion.update(data.get(active_minion["name"], blank_stats))
             active_minion.update(extra_data[active_minion["name"]])
+
+    pprint(serializer.data)
     return Response(serializer.data)
 
 
@@ -1236,70 +1239,41 @@ def flowcell_list(request):
 
         for record in queryset:
 
+            if request.user == record.owner:
+                owner = True
+                permission = "Owner"
+            elif request.user.has_perm("view_data", record):
+                owner = False
+                permission = "View data"
+            elif request.user.has_perm("run_analysis", record):
+                owner = False
+                permission = "Run analysis"
+            else:
+                logger.error(f"Flowcell {record.name} retrieved for user {request.user} that should not have been.")
+                continue
+
             obj = None
 
-            if request.user == record.owner:
 
-                obj = {
-                    "id": record.id,
-                    "name": record.name,
-                    "size": record.size,
-                    "start_time": record.start_time,
-                    "number_reads": record.number_reads,
-                    "number_reads_processed": record.number_reads_processed,
-                    "number_runs": record.number_runs,
-                    "number_barcodes": record.number_barcodes,
-                    "total_read_length": record.total_read_length,
-                    "average_read_length": record.average_read_length,
-                    "is_active": record.active(),
-                    "sample_name": record.sample_name,
-                    "has_fastq": record.has_fastq,
-                    "owner": True,
-                    "permission": "OWNER",
-                }
+            obj = {
+                "id": record.id,
+                "name": record.name,
+                "size": record.size,
+                "start_time": record.start_time,
+                "number_reads": record.number_reads,
+                "number_reads_processed": record.number_reads_processed,
+                "number_runs": record.number_runs,
+                "number_barcodes": record.number_barcodes,
+                "total_read_length": record.total_read_length,
+                "average_read_length": record.average_read_length,
+                "is_active": record.active(),
+                "sample_name": record.sample_name,
+                "has_fastq": record.has_fastq,
+                "owner": owner,
+                "permission": permission,
+            }
 
-            elif request.user.has_perm("view_data", record):
-
-                obj = {
-                    "id": record.id,
-                    "name": record.name,
-                    "size": record.size,
-                    "start_time": record.start_time,
-                    "number_reads": record.number_reads,
-                    "number_reads_processed": record.number_reads_processed,
-                    "number_runs": record.number_runs,
-                    "number_barcodes": record.number_barcodes,
-                    "total_read_length": record.total_read_length,
-                    "average_read_length": record.average_read_length,
-                    "is_active": record.active(),
-                    "sample_name": record.sample_name,
-                    "has_fastq": record.has_fastq,
-                    "owner": False,
-                    "permission": "VIEW DATA",
-                }
-
-            elif request.user.has_perm("run_analysis", record):
-
-                obj = {
-                    "id": record.id,
-                    "name": record.name,
-                    "size": record.size,
-                    "start_time": record.start_time,
-                    "number_reads": record.number_reads,
-                    "number_reads_processed": record.number_reads_processed,
-                    "number_runs": record.number_runs,
-                    "number_barcodes": record.number_barcodes,
-                    "total_read_length": record.total_read_length,
-                    "average_read_length": record.average_read_length,
-                    "is_active": record.active(),
-                    "sample_name": record.sample_name,
-                    "has_fastq": record.has_fastq,
-                    "owner": False,
-                    "permission": "RUN ANALYSIS",
-                }
-
-            if obj:
-                flowcells.append(obj)
+            flowcells.append(obj)
 
         return Response({"data": flowcells})
     # If the method is not GET, it must be post
@@ -2913,7 +2887,7 @@ def task_control(request):
                 running = job_master.running
                 time.sleep(1)
                 seconds_counter += 1
-                if seconds_counter is 30:
+                if seconds_counter is 10:
                     job_master.running = False
                     job_master.save()
 
