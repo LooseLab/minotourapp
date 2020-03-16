@@ -400,7 +400,7 @@
                                 return
                             } else {
                                 return this.devices.filter(function (devices) {
-                                    return devices.run_status.match(/^(active|ACQUISITION_COMPLETED|No Run)$/)
+                                    return devices.run_status.match(/^(active|COMPLETED|No Run|ACQUISITION_COMPLETED)$/)
                                 })
                             }
                         },
