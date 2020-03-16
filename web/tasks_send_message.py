@@ -1,6 +1,8 @@
 """
 Task_send_message.py. Code for sending tweets once a certain condition has been met on the flowcell.
 """
+import time
+
 import pandas as pd
 from celery import task
 from twitter import Twitter, OAuth
@@ -141,11 +143,13 @@ def send_messages():
 
     """
     time_limit = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)
-    
+
     new_messages = Message.objects.filter(delivered_date=None)
 
     for new_message in new_messages:
         # print('Sending message: {}'.format(new_message))
+        if new_message.created_date < time_limit:
+            continue
 
         message_sent = False
 
