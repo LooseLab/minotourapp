@@ -140,6 +140,8 @@ def send_messages():
     none
 
     """
+    time_limit = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)
+    
     new_messages = Message.objects.filter(delivered_date=None)
 
     for new_message in new_messages:
@@ -187,8 +189,9 @@ def send_messages():
 
             message_sent = True
 
+            time.sleep(1)
+
         if message_sent:
-            print("inside message_sent")
             new_message.delivered_date = datetime.datetime.now(tz=datetime.timezone.utc)
             new_message.save()
 
