@@ -108,7 +108,7 @@
                                                     humnum}}b
                                                 </td>
                                                 <td>
-                                                    <v-chip :color="testvalue(((item.strand + item.adapter)/ (item.strand + item.adapter + item.pore) * 100) , 'occupancy')">
+                                                    <v-chip :color="testValue(((item.strand + item.adapter)/ (item.strand + item.adapter + item.pore) * 100) , 'occupancy')">
                                                         {{ (item.strand + item.adapter)/ (item.strand +
                                                         item.adapter
                                                         +
@@ -116,24 +116,24 @@
                                                     </v-chip>
                                                 </td>
                                                 <td>
-                                                    <v-chip :color="testvalue(item.strand , 'strand')" small
+                                                    <v-chip :color="testValue(item.strand , 'strand')" small
                                                             outlined>{{
                                                         item.strand }}%
                                                     </v-chip>
                                                     <br>
-                                                    <v-chip :color="testvalue(item.adapter , 'adapter')" small
+                                                    <v-chip :color="testValue(item.adapter , 'adapter')" small
                                                             outlined>{{
                                                         item.adapter }}%
                                                     </v-chip>
                                                     <br>
-                                                    <v-chip :color="testvalue(item.pore , 'pore')" small
+                                                    <v-chip :color="testValue(item.pore , 'pore')" small
                                                             outlined>{{
                                                         item.pore
                                                         }}%
                                                     </v-chip>
                                                 </td>
                                                 <td>
-                                                    <v-chip :color="testvalue(item.voltage_value , 'voltage')">{{
+                                                    <v-chip :color="testValue(item.voltage_value , 'voltage')">{{
                                                         item.voltage_value}}
                                                     </v-chip>
                                                 </td>
@@ -252,6 +252,7 @@
                                                 <th class="text-left">Device</th>
                                                 <th class="text-left">Flowcell ID/Type</th>
                                                 <th class="text-left">Channels/Mux</th>
+                                                <th class="text-left">Test Coms</th>
 
                                             </tr>
                                             </thead>
@@ -261,6 +262,15 @@
                                                 <td>{{ item.minION_name }}</td>
                                                 <td>{{ item.flow_cell_id }}/{{ item.product_code }}</td>
                                                 <td>{{ item.channel_count }}/{{item.wells_per_channel}}</td>
+                                                <td>
+                                                    <button v-on:click="testMessage" :id='item.minION_name'
+                                                            type='button'
+                                                            class='btn btn-info btn-sm'><i class='fa fa-magic'></i>
+                                                        Test
+                                                        Communication
+                                                    </button>
+                                                </td>
+
 
                                             </tr>
                                             </tbody>
@@ -301,7 +311,32 @@
                         this.timer = setInterval(this.getData, 15000)
                     },
                     methods: {
-                        testvalue(value, type) {
+                        testMessage(event) {
+
+                            var minionid = event.target.id.split("/");
+                            var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
+                            axios.post(url_mask{
+                                "type": "POST",
+                                "dataType": "json",
+                                "url": url_mask,
+                                "data": {
+                                    "custom": "",
+                                    "job": "testmessage",
+                                    "minION": event.target.id,
+                                    "complete": 'False'
+                                },
+                                "beforeSend": function (xhr, settings) {
+                                    $.ajaxSettings.beforeSend(xhr, settings);
+                                },
+                                "success": function (result) {
+                                },
+                                error: function (XMLHttpRequest, textStatus, errorThrown) {
+                                }
+
+                            })
+                            //ws.send(JSON.stringify(instructionmessage));
+                        },
+                        testValue(value, type) {
                             /* eslint-disable no-console */
                             switch (type) {
                                 case "occupancy":

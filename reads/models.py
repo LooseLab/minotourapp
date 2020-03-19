@@ -1148,12 +1148,12 @@ class MinionRunStats(models.Model):
         null=True
     )
 
-    estimated_selected_bases = models.IntegerField(
+    estimated_selected_bases = models.BigIntegerField(
         default=0,
         null=True
     )
 
-    basecalled_bases = models.IntegerField(
+    basecalled_bases = models.BigIntegerField(
         default=0,
         null=True
     )
