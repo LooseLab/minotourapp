@@ -1,7 +1,7 @@
 {% extends "web/template_private.html" %}
 {% load static %}
 {% block content %}
-    <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+    <link href="{% static 'web/libraries/vuetify.min.css' %}" rel="stylesheet">
     <div class="content-wrapper" style="background-color: white">
         <section class="content">
             {#            <div id="app">#}
@@ -284,8 +284,8 @@
                 {% endverbatim %}
             </div>
 
-            <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+            <script src="{% static 'web/libraries/vue.js' %}"></script>
+            <script src="{% static 'web/libraries/vuetify.js' %}"></script>
 
             <script>
                 {#set_active_navbar_item(1);#}
