@@ -169,7 +169,7 @@
                                                 <v-col class="grow">
                                                     You have <strong>{{ computer_info.number }}</strong> computer(s)
                                                     connected.<br>
-                                                    There are <strong>{{ numactive }}</strong> active and <strong>{{numinactive}}</strong>
+                                                    There are <strong>{{ numActive }}</strong> active and <strong>{{numInactive}}</strong>
                                                     inactive positions.<br>
                                                     {{ computer_info.message }}
                                                 </v-col>
@@ -257,7 +257,7 @@
                                             </tr>
                                             </thead>
                                             <tbody>
-                                            <tr v-for="item in inactivedevices" :key="item.device">
+                                            <tr v-for="item in inactiveDevices" :key="item.device">
                                                 <td>{{ item.computer }}</td>
                                                 <td>{{ item.minION_name }}</td>
                                                 <td>{{ item.flow_cell_id }}/{{ item.product_code }}</td>
@@ -288,6 +288,7 @@
             <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 
             <script>
+                {#set_active_navbar_item(1);#}
                 const topPadding = $(".main-header").height() + 16;
                 $(".content-wrapper").css("padding-top", `${topPadding}px`);
                 const vuetify = new Vuetify({
@@ -315,25 +316,16 @@
 
                             var minionid = event.target.id.split("/");
                             var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
-                            axios.post(url_mask{
-                                "type": "POST",
-                                "dataType": "json",
-                                "url": url_mask,
-                                "data": {
+                            axios.post(url_mask, {
+
                                     "custom": "",
                                     "job": "testmessage",
                                     "minION": event.target.id,
                                     "complete": 'False'
-                                },
-                                "beforeSend": function (xhr, settings) {
-                                    $.ajaxSettings.beforeSend(xhr, settings);
-                                },
-                                "success": function (result) {
-                                },
-                                error: function (XMLHttpRequest, textStatus, errorThrown) {
                                 }
-
-                            })
+                            ).then(response => {
+                                console.log(response)
+                            });
                             //ws.send(JSON.stringify(instructionmessage));
                         },
                         testValue(value, type) {
@@ -430,7 +422,7 @@
                                 })
                             }
                         },
-                        inactivedevices() {
+                        inactiveDevices() {
                             if (typeof this.devices === 'undefined') {
                                 return
                             } else {
@@ -439,11 +431,11 @@
                                 })
                             }
                         },
-                        numactive() {
+                        numActive() {
                             return this.activeDevices.length
                         },
-                        numinactive() {
-                            return this.inactivedevices.length
+                        numInactive() {
+                            return this.inactiveDevices.length
                         },
 
 

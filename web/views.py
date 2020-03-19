@@ -523,5 +523,4 @@ def electric_boogaloo(request):
     -------
 
     """
-    print("Helleo")
     return render(request, 'web/remote_control_2_electric_boogaloo.html')

@@ -476,11 +476,11 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
 
     <script>
+        set_active_navbar_item(1);
 
         $(document).ready(function () {
             const topPadding = $(".main-header").height() + 16;
             $(".content-wrapper").css("padding-top", `${topPadding}px`);
-            set_active_navbar_item(1);
 
             function add(a, b) {
                 return a + b;
@@ -905,8 +905,6 @@
 
             start();
             setInterval(start, 20000);
-
-
 
 
             Vue.filter('currencyDisplay', {
@@ -2473,8 +2471,6 @@
                 })
 
 
-
-
             Vue.component('diskusage', {
                 template: "<div class='panel panel-info'><div class='panel-heading'><h3 class='panel-title'>Disk Space</h3></div><div class='panel-body'><div class='table-responsive'><table class='table table-condensed' ><tr><td>Category</td><td>Info</td></tr><tr><td>minKNOW computer name</td><td>{{title}}</td></tr><tr><td>Total Drive Capacity</td><td>{{capacity}}</td></tr><tr><td>Free Drive Space</td><td>{{space}} / {{percent}}%</td></tr><tr><td>Disk Space till Shutdown</td><td>{{bytealert}}</td></tr><tr><td>Warnings?</td><td>{{recalert}}</td></tr></table></div></div></div>",
                 props: ['title', 'keydata', 'datain'],
@@ -2756,8 +2752,6 @@
                 }
             })
         });
-
-
 
 
         function getCookie(name) {

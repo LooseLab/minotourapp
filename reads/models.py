@@ -2424,7 +2424,7 @@ class FlowcellSummaryBarcode(models.Model):
 
         return len(self.channel_presence.replace('0', ''))
 
-
+# TODO is the flowcell tab even used
 class FlowcellTab(models.Model):
 
     #
