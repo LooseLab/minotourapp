@@ -449,9 +449,7 @@ def message_details(request):
     return render(
         request, 'web/message.html',
         context={
-
             'messages': messages,
-
         }
     )
 
