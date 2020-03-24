@@ -445,14 +445,15 @@ def new_messages_list(request):
 @login_required
 def message_details(request):
 
-    #message = Message.objects.get(pk=pk)
     messages = Message.objects.filter(recipient=request.user).order_by('-created_date')
-
     return render(
-        request,
-        'web/message.html',
+        request, 'web/message.html',
         context={
-           'message': messages,
+            #'authToken': auth_token,
+            #'userDetails': user_options,
+            'messages': messages,
+            #'form': form,
         }
     )
+
 
