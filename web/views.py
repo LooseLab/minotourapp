@@ -14,6 +14,10 @@ from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinI
 from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
 
 from django.contrib import messages
+from communication.models import Message
+from communication.serializers import MessageSerializer
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 import pandas as pd
 
@@ -94,6 +98,20 @@ def profile(request):
             'form': form,
         }
     )
+
+@login_required
+def user_message(request):
+    try:
+
+        user_options = UserOptions.objects.get(owner=request.user)
+
+    except ObjectDoesNotExist:
+
+        user_options = UserOptions.objects.create(owner=request.user)
+
+    auth_token = Token.objects.get(user=request.user)
+
+    messages = Message.objects.filter(recipient=request.user).order_by('-created_date')
 
 
 @login_required
@@ -416,4 +434,25 @@ def flowcell_manager(request):
     # flowcells = Flowcell.objects.filter(owner=request.user)
     return render(request, 'reads/flowcell_manager.html', context={'flowcell_manager': flowcell_manager})
 
+
+@api_view(['GET'])
+def new_messages_list(request):
+
+    queryset = Message.objects.filter(recipient=request.user).order_by('-created_date')
+    serializer = MessageSerializer(queryset, many=True, context={'request': request})
+    return Response(serializer.data)
+
+@login_required
+def message_details(request):
+
+    #message = Message.objects.get(pk=pk)
+    messages = Message.objects.filter(recipient=request.user).order_by('-created_date')
+
+    return render(
+        request,
+        'web/message.html',
+        context={
+           'message': messages,
+        }
+    )
 

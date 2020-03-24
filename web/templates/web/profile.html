@@ -96,7 +96,7 @@
 
             <div class="box">
                 <div class="box-header">
-                    <h3 class="box-title">Messages</h3>
+                    <h3 class="box-title">User Messages</h3>
 
                     <div class="box-tools">
                         <ul class="pagination pagination-sm no-margin pull-right">
@@ -113,15 +113,15 @@
                     <table class="table">
                         <tr>
                             <th style="width: 180px;">Date</th>
-                            <th style="width: 300px;">Sender</th>
-                            <th>Title</th>
+                            <<th style="width: 300px;">Sender</th>
+                             <th>Title</th>
                         </tr>
 
                         {% for message in messages %}
                             <tr>
                                 <td>{{ message.created_date|date:'d-m-Y H:i' }}</td>
                                 <td>{{ message.sender.first_name }}&nbsp;{{ message.sender.last_name }}
-                                    <{{ message.sender.email }}>
+                                    <{{ message.sender.email}}>
                                 </td>
                                 <td>{{ message.title }}</td>
                             </tr>
@@ -131,6 +131,8 @@
                 <!-- /.box-body -->
             </div>
             <!-- /.box -->
+
+
 
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
