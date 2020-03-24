@@ -444,7 +444,6 @@ def new_messages_list(request):
 
 @login_required
 def message_details(request):
-
     messages = Message.objects.filter(recipient=request.user).order_by('-created_date')
     return render(
         request, 'web/message.html',
