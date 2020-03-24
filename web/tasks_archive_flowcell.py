@@ -54,6 +54,6 @@ def archive_flowcell(task_id, archive=True):
             logger.info('Flowcell id: {} - Deleted {} fastqread records'.format(flowcell.id, affected))
 
     if archive:
-        #TODO
+        #TODO sort out difference between archived flowcell so things to keep and just clearing a flowcell
         flowcell.archived = True
         flowcell.save()

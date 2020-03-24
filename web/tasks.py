@@ -697,7 +697,7 @@ def update_flowcell_details(job_master_id):
     using the MinIONRunStatus records if they are available, otherwise reading from the
     fastq file summaries
     """
-
+    # TODO
     """
     Refactoring this task such that:
     1. it only runs when new reads have appeared.
@@ -883,4 +883,3 @@ def save_reads(data):
 
     else:
         logger.info('Saving reads with failure')
-        
