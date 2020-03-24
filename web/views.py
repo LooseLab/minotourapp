@@ -449,10 +449,9 @@ def message_details(request):
     return render(
         request, 'web/message.html',
         context={
-            #'authToken': auth_token,
-            #'userDetails': user_options,
+
             'messages': messages,
-            #'form': form,
+
         }
     )
 
