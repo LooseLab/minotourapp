@@ -414,7 +414,6 @@ def metagenomics_data_download(request, pk):
     :param request:
     :return:
     """
-
     flowcell_id = request.GET.get("flowcellId", 0)
     flowcell = Flowcell.objects.get(pk=pk)
     job_type = JobType.objects.get(name="Metagenomics")
