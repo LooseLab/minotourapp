@@ -2410,15 +2410,8 @@ def read_list_new(request):
         reads = request.data
         reads_list = []
         run_dict = {}
-        barcode_dict = {}
-        print(reads[0])
-        # reads_list = [FastqRead(**read) for read in reads]
         for read in reads:
             run_pk = read.get("run", -1)
-            # barcode_pk = read.get("barcode", -1)
-            # type_pk = read.get("type", -1)
-            # rejected_barcode_pk = read.get("rejected_barcode", -1)
-            fastq_file_pk = read.get("rejected_barcode")
             if run_pk not in run_dict and run_pk != -1:
                 run = Run.objects.get(pk=run_pk)
                 run_dict[run_pk] = run
@@ -2447,8 +2440,6 @@ def read_list_new(request):
                 fastqfile_id=read['fastqfile']
             )
             reads_list.append(fastqread)
-        print(reads[0])
-        print(reads_list)
         try:
             FastqRead.objects.bulk_create(reads_list)
             return Response("Updated reads", status=status.HTTP_201_CREATED)
