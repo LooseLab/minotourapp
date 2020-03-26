@@ -11,6 +11,7 @@ urlpatterns = [
         views.message_details,
         name="message_details"
     ),
+
     url(r'^private/tutorial/$', views.tutorial, name='tutorial'),
     url(r'^private/flowcells/$', views.flowcells, name='flowcells'),
     url(r'^private/flowcells/(?P<pk>[0-9]+)/$', views.flowcell_index, name='flowcell-index'),

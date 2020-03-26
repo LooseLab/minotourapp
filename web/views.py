@@ -441,6 +441,7 @@ def new_messages_list(request):
     serializer = MessageSerializer(queryset, many=True, context={'request': request})
     return Response(serializer.data)
 
+
 @login_required
 def message_details(request):
     messages = Message.objects.filter(recipient=request.user).order_by('-created_date')
