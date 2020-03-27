@@ -2,7 +2,7 @@
 sankey.py
 """
 from centrifuge.models import CentrifugeOutput, SankeyLink
-from jobs.models import JobMaster
+from reads.models import JobMaster
 import pandas as pd
 from celery.utils.log import get_task_logger
 import numpy as np

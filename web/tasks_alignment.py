@@ -4,8 +4,7 @@ from celery import task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from alignment.models import PafRoughCov, PafStore, PafSummaryCov
-from jobs.models import JobMaster
-from reads.models import FastqRead
+from reads.models import FastqRead, JobMaster
 from reference.models import ReferenceInfo, ReferenceLine
 import pandas as pd
 import os

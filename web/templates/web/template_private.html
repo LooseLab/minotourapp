@@ -26,6 +26,7 @@
                                 <i class="fa fa-table fa-fw"></i><span> Flowcells</span>
                             </a>
                         </li>
+
                         <li>
                             <a href="{% url 'remotecontrol' %}">
                                 <i class="fa fa-gamepad fa-fw"></i><span> MinKnow Control</span>
@@ -37,8 +38,8 @@
                             </a>
                         </li>
                          <li>
-                            <a href="{% url 'minup' %}">
-                                <i class="fa fa-cloud-upload-alt fa-fw"></i><span> Flow Cell Manager </span>
+                            <a href="{% url 'flowcell-manager' %}">
+                                <i class="fa fa-cloud-upload-alt fa-fw"></i><span> Flowcell Manager </span>
                             </a>
                         </li>
                         <li>
@@ -64,7 +65,18 @@
                     </ul>
                 </div><!-- /.navbar-collapse -->
             </div><!-- /.container-fluid -->
+
         </nav>
 
     </header>
+
+    <div class="col-md-12">
+    {%if request.user.is_superuser%}
+        <br/>
+        <div class="alert alert-danger" role="alert">You are logged using an admin account. Please use another account to analyse or process Nanopore data</div>
+    {%endif %}
+    </div>
+
+
+
 {% endblock %}
