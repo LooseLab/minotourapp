@@ -30,6 +30,7 @@ class CoverageChartController {
 
         // get the selected option to view coverage
         var value_combination = selected_option.split('_');
+        console.log(value_combination);
         // get the task id for the jobmaster
         var task_id = value_combination[0];
         // get the barcode name

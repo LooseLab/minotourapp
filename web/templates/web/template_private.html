@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block header %}
-    <header class="main-header">
+    <header class="main-header" style="position: fixed; width: 100%">
 
         <nav class="navbar navbar-default">
             <div class="container-fluid">
@@ -20,7 +20,7 @@
 
                 <!-- Collect the nav links, forms, and other content for toggling -->
                 <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-                    <ul class="nav navbar-nav">
+                    <ul class="nav h navbar-nav">
                         <li class="active">
                             <a href="{% url 'flowcells' %}">
                                 <i class="fa fa-table fa-fw"></i><span> Flowcells</span>
@@ -28,8 +28,9 @@
                         </li>
 
                         <li>
-                            <a href="{% url 'remotecontrol' %}">
-                                <i class="fa fa-gamepad fa-fw"></i><span> MinKnow Control</span>
+                            <a href="{% url 'remote-control' %}">
+                                <i class="fa fa-gamepad fa-fw"></i><span> MinKnow Control </span>
+
                             </a>
                         </li>
                         <li>
@@ -37,7 +38,13 @@
                                 <i class="fa fa-cloud-upload-alt fa-fw"></i><span> Client </span>
                             </a>
                         </li>
-                         <li>
+                        <li>
+                            <a href="{% url 'messages' %}">
+                                <i class="fa fa-envelope fa-fw"></i>
+                                <span> Messages </span>
+                            </a>
+                        </li>
+                        <li>
                             <a href="{% url 'flowcell-manager' %}">
                                 <i class="fa fa-cloud-upload-alt fa-fw"></i><span> Flowcell Manager </span>
                             </a>
@@ -54,7 +61,8 @@
                         </li>
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button"
-                               aria-haspopup="true" aria-expanded="false">{{ request.user }} {%if request.user.is_superuser%} (admin user) {%endif %} <span class="caret"></span></a>
+                               aria-haspopup="true" aria-expanded="false">{{ request.user }}
+                                {% if request.user.is_superuser %} (admin user) {% endif %} <span class="caret"></span></a>
                             <ul class="dropdown-menu">
                                 <li><a href="{% url 'password_change' %}">Change Password</a></li>
                                 <li><a href="{% url 'profile' %}">Profile</a></li>
@@ -70,11 +78,14 @@
 
     </header>
 
-    <div class="col-md-12">
-    {%if request.user.is_superuser%}
-        <br/>
-        <div class="alert alert-danger" role="alert">You are logged using an admin account. Please use another account to analyse or process Nanopore data</div>
-    {%endif %}
+
+    <div class="col-md-12" style="display: none">
+        {% if request.user.is_superuser %}
+            <br/>
+            <div class="alert alert-danger" role="alert" >You are logged using an admin account. Please use another
+                account to analyse or process Nanopore data
+            </div>
+        {% endif %}
     </div>
 
 

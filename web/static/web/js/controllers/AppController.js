@@ -1,10 +1,3 @@
-/*var doStuff = function () {
-
-  	console.log('teste');
-   	setTimeout(doStuff, appController._interval);
-};
-
-doStuff();*/
 
 class AppController {
 

@@ -1,5 +1,10 @@
 function set_active_navbar_item(item_index) {
-
+    /**
+     * @param {number} item_index The index of the navbar element in the
+     * @function {function}
+     *
+     *
+     */
     var nav_bar = document.querySelectorAll('.nav li');
 
     nav_bar.forEach(function(element, index){
@@ -127,8 +132,6 @@ var FlowcellPageApp = {
 
         this.requestStatistics = requestStatistics.bind(this);
 
-        this.checkFlowcellTabs = checkFlowcellTabs.bind(this);
-        this.addStartTabsEvents = addStartTabsEvents.bind(this);
         this.updateBarcodeNavTab = updateBarcodeNavTab.bind(this);
 
         this.ChartNumContigs = this.makeSplineChartNonDatetime(

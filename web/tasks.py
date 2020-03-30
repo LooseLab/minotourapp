@@ -8,20 +8,15 @@ from datetime import datetime, timedelta
 
 import numpy as np
 import pandas as pd
-import pytz
 from celery import task
 from celery.utils.log import get_task_logger
-from django.conf import settings
-from django.core.mail import send_mail
 from django.db.models import Max
-from django_mailgun import MailgunAPIError
 from twitter import *
 
 from assembly.models import GfaStore, GfaSummary
 from centrifuge import centrifuge
 from centrifuge.sankey import calculate_sankey
-from communication.utils import *
-from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowcell, MinIONRunStatus, JobMaster
+from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowcell, MinionRunInfo, JobMaster
 from reads.utils import getn50
 from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
@@ -151,7 +146,7 @@ def run_monitor():
 def run_delete_flowcell(flowcell_job_id):
     """
     The function called in monitorapp to delete a flowcell
-    :param flowcell_job_id: The ID of the JobMaster database entry
+    :param flowcell_job_id: The primary key of the JobMaster database entry
     :return:
     """
 
@@ -566,73 +561,73 @@ def delete_runs():
     Run.objects.filter(to_delete=True).delete()
 
 
-@task
-def send_messages():
-    """
-    Send messages through the twitter API
-    Returns
-    -------
-
-    """
-    new_messages = Message.objects.filter(delivered_date=None)
-
-    for new_message in new_messages:
-
-        # print('Sending message: {}'.format(new_message))
-
-        message_sent = False
-
-        if new_message.recipient.extendedopts.email:
-
-            try:
-
-                if new_message.sender:
-
-                    sender = new_message.sender.email
-
-                else:
-
-                    sender = 'contact@minotour.org'
-
-                send_mail(
-                    new_message.title,
-                    new_message.content,
-                    sender,
-                    [new_message.recipient.email],
-                    fail_silently=False,
-                )
-
-                message_sent = True
-
-            except MailgunAPIError as e:
-                print(e)
-
-        if new_message.recipient.extendedopts.tweet \
-                and new_message.recipient.extendedopts.twitterhandle != '':
-            TWITTOKEN = settings.TWITTOKEN
-            TWITTOKEN_SECRET = settings.TWITTOKEN_SECRET
-            TWITCONSUMER_KEY = settings.TWITCONSUMER_KEY
-            TWITCONSUMER_SECRET = settings.TWITCONSUMER_SECRET
-
-            t = Twitter(
-                auth=OAuth(TWITTOKEN, TWITTOKEN_SECRET, TWITCONSUMER_KEY, TWITCONSUMER_SECRET)
-            )
-
-            t.direct_messages.new(
-                user=new_message.recipient.extendedopts.twitterhandle,
-                text=new_message.title
-            )
-            # status = '@{} {}'.format(new_message.recipient.extendedopts.twitterhandle,new_message.title)
-            # t.statuses.update(
-            #    status=status
-            # )
-
-            message_sent = True
-
-        if message_sent:
-            print('inside message_sent')
-            new_message.delivered_date = datetime.now(tz=pytz.utc)
-            new_message.save()
+# @task
+# def send_messages():
+#     """
+#     Send messages through the twitter API.
+#     Returns
+#     -------
+#
+#     """
+#     new_messages = Message.objects.filter(delivered_date=None)
+#
+#     for new_message in new_messages:
+#
+#         # print('Sending message: {}'.format(new_message))
+#
+#         message_sent = False
+#
+#         if new_message.recipient.extendedopts.email:
+#
+#             try:
+#
+#                 if new_message.sender:
+#
+#                     sender = new_message.sender.email
+#
+#                 else:
+#
+#                     sender = 'contact@minotour.org'
+#
+#                 send_mail(
+#                     new_message.title,
+#                     new_message.content,
+#                     sender,
+#                     [new_message.recipient.email],
+#                     fail_silently=False,
+#                 )
+#
+#                 message_sent = True
+#
+#             except MailgunAPIError as e:
+#                 print(e)
+#
+#         if new_message.recipient.extendedopts.tweet \
+#                 and new_message.recipient.extendedopts.twitterhandle != '':
+#             TWITTOKEN = settings.TWITTOKEN
+#             TWITTOKEN_SECRET = settings.TWITTOKEN_SECRET
+#             TWITCONSUMER_KEY = settings.TWITCONSUMER_KEY
+#             TWITCONSUMER_SECRET = settings.TWITCONSUMER_SECRET
+#
+#             t = Twitter(
+#                 auth=OAuth(TWITTOKEN, TWITTOKEN_SECRET, TWITCONSUMER_KEY, TWITCONSUMER_SECRET)
+#             )
+#
+#             t.direct_messages.new(
+#                 user=new_message.recipient.extendedopts.twitterhandle,
+#                 text=new_message.title
+#             )
+#             # status = '@{} {}'.format(new_message.recipient.extendedopts.twitterhandle,new_message.title)
+#             # t.statuses.update(
+#             #    status=status
+#             # )
+#
+#             message_sent = True
+#
+#         if message_sent:
+#             print('inside message_sent')
+#             new_message.delivered_date = datetime.now(tz=pytz.utc)
+#             new_message.save()
 
 
 @task
@@ -702,7 +697,7 @@ def update_flowcell_details(job_master_id):
     using the MinIONRunStatus records if they are available, otherwise reading from the
     fastq file summaries
     """
-
+    # TODO
     """
     Refactoring this task such that:
     1. it only runs when new reads have appeared.
@@ -720,7 +715,7 @@ def update_flowcell_details(job_master_id):
     #
     # Get the first MinIONRunStatus for a particular flowcell
     #
-    minion_run_status_first = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell).order_by('minKNOW_start_time')\
+    minion_run_status_first = MinionRunInfo.objects.filter(run_id__flowcell=flowcell).order_by('minKNOW_start_time')\
         .first()
 
     #
@@ -737,7 +732,7 @@ def update_flowcell_details(job_master_id):
     #
     # Define flowcell's sample_name
     #
-    minion_run_status_list = MinIONRunStatus.objects.filter(run_id__flowcell=flowcell)
+    minion_run_status_list = MinionRunInfo.objects.filter(run_id__flowcell=flowcell)
 
     if minion_run_status_list.count() > 0:
 
@@ -888,4 +883,3 @@ def save_reads(data):
 
     else:
         logger.info('Saving reads with failure')
-        

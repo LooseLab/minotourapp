@@ -4,12 +4,12 @@ Register models with the admin interface
 from django.contrib import admin
 
 from .models import (Barcode, FastqFile, FastqRead, FastqReadType,
-                     MinIONControl, MinIONEvent, MinIONEventType,
-                     MinionMessage, MinIONRunStats, MinIONRunStatus,
-                     MinIONScripts, MinIONStatus, Run, RunSummary, UserOptions, ChannelSummary, HistogramSummary,
+                     MinionControl, MinionEvent, MinionEventType,
+                     MinionMessage, MinionRunStats, MinionRunInfo,
+                     MinionScripts, MinionInfo, Run, RunSummary, UserOptions, ChannelSummary, HistogramSummary,
                      RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellHistogramSummary,
                      FlowcellStatisticBarcode,
-                     FlowcellSummaryBarcode, Flowcell, MinION,
+                     FlowcellSummaryBarcode, Flowcell, Minion,
                      FlowcellTab, JobMaster, JobType)
 
 
@@ -37,14 +37,14 @@ admin.site.register(FlowcellSummaryBarcode)
 admin.site.register(FlowcellHistogramSummary)
 admin.site.register(FlowcellTab)
 admin.site.register(Run)
-admin.site.register(MinIONEventType)
-admin.site.register(MinIONEvent)
-admin.site.register(MinIONScripts)
-admin.site.register(MinIONStatus)
-admin.site.register(MinIONRunStatus)
-admin.site.register(MinIONRunStats)
+admin.site.register(MinionEventType)
+admin.site.register(MinionEvent)
+admin.site.register(MinionScripts)
+admin.site.register(MinionInfo)
+admin.site.register(MinionRunInfo)
+admin.site.register(MinionRunStats)
 admin.site.register(MinionMessage)
-admin.site.register(MinIONControl)
+admin.site.register(MinionControl)
 admin.site.register(RunStatisticBarcode, RunStatisticsBarcodeAdmin)
 admin.site.register(RunSummaryBarcode, RunSummaryBarcodeAdmin)
 admin.site.register(ChannelSummary)
@@ -54,6 +54,6 @@ admin.site.register(Barcode)
 admin.site.register(GroupRun)
 admin.site.register(RunSummary)
 admin.site.register(Flowcell, FlowcellAdmin)
-admin.site.register(MinION)
+admin.site.register(Minion)
 admin.site.register(JobMaster)
 admin.site.register(JobType)

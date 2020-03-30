@@ -25,7 +25,39 @@ class MTaskController {
         this._reactivatemessageView = new MMessageView(document.querySelector('#messageViewReactivate'), "warning");
         // update reactivate message
         this._reactivatemessageView.update(this._message);
+        // The name of the flowcell used for the deletion checks
+        this._flowcellName = $("#name-flowcell").html();
+        // Whether or not to delete the flowcell
+        this._deleteBoolean = false;
     }
+
+
+    _submitDeleteTask(taskNew) {
+        // Not sure if this secure but ok
+        let csrftoken = getCookie('csrftoken');
+        const axiosInstance = axios.create({
+            headers: {"X-CSRFToken": csrftoken}
+        });
+
+        axiosInstance.post('/api/v1/tasks/', {
+            flowcell: taskNew.flowcell_id,
+            reference: taskNew.reference_id,
+            job_type: taskNew.job_type_id,
+            target_set: taskNew.target_set_id
+        }).then(function (response) {
+            console.log(response);
+            if (taskNew.job_type_id === "11") {
+                window.location.href = "/";
+                $("#basicModal").modal();
+                setTimeout(function () {
+                    $("#basicModal").modal("hide")
+                }, 6000)
+            }
+        }).catch(function(response){
+            $("#basicModal").modal();
+        })
+    }
+
 
     // Create a new event handler for when we submit a new job
     create_new_job(event) {
@@ -38,7 +70,6 @@ class MTaskController {
 
         // If this is metagenomics - set the reference value to null and the target set id instead
         if (this._select_job_type.value === "10") {
-            console.log("conditional");
             // the target set text
             this._target_set = this._select_reference[this._select_reference.selectedIndex].text;
             this._reference_id = null;
@@ -48,6 +79,32 @@ class MTaskController {
 
         let task_new = new MTask(this._flowcell_id, this._select_job_type.value,
             this._reference_id, this._target_set);
+        // delete a flowcell, so show confirmation modal
+        if (task_new.job_type_id === "11") {
+            $("#confirm-submit").modal();
+            $("#flowcell-name").on("input", event => {
+                let icon = $(".fa-galactic-republic");
+                console.log(this._flowcellName);
+                if (event.target.value === this._flowcellName) {
+                    console.log("Great Success");
+                    icon.removeClass("disallowed");
+                    icon.addClass("allowed");
+                    $("#submit-task").attr("disabled", false)
+                } else {
+                    icon.removeClass("allowed");
+                    icon.addClass("disallowed");
+                    console.log("Epic fail.");
+                    $("#submit-task").attr("disabled", true)
+
+                }
+            });
+            $("#submit-task").on("click", event => {
+                $("#confirm-submit").modal("hide");
+                this._submitDeleteTask(task_new)
+            });
+            return
+        }
+
         // csrf safe
         let csrftoken = getCookie('csrftoken');
         // new request
@@ -67,6 +124,8 @@ class MTaskController {
             if (this.readyState === XMLHttpRequest.DONE) {
                 // if successful
                 if (this.status === 200) {
+
+                    // If we have succesfully started a Delete flowcell task, return to the flowcell page
                     // change the message to
                     self._message.texto = 'Task successfully created!';
                     // update the message element to show the text
@@ -133,7 +192,6 @@ class MTaskController {
     }
 
     performActionOnTask(event, flowcellJobId, actionType) {
-        console.log("Perofmring action");
         let csrftoken = getCookie('csrftoken');
         // new request
         let xhr = new XMLHttpRequest();
@@ -151,8 +209,6 @@ class MTaskController {
         let action = lookup_action_type[actionType];
 
         if (action === "Delete") {
-            console.log("Removing delete button");
-            console.log(`${action.toLowerCase()}_${flowcellJobId}`);
             let element = document.getElementById(`${action.toLowerCase()}_${flowcellJobId}`);
             element.style.visibility = "hidden";
         }
@@ -182,7 +238,6 @@ class MTaskController {
 
 
                 } else {
-                    console.log(this);
                     // something went wrong
                     self._message.texto = 'Something went wrong. Please check the following message. ' + this.responseText;
                     // update the message element to show the error text

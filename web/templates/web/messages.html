@@ -1,0 +1,60 @@
+{% extends "web/template_private.html" %}
+{% block content %}
+    <div class="content-wrapper">
+        <div class="box">
+            <div class="box-header">
+                <h3 class="box-title">Messages</h3>
+            </div>
+            <div class="card">
+{#                <article class="card-group-item">#}
+{#                    <header class="card-header"><h6 class="title">Flowcells</h6></header>#}
+{#                    <div class="filter-content">#}
+{#                        <div class="list-group list-group-flush">#}
+{##}
+{#                            <a href="#" class="list-group-item">Cras justo odio <span#}
+{#                                    class="float-right badge badge-light round">142</span> </a>#}
+{#                            <a href="#" class="list-group-item">Dapibus ac facilisis <span#}
+{#                                    class="float-right badge badge-light round">3</span> </a>#}
+{#                            <a href="#" class="list-group-item">Morbi leo risus <span#}
+{#                                    class="float-right badge badge-light round">32</span> </a>#}
+{#                            <a href="#" class="list-group-item">Another item <span#}
+{#                                    class="float-right badge badge-light round">12</span> </a>#}
+{#                        </div>  <!-- list-group .// -->#}
+{#                    </div>#}
+{#                </article> <!-- card-group-item.// -->#}
+                <!-- /.box-header -->
+                <div class="box-body no-padding">
+                    <table class="table">
+                        <tr>
+                            <th style="width: 180px;">Date</th>
+                            <th style="width: 300px;">Sender</th>
+                            <th>Title</th>
+                        </tr>
+
+                        {% for message in messages %}
+                            <tr>
+                                <td>{{ message.created_date|date:'d-m-Y H:i' }}</td>
+                                <td>{{ message.sender.first_name }}&nbsp;{{ message.sender.last_name }}
+                                    <{{ message.sender.email }}>
+                                </td>
+                                <td>{{ message.title }}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                <!-- /.box-body -->
+            </div>
+            <!-- /.content-wrapper -->
+        </div>
+        <!-- /.box -->
+    </div>
+{% endblock %}
+
+{% block javascript %}
+
+    <script>
+        const topPadding = $(".main-header").height() + 16;
+        $(".content-wrapper").css("padding-top", `${topPadding}px`);
+        set_active_navbar_item(4);
+    </script>
+{% endblock %}

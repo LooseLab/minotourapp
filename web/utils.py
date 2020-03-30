@@ -8,7 +8,7 @@ from functools import lru_cache
 import collections
 import numpy as np
 
-from reads.models import Flowcell, MinIONRunStatus, Run
+from reads.models import Flowcell, MinionRunInfo, Run, JobMaster, JobType
 from web.tasks_move_reads_to_flowcell import move_reads_to_flowcell
 
 
@@ -450,17 +450,17 @@ def get_run_details(run_id):
             'last_read_start_time': None,
         }
 
-        minion_run_status_list = MinIONRunStatus.objects.filter(run_id=run).order_by('minKNOW_start_time')
+        minion_run_status_list = MinionRunInfo.objects.filter(run_id=run).order_by('minKNOW_start_time')
 
         if len(minion_run_status_list) > 0:
 
             minion_run_status = minion_run_status_list[0]
 
-            element['id'] = minion_run_status.run_id.id
-            element['runid'] = minion_run_status.run_id.runid
+            element['id'] = minion_run_status.run.id
+            element['runid'] = minion_run_status.run.runid
             element['run_start_time'] = minion_run_status.minKNOW_start_time
             element['minknow_computer_name'] = minion_run_status.minKNOW_computer
-            element['minion_id'] = minion_run_status.minION.minION_name
+            element['minion_id'] = minion_run_status.minion.minION_name
             element['asic_id'] = minion_run_status.minKNOW_asic_id
             element['sequencing_kit'] = minion_run_status.sequencing_kit
             element['purpose'] = minion_run_status.minKNOW_exp_script_purpose
@@ -550,6 +550,17 @@ def split_flowcell(existing_or_new_flowcell, from_flowcell_id, to_flowcell_id, t
             name=to_flowcell_name,
             sample_name=to_flowcell_name,
             owner=from_flowcell.owner,
+        )
+        JobMaster.objects.create(
+            flowcell=to_flowcell,
+            job_type=JobType.objects.filter(name="ChanCalc")[0],
+            last_read=0
+        )
+
+        JobMaster.objects.create(
+            flowcell=to_flowcell,
+            job_type=JobType.objects.filter(name="UpdateFlowcellDetails")[0],
+            last_read=0
         )
 
         print('Moving run {} from flowcell {} to flowcell {}'.format(

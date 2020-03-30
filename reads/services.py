@@ -2,13 +2,23 @@
 Services to help run some of the tasks in the web app. Why is this not stored there?
 """
 import pytz
+import datetime
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+from textwrap import wrap
 
 from reads.models import (
     FlowcellStatisticBarcode,
     FlowcellSummaryBarcode,
     FlowcellHistogramSummary,
     FlowcellChannelSummary,
+    Flowcell,
+    Run,
+    MinionMessage,
 )
+
+from communication.models import Message, NotificationConditions
 
 
 def save_flowcell_summary_barcode(flowcell_id, row):
@@ -20,7 +30,6 @@ def save_flowcell_summary_barcode(flowcell_id, row):
     :type row: pandas.core.series.Series
     :return: None
     """
-    print(row)
     barcode_name = row["barcode__name"][0]
     type_name = row["type__name"][0]
     status = row["is_pass"][0]
@@ -171,3 +180,157 @@ def save_flowcell_channel_summary(flowcell_id, row):
     flowcellChannelSummary.read_count += read_count
 
     flowcellChannelSummary.save()
+
+
+@receiver(post_save, sender=Flowcell)
+def new_flowcell_message(sender, instance=None, created=False, **kwargs):
+    """
+        If a new Flowcell is created in the database
+        Parameters
+        ----------
+        sender:
+            Unknown
+        instance: reads.models.Flowcell
+            The instance of the flowcell that is being saved.
+        created: bool
+            Whether the save that is being called is creating the object in the database.
+        kwargs: dict
+            Key word arguments, if any.
+
+        Returns
+        -------
+        None
+
+    """
+    if created:
+        myuser = instance.owner
+        new_flowcell_message = Message(
+            recipient=myuser,
+            sender=myuser,
+            flowcell=instance,
+            title=f"New flowcell {instance.name} created with sample name {instance.sample_name} "
+            f"at {datetime.datetime.now()}.",
+        )
+        new_flowcell_message.save()
+
+
+@receiver(post_save, sender=Run)
+def new_run_message(sender, instance=None, created=False, **kwargs):
+    """
+    If a new Run is created in the database
+    Parameters
+    ----------
+    sender:
+        Unknown
+    instance: reads.models.Run
+        The instance of the Run that is being saved.
+    created: bool
+        Whether the save that is being called is creating the object in the database.
+    kwargs: dict
+        Key word arguments, if any.
+
+    Returns
+    -------
+    None
+
+    """
+    if created:
+        myuser = instance.owner
+        new_run_message = Message(
+            recipient=myuser,
+            sender=myuser,
+            title=f"New run {instance.name} created on flowcell {instance.flowcell.name} at {datetime.datetime.now()}.",
+            run=instance,
+            flowcell=instance.flowcell
+        )
+        new_run_message.save()
+
+
+@receiver(post_save, sender=MinionMessage)
+def new_minion_message(sender, instance=None, created=False, **kwargs):
+    """
+    Save a message to the User if the minion message that has come in is a Mux or space warning.
+
+    Parameters
+    ----------
+    sender:
+        Unknown
+    instance: reads.models.MinionMessage
+        The instance of the MinionMessage that is being saved.
+    created: bool
+        Whether the save that is being called is creating the object in the database.
+    kwargs: dict
+        Key word arguments, if any.
+
+    Returns
+    -------
+    None
+
+    """
+    if created:
+        myuser = instance.minion.owner
+        # Messages sent as Warnings (Severity 2), Messages sent as Errors (Severity 3)
+        print(instance)
+        print(instance.run)
+        flowcell = instance.run.flowcell
+        queryset = NotificationConditions.objects.filter(
+            flowcell=flowcell, completed=False
+        )
+
+        if int(instance.severity) > 1:
+            # Check if we have notifications switched on for this
+            queryset = queryset.filter(notification_type="w/e")
+            if queryset:
+                title = "{} from computer {} at {}".format(
+                    instance.message,
+                    instance.minion.computer(),
+                    datetime.datetime.now(),
+                )
+                chunks = wrap(title, 512)
+                for chunk in chunks:
+                    new_message_message = Message(
+                        recipient=myuser,
+                        sender=myuser,
+                        title=chunk,
+                        run=instance.run,
+                        flowcell=flowcell
+                    )
+                    new_message_message.save()
+        # Mux messages me thinks
+        elif instance.message.startswith("Flow cell"):
+            queryset = queryset.filter(notification_type="mux")
+            if queryset:
+                title = "{} from computer {} at {}".format(
+                    instance.message,
+                    instance.minion.computer(),
+                    datetime.datetime.now(),
+                )
+                chunks = wrap(title, 512)
+                for chunk in chunks:
+                    new_message_message = Message(
+                        recipient=myuser,
+                        sender=myuser,
+                        title=chunk,
+                        run=instance.run,
+                        flowcell=flowcell,
+                    )
+                    new_message_message.save()
+        # Messages sent by minotTour
+        elif instance.message.startswith("minoTour"):
+            queryset = queryset.filter(notification_type="mino")
+            if queryset:
+                title = "{} from computer {} at {}".format(
+                    instance.message,
+                    instance.minion.computer(),
+                    datetime.datetime.now(),
+                )
+                chunks = wrap(title, 512)
+                for chunk in chunks:
+                    new_message_message = Message(
+                        recipient=myuser,
+                        sender=myuser,
+                        title=chunk,
+                        run=instance.run,
+                        flowcell=instance.run.flowcell,
+                    )
+                    new_message_message.save()

@@ -6,7 +6,7 @@
 <div class="content-wrapper" style="background-color: white;">
 
         <section class="content-header">
-            <h1>Flowcell name: <strong>{{ flowcell.name }}</strong> Sample name: <strong>{{ flowcell.sample_name }}</strong></h1>
+            <h1>Flowcell name: <strong id="name-flowcell">{{ flowcell.name }}</strong> Sample name: <strong>{{ flowcell.sample_name }}</strong></h1>
         </section>
 
         <section class="content">
@@ -57,6 +57,10 @@
                     <a class="flowcell-tab"
                        onclick="flowcellController.flowcell_tab_controller.toggle_tab_content('sharing')">Sharing</a>
                 </li>
+                <li role="presentation" class="nav_flowcell hidden" id="nav-notifications" >
+                    <a class="flowcell-tab"
+                       onclick="flowcellController.flowcell_tab_controller.toggle_tab_content('notifications')">Notifications</a>
+                </li>
             </ul>
 
             <br/>
@@ -106,6 +110,10 @@
                 <div id="tab-sharing" class="tab-pane">
                     {% include "web/flowcell/sharing.html" %}
                 </div>
+
+                <div id="tab-notifications" class="tab-pane">
+                    {% include "web/flowcell/notification-manager.html" %}
+                </div>
             </div>
 
             <!-- Modal -->
@@ -148,14 +156,17 @@
 
         console.log("Initialising FlowcellPageApp.");
 
-        var app = FlowcellPageApp;
+        const app = FlowcellPageApp;
 
         app.init();
 
-        var mTaskController = new MTaskController(input_flowcell_id.value);
+        const mTaskController = new MTaskController(input_flowcell_id.value);
 
-        var mSharingController = new MSharingController(input_flowcell_id.value);
+        const mSharingController = new MSharingController(input_flowcell_id.value);
 
-        var flowcellController = new FlowcellController(input_flowcell_id.value);
+        const flowcellController = new FlowcellController(input_flowcell_id.value);
+
+        const notificationsController = new FlowcellNotificationController(input_flowcell_id.value);
+
     </script>
 {% endblock %}

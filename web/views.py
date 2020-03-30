@@ -1,3 +1,5 @@
+
+import pandas as pd
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -7,19 +9,19 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.generic import ListView, DeleteView
 from rest_framework.authtoken.models import Token
-from jobs.models import JobMaster, JobType
-from centrifuge.models import CentrifugeOutput
-from communication.models import Message
-from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinIONRunStats
-from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
 
-from django.contrib import messages
+from centrifuge.models import CentrifugeOutput
 from communication.models import Message
 from communication.serializers import MessageSerializer
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinionRunStats, JobType, JobMaster
+from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
 
-import pandas as pd
+from web.utils import get_run_details, split_flowcell
+
+from django.contrib import messages
+
 
 
 def index(request):
@@ -52,7 +54,7 @@ def signup(request):
 
 @login_required
 def private_index(request):
-    return render(request, 'web/private_index.html')
+    return render(request, 'web/about_nav.html')
 
 
 @login_required
@@ -121,7 +123,7 @@ def minup(request):
 
 @login_required
 def tutorial(request):
-    return render(request, 'web/tutorial.html')
+    return render(request, 'web/help.html')
 
 
 @login_required
@@ -149,7 +151,7 @@ def flowcell_index(request, pk):
 
     else:
 
-        return render(request, 'web/no.html')
+        return render(request, 'web/404.html')
 
 
 @login_required
@@ -158,6 +160,11 @@ def flowcell_reads(request, pk):
     flowcell = Flowcell.objects.get(pk=pk)
 
     return render(request, 'web/flowcell_reads.html', context={'flowcell': flowcell})
+
+
+def flowcell_list(request):
+    flowcell_list = Flowcell.objects.filter(owner=request.user)
+    return render(request, 'web/flowcell_list.html', context={'access_flowcell': flowcell_list})
 
 
 def flowcell_reads_data(request):
@@ -384,27 +391,59 @@ def experiments_update(request, pk):
 
 @login_required
 def flowcell_run_stats_download(request, pk):
+    """
+    Return a csv file of the MinionRunStats that the user has requested for download.
+    Parameters
+    ----------
+    request
+    pk: int
+        The flowcell primary key.
 
+    Returns
+    -------
+
+    """
     flowcell = Flowcell.objects.get(pk=pk)
 
-    crazyminIONrunstats = MinIONRunStats.objects.filter(run_id__in=flowcell.runs.all())
+    minionrunstats_list = MinionRunStats.objects.filter(run_id__in=flowcell.runs.all())
 
-    runstats_dataframe = pd.DataFrame(list(crazyminIONrunstats.values()))
+    runstats_dataframe = pd.DataFrame(list(minionrunstats_list.values()))
     runstats_dataframe = runstats_dataframe.set_index('sample_time')
     runstats_dataframe = runstats_dataframe.drop('created_date', axis=1)
     runstats_dataframe = runstats_dataframe.drop('id', axis=1)
     runstats_dataframe = runstats_dataframe.drop('mean_ratio', axis=1)
-    runstats_dataframe = runstats_dataframe.drop('minION_id', axis=1)
-    runstats_dataframe = runstats_dataframe.drop('run_id_id', axis=1)
-    #runstats_dataframe = runstats_dataframe.drop('mean_ratio', axis=1)
+    runstats_dataframe = runstats_dataframe.drop('minion_id', axis=1)
+    runstats_dataframe = runstats_dataframe.drop('run_id', axis=1)
     runstats_dataframe = runstats_dataframe.drop('in_strand', axis=1)
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename={}_live_records.csv'.format(flowcell.name)
-    column_order = ['asic_temp','heat_sink_temp','voltage_value','minKNOW_read_count','event_yield','above','adapter','below','good_single','inrange','multiple','open_pore','pore','zero','no_pore','pending_mux_change','saturated','strand','unavailable','unblocking','unclassified','unknown','minKNOW_histogram_bin_width','minKNOW_histogram_values']
+    column_order = ['asic_temp',
+                    'heat_sink_temp',
+                    'voltage_value',
+                    'minKNOW_read_count',
+                    'event_yield',
+                    'above',
+                    'adapter',
+                    'below',
+                    'good_single',
+                    'inrange',
+                    'multiple',
+                    'open_pore',
+                    'pore',
+                    'zero',
+                    'no_pore',
+                    'pending_mux_change',
+                    'saturated',
+                    'strand',
+                    'unavailable',
+                    'unblocking',
+                    'unclassified',
+                    'unknown',
+                    'minKNOW_histogram_bin_width',
+                    'minKNOW_histogram_values']
     runstats_dataframe[column_order].to_csv(response)
 
     return response
-
 
 @login_required
 def metagenomics_data_download(request, pk):
@@ -430,8 +469,36 @@ def metagenomics_data_download(request, pk):
 
 
 def flowcell_manager(request):
+    """
+    Returns the flowcell manager HTML
+    Parameters
+    ----------
+    request: django.core.handlers.wsgi.WSGIRequest
+
+    Returns
+    -------
+    The flowcell manager page HTML template
+    """
     # flowcells = Flowcell.objects.filter(owner=request.user)
-    return render(request, 'reads/flowcell_manager.html', context={'flowcell_manager': flowcell_manager})
+    return render(request, 'web/flowcell_manager.html', context={'flowcell_manager': flowcell_manager})
+
+
+def render_messages(request):
+    """
+    Return the messages html to display messages on the profile tab.
+    Parameters
+    ----------
+    request: django.core.handlers.wsgi.WSGIRequest
+        The request object for this AJAX call
+
+    Returns
+    -------
+    The messages page HTML template
+    """
+    messages = Message.objects.filter(recipient=request.user).order_by('-created_date')
+    flowcells = Message.objects.all().values_list("sender__flowcells__name", flat=True).distinct()
+
+    return render(request, 'web/messages.html', context={"messages": messages, "flowcells": flowcells})
 
 
 @api_view(['GET'])
@@ -453,3 +520,53 @@ def message_details(request):
     )
 
 
+@login_required
+def flowcell_manager_runs_split(request, pk):
+    """
+    This view calls the split_flowcell function and
+    shows a status page for the user
+    """
+
+    flowcell_id = request.POST.get('flowcell_id', None)
+    run_id = request.POST.get('run_id', None)
+    new_flowcell_name = request.POST.get('new_flowcell_name', None)
+    new_or_existing_flowcell = request.POST.get('new_or_existing_flowcell', None)
+    existing_flowcell_id = request.POST.get('existing_flowcell_id', None)
+
+    run, from_flowcell, to_flowcell = split_flowcell(new_or_existing_flowcell, flowcell_id, existing_flowcell_id, new_flowcell_name, run_id)
+
+    return render(request,
+                  'web/flowcell_manager_runs_split.html',
+                  context={'run': run,
+                           'from_flowcell': from_flowcell,
+                           'to_flowcell': to_flowcell})
+
+@login_required
+def flowcell_manager_runs(request, pk):
+    """
+    This view shows the a list of runs of a specific flowcell
+    in the flowcell maintenance second page
+    """
+
+    flowcell = Flowcell.objects.get(pk=pk)
+    run_list = get_run_details(pk)
+    flowcell_list = Flowcell.objects.filter(owner=request.user).exclude(id=flowcell.id)
+
+    return render(request,
+                  'web/flowcell_manager_runs.html',
+                  context={'run_list': run_list,
+                           'flowcell_list': flowcell_list,
+                           'flowcell': flowcell})
+
+def electric_boogaloo(request):
+    """
+    Returns the web control vue page, maybe
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+
+    Returns
+    -------
+
+    """
+    return render(request, 'web/remote_control_2_electric_boogaloo.html')

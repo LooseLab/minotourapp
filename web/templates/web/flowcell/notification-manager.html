@@ -1,4 +1,161 @@
-<div>
-    
+<div class="row">
 
+    <div class="col-md-6">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title">Set notifications.</h3>
+            </div>
+            <div class="panel-body>">
+
+                <form method="post" id="post-form-notification-create"
+                      onsubmit="notificationsController.submitNotificationChoices(event, this)">
+                    {% csrf_token %}
+
+
+                    <label>Optional automatic notifications: <br>
+                        (Click for suggestions)
+                    </label>
+                    <blockquote>
+                        <multi-input id="autoMulti">
+                            <input list="notifications">
+                            <datalist id="notifications">
+                                <option value="Mux alerts"></option>
+                                <option value="Voltage"></option>
+                                <option value="Temperature"></option>
+                                <option value="Warnings/Errors" disabled></option>
+                                <option value="Occupancy"></option>
+                                <option value="MinoTour"></option>
+                            </datalist>
+                        </multi-input>
+
+                    </blockquote>
+
+                    <div id="coverageFormPart" style="display: none; visibility: hidden">
+
+                        <label for="coverage" style="font-size: x-large"> Coverage:
+                            <input id="coverage" value="coverage" type="checkbox" name="coverage"
+                                   onchange="notificationsController.disableCoverageFields(event, this)">
+                        </label>
+                        <blockquote>
+                            <label for="coverageAmount"> Coverage Depth:
+                                <input id="coverageAmount" value="" placeholder="Set target coverage..." type="text"
+                                       name="coverageAmount" disabled>
+                            </label>
+                            <label for="reference"> Reference mapped against:
+                                <select name="reference" id="reference" data-select="false" disabled>
+                                    <option value="" disabled selected hidden>Please Select...</option>
+                                </select>
+                            </label>
+                            <label for="contig"> Specific Contig:
+                                <select name="contig" id="contig" disabled data-select="false">
+                                    <option value="" disabled selected hidden>Please Select...</option>
+                                </select>
+                            </label>
+                            <label> Barcodes: </label>
+                            <multi-input id="barcodeMulti">
+                                <input id="notification_barcodesy" list="notification_barcodes" disabled>
+                                <datalist id="notification_barcodes">
+                                </datalist>
+                            </multi-input>
+                        </blockquote>
+                    </div>
+                    <br>
+
+                    {#        <input class="first" type="submit">#}
+                    <button class="btn btn-primary" type="submit">submit</button>
+
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h3 class="panel-title">Extant notifications</h3>
+            </div>
+            <div class="panel-body">
+                <table class="table table-hover extantNotif display" style="width: 100%;">
+                    <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Notification <br> type</th>
+                        <th>Upper Limit</th>
+                        <th>Lower Limit</th>
+                        <th>Complete</th>
+                        <th>Reference</th>
+                        <th>Chromosome</th>
+                        <th>Coverage Target</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tfoot>
+                    <tr>
+                        <th>Id</th>
+                        <th>Notification <br> type</th>
+                        <th>Upper Limit</th>
+                        <th>Lower Limit</th>
+                        <th>Complete</th>
+                        <th>Reference</th>
+                        <th>Chromosome</th>
+                        <th>Coverage Target</th>
+                        <th></th>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# Success modal #}
+<div class="modal fade" id="basicModal" tabindex="-1" role="dialog" aria-labelledby="basicModal"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+                <h4 class="modal-title" id="myModalLabel">Success!</h4>
+            </div>
+            <div class="modal-body">
+                Successfully created conditions.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# input range modal#}
+<div class="modal fade" id="inputModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                        aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="exampleModalLabel">Insert Range Values</h4>
+            </div>
+            <div class="modal-body">
+                <form onsubmit="notificationsController._getRangeChoices(event, this)">
+                    <h3></h3>
+                    <div class="form-group">
+                        <label for="recipient-name" class="control-label">Lower Limit</label>
+                        <input type="number" class="form-control" id="lower-limit" value="-180" min="-220"
+                               max="-180"
+                               required>
+                    </div>
+                    <div class="form-group">
+                        <label for="recipient-name" class="control-label">Upper Limit</label>
+                        <input type="number" class="form-control" id="upper-limit" min="-160" max="0"
+                               value="-160"
+                               required>
+                    </div>
+                    <input type="submit" class="btn-cust third btn-primary" value="Submit Range">
+                </form>
+            </div>
+        </div>
+    </div>
 </div>

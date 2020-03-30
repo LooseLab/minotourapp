@@ -24,20 +24,27 @@
                     <code>pip3 install minFQ</code>
                     <p>We recommend installing minFQ in its own environment:</p>
                     <code>python3 -m venv /path/to/your/environment<br>
-                    source /path/to/your/environment/bin/activate<br>
-                    pip install minFQ</code>
+                        source /path/to/your/environment/bin/activate<br>
+                        pip install minFQ</code>
 
-                    <p>The source code for minFQ will soon be available from <a href='https://github.com/LooseLab/minotourcli'>https://github.com/LooseLab/minotourcli</a></p>
+                    <p>The source code for minFQ will soon be available from <a
+                            href='https://github.com/LooseLab/minotourcli'>https://github.com/LooseLab/minotourcli</a>
+                    </p>
 
-                    <p>Please note that communication between minoTour and MinKNOW is mediated through the MinKNOW API. We do not distribute this code. However, installation of minFQ on a computer with MinKNOW installed will allow minFQ to access MinKNOW. These features have to be activated by the user and are used at the users own risk.</p>
+                    <p>Please note that communication between minoTour and MinKNOW is mediated through the MinKNOW API.
+                        We do not distribute this code. However, installation of minFQ on a computer with MinKNOW
+                        installed will allow minFQ to access MinKNOW. These features have to be activated by the user
+                        and are used at the users own risk.</p>
 
                     <h4>Using minFQ</h4>
 
                     <p>The minFQ package can be used in at least three different ways.</p>
 
-                    <p>The main command, minFQ provides two means of uploading run data to minoTour. minFQ can monitor both the fastq data in nanopore fastq read files and can DIRECTLY monitors MinKNOW itself. </p>
+                    <p>The main command, minFQ provides two means of uploading run data to minoTour. minFQ can monitor
+                        both the fastq data in nanopore fastq read files and can DIRECTLY monitors MinKNOW itself. </p>
 
-                    <p>To use minFQ you require an access token obtained from your own account on a minoTour server. The token can be found under your user name in the 'profile' section.</p>
+                    <p>To use minFQ you require an access token obtained from your own account on a minoTour server. The
+                        token can be found under your user name in the 'profile' section.</p>
 
                     <p>To test minFQ type:</p>
 
@@ -114,23 +121,29 @@ optional arguments:
 
                     <h5>To monitor both live and fastq data.</h5>
 
-                    <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -ip 127.0.0.1 -hn [url_to_your_minotour_server] -p [port_for_your_server_-_eg_80] -n [name_for_your_data] </code>
+                    <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -ip 127.0.0.1 -hn
+                        [url_to_your_minotour_server] -p [port_for_your_server_-_eg_80] -n [name_for_your_data] </code>
                     <p></p>
                     <h5>To monitor just live data from minKNOW.</h5>
 
-                    <code>minFQ -k [your_user_key] -ip 127.0.0.1 -hn [url_to_your_minotour_server] -p [port_for_your_server_-_eg_80] -nf</code>
+                    <code>minFQ -k [your_user_key] -ip 127.0.0.1 -hn [url_to_your_minotour_server] -p
+                        [port_for_your_server_-_eg_80] -nf</code>
                     <p></p>
                     <h5>To monitor live data and enable full remote control of minKNOW.</h5>
 
-                    <code>minFQ -k [your_user_key] -ip 127.0.0.1 -hn [url_to_your_minotour_server] -p [port_for_your_server_-_eg_80] -nf -e</code>
+                    <code>minFQ -k [your_user_key] -ip 127.0.0.1 -hn [url_to_your_minotour_server] -p
+                        [port_for_your_server_-_eg_80] -nf -e</code>
                     <p></p>
                     <h5>To monitor just fastq data.</h5>
 
-                    <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -hn [url_to_your_minotour_server] -p [port_for_your_server_-_eg_80] -nm</code>
+                    <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -hn [url_to_your_minotour_server] -p
+                        [port_for_your_server_-_eg_80] -nm</code>
                     <p></p>
-                    <h5>To monitor fastq statistics only. (Note you will not be able to run subsequent analysis on the server which requires sequence data).</h5>
+                    <h5>To monitor fastq statistics only. (Note you will not be able to run subsequent analysis on the
+                        server which requires sequence data).</h5>
 
-                    <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -hn [url_to_your_minotour_server] -p [port_for_your_server_-_eg_80] -nm -s</code>
+                    <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -hn [url_to_your_minotour_server] -p
+                        [port_for_your_server_-_eg_80] -nm -s</code>
 
 
                     <h4>minFQ Gui</h4>
@@ -147,6 +160,8 @@ optional arguments:
 {% block javascript %}
 
     <script>
+        const topPadding = $(".main-header").height() + 16;
+        $(".content-wrapper").css("padding-top", `${topPadding}px`);
 
         set_active_navbar_item(2);
     </script>

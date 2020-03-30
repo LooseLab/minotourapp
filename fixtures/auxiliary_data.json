@@ -211,12 +211,25 @@
   "fields": {
     "name": "Other",
     "description": "Extra jobtype for non specific jobs",
-    "long_description": "Used now to distinguish between the two minimaps, metagenomics and alignment",
+    "long_description": "Used currently to distinguish between the two minimaps, metagenomics and alignment",
     "reference": true,
     "transcriptome": false,
     "readcount": true,
     "private": true
   }
-}
+},
+  {
+    "model": "reads.jobtype",
+    "pk": 15,
+    "fields": {
+      "name": "Archive Flowcell",
+      "description": "Delete all Fastq data attached to a flowcell, preserving the summaries.",
+      "long_description": "When a flowcell has a last activity date of more than 30 days ago, we remove all the data attached to it.",
+      "reference": false,
+      "transcriptome": false,
+      "readcount": true,
+      "private": true
+  }
+  }
 
 ]

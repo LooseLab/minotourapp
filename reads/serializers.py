@@ -5,13 +5,14 @@ from django.conf import settings
 from rest_framework import serializers
 
 from centrifuge.models import CentrifugeOutput, MappingTarget
+from communication.models import NotificationConditions
 from reads.models import (Barcode, FastqFile, FastqRead,
-                          FastqReadType, MinIONControl,
-                          MinIONEvent, MinIONEventType, MinionMessage,
-                          MinIONRunStats, MinIONRunStatus, MinIONScripts,
-                          MinIONStatus, Run, UserOptions, ChannelSummary, HistogramSummary,
-                          RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellSummaryBarcode, Flowcell, MinION,
-                          FlowcellTab, JobType, JobMaster)
+                          FastqReadType, MinionControl,
+                          MinionEvent, MinionEventType, MinionMessage,
+                          MinionRunStats, MinionRunInfo, MinionScripts,
+                          MinionInfo, Run, UserOptions, ChannelSummary, HistogramSummary,
+                          RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellSummaryBarcode, Flowcell, Minion,
+                          JobType, JobMaster)
 from reference.models import ReferenceInfo
 
 
@@ -54,14 +55,16 @@ class ChannelSummarySerializer(serializers.ModelSerializer):
         )
 
 
-#class MinIONRunStatsSerializer(serializers.HyperlinkedModelSerializer):
-class MinIONRunStatsSerializer(serializers.HyperlinkedModelSerializer):
+class MinionRunStatsSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    Serialiser for MinION run stats. Stats about the Run provided by minFQ/minKNOW.
+    """
     class Meta:
-        model = MinIONRunStats
+        model = MinionRunStats
         fields = (
             'id',
-            'minION',
-            'run_id',
+            'minion',
+            'run',
             'sample_time',
             'event_yield',
             'asic_temp',
@@ -90,23 +93,44 @@ class MinIONRunStatsSerializer(serializers.HyperlinkedModelSerializer):
             'minKNOW_read_count',
             'minKNOW_histogram_values',
             'minKNOW_histogram_bin_width',
+            'actual_max_val',
+            'n50_data',
+            'estimated_selected_bases',
+            'basecalled_bases',
+            'basecalled_fail_read_count',
+            'basecalled_pass_read_count'
         )
         read_only = ('id', 'occupancy',)
 
 
-class MinIONSerializer(serializers.HyperlinkedModelSerializer):
+class MinionSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    Serialiser for the Minion model.
+    """
+    channel_count = serializers.SerializerMethodField()
+    flow_cell_id = serializers.SerializerMethodField()
 
     class Meta:
-
-        model = MinION
+        model = Minion
         fields = (
-        'url', 'id', 'name', 'minION_name', 'space_available', 'minKNOW_version', 'status', 'computer', 'sample_name', 'run_status',
-        'flow_cell_id', 'run_name', 'total_drive_space', 'space_till_shutdown', 'warnings', 'last_run', 'currentscript',
-        'event_yield', 'voltage_value',)
+        'url', 'id', 'name', 'minION_name', 'space_available', 'status', 'computer', 'sample_name', 'run_status',
+        'flow_cell_id', 'run_name', 'total_drive_space', 'space_till_shutdown', 'warnings', 'last_run', 'current_script',
+        'event_yield', 'voltage_value', 'channel_count', 'flow_cell_id')
         read_only = (
-        'status', 'space_available', 'minKNOW_version', 'computer', 'sample_name', 'run_status', 'flow_cell_id',
-        'run_name', 'total_drive_space', 'space_till_shutdown', 'warnings', 'last_run', 'currentscript', 'event_yield',
+        'status', 'space_available', 'computer', 'sample_name', 'run_status', 'flow_cell_id',
+        'run_name', 'total_drive_space', 'space_till_shutdown', 'warnings', 'last_run', 'current_script', 'event_yield',
         'voltage_value',)
+
+    def get_channel_count(self, obj):
+        if hasattr(obj.currentrundetails.last(), "run_id"):
+            return obj.currentrundetails.last().run.flowcell.size
+        return "Unknown"
+
+    def get_flow_cell_id(self, obj):
+        try:
+            return obj.currentrundetails.last().run.flowcell.name
+        except AttributeError as e:
+            return "Unknown"
 
 
 class FastqReadTypeSerializer(serializers.HyperlinkedModelSerializer):
@@ -125,14 +149,14 @@ class MinionMessageSerializer(serializers.HyperlinkedModelSerializer):
 
 class MinIONControlSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = MinIONControl
+        model = MinionControl
         fields = ('id', 'minION', 'job', 'custom', 'complete')
         read_only = ('id',)
 
 
 class MinIONEventTypeSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = MinIONEventType
+        model = MinionEventType
         fields = ('url', 'name',)
         read_only = ('id',)
 
@@ -216,24 +240,27 @@ class FastqReadNameSerializer(serializers.HyperlinkedModelSerializer):
 
 class MinIONEventSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = MinIONEvent
+        model = MinionEvent
         fields = ('id', 'computer_name', 'minION', 'event', 'datetime')
         read_only = ('id',)
 
 
 class MinIONScriptsSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = MinIONScripts
+        model = MinionScripts
         fields = ('id', 'minION', 'identifier', 'name', 'experiment_type', 'base_calling', 'flow_cell', 'kit', 'event_ratio', 'experiment_time')
         read_only = ('id',)
 
 
-class MinIONStatusSerializer(serializers.HyperlinkedModelSerializer):
+class MinionInfoSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    Serialiser for minion_info model.
+    """
     class Meta:
-        model = MinIONStatus
+        model = MinionInfo
         fields = (
             'id',
-            'minION',
+            'minion',
             'minKNOW_status',
             'minKNOW_current_script',
             'minKNOW_sample_name',
@@ -248,17 +275,17 @@ class MinIONStatusSerializer(serializers.HyperlinkedModelSerializer):
             'minKNOW_disk_space_till_shutdown',
             'minKNOW_disk_available',
             'minKNOW_warnings',
-
+            'minknow_version'
         )
         read_only = ('id',)
 
 
-class MinIONRunStatusSerializer(serializers.HyperlinkedModelSerializer):
+class MinionRunInfoSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
-        model = MinIONRunStatus
+        model = MinionRunInfo
         fields = (
             'id',
-            'minION',
+            'minion',
             'minION_name',
             # 'minKNOW_status',
             'minKNOW_current_script',
@@ -267,7 +294,7 @@ class MinIONRunStatusSerializer(serializers.HyperlinkedModelSerializer):
             'minKNOW_flow_cell_id',
             'minKNOW_run_name',
             'minKNOW_version',
-            'run_id',
+            'run',
             'minKNOW_hash_run_id',
             'minKNOW_script_run_id',
             'minKNOW_real_sample_rate',
@@ -289,7 +316,8 @@ class MinIONRunStatusSerializer(serializers.HyperlinkedModelSerializer):
             'sample_frequency',
             'sequencing_kit',
             'user_filename_input',
-
+            'wells_per_channel',
+            'target_temp'
         )
         read_only = ('id', 'minION_name')
 
@@ -493,6 +521,7 @@ class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
         #
         flowcell, created = Flowcell.objects.get_or_create(**validated_data)
         flowcell.save()
+        print(validated_data)
 
         if created:
 
@@ -509,6 +538,14 @@ class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
                 job_type=JobType.objects.filter(name="UpdateFlowcellDetails")[0],
                 last_read=0
             )
+            # If user has allowed us to tweet them
+            if UserOptions.objects.get(owner=flowcell.owner).tweet:
+                # Auto create a Warnings and error notification
+                NotificationConditions(notification_type="w/e", flowcell=flowcell,
+                                       creating_user=flowcell.owner).save()
+                # Auto create a mux notification
+                NotificationConditions(notification_type="mux", flowcell=flowcell,
+                                       creating_user=flowcell.owner).save()
 
         return flowcell
 
@@ -573,7 +610,6 @@ class JobMasterSerializer(serializers.ModelSerializer):
             "flowcell",
             "task_type_name",
             "reference_name",
-            "last_read",
             "read_count",
             "running",
             "complete",

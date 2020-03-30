@@ -58,8 +58,8 @@ function loadTasksForm() {
                                 }
                             }
                         });
+                        // if it's a minimap2 task, make the reference select box to be usable.
                     } else if (element["name"] === "Minimap2"){
-                        console.log("Reference mappong");
                         document.getElementById("id_reference").disabled = false;
                     } else {
                         // if it's not for the metagenomics task we label the second dropdown reference
@@ -209,7 +209,6 @@ function flowcellTaskHistoryTable(flowcellId) {
             columns: [
                 {"data": "id"},
                 {"data": "task_type_name"},
-                {"data": "last_read"},
                 {"data": "read_count"},
                 {"data": "running"},
                 {"data": "complete"},
@@ -221,13 +220,13 @@ function flowcellTaskHistoryTable(flowcellId) {
                     "width": "15%",
                     "render": function (data, type, full) {
                         if (!data["server_initiated"]) {
-                            return [`<a class="btn" id="pause_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>`,
-                                `<a class="btn" id="reset_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Reset </a>`,
-                                `<a class="btn" id="delete_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 3)"><i class="fa fa-times"></i> Delete </a>`];
+                            return [`<a class="btn icon-task"  id="pause_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>·
+                                <a class="btn icon-task" id="reset_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Reset </a>·
+                                <a class="btn icon-task" id="delete_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 3)"><i class="fa fa-times"></i> Delete </a>`,];
                         }
                         else {
-                            return [`<a class="btn" id="pause_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>`,
-                                `<a class="btn" id="reset_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Reset </a>`];
+                            return [`<a class="btn icon-task" id="pause_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>·
+                                <a class="btn icon-task" id="reset_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Reset </a>`];
                         }
                     }
                 }
