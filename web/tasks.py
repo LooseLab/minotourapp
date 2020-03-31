@@ -20,7 +20,6 @@ from reads.models import Barcode, FastqRead, Run, FlowcellSummaryBarcode, Flowce
 from reads.utils import getn50
 from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
-from reads.serializers import FastqReadSerializer
 
 from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
 
@@ -867,19 +866,19 @@ def update_flowcell_details(job_master_id):
     job_master.save()
 
 
-@task(rate_limit="100/m")
-def save_reads(data):
-    """
-    Save fastqreads sent by the client
-    :param data:
-    :return:
-    """
-
-    serializer = FastqReadSerializer(data=data, many=True)
-
-    if serializer.is_valid():
-        serializer.save()
-        logger.info('Saving reads with success')
-
-    else:
-        logger.info('Saving reads with failure')
+# @task(rate_limit="100/m")
+# def save_reads(data):
+#     """
+#     Save fastqreads sent by the client
+#     :param data:
+#     :return:
+#     """
+#
+#     serializer = FastqReadSerializer(data=data, many=True)
+#
+#     if serializer.is_valid():
+#         serializer.save()
+#         logger.info('Saving reads with success')
+#
+#     else:
+#         logger.info('Saving reads with failure')
