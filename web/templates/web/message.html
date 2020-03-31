@@ -15,20 +15,10 @@
 
             <div id="messages"></div>
 
-             <div class="box-tools">
-                 <ul class="pagination pagination-sm no-margin pull-right">
-                     <li><a href="#">&laquo;</a></li>
-                     <li><a href="#">1</a></li>
-                     <li><a href="#">2</a></li>
-                     <li><a href="#">3</a></li>
-                     <li><a href="#">&raquo;</a></li>
-                 </ul>
-             </div>
-
             <div class="message-body">
                 <!--<table id="all-messages" class="user messages received" style="width:100%"
                        cellspacing="0">-->
-                 <table id="all-runs" class="table table-bordered table-striped table-hover" style="width:100%"
+                 <table id="message-table" class="table table-bordered table-striped table-hover" style="width:100%"
                        cellspacing="0">
                     <thead>
                     <tr>
@@ -40,16 +30,6 @@
 
                     </tr>
                     </thead>
-                    {% for message in messages %}
-                            <tr>
-                                <td>{{ message.title }}</td>
-                                <td>{{ message.created_date|date:'d-m-Y H:i' }}</td>
-                                <td>{{ message.sender.first_name }} {{ message.sender.last_name }}
-                                <td>{{ message.content}}</td>
-                                </td>
-
-                            </tr>
-                    {% endfor %}
                 </table>
             </div>
         </section>
@@ -58,10 +38,12 @@
 
 {% block javascript %}
     <script>
-        document.getElementById("btn-copy-token").addEventListener("click", function() {
-            copyToClipboardMsg(document.getElementById("token"), "msg");
-        });
+    //    document.getElementById("btn-copy-token").addEventListener("click", function() {
+      //      copyToClipboardMsg(document.getElementById("token"), "msg");
+        // });
+            const messageController = new MessageController();
 
+        messageController.drawMessageTable();
         set_active_navbar_item(5);
     </script>
 {% endblock %}

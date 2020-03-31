@@ -19,7 +19,7 @@ from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, Mini
 from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
 
 from web.utils import get_run_details, split_flowcell
-
+from django.core.paginator import Paginator
 from django.contrib import messages
 
 
@@ -503,14 +503,41 @@ def render_messages(request):
 
 @api_view(['GET'])
 def new_messages_list(request):
+    """
+    API endpoint, returns a list of tweet/emails sent by minotour to a user
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+
+    Returns
+    -------
+    serializer.data: list
+        List of all messages sent to user ordered by date.
+
+    """
 
     queryset = Message.objects.filter(recipient=request.user).order_by('-created_date')
     serializer = MessageSerializer(queryset, many=True, context={'request': request})
-    return Response(serializer.data)
+    return Response({"data": serializer.data})
 
 
 @login_required
 def message_details(request):
+    """
+    Return data for messages
+    Author
+    ------
+    Solomon osei
+
+    Parameters
+    ----------
+    request: django.core.handlers.wsgi.WSGIRequest
+
+    Returns
+    -------
+    html
+
+    """
     messages = Message.objects.filter(recipient=request.user).order_by('-created_date')
     return render(
         request, 'web/message.html',
