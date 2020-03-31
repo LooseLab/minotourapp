@@ -712,9 +712,9 @@ def update_flowcell_details(job_master_id):
     logger.info('Flowcell id: {} - Updating details of flowcell {}'.format(flowcell.id, flowcell.name))
 
     #
-    # Get the first MinIONRunStatus for a particular flowcell
+    # Get the first MinIONRunStatus for a particular flowcell - but we want to ignore platform QCs
     #
-    minion_run_status_first = MinionRunInfo.objects.filter(run_id__flowcell=flowcell).order_by('minKNOW_start_time')\
+    minion_run_status_first = MinionRunInfo.objects.filter(run_id__flowcell=flowcell).exclude(experiment_type="platform_qc").order_by('minKNOW_start_time')\
         .first()
 
     #
@@ -731,7 +731,7 @@ def update_flowcell_details(job_master_id):
     #
     # Define flowcell's sample_name
     #
-    minion_run_status_list = MinionRunInfo.objects.filter(run_id__flowcell=flowcell)
+    minion_run_status_list = MinionRunInfo.objects.filter(run_id__flowcell=flowcell).exclude(experiment_type="platform_qc")
 
     if minion_run_status_list.count() > 0:
 
@@ -747,7 +747,7 @@ def update_flowcell_details(job_master_id):
 
     else:
 
-        for run in Run.objects.filter(flowcell=flowcell):
+        for run in Run.objects.filter(flowcell=flowcell).exclude(name="mux scan"):
 
             if run.name and run.name != 'undefined':
 
