@@ -2033,7 +2033,7 @@ def flowcell_run_stats_latest(request, pk, checkid):
     """
     flowcell = Flowcell.objects.get(pk=pk)
     # Get all the Minion Run status objects for this flowcell
-    minion_run_status_list = MinionRunInfo.objects.filter(run_id__flowcell=flowcell)
+    minion_run_status_list = MinionRunInfo.objects.filter(run_id__flowcell=flowcell).exclude(experiment_type="platform_qc")
     # If we have more than 0
     if minion_run_status_list.count() > 0:
         # Take the first entry to be the run status
@@ -2045,7 +2045,7 @@ def flowcell_run_stats_latest(request, pk, checkid):
 
     # Temporary work around to show all data.
     crazy_minion_run_stats = MinionRunStats.objects.filter(
-        run_id__in=flowcell.runs.all(), id__gt=checkid
+        run_id__in=flowcell.runs.all().exclude(name="mux scan"), id__gt=checkid
     )
 
     result = []
