@@ -8,14 +8,14 @@ class MessageController {
         console.log("drawing table");
         $("#message-table").DataTable({
             ajax: {
-                url: '/private/messages-sent',
+                url: '/web/private/sent_tweets/',
                 method: "GET",
             },
             columns: [
                 {"data": "title"},
                 {"data": "created_date"},
-                {"data": "sender"},
-                {"data": "content"},
+                {"data": "sender_first_name"},
+                {"data": "flowcell_name"}
             ]
         });
     }

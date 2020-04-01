@@ -18,7 +18,7 @@
             <div class="message-body">
                 <!--<table id="all-messages" class="user messages received" style="width:100%"
                        cellspacing="0">-->
-                 <table id="message-table" class="table table-bordered table-striped table-hover" style="width:100%"
+                <table id="message-table" class="table table-bordered table-striped table-hover" style="width:100%"
                        cellspacing="0">
                     <thead>
                     <tr>
@@ -26,7 +26,7 @@
                         <th>Message<br/>Title</th>
                         <th>Message<br/>Date</th>
                         <th>Message<br/>Sender</th>
-                        <th>Message<br/>Content</th>
+                        <th>Flowcell</th>
 
                     </tr>
                     </thead>
@@ -38,12 +38,14 @@
 
 {% block javascript %}
     <script>
-    //    document.getElementById("btn-copy-token").addEventListener("click", function() {
-      //      copyToClipboardMsg(document.getElementById("token"), "msg");
+        //    document.getElementById("btn-copy-token").addEventListener("click", function() {
+        //      copyToClipboardMsg(document.getElementById("token"), "msg");
         // });
-            const messageController = new MessageController();
+        const messageController = new MessageController();
 
         messageController.drawMessageTable();
-        set_active_navbar_item(5);
+        const topPadding = $(".main-header").height() + 16;
+        $(".content-wrapper").css("padding-top", `${topPadding}px`);
+        set_active_navbar_item(4);
     </script>
 {% endblock %}

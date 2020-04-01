@@ -495,10 +495,7 @@ def render_messages(request):
     -------
     The messages page HTML template
     """
-    messages = Message.objects.filter(recipient=request.user).order_by('-created_date')
-    flowcells = Message.objects.all().values_list("sender__flowcells__name", flat=True).distinct()
-
-    return render(request, 'web/messages.html', context={"messages": messages, "flowcells": flowcells})
+    return render(request, 'web/message.html')
 
 
 @api_view(['GET'])
@@ -515,36 +512,10 @@ def new_messages_list(request):
         List of all messages sent to user ordered by date.
 
     """
-
+    print("HELLO")
     queryset = Message.objects.filter(recipient=request.user).order_by('-created_date')
     serializer = MessageSerializer(queryset, many=True, context={'request': request})
     return Response({"data": serializer.data})
-
-
-@login_required
-def message_details(request):
-    """
-    Return data for messages
-    Author
-    ------
-    Solomon osei
-
-    Parameters
-    ----------
-    request: django.core.handlers.wsgi.WSGIRequest
-
-    Returns
-    -------
-    html
-
-    """
-    messages = Message.objects.filter(recipient=request.user).order_by('-created_date')
-    return render(
-        request, 'web/message.html',
-        context={
-            'messages': messages,
-        }
-    )
 
 
 @login_required

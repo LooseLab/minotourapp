@@ -5,8 +5,10 @@ from communication.models import Message, NotificationConditions
 
 class MessageSerializer(serializers.ModelSerializer):
 
-    recipient_email = serializers.ReadOnlyField(source="recipient.email")
-    sender_email = serializers.ReadOnlyField(source="sender.email")
+    recipient_email = serializers.ReadOnlyField(source="recipient.email", default="Unknown")
+    sender_email = serializers.ReadOnlyField(source="sender.email", default="Unknown")
+    sender_first_name = serializers.ReadOnlyField(source="sender.first_name", default="Unknown")
+    flowcell_name = serializers.ReadOnlyField(source="flowcell.name", default="Unknown")
 
     class Meta:
 
@@ -15,11 +17,13 @@ class MessageSerializer(serializers.ModelSerializer):
             'uuidstr',
             'recipient_email',
             'sender_email',
+            'sender_first_name',
             'title',
             'is_read',
             'created_date',
             'flowcell',
-            'run'
+            'run',
+            'flowcell_name'
         )
 
 
