@@ -1,5 +1,5 @@
+
 import pandas as pd
-from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -8,18 +8,19 @@ from django.forms import formset_factory
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.generic import ListView, DeleteView
-from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 
 from centrifuge.models import CentrifugeOutput
 from communication.models import Message
+from communication.serializers import MessageSerializer
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 from reads.models import Run, UserOptions, FastqRead, Experiment, Flowcell, MinionRunStats, JobType, JobMaster
 from web.forms import SignUpForm, UserOptionsForm, ExperimentForm, ExperimentFlowcellForm
 
 from web.utils import get_run_details, split_flowcell
-
+from django.core.paginator import Paginator
 from django.contrib import messages
-
 
 
 
@@ -29,15 +30,14 @@ def index(request):
 
         return redirect('flowcells')
 
-    return redirect('login')
+    else:
+
+        return redirect('login')
 
 
 def signup(request):
-
     if request.method == 'POST':
-
         form = SignUpForm(request.POST)
-
         if form.is_valid():
             form.save()
             username = form.cleaned_data.get('username')
@@ -101,6 +101,20 @@ def profile(request):
         }
     )
 
+@login_required
+def user_message(request):
+    try:
+
+        user_options = UserOptions.objects.get(owner=request.user)
+
+    except ObjectDoesNotExist:
+
+        user_options = UserOptions.objects.create(owner=request.user)
+
+    auth_token = Token.objects.get(user=request.user)
+
+    messages = Message.objects.filter(recipient=request.user).order_by('-created_date')
+
 
 @login_required
 def minup(request):
@@ -154,6 +168,7 @@ def flowcell_list(request):
 
 
 def flowcell_reads_data(request):
+
     # column_0_data = request.GET.get('column[0][data]', '')
     # column_0_name = request.GET.get('column[0][name]', '')
     # column_0_searchable = request.GET.get('column[0][searchable]', '')
@@ -169,6 +184,8 @@ def flowcell_reads_data(request):
         'run__runid',
         'barcode__name',
     ]
+
+    query_columns_string = ['read_id', 'read', 'channel', 'sequence_length', 'run__runid', 'barcode__name']
 
     flowcell_id = int(request.GET.get('flowcell_id', 0))
 
@@ -193,6 +210,7 @@ def flowcell_reads_data(request):
     for run in run_list:
 
         run_id_list.append(run.id)
+
 
     if not search_value == "":
 
@@ -226,9 +244,10 @@ def flowcell_reads_data(request):
             .filter(run__in=run_id_list)
             #.filter(run__flowcell_id=flowcell_id)\
             #.filter(run__flowcell__owner=request.user)\
-
+    print(order_column)
     if order_column:
 
+        print("ITS TRUE")
         if order_dir == 'desc':
 
             reads_temp2 = reads_temp.order_by('-{}'.format(query_columns[int(order_column)]))
@@ -239,9 +258,10 @@ def flowcell_reads_data(request):
 
     else:
         reads_temp2 = reads_temp
-
+    print(start, end)
     reads = reads_temp2[start:end]\
         .values('run__runid', 'barcode__name', 'read_id', 'read', 'channel', 'sequence_length')
+    print(reads)
 
     records_total = reads_temp.count()
 
@@ -371,7 +391,18 @@ def experiments_update(request, pk):
 
 @login_required
 def flowcell_run_stats_download(request, pk):
+    """
+    Return a csv file of the MinionRunStats that the user has requested for download.
+    Parameters
+    ----------
+    request
+    pk: int
+        The flowcell primary key.
 
+    Returns
+    -------
+
+    """
     flowcell = Flowcell.objects.get(pk=pk)
 
     minionrunstats_list = MinionRunStats.objects.filter(run_id__in=flowcell.runs.all())
@@ -414,7 +445,6 @@ def flowcell_run_stats_download(request, pk):
 
     return response
 
-
 @login_required
 def metagenomics_data_download(request, pk):
     """
@@ -423,7 +453,7 @@ def metagenomics_data_download(request, pk):
     :param request:
     :return:
     """
-
+    flowcell_id = request.GET.get("flowcellId", 0)
     flowcell = Flowcell.objects.get(pk=pk)
     job_type = JobType.objects.get(name="Metagenomics")
     metagenomics_task = JobMaster.objects.get(flowcell=flowcell, job_type=job_type)
@@ -438,10 +468,8 @@ def metagenomics_data_download(request, pk):
     return response
 
 
-@login_required
 def flowcell_manager(request):
     """
-<<<<<<< HEAD
     Returns the flowcell manager HTML
     Parameters
     ----------
@@ -467,28 +495,28 @@ def render_messages(request):
     -------
     The messages page HTML template
     """
-    messages = Message.objects.filter(recipient=request.user).order_by('-created_date')
-    flowcells = Message.objects.all().values_list("sender__flowcells__name", flat=True).distinct()
-
-    return render(request, 'web/messages.html', context={"messages": messages, "flowcells": flowcells})
+    return render(request, 'web/message.html')
 
 
-@login_required
-def flowcell_manager_runs(request, pk):
+@api_view(['GET'])
+def new_messages_list(request):
     """
-    This view shows the a list of runs of a specific flowcell
-    in the flowcell maintenance second page
+    API endpoint, returns a list of tweet/emails sent by minotour to a user
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+
+    Returns
+    -------
+    serializer.data: list
+        List of all messages sent to user ordered by date.
+
     """
+    print("HELLO")
+    queryset = Message.objects.filter(recipient=request.user).order_by('-created_date')
+    serializer = MessageSerializer(queryset, many=True, context={'request': request})
+    return Response({"data": serializer.data})
 
-    flowcell = Flowcell.objects.get(pk=pk)
-    run_list = get_run_details(pk)
-    flowcell_list = Flowcell.objects.filter(owner=request.user).exclude(id=flowcell.id)
-
-    return render(request,
-                  'web/flowcell_manager_runs.html',
-                  context={'run_list': run_list,
-                           'flowcell_list': flowcell_list,
-                           'flowcell': flowcell})
 
 @login_required
 def flowcell_manager_runs_split(request, pk):
@@ -512,6 +540,22 @@ def flowcell_manager_runs_split(request, pk):
                            'to_flowcell': to_flowcell})
 
 @login_required
+def flowcell_manager_runs(request, pk):
+    """
+    This view shows the a list of runs of a specific flowcell
+    in the flowcell maintenance second page
+    """
+
+    flowcell = Flowcell.objects.get(pk=pk)
+    run_list = get_run_details(pk)
+    flowcell_list = Flowcell.objects.filter(owner=request.user).exclude(id=flowcell.id)
+
+    return render(request,
+                  'web/flowcell_manager_runs.html',
+                  context={'run_list': run_list,
+                           'flowcell_list': flowcell_list,
+                           'flowcell': flowcell})
+
 def electric_boogaloo(request):
     """
     Returns the web control vue page, maybe
