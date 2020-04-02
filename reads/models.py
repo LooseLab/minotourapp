@@ -2618,7 +2618,7 @@ class SampleTag(models.Model):
     )
 
     key_text = models.CharField(
-        length_max=64
+        max_length=64
     )
 
     value_text = models.TextField(
