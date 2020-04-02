@@ -125,6 +125,11 @@ class Flowcell(models.Model):
         default=False
     )
 
+    sample_description = models.TextField(
+        null=True,
+        blank=True,
+    )
+
     def barcodes(self):
         """
         Return all the barcodes in runs contained under this flowcell.
@@ -2601,6 +2606,24 @@ class JobMaster(models.Model):
             return "{} {} {} {}".format(self.run, self.job_type, self.run.id, self.id)
 
         return "{} {} {}".format(self.flowcell, self.job_type, self.flowcell.id)
+
+
+class SampleTag(models.Model):
+
+    flowcell = models.ForeignKey(
+
+        Flowcell,
+        on_delete=models.CASCADE,
+        related_name='samples',
+    )
+
+    key_text = models.CharField(
+        length_max=64
+    )
+
+    value_text = models.TextField(
+
+    )
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)

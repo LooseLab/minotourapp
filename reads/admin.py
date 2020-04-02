@@ -10,7 +10,7 @@ from .models import (Barcode, FastqFile, FastqRead, FastqReadType,
                      RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellHistogramSummary,
                      FlowcellStatisticBarcode,
                      FlowcellSummaryBarcode, Flowcell, Minion,
-                     FlowcellTab, JobMaster, JobType)
+                     FlowcellTab, JobMaster, JobType, SampleTag)
 
 
 class RunStatisticsBarcodeAdmin(admin.ModelAdmin):
@@ -57,3 +57,4 @@ admin.site.register(Flowcell, FlowcellAdmin)
 admin.site.register(Minion)
 admin.site.register(JobMaster)
 admin.site.register(JobType)
+admin.site.register(SampleTag)
