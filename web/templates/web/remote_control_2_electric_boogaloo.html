@@ -1,5 +1,13 @@
 {% extends "web/template_private.html" %}
 {% load static %}
+{% block javascript %}
+    <script>
+        //    document.getElementById("btn-copy-token").addEventListener("click", function() {
+        //      copyToClipboardMsg(document.getElementById("token"), "msg");
+        // });
+        set_active_navbar_item(1);
+    </script>
+{% endblock %}
 {% block content %}
     <link href="{% static 'web/libraries/vuetify.min.css' %}" rel="stylesheet">
     <div class="content-wrapper" style="background-color: white">
@@ -489,6 +497,7 @@
                 {#const remoteControlController = new RemoteControlController(vm);#}
                 {#remoteControlController.getActiveMinionsAndStats();#}
 
+                {#set_active_navbar_item(1);#}
 
                 // NOW TO RAM SOME DATA IN
                 {#vm.computers.append(remoteControlController.getActiveMinions())#}
@@ -499,4 +508,5 @@
         </section>
     </div>
 {% endblock %}
+
 {#    </div>#}
