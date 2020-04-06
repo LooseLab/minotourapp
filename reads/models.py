@@ -476,7 +476,7 @@ class Run(models.Model):
 
     Fields:
 
-    :minion: the MinION that contains the flowcell used the produce the run data
+    :minion: the MinION that contains the flowcell used to produce the run data
     :flowcell: the flowcell used to produce the run data
     :owner: the run's owner; usually provides the token used in the minotour client
     :groupruns: to be removed
@@ -705,7 +705,6 @@ class FastqFile(models.Model):
 
     md5 = models.CharField(
         blank=True,
-        null=True,
         max_length=256
     )
 
@@ -2610,11 +2609,11 @@ class JobMaster(models.Model):
 
 class SampleTag(models.Model):
 
-    flowcell = models.ForeignKey(
-
-        Flowcell,
-        on_delete=models.CASCADE,
-        related_name='samples',
+    flowcell_name = models.CharField(
+        max_length=64
+    )
+    barcode_name = models.CharField(
+        max_length=64
     )
 
     key_text = models.CharField(
@@ -2624,6 +2623,7 @@ class SampleTag(models.Model):
     value_text = models.TextField(
 
     )
+
 
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
@@ -2652,4 +2652,17 @@ def create_run_barcodes(sender, instance=None, created=False, **kwargs):
             run=instance,
             name='No barcode'
         )
+
+
+class Sample(models.Model):
+    flowcell_name = models.CharField(
+        max_length=64
+    )
+    barcode_name = models.CharField(
+        max_length=64
+    )
+    description = models.TextField(
+        max_length=64
+    )
+
 
