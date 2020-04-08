@@ -715,6 +715,16 @@ class FastqFile(models.Model):
         return "{} {}".format(str(self.name),str(self.run))
 
 
+class Sample(models.Model):
+    name = models.CharField(
+        max_length=64
+    )
+    description = models.TextField(
+        blank=True,
+        null=True,
+    )
+
+
 class Barcode(models.Model):
     """
     :purpose: To store barcode names associated with a particular run.
@@ -742,6 +752,14 @@ class Barcode(models.Model):
     name = models.CharField(
 
         max_length=32
+    )
+    sample = models.ForeignKey(
+
+        Sample,
+        on_delete=models.CASCADE,
+        related_name='samplename',
+        blank=True,
+        null=True,
     )
 
     def __str__(self):
@@ -2607,33 +2625,12 @@ class JobMaster(models.Model):
         return "{} {} {}".format(self.flowcell, self.job_type, self.flowcell.id)
 
 
-class Sample(models.Model):
-    sample = models.CharField(
-        max_length=64
-    )
-    flowcell_name = models.CharField(
-        max_length=64
-    )
-    barcode_name = models.CharField(
-        max_length=64
-    )
-    description = models.TextField(
-        max_length=64
-    )
-
-
 class SampleTag(models.Model):
     sample = models.ForeignKey(
 
         Sample,
-        on_delete=models.DO_NOTHING,
+        on_delete=models.CASCADE,
         related_name='samplename',
-    )
-    flowcell_name = models.CharField(
-        max_length=64
-    )
-    barcode_name = models.CharField(
-        max_length=64
     )
 
     key_text = models.CharField(
@@ -2642,6 +2639,21 @@ class SampleTag(models.Model):
 
     value_text = models.TextField(
 
+    )
+
+
+class SampleFlowcell(models.Model):
+    sample = models.ForeignKey(
+
+        Sample,
+        on_delete=models.CASCADE,
+        related_name='samplename',
+    )
+    flowcell_name = models.CharField(
+        max_length=64
+    )
+    barcode_name = models.CharField(
+        max_length=64
     )
 
 
