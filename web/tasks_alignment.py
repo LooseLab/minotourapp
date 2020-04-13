@@ -14,12 +14,13 @@ import os
 logger = get_task_logger(__name__)
 
 
-def call_fetch_reads_alignment(runs, chunk_size, last_read):
+def call_fetch_reads_alignment(runs, chunk_size, last_read, pass_only=False):
     """
     Call the fetch reads function to create a fastq for the process
     :param runs: List of all runs on the flowcell
     :param chunk_size: The target number of reads we want
     :param last_read: The previous last read we took
+    :param pass_only: Only return pass fastq reads
     :return:
     """
     # a list of the fastqs object to pass into the mapping function
@@ -29,7 +30,7 @@ def call_fetch_reads_alignment(runs, chunk_size, last_read):
     while True:
         # Call fetch_reads_alignment to actually query the database
         reads, last_read, read_count, fastasmchunk = fetch_reads_alignment(
-            runs, chunk_size, last_read
+            runs, chunk_size, last_read, pass_only
         )
         # Add fasta_objects chunk to the list
         fasta_objects += fastasmchunk
@@ -43,12 +44,13 @@ def call_fetch_reads_alignment(runs, chunk_size, last_read):
     return fastq_df_barcode, last_read, read_count, fasta_objects
 
 
-def fetch_reads_alignment(runs, chunk_size, last_read):
+def fetch_reads_alignment(runs, chunk_size, last_read, pass_only):
     """
     Query the database for runs from a flowcell
     :param runs: The list of runs objects for this flowcell
     :param chunk_size: The target number of reads to have pulled back
     :param last_read: The id of the last read
+    :param pass_only: Only return pass fastq reads
     :return:
     """
     # Store the first read id and which run it's from this dict
@@ -61,7 +63,7 @@ def fetch_reads_alignment(runs, chunk_size, last_read):
         # Query the database for the reads objects
         fastqs = (
             FastqRead.objects.values_list("id")
-            .filter(run=run, id__gt=int(last_read))
+            .filter(run=run, id__gt=int(last_read), is_pass=True)
             .first()
         )
         # If there are fastqs store the object

@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'centrifuge',
     'readuntil',
     'guardian',
+    'artic'
 ]
 
 MIDDLEWARE = [

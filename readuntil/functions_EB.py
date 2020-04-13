@@ -334,7 +334,6 @@ def parse_cigar(cigar_string, read_string, chunk_length):
             query_array.extend(read_bases[query_pos: query_pos + count])
 
         elif operation is "I":
-            print ("insertion")
             # Extend query_array with bases from read
             # query_array.extend(read_bases[query_pos:query_pos + count])
 
