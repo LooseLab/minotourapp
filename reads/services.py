@@ -3,6 +3,8 @@ Services to help run some of the tasks in the web app. Why is this not stored th
 """
 import pytz
 import datetime
+
+from celery.task import task
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -16,9 +18,25 @@ from reads.models import (
     Flowcell,
     Run,
     MinionMessage,
-)
+    FastqRead)
 
 from communication.models import Message, NotificationConditions
+
+@task(rate_limit="2/m")
+def save_reads_bulk(reads_list):
+    """
+    Celery task to bulk create the reads
+    Parameters
+    ----------
+    reads_list: list of FastqRead
+        List of FastqRead objects to save.
+
+    Returns
+    -------
+    None
+    """
+    FastqRead.objects.bulk_create(reads_list)
+
 
 
 def save_flowcell_summary_barcode(flowcell_id, row):

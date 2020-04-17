@@ -75,6 +75,7 @@ from reads.serializers import (
     JobMasterSerializer,
     JobMasterInsertSerializer,
 )
+from reads.services import save_reads_bulk
 from reads.utils import get_coords, return_temp_empty_summary
 from readuntil.models import ExpectedBenefitChromosomes
 from reference.models import ReferenceInfo
@@ -2403,7 +2404,7 @@ def read_list_new(request):
             )
             reads_list.append(fastqread)
         try:
-            FastqRead.objects.bulk_create(reads_list)
+            save_reads_bulk.delay(reads_list)
             return Response("Updated reads", status=status.HTTP_201_CREATED)
         except Exception as e:
             print(e)
