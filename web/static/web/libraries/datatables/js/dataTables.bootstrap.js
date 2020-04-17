@@ -13,7 +13,7 @@
 (function( factory ){
 	if ( typeof define === 'function' && define.amd ) {
 		// AMD
-		define( ['jquery', 'datatables.net'], function ( $ ) {
+		define( ['web/static/web/libraries/datatables/js/jquery', 'datatables.net'], function ($ ) {
 			return factory( $, window, document );
 		} );
 	}
@@ -46,20 +46,19 @@ var DataTable = $.fn.dataTable;
 /* Set the defaults for DataTables initialisation */
 $.extend( true, DataTable.defaults, {
 	dom:
-		"<'row'<'col-sm-12 col-md-6'l><'col-sm-12 col-md-6'f>>" +
+		"<'row'<'col-sm-6'l><'col-sm-6'f>>" +
 		"<'row'<'col-sm-12'tr>>" +
-		"<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+		"<'row'<'col-sm-5'i><'col-sm-7'p>>",
 	renderer: 'bootstrap'
 } );
 
 
 /* Default class modification */
 $.extend( DataTable.ext.classes, {
-	sWrapper:      "dataTables_wrapper container-fluid dt-bootstrap4",
-	sFilterInput:  "form-control form-control-sm",
-	sLengthSelect: "form-control form-control-sm",
-	sProcessing:   "dataTables_processing card",
-	sPageButton:   "paginate_button page-item"
+	sWrapper:      "dataTables_wrapper form-inline dt-bootstrap",
+	sFilterInput:  "form-control input-sm",
+	sLengthSelect: "form-control input-sm",
+	sProcessing:   "dataTables_processing panel panel-default"
 } );
 
 
@@ -139,8 +138,7 @@ DataTable.ext.renderer.pageButton.bootstrap = function ( settings, host, idx, bu
 								'aria-controls': settings.sTableId,
 								'aria-label': aria[ button ],
 								'data-dt-idx': counter,
-								'tabindex': settings.iTabIndex,
-								'class': 'page-link'
+								'tabindex': settings.iTabIndex
 							} )
 							.html( btnDisplay )
 						)

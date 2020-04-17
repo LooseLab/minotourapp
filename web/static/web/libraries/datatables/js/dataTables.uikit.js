@@ -1,19 +1,13 @@
-/*! DataTables Bootstrap 3 integration
- * ©2011-2015 SpryMedia Ltd - datatables.net/license
+/*! DataTables UIkit 3 integration
  */
 
 /**
- * DataTables integration for Bootstrap 3. This requires Bootstrap 3 and
- * DataTables 1.10 or newer.
- *
- * This file sets the defaults and adds options to DataTables to style its
- * controls using Bootstrap. See http://datatables.net/manual/styling/bootstrap
- * for further information.
+ * This is a tech preview of UIKit integration with DataTables.
  */
 (function( factory ){
 	if ( typeof define === 'function' && define.amd ) {
 		// AMD
-		define( ['jquery', 'datatables.net'], function ( $ ) {
+		define( ['web/static/web/libraries/datatables/js/jquery', 'datatables.net'], function ($ ) {
 			return factory( $, window, document );
 		} );
 	}
@@ -46,34 +40,24 @@ var DataTable = $.fn.dataTable;
 /* Set the defaults for DataTables initialisation */
 $.extend( true, DataTable.defaults, {
 	dom:
-		"<'ui stackable grid'"+
-			"<'row'"+
-				"<'eight wide column'l>"+
-				"<'right aligned eight wide column'f>"+
-			">"+
-			"<'row dt-table'"+
-				"<'sixteen wide column'tr>"+
-			">"+
-			"<'row'"+
-				"<'seven wide column'i>"+
-				"<'right aligned nine wide column'p>"+
-			">"+
-		">",
-	renderer: 'semanticUI'
+		"<'row uk-grid'<'uk-width-1-2'l><'uk-width-1-2'f>>" +
+		"<'row uk-grid dt-merge-grid'<'uk-width-1-1'tr>>" +
+		"<'row uk-grid dt-merge-grid'<'uk-width-2-5'i><'uk-width-3-5'p>>",
+	renderer: 'uikit'
 } );
 
 
 /* Default class modification */
 $.extend( DataTable.ext.classes, {
-	sWrapper:      "dataTables_wrapper dt-semanticUI",
-	sFilter:       "dataTables_filter ui input",
-	sProcessing:   "dataTables_processing ui segment",
-	sPageButton:   "paginate_button item"
+	sWrapper:      "dataTables_wrapper uk-form dt-uikit",
+	sFilterInput:  "uk-form-small",
+	sLengthSelect: "uk-form-small",
+	sProcessing:   "dataTables_processing uk-panel"
 } );
 
 
-/* Bootstrap paging button renderer */
-DataTable.ext.renderer.pageButton.semanticUI = function ( settings, host, idx, buttons, page, pages ) {
+/* UIkit paging button renderer */
+DataTable.ext.renderer.pageButton.uikit = function ( settings, host, idx, buttons, page, pages ) {
 	var api     = new DataTable.Api( settings );
 	var classes = settings.oClasses;
 	var lang    = settings.oLanguage.oPaginate;
@@ -101,58 +85,57 @@ DataTable.ext.renderer.pageButton.semanticUI = function ( settings, host, idx, b
 
 				switch ( button ) {
 					case 'ellipsis':
-						btnDisplay = '&#x2026;';
-						btnClass = 'disabled';
+						btnDisplay = '<i class="uk-icon-ellipsis-h"></i>';
+						btnClass = 'uk-disabled disabled';
 						break;
 
 					case 'first':
-						btnDisplay = lang.sFirst;
-						btnClass = button + (page > 0 ?
-							'' : ' disabled');
+						btnDisplay = '<i class="uk-icon-angle-double-left"></i> ' + lang.sFirst;
+						btnClass = (page > 0 ?
+							'' : ' uk-disabled disabled');
 						break;
 
 					case 'previous':
-						btnDisplay = lang.sPrevious;
-						btnClass = button + (page > 0 ?
-							'' : ' disabled');
+						btnDisplay = '<i class="uk-icon-angle-left"></i> ' + lang.sPrevious;
+						btnClass = (page > 0 ?
+							'' : 'uk-disabled disabled');
 						break;
 
 					case 'next':
-						btnDisplay = lang.sNext;
-						btnClass = button + (page < pages-1 ?
-							'' : ' disabled');
+						btnDisplay = lang.sNext + ' <i class="uk-icon-angle-right"></i>';
+						btnClass = (page < pages-1 ?
+							'' : 'uk-disabled disabled');
 						break;
 
 					case 'last':
-						btnDisplay = lang.sLast;
-						btnClass = button + (page < pages-1 ?
-							'' : ' disabled');
+						btnDisplay = lang.sLast + ' <i class="uk-icon-angle-double-right"></i>';
+						btnClass = (page < pages-1 ?
+							'' : ' uk-disabled disabled');
 						break;
 
 					default:
 						btnDisplay = button + 1;
 						btnClass = page === button ?
-							'active' : '';
+							'uk-active' : '';
 						break;
 				}
 
-				var tag = btnClass.indexOf( 'disabled' ) === -1 ?
-					'a' :
-					'div';
-
 				if ( btnDisplay ) {
-					node = $('<'+tag+'>', {
+					node = $('<li>', {
 							'class': classes.sPageButton+' '+btnClass,
 							'id': idx === 0 && typeof button === 'string' ?
 								settings.sTableId +'_'+ button :
-								null,
-							'href': '#',
-							'aria-controls': settings.sTableId,
-							'aria-label': aria[ button ],
-							'data-dt-idx': counter,
-							'tabindex': settings.iTabIndex
+								null
 						} )
-						.html( btnDisplay )
+						.append( $(( -1 != btnClass.indexOf('disabled') || -1 != btnClass.indexOf('active') ) ? '<span>' : '<a>', {
+								'href': '#',
+								'aria-controls': settings.sTableId,
+								'aria-label': aria[ button ],
+								'data-dt-idx': counter,
+								'tabindex': settings.iTabIndex
+							} )
+							.html( btnDisplay )
+						)
 						.appendTo( container );
 
 					settings.oApi._fnBindAction(
@@ -179,29 +162,14 @@ DataTable.ext.renderer.pageButton.semanticUI = function ( settings, host, idx, b
 	catch (e) {}
 
 	attach(
-		$(host).empty().html('<div class="ui stackable pagination menu"/>').children(),
+		$(host).empty().html('<ul class="uk-pagination uk-pagination-right"/>').children('ul'),
 		buttons
 	);
 
-	if ( activeEl !== undefined ) {
+	if ( activeEl ) {
 		$(host).find( '[data-dt-idx='+activeEl+']' ).focus();
 	}
 };
-
-
-// Javascript enhancements on table initialisation
-$(document).on( 'init.dt', function (e, ctx) {
-	if ( e.namespace !== 'dt' ) {
-		return;
-	}
-
-	// Length menu drop down
-	if ( $.fn.dropdown ) {
-		var api = new $.fn.dataTable.Api( ctx );
-
-		$( 'div.dataTables_length select', api.table().container() ).dropdown();
-	}
-} );
 
 
 return DataTable;

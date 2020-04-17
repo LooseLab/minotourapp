@@ -2160,47 +2160,6 @@ def flowcell_tabs_details(request, pk):
     """
     Return tab_id, tab_title, and tab_position for a given flowcell.
     """
-    flowcell_tabs_dict = {
-        "LiveEvent": {
-            "id": "tab-live-event-data",
-            "title": "Live Event Data",
-            "position": 1,
-        },
-        "ChanCalc": {
-            "id": "tab-basecalled-data",
-            "title": "Basecalled Data",
-            "position": 2,
-        },
-        "Reads": {"id": "tab-reads", "title": "Reads data", "position": 3},
-        "Minimap2": {
-            "id": "tab-sequence-mapping",
-            "title": "Sequence Mapping",
-            "position": 4,
-        },
-        "Advanced_Minimap2": {
-            "id": "tab-advanced-sequence-mapping",
-            "title": "Advanced Sequence Mapping",
-            "position": 5,
-        },
-        "Assembly": {"id": "tab-sequence-assembly", "title": "Assembly", "position": 6},
-        "ExportReads": {
-            "id": "tab-export-reads",
-            "title": "Download Read Data",
-            "position": 7,
-        },
-        "Runs": {"id": "tab-runs", "title": "Runs", "position": 8},
-        "Metagenomics": {
-            "id": "tab-metagenomics",
-            "title": "Metagenomics",
-            "position": 9,
-        },
-        "Sharing": {"id": "tab-sharing", "title": "Sharing", "position": 10},
-        "Notifications": {
-            "id": "tab-notifications",
-            "title": "Notifications",
-            "position": 11,
-        },
-    }
 
     tabs = ["summary-data", "tasks", "sharing", "notifications"]
 
@@ -2247,6 +2206,9 @@ def flowcell_tabs_details(request, pk):
 
         tabs.append("sequence-assembly")
 
+    # TODO add an actual check here
+    if True:
+        tabs.append("artic")
     return Response(tabs)
 
 

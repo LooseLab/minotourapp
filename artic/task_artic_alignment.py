@@ -21,7 +21,7 @@ import gzip
 logger = get_task_logger(__name__)
 
 @task()
-def run_artic_pipeline():
+def run_artic_command(fastq_path):
     """
     Run the artic pipeline with the code that we provide
     Returns
@@ -30,11 +30,12 @@ def run_artic_pipeline():
     """
 
     # TODO we can add the
-    scheme_dir = get_env_variable("MT_ARTIC_SCHEME_DIR")
+    print(fastq_path)
+    scheme_dir = get_env_variable("MT_ARTIC_SCEHEME_DIR")
     cmd = ["bash", "-c",
            "source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate artic-ncov2019-medaka && artic minion"
            f" --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir}"
-           "--read-file /tmp/tmp.fastq nCoV-2019/V1 barcode01"]
+           f"--read-file {fastq_path} nCoV-2019/V1 barcode01"]
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -202,7 +203,15 @@ def run_artic_pipeline(task_id):
     fasta_df_barcode, last_read, read_count, fasta_objects = call_fetch_reads_alignment(
         runs, chunk_size, task.last_read, pass_only=True
     )
+
     print(f"Fetched reads.")
+    print(fasta_df_barcode.shape)
+
+    fasta_df_barcode["sequence_length"] = fasta_df_barcode["sequence"].str.len()
+
+    fasta_df_barcode = fasta_df_barcode[fasta_df_barcode["sequence_length"].between(400, 700, inclusive=True)]
+
+    print(f"Reads after filtering: {fasta_df_barcode.shape[0]}")
     # TODO come back to look at this
     # fasta_df_barcode["barcode_name"] = np.where(fasta_df_barcode["barcode_name"].eq("No barcode"), "Unknown",
     #                                             fasta_df_barcode["barcode_name"])
@@ -383,6 +392,7 @@ def run_artic_pipeline(task_id):
                 # Write out the coverage
                 # TODO barcodeding stuff goes here
                 for barcode in barcodes:
+                    print(barcode)
                     barcode_sorted_fastq_path = Path(f"{base_result_dir_path}/{barcode}/{barcode}.fastq")
 
                     coverage_path = Path(
@@ -465,10 +475,10 @@ def run_artic_pipeline(task_id):
                         print(
                             f"we would fire the code for the artic pipeline here for barcode {barcode}"
                         )
-                        task.running = False
-                        task.complete = True
-                        task.save()
-                        return
+                        run_artic_command(barcode_sorted_fastq_path)
+                        # task.running = False
+                        # task.complete = True
+                        # task.save()
 
                     # So we have to set up the auto fire of the pipeline here if the task fails
                     number_bases_in_array = coverage.size
@@ -479,16 +489,16 @@ def run_artic_pipeline(task_id):
                         print(
                             f"we would fire the code for the artic pipeline here for barcode {barcode} due to 95% coverage reached"
                         )
-                        task.running = False
-                        task.complete = True
-                        task.save()
-                        return
+                        run_artic_command(barcode_sorted_fastq_path)
+                        # task.running = False
+                        # task.complete = True
+                        # task.save()
                         # Update last read id on task to start from on next iteration
 
                 task.last_read = last_read
                 task.iteration_count += 1
 
-                logger.info("Finishing this batch of reads.")
+                print("Finishing this batch of reads.")
                 task.read_count += read_count
                 task.running = False
                 task.save()

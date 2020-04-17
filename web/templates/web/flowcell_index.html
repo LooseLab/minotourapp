@@ -61,6 +61,10 @@
                     <a class="flowcell-tab"
                        onclick="flowcellController.flowcell_tab_controller.toggle_tab_content('notifications')">Notifications</a>
                 </li>
+                <li role="presentation" class="nav_flowcell hidden" id="nav-artic" >
+                    <a class="flowcell-tab"
+                       onclick="flowcellController.flowcell_tab_controller.toggle_tab_content('artic')">Artic Pipeline</a>
+                </li>
             </ul>
 
             <br/>
@@ -113,6 +117,10 @@
 
                 <div id="tab-notifications" class="tab-pane">
                     {% include "web/flowcell/notification-manager.html" %}
+                </div>
+
+                <div id="tab-artic" class="tab-pane">
+                    {% include "web/flowcell/artic.html" %}
                 </div>
             </div>
 

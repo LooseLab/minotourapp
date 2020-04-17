@@ -29,7 +29,7 @@
 
 	if ( typeof define === 'function' && define.amd ) {
 		// AMD
-		define( ['jquery'], function ( $ ) {
+		define( ['web/static/web/libraries/datatables/js/jquery'], function ($ ) {
 			return factory( $, window, document );
 		} );
 	}
@@ -44,8 +44,8 @@
 
 			if ( ! $ ) {
 				$ = typeof window !== 'undefined' ? // jQuery's factory checks for a global window
-					require('jquery') :
-					require('jquery')( root );
+					require('web/static/web/libraries/datatables/js/jquery') :
+					require('web/static/web/libraries/datatables/js/jquery')( root );
 			}
 
 			return factory( $, root, root.document );
