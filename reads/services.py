@@ -23,19 +23,56 @@ from reads.models import (
 from communication.models import Message, NotificationConditions
 
 @task(rate_limit="2/m")
-def save_reads_bulk(reads_list):
+def save_reads_bulk(reads):
     """
     Celery task to bulk create the reads
     Parameters
     ----------
-    reads_list: list of FastqRead
-        List of FastqRead objects to save.
+    reads: list of dict
+        List of FastqRead dicts to save.
 
     Returns
     -------
     None
     """
-    FastqRead.objects.bulk_create(reads_list)
+    reads_list = []
+    run_dict = {}
+    for read in reads:
+        run_pk = read.get("run", -1)
+        if run_pk not in run_dict and run_pk != -1:
+            run = Run.objects.get(pk=run_pk)
+            run_dict[run_pk] = run
+            read["run"] = run
+            read["flowcell"] = run.flowcell
+        else:
+            read["run"] = run_dict[run_pk]
+            read["flowcell"] = run_dict[run_pk].flowcell
+
+        fastqread = FastqRead(
+            read_id=read['read_id'],
+            read=read['read'],
+            channel=read['channel'],
+            barcode_id=read['barcode'],
+            rejected_barcode_id=read['rejected_barcode'],
+            barcode_name=read['barcode_name'],
+            sequence_length=read['sequence_length'],
+            quality_average=read['quality_average'],
+            sequence=read['sequence'],
+            quality=read['quality'],
+            is_pass=read['is_pass'],
+            start_time=read['start_time'],
+            run=read["run"],
+            flowcell=read["flowcell"],
+            type_id=read['type'],
+            fastqfile_id=read['fastqfile']
+        )
+        reads_list.append(fastqread)
+    try:
+
+        FastqRead.objects.bulk_create(reads_list)
+    except Exception as e:
+        print(e)
+        return str(e)
 
 
 
