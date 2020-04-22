@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from celery import task
 from celery.utils.log import get_task_logger
-from django.db.models import Max
+from django.db.models import Max, Count
 from twitter import *
 
 from assembly.models import GfaStore, GfaSummary
@@ -702,7 +702,7 @@ def update_flowcell_details(job_master_id):
     Refactoring this task such that:
     1. it only runs when new reads have appeared.
     2. it only processes reads since the last one was processed.
-    3. Need to look at the reset on this task - it doesn't seem to work.
+    3. Need to look at the reset on this task - it doesn't seem to work.                    
     
     """
 
@@ -769,18 +769,27 @@ def update_flowcell_details(job_master_id):
 
     ### This query is slow - and it should be fast.
 
-    for run in Run.objects.filter(flowcell=flowcell):
+    #
+    # # Update flowcell size
+    # #
+    max_channel = FastqRead.objects.filter(
+        flowcell=flowcell,
+        id__gt=int(job_master.last_read)
+    ).aggregate(result=Max('channel'), last_read=Max('id'),read_number=Count('read_id'))
 
-        reads = FastqRead.objects.filter(run=run,id__gt=last_read)
+    if max_channel["read_number"] is not None:
 
-        number_reads = number_reads + reads.count()
+        number_reads += max_channel["read_number"]
 
-        if run.has_fastq:
-
-            flowcell.has_fastq=True
+        flowcell.has_fastq = True
 
     job_master.read_count = number_reads
-    job_master.save()
+
+    if max_channel['last_read'] is not None:
+
+        job_master.last_read = max_channel['last_read']
+
+    #job_master.save()
     #
     # Get the job_master chancalc for this flowcell
     #
@@ -832,13 +841,13 @@ def update_flowcell_details(job_master_id):
     logger.info('Flowcell id: {} - Number runs {}'.format(flowcell.id, flowcell.number_runs))
     logger.info('Flowcell id: {} - Number barcodes {}'.format(flowcell.id, flowcell.number_barcodes))
 
-    #
-    # Update flowcell size
-    #
-    max_channel = FastqRead.objects.filter(
-        flowcell=flowcell,
-        id__gt=int(job_master.last_read)
-    ).aggregate(result=Max('channel'), last_read=Max('id'))
+    # #
+    # # Update flowcell size
+    # #
+    # max_channel = FastqRead.objects.filter(
+    #     flowcell=flowcell,
+    #     id__gt=int(job_master.last_read)
+    # ).aggregate(result=Max('channel'), last_read=Max('id'),read_number=Count('read_id'))
 
     if max_channel['result'] is not None and max_channel['result'] > flowcell.max_channel:
 
@@ -864,15 +873,9 @@ def update_flowcell_details(job_master_id):
 
     flowcell.save()
 
-    job_master = JobMaster.objects.get(pk=job_master_id)
-
-    if max_channel['last_read'] is not None:
-
-        job_master.last_read = max_channel['last_read']
+    #job_master = JobMaster.objects.get(pk=job_master_id)
 
     job_master.running = False
-
-
 
     job_master.save()
 
