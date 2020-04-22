@@ -22,7 +22,8 @@ from reads.models import (
 
 from communication.models import Message, NotificationConditions
 
-@task(rate_limit="2/m")
+# @task(rate_limit="2/m")
+@task()
 def save_reads_bulk(reads):
     """
     Celery task to bulk create the reads
