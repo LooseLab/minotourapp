@@ -50,7 +50,7 @@ def run_monitor():
 
         flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(running=False,
                                                                                complete=False,
-                                                                               paused=False)
+                                                                                       paused=False)
 
         for flowcell_job in flowcell_job_list:
 
@@ -174,7 +174,7 @@ def run_delete_flowcell(flowcell_job_id):
 
         # Whilst we still have reads left
         while counter <= last_read:
-            counter = counter + 500
+            counter = counter + 5000
 
             logger.info('Flowcell id: {} - Deleting records with id < {}'.format(flowcell.id, counter))
 
@@ -257,6 +257,7 @@ def fetchreads_assem(runs,chunk_size,last_read):
                                               id__gt=int(last_read),
                                                 id__lt=int(sorted(countsdict)[count]),
                                                          )[:chunk_size]
+                ### Example of getting a dataframe django query.
                 fastq_df_barcode = fastq_df_barcode.append(pd.DataFrame.from_records(
                     fastqs.values("read_id", "barcode_name", "sequence", "id")))
 
@@ -701,6 +702,8 @@ def update_flowcell_details(job_master_id):
     Refactoring this task such that:
     1. it only runs when new reads have appeared.
     2. it only processes reads since the last one was processed.
+    3. Need to look at the reset on this task - it doesn't seem to work.
+    
     """
 
     job_master = JobMaster.objects.get(pk=job_master_id)
@@ -760,11 +763,15 @@ def update_flowcell_details(job_master_id):
     #
     # Get number of fastqreads
     #
-    number_reads = 0
+    number_reads = job_master.read_count
+
+    last_read = job_master.last_read
+
+    ### This query is slow - and it should be fast.
 
     for run in Run.objects.filter(flowcell=flowcell):
 
-        reads = FastqRead.objects.filter(run=run)
+        reads = FastqRead.objects.filter(run=run,id__gt=last_read)
 
         number_reads = number_reads + reads.count()
 
@@ -772,6 +779,8 @@ def update_flowcell_details(job_master_id):
 
             flowcell.has_fastq=True
 
+    job_master.read_count = number_reads
+    job_master.save()
     #
     # Get the job_master chancalc for this flowcell
     #
@@ -857,11 +866,13 @@ def update_flowcell_details(job_master_id):
 
     job_master = JobMaster.objects.get(pk=job_master_id)
 
-    job_master.running = False
-
     if max_channel['last_read'] is not None:
 
         job_master.last_read = max_channel['last_read']
+
+    job_master.running = False
+
+
 
     job_master.save()
 
