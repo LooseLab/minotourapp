@@ -1,4 +1,6 @@
 from __future__ import absolute_import, unicode_literals
+
+import os
 import subprocess
 from collections import defaultdict
 from typing import DefaultDict
@@ -9,7 +11,7 @@ from django.conf import settings
 
 from minotourapp.utils import get_env_variable
 from readuntil.functions_EB import *
-from reads.models import JobMaster
+from reads.models import JobMaster, JobType, Barcode
 import numpy as np
 import pickle
 from web.tasks_alignment import call_fetch_reads_alignment
@@ -21,35 +23,77 @@ import gzip
 logger = get_task_logger(__name__)
 
 @task()
-def run_artic_command(fastq_path, barcode_name):
+def run_artic_command(base_results_directory, barcode_name, jobmaster_pk):
     """
     Run the artic pipeline in this first pass method of dirty bash script
     Parameters
     ----------
-    fastq_path: pathlib.PosixPath
+    base_results_directory: str
         Path to the fastq file for this barcodes reads
-    barcode_name; str
+    barcode_name: str
         The name of the barcode in string
-
+    jobmaster_pk: int¯
+        Primary key of the job master for this barcode
     Returns
     -------
 
     """
+    jm = JobMaster.objects.get(pk=jobmaster_pk)
+    jm.running = True
+    jm.save()
+    # Path to barcode fastq
+    fastq_path = f"{base_results_directory}/{barcode_name}/{barcode_name}.fastq"
+
     # TODO get the barcode from the posix path for the sample name
     print(fastq_path)
     scheme_dir = get_env_variable("MT_ARTIC_SCEHEME_DIR")
-    results_dir = get_env_variable("MT_ARTIC_RESULTS_DIR")
-
-    cmd = ["bash", "-c", "cd", results_dir,
-           "source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate artic-ncov2019-medaka && artic minion"
-           f" --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir}"
-           f"--read-file {fastq_path} nCoV-2019/V1 {barcode_name}"]
+    os.chdir(f"{base_results_directory}/{barcode_name}")
+    cmd = ["bash", "-c",
+           "source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate artic-ncov2019-medaka && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V1 {barcode_name}"]
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     out, err = proc.communicate()
+    if not out and err:
+        logger.info("We are done here. Artic out!")
+        logger.info(out)
+    else:
+        logger.info("¯\_(ツ)_/¯")
+        logger.warning(str(out))
+        logger.warning(err)
+    if out and err:
+        raise out
+
+    jm = JobMaster.objects.get(pk=jobmaster_pk)
+    jm.running = False
+    jm.complete = True
+    jm.save()
 
     # TODO delete the files we don't need here
+
+
+def save_artic_job_masters(flowcell, barcode_name, reference_info):
+    """
+    Save the JobMasters that we need to manage the queue of tasks.
+    Parameters
+    ----------
+    flowcell: reads.models.Flowcell
+        Flowcell these runs are on
+    barcode_name: str
+        Barcode name for these reads
+    reference_info: reference.models.ReferenceInfo
+        Covid Reference
+    Returns
+    -------
+
+    """
+    job_type = JobType.objects.get(name="Run Artic")
+    # TODO potential bug here where the barcode name on the reads is not the barcode name we save
+    barcode_object = Barcode.objects.get(run__in=flowcell.runs.all(), name=barcode_name)
+    job_master = JobMaster(job_type=job_type, reference=reference_info,
+                           barcode=barcode_object, flowcell=flowcell)
+
+    job_master.save()
 
 
 def make_barcoded_directories(barcodes, results_dir):
@@ -94,7 +138,7 @@ def add_barcode_to_tofire_file(barcode_name, directory):
 
     with open(path, "a") as fh:
         try:
-            fh.write(f"barcode_name\n")
+            fh.write(f"{barcode_name}\n")
             return 0
         except Exception as e:
             logger.error(str(e))
@@ -116,12 +160,14 @@ def fetch_barcode_to_fire_list(directory):
     """
 
     path = directory / "barcodes_to_fire.txt"
-
-    with open(path, "r") as fh:
-        barcodes = fh.read().split("\n")
+    try:
+        with open(path, "r") as fh:
+            barcodes = fh.read().split("\n")
+    except FileNotFoundError as e:
+        print("File not found. First iteration? Continuing...")
+        return []
 
     return(barcodes)
-
 
 
 def make_results_directory_artic(flowcell_id, task_id):
@@ -142,6 +188,10 @@ def make_results_directory_artic(flowcell_id, task_id):
     environmental_results_directory = get_env_variable("MT_ARTIC_RESULTS_DIR")
     # environmental_results_directory = getattr(settings, "REFERENCE_LOCATION", None)
     print(environmental_results_directory)
+
+    artic_dir = Path(f"{environmental_results_directory}/artic/")
+    if not artic_dir.exists():
+        Path.mkdir(artic_dir)
 
     results_dir = Path(
         f"{environmental_results_directory}/artic/Temp_results"
@@ -241,6 +291,9 @@ def run_artic_pipeline(task_id):
 
     task = JobMaster.objects.get(pk=task_id)
 
+    if not task.reference:
+        raise ValueError("Missing Reference file. Please sort out.")
+
     flowcell = task.flowcell
 
     runs = flowcell.runs.all()
@@ -260,6 +313,12 @@ def run_artic_pipeline(task_id):
         runs, chunk_size, task.last_read, pass_only=True
     )
 
+    if fasta_df_barcode.shape[0] == 0:
+        print("No fastq found. Skipping this iteration.")
+        task.running = False
+        task.save()
+        return
+
     print(f"Fetched reads.")
     print(fasta_df_barcode.shape)
 
@@ -267,7 +326,7 @@ def run_artic_pipeline(task_id):
 
     fasta_df_barcode = fasta_df_barcode[fasta_df_barcode["sequence_length"].between(400, 700, inclusive=True)]
 
-    print(f"Reads after filtering: {fasta_df_barcode.shape[0]}")
+    print(f"Reads after filtering for read length4: {fasta_df_barcode.shape[0]}")
     # TODO come back to look at this
     # fasta_df_barcode["barcode_name"] = np.where(fasta_df_barcode["barcode_name"].eq("No barcode"), "Unknown",
     #                                             fasta_df_barcode["barcode_name"])
@@ -537,8 +596,9 @@ def run_artic_pipeline(task_id):
                         print(
                             f"we would fire the code for the artic pipeline here for barcode {barcode}"
                         )
-                        run_artic_command(barcode_sorted_fastq_path, barcode)
+                        # run_artic_command(barcode_sorted_fastq_path, barcode)
                         add_barcode_to_tofire_file(barcode, base_result_dir_path)
+                        save_artic_job_masters(flowcell, barcode, reference_info)
 
                         # task.running = False
                         # task.complete = True
@@ -549,8 +609,10 @@ def run_artic_pipeline(task_id):
                         print(
                             f"we would fire the code for the artic pipeline here for barcode {barcode} due to 95% coverage reached"
                         )
-                        run_artic_command(barcode_sorted_fastq_path, barcode)
+                        # run_artic_command(barcode_sorted_fastq_path, barcode)
                         add_barcode_to_tofire_file(barcode, base_result_dir_path)
+                        save_artic_job_masters(flowcell, barcode, reference_info)
+
 
                         # task.running = False
                         # task.complete = True

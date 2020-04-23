@@ -252,10 +252,6 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'web.tasks_send_message.check_condition_is_met',
         'schedule': 30,
     }
-    # 'update_flowcell_list_details': {
-    #     'task': 'web.tasks.update_flowcell_list_details',
-    #     'schedule': 30,
-    # }
 }
 
 # For sending twitter messages

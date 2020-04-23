@@ -235,13 +235,26 @@
     "model": "reads.jobtype",
     "pk": 16,
     "fields": {
-      "name": "Run Artic Covid 19 pipeline",
-      "description": "When coverage reaches 100x on each bases, stop sequencing start pipeline.",
+      "name": "Track Artic Coverage",
+      "description": "Track run coverage to fire Artic.",
       "long_description": "When coverage reaches 100x on each bases, stop sequencing start pipeline.",
       "reference": true,
       "transcriptome": false,
       "readcount": true,
       "private": false
+    }
+  },
+  {
+    "model": "reads.jobtype",
+    "pk": 17,
+    "fields": {
+      "name": "Run Artic",
+      "description": "JobType to alert celery to run artic when we can. ",
+      "long_description": "",
+      "reference": true,
+      "transcriptome": false,
+      "readcount": true,
+      "private": true
     }
   }
 ]
