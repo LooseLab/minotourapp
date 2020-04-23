@@ -1527,8 +1527,10 @@ def flowcell_statistics(request, pk):
     # Reverse lookup a queryset of all the runs in this flowcell
     run_list = flowcell.runs.all()
 
+    job_master_iteration = flowcell.flowcelljobs.get(job_type__name="ChanCalc").iteration_count
+
     queryset = (
-        FlowcellStatisticBarcode.objects.filter(flowcell=flowcell)
+        FlowcellStatisticBarcode.objects.filter(flowcell=flowcell,iteration_count=job_master_iteration)
         .filter(
             Q(barcode_name__in=barcodes_list) | Q(rejection_status__in=barcodes_list)
         )
