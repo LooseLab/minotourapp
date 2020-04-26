@@ -223,7 +223,7 @@ CELERY_BROKER_URL = get_env_variable("MT_CELERY_BROKER_URL")
 # CELERY_RESULT_BACKEND = 'redis://127.0.0.1:6379/0'
 CELERY_RESULT_BACKEND = get_env_variable("MT_CELERY_RESULT_BACKEND")
 # Celery Data Format
-CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_ACCEPT_CONTENT = ['application/json','pickle']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Europe/London'
