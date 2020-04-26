@@ -145,13 +145,15 @@ def chancalc(flowcell_id, job_master_id, last_read):
     job_master = JobMaster.objects.get(pk=job_master_id)
 
     #last_iteration = job_master.iteration_count
-
+    """
     flowcell = Flowcell.objects.get(pk=flowcell_id)
 
     runs = flowcell.runs.all()
 
-    chunk_size = 500000
+    chunk_size = 1000000
     # Get the fastq data
+
+    
     fastq_df_barcode, last_read, _ = callfetchreads(runs, chunk_size, last_read)
 
     fastqlen = fastq_df_barcode.shape[0]
@@ -159,6 +161,8 @@ def chancalc(flowcell_id, job_master_id, last_read):
     #
     # if read_count and last read are 0, then delete any previous summaries summaries
     #
+
+    '''
     if job_master.read_count == 0 and job_master.last_read == 0:
         print("Flowcell id: {} - Deleting summaries".format(flowcell.id))
 
@@ -166,7 +170,7 @@ def chancalc(flowcell_id, job_master_id, last_read):
         FlowcellStatisticBarcode.objects.filter(flowcell=flowcell).delete()
         FlowcellHistogramSummary.objects.filter(flowcell=flowcell).delete()
         FlowcellChannelSummary.objects.filter(flowcell=flowcell).delete()
-
+    '''
     if fastqlen > 0:
 
         new_last_read = fastq_df_barcode.iloc[-1]["id"]
@@ -210,9 +214,10 @@ def chancalc(flowcell_id, job_master_id, last_read):
         )
         logger.debug(fastq_df_result.head())
         logger.debug(f"keys is {fastq_df_result.keys()}")
-        fastq_df_result.reset_index().apply(
-            lambda row: save_flowcell_summary_barcode(flowcell_id, row), axis=1
-        )
+
+        ##fastq_df_result.reset_index().apply(
+        ##    lambda row: save_flowcell_summary_barcode(flowcell_id, row), axis=1
+        ##)
 
         # fastq_df['start_time']=fastq_df['start_time'].values.astype('<M8[m]')
         #
@@ -243,7 +248,7 @@ def chancalc(flowcell_id, job_master_id, last_read):
         #tempframe = pd.DataFrame.from_records(BarcodeObjects.values())
 
         ### Manipulate the data to get the values we need in a specific data frame.
-
+        '''
         barcoderesults = fastq_df_result.reset_index()
         barcoderesults['start_time'] = pd.to_datetime(barcoderesults["start_time_truncate"],utc=True)
         barcoderesults["sequence_length_sum"] = barcoderesults["sequence_length"]["sum"]
@@ -304,7 +309,7 @@ def chancalc(flowcell_id, job_master_id, last_read):
         FlowcellStatisticBarcode.objects.bulk_create(
             to_bulk_save_series.values.tolist(), batch_size=1000
         )
-
+        '''
         job_master.iteration_count+=1
         job_master.save()
 
@@ -328,10 +333,10 @@ def chancalc(flowcell_id, job_master_id, last_read):
             ]
         ).agg({"sequence_length": ["sum", "count"]})
 
-        fastq_df_result.reset_index().apply(
-            lambda row: save_flowcell_histogram_summary(flowcell_id, row),
-            axis=1,
-        )
+        ##fastq_df_result.reset_index().apply(
+        ##    lambda row: save_flowcell_histogram_summary(flowcell_id, row),
+        ##    axis=1,
+        ##)
 
         #
         # Calculates statistics for ChannelSummary
@@ -340,15 +345,16 @@ def chancalc(flowcell_id, job_master_id, last_read):
             {"sequence_length": ["sum", "count"]}
         )
 
-        fastq_df_result.reset_index().apply(
-            lambda row: save_flowcell_channel_summary(flowcell_id, row), axis=1
-        )
+        #fastq_df_result.reset_index().apply(
+        #    lambda row: save_flowcell_channel_summary(flowcell_id, row), axis=1
+        #   )
 
         # last_read = fastq_df_barcode['id'].max()
         last_read = new_last_read
 
     job_master = JobMaster.objects.get(pk=job_master_id)
+    """
     job_master.running = False
-    job_master.last_read = last_read
-    job_master.read_count = job_master.read_count + fastqlen
+    #job_master.last_read = last_read
+    #job_master.read_count = job_master.read_count + fastqlen
     job_master.save()
