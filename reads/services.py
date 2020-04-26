@@ -3,6 +3,9 @@ Services to help run some of the tasks in the web app. Why is this not stored th
 """
 import pytz
 import datetime
+import pandas as pd
+import numpy as np
+import decimal
 
 from celery.task import task
 from django.db.models.signals import post_save
@@ -15,14 +18,16 @@ from reads.models import (
     FlowcellSummaryBarcode,
     FlowcellHistogramSummary,
     FlowcellChannelSummary,
+    HistogramSummary,
     Flowcell,
     Run,
     MinionMessage,
-    FastqRead)
+    FastqRead, FastqReadType, Barcode)
 
 from communication.models import Message, NotificationConditions
 
 # @task(rate_limit="2/m")
+
 @task()
 def save_reads_bulk(reads):
     """
@@ -69,11 +74,346 @@ def save_reads_bulk(reads):
         )
         reads_list.append(fastqread)
     try:
-
+        update_flowcell.delay(reads_list)
         FastqRead.objects.bulk_create(reads_list)
     except Exception as e:
         print(e)
         return str(e)
+
+
+
+
+@task(serializer="pickle")
+def update_flowcell(reads_list):
+    """
+    Celery task to update the flowcell record for a specific batch of reads.
+
+    We need to do anything that the current flowcell task does based on a query of reads in the database.
+    This include:
+    set max channel
+    update read count
+
+    It will also handle updating some of the chan calc parameters.
+    Parameters
+    ----------
+    readDF
+
+    Returns
+    -------
+
+    """
+    # This manipulation returns a flowcell_id, read count and max channel for each flowcell in the dataFrame
+    readDF = pd.DataFrame([o.__dict__ for o in reads_list]).drop(['_state'], axis=1)
+    readDF['channel'] = readDF['channel'].astype(int)
+    readDF['sequence_length'] = readDF['sequence_length'].astype(int)
+
+    results = readDF.groupby(['flowcell_id']).agg({"read_id": "count", "channel": "max","sequence_length":"sum"})
+    results.reset_index().apply(
+        lambda row: update_flowcell_counts.delay(row), axis=1
+    )
+    ## We can assume that we will always have only a single flowcell in a batch of reads to process due to the way that minFQ behaves.
+    ## Todo: catch problems with multiple flowcells in a single transaction
+
+    readDF["status"] = np.where(
+        readDF["is_pass"] == False, "Fail", "Pass"
+    )
+
+    readDF["start_time_truncate"] = np.array(
+        readDF["start_time"], dtype="datetime64[m]"
+    )
+
+    readDF_allreads = readDF.copy()
+    readDF_allreads["barcode_name"] = "All reads"
+
+    fastq_df = readDF.append(readDF_allreads,sort=False)
+    fastq_df["barcode_name"] = fastq_df["barcode_name"].fillna("No barcode")
+    #
+    # Calculates statistics for flowcellSummaryBarcode
+    #
+
+    fastq_df_result = fastq_df.groupby(
+        [
+            "flowcell_id",
+            "barcode_name",
+            "rejected_barcode_id",
+            "type_id",
+            "is_pass",
+        ]
+    ).agg(
+        {
+            "sequence_length": ["min", "max", "sum", "count"],
+            "quality_average": ["sum"],
+            "channel": ["unique"],
+        }
+    )
+
+    fastq_df_result.reset_index().apply(
+        lambda row: save_flowcell_summary_barcode_async(row), axis=1
+    )
+
+    #
+    # Calculates statistics for FlowcellStatisticsBarcode
+    #
+    # todo: implement this.
+
+    fastq_df_result = fastq_df.groupby(
+        [
+            "flowcell_id",
+            "start_time_truncate",
+            "barcode_name",
+            "type_id",
+            "is_pass",
+            "rejected_barcode_id",
+        ]
+    ).agg(
+        {
+            "sequence_length": ["min", "max", "sum", "count"],
+            "quality_average": ["sum"],
+            "channel": ["unique"],
+        }
+    )
+
+    fastq_df_result.reset_index().apply(
+        lambda row: save_flowcell_statistic_barcode_async(row),
+        axis=1,
+    )
+
+    fastq_df["bin_index"] = (
+                                    fastq_df["sequence_length"]
+                                    - fastq_df["sequence_length"] % HistogramSummary.BIN_WIDTH
+                            ) / HistogramSummary.BIN_WIDTH
+
+    fastq_df_result = fastq_df.groupby(
+        [
+            "flowcell_id",
+            "barcode_name",
+            "type_id",
+            "is_pass",
+            "bin_index",
+            "rejected_barcode_id",
+        ]
+    ).agg({"sequence_length": ["sum", "count"]})
+
+    fastq_df_result.reset_index().apply(
+        lambda row: save_flowcell_histogram_summary_async.delay(row),
+        axis=1,
+    )
+
+    #
+    # Calculates statistics for ChannelSummary
+    #
+    fastq_df_result = fastq_df.groupby(["flowcell_id","channel"]).agg(
+        {"sequence_length": ["sum", "count"]}
+    )
+    print (fastq_df_result)
+    '''
+    fastq_df_result.reset_index().apply(
+        lambda row: save_flowcell_channel_summary_async.delay(row), axis=1
+    )
+    '''
+
+
+
+@task(serializer="pickle")
+def update_flowcell_counts(row):
+    # Get the flowcell we are working on:
+    flowcell = Flowcell.objects.get(pk=row["flowcell_id"])
+    if not flowcell.has_fastq:
+        flowcell.has_fastq = True
+    print (row)
+    #this is actually the count of the number of read_ids
+    flowcell.number_reads += row["read_id"]
+    #update the total read length on the flowcell
+    flowcell.total_read_length += row["sequence_length"]
+    flowcell.average_read_length = flowcell.total_read_length/flowcell.number_reads
+    if int(row['channel']) > flowcell.max_channel:
+        flowcell.max_channel = int(row['channel'])
+        if row['channel']:
+            if int(row['channel']) > 512:
+                flowcell.size = 3000
+            elif int(row['channel']) > 126:
+                flowcell.size = 512
+            else:
+                flowcell.size = 126
+        else:
+            flowcell.size = 512
+    flowcell.save()
+
+
+@task()
+def update_chan_calc(readDF):
+    pass
+
+@task(serializer="pickle")
+def save_flowcell_statistic_barcode_async(row):
+    """
+    Save flowcell statistic barcode objects into the database row-wise on a pandas dataframe.
+    Data for the flowcell statistics on y
+    :param flowcell_id: The primary key of the flowcell database entry
+    :type flowcell_id: int
+    :param row: a pandas dataframe row
+    :type row: pandas.core.series.Series
+    :return: None
+    """
+    flowcell_id = row["flowcell_id"][0]
+    utc = pytz.utc
+    barcode_name = row["barcode_name"][0]
+    type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
+    start_time = utc.localize(row["start_time_truncate"][0])
+    rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"][0]).name
+    status = row["is_pass"][0]
+    sequence_length_sum = int(row["sequence_length"]["sum"])
+    sequence_length_max = int(row["sequence_length"]["max"])
+    sequence_length_min = int(row["sequence_length"]["min"])
+    quality_average_sum = int(row["quality_average"]["sum"])
+    read_count = int(row["sequence_length"]["count"])
+    channels = row["channel"]["unique"]
+
+    flowcellStatisticBarcode, created = FlowcellStatisticBarcode.objects.get_or_create(
+        flowcell_id=flowcell_id,
+        sample_time=start_time,
+        barcode_name=barcode_name,
+        rejection_status=rejection_status,
+        read_type_name=type_name,
+        status=status,
+    )
+
+    flowcellStatisticBarcode.total_length += sequence_length_sum
+    flowcellStatisticBarcode.quality_sum += decimal.Decimal(quality_average_sum)
+    flowcellStatisticBarcode.read_count += read_count
+
+    if flowcellStatisticBarcode.max_length < sequence_length_max:
+        flowcellStatisticBarcode.max_length = sequence_length_max
+
+    if flowcellStatisticBarcode.min_length < sequence_length_min:
+        flowcellStatisticBarcode.min_length = sequence_length_min
+
+    channel_list = list(flowcellStatisticBarcode.channel_presence)
+
+    for c in channels:
+
+        channel_list[int(c) - 1] = "1"
+
+        flowcellStatisticBarcode.channel_presence = "".join(channel_list)
+        flowcellStatisticBarcode.channel_count = len(channels)
+
+    flowcellStatisticBarcode.save()
+
+
+
+@task(serializer="pickle")
+def save_flowcell_channel_summary_async(row):
+    """
+    Save flowcell channel summary into the database row-wise on a pandas dataframe. Used for the channel visualisations.
+    :param flowcell_id: Primary key of the flowcell database entry
+    :type flowcell_id: int
+    :param row: a pandas dataframe row
+    :type row: pandas.core.series.Series
+    :return: None
+    """
+    flowcell_id = row["flowcell_id"][0]
+    channel = int(row["channel"][0])
+    sequence_length_sum = int(row["sequence_length"]["sum"])
+    read_count = int(row["sequence_length"]["count"])
+
+    flowcellChannelSummary, created = FlowcellChannelSummary.objects.get_or_create(
+        flowcell_id=flowcell_id, channel=channel
+    )
+    flowcellChannelSummary.read_length += sequence_length_sum
+    flowcellChannelSummary.read_count += read_count
+    flowcellChannelSummary.save()
+
+@task(serializer="pickle")
+def save_flowcell_histogram_summary_async(row):
+    """
+    Save flowcell histogram barcode objects into the database row-wise on a pandas dataframe.
+    Data for the histograms on the chancalc page.
+    :param flowcell_id: Primary key of the flowcell database entry
+    :type flowcell_id: int
+    :param row: a pandas dataframe row
+    :type row: pandas.core.series.Series
+    :return: None
+    """
+    flowcell_id = row["flowcell_id"][0]
+    barcode_name = row["barcode_name"][0]
+    read_type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
+    #read_type_name = row["type__name"][0]
+    rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"][0]).name
+    #rejection_status = row["rejected_barcode__name"][0]
+    status = row["is_pass"][0]
+    bin_index = int(row["bin_index"][0])
+    sequence_length_sum = int(row["sequence_length"]["sum"])
+    read_count = int(row["sequence_length"]["count"])
+
+    flowcellHistogramSummary, created = FlowcellHistogramSummary.objects.get_or_create(
+        flowcell_id=flowcell_id,
+        barcode_name=barcode_name,
+        rejection_status=rejection_status,
+        read_type_name=read_type_name,
+        status=status,
+        bin_index=bin_index,
+    )
+
+    flowcellHistogramSummary.read_length += sequence_length_sum
+    flowcellHistogramSummary.read_count += read_count
+
+    flowcellHistogramSummary.save()
+
+
+
+@task(serializer="pickle")
+def save_flowcell_summary_barcode_async(row):
+    """
+    Save flowcell summary barcode rows, applied to a pandas dataframe
+    :param flowcell_id: Primary key of the flowcell database entry
+    :type flowcell_id: int
+    :param row: a pandas dataframe row
+    :type row: pandas.core.series.Series
+    :return: None
+    """
+    type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
+    rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"][0]).name
+    flowcell_id = row["flowcell_id"][0]
+    barcode_name = row["barcode_name"][0]
+    status = row["is_pass"][0]
+    #rejection_status = row["rejected_barcode_name"][0]
+    sequence_length_sum = int(row["sequence_length"]["sum"])
+    sequence_length_max = int(row["sequence_length"]["max"])
+    sequence_length_min = int(row["sequence_length"]["min"])
+    quality_average_sum = int(row["quality_average"]["sum"])
+    read_count = int(row["sequence_length"]["count"])
+    channels = row["channel"]["unique"]
+
+    #print ("making a barcode? {}".format(barcode_name))
+
+    flowcellSummaryBarcode, created = FlowcellSummaryBarcode.objects.get_or_create(
+        flowcell_id=flowcell_id,
+        barcode_name=barcode_name,
+        rejection_status=rejection_status,
+        read_type_name=type_name,
+        status=status,
+    )
+
+    flowcellSummaryBarcode.total_length += sequence_length_sum
+    flowcellSummaryBarcode.quality_sum += decimal.Decimal(quality_average_sum)
+    flowcellSummaryBarcode.read_count += read_count
+
+    if flowcellSummaryBarcode.max_length < sequence_length_max:
+        flowcellSummaryBarcode.max_length = sequence_length_max
+
+    if flowcellSummaryBarcode.min_length < sequence_length_min:
+        flowcellSummaryBarcode.min_length = sequence_length_min
+
+    channel_list = list(flowcellSummaryBarcode.channel_presence)
+
+    for c in channels:
+
+        channel_list[int(c)  - 1] = "1"
+
+    flowcellSummaryBarcode.channel_presence = "".join(channel_list)
+    flowcellSummaryBarcode.channel_count = len(channels)
+    flowcellSummaryBarcode.save()
+
 
 
 
