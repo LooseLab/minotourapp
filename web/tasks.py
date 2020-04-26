@@ -75,7 +75,7 @@ def run_monitor():
                     flowcell_job.id,
                 ))
 
-                chancalc.delay(flowcell.id, flowcell_job.id, flowcell_job.last_read)
+                #chancalc.delay(flowcell.id, flowcell_job.id, flowcell_job.last_read)
 
             if flowcell_job.job_type.name == "Assembly":
 
@@ -767,68 +767,72 @@ def update_flowcell_details(job_master_id):
 
     last_read = job_master.last_read
 
+    #Todo: If the flowcell has no reads, it may have been reset and so we may need to recount it based on previous issue.
+
     ### This query is slow - and it should be fast.
 
     #
     # # Update flowcell size
     # #
-    max_channel = FastqRead.objects.filter(
-        flowcell=flowcell,
-        id__gt=int(job_master.last_read)
-    ).aggregate(result=Max('channel'), last_read=Max('id'),read_number=Count('read_id'))
+    ##max_channel = FastqRead.objects.filter(
+    ##    flowcell=flowcell,
+    ##    id__gt=int(job_master.last_read)
+    ##).aggregate(result=Max('channel'), last_read=Max('id'),read_number=Count('read_id'))
 
-    if max_channel["read_number"] is not None:
+    ##if max_channel["read_number"] is not None:
 
-        number_reads += max_channel["read_number"]
+    ##    number_reads += max_channel["read_number"]
 
-        flowcell.has_fastq = True
+    ##    flowcell.has_fastq = True
 
-    job_master.read_count = number_reads
+    ##job_master.read_count = number_reads
 
-    if max_channel['last_read'] is not None:
+    ##if max_channel['last_read'] is not None:
 
-        job_master.last_read = max_channel['last_read']
+    ##    job_master.last_read = max_channel['last_read']
 
     #job_master.save()
     #
     # Get the job_master chancalc for this flowcell
     #
-    job_master_list = JobMaster.objects.filter(flowcell=flowcell, job_type__name='Chancalc')
 
-    number_reads_processed = flowcell.number_reads_processed
 
-    if job_master_list.count() > 0:
+    ##job_master_list = JobMaster.objects.filter(flowcell=flowcell, job_type__name='Chancalc')
 
-        number_reads_processed = job_master_list[0].read_count
+    ##number_reads_processed = flowcell.number_reads_processed
+
+    ##if job_master_list.count() > 0:
+
+    ##    number_reads_processed = job_master_list[0].read_count
 
     #
     # Get the FlowcellSummaryBarcodes for a particular flowcell and for barcode_name "All reads"
     #
-    flowcell_summary_list = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).filter(barcode_name='All reads')
+    ##flowcell_summary_list = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).filter(barcode_name='All reads')
 
-    average_read_length = 0
+    ##average_read_length = 0
 
-    total_read_length = 0
+    ##total_read_length = 0
 
-    logger.info('Flowcell id: {} - There is/are {} FlowcellSummaryBarcode records'.format(flowcell.id, len(flowcell_summary_list)))
+    ##logger.info('Flowcell id: {} - There is/are {} FlowcellSummaryBarcode records'.format(flowcell.id, len(flowcell_summary_list)))
 
-    for flowcell_summary in flowcell_summary_list:
+    ##for flowcell_summary in flowcell_summary_list:
 
-        total_read_length += flowcell_summary.total_length
+    ##    total_read_length += flowcell_summary.total_length
 
-    if number_reads > 0:
+    ##if number_reads > 0:
 
-        average_read_length = total_read_length / number_reads
+    ##    average_read_length = total_read_length / number_reads
 
-    logger.info('Flowcell id: {} - Total read length {}'.format(flowcell.id, total_read_length))
-    logger.info('Flowcell id: {} - Number reads {}'.format(flowcell.id, number_reads))
-    logger.info('Flowcell id: {} - Number reads processed {}'.format(flowcell.id, number_reads_processed))
-    logger.info('Flowcell id: {} - Average read length {}'.format(flowcell.id, average_read_length))
+    ##logger.info('Flowcell id: {} - Total read length {}'.format(flowcell.id, total_read_length))
+    ##logger.info('Flowcell id: {} - Number reads {}'.format(flowcell.id, number_reads))
+    ##logger.info('Flowcell id: {} - Number reads processed {}'.format(flowcell.id, number_reads_processed))
+    ##logger.info('Flowcell id: {} - Average read length {}'.format(flowcell.id, average_read_length))
 
-    flowcell.average_read_length = average_read_length
-    flowcell.total_read_length = total_read_length
-    flowcell.number_reads = number_reads
-    flowcell.number_reads_processed = number_reads_processed
+    ##flowcell.average_read_length = average_read_length
+    ##flowcell.total_read_length = total_read_length
+    ##flowcell.number_reads = number_reads
+    ##flowcell.number_reads_processed = number_reads_processed
 
     flowcell.number_runs = Run.objects.filter(flowcell=flowcell).count()
 
@@ -849,29 +853,29 @@ def update_flowcell_details(job_master_id):
     #     id__gt=int(job_master.last_read)
     # ).aggregate(result=Max('channel'), last_read=Max('id'),read_number=Count('read_id'))
 
-    if max_channel['result'] is not None and max_channel['result'] > flowcell.max_channel:
+    ##if max_channel['result'] is not None and max_channel['result'] > flowcell.max_channel:
 
-        flowcell.max_channel = max_channel['result']
+    ##    flowcell.max_channel = max_channel['result']
 
-        if max_channel['result']:
+    ##    if max_channel['result']:
 
-            if max_channel['result'] > 512:
+    ##        if max_channel['result'] > 512:
 
-                flowcell.size = 3000
+    ##            flowcell.size = 3000
 
-            elif max_channel['result'] > 126:
+    ##        elif max_channel['result'] > 126:
 
-                flowcell.size = 512
+    ##            flowcell.size = 512
 
-            else:
+    ##        else:
 
-                flowcell.size = 126
+    ##            flowcell.size = 126
 
-        else:
+    ##    else:
 
-            flowcell.size = 512
+    ##        flowcell.size = 512
 
-    flowcell.save()
+    ##flowcell.save()
 
     #job_master = JobMaster.objects.get(pk=job_master_id)
 
