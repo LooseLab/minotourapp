@@ -109,7 +109,7 @@ def update_flowcell(reads_list):
 
     results = readDF.groupby(['flowcell_id']).agg({"read_id": "count", "channel": "max","sequence_length":"sum"})
     results.reset_index().apply(
-        lambda row: update_flowcell_counts.delay(row), axis=1
+        lambda row: update_flowcell_counts(row), axis=1
     )
     ## We can assume that we will always have only a single flowcell in a batch of reads to process due to the way that minFQ behaves.
     ## Todo: catch problems with multiple flowcells in a single transaction
@@ -195,7 +195,7 @@ def update_flowcell(reads_list):
     ).agg({"sequence_length": ["sum", "count"]})
 
     fastq_df_result.reset_index().apply(
-        lambda row: save_flowcell_histogram_summary_async.delay(row),
+        lambda row: save_flowcell_histogram_summary_async(row),
         axis=1,
     )
 
@@ -206,11 +206,12 @@ def update_flowcell(reads_list):
         {"sequence_length": ["sum", "count"]}
     )
     print (fastq_df_result)
-    '''
+
     fastq_df_result.reset_index().apply(
-        lambda row: save_flowcell_channel_summary_async.delay(row), axis=1
+        lambda row: save_flowcell_channel_summary_async(row), axis=1
     )
-    '''
+
+
 
 
 
