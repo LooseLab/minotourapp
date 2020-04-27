@@ -1964,11 +1964,6 @@ class FlowcellStatisticBarcode(models.Model):
         default=0
     )
 
-    iteration_count = models.IntegerField(
-        default=0,
-        null=True,
-    )
-
     class Meta:
         verbose_name = 'Flowcell Statistics Barcode'
         verbose_name_plural = 'Flowcell Statistics Barcodes'
