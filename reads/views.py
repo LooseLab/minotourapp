@@ -75,6 +75,7 @@ from reads.serializers import (
     JobMasterSerializer,
     JobMasterInsertSerializer,
 )
+from reads.services import save_reads_bulk
 from reads.utils import get_coords, return_temp_empty_summary
 from readuntil.models import ExpectedBenefitChromosomes
 from reference.models import ReferenceInfo
@@ -1526,8 +1527,10 @@ def flowcell_statistics(request, pk):
     # Reverse lookup a queryset of all the runs in this flowcell
     run_list = flowcell.runs.all()
 
+    job_master_iteration = flowcell.flowcelljobs.get(job_type__name="ChanCalc").iteration_count
+
     queryset = (
-        FlowcellStatisticBarcode.objects.filter(flowcell=flowcell)
+        FlowcellStatisticBarcode.objects.filter(flowcell=flowcell,iteration_count=job_master_iteration)
         .filter(
             Q(barcode_name__in=barcodes_list) | Q(rejection_status__in=barcodes_list)
         )
@@ -2370,44 +2373,8 @@ def read_list_new(request):
     elif request.method == "POST":
 
         reads = request.data
-        reads_list = []
-        run_dict = {}
-        for read in reads:
-            run_pk = read.get("run", -1)
-            if run_pk not in run_dict and run_pk != -1:
-                run = Run.objects.get(pk=run_pk)
-                run_dict[run_pk] = run
-                read["run"] = run
-                read["flowcell"] = run.flowcell
-            else:
-                read["run"] = run_dict[run_pk]
-                read["flowcell"] = run_dict[run_pk].flowcell
-
-            fastqread = FastqRead(
-                read_id=read['read_id'],
-                read=read['read'],
-                channel=read['channel'],
-                barcode_id=read['barcode'],
-                rejected_barcode_id=read['rejected_barcode'],
-                barcode_name=read['barcode_name'],
-                sequence_length=read['sequence_length'],
-                quality_average=read['quality_average'],
-                sequence=read['sequence'],
-                quality=read['quality'],
-                is_pass=read['is_pass'],
-                start_time=read['start_time'],
-                run=read["run"],
-                flowcell=read["flowcell"],
-                type_id=read['type'],
-                fastqfile_id=read['fastqfile']
-            )
-            reads_list.append(fastqread)
-        try:
-            FastqRead.objects.bulk_create(reads_list)
-            return Response("Updated reads", status=status.HTTP_201_CREATED)
-        except Exception as e:
-            print(e)
-            return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
+        save_reads_bulk.delay(reads)
+        return Response("The task has started. It's in gods hands now...", status=status.HTTP_201_CREATED)
 
         #
         # serializer = FastqReadSerializer(data=request.data, many=True)
