@@ -1964,11 +1964,6 @@ class FlowcellStatisticBarcode(models.Model):
         default=0
     )
 
-    iteration_count = models.IntegerField(
-        default=0,
-        null=True,
-    )
-
     class Meta:
         verbose_name = 'Flowcell Statistics Barcode'
         verbose_name_plural = 'Flowcell Statistics Barcodes'
@@ -2518,7 +2513,9 @@ class JobType(models.Model):
 
 
 class JobMaster(models.Model):
+    """
 
+    """
     run = models.ForeignKey(
 
         Run,
@@ -2551,6 +2548,14 @@ class JobMaster(models.Model):
         related_name='referencejob',
         null=True,
         blank=True,
+    )
+
+    barcode = models.ForeignKey(
+        Barcode,
+        on_delete=models.CASCADE,
+        related_name="jobs_barcode",
+        null=True,
+        blank=True
     )
 
     last_read = models.BigIntegerField(

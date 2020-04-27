@@ -626,7 +626,7 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("A metagenomics task is already running for this flowcell.")
 
         # If the job isn't EB or minimap2
-        if data["job_type"].id not in [4, 15]:
+        if data["job_type"].id not in [4, 15, 16]:
 
             data["reference"] = None
 
