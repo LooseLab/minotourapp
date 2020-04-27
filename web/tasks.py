@@ -75,7 +75,7 @@ def run_monitor():
                     flowcell_job.id,
                 ))
 
-                #chancalc.delay(flowcell.id, flowcell_job.id, flowcell_job.last_read)
+                chancalc.delay(flowcell.id, flowcell_job.id, flowcell_job.last_read)
 
             if flowcell_job.job_type.name == "Assembly":
 
