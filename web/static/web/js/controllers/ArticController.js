@@ -2,11 +2,10 @@
  *
  */
 class ArticController {
-    constructor(divName, flowcellId) {
+    constructor(flowcellId) {
         this._coverageScatterMaster;
         this._coverageScatterDetail;
         this._flowcellId = flowcellId;
-        this._divName = divName;
     }
 
     /**
