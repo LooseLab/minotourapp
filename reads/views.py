@@ -2704,6 +2704,7 @@ def get_or_create_tasks(request):
 
             request.data["reference"] = None
 
+
         # For client side job starting, check if we have a reference and it's a string
         if (
             "reference" in request.data.keys()
@@ -2741,7 +2742,13 @@ def get_or_create_tasks(request):
                         "Reference not found Please contact server admin", status=500
                     )
         # Serialise the data to a Django savable object
-        
+        # Hard set the covid reference
+        if int(request.data["job_type"]) == 16:
+            print("we are setting covid reference")
+            reference = ReferenceInfo.objects.get(name="covid_19")
+            request.data["reference"] = reference.id
+
+        print(request.data)
         serializer = JobMasterInsertSerializer(data=request.data)
 
         # If the serialiser is valid

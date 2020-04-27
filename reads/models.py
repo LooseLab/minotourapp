@@ -2513,7 +2513,9 @@ class JobType(models.Model):
 
 
 class JobMaster(models.Model):
+    """
 
+    """
     run = models.ForeignKey(
 
         Run,
@@ -2546,6 +2548,14 @@ class JobMaster(models.Model):
         related_name='referencejob',
         null=True,
         blank=True,
+    )
+
+    barcode = models.ForeignKey(
+        Barcode,
+        on_delete=models.CASCADE,
+        related_name="jobs_barcode",
+        null=True,
+        blank=True
     )
 
     last_read = models.BigIntegerField(

@@ -77,13 +77,13 @@ class FlowcellTabController {
     }
 
     draw_tabs(){
-
         let promise1 = this._flowcell_services.getFlowcellTabs(this._flowcell_id);
 
         promise1.then((tabs) => {
 
             this.show_tabs(tabs);
             let storedFlowcellId = sessionStorage.getItem("flowcellID");
+            // TODO if we don't have the tab this is where we need to check that
             let seshTab = sessionStorage.getItem("tabName");
             let activeTab = (seshTab !== null) ? seshTab : "summary-data";
             this.toggle_tab_content(activeTab);
