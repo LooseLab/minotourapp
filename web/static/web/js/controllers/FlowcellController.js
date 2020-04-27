@@ -8,7 +8,7 @@ it contains references to the other controllers
         console.log('Initialising FlowcellController.');
         this._interval = setInterval(requestData, 60000, flowcell_id);
         this._flowcell = new Flowcell(flowcell_id);
-        this._articController = new ArticController(flowcell_id);
+        // this._articController = new ArticController(flowcell_id);
         this._flowcell_tab_controller = new FlowcellTabController(flowcell_id);
         this._coverage_chart_controller = new CoverageChartController('coverage_div', "");
         this._lastread = 0; // TODO this is a quick fix for the problem on the live data tab. we should refactor this soon.
@@ -33,9 +33,9 @@ it contains references to the other controllers
 
         this._lastread = val;
     }
-
-    get articController() {
-        return this._articController;
-    }
+    //
+    // get articController() {
+    //     return this._articController;
+    // }
 
 }
