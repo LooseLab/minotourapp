@@ -2,9 +2,11 @@
  *
  */
 class ArticController {
-    constructor(divName) {
+    constructor(divName, flowcellId) {
         this._coverageScatterMaster;
         this._coverageScatterDetail;
+        this._flowcellId = flowcellId;
+        this._divName = divName;
     }
 
     /**
@@ -19,10 +21,11 @@ class ArticController {
         const axiosInstance = axios.create({
             headers: {'X-CSRFToken': csrftoken}
         });
-
+        let self = this;
+        console.log(self);
         axiosInstance.get('/api/v1/artic/coverage/master', {params: {flowcellId, barcodeChosen}}, function (data) {
-            coverageScatterMaster.yAxis[0].setExtremes(0, data.coverage.ymax);
-            updateExistingChart(coverageScatterMaster, data.coverage.data, 0);
+            self._coverageScatterMaster.yAxis[0].setExtremes(0, data.coverage.ymax);
+            updateExistingChart(self._coverageScatterMaster, data.coverage.data, 0);
 
         });
     }
@@ -48,8 +51,8 @@ class ArticController {
      * @param flowcellId
      */
     createCoverageMaster(data, flowcellId) {
-        this._flowcellId = flowcellId;
-        coverageScatterMaster = Highcharts.chart("coverageScatterMaster", {
+        const self = this;
+        this._coverageScatterMaster = Highcharts.chart("coverageScatterMaster", {
 
             chart: {
                 zoomType: "x",
@@ -132,11 +135,11 @@ class ArticController {
                 }
             }]
             // Call back function, called after the master chart is drawn, draws all the detail charts
-        }, function (masterChart) {
+        }, (self) => {
             ////////////////////////////////////////////////////////////
             ///////// Call the detail chart drawing functions //////////
             ////////////////////////////////////////////////////////////
-            coverageScatterDetail = createDetailChart("coverageScatterDetail", data.coverage.ymax, "Coverage");
+            coverageScatterDetail = self.createDetailChart("coverageScatterDetail", data.coverage.ymax, "Coverage");
         });
 
     }
@@ -223,6 +226,119 @@ class ArticController {
 
         });
         return chartyChart;
+    }
+
+    afterSelection(event) {
+        // Event function called after the zoom box is chosen
+        let label;
+        let flowcellId = this._flowcellId;
+        // Prevent the default behaviour
+        event.preventDefault();
+        // The minimum and maximum value on the X axis
+        var min = Math.trunc(event.xAxis[0].min);
+        var max = Math.trunc(event.xAxis[0].max);
+        // If the selected box is too large tell the selector to learn to be less greedy
+        if (max - min > showWidth) {
+            label = coverageScatterDetail.renderer.label('Please select a smaller region', 100, 120)
+                .attr({
+                    fill: Highcharts.getOptions().colors[0],
+                    padding: 10,
+                    r: 5,
+                    zIndex: 8
+                })
+                .css({
+                    color: '#FFFFFF'
+                })
+                .add();
+
+            setTimeout(function () {
+                label.fadeOut();
+            }, 2000);
+            return;
+        }
+
+        // Change the grey plot band on the master chart to reflect the selected region
+        coverageScatterMaster.xAxis[0].removePlotBand('mask-before');
+        // Add the new one in the correct location
+        coverageScatterMaster.xAxis[0].addPlotBand({
+            id: 'mask-before',
+            from: min,
+            to: max,
+            color: 'rgba(0, 0, 0, 0.2)'
+        });
+
+        // Show the loading screen on the detail charts
+        let charts = [coverageScatterDetail];
+
+        charts.forEach(function (chart) {
+            chart.showLoading('Fetching data from the server');
+        });
+
+        // Get the detail chart data for the zoom selection from the server
+        $.getJSON('/api/v1/artic/coverage/detail', {
+            min,
+            max,
+            chromosome_chosen,
+            flowcellId
+        }, function (newSeriesDict, statusText, xhr) {
+
+            // if successful request, set the detail charts to show the newly retrieve data
+            if (xhr.status === 200) {
+
+                update_axes_and_data(coverageScatterDetail, min, max, newSeriesDict.coverage, true);
+
+            } else if (xhr.status === 404) {
+
+            } else {
+                throw "Request error";
+            }
+
+        });
+
+
+    }
+
+    // draw the charts, this is the function that is called in request data every 60 seconds
+    drawArticChart() {
+        let flowcellId = document.querySelector("#flowcell-id").value;
+        create_eb_selection_box(flowcellId);
+
+        if (!Highcharts.Series.prototype.renderCanvas) {
+            throw "Module not loaded";
+        }
+
+        // Select the coverage detail chart to see if it already exists
+        let coverageDetail = $("#coverageScatterDetail").highcharts();
+
+        let min, max;
+        console.time("scatter");
+
+        let startData = {"coverage": {"ymax": 1, "data": [0, 1]}};
+        // If the coverage detail chart doesn't exist, draw it for the first time by calling the create master chart which has a callback that draws the other charts
+        if (coverageDetail === undefined) {
+            createCoverageMaster(startData, flowcellId);
+        } else {
+            // If the coverage detail chart does exist, update the existing charts
+            // Get the minimum and maximum values of the xAxis
+            min = coverageDetail.min;
+            max = coverageDetail.max;
+            // If min is not undefined, the charts are already displaying data, so update thew, otherwise we're good
+            if (min !== undefined) {
+                $.getJSON('/api/v1/artic/coverage/detail', {
+                    min,
+                    max,
+                    chromosome_chosen,
+                    flowcellId
+                }, function (newSeriesDict, statusText, xhr) {
+                    updateExistingChart(coverageScatterMaster, data.coverage.data, 0);
+                    updateExistingChart(coverageDetail, newSeriesDict.coverage.data, 0);
+                });
+            }
+
+
+        }
+        console.timeEnd("scatter");
+
     }
 
 }
