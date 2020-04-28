@@ -5,7 +5,8 @@ import math
 from dateutil import parser
 from django.db.models import Q
 
-from reads.models import Flowcell, RunSummary
+from reads.models import Flowcell, RunSummary, FastqRead, FlowcellStatisticBarcode, FlowcellSummaryBarcode, \
+    FlowcellHistogramSummary, FlowcellChannelSummary, FastqFile
 
 
 def return_temp_empty_summary(run):
@@ -612,3 +613,40 @@ def getn50(lens):
         if t >= h:
             return l
 
+
+def reset_flowcell(flowcell_pk):
+    """
+    Reset the basecalled data related aspects of a flowcell. Clears Fastq data, Fastq Files and all basecalled data summaries, and resets the flowcell values
+    Parameters
+    ----------
+    flowcell_pk: int
+        Primary key of the flowcell to be reset.
+
+    Returns
+    -------
+
+    """
+    flowcell = Flowcell.objects.get(pk=flowcell_pk)
+    first_fastqread = FastqRead.objects.filter(flowcell=flowcell).first().id
+    left = 1
+    while first_fastqread and left:
+        first_fastqread += 5000
+        affected = FastqRead.objects.filter(flowcell=flowcell, id__lte=first_fastqread).delete()
+        left = FastqRead.objects.filter(flowcell=flowcell).count()
+        print(f"Time: {datetime.datetime.now()}, Deleted: {affected}, Left: {left}")
+
+    print(f"Finished deleting fastq at {datetime.datetime.now()}")
+    print("Deleting Fastq file records...")
+    affected = FastqFile.objects.filter(run__in=flowcell.runs.all()).delete()
+    print(f"Deleted: {affected}")
+    print("Deleting Basecalled data summaries...")
+    affected = FlowcellChannelSummary.objects.filter(flowcell=flowcell).delete()
+    print(f"Deleted: {affected}")
+    affected = FlowcellHistogramSummary.objects.filter(flowcell=flowcell).delete()
+    print(f"Deleted: {affected}")
+    affected = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).delete()
+    print(f"Deleted: {affected}")
+    affected = FlowcellStatisticBarcode.objects.filter(flowcell=flowcell).delete()
+    print(f"Deleted: {affected}")
+
+    print("Finished resetting flowcell!")
