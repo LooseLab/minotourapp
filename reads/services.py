@@ -223,9 +223,10 @@ def update_flowcell(reads_list):
 def update_flowcell_counts(row):
     try:
         with transaction.atomic():
+            flowcell = Flowcell.objects.select_for_update().filter(pk=row["flowcell_id"])[0]
             # We want to try with this being atomic to make sure only one task works on the row at once.
             # Get the flowcell we are working on:
-            flowcell = Flowcell.objects.get(pk=row["flowcell_id"])
+            #flowcell = Flowcell.objects.get(pk=row["flowcell_id"])
             if not flowcell.has_fastq:
                 flowcell.has_fastq = True
             #print (row)
@@ -316,7 +317,7 @@ def save_flowcell_statistic_barcode_async(row):
 
 
 @task(serializer="pickle")
-def save_flowcell_channel_summary_async(row):
+def     save_flowcell_channel_summary_async(row):
     """
     Save flowcell channel summary into the database row-wise on a pandas dataframe. Used for the channel visualisations.
     :param flowcell_id: Primary key of the flowcell database entry
@@ -342,7 +343,7 @@ def save_flowcell_channel_summary_async(row):
     except Exception as e:
         print(e)
         raise
-    
+
 
 @task(serializer="pickle")
 def save_flowcell_histogram_summary_async(row):
