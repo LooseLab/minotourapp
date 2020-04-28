@@ -1968,6 +1968,7 @@ class FlowcellStatisticBarcode(models.Model):
         verbose_name = 'Flowcell Statistics Barcode'
         verbose_name_plural = 'Flowcell Statistics Barcodes'
         db_table = 'flowcell_statistics_barcode'
+        unique_together = ('flowcell','sample_time','barcode_name','rejection_status','read_type_name','status')
 
     def __str__(self):
         return "{} {} {} {}".format(
@@ -2032,6 +2033,7 @@ class FlowcellChannelSummary(models.Model):  # TODO to be deleted
 
     class Meta:
         db_table = 'flowcell_channel_summary'
+        unique_together = ('flowcell','channel')
 
     def __str__(self):
         return "{} {} {}".format(self.flowcell, self.channel, self.read_count)
@@ -2140,6 +2142,7 @@ class FlowcellHistogramSummary(models.Model):
 
     class Meta:
         db_table = 'flowcell_histogram_summary'
+        unique_together =('flowcell','barcode_name','rejection_status','read_type_name','status','bin_index')
 
     def __str__(self):
         return "{} {} {}".format(
@@ -2396,6 +2399,7 @@ class FlowcellSummaryBarcode(models.Model):
         verbose_name = 'Flowcell Summary'
         verbose_name_plural = 'Flowcell Summary'
         db_table = 'flowcell_summary_barcode'
+        unique_together = ('flowcell','barcode_name','rejection_status','read_type_name','status')
 
     def __str__(self):
         return "{} {} {} {} {}".format(
