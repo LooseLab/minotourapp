@@ -2,6 +2,7 @@ from __future__ import absolute_import, unicode_literals
 from celery import task
 from celery.utils.log import get_task_logger
 from django.db.models import Max, Count
+from django.db import transaction
 from artic.task_artic_alignment import make_results_directory_artic, run_artic_pipeline, run_artic_command
 from centrifuge import centrifuge
 from centrifuge.sankey import calculate_sankey
@@ -277,177 +278,177 @@ def update_flowcell_details(job_master_id):
     job_master = JobMaster.objects.get(pk=job_master_id)
     job_master.running = True
     job_master.save()
+    with transaction.atomic():
+        flowcell = job_master.flowcell
 
-    flowcell = job_master.flowcell
+        logger.info('Flowcell id: {} - Updating details of flowcell {}'.format(flowcell.id, flowcell.name))
 
-    logger.info('Flowcell id: {} - Updating details of flowcell {}'.format(flowcell.id, flowcell.name))
+        #
+        # Get the first MinIONRunStatus for a particular flowcell - but we want to ignore platform QCs
+        #
+        minion_run_status_first = MinionRunInfo.objects.filter(run_id__flowcell=flowcell).exclude(
+            experiment_type="platform_qc").order_by('minKNOW_start_time') \
+            .first()
 
-    #
-    # Get the first MinIONRunStatus for a particular flowcell - but we want to ignore platform QCs
-    #
-    minion_run_status_first = MinionRunInfo.objects.filter(run_id__flowcell=flowcell).exclude(
-        experiment_type="platform_qc").order_by('minKNOW_start_time') \
-        .first()
+        #
+        # If the MinIONRunStatus exists, than update start time
+        #
+        if minion_run_status_first:
+            logger.info('Flowcell id: {} - There is at least one MinIONRunStatus'.format(flowcell.id))
 
-    #
-    # If the MinIONRunStatus exists, than update start time
-    #
-    if minion_run_status_first:
-        logger.info('Flowcell id: {} - There is at least one MinIONRunStatus'.format(flowcell.id))
+            flowcell.start_time = minion_run_status_first.minKNOW_start_time
 
-        flowcell.start_time = minion_run_status_first.minKNOW_start_time
+            logger.info('Flowcell id: {} - Setting start_time to {}'.format(flowcell.id, flowcell.start_time))
 
-        logger.info('Flowcell id: {} - Setting start_time to {}'.format(flowcell.id, flowcell.start_time))
+        #
+        # Define flowcell's sample_name
+        #
+        minion_run_status_list = MinionRunInfo.objects.filter(run_id__flowcell=flowcell).exclude(
+            experiment_type="platform_qc")
 
-    #
-    # Define flowcell's sample_name
-    #
-    minion_run_status_list = MinionRunInfo.objects.filter(run_id__flowcell=flowcell).exclude(
-        experiment_type="platform_qc")
+        if minion_run_status_list.count() > 0:
 
-    if minion_run_status_list.count() > 0:
+            for minion_run_status in minion_run_status_list:
 
-        for minion_run_status in minion_run_status_list:
+                if minion_run_status.minKNOW_sample_name and minion_run_status.minKNOW_sample_name != 'undefined':
+                    flowcell.sample_name = minion_run_status_first.minKNOW_sample_name
 
-            if minion_run_status.minKNOW_sample_name and minion_run_status.minKNOW_sample_name != 'undefined':
-                flowcell.sample_name = minion_run_status_first.minKNOW_sample_name
+                    logger.info(
+                        'Flowcell id: {} - Setting sample_name to {} - data from MinIONRunStatus.minKNOW_sample_name'.format(
+                            flowcell.id, flowcell.sample_name))
 
-                logger.info(
-                    'Flowcell id: {} - Setting sample_name to {} - data from MinIONRunStatus.minKNOW_sample_name'.format(
-                        flowcell.id, flowcell.sample_name))
+                    break
 
-                break
+        else:
 
-    else:
+            for run in Run.objects.filter(flowcell=flowcell).exclude(name="mux scan"):
 
-        for run in Run.objects.filter(flowcell=flowcell).exclude(name="mux scan"):
+                if run.name and run.name != 'undefined':
+                    flowcell.sample_name = run.name
 
-            if run.name and run.name != 'undefined':
-                flowcell.sample_name = run.name
+                    logger.info('Flowcell id: {} - Setting sample_name to {} - data from Run.name'.format(flowcell.id,
+                                                                                                          flowcell.sample_name))
 
-                logger.info('Flowcell id: {} - Setting sample_name to {} - data from Run.name'.format(flowcell.id,
-                                                                                                      flowcell.sample_name))
+                    break
 
-                break
+        #
+        # Get number of fastqreads
+        #
+        number_reads = job_master.read_count
 
-    #
-    # Get number of fastqreads
-    #
-    number_reads = job_master.read_count
+        last_read = job_master.last_read
 
-    last_read = job_master.last_read
+        # Todo: If the flowcell has no reads, it may have been reset and so we may need to recount it based on previous issue.
 
-    # Todo: If the flowcell has no reads, it may have been reset and so we may need to recount it based on previous issue.
+        ### This query is slow - and it should be fast.
 
-    ### This query is slow - and it should be fast.
+        #
+        # # Update flowcell size
+        # #
+        ##max_channel = FastqRead.objects.filter(
+        ##    flowcell=flowcell,
+        ##    id__gt=int(job_master.last_read)
+        ##).aggregate(result=Max('channel'), last_read=Max('id'),read_number=Count('read_id'))
 
-    #
-    # # Update flowcell size
-    # #
-    ##max_channel = FastqRead.objects.filter(
-    ##    flowcell=flowcell,
-    ##    id__gt=int(job_master.last_read)
-    ##).aggregate(result=Max('channel'), last_read=Max('id'),read_number=Count('read_id'))
+        ##if max_channel["read_number"] is not None:
 
-    ##if max_channel["read_number"] is not None:
+        ##    number_reads += max_channel["read_number"]
 
-    ##    number_reads += max_channel["read_number"]
+        ##    flowcell.has_fastq = True
 
-    ##    flowcell.has_fastq = True
+        ##job_master.read_count = number_reads
 
-    ##job_master.read_count = number_reads
+        ##if max_channel['last_read'] is not None:
 
-    ##if max_channel['last_read'] is not None:
+        ##    job_master.last_read = max_channel['last_read']
 
-    ##    job_master.last_read = max_channel['last_read']
+        # job_master.save()
+        #
+        # Get the job_master chancalc for this flowcell
+        #
 
-    # job_master.save()
-    #
-    # Get the job_master chancalc for this flowcell
-    #
+        ##job_master_list = JobMaster.objects.filter(flowcell=flowcell, job_type__name='Chancalc')
 
-    ##job_master_list = JobMaster.objects.filter(flowcell=flowcell, job_type__name='Chancalc')
+        ##number_reads_processed = flowcell.number_reads_processed
 
-    ##number_reads_processed = flowcell.number_reads_processed
+        ##if job_master_list.count() > 0:
 
-    ##if job_master_list.count() > 0:
+        ##    number_reads_processed = job_master_list[0].read_count
 
-    ##    number_reads_processed = job_master_list[0].read_count
+        #
+        # Get the FlowcellSummaryBarcodes for a particular flowcell and for barcode_name "All reads"
+        #
+        ##flowcell_summary_list = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).filter(barcode_name='All reads')
 
-    #
-    # Get the FlowcellSummaryBarcodes for a particular flowcell and for barcode_name "All reads"
-    #
-    ##flowcell_summary_list = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).filter(barcode_name='All reads')
+        ##average_read_length = 0
 
-    ##average_read_length = 0
+        ##total_read_length = 0
 
-    ##total_read_length = 0
+        ##logger.info('Flowcell id: {} - There is/are {} FlowcellSummaryBarcode records'.format(flowcell.id, len(flowcell_summary_list)))
 
-    ##logger.info('Flowcell id: {} - There is/are {} FlowcellSummaryBarcode records'.format(flowcell.id, len(flowcell_summary_list)))
+        ##for flowcell_summary in flowcell_summary_list:
 
-    ##for flowcell_summary in flowcell_summary_list:
+        ##    total_read_length += flowcell_summary.total_length
 
-    ##    total_read_length += flowcell_summary.total_length
+        ##if number_reads > 0:
 
-    ##if number_reads > 0:
+        ##    average_read_length = total_read_length / number_reads
 
-    ##    average_read_length = total_read_length / number_reads
+        ##logger.info('Flowcell id: {} - Total read length {}'.format(flowcell.id, total_read_length))
+        ##logger.info('Flowcell id: {} - Number reads {}'.format(flowcell.id, number_reads))
+        ##logger.info('Flowcell id: {} - Number reads processed {}'.format(flowcell.id, number_reads_processed))
+        ##logger.info('Flowcell id: {} - Average read length {}'.format(flowcell.id, average_read_length))
 
-    ##logger.info('Flowcell id: {} - Total read length {}'.format(flowcell.id, total_read_length))
-    ##logger.info('Flowcell id: {} - Number reads {}'.format(flowcell.id, number_reads))
-    ##logger.info('Flowcell id: {} - Number reads processed {}'.format(flowcell.id, number_reads_processed))
-    ##logger.info('Flowcell id: {} - Average read length {}'.format(flowcell.id, average_read_length))
+        ##flowcell.average_read_length = average_read_length
+        ##flowcell.total_read_length = total_read_length
+        ##flowcell.number_reads = number_reads
+        ##flowcell.number_reads_processed = number_reads_processed
 
-    ##flowcell.average_read_length = average_read_length
-    ##flowcell.total_read_length = total_read_length
-    ##flowcell.number_reads = number_reads
-    ##flowcell.number_reads_processed = number_reads_processed
+        flowcell.number_runs = Run.objects.filter(flowcell=flowcell).count()
 
-    flowcell.number_runs = Run.objects.filter(flowcell=flowcell).count()
+        barcode_count = len(Barcode.objects.filter(run_id__flowcell=flowcell).values('name').distinct()) - 1
 
-    barcode_count = len(Barcode.objects.filter(run_id__flowcell=flowcell).values('name').distinct()) - 1
+        flowcell.number_barcodes = barcode_count
 
-    flowcell.number_barcodes = barcode_count
+        flowcell.save()
 
-    flowcell.save()
+        logger.info('Flowcell id: {} - Number runs {}'.format(flowcell.id, flowcell.number_runs))
+        logger.info('Flowcell id: {} - Number barcodes {}'.format(flowcell.id, flowcell.number_barcodes))
 
-    logger.info('Flowcell id: {} - Number runs {}'.format(flowcell.id, flowcell.number_runs))
-    logger.info('Flowcell id: {} - Number barcodes {}'.format(flowcell.id, flowcell.number_barcodes))
+        # #
+        # # Update flowcell size
+        # #
+        # max_channel = FastqRead.objects.filter(
+        #     flowcell=flowcell,
+        #     id__gt=int(job_master.last_read)
+        # ).aggregate(result=Max('channel'), last_read=Max('id'),read_number=Count('read_id'))
 
-    # #
-    # # Update flowcell size
-    # #
-    # max_channel = FastqRead.objects.filter(
-    #     flowcell=flowcell,
-    #     id__gt=int(job_master.last_read)
-    # ).aggregate(result=Max('channel'), last_read=Max('id'),read_number=Count('read_id'))
+        ##if max_channel['result'] is not None and max_channel['result'] > flowcell.max_channel:
 
-    ##if max_channel['result'] is not None and max_channel['result'] > flowcell.max_channel:
+        ##    flowcell.max_channel = max_channel['result']
 
-    ##    flowcell.max_channel = max_channel['result']
+        ##    if max_channel['result']:
 
-    ##    if max_channel['result']:
+        ##        if max_channel['result'] > 512:
 
-    ##        if max_channel['result'] > 512:
+        ##            flowcell.size = 3000
 
-    ##            flowcell.size = 3000
+        ##        elif max_channel['result'] > 126:
 
-    ##        elif max_channel['result'] > 126:
+        ##            flowcell.size = 512
 
-    ##            flowcell.size = 512
+        ##        else:
 
-    ##        else:
+        ##            flowcell.size = 126
 
-    ##            flowcell.size = 126
+        ##    else:
 
-    ##    else:
+        ##        flowcell.size = 512
 
-    ##        flowcell.size = 512
+        ##flowcell.save()
 
-    ##flowcell.save()
+        # job_master = JobMaster.objects.get(pk=job_master_id)
 
-    # job_master = JobMaster.objects.get(pk=job_master_id)
+        job_master.running = False
 
-    job_master.running = False
-
-    job_master.save()
+        job_master.save()
