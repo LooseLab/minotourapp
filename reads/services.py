@@ -10,7 +10,7 @@ import decimal
 from celery.task import task
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.db import transaction
+from django.db import IntegrityError, transaction
 
 from textwrap import wrap
 
@@ -306,6 +306,7 @@ def save_flowcell_statistic_barcode_async(row):
 
 
 
+@transaction.atomic
 @task(serializer="pickle")
 def save_flowcell_channel_summary_async(row):
     """
@@ -316,18 +317,20 @@ def save_flowcell_channel_summary_async(row):
     :type row: pandas.core.series.Series
     :return: None
     """
-    with transaction.atomic():
-        flowcell_id = row["flowcell_id"][0]
-        channel = int(row["channel"][0])
-        sequence_length_sum = int(row["sequence_length"]["sum"])
-        read_count = int(row["sequence_length"]["count"])
-
-        flowcellChannelSummary, created = FlowcellChannelSummary.objects.get_or_create(
-            flowcell_id=flowcell_id, channel=channel
-        )
-        flowcellChannelSummary.read_length += sequence_length_sum
-        flowcellChannelSummary.read_count += read_count
-        flowcellChannelSummary.save()
+    flowcell_id = row["flowcell_id"][0]
+    channel = int(row["channel"][0])
+    sequence_length_sum = int(row["sequence_length"]["sum"])
+    read_count = int(row["sequence_length"]["count"])
+    try:
+        with transaction.atomic():
+            flowcellChannelSummary, created = FlowcellChannelSummary.objects.get_or_create(
+                flowcell_id=flowcell_id, channel=channel
+            )
+    except IntegrityError:
+        flowcellChannelSummary = FlowcellChannelSummary.objects.get(flowcell_id=flowcell_id, channel=channel)
+    flowcellChannelSummary.read_length += sequence_length_sum
+    flowcellChannelSummary.read_count += read_count
+    flowcellChannelSummary.save()
 
 @task(serializer="pickle")
 def save_flowcell_histogram_summary_async(row):
