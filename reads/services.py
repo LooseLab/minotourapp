@@ -223,7 +223,7 @@ def update_flowcell(reads_list):
 def update_flowcell_counts(row):
     try:
         with transaction.atomic():
-            flowcell = Flowcell.objects.select_for_update().filter(pk=row["flowcell_id"])[0]
+            flowcell = Flowcell.objects.select_for_update().filter(pk=int(row["flowcell_id"]))[0]
             # We want to try with this being atomic to make sure only one task works on the row at once.
             # Get the flowcell we are working on:
             #flowcell = Flowcell.objects.get(pk=row["flowcell_id"])
@@ -268,8 +268,8 @@ def save_flowcell_statistic_barcode_async(row):
     """
     try:
         with transaction.atomic():
-            flowcell_id = row["flowcell_id"][0]
-            flowcell = Flowcell.object.get(pk=flowcell_id)
+            flowcell_id = int(row["flowcell_id"][0])
+            flowcell = Flowcell.objects.get(pk=flowcell_id)
             utc = pytz.utc
             barcode_name = row["barcode_name"][0]
             type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
@@ -327,8 +327,8 @@ def save_flowcell_channel_summary_async(row):
     :type row: pandas.core.series.Series
     :return: None
     """
-    flowcell_id = row["flowcell_id"][0]
-    flowcell = Flowcell.object.get(pk=flowcell_id)
+    flowcell_id = int(row["flowcell_id"][0])
+    flowcell = Flowcell.objects.get(pk=flowcell_id)
     channel = int(row["channel"][0])
     sequence_length_sum = int(row["sequence_length"]["sum"])
     read_count = int(row["sequence_length"]["count"])
@@ -360,8 +360,8 @@ def save_flowcell_histogram_summary_async(row):
     """
     try:
         with transaction.atomic():
-            flowcell_id = row["flowcell_id"][0]
-            flowcell = Flowcell.object.get(pk=flowcell_id)
+            flowcell_id = int(row["flowcell_id"][0])
+            flowcell = Flowcell.objects.get(pk=flowcell_id)
             barcode_name = row["barcode_name"][0]
             read_type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
             #read_type_name = row["type__name"][0]
@@ -404,8 +404,8 @@ def save_flowcell_summary_barcode_async(row):
         with transaction.atomic():
             type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
             rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"][0]).name
-            flowcell_id = row["flowcell_id"][0]
-            flowcell = Flowcell.object.get(pk=flowcell_id)
+            flowcell_id = int(row["flowcell_id"][0])
+            flowcell = Flowcell.objects.get(pk=flowcell_id)
             barcode_name = row["barcode_name"][0]
             status = row["is_pass"][0]
             #rejection_status = row["rejected_barcode_name"][0]
