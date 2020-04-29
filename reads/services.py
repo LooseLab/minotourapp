@@ -210,7 +210,7 @@ def update_flowcell(reads_list):
     )
     #print (fastq_df_result)
 
-    fastq_df_result.reset_index().apply(
+    fastq_df_result.sample(frac=1).reset_index().apply(
         lambda row: save_flowcell_channel_summary_async(row), axis=1
     )
 
