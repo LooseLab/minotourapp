@@ -269,6 +269,7 @@ def save_flowcell_statistic_barcode_async(row):
     try:
         with transaction.atomic():
             flowcell_id = row["flowcell_id"][0]
+            flowcell = Flowcell.object.get(pk=flowcell_id)
             utc = pytz.utc
             barcode_name = row["barcode_name"][0]
             type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
@@ -283,7 +284,7 @@ def save_flowcell_statistic_barcode_async(row):
             channels = row["channel"]["unique"]
 
             flowcellStatisticBarcode, created = FlowcellStatisticBarcode.objects.get_or_create(
-                flowcell_id=flowcell_id,
+                flowcell=flowcell,
                 sample_time=start_time,
                 barcode_name=barcode_name,
                 rejection_status=rejection_status,
@@ -317,7 +318,7 @@ def save_flowcell_statistic_barcode_async(row):
 
 
 @task(serializer="pickle")
-def     save_flowcell_channel_summary_async(row):
+def save_flowcell_channel_summary_async(row):
     """
     Save flowcell channel summary into the database row-wise on a pandas dataframe. Used for the channel visualisations.
     :param flowcell_id: Primary key of the flowcell database entry
@@ -327,13 +328,14 @@ def     save_flowcell_channel_summary_async(row):
     :return: None
     """
     flowcell_id = row["flowcell_id"][0]
+    flowcell = Flowcell.object.get(pk=flowcell_id)
     channel = int(row["channel"][0])
     sequence_length_sum = int(row["sequence_length"]["sum"])
     read_count = int(row["sequence_length"]["count"])
     try:
         with transaction.atomic():
             flowcellChannelSummary, created = FlowcellChannelSummary.objects.get_or_create(
-                flowcell_id=flowcell_id, channel=channel
+                flowcell=flowcell, channel=channel
             )
     #except IntegrityError:
     #    flowcellChannelSummary = FlowcellChannelSummary.objects.get(flowcell_id=flowcell_id, channel=channel)
@@ -359,6 +361,7 @@ def save_flowcell_histogram_summary_async(row):
     try:
         with transaction.atomic():
             flowcell_id = row["flowcell_id"][0]
+            flowcell = Flowcell.object.get(pk=flowcell_id)
             barcode_name = row["barcode_name"][0]
             read_type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
             #read_type_name = row["type__name"][0]
@@ -370,7 +373,7 @@ def save_flowcell_histogram_summary_async(row):
             read_count = int(row["sequence_length"]["count"])
 
             flowcellHistogramSummary, created = FlowcellHistogramSummary.objects.get_or_create(
-                flowcell_id=flowcell_id,
+                flowcell=flowcell,
                 barcode_name=barcode_name,
                 rejection_status=rejection_status,
                 read_type_name=read_type_name,
@@ -402,6 +405,7 @@ def save_flowcell_summary_barcode_async(row):
             type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
             rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"][0]).name
             flowcell_id = row["flowcell_id"][0]
+            flowcell = Flowcell.object.get(pk=flowcell_id)
             barcode_name = row["barcode_name"][0]
             status = row["is_pass"][0]
             #rejection_status = row["rejected_barcode_name"][0]
@@ -415,7 +419,7 @@ def save_flowcell_summary_barcode_async(row):
             #print ("making a barcode? {}".format(barcode_name))
 
             flowcellSummaryBarcode, created = FlowcellSummaryBarcode.objects.get_or_create(
-                flowcell_id=flowcell_id,
+                flowcell=flowcell,
                 barcode_name=barcode_name,
                 rejection_status=rejection_status,
                 read_type_name=type_name,
