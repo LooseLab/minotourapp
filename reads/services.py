@@ -220,42 +220,40 @@ def update_flowcell(reads_list):
 
 
 @task(serializer="pickle")
+@transaction.atomic
 def update_flowcell_counts(row):
-    try:
-        with transaction.atomic():
-            flowcell = Flowcell.objects.select_for_update().filter(pk=int(row["flowcell_id"]))[0]
-            # We want to try with this being atomic to make sure only one task works on the row at once.
-            # Get the flowcell we are working on:
-            #flowcell = Flowcell.objects.get(pk=row["flowcell_id"])
-            if not flowcell.has_fastq:
-                flowcell.has_fastq = True
-            #print (row)
-            #this is actually the count of the number of read_ids
-            flowcell.number_reads += row["read_id"]
-            #update the total read length on the flowcell
-            flowcell.total_read_length += row["sequence_length"]
-            flowcell.average_read_length = flowcell.total_read_length/flowcell.number_reads
-            if int(row['channel']) > flowcell.max_channel:
-                flowcell.max_channel = int(row['channel'])
-                if row['channel']:
-                    if int(row['channel']) > 512:
-                        flowcell.size = 3000
-                    elif int(row['channel']) > 126:
-                        flowcell.size = 512
-                    else:
-                        flowcell.size = 126
-                else:
-                    flowcell.size = 512
-            flowcell.save()
-    except Exception as e:
-        print(e)
-        raise
+    flowcell = Flowcell.objects.select_for_update().filter(pk=int(row["flowcell_id"]))[0]
+    # We want to try with this being atomic to make sure only one task works on the row at once.
+    # Get the flowcell we are working on:
+    #flowcell = Flowcell.objects.get(pk=row["flowcell_id"])
+    if not flowcell.has_fastq:
+        flowcell.has_fastq = True
+    #print (row)
+    #this is actually the count of the number of read_ids
+    flowcell.number_reads += row["read_id"]
+    #update the total read length on the flowcell
+    flowcell.total_read_length += row["sequence_length"]
+    flowcell.average_read_length = flowcell.total_read_length/flowcell.number_reads
+    if int(row['channel']) > flowcell.max_channel:
+        flowcell.max_channel = int(row['channel'])
+        if row['channel']:
+            if int(row['channel']) > 512:
+                flowcell.size = 3000
+            elif int(row['channel']) > 126:
+                flowcell.size = 512
+            else:
+                flowcell.size = 126
+        else:
+            flowcell.size = 512
+    flowcell.save()
+
 
 @task()
 def update_chan_calc(readDF):
     pass
 
 @task(serializer="pickle")
+@transaction.atomic
 def save_flowcell_statistic_barcode_async(row):
     """
     Save flowcell statistic barcode objects into the database row-wise on a pandas dataframe.
@@ -266,58 +264,54 @@ def save_flowcell_statistic_barcode_async(row):
     :type row: pandas.core.series.Series
     :return: None
     """
-    try:
-        with transaction.atomic():
-            flowcell_id = int(row["flowcell_id"][0])
-            flowcell = Flowcell.objects.get(pk=flowcell_id)
-            utc = pytz.utc
-            barcode_name = row["barcode_name"][0]
-            type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
-            start_time = utc.localize(row["start_time_truncate"][0])
-            rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"][0]).name
-            status = row["is_pass"][0]
-            sequence_length_sum = int(row["sequence_length"]["sum"])
-            sequence_length_max = int(row["sequence_length"]["max"])
-            sequence_length_min = int(row["sequence_length"]["min"])
-            quality_average_sum = int(row["quality_average"]["sum"])
-            read_count = int(row["sequence_length"]["count"])
-            channels = row["channel"]["unique"]
+    flowcell_id = int(row["flowcell_id"][0])
+    flowcell = Flowcell.objects.get(pk=flowcell_id)
+    utc = pytz.utc
+    barcode_name = row["barcode_name"][0]
+    type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
+    start_time = utc.localize(row["start_time_truncate"][0])
+    rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"][0]).name
+    status = row["is_pass"][0]
+    sequence_length_sum = int(row["sequence_length"]["sum"])
+    sequence_length_max = int(row["sequence_length"]["max"])
+    sequence_length_min = int(row["sequence_length"]["min"])
+    quality_average_sum = int(row["quality_average"]["sum"])
+    read_count = int(row["sequence_length"]["count"])
+    channels = row["channel"]["unique"]
 
-            flowcellStatisticBarcode, created = FlowcellStatisticBarcode.objects.get_or_create(
-                flowcell=flowcell,
-                sample_time=start_time,
-                barcode_name=barcode_name,
-                rejection_status=rejection_status,
-                read_type_name=type_name,
-                status=status,
-            )
+    flowcellStatisticBarcode, created = FlowcellStatisticBarcode.objects.get_or_create(
+        flowcell=flowcell,
+        sample_time=start_time,
+        barcode_name=barcode_name,
+        rejection_status=rejection_status,
+        read_type_name=type_name,
+        status=status,
+    )
 
-            flowcellStatisticBarcode.total_length += sequence_length_sum
-            flowcellStatisticBarcode.quality_sum += decimal.Decimal(quality_average_sum)
-            flowcellStatisticBarcode.read_count += read_count
+    flowcellStatisticBarcode.total_length += sequence_length_sum
+    flowcellStatisticBarcode.quality_sum += decimal.Decimal(quality_average_sum)
+    flowcellStatisticBarcode.read_count += read_count
 
-            if flowcellStatisticBarcode.max_length < sequence_length_max:
-                flowcellStatisticBarcode.max_length = sequence_length_max
+    if flowcellStatisticBarcode.max_length < sequence_length_max:
+        flowcellStatisticBarcode.max_length = sequence_length_max
 
-            if flowcellStatisticBarcode.min_length < sequence_length_min:
-                flowcellStatisticBarcode.min_length = sequence_length_min
+    if flowcellStatisticBarcode.min_length < sequence_length_min:
+        flowcellStatisticBarcode.min_length = sequence_length_min
 
-            channel_list = list(flowcellStatisticBarcode.channel_presence)
+    channel_list = list(flowcellStatisticBarcode.channel_presence)
 
-            for c in channels:
+    for c in channels:
 
-                channel_list[int(c) - 1] = "1"
+        channel_list[int(c) - 1] = "1"
 
-                flowcellStatisticBarcode.channel_presence = "".join(channel_list)
-                flowcellStatisticBarcode.channel_count = len(channels)
+        flowcellStatisticBarcode.channel_presence = "".join(channel_list)
+        flowcellStatisticBarcode.channel_count = len(channels)
 
-            flowcellStatisticBarcode.save()
-    except Exception as e:
-        print(e)
-        raise
+    flowcellStatisticBarcode.save()
 
 
 @task(serializer="pickle")
+@transaction.atomic
 def save_flowcell_channel_summary_async(row):
     """
     Save flowcell channel summary into the database row-wise on a pandas dataframe. Used for the channel visualisations.
@@ -332,22 +326,16 @@ def save_flowcell_channel_summary_async(row):
     channel = int(row["channel"][0])
     sequence_length_sum = int(row["sequence_length"]["sum"])
     read_count = int(row["sequence_length"]["count"])
-    try:
-        with transaction.atomic():
-            flowcellChannelSummary, created = FlowcellChannelSummary.objects.get_or_create(
-                flowcell=flowcell, channel=channel
-            )
-    #except IntegrityError:
-    #    flowcellChannelSummary = FlowcellChannelSummary.objects.get(flowcell_id=flowcell_id, channel=channel)
-            flowcellChannelSummary.read_length += sequence_length_sum
-            flowcellChannelSummary.read_count += read_count
-            flowcellChannelSummary.save()
-    except Exception as e:
-        print(e)
-        raise
+    flowcellChannelSummary, created = FlowcellChannelSummary.objects.get_or_create(
+        flowcell=flowcell, channel=channel
+    )
+    flowcellChannelSummary.read_length += sequence_length_sum
+    flowcellChannelSummary.read_count += read_count
+    flowcellChannelSummary.save()
 
 
 @task(serializer="pickle")
+@transaction.atomic
 def save_flowcell_histogram_summary_async(row):
     """
     Save flowcell histogram barcode objects into the database row-wise on a pandas dataframe.
@@ -358,39 +346,35 @@ def save_flowcell_histogram_summary_async(row):
     :type row: pandas.core.series.Series
     :return: None
     """
-    try:
-        with transaction.atomic():
-            flowcell_id = int(row["flowcell_id"][0])
-            flowcell = Flowcell.objects.get(pk=flowcell_id)
-            barcode_name = row["barcode_name"][0]
-            read_type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
-            #read_type_name = row["type__name"][0]
-            rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"][0]).name
-            #rejection_status = row["rejected_barcode__name"][0]
-            status = row["is_pass"][0]
-            bin_index = int(row["bin_index"][0])
-            sequence_length_sum = int(row["sequence_length"]["sum"])
-            read_count = int(row["sequence_length"]["count"])
+    flowcell_id = int(row["flowcell_id"][0])
+    flowcell = Flowcell.objects.get(pk=flowcell_id)
+    barcode_name = row["barcode_name"][0]
+    read_type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
+    #read_type_name = row["type__name"][0]
+    rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"][0]).name
+    #rejection_status = row["rejected_barcode__name"][0]
+    status = row["is_pass"][0]
+    bin_index = int(row["bin_index"][0])
+    sequence_length_sum = int(row["sequence_length"]["sum"])
+    read_count = int(row["sequence_length"]["count"])
 
-            flowcellHistogramSummary, created = FlowcellHistogramSummary.objects.get_or_create(
-                flowcell=flowcell,
-                barcode_name=barcode_name,
-                rejection_status=rejection_status,
-                read_type_name=read_type_name,
-                status=status,
-                bin_index=bin_index,
-            )
+    flowcellHistogramSummary, created = FlowcellHistogramSummary.objects.get_or_create(
+        flowcell=flowcell,
+        barcode_name=barcode_name,
+        rejection_status=rejection_status,
+        read_type_name=read_type_name,
+        status=status,
+        bin_index=bin_index,
+    )
 
-            flowcellHistogramSummary.read_length += sequence_length_sum
-            flowcellHistogramSummary.read_count += read_count
+    flowcellHistogramSummary.read_length += sequence_length_sum
+    flowcellHistogramSummary.read_count += read_count
 
-            flowcellHistogramSummary.save()
-    except Exception as e:
-        print(e)
-        raise
+    flowcellHistogramSummary.save()
 
 
 @task(serializer="pickle")
+@transaction.atomic
 def save_flowcell_summary_barcode_async(row):
     """
     Save flowcell summary barcode rows, applied to a pandas dataframe
@@ -400,54 +384,39 @@ def save_flowcell_summary_barcode_async(row):
     :type row: pandas.core.series.Series
     :return: None
     """
-    try:
-        with transaction.atomic():
-            type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
-            rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"][0]).name
-            flowcell_id = int(row["flowcell_id"][0])
-            flowcell = Flowcell.objects.get(pk=flowcell_id)
-            barcode_name = row["barcode_name"][0]
-            status = row["is_pass"][0]
-            #rejection_status = row["rejected_barcode_name"][0]
-            sequence_length_sum = int(row["sequence_length"]["sum"])
-            sequence_length_max = int(row["sequence_length"]["max"])
-            sequence_length_min = int(row["sequence_length"]["min"])
-            quality_average_sum = int(row["quality_average"]["sum"])
-            read_count = int(row["sequence_length"]["count"])
-            channels = row["channel"]["unique"]
-
-            #print ("making a barcode? {}".format(barcode_name))
-
-            flowcellSummaryBarcode, created = FlowcellSummaryBarcode.objects.get_or_create(
-                flowcell=flowcell,
-                barcode_name=barcode_name,
-                rejection_status=rejection_status,
-                read_type_name=type_name,
-                status=status,
-            )
-
-            flowcellSummaryBarcode.total_length += sequence_length_sum
-            flowcellSummaryBarcode.quality_sum += decimal.Decimal(quality_average_sum)
-            flowcellSummaryBarcode.read_count += read_count
-
-            if flowcellSummaryBarcode.max_length < sequence_length_max:
-                flowcellSummaryBarcode.max_length = sequence_length_max
-
-            if flowcellSummaryBarcode.min_length < sequence_length_min:
-                flowcellSummaryBarcode.min_length = sequence_length_min
-
-            channel_list = list(flowcellSummaryBarcode.channel_presence)
-
-            for c in channels:
-
-                channel_list[int(c)  - 1] = "1"
-
-            flowcellSummaryBarcode.channel_presence = "".join(channel_list)
-            flowcellSummaryBarcode.channel_count = len(channels)
-            flowcellSummaryBarcode.save()
-    except Exception as e:
-        print(e)
-        raise
+    type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
+    rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"][0]).name
+    flowcell_id = int(row["flowcell_id"][0])
+    flowcell = Flowcell.objects.get(pk=flowcell_id)
+    barcode_name = row["barcode_name"][0]
+    status = row["is_pass"][0]
+    #rejection_status = row["rejected_barcode_name"][0]
+    sequence_length_sum = int(row["sequence_length"]["sum"])
+    sequence_length_max = int(row["sequence_length"]["max"])
+    sequence_length_min = int(row["sequence_length"]["min"])
+    quality_average_sum = int(row["quality_average"]["sum"])
+    read_count = int(row["sequence_length"]["count"])
+    channels = row["channel"]["unique"]
+    flowcellSummaryBarcode, created = FlowcellSummaryBarcode.objects.get_or_create(
+        flowcell=flowcell,
+        barcode_name=barcode_name,
+        rejection_status=rejection_status,
+        read_type_name=type_name,
+        status=status,
+    )
+    flowcellSummaryBarcode.total_length += sequence_length_sum
+    flowcellSummaryBarcode.quality_sum += decimal.Decimal(quality_average_sum)
+    flowcellSummaryBarcode.read_count += read_count
+    if flowcellSummaryBarcode.max_length < sequence_length_max:
+        flowcellSummaryBarcode.max_length = sequence_length_max
+    if flowcellSummaryBarcode.min_length < sequence_length_min:
+        flowcellSummaryBarcode.min_length = sequence_length_min
+    channel_list = list(flowcellSummaryBarcode.channel_presence)
+    for c in channels:
+        channel_list[int(c)  - 1] = "1"
+    flowcellSummaryBarcode.channel_presence = "".join(channel_list)
+    flowcellSummaryBarcode.channel_count = len(channels)
+    flowcellSummaryBarcode.save()
 
 
 
