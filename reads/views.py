@@ -1289,7 +1289,6 @@ def flowcell_list(request):
         if serializer.is_valid():
             # Save the data, creating the new flowcell
             serializer.save(owner=request.user)
-
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         # If the serialiser data is not valid, return bad request
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

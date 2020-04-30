@@ -175,7 +175,7 @@ def run_delete_flowcell(flowcell_job_id):
 
         # Whilst we still have reads left
         while counter <= last_read:
-            counter = counter + 500
+            counter = counter + 5000
 
             logger.info(
                 "Flowcell id: {} - Deleting records with id < {}".format(
