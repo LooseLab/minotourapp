@@ -175,7 +175,7 @@ class FlowcellTabController {
                 break;
 
             case 'nav-artic':
-                this.toggle_content(this._nav_artic, this._nav_artic);
+                this.toggle_content(this._nav_artic, this._tab_artic);
                 break;
         }
     }
