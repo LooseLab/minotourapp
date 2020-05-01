@@ -82,8 +82,6 @@ def save_reads_bulk(reads):
         return str(e)
 
 
-
-
 @task(serializer="pickle")
 def update_flowcell(reads_list):
     """
@@ -417,7 +415,6 @@ def save_flowcell_summary_barcode_async(row):
     flowcellSummaryBarcode.channel_presence = "".join(channel_list)
     flowcellSummaryBarcode.channel_count = len(channels)
     flowcellSummaryBarcode.save()
-
 
 
 def save_flowcell_summary_barcode(flowcell_id, row):

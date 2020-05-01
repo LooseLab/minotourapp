@@ -3,31 +3,14 @@
  */
 class ArticController {
     constructor(flowcellId) {
+        console.log("Initialising Artic controoller");
         this._coverageScatterMaster;
         this._coverageScatterDetail;
         this._flowcellId = flowcellId;
+        // this.createCoverageMaster();
+        this.drawArticChart(flowcellId);
     }
 
-    /**
-     * Draw the master coverage chart for the selected barcode
-     * @param flowcellId number - the primary key of the flowcell
-     * @param barcodeChosen str - the barcode that we are drawing the data for
-     */
-    drawSelectedBarcode(flowcellId, barcodeChosen) {
-        /*
-        Reload a new chromosomes data
-        */
-        const axiosInstance = axios.create({
-            headers: {'X-CSRFToken': csrftoken}
-        });
-        let self = this;
-        console.log(self);
-        axiosInstance.get('/api/v1/artic/coverage/master', {params: {flowcellId, barcodeChosen}}, function (data) {
-            self._coverageScatterMaster.yAxis[0].setExtremes(0, data.coverage.ymax);
-            updateExistingChart(self._coverageScatterMaster, data.coverage.data, 0);
-
-        });
-    }
 
     /**
      *
@@ -51,6 +34,7 @@ class ArticController {
      */
     createCoverageMaster(data, flowcellId) {
         const self = this;
+        let that = this;
         this._coverageScatterMaster = Highcharts.chart("coverageScatterMaster", {
 
             chart: {
@@ -134,11 +118,11 @@ class ArticController {
                 }
             }]
             // Call back function, called after the master chart is drawn, draws all the detail charts
-        }, (self) => {
+        }, () => {
             ////////////////////////////////////////////////////////////
             ///////// Call the detail chart drawing functions //////////
             ////////////////////////////////////////////////////////////
-            coverageScatterDetail = self.createDetailChart("coverageScatterDetail", data.coverage.ymax, "Coverage");
+            coverageScatterDetail = that.createDetailChart("coverageScatterDetail", data.coverage.ymax, "Coverage");
         });
 
     }
@@ -159,6 +143,8 @@ class ArticController {
         // The variable assigned to the chart we will return
         let chartyChart;
 
+        let that = this;
+
         chartyChart = Highcharts.chart(targetDivId, {
 
             chart: {
@@ -166,7 +152,7 @@ class ArticController {
                 height: "300px",
                 reflow: false,
                 events: {
-                    selection: afterSelection.bind(this)
+                    selection: that.afterSelection.bind(this)
                 }
             },
 
@@ -201,8 +187,7 @@ class ArticController {
             },
             tooltip: {
                 formatter: function () {
-                    return 'The value for base <b>' + this.x +
-                        '</b> is <b>' + this.y + '</b>';
+                    return `The value for base <b>${this.x}</b> is <b>${this.y}</b>`;
                 }
             },
             exporting: {"enabled": false},
@@ -297,25 +282,142 @@ class ArticController {
 
     }
 
+    createEbSelectionBox(flowcellId) {
+        let that = this
+        // For all the sel objects that finding the element by the sel class returned
+        $('.sel.artic').each(function () {
+            // get the child of the div, which is the select option in this case, do not display it
+            $(this).children('select').css('display', 'none');
+            // Get the sel div element as a var
+            var $current = $(this);
+            // get all the options children
+            $.get("/api/v1/artic/visualisation/barcodes", {flowcellId}, function (barcodes, statusText, xhr) {
+                // if it's the first options clause
+                if (xhr.status != 200) console.error("Error");
+                // If we're on our first drawing of the select spans
+                let first_iteration = !document.getElementById("artic-placeholder");
+                // The barcodes we have that are already present
+                let alreadyPresentBarcode = [];
+                // If it is not our first drawing of it
+                if (!first_iteration) {
+                    // The already present barcodes html elements
+                    alreadyPresentBarcode = [...$(".sel__box")[0].children];
+                    // for each of the elements
+                    alreadyPresentBarcode.forEach(function (presBarcode) {
+                        // if the chromsome in already present chromsome is in the list of barcodes fetched from the server
+                        if (barcodes.includes(presBarcode.textContent)) {
+                            // get the index,
+                            let index = barcodes.indexOf(presBarcode.textContent);
+                            // remove it from the freshly fetched barcodes
+                            barcodes.splice(index, 1);
+                        }
+                    });
+                    // If there are no new barcodes
+                    if (!barcodes.length) {
+                        return;
+                    }
+                    // if it is our first iteration
+                } else {
+                    // unshift choose barcodes
+                    barcodes.unshift("Choose Barcode");
+                }
+
+
+                barcodes.forEach(function (barcode, index) {
+                    console.log(barcode)
+                    // if this is the first time so we're creating the arrays
+                    if (index == 0 && first_iteration) {
+                        // the div to the front of the sel div, make it sel__box class instead of sel
+                        $current.prepend($('<div>', {
+                            class: $current.attr('class').replace(/sel/g, 'sel__box ')
+
+                        }));
+                        // Set the placeholder text to the option text - This would be the first barcode
+                        var placeholder = barcode;
+                        // prepend a span in front of the box div, with the placeholder text
+                        $current.prepend($('<span>', {
+                            class: $current.attr('class').replace(/sel/g, 'sel__placeholder '),
+                            text: placeholder,
+                            id: "artic-placeholder",
+                            'data-placeholder': placeholder
+                        }));
+
+                        return;
+                    }
+
+                    // Then for the rest of the options add them in
+                    $current.children('div').append($('<span>', {
+                        class: $current.attr('class').replace(/sel/g, 'sel__box__options '),
+                        text: barcode
+                    }));
+                });
+                // Toggling the `.active` state on the `.sel`.
+                $('.sel').click(function () {
+                    $(this).toggleClass('active');
+                });
+
+                // Toggling the `.selected` state on the options.
+                $('.sel__box__options').click(function () {
+                    console.log("The things....")
+                    var txt = $(this).text();
+                    chromosome_chosen = txt;
+                    var index = $(this).index();
+
+
+                    $(this).siblings('.sel__box__options').removeClass('selected');
+                    $(this).addClass('selected');
+
+                    var $currentSel = $(this).closest('.sel');
+                    $currentSel.children('.sel__placeholder').text(txt);
+                    $currentSel.children('select').prop('selectedIndex', index + 1);
+
+                    that.drawSelectedBarcode(flowcellId, txt);
+
+
+                });
+                $(".sel").css("display", "");
+            });
+        });
+    }
+
+    /**
+     * Draw the master coverage chart for the selected barcode
+     * @param flowcellId number - the primary key of the flowcell
+     * @param barcodeChosen str - the barcode that we are drawing the data for
+     */
+    drawSelectedBarcode(flowcellId, barcodeChosen){
+        /*
+        Reload a new chromosomes data
+        */
+        let that = this;
+        console.log(that._coverageScatterMaster);
+        $.getJSON('/api/v1/artic/visualisation/master', {flowcellId, barcodeChosen}, function (data) {
+            that._coverageScatterMaster.yAxis[0].setExtremes(0, data.coverage.ymax);
+            that.updateExistingChart(that.coverageScatterMaster, data.coverage.data, 0);
+
+        });
+    }
+
     // draw the charts, this is the function that is called in request data every 60 seconds
     drawArticChart() {
+        let that = this;
         let flowcellId = document.querySelector("#flowcell-id").value;
-        create_eb_selection_box(flowcellId);
+        that.createEbSelectionBox(flowcellId);
 
         if (!Highcharts.Series.prototype.renderCanvas) {
             throw "Module not loaded";
         }
 
         // Select the coverage detail chart to see if it already exists
-        let coverageDetail = $("#coverageScatterDetail").highcharts();
+        let coverageDetail = $("#coverageArticDetail");
 
         let min, max;
         console.time("scatter");
 
         let startData = {"coverage": {"ymax": 1, "data": [0, 1]}};
         // If the coverage detail chart doesn't exist, draw it for the first time by calling the create master chart which has a callback that draws the other charts
-        if (coverageDetail === undefined) {
-            createCoverageMaster(startData, flowcellId);
+        if (coverageDetail.length === 0) {
+            that.createCoverageMaster(startData, flowcellId);
         } else {
             // If the coverage detail chart does exist, update the existing charts
             // Get the minimum and maximum values of the xAxis
@@ -329,8 +431,8 @@ class ArticController {
                     chromosome_chosen,
                     flowcellId
                 }, function (newSeriesDict, statusText, xhr) {
-                    updateExistingChart(coverageScatterMaster, data.coverage.data, 0);
-                    updateExistingChart(coverageDetail, newSeriesDict.coverage.data, 0);
+                    that.updateExistingChart(that.coverageScatterMaster, data.coverage.data, 0);
+                    that.updateExistingChart(coverageDetail, newSeriesDict.coverage.data, 0);
                 });
             }
 

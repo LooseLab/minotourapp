@@ -160,7 +160,7 @@
 {% block javascript %}
     <script>
 
-        var input_flowcell_id = document.querySelector("#flowcell-id");
+        const flowcellId = document.querySelector("#flowcell-id").value;
 
         console.log("Initialising FlowcellPageApp.");
 
@@ -168,13 +168,16 @@
 
         app.init();
 
-        const mTaskController = new MTaskController(input_flowcell_id.value);
+        const mTaskController = new MTaskController(flowcellId);
 
-        const mSharingController = new MSharingController(input_flowcell_id.value);
+        const mSharingController = new MSharingController(flowcellId);
 
-        const flowcellController = new FlowcellController(input_flowcell_id.value);
+        const flowcellController = new FlowcellController(flowcellId);
 
-        const notificationsController = new FlowcellNotificationController(input_flowcell_id.value);
+        const notificationsController = new FlowcellNotificationController(flowcellId);
+
+        const articController = new ArticController(flowcellId)
+
 
     </script>
 {% endblock %}
