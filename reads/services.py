@@ -75,8 +75,8 @@ def save_reads_bulk(reads):
         )
         reads_list.append(fastqread)
     try:
-        update_flowcell.delay(reads_list)
         FastqRead.objects.bulk_create(reads_list)
+        update_flowcell.delay(reads_list)
     except Exception as e:
         print(e)
         return str(e)
@@ -208,7 +208,7 @@ def update_flowcell(reads_list):
     )
     #print (fastq_df_result)
 
-    fastq_df_result.sample(frac=1).reset_index().apply(
+    fastq_df_result.reset_index().apply(
         lambda row: save_flowcell_channel_summary_async(row), axis=1
     )
 
@@ -220,7 +220,7 @@ def update_flowcell(reads_list):
 @task(serializer="pickle")
 @transaction.atomic
 def update_flowcell_counts(row):
-    flowcell = Flowcell.objects.select_for_update().filter(pk=int(row["flowcell_id"]))[0]
+    flowcell = (Flowcell.objects.select_for_update().filter(pk=int(row["flowcell_id"]))[0])
     # We want to try with this being atomic to make sure only one task works on the row at once.
     # Get the flowcell we are working on:
     #flowcell = Flowcell.objects.get(pk=row["flowcell_id"])
@@ -231,6 +231,7 @@ def update_flowcell_counts(row):
     flowcell.number_reads += row["read_id"]
     #update the total read length on the flowcell
     flowcell.total_read_length += row["sequence_length"]
+    flowcell.save()
     flowcell.average_read_length = flowcell.total_read_length/flowcell.number_reads
     if int(row['channel']) > flowcell.max_channel:
         flowcell.max_channel = int(row['channel'])
@@ -244,6 +245,7 @@ def update_flowcell_counts(row):
         else:
             flowcell.size = 512
     flowcell.save()
+    return
 
 
 @task()
