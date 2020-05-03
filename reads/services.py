@@ -223,7 +223,7 @@ def update_flowcell(reads_list):
 
 
 
-@task(serializer="pickle")
+#@task(serializer="pickle")
 def update_flowcell_counts(row):
     """Playing with redis"""
     redis_instance.set("{}_has_fastq".format(int(row["flowcell_id"])),1)
@@ -268,8 +268,7 @@ def update_flowcell_counts(row):
 def update_chan_calc(readDF):
     pass
 
-@task(serializer="pickle")
-@transaction.atomic
+#@task(serializer="pickle")
 def save_flowcell_statistic_barcode_async(row):
     """
     Shifting this to store in redis
@@ -371,8 +370,7 @@ def save_flowcell_statistic_barcode_async(row):
 
 
 
-@task(serializer="pickle")
-@transaction.atomic
+#@task(serializer="pickle")
 def save_flowcell_channel_summary_async(row):
     """
         Convert to redis.
@@ -414,8 +412,7 @@ def save_flowcell_channel_summary_async(row):
     flowcellChannelSummary.save()
     """
 
-@task(serializer="pickle")
-@transaction.atomic
+#@task(serializer="pickle")
 def save_flowcell_histogram_summary_async(row):
     """
     Save flowcell histogram barcode objects into the database row-wise on a pandas dataframe.
@@ -465,8 +462,7 @@ def save_flowcell_histogram_summary_async(row):
     """
 
 
-@task(serializer="pickle")
-@transaction.atomic
+#s@task(serializer="pickle")
 def save_flowcell_summary_barcode_async(row):
     """
     Save flowcell summary barcode rows, applied to a pandas dataframe
