@@ -81,7 +81,7 @@ def save_reads_bulk(reads):
         )
         reads_list.append(fastqread)
     try:
-        FastqRead.objects.bulk_create(reads_list)
+        #FastqRead.objects.bulk_create(reads_list)
         update_flowcell.delay(reads_list)
     except Exception as e:
         print(e)
@@ -296,31 +296,32 @@ def save_flowcell_statistic_barcode_async(row):
 
     #our unique key for this is going to be:
     uniquekey = "{}_flowcellStatisticBarcode_{}_{}_{}_{}_{}".format(flowcell_id,start_time,barcode_name,rejection_status,type_name,status)
-    redis_instance.hset(uniquekey, "sample_time", str(start_time))
-    redis_instance.hset(uniquekey, "barcode_name", barcode_name)
-    redis_instance.hset(uniquekey, "rejection_status", rejection_status)
-    redis_instance.hset(uniquekey, "type_name", type_name)
-    redis_instance.hset(uniquekey, "status", str(status))
-    redis_instance.hincrby(uniquekey,"total_length",sequence_length_sum)
-    redis_instance.hincrby(uniquekey,"quality_sum",quality_average_sum)
-    redis_instance.hincrby(uniquekey,"read_count",read_count)
-    min_prev = redis_instance.hget(uniquekey,"min_length")
+    ## Make sure these are all together.
+    min_prev = redis_instance.hget(uniquekey, "min_length")
+    max_prev = redis_instance.hget(uniquekey, "max_length")
+    prev_channel_list = redis_instance.hget(uniquekey, "channel_presence")
+    p = redis_instance.pipeline()
+    p.multi()
+    p.hset(uniquekey, "sample_time", str(start_time))
+    p.hset(uniquekey, "barcode_name", barcode_name)
+    p.hset(uniquekey, "rejection_status", rejection_status)
+    p.hset(uniquekey, "type_name", type_name)
+    p.hset(uniquekey, "status", str(status))
+    p.hincrby(uniquekey,"total_length",sequence_length_sum)
+    p.hincrby(uniquekey,"quality_sum",quality_average_sum)
+    p.hincrby(uniquekey,"read_count",read_count)
     if min_prev:
         min_prev=int(min_prev)
         if min_prev > sequence_length_min:
-            redis_instance.hset(uniquekey,"min_length",sequence_length_min)
+            p.hset(uniquekey,"min_length",sequence_length_min)
     else:
-        redis_instance.hset(uniquekey, "min_length", sequence_length_min)
-    max_prev = redis_instance.hget(uniquekey, "max_length")
+        p.hset(uniquekey, "min_length", sequence_length_min)
     if max_prev:
         max_prev=int(max_prev)
         if max_prev < sequence_length_max:
-            redis_instance.hset(uniquekey, "max_length", sequence_length_max)
+            p.hset(uniquekey, "max_length", sequence_length_max)
     else:
-        redis_instance.hset(uniquekey, "max_length", sequence_length_max)
-
-    prev_channel_list = redis_instance.hget(uniquekey, "channel_presence")
-
+        p.hset(uniquekey, "max_length", sequence_length_max)
     if prev_channel_list:
         channel_list = list(prev_channel_list)
     else:
@@ -328,11 +329,10 @@ def save_flowcell_statistic_barcode_async(row):
 
     for c in channels:
         channel_list[int(c) - 1] = "1"
-
     channel_presence = "".join(channel_list)
+    p.hset(uniquekey,"channel_presence",channel_presence)
+    p.execute()
 
-
-    redis_instance.hset(uniquekey,"channel_presence",channel_presence)
     """
     flowcellStatisticBarcode, created = FlowcellStatisticBarcode.objects.get_or_create(
         flowcell=flowcell,
@@ -484,31 +484,38 @@ def save_flowcell_summary_barcode_async(row):
     read_count = int(row["sequence_length"]["count"])
     channels = row["channel"]["unique"]
 
+
+
     uniquekey = "{}_flowcellSummaryBarcode_{}_{}_{}_{}".format(flowcell_id, barcode_name,
                                                                     rejection_status, type_name, status)
-    redis_instance.hset(uniquekey, "barcode_name", barcode_name)
-    redis_instance.hset(uniquekey, "rejection_status", rejection_status)
-    redis_instance.hset(uniquekey, "type_name", type_name)
-    redis_instance.hset(uniquekey, "status", str(status))
-    redis_instance.hincrby(uniquekey, "total_length", sequence_length_sum)
-    redis_instance.hincrby(uniquekey, "quality_sum", quality_average_sum)
-    redis_instance.hincrby(uniquekey, "read_count", read_count)
+    prev_channel_list = redis_instance.hget(uniquekey, "channel_presence")
     min_prev = redis_instance.hget(uniquekey, "min_length")
+    max_prev = redis_instance.hget(uniquekey, "max_length")
+    p = redis_instance.pipeline()
+    p.multi()
+    p.hset(uniquekey, "barcode_name", barcode_name)
+    p.hset(uniquekey, "rejection_status", rejection_status)
+    p.hset(uniquekey, "type_name", type_name)
+    p.hset(uniquekey, "status", str(status))
+    p.hincrby(uniquekey, "total_length", sequence_length_sum)
+    p.hincrby(uniquekey, "quality_sum", quality_average_sum)
+    p.hincrby(uniquekey, "read_count", read_count)
+
     if min_prev:
         min_prev = int(min_prev)
         if min_prev > sequence_length_min:
-            redis_instance.hset(uniquekey, "min_length", sequence_length_min)
+            p.hset(uniquekey, "min_length", sequence_length_min)
     else:
-        redis_instance.hset(uniquekey, "min_length", sequence_length_min)
-    max_prev = redis_instance.hget(uniquekey, "max_length")
+        p.hset(uniquekey, "min_length", sequence_length_min)
+
     if max_prev:
         max_prev = int(max_prev)
         if max_prev < sequence_length_max:
-            redis_instance.hset(uniquekey, "max_length", sequence_length_max)
+            p.hset(uniquekey, "max_length", sequence_length_max)
     else:
-        redis_instance.hset(uniquekey, "max_length", sequence_length_max)
+        p.hset(uniquekey, "max_length", sequence_length_max)
 
-    prev_channel_list = redis_instance.hget(uniquekey, "channel_presence")
+
 
     if prev_channel_list:
         channel_list = list(prev_channel_list)
@@ -520,8 +527,8 @@ def save_flowcell_summary_barcode_async(row):
 
     channel_presence = "".join(channel_list)
 
-    redis_instance.hset(uniquekey, "channel_presence", channel_presence)
-
+    p.hset(uniquekey, "channel_presence", channel_presence)
+    p.execute()
     """
     flowcellSummaryBarcode, created = FlowcellSummaryBarcode.objects.get_or_create(
         flowcell=flowcell,
