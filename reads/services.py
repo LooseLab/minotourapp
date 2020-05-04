@@ -88,8 +88,6 @@ def save_reads_bulk(reads):
         return str(e)
 
 
-
-
 @task(serializer="pickle")
 def update_flowcell(reads_list):
     """
@@ -303,6 +301,7 @@ def save_flowcell_statistic_barcode_async(row):
     min_prev = redis_instance.hget(uniquekey, "min_length")
     max_prev = redis_instance.hget(uniquekey, "max_length")
     prev_channel_list = redis_instance.hget(uniquekey, "channel_presence")
+
     p = redis_instance.pipeline()
     p.multi()
     p.hset(uniquekey, "sample_time", str(start_time))
@@ -310,17 +309,18 @@ def save_flowcell_statistic_barcode_async(row):
     p.hset(uniquekey, "rejection_status", rejection_status)
     p.hset(uniquekey, "type_name", type_name)
     p.hset(uniquekey, "status", str(status))
-    p.hincrby(uniquekey,"total_length",sequence_length_sum)
-    p.hincrby(uniquekey,"quality_sum",quality_average_sum)
-    p.hincrby(uniquekey,"read_count",read_count)
+    p.hincrby(uniquekey, "total_length", sequence_length_sum)
+    p.hincrby(uniquekey, "quality_sum", quality_average_sum)
+    p.hincrby(uniquekey, "read_count", read_count)
+
     if min_prev:
-        min_prev=int(min_prev)
+        min_prev = int(min_prev)
         if min_prev > sequence_length_min:
-            p.hset(uniquekey,"min_length",sequence_length_min)
+            p.hset(uniquekey, "min_length", sequence_length_min)
     else:
         p.hset(uniquekey, "min_length", sequence_length_min)
     if max_prev:
-        max_prev=int(max_prev)
+        max_prev = int(max_prev)
         if max_prev < sequence_length_max:
             p.hset(uniquekey, "max_length", sequence_length_max)
     else:
@@ -368,8 +368,6 @@ def save_flowcell_statistic_barcode_async(row):
     flowcellStatisticBarcode.save()
     
     """
-
-
 
 #@task(serializer="pickle")
 def save_flowcell_channel_summary_async(row):
@@ -556,7 +554,6 @@ def save_flowcell_summary_barcode_async(row):
     flowcellSummaryBarcode.channel_count = len(channels)
     flowcellSummaryBarcode.save()
     """
-
 
 
 def save_flowcell_summary_barcode(flowcell_id, row):

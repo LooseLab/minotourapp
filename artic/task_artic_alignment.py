@@ -170,7 +170,7 @@ def fetch_barcode_to_fire_list(directory):
     return(barcodes)
 
 
-def make_results_directory_artic(flowcell_id, task_id):
+def make_results_directory_artic(flowcell_id, task_id, allow_create=True):
     """
     Make a results directory
     Parameters
@@ -179,6 +179,8 @@ def make_results_directory_artic(flowcell_id, task_id):
         Primary key of the flowcell entry in the database
     task_id: int
         Primary key of the task record in the database.
+    allow_create: bool
+        Allow the creation of the directory if it doesn't already exist
 
     Returns
     -------
@@ -187,26 +189,25 @@ def make_results_directory_artic(flowcell_id, task_id):
     """
     environmental_results_directory = get_env_variable("MT_ARTIC_RESULTS_DIR")
     # environmental_results_directory = getattr(settings, "REFERENCE_LOCATION", None)
-    print(environmental_results_directory)
 
     artic_dir = Path(f"{environmental_results_directory}/artic/")
-    if not artic_dir.exists():
+    if not artic_dir.exists() and allow_create:
         Path.mkdir(artic_dir)
 
     results_dir = Path(
         f"{environmental_results_directory}/artic/Temp_results"
         )
 
-    if not results_dir.exists():
+    if not results_dir.exists() and allow_create:
         Path.mkdir(results_dir)
 
     results_dir = Path(
         f"{environmental_results_directory}/artic/Temp_results/{flowcell_id}_{task_id}_artic"
     )
 
-    print(results_dir)
-    if not results_dir.exists():
+    if not results_dir.exists() and allow_create:
         Path.mkdir(results_dir)
+
     return results_dir
 
 
@@ -517,7 +518,7 @@ def run_artic_pipeline(task_id):
                         f"{base_result_dir_path}/{barcode}/coverage_{chrom_key}_{flowcell.id}_{task.id}.dat"
                     )
                     counts_path = Path(
-                        f"{base_result_dir_path}/{barcode}/counts_{chrom_key}_{flowcell.id}_{task.id}.dat"
+                        f"{base_result_dir_path}/{barcode}/counts_{chrom_key}_{flowcell.id}_{task.id}_{barcode}.dat"
                     )
 
                     ############################################################################
