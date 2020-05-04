@@ -81,7 +81,7 @@ def save_reads_bulk(reads):
         )
         reads_list.append(fastqread)
     try:
-        #FastqRead.objects.bulk_create(reads_list)
+        FastqRead.objects.bulk_create(reads_list)
         update_flowcell.delay(reads_list)
     except Exception as e:
         print(e)
@@ -230,8 +230,9 @@ def update_flowcell_counts(row):
     redis_instance.incrby("{}_number_reads".format(int(row["flowcell_id"])),int(row["read_id"]))
     redis_instance.incrby("{}_total_read_length".format(int(row["flowcell_id"])),int(row["sequence_length"]))
     saved_max_channel = redis_instance.get("{}_max_channel".format(int(row["flowcell_id"])))
-    if saved_max_channel and int(row["channel"])>int(saved_max_channel):
-        redis_instance.set("{}_max_channel".format(int(row["flowcell_id"])),int(row["channel"]))
+    if saved_max_channel:
+            if (row["channel"])>int(saved_max_channel):
+                redis_instance.set("{}_max_channel".format(int(row["flowcell_id"])),int(row["channel"]))
     else:
         redis_instance.set("{}_max_channel".format(int(row["flowcell_id"])),int(row["channel"]))
     """
@@ -437,14 +438,16 @@ def save_flowcell_histogram_summary_async(row):
 
     uniquekey = "{}_flowcellHistogramSummary_{}_{}_{}_{}_{}".format(flowcell_id, barcode_name,
                                                                     rejection_status, read_type_name, status,bin_index)
-
-    redis_instance.hset(uniquekey, "bin_index", bin_index)
-    redis_instance.hset(uniquekey, "barcode_name", barcode_name)
-    redis_instance.hset(uniquekey, "rejection_status", rejection_status)
-    redis_instance.hset(uniquekey, "read_type_name", read_type_name)
-    redis_instance.hset(uniquekey, "status", str(status))
-    redis_instance.hincrby(uniquekey, "read_length", sequence_length_sum)
-    redis_instance.hincrby(uniquekey, "read_count", read_count)
+    p = redis_instance.pipeline()
+    p.multi()
+    p.hset(uniquekey, "bin_index", bin_index)
+    p.hset(uniquekey, "barcode_name", barcode_name)
+    p.hset(uniquekey, "rejection_status", rejection_status)
+    p.hset(uniquekey, "read_type_name", read_type_name)
+    p.hset(uniquekey, "status", str(status))
+    p.hincrby(uniquekey, "read_length", sequence_length_sum)
+    p.hincrby(uniquekey, "read_count", read_count)
+    p.execute()
     """
     flowcellHistogramSummary, created = FlowcellHistogramSummary.objects.get_or_create(
         flowcell=flowcell,
