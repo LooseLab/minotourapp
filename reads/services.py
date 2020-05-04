@@ -108,7 +108,8 @@ def update_flowcell(reads_list):
 
     """
     # This manipulation returns a flowcell_id, read count and max channel for each flowcell in the dataFrame
-    readDF = pd.DataFrame([o.__dict__ for o in reads_list]).drop(['_state'], axis=1)
+    #readDF = pd.DataFrame([o.__dict__ for o in reads_list]).drop(['_state'], axis=1)
+    readDF = pd.DataFrame([o.__dict__ for o in reads_list])
     readDF['channel'] = readDF['channel'].astype(int)
     readDF['sequence_length'] = readDF['sequence_length'].astype(int)
 
