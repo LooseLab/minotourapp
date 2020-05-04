@@ -12,15 +12,24 @@ from reads.models import (
     FastqRead,
     Run,
     FlowcellSummaryBarcode,
+    FlowcellStatisticBarcode,
+    FlowcellHistogramSummary,
     Flowcell,
     MinionRunInfo,
     JobMaster,
+    FlowcellChannelSummary,
 )
 from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
 from pathlib import Path
 from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
+from dateutil import parser
 
+import redis
+import numpy as np
+
+redis_instance = redis.StrictRedis(host="127.0.0.1",
+                                  port=6379, db=0,decode_responses=True)
 
 logger = get_task_logger(__name__)
 
@@ -259,6 +268,167 @@ def update_run_start_time():
             print("Updating start_time for run {} from {}".format(run.runid, origin))
 
 
+def scan_keys(r, pattern):
+    "Returns a list of all the keys matching a given pattern in a redis index"
+    result = []
+    cur, keys = r.scan(cursor=0, match=pattern, count=2)
+    result.extend(keys)
+    while cur != 0:
+        cur, keys = r.scan(cursor=cur, match=pattern, count=2)
+        result.extend(keys)
+    return result
+
+
+def gd_key(r,key):
+    """
+
+    Parameters
+    ----------
+    r: redis instance
+    key: key to fetch and delete safely.
+
+    Returns
+    -------
+    key value
+    """
+    p = r.pipeline()
+    p.multi()
+    p.get(key)
+    p.delete(key)
+    returnvalue = p.execute()[0]
+    return returnvalue
+
+
+def hgd_key(r, key):
+    """
+
+    Parameters
+    ----------
+    r: redis instance
+    key: key to fetch and delete safely.
+
+    Returns
+    -------
+    key value
+    """
+    p = r.pipeline()
+    p.multi()
+    p.hgetall(key)
+    p.delete(key)
+    returnvalue = p.execute()[0]
+    return returnvalue
+
+@task(serializer="pickle")
+def fsumb(flowcell):
+    keys = redis_instance.scan_iter("{}_flowcellSummaryBarcode_*".format(flowcell.id))
+    for key in keys:
+        result = hgd_key(redis_instance, key)
+        barcode_name = result['barcode_name']
+        rejection_status = result['rejection_status']
+        type_name = result['type_name']
+        status = result['status']
+        sequence_length_sum = int(result['total_length'])
+        quality_average_sum = int(result['quality_sum'])
+        read_count = int(result['read_count'])
+        sequence_length_max = int(result["max_length"])
+        sequence_length_min = int(result["min_length"])
+        new_channel_list = list(result["channel_presence"])
+
+        flowcellSummaryBarcode, created = FlowcellSummaryBarcode.objects.get_or_create(
+            flowcell=flowcell,
+            barcode_name=barcode_name,
+            rejection_status=rejection_status,
+            read_type_name=type_name,
+            status=status,
+        )
+        flowcellSummaryBarcode.total_length += sequence_length_sum
+        flowcellSummaryBarcode.quality_sum += quality_average_sum
+        flowcellSummaryBarcode.read_count += read_count
+        if flowcellSummaryBarcode.max_length < sequence_length_max:
+            flowcellSummaryBarcode.max_length = sequence_length_max
+        if flowcellSummaryBarcode.min_length == 0 or flowcellSummaryBarcode.min_length > sequence_length_min:
+            flowcellSummaryBarcode.min_length = sequence_length_min
+
+        channel_list = list(flowcellSummaryBarcode.channel_presence)
+        fusedlist = np.bitwise_or(np.array(channel_list, dtype=int), np.array(new_channel_list, dtype=int))
+
+        flowcellSummaryBarcode.channel_presence = ("").join(list(fusedlist.astype(str)))
+        flowcellSummaryBarcode.channel_count = np.count_nonzero(fusedlist == 1)
+
+        flowcellSummaryBarcode.save()
+
+
+@task(serializer="pickle")
+def fhs(flowcell):
+    keys = redis_instance.scan_iter("{}_flowcellHistogramSummary_*".format(flowcell.id))
+    for key in keys:
+        result = hgd_key(redis_instance, key)
+        bin_index = int(result['bin_index'])
+        barcode_name = result['barcode_name']
+        rejection_status = result['rejection_status']
+        read_type_name = result['read_type_name']
+        status = result['status']
+        sequence_length_sum = int(result['read_length'])
+        read_count = int(result['read_count'])
+
+        flowcellHistogramSummary, created = FlowcellHistogramSummary.objects.get_or_create(
+            flowcell=flowcell,
+            barcode_name=barcode_name,
+            rejection_status=rejection_status,
+            read_type_name=read_type_name,
+            status=status,
+            bin_index=bin_index,
+        )
+
+        flowcellHistogramSummary.read_length += sequence_length_sum
+        flowcellHistogramSummary.read_count += read_count
+
+        flowcellHistogramSummary.save()
+
+@task(serializer="pickle")
+def fsb(flowcell):
+    keys = redis_instance.scan_iter("{}_flowcellStatisticBarcode_*".format(flowcell.id))
+    for key in keys:
+        result = hgd_key(redis_instance, key)
+        start_time = parser.parse(result['sample_time'])
+        barcode_name = result['barcode_name']
+        rejection_status = result['rejection_status']
+        type_name = result['type_name']
+        status = result['status']
+        sequence_length_sum = int(result['total_length'])
+        quality_average_sum = int(result['quality_sum'])
+        read_count = int(result['read_count'])
+        sequence_length_max = int(result["max_length"])
+        sequence_length_min = int(result["min_length"])
+        new_channel_list = list(result["channel_presence"])
+
+        flowcellStatisticBarcode, created = FlowcellStatisticBarcode.objects.get_or_create(
+            flowcell=flowcell,
+            sample_time=start_time,
+            barcode_name=barcode_name,
+            rejection_status=rejection_status,
+            read_type_name=type_name,
+            status=status,
+        )
+
+        flowcellStatisticBarcode.total_length += sequence_length_sum
+        flowcellStatisticBarcode.quality_sum += quality_average_sum
+        flowcellStatisticBarcode.read_count += read_count
+
+        if flowcellStatisticBarcode.max_length < sequence_length_max:
+            flowcellStatisticBarcode.max_length = sequence_length_max
+
+        if flowcellStatisticBarcode.min_length < sequence_length_min:
+            flowcellStatisticBarcode.min_length = sequence_length_min
+
+        channel_list = list(flowcellStatisticBarcode.channel_presence)
+        fusedlist = np.bitwise_or(np.array(channel_list, dtype=int), np.array(new_channel_list, dtype=int))
+
+        flowcellStatisticBarcode.channel_presence = ("").join(list(fusedlist.astype(str)))
+        flowcellStatisticBarcode.channel_count = np.count_nonzero(fusedlist == 1)
+
+        flowcellStatisticBarcode.save()
+
 @task()
 def update_flowcell_details(job_master_id):
     """
@@ -299,6 +469,11 @@ def update_flowcell_details(job_master_id):
             flowcell.start_time = minion_run_status_first.minKNOW_start_time
 
             logger.info('Flowcell id: {} - Setting start_time to {}'.format(flowcell.id, flowcell.start_time))
+        #
+        # Alternatively check the reads to find the earliest read?
+        #
+        #else:
+        #    first_read_entry =
 
         #
         # Define flowcell's sample_name
@@ -339,6 +514,85 @@ def update_flowcell_details(job_master_id):
         last_read = job_master.last_read
 
         # Todo: If the flowcell has no reads, it may have been reset and so we may need to recount it based on previous issue.
+
+        #if redis_instance.get("{}_has_fastq".format(flowcell.id)):
+        #    flowcell.has_fastq = True
+
+        #flowcell.size = redis_instance.get("{}_size".format(flowcell.id))
+
+        #redis_instance.delete("{}_size".format(flowcell.id))
+
+        #max_channel = redis_instance.get("{}_max_channel".format(flowcell.id))
+        #if max_channel:
+        #    if max_channel > flowcell.max_channel:
+        #        flowcell.max_channel = max_channel
+        #    redis_instance.delete("{}_max_channel".format(flowcell.id))
+
+        ### Get flowcell max_channel number.
+        has_fastq = gd_key(redis_instance, "{}_has_fastq".format(flowcell.id))
+        if has_fastq:
+            flowcell.has_fastq = has_fastq
+
+            total_read_length = gd_key(redis_instance,"{}_total_read_length".format(flowcell.id))
+            if total_read_length:
+                flowcell.total_read_length += int(total_read_length)
+
+            number_reads = gd_key(redis_instance, "{}_number_reads".format(flowcell.id))
+            if number_reads:
+                flowcell.number_reads += int(number_reads)
+
+            if number_reads and total_read_length:
+                flowcell.average_read_length = int(total_read_length)/int(number_reads)
+
+            max_channel = gd_key(redis_instance,"{}_max_channel".format(flowcell.id))
+            if max_channel:
+                max_channel = int(max_channel)
+                if max_channel > flowcell.max_channel:
+                    flowcell.max_channel = max_channel
+
+                    if max_channel > 512:
+
+                        flowcell.size = 3000
+
+                    elif max_channel > 126:
+
+                        flowcell.size = 512
+
+                    else:
+
+                        flowcell.size = 126
+
+            else:
+
+                flowcell.size = 512
+
+
+            ### Now to try and update all the channel values that we need to update...
+
+            for channel in range(1,flowcell.max_channel+1):
+                read_count = gd_key(redis_instance,"{}_{}_read_count".format(flowcell.id,channel))
+                read_length = gd_key(redis_instance, "{}_{}_read_length".format(flowcell.id, channel))
+                if read_count or read_length:
+                    flowcellChannelSummary, created = FlowcellChannelSummary.objects.get_or_create(
+                        flowcell=flowcell, channel=channel
+                    )
+                    if read_count:
+                        flowcellChannelSummary.read_count += int(read_count)
+                    if read_length:
+                        flowcellChannelSummary.read_length += int(read_length)
+                    flowcellChannelSummary.save()
+
+
+            ### Now try and update all the flowcellsummarystatistics
+
+            fsb.delay(flowcell)
+
+            fhs.delay(flowcell)
+
+            fsumb.delay(flowcell)
+            
+
+
 
         ### This query is slow - and it should be fast.
 

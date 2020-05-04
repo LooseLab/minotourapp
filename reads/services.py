@@ -27,6 +27,12 @@ from reads.models import (
 
 from communication.models import Message, NotificationConditions
 
+import redis
+
+redis_instance = redis.StrictRedis(host="127.0.0.1",
+                                  port=6379, db=0,decode_responses=True)
+
+
 # @task(rate_limit="2/m")
 
 @task()
@@ -75,7 +81,7 @@ def save_reads_bulk(reads):
         )
         reads_list.append(fastqread)
     try:
-        FastqRead.objects.bulk_create(reads_list)
+        #FastqRead.objects.bulk_create(reads_list)
         update_flowcell.delay(reads_list)
     except Exception as e:
         print(e)
@@ -215,11 +221,18 @@ def update_flowcell(reads_list):
 
 
 
-
-
-@task(serializer="pickle")
-@transaction.atomic
+#@task(serializer="pickle")
 def update_flowcell_counts(row):
+    """Playing with redis"""
+    redis_instance.set("{}_has_fastq".format(int(row["flowcell_id"])),1)
+    redis_instance.incrby("{}_number_reads".format(int(row["flowcell_id"])),int(row["read_id"]))
+    redis_instance.incrby("{}_total_read_length".format(int(row["flowcell_id"])),int(row["sequence_length"]))
+    saved_max_channel = redis_instance.get("{}_max_channel".format(int(row["flowcell_id"])))
+    if saved_max_channel and int(row["channel"])>int(saved_max_channel):
+        redis_instance.set("{}_max_channel".format(int(row["flowcell_id"])),int(row["channel"]))
+    else:
+        redis_instance.set("{}_max_channel".format(int(row["flowcell_id"])),int(row["channel"]))
+    """
     flowcell = (Flowcell.objects.select_for_update().filter(pk=int(row["flowcell_id"]))[0])
     # We want to try with this being atomic to make sure only one task works on the row at once.
     # Get the flowcell we are working on:
@@ -231,7 +244,7 @@ def update_flowcell_counts(row):
     flowcell.number_reads += row["read_id"]
     #update the total read length on the flowcell
     flowcell.total_read_length += row["sequence_length"]
-    flowcell.save()
+    #flowcell.save()
     flowcell.average_read_length = flowcell.total_read_length/flowcell.number_reads
     if int(row['channel']) > flowcell.max_channel:
         flowcell.max_channel = int(row['channel'])
@@ -246,26 +259,28 @@ def update_flowcell_counts(row):
             flowcell.size = 512
     flowcell.save()
     return
+    """
 
 
 @task()
 def update_chan_calc(readDF):
     pass
 
-@task(serializer="pickle")
-@transaction.atomic
+#@task(serializer="pickle")
 def save_flowcell_statistic_barcode_async(row):
     """
-    Save flowcell statistic barcode objects into the database row-wise on a pandas dataframe.
-    Data for the flowcell statistics on y
-    :param flowcell_id: The primary key of the flowcell database entry
-    :type flowcell_id: int
-    :param row: a pandas dataframe row
-    :type row: pandas.core.series.Series
-    :return: None
+    Shifting this to store in redis
+    Parameters
+    ----------
+    row
+
+    Returns
+    -------
+
     """
+
     flowcell_id = int(row["flowcell_id"][0])
-    flowcell = Flowcell.objects.get(pk=flowcell_id)
+    #flowcell = Flowcell.objects.get(pk=flowcell_id)
     utc = pytz.utc
     barcode_name = row["barcode_name"][0]
     type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
@@ -279,6 +294,46 @@ def save_flowcell_statistic_barcode_async(row):
     read_count = int(row["sequence_length"]["count"])
     channels = row["channel"]["unique"]
 
+    #our unique key for this is going to be:
+    uniquekey = "{}_flowcellStatisticBarcode_{}_{}_{}_{}_{}".format(flowcell_id,start_time,barcode_name,rejection_status,type_name,status)
+    ## Make sure these are all together.
+    min_prev = redis_instance.hget(uniquekey, "min_length")
+    max_prev = redis_instance.hget(uniquekey, "max_length")
+    prev_channel_list = redis_instance.hget(uniquekey, "channel_presence")
+    p = redis_instance.pipeline()
+    p.multi()
+    p.hset(uniquekey, "sample_time", str(start_time))
+    p.hset(uniquekey, "barcode_name", barcode_name)
+    p.hset(uniquekey, "rejection_status", rejection_status)
+    p.hset(uniquekey, "type_name", type_name)
+    p.hset(uniquekey, "status", str(status))
+    p.hincrby(uniquekey,"total_length",sequence_length_sum)
+    p.hincrby(uniquekey,"quality_sum",quality_average_sum)
+    p.hincrby(uniquekey,"read_count",read_count)
+    if min_prev:
+        min_prev=int(min_prev)
+        if min_prev > sequence_length_min:
+            p.hset(uniquekey,"min_length",sequence_length_min)
+    else:
+        p.hset(uniquekey, "min_length", sequence_length_min)
+    if max_prev:
+        max_prev=int(max_prev)
+        if max_prev < sequence_length_max:
+            p.hset(uniquekey, "max_length", sequence_length_max)
+    else:
+        p.hset(uniquekey, "max_length", sequence_length_max)
+    if prev_channel_list:
+        channel_list = list(prev_channel_list)
+    else:
+        channel_list = list("0"*3000)
+
+    for c in channels:
+        channel_list[int(c) - 1] = "1"
+    channel_presence = "".join(channel_list)
+    p.hset(uniquekey,"channel_presence",channel_presence)
+    p.execute()
+
+    """
     flowcellStatisticBarcode, created = FlowcellStatisticBarcode.objects.get_or_create(
         flowcell=flowcell,
         sample_time=start_time,
@@ -304,15 +359,35 @@ def save_flowcell_statistic_barcode_async(row):
 
         channel_list[int(c) - 1] = "1"
 
-        flowcellStatisticBarcode.channel_presence = "".join(channel_list)
-        flowcellStatisticBarcode.channel_count = len(channels)
+    flowcellStatisticBarcode.channel_presence = "".join(channel_list)
+    flowcellStatisticBarcode.channel_count = len(channels)
 
     flowcellStatisticBarcode.save()
+    
+    """
 
 
-@task(serializer="pickle")
-@transaction.atomic
+
+#@task(serializer="pickle")
 def save_flowcell_channel_summary_async(row):
+    """
+        Convert to redis.
+        Model is store under
+        flowcell_id_channel_read_length
+        flowcell_id_channel_read_count
+
+        Parameters
+        ----------
+        row
+
+        Returns
+        -------
+
+        """
+
+    redis_instance.incrby("{}_{}_read_count".format(int(row["flowcell_id"]),int(row["channel"][0])), int(row["sequence_length"]["count"]))
+    redis_instance.incrby("{}_{}_read_length".format(int(row["flowcell_id"]),int(row["channel"][0])), int(row["sequence_length"]["sum"]))
+
     """
     Save flowcell channel summary into the database row-wise on a pandas dataframe. Used for the channel visualisations.
     :param flowcell_id: Primary key of the flowcell database entry
@@ -320,6 +395,7 @@ def save_flowcell_channel_summary_async(row):
     :param row: a pandas dataframe row
     :type row: pandas.core.series.Series
     :return: None
+    """
     """
     flowcell_id = int(row["flowcell_id"][0])
     flowcell = Flowcell.objects.get(pk=flowcell_id)
@@ -332,10 +408,9 @@ def save_flowcell_channel_summary_async(row):
     flowcellChannelSummary.read_length += sequence_length_sum
     flowcellChannelSummary.read_count += read_count
     flowcellChannelSummary.save()
+    """
 
-
-@task(serializer="pickle")
-@transaction.atomic
+#@task(serializer="pickle")
 def save_flowcell_histogram_summary_async(row):
     """
     Save flowcell histogram barcode objects into the database row-wise on a pandas dataframe.
@@ -347,7 +422,7 @@ def save_flowcell_histogram_summary_async(row):
     :return: None
     """
     flowcell_id = int(row["flowcell_id"][0])
-    flowcell = Flowcell.objects.get(pk=flowcell_id)
+    #flowcell = Flowcell.objects.get(pk=flowcell_id)
     barcode_name = row["barcode_name"][0]
     read_type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
     #read_type_name = row["type__name"][0]
@@ -358,6 +433,17 @@ def save_flowcell_histogram_summary_async(row):
     sequence_length_sum = int(row["sequence_length"]["sum"])
     read_count = int(row["sequence_length"]["count"])
 
+    uniquekey = "{}_flowcellHistogramSummary_{}_{}_{}_{}_{}".format(flowcell_id, barcode_name,
+                                                                    rejection_status, read_type_name, status,bin_index)
+
+    redis_instance.hset(uniquekey, "bin_index", bin_index)
+    redis_instance.hset(uniquekey, "barcode_name", barcode_name)
+    redis_instance.hset(uniquekey, "rejection_status", rejection_status)
+    redis_instance.hset(uniquekey, "read_type_name", read_type_name)
+    redis_instance.hset(uniquekey, "status", str(status))
+    redis_instance.hincrby(uniquekey, "read_length", sequence_length_sum)
+    redis_instance.hincrby(uniquekey, "read_count", read_count)
+    """
     flowcellHistogramSummary, created = FlowcellHistogramSummary.objects.get_or_create(
         flowcell=flowcell,
         barcode_name=barcode_name,
@@ -371,10 +457,10 @@ def save_flowcell_histogram_summary_async(row):
     flowcellHistogramSummary.read_count += read_count
 
     flowcellHistogramSummary.save()
+    """
 
 
-@task(serializer="pickle")
-@transaction.atomic
+#s@task(serializer="pickle")
 def save_flowcell_summary_barcode_async(row):
     """
     Save flowcell summary barcode rows, applied to a pandas dataframe
@@ -397,6 +483,53 @@ def save_flowcell_summary_barcode_async(row):
     quality_average_sum = int(row["quality_average"]["sum"])
     read_count = int(row["sequence_length"]["count"])
     channels = row["channel"]["unique"]
+
+
+
+    uniquekey = "{}_flowcellSummaryBarcode_{}_{}_{}_{}".format(flowcell_id, barcode_name,
+                                                                    rejection_status, type_name, status)
+    prev_channel_list = redis_instance.hget(uniquekey, "channel_presence")
+    min_prev = redis_instance.hget(uniquekey, "min_length")
+    max_prev = redis_instance.hget(uniquekey, "max_length")
+    p = redis_instance.pipeline()
+    p.multi()
+    p.hset(uniquekey, "barcode_name", barcode_name)
+    p.hset(uniquekey, "rejection_status", rejection_status)
+    p.hset(uniquekey, "type_name", type_name)
+    p.hset(uniquekey, "status", str(status))
+    p.hincrby(uniquekey, "total_length", sequence_length_sum)
+    p.hincrby(uniquekey, "quality_sum", quality_average_sum)
+    p.hincrby(uniquekey, "read_count", read_count)
+
+    if min_prev:
+        min_prev = int(min_prev)
+        if min_prev > sequence_length_min:
+            p.hset(uniquekey, "min_length", sequence_length_min)
+    else:
+        p.hset(uniquekey, "min_length", sequence_length_min)
+
+    if max_prev:
+        max_prev = int(max_prev)
+        if max_prev < sequence_length_max:
+            p.hset(uniquekey, "max_length", sequence_length_max)
+    else:
+        p.hset(uniquekey, "max_length", sequence_length_max)
+
+
+
+    if prev_channel_list:
+        channel_list = list(prev_channel_list)
+    else:
+        channel_list = list("0" * 3000)
+
+    for c in channels:
+        channel_list[int(c) - 1] = "1"
+
+    channel_presence = "".join(channel_list)
+
+    p.hset(uniquekey, "channel_presence", channel_presence)
+    p.execute()
+    """
     flowcellSummaryBarcode, created = FlowcellSummaryBarcode.objects.get_or_create(
         flowcell=flowcell,
         barcode_name=barcode_name,
@@ -409,7 +542,7 @@ def save_flowcell_summary_barcode_async(row):
     flowcellSummaryBarcode.read_count += read_count
     if flowcellSummaryBarcode.max_length < sequence_length_max:
         flowcellSummaryBarcode.max_length = sequence_length_max
-    if flowcellSummaryBarcode.min_length < sequence_length_min:
+    if flowcellSummaryBarcode.min_length == 0 or flowcellSummaryBarcode.min_length > sequence_length_min:
         flowcellSummaryBarcode.min_length = sequence_length_min
     channel_list = list(flowcellSummaryBarcode.channel_presence)
     for c in channels:
@@ -417,6 +550,7 @@ def save_flowcell_summary_barcode_async(row):
     flowcellSummaryBarcode.channel_presence = "".join(channel_list)
     flowcellSummaryBarcode.channel_count = len(channels)
     flowcellSummaryBarcode.save()
+    """
 
 
 def save_flowcell_summary_barcode(flowcell_id, row):
