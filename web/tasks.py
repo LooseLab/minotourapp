@@ -279,9 +279,9 @@ def scan_keys(r, pattern):
     return result
 
 
-def gd_key(r,key):
+def gd_key(r, key):
     """
-
+    Safely delete a key
     Parameters
     ----------
     r: redis instance
@@ -301,7 +301,7 @@ def gd_key(r,key):
 
 def hgd_key(r, key):
     """
-
+    Safely delete a redis hash (Dictionary)
     Parameters
     ----------
     r: redis instance
@@ -320,6 +320,17 @@ def hgd_key(r, key):
 
 @task(serializer="pickle")
 def fsumb(flowcell):
+    """
+    Flowcell summary barcode, get all keys related to the flowcell summary barcode values of this flowcell
+    from redis and update them
+    Parameters
+    ----------
+    flowcell
+
+    Returns
+    -------
+
+    """
     keys = redis_instance.scan_iter("{}_flowcellSummaryBarcode_*".format(flowcell.id))
     for key in keys:
         result = hgd_key(redis_instance, key)
@@ -341,6 +352,7 @@ def fsumb(flowcell):
             read_type_name=type_name,
             status=status,
         )
+
         flowcellSummaryBarcode.total_length += sequence_length_sum
         flowcellSummaryBarcode.quality_sum += quality_average_sum
         flowcellSummaryBarcode.read_count += read_count
@@ -360,6 +372,17 @@ def fsumb(flowcell):
 
 @task(serializer="pickle")
 def fhs(flowcell):
+    """
+    Flowcell histogram summary. Get all keys related to the flowcell histogram values of this flowcell
+    from redis and update them
+    Parameters
+    ----------
+    flowcell
+
+    Returns
+    -------
+
+    """
     keys = redis_instance.scan_iter("{}_flowcellHistogramSummary_*".format(flowcell.id))
     for key in keys:
         result = hgd_key(redis_instance, key)
@@ -387,6 +410,17 @@ def fhs(flowcell):
 
 @task(serializer="pickle")
 def fsb(flowcell):
+    """
+    Flowcell summary Barcode. Get all keys related to the flowcell summary barcode values of this flowcell
+    from redis and update them
+    Parameters
+    ----------
+    flowcell
+
+    Returns
+    -------
+
+    """
     keys = redis_instance.scan_iter("{}_flowcellStatisticBarcode_*".format(flowcell.id))
     for key in keys:
         result = hgd_key(redis_instance, key)
