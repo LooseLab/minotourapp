@@ -4,11 +4,17 @@
 class ArticController {
     constructor(flowcellId) {
         console.log("Initialising Artic controoller");
-        this._coverageScatterMaster;
-        this._coverageScatterDetail;
+        this._articCoverageScatterMaster = "hello";
+        this._articCoverageScatterDetail = "world";
         this._flowcellId = flowcellId;
+        this.first = true;
         // this.createCoverageMaster();
         this.drawArticChart(flowcellId);
+        this._showWidth = 250000;
+        this._barcodeChosen = "banter"
+        this._axiosInstance = axios.create({
+            headers: {"X-CSRFToken": getCookie('csrftoken')}
+        });
     }
 
 
@@ -35,7 +41,7 @@ class ArticController {
     createCoverageMaster(data, flowcellId) {
         const self = this;
         let that = this;
-        this._coverageScatterMaster = Highcharts.chart("coverageScatterMaster", {
+        this._articCoverageScatterMaster = Highcharts.chart("coverageArticMaster", {
 
             chart: {
                 zoomType: "x",
@@ -43,7 +49,7 @@ class ArticController {
                 marginLeft: 50,
                 marginRight: 20,
                 events: {
-                    selection: afterSelection.bind(this)
+                    selection: that.afterSelection.bind(this)
                 }
 
             },
@@ -122,7 +128,7 @@ class ArticController {
             ////////////////////////////////////////////////////////////
             ///////// Call the detail chart drawing functions //////////
             ////////////////////////////////////////////////////////////
-            coverageScatterDetail = that.createDetailChart("coverageScatterDetail", data.coverage.ymax, "Coverage");
+            that._articCoverageScatterDetail = that.createDetailChart("coverageArticDetail", data.coverage.ymax, "Coverage");
         });
 
     }
@@ -215,6 +221,8 @@ class ArticController {
     afterSelection(event) {
         // Event function called after the zoom box is chosen
         let label;
+        let that = this;
+        console.log(this);
         let flowcellId = this._flowcellId;
         // Prevent the default behaviour
         event.preventDefault();
@@ -222,8 +230,8 @@ class ArticController {
         var min = Math.trunc(event.xAxis[0].min);
         var max = Math.trunc(event.xAxis[0].max);
         // If the selected box is too large tell the selector to learn to be less greedy
-        if (max - min > showWidth) {
-            label = coverageScatterDetail.renderer.label('Please select a smaller region', 100, 120)
+        if (max - min > that._showWidth) {
+            label = that._articCoverageScatterDetail.renderer.label('Please select a smaller region', 100, 120)
                 .attr({
                     fill: Highcharts.getOptions().colors[0],
                     padding: 10,
@@ -242,9 +250,9 @@ class ArticController {
         }
 
         // Change the grey plot band on the master chart to reflect the selected region
-        coverageScatterMaster.xAxis[0].removePlotBand('mask-before');
+        that._articCoverageScatterMaster.xAxis[0].removePlotBand('mask-before');
         // Add the new one in the correct location
-        coverageScatterMaster.xAxis[0].addPlotBand({
+        that._articCoverageScatterMaster.xAxis[0].addPlotBand({
             id: 'mask-before',
             from: min,
             to: max,
@@ -252,34 +260,53 @@ class ArticController {
         });
 
         // Show the loading screen on the detail charts
-        let charts = [coverageScatterDetail];
+        let charts = [this._articCoverageScatterDetail];
 
         charts.forEach(function (chart) {
             chart.showLoading('Fetching data from the server');
         });
 
-        // Get the detail chart data for the zoom selection from the server
-        $.getJSON('/api/v1/artic/coverage/detail', {
-            min,
-            max,
-            chromosome_chosen,
-            flowcellId
-        }, function (newSeriesDict, statusText, xhr) {
-
+        this._axiosInstance.get('/api/v1/artic/visualisation/detail', {
+            params: {min, max, barcodeChosen: this._barcodeChosen, flowcellId}
+        }).then(response => {
+            console.log(response)
             // if successful request, set the detail charts to show the newly retrieve data
-            if (xhr.status === 200) {
+            if (response.status === 200) {
 
-                update_axes_and_data(coverageScatterDetail, min, max, newSeriesDict.coverage, true);
+                that.updateAxesAndData(that._articCoverageScatterDetail, min, max, response.data.coverage, true);
 
-            } else if (xhr.status === 404) {
+            } else if (response.status === 404) {
 
             } else {
                 throw "Request error";
             }
 
+        }).catch(error => {
+            console.error(error)
         });
 
 
+    }
+
+
+    updateAxesAndData(chart, min, max, data, ymax) {
+        // Y max let's us know we need to change the yAxis
+        // Set the xAxis extremes to the newly selected values
+        chart.xAxis[0].setExtremes(min, max);
+        console.log(data.ymax);
+        console.log(chart);
+        // if we need to update the yaxis as well
+        if (ymax) {
+            // set the yAxisextremes
+            chart.yAxis[0].setExtremes(0, data.ymax);
+        }
+        // set the data for the chart to display
+        chart.series[0].setData(data.data);
+        // update the axes
+        chart.xAxis[0].update();
+
+        // hide the loading screen
+        chart.hideLoading();
     }
 
     createEbSelectionBox(flowcellId) {
@@ -324,7 +351,6 @@ class ArticController {
 
 
                 barcodes.forEach(function (barcode, index) {
-                    console.log(barcode)
                     // if this is the first time so we're creating the arrays
                     if (index == 0 && first_iteration) {
                         // the div to the front of the sel div, make it sel__box class instead of sel
@@ -360,7 +386,7 @@ class ArticController {
                 $('.sel__box__options').click(function () {
                     console.log("The things....")
                     var txt = $(this).text();
-                    chromosome_chosen = txt;
+                    that._barcodeChosen = txt;
                     var index = $(this).index();
 
 
@@ -385,21 +411,57 @@ class ArticController {
      * @param flowcellId number - the primary key of the flowcell
      * @param barcodeChosen str - the barcode that we are drawing the data for
      */
-    drawSelectedBarcode(flowcellId, barcodeChosen){
+    drawSelectedBarcode(flowcellId, barcodeChosen) {
         /*
         Reload a new chromosomes data
         */
         let that = this;
-        console.log(that._coverageScatterMaster);
-        $.getJSON('/api/v1/artic/visualisation/master', {flowcellId, barcodeChosen}, function (data) {
-            that._coverageScatterMaster.yAxis[0].setExtremes(0, data.coverage.ymax);
-            that.updateExistingChart(that.coverageScatterMaster, data.coverage.data, 0);
+        console.log(that)
+        console.log(that._articCoverageScatterMaster);
+        this._axiosInstance.get('/api/v1/artic/visualisation/master', {
+            params: {
+                flowcellId,
+                barcodeChosen
+            }
+        }).then(response => {
+            console.log(response)
+            that._articCoverageScatterMaster.yAxis[0].setExtremes(0, response.data.coverage.ymax);
+            that.updateExistingChart(that._articCoverageScatterMaster, response.data.coverage.data, 0);
 
+        }).catch(error => {
+            console.log(error)
+            console.error(error)
         });
+
+        let coverageDetail = $("#coverageArticDetail").highcharts();
+        console.log(coverageDetail)
+        let min = coverageDetail.xAxis[0].min;
+        let max = coverageDetail.xAxis[0].max;
+        console.log(min)
+        // If min is not undefined, the charts are already displaying data, so update them, otherwise we're good
+        if (min !== undefined) {
+            that._articCoverageScatterDetail.showLoading('Fetching data from the server')
+
+            this._axiosInstance.get('/api/v1/artic/visualisation/detail', {
+                params: {
+                    min,
+                    max,
+                    barcodeChosen: that._barcodeChosen,
+                    flowcellId
+                }
+            }).then(response => {
+                that.updateAxesAndData(that._articCoverageScatterDetail, min, max, response.data.coverage, true);
+                // that.updateExistingChart(coverageDetail, response.coverage.data, 0);
+                // that.updateExistingChart(that._articCoverageScatterMaster, response.coverage.data, 0);
+            }).catch(error => {
+                console.error(error)
+            });
+        }
     }
 
     // draw the charts, this is the function that is called in request data every 60 seconds
     drawArticChart() {
+        console.log("drawingarticcharts");
         let that = this;
         let flowcellId = document.querySelector("#flowcell-id").value;
         that.createEbSelectionBox(flowcellId);
@@ -409,31 +471,39 @@ class ArticController {
         }
 
         // Select the coverage detail chart to see if it already exists
-        let coverageDetail = $("#coverageArticDetail");
 
-        let min, max;
         console.time("scatter");
 
         let startData = {"coverage": {"ymax": 1, "data": [0, 1]}};
         // If the coverage detail chart doesn't exist, draw it for the first time by calling the create master chart which has a callback that draws the other charts
-        if (coverageDetail.length === 0) {
+        if (this.first === true) {
             that.createCoverageMaster(startData, flowcellId);
+            this.first = false;
         } else {
+            let coverageDetail = $("#coverageArticDetail").highchart();
+            console.log(coverageDetail)
+
+            let min, max;
             // If the coverage detail chart does exist, update the existing charts
             // Get the minimum and maximum values of the xAxis
-            min = coverageDetail.min;
-            max = coverageDetail.max;
-            // If min is not undefined, the charts are already displaying data, so update thew, otherwise we're good
+            min = coverageDetail.xAxis[0].min;
+            max = coverageDetail.xAxis[0].max;il.max;
+            // If min is not undefined, the charts are already displaying data, so update them, otherwise we're good
             if (min !== undefined) {
-                $.getJSON('/api/v1/artic/coverage/detail', {
-                    min,
-                    max,
-                    chromosome_chosen,
-                    flowcellId
-                }, function (newSeriesDict, statusText, xhr) {
-                    that.updateExistingChart(that.coverageScatterMaster, data.coverage.data, 0);
-                    that.updateExistingChart(coverageDetail, newSeriesDict.coverage.data, 0);
+                this._axiosInstance.get('/api/v1/artic/visualisation/detail', {
+                    params: {
+                        min,
+                        max,
+                        barcodeChosen: that._barcodeChosen,
+                        flowcellId
+                    }
+                }).then(response => {
+                    that.updateExistingChart(coverageDetail, response.coverage.data, 0);
+                    that.updateExistingChart(that._articCoverageScatterMaster, response.coverage.data, 0);
+                }).catch(error => {
+                    console.error(error)
                 });
+                this.drawSelectedBarcode(flowcellId, this._barcodeChosen)
             }
 
 
