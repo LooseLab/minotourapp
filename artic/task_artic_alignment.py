@@ -21,6 +21,7 @@ from readuntil.models import ExpectedBenefitChromosomes
 import gzip
 
 logger = get_task_logger(__name__)
+# TODO split artic task into a sexy chain, rather than blocking a worker for so long
 
 @task()
 def run_artic_command(base_results_directory, barcode_name, jobmaster_pk):
@@ -49,7 +50,7 @@ def run_artic_command(base_results_directory, barcode_name, jobmaster_pk):
     scheme_dir = get_env_variable("MT_ARTIC_SCEHEME_DIR")
     os.chdir(f"{base_results_directory}/{barcode_name}")
     cmd = ["bash", "-c",
-           "source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate artic-ncov2019-medaka && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V1 {barcode_name}"]
+           f"source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate artic-ncov2019-medaka && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V1 {barcode_name}"]
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -323,11 +324,17 @@ def run_artic_pipeline(task_id):
     print(f"Fetched reads.")
     print(fasta_df_barcode.shape)
 
+    min_read_length = 400
+
+    max_read_length = 700
+
     fasta_df_barcode["sequence_length"] = fasta_df_barcode["sequence"].str.len()
 
-    fasta_df_barcode = fasta_df_barcode[fasta_df_barcode["sequence_length"].between(400, 700, inclusive=True)]
+    fasta_df_barcode = fasta_df_barcode[fasta_df_barcode["sequence_length"].between(
+        min_read_length, max_read_length, inclusive=True)]
 
-    print(f"Reads after filtering for read length4: {fasta_df_barcode.shape[0]}")
+    print(f"Reads after filtering for read lengths between"
+          f" {min_read_length} - {max_read_length}: {fasta_df_barcode.shape[0]}")
     # TODO come back to look at this
     # fasta_df_barcode["barcode_name"] = np.where(fasta_df_barcode["barcode_name"].eq("No barcode"), "Unknown",
     #                                             fasta_df_barcode["barcode_name"])
@@ -515,7 +522,7 @@ def run_artic_pipeline(task_id):
                     barcode_sorted_fastq_path = Path(f"{base_result_dir_path}/{barcode}/{barcode}.fastq")
 
                     coverage_path = Path(
-                        f"{base_result_dir_path}/{barcode}/coverage_{chrom_key}_{flowcell.id}_{task.id}.dat"
+                        f"{base_result_dir_path}/{barcode}/coverage_{chrom_key}_{flowcell.id}_{task.id}_{barcode}.dat"
                     )
                     counts_path = Path(
                         f"{base_result_dir_path}/{barcode}/counts_{chrom_key}_{flowcell.id}_{task.id}_{barcode}.dat"

@@ -9,7 +9,12 @@ urlpatterns = [
     ),
     url(
         r'^api/v1/artic/visualisation/master/$',
-        views.get_artic_barcodes,
+        views.get_artic_master_chart_data,
         name="get-artic-barcodes"
+    ),
+    url(
+        r'^api/v1/artic/visualisation/detail/$',
+        views.get_artic_detail_chart_data,
+        name="get-artic-detail"
     )
 ]
