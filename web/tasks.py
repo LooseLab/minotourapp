@@ -127,8 +127,11 @@ def run_monitor():
 
                     barcode_name = flowcell_job.barcode.name
                     # generate the base results path
+
+                    track_coverage_task_id = JobMaster.objects.get(flowcell=flowcell_job.flowcell
+                                                                   , job_type__name="Track Artic Coverage").id
                     base_result_dir_path = make_results_directory_artic(
-                        flowcell_job.flowcell.id, flowcell_job.id
+                        flowcell_job.flowcell.id, track_coverage_task_id
                     )
 
                     # run the command task.
