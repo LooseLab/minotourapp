@@ -1703,7 +1703,7 @@ def flowcell_speed(request, pk):
         df["mean_total_length"] = df["sum_total_length"].rolling(window=window).mean()
         # calculate the mean speed over those rolling windows in bases per second
         df["mean_speed"] = (
-            df["mean_total_length"].div(df["mean_chan_count"]).div(60).round(decimals=0)
+            df["mean_total_length"].div(df["mean_chan_count"]).div(600).round(decimals=0)
         )
     elif len(df.status.unique()) == 1:
         # We only have either pass or fail reads in the dataset
