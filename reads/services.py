@@ -126,9 +126,13 @@ def update_flowcell(reads_list):
         readDF["is_pass"] == False, "Fail", "Pass"
     )
 
-    readDF["start_time_truncate"] = np.array(
+    readDF["start_time_round"] = np.array(
+        ### Converting to store data in 10 minute windows.
         readDF["start_time"], dtype="datetime64[m]"
     )
+
+    readDF["start_time_truncate"] = readDF['start_time_round'].apply(
+        lambda dt: datetime.datetime(dt.year, dt.month, dt.day, dt.hour, 10 * (dt.minute // 10)))
 
     readDF_allreads = readDF.copy()
     readDF_allreads["barcode_name"] = "All reads"
