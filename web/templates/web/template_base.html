@@ -54,33 +54,10 @@
     <script src="{% static 'web/libraries/heatmap.src.js' %}"></script>
     <script src="{% static 'web/libraries/no-data-to-display.js' %}"></script>
 
-    <!-- jQuery 2.2.3 -->
     <script src="{% static 'web/libraries/cookie.js' %}"></script>
     <script src="{% static 'web/libraries/ajax_setup.js' %}"></script>
-    <script src="{% static 'web/minotour.js' %}?{% now 'c' %}"></script>
+    <script src="{% static 'web/minotour_utils.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/controllers/RemoteControlController.js' %}"></script>
-
-
-    {#    <script src="{% static 'web/libraries/html5shiv-master ' %}"></script>#}
-    {#    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>#}
-    <![endif]-->
-
-    <style>
-        .principal {
-            width: 100%;
-            height: 600px;
-        }
-
-        .detail_chart {
-            width: 100%;
-            height: 200px;
-        }
-
-        .master_chart {
-            width: 100%;
-            height: 70px;
-        }
-    </style>
 </head>
 
 {% block body_tag %}
@@ -155,13 +132,10 @@
 <script src="{% static 'web/js/flowcell/updateBarcodeNavTab.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/models/Message.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/controllers/MessageController.js' %}?{% now 'c' %}"></script>
-<script src="{% static 'web/js/services/MessageService.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/views/MessagesView.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/controllers/AppController.js' %}?{% now 'c' %}"></script>
-
 <script src="{% static 'web/js/helpers/DateHelper.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/controllers/FlowcellTableController.js' %}"></script>
-
 <script src="{% static 'web/js/views/MView.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/models/FlowcellTab.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/models/FlowcellTabList.js' %}?{% now 'c' %}"></script>
@@ -181,10 +155,7 @@
 <script src="{% static 'web/js/views/MMessageView.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/controllers/FlowcellNotificationController.js' %}?{% now 'c' %}"></script>
 <script src="{% static 'web/js/controllers/ArticController.js' %}?{% now 'c' %}"></script>
-
-
 <script src="{% static 'web/FlowcellPageApp.js' %}?{% now 'c' %}"></script>
-
 <!-- Data tables -->
 <script src="{% static 'web/libraries/datatables/js/jquery.dataTables.min.js' %}"></script>
 
@@ -193,12 +164,6 @@
      user experience. Slimscroll is required when using the
      fixed layout. -->
 <script src="{% static 'web/plugins/slimScroll/jquery.slimscroll.min.js' %}"></script>
-
-{#<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js"></script>#}
-{#TODO get local library of Vue#}
-{#<script src="https://unpkg.com/vue"></script>#}
-{#<script src="{% static 'web/libraries/vue.js' %}"></script>#}
-
 
 {% block javascript %}
 
