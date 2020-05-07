@@ -26,45 +26,45 @@
                     {% csrf_token %}
                     <div class="box-body">
                         <div class="form-group">
-                            <label class="col-sm-2 control-label">Username</label>
+                            <label class="col-sm-2 ">Username</label>
 
-                            <div class="col-sm-10 control-label" style="height: 100%; text-align: left;">
+                            <div class="col-sm-10 " style="height: 100%; text-align: left;">
                                 {{ request.user.username }}
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="id_email" class="col-sm-2 control-label">Email</label>
+                            <label for="id_email" class="col-sm-2 ">Email</label>
 
                             <div class="col-sm-10">
                                 {{ form.email.errors }}
-                                <input class="form-control" type="email" name="email" id="id_email" maxlength="120"
+                                <input class="input-email" type="email" name="email" id="id_email" maxlength="120"
                                        required
                                        value="{{ request.user.email }}">
                             </div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-2 control-label">Access Token</label>
+                            <label class="col-sm-2 ">Access Token</label>
 
-                            <div class="col-sm-10 control-label" style="height: 100%; text-align: left;">
-                                <span id="token">{{ authToken }}</span>&nbsp;<button id="btn-copy-token"
+                            <div class="col-sm-10 " style="height: 100%; text-align: left;">
+                                <span id="token">{{ authToken }}</span>&nbsp;<span id="btn-copy-token"
                                                                                      class="btn btn-info btn-sm">Copy
-                            </button>
-                                <span id="msg"></span><br>
+                            </span>
+                                <span id="copy-msg"></span><br>
                             </div>
 
                         </div>
                         <div class="form-group">
-                            <label for="id_twitter_handle" class="col-sm-2 control-label">Twitter Handle</label>
+                            <label for="id_twitter_handle" class="col-sm-2 ">Twitter Handle</label>
 
                             <div class="col-sm-10">
                                 {{ form.twitter_handle.errors }}
-                                <input class="form-control" type="text" name="twitter_handle" id="id_twitter_handle"
+                                <input class="twitter-input" type="text" name="twitter_handle" id="id_twitter_handle"
                                        maxlength="32"
                                        value="{{ userDetails.twitterhandle }}">
                             </div>
                         </div>
                         <div class="form-group">
-                            <div class="col-sm-offset-2 col-sm-10">
+                            <div class="col-sm-10">
                                 <div class="checkbox">
                                     <label>
                                         {{ form.receive_emails.errors }}
@@ -80,7 +80,7 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <div class="col-sm-offset-2 col-sm-10">
+                            <div class="col-sm-10">
                                 <div class="checkbox">
                                     <label>
                                         {{ form.receive_tweets.errors }}
@@ -112,11 +112,24 @@
 {% block javascript %}
 
     <script>
-
-        document.getElementById("btn-copy-token").addEventListener("click", function () {
-            copyToClipboardMsg(document.getElementById("token"), "msg");
-        });
-
+        /**
+         * Set a message and clear it three seconds later.
+         * @param {string} msg The messsage to set on resolution of the promise.
+         */
+        function setMessage(msg){
+            $("#copy-msg").text(msg)
+            setInterval(()=>{$("#copy-msg").text("")}, 3000)
+        }
+        $(function () {
+            $('#btn-copy-token').click(function () {
+                navigator.clipboard.writeText($("#token").text()).then(()=>{
+                    setMessage("Text copied to clipboard.")
+                }, (err)=>{
+                    setMessage("Copy not supported or blocked.  Press Ctrl+c to copy.")
+                    console.error(err)
+                })
+            });
+         });
         const topPadding = $(".main-header").height() + 16;
         $(".content-wrapper").css("padding-top", `${topPadding}px`);
 
