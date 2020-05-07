@@ -258,6 +258,7 @@ def update_run_start_time():
     This method update the field start_time of run based on the live data or
     the header of the first fastq read
     """
+    # TODO could this be improved?
 
     runs = Run.objects.all()
 
@@ -268,7 +269,7 @@ def update_run_start_time():
             run.start_time = run.RunDetails.last().minKNOW_start_time
             origin = "Live data"
             run.save()
-            print("Updating start_time for run {} from {}".format(run.runid, origin))
+            logger.info(f"Updating start_time for run {run.runid} from {origin}")
 
 
 def scan_keys(r, pattern):
@@ -414,7 +415,7 @@ def fhs(flowcell):
 @task(serializer="pickle")
 def fsb(flowcell):
     """
-    Flowcell summary Barcode. Get all keys related to the flowcell summary barcode values of this flowcell
+    Flowcell statistic Barcode. Get all keys related to the flowcell summary barcode values of this flowcell
     from redis and update them
     Parameters
     ----------

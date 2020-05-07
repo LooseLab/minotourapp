@@ -58,6 +58,7 @@ def run_artic_command(base_results_directory, barcode_name, jobmaster_pk):
     if not out and err:
         logger.info("We are done here. Artic out!")
         logger.info(out)
+        logger.info(err)
     else:
         logger.info("¯\_(ツ)_/¯")
         logger.warning(str(out))
@@ -278,7 +279,7 @@ def replicate_counts_array_barcoded(barcode_names, counts_dict):
 @task()
 def run_artic_pipeline(task_id):
     """
-    Run the artic pipeline on a flwocells amount of reads
+    Run the artic pipeline on a flowcells amount of reads
     Parameters
     ----------
     task_id
