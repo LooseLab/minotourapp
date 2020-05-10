@@ -99,8 +99,8 @@ def harvestreads():
                 reads_list.append(fastqread)
 
         try:
-            FastqRead.objects.bulk_create(reads_list,batch_size=500)
             update_flowcell.delay(reads_list)
+            FastqRead.objects.bulk_create(reads_list,batch_size=500)
         except Exception as e:
             print(e)
             return str(e)
@@ -127,9 +127,10 @@ def update_flowcell(reads_list):
     # This manipulation returns a flowcell_id, read count and max channel for each flowcell in the dataFrame
     #readDF = pd.DataFrame([o.__dict__ for o in reads_list]).drop(['_state'], axis=1)
     readDF = pd.DataFrame([o.__dict__ for o in reads_list])
-    print (readDF.head())
     readDF['channel'] = readDF['channel'].astype(int)
     readDF['sequence_length'] = readDF['sequence_length'].astype(int)
+
+    readDF = readDF.drop(columns=['sequence','quality'])
 
     results = readDF.groupby(['flowcell_id']).agg({"read_id": "count", "channel": "max","sequence_length":"sum"})
     results.reset_index().apply(
@@ -494,7 +495,7 @@ def save_flowcell_summary_barcode_async(row):
     type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
     rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"][0]).name
     flowcell_id = int(row["flowcell_id"][0])
-    flowcell = Flowcell.objects.get(pk=flowcell_id)
+    #flowcell = Flowcell.objects.get(pk=flowcell_id)
     barcode_name = row["barcode_name"][0]
     status = row["is_pass"][0]
     #rejection_status = row["rejected_barcode_name"][0]
@@ -504,9 +505,6 @@ def save_flowcell_summary_barcode_async(row):
     quality_average_sum = int(row["quality_average"]["sum"])
     read_count = int(row["sequence_length"]["count"])
     channels = row["channel"]["unique"]
-
-
-
     uniquekey = "{}_flowcellSummaryBarcode_{}_{}_{}_{}".format(flowcell_id, barcode_name,
                                                                     rejection_status, type_name, status)
     prev_channel_list = redis_instance.hget(uniquekey, "channel_presence")
@@ -535,8 +533,6 @@ def save_flowcell_summary_barcode_async(row):
             p.hset(uniquekey, "max_length", sequence_length_max)
     else:
         p.hset(uniquekey, "max_length", sequence_length_max)
-
-
 
     if prev_channel_list:
         channel_list = list(prev_channel_list)
