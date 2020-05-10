@@ -25,6 +25,8 @@ from pathlib import Path
 from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
 from dateutil import parser
 
+from reads.services import harvestreads
+
 import redis
 import numpy as np
 
@@ -48,6 +50,9 @@ def run_monitor():
     logger.info("--------------------------------")
     logger.info("Running run_monitor celery task.")
     logger.info("--------------------------------")
+
+    # This fires a new task every 30 seconds to collect any uploaded reads and basically process them.
+    harvestreads.delay()
 
     # Create a list of all flowcells that have been active in the last 48 hours
     flowcell_list = [x for x in Flowcell.objects.all() if x.active()]
@@ -486,6 +491,7 @@ def update_flowcell_details(job_master_id):
     job_master = JobMaster.objects.get(pk=job_master_id)
     job_master.running = True
     job_master.save()
+
     with transaction.atomic():
         flowcell = job_master.flowcell
 
