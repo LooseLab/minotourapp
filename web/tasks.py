@@ -543,7 +543,8 @@ def update_flowcell_details(job_master_id):
 
                 if run.name and run.name != 'undefined':
                     flowcell.sample_name = run.name
-
+                    if run.start_time <= flowcell.start_time:
+                        flowcell.start_time = run.start_time
                     logger.info('Flowcell id: {} - Setting sample_name to {} - data from Run.name'.format(flowcell.id,
                                                                                                           flowcell.sample_name))
 
