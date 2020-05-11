@@ -386,7 +386,7 @@ def align_reads(fastas, job_master_id, fasta_df):
 
         PafStore.objects.bulk_create(bulk_paf, batch_size=1000)
         PafRoughCov.objects.bulk_create(bulk_paf_rough, batch_size=1000)
-
+        # TODO this is why the alignment task is SO SLOW ON COVID RUNS
         paf_store_list = PafStore.objects.filter(job_master=job_master).values(
             "read__barcode_name",
             "tsn__line_name",

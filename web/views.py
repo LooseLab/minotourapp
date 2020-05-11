@@ -66,7 +66,7 @@ def signup(request):
 
 @login_required
 def private_index(request):
-    return render(request, "web/about_nav.html")
+    return render(request, "web/about.html")
 
 
 @login_required
@@ -132,7 +132,7 @@ def user_message(request):
 
 @login_required
 def minup(request):
-    return render(request, "web/minup.html")
+    return render(request, "web/minFq.html")
 
 
 @login_required
@@ -172,14 +172,6 @@ def flowcell_index(request, pk):
     else:
 
         return render(request, "web/404.html")
-
-
-@login_required
-def flowcell_reads(request, pk):
-
-    flowcell = Flowcell.objects.get(pk=pk)
-
-    return render(request, "web/flowcell_reads.html", context={"flowcell": flowcell})
 
 
 def flowcell_list(request):
@@ -577,7 +569,6 @@ def new_messages_list(request):
         List of all messages sent to user ordered by date.
 
     """
-    print("HELLO")
     queryset = Message.objects.filter(recipient=request.user).order_by("-created_date")
     serializer = MessageSerializer(queryset, many=True, context={"request": request})
     return Response({"data": serializer.data})
