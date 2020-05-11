@@ -29,6 +29,8 @@ from communication.models import Message, NotificationConditions
 
 import redis
 
+import json
+
 redis_instance = redis.StrictRedis(host="127.0.0.1",
                                   port=6379, db=0,decode_responses=True)
 
@@ -37,6 +39,15 @@ redis_instance = redis.StrictRedis(host="127.0.0.1",
 
 @task()
 def save_reads_bulk(reads):
+    """This task will save reads into redis for later processing."""
+    ### Save reads to redis for later processing.
+    reads_as_json = json.dumps(reads)
+    redis_instance.sadd("reads", reads_as_json)
+
+
+
+@task()
+def harvestreads():
     """
     Celery task to bulk create the reads
     Parameters
@@ -48,45 +59,51 @@ def save_reads_bulk(reads):
     -------
     None
     """
-    reads_list = []
-    run_dict = {}
-    for read in reads:
-        run_pk = read.get("run", -1)
-        if run_pk not in run_dict and run_pk != -1:
-            run = Run.objects.get(pk=run_pk)
-            run_dict[run_pk] = run
-            read["run"] = run
-            read["flowcell"] = run.flowcell
-        else:
-            read["run"] = run_dict[run_pk]
-            read["flowcell"] = run_dict[run_pk].flowcell
+    reads = list()
+    while (redis_instance.scard("reads") > 0):
+        read_chunk = redis_instance.spop("reads")
+        read_chunk = json.loads(read_chunk)
+        reads.append(read_chunk)
+    if len(reads)>0:
+        reads_list = []
+        run_dict = {}
+        for chunk in reads:
+            for read in chunk:
+                run_pk = read.get("run", -1)
+                if run_pk not in run_dict and run_pk != -1:
+                    run = Run.objects.get(pk=run_pk)
+                    run_dict[run_pk] = run
+                    read["run"] = run
+                    read["flowcell"] = run.flowcell
+                else:
+                    read["run"] = run_dict[run_pk]
+                    read["flowcell"] = run_dict[run_pk].flowcell
+                fastqread = FastqRead(
+                    read_id=read['read_id'],
+                    read=read['read'],
+                    channel=read['channel'],
+                    barcode_id=read['barcode'],
+                    rejected_barcode_id=read['rejected_barcode'],
+                    barcode_name=read['barcode_name'],
+                    sequence_length=read['sequence_length'],
+                    quality_average=read['quality_average'],
+                    sequence=read['sequence'],
+                    quality=read['quality'],
+                    is_pass=read['is_pass'],
+                    start_time=read['start_time'],
+                    run=read["run"],
+                    flowcell=read["flowcell"],
+                    type_id=read['type'],
+                    fastqfile_id=read['fastqfile']
+                )
+                reads_list.append(fastqread)
 
-        fastqread = FastqRead(
-            read_id=read['read_id'],
-            read=read['read'],
-            channel=read['channel'],
-            barcode_id=read['barcode'],
-            rejected_barcode_id=read['rejected_barcode'],
-            barcode_name=read['barcode_name'],
-            sequence_length=read['sequence_length'],
-            quality_average=read['quality_average'],
-            sequence=read['sequence'],
-            quality=read['quality'],
-            is_pass=read['is_pass'],
-            start_time=read['start_time'],
-            run=read["run"],
-            flowcell=read["flowcell"],
-            type_id=read['type'],
-            fastqfile_id=read['fastqfile']
-        )
-        reads_list.append(fastqread)
-    try:
-        FastqRead.objects.bulk_create(reads_list)
-        update_flowcell.delay(reads_list)
-    except Exception as e:
-        print(e)
-        return str(e)
-
+        try:
+            update_flowcell.delay(reads_list)
+            FastqRead.objects.bulk_create(reads_list,batch_size=500)
+        except Exception as e:
+            print(e)
+            return str(e)
 
 @task(serializer="pickle")
 def update_flowcell(reads_list):
@@ -112,6 +129,8 @@ def update_flowcell(reads_list):
     readDF = pd.DataFrame([o.__dict__ for o in reads_list])
     readDF['channel'] = readDF['channel'].astype(int)
     readDF['sequence_length'] = readDF['sequence_length'].astype(int)
+
+    readDF = readDF.drop(columns=['sequence','quality'])
 
     results = readDF.groupby(['flowcell_id']).agg({"read_id": "count", "channel": "max","sequence_length":"sum"})
     results.reset_index().apply(
@@ -266,11 +285,6 @@ def update_flowcell_counts(row):
     flowcell.save()
     return
     """
-
-
-@task()
-def update_chan_calc(readDF):
-    pass
 
 #@task(serializer="pickle")
 def save_flowcell_statistic_barcode_async(row):
@@ -481,7 +495,7 @@ def save_flowcell_summary_barcode_async(row):
     type_name = FastqReadType.objects.get(pk=row["type_id"][0]).name
     rejection_status = Barcode.objects.get(pk=row["rejected_barcode_id"][0]).name
     flowcell_id = int(row["flowcell_id"][0])
-    flowcell = Flowcell.objects.get(pk=flowcell_id)
+    #flowcell = Flowcell.objects.get(pk=flowcell_id)
     barcode_name = row["barcode_name"][0]
     status = row["is_pass"][0]
     #rejection_status = row["rejected_barcode_name"][0]
@@ -491,9 +505,6 @@ def save_flowcell_summary_barcode_async(row):
     quality_average_sum = int(row["quality_average"]["sum"])
     read_count = int(row["sequence_length"]["count"])
     channels = row["channel"]["unique"]
-
-
-
     uniquekey = "{}_flowcellSummaryBarcode_{}_{}_{}_{}".format(flowcell_id, barcode_name,
                                                                     rejection_status, type_name, status)
     prev_channel_list = redis_instance.hget(uniquekey, "channel_presence")
@@ -522,8 +533,6 @@ def save_flowcell_summary_barcode_async(row):
             p.hset(uniquekey, "max_length", sequence_length_max)
     else:
         p.hset(uniquekey, "max_length", sequence_length_max)
-
-
 
     if prev_channel_list:
         channel_list = list(prev_channel_list)

@@ -25,6 +25,8 @@ from pathlib import Path
 from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
 from dateutil import parser
 
+from reads.services import harvestreads
+
 import redis
 import numpy as np
 
@@ -48,6 +50,9 @@ def run_monitor():
     logger.info("--------------------------------")
     logger.info("Running run_monitor celery task.")
     logger.info("--------------------------------")
+
+    # This fires a new task every 30 seconds to collect any uploaded reads and basically process them.
+    harvestreads.delay()
 
     # Create a list of all flowcells that have been active in the last 48 hours
     flowcell_list = [x for x in Flowcell.objects.all() if x.active()]
@@ -187,7 +192,7 @@ def run_delete_flowcell(flowcell_job_id):
 
         # Whilst we still have reads left
         while counter <= last_read:
-            counter = counter + 5000
+            counter = counter + 100000
 
             logger.info(
                 "Flowcell id: {} - Deleting records with id < {}".format(
@@ -197,9 +202,9 @@ def run_delete_flowcell(flowcell_job_id):
 
             affected = (
                 FastqRead.objects.filter(flowcell=flowcell)
-                .filter(id__lt=counter)
-                .delete()
-            )
+                .filter(id__lt=counter))
+
+            affected._raw_delete(affected.db)
 
             logger.info(
                 "Flowcell id: {} - Deleted {} fastqread records".format(
@@ -486,6 +491,7 @@ def update_flowcell_details(job_master_id):
     job_master = JobMaster.objects.get(pk=job_master_id)
     job_master.running = True
     job_master.save()
+
     with transaction.atomic():
         flowcell = job_master.flowcell
 
@@ -538,7 +544,8 @@ def update_flowcell_details(job_master_id):
 
                 if run.name and run.name != 'undefined':
                     flowcell.sample_name = run.name
-
+                    if run.start_time <= flowcell.start_time:
+                        flowcell.start_time = run.start_time
                     logger.info('Flowcell id: {} - Setting sample_name to {} - data from Run.name'.format(flowcell.id,
                                                                                                           flowcell.sample_name))
 
@@ -608,7 +615,7 @@ def update_flowcell_details(job_master_id):
             ### Now to try and update all the channel values that we need to update...
 
             for channel in range(1,flowcell.max_channel+1):
-                read_count = gd_key(redis_instance,"{}_{}_read_count".format(flowcell.id,channel))
+                read_count = gd_key(redis_instance,"{}_{}_read_count".format(flowcell.id, channel))
                 read_length = gd_key(redis_instance, "{}_{}_read_length".format(flowcell.id, channel))
                 if read_count or read_length:
                     flowcellChannelSummary, created = FlowcellChannelSummary.objects.get_or_create(
