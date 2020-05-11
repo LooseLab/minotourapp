@@ -1,14 +1,11 @@
 from __future__ import absolute_import, unicode_literals
-
 import os
 import subprocess
 from collections import defaultdict
-from typing import DefaultDict
-
 from celery import task
 from celery.utils.log import get_task_logger
-from django.conf import settings
 
+from alignment.models import PafSummaryCov
 from minotourapp.utils import get_env_variable
 from readuntil.functions_EB import *
 from reads.models import JobMaster, JobType, Barcode
@@ -21,6 +18,8 @@ from readuntil.models import ExpectedBenefitChromosomes
 import gzip
 
 logger = get_task_logger(__name__)
+
+
 # TODO split artic task into a sexy chain, rather than blocking a worker for so long
 
 @task()
@@ -169,7 +168,7 @@ def fetch_barcode_to_fire_list(directory):
         print("File not found. First iteration? Continuing...")
         return []
 
-    return(barcodes)
+    return (barcodes)
 
 
 def make_results_directory_artic(flowcell_id, task_id, allow_create=True):
@@ -198,7 +197,7 @@ def make_results_directory_artic(flowcell_id, task_id, allow_create=True):
 
     results_dir = Path(
         f"{environmental_results_directory}/artic/Temp_results"
-        )
+    )
 
     if not results_dir.exists() and allow_create:
         Path.mkdir(results_dir)
@@ -214,7 +213,7 @@ def make_results_directory_artic(flowcell_id, task_id, allow_create=True):
 
 
 def populate_reference_count(
-    reference_count_dict, fp, master_reference_count_path,
+        reference_count_dict, fp, master_reference_count_path,
 ):
     """
     Populate the reference count dict so we can write it out with counts
@@ -360,7 +359,7 @@ def run_artic_pipeline(task_id):
 
         # Create the series that contains the read_id and sequence as a correctly formatted fasta string
         fasta_df_barcode["fasta"] = (
-            ">" + fasta_df_barcode["read_id"] + "\n" + fasta_df_barcode["sequence"]
+                ">" + fasta_df_barcode["read_id"] + "\n" + fasta_df_barcode["sequence"]
         )
         # Create one string formatted correctly for fasta with input data
         fasta_data = "\n".join(list(fasta_df_barcode["fasta"]))
@@ -436,29 +435,31 @@ def run_artic_pipeline(task_id):
                 barcodes, reference_count_dict
             )
 
+            paf_summary_cov_dict = {}
+
             make_barcoded_directories(barcodes, base_result_dir_path)
 
             print(f"Parsing paf file. Please wait.")
 
             for i, record in enumerate(
-                parse_PAF(
-                    StringIO(paf),
-                    fields=[
-                        "qsn",
-                        "qsl",
-                        "qs",
-                        "qe",
-                        "rs",
-                        "tsn",
-                        "tsl",
-                        "ts",
-                        "te",
-                        "nrm",
-                        "abl",
-                        "mq",
-                        "tags",
-                    ],
-                )
+                    parse_PAF(
+                        StringIO(paf),
+                        fields=[
+                            "qsn",
+                            "qsl",
+                            "qs",
+                            "qe",
+                            "rs",
+                            "tsn",
+                            "tsl",
+                            "ts",
+                            "te",
+                            "nrm",
+                            "abl",
+                            "mq",
+                            "tags",
+                        ],
+                    )
             ):
                 fastq_read = fastq_dict[record.qsn]
 
@@ -466,11 +467,7 @@ def run_artic_pipeline(task_id):
 
                 barcode_sorted_fastq_cache[barcode_of_read].append(f">{fastq_read.read_id}\n{fastq_read.sequence}")
 
-                chromosome_name = chromdict[record.tsn]
-
-                chromosomes_seen_now.add(chromosome_name.line_name)
-
-
+                chromosome = chromdict[record.tsn]
 
                 #########################################################
                 # ########## Now for the parse cigar string ########### #
@@ -481,6 +478,26 @@ def run_artic_pipeline(task_id):
                 mapping_end = record.te
                 # The length of the mapping
                 mapping_length = mapping_end - mapping_start
+
+                if barcode_of_read not in paf_summary_cov_dict:
+                    paf_summary_cov_dict[barcode_of_read] = {
+                                                             "job_master": task,
+                                                             "barcode_name": barcode_of_read,
+                                                             "chromosome": chromosome,
+                                                             "reference_line_length": chromosome.chromosome_length,
+                                                             "yield": 0,
+                                                             "read_count": 0,
+                                                             "read_type": fastq_read.type
+                                                             }
+
+                paf_summary_cov = paf_summary_cov_dict[barcode_of_read]
+
+                paf_summary_cov["yield"] += mapping_length
+
+                paf_summary_cov["read_count"] += 1
+
+                chromosomes_seen_now.add(chromosome.line_name)
+
                 # Parse the cigar string, on the path file record, returns a dictionary of bases, with numpy arrays
                 d = parse_cigar(
                     record.tags.get("cg", None), fastq_read.sequence, mapping_length,
@@ -488,21 +505,12 @@ def run_artic_pipeline(task_id):
                 # Adds the mismatch count to the temporary dict, parsing the MD string
                 d["M"] = np.fromiter(parse_MD(record.tags.get("MD", None)), np.uint16)
 
-                # If the chromosome is not already a key in chrom dict, add it, with a 1 by 9 multidimensinal array,
-                #  filled with zeros, the length of the reference, it should be there already but best to check
-
-                # Here check if reference_count_dict[record.tsn] exists - if NOT then load that from the file and populate  priors_dict for this chromosome from the file.
-
-                # if record.tsn not in reference_count_dict:
-                #     reference_count_dict[record.tsn] = multi_array_results(
-                #         record.tsl
-                #     )
                 # Loop through the dictionary of results, through each base
                 for base in d:
                     # add the counts for that base to the array that exists in the reference count dict for that base,
                     # at the correct location
                     barcoded_counts_dict[barcode_of_read][record.tsn][base][
-                        mapping_start:mapping_end
+                    mapping_start:mapping_end
                     ] += d[base].astype(reference_count_dict[record.tsn][base].dtype)
 
                 # TODO this needs to be reset, here we set the U to True to indicate that a count at this position
@@ -511,13 +519,30 @@ def run_artic_pipeline(task_id):
                 # mapping_start:mapping_end
                 # ] = True
 
+            # iterate the paf_summary_cov objects
+            for paf_summary_barcode, paf_summary_cov in paf_summary_cov_dict.items():
+                print(f"Creating PafSummaryCov objects for {paf_summary_barcode}")
+                paf_summary_cov_orm, created = PafSummaryCov.objects.get_or_create(
+                    job_master=task,
+                    barcode_name=paf_summary_cov["barcode_name"],
+                    chromosome=paf_summary_cov["chromosome"],
+                    reference_line_length=paf_summary_cov["reference_line_length"],
+                    read_type=paf_summary_cov["read_type"],
+                )
+
+                paf_summary_cov_orm.total_length += paf_summary_cov["yield"]
+                paf_summary_cov_orm.read_count += paf_summary_cov["read_count"]
+
+                paf_summary_cov_orm.save()
+
+
+
             # TODO only ever see one chromosome, so we can remove for loop?
             barcodes_already_fired = fetch_barcode_to_fire_list(base_result_dir_path)
             for chrom_key in chromosomes_seen_now:
                 # Write out the coverage
-                # TODO barcodeding stuff goes here
+                # TODO barcoding stuff goes here
                 for barcode in barcodes:
-                    print(barcode)
                     if barcode in barcodes_already_fired:
                         continue
                     barcode_sorted_fastq_path = Path(f"{base_result_dir_path}/{barcode}/{barcode}.fastq")
@@ -537,32 +562,32 @@ def run_artic_pipeline(task_id):
                     if counts_path.exists():
                         # Read the old coverage counts into memory
 
-                            with open(counts_path, "rb") as fh:
+                        with open(counts_path, "rb") as fh:
 
-                                old_counts_array = np.fromfile(
-                                    fh,
-                                    dtype=[
-                                        ("A", np.uint16),
-                                        ("C", np.uint16),
-                                        ("G", np.uint16),
-                                        ("T", np.uint16),
-                                        ("D", np.uint16),
-                                        ("I", np.uint16),
-                                        ("IC", np.uint16),
-                                        ("M", np.uint16),
-                                        ("U", np.bool),
-                                    ],
-                                )
-                            # Add the sum of each position counts to the old array, by each base type
-                            for name in barcoded_counts_dict[barcode][chrom_key].dtype.names:
-                                # Don't update U as True + True = 2, which would ruin everything
-                                if name is not "U":
-                                    barcoded_counts_dict[barcode][chrom_key][
-                                        name
-                                    ] += old_counts_array[name]
-                                    a = barcoded_counts_dict[barcode][chrom_key][name].max()
-                                    if a > max_values:
-                                        max_values = a
+                            old_counts_array = np.fromfile(
+                                fh,
+                                dtype=[
+                                    ("A", np.uint16),
+                                    ("C", np.uint16),
+                                    ("G", np.uint16),
+                                    ("T", np.uint16),
+                                    ("D", np.uint16),
+                                    ("I", np.uint16),
+                                    ("IC", np.uint16),
+                                    ("M", np.uint16),
+                                    ("U", np.bool),
+                                ],
+                            )
+                        # Add the sum of each position counts to the old array, by each base type
+                        for name in barcoded_counts_dict[barcode][chrom_key].dtype.names:
+                            # Don't update U as True + True = 2, which would ruin everything
+                            if name is not "U":
+                                barcoded_counts_dict[barcode][chrom_key][
+                                    name
+                                ] += old_counts_array[name]
+                                a = barcoded_counts_dict[barcode][chrom_key][name].max()
+                                if a > max_values:
+                                    max_values = a
 
                     coverage = np.sum(
                         np.array(
@@ -621,7 +646,6 @@ def run_artic_pipeline(task_id):
                         # run_artic_command(barcode_sorted_fastq_path, barcode)
                         add_barcode_to_tofire_file(barcode, base_result_dir_path)
                         save_artic_job_masters(flowcell, barcode, reference_info)
-
 
                         # task.running = False
                         # task.complete = True

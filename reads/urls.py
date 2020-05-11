@@ -180,6 +180,7 @@ urlpatterns = [
         views.flowcell_run_stats_latest,
         name="flowcellrunstats_latest"
     ),
+    #TODO IS THIS VIEW USED
     url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/tasks/$',
         views.flowcell_tasks_detail_all,
@@ -241,12 +242,6 @@ urlpatterns = [
         views.flowcell_summary_html,
         name="flowcell-summary-html"
     ),
-    url(
-        r'^flowcells/(?P<pk>[0-9]+)/minknow_messages_html/$',
-        views.minknow_message_list_by_flowcell,
-        name="minknow-message-list-by-flowcell"
-    ),
-
     url(
         r'^api/v1/tasks/action$',
         views.task_control,
