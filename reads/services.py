@@ -100,7 +100,7 @@ def harvestreads():
 
         try:
             update_flowcell.delay(reads_list)
-            FastqRead.objects.bulk_create(reads_list,batch_size=500)
+            FastqRead.objects.bulk_create(reads_list, batch_size=500)
         except Exception as e:
             print(e)
             return str(e)

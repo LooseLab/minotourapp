@@ -76,6 +76,16 @@ def move_reads_to_flowcell(run_id, flowcell_id, fromflowcell_id):
 
 
 def reset_flowcell_info(flowcell):
+    """
+    
+    Parameters
+    ----------
+    flowcell
+
+    Returns
+    -------
+
+    """
     # We need to delete the old objects for this flowcell
     FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).delete()
     FlowcellStatisticBarcode.objects.filter(flowcell=flowcell).delete()
