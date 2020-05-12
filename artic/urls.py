@@ -16,5 +16,10 @@ urlpatterns = [
         r'^api/v1/artic/visualisation/detail/$',
         views.get_artic_detail_chart_data,
         name="get-artic-detail"
-    )
+    ),
+    url(
+        r'^api/v1/artic/visualisation/column-charts/$',
+        views.get_artic_column_chart_data,
+        name="get-artic-column"
+    ),
 ]

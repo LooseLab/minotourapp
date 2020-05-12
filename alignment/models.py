@@ -149,6 +149,14 @@ class PafSummaryCov(models.Model):
         null=True,
     )
 
+    coverage = models.IntegerField(
+        default=0
+    )
+
+    average_read_length = models.IntegerField(
+        default=0
+    )
+
 
 @receiver(post_save, sender=PafStore)
 def updatePafRoughCov(instance, sender, **kwargs):

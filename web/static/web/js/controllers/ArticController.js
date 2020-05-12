@@ -8,23 +8,23 @@ class ArticController {
         this._articCoverageScatterDetail = "world";
         this._flowcellId = flowcellId;
         this._first = true;
-        // this.createCoverageMaster();
-        this.drawArticChart(flowcellId);
         this._showWidth = 250000;
         this._barcodeChosen = "banter"
         this._axiosInstance = axios.create({
             headers: {"X-CSRFToken": getCookie('csrftoken')}
         });
-        this._perBarcodeAverageChart = null;
+        this._perBarcodeAverageReadLengthChart = null;
         this._perBarcodeCoverageChart = null;
+        // this.createCoverageMaster();
+        this.drawArticChart(flowcellId);
     }
 
 
     /**
      *
-     * @param chart - Chart object that is being updated
-     * @param newSeries - The new data to add into the chart
-     * @param index - The index of the series that we are updating. Use 0.
+     * @param {obj} chart - Chart object that is being updated
+     * @param {obj} newSeries - The new data to add into the chart
+     * @param {number} index - The index of the series that we are updating. Use 0.
      */
     updateExistingChart(chart, newSeries, index) {
         // Set the data on an existing series on a chart, either master or detail
@@ -32,9 +32,7 @@ class ArticController {
 
     }
 
-//////////////////////////////////////////////////////////////////////////
-///////// Draw the single master chart under the coverage detail /////////
-//////////////////////////////////////////////////////////////////////////
+
     /**
      * The small coverage master chart that shows the region selected
      * @param data
@@ -127,23 +125,22 @@ class ArticController {
             }]
             // Call back function, called after the master chart is drawn, draws all the detail charts
         }, () => {
-            ////////////////////////////////////////////////////////////
-            ///////// Call the detail chart drawing functions //////////
-            ////////////////////////////////////////////////////////////
-            that._articCoverageScatterDetail = that.createDetailChart("coverageArticDetail", data.coverage.ymax, "Coverage");
+
+            that._articCoverageScatterDetail = that.createDetailChart("coverageArticDetail", data.coverage.ymax, "Coverage", "line"
+                , false);
         });
 
     }
 
     /**
      *
-     * @param targetDivId str Div ID chart is drawn to
-     * @param ymax int The maximum value of the Y axis
-     * @param title str The chart title
-     * @param chartType str Chart title
-     * @param stepped bool Stepped line
-     * @param legend bool Display chart legend
-     * @returns {*}
+     * @param {string} targetDivId Div ID chart is drawn to
+     * @param {number} ymax The maximum value of the Y axis
+     * @param {string} title The chart title
+     * @param {string} chartType Chart title
+     * @param {boolean} stepped Stepped line
+     * @param {boolean} legend Display chart legend
+     * @returns {obj} chartyChart Highcharts chart.
      */
     createDetailChart(targetDivId, ymax, title, chartType = "scatter", stepped = false, legend = false) {
         // The data we are going to use to display, starts a display with an empty chart
@@ -275,7 +272,7 @@ class ArticController {
             // if successful request, set the detail charts to show the newly retrieve data
             if (response.status === 200) {
 
-                that.updateAxesAndData(that._articCoverageScatterDetail, min, max, response.data.coverage, true);
+                that._updateAxesAndData(that._articCoverageScatterDetail, min, max, response.data.coverage, true);
 
             } else if (response.status === 404) {
 
@@ -291,7 +288,7 @@ class ArticController {
     }
 
 
-    updateAxesAndData(chart, min, max, data, ymax) {
+    _updateAxesAndData(chart, min, max, data, ymax) {
         // Y max let's us know we need to change the yAxis
         // Set the xAxis extremes to the newly selected values
         chart.xAxis[0].setExtremes(min, max);
@@ -320,9 +317,10 @@ class ArticController {
             // get the child of the div, which is the select option in this case, do not display it
             $(this).children('select').css('display', 'none');
             // get all the options children
-            $.get("/api/v1/artic/visualisation/barcodes", {flowcellId}, function (barcodes, statusText, xhr) {
+            that._axiosInstance.get("/api/v1/artic/visualisation/barcodes", {params: {flowcellId}}).then((response) => {
+                let barcodes = response.data;
                 // if it's the first options clause
-                if (xhr.status != 200) console.error("Error");
+                if (response.status != 200) console.error("Error");
                 // If we're on our first drawing of the select spans
                 let first_iteration = !document.getElementById("artic-placeholder");
                 // The barcodes we have that are already present
@@ -404,6 +402,8 @@ class ArticController {
 
                 });
                 $(".sel").css("display", "");
+            }).catch(error => {
+                console.error(error)
             });
         });
     }
@@ -453,7 +453,7 @@ class ArticController {
                     flowcellId
                 }
             }).then(response => {
-                that.updateAxesAndData(that._articCoverageScatterDetail, min, max, response.data.coverage, true);
+                that._updateAxesAndData(that._articCoverageScatterDetail, min, max, response.data.coverage, true);
                 // that.updateExistingChart(coverageDetail, response.coverage.data, 0);
                 // that.updateExistingChart(that._articCoverageScatterMaster, response.coverage.data, 0);
             }).catch(error => {
@@ -466,9 +466,10 @@ class ArticController {
     drawArticChart() {
         let min, max;
         let that = this;
-        let flowcellId = document.querySelector("#flowcell-id").value;
+        let coverageDetail;
+
+        let flowcellId = this._flowcellId;
         let startData = {"coverage": {"ymax": 1, "data": [0, 1]}};
-        let coverageDetail = $("#coverageArticDetail").highchart();
 
 
         that.createEbSelectionBox(flowcellId);
@@ -485,8 +486,10 @@ class ArticController {
         if (this._first === true) {
             that.createCoverageMaster(startData, flowcellId);
             this._first = false;
+            that.drawColumnCharts()
         } else {
 
+            coverageDetail = $("#coverageArticDetail").highchart();
             // If the coverage detail chart does exist, update the existing charts
             // Get the minimum and maximum values of the xAxis
             min = coverageDetail.xAxis[0].min;
@@ -515,26 +518,80 @@ class ArticController {
 
     }
 
+    /**
+     * @function Request the data for the column charts on the Artic Tab page and draw them.
+     */
     drawColumnCharts() {
+        let that;
+        let flowcellId = this._flowcellId;
         if (!this._perBarcodeCoverageChart) {
 
             this._perBarcodeCoverageChart = makeColumnChart(
-                "per-chrom-cov",
-                "Chromosome Coverage".toUpperCase(),
-                "Chromosome Coverage".toUpperCase()
+                "artic-per-barcode-coverage",
+                "Chromosome Barcode",
+                "Chromosome Barcode"
             );
 
         }
 
-        if (!this._perBarcodeAverageChart) {
+        if (!this._perBarcodeAverageReadLengthChart) {
 
-            this._perBarcodeAverageChart = makeColumnChart(
-                "per-chrom-avg",
-                "Mean Read Length By Chromosome".toUpperCase(),
-                "Mean Read Length By Chromosome".toUpperCase()
+            this._perBarcodeAverageReadLengthChart = makeColumnChart(
+                "artic-per-barcode-average-length",
+                "Mean Read Length By Barcode",
+                "Mean Read Length By Barcode"
             );
 
         }
+        // Callback scope proof access to class methods and variables.
+        that = this;
+
+        this._axiosInstance.get("/api/v1/artic/visualisation/column-charts", {
+            "params": {flowcellId}
+        }).then(response => {
+            let data, chartSeriesCoverage, chartSeriesReadLength;
+
+            console.log(response)
+
+            data = response.data;
+
+            chartSeriesCoverage = this._perBarcodeCoverageChart.series;
+
+            chartSeriesReadLength = this._perBarcodeAverageReadLengthChart.series;
+
+            Object.entries(data).forEach(([key, value], index) => {
+                let indexInArray = chartSeriesCoverage.findIndex(obj => obj.name === key);
+                console.log(indexInArray)
+                // See if we already have a series by this name, if we do update exisiting series
+                if (indexInArray >= 0) {
+                    chartSeriesCoverage[indexInArray].setData(value["coverage"]);
+                    chartSeriesCoverage[indexInArray].update({
+                        name: key
+                    });
+                    chartSeriesReadLength[indexInArray].setData(value["average_read_length"])
+                    chartSeriesReadLength[indexInArray].update({
+                        name: key
+                    });
+
+                } else { // Add the series
+                    this._perBarcodeCoverageChart.addSeries({"name":key, "data": [value["coverage"]]})
+                    this._perBarcodeAverageReadLengthChart.addSeries({"name":key, "data": [value["average_read_length"]]})
+                }
+            })
+
+        }).catch(errorResponse => {
+            console.log(errorResponse.message)
+        })
+    }
+
+
+    /**
+     *
+     * @param data
+     * @private
+     */
+    _updateColumnCharts(data) {
+
     }
 
 }

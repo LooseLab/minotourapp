@@ -45,7 +45,7 @@ def run_artic_command(base_results_directory, barcode_name, jobmaster_pk):
     fastq_path = f"{base_results_directory}/{barcode_name}/{barcode_name}.fastq"
 
     # TODO get the barcode from the posix path for the sample name
-    print(fastq_path)
+    logger.info(fastq_path)
     scheme_dir = get_env_variable("MT_ARTIC_SCEHEME_DIR")
     os.chdir(f"{base_results_directory}/{barcode_name}")
     cmd = ["bash", "-c",
@@ -118,7 +118,7 @@ def make_barcoded_directories(barcodes, results_dir):
             Path.mkdir(path)
             logger.info(f"Created directory {path} for barcode {barcode}.")
         else:
-            print(f"Directory {path} already exists.")
+            logger.info(f"Directory {path} already exists.")
 
 
 def add_barcode_to_tofire_file(barcode_name, directory):
@@ -165,7 +165,7 @@ def fetch_barcode_to_fire_list(directory):
         with open(path, "r") as fh:
             barcodes = fh.read().split("\n")
     except FileNotFoundError as e:
-        print("File not found. First iteration? Continuing...")
+        logger.info("File not found. First iteration? Continuing...")
         return []
 
     return (barcodes)
@@ -308,7 +308,7 @@ def run_artic_pipeline(task_id):
 
     chunk_size = round(desired_yield / avg_read_length)
 
-    print(f"Fetching reads in chunks of {chunk_size} for alignment.")
+    logger.info(f"Fetching reads in chunks of {chunk_size} for alignment.")
 
     # Get the fastq objects
     fasta_df_barcode, last_read, read_count, fasta_objects = call_fetch_reads_alignment(
@@ -316,13 +316,13 @@ def run_artic_pipeline(task_id):
     )
 
     if fasta_df_barcode.shape[0] == 0:
-        print("No fastq found. Skipping this iteration.")
+        logger.info("No fastq found. Skipping this iteration.")
         task.running = False
         task.save()
         return
 
-    print(f"Fetched reads.")
-    print(fasta_df_barcode.shape)
+    logger.info(f"Fetched reads.")
+    logger.info(fasta_df_barcode.shape)
 
     min_read_length = 400
 
@@ -333,7 +333,7 @@ def run_artic_pipeline(task_id):
     fasta_df_barcode = fasta_df_barcode[fasta_df_barcode["sequence_length"].between(
         min_read_length, max_read_length, inclusive=True)]
 
-    print(f"Reads after filtering for read lengths between"
+    logger.info(f"Reads after filtering for read lengths between"
           f" {min_read_length} - {max_read_length}: {fasta_df_barcode.shape[0]}")
     # TODO come back to look at this
     # fasta_df_barcode["barcode_name"] = np.where(fasta_df_barcode["barcode_name"].eq("No barcode"), "Unknown",
@@ -370,7 +370,7 @@ def run_artic_pipeline(task_id):
             minimap2, Path(reference_location) / reference_info.filename
         )
 
-        print(
+        logger.info(
             "Flowcell id: {} - Calling minimap Artic - {}".format(flowcell.id, cmd)
         )
         # Setup minimap call
@@ -429,7 +429,7 @@ def run_artic_pipeline(task_id):
 
             barcodes = np.unique(fasta_df_barcode["barcode_name"])
 
-            print(f"Barcodes in this iteration are {barcodes}")
+            logger.info(f"Barcodes in this iteration are {barcodes}")
 
             barcoded_counts_dict = replicate_counts_array_barcoded(
                 barcodes, reference_count_dict
@@ -439,7 +439,7 @@ def run_artic_pipeline(task_id):
 
             make_barcoded_directories(barcodes, base_result_dir_path)
 
-            print(f"Parsing paf file. Please wait.")
+            logger.info(f"Parsing paf file. Please wait.")
 
             for i, record in enumerate(
                     parse_PAF(
@@ -521,7 +521,7 @@ def run_artic_pipeline(task_id):
 
             # iterate the paf_summary_cov objects
             for paf_summary_barcode, paf_summary_cov in paf_summary_cov_dict.items():
-                print(f"Creating PafSummaryCov objects for {paf_summary_barcode}")
+                logger.info(f"Creating PafSummaryCov objects for {paf_summary_barcode}")
                 paf_summary_cov_orm, created = PafSummaryCov.objects.get_or_create(
                     job_master=task,
                     barcode_name=paf_summary_cov["barcode_name"],
@@ -532,10 +532,11 @@ def run_artic_pipeline(task_id):
 
                 paf_summary_cov_orm.total_length += paf_summary_cov["yield"]
                 paf_summary_cov_orm.read_count += paf_summary_cov["read_count"]
+                paf_summary_cov_orm.average_read_length = round(paf_summary_cov_orm.total_length
+                                                                / paf_summary_cov_orm.reference_line_length, 2)
+                paf_summary_cov_orm.coverage = round(paf_summary_cov_orm.total_length / paf_summary_cov_orm.read_count)
 
                 paf_summary_cov_orm.save()
-
-
 
             # TODO only ever see one chromosome, so we can remove for loop?
             barcodes_already_fired = fetch_barcode_to_fire_list(base_result_dir_path)
@@ -618,7 +619,7 @@ def run_artic_pipeline(task_id):
                     with open(barcode_sorted_fastq_path, "a") as fh:
                         fh.write("\n".join(barcode_sorted_fastq_cache[barcode]))
 
-                    print(
+                    logger.info(
                         f"Avg Coverage at iteration {task.iteration_count} for barcode {barcode} is {coverage.mean()}"
                     )
 
@@ -627,7 +628,7 @@ def run_artic_pipeline(task_id):
                     percent_250x = number_of_bases_250x / number_bases_in_array * 100
                     # 200x coverage
                     if np.all(coverage >= 200):
-                        print(
+                        logger.info(
                             f"we would fire the code for the artic pipeline here for barcode {barcode}"
                         )
                         # run_artic_command(barcode_sorted_fastq_path, barcode)
@@ -640,7 +641,7 @@ def run_artic_pipeline(task_id):
                     elif percent_250x >= 95:
 
                         # So we have to set up the auto fire of the pipeline here if the task fails
-                        print(
+                        logger.info(
                             f"we would fire the code for the artic pipeline here for barcode {barcode} due to 95% coverage reached"
                         )
                         # run_artic_command(barcode_sorted_fastq_path, barcode)
@@ -655,7 +656,7 @@ def run_artic_pipeline(task_id):
                 task.last_read = last_read
                 task.iteration_count += 1
 
-                print("Finishing this batch of reads.")
+                logger.info("Finishing this batch of reads.")
                 task.read_count += read_count
                 task.running = False
                 task.save()
