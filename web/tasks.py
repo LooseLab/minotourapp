@@ -1,8 +1,12 @@
 from __future__ import absolute_import, unicode_literals
+
+import numpy as np
+import redis
 from celery import task, chain
 from celery.utils.log import get_task_logger
-from django.db.models import Max, Count
+from dateutil import parser
 from django.db import transaction
+
 from artic.task_artic_alignment import make_results_directory_artic, run_artic_pipeline, run_artic_command
 from centrifuge import centrifuge
 from centrifuge.sankey import calculate_sankey
@@ -19,16 +23,10 @@ from reads.models import (
     JobMaster,
     FlowcellChannelSummary,
 )
+from reads.services import harvestreads
+from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
 from web.tasks_chancalc import chancalc
 from .tasks_alignment import run_minimap2_alignment
-from pathlib import Path
-from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
-from dateutil import parser
-
-from reads.services import harvestreads
-
-import redis
-import numpy as np
 
 redis_instance = redis.StrictRedis(host="127.0.0.1",
                                   port=6379, db=0,decode_responses=True)
@@ -340,7 +338,7 @@ def fsumb(flowcell_id):
     -------
 
     """
-    flowcell = Flowcell.objects.get(pk=flowcell_id)
+    # flowcell = Flowcell.objects.get(pk=flowcell_id)
     keys = redis_instance.scan_iter("{}_flowcellSummaryBarcode_*".format(flowcell.id))
     for key in keys:
         result = hgd_key(redis_instance, key)
@@ -356,7 +354,7 @@ def fsumb(flowcell_id):
         new_channel_list = list(result["channel_presence"])
 
         flowcellSummaryBarcode, created = FlowcellSummaryBarcode.objects.get_or_create(
-            flowcell=flowcell,
+            flowcell_id=flowcell_id,
             barcode_name=barcode_name,
             rejection_status=rejection_status,
             read_type_name=type_name,
@@ -394,8 +392,8 @@ def fhs(flowcell_id):
     -------
 
     """
-    flowcell = Flowcell.objects.get(pk=flowcell_id)
-    keys = redis_instance.scan_iter("{}_flowcellHistogramSummary_*".format(flowcell.id))
+    # flowcell = Flowcell.objects.get(pk=flowcell_id)
+    keys = redis_instance.scan_iter("{}_flowcellHistogramSummary_*".format(flowcell_id))
     for key in keys:
         result = hgd_key(redis_instance, key)
         bin_index = int(result['bin_index'])
@@ -407,7 +405,7 @@ def fhs(flowcell_id):
         read_count = int(result['read_count'])
 
         flowcellHistogramSummary, created = FlowcellHistogramSummary.objects.get_or_create(
-            flowcell=flowcell,
+            flowcell_id=flowcell_id,
             barcode_name=barcode_name,
             rejection_status=rejection_status,
             read_type_name=read_type_name,
@@ -435,8 +433,8 @@ def fsb(flowcell_id):
     -------
 
     """
-    flowcell = Flowcell.objects.get(pk=flowcell_id)
-    keys = redis_instance.scan_iter("{}_flowcellStatisticBarcode_*".format(flowcell.id))
+    # flowcell = Flowcell.objects.get(pk=flowcell_id)
+    keys = redis_instance.scan_iter("{}_flowcellStatisticBarcode_*".format(flowcell_id))
     for key in keys:
         result = hgd_key(redis_instance, key)
         start_time = parser.parse(result['sample_time'])
@@ -452,7 +450,7 @@ def fsb(flowcell_id):
         new_channel_list = list(result["channel_presence"])
 
         flowcellStatisticBarcode, created = FlowcellStatisticBarcode.objects.get_or_create(
-            flowcell=flowcell,
+            flowcell_id=flowcell_id,
             sample_time=start_time,
             barcode_name=barcode_name,
             rejection_status=rejection_status,
@@ -521,15 +519,7 @@ def update_flowcell_details(job_master_id):
             flowcell.start_time = minion_run_status_first.minKNOW_start_time
 
             logger.info('Flowcell id: {} - Setting start_time to {}'.format(flowcell.id, flowcell.start_time))
-        #
-        # Alternatively check the reads to find the earliest read?
-        #
-        #else:
-        #    first_read_entry =
 
-        #
-        # Define flowcell's sample_name
-        #
         minion_run_status_list = MinionRunInfo.objects.filter(run_id__flowcell=flowcell).exclude(
             experiment_type="platform_qc")
 
@@ -556,33 +546,12 @@ def update_flowcell_details(job_master_id):
                         if run.start_time <= flowcell.start_time:
                             flowcell.start_time = run.start_time
                     #else:
-                        #flowcell.start_time = run.start_time
+                    #flowcell.start_time = run.start_time
                     logger.info('Flowcell id: {} - Setting sample_name to {} - data from Run.name'.format(flowcell.id,
                                                                                                           flowcell.sample_name))
 
                     break
 
-        #
-        # Get number of fastqreads
-        #
-        number_reads = job_master.read_count
-
-        last_read = job_master.last_read
-
-        # Todo: If the flowcell has no reads, it may have been reset and so we may need to recount it based on previous issue.
-
-        #if redis_instance.get("{}_has_fastq".format(flowcell.id)):
-        #    flowcell.has_fastq = True
-
-        #flowcell.size = redis_instance.get("{}_size".format(flowcell.id))
-
-        #redis_instance.delete("{}_size".format(flowcell.id))
-
-        #max_channel = redis_instance.get("{}_max_channel".format(flowcell.id))
-        #if max_channel:
-        #    if max_channel > flowcell.max_channel:
-        #        flowcell.max_channel = max_channel
-        #    redis_instance.delete("{}_max_channel".format(flowcell.id))
 
         ### Get flowcell max_channel number.
         has_fastq = gd_key(redis_instance, "{}_has_fastq".format(flowcell.id))
@@ -640,125 +609,20 @@ def update_flowcell_details(job_master_id):
             ### Now try and update all the flowcellsummarystatistics
 
             res = chain(fsb.s(flowcell.id), fhs.s(), fsumb.s()).apply_async()
+
             logger.info(res)
-            # fsb.delay(flowcell.id)
-            #
-            # fhs.delay(flowcell.id)
-            #
-            # fsumb.delay(flowcell.id)
-            
 
+            flowcell.number_runs = Run.objects.filter(flowcell=flowcell).count()
 
+            barcode_count = len(Barcode.objects.filter(run_id__flowcell=flowcell).values('name').distinct()) - 1
 
-        ### This query is slow - and it should be fast.
+            flowcell.number_barcodes = barcode_count
 
-        #
-        # # Update flowcell size
-        # #
-        ##max_channel = FastqRead.objects.filter(
-        ##    flowcell=flowcell,
-        ##    id__gt=int(job_master.last_read)
-        ##).aggregate(result=Max('channel'), last_read=Max('id'),read_number=Count('read_id'))
+            flowcell.save()
 
-        ##if max_channel["read_number"] is not None:
+            logger.info('Flowcell id: {} - Number runs {}'.format(flowcell.id, flowcell.number_runs))
+            logger.info('Flowcell id: {} - Number barcodes {}'.format(flowcell.id, flowcell.number_barcodes))
 
-        ##    number_reads += max_channel["read_number"]
+            job_master.running = False
 
-        ##    flowcell.has_fastq = True
-
-        ##job_master.read_count = number_reads
-
-        ##if max_channel['last_read'] is not None:
-
-        ##    job_master.last_read = max_channel['last_read']
-
-        # job_master.save()
-        #
-        # Get the job_master chancalc for this flowcell
-        #
-
-        ##job_master_list = JobMaster.objects.filter(flowcell=flowcell, job_type__name='Chancalc')
-
-        ##number_reads_processed = flowcell.number_reads_processed
-
-        ##if job_master_list.count() > 0:
-
-        ##    number_reads_processed = job_master_list[0].read_count
-
-        #
-        # Get the FlowcellSummaryBarcodes for a particular flowcell and for barcode_name "All reads"
-        #
-        ##flowcell_summary_list = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).filter(barcode_name='All reads')
-
-        ##average_read_length = 0
-
-        ##total_read_length = 0
-
-        ##logger.info('Flowcell id: {} - There is/are {} FlowcellSummaryBarcode records'.format(flowcell.id, len(flowcell_summary_list)))
-
-        ##for flowcell_summary in flowcell_summary_list:
-
-        ##    total_read_length += flowcell_summary.total_length
-
-        ##if number_reads > 0:
-
-        ##    average_read_length = total_read_length / number_reads
-
-        ##logger.info('Flowcell id: {} - Total read length {}'.format(flowcell.id, total_read_length))
-        ##logger.info('Flowcell id: {} - Number reads {}'.format(flowcell.id, number_reads))
-        ##logger.info('Flowcell id: {} - Number reads processed {}'.format(flowcell.id, number_reads_processed))
-        ##logger.info('Flowcell id: {} - Average read length {}'.format(flowcell.id, average_read_length))
-
-        ##flowcell.average_read_length = average_read_length
-        ##flowcell.total_read_length = total_read_length
-        ##flowcell.number_reads = number_reads
-        ##flowcell.number_reads_processed = number_reads_processed
-
-        flowcell.number_runs = Run.objects.filter(flowcell=flowcell).count()
-
-        barcode_count = len(Barcode.objects.filter(run_id__flowcell=flowcell).values('name').distinct()) - 1
-
-        flowcell.number_barcodes = barcode_count
-
-        flowcell.save()
-
-        logger.info('Flowcell id: {} - Number runs {}'.format(flowcell.id, flowcell.number_runs))
-        logger.info('Flowcell id: {} - Number barcodes {}'.format(flowcell.id, flowcell.number_barcodes))
-
-        # #
-        # # Update flowcell size
-        # #
-        # max_channel = FastqRead.objects.filter(
-        #     flowcell=flowcell,
-        #     id__gt=int(job_master.last_read)
-        # ).aggregate(result=Max('channel'), last_read=Max('id'),read_number=Count('read_id'))
-
-        ##if max_channel['result'] is not None and max_channel['result'] > flowcell.max_channel:
-
-        ##    flowcell.max_channel = max_channel['result']
-
-        ##    if max_channel['result']:
-
-        ##        if max_channel['result'] > 512:
-
-        ##            flowcell.size = 3000
-
-        ##        elif max_channel['result'] > 126:
-
-        ##            flowcell.size = 512
-
-        ##        else:
-
-        ##            flowcell.size = 126
-
-        ##    else:
-
-        ##        flowcell.size = 512
-
-        ##flowcell.save()
-
-        # job_master = JobMaster.objects.get(pk=job_master_id)
-
-        job_master.running = False
-
-        job_master.save()
+            job_master.save()
