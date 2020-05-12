@@ -192,7 +192,7 @@ def run_delete_flowcell(flowcell_job_id):
 
         # Whilst we still have reads left
         while counter <= last_read:
-            counter = counter + 100000
+            counter = counter + 20000
 
             logger.info(
                 "Flowcell id: {} - Deleting records with id < {}".format(
@@ -327,7 +327,7 @@ def hgd_key(r, key):
     return returnvalue
 
 @task(serializer="pickle")
-def fsumb(flowcell):
+def fsumb(flowcell_id):
     """
     Flowcell summary barcode, get all keys related to the flowcell summary barcode values of this flowcell
     from redis and update them
@@ -339,6 +339,7 @@ def fsumb(flowcell):
     -------
 
     """
+    flowcell = Flowcell.objects.get(pk=flowcell_id)
     keys = redis_instance.scan_iter("{}_flowcellSummaryBarcode_*".format(flowcell.id))
     for key in keys:
         result = hgd_key(redis_instance, key)
@@ -379,7 +380,7 @@ def fsumb(flowcell):
 
 
 @task(serializer="pickle")
-def fhs(flowcell):
+def fhs(flowcell_id):
     """
     Flowcell histogram summary. Get all keys related to the flowcell histogram values of this flowcell
     from redis and update them
@@ -391,6 +392,7 @@ def fhs(flowcell):
     -------
 
     """
+    flowcell = Flowcell.objects.get(pk=flowcell_id)
     keys = redis_instance.scan_iter("{}_flowcellHistogramSummary_*".format(flowcell.id))
     for key in keys:
         result = hgd_key(redis_instance, key)
@@ -417,7 +419,7 @@ def fhs(flowcell):
         flowcellHistogramSummary.save()
 
 @task(serializer="pickle")
-def fsb(flowcell):
+def fsb(flowcell_id):
     """
     Flowcell summary Barcode. Get all keys related to the flowcell summary barcode values of this flowcell
     from redis and update them
@@ -429,6 +431,7 @@ def fsb(flowcell):
     -------
 
     """
+    flowcell = Flowcell.objects.get(pk=flowcell_id)
     keys = redis_instance.scan_iter("{}_flowcellStatisticBarcode_*".format(flowcell.id))
     for key in keys:
         result = hgd_key(redis_instance, key)
@@ -632,11 +635,11 @@ def update_flowcell_details(job_master_id):
 
             ### Now try and update all the flowcellsummarystatistics
 
-            fsb.delay(flowcell)
+            fsb.delay(flowcell.id)
 
-            fhs.delay(flowcell)
+            fhs.delay(flowcell.id)
 
-            fsumb.delay(flowcell)
+            fsumb.delay(flowcell.id)
             
 
 
