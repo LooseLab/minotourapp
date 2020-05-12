@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 # Create your views here.
+from alignment.models import PafSummaryCov
 from artic.task_artic_alignment import make_results_directory_artic, np
 from reads.models import Flowcell, JobMaster
 from pathlib import Path
@@ -46,6 +47,7 @@ def quick_get_artic_results_directory(flowcell_id, barcodeName=""):
 
     return flowcell, artic_results_path, artic_task.id
 
+
 @api_view(["GET"])
 def get_artic_barcodes(request):
     """
@@ -65,7 +67,9 @@ def get_artic_barcodes(request):
             "Please provide a flowcell id.", status=status.HTTP_400_BAD_REQUEST
         )
 
-    flowcell, artic_results_path, artic_task_id = quick_get_artic_results_directory(flowcell_id)
+    flowcell, artic_results_path, artic_task_id = quick_get_artic_results_directory(
+        flowcell_id
+    )
 
     barcodes_list = []
 
@@ -100,7 +104,12 @@ def get_artic_master_chart_data(request):
 
     barcode = request.GET.get("barcodeChosen", None)
 
-    flowcell, artic_results_path, artic_task_id, coverage_path = quick_get_artic_results_directory(flowcell_id, barcode)
+    (
+        flowcell,
+        artic_results_path,
+        artic_task_id,
+        coverage_path,
+    ) = quick_get_artic_results_directory(flowcell_id, barcode)
 
     try:
         with open(coverage_path, "rb") as fh:
@@ -223,13 +232,23 @@ def get_artic_detail_chart_data(request):
 
     barcode = request.GET.get("barcodeChosen", "NOTFOUND")
 
-    flowcell, artic_results_path, artic_task_id, coverage_path = quick_get_artic_results_directory(flowcell_id, barcode)
+    (
+        flowcell,
+        artic_results_path,
+        artic_task_id,
+        coverage_path,
+    ) = quick_get_artic_results_directory(flowcell_id, barcode)
 
     if artic_task_id is None:
-        return Response("Artic task not found for this flowcell.", status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            "Artic task not found for this flowcell.", status=status.HTTP_404_NOT_FOUND
+        )
 
     if not coverage_path.exists():
-        return Response("No results files found for this flowcell.", status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            "No results files found for this flowcell.",
+            status=status.HTTP_404_NOT_FOUND,
+        )
 
     # the file path and data type we need as a tuple
     file_path_list = [
@@ -259,3 +278,45 @@ def get_artic_detail_chart_data(request):
     }
 
     return Response(data_dict)
+
+
+@api_view(["GET"])
+def get_artic_column_chart_data(request):
+    """
+    Return the date for the Average Coverage per barcode and Average Read length per barcode
+    column charts for a specified flowcell.
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        Django rest framework request class. Contains Flowcell ID as a param..
+    Returns
+    -------
+
+    """
+
+    flowcell_id = request.GET.get("flowcellId", None)
+
+    if not flowcell_id:
+        return Response(
+            "No flowcellId specified. Please check request.",
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    # TODO catch does not exist query here
+    artic_task = JobMaster.objects.filter(
+        flowcell_id=flowcell_id, job_type__name="Track Artic Coverage"
+    ).last()
+
+    try:
+        queryset = PafSummaryCov.objects.filter(job_master__id=artic_task.id).values()
+        return_data = {d.get("barcode_name", "Unknown"): d for d in queryset}
+    except TypeError as e:
+        print(e.args)
+        return Response(e, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    if not queryset:
+        return Response(
+            "No values for this flowcell found. Please check task has been created.",
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    return Response(return_data, status=status.HTTP_200_OK)

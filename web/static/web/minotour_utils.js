@@ -10,16 +10,16 @@ Highcharts.setOptions({
 
 /**
  * @function makeColumnChart
- * @param {string} divName ID of the div we want to draw the charts in
+ * @param {string} divId ID of the div we want to draw the charts in
  * @param {string} chartTitle
  * @param {string} yAxisTitle
  * Creates an empty highCharts column chart at the provided divName,
  * with divName being the Id if the div we want to draw in.
  */
-function makeColumnChart(divName, chartTitle, yAxisTitle) {
+function makeColumnChart(divId, chartTitle, yAxisTitle) {
 
     var chart;
-    chart = Highcharts.chart(divName, {
+    chart = Highcharts.chart(divId, {
         chart: {
             type: "column",
             animation: Highcharts.svg, // don"t animate in old IE
