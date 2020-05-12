@@ -339,7 +339,7 @@ def fsumb(flowcell_id):
 
     """
     # flowcell = Flowcell.objects.get(pk=flowcell_id)
-    keys = redis_instance.scan_iter("{}_flowcellSummaryBarcode_*".format(flowcell.id))
+    keys = redis_instance.scan_iter("{}_flowcellSummaryBarcode_*".format(flowcell_id))
     for key in keys:
         result = hgd_key(redis_instance, key)
         barcode_name = result['barcode_name']
