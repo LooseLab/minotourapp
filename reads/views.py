@@ -14,6 +14,7 @@ from django.db.models import Max, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.utils import timezone
+from guardian.shortcuts import assign_perm, remove_perm
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -21,7 +22,6 @@ from rest_framework.response import Response
 from alignment.models import PafRoughCov
 from assembly.models import GfaStore
 from centrifuge.models import CentrifugeOutput
-from guardian.shortcuts import assign_perm, remove_perm
 from minotourapp import settings
 from reads.models import (
     Barcode,
@@ -83,7 +83,6 @@ from web.delete_tasks import (
     delete_alignment_task,
     delete_expected_benefit_task,
 )
-
 
 logger = get_task_logger(__name__)
 
@@ -740,6 +739,7 @@ def list_minion_info(request, pk):
         return Response(serializer.data)
 
     elif request.method == "PUT":
+        #TODO WE HAVE A BUG HERE AGAIN?
         serializer = MinionInfoSerializer(
             minion_info, data=request.data, context={"request": request}
         )
