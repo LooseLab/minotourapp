@@ -1,5 +1,5 @@
 from __future__ import absolute_import, unicode_literals
-from celery import task
+from celery import task, chain
 from celery.utils.log import get_task_logger
 from django.db.models import Max, Count
 from django.db import transaction
@@ -327,14 +327,14 @@ def hgd_key(r, key):
     returnvalue = p.execute()[0]
     return returnvalue
 
-@task(serializer="pickle")
+@task()
 def fsumb(flowcell_id):
     """
     Flowcell summary barcode, get all keys related to the flowcell summary barcode values of this flowcell
     from redis and update them
     Parameters
     ----------
-    flowcell
+    flowcell_id: int
 
     Returns
     -------
@@ -378,16 +378,17 @@ def fsumb(flowcell_id):
         flowcellSummaryBarcode.channel_count = np.count_nonzero(fusedlist == 1)
 
         flowcellSummaryBarcode.save()
+    return None
 
 
-@task(serializer="pickle")
+@task()
 def fhs(flowcell_id):
     """
     Flowcell histogram summary. Get all keys related to the flowcell histogram values of this flowcell
     from redis and update them
     Parameters
     ----------
-    flowcell
+    flowcell_id: int
 
     Returns
     -------
@@ -419,14 +420,16 @@ def fhs(flowcell_id):
 
         flowcellHistogramSummary.save()
 
-@task(serializer="pickle")
+    return flowcell_id
+
+@task()
 def fsb(flowcell_id):
     """
     Flowcell statistic Barcode. Get all keys related to the flowcell summary barcode values of this flowcell
     from redis and update them
     Parameters
     ----------
-    flowcell
+    flowcell_id: int
 
     Returns
     -------
@@ -474,6 +477,8 @@ def fsb(flowcell_id):
         flowcellStatisticBarcode.channel_count = np.count_nonzero(fusedlist == 1)
 
         flowcellStatisticBarcode.save()
+
+    return flowcell_id
 
 @task()
 def update_flowcell_details(job_master_id):
@@ -632,15 +637,15 @@ def update_flowcell_details(job_master_id):
                     if read_length:
                         flowcellChannelSummary.read_length += int(read_length)
                     flowcellChannelSummary.save()
-
-
             ### Now try and update all the flowcellsummarystatistics
 
-            fsb.delay(flowcell.id)
-
-            fhs.delay(flowcell.id)
-
-            fsumb.delay(flowcell.id)
+            res = chain(fsb.s(flowcell.id), fhs.s(), fsumb.s()).apply_async()
+            logger.info(res)
+            # fsb.delay(flowcell.id)
+            #
+            # fhs.delay(flowcell.id)
+            #
+            # fsumb.delay(flowcell.id)
             
 
 
