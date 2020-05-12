@@ -532,9 +532,9 @@ def run_artic_pipeline(task_id):
 
                 paf_summary_cov_orm.total_length += paf_summary_cov["yield"]
                 paf_summary_cov_orm.read_count += paf_summary_cov["read_count"]
-                paf_summary_cov_orm.average_read_length = round(paf_summary_cov_orm.total_length
+                paf_summary_cov_orm.coverage = round(paf_summary_cov_orm.total_length
                                                                 / paf_summary_cov_orm.reference_line_length, 2)
-                paf_summary_cov_orm.coverage = round(paf_summary_cov_orm.total_length / paf_summary_cov_orm.read_count)
+                paf_summary_cov_orm.average_read_length = round(paf_summary_cov_orm.total_length / paf_summary_cov_orm.read_count)
 
                 paf_summary_cov_orm.save()
 
