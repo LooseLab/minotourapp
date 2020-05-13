@@ -218,7 +218,7 @@ def run_delete_flowcell(flowcell_job_id):
 @task()
 def run_sankey(flowcell_job_id):
     """
-    Calculate sankeys for a flowcell upon demand of the user
+    Calculate sankeys for a flowcell on demand of the user
     :param flowcell_job_id: The pk id of this task
     :author: Rory
     :return:
@@ -612,17 +612,17 @@ def update_flowcell_details(job_master_id):
 
             logger.info(res)
 
-            flowcell.number_runs = Run.objects.filter(flowcell=flowcell).count()
+        flowcell.number_runs = Run.objects.filter(flowcell=flowcell).count()
 
-            barcode_count = len(Barcode.objects.filter(run_id__flowcell=flowcell).values('name').distinct()) - 1
+        barcode_count = len(Barcode.objects.filter(run_id__flowcell=flowcell).values('name').distinct()) - 1
 
-            flowcell.number_barcodes = barcode_count
+        flowcell.number_barcodes = barcode_count
 
-            flowcell.save()
+        flowcell.save()
 
-            logger.info('Flowcell id: {} - Number runs {}'.format(flowcell.id, flowcell.number_runs))
-            logger.info('Flowcell id: {} - Number barcodes {}'.format(flowcell.id, flowcell.number_barcodes))
+        logger.info('Flowcell id: {} - Number runs {}'.format(flowcell.id, flowcell.number_runs))
+        logger.info('Flowcell id: {} - Number barcodes {}'.format(flowcell.id, flowcell.number_barcodes))
 
-            job_master.running = False
+        job_master.running = False
 
-            job_master.save()
+        job_master.save()

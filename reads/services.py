@@ -59,51 +59,54 @@ def harvestreads():
     -------
     None
     """
-    reads = list()
-    while (redis_instance.scard("reads") > 0):
-        read_chunk = redis_instance.spop("reads")
-        read_chunk = json.loads(read_chunk)
-        reads.append(read_chunk)
-    if len(reads)>0:
-        reads_list = []
-        run_dict = {}
-        for chunk in reads:
-            for read in chunk:
-                run_pk = read.get("run", -1)
-                if run_pk not in run_dict and run_pk != -1:
-                    run = Run.objects.get(pk=run_pk)
-                    run_dict[run_pk] = run
-                    read["run"] = run
-                    read["flowcell"] = run.flowcell
-                else:
-                    read["run"] = run_dict[run_pk]
-                    read["flowcell"] = run_dict[run_pk].flowcell
-                fastqread = FastqRead(
-                    read_id=read['read_id'],
-                    read=read['read'],
-                    channel=read['channel'],
-                    barcode_id=read['barcode'],
-                    rejected_barcode_id=read['rejected_barcode'],
-                    barcode_name=read['barcode_name'],
-                    sequence_length=read['sequence_length'],
-                    quality_average=read['quality_average'],
-                    sequence=read['sequence'],
-                    quality=read['quality'],
-                    is_pass=read['is_pass'],
-                    start_time=read['start_time'],
-                    run=read["run"],
-                    flowcell=read["flowcell"],
-                    type_id=read['type'],
-                    fastqfile_id=read['fastqfile']
-                )
-                reads_list.append(fastqread)
+    if not redis_instance.get("harvesting") or not redis_instance.get("harvesting")=="1":
+        redis_instance.set("harvesting",1)
+        reads = list()
+        while (redis_instance.scard("reads") > 0):
+            read_chunk = redis_instance.spop("reads")
+            read_chunk = json.loads(read_chunk)
+            reads.append(read_chunk)
+        if len(reads)>0:
+            reads_list = []
+            run_dict = {}
+            for chunk in reads:
+                for read in chunk:
+                    run_pk = read.get("run", -1)
+                    if run_pk not in run_dict and run_pk != -1:
+                        run = Run.objects.get(pk=run_pk)
+                        run_dict[run_pk] = run
+                        read["run"] = run
+                        read["flowcell"] = run.flowcell
+                    else:
+                        read["run"] = run_dict[run_pk]
+                        read["flowcell"] = run_dict[run_pk].flowcell
+                    fastqread = FastqRead(
+                        read_id=read['read_id'],
+                        read=read['read'],
+                        channel=read['channel'],
+                        barcode_id=read['barcode'],
+                        rejected_barcode_id=read['rejected_barcode'],
+                        barcode_name=read['barcode_name'],
+                        sequence_length=read['sequence_length'],
+                        quality_average=read['quality_average'],
+                        sequence=read['sequence'],
+                        quality=read['quality'],
+                        is_pass=read['is_pass'],
+                        start_time=read['start_time'],
+                        run=read["run"],
+                        flowcell=read["flowcell"],
+                        type_id=read['type'],
+                        fastqfile_id=read['fastqfile']
+                    )
+                    reads_list.append(fastqread)
 
-        try:
-            update_flowcell.delay(reads_list)
-            FastqRead.objects.bulk_create(reads_list,batch_size=500)
-        except Exception as e:
-            print(e)
-            return str(e)
+            try:
+                update_flowcell.delay(reads_list)
+                FastqRead.objects.bulk_create(reads_list,batch_size=500)
+            except Exception as e:
+                print(e)
+                return str(e)
+        redis_instance.set("harvesting", 0)
 
 @task(serializer="pickle")
 def update_flowcell(reads_list):
