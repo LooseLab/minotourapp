@@ -8,6 +8,7 @@ import numpy as np
 import decimal
 
 from celery.task import task
+from celery.utils.log import get_task_logger
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db import IntegrityError, transaction
@@ -34,6 +35,8 @@ import json
 redis_instance = redis.StrictRedis(host="127.0.0.1",
                                   port=6379, db=0,decode_responses=True)
 
+
+logger = get_task_logger(__name__)
 
 # @task(rate_limit="2/m")
 
@@ -63,6 +66,7 @@ def harvestreads():
         redis_instance.set("harvesting",1)
         reads = list()
         count = redis_instance.scard("reads")
+        logger.info("Harvest Reads had seen {} batches.".format(count))
         while (count > 0):
             read_chunk = redis_instance.spop("reads")
             read_chunk = json.loads(read_chunk)
@@ -72,6 +76,7 @@ def harvestreads():
             reads_list = []
             run_dict = {}
             for chunk in reads:
+                logger.info("Harvesting Chunk")
                 for read in chunk:
                     run_pk = read.get("run", -1)
                     if run_pk not in run_dict and run_pk != -1:
@@ -101,10 +106,11 @@ def harvestreads():
                         fastqfile_id=read['fastqfile']
                     )
                     reads_list.append(fastqread)
-
+            logger.info("Harvest Reads Updating Flowcell.")
             update_flowcell.delay(reads_list)
 
             try:
+                logger.info("Harvest Reads Bulk Creating.")
                 FastqRead.objects.bulk_create(reads_list,batch_size=500)
             except Exception as e:
                 print(e)
