@@ -62,10 +62,12 @@ def harvestreads():
     if not redis_instance.get("harvesting") or not redis_instance.get("harvesting")=="1":
         redis_instance.set("harvesting",1)
         reads = list()
-        while (redis_instance.scard("reads") > 0):
+        count = redis_instance.scard("reads")
+        while (count > 0):
             read_chunk = redis_instance.spop("reads")
             read_chunk = json.loads(read_chunk)
             reads.append(read_chunk)
+            count-=1
         if len(reads)>0:
             reads_list = []
             run_dict = {}
@@ -101,7 +103,7 @@ def harvestreads():
                     reads_list.append(fastqread)
 
             update_flowcell.delay(reads_list)
-            
+
             try:
                 FastqRead.objects.bulk_create(reads_list,batch_size=500)
             except Exception as e:
