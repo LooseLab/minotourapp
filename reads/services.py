@@ -77,7 +77,7 @@ def save_reads_bulk(reads):
             fastqfile_id=read['fastqfile']
         )
         reads_list.append(fastqread)
-        FastqRead.objects.bulk_create(reads_list, batch_size=500)
+    FastqRead.objects.bulk_create(reads_list, batch_size=500)
 
 
 
