@@ -2379,7 +2379,7 @@ def read_list_new(request):
     elif request.method == "POST":
 
         reads = request.data
-        save_reads_bulk.delay(reads)
+        save_reads_bulk(reads)
         return Response("The task has started. It's in gods hands now...", status=status.HTTP_201_CREATED)
 
         #
