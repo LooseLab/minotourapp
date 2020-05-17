@@ -61,11 +61,18 @@ def fetch_reads_alignment(runs, chunk_size, last_read, pass_only):
     for run in runs:
         # fastqs = FastqRead.objects.filter(run=run, id__gt=int(last_read)).first()
         # Query the database for the reads objects
-        fastqs = (
-            FastqRead.objects.values_list("id")
-            .filter(run=run, id__gt=int(last_read), is_pass=True)
-            .first()
-        )
+        if pass_only:
+            fastqs = (
+                FastqRead.objects.values_list("id")
+                .filter(run=run, id__gt=int(last_read), is_pass=True)
+                .first()
+            )
+        else:
+            fastqs = (
+                FastqRead.objects.values_list("id")
+                    .filter(run=run, id__gt=int(last_read))
+                    .first()
+            )
         # If there are fastqs store the object
         if fastqs:
             # Store the first id you get and the urn it's from
