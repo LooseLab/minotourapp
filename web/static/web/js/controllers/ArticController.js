@@ -3,7 +3,6 @@
  */
 class ArticController {
     constructor(flowcellId) {
-        console.log("Initialising Artic controoller");
         this._articCoverageScatterMaster = "hello";
         this._articCoverageScatterDetail = "world";
         this._flowcellId = flowcellId;
@@ -270,7 +269,6 @@ class ArticController {
         this._axiosInstance.get('/api/v1/artic/visualisation/detail', {
             params: {min, max, barcodeChosen: this._barcodeChosen, flowcellId}
         }).then(response => {
-            console.log(response)
             // if successful request, set the detail charts to show the newly retrieve data
             if (response.status === 200) {
 
@@ -294,8 +292,6 @@ class ArticController {
         // Y max let's us know we need to change the yAxis
         // Set the xAxis extremes to the newly selected values
         chart.xAxis[0].setExtremes(min, max);
-        console.log(data.ymax);
-        console.log(chart);
         // if we need to update the yaxis as well
         if (ymax) {
             // set the yAxisextremes
@@ -324,10 +320,8 @@ class ArticController {
         optionChildren = $current.children('option');
         first_iteration = optionChildren.length === 0 ? true : false;
         that._axiosInstance.get("/api/v1/artic/visualisation/barcodes", {params: {flowcellId}}).then((response) => {
-            console.log(response);
             if (response.status !== 200) console.error("Error");
             barcodes = response.data;
-            console.log(first_iteration)
             // else we need to remove the barcodes that we have already added then add them.
             if (!first_iteration) {
                 alreadyPresentBarcode = [...$("#select-artic-barcode")[0].children];
@@ -346,10 +340,6 @@ class ArticController {
 
 
             barcodes.forEach(barcode => {
-                console.log("for barcode");
-                console.log(barcode);
-                console.log($current);
-                console.log($(`option`, {"class": "sel__box__options", "text": barcode}));
                 barcodeList.push(`<option class="sel__box__options" value="${barcode}">${barcode}</option>`)
             })
             $current.html(barcodeList.join(""))
@@ -361,7 +351,6 @@ class ArticController {
                 that.drawSelectedBarcode(flowcellId, txt);
             })
 
-            console.log("hello")
         }).catch(error => {
             console.error(error)
         })
@@ -481,28 +470,22 @@ class ArticController {
         */
         let that = this;
         let min, max, coverageDetail;
-        console.log(that)
-        console.log(that._articCoverageScatterMaster);
         this._axiosInstance.get('/api/v1/artic/visualisation/master', {
             params: {
                 flowcellId,
                 barcodeChosen
             }
         }).then(response => {
-            console.log(response)
             that._articCoverageScatterMaster.yAxis[0].setExtremes(0, response.data.coverage.ymax);
             that.updateExistingChart(that._articCoverageScatterMaster, response.data.coverage.data, 0);
 
         }).catch(error => {
-            console.log(error)
             console.error(error)
         });
 
         coverageDetail = $("#coverageArticDetail").highcharts();
-        console.log(coverageDetail)
         min = coverageDetail.xAxis[0].min;
         max = coverageDetail.xAxis[0].max;
-        console.log(min)
         // If min is not undefined, the charts are already displaying data, so update them, otherwise we're good
         if (min !== undefined) {
             that._articCoverageScatterDetail.showLoading('Fetching data from the server')
@@ -621,7 +604,6 @@ class ArticController {
         }).then(response => {
             let data, chartSeriesCoverage, chartSeriesReadLength;
 
-            console.log(response)
 
             data = response.data;
 
@@ -631,7 +613,6 @@ class ArticController {
 
             Object.entries(data).forEach(([key, value], index) => {
                 let indexInArray = chartSeriesCoverage.findIndex(obj => obj.name === key);
-                console.log(indexInArray)
                 // See if we already have a series by this name, if we do update exisiting series
                 if (indexInArray >= 0) {
                     chartSeriesCoverage[indexInArray].setData(value["coverage"]);
@@ -654,7 +635,7 @@ class ArticController {
             this._perBarcodeCoverageChart.hideLoading()
             this._perBarcodeAverageReadLengthChart.hideLoading()
         }).catch(errorResponse => {
-            console.log(errorResponse.message)
+            console.error(errorResponse.message)
         })
     }
 
@@ -681,6 +662,11 @@ class ArticController {
                         "url": "/api/v1/artic/visualisation/summary-table-data",
                         "data": {
                             "flowcellId": that._flowcellId
+                        },
+                        async: true,
+                        error: (xhr, error, code) => {
+                            console.error(xhr);
+                            console.error(code);
                         }
                     },
                     "columns": [

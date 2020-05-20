@@ -11,10 +11,9 @@ class FlowcellTableController {
         this._elementId = elementId;
         this._linkDestination = linkDestination;
         this._datatableObj = null;
-        this._interval = setInterval(this.refreshTable, 30000);
+        this._interval = setInterval(this.refreshTable, 30000, elementId)
         // ON page unload clear the interval, so when user navigates away from table
         $(window).on("unload", function () {
-            console.log("stopping refresh");
             clearInterval(this._interval)
         })
     }
@@ -22,9 +21,8 @@ class FlowcellTableController {
     /**
      * @function refresh the flowcell table.
      */
-    refreshTable() {
-        console.log("Starting refresh");
-        this._datatableObj.DataTable().ajax.reload(null, false)
+    refreshTable(_elementId) {
+        $(`#${_elementId}`).DataTable().ajax.reload(null, false)
     }
 
     /**

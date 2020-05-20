@@ -1,7 +1,7 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-
+from django.shortcuts import get_object_or_404
 # Create your views here.
 from alignment.models import PafSummaryCov
 from artic.task_artic_alignment import make_results_directory_artic, np
@@ -9,7 +9,7 @@ from reads.models import Flowcell, JobMaster
 from pathlib import Path
 
 
-def quick_get_artic_results_directory(flowcell_id, barcodeName=""):
+def quick_get_artic_results_directory(flowcell_id, barcodeName="", check=False):
     """
 
     Parameters
@@ -18,6 +18,8 @@ def quick_get_artic_results_directory(flowcell_id, barcodeName=""):
         Primary key of flowcell record that we are looking
     barcodeName : str optional
         The barcode that the data is from. If provided coverage path is also returned.
+    check : bool
+        Check whether we have results or not.
 
     Returns
     -------
@@ -28,13 +30,16 @@ def quick_get_artic_results_directory(flowcell_id, barcodeName=""):
     """
     flowcell = Flowcell.objects.get(pk=flowcell_id)
 
-    artic_task = JobMaster.objects.get(
+    artic_task = get_object_or_404(JobMaster,
         flowcell=flowcell, job_type__name="Track Artic Coverage"
     )
 
     artic_results_path = make_results_directory_artic(
         flowcell.id, artic_task.id, allow_create=False
     )
+
+    if check:
+        return artic_results_path.exists()
 
     if barcodeName:
         # TODO Note this chromsome is hard coded here because we are only doing this on Covid at the moment
@@ -309,6 +314,9 @@ def get_artic_column_chart_data(request):
         flowcell_id=flowcell_id, job_type__name="Track Artic Coverage"
     ).last()
 
+    if not artic_task:
+            return Response("no coverage tracking task running on this flowcell.", status=status.HTTP_400_BAD_REQUEST)
+
     try:
         queryset = PafSummaryCov.objects.filter(job_master__id=artic_task.id).values()
         return_data = {d.get("barcode_name", "Unknown"): d for d in queryset}
@@ -347,7 +355,7 @@ def get_artic_summary_table_data(request):
     ).last()
 
     if not artic_task:
-        return Response("no coverage tracking task running on this flowcell.", status=status.HTTP_404_NOT_FOUND)
+        return Response("no coverage tracking task running on this flowcell.", status=status.HTTP_400_BAD_REQUEST)
 
     queryset = PafSummaryCov.objects.filter(job_master=artic_task).values("barcode_name",
                                                                           "chromosome__line_name",
@@ -359,6 +367,6 @@ def get_artic_summary_table_data(request):
                                                                           "reference_line_length", )
 
     if not queryset:
-        return Response(f"No coverage summaries found for this task {artic_task.id}.", status=status.HTTP_404_NOT_FOUND)
+        return Response(f"No coverage summaries found for this task {artic_task.id}.", status=status.HTTP_204_NO_CONTENT)
 
     return Response({"data": queryset})
