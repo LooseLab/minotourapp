@@ -7,24 +7,22 @@
 
 
         <section class="content-header">
-            <h1>User Profile</h1>
         </section>
 
         <!-- Main content -->
         <section class="content">
-            <div class="box box-info">
-                <div class="box-header with-border">
-                    <h3 class="box-title">Overview - Below are your registered user details. Your access token is
-                        required to upload data to
-                        minoTour</h3>
-                </div>
+        <div class="container-fluid">
+            <div class="card ">
+
+                <h2 class="card-header">User Profile - Below are your registered user details. Your access token is
+                    required to upload data to minoTour.</h2>
                 <!-- /.box-header -->
                 <!-- form start -->
                 {{ form.non_field_errors }}
+                <div class="card-body">
 
-                <form class="form-horizontal" method="post" action="{% url 'profile' %}">
-                    {% csrf_token %}
-                    <div class="box-body">
+                    <form class="form-horizontal" method="post" action="{% url 'profile' %}">
+                        {% csrf_token %}
                         <div class="form-group">
                             <label class="col-sm-2 ">Username</label>
 
@@ -37,7 +35,7 @@
 
                             <div class="col-sm-10">
                                 {{ form.email.errors }}
-                                <input class="input-email" type="email" name="email" id="id_email" maxlength="120"
+                                <input class="stretchy profile" type="email" name="email" id="id_email" maxlength="120"
                                        required
                                        value="{{ request.user.email }}">
                             </div>
@@ -47,7 +45,7 @@
 
                             <div class="col-sm-10 " style="height: 100%; text-align: left;">
                                 <span id="token">{{ authToken }}</span>&nbsp;<span id="btn-copy-token"
-                                                                                     class="btn btn-info btn-sm">Copy
+                                                                                   class="btn btn-info btn-sm">Copy
                             </span>
                                 <span id="copy-msg"></span><br>
                             </div>
@@ -58,7 +56,7 @@
 
                             <div class="col-sm-10">
                                 {{ form.twitter_handle.errors }}
-                                <input class="twitter-input" type="text" name="twitter_handle" id="id_twitter_handle"
+                                <input class="stretchy" type="text" name="twitter_handle" id="id_twitter_handle"
                                        maxlength="32"
                                        value="{{ userDetails.twitterhandle }}">
                             </div>
@@ -95,15 +93,16 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <!-- /.box-body -->
-                    <div class="box-footer">
-                        <button type="submit" class="btn btn-info pull-right">Save</button>
-                    </div>
-                    <!-- /.box-footer -->
-                </form>
-            </div>
+                    </form>
 
+                </div>
+                <!-- /.box-body -->
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-info pull-right">Save</button>
+                </div>
+                <!-- /.box-footer -->
+            </div>
+        </div>
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 
@@ -116,20 +115,23 @@
          * Set a message and clear it three seconds later.
          * @param {string} msg The messsage to set on resolution of the promise.
          */
-        function setMessage(msg){
+        function setMessage(msg) {
             $("#copy-msg").text(msg)
-            setInterval(()=>{$("#copy-msg").text("")}, 3000)
+            setInterval(() => {
+                $("#copy-msg").text("")
+            }, 3000)
         }
+
         $(function () {
             $('#btn-copy-token').click(function () {
-                navigator.clipboard.writeText($("#token").text()).then(()=>{
+                navigator.clipboard.writeText($("#token").text()).then(() => {
                     setMessage("Text copied to clipboard.")
-                }, (err)=>{
+                }, (err) => {
                     setMessage("Copy not supported or blocked.  Press Ctrl+c to copy.")
                     console.error(err)
                 })
             });
-         });
+        });
         const topPadding = $(".main-header").height() + 16;
         $(".content-wrapper").css("padding-top", `${topPadding}px`);
 

@@ -88,6 +88,7 @@ def save_artic_job_masters(flowcell, barcode_name, reference_info):
     -------
 
     """
+    return
     job_type = JobType.objects.get(name="Run Artic")
     # TODO potential bug here where the barcode name on the reads is not the barcode name we save
     barcode_object = Barcode.objects.get(run__in=flowcell.runs.all(), name=barcode_name)
@@ -302,6 +303,10 @@ def run_artic_pipeline(task_id):
     # The chunk size of reads from this flowcell to fetch from the database
 
     avg_read_length = flowcell.average_read_length
+
+    if avg_read_length == 0:
+        logger.error(f"Average read length is zero Defaulting to 450, but this is an error.")
+        avg_read_length = 450
 
     # aim for 100 megabases
     desired_yield = 100 * 1000000

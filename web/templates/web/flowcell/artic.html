@@ -1,50 +1,75 @@
-<div class="panel panel-info">
-    <div class="panel-heading">
-        <h3 class="panel-title">Artic Coverage Data</h3>
-    </div>
-    <div class="panel-body">
-        <div class="row" style="text-align: center">
+<div class="card">
+    <h3 class="card-header">Artic Coverage Data</h3>
+    <div class="card-body">
+        <div class="container-fluid">
+            <div class="row">
+                <div id="artic-per-barcode-coverage" class="col-md-6 highcharts"
+                     style="height:300px;">
+                </div>
+                <div id="artic-per-barcode-average-length"
+                     class="col-md-6 highcharts"
+                     style=" height:300px;">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <table class="table table-hover" id="artic-coverage-summary-table" style="width: 100%">
+                        <thead>
+                        <tr>
+                            <th>Barcode</th>
+                            <th>Sequence Name</th>
+                            <th>Sequence Length</th>
+                            <th>Read Count</th>
+                            <th>Yield</th>
+                            <th>Average Read Length</th>
+                            <th>Coverage</th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr>
+                            <th>Barcode</th>
+                            <th>Sequence Name</th>
+                            <th>Sequence Length</th>
+                            <th>Read Count</th>
+                            <th>Yield</th>
+                            <th>Average Read Length</th>
+                            <th>Coverage</th>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" style="text-align: center; padding-top: 10px">
             <div class="col-md-9">
                 <div class="col-md-12">
-                    <div class="sel artic sel--black-panther" style="display: none">
-                        <select name="select-barcode" id="select-barcode">
+{#                    <div class="sel artic sel--black-panther" style="display: none">#}
+                        <select name="select-artic-barcode" id="select-artic-barcode">
 
                         </select>
-                    </div>
+{#                    </div>#}
                 </div>
-                <div class="row">
+                <div class="row" style="padding-top:10px">
                     <div class="col-md-12">
-                        <div id="artic-per-barcode-coverage" class="col-md-12 highcharts"
-                             style="width:50%; height:300px;">
-                            <i class="fa fa-cog fa-spin fa-3x"></i>
-                            Calculating>
-                        </div>
-                        <div id="artic-per-barcode-average-length"
-                             class="col-md-12 highcharts"
-                             style="width:50%; height:300px;">
-                            <i class="fa fa-cog fa-spin fa-3x"></i>
-                            Calculating
+                        <div id="coverageArticDetail" style="height: 400px">
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div id="coverageArticDetail" style="height: 400px">
-                            </div>
-                        </div>
-                        <div class="col-md-12">
-                            <div id="coverageArticMaster">
-                            </div>
+                    <div class="col-md-12">
+                        <div id="coverageArticMaster">
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="panel-body">
-                <div class="row">
+            <div class="card  col-md-3">
+                <h3 class="card-header">Placeholder</h3>
+                <div class="card-body ">
                     <div class="col-md-12">
-                        <div id="articMetaInfo" style="height: 400px">
+                        <div id="articMetaInfo" style="height: 100%; background: coral">
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>

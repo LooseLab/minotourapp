@@ -8,6 +8,7 @@ function requestRunDetails(id) {
         url: url,
         dataType: "html",
         success: function(data) {
+            run_summaries_table.className = "";
             run_summaries_table.innerHTML = data;
         },
         error: function(e)
@@ -24,6 +25,7 @@ function requestRunDetails(id) {
         url: url,
         dataType: "html",
         success: function(data) {
+            flowcell_run_basecalled_summary_html_div.className = "";
             flowcell_run_basecalled_summary_html_div.innerHTML = data;
         },
         error: function(e)

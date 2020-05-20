@@ -1,4 +1,6 @@
 function updateBarcodeNavTab() {
+    // TODO this is bad code
+    // TODO Rewrite as class
     // Set the request data function to have access to the scope of this function
     var requestData = this.requestData.bind(this);
     // Get the glowcell UD
@@ -17,8 +19,12 @@ function updateBarcodeNavTab() {
         var li = document.createElement("li");
         // Add the barcode-tab class to the new element
         li.classList.add('barcode-tab');
+        // Add new bootstrap nav item class
+        li.classList.add('nav-item');
         // create an a element to add to the list element, we're going to attach the click event listener to this tab
         var a = document.createElement("a");
+
+        a.classList.add("nav-link")
         // add event listener to a element
         a.addEventListener('click', function(event) {
             // Get the text for the selected barcode, upon click
@@ -31,7 +37,7 @@ function updateBarcodeNavTab() {
             requestData(flowcell_id);
             console.log('Calling requestData from inside updateBarcodeNavTab. <<<');
             // get all the barcode tabs as elements
-            var barcode_tabs = document.querySelectorAll('.barcode-tab');
+            var barcode_tabs = document.querySelectorAll('.barcode-tab a');
             // for each of these elements
             barcode_tabs.forEach(function(value) {
                 // remove the active class from the tab
@@ -48,7 +54,7 @@ function updateBarcodeNavTab() {
         a.text = sortedBarcodes[i];
         // set the barcode class to active, redundant but not terrible
         if (sortedBarcodes[i] == selected_barcode) {
-            li.classList.add("active");
+            a.classList.add("active");
         }
         // append the a element to the list element
         li.appendChild(a);

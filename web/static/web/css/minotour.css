@@ -129,8 +129,7 @@
     font-family: 'FontAwesome';
     font-size: 2em;
     color: #00a65a;
-    right: 20px;
-    top: calc(50% - 0.5em);
+    top: calc(50%);
 }
 
 .sel.active::before {
@@ -482,7 +481,7 @@ p {
 }
 
 #post-form-notification-create {
-    padding: 10px 0 0 10px;
+    padding: 10px 0 0 0px;
 }
 
 .noselect {
@@ -490,13 +489,32 @@ p {
     border: none;
 }
 
-input[type=text], input[type=email] {
+input[type=text].stretchy, input[type=email].stretchy {
     -webkit-transition: width 1s ease-in-out;
     -moz-transition: width 1s ease-in-out;
     -o-transition: width 1s ease-in-out;
     transition: width 1s ease-in-out;
 }
 
-input[type=text]:focus, input[type=email]:focus {
+input[type=text].stretchy:focus, input[type=email].stretchy:focus {
     width: 500px;
+}
+
+.flowcell-tab:hover{
+    cursor: pointer;
+}
+
+.carousel-control-prev-icon {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23d3d3d3' viewBox='0 0 8 8'%3E%3Cpath d='M5.25 0l-4 4 4 4 1.5-1.5-2.5-2.5 2.5-2.5-1.5-1.5z'/%3E%3C/svg%3E");
+}
+
+.carousel-control-next-icon {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23d3d3d3' viewBox='0 0 8 8'%3E%3Cpath d='M2.75 0l-1.5 1.5 2.5 2.5-2.5 2.5 1.5 1.5 4-4-4-4z'/%3E%3C/svg%3E");
+}
+
+.carousel-indicators > li {
+    background-color: #23d3d3d3;
+}
+a{
+    color: #3c8dbc;
 }

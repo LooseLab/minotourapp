@@ -3,11 +3,11 @@
     <div id="sharing-messages" class="col-md-12"></div>
 
     <div class="col-md-12">
-        <div class='panel panel-info'>
-            <div class='panel-heading'>
-                <h3 class='panel-title'>Share flowcell</h3>
+        <div class="card ">
+            <div class="card-heading">
+                <h3 class="card-header">Share flowcell</h3>
             </div>
-            <div class='panel-body'>
+            <div class="card-body">
 
                 <form method="post" id="post-form-task-create" onsubmit="mSharingController.create(event)">
                     {% csrf_token %}
@@ -19,8 +19,8 @@
                     <div class="form-group">
                         <label id="select-label" for="id_permission">Permission</label>
                         <select class="form-control" name="permission" id="id_permission">
-                            <option value='VIEW_DATA'>VIEW DATA</option>
-                            <option value='RUN_ANALYSIS'>RUN ANALYSIS</option>
+                            <option value="VIEW_DATA">VIEW DATA</option>
+                            <option value="RUN_ANALYSIS">RUN ANALYSIS</option>
                         </select>
                     </div>
 
@@ -33,12 +33,12 @@
 
 <div class="row">
     <div class="col-md-12">
-        <div class='panel panel-info'>
-            <div class='panel-heading'>
-                <h3 class='panel-title'>Current users with access to this flowcell</h3>
+        <div class="card ">
+            <div class="card-heading">
+                <h3 class="card-header">Current users with access to this flowcell</h3>
             </div>
-            <div class='panel-body'>
-                <table id='sharing_table' class="table table-hover display" style="width: 100%;">
+            <div class="card-body">
+                <table id="sharing_table" class="table table-hover display" style="width: 100%;">
                     <thead>
                     <tr>
                         <th>Username</th>

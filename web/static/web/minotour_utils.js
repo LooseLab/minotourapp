@@ -39,6 +39,9 @@ function makeColumnChart(divId, chartTitle, yAxisTitle) {
                 color: "#808080"
             }]
         },
+        lang: {
+            noData: "looking for data probably."
+        },
         legend: {
             enabled: true
         },

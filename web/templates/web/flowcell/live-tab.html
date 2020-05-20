@@ -1,8 +1,8 @@
-<div class="panel panel-info">
-    <div class="panel-heading">
-        <h3 class="panel-title">Sequencing Yield</h3>
+<div class="card ">
+    <div class="card-heading">
+        <h3 class="card-header">Sequencing Yield</h3>
     </div>
-    <div class="panel-body">
+    <div class="card-body">
         <div class="row">
             <div id="chart-yield" class="col-md-12 highcharts"
                  style="height:400px; display:block;">
@@ -13,11 +13,11 @@
         Yield values are captured in real time as reported by MinKNOW and so are not cumulative if a run is interrupted.
     </div>
 </div>
-<div class="panel panel-info">
-    <div class="panel-heading">
-        <h3 class="panel-title">Flowcell Occupancy</h3>
+<div class="card ">
+    <div class="card-heading">
+        <h3 class="card-header">Flowcell Occupancy</h3>
     </div>
-    <div class="panel-body">
+    <div class="card-body">
         <div class="row">
             <div id="poreshizzle" class="col-md-12 highcharts"
                  style="height:400px;display:block;">
@@ -31,11 +31,11 @@
     </div>
 </div>
 
-<div class="panel panel-info">
-    <div class="panel-heading">
-        <h3 class="panel-title">Read Length Histogram</h3>
+<div class="card ">
+    <div class="card-heading">
+        <h3 class="card-header">Read Length Histogram</h3>
     </div>
-    <div class="panel-body">
+    <div class="card-body">
         <div class="row">
             <div id="live-histogram" class="col-md-12 highcharts-container"
                  style="width:100%; height:400px;display:block;">
@@ -50,11 +50,11 @@
 </div>
 
 
-<div class="panel panel-info">
-    <div class="panel-heading">
-        <h3 class="panel-title">Strand Numbers and Occupancy</h3>
+<div class="card ">
+    <div class="card-heading">
+        <h3 class="card-header">Strand Numbers and Occupancy</h3>
     </div>
-    <div class="panel-body">
+    <div class="card-body">
         <div class="row">
             <div id="live-strand" class="col-md-6 highcharts"
                  style="height:400px;display:block;">
@@ -76,11 +76,11 @@
 </div>
 
 
-<div class="panel panel-info">
-    <div class="panel-heading">
-        <h3 class="panel-title">Voltage and Temperature</h3>
+<div class="card ">
+    <div class="card-heading">
+        <h3 class="card-header">Voltage and Temperature</h3>
     </div>
-    <div class="panel-body">
+    <div class="card-body">
         <div class="row">
             <div id="live-temperature" class="col-md-6 highcharts"
                  style="height:400px;">
@@ -100,11 +100,11 @@
     </div>
 </div>
 
-<div class="panel panel-info">
-    <div class="panel-heading">
-        <h3 class="panel-title">Data Download</h3>
+<div class="card ">
+    <div class="card-heading">
+        <h3 class="card-header">Data Download</h3>
     </div>
-    <div class="panel-body">
+    <div class="card-body">
         <div class="row">
             <div class="col-md-12">
                 <a href="{% url 'flowcell_run_stats_download' pk=flowcell.id %}" target="_blank"

@@ -1,6 +1,16 @@
+/**
+ * Controller for the tables on the Flowcell page and the Flowcell Manager page.
+ */
 class FlowcellTableController {
-    constructor() {
-
+    /**
+     *
+     * @param linkDestination {string} The destination of the formatted link. flowcell_manager or flowcells.
+     * @param elementId {string} The target Element to render this table inside.
+     */
+    constructor(linkDestination, elementId) {
+        this._elementId = elementId;
+        this._linkDestination = linkDestination;
+        this._datatableObj = null;
         this._interval = setInterval(this.refreshTable, 30000);
         // ON page unload clear the interval, so when user navigates away from table
         $(window).on("unload", function () {
@@ -14,23 +24,24 @@ class FlowcellTableController {
      */
     refreshTable() {
         console.log("Starting refresh");
-        $('#all-runs').DataTable().ajax.reload(null, false)
+        this._datatableObj.DataTable().ajax.reload(null, false)
     }
 
     /**
      * @function Draw the flowcells index table.
      */
-    drawTable() {
+    renderTable() {
+        let that = this;
         var table_all_runs;
 
         $.fn.dataTable.render.format_link = function () {
             return function (data, type, full, meta) {
 
-                return `<a href="/web/private/flowcells/${full["id"]}/">${data}</a>`;
+                return `<a href="/web/private/${that._linkDestination}/${full["id"]}/">${data}</a>`;
             };
         };
 
-        table_all_runs = $('#all-runs').DataTable({
+        this._datatableObj = $(`#${this._elementId}`).DataTable({
             // callback for each created row, add styling class so cursor is pointer showing it's a link
             "createdRow": function (row, data, index) {
                 $(row).addClass("stylable");
@@ -64,7 +75,7 @@ class FlowcellTableController {
                     'targets': 3,
                     'data': "start_time",
                     'render': function (data, type, full, meta) {
-                        return `<a href="/web/private/flowcells/${full["id"]}/">${moment(data).format('YYYY-MM-DD HH:mm')}</a>`;
+                        return `<a href="/web/private/${that._linkDestination}/${full["id"]}/">${moment(data).format('YYYY-MM-DD HH:mm')}</a>`;
                     }
                 },
                 {
@@ -102,14 +113,14 @@ class FlowcellTableController {
                                     if (/\.00$/.test(data)) {
                                         data = data.substr(0, data.length - 3);
                                     }
-                                    return `<a href="/web/private/flowcells/${row["id"]}/">${`${data} ${UNITS[i]}${suffix}`}</a>`;
+                                    return `<a href="/web/private/${that._linkDestination}/${row["id"]}/">${`${data} ${UNITS[i]}${suffix}`}</a>`;
                                 }
                                 data /= factor;
                             }
                             data = data.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
                             if (/\.00$/.test(data))
                                 data = data.substr(0, data.length - 3);
-                            return `<a href="/web/private/flowcells/${row["id"]}/">${`${data} Y${suffix}`}</a>`;
+                            return `<a href="/web/private/${that._linkDestination}/${row["id"]}/">${`${data} Y${suffix}`}</a>`;
                         } else {
                             return data
                         }
@@ -142,13 +153,13 @@ class FlowcellTableController {
                 },
             ]
         });
-        // When we've drawn the table, make the whole row clickable, links to it's flowcell
-        table_all_runs.on("draw", function () {
+        // When we've drawn the table, make the whole row clickable, links to href destination
+        that._datatableObj.on("draw", function () {
 
             // create a fake element
             // add the rows HTML
             // Get the href from the Cell
-            table_all_runs.on("click", "tbody tr", function () {
+            that._datatableObj.on("click", "tbody tr", function () {
                 let el = $('<div></div>');
                 el.html($(this)[0].outerHTML);
 

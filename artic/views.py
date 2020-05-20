@@ -100,9 +100,12 @@ def get_artic_master_chart_data(request):
     -------
 
     """
-    flowcell_id = request.GET.get("flowcellId")
+    flowcell_id = request.GET.get("flowcellId", None)
 
     barcode = request.GET.get("barcodeChosen", None)
+
+    if not flowcell_id or not barcode:
+        return Response("Flowcell ID and Barcode Name are required.", status=status.HTTP_400_BAD_REQUEST)
 
     (
         flowcell,
@@ -320,3 +323,42 @@ def get_artic_column_chart_data(request):
         )
 
     return Response(return_data, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def get_artic_summary_table_data(request):
+    """
+    Return the PafSummaryCov data for a given flowcell and populate a datatable
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        Request object that contains the flowcell Primary key
+    Returns
+    -------
+
+    """
+    flowcell_id = request.GET.get("flowcellId", None)
+
+    if not flowcell_id:
+        return Response("Please specify a flowcell_id parameter.", status=status.HTTP_400_BAD_REQUEST)
+
+    artic_task = JobMaster.objects.filter(
+        flowcell_id=flowcell_id, job_type__name="Track Artic Coverage"
+    ).last()
+
+    if not artic_task:
+        return Response("no coverage tracking task running on this flowcell.", status=status.HTTP_404_NOT_FOUND)
+
+    queryset = PafSummaryCov.objects.filter(job_master=artic_task).values("barcode_name",
+                                                                          "chromosome__line_name",
+                                                                          "average_read_length",
+                                                                          "coverage",
+                                                                          "job_master__id",
+                                                                          "read_count",
+                                                                          "total_length",
+                                                                          "reference_line_length", )
+
+    if not queryset:
+        return Response(f"No coverage summaries found for this task {artic_task.id}.", status=status.HTTP_404_NOT_FOUND)
+
+    return Response({"data": queryset})

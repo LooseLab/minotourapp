@@ -52,15 +52,15 @@
                                          :id="minions[minion].name">
                                         <!--{{ minions[minion].state }}-->
                                         <!--<div v-if='minions[minion].state=="active"'>-->
-                                        <div class="panel-body">
+                                        <div class=card-body">
 
 
                                             <div class="col-md-4">
-                                                <div class="panel panel-warning">
-                                                    <div class="panel-heading">
-                                                        <h3 class="panel-title">minKNOW Control options</h3>
+                                                <div class=card panel-warning">
+                                                    <div class=card-heading">
+                                                        <h3 class="card-header">minKNOW Control options</h3>
                                                     </div>
-                                                    <div class="panel-body">
+                                                    <div class=card-body">
                                                         <h5>To test if you have a connection to minKNOW:</h5>
                                                         <button v-on:click="testmessage" :id='minions[minion].url'
                                                                 type='button'
@@ -395,9 +395,9 @@
                                                 </div>
                                             </div>
                                             <div class="col-md-4">
-                                                <div class='panel panel-info'>
+                                                <div class='panel '>
                                                     <div class='panel-heading'>
-                                                        <h3 class='panel-title'>minKNOW real time data</h3>
+                                                        <h3 class='card-header'>minKNOW real time data</h3>
                                                     </div>
                                                     <div class='panel-body'>
                                                         <div class='table-responsive'>
@@ -2472,7 +2472,7 @@
 
 
             Vue.component('diskusage', {
-                template: "<div class='panel panel-info'><div class='panel-heading'><h3 class='panel-title'>Disk Space</h3></div><div class='panel-body'><div class='table-responsive'><table class='table table-condensed' ><tr><td>Category</td><td>Info</td></tr><tr><td>minKNOW computer name</td><td>{{title}}</td></tr><tr><td>Total Drive Capacity</td><td>{{capacity}}</td></tr><tr><td>Free Drive Space</td><td>{{space}} / {{percent}}%</td></tr><tr><td>Disk Space till Shutdown</td><td>{{bytealert}}</td></tr><tr><td>Warnings?</td><td>{{recalert}}</td></tr></table></div></div></div>",
+                template: "<div class='panel '><div class='panel-heading'><h3 class='card-header'>Disk Space</h3></div><div class='panel-body'><div class='table-responsive'><table class='table table-condensed' ><tr><td>Category</td><td>Info</td></tr><tr><td>minKNOW computer name</td><td>{{title}}</td></tr><tr><td>Total Drive Capacity</td><td>{{capacity}}</td></tr><tr><td>Free Drive Space</td><td>{{space}} / {{percent}}%</td></tr><tr><td>Disk Space till Shutdown</td><td>{{bytealert}}</td></tr><tr><td>Warnings?</td><td>{{recalert}}</td></tr></table></div></div></div>",
                 props: ['title', 'keydata', 'datain'],
 
                 data: function () {

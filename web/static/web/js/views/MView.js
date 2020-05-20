@@ -7,13 +7,9 @@ class MView {
         this._elemento = elemento;
     }
 
-    template() {
-        // not implemented yet
-        throw new Error('O método template deve ser implementado');
-    }
-
     update(model) {
         // set the element inner html to the passed html
         this._elemento.innerHTML = this.template(model);
+        setTimeout(()=>{this._elemento.innerHTML=""}, 3000);
     }
 }
