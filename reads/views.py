@@ -2379,36 +2379,10 @@ def read_list_new(request):
     elif request.method == "POST":
 
         reads = request.data
-
         if not reads:
             return Response("No reads in post request", status=status.HTTP_200_OK)
         save_reads_bulk(reads)
         return Response("The task has started. It's in gods hands now...", status=status.HTTP_201_CREATED)
-
-        #
-        # serializer = FastqReadSerializer(data=request.data, many=True)
-        #
-        # if serializer.is_valid():
-        #
-        #     # print(serializer.validated_data)
-        #
-        #     logger.info(
-        #         ">>> received reads post - calling task - request.data size: {}".format(
-        #             len(request.data)
-        #         )
-        #     )
-
-            # save_reads.delay(request.data)
-        #     save_reads(request.data)
-        #
-        #     return Response({}, status=status.HTTP_201_CREATED)
-        #
-        # else:
-        #
-        #     logger.info(">>> received reads post - no valid data")
-        #     return Response(
-        #         {"message": "no valid data"}, status=status.HTTP_400_BAD_REQUEST
-        #     )
 
 
 @api_view(["GET"])

@@ -232,7 +232,7 @@ CELERY_TIMEZONE = 'Europe/London'
 CELERY_BEAT_SCHEDULE = {
     'rapid-monitor': {
         'task': 'web.tasks.run_monitor',
-        'schedule': 30,
+        'schedule': 90,
     },
     'delete-runs': {
         'task': 'web.tasks.delete_runs',

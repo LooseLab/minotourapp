@@ -5,7 +5,7 @@ import time
 
 import pandas as pd
 from celery import task
-from twitter import Twitter, OAuth
+from twitter import Twitter, OAuth, TwitterHTTPError
 
 from alignment.models import PafSummaryCov
 from communication.models import NotificationConditions, Message
@@ -168,23 +168,25 @@ def send_messages():
                     TWITTOKEN, TWITTOKEN_SECRET, TWITCONSUMER_KEY, TWITCONSUMER_SECRET
                 )
             )
-
-            t.direct_messages.events.new(
-                _json={
-                    "event": {
-                        "type": "message_create",
-                        "message_create": {
-                            "target": {
-                                "recipient_id": t.users.show(
-                                    screen_name=new_message.recipient.extendedopts.twitterhandle
-                                )["id"]
+            try:
+                t.direct_messages.events.new(
+                    _json={
+                        "event": {
+                            "type": "message_create",
+                            "message_create": {
+                                "target": {
+                                    "recipient_id": t.users.show(
+                                        screen_name=new_message.recipient.extendedopts.twitterhandle
+                                    )["id"]
+                                },
+                                "message_data": {"text": new_message.title},
                             },
-                            "message_data": {"text": new_message.title},
-                        },
+                        }
                     }
-                }
-            )
-
+                )
+            except TwitterHTTPError as e:
+                logger.error(str(e))
+                return
 
             # status = '@{} {}'.format(new_message.recipient.extendedopts.twitterhandle,new_message.title)
             # t.statuses.update(
