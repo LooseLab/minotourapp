@@ -83,9 +83,9 @@ class FlowcellTabController {
 
             this.show_tabs(tabs);
             let storedFlowcellId = sessionStorage.getItem("flowcellID");
-            // TODO if we don't have the tab this is where we need to check that
             let seshTab = sessionStorage.getItem("tabName");
-            let activeTab = (seshTab !== null) ? seshTab : "summary-data";
+            // We are getting the previous tab here and checking it still is available. If it is we show it.
+            let activeTab = (seshTab !== null && tabs.includes(seshTab)) ? seshTab : "summary-data";
             this.toggle_tab_content(activeTab);
         });
     }
@@ -104,13 +104,14 @@ class FlowcellTabController {
 
         console.log(name);
         var nav_name = 'nav-' + name;
+        console.log(nav_name)
         var panel_name = 'panel-' + name;
 
         this._flowcell_selected_tab.value = nav_name;
 
         this._all_navs.forEach(nav => {
 
-            nav.classList.remove('active');
+            nav.children[0].classList.remove('active');
         });
 
         this._all_tabs.forEach(tab => {
@@ -181,12 +182,15 @@ class FlowcellTabController {
     }
 
     toggle_content(nav, tab) {
-        const topPadding = $(".main-header").height() + 16;
-        $(".content-wrapper").css("padding-top", `${topPadding}px`);
-        nav.classList.add('active');
+        // const topPadding = $(".main-header").height() + 16;
+        // $(".content-wrapper").css("padding-top", `${topPadding}px`);
+        // As of bootstrap 4 we need to add the active class to the a link not the Li element
+        nav.children[0].classList.add('active');
+        console.log(tab)
+        console.log(nav)
+        console.log("hello")
         tab.classList.remove('hidden');
-        tab.classList.add('show');
-        console.log(tab);
+        tab.classList.add('active');
         sessionStorage.setItem("tabName", tab.id.substr(4));
         app.requestData(this._flowcell_id);
     }

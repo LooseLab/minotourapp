@@ -1,20 +1,19 @@
 <div class="row">
 
     <div class="col-md-6">
-        <div class="panel panel-info">
-            <div class="panel-heading">
-                <h3 class="panel-title">Set notifications.</h3>
+        <div class="card ">
+            <div class="card-header">
+                <h3 class="card-header">Set notifications.</h3>
             </div>
-            <div class="panel-body>">
+            <form method="post" id="post-form-notification-create"
+                  onsubmit="notificationsController.submitNotificationChoices(event, this)">
+                {% csrf_token %}
+                <div class="card-body>">
 
-                <form method="post" id="post-form-notification-create"
-                      onsubmit="notificationsController.submitNotificationChoices(event, this)">
-                    {% csrf_token %}
 
-
-                    <label>Optional automatic notifications: <br>
+                    <p class="card-text">Optional automatic notifications: <br>
                         (Click for suggestions)
-                    </label>
+                    </p>
                     <blockquote>
                         <multi-input id="autoMulti">
                             <input list="notifications">
@@ -62,18 +61,22 @@
                     <br>
 
                     {#        <input class="first" type="submit">#}
-                    <button class="btn btn-primary" type="submit">submit</button>
 
-                </form>
-            </div>
+                </div>
+                <div class="card-footer">
+                                        <button class="btn btn-primary" type="submit">submit</button>
+
+                </div>
+            </form>
+
         </div>
     </div>
     <div class="col-md-6">
-        <div class="panel panel-info">
-            <div class="panel-heading">
-                <h3 class="panel-title">Extant notifications</h3>
+        <div class="card ">
+            <div class="card-heading">
+                <h3 class="card-header">Extant notifications</h3>
             </div>
-            <div class="panel-body">
+            <div class="card-body">
                 <table class="table table-hover extantNotif display" style="width: 100%;">
                     <thead>
                     <tr>

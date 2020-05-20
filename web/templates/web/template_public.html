@@ -1,26 +1,22 @@
 {% extends "web/template_base.html" %}
+{% load static %}
 
 {% block body_tag %}
-<body class="hold-transition skin-blue sidebar-mini layout-top-nav fixed">
+<body class="hold-transition sidebar-mini layout-top-nav fixed">
 {% endblock %}
 
 {% block header %}
-    <!-- Main Header -->
-    <header class="main-header">
-        <nav class="navbar navbar-static-top">
-            <a href="{% url 'login' %}" class="logo">
-                <!-- mini logo for sidebar mini 50x50 pixels -->
-                <span class="logo-mini"><b>m</b>T<small></small></span>
-                <!-- logo for regular state and mobile devices -->
-                <span class="logo-lg"><b>mino</b>Tour</span>
-            </a>
+    <!-- Public NavBar -->
+        <nav class="nav navbar-static-top" style="background-color: #6bb9f0">
+
+            <a class="navbar-brand" href="{% url 'login' %}" style="height: 100%; background-color: #3498db"><img src="{% static 'web/img/minotourlogo.png' %}"
+                                                                  style="max-width: 80px;padding-right: .5rem; padding-left: .5rem;"></a>
 
             <div class="container-fluid">
                 <div class="navbar-header">
                 </div><!-- /.navbar-collapse -->
             </div><!-- /.container-fluid -->
         </nav>
-    </header>
 {% endblock %}
 
 {% block sidebar %}

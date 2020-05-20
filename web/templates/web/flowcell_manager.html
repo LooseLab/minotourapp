@@ -6,37 +6,42 @@
 
         <!-- Content Header (Page header) -->
         <section class="content-header">
-            <h1>Flowcell Management <small> - select a Flowcell to split.</small></h1>
         </section>
 
         <!-- Main content -->
         <section class="content">
             <!-- Main top nav bar -->
+            <div class="container-fluid">
+                <div class="card">
+                    <h2 class="card-header">Flowcell Splitting Management <small> - select a Flowcell to split.</small>
+                    </h2>
+                    <div class="card-body">
+                        <div id="messages"></div>
 
-            <div id="messages"></div>
-
-            <div class="box-body">
-                <table id="all-runs" class="table table-bordered table-striped table-hover" style="width:100%"
-                       cellspacing="0">
-                    <thead>
-                    <tr>
-                        <th>Flowcell<br/>Name</th>
-                        <th>Flowcell<br/>Size</th>
-                        <th>Sample<br/>Name</th>
-                        <th>Start<br/>Time</th>
-                        <th>Number<br/>of Reads</th>
-                        <th>Number<br/>of Reads Processed</th>
-                        <th>Number<br/>of Runs</th>
-                        <th>Number<br/>of Barcodes</th>
-                        <th>Yield</th>
-                        <th>Average<br/>Read Length</th>
-                        <th>Status</th>
-                        <th>Contains<br/>sequence data</th>
-                        <th>Is Owner</th>
-                        <th>Permission</th>
-                    </tr>
-                    </thead>
-                </table>
+                        <table id="splitting-all-flowcells" class="table table-bordered table-striped table-hover"
+                               style="width:100%"
+                               cellspacing="0">
+                            <thead>
+                            <tr>
+                                <th>Flowcell<br/>Name</th>
+                                <th>Flowcell<br/>Size</th>
+                                <th>Sample<br/>Name</th>
+                                <th>Start<br/>Time</th>
+                                <th>Number<br/>of Reads</th>
+                                <th>Number<br/>of Reads Processed</th>
+                                <th>Number<br/>of Runs</th>
+                                <th>Number<br/>of Barcodes</th>
+                                <th>Yield</th>
+                                <th>Average<br/>Read Length</th>
+                                <th>Status</th>
+                                <th>Contains<br/>sequence data</th>
+                                <th>Is Owner</th>
+                                <th>Permission</th>
+                            </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
             </div>
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
@@ -44,132 +49,8 @@
 
 {% block javascript %}
     <script>
-        const topPadding = $(".main-header").height() + 16;
-        $(".content-wrapper").css("padding-top", `${topPadding}px`);
-
-        var table_all_runs;
-
-        $(document).ready(function () {
-            $.fn.dataTable.render.format_link = function () {
-                return function (data, type, full, meta) {
-
-                    return `<a href="/web/private/flowcell_manager/${full["id"]}/">${data}</a>`;
-                };
-            };
-
-            table_all_runs = $('#all-runs').DataTable({
-                "scrollX": true,
-                "order": [[3, "desc"]],
-                'ajax': {
-                    'url': "{% url 'flowcell-list' %}",
-
-                },
-                'columnDefs': [
-                    {
-                        'targets': 0,
-                        'data': "name",
-                        'render': $.fn.dataTable.render.format_link()
-
-                    },
-                    {
-                        'targets': 1,
-                        'data': "size",
-                        'render': $.fn.dataTable.render.format_link()
-                    },
-                    {
-                        'targets': 2,
-                        'data': "sample_name",
-                        'render': $.fn.dataTable.render.format_link()
-                    },
-                    {
-                        'targets': 3,
-                        'data': "start_time",
-                        'render': function (data, type, full, meta) {
-                            return `<a href="/web/private/flowcells/${full["id"]}/">${moment(data).format('YYYY-MM-DD HH:mm')}</a>`;
-                        }
-                    },
-                    {
-                        'targets': 4,
-                        'data': "number_reads",
-                        'render': $.fn.dataTable.render.format_link()
-                    },
-                    {
-                        'targets': 5,
-                        'data': "number_reads_processed",
-                        'render': $.fn.dataTable.render.format_link()
-                    },
-                    {
-                        'targets': 6,
-                        'data': "number_runs",
-                        'render': $.fn.dataTable.render.format_link()
-                    },
-                    {
-                        'targets': 7,
-                        'data': "number_barcodes",
-                        'render': $.fn.dataTable.render.format_link()
-                    },
-                    {
-                        'targets': 8,
-                        'data': "total_read_length",
-                        render: function (data, type, row) {
-                            console.log(typeof data);
-                            if (type === "display" || type === "filter") {
-                                {#var data = data;#}
-                                var UNITS = ["", "k", "M", "G", "T", "P", "E", "Z"];
-                                var factor = 1000;
-                                var suffix = "b";
-                                for (var i = 0; i < UNITS.length; i++) {
-                                    console.log(UNITS[i]);
-                                    if (Math.abs(data) < factor) {
-                                        console.log("factor");
-                                        data = data.toFixed(2);
-                                        if (/\.00$/.test(data)) {
-                                            data = data.substr(0, data.length - 3);
-                                        }
-                                        return `<a href="/web/private/flowcells/${row["id"]}/">${`${data} ${UNITS[i]}${suffix}`}</a>`;
-                                    }
-                                    data /= factor;
-                                }
-                                data = data.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-                                if (/\.00$/.test(data))
-                                    data = data.substr(0, data.length - 3);
-                                return `<a href="/web/private/flowcells/${row["id"]}/">${`${data} Y${suffix}`}</a>`;
-                            } else {
-                                return data
-                            }
-                        }
-                    },
-                    {
-                        'targets': 9,
-                        'data': "average_read_length",
-                        'render': $.fn.dataTable.render.format_link()
-                    },
-                    {
-                        'targets': 10,
-                        'data': "is_active",
-                        'render': $.fn.dataTable.render.format_link()
-                    },
-                    {
-                        'targets': 11,
-                        'data': "has_fastq",
-                        'render': $.fn.dataTable.render.format_link()
-                    },
-                    {
-                        'targets': 12,
-                        'data': "owner",
-                        'render': $.fn.dataTable.render.format_link()
-                    },
-                    {
-                        'targets': 13,
-                        'data': "permission",
-                        'render': $.fn.dataTable.render.format_link()
-                    },
-                ]
-            });
-
-            set_active_navbar_item(4);
-
-
-        });
+        const flowcellTableController = new FlowcellTableController("flowcell_manager", "splitting-all-flowcells");
+        flowcellTableController.renderTable();
+        set_active_navbar_item(4);
     </script>
 {% endblock %}

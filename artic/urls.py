@@ -22,4 +22,9 @@ urlpatterns = [
         views.get_artic_column_chart_data,
         name="get-artic-column"
     ),
+    url(
+        r'^api/v1/artic/visualisation/summary-table-data/$',
+        views.get_artic_summary_table_data,
+        name="get-summary-table-data"
+    ),
 ]

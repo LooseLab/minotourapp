@@ -71,11 +71,13 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'minotourapp.urls'
+print(BASE_DIR)
+print(os.path.join(BASE_DIR, 'web/templates/'))
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates/')],
+        'DIRS': [os.path.join(BASE_DIR, 'web/templates/')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

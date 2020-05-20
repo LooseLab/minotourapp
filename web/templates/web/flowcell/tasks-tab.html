@@ -2,11 +2,9 @@
     <div id="messageView" class="col-md-12"></div>
 
     <div class="col-md-12">
-        <div class='panel panel-info'>
-            <div class='panel-heading'>
-                <h3 class='panel-title'>Create a new analysis task</h3>
-            </div>
-            <div class='panel-body'>
+        <div class="card ">
+            <h3 class="card-header">Create a new analysis task</h3>
+            <div class="card-body">
 
                 <form method="post" id="post-form-task-create" onsubmit="mTaskController.create_new_job(event)">
                     {% csrf_token %}
@@ -30,11 +28,9 @@
 
 <div class="row tasktablecont">
     <div class="col-md-12">
-        <div class='panel panel-info'>
-            <div class='panel-heading'>
-                <h3 class='panel-title'>Tasks</h3>
-            </div>
-            <div class='panel-body'>
+        <div class="card">
+            <h3 class="card-header">Tasks</h3>
+            <div class="card-body">
                 <table class="table table-hover tasktable display" style="width: 100%;">
                     <thead>
                     <tr>
@@ -68,22 +64,30 @@
 
 <div class="row">
     <div class="col-md-12">
-        <div class='panel panel-info'>
-            <div class='panel-heading'>
-                <h3 class='panel-title'>Reactivate flowcell</h3>
-            </div>
-            <div class='panel-body'>
+        <div class="card">
+            <h3 class="card-header">Reactivate flowcell</h3>
+            <div class="card-body">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-12" id="messageViewReactivate"></div>
+                    </div>
 
-                <div id="messageViewReactivate"></div>
-
-                <button name="reactivate_flowcell" class="btn button"
-                        onclick="mTaskController.reactivateFlowcell(event)">Reactivate
-                </button>
-
-                <p><br>We don't expect manually reactivating a flowcell to be necessary, as starting a task should
-                    reactivate an inactivated flowcell.
-                    However if for some reason you need to reactivate a flowcell to start a task running again, hit this
-                    button.</p>
+                    <div class="row">
+                        <div class="col-md-2" style="display: flex; justify-content: center; align-content: center; flex-direction: column;">
+                            <button name="reactivate_flowcell" class="btn btn-warning"
+                                    onclick="mTaskController.reactivateFlowcell(event)">Reactivate
+                            </button>
+                        </div>
+                        <div class="col-md-10">
+                            <p>We don"t expect manually reactivating a flowcell to be necessary, as starting a task
+                                should
+                                reactivate an inactivated flowcell.
+                                However if for some reason you need to reactivate a flowcell to start a task running
+                                again, hit this
+                                button.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -92,7 +96,7 @@
 <div class="modal fade" id="confirm-submit" tabindex="-1" role="dialog"
      aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div style="border-radius: 25px"  class="modal-content" >
+        <div style="border-radius: 25px" class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
                 </button>

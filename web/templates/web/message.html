@@ -6,31 +6,34 @@
 
         <!-- Content Header (Page header) -->
         <section class="content-header">
-            <h1>User Messages <small> - List of messages received for the current user </small></h1>
         </section>
 
-        <!-- Main content -->
+        <!-- Main Messages content -->
         <section class="content">
-            <!-- Main top nav bar -->
+            <div class="container-fluid">
+                <div class="card">
+                    <h2 class="card-header">User Messages - List of messages received for the current user </h2>
+                    <div class="card-body">
+                        <div id="messages"></div>
 
-            <div id="messages"></div>
+                        <div class="message-body">
+                            <table id="message-table" class="table table-bordered table-striped table-hover"
+                                   style="width:100%"
+                                   cellspacing="0">
+                                <thead>
+                                <tr>
 
-            <div class="message-body">
-                <!--<table id="all-messages" class="user messages received" style="width:100%"
-                       cellspacing="0">-->
-                <table id="message-table" class="table table-bordered table-striped table-hover" style="width:100%"
-                       cellspacing="0">
-                    <thead>
-                    <tr>
+                                    <th>Message<br/>Title</th>
+                                    <th>Message<br/>Date</th>
+                                    <th>Message<br/>Sender</th>
+                                    <th>Flowcell</th>
 
-                        <th>Message<br/>Title</th>
-                        <th>Message<br/>Date</th>
-                        <th>Message<br/>Sender</th>
-                        <th>Flowcell</th>
-
-                    </tr>
-                    </thead>
-                </table>
+                                </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     </div>
@@ -38,14 +41,9 @@
 
 {% block javascript %}
     <script>
-        //    document.getElementById("btn-copy-token").addEventListener("click", function() {
-        //      copyToClipboardMsg(document.getElementById("token"), "msg");
-        // });
         const messageController = new MessageController();
 
         messageController.drawMessageTable();
-        const topPadding = $(".main-header").height() + 16;
-        $(".content-wrapper").css("padding-top", `${topPadding}px`);
         set_active_navbar_item(3);
     </script>
 {% endblock %}

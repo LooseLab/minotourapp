@@ -2,90 +2,94 @@
 {% load static %}
 
 {% block header %}
-    <header class="main-header" style="position: fixed; width: 100%">
+    {#    <header class="main-header" style=" width: 100%">#}
+    <nav class="navbar navbar-expand-md navbar-dark bg-primary fixed-top" id="tn">
+        <a class="navbar-brand" href="{% url 'flowcells' %}"><img src="{% static 'web/img/minotourlogo.png' %}"
+                                                                  style="max-width: 80px"></a>
 
-        <nav class="navbar navbar-default">
-            <div class="container-fluid">
-                <!-- Brand and toggle get grouped for better mobile display -->
-                <div class="navbar-header">
-                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse"
-                            data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
-                        <span class="sr-only">Toggle navigation</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" href="{% url 'flowcells' %}"> minoTour </a>
-                </div>
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggler collapse" data-toggle="collapse"
+                    data-target="#navbar-minotour-content" aria-expanded="false"
+                    aria-controls="navbar-minotour-content" aria-label="Toggle navigation">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="navbar-toggler-icono"></span>
+            </button>
+        </div>
 
-                <!-- Collect the nav links, forms, and other content for toggling -->
-                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-                    <ul class="nav h navbar-nav">
-                        <li class="active">
-                            <a href="{% url 'flowcells' %}">
-                                <i class="fa fa-table fa-fw"></i><span> Flowcells</span>
-                            </a>
-                        </li>
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="navbar-minotour-content">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" href="{% url 'flowcells' %}">
+                        <i class="fa fa-table fa-fw"></i><span> Flowcells</span>
+                    </a>
+                </li>
 
-                        <li>
-                            <a href="{% url 'remote-control' %}">
-                                <i class="fa fa-gamepad fa-fw"></i><span> MinKnow Control </span>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'remote-control' %}">
+                        <i class="fa fa-gamepad fa-fw"></i><span> MinKnow Control </span>
 
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'minup' %}">
-                                <i class="fa fa-cloud-upload-alt fa-fw"></i><span> Client </span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'messages' %}">
-                                <i class="fa fa-envelope fa-fw"></i>
-                                <span> Messages </span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'flowcell-manager' %}">
-                                <i class="fa fa-cloud-upload-alt fa-fw"></i><span> Flowcell Manager </span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'private-index' %}">
-                                <i class="fa fa-book-dead fa-fw"></i><span> About </span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{% url 'tutorial' %}">
-                                <i class="fa fa-quidditch fa-fw"></i><span> Help </span>
-                            </a>
-                        </li>
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button"
-                               aria-haspopup="true" aria-expanded="false">{{ request.user }}
-                                {% if request.user.is_superuser %} (admin user) {% endif %} <span class="caret"></span></a>
-                            <ul class="dropdown-menu">
-                                <li><a href="{% url 'password_change' %}">Change Password</a></li>
-                                <li><a href="{% url 'profile' %}">Profile</a></li>
-                                <li><a href="{% url 'logout' %}">Sign out</a></li>
-                            </ul>
-                        </li>
-                    </ul>
-                </div><!-- /.navbar-collapse -->
-            </div><!-- /.container-fluid -->
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'minup' %}">
+                        <i class="fa fa-cloud-upload-alt fa-fw"></i><span> Client </span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'messages' %}">
+                        <i class="fa fa-envelope fa-fw"></i>
+                        <span> Messages </span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'flowcell-manager' %}">
+                        <i class="fa fa-cloud-upload-alt fa-fw"></i><span> Flowcell Manager </span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'private-index' %}">
+                        <i class="fa fa-book-dead fa-fw"></i><span> About </span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'tutorial' %}">
+                        <i class="fa fa-quidditch fa-fw"></i><span> Help </span>
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button"
+                       aria-haspopup="true" aria-expanded="false">{{ request.user }}
+                        {% if request.user.is_superuser %} (admin user) {% endif %} <span class="caret"></span></a>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="{% url 'password_change' %}">Change Password</a>
+                        <a class="dropdown-item" href="{% url 'profile' %}">{{ request.user }}'s Profile</a>
+                        <a class="dropdown-item" href="{% url 'logout' %}">Sign out</a>
+                    </div>
+                </li>
+            </ul>
+        </div><!-- /.navbar-collapse -->
 
-        </nav>
+    </nav>
 
-    </header>
+    {#    </header>#}
 
 
     <div class="col-md-12" style="display: none">
         {% if request.user.is_superuser %}
             <br/>
-            <div class="alert alert-danger" role="alert" >You are logged using an admin account. Please use another
+            <div class="alert alert-danger" role="alert">You are logged using an admin account. Please use another
                 account to analyse or process Nanopore data
             </div>
         {% endif %}
     </div>
+
+    <script>
+        // offset body to account for navbar stickyness, which pulls navbar out of DOM
+        let heighty = $("#tn").css("height")
+        $("body").css("padding-top", heighty)
+    </script>
 
 
 

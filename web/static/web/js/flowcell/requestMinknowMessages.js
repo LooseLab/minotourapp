@@ -1,6 +1,6 @@
 function requestMinknowMessages(id, data) {
     // Request minKnow messages for the live events page and flowcell summary page
-    var url = '/flowcells/' + id + '/minknow_messages_html/';
+    var url = '/api/v1/flowcells/' + id + '/minknow-messages-html/';
     // Select the message table node in the DOM
     var minknowMessagesDiv = document.querySelector('#minknow-messages-div');
     console.log(data);
@@ -9,6 +9,7 @@ function requestMinknowMessages(id, data) {
         dataType: "html",
         // Append the rendered HTML to the DOM node we selected above, django is returning a fully rendered HTML template
         success: function(data) {
+            minknowMessagesDiv.className="";
             minknowMessagesDiv.innerHTML = data;
         },
         // Send the get request params, start time of the first run, end time of the final run

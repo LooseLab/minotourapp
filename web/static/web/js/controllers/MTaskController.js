@@ -24,7 +24,7 @@ class MTaskController {
         // create a message view for reactivating the flowcell
         this._reactivatemessageView = new MMessageView(document.querySelector('#messageViewReactivate'), "warning");
         // update reactivate message
-        this._reactivatemessageView.update(this._message);
+        // this._reactivatemessageView.update(this._message);
         // The name of the flowcell used for the deletion checks
         this._flowcellName = $("#name-flowcell").html();
         // Whether or not to delete the flowcell
