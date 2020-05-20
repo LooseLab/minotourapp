@@ -1,6 +1,7 @@
 import datetime
 import json
 import time
+from pathlib import Path
 from pprint import pprint
 
 import numpy as np
@@ -20,6 +21,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from alignment.models import PafRoughCov
+from artic.views import quick_get_artic_results_directory
 from assembly.models import GfaStore
 from centrifuge.models import CentrifugeOutput
 from minotourapp import settings
@@ -421,38 +423,40 @@ def active_minion_list(request):
 
     extra_data = {}
 
-    blank_stats = {'id': -1,
-                   'minion_id': -1,
-                   'run_id': -1,
-                   'sample_time': datetime.datetime.now(),
-                   'event_yield': "Unknown",
-                   'asic_temp': "Unknown",
-                   'heat_sink_temp': "Unknown",
-                   'voltage_value': "Unknown",
-                   'mean_ratio': "Unknown",
-                   'open_pore': "Unknown",
-                   'in_strand': "Unknown",
-                   'multiple': "Unknown",
-                   'unavailable': "Unknown",
-                   'unknown': "Unknown",
-                   'adapter': "Unknown",
-                   'pending_mux_change': "Unknown",
-                   'unclassified': "Unknown",
-                   'below': "Unknown",
-                   'unblocking': "Unknown",
-                   'above': "Unknown",
-                   'good_single': "Unknown",
-                   'saturated': "Unknown",
-                   'inrange': "Unknown",
-                   'strand': "Unknown",
-                   'no_pore': "Unknown",
-                   'zero': "Unknown",
-                   'pore': "Unknown",
-                   'minKNOW_read_count': "Unknown",
-                   'minKNOW_histogram_values': "[]",
-                   'minKNOW_histogram_bin_width': "Unknown",
-                   'created_date': datetime.datetime.now(),
-                   'actual_max_val': "Unknown"}
+    blank_stats = {
+        "id": -1,
+        "minion_id": -1,
+        "run_id": -1,
+        "sample_time": datetime.datetime.now(),
+        "event_yield": "Unknown",
+        "asic_temp": "Unknown",
+        "heat_sink_temp": "Unknown",
+        "voltage_value": "Unknown",
+        "mean_ratio": "Unknown",
+        "open_pore": "Unknown",
+        "in_strand": "Unknown",
+        "multiple": "Unknown",
+        "unavailable": "Unknown",
+        "unknown": "Unknown",
+        "adapter": "Unknown",
+        "pending_mux_change": "Unknown",
+        "unclassified": "Unknown",
+        "below": "Unknown",
+        "unblocking": "Unknown",
+        "above": "Unknown",
+        "good_single": "Unknown",
+        "saturated": "Unknown",
+        "inrange": "Unknown",
+        "strand": "Unknown",
+        "no_pore": "Unknown",
+        "zero": "Unknown",
+        "pore": "Unknown",
+        "minKNOW_read_count": "Unknown",
+        "minKNOW_histogram_values": "[]",
+        "minKNOW_histogram_bin_width": "Unknown",
+        "created_date": datetime.datetime.now(),
+        "actual_max_val": "Unknown",
+    }
 
     data = {}
 
@@ -471,10 +475,14 @@ def active_minion_list(request):
         if minion_event_list.count() > 0:
 
             last_minion_event = minion_event_list.last()
-            five_minute_check = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(minutes=5)
+            five_minute_check = datetime.datetime.now(
+                datetime.timezone.utc
+            ) - datetime.timedelta(minutes=5)
 
-            if last_minion_event.event.name != "unplugged" and minion.currentdetails.last_modified > five_minute_check:
-
+            if (
+                last_minion_event.event.name != "unplugged"
+                and minion.currentdetails.last_modified > five_minute_check
+            ):
 
                 if minion.currentdetails.minKNOW_status in [
                     "ACQUISITION_RUNNING",
@@ -483,17 +491,25 @@ def active_minion_list(request):
                 ]:
                     # Get the run start time and other deets
                     extra_data[minion.name]["start_time"] = str(minion.start_time())
-                    extra_data[minion.name]["wells_per_channel"] = minion.wells_per_channel()
-                    extra_data[minion.name]["read_length_type"] = minion.read_length_type()
+                    extra_data[minion.name][
+                        "wells_per_channel"
+                    ] = minion.wells_per_channel()
+                    extra_data[minion.name][
+                        "read_length_type"
+                    ] = minion.read_length_type()
                     extra_data[minion.name]["actual_max_val"] = minion.actual_max_val()
                     extra_data[minion.name]["target_temp"] = minion.target_temp()
                     extra_data[minion.name]["flowcell_type"] = minion.flowcell_type()
-                    extra_data[minion.name]["experiment_name"] = minion.experiment_name()
+                    extra_data[minion.name][
+                        "experiment_name"
+                    ] = minion.experiment_name()
 
                     mrs = MinionRunStats.objects.filter(minion=minion).last()
 
                     if mrs:
-                        mrs_serialiser = MinionRunStatsSerializer(mrs, context={"request": request})
+                        mrs_serialiser = MinionRunStatsSerializer(
+                            mrs, context={"request": request}
+                        )
 
                         data[minion.name] = mrs_serialiser.data
 
@@ -637,7 +653,6 @@ def minknow_message_html(request, pk):
     """
     flowcell = Flowcell.objects.get(pk=pk)
     runs = Run.objects.filter(flowcell=flowcell)
-
 
     messages = MinionMessage.objects.filter(run__in=runs).order_by("-timestamp")
 
@@ -794,7 +809,7 @@ def list_minion_info(request, pk):
         return Response(serializer.data)
 
     elif request.method == "PUT":
-        #TODO WE HAVE A BUG HERE AGAIN?
+        # TODO WE HAVE A BUG HERE AGAIN?
         serializer = MinionInfoSerializer(
             minion_info, data=request.data, context={"request": request}
         )
@@ -825,7 +840,7 @@ def minion_run_stats_list(request, pk):
 
     """
     if request.method == "POST":
-        
+
         serializer = MinionRunStatsSerializer(
             data=request.data, context={"request": request}
         )
@@ -923,8 +938,9 @@ def remote_control_run_stats(request):
 
         for minion in minions:
 
-            queryset = MinionRunStats.objects.filter(minion__owner=request.user, minion__name=minion).values()
-            
+            queryset = MinionRunStats.objects.filter(
+                minion__owner=request.user, minion__name=minion
+            ).values()
 
             if queryset:
 
@@ -1253,11 +1269,12 @@ def flowcell_list(request):
                 owner = False
                 permission = "Run analysis"
             else:
-                logger.error(f"Flowcell {record.name} retrieved for user {request.user} that should not have been.")
+                logger.error(
+                    f"Flowcell {record.name} retrieved for user {request.user} that should not have been."
+                )
                 continue
 
             obj = None
-
 
             obj = {
                 "id": record.id,
@@ -1525,8 +1542,10 @@ def flowcell_statistics(request, pk):
     # Reverse lookup a queryset of all the runs in this flowcell
     run_list = flowcell.runs.all()
 
-    job_master_iteration = flowcell.flowcelljobs.get(job_type__name="ChanCalc").iteration_count
-    '''
+    job_master_iteration = flowcell.flowcelljobs.get(
+        job_type__name="ChanCalc"
+    ).iteration_count
+    """
     queryset = (
         FlowcellStatisticBarcode.objects.filter(flowcell=flowcell, iteration_count=job_master_iteration)
             .filter(
@@ -1534,7 +1553,7 @@ def flowcell_statistics(request, pk):
         )
             .order_by("sample_time")
     )
-    '''
+    """
     queryset = (
         FlowcellStatisticBarcode.objects.filter(flowcell=flowcell)
         .filter(
@@ -1702,7 +1721,10 @@ def flowcell_speed(request, pk):
         df["mean_total_length"] = df["sum_total_length"].rolling(window=window).mean()
         # calculate the mean speed over those rolling windows in bases per second
         df["mean_speed"] = (
-            df["mean_total_length"].div(df["mean_chan_count"]).div(600).round(decimals=0)
+            df["mean_total_length"]
+            .div(df["mean_chan_count"])
+            .div(600)
+            .round(decimals=0)
         )
     elif len(df.status.unique()) == 1:
         # We only have either pass or fail reads in the dataset
@@ -2042,7 +2064,9 @@ def flowcell_run_stats_latest(request, pk, checkid):
     """
     flowcell = Flowcell.objects.get(pk=pk)
     # Get all the Minion Run status objects for this flowcell
-    minion_run_status_list = MinionRunInfo.objects.filter(run_id__flowcell=flowcell).exclude(experiment_type="platform_qc")
+    minion_run_status_list = MinionRunInfo.objects.filter(
+        run_id__flowcell=flowcell
+    ).exclude(experiment_type="platform_qc")
     # If we have more than 0
     if minion_run_status_list.count() > 0:
         # Take the first entry to be the run status
@@ -2165,9 +2189,20 @@ def flowcell_tasks_detail_all(request, pk):
 
 
 @api_view(["GET"])
-def flowcell_tabs_details(request, pk):
+def flowcell_tabs_list(request, pk):
     """
-    Return tab_id, tab_title, and tab_position for a given flowcell.
+    Get the flowcell tabs for a given flowcell.
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+    pk: int
+        Primary key of Flowcell record.
+
+    Returns
+    -------
+    list
+        List of tabs with data for flowcell.
+
     """
 
     tabs = ["summary-data", "tasks", "sharing", "notifications"]
@@ -2216,8 +2251,9 @@ def flowcell_tabs_details(request, pk):
         tabs.append("sequence-assembly")
 
     # TODO add an actual check here
-    if True:
+    if JobMaster.objects.filter(flowcell__id=pk, job_type__name="Track Artic Coverage", complete=True):
         tabs.append("artic")
+
     return Response(tabs)
 
 
@@ -2360,12 +2396,12 @@ def read_list_new(request):
 
         if search_criteria == "run":
 
-            qs = FastqRead.objects.filter(run__id=search_value)[offset: offset + limit]
+            qs = FastqRead.objects.filter(run__id=search_value)[offset : offset + limit]
 
         elif search_criteria == "fastqfile":
 
             qs = FastqRead.objects.filter(fastqfile_id=search_value)[
-                offset: offset + limit
+                offset : offset + limit
             ]
 
         else:
@@ -2383,7 +2419,10 @@ def read_list_new(request):
         if not reads:
             return Response("No reads in post request", status=status.HTTP_200_OK)
         save_reads_bulk(reads)
-        return Response("The task has started. It's in gods hands now...", status=status.HTTP_201_CREATED)
+        return Response(
+            "The task has started. It's in gods hands now...",
+            status=status.HTTP_201_CREATED,
+        )
 
         #
         # serializer = FastqReadSerializer(data=request.data, many=True)
@@ -2520,7 +2559,7 @@ def flowcell_sharing(request, pk):
             return Response(
                 {
                     "message": "User already has permission. If you want to change the permission"
-                               " level, delete the current permission first."
+                    " level, delete the current permission first."
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
@@ -2704,7 +2743,6 @@ def get_or_create_tasks(request):
         if int(request.data["job_type"]) not in [4, 15]:
 
             request.data["reference"] = None
-
 
         # For client side job starting, check if we have a reference and it's a string
         if (

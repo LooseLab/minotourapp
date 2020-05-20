@@ -200,7 +200,7 @@ urlpatterns = [
         name="flowcell-sharing-delete"),
     url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/tabs/$',
-        views.flowcell_tabs_details,
+        views.flowcell_tabs_list,
         name="tabs-details"
     ),
     url(
