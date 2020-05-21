@@ -25,6 +25,8 @@ function updateBarcodeNavTab() {
         var a = document.createElement("a");
 
         a.classList.add("nav-link")
+
+        a.setAttribute("data-toggle","pill")
         // add event listener to a element
         a.addEventListener('click', function(event) {
             // Get the text for the selected barcode, upon click

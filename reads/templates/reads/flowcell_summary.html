@@ -1,20 +1,20 @@
 {% load humanize %}
 {#// TODO THIS SEEMS BROKEN#}
 
-<div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+<div id="accordion">
+  <div class="card card-primary card-outline">
+    <div class="card-header" id="headingOne">
+      <h5>
+        <button class="btn btn-link" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+          <i class="fas fa-table"></i>
+            All Reads Summary
+        </button>
+      </h5>
+    </div>
 
-    <div class="panel panel-default">
-        <div class="panel-heading" role="tab" id="headingOne">
-            <h4 class="panel-title">
-                <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseOne"
-                   aria-expanded="true" aria-controls="collapseOne">
-                    All Reads Summary
-                </a>
-            </h4>
-        </div>
-        <div id="collapseOne" class="panel-collapse collapse in" role="tabpanel" aria-labelledby="headingOne">
-            <div class="panel-body">
-                <table class="table table-condensed table-hover">
+    <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
+      <div class="card-body">
+        <table class="table table-sm table-hover">
                     <thead>
                     <th>Barcode</th>
                     <th>Read type</th>
@@ -34,11 +34,11 @@
                         {% if record.barcode_name == "All reads" %}
 
                             {% if record.read_type == "Pass" %}
-                                <tr class="success">
+                                <tr class="table-success">
                                     {% elif record.read_type == "Fail" %}
-                                <tr class="danger">
+                                <tr class="table-danger">
                                     {% else %}
-                                <tr class="info" style="font-weight:bold;font-style: italic">
+                                <tr class="table-info" style="font-weight:bold;font-style: italic">
                             {% endif %}
                         {% if record.read_type == "all" %}
                             <td>{{ record.barcode_name }}</td>
@@ -64,25 +64,23 @@
 
 
                 </table>
-
-
-            </div>
-        </div>
+      </div>
     </div>
+  </div>
 
     {% if qs|length > 3 %}
-        <div class="panel panel-default">
-            <div class="panel-heading" role="tab" id="headingTwo">
-                <h4 class="panel-title">
-                    <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion"
-                       href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                        Read Summary by Barcode
-                    </a>
-                </h4>
-            </div>
-            <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
-                <div class="panel-body">
-                    <table id="barcode_table" class="table table-condensed table-hover">
+  <div class="card card-primary card-outline">
+    <div class="card-header" id="headingTwo">
+      <h5>
+        <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+          <i class="fas fa-table"></i>
+            Read Summary by Barcode
+        </button>
+      </h5>
+    </div>
+    <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
+      <div class="card-body">
+        <table id="barcode_table" class="table table-sm table-hover">
                         <thead>
                         <th>Barcode</th>
                         <th>Read type</th>
@@ -101,11 +99,11 @@
                             {% if record.barcode_name != "All reads" %}
 
                                 {% if record.read_type == "Pass" %}
-                                    <tr class="success">
+                                    <tr class="table-success">
                                         {% elif record.read_type == "Fail" %}
-                                    <tr class="danger">
+                                    <tr class="table-danger">
                                         {% else %}
-                                    <tr class="info" style="font-weight:bold;font-style: italic">
+                                    <tr class="table-info" style="font-weight:bold;font-style: italic">
                                 {% endif %}
                             {% if record.read_type == "all" %}
                                 <td>{{ record.barcode_name }}</td>
@@ -130,11 +128,12 @@
 
                         </tbody>
                     </table>
-
-                </div>
-            </div>
-        </div>
+      </div>
+    </div>
+  </div>
     {% endif %}
+</div>
+
 
     {% block javascript %}
         <script>
