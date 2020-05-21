@@ -102,7 +102,6 @@ def reactivate_flowcell(request):
     flowcell = Flowcell.objects.get(pk=flowcell_id)
 
     if flowcell.active():
-
         return Response("Error - Flowcell already active", status=405)
 
     flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
@@ -248,8 +247,8 @@ def fastq_file(request, pk):
 
         run = (
             Run.objects.filter(runid=request.data["runid"])
-            .filter(owner=request.user)
-            .first()
+                .filter(owner=request.user)
+                .first()
         )
 
         obj, created = FastqFile.objects.get_or_create(
@@ -288,9 +287,9 @@ def run_list(request):
 
         for flowcell in Flowcell.objects.all():
             if (
-                request.user == flowcell.owner
-                or request.user.has_perm("view_data", flowcell)
-                or request.user.has_perm("run_analysis", flowcell)
+                    request.user == flowcell.owner
+                    or request.user.has_perm("view_data", flowcell)
+                    or request.user.has_perm("run_analysis", flowcell)
             ):
                 flowcell_list.append(flowcell)
 
@@ -341,9 +340,9 @@ def run_detail(request, pk):
 
     for flowcell in Flowcell.objects.all():
         if (
-            request.user == flowcell.owner
-            or request.user.has_perm("view_data", flowcell)
-            or request.user.has_perm("run_analysis", flowcell)
+                request.user == flowcell.owner
+                or request.user.has_perm("view_data", flowcell)
+                or request.user.has_perm("run_analysis", flowcell)
         ):
             flowcell_list.append(flowcell)
 
@@ -360,7 +359,6 @@ def run_detail(request, pk):
         run_list = Run.objects.none()
 
     if len(run_list) < 1:
-
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     run = run_list[
@@ -480,8 +478,8 @@ def active_minion_list(request):
             ) - datetime.timedelta(minutes=5)
 
             if (
-                last_minion_event.event.name != "unplugged"
-                and minion.currentdetails.last_modified > five_minute_check
+                    last_minion_event.event.name != "unplugged"
+                    and minion.currentdetails.last_modified > five_minute_check
             ):
 
                 if minion.currentdetails.minKNOW_status in [
@@ -579,7 +577,6 @@ def minion_messages_list(request, pk):
 
     elif request.method == "POST":
         if len(request.data["message"]) > 256:
-
             request.data["full_text"] = request.data["message"]
 
             request.data["message"] = request.data["message"][:256]
@@ -621,9 +618,8 @@ def minion_messages_list(request, pk):
 #     return Response(serializer.data)
 
 
-@api_view(["GET"],)
+@api_view(["GET"], )
 def recentminion_messages_list(request, pk):
-
     queryset = MinionMessage.objects.filter(minION=pk).filter(
         minKNOW_message_timestamp__gte=timezone.now() - datetime.timedelta(hours=24)
     )
@@ -659,7 +655,7 @@ def minknow_message_html(request, pk):
     return render(request, "reads/minknow_messages.html", {"message_list": messages})
 
 
-@api_view(["GET", "POST"],)
+@api_view(["GET", "POST"], )
 def minION_control_list(request, pk):
     """
     TODO describe function
@@ -682,7 +678,7 @@ def minION_control_list(request, pk):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(["GET", "POST"],)
+@api_view(["GET", "POST"], )
 def minION_control_update(request, pk, checkid):
     """
     TODO describe function
@@ -701,7 +697,6 @@ def minION_control_update(request, pk, checkid):
         return Response(serializer.data)
 
     if request.method == "POST":
-
         event_ = MinionControl.objects.get(id=checkid)
         event_.complete = True
         event_.save(update_fields=["complete"])
@@ -709,7 +704,7 @@ def minION_control_update(request, pk, checkid):
 
 
 @api_view(
-    ["GET",]
+    ["GET", ]
 )
 def minION_currentrun_list(request, pk):
     """
@@ -907,7 +902,6 @@ def minion_run_stats_latest(request, pk, checkid):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     if request.method == "GET":
-
         serializer = MinionRunStatsSerializer(
             crazy_minion_run_stats, many=True, context={"request": request}
         )
@@ -943,7 +937,6 @@ def remote_control_run_stats(request):
             ).values()
 
             if queryset:
-
                 last_runs_stat = queryset[::-1][0]
 
                 data[minion] = last_runs_stat
@@ -1036,7 +1029,6 @@ def minION_scripts_detail(request, pk, nk):
 
 @api_view(["GET", "POST"])
 def read_list(request, pk):
-
     if request.method == "GET":
 
         querysets = FastqRead.objects.filter(run_id=pk)
@@ -1346,7 +1338,7 @@ def flowcell_detail(request, pk):
             for f in all_flowcell_list:
 
                 if request.user.has_perm("view_data", f) or request.user.has_perm(
-                    "run_analysis", f
+                        "run_analysis", f
                 ):
 
                     if search_criteria == "id":
@@ -1360,7 +1352,6 @@ def flowcell_detail(request, pk):
         # TODO look at the logic here, a user with two identical flowcells would crash this
 
         if len(flowcell_list) != 1:
-
             return Response({"data": {}}, status=404)
 
         # get the matching flowcell
@@ -1391,7 +1382,6 @@ def flowcell_detail(request, pk):
         serializer = FlowcellSerializer(data=request.data, context={"request": request})
 
         if serializer.is_valid():
-
             serializer.save()
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -1401,7 +1391,6 @@ def flowcell_detail(request, pk):
 
 @api_view(["GET"])
 def flowcell_summary_barcode(request, pk):
-
     q = request.GET.get("barcode_name", "All reads")
 
     flowcell = Flowcell.objects.get(pk=pk)
@@ -1489,8 +1478,8 @@ def flowcell_summary_html(request, pk):
     # and creating the columns for the results
     df2 = (
         df[df["barcode_name"].eq("All reads")]
-        .groupby(["barcode_name", "read_type_name", "rejection_status"])
-        .agg(agg)
+            .groupby(["barcode_name", "read_type_name", "rejection_status"])
+            .agg(agg)
     )
 
     df2 = df2.reset_index()
@@ -1503,8 +1492,8 @@ def flowcell_summary_html(request, pk):
     # Same aggregations on other barcodes
     df2 = (
         df[df["barcode_name"].ne("All reads")]
-        .groupby(["barcode_name", "read_type_name", "rejection_status"])
-        .agg(agg)
+            .groupby(["barcode_name", "read_type_name", "rejection_status"])
+            .agg(agg)
     )
 
     if df2.shape[0] > 0:
@@ -1556,10 +1545,10 @@ def flowcell_statistics(request, pk):
     """
     queryset = (
         FlowcellStatisticBarcode.objects.filter(flowcell=flowcell)
-        .filter(
+            .filter(
             Q(barcode_name__in=barcodes_list) | Q(rejection_status__in=barcodes_list)
         )
-        .order_by("sample_time")
+            .order_by("sample_time")
     )
 
     df = pd.DataFrame(
@@ -1608,13 +1597,13 @@ def flowcell_statistics(request, pk):
     )["total_length"].apply(lambda x: x.cumsum())
 
     df3["key"] = (
-        df3["barcode_name"].astype("str")
-        + " - "
-        + df3["read_type_name"].astype("str")
-        + " - "
-        + df3["read_type"].astype("str")
-        + " - "
-        + df3["rejection_status"].astype("str")
+            df3["barcode_name"].astype("str")
+            + " - "
+            + df3["read_type_name"].astype("str")
+            + " - "
+            + df3["read_type"].astype("str")
+            + " - "
+            + df3["rejection_status"].astype("str")
     )
 
     df3["average_quality"] = (
@@ -1677,14 +1666,13 @@ def flowcell_statistics(request, pk):
 
 @api_view(["get"])
 def flowcell_speed(request, pk):
-
     window = 5
     flowcell = Flowcell.objects.get(pk=pk)
 
     queryset = (
         FlowcellStatisticBarcode.objects.filter(flowcell=flowcell)
-        .filter(barcode_name="All Reads")
-        .order_by("sample_time")
+            .filter(barcode_name="All Reads")
+            .order_by("sample_time")
     )
 
     df = pd.DataFrame(
@@ -1701,14 +1689,14 @@ def flowcell_speed(request, pk):
         # Convert the dataframe to stack channel_presence and total_length
         df = (
             df.groupby("sample_time")[["channel_presence", "total_length"]]
-            .apply(lambda df: df.reset_index(drop=True))
-            .unstack()
+                .apply(lambda df: df.reset_index(drop=True))
+                .unstack()
         )
         # Generate the total length across both pass and fail
         df["sum_total_length"] = df["total_length"][0] + df["total_length"][1]
         # Add the two channel presence arrays to obtain 0 values and values greater than 1 where a channel has been used
         df["sum_channel_presence"] = (
-            df["channel_presence"][0] + df["channel_presence"][1]
+                df["channel_presence"][0] + df["channel_presence"][1]
         )
         # Calculate our channel count by counting the number of nonzero values in the array.
         # This gets around the fact that a channel might produce both a pass and fail read in the same one minute window
@@ -1722,9 +1710,9 @@ def flowcell_speed(request, pk):
         # calculate the mean speed over those rolling windows in bases per second
         df["mean_speed"] = (
             df["mean_total_length"]
-            .div(df["mean_chan_count"])
-            .div(600)
-            .round(decimals=0)
+                .div(df["mean_chan_count"])
+                .div(600)
+                .round(decimals=0)
         )
     elif len(df.status.unique()) == 1:
         # We only have either pass or fail reads in the dataset
@@ -1766,16 +1754,16 @@ def flowcell_histogram_summary(request, pk):
 
     max_bin_index = (
         FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-        .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
-        .aggregate(Max("bin_index"))
+            .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
+            .aggregate(Max("bin_index"))
     )
 
     # A list of tuples, distinct on barcode name, pass/fail, template
     key_list = (
         FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-        .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
-        .values_list("barcode_name", "read_type_name", "rejection_status", "status")
-        .distinct()
+            .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
+            .values_list("barcode_name", "read_type_name", "rejection_status", "status")
+            .distinct()
     )
 
     data_keys = {}
@@ -1784,11 +1772,11 @@ def flowcell_histogram_summary(request, pk):
         # query flowcell Histogram summary objects for all of the combinations under this barcode
         queryset = (
             FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-            .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
-            .filter(read_type_name=read_type_name)
-            .filter(status=status)
-            .filter(rejection_status=rejection_status)
-            .order_by("bin_index")
+                .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
+                .filter(read_type_name=read_type_name)
+                .filter(status=status)
+                .filter(rejection_status=rejection_status)
+                .order_by("bin_index")
         )
         # make a list of 0s one element for each bin
         result_read_count_sum = np.zeros(
@@ -1816,7 +1804,6 @@ def flowcell_histogram_summary(request, pk):
             l_collect_read_length_sum = 0
 
             for r in queryset:
-
                 l_bin_index = r.bin_index
 
                 l_read_count_sum = r.read_count
@@ -1847,17 +1834,17 @@ def flowcell_histogram_summary(request, pk):
             ### This is wrong.
             result_collect_read_count_sum = list(
                 (
-                    -pd.concat(
-                        [
-                            pd.Series([0]),
-                            pd.Series(result_collect_read_count_sum).replace(
-                                to_replace=0, method="ffill"
-                            ),
-                        ]
-                    )
-                    + pd.Series(result_collect_read_count_sum)
-                    .replace(to_replace=0, method="ffill")
-                    .max()
+                        -pd.concat(
+                            [
+                                pd.Series([0]),
+                                pd.Series(result_collect_read_count_sum).replace(
+                                    to_replace=0, method="ffill"
+                                ),
+                            ]
+                        )
+                        + pd.Series(result_collect_read_count_sum)
+                        .replace(to_replace=0, method="ffill")
+                        .max()
                 )
                 / total_reads_count
                 * 100
@@ -1865,17 +1852,17 @@ def flowcell_histogram_summary(request, pk):
 
             result_collect_read_length_sum = list(
                 (
-                    -pd.concat(
-                        [
-                            pd.Series([0]),
-                            pd.Series(result_collect_read_length_sum).replace(
-                                to_replace=0, method="ffill"
-                            ),
-                        ]
-                    )
-                    + pd.Series(result_collect_read_length_sum)
-                    .replace(to_replace=0, method="ffill")
-                    .max()
+                        -pd.concat(
+                            [
+                                pd.Series([0]),
+                                pd.Series(result_collect_read_length_sum).replace(
+                                    to_replace=0, method="ffill"
+                                ),
+                            ]
+                        )
+                        + pd.Series(result_collect_read_length_sum)
+                        .replace(to_replace=0, method="ffill")
+                        .max()
                 )
                 / total_reads_length
                 * 100
@@ -1925,7 +1912,6 @@ def flowcell_channel_summary(request, pk):
     result_mapped_to_flowcell = {}
 
     for i in range(1, flowcell.size + 1):
-
         coordinate = get_coords(i, flowcell.size)
 
         result_mapped_to_flowcell[i] = [coordinate[0], coordinate[1], 0, 0]
@@ -1935,7 +1921,6 @@ def flowcell_channel_summary(request, pk):
     #
 
     for record in qs:
-
         coordinate = get_coords(record.channel, flowcell.size)
 
         result_mapped_to_flowcell[record.channel] = [
@@ -1953,7 +1938,6 @@ def flowcell_channel_summary(request, pk):
 
 @api_view(["GET"])
 def flowcell_run_summaries_html(request, pk):
-
     flowcell = Flowcell.objects.get(pk=pk)
 
     result = []
@@ -1984,7 +1968,6 @@ def flowcell_run_summaries_html(request, pk):
         )
 
         if len(minion_run_status_list) > 0:
-
             minion_run_status = minion_run_status_list[0]
 
             element["runid"] = minion_run_status.run.runid
@@ -2007,7 +1990,6 @@ def flowcell_run_summaries_html(request, pk):
 
 @api_view(["GET"])
 def flowcell_run_basecalled_summary_html(request, pk):
-
     flowcell = Flowcell.objects.get(pk=pk)
 
     result_basecalled_summary = []
@@ -2135,7 +2117,6 @@ def flowcell_run_stats_latest(request, pk, checkid):
 
 @api_view(["GET"])
 def flowcell_tasks_detail_all(request, pk):
-
     flowcell = Flowcell.objects.get(pk=pk)
 
     run_list = Run.objects.filter(flowcell=flowcell)
@@ -2180,7 +2161,6 @@ def flowcell_tasks_detail_all(request, pk):
             )
 
             if len(obj2) > 0:
-
                 obj.update({"job_details": obj2})
 
         result.append(obj)
@@ -2215,20 +2195,17 @@ def flowcell_tabs_list(request, pk):
     )
 
     if flowcell_summary_barcode_list.count() > 0:
-
         tabs.append("basecalled-data")
         tabs.append("reads")
 
     minion_run_stats_list = MinionRunStats.objects.filter(run_id__flowcell__id=pk)
 
     if minion_run_stats_list.count() > 0:
-
         tabs.append("live-event-data")
 
     paf_rough_cov_list = PafRoughCov.objects.filter(flowcell_id=pk)
 
     if paf_rough_cov_list.count() > 0:
-
         tabs.append("sequence-mapping")
 
     chromosome = ExpectedBenefitChromosomes.objects.filter(task__flowcell__id=pk).last()
@@ -2239,7 +2216,6 @@ def flowcell_tabs_list(request, pk):
     centrifuge_output_list = CentrifugeOutput.objects.filter(task__flowcell_id=pk)
 
     if centrifuge_output_list.count() > 0:
-
         tabs.append("metagenomics")
 
     # Check for assembly data
@@ -2247,12 +2223,13 @@ def flowcell_tabs_list(request, pk):
     assembly_output_list = GfaStore.objects.filter(flowcell=pk)
 
     if assembly_output_list.count() > 0:
-
         tabs.append("sequence-assembly")
 
     # TODO add an actual check here
-    if JobMaster.objects.filter(flowcell__id=pk, job_type__name="Track Artic Coverage", complete=True):
-        tabs.append("artic")
+    if JobMaster.objects.filter(flowcell__id=pk, job_type__name="Track Artic Coverage").last():
+        if JobMaster.objects.filter(flowcell__id=pk, job_type__name="Track Artic Coverage").last().read_count:
+
+            tabs.append("artic")
 
     return Response(tabs)
 
@@ -2285,7 +2262,6 @@ def grouprun_list(request):
         serializer = GroupRunSerializer(data=request.data, context={"request": request})
 
         if serializer.is_valid():
-
             serializer.save(owner=request.user)
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -2322,7 +2298,6 @@ def grouprun_detail(request, pk):
         grouprun_list = GroupRun.objects.none()
 
     if len(grouprun_list) != 1:
-
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     grouprun = grouprun_list[0]
@@ -2396,13 +2371,13 @@ def read_list_new(request):
 
         if search_criteria == "run":
 
-            qs = FastqRead.objects.filter(run__id=search_value)[offset : offset + limit]
+            qs = FastqRead.objects.filter(run__id=search_value)[offset: offset + limit]
 
         elif search_criteria == "fastqfile":
 
             qs = FastqRead.objects.filter(fastqfile_id=search_value)[
-                offset : offset + limit
-            ]
+                 offset: offset + limit
+                 ]
 
         else:
 
@@ -2452,7 +2427,6 @@ def read_list_new(request):
 
 @api_view(["GET"])
 def readextra_list(request):
-
     search_criteria = request.GET.get("search_criteria", "read_id")
 
     search_value = request.GET.get("search_value", "name")
@@ -2510,7 +2484,6 @@ def barcode_list_new(request):
         serializer = BarcodeSerializer(data=request.data, context={"request": request})
 
         if serializer.is_valid():
-
             serializer.save()
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -2520,8 +2493,7 @@ def barcode_list_new(request):
 
 @api_view(["GET"])
 def version(request):
-
-    resp = {"server": "1.0", "clients": ["1.0"], "minknow": ["1.11.5",]}
+    resp = {"server": "1.0", "clients": ["1.0"], "minknow": ["1.11.5", ]}
 
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
@@ -2546,7 +2518,6 @@ def flowcell_sharing(request, pk):
             )
 
         if flowcell.owner.id != request.user.id:
-
             return Response(
                 {"message": "You are not authorised to share this flowcell."},
                 status=status.HTTP_404_NOT_FOUND,
@@ -2559,7 +2530,7 @@ def flowcell_sharing(request, pk):
             return Response(
                 {
                     "message": "User already has permission. If you want to change the permission"
-                    " level, delete the current permission first."
+                               " level, delete the current permission first."
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
@@ -2581,7 +2552,6 @@ def flowcell_sharing(request, pk):
             if user != flowcell.owner and not user.is_superuser:
 
                 if user.has_perm("view_data", flowcell):
-
                     permission_list.append(
                         {
                             "username": user.username,
@@ -2593,7 +2563,6 @@ def flowcell_sharing(request, pk):
                     )
 
                 if user.has_perm("run_analysis", flowcell):
-
                     permission_list.append(
                         {
                             "username": user.username,
@@ -2654,7 +2623,7 @@ def get_or_create_tasks(request):
     search_criteria and search_value params
     :return: A dictionary containing all the matching JobMasters on this flowcell
     """
-
+    # TODO this is hacky as well
     if request.method == "GET":
 
         search_criteria = request.GET.get("search_criteria", "flowcell")
@@ -2670,7 +2639,7 @@ def get_or_create_tasks(request):
             # Get all the JobMasters for this flowcell, excluding job type other - which are for background sub tasks
             tasks_list = JobMaster.objects.filter(
                 flowcell__id=int(flowcell_id)
-            ).exclude(job_type__name="Other")
+            ).exclude(job_type__name__in=["Other", "Run Artic"])
             # Serialise the data to a python object
             serializer = JobMasterSerializer(tasks_list, many=True)
             # Check the icon required on the pause control part of the table
@@ -2696,7 +2665,7 @@ def get_or_create_tasks(request):
     else:
 
         if (
-            type(request.data["flowcell"]) is str
+                type(request.data["flowcell"]) is str
         ):  # TODO this could be removed because on this point (creating tasks) the client knows the flowcell id
 
             try:
@@ -2725,10 +2694,9 @@ def get_or_create_tasks(request):
                     )
 
         if (
-            not request.user.has_perm("run_analysis", flowcell)
-            and not request.user == flowcell.owner
+                not request.user.has_perm("run_analysis", flowcell)
+                and not request.user == flowcell.owner
         ):
-
             return Response(
                 {
                     "message": "Permission denied - you do not have the RUN ANALYSIS permission."
@@ -2740,14 +2708,21 @@ def get_or_create_tasks(request):
         # This is for starting a job from the client
 
         # If the job isn't EB or minimap2
-        if int(request.data["job_type"]) not in [4, 15]:
+        if int(request.data["job_type"]) not in [4, 15, 16]:
 
             request.data["reference"] = None
 
+            # Serialise the data to a Django savable object
+            # Hard set the covid reference
+        if int(request.data["job_type"]) == 16:
+            print("we are setting covid reference")
+            reference = ReferenceInfo.objects.get(name="covid_19")
+            request.data["reference"] = reference.id
+
         # For client side job starting, check if we have a reference and it's a string
         if (
-            "reference" in request.data.keys()
-            and type(request.data["reference"]) is str
+                "reference" in request.data.keys()
+                and type(request.data["reference"]) is str
         ):
 
             try:
@@ -2755,7 +2730,7 @@ def get_or_create_tasks(request):
                 if request.data["reference"] is "":
                     return Response(
                         "Reference does not exist - Please select a reference",
-                        status=500,
+                        status=400,
                     )
 
                 # Try to get the reference by name
@@ -2780,12 +2755,6 @@ def get_or_create_tasks(request):
                     return Response(
                         "Reference not found Please contact server admin", status=500
                     )
-        # Serialise the data to a Django savable object
-        # Hard set the covid reference
-        if int(request.data["job_type"]) == 16:
-            print("we are setting covid reference")
-            reference = ReferenceInfo.objects.get(name="covid_19")
-            request.data["reference"] = reference.id
 
         print(request.data)
         serializer = JobMasterInsertSerializer(data=request.data)
@@ -2815,7 +2784,7 @@ def task_types_list(request):
     # If it's a request from the client
     if request.GET.get("cli", False):
         # These are the available tasks
-        tasks = ["Metagenomics", "Assembly", "Minimap2"]
+        tasks = ["Metagenomics", "Minimap2", "Track Artic Coverage"]
         # Get the tasks
         queryset = JobType.objects.filter(name__in=tasks)
 
@@ -2839,15 +2808,15 @@ def task_control(request):
     :param request: Request object, contains the Id of the task keyed to flowcellJobId
     :return: A status reflecting the state of the executed code
     """
+    # TODO rewrite right now!!
     # Get the task object from django ORM
 
     job_master = JobMaster.objects.get(pk=request.data["flowcellJobId"])
 
     if not (
-        request.user == job_master.flowcell.owner
-        or request.user.has_perm("run_analysis", job_master.flowcell)
+            request.user == job_master.flowcell.owner
+            or request.user.has_perm("run_analysis", job_master.flowcell)
     ):
-
         return Response(
             "You do not have permission to perform this action.", status=403
         )
