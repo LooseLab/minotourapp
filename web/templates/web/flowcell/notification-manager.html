@@ -1,16 +1,18 @@
 <div class="row">
 
     <div class="col-md-6">
-        <div class="card ">
-            <div class="card-header">
-                <h3 class="card-header">Set notifications.</h3>
-            </div>
+        <div class="card card-primary card-outline">
+    <div class="card-header">
+            <h3 class="card-title">
+                <i class="far fa-comment-alt"></i>
+                Create Notification
+            </h3>
+          </div>
+
             <form method="post" id="post-form-notification-create"
                   onsubmit="notificationsController.submitNotificationChoices(event, this)">
                 {% csrf_token %}
                 <div class="card-body>">
-
-
                     <p class="card-text">Optional automatic notifications: <br>
                         (Click for suggestions)
                     </p>
@@ -72,12 +74,16 @@
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card ">
-            <div class="card-heading">
-                <h3 class="card-header">Extant notifications</h3>
-            </div>
+        <div class="card card-primary card-outline">
+    <div class="card-header">
+            <h3 class="card-title">
+                <i class="far fa-comment"></i>
+                Existing Notifications
+            </h3>
+          </div>
             <div class="card-body">
-                <table class="table table-hover extantNotif display" style="width: 100%;">
+                <div class="table-responsive">
+                <table class="table table-hover extantNotif dataTable dtr-inline responsive">
                     <thead>
                     <tr>
                         <th>Id</th>
@@ -105,6 +111,7 @@
                     </tr>
                     </tfoot>
                 </table>
+                </div>
             </div>
         </div>
     </div>
