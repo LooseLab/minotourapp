@@ -5,7 +5,7 @@ import time
 
 import pandas as pd
 from celery import task
-from twitter import Twitter, OAuth, TwitterHTTPError
+from twitter import Twitter, OAuth, TwitterHTTPError, TwitterError
 
 from alignment.models import PafSummaryCov
 from communication.models import NotificationConditions, Message
@@ -184,22 +184,24 @@ def send_messages():
                         }
                     }
                 )
-            except TwitterHTTPError as e:
+            except (TwitterHTTPError, TwitterError) as e:
                 logger.error(str(e))
                 return
+            finally:
+
 
             # status = '@{} {}'.format(new_message.recipient.extendedopts.twitterhandle,new_message.title)
             # t.statuses.update(
             #    status=status
             # )
 
-            message_sent = True
+                message_sent = True
 
-            time.sleep(1)
+                time.sleep(1)
 
-        if message_sent:
-            new_message.delivered_date = datetime.datetime.now(tz=datetime.timezone.utc)
-            new_message.save()
+                if message_sent:
+                    new_message.delivered_date = datetime.datetime.now(tz=datetime.timezone.utc)
+                    new_message.save()
 
 
 @task()
