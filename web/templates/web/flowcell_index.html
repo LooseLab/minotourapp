@@ -8,15 +8,16 @@
 
         <section class="content-header">
             <div class="container-fluid">
-                <h1>Flowcell name: <strong id="name-flowcell">{{ flowcell.name }}</strong> Sample name:
-                    <strong>{{ flowcell.sample_name }}</strong></h1>
-            </div>
-        </section>
-        <div class="content">
-            <div class="container-fluid">
 
 
-                <ul class="nav nav-pills" style="border-bottom: 2px solid #337ab7">
+                <h5 class="mt-4 mb-2">Flowcell name: <strong id="name-flowcell">{{ flowcell.name }}</strong> Sample name:
+                    <strong>{{ flowcell.sample_name }}</strong></h5>
+                <div class="row">
+          <div class="col-12">
+            <!-- Custom Tabs -->
+            <div class="card">
+              <div class="card-header">
+                  <ul class="nav nav-tabs card-header-tabs">
 
                     <li role="presentation" class="nav-item hidden" id='nav-summary-data'>
                         <a class="nav-link flowcell-tab"
@@ -79,9 +80,10 @@
                     </li>
                 </ul>
 
-                <br/>
-
+              </div><!-- /.card-header -->
+              <div class="card-body">
                 <div class="tab-content">
+
 
                     <div id="tab-summary-data" class="tab-pane">
                         {% include "web/flowcell/summary-tab.html" %}
@@ -134,7 +136,28 @@
                     <div id="tab-artic" class="tab-pane">
                         {% include "web/flowcell/artic.html" %}
                     </div>
+
+                  <!-- /.tab-pane -->
                 </div>
+                <!-- /.tab-content -->
+              </div><!-- /.card-body -->
+            </div>
+            <!-- ./card -->
+          </div>
+          <!-- /.col -->
+        </div>
+
+
+        </section>
+        <div class="content">
+            <div class="container-fluid">
+
+
+
+
+
+
+
 
                 <!-- Modal -->
                 <div class="modal fade" id="eastermodal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
