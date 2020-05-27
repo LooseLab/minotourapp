@@ -379,7 +379,6 @@ class FlowcellNotificationController {
      */
     getNotificationsForTable(flowcellId) {
         let table = $(".extantNotif");
-        console.log(table);
         table.DataTable({
             language: {
                 infoEmpty: "No records available - Got it?",

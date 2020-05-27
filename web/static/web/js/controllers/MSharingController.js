@@ -4,7 +4,6 @@ class MSharingController {
     */
 
     constructor(flowcell_id) {
-        console.log('Initialising MSharingController');
 
         this._flowcell_id = flowcell_id;
 
@@ -81,7 +80,6 @@ class MSharingController {
             user_id: user_id,
             permission: permission,
         }).then(function(response) {
-            console.log(response);
             self.getAll();
             self._message.texto = 'Permission deleted!';
             self._messageView.update(self._message);
@@ -97,7 +95,7 @@ class MSharingController {
 
         axios.get(url)
             .then(function(response) {
-                console.log(self._dataTable.clear().rows.add(response.data).draw());
+                self._dataTable.clear().rows.add(response.data).draw();
             })
             .catch(function(error) {
                 console.log(error);
