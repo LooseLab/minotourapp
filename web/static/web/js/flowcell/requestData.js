@@ -1,7 +1,7 @@
 function requestData(flowcell_id) {
-
-    var selected_barcode = get_selected_barcode();
-
+    console.log("Requesting data");
+    var selected_barcode = getSelectedBarcode("Metagenomics");
+    console.log(selected_barcode)
     var flowcell_id = flowcell_id;
 
     var url_run = '/api/v1/flowcells/' + flowcell_id + '/';
@@ -35,36 +35,6 @@ function requestData(flowcell_id) {
 
             this.flowcellTaskHistoryTable(flowcell_id);
 
-        } else if (flowcell_selected_tab_input.value == 'nav-basecalled-data') {
-            // If there is not selected barcode, so we're on the tab for the first time since loading the site
-            if (selected_barcode == '') {
-                set_selected_barcode('All reads');
-            }
-            // Sort the barcode in Alphabeticla order
-            this.barcodes = Array.from(barcodes).sort();
-            // Update the barcode nav tabs found in updateBarcodeNavTab.js
-            this.updateBarcodeNavTab();
-            this.requestSummaryData(flowcell_id);
-            this.requestHistogramData(flowcell_id);
-            this.requestStatistics(flowcell_id);
-            this.requestChannelSummaryData(flowcell_id);
-            //this.requestReference(flowcell_id);
-
-        } else if (flowcell_selected_tab_input.value == 'nav-rejected-basecalled-data') {
-            // If there is not selected barcode, so we're on the tab for the first time since loading the site
-            if (selected_barcode == '') {
-                set_selected_barcode('All reads');
-            }
-            // Sort the barcode in Alphabeticla order
-            this.barcodes = Array.from(barcodes).sort();
-            // Update the barcode nav tabs found in updateBarcodeNavTab.js
-            this.updateBarcodeNavTab();
-            this.requestSummaryData(flowcell_id);
-            this.requestHistogramData(flowcell_id);
-            this.requestStatistics(flowcell_id);
-            this.requestChannelSummaryData(flowcell_id);
-            //this.requestReference(flowcell_id);
-
         } else if (flowcell_selected_tab_input.value == 'nav-reads') {
 
             requestReadData(flowcell_id);
@@ -78,8 +48,8 @@ function requestData(flowcell_id) {
             // The intervals for updating the charts are found in the individual files in the vis-d3 directory
             // SO you are on the Metagenomics tab, congratulations!
             let addBarcodes = this.addMetaBarcodeTabs.bind(this);
-            if (selected_barcode == '') {
-                set_selected_barcode('All reads');
+            if (selected_barcode == null) {
+                setSelectedBarcode('All reads', "Metagenomics");
             }
             let url = "/api/v1/flowcells/" + flowcell_id + "/metagenomic_barcodes";
 
