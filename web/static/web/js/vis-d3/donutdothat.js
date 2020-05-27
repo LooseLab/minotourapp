@@ -64,7 +64,7 @@ function drawPie(countedData, pie, arc, svg) {
 }
 
 function drawDonut(flowCellId) {
-    let selectedBarcode = get_selected_barcode();
+    let selectedBarcode = getSelectedBarcode("Metagenomics");
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     if (flowcell_selected_tab_input.value !== "nav-metagenomics") {
         return;

@@ -151,7 +151,7 @@ function drawTables(selection, dataToDraw) {
 }
 
 function drawDonutRankTable(flowCellId) {
-    var selectedBarcode = get_selected_barcode();
+    var selectedBarcode = getSelectedBarcode("Metagenomics");
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     if (flowcell_selected_tab_input.value !== "nav-metagenomics"){
         return;

@@ -22,7 +22,7 @@ function update_mapping_table(flowcellId) {
         "Target prop. mapped (%)",
          ];
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
-    let barcode = get_selected_barcode();
+    let barcode = getSelectedBarcode("Metagenomics");
 
     // Order the results correctly
     function compare(a, b) {
