@@ -1,13 +1,14 @@
 {% load humanize %}
-{#// TODO THIS SEEMS BROKEN#}
 
-<div id="accordion">
+<div class="accordion" id="accordion">
   <div class="card card-primary card-outline">
     <div class="card-header">
       <h5>
-        <button class="btn btn-link" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+        <button class="btn btn-link arrow-toggle" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
           <i class="fas fa-table"></i>
             All Reads Summary
+            <i class ="fa fa-arrow-up"></i>
+            <i class ="fa fa-arrow-down"></i>
         </button>
       </h5>
     </div>
@@ -72,9 +73,11 @@
   <div class="card card-primary card-outline">
     <div class="card-header" id="headingTwo">
       <h5>
-        <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+        <button class="btn btn-link collapsed arrow-toggle" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
           <i class="fas fa-table"></i>
             Read Summary by Barcode
+            <i class ="fa fa-arrow-up"></i>
+            <i class ="fa fa-arrow-down"></i>
         </button>
       </h5>
     </div>
