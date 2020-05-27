@@ -1,19 +1,3 @@
-function set_active_navbar_item(item_index) {
-    /**
-     * @param {number} item_index The index of the navbar element in the
-     * @function {function}
-     *
-     *
-     */
-    var nav_bar = document.querySelectorAll('.navbar li a');
-
-    nav_bar.forEach(function(element, index){
-
-        element.classList.remove("active");
-        if(index == item_index) element.classList.add('active');
-    });
-}
-
 
 var FlowcellPageApp = {
 
@@ -102,11 +86,6 @@ var FlowcellPageApp = {
 
         this.drawReadUntilCharts = drawReadUntilCharts;
 
-        this.updatePoreChart = updatePoreChart;
-
-        this.requestChannelSummaryData = requestChannelSummaryData;
-
-        this.requestHistogramData = requestHistogramData.bind(this);
 
         this.updateAssemblyCharts = updateAssemblyCharts;
 
@@ -124,15 +103,11 @@ var FlowcellPageApp = {
 
         this.requestLiveRunStats = requestLiveRunStats;
 
-        this.requestSummaryData = requestSummaryData;
 
         this.requestData = requestData;
 
         var flowcell_id = get_selected_flowcell();
 
-        this.requestStatistics = requestStatistics.bind(this);
-
-        this.updateBarcodeNavTab = updateBarcodeNavTab.bind(this);
 
         this.ChartNumContigs = this.makeSplineChartNonDatetime(
             "num-contigs",
@@ -212,7 +187,7 @@ var FlowcellPageApp = {
         console.log('Calling request data from monitor_app. <<<');
     }, // end of init
 
-    projectdata: function (data) {
+    projectdata(data) {
         var results = [];
         var holder = [];
         var diffholder = 0;
@@ -310,7 +285,7 @@ var FlowcellPageApp = {
         this.LiveYield.reflow();
     },
 
-    converttobases: function (data, seqspeed) {
+    converttobases(data, seqspeed) {
         if (Number(this.livedata.scalingfactor) > Number(0)) {
             //console.log("returning scaling factor" + this.livedata.scalingfactor);
             scaling = Number(this.livedata.scalingfactor);

@@ -312,24 +312,24 @@ class ArticController {
      * @private
      */
     _createSelectionBox(flowcellId) {
-        let first_iteration, optionChildren, barcodes, alreadyPresentBarcode, that, $current, barcodeList;
+        let firstIteration, optionChildren, barcodes, alreadyPresentBarcode, index, that, $current, barcodeList;
         that = this;
         barcodeList = [];
         // for each select box on the page
         $current = $("#select-artic-barcode");
         optionChildren = $current.children('option');
-        first_iteration = optionChildren.length === 0 ? true : false;
+        firstIteration = optionChildren.length === 0 ? true : false;
         that._axiosInstance.get("/api/v1/artic/visualisation/barcodes", {params: {flowcellId}}).then((response) => {
             if (response.status !== 200) console.error("Error");
             barcodes = response.data;
             // else we need to remove the barcodes that we have already added then add them.
-            if (!first_iteration) {
+            if (!firstIteration) {
                 alreadyPresentBarcode = [...$("#select-artic-barcode")[0].children];
-                alreadyPresentBarcode.forEach(function (presBarcode) {
+                alreadyPresentBarcode.forEach(presBarcode => {
                     // if the chromsome in already present chromsome is in the list of barcodes fetched from the server
                     if (barcodes.includes(presBarcode.textContent)) {
                         // get the index,
-                        let index = barcodes.indexOf(presBarcode.textContent);
+                        index = barcodes.indexOf(presBarcode.textContent);
                         // remove it from the freshly fetched barcodes
                         barcodes.splice(index, 1);
                     }
@@ -343,7 +343,7 @@ class ArticController {
                 barcodeList.push(`<option class="sel__box__options" value="${barcode}">${barcode}</option>`)
             })
             $current.html(barcodeList.join(""))
-            $current.change(function()  {
+            $current.change(function () {
                 let txt;
                 txt = $(this).val();
                 that._barcodeChosen = txt;
@@ -356,108 +356,7 @@ class ArticController {
         })
 
     }
-        ;
-
-
-// _createSelectionBox(flowcellId) {
-//     let that = this
-//     // For all the sel objects that finding the element by the sel class returned
-//     $('.sel.artic').each(function () {
-//         // Get the sel div element as a var
-//         let $current = $(this);
-//         // get the child of the div, which is the select option in this case, do not display it
-//         $(this).children('select').css('display', 'none');
-//         // get all the options children
-//         that._axiosInstance.get("/api/v1/artic/visualisation/barcodes", {params: {flowcellId}}).then((response) => {
-//             let barcodes = response.data;
-//             // if it's the first options clause
-//             if (response.status != 200) console.error("Error");
-//             // If we're on our first drawing of the select spans
-//             let first_iteration = !document.getElementById("artic-placeholder");
-//             // The barcodes we have that are already present
-//             let alreadyPresentBarcode = [];
-//             // If it is not our first drawing of it
-//             if (!first_iteration) {
-//                 // The already present barcodes html elements
-//                 alreadyPresentBarcode = [...$(".sel__box")[0].children];
-//                 // for each of the elements
-//                 alreadyPresentBarcode.forEach(function (presBarcode) {
-//                     // if the chromsome in already present chromsome is in the list of barcodes fetched from the server
-//                     if (barcodes.includes(presBarcode.textContent)) {
-//                         // get the index,
-//                         let index = barcodes.indexOf(presBarcode.textContent);
-//                         // remove it from the freshly fetched barcodes
-//                         barcodes.splice(index, 1);
-//                     }
-//                 });
-//                 // If there are no new barcodes
-//                 if (!barcodes.length) {
-//                     return;
-//                 }
-//                 // if it is our first iteration
-//             } else {
-//                 // unshift choose barcodes
-//                 barcodes.unshift("Choose Barcode");
-//             }
-//
-//
-//             barcodes.forEach(function (barcode, index) {
-//                 // if this is the first time so we're creating the arrays
-//                 if (index == 0 && first_iteration) {
-//                     // the div to the front of the sel div, make it sel__box class instead of sel
-//                     $current.prepend($('<div>', {
-//                         class: $current.attr('class').replace(/sel/g, 'sel__box ')
-//
-//                     }));
-//                     // Set the placeholder text to the option text - This would be the first barcode
-//                     var placeholder = barcode;
-//                     // prepend a span in front of the box div, with the placeholder text
-//                     $current.prepend($('<span>', {
-//                         class: $current.attr('class').replace(/sel/g, 'sel__placeholder '),
-//                         text: placeholder,
-//                         id: "artic-placeholder",
-//                         'data-placeholder': placeholder
-//                     }));
-//
-//                     return;
-//                 }
-//
-//                 // Then for the rest of the options add them in
-//                 $current.children('div').append($('<span>', {
-//                     class: $current.attr('class').replace(/sel/g, 'sel__box__options '),
-//                     text: barcode
-//                 }));
-//             });
-//             // Toggling the `.active` state on the `.sel`.
-//             $('.sel').click(function () {
-//                 $(this).toggleClass('active');
-//             });
-//
-//             // Toggling the `.selected` state on the options.
-//             $('.sel__box__options').click(function () {
-//                 console.log("The things....")
-//                 var txt = $(this).text();
-//                 that._barcodeChosen = txt;
-//                 var index = $(this).index();
-//
-//
-//                 $(this).siblings('.sel__box__options').removeClass('selected');
-//                 $(this).addClass('selected');
-//
-//                 var $currentSel = $(this).closest('.sel');
-//                 $currentSel.children('.sel__placeholder').text(txt);
-//                 $currentSel.children('select').prop('selectedIndex', index + 1);
-//
-//                 that.drawSelectedBarcode(flowcellId, txt);
-//
-//
-//             });
-//             $(".sel").css("display", "");
-//         }).catch(error => {
-//             console.error(error)
-//         });
-//     });
-// }
+    ;
 
     /**
      * Draw the master coverage chart for the selected barcode

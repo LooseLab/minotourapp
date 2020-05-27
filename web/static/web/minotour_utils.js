@@ -7,6 +7,75 @@ Highcharts.setOptions({
     }
 });
 
+/**
+ * Remove old series from a given chart
+ * @param chart {object}
+ */
+function clearChartData(chart){
+    while (chart.series.length > 0) {
+        chart.series[0].remove();
+    }
+}
+
+
+/**
+ * Check whether the data we are about to add to a chart series is identical to the data already in that series.
+ * @param newChartData {array} The data we plan to insert.
+ * @param oldChartData {array} The data that exists in the series. Accessed via series.options.data.
+ * @returns {bool} Whether the arrays are identical or not.
+ */
+function checkHighChartsDataIsNew(newChartData, oldChartData){
+    let flattenedNewData = [];
+    let flattenedOldData = [];
+    let identical= false;
+    flattenedNewData = [].concat(...newChartData);
+    // flatten chart data so we can compare it to the new data, can't compare nested arrays
+    flattenedOldData = [].concat(...oldChartData);
+
+    // compare old data with new data
+    identical = flattenedNewData.length === flattenedOldData.length && flattenedNewData.every((value, index) => value === flattenedOldData[index]);
+    return identical
+}
+
+/**
+ * Get a cookie value.
+ * @param name {string} The name of the cookie to be parsed.
+ * @returns {string} The value of the given cookie.
+ */
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+
+/**
+ * @param {number} item_index The index of the navbar element in the
+ * @function {function} Set the active item on the top navbar.
+ *
+ *
+ */
+function set_active_navbar_item(item_index) {
+
+    var nav_bar = document.querySelectorAll('.navbar li a');
+
+    nav_bar.forEach(function (element, index) {
+
+        element.classList.remove("active");
+        if (index == item_index) element.classList.add('active');
+    });
+}
+
 
 /**
  * @function makeColumnChart
@@ -55,8 +124,15 @@ function makeColumnChart(divId, chartTitle, yAxisTitle) {
 }
 
 
-function makeSplineChart(divName, chartTitle, yAxisTitle) {
-    var chart = Highcharts.chart(divName, {
+/**
+ * Function abstracting creation of a HighCharts Spline chart.
+ * @param divName {str} ID of div to initialise chart inside.
+ * @param chartTitle {str} Title of chart.
+ * @param yAxisTitle {str} Title of Y axis.
+ * @returns {*}
+ */
+function makeSplineChart(divId, chartTitle, yAxisTitle) {
+    const chart = Highcharts.chart(divId, {
         chart: {
             type: "spline",
             marginRight: 10,
@@ -321,19 +397,48 @@ function makeLiveChart(divName, chartTitle, yAxisTitle) {
     return chart;
 };
 
-function getCookie(name) {
-    var cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        var cookies = document.cookie.split(';');
-        for (var i = 0; i < cookies.length; i++) {
-            var cookie = jQuery.trim(cookies[i]);
-            // Does this cookie string begin with the name we want?
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
+/**
+ * Create a HighCharts heatmap chart. These are used on the basecalled data tab.
+ * @param divName {string} The id of the div to render chart to.
+ * @param chartTitle {string} The title of the chart.
+ * @return {*}
+ */
+function makeHeatmapChart(divName, chartTitle) {
 
+    var chart = Highcharts.chart(divName, {
+        chart: {
+            type: "heatmap",
+        },
+        title: {
+            text: chartTitle
+        },
+        colorAxis: {
+            min: 0,
+            minColor: '#FFFFFF',
+            maxColor: Highcharts.getOptions().colors[0]
+        },
+        xAxis: {
+            title: null,
+            labels: {
+                enabled: false
+            },
+
+        },
+        yAxis: {
+            title: null,
+            labels: {
+                enabled: false
+            },
+
+        },
+        legend: {
+            layout: 'horizontal',
+        },
+        exporting: {
+            enabled: false
+        }
+    });
+
+    return chart;
+
+}
