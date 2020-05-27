@@ -1,4 +1,5 @@
 from django.conf.urls import url
+
 from reads import views
 
 urlpatterns = [
@@ -72,7 +73,7 @@ urlpatterns = [
         name="fastqfile-list",
     ),
     url(
-        #r'^api/v1/minions/(?P<pk>[0-9A-Za-z-_]+)/$',
+        # r'^api/v1/minions/(?P<pk>[0-9A-Za-z-_]+)/$',
         r'^api/v1/files/(?P<pk>[0-9]+)/$',
         views.fastq_detail,
         name="fastqfile-detail"),
@@ -153,6 +154,11 @@ urlpatterns = [
         views.flowcell_list,
         name="flowcell-list"),
     url(
+        r'^api/v1/flowcells/barcodes/$',
+        views.flowcell_barcodes_list,
+        name="flowcell-barcodes"
+    ),
+    url(
         r'^api/v1/flowcells/(?P<pk>[0-9A-Za-z-_]+)/$',
         views.flowcell_detail,
         name="flowcell-detail"),
@@ -166,17 +172,12 @@ urlpatterns = [
         name="flowcell-statistics"
     ),
     url(
-        r'^api/v1/flowcells/(?P<pk>[0-9]+)/speed/$',
-        views.flowcell_speed,
-        name="flowcell-speed"
-    ),
-    url(
-        r'^api/v1/flowcells/(?P<pk>[0-9]+)/histogramsummary/$',
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/histogram-summary/$',
         views.flowcell_histogram_summary,
-        name="flowcellhistogramsummary-detail"
+        name="flowcell-histogram-summary-detail"
     ),
     url(
-        r'^api/v1/flowcells/(?P<pk>[0-9]+)/channelsummary/$',
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/channel-summary/$',
         views.flowcell_channel_summary,
         name="flowcell-channel-summary"
     ),
@@ -185,7 +186,7 @@ urlpatterns = [
         views.flowcell_run_stats_latest,
         name="flowcellrunstats_latest"
     ),
-    #TODO IS THIS VIEW USED
+    # TODO IS THIS VIEW USED
     url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/tasks/$',
         views.flowcell_tasks_detail_all,
@@ -243,8 +244,8 @@ urlpatterns = [
         name="flowcell_run_basecalled_summary_html"
     ),
     url(
-        r'^flowcells/(?P<pk>[0-9]+)/summary_html/$',
-        views.flowcell_summary_html,
+        r'^flowcells/(?P<pk>[0-9]+)/basecalled-summary-html/$',
+        views.flowcell_basecalled_summary_html,
         name="flowcell-summary-html"
     ),
     url(
@@ -267,6 +268,6 @@ urlpatterns = [
         r'^api/v1/active_minions/run_stats/$',
         views.remote_control_run_stats,
         name="remote-control-run_stats"
-    )
+    ),
 
 ]

@@ -1,7 +1,8 @@
 import datetime
 import json
 import time
-from pathlib import Path
+from collections import defaultdict
+from operator import itemgetter
 from pprint import pprint
 
 import numpy as np
@@ -13,6 +14,7 @@ from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Max, Q
 from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404
 from django.shortcuts import render
 from django.utils import timezone
 from guardian.shortcuts import assign_perm, remove_perm
@@ -21,7 +23,6 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from alignment.models import PafRoughCov
-from artic.views import quick_get_artic_results_directory
 from assembly.models import GfaStore
 from centrifuge.models import CentrifugeOutput
 from minotourapp import settings
@@ -87,6 +88,33 @@ from web.delete_tasks import (
 )
 
 logger = get_task_logger(__name__)
+
+
+@api_view(["GET"])
+def flowcell_barcodes_list(request):
+    """
+    Return a list of barcodes for a given flowcell.
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+
+    Returns
+    -------
+
+    """
+    flowcell_id = request.GET.get("flowcellId", None)
+    print("!!!!!!!!!!!!!!!!!")
+    print(flowcell_id)
+    if not flowcell_id:
+        return Response("No Flowcell ID specified.", status.HTTP_400_BAD_REQUEST)
+    flowcell = get_object_or_404(Flowcell, pk=int(flowcell_id))
+    # TODO this could become slow if we ended up with 10000s of barcodes
+    barcodes = sorted(
+        list(Barcode.objects.filter(run__in=flowcell.runs.all()).values()),
+        key=itemgetter("name"),
+    )
+
+    return Response(barcodes, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
@@ -247,8 +275,8 @@ def fastq_file(request, pk):
 
         run = (
             Run.objects.filter(runid=request.data["runid"])
-                .filter(owner=request.user)
-                .first()
+            .filter(owner=request.user)
+            .first()
         )
 
         obj, created = FastqFile.objects.get_or_create(
@@ -287,9 +315,9 @@ def run_list(request):
 
         for flowcell in Flowcell.objects.all():
             if (
-                    request.user == flowcell.owner
-                    or request.user.has_perm("view_data", flowcell)
-                    or request.user.has_perm("run_analysis", flowcell)
+                request.user == flowcell.owner
+                or request.user.has_perm("view_data", flowcell)
+                or request.user.has_perm("run_analysis", flowcell)
             ):
                 flowcell_list.append(flowcell)
 
@@ -340,9 +368,9 @@ def run_detail(request, pk):
 
     for flowcell in Flowcell.objects.all():
         if (
-                request.user == flowcell.owner
-                or request.user.has_perm("view_data", flowcell)
-                or request.user.has_perm("run_analysis", flowcell)
+            request.user == flowcell.owner
+            or request.user.has_perm("view_data", flowcell)
+            or request.user.has_perm("run_analysis", flowcell)
         ):
             flowcell_list.append(flowcell)
 
@@ -478,8 +506,8 @@ def active_minion_list(request):
             ) - datetime.timedelta(minutes=5)
 
             if (
-                    last_minion_event.event.name != "unplugged"
-                    and minion.currentdetails.last_modified > five_minute_check
+                last_minion_event.event.name != "unplugged"
+                and minion.currentdetails.last_modified > five_minute_check
             ):
 
                 if minion.currentdetails.minKNOW_status in [
@@ -618,7 +646,7 @@ def minion_messages_list(request, pk):
 #     return Response(serializer.data)
 
 
-@api_view(["GET"], )
+@api_view(["GET"],)
 def recentminion_messages_list(request, pk):
     queryset = MinionMessage.objects.filter(minION=pk).filter(
         minKNOW_message_timestamp__gte=timezone.now() - datetime.timedelta(hours=24)
@@ -655,7 +683,7 @@ def minknow_message_html(request, pk):
     return render(request, "reads/minknow_messages.html", {"message_list": messages})
 
 
-@api_view(["GET", "POST"], )
+@api_view(["GET", "POST"],)
 def minION_control_list(request, pk):
     """
     TODO describe function
@@ -678,7 +706,7 @@ def minION_control_list(request, pk):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(["GET", "POST"], )
+@api_view(["GET", "POST"],)
 def minION_control_update(request, pk, checkid):
     """
     TODO describe function
@@ -704,7 +732,7 @@ def minION_control_update(request, pk, checkid):
 
 
 @api_view(
-    ["GET", ]
+    ["GET",]
 )
 def minION_currentrun_list(request, pk):
     """
@@ -1338,7 +1366,7 @@ def flowcell_detail(request, pk):
             for f in all_flowcell_list:
 
                 if request.user.has_perm("view_data", f) or request.user.has_perm(
-                        "run_analysis", f
+                    "run_analysis", f
                 ):
 
                     if search_criteria == "id":
@@ -1429,7 +1457,7 @@ def process_summary_data(df):
 
 
 @login_required
-def flowcell_summary_html(request, pk):
+def flowcell_basecalled_summary_html(request, pk):
     """
     Returns a html table to the top of the chancalc page
     :param request: The Get request body
@@ -1458,6 +1486,7 @@ def flowcell_summary_html(request, pk):
             "total_length",
         )
     )
+    # TODO do we not already keep these - do this on creation of flowcell summary barcode?!?!
     # calculate the percentage of reads in a barcode
     df = process_summary_data(df)
 
@@ -1478,8 +1507,8 @@ def flowcell_summary_html(request, pk):
     # and creating the columns for the results
     df2 = (
         df[df["barcode_name"].eq("All reads")]
-            .groupby(["barcode_name", "read_type_name", "rejection_status"])
-            .agg(agg)
+        .groupby(["barcode_name", "read_type_name", "rejection_status"])
+        .agg(agg)
     )
 
     df2 = df2.reset_index()
@@ -1492,8 +1521,8 @@ def flowcell_summary_html(request, pk):
     # Same aggregations on other barcodes
     df2 = (
         df[df["barcode_name"].ne("All reads")]
-            .groupby(["barcode_name", "read_type_name", "rejection_status"])
-            .agg(agg)
+        .groupby(["barcode_name", "read_type_name", "rejection_status"])
+        .agg(agg)
     )
 
     if df2.shape[0] > 0:
@@ -1519,8 +1548,8 @@ def flowcell_statistics(request, pk):
     :type pk: int
     :return: (HttpResponse) json of all sorts of data
     """
-
-    barcode_name = request.GET.get("barcode_name", "All reads")
+    # TODO comment and REWRITE OOFT
+    barcode_name = request.GET.get("barcodeName", "All reads")
 
     barcodes_list = [barcode_name]
 
@@ -1531,9 +1560,6 @@ def flowcell_statistics(request, pk):
     # Reverse lookup a queryset of all the runs in this flowcell
     run_list = flowcell.runs.all()
 
-    job_master_iteration = flowcell.flowcelljobs.get(
-        job_type__name="ChanCalc"
-    ).iteration_count
     """
     queryset = (
         FlowcellStatisticBarcode.objects.filter(flowcell=flowcell, iteration_count=job_master_iteration)
@@ -1545,10 +1571,10 @@ def flowcell_statistics(request, pk):
     """
     queryset = (
         FlowcellStatisticBarcode.objects.filter(flowcell=flowcell)
-            .filter(
+        .filter(
             Q(barcode_name__in=barcodes_list) | Q(rejection_status__in=barcodes_list)
         )
-            .order_by("sample_time")
+        .order_by("sample_time")
     )
 
     df = pd.DataFrame(
@@ -1588,6 +1614,7 @@ def flowcell_statistics(request, pk):
 
     df3 = pd.concat([df, df2], ignore_index=True, sort=True)
 
+    # TODO np.cumsum()
     df3["cumulative_read_count"] = df3.groupby(
         ["barcode_name", "read_type_name", "read_type", "rejection_status"]
     )["read_count"].apply(lambda x: x.cumsum())
@@ -1597,13 +1624,13 @@ def flowcell_statistics(request, pk):
     )["total_length"].apply(lambda x: x.cumsum())
 
     df3["key"] = (
-            df3["barcode_name"].astype("str")
-            + " - "
-            + df3["read_type_name"].astype("str")
-            + " - "
-            + df3["read_type"].astype("str")
-            + " - "
-            + df3["rejection_status"].astype("str")
+        df3["barcode_name"].astype("str")
+        + " - "
+        + df3["read_type_name"].astype("str")
+        + " - "
+        + df3["read_type"].astype("str")
+        + " - "
+        + df3["rejection_status"].astype("str")
     )
 
     df3["average_quality"] = (
@@ -1664,73 +1691,73 @@ def flowcell_statistics(request, pk):
     )
 
 
-@api_view(["get"])
-def flowcell_speed(request, pk):
-    window = 5
-    flowcell = Flowcell.objects.get(pk=pk)
-
-    queryset = (
-        FlowcellStatisticBarcode.objects.filter(flowcell=flowcell)
-            .filter(barcode_name="All Reads")
-            .order_by("sample_time")
-    )
-
-    df = pd.DataFrame(
-        list(
-            queryset.values("sample_time", "status", "channel_presence", "total_length")
-        )
-    )
-    if len(df.status.unique()) == 2:
-        # We have pass and fail reads in the dataset
-        # Convert channel presence strings to numpy array for later manipulation.
-        df["channel_presence"] = df["channel_presence"].apply(
-            lambda x: np.asarray(list(x), dtype=int)
-        )
-        # Convert the dataframe to stack channel_presence and total_length
-        df = (
-            df.groupby("sample_time")[["channel_presence", "total_length"]]
-                .apply(lambda df: df.reset_index(drop=True))
-                .unstack()
-        )
-        # Generate the total length across both pass and fail
-        df["sum_total_length"] = df["total_length"][0] + df["total_length"][1]
-        # Add the two channel presence arrays to obtain 0 values and values greater than 1 where a channel has been used
-        df["sum_channel_presence"] = (
-                df["channel_presence"][0] + df["channel_presence"][1]
-        )
-        # Calculate our channel count by counting the number of nonzero values in the array.
-        # This gets around the fact that a channel might produce both a pass and fail read in the same one minute window
-        df["chan_count"] = df["sum_channel_presence"].apply(
-            lambda x: np.count_nonzero(x)
-        )
-        # calculate the mean channel count over a 10 minute window.
-        df["mean_chan_count"] = df["chan_count"].rolling(window=window).mean()
-        # calculate the mean read length seen in a rolling 10 minute window.
-        df["mean_total_length"] = df["sum_total_length"].rolling(window=window).mean()
-        # calculate the mean speed over those rolling windows in bases per second
-        df["mean_speed"] = (
-            df["mean_total_length"]
-                .div(df["mean_chan_count"])
-                .div(600)
-                .round(decimals=0)
-        )
-    elif len(df.status.unique()) == 1:
-        # We only have either pass or fail reads in the dataset
-        df["channel_presence"] = df["channel_presence"].apply(
-            lambda x: np.asarray(list(x), dtype=int)
-        )
-        df = df.groupby("sample_time")[["channel_presence", "total_length"]].apply(
-            lambda df: df.reset_index(drop=True)
-        )
-        df["chan_count"] = df["channel_presence"].apply(lambda x: np.count_nonzero(x))
-        df["mean_chan_count"] = df["chan_count"].rolling(window=window).mean()
-        df["mean_total_length"] = df["total_length"].rolling(window=window).mean()
-        df["mean_speed"] = (
-            df["mean_total_length"].div(df["mean_chan_count"]).round(decimals=0)
-        )
-        df.reset_index(level=1, drop=True, inplace=True)
-
-    return Response(df["mean_speed"].to_json(orient="columns"))
+# @api_view(["GET"])
+# def flowcell_speed(request, pk):
+#     window = 5
+#     flowcell = Flowcell.objects.get(pk=pk)
+#
+#     queryset = (
+#         FlowcellStatisticBarcode.objects.filter(flowcell=flowcell)
+#         .filter(barcode_name="All Reads")
+#         .order_by("sample_time")
+#     )
+#
+#     df = pd.DataFrame(
+#         list(
+#             queryset.values("sample_time", "status", "channel_presence", "total_length")
+#         )
+#     )
+#     if len(df.status.unique()) == 2:
+#         # We have pass and fail reads in the dataset
+#         # Convert channel presence strings to numpy array for later manipulation.
+#         df["channel_presence"] = df["channel_presence"].apply(
+#             lambda x: np.asarray(list(x), dtype=int)
+#         )
+#         # Convert the dataframe to stack channel_presence and total_length
+#         df = (
+#             df.groupby("sample_time")[["channel_presence", "total_length"]]
+#             .apply(lambda df: df.reset_index(drop=True))
+#             .unstack()
+#         )
+#         # Generate the total length across both pass and fail
+#         df["sum_total_length"] = df["total_length"][0] + df["total_length"][1]
+#         # Add the two channel presence arrays to obtain 0 values and values greater than 1 where a channel has been used
+#         df["sum_channel_presence"] = (
+#             df["channel_presence"][0] + df["channel_presence"][1]
+#         )
+#         # Calculate our channel count by counting the number of nonzero values in the array.
+#         # This gets around the fact that a channel might produce both a pass and fail read in the same one minute window
+#         df["chan_count"] = df["sum_channel_presence"].apply(
+#             lambda x: np.count_nonzero(x)
+#         )
+#         # calculate the mean channel count over a 10 minute window.
+#         df["mean_chan_count"] = df["chan_count"].rolling(window=window).mean()
+#         # calculate the mean read length seen in a rolling 10 minute window.
+#         df["mean_total_length"] = df["sum_total_length"].rolling(window=window).mean()
+#         # calculate the mean speed over those rolling windows in bases per second
+#         df["mean_speed"] = (
+#             df["mean_total_length"]
+#             .div(df["mean_chan_count"])
+#             .div(600)
+#             .round(decimals=0)
+#         )
+#     elif len(df.status.unique()) == 1:
+#         # We only have either pass or fail reads in the dataset
+#         df["channel_presence"] = df["channel_presence"].apply(
+#             lambda x: np.asarray(list(x), dtype=int)
+#         )
+#         df = df.groupby("sample_time")[["channel_presence", "total_length"]].apply(
+#             lambda df: df.reset_index(drop=True)
+#         )
+#         df["chan_count"] = df["channel_presence"].apply(lambda x: np.count_nonzero(x))
+#         df["mean_chan_count"] = df["chan_count"].rolling(window=window).mean()
+#         df["mean_total_length"] = df["total_length"].rolling(window=window).mean()
+#         df["mean_speed"] = (
+#             df["mean_total_length"].div(df["mean_chan_count"]).round(decimals=0)
+#         )
+#         df.reset_index(level=1, drop=True, inplace=True)
+#
+#     return Response(df["mean_speed"].to_json(orient="columns"))
 
 
 @api_view(["GET"])
@@ -1742,41 +1769,54 @@ def flowcell_histogram_summary(request, pk):
     :param pk: The primary key of the flowcell that the basecalled data metrics are attached to
     :type pk: int
     :return: (rest_framework.response.Response) containing a
-
     """
     # Get the barcode we are doing this for, default to all reads
-    barcode_name = request.GET.get("barcode_name", "All reads")
+    barcode_name = request.GET.get("barcodeName", "All reads").replace("_", " ")
     # Get the information for the flowcell the data is attached to
     flowcell = Flowcell.objects.get(pk=pk)
+
+    initialise = request.GET.get("initialise", False)
 
     total_reads_length = flowcell.total_read_length
     total_reads_count = flowcell.number_reads
 
     max_bin_index = (
         FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-            .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
-            .aggregate(Max("bin_index"))
+        .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
+        .aggregate(Max("bin_index"))
     )
+    # create the categories for the x asis, they are the bins * the bin width (default 1000)
+    categories = list(
+        range(
+            1 * FlowcellHistogramSummary.BIN_WIDTH,
+            (max_bin_index["bin_index__max"] + 1) * FlowcellHistogramSummary.BIN_WIDTH,
+            FlowcellHistogramSummary.BIN_WIDTH,
+        )
+    )
+
+    # We are initialising the charts we only want the categories
+    if initialise:
+        return Response(categories, status=status.HTTP_200_OK)
 
     # A list of tuples, distinct on barcode name, pass/fail, template
     key_list = (
         FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-            .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
-            .values_list("barcode_name", "read_type_name", "rejection_status", "status")
-            .distinct()
+        .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
+        .values_list("barcode_name", "read_type_name", "rejection_status", "status")
+        .distinct()
     )
 
-    data_keys = {}
+    chart_data = defaultdict(list)
     # unpack the tuple and create data using it, for each tuple
-    for (barcode_name, read_type_name, rejection_status, status) in key_list:
+    for (barcode_name, read_type_name, rejection_status, is_pass) in key_list:
         # query flowcell Histogram summary objects for all of the combinations under this barcode
-        queryset = (
+        histogram_queryset = (
             FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-                .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
-                .filter(read_type_name=read_type_name)
-                .filter(status=status)
-                .filter(rejection_status=rejection_status)
-                .order_by("bin_index")
+            .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
+            .filter(read_type_name=read_type_name)
+            .filter(status=is_pass)
+            .filter(rejection_status=rejection_status)
+            .order_by("bin_index")
         )
         # make a list of 0s one element for each bin
         result_read_count_sum = np.zeros(
@@ -1789,62 +1829,56 @@ def flowcell_histogram_summary(request, pk):
 
         result_collect_read_length_sum = [0] * (max_bin_index["bin_index__max"] + 1)
         # if there is more than one histogram summary, there should be one for each bin
-        if queryset.count() > 0:
-            if status == "True":
-                l_is_pass = "Pass"
+        if histogram_queryset.count() > 0:
+            if is_pass == "True":
+                summary_is_pass = "Pass"
             else:
-                l_is_pass = "Fail"
+                summary_is_pass = "Fail"
 
-            l_key = "{} - {} - {} - {}".format(
-                barcode_name, read_type_name, rejection_status, l_is_pass
+            series_name = "{} - {} - {} - {}".format(
+                barcode_name, read_type_name, rejection_status, summary_is_pass
             )
 
-            l_collect_read_count_sum = 0
+            seriescollect_read_count_sum = 0
 
-            l_collect_read_length_sum = 0
+            seriescollect_read_length_sum = 0
 
-            for r in queryset:
-                l_bin_index = r.bin_index
+            for bin_summary in histogram_queryset:
+                seriesbin_index = bin_summary.bin_index
 
-                l_read_count_sum = r.read_count
+                seriesread_count_sum = bin_summary.read_count
 
-                l_read_length_sum = r.read_length
+                seriesread_length_sum = bin_summary.read_length
 
-                l_collect_read_count_sum += r.read_count
+                seriescollect_read_count_sum += bin_summary.read_count
 
-                l_collect_read_length_sum += r.read_length
+                seriescollect_read_length_sum += bin_summary.read_length
 
-                result_read_count_sum[l_bin_index] = l_read_count_sum
+                result_read_count_sum[seriesbin_index] = seriesread_count_sum
 
-                result_read_length_sum[l_bin_index] = l_read_length_sum
+                result_read_length_sum[seriesbin_index] = seriesread_length_sum
 
-                result_collect_read_count_sum[l_bin_index] = l_collect_read_count_sum
+                result_collect_read_count_sum[
+                    seriesbin_index
+                ] = seriescollect_read_count_sum
 
-                result_collect_read_length_sum[l_bin_index] = l_collect_read_length_sum
+                result_collect_read_length_sum[
+                    seriesbin_index
+                ] = seriescollect_read_length_sum
 
-            if barcode_name not in data_keys.keys():
-                data_keys[barcode_name] = {}
-
-            if read_type_name not in data_keys[barcode_name].keys():
-                data_keys[barcode_name][read_type_name] = {}
-
-            if rejection_status not in data_keys[barcode_name][read_type_name].keys():
-                data_keys[barcode_name][read_type_name][rejection_status] = {}
-
-            ### This is wrong.
             result_collect_read_count_sum = list(
                 (
-                        -pd.concat(
-                            [
-                                pd.Series([0]),
-                                pd.Series(result_collect_read_count_sum).replace(
-                                    to_replace=0, method="ffill"
-                                ),
-                            ]
-                        )
-                        + pd.Series(result_collect_read_count_sum)
-                        .replace(to_replace=0, method="ffill")
-                        .max()
+                    -pd.concat(
+                        [
+                            pd.Series([0]),
+                            pd.Series(result_collect_read_count_sum).replace(
+                                to_replace=0, method="ffill"
+                            ),
+                        ]
+                    )
+                    + pd.Series(result_collect_read_count_sum)
+                    .replace(to_replace=0, method="ffill")
+                    .max()
                 )
                 / total_reads_count
                 * 100
@@ -1852,43 +1886,36 @@ def flowcell_histogram_summary(request, pk):
 
             result_collect_read_length_sum = list(
                 (
-                        -pd.concat(
-                            [
-                                pd.Series([0]),
-                                pd.Series(result_collect_read_length_sum).replace(
-                                    to_replace=0, method="ffill"
-                                ),
-                            ]
-                        )
-                        + pd.Series(result_collect_read_length_sum)
-                        .replace(to_replace=0, method="ffill")
-                        .max()
+                    -pd.concat(
+                        [
+                            pd.Series([0]),
+                            pd.Series(result_collect_read_length_sum).replace(
+                                to_replace=0, method="ffill"
+                            ),
+                        ]
+                    )
+                    + pd.Series(result_collect_read_length_sum)
+                    .replace(to_replace=0, method="ffill")
+                    .max()
                 )
                 / total_reads_length
                 * 100
             )
-            data_keys[barcode_name][read_type_name][rejection_status][l_is_pass] = {
-                "read_count": {"name": l_key, "data": result_read_count_sum},
-                "read_length": {"name": l_key, "data": result_read_length_sum},
-                "collect_read_count": {
-                    "name": l_key,
-                    "data": result_collect_read_count_sum,
-                },
-                "collect_read_length": {
-                    "name": l_key,
-                    "data": result_collect_read_length_sum,
-                },
-            }
 
-    categories = list(
-        range(
-            1 * FlowcellHistogramSummary.BIN_WIDTH,
-            (max_bin_index["bin_index__max"] + 1) * FlowcellHistogramSummary.BIN_WIDTH,
-            FlowcellHistogramSummary.BIN_WIDTH,
-        )
-    )
+            chart_data["read_count"].append(
+                {"name": series_name, "data": result_read_count_sum}
+            )
+            chart_data["read_length"].append(
+                {"name": series_name, "data": result_read_length_sum}
+            )
+            chart_data["collect_read_count"].append(
+                {"name": series_name, "data": result_collect_read_count_sum,}
+            )
+            chart_data["collect_read_length"].append(
+                {"name": series_name, "data": result_collect_read_length_sum,}
+            )
 
-    return Response({"data": data_keys, "categories": categories})
+    return Response({"data": chart_data, "categories": categories})
 
 
 @api_view(["GET"])
@@ -1896,14 +1923,12 @@ def flowcell_channel_summary(request, pk):
     """
     This function generates the json data for the heatmap charts
     (Reads per channel and Bases per channel). The javascript
-    file requestHistogramData.js calls this function.
+    file basecalledDataController.js calls this function.
     """
 
     flowcell = Flowcell.objects.get(pk=pk)
 
     qs = FlowcellChannelSummary.objects.filter(flowcell=flowcell)
-
-    result_mapped_to_flowcell = {}
 
     #
     # set all channels with value 0
@@ -2226,8 +2251,16 @@ def flowcell_tabs_list(request, pk):
         tabs.append("sequence-assembly")
 
     # TODO add an actual check here
-    if JobMaster.objects.filter(flowcell__id=pk, job_type__name="Track Artic Coverage").last():
-        if JobMaster.objects.filter(flowcell__id=pk, job_type__name="Track Artic Coverage").last().read_count:
+    if JobMaster.objects.filter(
+        flowcell__id=pk, job_type__name="Track Artic Coverage"
+    ).last():
+        if (
+            JobMaster.objects.filter(
+                flowcell__id=pk, job_type__name="Track Artic Coverage"
+            )
+            .last()
+            .read_count
+        ):
 
             tabs.append("artic")
 
@@ -2371,13 +2404,13 @@ def read_list_new(request):
 
         if search_criteria == "run":
 
-            qs = FastqRead.objects.filter(run__id=search_value)[offset: offset + limit]
+            qs = FastqRead.objects.filter(run__id=search_value)[offset : offset + limit]
 
         elif search_criteria == "fastqfile":
 
             qs = FastqRead.objects.filter(fastqfile_id=search_value)[
-                 offset: offset + limit
-                 ]
+                offset : offset + limit
+            ]
 
         else:
 
@@ -2467,7 +2500,7 @@ def barcode_list_new(request):
 
 @api_view(["GET"])
 def version(request):
-    resp = {"server": "1.0", "clients": ["1.0"], "minknow": ["1.11.5", ]}
+    resp = {"server": "1.0", "clients": ["1.0"], "minknow": ["1.11.5",]}
 
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
@@ -2504,7 +2537,7 @@ def flowcell_sharing(request, pk):
             return Response(
                 {
                     "message": "User already has permission. If you want to change the permission"
-                               " level, delete the current permission first."
+                    " level, delete the current permission first."
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
@@ -2639,7 +2672,7 @@ def get_or_create_tasks(request):
     else:
 
         if (
-                type(request.data["flowcell"]) is str
+            type(request.data["flowcell"]) is str
         ):  # TODO this could be removed because on this point (creating tasks) the client knows the flowcell id
 
             try:
@@ -2668,8 +2701,8 @@ def get_or_create_tasks(request):
                     )
 
         if (
-                not request.user.has_perm("run_analysis", flowcell)
-                and not request.user == flowcell.owner
+            not request.user.has_perm("run_analysis", flowcell)
+            and not request.user == flowcell.owner
         ):
             return Response(
                 {
@@ -2695,8 +2728,8 @@ def get_or_create_tasks(request):
 
         # For client side job starting, check if we have a reference and it's a string
         if (
-                "reference" in request.data.keys()
-                and type(request.data["reference"]) is str
+            "reference" in request.data.keys()
+            and type(request.data["reference"]) is str
         ):
 
             try:
@@ -2788,8 +2821,8 @@ def task_control(request):
     job_master = JobMaster.objects.get(pk=request.data["flowcellJobId"])
 
     if not (
-            request.user == job_master.flowcell.owner
-            or request.user.has_perm("run_analysis", job_master.flowcell)
+        request.user == job_master.flowcell.owner
+        or request.user.has_perm("run_analysis", job_master.flowcell)
     ):
         return Response(
             "You do not have permission to perform this action.", status=403
