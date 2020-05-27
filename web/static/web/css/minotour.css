@@ -523,6 +523,15 @@ a{
   background-color: #6bb9f0;
 }
 
+.arrow-toggle .fa-arrow-down,
+.arrow-toggle.collapsed .fa-arrow-up {
+    display: inline-block;
+}
+.arrow-toggle.collapsed .fa-arrow-down,
+.arrow-toggle .fa-arrow-up {
+    display: none;
+}
+
 
 body {
 font-family: -apple-system, BlinkMacSystemFont, “Segoe UI”, Roboto, “Helvetica Neue”, Arial, sans-serif, “Apple Color Emoji”, “Segoe UI Emoji”, “Segoe UI Symbol”;
@@ -535,9 +544,17 @@ line-height: 1.5;
 /* Increase all font sizes on mobile */
 @media (max-width: 767px) {
 
-body {
-/* default is 1rem or 16px */
-font-size: 25px;
+    body {
+    /* default is 1rem or 16px */
+    font-size: 25px;
+    }
 }
+
+.barcode-tab:hover{
+    cursor: pointer;
+}
+
+.basecalled-loader{
+        top: 0;
 
 }
