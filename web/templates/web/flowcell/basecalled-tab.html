@@ -1,3 +1,8 @@
+<div id="loader-wrapper" style="text-align: center">
+    <div id="loader"></div>
+    <div class="loader-section section-left basecalled-loader"></div>
+    <div class="loader-section section-right basecalled-loader"></div>
+</div>
 <div class="row">
 
     <div class="col-md-12" id="basecalled-summary"></div>
@@ -5,165 +10,113 @@
 </div>
 
 <div class="card card-primary card-outline">
-          <div class="card-header">
-            <h3 class="card-title">
-              <i class="fas fa-edit"></i>
-              Yield and Throughput By Barcode
-            </h3>
-          </div>
-          <div class="card-body">
-            <h5>Select a Barcode</h5>
-              <ul class="nav nav-tabs" id="nav-tabs-barcodes" role="tablist"></ul>
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-edit"></i>
+            Yield and Throughput By Barcode
+        </h3>
+    </div>
+    <div class="card-body">
+        <h5>Select a Barcode</h5>
+        <ul class="nav nav-tabs" id="nav-tabs-barcodes" role="tablist"></ul>
 
-            <div class="tab-content" id="custom-content-below-tabContent">
+        <div class="tab-content" id="custom-content-below-tabContent">
 
-            </div>
-            <div class="tab-custom-content">
-              <div class="row">
+        </div>
+        <div class="tab-custom-content">
+            <div class="row">
 
-            <div class="col-md-12">
-                <div class="">
+                <div class="col-md-12">
+                    <div class="">
+
+                    </div>
+                </div>
+
+
+                <div id="cumulative-yield-over-time"
+                     class="col-md-6 highcharts-container"
+                     style="height:400px;">
+                </div>
+
+                <div id="cumulative-number-reads-over-time"
+                     class="col-md-6 highcharts-container"
+                     style="height:400px;">
+                </div>
+
+                <div id="histogram-bases-sequenced-by-read-length"
+                     class="col-md-6 highcharts-container"
+                     style="height:400px;">
+                </div>
+
+                <div id="histogram-read-lengths"
+                     class="col-md-6 highcharts-container"
+                     style="height:400px;">
+                </div>
+
+                <div id="collect-histogram-bases-sequenced-by-read-length"
+                     class="col-md-6 highcharts-container"
+                     style="height:400px;">
 
                 </div>
-            </div>
+
+                <div id="collect-histogram-read-lengths"
+                     class="col-md-6 highcharts-container"
+                     style="height:400px;">
+                </div>
 
 
-            <div id="cumulative-yield-overtime-new"
-                 class="col-md-6 highcharts-container"
-                 style="height:400px;">
-                <i class="fa fa-cog fa-spin fa-3x"></i>
-                Calculating
-            </div>
+                <div id="average-quality-over-time"
+                     class="col-md-6 highcharts-container"
+                     style="height:400px;">
+                    
+                </div>
 
-            <div id="cumulative-number-reads-overtime-new"
-                 class="col-md-6 highcharts-container"
-                 style="height:400px;">
-                <i class="fa fa-cog fa-spin fa-3x"></i>
-                Calculating
-            </div>
+                <div id="sequencing-rate"
+                     class="col-md-6 highcharts-container"
+                     style="height:400px;">
+                </div>
 
-            <div id="histogram-bases-sequenced-by-read-length"
-                 class="col-md-6 highcharts-container"
-                 style="height:400px;">
-                <i class="fa fa-cog fa-spin fa-3x"></i>
-                Calculating bases sequenced by read length
+                <div id="average-read-lengths-over-time"
+                     class="col-md-6 highcharts-container"
+                     style=" height:400px;">
+                    
+                </div>
 
-            </div>
-
-            <div id="histogram-read-lengths"
-                 class="col-md-6 highcharts-container"
-                 style="height:400px;">
-                <i class="fa fa-cog fa-spin fa-3x"></i>
-                Calculating histogram of read lengths
-            </div>
-
-            <div id="collect-histogram-bases-sequenced-by-read-length"
-                 class="col-md-6 highcharts-container"
-                 style="height:400px;">
-                <i class="fa fa-cog fa-spin fa-3x"></i>
-                Calculating bases sequenced by read length
+                <div id="max-read-lengths-over-time"
+                     class="col-md-6 highcharts-container"
+                     style="height:400px;">
+                    
+                </div>
 
             </div>
-
-            <div id="collect-histogram-read-lengths"
-                 class="col-md-6 highcharts-container"
-                 style="height:400px;">
-                <i class="fa fa-cog fa-spin fa-3x"></i>
-                Calculating histogram of read lengths
-            </div>
-
-
-
-            <div id="average-quality-overtime-new"
-                 class="col-md-6 highcharts-container"
-                 style="height:400px;">
-                <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
-            </div>
-
-            <div id="sequencing-rate-new"
-                 class="col-md-6 highcharts-container"
-                 style="height:400px;">
-                <i class="fa fa-cog fa-spin fa-3x"></i>
-                Calculating
-            </div>
-
-            <div id="average-read-lengths-overtime-new"
-                 class="col-md-6 highcharts-container"
-                 style=" height:400px;">
-                <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
-            </div>
-
-            <div id="max-read-lengths-overtime-new"
-                 class="col-md-6 highcharts-container"
-                 style="height:400px;">
-                <i class="fa fa-cog fa-spin fa-3x"></i> Calculating
-            </div>
-            <!---
-            <div id="sequencing-speed-new"
-                 class="col-md-12 highcharts-container"
-                 style="width:100%; height:400px;">
-                <i class="fa fa-cog fa-spin fa-3x"></i>
-                Calculating
-            </div>
-            --->
-
-        </div>
-            </div>
-
-          </div>
-          <!-- /.card -->
         </div>
 
-
-<div class="card card-primary card-outline">
-    <div class="card-header">
-            <h3 class="card-title">
-              <i class="fas fa-tachometer-alt"></i>
-              Sequencing Speed
-            </h3>
-          </div>
-
-    <div class="card-body">
-        <div class="row">
-            <div id="estimated-sequencing-speed"
-                 class="col-md-12 highcharts-container"
-                 style="width:100%; height:400px;">
-                <i class="fa fa-cog fa-spin fa-3x"></i>
-                Calculating Sequencing Speed - this can take time and will be at least ten minutes into the run. So -
-                Don't Panic.
-            </div>
-
-        </div>
-        Speed of DNA moving through the pore is estimated from fastq data alone. More accurate calculations can be made
-        from the raw Nanopore data.
-        <br>
-        This feature is provided to allow users to estimate if speed is falling outside reasonable parameters.
-        <br>
-        Speed estimates will not be correct for runs with extremely long read lengths or those where input library is
-        limiting.
     </div>
+    <!-- /.card -->
 </div>
+
+
 <div class="card card-primary card-outline">
     <div class="card-header">
-            <h3 class="card-title">
-              <i class="fas fa-fire"></i>
-              Flowcell Heatmaps
-            </h3>
-          </div>
+        <h3 class="card-title">
+            <i class="fas fa-fire"></i>
+            Flowcell Heatmaps
+        </h3>
+    </div>
 
     <div class="card-body">
         <div id="reads-per-pore"
              class="col-md-12"
              style="height:600px;">
-            <i class="fa fa-cog fa-spin fa-3x"></i>
-            Calculating reads per pore
         </div>
 
         <div id="bases-per-pore"
              class="col-md-12"
              style="height:600px;">
-            <i class="fa fa-cog fa-spin fa-3x"></i>
-            Calculating reads per pore
         </div>
     </div>
 </div>
+
+<script>
+    const basecalledDataController = new BasecalledDataController(sessionStorage.getItem("flowcellID"));
+</script>
