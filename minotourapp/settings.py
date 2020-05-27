@@ -14,7 +14,6 @@ import os
 import tempfile
 
 from celery.schedules import crontab
-
 from kombu import Exchange, Queue
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -71,8 +70,6 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'minotourapp.urls'
-print(BASE_DIR)
-print(os.path.join(BASE_DIR, 'web/templates/'))
 
 TEMPLATES = [
     {
