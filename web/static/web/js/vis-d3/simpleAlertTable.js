@@ -18,7 +18,7 @@ function draw_simple_table(flowcellId) {
     let data;
     let limit;
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
-    let barcode = get_selected_barcode();
+    let barcode = getSelectedBarcode();
     // if we are not on the metagenomics tab, don't waste time loading it
     if (flowcell_selected_tab_input.value !== "nav-metagenomics") {
         return;

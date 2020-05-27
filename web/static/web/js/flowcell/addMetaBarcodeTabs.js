@@ -2,7 +2,7 @@ function addMetaBarcodeTabs(flowcellId, barcodes, tabs){
     // bind the scope of this function to a the request data function
     var requestData = this.requestData.bind(this);
     // Get the currently selected barcode
-    var selected_barcode = get_selected_barcode();
+    var selected_barcode = getSelectedBarcode("Metagenomics");
     // Get the unordered list element
     var ul = document.getElementById("nav-tabs-meta-barcodes");
     // Set the unordered list to empty
@@ -32,7 +32,7 @@ function addMetaBarcodeTabs(flowcellId, barcodes, tabs){
             // Get the barcode we have selected from the tabs inner text
             var selected_barcode = event.target.innerText;
             // Set the selected barcode as that barcode
-            set_selected_barcode(selected_barcode);
+            setSelectedBarcode(selected_barcode, "Metagenomics");
             // Call request data for this flowcell, which will replace all the graphs with data for that barcode
             requestData(flowcellId);
             // Get all the tabs into an array

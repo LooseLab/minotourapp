@@ -1,5 +1,5 @@
 function getTotalReadsTable(flowCellId) {
-    var selectedBarcode = get_selected_barcode();
+    var selectedBarcode = getSelectedBarcode("Metagenomics");
     // Get ttoal reads table updates the total reads table at te bottom of the page
     // Get data from the api
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');

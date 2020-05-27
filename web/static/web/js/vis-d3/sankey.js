@@ -84,7 +84,7 @@ function update(flowcellId, sankey, checkForData, svg, g, format, color, width, 
 }
 // top level function
 function drawSankey(flowcellId) {
-    let selectedBarcode = get_selected_barcode();
+    let selectedBarcode = getSelectedBarcode("Metagenomics");
     // Check the tab value
     let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
     if(flowcell_selected_tab_input.value !== "nav-metagenomics"){
