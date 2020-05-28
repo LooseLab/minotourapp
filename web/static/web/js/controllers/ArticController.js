@@ -472,29 +472,24 @@ class ArticController {
         let that;
         let flowcellId = this._flowcellId;
         if (!this._perBarcodeCoverageChart) {
-
             this._perBarcodeCoverageChart = makeColumnChart(
                 "artic-per-barcode-coverage",
-                "Coverage Per Barcode",
-                "Coverage X"
+                "COVERAGE PER BARCODE",
+                "COVERAGE X"
             );
-
         }
-
         if (!this._perBarcodeAverageReadLengthChart) {
-
             this._perBarcodeAverageReadLengthChart = makeColumnChart(
                 "artic-per-barcode-average-length",
-                "Mean Read Length By Barcode",
-                "Mean Read Length By Barcode"
+                "MEAN READ LENGTH PER BARCODE",
+                "READ LENGTH (BASES)"
             );
-
         }
         // show loading on the page.
         this._perBarcodeCoverageChart.showLoading(`<div class="spinner-border text-success" role="status">
-    <span class = "sr-only"> Loading...</span></div>`);
+            <span class = "sr-only"> Loading...</span></div>`);
         this._perBarcodeAverageReadLengthChart.showLoading(`<div class="spinner-border text-success" role="status">
-    <span class = "sr-only"> Loading...</span></div>`);
+            <span class = "sr-only"> Loading...</span></div>`);
         // Callback scope proof access to class methods and variables.
         that = this;
 
