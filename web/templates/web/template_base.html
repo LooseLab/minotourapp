@@ -6,78 +6,46 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>minoTour | v1.0 | real time minION analysis</title>
     <link rel="icon" type="image/png" href="{% static 'web/img/minitour.png' %}">
-
     <link rel="apple-touch-icon" sizes="57x57" href="{% static 'web/img/minitour57.png' %}">
     <link rel="apple-touch-icon" sizes="72x72" href="{% static 'web/img/minitour72.png' %}">
     <link rel="apple-touch-icon" sizes="114x114" href="{% static 'web/img/minitour114.png' %}">
     <link rel="apple-touch-icon" sizes="144x144" href="{% static 'web/img/minitour144.png' %}">
     <link rel="mask-icon" href="{% static 'web/img/minotour.svg' %}" color="yellow">
-
     <!-- Tell the browser to be responsive to screen width -->
     <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
-    <!-- Bootstrap 4.4.1 -->
     <script src="{% static 'web/libraries/jquery-3.5.0.js' %}"></script>
-    {#    <script src="{% static 'web/libraries/popper.js' %}"></script>#}
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-            crossorigin="anonymous"></script>
-    <script src="{% static 'web/libraries/bootstrap-4.5.0-dist/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'web/libraries/popper.js' %}"></script>
 
+{#    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"#}
+{#            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"#}
+{#            crossorigin="anonymous"></script>#}
+    <script src="{% static 'web/libraries/bootstrap-4.5.0-dist/js/bootstrap.min.js' %}"></script>
     <link rel="stylesheet" href="{% static 'web/libraries/AdminLTE-3.0.4/dist/css/adminlte.min.css' %}">
-    {#    <link rel="stylesheet" href="{% static 'web/libraries/bootstrap-4.5.0-dist/css/bootstrap.min.css' %}">#}
     <!-- Font Awesome -->
     <link rel="stylesheet" href="{% static 'web/libraries/fontawesome-free-5.7.2-web/css/all.min.css' %}">
-    <!-- Ionicons -->
-    {#    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/ionicons/2.0.1/css/ionicons.min.css">#}
-    <link rel="stylesheet" href="{% static 'web/libraries/ionicons-master/docs/v2/css/ionicons.min.css' %}">
-    <!-- Theme style -->
-    <!-- AdminLTE Skins. We have chosen the skin-blue for this starter
-          page. However, you can choose any other skin. Make sure you
-          apply the skin class to the body tag so the changes take effect.
-    -->
-    {#    <link rel="stylesheet" href="{% static 'web/dist/css/skins/skin-blue.min.css' %}">#}
-
-    <link rel="stylesheet" href="{% static 'web/libraries/datatables/css/jquery.dataTables.css' %}">
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>-->
+    <link rel="stylesheet" href="{% static 'web/libraries/DataTables/datatables.css' %}">
     <link rel="stylesheet" href="{% static 'web/css/minotour.css' %}">
     <link rel="stylesheet" href="{% static 'web/css/loader.css' %}">
-    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
-    <link href="{% static 'web/libraries/materialdesignicons.min.css' %}" rel="stylesheet">
-
-    <script src="{% static 'web/plugins/fastclick/fastclick.min.js' %}"></script>
+{#    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">#}
     <script src="{% static 'web/libraries/axios/axios.min.js' %}"></script>
-
-
     <script src="{% static 'web/libraries/highstock.js' %}"></script>
-    {#    <script src="https://code.highcharts.com/stock/highstock.js"></script>#}
     <script src="{% static 'web/libraries/exporting.js' %}"></script>
-
     <script src="{% static 'web/libraries/highcharts-more.js' %}"></script>
     <script src="{% static 'web/libraries/boost.js' %}"></script>
-
     <script src="{% static 'web/libraries/solid-gauge.src.js' %}"></script>
     <script src="{% static 'web/libraries/grid-light-custom.js' %}"></script>
     <script src="{% static 'web/libraries/heatmap.src.js' %}"></script>
     <script src="{% static 'web/libraries/no-data-to-display.js' %}"></script>
-
     <script src="{% static 'web/libraries/cookie.js' %}"></script>
     <script src="{% static 'web/libraries/ajax_setup.js' %}"></script>
     <script src="{% static 'web/minotour_utils.js' %}?{% now 'c' %}"></script>
-
     <!-- Multi input code -->
     <script src="{% static 'web/libraries/multi-input-glitch/multi-input.js' %}"></script>
     <!-- ./wrapper -->
-
-    <!-- Bootstrap 4.4.1 -->
-    <!-- AdminLTE App -->
-    {#<script src="{% static 'web/libraries/AdminLTE-3.0.4/dist/js/app.min.js' %}?dev=19"></script>#}
     <script src="{% static 'web/js/flowcell/requestReadData.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/flowcell/addMetaBarcodeTabs.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/libraries/d3/d3.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/libraries/d3-sankey/d3-sankey.js' %}?{% now 'c' %}"></script>
-    <script src="{% static 'web/libraries/moment.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/vis-d3/sankey.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/vis-d3/donutdothat.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/vis-d3/allResultsTable.js' %}?{% now 'c' %}"></script>
@@ -88,10 +56,8 @@
     <script src="{% static 'web/js/vis-d3/masterDetailEB.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/models/CoverageChart.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/controllers/CoverageChartController.js' %}?{% now 'c' %}"></script>
-    <script src="{% static 'web/js/utils/checkFlowcellTabs.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/utils/selectedBarcode.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/utils/selectedFlowcell.js' %}?{% now 'c' %}"></script>
-    <script src="{% static 'web/js/utils/dynamicSort.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/flowcell/requestMinknowMessages.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/flowcell/requestTasks.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/flowcell/requestGfaData.js' %}?{% now 'c' %}"></script>
@@ -127,13 +93,7 @@
     <script src="{% static 'web/FlowcellPageApp.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/controllers/BasecalledDataController.js' %}"></script>
     <!-- Data tables -->
-    <script src="{% static 'web/libraries/datatables/js/jquery.dataTables.min.js' %}"></script>
-
-    <!-- Optionally, you can add Slimscroll and FastClick plugins.
-         Both of these plugins are recommended to enhance the
-         user experience. Slimscroll is required when using the
-         fixed layout. -->
-    <script src="{% static 'web/plugins/slimScroll/jquery.slimscroll.min.js' %}"></script>
+    <script src="{% static 'web/libraries/DataTables/datatables.min.js' %}"></script>
 </head>
 
 {% block body_tag %}
