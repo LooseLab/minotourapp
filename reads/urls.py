@@ -4,6 +4,11 @@ from reads import views
 
 urlpatterns = [
     url(
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/barcode-proportion/$',
+        views.proportion_of_total_reads_in_barcode_list,
+        name="barcode-proportion"
+    ),
+    url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/minknow-messages-html/$',
         views.minknow_message_html,
         name="minknow-messages-html"
