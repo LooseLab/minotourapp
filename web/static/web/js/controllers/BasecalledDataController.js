@@ -44,43 +44,43 @@ class BasecalledDataController {
      * @private
      */
     _updateBarcodeNavTab(flowcellId) {
-        let firstIteration, that, index, barcodes,
-            barcode_objs, active, newBarcodeElementsArray = [];
+        let firstIteration, that, index,
+            barcode_names = [], active, newBarcodeElementsArray = [];
         that = this;
         firstIteration = this.barcodesList.length === 0;
         this._axiosInstance.get("/api/v1/flowcells/barcodes", {params: {flowcellId}}).then((response) => {
             if (response.status !== 200) console.error(`Error ${response.status}`);
-            barcode_objs = response.data;
+            barcode_names = response.data;
             // Remove no barcode
-            barcode_objs = barcode_objs.filter(el => {
-                return el.name !== "No barcode";
+            barcode_names = barcode_names.filter(el => {
+                return el !== "No barcode";
             })
-            // Just string names as an array
-            barcodes = barcode_objs.map(barc => barc.name)
             // If we already have HTML elements
             if (!firstIteration) {
                 that.barcodesList.forEach(presBarcode => {
                     // if the barcode in controller in the list of barcodes fetched from the server
-                    if (barcodes.includes(presBarcode)) {
+                    if (barcode_names.includes(presBarcode)) {
                         // get the index,
-                        index = barcode_objs.findIndex(b => b.name === presBarcode);
+                        index = barcode_names.findIndex(b => b === presBarcode);
                         // remove it from the freshly fetched barcodes
-                        barcode_objs.splice(index, 1);
+                        barcode_names.splice(index, 1);
                     }
                 });
             }
-            barcode_objs.forEach(barcode => {
-                that.barcodesList.push(barcode.name)
-                active = barcode.name === that._currentBarcode ? "active" : "";
+            barcode_names.forEach(barcode => {
+                that.barcodesList.push(barcode)
+                active = barcode === that._currentBarcode ? "active" : "";
                 // that.barcodesElementsList.push(`<li class="barcode-tab nav-item">
                 //                             <a class="nav-link ${active}" data-toggle="pill" id="${barcode.name.replace(" ", "_")}" onclick="basecalledDataController._changeBarcode(event)">${barcode.name}</a>
                 //                         </li>`)
                 newBarcodeElementsArray.push(`<li class="barcode-tab nav-item">
-                                            <a class="nav-link ${active}" data-toggle="pill" id="${barcode.name.replace(" ", "_")}" onclick="basecalledDataController._changeBarcode(event)">${barcode.name}</a>
+                                            <a class="nav-link ${active}" data-toggle="pill" id="${barcode.replace(" ", "_")}" onclick="basecalledDataController._changeBarcode(event)">${barcode}</a>
                                         </li>`)
             })
             // this.barcodesElementsList = this.barcodesElementsList.sort()
-            if (barcode_objs.length > 0) {
+            if (barcode_names.length > 0) {
+                // TODO this means that they won't be ordered. Go back to setting HTML ?
+
                 this._barcodesHtmlListElement.append(newBarcodeElementsArray)
             }
         }).catch(error => {
@@ -112,14 +112,24 @@ class BasecalledDataController {
      * @private
      */
     _fetchSummaryDataHtmlTable(flowcellId) {
-        let that = this;
+        let that = this, collapsedBarcodeDatatableClassList = [], collapsedAllReadsHTMLTableClassList = [];
         this._basecalledSummaryTable = $('#basecalled-summary');
 
         this._axiosInstance.get(`/flowcells/${flowcellId}/basecalled-summary-html`).then((response) => {
             if (response.status !== 200) {
                 console.error(`Error, incorrect status, expected 200, got ${response.status}`)
             }
-            that._basecalledSummaryTable.html(response.data)
+            // check div exists first
+            if($('#accordion').length){
+                this._funHTML = $(response.data)
+                // set the classes to be as they were for the collapsable element
+                this._funHTML[0].children[1].children[1].classList = $("#collapseTwo").get(0).classList
+                this._funHTML[0].children[0].children[1].classList =  $("#collapseOne").get(0).classList;
+                that._basecalledSummaryTable.html(this._funHTML)
+            } else {
+                that._basecalledSummaryTable.html(response.data)
+            }
+
             setTimeout(this._revealResults, 100);
 
         }).catch(error => {
