@@ -2,12 +2,12 @@
 
     <div class="col-md-6">
         <div class="card card-primary card-outline">
-    <div class="card-header">
-            <h3 class="card-title">
-                <i class="far fa-comment-alt"></i>
-                Create Notification
-            </h3>
-          </div>
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="far fa-comment-alt"></i>
+                    Create Notification
+                </h3>
+            </div>
 
             <form method="post" id="post-form-notification-create"
                   onsubmit="notificationsController.submitNotificationChoices(event, this)">
@@ -66,7 +66,7 @@
 
                 </div>
                 <div class="card-footer">
-                                        <button class="btn btn-primary" type="submit">submit</button>
+                    <button class="btn btn-primary" type="submit">submit</button>
 
                 </div>
             </form>
@@ -75,42 +75,42 @@
     </div>
     <div class="col-md-6">
         <div class="card card-primary card-outline">
-    <div class="card-header">
-            <h3 class="card-title">
-                <i class="far fa-comment"></i>
-                Existing Notifications
-            </h3>
-          </div>
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="far fa-comment"></i>
+                    Existing Notifications
+                </h3>
+            </div>
             <div class="card-body">
                 <div class="table-responsive">
-                <table class="table table-hover extantNotif dataTable dtr-inline responsive">
-                    <thead>
-                    <tr>
-                        <th>Id</th>
-                        <th>Notification <br> type</th>
-                        <th>Upper Limit</th>
-                        <th>Lower Limit</th>
-                        <th>Complete</th>
-                        <th>Reference</th>
-                        <th>Chromosome</th>
-                        <th>Coverage Target</th>
-                        <th></th>
-                    </tr>
-                    </thead>
-                    <tfoot>
-                    <tr>
-                        <th>Id</th>
-                        <th>Notification <br> type</th>
-                        <th>Upper Limit</th>
-                        <th>Lower Limit</th>
-                        <th>Complete</th>
-                        <th>Reference</th>
-                        <th>Chromosome</th>
-                        <th>Coverage Target</th>
-                        <th></th>
-                    </tr>
-                    </tfoot>
-                </table>
+                    <table class="table table-hover extantNotif dataTable dtr-inline responsive">
+                        <thead>
+                        <tr>
+                            <th>Id</th>
+                            <th>Notification <br> type</th>
+                            <th>Upper Limit</th>
+                            <th>Lower Limit</th>
+                            <th>Complete</th>
+                            <th>Reference</th>
+                            <th>Chromosome</th>
+                            <th>Coverage Target</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr>
+                            <th>Id</th>
+                            <th>Notification <br> type</th>
+                            <th>Upper Limit</th>
+                            <th>Lower Limit</th>
+                            <th>Complete</th>
+                            <th>Reference</th>
+                            <th>Chromosome</th>
+                            <th>Coverage Target</th>
+                            <th></th>
+                        </tr>
+                        </tfoot>
+                    </table>
                 </div>
             </div>
         </div>
@@ -169,3 +169,7 @@
         </div>
     </div>
 </div>
+
+<script>
+    const notificationsController = new FlowcellNotificationController({{ flowcell.id }});
+</script>
