@@ -65,7 +65,6 @@ var FlowcellPageApp = {
         this.coveragedata.read_type = new Array();
 
         this.makeColumnChart = makeColumnChart;
-        this.makeSplineChart = makeSplineChart;
         this.makeSplineChartNonDatetime = makeSplineChartNonDatetime;
         this.makeBoxPlot = makeBoxPlot;
         this.makeLiveHistogram = makeLiveHistogram;
@@ -106,7 +105,7 @@ var FlowcellPageApp = {
 
         this.requestData = requestData;
 
-        var flowcell_id = get_selected_flowcell();
+        var flowcell_id = getSelectedFlowcell();
 
 
         this.ChartNumContigs = this.makeSplineChartNonDatetime(
