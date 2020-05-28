@@ -196,7 +196,7 @@
 {% block javascript %}
     <script>
 
-        const flowcellId = document.querySelector("#flowcell-id").value;
+        const flowcellId = getSelectedFlowcell()
 
         console.log("Initialising FlowcellPageApp.");
 
@@ -211,9 +211,6 @@
         const flowcellController = new FlowcellController(flowcellId);
 
         const notificationsController = new FlowcellNotificationController(flowcellId);
-
-        const articController = new ArticController(flowcellId)
-
 
     </script>
 {% endblock %}
