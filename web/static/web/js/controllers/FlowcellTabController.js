@@ -100,9 +100,7 @@ class FlowcellTabController {
 
     toggle_tab_content(name) {
 
-        console.log(name);
         var nav_name = 'nav-' + name;
-        console.log(nav_name)
         var panel_name = 'panel-' + name;
 
         this._flowcell_selected_tab.value = nav_name;
