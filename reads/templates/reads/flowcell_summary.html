@@ -1,21 +1,22 @@
 {% load humanize %}
 
 <div class="accordion" id="accordion">
-  <div class="card card-primary card-outline">
-    <div class="card-header">
-      <h5>
-        <button class="btn btn-link arrow-toggle" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-          <i class="fas fa-table"></i>
-            All Reads Summary
-            <i class ="fa fa-arrow-up"></i>
-            <i class ="fa fa-arrow-down"></i>
-        </button>
-      </h5>
-    </div>
+    <div class="card card-primary card-outline">
+        <div class="card-header">
+            <h5>
+                <button class="btn btn-link arrow-toggle" data-toggle="collapse" data-target="#collapseOne"
+                        aria-expanded="true" aria-controls="collapseOne">
+                    <i class="fas fa-table"></i>
+                    All Reads Summary
+                    <i class="fa fa-arrow-up"></i>
+                    <i class="fa fa-arrow-down"></i>
+                </button>
+            </h5>
+        </div>
 
-    <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
-      <div class="card-body">
-        <table class="table table-sm table-hover">
+        <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
+            <div class="card-body">
+                <table class="table table-sm table-hover">
                     <thead>
                     <th>Barcode</th>
                     <th>Read type</th>
@@ -65,25 +66,26 @@
 
 
                 </table>
-      </div>
+            </div>
+        </div>
     </div>
-  </div>
 
     {% if qs|length > 3 %}
-  <div class="card card-primary card-outline">
-    <div class="card-header" id="headingTwo">
-      <h5>
-        <button class="btn btn-link collapsed arrow-toggle" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-          <i class="fas fa-table"></i>
-            Read Summary by Barcode
-            <i class ="fa fa-arrow-up"></i>
-            <i class ="fa fa-arrow-down"></i>
-        </button>
-      </h5>
-    </div>
-    <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
-      <div class="card-body">
-        <table id="barcode_table" class="table table-sm table-hover">
+        <div class="card card-primary card-outline">
+            <div class="card-header" id="headingTwo">
+                <h5>
+                    <button class="btn btn-link collapsed arrow-toggle" data-toggle="collapse"
+                            data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                        <i class="fas fa-table"></i>
+                        Read Summary by Barcode
+                        <i class="fa fa-arrow-up"></i>
+                        <i class="fa fa-arrow-down"></i>
+                    </button>
+                </h5>
+            </div>
+            <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
+                <div class="card-body">
+                    <table id="barcode_table" class="table table-sm table-hover">
                         <thead>
                         <th>Barcode</th>
                         <th>Read type</th>
@@ -131,18 +133,18 @@
 
                         </tbody>
                     </table>
-      </div>
-    </div>
-  </div>
+                </div>
+            </div>
+        </div>
     {% endif %}
 </div>
 
 
-    {% block javascript %}
-        <script>
-            $(document).ready(function () {
-                $('#barcode_table').DataTable();
-            });
+{% block javascript %}
+    <script>
+        $(document).ready(function () {
+            $('#barcode_table').DataTable();
+        });
 
-        </script>
-    {% endblock %}
+    </script>
+{% endblock %}
