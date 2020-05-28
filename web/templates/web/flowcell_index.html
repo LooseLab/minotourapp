@@ -184,9 +184,7 @@
                 </div>
 
                 <form>
-                    <input id="flowcell-id" type="text" value="{{ flowcell.id }}" style="visibility: hidden;"/>
                     <input id="flowcell-selected-tab" type="text" value="Summary" style="visibility: hidden;"/>
-{#                    <input id="flowcell-selected-barcode" type="text" value="All reads" style="visibility: hidden;"/>#}
                 </form>
             </div>
         </div><!-- /.content -->
@@ -195,8 +193,9 @@
 
 {% block javascript %}
     <script>
-
-        const flowcellId = getSelectedFlowcell()
+        const flowcellId = {{ flowcell.id }}
+        setSelectedFlowcell({{ flowcell.id }})
+        setSelectedTab()
 
         console.log("Initialising FlowcellPageApp.");
 
@@ -209,8 +208,6 @@
         const mSharingController = new MSharingController(flowcellId);
 
         const flowcellController = new FlowcellController(flowcellId);
-
-        const notificationsController = new FlowcellNotificationController(flowcellId);
 
     </script>
 {% endblock %}
