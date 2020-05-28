@@ -5,7 +5,6 @@ class FlowcellTabController {
     constructor(flowcell_id) {
 
         this._flowcell_id = flowcell_id;
-        sessionStorage.setItem("flowcellID", this._flowcell_id);
 
         this._flowcell_selected_tab = document.querySelector('#flowcell-selected-tab');
 
@@ -82,7 +81,6 @@ class FlowcellTabController {
         promise1.then((tabs) => {
 
             this.show_tabs(tabs);
-            let storedFlowcellId = sessionStorage.getItem("flowcellID");
             let seshTab = sessionStorage.getItem("tabName");
             // We are getting the previous tab here and checking it still is available. If it is we show it.
             let activeTab = (seshTab !== null && tabs.includes(seshTab)) ? seshTab : "summary-data";
