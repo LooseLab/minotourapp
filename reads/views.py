@@ -2,7 +2,6 @@ import datetime
 import json
 import time
 from collections import defaultdict
-from operator import itemgetter
 from pprint import pprint
 
 import numpy as np
@@ -89,6 +88,30 @@ from web.delete_tasks import (
 
 logger = get_task_logger(__name__)
 
+@api_view(["GET"])
+def proportion_of_total_reads_in_barcode_list(request, pk):
+    """
+    Return a list of the proportion of the total make up of a flowcells read data each barcode is.
+
+    Author
+    ------
+    Adonis
+
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        Django rest framework object.
+    pk: str
+        Primary key of the flowcell
+    Returns
+    -------
+    list of dicts
+        A list of the barcode name and it's proportion inside a run.
+
+    """
+    pass
+
+
 
 @api_view(["GET"])
 def flowcell_barcodes_list(request):
@@ -103,16 +126,16 @@ def flowcell_barcodes_list(request):
 
     """
     flowcell_id = request.GET.get("flowcellId", None)
-    print("!!!!!!!!!!!!!!!!!")
-    print(flowcell_id)
     if not flowcell_id:
         return Response("No Flowcell ID specified.", status.HTTP_400_BAD_REQUEST)
     flowcell = get_object_or_404(Flowcell, pk=int(flowcell_id))
     # TODO this could become slow if we ended up with 10000s of barcodes
     barcodes = sorted(
-        list(Barcode.objects.filter(run__in=flowcell.runs.all()).values()),
-        key=itemgetter("name"),
+        list(Barcode.objects.filter(run__in=flowcell.runs.all()).values_list("name", flat=True))
     )
+
+    if "Unblocked" not in barcodes:
+        barcodes.remove("Sequenced")
 
     return Response(barcodes, status=status.HTTP_200_OK)
 
