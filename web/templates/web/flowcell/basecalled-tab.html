@@ -8,7 +8,21 @@
     <div class="col-md-12" id="basecalled-summary"></div>
 
 </div>
+<div class="card card-primary card-outline">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-chart-bar"></i>
+            Proportion of barcode in Flowcell data
+        </h3>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-12 highcharts-container" style="height:400px;" id="barcode-proportion">
 
+            </div>
+        </div>
+    </div>
+</div>
 <div class="card card-primary card-outline">
     <div class="card-header">
         <h3 class="card-title">
@@ -23,60 +37,46 @@
         </div>
         <div class="tab-custom-content">
             <div class="row">
-
                 <div class="col-md-12">
                     <div class="">
-
                     </div>
                 </div>
-
-
                 <div id="cumulative-yield-over-time"
                      class="col-md-6 highcharts-container"
                      style="height:400px;">
                 </div>
-
                 <div id="cumulative-number-reads-over-time"
                      class="col-md-6 highcharts-container"
                      style="height:400px;">
                 </div>
-
                 <div id="histogram-bases-sequenced-by-read-length"
                      class="col-md-6 highcharts-container"
                      style="height:400px;">
                 </div>
-
                 <div id="histogram-read-lengths"
                      class="col-md-6 highcharts-container"
                      style="height:400px;">
                 </div>
-
                 <div id="collect-histogram-bases-sequenced-by-read-length"
                      class="col-md-6 highcharts-container"
                      style="height:400px;">
                 </div>
-
                 <div id="collect-histogram-read-lengths"
                      class="col-md-6 highcharts-container"
                      style="height:400px;">
                 </div>
-
-
                 <div id="average-quality-over-time"
                      class="col-md-6 highcharts-container"
                      style="height:400px;">
                 </div>
-
                 <div id="sequencing-rate"
                      class="col-md-6 highcharts-container"
                      style="height:400px;">
                 </div>
-
                 <div id="average-read-lengths-over-time"
                      class="col-md-6 highcharts-container"
                      style=" height:400px;">
                 </div>
-
                 <div id="max-read-lengths-over-time"
                      class="col-md-6 highcharts-container"
                      style="height:400px;">
@@ -86,8 +86,6 @@
     </div>
     <!-- /.card -->
 </div>
-
-
 <div class="card card-primary card-outline">
     <div class="card-header">
         <h3 class="card-title">
@@ -108,7 +106,6 @@
         </div>
     </div>
 </div>
-
 <script>
     const basecalledDataController = new BasecalledDataController({{ flowcell.id }});
 </script>
