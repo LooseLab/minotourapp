@@ -44,11 +44,9 @@
         <div class="row" style="text-align: center; padding-top: 10px">
             <div class="col-md-9">
                 <div class="col-md-12">
-{#                    <div class="sel artic sel--black-panther" style="display: none">#}
-                        <select name="select-artic-barcode" id="select-artic-barcode">
+                    <select name="select-artic-barcode" id="select-artic-barcode">
 
-                        </select>
-{#                    </div>#}
+                    </select>
                 </div>
                 <div class="row" style="padding-top:10px">
                     <div class="col-md-12">
@@ -73,3 +71,7 @@
         </div>
     </div>
 </div>
+
+<script>
+    const articController = new ArticController(getSelectedFlowcell())
+</script>
