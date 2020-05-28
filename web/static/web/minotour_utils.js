@@ -7,6 +7,22 @@ Highcharts.setOptions({
     }
 });
 
+
+/**
+ * Get the selected flowcell tab
+ */
+function getSelectedTab(){
+    return sessionStorage.getItem("flowcellTab")
+}
+
+/**
+ * Set the selected flowcell Tab
+ * @param tab {string} The tab that a user has just switched to
+ */
+function setSelectedTab(tab){
+    sessionStorage.setItem("flowcellTab", tab);
+}
+
 /**
  * Set the Flowcell ID in the session storage for whatever flowcell we are inspecting.
  * @param flowcell_id
