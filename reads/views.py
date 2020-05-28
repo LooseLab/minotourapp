@@ -88,6 +88,7 @@ from web.delete_tasks import (
 
 logger = get_task_logger(__name__)
 
+
 @api_view(["GET"])
 def proportion_of_total_reads_in_barcode_list(request, pk):
     """
@@ -103,15 +104,39 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
         Django rest framework object.
     pk: str
         Primary key of the flowcell
-    Returns
+    Returns`
     -------
     list of dicts
-        A list of the barcode name and it's proportion inside a run.
+        The name of the series, and the series value..
 
     """
-    pass
 
-
+    if not pk:
+        return Response("No Flowcell primary key provided", status=status.HTTP_400_BAD_REQUEST)
+    flowcell = Flowcell.objects.get(pk=pk)
+    qs = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).exclude(
+        barcode_name__in=["No barcode", "All reads"]
+    )
+    df = pd.DataFrame(
+        qs.values(
+            "barcode_name",
+            "read_count",
+            "rejection_status",
+            "read_type_name",
+            "status",
+        )
+    )
+    df["status"] = np.where(df["status"] == "True", "Pass", "Fail")
+    total_read_count = df["read_count"].sum()
+    # gb = df.groupby(["barcode_name", "rejection_status", "status"])
+    # df = df.set_index(["barcode_name", "rejection_status", "status"])
+    # df["data"] = round(gb["read_count"].sum() / total_read_count * 100, 2)
+    # df = df.reset_index()
+    df["data"] = round(df["read_count"] / total_read_count * 100, 2)
+    df["name"] = df["barcode_name"]
+    df = df.drop(columns=["rejection_status", "read_type_name", "barcode_name", "read_count", "status"])
+    df["data"] = df["data"].apply(lambda x: [x])
+    return Response(df.to_dict(orient="records"), status=status.HTTP_200_OK)
 
 @api_view(["GET"])
 def flowcell_barcodes_list(request):
@@ -131,7 +156,11 @@ def flowcell_barcodes_list(request):
     flowcell = get_object_or_404(Flowcell, pk=int(flowcell_id))
     # TODO this could become slow if we ended up with 10000s of barcodes
     barcodes = sorted(
-        list(Barcode.objects.filter(run__in=flowcell.runs.all()).values_list("name", flat=True))
+        list(
+            Barcode.objects.filter(run__in=flowcell.runs.all()).values_list(
+                "name", flat=True
+            )
+        )
     )
 
     if "Unblocked" not in barcodes:
