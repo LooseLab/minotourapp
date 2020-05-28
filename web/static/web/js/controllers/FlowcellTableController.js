@@ -73,7 +73,7 @@ class FlowcellTableController {
                     'targets': 3,
                     'data': "start_time",
                     'render': function (data, type, full, meta) {
-                        return `<a href="/web/private/${that._linkDestination}/${full["id"]}/">${moment(data).format('YYYY-MM-DD HH:mm')}</a>`;
+                        return `<a href="/web/private/${that._linkDestination}/${full["id"]}/">${data}</a>`;
                     }
                 },
                 {
