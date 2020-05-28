@@ -23,6 +23,7 @@ class BasecalledDataController {
         this._createHistogramCharts(flowcellId, this._currentBarcode);
         this._createBaseCalledReadCharts(flowcellId, this._currentBarcode);
         this._createFlowcellHeatMaps(flowcellId);
+        this._createBarcodeProportionBarCharts(flowcellId);
         this._interval = setInterval(this._updateTab, 60000, flowcellId, this._currentBarcode, this, false);
         $(window).on("unload", function () {
             console.log("lcearing interval");
@@ -34,7 +35,7 @@ class BasecalledDataController {
      * Change class on the loading div to reveal results.
      * @private
      */
-    _revealResults(){
+    _revealResults() {
         $("#tab-basecalled-data").addClass("loaded");
     }
 
@@ -120,11 +121,11 @@ class BasecalledDataController {
                 console.error(`Error, incorrect status, expected 200, got ${response.status}`)
             }
             // check div exists first
-            if($('#accordion').length){
+            if ($('#accordion').length) {
                 this._funHTML = $(response.data)
                 // set the classes to be as they were for the collapsable element
                 this._funHTML[0].children[1].children[1].classList = $("#collapseTwo").get(0).classList
-                this._funHTML[0].children[0].children[1].classList =  $("#collapseOne").get(0).classList;
+                this._funHTML[0].children[0].children[1].classList = $("#collapseOne").get(0).classList;
                 that._basecalledSummaryTable.html(this._funHTML)
             } else {
                 that._basecalledSummaryTable.html(response.data)
@@ -464,7 +465,6 @@ class BasecalledDataController {
         let chartHasData;
         let size; // size of the flowcell. 512 for minIon etc.
         this._axiosInstance(`/api/v1/flowcells/${flowcellId}/channel-summary`).then(response => {
-            console.log(response.data)
             if (response.status !== 200) {
                 console.error(`Error, incorrect status, expected 200, got ${response.status}`)
             }
@@ -498,6 +498,63 @@ class BasecalledDataController {
     }
 
     /**
+     * Render the bar charts at the top of the page, displaying the proportion of flowcell reads in each barcode.
+     * @param flowcellId {string} The primary key of the flowcell in the mysql database.
+     * @private
+     */
+    _createBarcodeProportionBarCharts(flowcellId) {
+        if (!this.hasOwnProperty("_columnChartBarcodeProportion")) {
+            this._columnChartBarcodeProportion = makeColumnChart(
+                "barcode-proportion",
+                "PERCENT OF TOTAL READS PER BARCODE",
+                "PERCENT OF TOTAL"
+            );
+        }
+        this._updateBarcodeProportionBarCharts(flowcellId)
+    }
+
+    /**
+     * Update the data found in the top column chart about the amount of reads in each barcode.
+     * @param flowcellId {string} The primary key of the flowcell record in database
+     * @private
+     */
+    _updateBarcodeProportionBarCharts(flowcellId) {
+        this._axiosInstance(`/api/v1/flowcells/${flowcellId}/barcode-proportion`).then(response => {
+            let chartData = response.data;
+            let oldChartData = this._columnChartBarcodeProportion.series;
+            let oldSeries;
+            console.log(response)
+            this._columnChartBarcodeProportion.showLoading(`<div class="spinner-border text-success" role="status">
+                                        <span class = "sr-only"> Loading...</span></div>`);
+            if (response.status !== 200) {
+                console.error(`Error, incorrect status, expected 200, got ${response.status}`)
+            }
+            // for each series data set we returned
+            chartData.forEach(newSeries => {
+                console.log(newSeries)
+                oldSeries = oldChartData.filter(series => {
+                    return series.name === newSeries.name;
+                })
+                if (oldSeries.length) {
+                    // If the data is the same
+                    if (checkHighChartsDataIsNew([newSeries.data], [oldSeries[0].options.data])) {
+                        console.log(`Skipping redraw for series: ${newSeries.name}`)
+                    } else {
+                        oldChartData[0].setData(newSeries.data)
+                    }
+                } else {
+                    console.log("adding series");
+                    this._columnChartBarcodeProportion.addSeries(newSeries)
+                }
+            })
+            this._columnChartBarcodeProportion.hideLoading()
+        })
+            .catch((error) => {
+                console.error(error);
+            })
+    }
+
+    /**
      * Update the data, called in interval in initialisation.
      * @param flowcellId {string} Primary key of the flowcell record in the mysql database.
      * @param barcodeName {string} Chose barcode of the tab.
@@ -513,5 +570,6 @@ class BasecalledDataController {
         that._updateHistogramChartsData(flowcellId, barcode, changeBarcode);
         that._updateBaseCalledReadCharts(flowcellId, barcode, changeBarcode);
         that._updateBarcodeNavTab(flowcellId, changeBarcode);
+        that._updateBarcodeProportionBarCharts(flowcellId);
     }
 }
