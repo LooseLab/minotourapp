@@ -186,9 +186,6 @@ class FlowcellTabController {
         // $(".content-wrapper").css("padding-top", `${topPadding}px`);
         // As of bootstrap 4 we need to add the active class to the a link not the Li element
         nav.children[0].classList.add('active');
-        console.log(tab)
-        console.log(nav)
-        console.log("hello")
         tab.classList.remove('hidden');
         tab.classList.add('active');
         sessionStorage.setItem("tabName", tab.id.substr(4));
