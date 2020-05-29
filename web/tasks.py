@@ -29,7 +29,6 @@ from reads.models import (
 )
 from reads.services import harvestreads
 from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
-from web.tasks_chancalc import chancalc
 
 redis_instance = redis.StrictRedis(
     host="127.0.0.1", port=6379, db=0, decode_responses=True
@@ -74,14 +73,6 @@ def run_monitor():
             if flowcell_job.job_type.name == "Minimap2":
 
                 run_minimap2_alignment.delay(flowcell_job.id,)
-
-            if flowcell_job.job_type.name == "ChanCalc":
-
-                chancalc.delay(flowcell.id, flowcell_job.id, flowcell_job.last_read)
-
-            # if flowcell_job.job_type.name == "Assembly":
-            #
-            #     run_minimap2_assembly.delay(flowcell_job.id)
 
             if flowcell_job.job_type.name == "Metagenomics":
 
