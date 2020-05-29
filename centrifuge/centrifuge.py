@@ -1,15 +1,21 @@
 """Centrifuge.py
 """
 
+import os
 import subprocess
 from collections import defaultdict
 from io import StringIO
+
 import numpy as np
 import pandas as pd
 from celery.utils.log import get_task_logger
 from django.db.models import ObjectDoesNotExist, Q
+from django.db.models import Sum
 from django.utils import timezone
 from ete3 import NCBITaxa
+
+from alignment.models import PafStore
+from alignment.tasks_alignment import align_reads
 from centrifuge.models import (
     CentrifugeOutput,
     LineageValue,
@@ -21,10 +27,6 @@ from centrifuge.models import (
 from minotourapp.utils import get_env_variable
 from reads.models import FastqRead, JobType, JobMaster
 from reference.models import ReferenceInfo
-from alignment.models import PafStore
-from django.db.models import Sum
-from web.tasks_alignment import align_reads
-import os
 
 pd.options.mode.chained_assignment = None
 logger = get_task_logger(__name__)

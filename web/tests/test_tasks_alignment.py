@@ -1,9 +1,9 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 
+from alignment.tasks_alignment import calculate_exepected_benefit_2dot0
 from reads.models import Flowcell, Run, FastqRead, FastqReadType, Barcode, JobType, JobMaster
 from reference.models import ReferenceInfo
-from web.tasks_alignment import calculate_exepected_benefit_2dot0
 from web.utils import parse_md_cg_pafline, parse_mdpaf_alex
 
 

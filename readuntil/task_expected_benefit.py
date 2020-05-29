@@ -1,17 +1,19 @@
 from __future__ import absolute_import, unicode_literals
-import subprocess
-from celery import task
-from celery.utils.log import get_task_logger
-from django.conf import settings
-from readuntil.functions_EB import *
-from reads.models import JobMaster
-import numpy as np
+
+import gzip
 import pickle
-from web.tasks_alignment import call_fetch_reads_alignment
+import subprocess
 from io import StringIO
 from pathlib import Path
+
+import numpy as np
+from celery import task
+from celery.utils.log import get_task_logger
+
+from alignment.tasks_alignment import call_fetch_reads_alignment
+from reads.models import JobMaster
+from readuntil.functions_EB import *
 from readuntil.models import ExpectedBenefitChromosomes
-import gzip
 
 # Set up the logger to write to logging file
 logger = get_task_logger(__name__)
