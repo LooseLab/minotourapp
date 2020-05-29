@@ -5,8 +5,8 @@ import redis
 from celery import task, chain
 from celery.utils.log import get_task_logger
 from dateutil import parser
-from django.db import transaction
 
+from alignment.tasks_alignment import run_minimap2_alignment
 from artic.task_artic_alignment import (
     make_results_directory_artic,
     run_artic_pipeline,
@@ -30,7 +30,6 @@ from reads.models import (
 from reads.services import harvestreads
 from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
 from web.tasks_chancalc import chancalc
-from .tasks_alignment import run_minimap2_alignment
 
 redis_instance = redis.StrictRedis(
     host="127.0.0.1", port=6379, db=0, decode_responses=True

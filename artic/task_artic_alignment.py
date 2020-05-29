@@ -1,21 +1,23 @@
 from __future__ import absolute_import, unicode_literals
+
+import gzip
 import os
+import pickle
 import subprocess
 from collections import defaultdict
+from io import StringIO
+from pathlib import Path
+
+import numpy as np
 from celery import task
 from celery.utils.log import get_task_logger
 
 from alignment.models import PafSummaryCov
+from alignment.tasks_alignment import call_fetch_reads_alignment
 from minotourapp.utils import get_env_variable
-from readuntil.functions_EB import *
 from reads.models import JobMaster, JobType, Barcode
-import numpy as np
-import pickle
-from web.tasks_alignment import call_fetch_reads_alignment
-from io import StringIO
-from pathlib import Path
+from readuntil.functions_EB import *
 from readuntil.models import ExpectedBenefitChromosomes
-import gzip
 
 logger = get_task_logger(__name__)
 
