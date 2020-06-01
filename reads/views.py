@@ -2555,7 +2555,7 @@ def barcode_list_new(request):
 
 @api_view(["GET"])
 def version(request):
-    resp = {"server": "1.0", "clients": ["1.0"], "minknow": ["1.11.5",]}
+    resp = {"server": "1.0", "clients": ["1.0"], "minknow": ["3.6.5"]}
 
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
@@ -2611,7 +2611,7 @@ def flowcell_sharing(request, pk):
 
         for user in users:
 
-            if user != flowcell.owner and not user.is_superuser:
+            if user != flowcell.owner:
 
                 if user.has_perm("view_data", flowcell):
                     permission_list.append(
