@@ -72,17 +72,13 @@
 
     </nav>
 
-    {#    </header>#}
-
-
-    <div class="col-md-12" style="display: none">
-        {% if request.user.is_superuser %}
-            <br/>
+    {% if request.user.is_superuser %}
+        <div class="col-md-12 admin-warning">
             <div class="alert alert-danger" role="alert">You are logged using an admin account. Please use another
-                account to analyse or process Nanopore data
+                account to analyse or process Nanopore data.
             </div>
-        {% endif %}
-    </div>
+        </div>
+    {% endif %}
 
     <script>
         // offset body to account for navbar stickyness, which pulls navbar out of DOM
