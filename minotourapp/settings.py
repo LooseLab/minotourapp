@@ -191,6 +191,7 @@ MAILGUN_SERVER_NAME = get_env_variable("MT_MAILGUN_SERVER_NAME")
 default_exchange = Exchange('default', type='direct')
 priority_exchange = Exchange('priority_queue', type='direct')
 
+# TODO What is this??
 CELERY_QUEUES = (
     Queue('default', default_exchange, routing_key='default', consumer_arguments={'x-priority': 0}),
     Queue('centrifuge', default_exchange, routing_key='centrifuge', consumer_arguments={'x-priority': 10}),
@@ -213,7 +214,7 @@ CELERY_ROUTES = ({
     }
 })
 
-CELERY_IMPORTS = ('web.tasks', 'web.tasks_update_run_summary', 'web.tasks_send_message')
+CELERY_IMPORTS = ('web.tasks', 'reads.tasks.tasks_update_run_summary', 'communication.tasks_send_message', )
 # For RabbitMQ
 # CELERY_BROKER_URL = 'amqp://'
 # CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
@@ -240,15 +241,15 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': 600,
     },
     'run_summary': {
-        'task': 'web.tasks_update_run_summary.update_run_summary',
+        'task': 'reads.tasks.tasks_update_run_summary.update_run_summary',
         'schedule': 30,
     },
     'send_messages': {
-        'task': 'web.tasks_send_message.send_messages',
+        'task': 'communication.tasks_send_message.send_messages',
         'schedule': 30,
     },
     'check_condition_is_met': {
-        'task': 'web.tasks_send_message.check_condition_is_met',
+        'task': 'communication.tasks_send_message.check_condition_is_met',
         'schedule': 30,
     }
 }
