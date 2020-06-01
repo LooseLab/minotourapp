@@ -10,8 +10,6 @@ envs.sh
 *.out
 minotour.log
 .env
-minUPfastq/*
-minUPfastqi
 logfile
 celerybeat*
 centrifuge_report.tsv
