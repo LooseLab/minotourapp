@@ -2,6 +2,7 @@ numpy
 wheel
 watchdog
 django==2.2.10
+flower
 django-filter
 django-mailgun
 djangorestframework
