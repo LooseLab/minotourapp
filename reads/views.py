@@ -76,7 +76,7 @@ from reads.serializers import (
     JobMasterSerializer,
     JobMasterInsertSerializer,
 )
-from reads.services import save_reads_bulk
+from reads.tasks.redis_tasks_functions import save_reads_bulk
 from reads.utils import get_coords, return_temp_empty_summary
 from readuntil.models import ExpectedBenefitChromosomes
 from reference.models import ReferenceInfo
@@ -114,29 +114,32 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
     if not pk:
         return Response("No Flowcell primary key provided", status=status.HTTP_400_BAD_REQUEST)
     flowcell = Flowcell.objects.get(pk=pk)
-    qs = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).exclude(
-        barcode_name__in=["No barcode", "All reads"]
-    )
-    df = pd.DataFrame(
-        qs.values(
-            "barcode_name",
-            "read_count",
-            "rejection_status",
-            "read_type_name",
-            "status",
+    if flowcell.number_barcodes > 2:
+        qs = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).exclude(
+            barcode_name__in=["No barcode", "All reads"]
         )
-    )
-    df["status"] = np.where(df["status"] == "True", "Pass", "Fail")
-    total_read_count = df["read_count"].sum()
-    # gb = df.groupby(["barcode_name", "rejection_status", "status"])
-    # df = df.set_index(["barcode_name", "rejection_status", "status"])
-    # df["data"] = round(gb["read_count"].sum() / total_read_count * 100, 2)
-    # df = df.reset_index()
-    df["data"] = round(df["read_count"] / total_read_count * 100, 2)
-    df["name"] = df["barcode_name"]
-    df = df.drop(columns=["rejection_status", "read_type_name", "barcode_name", "read_count", "status"])
-    df["data"] = df["data"].apply(lambda x: [x])
-    return Response(df.to_dict(orient="records"), status=status.HTTP_200_OK)
+        df = pd.DataFrame(
+            qs.values(
+                "barcode_name",
+                "read_count",
+                "rejection_status",
+                "read_type_name",
+                "status",
+            )
+        )
+        df["status"] = np.where(df["status"] == "True", "Pass", "Fail")
+        total_read_count = df["read_count"].sum()
+        # gb = df.groupby(["barcode_name", "rejection_status", "status"])
+        # df = df.set_index(["barcode_name", "rejection_status", "status"])
+        # df["data"] = round(gb["read_count"].sum() / total_read_count * 100, 2)
+        # df = df.reset_index()
+        df["data"] = round(df["read_count"] / total_read_count * 100, 2)
+        df["name"] = df["barcode_name"]
+        df = df.drop(columns=["rejection_status", "read_type_name", "barcode_name", "read_count", "status"])
+        df["data"] = df["data"].apply(lambda x: [x])
+        return Response(df.to_dict(orient="records"), status=status.HTTP_200_OK)
+
+    return Response("Not a barcoded run", status=status.HTTP_204_NO_CONTENT)
 
 @api_view(["GET"])
 def flowcell_barcodes_list(request):
@@ -2723,34 +2726,20 @@ def get_or_create_tasks(request):
     # Its a post request to create a new task
     else:
 
-        if (
-            type(request.data["flowcell"]) is str
-        ):  # TODO this could be removed because on this point (creating tasks) the client knows the flowcell id
+        try:
+            # Get the flowcell by name
+            flowcell = Flowcell.objects.get(
+                Q(name=request.data["flowcell"])
+                | Q(pk=int(request.data["flowcell"]))
+            )
 
-            try:
-                # Get the flowcell by name
-                flowcell = Flowcell.objects.get(
-                    Q(name=request.data["flowcell"])
-                    | Q(pk=int(request.data["flowcell"]))
-                )
-
-                request.data["flowcell"] = flowcell.id
-            # If that doesn't work
-            except Flowcell.DoesNotExist as e:
-
-                try:
-                    # Get the flowcell by pk but change the string number to an int
-                    flowcell = Flowcell.objects.get(pk=int(request.data["flowcell"]))
-
-                    request.data["flowcell"] = flowcell.id
-
-                except Flowcell.DoesNotExist:
-
-                    print("Exception: {}".format(e))
-
-                    return Response(
-                        "Flowcell not found. Please contact server admin.", status=500
-                    )
+            request.data["flowcell"] = flowcell.id
+        # If that doesn't work
+        except Flowcell.DoesNotExist as e:
+            print("Exception: {}".format(e))
+            return Response(
+                "Flowcell not found. Please contact server admin.", status=status.HTTP_404_NOT_FOUND
+            )
 
         if (
             not request.user.has_perm("run_analysis", flowcell)
