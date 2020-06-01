@@ -6,16 +6,14 @@ import pickle
 import subprocess
 from collections import defaultdict
 from io import StringIO
-from pathlib import Path
 
-import numpy as np
 from celery import task
 from celery.utils.log import get_task_logger
 
 from alignment.models import PafSummaryCov
 from alignment.tasks_alignment import call_fetch_reads_alignment
 from minotourapp.utils import get_env_variable
-from reads.models import JobMaster, JobType, Barcode
+from reads.models import JobMaster, JobType, Barcode, FastqReadType
 from readuntil.functions_EB import *
 from readuntil.models import ExpectedBenefitChromosomes
 
@@ -25,7 +23,7 @@ logger = get_task_logger(__name__)
 # TODO split artic task into a sexy chain, rather than blocking a worker for so long
 
 @task()
-def run_artic_command(base_results_directory, barcode_name, jobmaster_pk):
+def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     """
     Run the artic pipeline in this first pass method of dirty bash script
     Parameters
@@ -34,13 +32,13 @@ def run_artic_command(base_results_directory, barcode_name, jobmaster_pk):
         Path to the fastq file for this barcodes reads
     barcode_name: str
         The name of the barcode in string
-    jobmaster_pk: int¯
+    job_master_pk: int¯
         Primary key of the job master for this barcode
     Returns
     -------
 
     """
-    jm = JobMaster.objects.get(pk=jobmaster_pk)
+    jm = JobMaster.objects.get(pk=job_master_pk)
     jm.running = True
     jm.save()
     # Path to barcode fastq
@@ -67,7 +65,7 @@ def run_artic_command(base_results_directory, barcode_name, jobmaster_pk):
     if out and err:
         raise out
 
-    jm = JobMaster.objects.get(pk=jobmaster_pk)
+    jm = JobMaster.objects.get(pk=job_master_pk)
     jm.running = False
     jm.complete = True
     jm.save()
@@ -236,8 +234,7 @@ def populate_reference_count(
 
     """
     # # Use the reference to populate the priors dict
-    ## If priors_dict and reference_count_dict for this dataset ALREADY EXISTS load them from archive
-    ## This is sole
+    # If priors_dict and reference_count_dict for this dataset ALREADY EXISTS load them from archive
 
     if master_reference_count_path.exists():
         with open(master_reference_count_path, "rb") as f2:
@@ -249,7 +246,7 @@ def populate_reference_count(
             reference_count_dict[name] = multi_array_results(len(seq))
             # create a dictionary under the priors dict, keyed to the reference name
 
-        ##Save priors_dict and reference_count_dict for next use
+        # Save reference_count_dict for next use
         with open(master_reference_count_path, "wb") as fh2:
             pickle.dump(reference_count_dict, fh2, pickle.HIGHEST_PROTOCOL)
 
@@ -273,18 +270,21 @@ def replicate_counts_array_barcoded(barcode_names, counts_dict):
         Dictionary to store results. Keyed barcode name to a value of the reference count dictionary.
     None
     """
-
+    # TODO this may be where the coverage ends up the same if the counts dict is shared, not unique to each barcode
     barcoded_counts_dict = {barcode: counts_dict for barcode in barcode_names}
     return barcoded_counts_dict
 
 
 @task()
-def run_artic_pipeline(task_id):
+def run_artic_pipeline(task_id, streamed_reads=None):
     """
     Run the artic pipeline on a flowcells amount of reads
     Parameters
     ----------
-    task_id
+    task_id: int
+        The pk of the task record in the database
+    streamed_reads: list of dict
+        List of reads in dictionary form. Default None.
 
     Returns
     -------
@@ -301,8 +301,6 @@ def run_artic_pipeline(task_id):
 
     flowcell = task.flowcell
 
-    runs = flowcell.runs.all()
-    # The chunk size of reads from this flowcell to fetch from the database
 
     avg_read_length = flowcell.average_read_length
 
@@ -310,23 +308,34 @@ def run_artic_pipeline(task_id):
         logger.error(f"Average read length is zero Defaulting to 450, but this is an error.")
         avg_read_length = 450
 
-    # aim for 100 megabases
-    desired_yield = 100 * 1000000
+    if not streamed_reads:
+        runs = flowcell.runs.all()
+        # The chunk size of reads from this flowcell to fetch from the database
+        # aim for 100 megabases
+        desired_yield = 100 * 1000000
 
-    chunk_size = round(desired_yield / avg_read_length)
+        chunk_size = round(desired_yield / avg_read_length)
 
-    logger.info(f"Fetching reads in chunks of {chunk_size} for alignment.")
+        logger.info(f"Fetching reads in chunks of {chunk_size} for alignment.")
 
-    # Get the fastq objects
-    fasta_df_barcode, last_read, read_count, fasta_objects = call_fetch_reads_alignment(
-        runs, chunk_size, task.last_read, pass_only=True
-    )
+        # Get the fastq objects
+        fasta_df_barcode, last_read, read_count, fasta_objects = call_fetch_reads_alignment(
+            runs, chunk_size, task.last_read, pass_only=True
+        )
 
-    if fasta_df_barcode.shape[0] == 0:
-        logger.info("No fastq found. Skipping this iteration.")
-        task.running = False
-        task.save()
-        return
+        if fasta_df_barcode.shape[0] == 0:
+            logger.info("No fastq found. Skipping this iteration.")
+            task.running = False
+            task.save()
+            return
+
+    else:
+        last_read = task.last_read
+        fasta_df_barcode = pd.DataFrame(streamed_reads)
+        fasta_df_barcode = fasta_df_barcode[fasta_df_barcode["is_pass"]==True]
+        fasta_objects = streamed_reads
+
+    read_count = fasta_df_barcode.shape[0]
 
     logger.info(f"Fetched reads.")
     logger.info(fasta_df_barcode.shape)
@@ -370,8 +379,11 @@ def run_artic_pipeline(task_id):
         )
         # Create one string formatted correctly for fasta with input data
         fasta_data = "\n".join(list(fasta_df_barcode["fasta"]))
-        # dict where we will be storing the fastq objects keyed to read ID
-        fastq_dict = {fasta.read_id: fasta for fasta in fasta_objects}
+        if streamed_reads:
+            fastq_dict = {fasta.get("read_id"): fasta for fasta in fasta_objects}
+        else:
+            # dict where we will be storing the fastq objects keyed to read ID
+            fastq_dict = {fasta.read_id: fasta for fasta in fasta_objects}
         # create the command we are calling minimap with
         cmd = "{} -x map-ont -t 1 --secondary=no -c --MD {} -".format(
             minimap2, Path(reference_location) / reference_info.filename
@@ -470,9 +482,21 @@ def run_artic_pipeline(task_id):
             ):
                 fastq_read = fastq_dict[record.qsn]
 
-                barcode_of_read = fastq_read.barcode_name
+                if streamed_reads:
+                    barcode_of_read = fastq_read.get("barcode_name", "Failed")
+                    read_id = fastq_read.get("read_id")
+                    sequence = fastq_read.get("sequence")
+                    read_type = FastqReadType.objects.get(pk=fastq_read.get("type", 1))
+                else:
+                    barcode_of_read = fastq_read.barcode_name
+                    read_id = fastq_read.read_id
+                    sequence = fastq_read.sequence
+                    read_type = fastq_read.type
 
-                barcode_sorted_fastq_cache[barcode_of_read].append(f">{fastq_read.read_id}\n{fastq_read.sequence}")
+
+
+                barcode_sorted_fastq_cache[barcode_of_read].append(f">{read_id}\n{sequence}")
+
 
                 chromosome = chromdict[record.tsn]
 
@@ -488,14 +512,14 @@ def run_artic_pipeline(task_id):
 
                 if barcode_of_read not in paf_summary_cov_dict:
                     paf_summary_cov_dict[barcode_of_read] = {
-                                                             "job_master": task,
-                                                             "barcode_name": barcode_of_read,
-                                                             "chromosome": chromosome,
-                                                             "reference_line_length": chromosome.chromosome_length,
-                                                             "yield": 0,
-                                                             "read_count": 0,
-                                                             "read_type": fastq_read.type
-                                                             }
+                        "job_master": task,
+                        "barcode_name": barcode_of_read,
+                        "chromosome": chromosome,
+                        "reference_line_length": chromosome.chromosome_length,
+                        "yield": 0,
+                        "read_count": 0,
+                        "read_type": read_type
+                    }
 
                 paf_summary_cov = paf_summary_cov_dict[barcode_of_read]
 
@@ -507,7 +531,7 @@ def run_artic_pipeline(task_id):
 
                 # Parse the cigar string, on the path file record, returns a dictionary of bases, with numpy arrays
                 d = parse_cigar(
-                    record.tags.get("cg", None), fastq_read.sequence, mapping_length,
+                    record.tags.get("cg", None), sequence, mapping_length,
                 )
                 # Adds the mismatch count to the temporary dict, parsing the MD string
                 d["M"] = np.fromiter(parse_MD(record.tags.get("MD", None)), np.uint16)
@@ -659,7 +683,6 @@ def run_artic_pipeline(task_id):
                         # task.complete = True
                         # task.save()
                         # Update last read id on task to start from on next iteration
-
                 task.last_read = last_read
                 task.iteration_count += 1
 
