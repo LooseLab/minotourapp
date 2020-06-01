@@ -377,6 +377,7 @@ class BasecalledDataController {
             let identical = false; // If we have no new data
             let chartHasData = false; // If chart has no data
             let seriesToUpdate = {}; // The series in the chart we are updating
+            let oldSeriesData = null;
             console.time("statistics charts")
             if (response.status !== 200) {
                 console.error(`Error, incorrect status, expected 200, got ${response.status}`)
@@ -405,7 +406,10 @@ class BasecalledDataController {
                     });
                     // only check if there is already data in the same chart series
                     if (chartHasData && seriesToUpdate.length > 0) {
-                        identical = checkHighChartsDataIsNew(newChartData, seriesToUpdate[0].options.data)
+                        console.log(seriesToUpdate)
+                        console.log(seriesToUpdate[0].options.data)
+                        oldSeriesData = Array.isArray(seriesToUpdate[0].options.data) ? seriesToUpdate[0].options.data.data : seriesToUpdate[0].options.data
+                        identical = checkHighChartsDataIsNew(newChartData, oldSeriesData)
                     }
                     if (identical) {
                         console.log("Data is the same. Skipping update.")
@@ -417,6 +421,7 @@ class BasecalledDataController {
                                 name: key,
                                 data: newChartData
                             })
+                            // add a new series
                         } else {
                             chart.addSeries({
                                 name: key,
@@ -540,7 +545,6 @@ class BasecalledDataController {
             }
             // for each series data set we returned
             chartData.forEach(newSeries => {
-                console.log(newSeries)
                 oldSeries = oldChartData.filter(series => {
                     return series.name === newSeries.name;
                 })
@@ -552,7 +556,6 @@ class BasecalledDataController {
                         oldChartData[0].setData(newSeries.data)
                     }
                 } else {
-                    console.log("adding series");
                     this._columnChartBarcodeProportion.addSeries(newSeries)
                 }
             })
