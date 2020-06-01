@@ -12,6 +12,7 @@ import redis
 from celery import task
 from celery.utils.log import get_task_logger
 
+from artic.task_artic_alignment import run_artic_pipeline
 from reads.models import (
     FastqRead,
     Flowcell,
@@ -19,8 +20,12 @@ from reads.models import (
     FlowcellStatisticBarcode,
     FlowcellHistogramSummary,
     FlowcellSummaryBarcode,
-    JobMaster, Run, JobType,
-    FastqReadType, Barcode, HistogramSummary
+    JobMaster,
+    Run,
+    JobType,
+    FastqReadType,
+    Barcode,
+    HistogramSummary,
 )
 
 logger = get_task_logger(__name__)
@@ -29,20 +34,28 @@ redis_instance = redis.StrictRedis(
 )
 
 
-
 def split_flowcell(
     existing_or_new_flowcell, from_flowcell_id, to_flowcell_id, to_flowcell_name, run_id
 ):
     """
-    Split the flowcell in two flowcells
+    Split a run from a flowcell and move it and it's reads to a new flowcell
+    Parameters
+    ----------
+    existing_or_new_flowcell: str
+        one of new or existing, if the run is being moved to a new or existing flowcell
+    from_flowcell_id: int
+        PK of the flowcell that the run is being moved from.
+    to_flowcell_id: int
+        PK of the flowcell that the run is being moved, to, if it exists
+    to_flowcell_name: str
+        Name of flowcell to create to move run to, if not existing
+    run_id: int
+        The PK of the run that is being moved between flowcells.
+
+    Returns
+    -------
+
     """
-
-    print("existing_or_new_flowcell: {}".format(existing_or_new_flowcell))
-    print("from_flowcell_id: {}".format(from_flowcell_id))
-    print("to_flowcell_id: {}".format(to_flowcell_id))
-    print("to_flowcell_name: {}".format(to_flowcell_name))
-    print("run_id: {}".format(run_id))
-
     run = Run.objects.get(pk=run_id)
 
     if existing_or_new_flowcell == "new":
@@ -52,11 +65,6 @@ def split_flowcell(
             sample_name=to_flowcell_name,
             owner=from_flowcell.owner,
         )
-        JobMaster.objects.create(
-            flowcell=to_flowcell,
-            job_type=JobType.objects.filter(name="ChanCalc")[0],
-            last_read=0,
-        )
 
         JobMaster.objects.create(
             flowcell=to_flowcell,
@@ -64,7 +72,7 @@ def split_flowcell(
             last_read=0,
         )
 
-        print(
+        logger.info(
             "Moving run {} from flowcell {} to flowcell {}".format(
                 run.id, from_flowcell.id, to_flowcell.id
             )
@@ -77,7 +85,7 @@ def split_flowcell(
         from_flowcell = Flowcell.objects.get(pk=from_flowcell_id)
         to_flowcell = Flowcell.objects.get(pk=to_flowcell_id)
 
-        print(
+        logger.info(
             "Moving run {} from flowcell {} to flowcell {}".format(
                 run.id, from_flowcell.id, to_flowcell.id
             )
@@ -89,6 +97,7 @@ def split_flowcell(
     move_reads_to_flowcell.delay(run.id, to_flowcell.id, from_flowcell.id)
 
     return run, from_flowcell, to_flowcell
+
 
 @task()
 def move_reads_to_flowcell(run_id, flowcell_id, from_flowcell_id):
@@ -128,7 +137,7 @@ def move_reads_to_flowcell(run_id, flowcell_id, from_flowcell_id):
             f"Finished moving reads from run {run.runid} to flowcell {flowcell.name}"
         )
 
-    #Update tasks on old flowcell
+    # Update tasks on old flowcell
     if not reads:
         reset_flowcell_info.delay(old_flowcell.id)
 
@@ -235,8 +244,14 @@ def update_flowcell(reads_list):
     read_df = pd.DataFrame(reads_list)
     read_df["channel"] = read_df["channel"].astype(int)
     read_df["sequence_length"] = read_df["sequence_length"].astype(int)
-    read_df = read_df.rename(columns={"rejected_barcode": "rejected_barcode_id", "barcode": "barcode_id",
-                                      "type": "type_id", "fastqfile": "fastqfile_id"})
+    read_df = read_df.rename(
+        columns={
+            "rejected_barcode": "rejected_barcode_id",
+            "barcode": "barcode_id",
+            "type": "type_id",
+            "fastqfile": "fastqfile_id",
+        }
+    )
 
     read_df = read_df.drop(columns=["sequence", "quality"])
 
@@ -338,6 +353,52 @@ def update_flowcell(reads_list):
     )
 
 
+def check_if_flowcell_has_streamable_tasks(flowcell_pk):
+    """
+    Check if the flowcell has streamable tasks.
+    Parameters
+    ----------
+    flowcell_pk: int
+        Primary key of the flowcell to check tasks from.
+    Returns
+    -------
+    tasks: list of int
+        List of streamable job_masters IDs
+    """
+
+    streamable_tasks_pks = [16]
+    tasks = JobMaster.objects.filter(
+        flowcell_id=flowcell_pk, job_type__id__in=streamable_tasks_pks
+    ).values("id", "job_type_id")
+    return tasks
+
+
+def sort_reads_by_flowcell_fire_tasks(reads):
+    """
+    Sort group reads by flowcell, check if
+    Parameters
+    ----------
+    reads: list of dict
+        Reads dictionaries.
+    Returns
+    -------
+
+    """
+    read_df = pd.DataFrame(reads)
+    flowcell_gb = read_df.groupby("flowcell_id")
+    flowcell_ids = np.unique(read_df["flowcell_id"].values).tolist()
+
+    # TODO talk this through with Matt, what if we only have like 100 reads in a flowcell?
+    for flowcell_id in flowcell_ids:
+        task_lookups = check_if_flowcell_has_streamable_tasks(flowcell_id)
+        flowcell_reads = flowcell_gb.get_group(flowcell_id).to_dict(orient="records")
+        for task in task_lookups:
+            if task["job_type_id"] == 16:
+
+                run_artic_pipeline.delay(task["id"], flowcell_reads)
+
+
+
 @task()
 def harvest_reads():
     """
@@ -364,49 +425,11 @@ def harvest_reads():
             reads.extend(read_chunk)
             count -= 1
 
-        if len(reads) > 0:
-            reads_list = []
-            # run_dict = {}
+        if reads:
             logger.info("Analysing Chunk")
-            # for chunk in reads:
-            # for read in chunk:
-            # run_pk = read.get("run", -1)
-            # if run_pk not in run_dict and run_pk != -1:
-            #     run = Run.objects.get(pk=run_pk)
-            #     run_dict[run_pk] = run
-            #     read["run"] = run
-            #     read["flowcell"] = run.flowcell
-            # else:
-            #     read["run"] = run_dict[run_pk]
-            #     read["flowcell"] = run_dict[run_pk].flowcell
-            # fastqread = FastqRead(
-            #     read_id=read["read_id"],
-            #     read=read["read"],
-            #     channel=read["channel"],
-            #     barcode_id=read["barcode"],
-            #     rejected_barcode_id=read["rejected_barcode"],
-            #     barcode_name=read["barcode_name"],
-            #     sequence_length=read["sequence_length"],
-            #     quality_average=read["quality_average"],
-            #     sequence=read["sequence"],
-            #     quality=read["quality"],
-            #     is_pass=read["is_pass"],
-            #     start_time=read["start_time"],
-            #     run=read["run"],
-            #     flowcell=read["flowcell"],
-            #     type_id=read["type"],
-            #     fastqfile_id=read["fastqfile"],
-            # )
-            # reads_list.append(fastqread)
             logger.info("Harvest Reads Updating Flowcell.")
             update_flowcell.delay(reads)
-
-            # try:
-            #    logger.info("Harvest Reads Bulk Creating.")
-            #    FastqRead.objects.bulk_create(reads_list,batch_size=500)
-            # except Exception as e:
-            #    print(e)
-            #    return str(e)
+            sort_reads_by_flowcell_fire_tasks(reads)
         redis_instance.set("harvesting", 0)
 
 
@@ -501,29 +524,20 @@ def update_flowcell_counts(row):
     # TODO this is where we would set no fastq of we WEREN't saving te data but were uploading it
     redis_instance.set(f"{flowcell_id}_has_fastq", 1)
     # Increment by the count of the read_ids on this flowcell for total read number
-    redis_instance.incrby(
-        f"{flowcell_id}_number_reads", int(row["read_id"])
-    )
+    redis_instance.incrby(f"{flowcell_id}_number_reads", int(row["read_id"]))
     #  Increment by the sum of the sequence length to calculate yield
     redis_instance.incrby(
-        f"{flowcell_id}_total_read_length",
-        int(row["sequence_length"]),
+        f"{flowcell_id}_total_read_length", int(row["sequence_length"]),
     )
     # Current largest channel
-    saved_max_channel = redis_instance.get(
-        f"{flowcell_id}_max_channel"
-    )
+    saved_max_channel = redis_instance.get(f"{flowcell_id}_max_channel")
     if saved_max_channel:
         # Update to new, larger channel
         if (row["channel"]) > int(saved_max_channel):
-            redis_instance.set(
-                f"{flowcell_id}_max_channel", int(row["channel"])
-            )
+            redis_instance.set(f"{flowcell_id}_max_channel", int(row["channel"]))
     else:
         # Set initial max channel
-        redis_instance.set(
-            f"{flowcell_id}_max_channel",  int(row["channel"])
-        )
+        redis_instance.set(f"{flowcell_id}_max_channel", int(row["channel"]))
 
 
 def save_flowcell_histogram_summary(row):
@@ -577,17 +591,15 @@ def save_flowcell_channel_summary(row):
     -------
     None
     """
-    flowcell_id = row["flowcell_id"]
+    flowcell_id = row["flowcell_id"][0]
     channel_number = row["channel"][0]
     channel_read_count = int(row["sequence_length"]["count"])
     channel_yield = int(row["sequence_length"]["sum"])
     redis_instance.incrby(
-        f"{flowcell_id}_{channel_number}_read_count",
-        channel_read_count,
+        f"{flowcell_id}_{channel_number}_read_count", channel_read_count,
     )
     redis_instance.incrby(
-        f"{flowcell_id}_{channel_number}_read_count",
-        channel_yield,
+        f"{flowcell_id}_{channel_number}_pore_yield", channel_yield,
     )
 
 
@@ -620,8 +632,10 @@ def do_whatever_this_does(row, unique_key_base):
     if unique_key_base == "flowcellStatisticBarcode":
         utc = pytz.utc
         start_time = utc.localize(row["start_time_truncate"][0])
-        unique_key = f"{flowcell_id}_{unique_key_base}_{start_time}_{barcode_name}" \
-                     f"_{rejection_status}_{type_name}_{status}"
+        unique_key = (
+            f"{flowcell_id}_{unique_key_base}_{start_time}_{barcode_name}"
+            f"_{rejection_status}_{type_name}_{status}"
+        )
     else:
         unique_key = f"{flowcell_id}_{unique_key_base}_{barcode_name}_{rejection_status}_{type_name}_{status}"
     prev_channel_list = redis_instance.hget(unique_key, "channel_presence")
