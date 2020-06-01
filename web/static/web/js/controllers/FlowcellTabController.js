@@ -178,9 +178,7 @@ class FlowcellTabController {
     }
 
     toggle_content(nav, tab) {
-        // const topPadding = $(".main-header").height() + 16;
-        // $(".content-wrapper").css("padding-top", `${topPadding}px`);
-        // As of bootstrap 4 we need to add the active class to the a link not the Li element
+         // As of bootstrap 4 we need to add the active class to the a link not the Li element
         nav.children[0].classList.add('active');
         tab.classList.remove('hidden');
         tab.classList.add('active');
