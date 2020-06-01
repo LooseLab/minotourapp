@@ -1,4 +1,5 @@
 import pandas as pd
+from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -8,12 +9,12 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.generic import ListView, DeleteView
 from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from centrifuge.models import CentrifugeOutput
 from communication.models import Message
 from communication.serializers import MessageSerializer
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
 from reads.models import (
     Run,
     UserOptions,
@@ -24,16 +25,14 @@ from reads.models import (
     JobType,
     JobMaster,
 )
+from reads.tasks.redis_tasks_functions import split_flowcell
 from web.forms import (
     SignUpForm,
     UserOptionsForm,
     ExperimentForm,
     ExperimentFlowcellForm,
 )
-
-from web.utils import get_run_details, split_flowcell
-from django.core.paginator import Paginator
-from django.contrib import messages
+from web.utils import get_run_details
 
 
 def index(request):
