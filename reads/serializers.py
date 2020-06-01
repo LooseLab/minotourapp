@@ -487,17 +487,9 @@ class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
         #
         flowcell, created = Flowcell.objects.get_or_create(**validated_data)
         flowcell.save()
-        print(validated_data)
 
+        # Create tasks that need to be auto-created
         if created:
-
-            job_type = JobType.objects.filter(name="ChanCalc")
-
-            JobMaster.objects.create(
-                flowcell=flowcell,
-                job_type=job_type[0],
-                last_read=0
-            )
 
             JobMaster.objects.create(
                 flowcell=flowcell,
