@@ -1,17 +1,17 @@
 """
 Task_send_message.py. Code for sending tweets once a certain condition has been met on the flowcell.
 """
+import datetime
 import time
 
 import pandas as pd
 from celery import task
+from celery.utils.log import get_task_logger
+from django.conf import settings
 from twitter import Twitter, OAuth, TwitterHTTPError, TwitterError
 
 from alignment.models import PafSummaryCov
 from communication.models import NotificationConditions, Message
-import datetime
-from django.conf import settings
-from celery.utils.log import get_task_logger
 from reads.models import UserOptions, MinionRunStats
 
 logger = get_task_logger(__name__)
@@ -142,7 +142,9 @@ def send_messages():
     none
 
     """
-    time_limit = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)
+    time_limit = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
+        hours=1
+    )
 
     new_messages = Message.objects.filter(delivered_date=None)
 
@@ -161,7 +163,6 @@ def send_messages():
             TWITTOKEN_SECRET = settings.TWITTOKEN_SECRET
             TWITCONSUMER_KEY = settings.TWITCONSUMER_KEY
             TWITCONSUMER_SECRET = settings.TWITCONSUMER_SECRET
-
 
             t = Twitter(
                 auth=OAuth(
@@ -189,18 +190,19 @@ def send_messages():
                 return
             finally:
 
-
-            # status = '@{} {}'.format(new_message.recipient.extendedopts.twitterhandle,new_message.title)
-            # t.statuses.update(
-            #    status=status
-            # )
+                # status = '@{} {}'.format(new_message.recipient.extendedopts.twitterhandle,new_message.title)
+                # t.statuses.update(
+                #    status=status
+                # )
 
                 message_sent = True
 
                 time.sleep(1)
 
                 if message_sent:
-                    new_message.delivered_date = datetime.datetime.now(tz=datetime.timezone.utc)
+                    new_message.delivered_date = datetime.datetime.now(
+                        tz=datetime.timezone.utc
+                    )
                     new_message.save()
 
 
@@ -281,7 +283,6 @@ def check_condition_is_met():
                         sender=condition.creating_user,
                         title=message_text,
                         flowcell=flowcell,
-
                     )
 
                     message.save()
@@ -300,10 +301,10 @@ def check_condition_is_met():
             lower_limit = condition.lower_limit
 
             if condition.notification_type == "volt":
-                queryset = MinionRunStats.objects.filter(
-                    run_id__flowcell=condition.flowcell
-                ).order_by("-id")[:10].values_list(
-                    "voltage_value", flat=True
+                queryset = (
+                    MinionRunStats.objects.filter(run_id__flowcell=condition.flowcell)
+                    .order_by("-id")[:10]
+                    .values_list("voltage_value", flat=True)
                 )
             else:
                 # Else occupancy
@@ -332,7 +333,7 @@ def check_condition_is_met():
                     recipient=condition.creating_user,
                     sender=condition.creating_user,
                     title=text,
-                    flowcell=condition.flowcell
+                    flowcell=condition.flowcell,
                 )
                 message.save()
 
@@ -348,6 +349,6 @@ def check_condition_is_met():
                     recipient=condition.creating_user,
                     sender=condition.creating_user,
                     title=text,
-                    flowcell=condition.flowcell
+                    flowcell=condition.flowcell,
                 )
                 message.save()
