@@ -1,12 +1,41 @@
 import datetime
 
-import math
+from communication.models import Message
+from reads.models import (
+    Flowcell,
+    RunSummary,
+    FastqRead,
+    FlowcellStatisticBarcode,
+    FlowcellSummaryBarcode,
+    FlowcellHistogramSummary,
+    FlowcellChannelSummary,
+    FastqFile,
+)
 
-from dateutil import parser
-from django.db.models import Q
 
-from reads.models import Flowcell, RunSummary, FastqRead, FlowcellStatisticBarcode, FlowcellSummaryBarcode, \
-    FlowcellHistogramSummary, FlowcellChannelSummary, FastqFile
+def create_and_save_message(**kwargs):
+    """
+    Create and save a message to be sent to the user, about a specific action that has happened.
+    Parameters
+    ----------
+    kwargs: dict
+        Dictionary of kwargs including, title, user, flowcell, run
+
+    Returns
+    -------
+    None
+
+    """
+    if kwargs["created"]:
+        user = kwargs["user"]
+        new_message = Message(
+            recipient=user,
+            sender=user,
+            title=kwargs["title"],
+            run=kwargs["run"],
+            flowcell=kwargs["flowcell"],
+        )
+        new_message.save()
 
 
 def return_temp_empty_summary(run):
@@ -32,7 +61,18 @@ def return_temp_empty_summary(run):
 
 
 def get_coords(channel, flowcellsize):
+    """
+    Get the cartesian coordinate on the flowcell layout grid of a channel.
+    Parameters
+    ----------
+    channel: int
+        The channel number
+    flowcellsize: Total sie of the flowcell
 
+    Returns
+    -------
+
+    """
     if flowcellsize == 3000:
 
         block = (channel - 1) // 250
@@ -55,6 +95,19 @@ def get_coords(channel, flowcellsize):
 
 
 def flowcell_layout(channel):
+    """
+    Lookup dictionary of the channel number to cartesian coordinate of the channel.
+    Parameters
+    ----------
+    channel: int
+        The channel number.
+
+    Returns
+    -------
+    (x, y):tuple
+        The x and y coordinate of the channel on the flowcell.
+
+    """
 
     chanlookup = {
         1: (31, 0),
@@ -574,38 +627,20 @@ def flowcell_layout(channel):
     return chanlookup[channel]
 
 
-def human_readable(number, suffix="b"):
-    """
-    :purpose: Convert bases to human readable format
-    :used_by: used by many
-    :author: Matt Loose
-
-    ChangeLog
-    2018-07-09 Add documentation
-    2018-10-25 Update the algorithm
-
-    """
-    for unit in ["", "K", "M", "G", "T"]:
-
-        if abs(number) < 1024.0:
-
-            return "%3.1f%s%s" % (number, unit, suffix)
-
-        number /= 1024.0
-
-    return "%.1f%s%s" % (number, "Y", suffix)
-
-
-def UTC_time_to_epoch(timestamp):
-    """
-    TODO describe function
-    """
-    dt = parser.parse(timestamp)
-
-    return dt.timestamp() * 1000
-
-
 def getn50(lens):
+    """
+    Get the n50 of a read set
+    Parameters
+    ----------
+    lens: list
+        List of read lengths
+
+    Returns
+    -------
+    l: int
+        The length of the read that is the n50 length
+    """
+    # TODO could be rewritten into numpy quite easily
     h = sum(lens) / 2
     t = 0
     for l in lens:
@@ -627,13 +662,20 @@ def reset_flowcell(flowcell_pk):
 
     """
     flowcell = Flowcell.objects.get(pk=flowcell_pk)
-    first_fastqread = FastqRead.objects.filter(flowcell=flowcell).first().id
+    first_fastqread = FastqRead.objects.filter(flowcell=flowcell).first()
     left = 1
     while first_fastqread and left:
-        first_fastqread += 5000
-        affected = FastqRead.objects.filter(flowcell=flowcell, id__lte=first_fastqread).delete()
+        first_fastqread.id += 5000
+        affected = FastqRead.objects.filter(
+            flowcell=flowcell, id__lte=first_fastqread.id
+        ).delete()
         left = FastqRead.objects.filter(flowcell=flowcell).count()
         print(f"Time: {datetime.datetime.now()}, Deleted: {affected}, Left: {left}")
+
+    flowcell.number_reads = 0
+    flowcell.average_read_length = 0
+    flowcell.total_read_length = 0
+    flowcell.save()
 
     print(f"Finished deleting fastq at {datetime.datetime.now()}")
     print("Deleting Fastq file records...")
