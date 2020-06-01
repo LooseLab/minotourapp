@@ -123,8 +123,12 @@ class BasecalledDataController {
             // check div exists first
             if ($('#accordion').length) {
                 this._funHTML = $(response.data)
+                // check if barcoded table exists
+                if ($("#collapseTwo").length) {
+                    this._funHTML[0].children[1].children[1].classList = $("#collapseTwo").get(0).classList
+                }
                 // set the classes to be as they were for the collapsable element
-                this._funHTML[0].children[1].children[1].classList = $("#collapseTwo").get(0).classList
+
                 this._funHTML[0].children[0].children[1].classList = $("#collapseOne").get(0).classList;
                 that._basecalledSummaryTable.html(this._funHTML)
             } else {
@@ -526,8 +530,13 @@ class BasecalledDataController {
             console.log(response)
             this._columnChartBarcodeProportion.showLoading(`<div class="spinner-border text-success" role="status">
                                         <span class = "sr-only"> Loading...</span></div>`);
-            if (response.status !== 200) {
-                console.error(`Error, incorrect status, expected 200, got ${response.status}`)
+            if (![200, 204].includes(response.status)) {
+                console.error(`Error, incorrect status, expected 200 or 204, got ${response.status}`)
+            }
+            if (response.status === 204) {
+                console.log("Not a barcoded run, deleting proportion chart.")
+                $("#barcode-proportion-card").remove()
+                return
             }
             // for each series data set we returned
             chartData.forEach(newSeries => {
@@ -563,8 +572,6 @@ class BasecalledDataController {
      * @private
      */
     _updateTab(flowcellId, barcodeName, that, changeBarcode) {
-        console.log("Updating!");
-        console.log(barcodeName)
         let barcode = getSelectedBarcode("BasecalledData")
         that._fetchSummaryDataHtmlTable(flowcellId)
         that._updateHistogramChartsData(flowcellId, barcode, changeBarcode);
