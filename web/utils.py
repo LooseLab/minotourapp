@@ -1,13 +1,14 @@
+import collections
 import datetime
 import math
+import os
 import sys
 from functools import lru_cache
-import collections
+
 import numpy as np
-import os
+
 from minotourapp.utils import get_env_variable
-from reads.models import Flowcell, MinionRunInfo, Run, JobMaster, JobType
-from web.tasks_move_reads_to_flowcell import move_reads_to_flowcell
+from reads.models import Flowcell, MinionRunInfo
 
 
 def file_folder_exists(filepath):
@@ -570,63 +571,3 @@ def get_run_details(run_id):
 
     return result.values()
 
-
-def split_flowcell(
-    existing_or_new_flowcell, from_flowcell_id, to_flowcell_id, to_flowcell_name, run_id
-):
-    """
-    Split the flowcell in two flowcells
-    """
-
-    print("existing_or_new_flowcell: {}".format(existing_or_new_flowcell))
-    print("from_flowcell_id: {}".format(from_flowcell_id))
-    print("to_flowcell_id: {}".format(to_flowcell_id))
-    print("to_flowcell_name: {}".format(to_flowcell_name))
-    print("run_id: {}".format(run_id))
-
-    run = Run.objects.get(pk=run_id)
-
-    if existing_or_new_flowcell == "new":
-        from_flowcell = Flowcell.objects.get(pk=from_flowcell_id)
-        to_flowcell = Flowcell.objects.create(
-            name=to_flowcell_name,
-            sample_name=to_flowcell_name,
-            owner=from_flowcell.owner,
-        )
-        JobMaster.objects.create(
-            flowcell=to_flowcell,
-            job_type=JobType.objects.filter(name="ChanCalc")[0],
-            last_read=0,
-        )
-
-        JobMaster.objects.create(
-            flowcell=to_flowcell,
-            job_type=JobType.objects.filter(name="UpdateFlowcellDetails")[0],
-            last_read=0,
-        )
-
-        print(
-            "Moving run {} from flowcell {} to flowcell {}".format(
-                run.id, from_flowcell.id, to_flowcell.id
-            )
-        )
-
-        run.flowcell = to_flowcell
-        run.save()
-
-    else:
-        from_flowcell = Flowcell.objects.get(pk=from_flowcell_id)
-        to_flowcell = Flowcell.objects.get(pk=to_flowcell_id)
-
-        print(
-            "Moving run {} from flowcell {} to flowcell {}".format(
-                run.id, from_flowcell.id, to_flowcell.id
-            )
-        )
-
-        run.flowcell = to_flowcell
-        run.save()
-
-    move_reads_to_flowcell.delay(run.id, to_flowcell.id, from_flowcell.id)
-
-    return run, from_flowcell, to_flowcell
