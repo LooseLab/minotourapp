@@ -3,7 +3,7 @@ import os
 
 from django.core.management import BaseCommand, CommandError
 
-from web.tasks_update_run_summary import update_run_summary
+from reads.tasks.tasks_update_run_summary import update_run_summary
 
 log_folder = os.environ.get('MT_LOG_FOLDER')
 
