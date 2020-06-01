@@ -1,15 +1,14 @@
+import collections
 import datetime
 import math
-import re
-import sys
-import time
-from functools import lru_cache
-import collections
-import numpy as np
 import os
+import sys
+from functools import lru_cache
+
+import numpy as np
+
 from minotourapp.utils import get_env_variable
-from reads.models import Flowcell, MinionRunInfo, Run, JobMaster, JobType
-from web.tasks_move_reads_to_flowcell import move_reads_to_flowcell
+from reads.models import Flowcell, MinionRunInfo
 
 
 def file_folder_exists(filepath):
@@ -455,65 +454,8 @@ def parse_md_cg_pafline(line):
     return paffile
 
 
-def parseMDPAF(pafline):
-    t0 = time.time()
-    bits = pafline.split()
-    sub = "MD:Z:"
-    # reflen = int(bits[6])
-    # reflen = 20000
-    mapstart = int(bits[7])
-    mdstr = ""
-    for s in filter(lambda x: sub in x, pafline.split()):
-        mdstr = s.split(":")[-1]
-
-    """
-    Returns a numpy array with positions for where a `fromMM` base is, in the
-    reference genome. This can then be used to intersect with the query string
-    to find all desired mutations.
-    """
-    # Split MD String at every single [ACGT] or ^:
-    mdSub = re.sub(r"([\\^]*[ACGT]+)[0]*", " \\1 ", mdstr)
-    mdSplit = re.split("[ ]+", mdSub)
-    # print (mdstr)
-    # print (mdSub)
-    # print (mdSplit)
-
-    mutArr = np.array([]).astype(int)  # array to hold counts of mismatches
-    matArr = np.array([]).astype(int)  # array to hold counts of matches
-
-    # Iterate over Array and replace all mutations from the MD string with the
-    # letter of the corresponding reference.
-    # eg: 2G1 will produce the numpy array: 'M M G M'
-    # All ^[ACGT]* by "D" and the number with a corresponding stretch of "M"
-    for i in range(len(mdSplit)):
-        mdPos = mdSplit[i]
-        if len(mdPos) > 0 and RepresentsInt(mdPos):
-            mutArr = np.concatenate((mutArr, np.repeat(0, int(mdPos))))
-            matArr = np.concatenate((matArr, np.repeat(1, int(mdPos))))
-        elif re.match("\\^", mdPos):
-            mutArr = np.concatenate((mutArr, np.repeat(1, len(mdPos) - 1)))
-            matArr = np.concatenate((matArr, np.repeat(0, len(mdPos) - 1)))
-        elif len(mdPos) == 1:
-            mutArr = np.concatenate((mutArr, np.array([1])))
-            matArr = np.concatenate((matArr, np.array([0])))
-        else:
-            # I'm not yet quite sure, if this won't just break at some point.
-            # In my BAM/SAM files I have seen rare cases with two consecutive
-            # mismatches in the MD tag causing this series of ifs to report incorrect
-            # positions if I don't catch this.
-            mutArr = np.concatenate((mutArr, np.array([1])))
-            matArr = np.concatenate((matArr, np.array([0])))
-
-    # mutArr_length = np.pad(mutArr, (startpad,endpad), 'constant', constant_values = (0,0))
-    # matArr_length = np.pad(matArr, (startpad,endpad), 'constant', constant_values = (0,0))
-
-    # Return mismatch positions
-    t1 = time.time()
-    return mutArr, matArr, mapstart, t1 - t0
-
-
 def get_run_details(run_id):
-
+    # TODO i hate this code, let's rewrite this code and comment it
     flowcell = Flowcell.objects.get(pk=run_id)
 
     result = {}
@@ -629,63 +571,3 @@ def get_run_details(run_id):
 
     return result.values()
 
-
-def split_flowcell(
-    existing_or_new_flowcell, from_flowcell_id, to_flowcell_id, to_flowcell_name, run_id
-):
-    """
-    Split the flowcell in two flowcells
-    """
-
-    print("existing_or_new_flowcell: {}".format(existing_or_new_flowcell))
-    print("from_flowcell_id: {}".format(from_flowcell_id))
-    print("to_flowcell_id: {}".format(to_flowcell_id))
-    print("to_flowcell_name: {}".format(to_flowcell_name))
-    print("run_id: {}".format(run_id))
-
-    run = Run.objects.get(pk=run_id)
-
-    if existing_or_new_flowcell == "new":
-        from_flowcell = Flowcell.objects.get(pk=from_flowcell_id)
-        to_flowcell = Flowcell.objects.create(
-            name=to_flowcell_name,
-            sample_name=to_flowcell_name,
-            owner=from_flowcell.owner,
-        )
-        JobMaster.objects.create(
-            flowcell=to_flowcell,
-            job_type=JobType.objects.filter(name="ChanCalc")[0],
-            last_read=0,
-        )
-
-        JobMaster.objects.create(
-            flowcell=to_flowcell,
-            job_type=JobType.objects.filter(name="UpdateFlowcellDetails")[0],
-            last_read=0,
-        )
-
-        print(
-            "Moving run {} from flowcell {} to flowcell {}".format(
-                run.id, from_flowcell.id, to_flowcell.id
-            )
-        )
-
-        run.flowcell = to_flowcell
-        run.save()
-
-    else:
-        from_flowcell = Flowcell.objects.get(pk=from_flowcell_id)
-        to_flowcell = Flowcell.objects.get(pk=to_flowcell_id)
-
-        print(
-            "Moving run {} from flowcell {} to flowcell {}".format(
-                run.id, from_flowcell.id, to_flowcell.id
-            )
-        )
-
-        run.flowcell = to_flowcell
-        run.save()
-
-    move_reads_to_flowcell.delay(run.id, to_flowcell.id, from_flowcell.id)
-
-    return run, from_flowcell, to_flowcell
