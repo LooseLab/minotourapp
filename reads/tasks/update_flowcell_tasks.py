@@ -3,6 +3,7 @@ Celery task to update flowcell metadata
 """
 
 import numpy as np
+import redis
 from celery import chain
 from celery.task import task
 from celery.utils.log import get_task_logger
@@ -19,10 +20,12 @@ from reads.models import (
 )
 from reads.tasks.redis_tasks_functions import (
     get_values_and_delete_key_redis_hash,
-    redis_instance,
     get_values_and_delete_redis_key,
 )
 
+redis_instance = redis.StrictRedis(
+    host="127.0.0.1", port=6379, db=0, decode_responses=True
+)
 logger = get_task_logger(__name__)
 
 
@@ -302,12 +305,10 @@ def update_flowcell_details(job_master_id):
             read_count = get_values_and_delete_redis_key(
                 redis_instance, f"{flowcell.id}_{channel}_read_count"
             )
-            read_length = get_values_and_delete_redis_key(
-                redis_instance, f"{flowcell.id}_{channel}_read_length"
+            pore_yield = get_values_and_delete_redis_key(
+                redis_instance, f"{flowcell.id}_{channel}_pore_yield"
             )
-            print(read_count)
-            print(read_length)
-            if read_count or read_length:
+            if read_count or pore_yield:
                 (
                     flowcellChannelSummary,
                     created,
@@ -316,8 +317,8 @@ def update_flowcell_details(job_master_id):
                 )
                 if read_count:
                     flowcellChannelSummary.read_count += int(read_count)
-                if read_length:
-                    flowcellChannelSummary.read_length += int(read_length)
+                if pore_yield:
+                    flowcellChannelSummary.read_length += int(pore_yield)
                 flowcellChannelSummary.save()
 
         #Now try and update all the flowcellsummarystatistics
@@ -333,7 +334,6 @@ def update_flowcell_details(job_master_id):
     barcode_count = (
         Barcode.objects.filter(run_id__flowcell=flowcell).values("name").distinct().count() - 1
     )
-
     flowcell.number_barcodes = barcode_count
     flowcell.save()
     logger.info(
