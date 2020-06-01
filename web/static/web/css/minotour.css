@@ -327,7 +327,7 @@ p {
     color: #f1c40f;
     font-size: 1.2rem;
     width: 100%;
-    padding: 20px;
+    /*padding: 20px;*/
     /*text-align: center;*/
 }
 
@@ -557,4 +557,8 @@ line-height: 1.5;
 .basecalled-loader{
         top: 0;
 
+}
+
+.admin-warning{
+    padding-top: 7px;
 }
