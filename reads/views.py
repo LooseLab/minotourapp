@@ -169,7 +169,7 @@ def flowcell_barcodes_list(request):
         list(
             Barcode.objects.filter(run__in=flowcell.runs.all()).values_list(
                 "name", flat=True
-            )
+            ).distinct()
         )
     )
 
