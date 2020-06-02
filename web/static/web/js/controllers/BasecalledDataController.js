@@ -26,7 +26,7 @@ class BasecalledDataController {
         this._createBarcodeProportionBarCharts(flowcellId);
         this._interval = setInterval(this._updateTab, 60000, flowcellId, this._currentBarcode, this, false);
         $(window).on("unload", function () {
-            console.log("lcearing interval");
+            console.log("clearing interval");
             clearInterval(this._interval);
         });
     }
@@ -532,7 +532,8 @@ class BasecalledDataController {
             let chartData = response.data;
             let oldChartData = this._columnChartBarcodeProportion.series;
             let oldSeries;
-            console.log(response)
+            let categories = chartData.pop()
+            let options;
             this._columnChartBarcodeProportion.showLoading(`<div class="spinner-border text-success" role="status">
                                         <span class = "sr-only"> Loading...</span></div>`);
             if (![200, 204].includes(response.status)) {
@@ -543,6 +544,20 @@ class BasecalledDataController {
                 $("#barcode-proportion-card").remove()
                 return
             }
+
+            options = {
+                yAxis: {stackLabels: {enabled: true,}}, plotOptions: {
+                    column: {
+                        stacking: 'normal',
+                        dataLabels: {
+                            enabled: true
+                        }
+                    }
+                },
+                xAxis: {categories: categories.categories}
+            }
+
+            this._columnChartBarcodeProportion.update(options)
             // for each series data set we returned
             chartData.forEach(newSeries => {
                 oldSeries = oldChartData.filter(series => {

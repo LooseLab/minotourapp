@@ -301,7 +301,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
 
     flowcell = task.flowcell
 
-
     avg_read_length = flowcell.average_read_length
 
     if avg_read_length == 0:
@@ -332,7 +331,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
     else:
         last_read = task.last_read
         fasta_df_barcode = pd.DataFrame(streamed_reads)
-        fasta_df_barcode = fasta_df_barcode[fasta_df_barcode["is_pass"]==True]
+        fasta_df_barcode = fasta_df_barcode[fasta_df_barcode["is_pass"]]
         fasta_objects = streamed_reads
 
     read_count = fasta_df_barcode.shape[0]
@@ -493,10 +492,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     sequence = fastq_read.sequence
                     read_type = fastq_read.type
 
-
-
                 barcode_sorted_fastq_cache[barcode_of_read].append(f">{read_id}\n{sequence}")
-
 
                 chromosome = chromdict[record.tsn]
 
