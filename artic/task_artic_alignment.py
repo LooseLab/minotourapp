@@ -271,7 +271,7 @@ def replicate_counts_array_barcoded(barcode_names, counts_dict):
     None
     """
     # TODO this may be where the coverage ends up the same if the counts dict is shared, not unique to each barcode
-    barcoded_counts_dict = {barcode: counts_dict for barcode in barcode_names}
+    barcoded_counts_dict = {barcode: counts_dict.deepcopy() for barcode in barcode_names}
     return barcoded_counts_dict
 
 
@@ -416,12 +416,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             reference_count_dict = {}
 
             chromosomes_seen_now = set()
-
-            previously_known_chromosomes = set(
-                ExpectedBenefitChromosomes.objects.filter(task=task).values_list(
-                    "chromosome__line_name", flat=True
-                )
-            )
 
             # Dictionary to store reads that have mapped under the correct barcode
             barcode_sorted_fastq_cache = defaultdict(list)
