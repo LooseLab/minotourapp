@@ -135,9 +135,16 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
         # df = df.reset_index()
         df["data"] = round(df["read_count"] / total_read_count * 100, 2)
         df["name"] = df["barcode_name"]
-        df = df.drop(columns=["rejection_status", "read_type_name", "barcode_name", "read_count", "status"])
-        df["data"] = df["data"].apply(lambda x: [x])
-        return Response(df.to_dict(orient="records"), status=status.HTTP_200_OK)
+        categories = df["name"].unique().tolist()
+
+        listy = list()
+
+        for name, group in df.groupby("status"):
+            listy.append({"name": name, "data": group["data"].values.tolist()})
+
+        listy.append({"categories": categories})
+
+        return Response(listy, status=status.HTTP_200_OK)
 
     return Response("Not a barcoded run", status=status.HTTP_204_NO_CONTENT)
 
