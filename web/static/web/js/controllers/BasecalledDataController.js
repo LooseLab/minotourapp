@@ -532,7 +532,8 @@ class BasecalledDataController {
             let chartData = response.data;
             let oldChartData = this._columnChartBarcodeProportion.series;
             let oldSeries;
-            console.log(response)
+            let categories = chartData.pop()
+            let options;
             this._columnChartBarcodeProportion.showLoading(`<div class="spinner-border text-success" role="status">
                                         <span class = "sr-only"> Loading...</span></div>`);
             if (![200, 204].includes(response.status)) {
@@ -544,17 +545,17 @@ class BasecalledDataController {
                 return
             }
 
-            let categories = chartData.pop()
-            console.log(categories)
-            let options = {yAxis:{stackLabels:{enabled: true,}},plotOptions: {
-        column: {
-            stacking: 'normal',
-            dataLabels: {
-                enabled: true
+            options = {
+                yAxis: {stackLabels: {enabled: true,}}, plotOptions: {
+                    column: {
+                        stacking: 'normal',
+                        dataLabels: {
+                            enabled: true
+                        }
+                    }
+                },
+                xAxis: {categories: categories.categories}
             }
-        }
-    },
-    xAxis: {categories: categories.categories}}
 
             this._columnChartBarcodeProportion.update(options)
             // for each series data set we returned
