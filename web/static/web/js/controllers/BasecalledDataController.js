@@ -549,7 +549,7 @@ class BasecalledDataController {
             }
         }
     },
-    xAxis: {categories: categories.categories
+    xAxis: {categories: categories.categories}}
 
             this._columnChartBarcodeProportion.update(options)
             // for each series data set we returned
