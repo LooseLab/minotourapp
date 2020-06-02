@@ -1,4 +1,5 @@
 from __future__ import absolute_import, unicode_literals
+from copy import deepcopy
 
 import gzip
 import os
@@ -271,7 +272,7 @@ def replicate_counts_array_barcoded(barcode_names, counts_dict):
     None
     """
     # TODO this may be where the coverage ends up the same if the counts dict is shared, not unique to each barcode
-    barcoded_counts_dict = {barcode: counts_dict.deepcopy() for barcode in barcode_names}
+    barcoded_counts_dict = {barcode: deepcopy(counts_dict) for barcode in barcode_names}
     return barcoded_counts_dict
 
 
