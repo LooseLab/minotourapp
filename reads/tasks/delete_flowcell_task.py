@@ -35,6 +35,8 @@ def delete_flowcell(flowcell_job_id):
     logger.info(
         "Flowcell id: {} - Deleting flowcell {}".format(flowcell.id, flowcell.name)
     )
+
+    JobMaster.objects.filter(flowcell=flowcell).update(complete=True)
     # Get the last FastQRead object, wayyy faster than count
     last_fastq_read = FastqRead.objects.filter(flowcell=flowcell).last()
     # if we have both a first and last read PK
