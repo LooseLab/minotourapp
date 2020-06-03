@@ -1,4 +1,5 @@
 from __future__ import absolute_import, unicode_literals
+from copy import deepcopy
 
 import gzip
 import os
@@ -48,7 +49,7 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     scheme_dir = get_env_variable("MT_ARTIC_SCEHEME_DIR")
     os.chdir(f"{base_results_directory}/{barcode_name}")
     cmd = ["bash", "-c",
-           f"source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate artic-ncov2019-medaka && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V1 {barcode_name}"]
+           f"source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate artic-ncov2019 && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V1 {barcode_name}"]
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -270,7 +271,7 @@ def replicate_counts_array_barcoded(barcode_names, counts_dict):
     None
     """
     # TODO this may be where the coverage ends up the same if the counts dict is shared, not unique to each barcode
-    barcoded_counts_dict = {barcode: counts_dict for barcode in barcode_names}
+    barcoded_counts_dict = {barcode: deepcopy(counts_dict) for barcode in barcode_names}
     return barcoded_counts_dict
 
 
