@@ -15,7 +15,6 @@ from alignment.tasks_alignment import call_fetch_reads_alignment
 from minotourapp.utils import get_env_variable
 from reads.models import JobMaster, JobType, Barcode, FastqReadType
 from readuntil.functions_EB import *
-from readuntil.models import ExpectedBenefitChromosomes
 
 logger = get_task_logger(__name__)
 
@@ -410,18 +409,11 @@ def run_artic_pipeline(task_id, streamed_reads=None):
         )
         # decode output from byte string
         paf = out
-        logger.info("")
 
         if paf:
             reference_count_dict = {}
 
             chromosomes_seen_now = set()
-
-            previously_known_chromosomes = set(
-                ExpectedBenefitChromosomes.objects.filter(task=task).values_list(
-                    "chromosome__line_name", flat=True
-                )
-            )
 
             # Dictionary to store reads that have mapped under the correct barcode
             barcode_sorted_fastq_cache = defaultdict(list)
