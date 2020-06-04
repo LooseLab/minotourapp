@@ -1,12 +1,17 @@
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from rest_framework import status
-from django.shortcuts import get_object_or_404
-# Create your views here.
-from alignment.models import PafSummaryCov
-from artic.task_artic_alignment import make_results_directory_artic, np
-from reads.models import Flowcell, JobMaster
+from collections import defaultdict
 from pathlib import Path
+
+from django.shortcuts import get_object_or_404, render
+from rest_framework import status
+from rest_framework.decorators import api_view, renderer_classes
+from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
+from rest_framework.response import Response
+
+from alignment.models import PafSummaryCov
+# Create your views here.
+from artic.models import ArticBarcodeMetadata
+from artic.task_artic_alignment import make_results_directory_artic, np
+from reads.models import Flowcell, JobMaster, FlowcellSummaryBarcode
 
 
 def quick_get_artic_results_directory(flowcell_id, barcodeName="", check=False):
@@ -291,7 +296,7 @@ def get_artic_detail_chart_data(request):
 @api_view(["GET"])
 def get_artic_column_chart_data(request):
     """
-    Return the date for the Average Coverage per barcode and Average Read length per barcode
+    Return the data for the Average Coverage per barcode and Average Read length per barcode
     column charts for a specified flowcell.
     Parameters
     ----------
@@ -309,7 +314,6 @@ def get_artic_column_chart_data(request):
             "No flowcellId specified. Please check request.",
             status=status.HTTP_400_BAD_REQUEST,
         )
-    # TODO catch does not exist query here
     artic_task = JobMaster.objects.filter(
         flowcell_id=flowcell_id, job_type__name="Track Artic Coverage"
     ).last()
@@ -318,8 +322,13 @@ def get_artic_column_chart_data(request):
             return Response("no coverage tracking task running on this flowcell.", status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        queryset = PafSummaryCov.objects.filter(job_master__id=artic_task.id).values()
-        return_data = {d.get("barcode_name", "Unknown"): d for d in queryset}
+        return_data = defaultdict(list)
+        queryset = PafSummaryCov.objects.filter(job_master__id=227).values_list("barcode_name", "average_read_length", "coverage")
+        for barcode, read_length, coverage in queryset:
+            return_data["barcodes"].append(barcode)
+            return_data["average_read_length"].append(read_length)
+            return_data["coverage"].append(coverage)
+
     except TypeError as e:
         print(e.args)
         return Response(e, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -370,3 +379,58 @@ def get_artic_summary_table_data(request):
         return Response(f"No coverage summaries found for this task {artic_task.id}.", status=status.HTTP_204_NO_CONTENT)
 
     return Response({"data": queryset})
+
+
+@api_view(('GET',))
+@renderer_classes((TemplateHTMLRenderer, JSONRenderer))
+def get_artic_barcode_metadata_html(request):
+    """
+
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        Request body, params: the flowcell PK and selected barcode
+
+    Returns
+    -------
+
+    """
+    flowcell_id = request.GET.get("flowcellId", None)
+    selected_barcode = request.GET.get("selectedBarcode", None)
+    if not flowcell_id or not selected_barcode:
+        return Response("No flowcell ID or barcode provided.", status=status.HTTP_400_BAD_REQUEST)
+    orm_object = ArticBarcodeMetadata.objects.filter(flowcell_id=flowcell_id, barcode__name=selected_barcode).last()
+
+    if not orm_object:
+        return Response("No data found", status=status.HTTP_404_NOT_FOUND)
+
+    # First iteration we may may not have FlowcellSumamryBarcodes
+    if not orm_object.percentage_of_reads_in_barcode:
+        try:
+            barcode_numbers = FlowcellSummaryBarcode.objects.get(flowcell_id=flowcell_id, barcode_name=selected_barcode)
+            all_numbers = FlowcellSummaryBarcode.objects.filter(flowcell_id=flowcell_id, barcode_name="All reads").values_list("read_count", flat=True)
+            total_reads = 0
+            for all_number in all_numbers:
+                total_reads += all_number
+            orm_object.percentage_of_reads_in_barcode = barcode_numbers.read_count / total_reads
+
+        except FlowcellSummaryBarcode.DoesNotExist as e:
+            orm_object.percentage_of_reads_in_barcode = 0
+
+            # [[new key, old key]]
+    new_key_names = [["Avg. Coverage", "average_coverage"], ["Var. Coverage", "variance_coverage"], ["Min. Coverage", "minimum_coverage"], ["Max. Coverage", "maximum_coverage"],
+                     ["% in barcode", "percentage_of_reads_in_barcode"]]
+    old_dict = orm_object.__dict__
+    context_dict = {key[0]: old_dict[key[1]] for key in new_key_names}
+    context_dict["barcode_name"] = orm_object.barcode.name
+
+    try:
+        context_dict["has_run"] = JobMaster.objects.get(flowcell_id=flowcell_id, job_type__name="Run Artic",
+                                                        barcode__name=selected_barcode).complete
+        context_dict["has_reached_sufficient_coverage"] = True
+    except JobMaster.DoesNotExist:
+        context_dict["has_run"] = False
+        context_dict["has_reached_sufficient_coverage"] = False
+
+
+    return render(request, "artic-barcode-metadata.html", context={"artic_barcode_metadata": context_dict})
