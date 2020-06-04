@@ -1,0 +1,23 @@
+{% load humanize %}
+
+<h3 class="card-header">{{ artic_barcode_metadata.barcode_name }}</h3>
+<div class="card-body ">
+    <div class="col-md-12">
+        <div style="height: 100%;">
+            <table class="table table-responsive-md table-sm table-bordered">
+                {% for key, value in artic_barcode_metadata.items %}
+                    <tr>
+                        {% if not key == "barcode_name" %}
+                            <th>
+                                {{ key }}
+                            </th>
+                            <td>
+                                {{ value }}
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+</div>
