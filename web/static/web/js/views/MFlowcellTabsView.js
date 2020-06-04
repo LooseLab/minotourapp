@@ -12,10 +12,10 @@ class MFlowcellTabsView extends MView {
 
             if (n.is_active) {
 
-                return '<li role="presentation" class="active"><a class="flowcell-tab" id="' + n.html_element +'" role="tab" onclick="flowcellController.flowcell_tab_controller.toggle_tab_content(\'' + n.name + '\')">' + n.text +'</a></li>'
+                return '<li role="presentation" class="active"><a class="flowcell-tab" id="' + n.html_element +'" role="tab" onclick="flowcellController.flowcell_tab_controller.toggleTabContent(\'' + n.name + '\')">' + n.text +'</a></li>'
             } else {
 
-                return '<li role="presentation"><a class="flowcell-tab" id="' + n.html_element +'" role="tab" onclick="flowcellController.flowcell_tab_controller.toggle_tab_content(\'' + n.name + '\')">' + n.text +'</a></li>'
+                return '<li role="presentation"><a class="flowcell-tab" id="' + n.html_element +'" role="tab" onclick="flowcellController.flowcell_tab_controller.toggleTabContent(\'' + n.name + '\')">' + n.text +'</a></li>'
             }
         }).join('')
 
