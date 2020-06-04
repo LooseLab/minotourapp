@@ -1,4 +1,5 @@
 from django.conf.urls import url
+
 from artic import views
 
 urlpatterns = [
@@ -27,4 +28,9 @@ urlpatterns = [
         views.get_artic_summary_table_data,
         name="get-summary-table-data"
     ),
+    url(
+        r'^api/v1/artic/barcode-metadata/$',
+        views.get_artic_barcode_metadata_html,
+        name="get-barcode-metadata"
+    )
 ]
