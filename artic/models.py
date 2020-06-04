@@ -1,3 +1,33 @@
+"""Model classes for the artic app."""
 from django.db import models
 
-# Create your models here.
+from reads.models import Flowcell, JobMaster, Barcode
+
+
+class ArticBarcodeMetadata(models.Model):
+    """
+    Contains the metadata for each barcode in an artic track coverage task.
+    """
+    average_coverage = models.IntegerField(default=0)
+    variance_coverage = models.FloatField(default=0.0)
+    minimum_coverage = models.IntegerField(default=0)
+    maximum_coverage = models.IntegerField(default=0)
+    percentage_of_reads_in_barcode = models.FloatField(default=0)
+    flowcell = models.ForeignKey(
+        Flowcell,
+        related_name="FlowcellsArticBarcodeMetadatas",
+        on_delete=models.CASCADE,
+        null=True
+    )
+    job_master = models.ForeignKey(
+        JobMaster,
+        related_name="JobMastersArticBarcodeMetadatas",
+        on_delete=models.CASCADE,
+        null=True
+    )
+    barcode = models.ForeignKey(
+        Barcode,
+        related_name="barcodeArticBarcodeMetadata",
+        on_delete=models.CASCADE,
+        null=True
+    )
