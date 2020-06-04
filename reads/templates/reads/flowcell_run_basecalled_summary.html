@@ -1,47 +1,42 @@
 {% load humanize %}
-{% for record in result_basecalled_summary %}
-
-    {% if forloop.first %}
-
-        <div class='table-responsive'>
-        <table class="table table-striped table-sm table-hover">
+{% if result_basecalled_summary %}
+<div class='table-responsive'>
+    <table class="table table-striped table-sm table-hover">
         <thead>
-        <th align="left">Run</th>
-        <th align="right">Runid</th>
-        <th align="right">First Read</th>
-        <th align="right">Last Read</th>
-        <th align="right">Read Count</th>
-        <th align="right">Yield</th>
-        <th align="right">Min Read Length</th>
-        <th align="right">Avg Read Length</th>
-        <th align="right">Max Read Length</th>
+        <th>Run</th>
+        <th>Runid</th>
+        <th>First Read</th>
+        <th>Last Read</th>
+        <th>Read Count</th>
+        <th>Yield</th>
+        <th>Min Read Length</th>
+        <th>Avg Read Length</th>
+        <th>Max Read Length</th>
         </thead>
         <tbody>
 
-    {% endif %}
+        {% for record in result_basecalled_summary %}
 
-    <tr>
-        <td align="right">{{ forloop.counter }}</td>
-        <td>{{ record.runid }}</td>
-        <td align="right">{{ record.first_read_start_time }}</td>
-        <td align="right">{{ record.last_read_start_time }}</td>
-        <td align="right">{{ record.read_count|intcomma }}</td>
-        <td align="right">{{ record.total_read_length|intcomma }}</td>
-        <td align="right">{{ record.min_read_length|intcomma }}</td>
-        <td align="right">{{ record.avg_read_length|intcomma }}</td>
-        <td align="right">{{ record.max_read_length|intcomma }}</td>
-    </tr>
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ record.runid }}</td>
+                <td>{{ record.first_read_start_time }}</td>
+                <td>{{ record.last_read_start_time }}</td>
+                <td>{{ record.read_count|intcomma }}</td>
+                <td>{{ record.total_read_length|intcomma }}</td>
+                <td>{{ record.min_read_length|intcomma }}</td>
+                <td>{{ record.avg_read_length|intcomma }}</td>
+                <td>{{ record.max_read_length|intcomma }}</td>
+            </tr>
+        {% endfor %}
 
-    {% if forloop.last %}
         </tbody>
 
-        </table>
+    </table>
 
-        </div>
-    {% endif %}
-
-{% empty %}
+</div>
+{% else %}
 
 No information available.
+{% endif %}
 
-{% endfor %}
