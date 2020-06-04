@@ -26,7 +26,7 @@ class BasecalledDataController {
         this._createBarcodeProportionBarCharts(flowcellId);
         this._interval = setInterval(this._updateTab, 60000, flowcellId, this._currentBarcode, this, false);
         $(window).on("unload", function () {
-            console.log("clearing interval");
+            console.log("clearing base-called interval");
             clearInterval(this._interval);
         });
     }
@@ -365,7 +365,6 @@ class BasecalledDataController {
             this._cumulativeNumberReadsOverTime,
             this._maxReadLengthsOverTime,
             this._sequencingRate]
-        console.log("Updating line charts");
         this._axiosInstance.get(`/api/v1/flowcells/${flowcellId}/statistics/`, {params: {barcodeName}}).then(response => {
             let key, value;
             //TODO add in the run start lines.
@@ -408,7 +407,7 @@ class BasecalledDataController {
                     if (chartHasData && seriesToUpdate.length > 0) {
                         console.log(seriesToUpdate)
                         console.log(seriesToUpdate[0].options.data)
-                        oldSeriesData = Array.isArray(seriesToUpdate[0].options.data) ? seriesToUpdate[0].options.data.data : seriesToUpdate[0].options.data
+                        oldSeriesData = Array.isArray(seriesToUpdate[0].options.data) ? seriesToUpdate[0].options.data : seriesToUpdate[0].options.data.data
                         identical = checkHighChartsDataIsNew(newChartData, oldSeriesData)
                     }
                     if (identical) {
@@ -538,6 +537,7 @@ class BasecalledDataController {
                                         <span class = "sr-only"> Loading...</span></div>`);
             if (![200, 204].includes(response.status)) {
                 console.error(`Error, incorrect status, expected 200 or 204, got ${response.status}`)
+                return
             }
             if (response.status === 204) {
                 console.log("Not a barcoded run, deleting proportion chart.")
@@ -546,7 +546,8 @@ class BasecalledDataController {
             }
 
             options = {
-                yAxis: {stackLabels: {enabled: true,}}, plotOptions: {
+                yAxis: {stackLabels: {enabled: true,}},
+                plotOptions: {
                     column: {
                         stacking: 'normal',
                         dataLabels: {
@@ -595,6 +596,8 @@ class BasecalledDataController {
         that._updateHistogramChartsData(flowcellId, barcode, changeBarcode);
         that._updateBaseCalledReadCharts(flowcellId, barcode, changeBarcode);
         that._updateBarcodeNavTab(flowcellId, changeBarcode);
-        that._updateBarcodeProportionBarCharts(flowcellId);
+        if (!changeBarcode){
+            that._updateBarcodeProportionBarCharts(flowcellId);
+        }
     }
 }
