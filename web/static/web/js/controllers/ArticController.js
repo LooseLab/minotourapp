@@ -8,7 +8,7 @@ class ArticController {
         this._flowcellId = flowcellId;
         this._first = true;
         this._showWidth = 250000;
-        this._barcodeChosen = "banter"
+        this._barcodeChosen = "banter";
         this._axiosInstance = axios.create({
             headers: {"X-CSRFToken": getCookie('csrftoken')}
         });
@@ -16,45 +16,52 @@ class ArticController {
         this._perBarcodeAverageReadLengthChart = null;
         this._perBarcodeCoverageChart = null;
         this._coverageSummaryTable = $("#artic-coverage-summary-table");
-        // this.createCoverageMaster();
-        this.drawArticChart(flowcellId);
+        this._drawArticCharts(this);
+        this._interval = setInterval(this._drawArticCharts, 45000, this);
+        $(window).on("unload", function () {
+            console.log("clearing Artic interval");
+            clearInterval(this._interval);
+        });
+
     }
 
-
     /**
-     *
+     *  Update the series of an existing chart. Checks to see if data is identical
      * @param {obj} chart - Chart object that is being updated
-     * @param {obj} newSeries - The new data to add into the chart
-     * @param {number} index - The index of the series that we are updating. Use 0.
+     * @param {Array.Array} newSeries - The new data to add into the chart
+     * @param {number} index - The index of the series that we are updating. Use 0 .
      */
-    updateExistingChart(chart, newSeries, index) {
+    _updateExistingChart(chart, newSeries, index) {
         // Set the data on an existing series on a chart, either master or detail
-        chart.series[index].setData(newSeries);
-
+        // if the data is identical
+        if (checkHighChartsDataIsNew(newSeries, chart.series[index].options.data)) {
+            console.log("Data is identical , skip redraw");
+        } else {
+            chart.showLoading('Fetching data from the server');
+            chart.series[index].setData(newSeries);
+            chart.hideLoading();
+        }
     }
 
-
     /**
-     * The small coverage master chart that shows the region selected
-     * @param data
-     * @param flowcellId
+     * Render the smaller coverage master chart that shows the region selected, and allows users to select a region.
+     * @param data {object} Object conatinf response data from the server.
+     * @param flowcellId {number} The Primary key of the flowcell record in the database.
      */
-    createCoverageMaster(data, flowcellId) {
+    _createCoverageMaster(data, flowcellId) {
         const self = this;
         let that = this;
         this._articCoverageScatterMaster = Highcharts.chart("coverageArticMaster", {
-
             chart: {
                 zoomType: "x",
                 height: "150px",
                 marginLeft: 50,
                 marginRight: 20,
                 events: {
-                    selection: that.afterSelection.bind(this)
+                    selection: that._afterSelection.bind(this)
                 }
 
             },
-
             boost: {
                 useGPUTranslations: true,
                 usePreAllocated: true
@@ -71,22 +78,17 @@ class ArticController {
                     color: 'rgba(0, 0, 0, 0.2)'
                 }]
             },
-
             yAxis: {
-                // Renders faster when we don"t have to compute min and max
                 min: 0,
                 max: data.coverage.ymax,
                 title: {
                     text: null
                 }
             },
-
             legend: {
                 enabled: false
             },
-
             title: {text: null},
-
             plotOptions: {
                 series: {
                     fillColor: {
@@ -109,7 +111,6 @@ class ArticController {
                     enableMouseTracking: false
                 }
             },
-
             series: [{
                 type: "area",
                 color: "blue",
@@ -124,17 +125,16 @@ class ArticController {
                     valueDecimals: 8
                 }
             }]
-            // Call back function, called after the master chart is drawn, draws all the detail charts
+            // Call back function, called after the master chart is drawn, draws the detail charts
         }, () => {
-
-            that._articCoverageScatterDetail = that.createDetailChart("coverageArticDetail", data.coverage.ymax, "Coverage", "line"
+            that._articCoverageScatterDetail = that._createDetailChart("coverageArticDetail", data.coverage.ymax, "Coverage", "line"
                 , false);
         });
 
     }
 
     /**
-     *
+     * Render the coverage detail chart, with empty series
      * @param {string} targetDivId Div ID chart is drawn to
      * @param {number} ymax The maximum value of the Y axis
      * @param {string} title The chart title
@@ -143,7 +143,7 @@ class ArticController {
      * @param {boolean} legend Display chart legend
      * @returns {obj} chartyChart Highcharts chart.
      */
-    createDetailChart(targetDivId, ymax, title, chartType = "scatter", stepped = false, legend = false) {
+    _createDetailChart(targetDivId, ymax, title, chartType = "scatter", stepped = false, legend = false) {
         // The data we are going to use to display, starts a display with an empty chart
         let detailData = [];
         // The variable assigned to the chart we will return
@@ -156,9 +156,9 @@ class ArticController {
             chart: {
                 zoomType: "x",
                 height: "300px",
-                reflow: false,
+                reflow: true,
                 events: {
-                    selection: that.afterSelection.bind(this)
+                    selection: that._afterSelection.bind(this)
                 }
             },
 
@@ -196,7 +196,7 @@ class ArticController {
                     return `The value for base <b>${this.x}</b> is <b>${this.y}</b>`;
                 }
             },
-            exporting: {"enabled": false},
+            exporting: {"enabled": true},
 
             series: [{
                 type: chartType,
@@ -218,7 +218,11 @@ class ArticController {
         return chartyChart;
     }
 
-    afterSelection(event) {
+    /**
+     * The event that is called after an area selection is made on the master or detail chart. Sets the plot band, calls to server for new data.
+     * @param event {object} The event object generated when the event is triggered
+     */
+    _afterSelection(event) {
         // Event function called after the zoom box is chosen
         let label;
         let that = this;
@@ -260,7 +264,7 @@ class ArticController {
             color: 'rgba(0, 0, 0, 0.2)'
         });
 
-        // Show the loading screen on the detail charts
+        // Show the loading screen on the charts
 
         charts.forEach(function (chart) {
             chart.showLoading('Fetching data from the server');
@@ -271,23 +275,26 @@ class ArticController {
         }).then(response => {
             // if successful request, set the detail charts to show the newly retrieve data
             if (response.status === 200) {
-
                 that._updateAxesAndData(that._articCoverageScatterDetail, min, max, response.data.coverage, true);
-
             } else if (response.status === 404) {
-
+                console.error("Artic detail cahrt data not found.")
             } else {
                 throw "Request error";
             }
-
         }).catch(error => {
             console.error(error)
         });
-
-
     }
 
-
+    /**
+     * Update the axes and series data of a specified chart.
+     * @param chart {object} The highcharts APi object for the detail and the master chart.
+     * @param min {number} The x axis minimum value.
+     * @param max {number} The x axis maximum value.
+     * @param data {Array[]} Array of Arrays, specifying cartesian coordinates for the plot.
+     * @param ymax {number} The maximum value of the y axis
+     * @private
+     */
     _updateAxesAndData(chart, min, max, data, ymax) {
         // Y max let's us know we need to change the yAxis
         // Set the xAxis extremes to the newly selected values
@@ -307,11 +314,11 @@ class ArticController {
     }
 
     /**
-     * Draw the select box on the artic page for the coverage tracker.
+     * Draw the select box on the artic page for the coverage tracker charts.
      * @param flowcellId {number} Primary key of the flowcell that barcodes are bring added to the selection box for.
      * @private
      */
-    _createSelectionBox(flowcellId) {
+    _createOrUpdateSelectionBox(flowcellId) {
         let firstIteration, optionChildren, barcodes, alreadyPresentBarcode, index, that, $current, barcodeList;
         that = this;
         barcodeList = [];
@@ -337,18 +344,18 @@ class ArticController {
             } else {
                 barcodes.unshift("Choose Barcode");
             }
-
-
             barcodes.forEach(barcode => {
                 barcodeList.push(`<option class="sel__box__options" value="${barcode}">${barcode}</option>`)
             })
-            $current.html(barcodeList.join(""))
+            if (barcodeList.length) {
+                $current.html(barcodeList.join(""))
+            }
             $current.change(function () {
                 let txt;
                 txt = $(this).val();
                 that._barcodeChosen = txt;
 
-                that.drawSelectedBarcode(flowcellId, txt);
+                that._drawSelectedBarcode(flowcellId, txt);
             })
 
         }).catch(error => {
@@ -356,16 +363,15 @@ class ArticController {
         })
 
     }
-    ;
 
     /**
-     * Draw the master coverage chart for the selected barcode
+     * Update the master coverage chart and detail coverage chart with data from the selected barcode, triggered on change in the select box.
      * @param flowcellId number - the primary key of the flowcell
      * @param barcodeChosen str - the barcode that we are drawing the data for
      */
-    drawSelectedBarcode(flowcellId, barcodeChosen) {
+    _drawSelectedBarcode(flowcellId, barcodeChosen) {
         /*
-        Reload a new chromosomes data
+        Reload a new barcode data
         */
         let that = this;
         let min, max, coverageDetail;
@@ -375,8 +381,11 @@ class ArticController {
                 barcodeChosen
             }
         }).then(response => {
+            // update the extremes on the y axis
+            that._articCoverageScatterMaster.showLoading("Fetching data from server.")
             that._articCoverageScatterMaster.yAxis[0].setExtremes(0, response.data.coverage.ymax);
-            that.updateExistingChart(that._articCoverageScatterMaster, response.data.coverage.data, 0);
+            that._updateExistingChart(that._articCoverageScatterMaster, response.data.coverage.data, 0);
+            that._articCoverageScatterMaster.hideLoading()
 
         }).catch(error => {
             console.error(error)
@@ -388,7 +397,6 @@ class ArticController {
         // If min is not undefined, the charts are already displaying data, so update them, otherwise we're good
         if (min !== undefined) {
             that._articCoverageScatterDetail.showLoading('Fetching data from the server')
-
             this._axiosInstance.get('/api/v1/artic/visualisation/detail', {
                 params: {
                     min,
@@ -398,77 +406,60 @@ class ArticController {
                 }
             }).then(response => {
                 that._updateAxesAndData(that._articCoverageScatterDetail, min, max, response.data.coverage, true);
-                // that.updateExistingChart(coverageDetail, response.coverage.data, 0);
-                // that.updateExistingChart(that._articCoverageScatterMaster, response.coverage.data, 0);
             }).catch(error => {
                 console.error(error)
             });
         }
+        this._setBarcodeMetaDataTable(flowcellId, barcodeChosen)
     }
 
     /**
-     * @function Top level call that creates the chart om the page when the page is laoded
+     * @function Top level call that creates the charts on the page when the controller is initialised on page load.
+     * Is called in interval to update charts.
+     * @param that {ArticController} The scope of the class, allowing access to properties.
      */
-    drawArticChart() {
+    _drawArticCharts(that) {
         let min, max;
-        let that = this;
         let coverageDetail;
-
-        let flowcellId = this._flowcellId;
-        let startData = {"coverage": {"ymax": 1, "data": [0, 1]}};
-
-
-        that._createSelectionBox(flowcellId);
-
+        let flowcellId = that._flowcellId;
+        let startData;
         if (!Highcharts.Series.prototype.renderCanvas) {
             throw "Module not loaded";
         }
-
-        // Select the coverage detail chart to see if it already exists
-
         console.time("scatter");
-
-        // If the coverage detail chart doesn't exist, draw it for the first time by calling the create master chart which has a callback that draws the other charts
-        if (this._first === true) {
-            that.createCoverageMaster(startData, flowcellId);
-            this._first = false;
-            that.drawColumnCharts()
-            that._drawSummaryTable()
+        // If we are drawing it for the first time by calling the create master chart which has a callback that draws the other charts
+        if (that._first === true) {
+            startData = {"coverage": {"ymax": 1, "data": [0, 1]}};
+            // Create selection drop down
+            that._createOrUpdateSelectionBox(flowcellId);
+            that._createCoverageMaster(startData, flowcellId);
+            that._drawColumnCharts()
+            that._drawOrUpdateSummaryTable(that._coverageSummaryTable, flowcellId)
+            that._first = false;
         } else {
-
-            coverageDetail = $("#coverageArticDetail").highchart();
+            // update the column charts
+            that._updateColumnCharts(flowcellId)
+            // update the table
+            that._drawOrUpdateSummaryTable(that._coverageSummaryTable, flowcellId)
+            // update the selection box
+            that._createOrUpdateSelectionBox(flowcellId)
+            //update the detail master charts
+            coverageDetail = $("#coverageArticDetail").highcharts();
             // If the coverage detail chart does exist, update the existing charts
             // Get the minimum and maximum values of the xAxis
             min = coverageDetail.xAxis[0].min;
-            max = coverageDetail.xAxis[0].max;
-            // If min is not undefined, the charts are already displaying data, so update them, otherwise we're good
             if (min !== undefined) {
-                this._axiosInstance.get('/api/v1/artic/visualisation/detail', {
-                    params: {
-                        min,
-                        max,
-                        barcodeChosen: that._barcodeChosen,
-                        flowcellId
-                    }
-                }).then(response => {
-                    that.updateExistingChart(coverageDetail, response.coverage.data, 0);
-                    that.updateExistingChart(that._articCoverageScatterMaster, response.coverage.data, 0);
-                }).catch(error => {
-                    console.error(error)
-                });
-                this.drawSelectedBarcode(flowcellId, this._barcodeChosen)
+                that._setBarcodeMetaDataTable(flowcellId, that._barcodeChosen)
+                that._drawSelectedBarcode(flowcellId, that._barcodeChosen)
             }
-
-
         }
         console.timeEnd("scatter");
-
     }
 
     /**
      * @function Request the data for the column charts on the Artic Tab page and draw them.
      */
-    drawColumnCharts() {
+    _drawColumnCharts() {
         let that;
         let flowcellId = this._flowcellId;
         if (!this._perBarcodeCoverageChart) {
@@ -485,77 +476,78 @@ class ArticController {
                 "READ LENGTH (BASES)"
             );
         }
-        // show loading on the page.
-        this._perBarcodeCoverageChart.showLoading(`<div class="spinner-border text-success" role="status">
-            <span class = "sr-only"> Loading...</span></div>`);
-        this._perBarcodeAverageReadLengthChart.showLoading(`<div class="spinner-border text-success" role="status">
-            <span class = "sr-only"> Loading...</span></div>`);
-        // Callback scope proof access to class methods and variables.
-        that = this;
+        this._updateColumnCharts(flowcellId)
+    }
 
+    /**
+     * Update the column charts at the top of the page.
+     * @param flowcellId {number} The number of the flowcell charts
+     * @private
+     */
+    _updateColumnCharts(flowcellId) {
+
+        // Callback scope proof access to class methods and variables.
         this._axiosInstance.get("/api/v1/artic/visualisation/column-charts", {
             "params": {flowcellId}
         }).then(response => {
-            let data, chartSeriesCoverage, chartSeriesReadLength;
-
-
+            let data, chartSeriesCoverage, chartSeriesReadLength, categories;
+            let options;
+            let indexInArray
             data = response.data;
-
             chartSeriesCoverage = this._perBarcodeCoverageChart.series;
-
             chartSeriesReadLength = this._perBarcodeAverageReadLengthChart.series;
-
-            Object.entries(data).forEach(([key, value], index) => {
-                let indexInArray = chartSeriesCoverage.findIndex(obj => obj.name === key);
-                // See if we already have a series by this name, if we do update exisiting series
-                if (indexInArray >= 0) {
-                    chartSeriesCoverage[indexInArray].setData(value["coverage"]);
-                    chartSeriesCoverage[indexInArray].update({
-                        name: key
-                    });
-                    chartSeriesReadLength[indexInArray].setData(value["average_read_length"])
-                    chartSeriesReadLength[indexInArray].update({
-                        name: key
-                    });
-
-                } else { // Add the series
-                    this._perBarcodeCoverageChart.addSeries({"name": key, "data": [value["coverage"]]})
-                    this._perBarcodeAverageReadLengthChart.addSeries({
-                        "name": key,
-                        "data": [value["average_read_length"]]
-                    })
+            options = {
+                xAxis: {categories: data["barcodes"]}
+            }
+            this._perBarcodeCoverageChart.update(options)
+            this._perBarcodeAverageReadLengthChart.update(options)
+            // we only need to check the one chart to know if both have data
+            indexInArray = chartSeriesCoverage.findIndex(obj => obj.name === "Mean Coverage");
+            // See if we already have a series by this name, if we do update existing series // show loading on the chart.
+            this._perBarcodeCoverageChart.showLoading(`<div class="spinner-border text-success" role="status">
+                        <span class = "sr-only"> Loading...</span></div>`);
+            this._perBarcodeAverageReadLengthChart.showLoading(`<div class="spinner-border text-success" role="status">
+                        <span class = "sr-only"> Loading...</span></div>`);
+            if (indexInArray >= 0) {
+                // if the data is not new, i.e it is identical don't draw
+                if (checkHighChartsDataIsNew(data["coverage"], chartSeriesCoverage[indexInArray].options.data)) {
+                    console.log("data is identical, don't draw")
+                } else {
+                    chartSeriesCoverage[indexInArray].setData(data["coverage"]);
+                    chartSeriesReadLength[indexInArray].setData(data["average_read_length"])
                 }
-            })
+            } else { // Add the series
+                this._perBarcodeCoverageChart.addSeries({"name": "Mean Coverage", "data": data["coverage"]})
+                this._perBarcodeAverageReadLengthChart.addSeries({
+                    "name": "Average read length",
+                    "data": data["average_read_length"]
+                })
+            }
             this._perBarcodeCoverageChart.hideLoading()
             this._perBarcodeAverageReadLengthChart.hideLoading()
         }).catch(errorResponse => {
-            console.error(errorResponse.message)
-        })
+            console.error(errorResponse)
+        });
     }
-
 
     /**
-     *
-     * @param data
+     * Draw the Artic Summary Datatable, showing the Summary information for each barcode.
+     * @param {obj} DataTables object kept in the class.
+     * @param {number} The primary key of the flowcell
      * @private
      */
-    _updateColumnCharts(data) {
-
-    }
-
-    _drawSummaryTable() {
-        let that = this;
+    _drawOrUpdateSummaryTable(datatableObj, flowcellId) {
         // If the table already exists, use the DataTable APi to update in place
-        if ($.fn.DataTable.isDataTable(that._coverageSummaryTable)) {
-            that._coverageSummaryTable.DataTable().clear();
-            that._coverageSummaryTable.DataTable().draw();
+        if ($.fn.DataTable.isDataTable(datatableObj)) {
+            // null for callback function, false for reset paging
+            datatableObj.DataTable().ajax.reload(null, false)
         } else {
-            // else the databale must be initialised
-            that._coverageSummaryTable.DataTable({
+            // else the datatable must be initialised
+            datatableObj.DataTable({
                     "ajax": {
                         "url": "/api/v1/artic/visualisation/summary-table-data",
                         "data": {
-                            "flowcellId": that._flowcellId
+                            "flowcellId": flowcellId
                         },
                         async: true,
                         error: (xhr, error, code) => {
@@ -575,6 +567,25 @@ class ArticController {
                 }
             );
         }
+    }
+
+    /**
+     * Set the barcode metadata html table for the selected barcode
+     * @param flowcellId {number} Primary key of the flowcell record in the database.
+     * @param selectedBarcode {string} The buser selected barcode in the drop down.
+     * @private
+     */
+    _setBarcodeMetaDataTable(flowcellId, selectedBarcode) {
+        this._axiosInstance.get("/api/v1/artic/barcode-metadata", {
+            params: {
+                flowcellId,
+                selectedBarcode
+            }
+        }).then(response => {
+            $("#articMetaInfo").html(response.data)
+        }).catch(error => {
+            console.error(error)
+        })
     }
 
 }
