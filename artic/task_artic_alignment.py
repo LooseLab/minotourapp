@@ -89,7 +89,7 @@ def save_artic_job_masters(flowcell, barcode_name, reference_info):
     -------
 
     """
-    return
+
     job_type = JobType.objects.get(name="Run Artic")
     # TODO potential bug here where the barcode name on the reads is not the barcode name we save
     barcode_object = Barcode.objects.get(run__in=flowcell.runs.all(), name=barcode_name)
@@ -97,7 +97,7 @@ def save_artic_job_masters(flowcell, barcode_name, reference_info):
                            barcode=barcode_object, flowcell=flowcell)
 
     job_master.save()
-
+    return
 
 def make_barcoded_directories(barcodes, results_dir):
     """

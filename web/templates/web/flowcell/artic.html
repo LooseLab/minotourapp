@@ -1,5 +1,10 @@
-<div class="card">
-    <h3 class="card-header">Artic Coverage Data</h3>
+<div class="card card-primary card-outline">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-chart-bar"></i>
+            Artic Coverage Charts
+        </h3>
+    </div>
     <div class="card-body">
         <div class="container-fluid">
             <div class="row">
@@ -11,8 +16,18 @@
                      style=" height:300px;">
                 </div>
             </div>
-            <div class="row">
-                <div class="col-md-12">
+        </div>
+    </div>
+</div>
+<div class="card card-primary card-outline">
+  <div class="card-header">
+    <h4 class="card-title">
+            <i class="fas fa-chart-bar"></i>
+            Summary Table
+        </h4>
+  </div>
+  <div class="card-body">
+    <div class="col-md-12">
                     <table class="table table-hover" id="artic-coverage-summary-table" style="width: 100%">
                         <thead>
                         <tr>
@@ -38,17 +53,24 @@
                         </tfoot>
                     </table>
                 </div>
-            </div>
-        </div>
+  </div>
+</div>
 
-        <div class="row" style="text-align: center; padding-top: 10px">
-            <div class="col-md-9">
-                <div class="col-md-12">
+<div class="row">
+    <div class="col-sm-8">
+<div class="h-100 card card-primary card-outline">
+  <div class="card-header">
+    <h4 class="card-title">
+            <i class="fas fa-chart-bar"></i>
+            Coverage Plots
+        </h4>
+  </div>
+  <div class="card-body">
                     <select name="select-artic-barcode" id="select-artic-barcode">
 
                     </select>
                 </div>
-                <div class="row" style="padding-top:10px">
+                <div class="row">
                     <div class="col-md-12">
                         <div id="coverageArticDetail" style="height: 400px">
                         </div>
@@ -58,19 +80,21 @@
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="card  col-md-3">
-                <h3 class="card-header">Placeholder</h3>
+</div>
+    </div>
+    <div class="col-sm-4">
+<div class="h-100 card card-primary card-outline">
+                <h4 class="card-header">Placeholder</h4>
                 <div class="card-body ">
                     <div class="col-md-12">
-                        <div id="articMetaInfo" style="height: 100%; background: coral">
+                        <div id="articMetaInfo">
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 </div>
+
 
 <script>
     const articController = new ArticController({{flowcell.id}})
