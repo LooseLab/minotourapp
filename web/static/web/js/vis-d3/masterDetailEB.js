@@ -474,11 +474,11 @@ function drawReadUntilCharts() {
                 updateExistingChart(costReverseScatterDetail, newSeriesDict.costsRev.data, 0);
                 updateExistingChart(scoresForwardDetail, newSeriesDict.scoresFwd.data, 0);
                 updateExistingChart(scoresReverseDetail, newSeriesDict.scoresRev.data, 0);
-                // updateExistingChart(costScatterDetail, newSeriesDict.match.data, 0);
-                // updateExistingChart(mismatchScatterDetail, newSeriesDict.mismatch.data, 0);
-                // updateExistingChart(localBenefitDetail, newSeriesDict.localBenefit.data, 0);
-                // updateExistingChart(rollingBenefitLineDetail, newSeriesDict.rollingBenefitFwd.data, 0);
-                // updateExistingChart(rollingBenefitLineDetail, newSeriesDict.rollingBenefitRev.data, 1);
+                // _updateExistingChart(costScatterDetail, newSeriesDict.match.data, 0);
+                // _updateExistingChart(mismatchScatterDetail, newSeriesDict.mismatch.data, 0);
+                // _updateExistingChart(localBenefitDetail, newSeriesDict.localBenefit.data, 0);
+                // _updateExistingChart(rollingBenefitLineDetail, newSeriesDict.rollingBenefitFwd.data, 0);
+                // _updateExistingChart(rollingBenefitLineDetail, newSeriesDict.rollingBenefitRev.data, 1);
                 updateExistingChart(forwardMaskDetail, newSeriesDict.forwardMask.data, 0);
                 updateExistingChart(revMaskDetail, newSeriesDict.reverseMask.data, 0);
             });
