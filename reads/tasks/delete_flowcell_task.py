@@ -1,15 +1,59 @@
 """Delete a flowcell by first deleting it's reads, then it's database record
 """
 import time
+from pathlib import Path
+from shutil import rmtree
 
 from celery.task import task
 from celery.utils.log import get_task_logger
 from django.db import connection
 
 from alignment.models import PafStore
+from minotourapp.utils import get_env_variable
 from reads.models import JobMaster, FastqRead
 
 logger = get_task_logger(__name__)
+
+def on_delete_error(function, path, excinfo):
+    """
+    Function provided to shutils rmtree on error catch
+    Parameters
+    ----------
+    function
+        The function that raised the exception
+    path
+        Path name passed to function
+    excinfo
+        The exception information returned by sys.execinfo
+
+    Returns
+    -------
+
+    """
+    logger.error(excinfo)
+    return 1
+
+def clear_artic_data(job_master):
+    """
+    Clear the artic files from the system drive
+    Parameters
+    ----------
+    job_master: reads.models.JobMaster
+        The job master ORM object of the track artic job
+    Returns
+    -------
+    exit_code: int
+        0 if successful, 1 if not
+    """
+    environmental_results_directory = get_env_variable("MT_ARTIC_RESULTS_DIR")
+    results_dir = Path(
+        f"{environmental_results_directory}/artic/Temp_results/{job_master.flowcell.id}_{job_master.id}_artic"
+    )
+    if not results_dir.exists():
+        exit_code = 1
+    else:
+        rmtree(results_dir, onerror=on_delete_error)
+        return 0
 
 
 @task()
@@ -35,6 +79,12 @@ def delete_flowcell(flowcell_job_id):
     logger.info(
         "Flowcell id: {} - Deleting flowcell {}".format(flowcell.id, flowcell.name)
     )
+
+    JobMaster.objects.filter(flowcell=flowcell).update(complete=True)
+    # Clear Artic data away
+    for job in JobMaster.objects.filter(job_type__name="Track Artic Coverage", flowcell=flowcell):
+        clear_artic_data(job)
+
     # Get the last FastQRead object, wayyy faster than count
     last_fastq_read = FastqRead.objects.filter(flowcell=flowcell).last()
     # if we have both a first and last read PK

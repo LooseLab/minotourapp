@@ -1,7 +1,6 @@
 function requestData(flowcell_id) {
     console.log("Requesting data");
     var selected_barcode = getSelectedBarcode("Metagenomics");
-    console.log(selected_barcode)
     var flowcell_id = flowcell_id;
 
     var url_run = '/api/v1/flowcells/' + flowcell_id + '/';
@@ -18,16 +17,16 @@ function requestData(flowcell_id) {
             }
         }
 
-        var flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
+        var flowcellSelectedTabInput = getSelectedTab();
 
-        if (flowcell_selected_tab_input.value == 'nav-summary-data') {
+        if (flowcellSelectedTabInput == 'summary-data') {
             // if we are on the summary page - cal l requestRunDetail from the monitor app scope
             // appends the Run summary table HTML onto the summary page
             this.requestRunDetails(flowcell_id);
             //// append a messages html tableonto the messages div of the summaries tab
             requestMinknowMessages(flowcell_id, data);
 
-        } else if (flowcell_selected_tab_input.value == 'nav-tasks') {
+        } else if (flowcellSelectedTabInput == 'tasks') {
             // If we are on the tasks tab
             // Load the tasks form for selecting a task and reference and submitting a ne wtask
             loadTasksForm();
@@ -35,16 +34,16 @@ function requestData(flowcell_id) {
 
             this.flowcellTaskHistoryTable(flowcell_id);
 
-        } else if (flowcell_selected_tab_input.value == 'nav-reads') {
+        } else if (flowcellSelectedTabInput == 'reads') {
 
             requestReadData(flowcell_id);
 
-        } else if (flowcell_selected_tab_input.value == 'nav-live-event-data') {
+        } else if (flowcellSelectedTabInput == 'live-event-data') {
 
             // this.requestRunDetails(flowcell_id);
             this.requestLiveRunStats(flowcell_id);
 
-        } else if (flowcell_selected_tab_input.value == 'nav-metagenomics') {
+        } else if (flowcellSelectedTabInput == 'metagenomics') {
             // The intervals for updating the charts are found in the individual files in the vis-d3 directory
             // SO you are on the Metagenomics tab, congratulations!
             let addBarcodes = this.addMetaBarcodeTabs.bind(this);
@@ -78,18 +77,18 @@ function requestData(flowcell_id) {
             });
 
 
-        } else if (flowcell_selected_tab_input.value == 'nav-sequence-mapping') {
+        } else if (flowcellSelectedTabInput == 'sequence-mapping') {
             this.requestPafData(flowcell_id);
 
-        } else if (flowcell_selected_tab_input.value == 'nav-advanced-sequence-mapping') {
+        } else if (flowcellSelectedTabInput == 'advanced-sequence-mapping') {
             // this.requestAdvancedPafData(flowcell_id);
             this.drawReadUntilCharts();
 
-        } else if (flowcell_selected_tab_input.value == 'nav-sequence-assembly') {
+        } else if (flowcellSelectedTabInput == 'sequence-assembly') {
 
             this.requestGfaData(flowcell_id);
 
-        } else if (flowcell_selected_tab_input.value == "nav-notifications") {
+        } else if (flowcellSelectedTabInput == "notifications") {
             notificationsController.getReferencesForDataList();
         }
 

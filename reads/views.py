@@ -129,16 +129,15 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
         )
         df["status"] = np.where(df["status"] == "True", "Pass", "Fail")
         total_read_count = df["read_count"].sum()
-        # gb = df.groupby(["barcode_name", "rejection_status", "status"])
-        # df = df.set_index(["barcode_name", "rejection_status", "status"])
-        # df["data"] = round(gb["read_count"].sum() / total_read_count * 100, 2)
-        # df = df.reset_index()
         df["data"] = round(df["read_count"] / total_read_count * 100, 2)
         df["name"] = df["barcode_name"]
         categories = df["name"].unique().tolist()
-
-        listy = list()
-
+        no_fail_pass_df = df[(df["status"] == "Pass") & (~df["barcode_name"].isin(df[df["status"] == "Fail"]["barcode_name"].values))]
+        no_fail_pass_df["status"] = "Fail"
+        no_fail_pass_df["data"] = 0
+        df = df.append(no_fail_pass_df)
+        df = df.sort_values("barcode_name")
+        listy = []
         for name, group in df.groupby("status"):
             listy.append({"name": name, "data": group["data"].values.tolist()})
 
@@ -146,7 +145,7 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
 
         return Response(listy, status=status.HTTP_200_OK)
 
-    return Response("Not a barcoded run", status=status.HTTP_204_NO_CONTENT)
+    return Response("Not a barcoded run.", status=status.HTTP_204_NO_CONTENT)
 
 @api_view(["GET"])
 def flowcell_barcodes_list(request):
@@ -2118,7 +2117,7 @@ def flowcell_run_basecalled_summary_html(request, pk):
     return render(
         request,
         "reads/flowcell_run_basecalled_summary.html",
-        {"result_basecalled_summary": result_basecalled_summary},
+        context={"result_basecalled_summary": result_basecalled_summary},
     )
 
 
