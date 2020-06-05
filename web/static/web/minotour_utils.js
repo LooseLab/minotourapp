@@ -7,12 +7,19 @@ Highcharts.setOptions({
     }
 });
 
+/**
+ * Check if the tab for a controller is displayed to the user.
+ */
+function checkTabIsDisplayed(tabName, tabs) {
+    return tabs.includes(tabName);
+}
+
 
 /**
  * Get the selected flowcell tab
  */
 function getSelectedTab(){
-    return sessionStorage.getItem("flowcellTab")
+    return sessionStorage.getItem("flowcellTab");
 }
 
 /**
@@ -35,7 +42,7 @@ function setSelectedFlowcell(flowcellId) {
  * Return the selected Flowcell from the hidden input.
  */
 function getSelectedFlowcell() {
-    return sessionStorage.getItem("flowcellId")
+    return sessionStorage.getItem("flowcellId");
 }
 
 
@@ -45,7 +52,7 @@ function getSelectedFlowcell() {
  * @returns {string} Barcode name for this tab.
  */
 function getSelectedBarcode(tab) {
-    return sessionStorage.getItem(`${tab}-barcode`)
+    return sessionStorage.getItem(`${tab}-barcode`);
 }
 
 /**
@@ -85,7 +92,7 @@ function checkHighChartsDataIsNew(newChartData, oldChartData){
 
     // compare old data with new data
     identical = flattenedNewData.length === flattenedOldData.length && flattenedNewData.every((value, index) => value === flattenedOldData[index]);
-    return identical
+    return identical;
 }
 
 /**
