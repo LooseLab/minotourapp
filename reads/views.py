@@ -132,7 +132,8 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
         df["data"] = round(df["read_count"] / total_read_count * 100, 2)
         df["name"] = df["barcode_name"]
         categories = df["name"].unique().tolist()
-        no_fail_pass_df = df[(df["status"] == "Pass") & (~df["barcode_name"].isin(df[df["status"] == "Fail"]["barcode_name"].values))]
+        no_fail_pass_df = df[
+            (df["status"] == "Pass") & (~df["barcode_name"].isin(df[df["status"] == "Fail"]["barcode_name"].values))]
         no_fail_pass_df["status"] = "Fail"
         no_fail_pass_df["data"] = 0
         df = df.append(no_fail_pass_df)
@@ -146,6 +147,7 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
         return Response(listy, status=status.HTTP_200_OK)
 
     return Response("Not a barcoded run.", status=status.HTTP_204_NO_CONTENT)
+
 
 @api_view(["GET"])
 def flowcell_barcodes_list(request):
@@ -336,8 +338,8 @@ def fastq_file(request, pk):
 
         run = (
             Run.objects.filter(runid=request.data["runid"])
-            .filter(owner=request.user)
-            .first()
+                .filter(owner=request.user)
+                .first()
         )
 
         obj, created = FastqFile.objects.get_or_create(
@@ -376,9 +378,9 @@ def run_list(request):
 
         for flowcell in Flowcell.objects.all():
             if (
-                request.user == flowcell.owner
-                or request.user.has_perm("view_data", flowcell)
-                or request.user.has_perm("run_analysis", flowcell)
+                    request.user == flowcell.owner
+                    or request.user.has_perm("view_data", flowcell)
+                    or request.user.has_perm("run_analysis", flowcell)
             ):
                 flowcell_list.append(flowcell)
 
@@ -429,9 +431,9 @@ def run_detail(request, pk):
 
     for flowcell in Flowcell.objects.all():
         if (
-            request.user == flowcell.owner
-            or request.user.has_perm("view_data", flowcell)
-            or request.user.has_perm("run_analysis", flowcell)
+                request.user == flowcell.owner
+                or request.user.has_perm("view_data", flowcell)
+                or request.user.has_perm("run_analysis", flowcell)
         ):
             flowcell_list.append(flowcell)
 
@@ -567,8 +569,8 @@ def active_minion_list(request):
             ) - datetime.timedelta(minutes=5)
 
             if (
-                last_minion_event.event.name != "unplugged"
-                and minion.currentdetails.last_modified > five_minute_check
+                    last_minion_event.event.name != "unplugged"
+                    and minion.currentdetails.last_modified > five_minute_check
             ):
 
                 if minion.currentdetails.minKNOW_status in [
@@ -707,7 +709,7 @@ def minion_messages_list(request, pk):
 #     return Response(serializer.data)
 
 
-@api_view(["GET"],)
+@api_view(["GET"], )
 def recentminion_messages_list(request, pk):
     queryset = MinionMessage.objects.filter(minION=pk).filter(
         minKNOW_message_timestamp__gte=timezone.now() - datetime.timedelta(hours=24)
@@ -744,7 +746,7 @@ def minknow_message_html(request, pk):
     return render(request, "reads/minknow_messages.html", {"message_list": messages})
 
 
-@api_view(["GET", "POST"],)
+@api_view(["GET", "POST"], )
 def minION_control_list(request, pk):
     """
     TODO describe function
@@ -767,7 +769,7 @@ def minION_control_list(request, pk):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(["GET", "POST"],)
+@api_view(["GET", "POST"], )
 def minION_control_update(request, pk, checkid):
     """
     TODO describe function
@@ -793,7 +795,7 @@ def minION_control_update(request, pk, checkid):
 
 
 @api_view(
-    ["GET",]
+    ["GET", ]
 )
 def minION_currentrun_list(request, pk):
     """
@@ -1427,7 +1429,7 @@ def flowcell_detail(request, pk):
             for f in all_flowcell_list:
 
                 if request.user.has_perm("view_data", f) or request.user.has_perm(
-                    "run_analysis", f
+                        "run_analysis", f
                 ):
 
                     if search_criteria == "id":
@@ -1568,8 +1570,8 @@ def flowcell_basecalled_summary_html(request, pk):
     # and creating the columns for the results
     df2 = (
         df[df["barcode_name"].eq("All reads")]
-        .groupby(["barcode_name", "read_type_name", "rejection_status"])
-        .agg(agg)
+            .groupby(["barcode_name", "read_type_name", "rejection_status"])
+            .agg(agg)
     )
 
     df2 = df2.reset_index()
@@ -1582,8 +1584,8 @@ def flowcell_basecalled_summary_html(request, pk):
     # Same aggregations on other barcodes
     df2 = (
         df[df["barcode_name"].ne("All reads")]
-        .groupby(["barcode_name", "read_type_name", "rejection_status"])
-        .agg(agg)
+            .groupby(["barcode_name", "read_type_name", "rejection_status"])
+            .agg(agg)
     )
 
     if df2.shape[0] > 0:
@@ -1632,10 +1634,10 @@ def flowcell_statistics(request, pk):
     """
     queryset = (
         FlowcellStatisticBarcode.objects.filter(flowcell=flowcell)
-        .filter(
+            .filter(
             Q(barcode_name__in=barcodes_list) | Q(rejection_status__in=barcodes_list)
         )
-        .order_by("sample_time")
+            .order_by("sample_time")
     )
 
     df = pd.DataFrame(
@@ -1685,13 +1687,13 @@ def flowcell_statistics(request, pk):
     )["total_length"].apply(lambda x: x.cumsum())
 
     df3["key"] = (
-        df3["barcode_name"].astype("str")
-        + " - "
-        + df3["read_type_name"].astype("str")
-        + " - "
-        + df3["read_type"].astype("str")
-        + " - "
-        + df3["rejection_status"].astype("str")
+            df3["barcode_name"].astype("str")
+            + " - "
+            + df3["read_type_name"].astype("str")
+            + " - "
+            + df3["read_type"].astype("str")
+            + " - "
+            + df3["rejection_status"].astype("str")
     )
 
     df3["average_quality"] = (
@@ -1843,8 +1845,8 @@ def flowcell_histogram_summary(request, pk):
 
     max_bin_index = (
         FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-        .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
-        .aggregate(Max("bin_index"))
+            .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
+            .aggregate(Max("bin_index"))
     )
     # create the categories for the x asis, they are the bins * the bin width (default 1000)
     categories = list(
@@ -1862,9 +1864,9 @@ def flowcell_histogram_summary(request, pk):
     # A list of tuples, distinct on barcode name, pass/fail, template
     key_list = (
         FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-        .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
-        .values_list("barcode_name", "read_type_name", "rejection_status", "status")
-        .distinct()
+            .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
+            .values_list("barcode_name", "read_type_name", "rejection_status", "status")
+            .distinct()
     )
 
     chart_data = defaultdict(list)
@@ -1873,11 +1875,11 @@ def flowcell_histogram_summary(request, pk):
         # query flowcell Histogram summary objects for all of the combinations under this barcode
         histogram_queryset = (
             FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-            .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
-            .filter(read_type_name=read_type_name)
-            .filter(status=is_pass)
-            .filter(rejection_status=rejection_status)
-            .order_by("bin_index")
+                .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
+                .filter(read_type_name=read_type_name)
+                .filter(status=is_pass)
+                .filter(rejection_status=rejection_status)
+                .order_by("bin_index")
         )
         # make a list of 0s one element for each bin
         result_read_count_sum = np.zeros(
@@ -1929,17 +1931,17 @@ def flowcell_histogram_summary(request, pk):
 
             result_collect_read_count_sum = list(
                 (
-                    -pd.concat(
-                        [
-                            pd.Series([0]),
-                            pd.Series(result_collect_read_count_sum).replace(
-                                to_replace=0, method="ffill"
-                            ),
-                        ]
-                    )
-                    + pd.Series(result_collect_read_count_sum)
-                    .replace(to_replace=0, method="ffill")
-                    .max()
+                        -pd.concat(
+                            [
+                                pd.Series([0]),
+                                pd.Series(result_collect_read_count_sum).replace(
+                                    to_replace=0, method="ffill"
+                                ),
+                            ]
+                        )
+                        + pd.Series(result_collect_read_count_sum)
+                        .replace(to_replace=0, method="ffill")
+                        .max()
                 )
                 / total_reads_count
                 * 100
@@ -1947,17 +1949,17 @@ def flowcell_histogram_summary(request, pk):
 
             result_collect_read_length_sum = list(
                 (
-                    -pd.concat(
-                        [
-                            pd.Series([0]),
-                            pd.Series(result_collect_read_length_sum).replace(
-                                to_replace=0, method="ffill"
-                            ),
-                        ]
-                    )
-                    + pd.Series(result_collect_read_length_sum)
-                    .replace(to_replace=0, method="ffill")
-                    .max()
+                        -pd.concat(
+                            [
+                                pd.Series([0]),
+                                pd.Series(result_collect_read_length_sum).replace(
+                                    to_replace=0, method="ffill"
+                                ),
+                            ]
+                        )
+                        + pd.Series(result_collect_read_length_sum)
+                        .replace(to_replace=0, method="ffill")
+                        .max()
                 )
                 / total_reads_length
                 * 100
@@ -1970,10 +1972,10 @@ def flowcell_histogram_summary(request, pk):
                 {"name": series_name, "data": result_read_length_sum}
             )
             chart_data["collect_read_count"].append(
-                {"name": series_name, "data": result_collect_read_count_sum,}
+                {"name": series_name, "data": result_collect_read_count_sum, }
             )
             chart_data["collect_read_length"].append(
-                {"name": series_name, "data": result_collect_read_length_sum,}
+                {"name": series_name, "data": result_collect_read_length_sum, }
             )
 
     return Response({"data": chart_data, "categories": categories})
@@ -2313,16 +2315,15 @@ def flowcell_tabs_list(request, pk):
 
     # TODO add an actual check here
     if JobMaster.objects.filter(
-        flowcell__id=pk, job_type__name="Track Artic Coverage"
+            flowcell__id=pk, job_type__name="Track Artic Coverage"
     ).last():
         if (
-            JobMaster.objects.filter(
-                flowcell__id=pk, job_type__name="Track Artic Coverage"
-            )
-            .last()
-            .read_count
+                JobMaster.objects.filter(
+                    flowcell__id=pk, job_type__name="Track Artic Coverage"
+                )
+                        .last()
+                        .read_count
         ):
-
             tabs.append("artic")
 
     return Response(tabs)
@@ -2465,13 +2466,13 @@ def read_list_new(request):
 
         if search_criteria == "run":
 
-            qs = FastqRead.objects.filter(run__id=search_value)[offset : offset + limit]
+            qs = FastqRead.objects.filter(run__id=search_value)[offset: offset + limit]
 
         elif search_criteria == "fastqfile":
 
             qs = FastqRead.objects.filter(fastqfile_id=search_value)[
-                offset : offset + limit
-            ]
+                 offset: offset + limit
+                 ]
 
         else:
 
@@ -2624,7 +2625,7 @@ def flowcell_sharing(request, pk):
             return Response(
                 {
                     "message": "User already has permission. If you want to change the permission"
-                    " level, delete the current permission first."
+                               " level, delete the current permission first."
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
@@ -2710,7 +2711,7 @@ def flowcell_sharing_delete(request, pk):
 
 
 @api_view(["GET", "POST"])
-def get_or_create_tasks(request):
+def job_master_list(request):
     """
     API endpoint for dealing with fetching or creating new JobMasters
     :param request: The django rest framework request body - if a GET request should contain
@@ -2774,8 +2775,8 @@ def get_or_create_tasks(request):
             )
 
         if (
-            not request.user.has_perm("run_analysis", flowcell)
-            and not request.user == flowcell.owner
+                not request.user.has_perm("run_analysis", flowcell)
+                and not request.user == flowcell.owner
         ):
             return Response(
                 {
@@ -2787,12 +2788,9 @@ def get_or_create_tasks(request):
         # Check to see if we have a string as the flowcell, not an Int for a PK based lookup
         # This is for starting a job from the client
 
-        # If the job isn't EB or minimap2
+        # If the job isn't EB or minimap2 or artic
         if int(request.data["job_type"]) not in [4, 15, 16]:
-
             request.data["reference"] = None
-
-            # Serialise the data to a Django savable object
             # Hard set the covid reference
         if int(request.data["job_type"]) == 16:
             print("we are setting covid reference")
@@ -2804,7 +2802,6 @@ def get_or_create_tasks(request):
             "reference" in request.data.keys()
             and type(request.data["reference"]) is str
         ):
-
             try:
                 # If a reference hasn't been selected.
                 if request.data["reference"] is "":
@@ -2812,44 +2809,24 @@ def get_or_create_tasks(request):
                         "Reference does not exist - Please select a reference",
                         status=400,
                     )
-
-                # Try to get the reference by name
-                reference = ReferenceInfo.objects.get(name=request.data["reference"])
-
+                reference = ReferenceInfo.objects.get(
+                    Q(name=request.data["reference"])
+                    | Q(pk=int(request.data["reference"]))
+                )
                 request.data["reference"] = reference.id
-
             except ReferenceInfo.DoesNotExist as e:
-
-                try:
-
-                    reference = ReferenceInfo.objects.get(
-                        pk=int(request.data["reference"])
-                    )
-
-                    request.data["reference"] = reference.id
-
-                except ReferenceInfo.DoesNotExist:
-
-                    print("Exception: {}".format(e))
-
-                    return Response(
-                        "Reference not found Please contact server admin", status=500
-                    )
-
-        print(request.data)
+                print("Exception: {}".format(e))
+                return Response(
+                    "Reference not found Please contact server admin", status=500
+                )
         serializer = JobMasterInsertSerializer(data=request.data)
-
         # If the serialiser is valid
         if serializer.is_valid():
-
             task = serializer.save()
-
             response_data = {"message": "Task created successfully!", "pk": task.id}
-
             return JsonResponse(response_data)
 
         else:
-
             return JsonResponse({"error_messages": serializer.errors}, status=500)
 
 
@@ -2888,14 +2865,14 @@ def task_control(request):
     :param request: Request object, contains the Id of the task keyed to flowcellJobId
     :return: A status reflecting the state of the executed code
     """
-    # TODO rewrite right now!!
+    # TODO rewrite right now!! MAKE CHILDREN CRY
     # Get the task object from django ORM
 
     job_master = JobMaster.objects.get(pk=request.data["flowcellJobId"])
 
     if not (
-        request.user == job_master.flowcell.owner
-        or request.user.has_perm("run_analysis", job_master.flowcell)
+            request.user == job_master.flowcell.owner
+            or request.user.has_perm("run_analysis", job_master.flowcell)
     ):
         return Response(
             "You do not have permission to perform this action.", status=403
