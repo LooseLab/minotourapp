@@ -1,5 +1,5 @@
 class MSharingController {
-    /*
+    /* TODO rewrite and redocument all this
     Create a sharing controller that is in charge of fetching and creating new user permissions on flowcells - used on the sharing-tab.html page
     */
 
