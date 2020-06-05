@@ -4,17 +4,17 @@ class FlowcellTabController {
      */
     constructor(flowcellId) {
         this._flowcellId = flowcellId;
-        this._tabs = new FlowcellTabList();
         this._flowcellServices = new FlowcellService();
-        this.drawTabs();
-        this.createElementLookupObjects();
+        this._drawTabs();
+        this.tabs = [];
+        this._createElementLookupObjects();
         this._redraw_interval = setInterval(() => this.redrawTabs(), 30000);
     }
 
     /**
      * Create a object that has all the tabs and nav HTML objects keyed to the elements ID attribute
      */
-    createElementLookupObjects() {
+    _createElementLookupObjects() {
         let that = this
         this.lookupElement = {}
         $(".flowcell-tab-ctl").each((i, obj) => {
@@ -25,7 +25,7 @@ class FlowcellTabController {
     /**
      * Draw the tabs for the first time on the flowcell index.html page, then show one tab of data
      */
-    drawTabs() {
+    _drawTabs() {
         let promise = this._flowcellServices.getFlowcellTabs(this._flowcellId);
 
         promise.then((tabs) => {
@@ -46,6 +46,7 @@ class FlowcellTabController {
         let promise = this._flowcellServices.getFlowcellTabs(this._flowcellId);
 
         promise.then((tabs) => {
+            this.tabs = tabs;
             this.showTabs(tabs);
         });
     }
