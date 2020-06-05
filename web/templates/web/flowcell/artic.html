@@ -20,79 +20,83 @@
     </div>
 </div>
 <div class="card card-primary card-outline">
-  <div class="card-header">
-    <h4 class="card-title">
+    <div class="card-header">
+        <h4 class="card-title">
             <i class="fas fa-chart-bar"></i>
             Summary Table
         </h4>
-  </div>
-  <div class="card-body">
-    <div class="col-md-12">
-                    <table class="table table-hover" id="artic-coverage-summary-table" style="width: 100%">
-                        <thead>
-                        <tr>
-                            <th>Barcode</th>
-                            <th>Sequence Name</th>
-                            <th>Sequence Length</th>
-                            <th>Read Count</th>
-                            <th>Yield</th>
-                            <th>Average Read Length</th>
-                            <th>Coverage</th>
-                        </tr>
-                        </thead>
-                        <tfoot>
-                        <tr>
-                            <th>Barcode</th>
-                            <th>Sequence Name</th>
-                            <th>Sequence Length</th>
-                            <th>Read Count</th>
-                            <th>Yield</th>
-                            <th>Average Read Length</th>
-                            <th>Coverage</th>
-                        </tr>
-                        </tfoot>
-                    </table>
-                </div>
-  </div>
+    </div>
+    <div class="card-body">
+        <div class="col-md-12">
+            <table class="table table-hover" id="artic-coverage-summary-table" style="width: 100%">
+                <thead>
+                <tr>
+                    <th>Barcode</th>
+                    <th>Sequence Name</th>
+                    <th>Sequence Length</th>
+                    <th>Read Count</th>
+                    <th>Yield</th>
+                    <th>Average Read Length</th>
+                    <th>Coverage</th>
+                    <th>Percent Bases at 200x</th>
+                    <th>Percent Bases at 250x</th>
+                    <th>Sufficient Coverage</th>
+                </tr>
+                </thead>
+                <tfoot>
+                <tr>
+                    <th>Barcode</th>
+                    <th>Sequence Name</th>
+                    <th>Sequence Length</th>
+                    <th>Read Count</th>
+                    <th>Yield</th>
+                    <th>Average Read Length</th>
+                    <th>Coverage</th>
+                    <th>Percent Bases at 200x</th>
+                    <th>Percent Bases at 250x</th>
+                    <th>Sufficient Coverage</th>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
 </div>
 
 <div class="row">
     <div class="col-sm-8">
-<div class="h-100 card card-primary card-outline">
-  <div class="card-header">
-    <h4 class="card-title">
-            <i class="fas fa-chart-bar"></i>
-            Coverage Plots
-        </h4>
-  </div>
-  <div class="card-body">
-                    <select name="select-artic-barcode" id="select-artic-barcode">
+        <div class="h-100 card card-primary card-outline">
+            <div class="card-header">
+                <h4 class="card-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Coverage Plots
+                </h4>
+            </div>
+            <div class="card-body">
+                <select name="select-artic-barcode" id="select-artic-barcode">
 
-                    </select>
-                </div>
-                <div class="row">
-                    <div class="col-md-12">
-                        <div id="coverageArticDetail" style="height: 400px">
-                        </div>
-                    </div>
-                    <div class="col-md-12">
-                        <div id="coverageArticMaster">
-                        </div>
+                </select>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div id="coverageArticDetail" style="height: 400px">
                     </div>
                 </div>
-</div>
-    </div>
-    <div class="col-sm-4">
-<div class="h-100 card card-primary card-outline">
-                <h4 class="card-header">Placeholder</h4>
-                <div class="card-body ">
-                    <div class="col-md-12">
-                        <div id="articMetaInfo">
-                        </div>
+                <div class="col-md-12">
+                    <div id="coverageArticMaster">
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+    <div class="col-sm-4">
+        <div class="h-100 card card-primary card-outline">
+            <div id="articMetaInfo">
+                <h4 class="card-header">Barcode Metadata</h4>
+                <div class="card-body ">
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 
