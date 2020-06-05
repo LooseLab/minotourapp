@@ -323,7 +323,7 @@ def get_artic_column_chart_data(request):
 
     try:
         return_data = defaultdict(list)
-        queryset = PafSummaryCov.objects.filter(job_master__id=227).values_list("barcode_name", "average_read_length", "coverage")
+        queryset = PafSummaryCov.objects.filter(job_master__id=artic_task.id).values_list("barcode_name", "average_read_length", "coverage")
         for barcode, read_length, coverage in queryset:
             return_data["barcodes"].append(barcode)
             return_data["average_read_length"].append(read_length)
