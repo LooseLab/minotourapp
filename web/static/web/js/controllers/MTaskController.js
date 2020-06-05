@@ -1,5 +1,5 @@
 class MTaskController {
-    /*
+    /* TODO rewrite and redocument
     Create a task controller that is in charge of fetching and creating new tasks - used on the task-tab.html page,
      separate from Javascript that creates the drop-downs themselves
      */
