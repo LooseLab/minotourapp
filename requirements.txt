@@ -1,7 +1,7 @@
 numpy
 wheel
 watchdog
-django==2.2.8
+django==2.2.13
 django-filter
 django-mailgun
 djangorestframework
