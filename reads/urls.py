@@ -265,7 +265,7 @@ urlpatterns = [
         name="task-types-list"),
     url(
         r'^api/v1/tasks/$',
-        views.get_or_create_tasks,
+        views.job_master_list,
         name='task_list'
     ),
     # TODO web only
