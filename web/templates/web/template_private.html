@@ -83,7 +83,8 @@
     <script>
         // offset body to account for navbar stickyness, which pulls navbar out of DOM
         let heighty = $("#tn").css("height")
-        $("body").css("padding-top", heighty)
+        let windowHeight = $(document).height()
+        $("body").css({"padding-top": heighty, "min-height": `${windowHeight}px`})
     </script>
 
 
