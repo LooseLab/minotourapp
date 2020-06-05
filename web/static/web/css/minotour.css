@@ -562,3 +562,13 @@ line-height: 1.5;
 .admin-warning{
     padding-top: 7px;
 }
+.footer{
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    height: 60px;
+    line-height: 60px;
+}
+.finished-pipeline{
+        background-color: #8fea8f;
+}
