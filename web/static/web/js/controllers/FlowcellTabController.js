@@ -7,8 +7,17 @@ class FlowcellTabController {
         this._flowcellServices = new FlowcellService();
         this._drawTabs();
         this.tabs = [];
+        this._first = true;
         this._createElementLookupObjects();
         this._redraw_interval = setInterval(() => this.redrawTabs(), 30000);
+    }
+
+    /**
+     * Check that the given tab name is included in the shown tabs.
+     * @param tabName {string} Name of the tab to check
+     */
+    checkTabIsPresent(tabName){
+        return this.tabs.includes(tabName)
     }
 
     /**
@@ -32,22 +41,13 @@ class FlowcellTabController {
 
             let seshTab = getSelectedTab();
             // We are getting the previous tab here and checking it still is available. If it is we show it.
-            let activeTab = seshTab !== null && tabs.includes(seshTab) ? seshTab : "summary-data";
             this.showTabs(tabs);
-            this.toggleTabContent(activeTab);
-        });
-    }
-
-    /**
-     * @function Update the tabs on the flowcell index page to include any new tabs sent from the server
-     */
-    redrawTabs() {
-        console.log("redrawing tabs");
-        let promise = this._flowcellServices.getFlowcellTabs(this._flowcellId);
-
-        promise.then((tabs) => {
-            this.tabs = tabs;
-            this.showTabs(tabs);
+            this.tabs=tabs;
+            if (this._first){
+                let activeTab = seshTab !== null && tabs.includes(seshTab) ? seshTab : "summary-data";
+                this.toggleTabContent(activeTab);
+                this._first=false;
+            }
         });
     }
 
