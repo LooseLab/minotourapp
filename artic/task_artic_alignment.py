@@ -29,6 +29,35 @@ logger = get_task_logger(__name__)
 
 # TODO split artic task into a sexy chain, rather than blocking a worker for so long
 
+@task()
+def run_pangolin_command(base_results_directory, barcode_name, job_master_pk):
+    """
+
+    Returns
+    -------
+
+    """
+    jm = JobMaster.objects.get(pk=job_master_pk)
+    os.chdir(f"{base_results_directory}/{barcode_name}")
+    cmd = [
+        "bash",
+        "-c",
+        f"source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate pangolin && pangolin -p --write-tree {barcode_name}.consensus.fasta",
+    ]
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    out, err = proc.communicate()
+    if not out and err:
+        logger.info("We are done here. Pangolin out!")
+        logger.info(out)
+        logger.info(err)
+    else:
+        logger.info("¯\_(ツ)_/¯")
+        logger.warning(str(out))
+        logger.warning(err)
+    #if out and err:
+    #    raise Exception(out)
+
 
 @task()
 def run_artic_command(base_results_directory, barcode_name, job_master_pk):
@@ -74,7 +103,9 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         logger.warning(str(out))
         logger.warning(err)
     if out and err:
-        raise out
+        raise Exception(err)
+
+    run_pangolin_command(base_results_directory,barcode_name,job_master_pk)
 
     jm = JobMaster.objects.get(pk=job_master_pk)
     jm.running = False
