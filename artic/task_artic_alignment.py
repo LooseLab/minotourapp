@@ -27,19 +27,44 @@ from readuntil.functions_EB import *
 logger = get_task_logger(__name__)
 
 
-# TODO split artic task into a sexy chain, rather than blocking a worker for so long
-def clear_unused_artic_files(artic_results_path):
+# TODO split artic task into a sexy chain, rather than blocking a worker for so long, start here
+def clear_unused_artic_files(artic_results_path, sample_name):
     """
     Clear the leftover files from the artic command from the directory, gzip remaining files
     Parameters
     ----------
     artic_results_path: str
         Path to directory that artic results were produced in.
+    sample_name: str
+        The sample name provided to the artic command. Assume the barcode name.
     Returns
     -------
     None
     """
-    logger.debug(f"Clearing non necessary results for {artic_results_path}")
+    logger.info(
+        f"Clearing non necessary results for {artic_results_path} for sample name {sample_name}"
+    )
+    files_to_keep = [
+        ".pass.vcf",
+        ".fail.vcf",
+        "-barplot.png",
+        "-boxplot.png",
+        ".consensus.fasta",
+        ".fastq",
+        ".counts.dat",
+        ".coverage.dat",
+    ]
+    files_to_keep_full = []
+    files_to_keep_full.extend([f"{sample_name}{filey}" for filey in files_to_keep])
+    files_to_keep_full.extend([f"{el}.gz" for el in files_to_keep_full])
+    artic_results_pathlib = Path(artic_results_path)
+    for filey in artic_results_pathlib.iterdir():
+        if f"{filey.stem}{filey.suffix}" not in files_to_keep_full:
+            filey.unlink()
+        elif not filey.suffix == ".gz" or not filey.suffix == ".dat":
+            logger.info("Gzipping file")
+            subprocess.Popen(["gzip", "-9", str(filey)]).communicate()
+    logger.info(f"Tidied files for {sample_name}")
 
 
 @task()
@@ -86,11 +111,10 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         raise out
     # Update the Barcode Metadata to show the task has been run on this barcode
     ArticBarcodeMetadata.objects.filter(
-        flowcell=jm.flowcell,
-        job_master=jm,
-        barcode__name=barcode_name).update(has_finished=True)
+        flowcell=jm.flowcell, job_master__job_type__id=16, barcode__name=barcode_name
+    ).update(has_finished=True)
 
-    clear_unused_artic_files(f"{base_results_directory}/{barcode_name}")
+    clear_unused_artic_files(f"{base_results_directory}/{barcode_name}", barcode_name)
     jm = JobMaster.objects.get(pk=job_master_pk)
     jm.running = False
     jm.complete = True
@@ -238,7 +262,7 @@ def make_results_directory_artic(flowcell_id, task_id, allow_create=True):
 
 
 def populate_reference_count(
-        reference_count_dict, fp, master_reference_count_path,
+    reference_count_dict, fp, master_reference_count_path,
 ):
     """
     Populate the reference count dict so we can write it out with counts
@@ -299,7 +323,14 @@ def replicate_counts_array_barcoded(barcode_names, counts_dict):
 
 
 def save_artic_barcode_metadata_info(
-        coverage, flowcell, job_master, run_id, barcode_name, percent200x, percent250x, has_sufficient_coverage
+    coverage,
+    flowcell,
+    job_master,
+    run_id,
+    barcode_name,
+    percent200x,
+    percent250x,
+    has_sufficient_coverage,
 ):
     """
     Save the artic metadata info for this barcode.
@@ -381,7 +412,7 @@ def save_artic_barcode_metadata_info(
             "percentage_of_reads_in_barcode": round(proportion, 2),
             "percentage_bases_over_250x": round(percent250x, 2),
             "percentage_bases_over_200x": round(percent200x, 2),
-            "has_sufficient_coverage": has_sufficient_coverage
+            "has_sufficient_coverage": has_sufficient_coverage,
         },
     )
 
@@ -492,7 +523,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
 
         # Create the series that contains the read_id and sequence as a correctly formatted fasta string
         fasta_df_barcode["fasta"] = (
-                ">" + fasta_df_barcode["read_id"] + "\n" + fasta_df_barcode["sequence"]
+            ">" + fasta_df_barcode["read_id"] + "\n" + fasta_df_barcode["sequence"]
         )
         # Create one string formatted correctly for fasta with input data
         fasta_data = "\n".join(list(fasta_df_barcode["fasta"]))
@@ -575,24 +606,24 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             barcodes_with_mapped_results = set()
 
             for i, record in enumerate(
-                    parse_PAF(
-                        StringIO(paf),
-                        fields=[
-                            "qsn",
-                            "qsl",
-                            "qs",
-                            "qe",
-                            "rs",
-                            "tsn",
-                            "tsl",
-                            "ts",
-                            "te",
-                            "nrm",
-                            "abl",
-                            "mq",
-                            "tags",
-                        ],
-                    )
+                parse_PAF(
+                    StringIO(paf),
+                    fields=[
+                        "qsn",
+                        "qsl",
+                        "qs",
+                        "qe",
+                        "rs",
+                        "tsn",
+                        "tsl",
+                        "ts",
+                        "te",
+                        "nrm",
+                        "abl",
+                        "mq",
+                        "tags",
+                    ],
+                )
             ):
                 fastq_read = fastq_dict[record.qsn]
 
@@ -645,7 +676,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                 chromosomes_seen_now.add(chromosome.line_name)
 
                 # Parse the cigar string, on the path file record, returns a dictionary of bases, with numpy arrays
-                d = parse_cigar(record.tags.get("cg", None), sequence, mapping_length, )
+                d = parse_cigar(record.tags.get("cg", None), sequence, mapping_length,)
                 # Adds the mismatch count to the temporary dict, parsing the MD string
                 d["M"] = np.fromiter(parse_MD(record.tags.get("MD", None)), np.uint16)
 
@@ -654,7 +685,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     # add the counts for that base to the array that exists in the reference count dict for that base,
                     # at the correct location
                     barcoded_counts_dict[barcode_of_read][record.tsn][base][
-                    mapping_start:mapping_end
+                        mapping_start:mapping_end
                     ] += d[base].astype(reference_count_dict[record.tsn][base].dtype)
 
                 # TODO this needs to be reset, here we set the U to True to indicate that a count at this position
@@ -697,12 +728,12 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     barcode_sorted_fastq_path = Path(
                         f"{base_result_dir_path}/{barcode}/{barcode}.fastq"
                     )
-
+                    # TODO NOTE REMOVED CHROMOSOME FROM PATH SO WILL NOT WORK FOR MULTI CHROMOSOME DATA
                     coverage_path = Path(
-                        f"{base_result_dir_path}/{barcode}/coverage_{chrom_key}_{flowcell.id}_{task.id}_{barcode}.dat"
+                        f"{base_result_dir_path}/{barcode}/{barcode}.coverage.dat"
                     )
                     counts_path = Path(
-                        f"{base_result_dir_path}/{barcode}/counts_{chrom_key}_{flowcell.id}_{task.id}_{barcode}.dat"
+                        f"{base_result_dir_path}/{barcode}/{barcode}.counts.dat"
                     )
 
                     ############################################################################
@@ -789,7 +820,9 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                             f"Creating artic command job_master here for barcode {barcode}"
                         )
                         add_barcode_to_tofire_file(barcode, base_result_dir_path)
-                        save_artic_command_job_masters(flowcell, barcode, reference_info)
+                        save_artic_command_job_masters(
+                            flowcell, barcode, reference_info
+                        )
                         has_sufficient_coverage = True
                     elif percent_250x >= 95:
 
@@ -798,11 +831,20 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                             f"Creating artic command job_master here for barcode {barcode} due to 95% coverage reached"
                         )
                         add_barcode_to_tofire_file(barcode, base_result_dir_path)
-                        save_artic_command_job_masters(flowcell, barcode, reference_info)
+                        save_artic_command_job_masters(
+                            flowcell, barcode, reference_info
+                        )
                         has_sufficient_coverage = True
                     # save the artic per barcode metadata
                     save_artic_barcode_metadata_info(
-                        coverage, flowcell, task, run_id, barcode, percent_200x, percent_250x, has_sufficient_coverage
+                        coverage,
+                        flowcell,
+                        task,
+                        run_id,
+                        barcode,
+                        percent_200x,
+                        percent_250x,
+                        has_sufficient_coverage,
                     )
                 task.last_read = last_read
                 task.iteration_count += 1
