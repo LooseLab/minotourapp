@@ -60,7 +60,7 @@ class MTaskController {
 
 
     // Create a new event handler for when we submit a new job
-    create_new_job(event) {
+    createNewJob(event) {
         // prevent default behaviour
         event.preventDefault();
 
@@ -68,7 +68,7 @@ class MTaskController {
 
         console.log(this._select_job_type.value);
 
-        // If this is metagenomics - set the reference value to null and the target set id instead
+        // If this is metagenomics - set the reference value to null and the target set id
         if (this._select_job_type.value === "10") {
             // the target set text
             this._target_set = this._select_reference[this._select_reference.selectedIndex].text;
