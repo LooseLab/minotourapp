@@ -11,7 +11,7 @@ it contains references to the other controllers
         this._lastread = 0; // TODO this is a quick fix for the problem on the live data tab. we should refactor this soon.
     }
 
-    get flowcell_tab_controller() {
+    get flowcellTabController() {
         return this._flowcellTabController;
     }
 
