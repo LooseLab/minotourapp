@@ -411,7 +411,7 @@ class ArticController {
                 console.error(error)
             });
         }
-        this._setBarcodeMetaDataTable(flowcellId, barcodeChosen)
+        this._setBarcodeMetaDataHTMLTable(flowcellId, barcodeChosen)
     }
 
     /**
@@ -424,6 +424,10 @@ class ArticController {
         let coverageDetail;
         let flowcellId = that._flowcellId;
         let startData;
+        // If we don't have this tab, don't do all these calls.
+        // if (!flowcellController.flowcellTabController.checkTabIsPresent("artic")){
+        //     return
+        // }
         if (!Highcharts.Series.prototype.renderCanvas) {
             throw "Module not loaded";
         }
@@ -450,7 +454,7 @@ class ArticController {
             // Get the minimum and maximum values of the xAxis
             min = coverageDetail.xAxis[0].min;
             if (min !== undefined) {
-                that._setBarcodeMetaDataTable(flowcellId, that._barcodeChosen)
+                that._setBarcodeMetaDataHTMLTable(flowcellId, that._barcodeChosen)
                 that._drawSelectedBarcode(flowcellId, that._barcodeChosen)
             }
         }
@@ -466,8 +470,8 @@ class ArticController {
         if (!this._perBarcodeCoverageChart) {
             this._perBarcodeCoverageChart = makeColumnChart(
                 "artic-per-barcode-coverage",
-                "COVERAGE PER BARCODE",
-                "COVERAGE X"
+                "READ COUNTS PER BARCODE",
+                "READ COUNT"
             );
         }
         if (!this._perBarcodeAverageReadLengthChart) {
@@ -503,7 +507,7 @@ class ArticController {
             this._perBarcodeCoverageChart.update(options)
             this._perBarcodeAverageReadLengthChart.update(options)
             // we only need to check the one chart to know if both have data
-            indexInArray = chartSeriesCoverage.findIndex(obj => obj.name === "Mean Coverage");
+            indexInArray = chartSeriesCoverage.findIndex(obj => obj.name === "Read Counts");
             // See if we already have a series by this name, if we do update existing series // show loading on the chart.
             this._perBarcodeCoverageChart.showLoading(`<div class="spinner-border text-success" role="status">
                         <span class = "sr-only"> Loading...</span></div>`);
@@ -511,14 +515,14 @@ class ArticController {
                         <span class = "sr-only"> Loading...</span></div>`);
             if (indexInArray >= 0) {
                 // if the data is not new, i.e it is identical don't draw
-                if (checkHighChartsDataIsNew(data["coverage"], chartSeriesCoverage[indexInArray].options.data)) {
+                if (checkHighChartsDataIsNew(data["read_counts"], chartSeriesCoverage[indexInArray].options.data)) {
                     console.log("data is identical, don't draw")
                 } else {
-                    chartSeriesCoverage[indexInArray].setData(data["coverage"]);
+                    chartSeriesCoverage[indexInArray].setData(data["read_counts"]);
                     chartSeriesReadLength[indexInArray].setData(data["average_read_length"])
                 }
             } else { // Add the series
-                this._perBarcodeCoverageChart.addSeries({"name": "Mean Coverage", "data": data["coverage"]})
+                this._perBarcodeCoverageChart.addSeries({"name": "Read Counts", "data": data["read_counts"]})
                 this._perBarcodeAverageReadLengthChart.addSeries({
                     "name": "Average read length",
                     "data": data["average_read_length"]
@@ -545,10 +549,11 @@ class ArticController {
         } else {
             // else the datatable must be initialised
             datatableObj.DataTable({
-                    "createdRow": function (row, data, index) {
-                        console.log(row)
+                    "createdRow": (row, data, index) => {
                         console.log(data)
-                        if(data.has_finished){$(row).addClass("finished-pipeline");}
+                        if (data.has_finished) {
+                            $(row).addClass("finished-pipeline");
+                        }
 
                     },
                     "ajax": {
@@ -585,7 +590,7 @@ class ArticController {
      * @param selectedBarcode {string} The buser selected barcode in the drop down.
      * @private
      */
-    _setBarcodeMetaDataTable(flowcellId, selectedBarcode) {
+    _setBarcodeMetaDataHTMLTable(flowcellId, selectedBarcode) {
         this._axiosInstance.get("/api/v1/artic/barcode-metadata", {
             params: {
                 flowcellId,
@@ -604,14 +609,48 @@ class ArticController {
      * @param barcodeNameString {string} The primary key of the barcode that we want the data from.
      * @param event {obj} Event object created on trigger.
      */
-    manuallyTriggerPipeline(flowcellId, barcodeNameString, event){
+    manuallyTriggerPipeline(flowcellId, barcodeNameString, event) {
+        let jobTypeId = 17
         event.preventDefault()
         console.log(barcodeNameString.id)
-        let jobTypeId = 17
-        this._axiosInstance.post("/api/v1/artic/manual-trigger/" , {flowcellId, barcodeName: barcodeNameString.id, jobTypeId}).then(response=>{
+        this._axiosInstance.post("/api/v1/artic/manual-trigger/", {
+            flowcellId,
+            barcodeName: barcodeNameString.id,
+            jobTypeId
+        }).then(response => {
             console.log(response)
             let message = response.data
-        }).catch(error=>{
+        }).catch(error => {
+            console.error(error)
+        })
+    }
+
+    /**
+     * Submit the user choices from the modal to the server then offer the selected files as a .tar.gz
+     * @param flowcellId {number} Primary key of the flowcell
+     * @param selectedBarcode {string} The chosen barcode name
+     * @param event {obj} Auto generatee event object
+     */
+    buildResults(flowcellId, selectedBarcode, event) {
+        let data = {"string": $(".results-builder-form").serialize()}
+        event.preventDefault()
+        data["params"] = {flowcellId, selectedBarcode}
+        console.log($(".results-builder-form").serialize());
+        this._axiosInstance.get("/api/v1/artic/build-results/",
+            {
+                params: data,
+                Accept: 'application/gzip',
+                'Content-Type': 'application/gzip',
+                responseType: 'blob'
+            }).then(response => {
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', response.headers["x-file-name"]);
+            document.body.appendChild(link);
+            link.click();
+        }).
+        catch(error => {
             console.error(error)
         })
     }
