@@ -16,19 +16,35 @@ class BasecalledDataController {
         });
         this._barcodesHtmlListElement = $("#nav-tabs-barcodes");
         this.barcodesList = [];
+        this.chartsInitialised = false;
         this.barcodesElementsList = [];
         this._basecalledSummaryTable = null;
+        this.initialiseCharts(flowcellId, this._currentBarcode);
+    }
+
+    /**
+     * Initialise the base-called data charts.
+     * @param flowcellId {number} The primary key of the flowcell in the database.
+     * @param selectedBarcode {string} The starting barcode. Default is all reads.
+     */
+    initialiseCharts(flowcellId, selectedBarcode){
+        // We have no data for this tab.
+        if (!flowcellController.flowcellTabController.checkTabIsPresent("basecalled-data")){
+            return
+        }
         this._updateBarcodeNavTab(flowcellId);
         this._fetchSummaryDataHtmlTable(flowcellId);
         this._createHistogramCharts(flowcellId, this._currentBarcode);
         this._createBaseCalledReadCharts(flowcellId, this._currentBarcode);
         this._createFlowcellHeatMaps(flowcellId);
         this._createBarcodeProportionBarCharts(flowcellId);
+        this.chartsInitialised = true;
         this._interval = setInterval(this._updateTab, 60000, flowcellId, this._currentBarcode, this, false);
         $(window).on("unload", function () {
             console.log("clearing base-called interval");
             clearInterval(this._interval);
         });
+
     }
 
     /**
