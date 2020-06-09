@@ -12,7 +12,7 @@
 
             <div class="card-body">
 
-                <form method="post" id="post-form-task-create" onsubmit="mTaskController.create_new_job(event)">
+                <form method="post" id="post-form-task-create" onsubmit="mTaskController.createNewJob(event)">
                     {% csrf_token %}
                     <input type="hidden" name="flowcell" value="{{ flowcell.id }}"/>
                     <div class="form-group">
