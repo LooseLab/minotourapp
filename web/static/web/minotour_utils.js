@@ -8,14 +8,6 @@ Highcharts.setOptions({
 });
 
 /**
- * Check if the tab for a controller is displayed to the user.
- */
-function checkTabIsDisplayed(tabName, tabs) {
-    return tabs.includes(tabName);
-}
-
-
-/**
  * Get the selected flowcell tab
  */
 function getSelectedTab(){
