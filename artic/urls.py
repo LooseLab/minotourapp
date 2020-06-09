@@ -37,5 +37,10 @@ urlpatterns = [
         r'^api/v1/artic/manual-trigger/$',
         views.manually_create_artic_command_job_master,
         name="manual-trigger"
+    ),
+    url(
+        r'^api/v1/artic/build-results/$',
+        views.get_results_package,
+        name="create-results-bundle"
     )
 ]
