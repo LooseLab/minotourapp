@@ -17,8 +17,44 @@
                     </tr>
                 {% endfor %}
             </table>
-            <button class="btn btn-primary"><a href={{ artic_barcode_metadata.path_to_results }} download>Download Concensus</a></button>
-            <button class="btn btn-primary" onclick="articController.manuallyTriggerPipeline({{ artic_barcode_metadata.flowcell_id }},{{ artic_barcode_metadata.barcode_name }}, event)">Manually trigger</button>
+            {% if artic_barcode_metadata.path_to_results %}
+                <button class="btn btn-primary" data-toggle="modal" data-target="#results-builder">Download Results
+                </button>
+            {% endif %}
+            <button class="btn btn-primary"
+                    onclick="articController.manuallyTriggerPipeline({{ artic_barcode_metadata.flowcell_id }}, "{{ artic_barcode_metadata.barcode_name }}", event)">
+                Manually trigger
+            </button>
         </div>
     </div>
 </div>
+{% if artic_barcode_metadata.path_to_results %}
+
+    <div class="modal fade" id="results-builder" tabindex="-1" role="dialog"
+         aria-labelledby="myModalLabel" aria-hidden="true" >
+        <div class="modal-dialog" role="document">
+            <div style="border-radius: 25px" class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="exampleModalLabel">Choose results to download
+                    </h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <form class="results-builder-form">
+                        {% for title, id in artic_barcode_metadata.results_files %}
+                            <input type="checkbox" checked class="form-check-input" id="{{ id }}" name="{{ id }}">
+                            <label class="form-check-label" for="{{ id }}">{{ title }}</label>
+                        {% endfor %}
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button id="submit-task" class="btn btn-success success" type="reset" data-dismiss="modal" onclick="articController.buildResults({{ artic_barcode_metadata.flowcell_id}} ,`{{artic_barcode_metadata.barcode_name }}`, event)">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
