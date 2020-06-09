@@ -1,6 +1,5 @@
 {% load humanize %}
-
-<h3 class="card-header">{{ artic_barcode_metadata.barcode_name }}</h3>
+<h4 class="card-header">{{ artic_barcode_metadata.barcode_name }}</h4>
 <div class="card-body ">
     <div class="col-md-12">
         <div style="height: 100%;">
@@ -18,6 +17,8 @@
                     </tr>
                 {% endfor %}
             </table>
+            <button class="btn btn-primary"><a href={{ artic_barcode_metadata.path_to_results }} download>Download Concensus</a></button>
+            <button class="btn btn-primary" onclick="articController.manuallyTriggerPipeline({{ artic_barcode_metadata.flowcell_id }},{{ artic_barcode_metadata.barcode_name }}, event)">Manually trigger</button>
         </div>
     </div>
 </div>

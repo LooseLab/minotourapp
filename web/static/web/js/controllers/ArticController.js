@@ -1,5 +1,5 @@
 /**
- *
+ * TODO this would be a good candidate to list the run the data was coming from in localStorage
  */
 class ArticController {
     constructor(flowcellId) {
@@ -375,6 +375,8 @@ class ArticController {
         */
         let that = this;
         let min, max, coverageDetail;
+        that._articCoverageScatterMaster.showLoading("Fetching data from server.")
+
         this._axiosInstance.get('/api/v1/artic/visualisation/master', {
             params: {
                 flowcellId,
@@ -382,7 +384,6 @@ class ArticController {
             }
         }).then(response => {
             // update the extremes on the y axis
-            that._articCoverageScatterMaster.showLoading("Fetching data from server.")
             that._articCoverageScatterMaster.yAxis[0].setExtremes(0, response.data.coverage.ymax);
             that._updateExistingChart(that._articCoverageScatterMaster, response.data.coverage.data, 0);
             that._articCoverageScatterMaster.hideLoading()
@@ -544,10 +545,16 @@ class ArticController {
         } else {
             // else the datatable must be initialised
             datatableObj.DataTable({
+                    "createdRow": function (row, data, index) {
+                        console.log(row)
+                        console.log(data)
+                        if(data.has_finished){$(row).addClass("finished-pipeline");}
+
+                    },
                     "ajax": {
                         "url": "/api/v1/artic/visualisation/summary-table-data",
                         "data": {
-                            "flowcellId": flowcellId
+                            flowcellId
                         },
                         async: true,
                         error: (xhr, error, code) => {
@@ -555,14 +562,17 @@ class ArticController {
                             console.error(code);
                         }
                     },
-                    "columns": [
-                        {"data": "barcode_name"},
-                        {"data": "chromosome__line_name"},
-                        {"data": "reference_line_length"},
-                        {"data": "read_count"},
-                        {"data": "total_length"},
-                        {"data": "average_read_length"},
-                        {"data": "coverage"},
+                    "columnDefs": [
+                        {"targets": 0, "data": "barcode_name"},
+                        {"targets": 1, "data": "chromosome__line_name"},
+                        {"targets": 2, "data": "reference_line_length"},
+                        {"targets": 3, "data": "read_count"},
+                        {"targets": 4, "data": "total_length"},
+                        {"targets": 5, "data": "average_read_length"},
+                        {"targets": 6, "data": "coverage"},
+                        {"targets": 7, "data": "percent_200x"},
+                        {"targets": 8, "data": "percent_250x"},
+                        {"targets": 9, "data": "has_sufficient_coverage"},
                     ]
                 }
             );
@@ -584,6 +594,24 @@ class ArticController {
         }).then(response => {
             $("#articMetaInfo").html(response.data)
         }).catch(error => {
+            console.error(error)
+        })
+    }
+
+    /**
+     * Manually trigger the artic command to be run on this barcode.
+     * @param flowcellId {number} The primary key of the flowcell we are running this on.
+     * @param barcodeNameString {string} The primary key of the barcode that we want the data from.
+     * @param event {obj} Event object created on trigger.
+     */
+    manuallyTriggerPipeline(flowcellId, barcodeNameString, event){
+        event.preventDefault()
+        console.log(barcodeNameString.id)
+        let jobTypeId = 17
+        this._axiosInstance.post("/api/v1/artic/manual-trigger/" , {flowcellId, barcodeName: barcodeNameString.id, jobTypeId}).then(response=>{
+            console.log(response)
+            let message = response.data
+        }).catch(error=>{
             console.error(error)
         })
     }

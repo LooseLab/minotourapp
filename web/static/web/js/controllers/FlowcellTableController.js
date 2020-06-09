@@ -55,7 +55,6 @@ class FlowcellTableController {
                     console.error(code);
                 }
             },
-
             'columnDefs': [
                 {
                     'targets': 0,
@@ -77,7 +76,7 @@ class FlowcellTableController {
                     'targets': 3,
                     'data': "start_time",
                     'render': function (data, type, full, meta) {
-                        return `<a href="/web/private/${that._linkDestination}/${full["id"]}/">${data}</a>`;
+                        return `<a href="/web/private/${that._linkDestination}/${full["id"]}/">${new Date(data).toString()}</a>`;
                     }
                 },
                 {
@@ -104,7 +103,7 @@ class FlowcellTableController {
                     'targets': 8,
                     'data': "total_read_length",
                     render: function (data, type, row) {
-                        // The below function returns the read length in a human readable format
+                        // The below function returns the yield in a human readable format
                         if (type === "display" || type === "filter") {
                             var UNITS = ["", "k", "M", "G", "T", "P", "E", "Z"];
                             var factor = 1000;

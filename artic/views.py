@@ -11,7 +11,8 @@ from alignment.models import PafSummaryCov
 # Create your views here.
 from artic.models import ArticBarcodeMetadata
 from artic.task_artic_alignment import make_results_directory_artic, np
-from reads.models import Flowcell, JobMaster, FlowcellSummaryBarcode
+from reads.models import Flowcell, JobMaster, FlowcellSummaryBarcode, Barcode
+from reference.models import ReferenceInfo
 
 
 def quick_get_artic_results_directory(flowcell_id, barcodeName="", check=False):
@@ -24,7 +25,7 @@ def quick_get_artic_results_directory(flowcell_id, barcodeName="", check=False):
     barcodeName : str optional
         The barcode that the data is from. If provided coverage path is also returned.
     check : bool
-        Check whether we have results or not.
+        If True, check whether there ia a results directory.
 
     Returns
     -------
@@ -35,8 +36,8 @@ def quick_get_artic_results_directory(flowcell_id, barcodeName="", check=False):
     """
     flowcell = Flowcell.objects.get(pk=flowcell_id)
 
-    artic_task = get_object_or_404(JobMaster,
-        flowcell=flowcell, job_type__name="Track Artic Coverage"
+    artic_task = get_object_or_404(
+        JobMaster, flowcell=flowcell, job_type__name="Track Artic Coverage"
     )
 
     artic_results_path = make_results_directory_artic(
@@ -115,7 +116,10 @@ def get_artic_master_chart_data(request):
     barcode = request.GET.get("barcodeChosen", None)
 
     if not flowcell_id or not barcode:
-        return Response("Flowcell ID and Barcode Name are required.", status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            "Flowcell ID and Barcode Name are required.",
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     (
         flowcell,
@@ -319,11 +323,16 @@ def get_artic_column_chart_data(request):
     ).last()
 
     if not artic_task:
-            return Response("no coverage tracking task running on this flowcell.", status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            "no coverage tracking task running on this flowcell.",
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     try:
         return_data = defaultdict(list)
-        queryset = PafSummaryCov.objects.filter(job_master__id=artic_task.id).values_list("barcode_name", "average_read_length", "coverage")
+        queryset = PafSummaryCov.objects.filter(
+            job_master__id=artic_task.id
+        ).values_list("barcode_name", "average_read_length", "coverage")
         for barcode, read_length, coverage in queryset:
             return_data["barcodes"].append(barcode)
             return_data["average_read_length"].append(read_length)
@@ -357,31 +366,57 @@ def get_artic_summary_table_data(request):
     flowcell_id = request.GET.get("flowcellId", None)
 
     if not flowcell_id:
-        return Response("Please specify a flowcell_id parameter.", status=status.HTTP_400_BAD_REQUEST)
-
+        return Response(
+            "Please specify a flowcell_id parameter.",
+            status=status.HTTP_400_BAD_REQUEST,
+        )
     artic_task = JobMaster.objects.filter(
         flowcell_id=flowcell_id, job_type__name="Track Artic Coverage"
     ).last()
-
     if not artic_task:
-        return Response("no coverage tracking task running on this flowcell.", status=status.HTTP_400_BAD_REQUEST)
-
-    queryset = PafSummaryCov.objects.filter(job_master=artic_task).values("barcode_name",
-                                                                          "chromosome__line_name",
-                                                                          "average_read_length",
-                                                                          "coverage",
-                                                                          "job_master__id",
-                                                                          "read_count",
-                                                                          "total_length",
-                                                                          "reference_line_length", )
-
+        return Response(
+            "no coverage tracking task running on this flowcell.",
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    queryset = PafSummaryCov.objects.filter(job_master=artic_task).values(
+        "barcode_name",
+        "chromosome__line_name",
+        "average_read_length",
+        "coverage",
+        "job_master__id",
+        "read_count",
+        "total_length",
+        "reference_line_length",
+    )
+    artic_metadata = {
+        d.barcode.name: d
+        for d in ArticBarcodeMetadata.objects.filter(
+            flowcell_id=flowcell_id, job_master=artic_task
+        )
+    }
+    for pafsummarycov in queryset:
+        barcode_name = pafsummarycov["barcode_name"]
+        pafsummarycov["percent_200x"] = artic_metadata[
+            barcode_name
+        ].percentage_bases_over_200x
+        pafsummarycov["percent_250x"] = artic_metadata[
+            barcode_name
+        ].percentage_bases_over_250x
+        pafsummarycov["has_finished"] = artic_metadata[
+            barcode_name
+        ].has_finished
+        pafsummarycov["has_sufficient_coverage"] = artic_metadata[
+            barcode_name
+        ].has_sufficient_coverage
     if not queryset:
-        return Response(f"No coverage summaries found for this task {artic_task.id}.", status=status.HTTP_204_NO_CONTENT)
-
+        return Response(
+            f"No coverage summaries found for this task {artic_task.id}.",
+            status=status.HTTP_204_NO_CONTENT,
+        )
     return Response({"data": queryset})
 
 
-@api_view(('GET',))
+@api_view(("GET",))
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
 def get_artic_barcode_metadata_html(request):
     """
@@ -398,39 +433,97 @@ def get_artic_barcode_metadata_html(request):
     flowcell_id = request.GET.get("flowcellId", None)
     selected_barcode = request.GET.get("selectedBarcode", None)
     if not flowcell_id or not selected_barcode:
-        return Response("No flowcell ID or barcode provided.", status=status.HTTP_400_BAD_REQUEST)
-    orm_object = ArticBarcodeMetadata.objects.filter(flowcell_id=flowcell_id, barcode__name=selected_barcode).last()
+        return Response(
+            "No flowcell ID or barcode provided.", status=status.HTTP_400_BAD_REQUEST
+        )
+    orm_object = ArticBarcodeMetadata.objects.filter(
+        flowcell_id=flowcell_id, barcode__name=selected_barcode
+    ).last()
 
     if not orm_object:
         return Response("No data found", status=status.HTTP_404_NOT_FOUND)
 
-    # First iteration we may may not have FlowcellSumamryBarcodes
+    # First iteration we may may not have FlowcellSumamryBarcodes, so cal
     if not orm_object.percentage_of_reads_in_barcode:
         try:
-            barcode_numbers = FlowcellSummaryBarcode.objects.get(flowcell_id=flowcell_id, barcode_name=selected_barcode)
-            all_numbers = FlowcellSummaryBarcode.objects.filter(flowcell_id=flowcell_id, barcode_name="All reads").values_list("read_count", flat=True)
+            barcode_numbers = FlowcellSummaryBarcode.objects.get(
+                flowcell_id=flowcell_id, barcode_name=selected_barcode
+            )
+            all_numbers = FlowcellSummaryBarcode.objects.filter(
+                flowcell_id=flowcell_id, barcode_name="All reads"
+            ).values_list("read_count", flat=True)
             total_reads = 0
             for all_number in all_numbers:
                 total_reads += all_number
-            orm_object.percentage_of_reads_in_barcode = barcode_numbers.read_count / total_reads
+            orm_object.percentage_of_reads_in_barcode = (
+                barcode_numbers.read_count / total_reads * 100
+            )
 
         except FlowcellSummaryBarcode.DoesNotExist as e:
             orm_object.percentage_of_reads_in_barcode = 0
 
             # [[new key, old key]]
-    new_key_names = [["Avg. Coverage", "average_coverage"], ["Var. Coverage", "variance_coverage"], ["Min. Coverage", "minimum_coverage"], ["Max. Coverage", "maximum_coverage"],
-                     ["% in barcode", "percentage_of_reads_in_barcode"]]
+    new_key_names = [
+        ["Avg. Coverage", "average_coverage"],
+        ["Var. Coverage", "variance_coverage"],
+        ["Min. Coverage", "minimum_coverage"],
+        ["Max. Coverage", "maximum_coverage"],
+        ["% reads in run", "percentage_of_reads_in_barcode"],
+        ["% Bases over 200x", "percentage_bases_over_200x"],
+        ["% Bases over 250x", "percentage_bases_over_250x"],
+        ["Has Finished", "has_finished"],
+        ["Has Sufficient Coverage", "has_sufficient_coverage"],
+    ]
     old_dict = orm_object.__dict__
     context_dict = {key[0]: old_dict[key[1]] for key in new_key_names}
     context_dict["barcode_name"] = orm_object.barcode.name
+    context_dict["flowcell_id"] = flowcell_id
+    _, path_to_results, _, _ = quick_get_artic_results_directory(
+        flowcell_id, selected_barcode
+    )
+    context_dict["path_to_results"] = path_to_results / "concensus.fasta"
 
+    return render(
+        request,
+        "artic-barcode-metadata.html",
+        context={"artic_barcode_metadata": context_dict},
+    )
+
+
+@api_view(["POST"])
+def manually_create_artic_command_job_master(request):
+    """
+    Manually create a Job Master for the run_artic_command for a given barcode.
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        Django rest framework request object. Should contain flowcell_id, job_master_id, barcode_name as data.
+    Returns
+    -------
+    status: int
+        The HTTP code of the request.
+    """
+    job_type_id = request.data.get("jobTypeId", None)
+    barcode_name = request.data.get("barcodeName", None)
+    flowcell_id = request.data.get("flowcellId", None)
+    reference_name = "covid_19"
+    if not job_type_id or not barcode_name or not flowcell_id:
+        return Response("Flowcell id, barcode id, job_type_id are required fields.", status=status.HTTP_400_BAD_REQUEST)
     try:
-        context_dict["has_run"] = JobMaster.objects.get(flowcell_id=flowcell_id, job_type__name="Run Artic",
-                                                        barcode__name=selected_barcode).complete
-        context_dict["has_reached_sufficient_coverage"] = True
-    except JobMaster.DoesNotExist:
-        context_dict["has_run"] = False
-        context_dict["has_reached_sufficient_coverage"] = False
+        reference = ReferenceInfo.objects.get(name="covid_19")
+        barcode = Barcode.objects.filter(name=barcode_name, run__in=Flowcell.objects.get(pk=flowcell_id).runs.all()).last()
 
-
-    return render(request, "artic-barcode-metadata.html", context={"artic_barcode_metadata": context_dict})
+    except [ReferenceInfo.DoesNotExist, ReferenceInfo.MultipleObjectsReturned] as e:
+        return Response(f"Task was expecting reference of name {reference_name}, and only one. Exception: {e}",
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    # TODO potential bug here where the barcode name on the reads is not the barcode name we save
+    job_master, created = JobMaster.objects.get_or_create(
+        job_type_id=job_type_id,
+        reference=reference,
+        barcode=barcode,
+        flowcell_id=flowcell_id,
+    )
+    if created:
+        return Response("Successfully created task to be consumed by Celery later.", status=status.HTTP_200_OK)
+    else:
+        return Response("Already a JobMaster for this barcode on this flowcell.", status=status.HTTP_403_FORBIDDEN)
