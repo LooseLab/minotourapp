@@ -570,5 +570,14 @@ line-height: 1.5;
     line-height: 60px;
 }
 .finished-pipeline{
-        background-color: #8fea8f;
+        background-color: #8fea8f !important;
+}
+
+/* Add no top to the checkboxs*/
+.form-check-input{
+    margin-top: 0 !important;
+}
+
+.results-builder-form{
+    padding-left: 5%;
 }
