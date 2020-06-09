@@ -27,36 +27,44 @@ from readuntil.functions_EB import *
 logger = get_task_logger(__name__)
 
 
-# TODO split artic task into a sexy chain, rather than blocking a worker for so long
-
-@task()
-def run_pangolin_command(base_results_directory, barcode_name, job_master_pk):
+# TODO split artic task into a sexy chain, rather than blocking a worker for so long, start here
+def clear_unused_artic_files(artic_results_path, sample_name):
     """
-
+    Clear the leftover files from the artic command from the directory, gzip remaining files
+    Parameters
+    ----------
+    artic_results_path: str
+        Path to directory that artic results were produced in.
+    sample_name: str
+        The sample name provided to the artic command. Assume the barcode name.
     Returns
     -------
-
+    None
     """
-    jm = JobMaster.objects.get(pk=job_master_pk)
-    os.chdir(f"{base_results_directory}/{barcode_name}")
-    cmd = [
-        "bash",
-        "-c",
-        f"source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate pangolin && pangolin -p --write-tree {barcode_name}.consensus.fasta",
+    logger.info(
+        f"Clearing non necessary results for {artic_results_path} for sample name {sample_name}"
+    )
+    files_to_keep = [
+        ".pass.vcf",
+        ".fail.vcf",
+        "-barplot.png",
+        "-boxplot.png",
+        ".consensus.fasta",
+        ".fastq",
+        ".counts.dat",
+        ".coverage.dat",
     ]
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    out, err = proc.communicate()
-    if not out and err:
-        logger.info("We are done here. Pangolin out!")
-        logger.info(out)
-        logger.info(err)
-    else:
-        logger.info("¯\_(ツ)_/¯")
-        logger.warning(str(out))
-        logger.warning(err)
-    #if out and err:
-    #    raise Exception(out)
+    files_to_keep_full = []
+    files_to_keep_full.extend([f"{sample_name}{filey}" for filey in files_to_keep])
+    files_to_keep_full.extend([f"{el}.gz" for el in files_to_keep_full])
+    artic_results_pathlib = Path(artic_results_path)
+    for filey in artic_results_pathlib.iterdir():
+        if f"{filey.stem}{filey.suffix}" not in files_to_keep_full:
+            filey.unlink()
+        elif not filey.suffix == ".gz" or not filey.suffix == ".dat":
+            logger.info("Gzipping file")
+            subprocess.Popen(["gzip", "-9", str(filey)]).communicate()
+    logger.info(f"Tidied files for {sample_name}")
 
 
 @task()
@@ -80,7 +88,6 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     jm.save()
     # Path to barcode fastq
     fastq_path = f"{base_results_directory}/{barcode_name}/{barcode_name}.fastq"
-
     # TODO get the barcode from the posix path for the sample name
     logger.info(fastq_path)
     scheme_dir = get_env_variable("MT_ARTIC_SCEHEME_DIR")
@@ -90,9 +97,7 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         "-c",
         f"source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate artic-ncov2019 && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V1 {barcode_name}",
     ]
-
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
     out, err = proc.communicate()
     if not out and err:
         logger.info("We are done here. Artic out!")
@@ -103,19 +108,20 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         logger.warning(str(out))
         logger.warning(err)
     if out and err:
-        raise Exception(err)
+        raise out
+    # Update the Barcode Metadata to show the task has been run on this barcode
+    ArticBarcodeMetadata.objects.filter(
+        flowcell=jm.flowcell, job_master__job_type__id=16, barcode__name=barcode_name
+    ).update(has_finished=True)
 
-    run_pangolin_command(base_results_directory,barcode_name,job_master_pk)
-
+    clear_unused_artic_files(f"{base_results_directory}/{barcode_name}", barcode_name)
     jm = JobMaster.objects.get(pk=job_master_pk)
     jm.running = False
     jm.complete = True
     jm.save()
 
-    # TODO delete the files we don't need here
 
-
-def save_artic_job_masters(flowcell, barcode_name, reference_info):
+def save_artic_command_job_masters(flowcell, barcode_name, reference_info):
     """
     Save the JobMasters that we need to manage the queue of tasks.
     Parameters
@@ -130,7 +136,6 @@ def save_artic_job_masters(flowcell, barcode_name, reference_info):
     -------
 
     """
-
     job_type = JobType.objects.get(name="Run Artic")
     # TODO potential bug here where the barcode name on the reads is not the barcode name we save
     barcode_object = Barcode.objects.get(run__in=flowcell.runs.all(), name=barcode_name)
@@ -143,6 +148,7 @@ def save_artic_job_masters(flowcell, barcode_name, reference_info):
 
     job_master.save()
     return
+
 
 def make_barcoded_directories(barcodes, results_dir):
     """
@@ -317,7 +323,14 @@ def replicate_counts_array_barcoded(barcode_names, counts_dict):
 
 
 def save_artic_barcode_metadata_info(
-    coverage, flowcell, job_master, run_id, barcode_name
+    coverage,
+    flowcell,
+    job_master,
+    run_id,
+    barcode_name,
+    percent200x,
+    percent250x,
+    has_sufficient_coverage,
 ):
     """
     Save the artic metadata info for this barcode.
@@ -338,6 +351,15 @@ def save_artic_barcode_metadata_info(
     barcode_name: str
         The name of the barcode.
 
+    percent200x: float
+        Percentage of bases covered above and including 200x across the reference
+
+    percent250x: float
+        Percentage of bases covered above and including 250x across the reference
+
+    has_sufficient_coverage: bool
+        If True, the barcode has sufficient coverage to fire the artic command
+
     Returns
     -------
     None
@@ -353,16 +375,14 @@ def save_artic_barcode_metadata_info(
     except FlowcellSummaryBarcode.DoesNotExist as e:
         logger.warning(e)
         return
-
     barcode_numbers_total = 0
     for barcode_number in barcode_numbers:
         barcode_numbers_total += barcode_number.read_count
     total_reads = 0
     for all_number in all_numbers:
         total_reads += all_number
-
+    # Except zero division in case no flowcell summary barcode entries yet
     try:
-
         proportion = barcode_numbers_total / total_reads * 100
     except ZeroDivisionError:
         proportion = 0
@@ -375,10 +395,10 @@ def save_artic_barcode_metadata_info(
         )
         return
 
-    barcodes_minimum_coverage = coverage.min()
-    barcodes_maximum_coverage = coverage.max()
-    barcodes_variance_coverage = coverage.var()
-    barcodes_average_coverage = coverage.mean()
+    barcodes_minimum_coverage = round(coverage.min(), 2)
+    barcodes_maximum_coverage = round(coverage.max(), 2)
+    barcodes_variance_coverage = round(coverage.var(), 2)
+    barcodes_average_coverage = round(coverage.mean(), 2)
 
     orm_object, created = ArticBarcodeMetadata.objects.update_or_create(
         flowcell=flowcell,
@@ -389,7 +409,10 @@ def save_artic_barcode_metadata_info(
             "maximum_coverage": barcodes_maximum_coverage,
             "minimum_coverage": barcodes_minimum_coverage,
             "variance_coverage": barcodes_variance_coverage,
-            "percentage_of_reads_in_barcode": proportion,
+            "percentage_of_reads_in_barcode": round(proportion, 2),
+            "percentage_bases_over_250x": round(percent250x, 2),
+            "percentage_bases_over_200x": round(percent200x, 2),
+            "has_sufficient_coverage": has_sufficient_coverage,
         },
     )
 
@@ -705,12 +728,12 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     barcode_sorted_fastq_path = Path(
                         f"{base_result_dir_path}/{barcode}/{barcode}.fastq"
                     )
-
+                    # TODO NOTE REMOVED CHROMOSOME FROM PATH SO WILL NOT WORK FOR MULTI CHROMOSOME DATA
                     coverage_path = Path(
-                        f"{base_result_dir_path}/{barcode}/coverage_{chrom_key}_{flowcell.id}_{task.id}_{barcode}.dat"
+                        f"{base_result_dir_path}/{barcode}/{barcode}.coverage.dat"
                     )
                     counts_path = Path(
-                        f"{base_result_dir_path}/{barcode}/counts_{chrom_key}_{flowcell.id}_{task.id}_{barcode}.dat"
+                        f"{base_result_dir_path}/{barcode}/{barcode}.counts.dat"
                     )
 
                     ############################################################################
@@ -761,11 +784,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         dtype=np.uint16,
                     )
 
-                    # save the artic per bearcode metadata
-                    save_artic_barcode_metadata_info(
-                        coverage, flowcell, task, run_id, barcode
-                    )
-
                     # ################################################################ #
                     # ################# Write out coverage array ################ #
                     ####################################################################
@@ -792,33 +810,42 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         continue
                     number_bases_in_array = coverage.size
                     number_of_bases_250x = coverage[coverage >= 250].size
+                    number_of_bases_200x = coverage[coverage >= 200].size
+                    percent_200x = number_of_bases_200x / number_bases_in_array * 100
                     percent_250x = number_of_bases_250x / number_bases_in_array * 100
+                    has_sufficient_coverage = False
                     # 200x coverage
                     if np.all(coverage >= 200):
                         logger.info(
-                            f"we would fire the code for the artic pipeline here for barcode {barcode}"
+                            f"Creating artic command job_master here for barcode {barcode}"
                         )
-                        # run_artic_command(barcode_sorted_fastq_path, barcode)
                         add_barcode_to_tofire_file(barcode, base_result_dir_path)
-                        save_artic_job_masters(flowcell, barcode, reference_info)
-
-                        # task.running = False
-                        # task.complete = True
-                        # task.save()
+                        save_artic_command_job_masters(
+                            flowcell, barcode, reference_info
+                        )
+                        has_sufficient_coverage = True
                     elif percent_250x >= 95:
 
                         # So we have to set up the auto fire of the pipeline here if the task fails
                         logger.info(
-                            f"we would fire the code for the artic pipeline here for barcode {barcode} due to 95% coverage reached"
+                            f"Creating artic command job_master here for barcode {barcode} due to 95% coverage reached"
                         )
-                        # run_artic_command(barcode_sorted_fastq_path, barcode)
                         add_barcode_to_tofire_file(barcode, base_result_dir_path)
-                        save_artic_job_masters(flowcell, barcode, reference_info)
-
-                        # task.running = False
-                        # task.complete = True
-                        # task.save()
-                        # Update last read id on task to start from on next iteration
+                        save_artic_command_job_masters(
+                            flowcell, barcode, reference_info
+                        )
+                        has_sufficient_coverage = True
+                    # save the artic per barcode metadata
+                    save_artic_barcode_metadata_info(
+                        coverage,
+                        flowcell,
+                        task,
+                        run_id,
+                        barcode,
+                        percent_200x,
+                        percent_250x,
+                        has_sufficient_coverage,
+                    )
                 task.last_read = last_read
                 task.iteration_count += 1
 
