@@ -51,86 +51,107 @@ class ArticController {
     _createCoverageMaster(data, flowcellId) {
         const self = this;
         let that = this;
-        this._articCoverageScatterMaster = Highcharts.chart("coverageArticMaster", {
-            chart: {
-                zoomType: "x",
-                height: "150px",
-                marginLeft: 50,
-                marginRight: 20,
-                events: {
-                    selection: that._afterSelection.bind(this)
-                }
+        this._axiosInstance.get("/api/v1/artic/fetch-amplicon-bands").then(response => {
+            let bands = response.data.amplicon_band_coords
+            let colourLookup = response.data.colours
+            let highChartsBands = []
+            bands.forEach((band, index) => {
+                highChartsBands.push({
+                    from: band[0],
+                    to: band[1],
+                    color: colourLookup[band[2]],
+                    label: {
+                        text: `# ${index + 1}`,
+                        style: {
+                            color: "grey"
+                        },
+                        rotation: 270
+                    }
+                })
+            })
 
-            },
-            boost: {
-                useGPUTranslations: true,
-                usePreAllocated: true
-            },
-            xAxis: {
-                min: 0,
-                max: data.coverage.xmax,
-                gridLineWidth: 1,
-                maxZoom: 10000, // fourteen days
-                plotBands: [{
-                    id: 'mask-before',
-                    from: data.coverage.data[0][0],
-                    to: data.coverage.data[data.coverage.data.length - 1][0],
-                    color: 'rgba(0, 0, 0, 0.2)'
-                }]
-            },
-            yAxis: {
-                min: 0,
-                max: data.coverage.ymax,
-                title: {
-                    text: null
-                }
-            },
-            legend: {
-                enabled: false
-            },
-            title: {text: null},
-            plotOptions: {
-                series: {
-                    fillColor: {
-                        linearGradient: [0, 0, 0, 70],
-                        stops: [
-                            [0, Highcharts.getOptions().colors[0]],
-                            [1, 'rgba(255,255,255,0)']
-                        ]
-                    },
-                    lineWidth: 1,
-                    marker: {
-                        enabled: false
-                    },
-                    shadow: false,
-                    states: {
-                        hover: {
-                            lineWidth: 1
-                        }
-                    },
-                    enableMouseTracking: false
-                }
-            },
-            series: [{
-                type: "area",
-                color: "blue",
-                data: data.coverage.data,
-                marker: {
-                    fillcolor: "red",
-                    radius: 1
+            this._articCoverageScatterMaster = Highcharts.chart("coverageArticMaster", {
+                chart: {
+                    zoomType: "x",
+                    height: "150px",
+                    marginLeft: 50,
+                    marginRight: 20,
+                    events: {
+                        selection: that._afterSelection.bind(this)
+                    }
+
                 },
-                tooltip: {
-                    followPointer: false,
-                    pointFormat: "[{point.x:.1f}, {point.y:.1f}]",
-                    valueDecimals: 8
-                }
-            }]
-            // Call back function, called after the master chart is drawn, draws the detail charts
-        }, () => {
-            that._articCoverageScatterDetail = that._createDetailChart("coverageArticDetail", data.coverage.ymax, "Coverage", "line"
-                , false);
-        });
-
+                boost: {
+                    useGPUTranslations: true,
+                    usePreAllocated: true
+                },
+                xAxis: {
+                    min: 0,
+                    max: data.coverage.xmax,
+                    gridLineWidth: 1,
+                    maxZoom: 10000, // fourteen days
+                    plotBands: [...highChartsBands, {
+                        id: 'mask-before',
+                        from: data.coverage.data[0][0],
+                        to: data.coverage.data[data.coverage.data.length - 1][0],
+                        color: 'rgba(0, 0, 0, 0.2)'
+                    }]
+                },
+                yAxis: {
+                    min: 0,
+                    max: data.coverage.ymax,
+                    title: {
+                        text: null
+                    }
+                },
+                legend: {
+                    enabled: false
+                },
+                title: {text: null},
+                plotOptions: {
+                    series: {
+                        fillColor: {
+                            linearGradient: [0, 0, 0, 70],
+                            stops: [
+                                [0, Highcharts.getOptions().colors[0]],
+                                [1, 'rgba(255,255,255,0)']
+                            ]
+                        },
+                        lineWidth: 1,
+                        marker: {
+                            enabled: false
+                        },
+                        shadow: false,
+                        states: {
+                            hover: {
+                                lineWidth: 1
+                            }
+                        },
+                        enableMouseTracking: false
+                    }
+                },
+                series: [{
+                    type: "area",
+                    color: "blue",
+                    data: data.coverage.data,
+                    marker: {
+                        fillcolor: "red",
+                        radius: 1
+                    },
+                    tooltip: {
+                        followPointer: false,
+                        pointFormat: "[{point.x:.1f}, {point.y:.1f}]",
+                        valueDecimals: 8
+                    }
+                }]
+                // Call back function, called after the master chart is drawn, draws the detail charts
+            }, () => {
+                that._articCoverageScatterDetail = that._createDetailChart("coverageArticDetail", data.coverage.ymax, "Coverage", "line"
+                    , false, false, highChartsBands);
+            });
+        }).catch(error => {
+            console.error(error)
+        })
     }
 
     /**
@@ -141,9 +162,10 @@ class ArticController {
      * @param {string} chartType Chart title
      * @param {boolean} stepped Stepped line
      * @param {boolean} legend Display chart legend
+     * @param {Array} bands Array of plot bands for amplicons
      * @returns {obj} chartyChart Highcharts chart.
      */
-    _createDetailChart(targetDivId, ymax, title, chartType = "scatter", stepped = false, legend = false) {
+    _createDetailChart(targetDivId, ymax, title, chartType = "scatter", stepped = false, legend = false, bands = []) {
         // The data we are going to use to display, starts a display with an empty chart
         let detailData = [];
         // The variable assigned to the chart we will return
@@ -172,7 +194,8 @@ class ArticController {
                 gridLineWidth: 1,
                 text: {
                     text: "Base number"
-                }
+                },
+                plotBands: bands
             },
 
             yAxis: {
@@ -353,6 +376,7 @@ class ArticController {
             $current.change(function () {
                 let txt;
                 txt = $(this).val();
+                console.log(txt)
                 that._barcodeChosen = txt;
 
                 that._drawSelectedBarcode(flowcellId, txt);
@@ -375,15 +399,18 @@ class ArticController {
         */
         let that = this;
         let min, max, coverageDetail;
+        let logCoverage = $("#log-coverage")[0].checked ? 1: 0
         that._articCoverageScatterMaster.showLoading("Fetching data from server.")
 
         this._axiosInstance.get('/api/v1/artic/visualisation/master', {
             params: {
                 flowcellId,
-                barcodeChosen
+                barcodeChosen,
+                logCoverage
             }
         }).then(response => {
             // update the extremes on the y axis
+            console.log(response.data.coverage.ymax)
             that._articCoverageScatterMaster.yAxis[0].setExtremes(0, response.data.coverage.ymax);
             that._updateExistingChart(that._articCoverageScatterMaster, response.data.coverage.data, 0);
             that._articCoverageScatterMaster.hideLoading()
@@ -403,7 +430,8 @@ class ArticController {
                     min,
                     max,
                     barcodeChosen: that._barcodeChosen,
-                    flowcellId
+                    flowcellId,
+                    logCoverage
                 }
             }).then(response => {
                 that._updateAxesAndData(that._articCoverageScatterDetail, min, max, response.data.coverage, true);
@@ -412,6 +440,7 @@ class ArticController {
             });
         }
         this._setBarcodeMetaDataHTMLTable(flowcellId, barcodeChosen)
+        this._renderPngs(flowcellId, barcodeChosen)
     }
 
     /**
@@ -456,6 +485,7 @@ class ArticController {
             if (min !== undefined) {
                 that._setBarcodeMetaDataHTMLTable(flowcellId, that._barcodeChosen)
                 that._drawSelectedBarcode(flowcellId, that._barcodeChosen)
+                that._renderPngs(flowcellId, that._barcodeChosen)
             }
         }
         console.timeEnd("scatter");
@@ -550,7 +580,6 @@ class ArticController {
             // else the datatable must be initialised
             datatableObj.DataTable({
                     "createdRow": (row, data, index) => {
-                        console.log(data)
                         if (data.has_finished) {
                             $(row).addClass("finished-pipeline");
                         }
@@ -649,10 +678,26 @@ class ArticController {
             link.setAttribute('download', response.headers["x-file-name"]);
             document.body.appendChild(link);
             link.click();
-        }).
-        catch(error => {
+        }).catch(error => {
             console.error(error)
         })
     }
 
+    /**
+     * Show the barplot and boxplot PNGs generated by artic on the page it they have been made
+     * @param flowcellId {number} Primary key of the flowcell
+     * @param selectedBarcode {string} The chosen barcode name
+     * @private
+     */
+    _renderPngs(flowcellId, selectedBarcode) {
+        this._axiosInstance.get("/api/v1/artic/fetch-png-html", {
+            params: {
+                flowcellId,
+                selectedBarcode
+            }
+        }).then(response => {
+            console.log(response)
+            $("#artic-pngs").html(response.data);
+        })
+    }
 }
