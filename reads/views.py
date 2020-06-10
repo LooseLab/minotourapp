@@ -114,7 +114,7 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
     if not pk:
         return Response("No Flowcell primary key provided", status=status.HTTP_400_BAD_REQUEST)
     flowcell = Flowcell.objects.get(pk=pk)
-    if flowcell.number_barcodes > 2:
+    if flowcell.number_barcodes > 3:
         qs = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).exclude(
             barcode_name__in=["No barcode", "All reads"]
         )
@@ -132,17 +132,44 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
         df["data"] = round(df["read_count"] / total_read_count * 100, 2)
         df["name"] = df["barcode_name"]
         categories = df["name"].unique().tolist()
+        # get the barcodes that have a pass status and no corresponding fail data
         no_fail_pass_df = df[
             (df["status"] == "Pass") & (~df["barcode_name"].isin(df[df["status"] == "Fail"]["barcode_name"].values))]
         no_fail_pass_df["status"] = "Fail"
         no_fail_pass_df["data"] = 0
+        # append new entries with 0
+        # Get the barcode rows that have a fail status and no cprreponding pass data
         df = df.append(no_fail_pass_df)
+        no_pass_fail_df = df[
+            (df["status"] == "Fail") & (~df["barcode_name"].isin(df[df["status"] == "Pass"]["barcode_name"].values))]
+        no_pass_fail_df["status"] = "Pass"
+        no_pass_fail_df["data"] = 0
+        df = df.append(no_pass_fail_df)
         df = df.sort_values("barcode_name")
+        # Get the proportion unclassified for pie chart
+        df["is_unclassified"] = np.where(df["barcode_name"] == "unclassified", "Classified", "Unclassified")
+        # use this array for easy comparison of current data on client side in BaseCalledData controller
+        array_data = []
+        pie_chart_data = []
+        for key, value in df.groupby("is_unclassified")["data"].sum().to_dict().items():
+            results = {}
+            results["name"] = key
+            results["y"] = value
+            array_data.append(value)
+            if key == "Classified":
+                results["sliced"] = True
+                results["selected"] = True
+            pie_chart_data.append(results)
+        pie_chart_data.append(array_data)
+        series = {"data": pie_chart_data, "name": "Classification Proportions", "colorByPoint": True}
+
+        # drop unclassified from prop charts
+        df = df[df["barcode_name"] != "unclassified"]
         listy = []
         for name, group in df.groupby("status"):
             listy.append({"name": name, "data": group["data"].values.tolist()})
 
-        listy.append({"categories": categories})
+        listy.append({"categories": categories, "pieChartData": series})
 
         return Response(listy, status=status.HTTP_200_OK)
 
