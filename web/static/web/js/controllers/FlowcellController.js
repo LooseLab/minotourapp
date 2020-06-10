@@ -3,10 +3,10 @@ class FlowcellController {
 This controller is the top level controller, initialised when the flowcell index page is loaded,
 it contains references to the other controllers
  */
-    constructor(flowcell_id) {
-        console.log('Initialising FlowcellController.');
-        this._interval = setInterval(requestData, 60000, flowcell_id);
-        this._flowcellTabController = new FlowcellTabController(flowcell_id);
+    constructor(flowcellId) {
+        // delete soon
+        this._interval = setInterval(requestData, 60000, flowcellId);
+        this._flowcellTabController = new FlowcellTabController(flowcellId);
         this._coverage_chart_controller = new CoverageChartController('coverage_div', "");
         this._lastread = 0; // TODO this is a quick fix for the problem on the live data tab. we should refactor this soon.
     }
