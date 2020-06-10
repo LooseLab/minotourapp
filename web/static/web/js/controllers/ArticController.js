@@ -690,6 +690,7 @@ class ArticController {
      * @private
      */
     _renderPngs(flowcellId, selectedBarcode) {
+        // TODO somehow check if pngs are rendered so we don't make call again! Include a class on the HTML
         this._axiosInstance.get("/api/v1/artic/fetch-png-html", {
             params: {
                 flowcellId,
