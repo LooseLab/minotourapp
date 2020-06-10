@@ -79,12 +79,14 @@
             </div>
         </div>
     {% endif %}
-
+{% endblock %}
+{% block adjustment %}
     <script>
         // offset body to account for navbar stickyness, which pulls navbar out of DOM
-        let heighty = $("#tn").css("height")
+        let heightNavBar = $("#tn").css("height")
+        let heightFooter = $("#sticky-footer").css("height")
         let windowHeight = $(document).height()
-        $("body").css({"padding-top": heighty, "min-height": `${windowHeight}px`})
+        $("body").css({"padding-top": heightNavBar,"padding-bottom": heightFooter, "min-height": `${windowHeight}px`})
     </script>
 
 
