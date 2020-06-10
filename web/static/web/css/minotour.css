@@ -581,3 +581,9 @@ line-height: 1.5;
 .results-builder-form{
     padding-left: 5%;
 }
+
+.custom-control{
+	position: absolute;
+	display: inline;
+    padding-left: 3rem;
+}
