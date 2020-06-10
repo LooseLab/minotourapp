@@ -62,8 +62,8 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-sm-8">
+<div class="row" style="margin-bottom: 1rem">
+    <div class="col-md-8">
         <div class="h-100 card card-primary card-outline">
             <div class="card-header">
                 <h4 class="card-title">
@@ -72,33 +72,43 @@
                 </h4>
             </div>
             <div class="card-body">
-                <select name="select-artic-barcode" id="select-artic-barcode">
-
-                </select>
-            </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <div id="coverageArticDetail" style="height: 400px">
+                <div class="row">
+                    <div class="col-md-12">
+                        <select name="select-artic-barcode" id="select-artic-barcode">
+                        </select>
+                        <!-- Default checked -->
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="log-coverage">
+                            <label class="custom-control-label" for="log-coverage">Log Coverage</label>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-12">
-                    <div id="coverageArticMaster">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div id="coverageArticDetail" style="height: 400px">
+                        </div>
+                    </div>
+                    <div class="col-md-12">
+                        <div id="coverageArticMaster">
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
-    <div class="col-sm-4">
+    <div class="col-md-4">
         <div class="h-100 card card-primary card-outline">
             <div id="articMetaInfo">
-                <h4 class="card-header">Barcode Metadata</h4>
+                <div class="card-header">
+
+                    <h4 class="card-title"><i class="fas fa-chart-bar"></i>Barcode Metadata</h4>
+                </div>
                 <div class="card-body ">
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-    const articController = new ArticController({{flowcell.id}})
-</script>
+<div class="row" id="artic-pngs">
+</div>
