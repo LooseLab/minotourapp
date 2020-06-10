@@ -7,6 +7,7 @@ import subprocess
 from collections import defaultdict
 from copy import deepcopy
 from io import StringIO
+from shutil import copy
 
 from celery import task
 from celery.utils.log import get_task_logger
@@ -14,6 +15,7 @@ from celery.utils.log import get_task_logger
 from alignment.models import PafSummaryCov
 from alignment.tasks_alignment import call_fetch_reads_alignment
 from artic.models import ArticBarcodeMetadata
+from minotourapp.settings import BASE_DIR
 from minotourapp.utils import get_env_variable
 from reads.models import (
     JobMaster,
@@ -59,12 +61,16 @@ def clear_unused_artic_files(artic_results_path, sample_name):
     files_to_keep_full.extend([f"{el}.gz" for el in files_to_keep_full])
     artic_results_pathlib = Path(artic_results_path)
     for filey in artic_results_pathlib.iterdir():
-        if f"{filey.stem}{filey.suffix}" not in files_to_keep_full:
+        if f"{filey.name}" not in files_to_keep_full:
             filey.unlink()
-        elif not filey.suffix == ".gz" or not filey.suffix == ".dat":
-            logger.info("Gzipping file")
+        elif not filey.suffix == ".gz" and not filey.suffix in [".dat", ".png"]:
             subprocess.Popen(["gzip", "-9", str(filey)]).communicate()
-    logger.info(f"Tidied files for {sample_name}")
+        elif filey.suffix == ".png":
+            # Copy the pngs to the artic static directory to be served
+            if not Path(f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}").exists():
+                Path(f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}").mkdir()
+            copy(str(filey), f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}")
+
 
 
 @task()
