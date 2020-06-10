@@ -10,7 +10,7 @@ Highcharts.setOptions({
 /**
  * Get the selected flowcell tab
  */
-function getSelectedTab(){
+function getSelectedTab() {
     return sessionStorage.getItem("flowcellTab");
 }
 
@@ -18,7 +18,7 @@ function getSelectedTab(){
  * Set the selected flowcell Tab
  * @param tab {string} The tab that a user has just switched to
  */
-function setSelectedTab(tab){
+function setSelectedTab(tab) {
     sessionStorage.setItem("flowcellTab", tab);
 }
 
@@ -61,7 +61,7 @@ function setSelectedBarcode(barcode, tab) {
  * Remove old series from a given chart
  * @param chart {object}
  */
-function clearChartData(chart){
+function clearChartData(chart) {
     while (chart.series.length > 0) {
         chart.series[0].remove();
     }
@@ -74,10 +74,10 @@ function clearChartData(chart){
  * @param oldChartData {array} The data that exists in the series. Accessed via series.options.data.
  * @returns {bool} Whether the arrays are identical or not.
  */
-function checkHighChartsDataIsNew(newChartData, oldChartData){
+function checkHighChartsDataIsNew(newChartData, oldChartData) {
     let flattenedNewData = [];
     let flattenedOldData = [];
-    let identical= false;
+    let identical = false;
     flattenedNewData = [].concat(...newChartData);
     // flatten chart data so we can compare it to the new data, can't compare nested arrays
     flattenedOldData = [].concat(...oldChartData);
@@ -491,4 +491,44 @@ function makeHeatmapChart(divName, chartTitle) {
 
     return chart;
 
+}
+
+/**
+ * Create a HighCharts pie chart. These are used on the basecalled data tab.
+ * @param divName {string} The id of the div to render chart to.
+ * @param chartTitle {string} The title of the chart.
+ * @return {*}
+ */
+function makePieChart(divName, chartTitle) {
+    let chart = Highcharts.chart(divName, {
+        chart: {
+            plotBackgroundColor: null,
+            plotBorderWidth: null,
+            plotShadow: false,
+            type: 'pie'
+        },
+        title: {
+            text: chartTitle
+        },
+        tooltip: {
+            pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+        },
+        accessibility: {
+            point: {
+                valueSuffix: '%'
+            }
+        },
+        plotOptions: {
+            pie: {
+                allowPointSelect: true,
+                cursor: 'pointer',
+                dataLabels: {
+                    enabled: true,
+                    format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+                }
+            }
+        },
+        series: []
+    })
+    return chart
 }
