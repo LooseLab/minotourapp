@@ -16,9 +16,9 @@
     <script src="{% static 'web/libraries/jquery-3.5.0.js' %}"></script>
     <script src="{% static 'web/libraries/popper.js' %}"></script>
 
-{#    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"#}
-{#            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"#}
-{#            crossorigin="anonymous"></script>#}
+    {#    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"#}
+    {#            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"#}
+    {#            crossorigin="anonymous"></script>#}
     <script src="{% static 'web/libraries/bootstrap-4.5.0-dist/js/bootstrap.min.js' %}"></script>
     <link rel="stylesheet" href="{% static 'web/libraries/AdminLTE-3.0.4/dist/css/adminlte.min.css' %}">
     <!-- Font Awesome -->
@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="{% static 'web/libraries/DataTables/datatables.css' %}">
     <link rel="stylesheet" href="{% static 'web/css/minotour.css' %}">
     <link rel="stylesheet" href="{% static 'web/css/loader.css' %}">
-{#    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">#}
+    {#    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">#}
     <script src="{% static 'web/libraries/axios/axios.min.js' %}"></script>
     <script src="{% static 'web/libraries/highstock.js' %}"></script>
     <script src="{% static 'web/libraries/exporting.js' %}"></script>
@@ -64,6 +64,8 @@
     <script src="{% static 'web/js/flowcell/requestRunDetails.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/flowcell/requestLiveRunStats.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/models/Message.js' %}?{% now 'c' %}"></script>
+    <script src="{% static 'web/js/controllers/FlowcellTabController.js' %}?{% now 'c' %}"></script>
+    <script src="{% static 'web/js/controllers/FlowcellController.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/controllers/MessageController.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/helpers/DateHelper.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/controllers/FlowcellTableController.js' %}"></script>
@@ -72,8 +74,6 @@
     <script src="{% static 'web/js/models/MTask.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/models/MTaskList.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/models/MMessage.js' %}?{% now 'c' %}"></script>
-    <script src="{% static 'web/js/controllers/FlowcellController.js' %}?{% now 'c' %}"></script>
-    <script src="{% static 'web/js/controllers/FlowcellTabController.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/services/HttpService.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/services/FlowcellService.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/controllers/MTaskController.js' %}?{% now 'c' %}"></script>
@@ -97,16 +97,12 @@
     {% block header %}
     {% endblock %}
 
-    <!-- Left side column. contains the logo and sidebar -->
-    {% block sidebar %}
-    {% endblock %}
-
     <!-- Content Wrapper. Contains page content -->
     {% block content %}
     {% endblock %}
 
     <!-- Main Footer -->
-    <footer class="footer bg-light">
+    <footer class="footer bg-light" id="sticky-footer">
         <!-- To the right -->
         <div class="container-fluid">
             <div class="row">
@@ -135,7 +131,8 @@
 </div>
 
 {% block javascript %}
-
+{% endblock %}
+{% block adjustment %}
 {% endblock %}
 </body>
 </html>
