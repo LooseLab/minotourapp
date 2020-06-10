@@ -9,6 +9,7 @@ from celery.utils.log import get_task_logger
 from django.db import connection
 
 from alignment.models import PafStore
+from minotourapp.settings import BASE_DIR
 from minotourapp.utils import get_env_variable
 from reads.models import JobMaster, FastqRead
 
@@ -33,6 +34,7 @@ def on_delete_error(function, path, excinfo):
     logger.error(excinfo)
     return 1
 
+
 def clear_artic_data(job_master):
     """
     Clear the artic files from the system drive
@@ -49,9 +51,12 @@ def clear_artic_data(job_master):
     results_dir = Path(
         f"{environmental_results_directory}/artic/Temp_results/{job_master.flowcell.id}_{job_master.id}_artic"
     )
+
     if not results_dir.exists():
         exit_code = 1
     else:
+        # clear pngs from artic static dir
+        rmtree(Path(f"{BASE_DIR}/artic/static/artic/{job_master.flowcell.id}_{job_master.id}_artic/"), onerror=on_delete_error)
         rmtree(results_dir, onerror=on_delete_error)
         return 0
 
