@@ -27,11 +27,8 @@ class BasecalledDataController {
      * @param flowcellId {number} The primary key of the flowcell in the database.
      * @param selectedBarcode {string} The starting barcode. Default is all reads.
      */
-    initialiseCharts(flowcellId, selectedBarcode){
+    initialiseCharts(flowcellId, selectedBarcode) {
         // We have no data for this tab.
-        if (!flowcellController.flowcellTabController.checkTabIsPresent("basecalled-data")){
-            return
-        }
         this._updateBarcodeNavTab(flowcellId);
         this._fetchSummaryDataHtmlTable(flowcellId);
         this._createHistogramCharts(flowcellId, this._currentBarcode);
@@ -91,7 +88,7 @@ class BasecalledDataController {
                 //                             <a class="nav-link ${active}" data-toggle="pill" id="${barcode.name.replace(" ", "_")}" onclick="basecalledDataController._changeBarcode(event)">${barcode.name}</a>
                 //                         </li>`)
                 newBarcodeElementsArray.push(`<li class="barcode-tab nav-item">
-                                            <a class="nav-link ${active}" data-toggle="pill" id="${barcode.replace(" ", "_")}" onclick="basecalledDataController._changeBarcode(event)">${barcode}</a>
+                                            <a class="nav-link ${active}" data-toggle="pill" id="${barcode.replace(" ", "_")}" onclick="flowcellController.flowcellTabController.baseCalledDataController._changeBarcode(event)">${barcode}</a>
                                         </li>`)
             })
             // this.barcodesElementsList = this.barcodesElementsList.sort()
@@ -534,7 +531,40 @@ class BasecalledDataController {
                 "PERCENT OF TOTAL"
             );
         }
-        this._updateBarcodeProportionBarCharts(flowcellId)
+        if (!this.hasOwnProperty("_pieChartBarcodeClassUnclass")) {
+            this._pieChartBarcodeClassUnclass = makePieChart(
+                "unclass-pie-proportion",
+                "PROPORTION OF READS CLASSIFIED"
+            )
+        }
+        this._updateBarcodeProportionCharts(flowcellId)
+    }
+
+    /**
+     * Update the classified vs unclassifed proportion of reads pie chart
+     * @param data {Object} Series object sent from server
+     * @private
+     */
+    _updatePieChartProportion(data) {
+        let newComparisonData = data.data.pop()
+        let oldChartSeries = this._pieChartBarcodeClassUnclass.series
+        let oldChartData = oldChartSeries.filter(series => {
+            return series.name === data.name;
+        })
+        console.log(this._pieChartBarcodeClassUnclass)
+        console.log(newComparisonData)
+
+        if (!oldChartData.length) {
+            this._pieChartBarcodeClassUnclass.addSeries(data)
+        } else {
+            // if the data is the same
+            if (checkHighChartsDataIsNew(oldChartData[0].options.data, newComparisonData)) {
+                console.log("Skipping draw")
+            } else {
+                oldChartData[0].setData(data.data)
+            }
+        }
+
     }
 
     /**
@@ -542,12 +572,16 @@ class BasecalledDataController {
      * @param flowcellId {string} The primary key of the flowcell record in database
      * @private
      */
-    _updateBarcodeProportionBarCharts(flowcellId) {
+    _updateBarcodeProportionCharts(flowcellId) {
         this._axiosInstance(`/api/v1/flowcells/${flowcellId}/barcode-proportion`).then(response => {
             let chartData = response.data;
+            console.log(response.data)
             let oldChartData = this._columnChartBarcodeProportion.series;
             let oldSeries;
-            let categories = chartData.pop()
+            let otherData = chartData.pop()
+            let categories = otherData.categories
+            let pieChartData = otherData.pieChartData
+            console.log(pieChartData)
             let options;
             this._columnChartBarcodeProportion.showLoading(`<div class="spinner-border text-success" role="status">
                                         <span class = "sr-only"> Loading...</span></div>`);
@@ -571,9 +605,9 @@ class BasecalledDataController {
                         }
                     }
                 },
-                xAxis: {categories: categories.categories}
+                xAxis: {categories}
             }
-
+            this._updatePieChartProportion(pieChartData)
             this._columnChartBarcodeProportion.update(options)
             // for each series data set we returned
             chartData.forEach(newSeries => {
@@ -612,8 +646,8 @@ class BasecalledDataController {
         that._updateHistogramChartsData(flowcellId, barcode, changeBarcode);
         that._updateBaseCalledReadCharts(flowcellId, barcode, changeBarcode);
         that._updateBarcodeNavTab(flowcellId, changeBarcode);
-        if (!changeBarcode){
-            that._updateBarcodeProportionBarCharts(flowcellId);
+        if (!changeBarcode) {
+            that._updateBarcodeProportionCharts(flowcellId);
         }
     }
 }
