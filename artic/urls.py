@@ -42,5 +42,15 @@ urlpatterns = [
         r'^api/v1/artic/build-results/$',
         views.get_results_package,
         name="create-results-bundle"
+    ),
+    url(
+        r'^api/v1/artic/fetch-png-html/$',
+        views.png_html,
+        name="png-html"
+    ),
+    url(
+        r'^api/v1/artic/fetch-amplicon-bands/$',
+        views.get_amplicon_bands_for_master,
+        name="amplicon-bands"
     )
 ]
