@@ -9,16 +9,9 @@ class FlowcellTabController {
         this.tabs = [];
         this._first = true;
         this._createElementLookupObjects();
-        this._redraw_interval = setInterval(() => this.redrawTabs(), 30000);
+        this._redraw_interval = setInterval(() => this._drawTabs(), 30000);
     }
 
-    /**
-     * Check that the given tab name is included in the shown tabs.
-     * @param tabName {string} Name of the tab to check
-     */
-    checkTabIsPresent(tabName){
-        return this.tabs.includes(tabName)
-    }
 
     /**
      * Create a object that has all the tabs and nav HTML objects keyed to the elements ID attribute
@@ -36,17 +29,16 @@ class FlowcellTabController {
      */
     _drawTabs() {
         let promise = this._flowcellServices.getFlowcellTabs(this._flowcellId);
-
         promise.then((tabs) => {
-
             let seshTab = getSelectedTab();
             // We are getting the previous tab here and checking it still is available. If it is we show it.
             this.showTabs(tabs);
-            this.tabs=tabs;
-            if (this._first){
+            this.tabs = tabs;
+            if (this._first) {
+
                 let activeTab = seshTab !== null && tabs.includes(seshTab) ? seshTab : "summary-data";
                 this.toggleTabContent(activeTab);
-                this._first=false;
+                this._first = false;
             }
         });
     }
@@ -99,8 +91,26 @@ class FlowcellTabController {
      * @param tabs {string[]} Array of tab names
      */
     showTabs(tabs) {
+        let controllers = {
+            "basecalled-data": ["baseCalledDataController", BasecalledDataController],
+            "artic": ["articController", ArticController]
+        };
+        Object.keys(controllers).forEach(controllerName=>{
+            // if we have a controller for this tab, but we are no longer showing it as underlying data has been deleted
+            if (!tabs.includes(controllerName) && this[controllers[controllerName][0]]){
+                // delete the controller
+                delete this[controllers[controllerName][0]]
+            }
+        })
         tabs.forEach((name) => {
             this.lookupElement[`nav-${name}`].classList.remove("hidden");
+            // if the name of the tab is in our list of controllers to initialise
+            if ( Object.keys(controllers).includes(name)) {
+                // if we don't have a controller already initialised for this tab
+                if (!this[controllers[name][0]]){
+                    this[controllers[name][0]] = new controllers[name][1](this._flowcellId);
+                }
+            }
         });
     }
 }
