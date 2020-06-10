@@ -8,17 +8,34 @@
     <div class="col-md-12" id="basecalled-summary"></div>
 
 </div>
-<div class="card card-primary card-outline" id="barcode-proportion-card">
-    <div class="card-header">
-        <h3 class="card-title">
-            <i class="fas fa-chart-bar"></i>
-            Proportion of barcode in Flowcell data
-        </h3>
-    </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-12 highcharts-container" style="height:400px;" id="barcode-proportion">
+<div class="row">
+    <div class="col-md-6">
+        <div class="card card-primary card-outline" id="barcode-proportion-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Proportion of barcode in Flowcell data
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class=highcharts-container" style="height:400px;" id="barcode-proportion">
 
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card card-primary card-outline" id="barcode-proportion-card">
+            <div class="card-header">
+                <h3 class="card-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Proportion of Reads Barcode Classified
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class=highcharts-container" style="height:400px;" id="unclass-pie-proportion">
+
+                </div>
             </div>
         </div>
     </div>
@@ -107,5 +124,5 @@
     </div>
 </div>
 <script>
-    const basecalledDataController = new BasecalledDataController({{ flowcell.id }});
+    {#const basecalledDataController = new BasecalledDataController({{ flowcell.id }});#}
 </script>
