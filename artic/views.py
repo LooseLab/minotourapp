@@ -2,11 +2,10 @@ import json
 import os
 import tarfile
 from collections import defaultdict
-from pathlib import Path
 from urllib.parse import parse_qs
 
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
@@ -15,51 +14,10 @@ from rest_framework.response import Response
 from alignment.models import PafSummaryCov
 # Create your views here.
 from artic.models import ArticBarcodeMetadata
-from artic.task_artic_alignment import make_results_directory_artic, np
+from artic.task_artic_alignment import np
+from artic.utils import get_amplicon_band_data, quick_get_artic_results_directory, remove_duplicate_sequences_numpy
 from reads.models import Flowcell, JobMaster, FlowcellSummaryBarcode, Barcode
 from reference.models import ReferenceInfo
-
-
-def quick_get_artic_results_directory(flowcell_id, barcodeName="", check=False):
-    """
-
-    Parameters
-    ----------
-    flowcell_id : int
-        Primary key of flowcell record that we are looking
-    barcodeName : str optional
-        The barcode that the data is from. If provided coverage path is also returned.
-    check : bool
-        If True, check whether there ia a results directory.
-
-    Returns
-    -------
-    (flowcell: reads.models.Flowcell, artic_results_path: pathlib.PosixPath, artic_task.id : int)
-
-
-
-    """
-    flowcell = Flowcell.objects.get(pk=flowcell_id)
-
-    artic_task = get_object_or_404(
-        JobMaster, flowcell=flowcell, job_type__name="Track Artic Coverage"
-    )
-
-    artic_results_path = make_results_directory_artic(
-        flowcell.id, artic_task.id, allow_create=False
-    )
-
-    if check:
-        return artic_results_path.exists()
-
-    if barcodeName:
-        # The path to the coverage array for this barcode
-        coverage_path = Path(
-            f"{artic_results_path}/{barcodeName}/{barcodeName}.coverage.dat"
-        )
-        return flowcell, artic_results_path, artic_task.id, coverage_path
-
-    return flowcell, artic_results_path, artic_task.id
 
 
 @api_view(["GET"])
@@ -117,6 +75,9 @@ def get_artic_master_chart_data(request):
     flowcell_id = request.GET.get("flowcellId", None)
 
     barcode = request.GET.get("barcodeChosen", None)
+    # Whether to log the data
+    # 1 is true 0 is false
+    log_coverage = int(request.GET.get("logCoverage", 0))
 
     if not flowcell_id or not barcode:
         return Response(
@@ -138,92 +99,22 @@ def get_artic_master_chart_data(request):
     except FileNotFoundError as e:
         Response("Coverage file not found.", status=status.HTTP_404_NOT_FOUND)
         raise e
+
+    if log_coverage:
+        coverage = coverage.astype(np.float32)
+        coverage = np.log10(coverage)
+        coverage[np.isneginf(coverage)] = 0
     # Remove duplicate elements in series
     x_y_cov, xmax_cov, ymax_cov, ymin_cov = remove_duplicate_sequences_numpy(
         coverage, True
     )
 
     # The return dictionary
-    data_dict = {"coverage": {"xmax": xmax_cov, "ymax": ymax_cov, "data": x_y_cov}}
+    data_dict = {
+        "coverage": {"xmax": xmax_cov, "ymax": ymax_cov, "data": x_y_cov},
+    }
 
     return Response(data_dict)
-
-
-def remove_duplicate_sequences_numpy(array, master=False, minimum=None):
-    """
-        Remove stretches of the reference with the same values
-        :param array: The array with a value for each reference location
-        :param master: Whether this data is for the master chart or not - if it is and
-        the array is longer than 50000 elements we want to downsample it until it matches 50000,
-        which is the number of points we're happy to draw
-        :param minimum: The minimum data value on the x axis
-        :return: a tuple of a list with an x,y coordinate for plotting, the max value on the x axis,
-        and the max value on the y axis
-    """
-
-    # Check we haven't accidentally sent a list
-    if not isinstance(array, np.ndarray):
-        print(
-            f"Expecting Numpy array, received {type(array)}, converting "
-            f"to np.ndarray and removing duplicate sequences."
-        )
-        array = np.array(array)
-
-    # get width of selected window, starting at x coord and finishing at x coord + window width
-    if minimum is not None:
-        # We aren't starting at x = 0 so add the values on
-        xmax = minimum + array.size
-        index_start = minimum
-    else:
-        xmax = array.size
-        index_start = 1
-
-    # Get largest value
-    ymax = array.max()
-
-    ymin = array.min()
-
-    a = array
-
-    # create an index position, so we can draw the point above the correct base on the graph
-    index_position = np.arange(index_start, index_start + a.size, dtype=np.uint32)
-    # Remove all the indexes where there is duplicated numbers in sequence
-
-    a = np.insert(a, 0, -1)
-
-    a = np.append(a, -1)
-
-    index_position = index_position[a[2:] != a[:-2]]
-    # remove all the duplicate sequential values from the array of actual data values
-    a = array[a[2:] != a[:-2]]
-
-    a[a == np.inf] = 0
-
-    a[a == 1.7976931348623157e308] = 0
-
-    # Create a list of tuples, with the x coord as first tuple element and the y value as second
-    x_y_values = list(zip(index_position, a))
-
-    # if this is for the coverage master chart we need 50000 values or less for the sake of the browser
-    if len(x_y_values) > 50000 and master:
-        print("Down sampling for master")
-        x_y_values = sampler(x_y_values)
-
-    return x_y_values, xmax, ymax, ymin
-
-
-def sampler(array):
-    """
-    If the array is too large > 50000 points, take a sample using steps until we have 50000 or less points
-    :param array: A list of tuple values for expected benefit steps
-    :type array: list
-    :return: a smaller sampled numpy array
-    """
-    # Get the step size for slicing, getting the array to 50000 points
-    step_size = int(len(array) / 50000)
-    # Slice is step size
-    sampled_array = array[0::step_size]
-    return sampled_array
 
 
 @api_view(["GET"])
@@ -244,6 +135,7 @@ def get_artic_detail_chart_data(request):
     # the minimum and maxiumum x coordinates for the detail graph
     mini = int(request.GET.get("min"))
     maxi = int(request.GET.get("max"))
+    log_coverage = int(request.GET.get("logCoverage", 0))
 
     flowcell_id = request.GET.get("flowcellId")
 
@@ -258,7 +150,7 @@ def get_artic_detail_chart_data(request):
         artic_task_id,
         coverage_path,
     ) = quick_get_artic_results_directory(flowcell_id, barcode)
-
+    print(coverage_path)
     if artic_task_id is None:
         return Response(
             "Artic task not found for this flowcell.", status=status.HTTP_404_NOT_FOUND
@@ -274,27 +166,29 @@ def get_artic_detail_chart_data(request):
     file_path_list = [
         (coverage_path, np.uint16),
     ]
-    # use these strings as a key
-    file_contents = [
-        "coverage",
-    ]
-    # Get a list with a dictionary of all the numpy arrays
-    data_dict = {}
 
     # We're gonna use the numpy memmap to read only the part of the array we need
-    for index, file_path_or_dtype in enumerate(file_path_list):
-        # Create a key matching the contents of this value
-        data_dict[file_contents[index]] = np.memmap(
-            file_path_or_dtype[0], dtype=file_path_or_dtype[1]
-        )[mini:maxi]
+    # Create a key matching the contents of this value
+    coverage = np.memmap(
+        coverage_path, np.uint16
+    )[mini:maxi]
+
+    if log_coverage:
+        coverage = np.log10(coverage, where=coverage != 0)
 
     # # Remove the duplicate values until a change in the array
     x_y_cov, xmax_cov, ymax_cov, ymin_cov = remove_duplicate_sequences_numpy(
-        data_dict["coverage"], minimum=mini
+        coverage, minimum=mini
     )
 
+    # Get the primer bands
+    scheme = "nCoV-2019"
+    scheme_version = "V3"
+    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
     data_dict = {
         "coverage": {"xmax": xmax_cov, "ymax": ymax_cov, "data": x_y_cov},
+        "amplicon_bands": amplicon_band_coords,
+        "colour_lookup": colours,
     }
 
     return Response(data_dict)
@@ -485,14 +379,11 @@ def get_artic_barcode_metadata_html(request):
     ]
     old_dict = orm_object.__dict__
     context_dict = {key[0]: old_dict[key[1]] for key in new_key_names}
-    context_dict["barcode_name"] = orm_object.barcode.name
-    context_dict["flowcell_id"] = flowcell_id
-
-    _, path_to_results, _, _ = quick_get_artic_results_directory(
-        flowcell_id, selected_barcode
-    )
-    context_dict["path_to_results"] = path_to_results / "results.tar.gz"
-    context_dict["results_files"] = results_files
+    context_dict["hidden_barcode_name"] = orm_object.barcode.name
+    context_dict["hidden_flowcell_id"] = flowcell_id
+    context_dict["hidden_results_files"] = results_files
+    context_dict["hidden_has_finished"] = old_dict["has_finished"]
+    context_dict["hidden_has_suff"] = old_dict["has_sufficient_coverage"]
 
     return render(
         request,
@@ -573,7 +464,10 @@ def get_results_package(request):
     barcode = params.get("selectedBarcode", None)
     chosen = parse_qs(request.GET.get("string"))
     if not flowcell_id or not barcode:
-        return Response("Flowcell Id or barocde required in request.", status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            "Flowcell Id or barocde required in request.",
+            status=status.HTTP_400_BAD_REQUEST,
+        )
 
     try:
         flowcell = Flowcell.objects.get(pk=flowcell_id)
@@ -582,16 +476,14 @@ def get_results_package(request):
 
     # TODO add check to see if task is complete
     print(request.data)
-    _, path_to_results, _, _ = quick_get_artic_results_directory(
-        flowcell_id, barcode
-    )
+    _, path_to_results, _, _ = quick_get_artic_results_directory(flowcell_id, barcode)
     results_files = {
-        "consensus":f"{barcode}.consensus.fasta.gz",
+        "consensus": f"{barcode}.consensus.fasta.gz",
         "box-plot": f"{barcode}-boxplot.png.gz",
         "bar-plot": f"{barcode}-barplot.png.gz",
         "fail-vcf": f"{barcode}.fail.vcf.gz",
         "pass-vcf": f"{barcode}.pass.vcf.gz",
-        "input-fasta": f"{barcode}.fastq.gz"
+        "input-fasta": f"{barcode}.fastq.gz",
     }
     chosen_files = [results_files[key] for key in chosen.keys()]
     # change into the directory
@@ -607,8 +499,81 @@ def get_results_package(request):
 
     with open(results_file, "rb") as fh:
         response = HttpResponse(fh.read(), content_type="application/gzip")
-        response["Content-Disposition"] = f"attachment; filename=results_artic_{flowcell.name}.tar.gz"
+        response[
+            "Content-Disposition"
+        ] = f"attachment; filename=results_artic_{flowcell.name}.tar.gz"
         response["x-file-name"] = f"results_artic_{flowcell.name}.tar.gz"
         return response
 
 
+@api_view(["GET"])
+@renderer_classes((TemplateHTMLRenderer, JSONRenderer))
+def png_html(request):
+    """
+    Return the html for the PNG cards, and give them the context to render the images
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        Request object, contains flowcell primary key and barcode for sample to be shown
+
+    Returns
+    -------
+
+    """
+
+    flowcell_id = request.GET.get("flowcellId", None)
+    selected_barcode = request.GET.get("selectedBarcode", None)
+    if not flowcell_id or not selected_barcode:
+        return Response(
+            "No flowcell ID or barcode provided.", status=status.HTTP_400_BAD_REQUEST
+        )
+    orm_object = ArticBarcodeMetadata.objects.filter(
+        flowcell_id=flowcell_id, barcode__name=selected_barcode
+    ).last()
+
+    if not orm_object:
+        return Response("No data found", status=status.HTTP_404_NOT_FOUND)
+    (flowcell, artic_results_path, artic_task_id,) = quick_get_artic_results_directory(
+        flowcell_id
+    )
+
+    context_list = [
+        [
+            # TODO we need to add the flowcell_pk_job_master_pk folder before here
+            f"artic/{flowcell_id}_{artic_task_id}_artic/{selected_barcode}-barplot.png",
+            f"{selected_barcode} Artic Bar Plot",
+            "DESCRIPTION",
+        ],
+        [
+            f"artic/{flowcell_id}_{artic_task_id}_artic/{selected_barcode}-boxplot.png",
+            f"{selected_barcode} Artic Box Plot",
+            "DESCRIPTION",
+        ],
+    ]
+
+    png_dict = {"srcs": context_list, "has_finished": orm_object.has_finished}
+    print(png_dict)
+    return render(request, "artic-pngs.html", context={"png": png_dict})
+
+
+@api_view(["GET"])
+def get_amplicon_bands_for_master(request):
+    """
+    TODO should contain scheme and scheme version
+    Get the amplicon x and y coordinates for the master chart on initialisation
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The request object.
+    Returns
+    -------
+    list of lists
+        List of the start and stop coordinates, and colour lookup
+
+    """
+    # Get the primer bands
+    scheme = "nCoV-2019"
+    scheme_version = "V3"
+    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
+    data_dict = {"amplicon_band_coords": amplicon_band_coords, "colours": colours}
+    return Response(data_dict, status=status.HTTP_200_OK)
