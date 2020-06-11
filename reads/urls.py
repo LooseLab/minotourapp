@@ -27,11 +27,11 @@ urlpatterns = [
         views.run_detail,
         name="run-detail"
     ),
-    url(
-        r'^api/v1/runs/(?P<pk>[0-9]+)/reads/$',
-        views.read_list,
-        name="fastqread-list"
-    ),
+    # url(
+    #     r'^api/v1/runs/(?P<pk>[0-9]+)/reads/$',
+    #     views.read_list,
+    #     name="fastqread-list"
+    # ),
     url(
         r'^api/v1/read/$',
         views.read_list_new,
