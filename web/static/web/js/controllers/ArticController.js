@@ -89,7 +89,8 @@ class ArticController {
                     min: 0,
                     max: data.coverage.xmax,
                     gridLineWidth: 1,
-                    maxZoom: 10000, // fourteen days
+                    zoomEnabled: false,
+                    maxZoom: 10000,
                     plotBands: [...highChartsBands, {
                         id: 'mask-before',
                         from: data.coverage.data[0][0],
@@ -368,7 +369,11 @@ class ArticController {
                 barcodes.unshift("Choose Barcode");
             }
             barcodes.forEach(barcode => {
-                barcodeList.push(`<option class="sel__box__options" value="${barcode}">${barcode}</option>`)
+                if (barcode === "Choose Barcode") {
+                    barcodeList.push(`<option class="sel__box__options" id="place-holder" value="${barcode}">${barcode}</option>`)
+                } else {
+                    barcodeList.push(`<option class="sel__box__options" value="${barcode}">${barcode}</option>`)
+                }
             })
             if (barcodeList.length) {
                 $current.html(barcodeList.join(""))
@@ -378,6 +383,10 @@ class ArticController {
                 txt = $(this).val();
                 console.log(txt)
                 that._barcodeChosen = txt;
+                // Remove the placeholder "Choose Barcode" option
+                $("#place-holder").remove()
+                // enable the log coverage toggle slider
+                $("#log-coverage").attr("disabled", false);
 
                 that._drawSelectedBarcode(flowcellId, txt);
             })
@@ -399,9 +408,12 @@ class ArticController {
         */
         let that = this;
         let min, max, coverageDetail;
-        let logCoverage = $("#log-coverage")[0].checked ? 1: 0
+        let logCoverage = $("#log-coverage")[0].checked ? 1 : 0
         that._articCoverageScatterMaster.showLoading("Fetching data from server.")
-
+        // enable zoom on the master chart
+        if (!this._articCoverageScatterMaster.xAxis[0].zoomEnabled === true) {
+            this._articCoverageScatterMaster.xAxis[0].zoomEnabled = true
+        }
         this._axiosInstance.get('/api/v1/artic/visualisation/master', {
             params: {
                 flowcellId,
@@ -464,9 +476,10 @@ class ArticController {
         // If we are drawing it for the first time by calling the create master chart which has a callback that draws the other charts
         if (that._first === true) {
             startData = {"coverage": {"ymax": 1, "data": [0, 1]}};
+            that._createCoverageMaster(startData, flowcellId);
             // Create selection drop down
             that._createOrUpdateSelectionBox(flowcellId);
-            that._createCoverageMaster(startData, flowcellId);
+            that._addListenerToLogSlider(flowcellId);
             that._drawColumnCharts()
             that._drawOrUpdateSummaryTable(that._coverageSummaryTable, flowcellId)
             that._first = false;
@@ -479,9 +492,9 @@ class ArticController {
             that._createOrUpdateSelectionBox(flowcellId)
             //update the detail master charts
             coverageDetail = $("#coverageArticDetail").highcharts();
-            // If the coverage detail chart does exist, update the existing charts
             // Get the minimum and maximum values of the xAxis
             min = coverageDetail.xAxis[0].min;
+            // if min is undefined we don't have a detail chart so don't update
             if (min !== undefined) {
                 that._setBarcodeMetaDataHTMLTable(flowcellId, that._barcodeChosen)
                 that._drawSelectedBarcode(flowcellId, that._barcodeChosen)
@@ -690,15 +703,28 @@ class ArticController {
      * @private
      */
     _renderPngs(flowcellId, selectedBarcode) {
-        // TODO somehow check if pngs are rendered so we don't make call again! Include a class on the HTML
-        this._axiosInstance.get("/api/v1/artic/fetch-png-html", {
-            params: {
-                flowcellId,
-                selectedBarcode
-            }
-        }).then(response => {
-            console.log(response)
-            $("#artic-pngs").html(response.data);
+        if (!$(".rendered").length) {
+            this._axiosInstance.get("/api/v1/artic/fetch-png-html", {
+                params: {
+                    flowcellId,
+                    selectedBarcode
+                }
+            }).then(response => {
+                console.log(response)
+                $("#artic-pngs").html(response.data);
+            })
+        }
+    }
+
+
+    /**
+     * Add on change listener to the HTML slider for logging coverage to call the draw selected barocde function
+     * @param flowcellId {number} The primary key of the flowcell record in the database.
+     * @private
+     */
+    _addListenerToLogSlider(flowcellId) {
+        $("#log-coverage").on("change", () => {
+            this._drawSelectedBarcode(flowcellId, this._barcodeChosen)
         })
     }
 }
