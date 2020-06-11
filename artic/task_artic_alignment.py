@@ -7,7 +7,7 @@ import subprocess
 from collections import defaultdict
 from copy import deepcopy
 from io import StringIO
-from shutil import copy
+from shutil import copy, rmtree
 
 from celery import task
 from celery.utils.log import get_task_logger
@@ -61,7 +61,10 @@ def clear_unused_artic_files(artic_results_path, sample_name):
     files_to_keep_full.extend([f"{el}.gz" for el in files_to_keep_full])
     artic_results_pathlib = Path(artic_results_path)
     for filey in artic_results_pathlib.iterdir():
-        if f"{filey.name}" not in files_to_keep_full:
+        if filey.is_dir():
+            rmtree(filey, ignore_errors=True)
+        # add or for pangolin csv to keep
+        if f"{filey.name}" not in files_to_keep_full or filey.suffix == ".csv":
             filey.unlink()
         elif not filey.suffix == ".gz" and not filey.suffix in [".dat", ".png"]:
             subprocess.Popen(["gzip", "-9", str(filey)]).communicate()
@@ -71,6 +74,44 @@ def clear_unused_artic_files(artic_results_path, sample_name):
                 Path(f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}").mkdir()
             copy(str(filey), f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}")
 
+
+@task()
+def run_pangolin_command(base_results_directory, barcode_name):
+    """
+
+    Returns
+    -------
+
+    """
+    # jm = JobMaster.objects.get(pk=job_master_pk)
+    re_gzip = False
+    os.chdir(f"{base_results_directory}/{barcode_name}")
+    if not Path(f"{barcode_name}.consensus.fasta").exists() and Path(f"{barcode_name}.consensus.fasta.gz").exists():
+        logger.debug(f"Unzipping {barcode_name}.consensus.fasta")
+        subprocess.Popen(["gzip", "-d", f"{barcode_name}.consensus.fasta.gz"]).communicate()
+        re_gzip = True
+    cmd = [
+        "bash",
+        "-c",
+        f"source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate pangolin && pangolin -p --write-tree {barcode_name}.consensus.fasta",
+    ]
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    out, err = proc.communicate()
+    if not out and err:
+        print("We are done here. Pangolin out!")
+        print(out)
+        print(err)
+    else:
+        print("¯\_(ツ)_/¯")
+        print(str(out))
+        print(err)
+
+    if re_gzip:
+        logger.debug(f"ReGzipping {barcode_name}.consensus.fasta")
+        subprocess.Popen(["gzip", "-9", f"{barcode_name}.consensus.fasta"]).communicate()
+    #if out and err:
+    #    raise Exception(out)
 
 
 @task()
@@ -114,8 +155,11 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         logger.warning(str(out))
         logger.warning(err)
     if out and err:
-        raise out
+        raise Exception(err)
+
+    run_pangolin_command(base_results_directory,barcode_name,job_master_pk)
     # Update the Barcode Metadata to show the task has been run on this barcode
+
     ArticBarcodeMetadata.objects.filter(
         flowcell=jm.flowcell, job_master__job_type__id=16, barcode__name=barcode_name
     ).update(has_finished=True)
