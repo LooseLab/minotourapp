@@ -1,7 +1,7 @@
 {% load static %}
 {% if png.has_finished %}
     {% for png_path, png_title, png_description in png.srcs %}
-        <div class="col-md-6">
+        <div class="col-md-6 rendered">
             <div class="card card-primary card-outline">
                 <div class="card-header">
                     <h4 class="card-title">{{ png_title }}</h4>
