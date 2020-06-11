@@ -376,6 +376,7 @@ def get_artic_barcode_metadata_html(request):
         ("Fail VCF", "fail-vcf"),
         ("Pass VCF", "pass-vcf"),
         ("Input fasta", "input-fasta"),
+        ("Pangolin lineages CSV", "pangolin-lineages")
     ]
     old_dict = orm_object.__dict__
     context_dict = {key[0]: old_dict[key[1]] for key in new_key_names}
@@ -484,6 +485,7 @@ def get_results_package(request):
         "fail-vcf": f"{barcode}.fail.vcf.gz",
         "pass-vcf": f"{barcode}.pass.vcf.gz",
         "input-fasta": f"{barcode}.fastq.gz",
+        "pangolin-lineages": "lineage_report.csv"
     }
     chosen_files = [results_files[key] for key in chosen.keys()]
     # change into the directory
