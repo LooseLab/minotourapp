@@ -387,8 +387,6 @@ def sort_reads_by_flowcell_fire_tasks(reads):
     read_df = pd.DataFrame(reads)
     flowcell_gb = read_df.groupby("flowcell_id")
     flowcell_ids = np.unique(read_df["flowcell_id"].values).tolist()
-
-    # TODO talk this through with Matt, what if we only have like 100 reads in a flowcell?
     for flowcell_id in flowcell_ids:
         task_lookups = check_if_flowcell_has_streamable_tasks(flowcell_id)
         flowcell_reads = flowcell_gb.get_group(flowcell_id).to_dict(orient="records")
