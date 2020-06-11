@@ -1145,35 +1145,35 @@ def minION_scripts_detail(request, pk, nk):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@api_view(["GET", "POST"])
-def read_list(request, pk):
-    if request.method == "GET":
-
-        querysets = FastqRead.objects.filter(run_id=pk)
-
-        serializer = FastqReadGetSerializer(
-            querysets, many=True, context={"request": request}
-        )
-
-        return Response(serializer.data)
-
-    elif request.method == "POST":
-
-        # serializer = FastqReadSerializer(
-        #     data=request.data, many=True, context={"request": request}
-        # )
-        #
-        # if serializer.is_valid():
-        #     serializer.save()
-        #     return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        reads = request.data
-        reads_list = [FastqRead(**read) for read in reads]
-        try:
-            FastqRead.objects.bulk_create(read_list)
-            return Response("Updated reads", status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return Response(e, status=status.HTTP_400_BAD_REQUEST)
+# @api_view(["GET", "POST"])
+# def read_list(request, pk):
+#     if request.method == "GET":
+#
+#         querysets = FastqRead.objects.filter(run_id=pk)
+#
+#         serializer = FastqReadGetSerializer(
+#             querysets, many=True, context={"request": request}
+#         )
+#
+#         return Response(serializer.data)
+#
+#     elif request.method == "POST":
+#
+#         # serializer = FastqReadSerializer(
+#         #     data=request.data, many=True, context={"request": request}
+#         # )
+#         #
+#         # if serializer.is_valid():
+#         #     serializer.save()
+#         #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+#
+#         reads = request.data
+#         reads_list = [FastqRead(**read) for read in reads]
+#         try:
+#             FastqRead.objects.bulk_create(read_list)
+#             return Response("Updated reads", status=status.HTTP_201_CREATED)
+#         except Exception as e:
+#             return Response(e, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["GET", "POST"])
@@ -2756,10 +2756,8 @@ def job_master_list(request):
             return Response(
                 "Bad search criteria provided", status=status.HTTP_400_BAD_REQUEST
             )
-
     # Its a post request to create a new task
     else:
-
         try:
             # Get the flowcell by name
             flowcell = Flowcell.objects.get(
