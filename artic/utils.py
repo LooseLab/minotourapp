@@ -135,6 +135,7 @@ def quick_get_artic_results_directory(flowcell_id, barcodeName="", check=False):
 
     Returns
     -------
+
     (flowcell: reads.models.Flowcell, artic_results_path: pathlib.PosixPath, artic_task.id : int)
 
 
