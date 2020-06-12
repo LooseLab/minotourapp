@@ -13,7 +13,7 @@ from celery import task
 from celery.utils.log import get_task_logger
 
 from alignment.models import PafSummaryCov
-from alignment.tasks_alignment import call_fetch_reads_alignment
+# from alignment.tasks_alignment import call_fetch_reads_alignment
 from artic.models import ArticBarcodeMetadata
 from minotourapp.settings import BASE_DIR
 from minotourapp.utils import get_env_variable
@@ -23,6 +23,7 @@ from reads.models import (
     Barcode,
     FastqReadType,
     FlowcellSummaryBarcode,
+    FastqRead,
 )
 from readuntil.functions_EB import *
 
@@ -59,20 +60,28 @@ def clear_unused_artic_files(artic_results_path, sample_name):
     files_to_keep_full = []
     files_to_keep_full.extend([f"{sample_name}{filey}" for filey in files_to_keep])
     files_to_keep_full.extend([f"{el}.gz" for el in files_to_keep_full])
+    files_to_keep_full.append("lineage_report.csv")
     artic_results_pathlib = Path(artic_results_path)
     for filey in artic_results_pathlib.iterdir():
-        if filey.is_dir():
-            rmtree(filey, ignore_errors=True)
-        # add or for pangolin csv to keep
-        if f"{filey.name}" not in files_to_keep_full or filey.suffix == ".csv":
+        if f"{filey.name}" not in files_to_keep_full:
             filey.unlink()
-        elif not filey.suffix == ".gz" and not filey.suffix in [".dat", ".png"]:
+            # delete pangolin tree files
+        elif filey.is_dir():
+            rmtree(filey, ignore_errors=True)
+        elif not filey.suffix == ".gz" and filey.suffix not in [".dat", ".png"]:
             subprocess.Popen(["gzip", "-9", str(filey)]).communicate()
         elif filey.suffix == ".png":
             # Copy the pngs to the artic static directory to be served
-            if not Path(f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}").exists():
-                Path(f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}").mkdir()
-            copy(str(filey), f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}")
+            if not Path(
+                    f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}"
+            ).exists():
+                Path(
+                    f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}"
+                ).mkdir()
+            copy(
+                str(filey),
+                f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}",
+            )
 
 
 @task()
@@ -86,9 +95,14 @@ def run_pangolin_command(base_results_directory, barcode_name):
     # jm = JobMaster.objects.get(pk=job_master_pk)
     re_gzip = False
     os.chdir(f"{base_results_directory}/{barcode_name}")
-    if not Path(f"{barcode_name}.consensus.fasta").exists() and Path(f"{barcode_name}.consensus.fasta.gz").exists():
+    if (
+            not Path(f"{barcode_name}.consensus.fasta").exists()
+            and Path(f"{barcode_name}.consensus.fasta.gz").exists()
+    ):
         logger.debug(f"Unzipping {barcode_name}.consensus.fasta")
-        subprocess.Popen(["gzip", "-d", f"{barcode_name}.consensus.fasta.gz"]).communicate()
+        subprocess.Popen(
+            ["gzip", "-d", f"{barcode_name}.consensus.fasta.gz"]
+        ).communicate()
         re_gzip = True
     cmd = [
         "bash",
@@ -109,8 +123,10 @@ def run_pangolin_command(base_results_directory, barcode_name):
 
     if re_gzip:
         logger.debug(f"ReGzipping {barcode_name}.consensus.fasta")
-        subprocess.Popen(["gzip", "-9", f"{barcode_name}.consensus.fasta"]).communicate()
-    #if out and err:
+        subprocess.Popen(
+            ["gzip", "-9", f"{barcode_name}.consensus.fasta"]
+        ).communicate()
+    # if out and err:
     #    raise Exception(out)
 
 
@@ -157,7 +173,7 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     if out and err:
         raise Exception(err)
 
-    run_pangolin_command(base_results_directory,barcode_name,job_master_pk)
+    run_pangolin_command(base_results_directory, barcode_name)
     # Update the Barcode Metadata to show the task has been run on this barcode
 
     ArticBarcodeMetadata.objects.filter(
@@ -312,7 +328,7 @@ def make_results_directory_artic(flowcell_id, task_id, allow_create=True):
 
 
 def populate_reference_count(
-    reference_count_dict, fp, master_reference_count_path,
+        reference_count_dict, fp, master_reference_count_path,
 ):
     """
     Populate the reference count dict so we can write it out with counts
@@ -373,14 +389,14 @@ def replicate_counts_array_barcoded(barcode_names, counts_dict):
 
 
 def save_artic_barcode_metadata_info(
-    coverage,
-    flowcell,
-    job_master,
-    run_id,
-    barcode_name,
-    percent200x,
-    percent250x,
-    has_sufficient_coverage,
+        coverage,
+        flowcell,
+        job_master,
+        run_id,
+        barcode_name,
+        percent200x,
+        percent250x,
+        has_sufficient_coverage,
 ):
     """
     Save the artic metadata info for this barcode.
@@ -512,12 +528,21 @@ def run_artic_pipeline(task_id, streamed_reads=None):
         logger.info(f"Fetching reads in chunks of {chunk_size} for alignment.")
 
         # Get the fastq objects
-        (
-            fasta_df_barcode,
-            last_read,
-            read_count,
-            fasta_objects,
-        ) = call_fetch_reads_alignment(runs, chunk_size, task.last_read, pass_only=True)
+        # (
+        #     fasta_df_barcode,
+        #     last_read,
+        #     read_count,
+        #     fasta_objects,
+        # ) = call_fetch_reads_alignment(runs, chunk_size, task.last_read, pass_only=True)
+
+        fasta_objects = FastqRead.objects.filter(
+            flowcell_id=flowcell.id, id__gt=task.last_read
+        )[:chunk_size]
+        fasta_df_barcode = pd.DataFrame().from_records(
+            fasta_objects.values("read_id", "barcode_name", "sequence", "id", "run_id")
+        )
+        if fasta_objects:
+            last_read = fasta_df_barcode.tail(1).iloc[0].id
 
         if fasta_df_barcode.shape[0] == 0:
             logger.info("No fastq found. Skipping this iteration.")
@@ -554,8 +579,8 @@ def run_artic_pipeline(task_id, streamed_reads=None):
     )
 
     # ##Check if read_count is > 0 otherwise exit
-    ## #We might want to check the minimum number of reads or the time since the last read was entered to do a smaller chunk?
-
+    ## #We might want to check the minimum number of reads or the time
+    # since the last read was entered to do a smaller chunk?
     if read_count > 0:
         if not minimap2:
             logger.error("Can not find minimap2 executable - stopping task.")
@@ -573,7 +598,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
 
         # Create the series that contains the read_id and sequence as a correctly formatted fasta string
         fasta_df_barcode["fasta"] = (
-            ">" + fasta_df_barcode["read_id"] + "\n" + fasta_df_barcode["sequence"]
+                ">" + fasta_df_barcode["read_id"] + "\n" + fasta_df_barcode["sequence"]
         )
         # Create one string formatted correctly for fasta with input data
         fasta_data = "\n".join(list(fasta_df_barcode["fasta"]))
@@ -656,24 +681,24 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             barcodes_with_mapped_results = set()
 
             for i, record in enumerate(
-                parse_PAF(
-                    StringIO(paf),
-                    fields=[
-                        "qsn",
-                        "qsl",
-                        "qs",
-                        "qe",
-                        "rs",
-                        "tsn",
-                        "tsl",
-                        "ts",
-                        "te",
-                        "nrm",
-                        "abl",
-                        "mq",
-                        "tags",
-                    ],
-                )
+                    parse_PAF(
+                        StringIO(paf),
+                        fields=[
+                            "qsn",
+                            "qsl",
+                            "qs",
+                            "qe",
+                            "rs",
+                            "tsn",
+                            "tsl",
+                            "ts",
+                            "te",
+                            "nrm",
+                            "abl",
+                            "mq",
+                            "tags",
+                        ],
+                    )
             ):
                 fastq_read = fastq_dict[record.qsn]
 
@@ -726,7 +751,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                 chromosomes_seen_now.add(chromosome.line_name)
 
                 # Parse the cigar string, on the path file record, returns a dictionary of bases, with numpy arrays
-                d = parse_cigar(record.tags.get("cg", None), sequence, mapping_length,)
+                d = parse_cigar(record.tags.get("cg", None), sequence, mapping_length, )
                 # Adds the mismatch count to the temporary dict, parsing the MD string
                 d["M"] = np.fromiter(parse_MD(record.tags.get("MD", None)), np.uint16)
 
@@ -735,7 +760,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     # add the counts for that base to the array that exists in the reference count dict for that base,
                     # at the correct location
                     barcoded_counts_dict[barcode_of_read][record.tsn][base][
-                        mapping_start:mapping_end
+                    mapping_start:mapping_end
                     ] += d[base].astype(reference_count_dict[record.tsn][base].dtype)
 
                 # TODO this needs to be reset, here we set the U to True to indicate that a count at this position
@@ -896,10 +921,10 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         percent_250x,
                         has_sufficient_coverage,
                     )
-                task.last_read = last_read
-                task.iteration_count += 1
+    task.last_read = last_read
+    task.iteration_count += 1
 
-                logger.info("Finishing this batch of reads.")
-                task.read_count += read_count
-                task.running = False
-                task.save()
+    logger.info("Finishing this batch of reads.")
+    task.read_count += read_count
+    task.running = False
+    task.save()
