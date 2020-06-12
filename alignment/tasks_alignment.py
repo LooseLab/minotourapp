@@ -1,14 +1,17 @@
 from __future__ import absolute_import, unicode_literals
+
+import os
 import subprocess
+
+import numpy as np
+import pandas as pd
 from celery import task
 from celery.utils.log import get_task_logger
 from django.conf import settings
+
 from alignment.models import PafRoughCov, PafStore, PafSummaryCov
 from reads.models import FastqRead, JobMaster, FastqReadType
 from reference.models import ReferenceInfo, ReferenceLine
-import pandas as pd
-import numpy as np
-import os
 
 # Set up the logger to write to logging file
 logger = get_task_logger(__name__)
@@ -131,27 +134,6 @@ def fetch_reads_alignment(runs, chunk_size, last_read, pass_only):
     read_count = len(fastq_df_barcode)
     # Return everything to be used above
     return fastq_df_barcode, last_read, read_count, fasta_objects
-
-
-@task()
-def run_minimap2_alignment_by_job_master(job_master_id):
-    # TODO this is currently completely unused - To Delete? Plus run_task_minimap2.py
-    """
-    The code to run the minimap alignment from the django command line
-    :param job_master_id: The id of the JobMaster for this alignment
-    :return:
-    """
-    # Get the JobMaster Django Model object
-    job_master = JobMaster.objects.get(pk=job_master_id)
-    # If there is a reference
-    if job_master.reference:
-        run_minimap2_alignment(job_master.id,)
-    else:
-        logger.info(
-            "Flowcell id: {} - Job master {} has no reference.".format(
-                job_master.flowcell.id, job_master.id
-            )
-        )
 
 
 @task()
