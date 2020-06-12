@@ -589,7 +589,8 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
             "job_type",
             "flowcell",
             "reference",
-            "target_set"
+            "target_set",
+            "from_database"
         )
 
     def validate(self, data):
