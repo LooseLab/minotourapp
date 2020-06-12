@@ -2535,7 +2535,7 @@ class JobType(models.Model):
 
 class JobMaster(models.Model):
     """
-
+    The JobMaster model is used to store the tasks that we wish celery to pick up and run
     """
     run = models.ForeignKey(
 
@@ -2609,7 +2609,9 @@ class JobMaster(models.Model):
     paused = models.BooleanField(
         default=False
     )
-
+    from_database = models.BooleanField(
+        default=False
+    )
     iteration_count = models.IntegerField(
 
         null=True,
