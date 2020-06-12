@@ -9,7 +9,7 @@ from celery.utils.log import get_task_logger
 from alignment.tasks_alignment import run_minimap2_alignment
 from artic.task_artic_alignment import (
     make_results_directory_artic,
-    run_artic_command,
+    run_artic_command, run_artic_pipeline,
 )
 from centrifuge import centrifuge
 from centrifuge.sankey import calculate_sankey
@@ -86,9 +86,9 @@ def run_monitor():
 
                 calculate_expected_benefit_3dot0_final.delay(flowcell_job.id)
 
-            # if flowcell_job.job_type.name == "Track Artic Coverage":
-            #
-            #     run_artic_pipeline.delay(flowcell_job.id)
+            if flowcell_job.job_type.name == "Track Artic Coverage" and flowcell_job.from_database:
+
+                run_artic_pipeline.delay(flowcell_job.id)
 
             if flowcell_job.job_type.name == "Run Artic":
                 logger.info("Running the check for the Artic code.")
