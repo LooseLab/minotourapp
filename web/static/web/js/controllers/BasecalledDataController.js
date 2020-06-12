@@ -578,9 +578,9 @@ class BasecalledDataController {
             console.log(response.data)
             let oldChartData = this._columnChartBarcodeProportion.series;
             let oldSeries;
-            let otherData = chartData.pop()
-            let categories = otherData.categories
-            let pieChartData = otherData.pieChartData
+            let otherData;
+            let categories;
+            let pieChartData;
             console.log(pieChartData)
             let options;
             this._columnChartBarcodeProportion.showLoading(`<div class="spinner-border text-success" role="status">
@@ -591,10 +591,12 @@ class BasecalledDataController {
             }
             if (response.status === 204) {
                 console.log("Not a barcoded run, deleting proportion chart.")
-                $("#barcode-proportion-card").remove()
+                $("#barcode-proportion-cards").remove()
                 return
             }
-
+            otherData = chartData.pop();
+            categories = otherData.categories;
+            pieChartData = otherData.pieChartData
             options = {
                 yAxis: {stackLabels: {enabled: true,}},
                 plotOptions: {
