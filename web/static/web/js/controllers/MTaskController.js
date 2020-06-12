@@ -1,5 +1,5 @@
 class MTaskController {
-    /* TODO rewrite and redocument
+    /* TODO rewrite this trash and redocument
     Create a task controller that is in charge of fetching and creating new tasks - used on the task-tab.html page,
      separate from Javascript that creates the drop-downs themselves
      */
@@ -28,7 +28,7 @@ class MTaskController {
         // The name of the flowcell used for the deletion checks
         this._flowcellName = $("#name-flowcell").html();
         // Whether or not to delete the flowcell
-        this._deleteBoolean = false;
+        this._fromDatabase = $("#from-database");
     }
 
 
@@ -61,9 +61,9 @@ class MTaskController {
 
     // Create a new event handler for when we submit a new job
     createNewJob(event) {
+        let fromDatabase;
         // prevent default behaviour
         event.preventDefault();
-
         this._reference_id = this._select_reference.value;
 
         console.log(this._select_job_type.value);
@@ -76,9 +76,9 @@ class MTaskController {
         }
 
         // create an instance of the MTask class for this new task
-
+        fromDatabase = this._fromDatabase[0].checked
         let task_new = new MTask(this._flowcell_id, this._select_job_type.value,
-            this._reference_id, this._target_set);
+            this._reference_id, this._target_set, fromDatabase);
         // delete a flowcell, so show confirmation modal
         if (task_new.job_type_id === "11") {
             $("#confirm-submit").modal();
@@ -151,7 +151,8 @@ class MTaskController {
             flowcell: task_new.flowcell_id,
             reference: task_new.reference_id,
             job_type: task_new.job_type_id,
-            target_set: task_new.target_set_id
+            target_set: task_new.target_set_id,
+            from_database: task_new.fromDatabase
         }));
     }
 
