@@ -4,6 +4,7 @@ import tarfile
 from collections import defaultdict
 from urllib.parse import parse_qs
 
+import pandas as pd
 from django.http import HttpResponse
 from django.shortcuts import render
 from rest_framework import status
@@ -476,7 +477,6 @@ def get_results_package(request):
         return Response("Flowcell not found.", status=status.HTTP_404_NOT_FOUND)
 
     # TODO add check to see if task is complete
-    print(request.data)
     _, path_to_results, _, _ = quick_get_artic_results_directory(flowcell_id, barcode)
     results_files = {
         "consensus": f"{barcode}.consensus.fasta.gz",
@@ -522,7 +522,6 @@ def png_html(request):
     -------
 
     """
-
     flowcell_id = request.GET.get("flowcellId", None)
     selected_barcode = request.GET.get("selectedBarcode", None)
     if not flowcell_id or not selected_barcode:
@@ -538,7 +537,6 @@ def png_html(request):
     (flowcell, artic_results_path, artic_task_id,) = quick_get_artic_results_directory(
         flowcell_id
     )
-
     context_list = [
         [
             # TODO we need to add the flowcell_pk_job_master_pk folder before here
@@ -552,9 +550,9 @@ def png_html(request):
             "DESCRIPTION",
         ],
     ]
-
-    png_dict = {"srcs": context_list, "has_finished": orm_object.has_finished}
-    print(png_dict)
+    df = pd.read_csv(artic_results_path/selected_barcode/"lineage_report.csv")
+    html_string = df.to_html()
+    png_dict = {"srcs": context_list, "has_finished": orm_object.has_finished, "lineages_table": html_string}
     return render(request, "artic-pngs.html", context={"png": png_dict})
 
 
