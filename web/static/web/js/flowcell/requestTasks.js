@@ -1,5 +1,5 @@
 function loadTasksForm() {
-    /**
+    /** TODO rewrite
      * @function
      * Loads create task's form and add event listeners
      */
@@ -218,15 +218,13 @@ function flowcellTaskHistoryTable(flowcellId) {
                     "data": null,
                     "orderable": false,
                     "width": "15%",
-                    "render": function (data, type, full) {
+                    "render": (data, type, full) => {
                         if (!data["server_initiated"]) {
-                            return [`<a class="btn icon-task"  id="pause_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>·
-                                <a class="btn icon-task" id="reset_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Reset </a>·
-                                <a class="btn icon-task" id="delete_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 3)"><i class="fa fa-times"></i> Delete </a>`,];
-                        }
-                        else {
-                            return [`<a class="btn icon-task" id="pause_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon}"></i> ${data.iconText} </a>·
-                                <a class="btn icon-task" id="reset_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle"></i> Reset </a>`];
+                            return [`<a class="btn icon-task"  id="pause_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon} task-icon"></i> ${data.iconText} </a>·
+                                <a class="btn icon-task" id="reset_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 1)"><i class="fa fa-recycle task-icon"></i> Reset </a>·
+                                <a class="btn icon-task" id="delete_${data.id}" onclick="mTaskController.performActionOnTask(event, ${data.id}, 3)"><i class="fa fa-times task-icon"></i> Delete </a>`,];
+                        }else{
+                            return [`<a></a>`]
                         }
                     }
                 }
