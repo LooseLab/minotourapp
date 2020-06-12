@@ -369,7 +369,7 @@ def check_if_flowcell_has_streamable_tasks(flowcell_pk):
     streamable_tasks_pks = [16]
     tasks = JobMaster.objects.filter(
         flowcell_id=flowcell_pk, job_type__id__in=streamable_tasks_pks
-    ).values("id", "job_type_id")
+    ).values("id", "job_type_id", "from_database")
     return tasks
 
 
@@ -391,7 +391,7 @@ def sort_reads_by_flowcell_fire_tasks(reads):
         task_lookups = check_if_flowcell_has_streamable_tasks(flowcell_id)
         flowcell_reads = flowcell_gb.get_group(flowcell_id).to_dict(orient="records")
         for task in task_lookups:
-            if task["job_type_id"] == 16:
+            if task["job_type_id"] == 16 and not task["from_database"]:
 
                 run_artic_pipeline.delay(task["id"], flowcell_reads)
 
