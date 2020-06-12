@@ -470,6 +470,10 @@ p {
 
 .icon-task {
     padding: 2px 6px 2px 6px;
+    font-size: small;
+}
+.task-icon{
+    color: lightslategray;
 }
 
 .disallowed {
