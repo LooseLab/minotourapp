@@ -692,3 +692,28 @@ def reset_flowcell(flowcell_pk):
     print(f"Deleted: {affected}")
 
     print("Finished resetting flowcell!")
+
+
+def pause_job(job_master):
+    """
+    Pause a job master.
+    Parameters
+    ----------
+    job_master: reads.models.JobMaster
+        The JobMaster to pause.
+    Returns
+    -------
+    job_master, return_message: (reads.models.JobMaster, str)
+        The modified job master object and the return message
+    """
+
+    if job_master.paused:
+        job_master.paused = False
+        paused_status = "un-paused"
+    else:
+        job_master.paused = True
+        paused_status = "paused"
+
+    job_master.save()
+    return_message = f"Successfully {paused_status} {job_master.job_type.name} task, id: {job_master.id}"
+    return job_master, return_message
