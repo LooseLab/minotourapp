@@ -91,6 +91,9 @@ class ArticController {
                     gridLineWidth: 1,
                     zoomEnabled: false,
                     maxZoom: 10000,
+                    title: {
+                        text: "Base Number"
+                    },
                     plotBands: [...highChartsBands, {
                         id: 'mask-before',
                         from: data.coverage.data[0][0],
@@ -102,7 +105,7 @@ class ArticController {
                     min: 0,
                     max: data.coverage.ymax,
                     title: {
-                        text: null
+                        text: "Coverage"
                     }
                 },
                 legend: {
@@ -193,7 +196,7 @@ class ArticController {
             xAxis: {
                 type: chartType,
                 gridLineWidth: 1,
-                text: {
+                title: {
                     text: "Base number"
                 },
                 plotBands: bands
@@ -408,7 +411,8 @@ class ArticController {
         */
         let that = this;
         let min, max, coverageDetail;
-        let logCoverage = $("#log-coverage")[0].checked ? 1 : 0
+        let logCoverage = $("#log-coverage")[0].checked ? 1 : 0;
+        let yAxisTitle = logCoverage ? "Log 10 coverage" : "Coverage";
         that._articCoverageScatterMaster.showLoading("Fetching data from server.")
         // enable zoom on the master chart
         if (!this._articCoverageScatterMaster.xAxis[0].zoomEnabled === true) {
@@ -424,6 +428,7 @@ class ArticController {
             // update the extremes on the y axis
             console.log(response.data.coverage.ymax)
             that._articCoverageScatterMaster.yAxis[0].setExtremes(0, response.data.coverage.ymax);
+            that._articCoverageScatterMaster.yAxis[0].setTitle({text: yAxisTitle})
             that._updateExistingChart(that._articCoverageScatterMaster, response.data.coverage.data, 0);
             that._articCoverageScatterMaster.hideLoading()
 
@@ -446,6 +451,7 @@ class ArticController {
                     logCoverage
                 }
             }).then(response => {
+                that._articCoverageScatterDetail.yAxis[0].setTitle({text: yAxisTitle})
                 that._updateAxesAndData(that._articCoverageScatterDetail, min, max, response.data.coverage, true);
             }).catch(error => {
                 console.error(error)
