@@ -1,6 +1,5 @@
 import datetime
 import json
-import time
 from collections import defaultdict
 from pprint import pprint
 
@@ -76,14 +75,14 @@ from reads.serializers import (
     JobMasterSerializer,
     JobMasterInsertSerializer,
 )
+from reads.tasks.delete_flowcell_task import clear_artic_data
 from reads.tasks.redis_tasks_functions import save_reads_bulk
-from reads.utils import get_coords, return_temp_empty_summary
+from reads.utils import get_coords, return_temp_empty_summary, pause_job
 from readuntil.models import ExpectedBenefitChromosomes
 from reference.models import ReferenceInfo
 from web.delete_tasks import (
     delete_metagenomics_task,
     delete_alignment_task,
-    delete_expected_benefit_task,
 )
 
 logger = get_task_logger(__name__)
@@ -154,8 +153,8 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
         for key, value in df.groupby("is_unclassified")["data"].sum().to_dict().items():
             results = {}
             results["name"] = key
-            results["y"] = value
-            array_data.append(value)
+            results["y"] = round(value, 2)
+            array_data.append(round(value, 2))
             if key == "Classified":
                 results["sliced"] = True
                 results["selected"] = True
@@ -2890,11 +2889,9 @@ def task_control(request):
     :param request: Request object, contains the Id of the task keyed to flowcellJobId
     :return: A status reflecting the state of the executed code
     """
-    # TODO rewrite right now!! MAKE CHILDREN CRY
     # Get the task object from django ORM
 
     job_master = JobMaster.objects.get(pk=request.data["flowcellJobId"])
-
     if not (
             request.user == job_master.flowcell.owner
             or request.user.has_perm("run_analysis", job_master.flowcell)
@@ -2904,124 +2901,28 @@ def task_control(request):
         )
 
     action_type = request.data["actionType"]
-
     lookup_action_type = {1: "Reset", 2: "Pause", 3: "Delete"}
-
     action = lookup_action_type[action_type]
-
     unrecognised_action_message = (
         "Apologies, but this action type was not recognised."
-        " It may have not been implemented yet."
+        "It may have not been implemented yet."
     )
 
-    if job_master.job_type.name == "ChanCalc":
-        if action == "Reset":
-
-            running = job_master.running
-
-            seconds_counter = 0
-
-            while running:
-
-                running = job_master.running
-                time.sleep(1)
-                seconds_counter += 1
-
-                if seconds_counter is 25:
-                    job_master.running = False
-                    job_master.save()
-
-            # reset the values, skips existing values
-            job_master.read_count = 0
-            job_master.last_read = 0
-            job_master.save()
-            # set a return message
-            return_message = f"Successfully reset ChanCalc task, id: {job_master.id}"
-
-        elif action == "Pause":
-
-            if job_master.paused:
-                job_master.paused = False
-                paused_status = "un-paused"
-            elif not job_master.paused:
-                job_master.paused = True
-                paused_status = "paused"
-
-            job_master.save()
-            return_message = (
-                f"Successfully {paused_status} ChanCalc task, id: {job_master.id}"
-            )
-
-        else:
-            return Response(unrecognised_action_message, status=500)
-
-    elif job_master.job_type.name == "UpdateFlowcellDetails":
-        if action == "Reset":
-            # reset the values, skips existing values
-            running = job_master.running
-
-            seconds_counter = 0
-
-            while running:
-                running = job_master.running
-                time.sleep(1)
-                seconds_counter += 1
-                if seconds_counter is 10:
-                    job_master.running = False
-                    job_master.save()
-
-            job_master.read_count = 0
-            job_master.last_read = 0
-            job_master.save()
-            # set a return message
-            return_message = (
-                f"Successfully reset UpdateFlowcellDetails task, id: {job_master.id}"
-            )
-
-        elif action == "Pause":
-            if job_master.paused:
-                job_master.paused = False
-                paused_status = "un-paused"
-            else:
-                job_master.paused = True
-                paused_status = "paused"
-
-            job_master.save()
-            return_message = f"Successfully {paused_status} UpdateFlowcellDetails task, id: {job_master.id}"
-
-        else:
-
-            return Response(unrecognised_action_message, status=500)
-
-    elif job_master.job_type.name == "Metagenomics":
+    if job_master.job_type.name == "Metagenomics":
         if action == "Reset":
             delete_metagenomics_task.delay(job_master.id, True)
-
             return_message = (
                 f"Successfully started to reset this metagenomics task, id: {job_master.id}."
                 f" Clearing previous data may take a while, please be patient!"
             )
-
         elif action == "Pause":
-            if job_master.paused:
-                job_master.paused = False
-                paused_status = "un-paused"
-            else:
-                job_master.paused = True
-                paused_status = "paused"
-
-            job_master.save()
-            return_message = (
-                f"Successfully {paused_status} metagenomics task, id: {job_master.id}."
-            )
-
+            job_master, return_message = pause_job(job_master)
         elif action == "Delete":
             delete_metagenomics_task.delay(job_master.id)
             return_message = (
                 f"Successfully started deletion of this metagenomics task, id: {job_master.id}."
                 f" Clearing previous data may take a while, please be patient!"
             )
-
         else:
             return Response(unrecognised_action_message, status=500)
 
@@ -3032,21 +2933,8 @@ def task_control(request):
                 f"Successfully began reset of minimap2 task, id: {job_master.id}"
                 f" Clearing previous data may take a while, please be patient!"
             )
-
         elif action == "Pause":
-
-            if job_master.paused:
-                job_master.paused = False
-                paused_status = "un-paused"
-            else:
-                job_master.paused = True
-                paused_status = "paused"
-
-            job_master.save()
-            return_message = (
-                f"Successfully {paused_status} minimap2 task, id: {job_master.id}"
-            )
-
+            job_master, return_message = pause_job(job_master)
         elif action == "Delete":
             delete_alignment_task.delay(job_master.id)
             return_message = (
@@ -3055,33 +2943,20 @@ def task_control(request):
             )
         else:
             return Response(unrecognised_action_message, status=500)
-
-    elif job_master.job_type.name == "ExpectedBenefit":
+    # for artic tasks
+    elif job_master.job_type.id == 16:
         if action == "Reset":
-            return_message = (
-                f"Successfully reset this Expected benefit task, id: {job_master.id}"
-            )
-
-        elif action == "Pause":
-
-            if job_master.paused:
-                job_master.paused = False
-                paused_status = "un-paused"
-            else:
-                job_master.paused = True
-                paused_status = "paused"
+            clear_artic_data(job_master)
+            job_master.running = False
+            job_master.complete = False
             job_master.save()
-            return_message = f"Successfully {paused_status} this Expected benefit task, id: {job_master.id}"
-
+            return_message = "Successfully reset artic Task."
+        elif action == "Pause":
+            job_master, return_message = pause_job(job_master)
         elif action == "Delete":
-            return_message = (
-                f"Successfully deleted this Expected benefit task, id: {job_master.id}"
-            )
-
-            delete_expected_benefit_task.delay(job_master.id)
-
-        else:
-            return Response(unrecognised_action_message, status=500)
+            clear_artic_data(job_master)
+            job_master.delete()
+            return_message = "Successfully deleted artic Task."
 
     else:
         raise NotImplementedError
