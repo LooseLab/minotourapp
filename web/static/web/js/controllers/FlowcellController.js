@@ -7,7 +7,6 @@ it contains references to the other controllers
         // delete soon
         this._interval = setInterval(requestData, 60000, flowcellId);
         this._flowcellTabController = new FlowcellTabController(flowcellId);
-        this._coverage_chart_controller = new CoverageChartController('coverage_div', "");
         this._lastread = 0; // TODO this is a quick fix for the problem on the live data tab. we should refactor this soon.
     }
 
