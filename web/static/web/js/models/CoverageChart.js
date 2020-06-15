@@ -6,33 +6,32 @@ class CoverageChart {
 
     constructor(div_name) {
         // the chart
-        this._div_master_name = div_name + "_master";
-        this._div_detail_name = div_name + "_detail";
+        this._divIdMaster = div_name + "_master";
+        this._divIdDetail = div_name + "_detail";
 
-        this._master_chart = this.create_master_chart();
-        this._detail_chart = this.create_detail_chart();
+        this._masterChart = this.createMasterChart();
+        this._detailChart = this.createDetailChart();
     }
 
-    get master_chart() {
+    get masterChart() {
 
-        return this._master_chart;
+        return this._masterChart;
     }
 
-    get detail_chart() {
+    get detailChart() {
 
-        return this._detail_chart;
+        return this._detailChart;
     }
 
-    create_master_chart(){
+    createMasterChart() {
 
         let self = this;
 
-        var chart = new Highcharts.chart({
+        return Highcharts.chart({
 
             chart: {
-                renderTo: this._div_master_name,
+                renderTo: this._divIdMaster,
                 reflow: true,
-                backgroundColor: null,
                 marginLeft: 50,
                 marginRight: 20,
                 zoomType: 'x',
@@ -89,31 +88,24 @@ class CoverageChart {
                     enableMouseTracking: false
                 }
             },
-
             series: [{
                 type: 'area',
                 name: null,
                 data: [],
                 step: true
             }],
-
             exporting: {
                 enabled: false
             }
         });
-
-        return chart;
     }
 
-    create_detail_chart() {
-
+    createDetailChart() {
         let self = this;
-
-        var chart = Highcharts.chart({
-
+        return Highcharts.chart({
             chart: {
-                renderTo: this._div_detail_name,
-                reflow: false,
+                renderTo: this._divIdDetail,
+                reflow: true,
                 marginLeft: 50,
                 marginRight: 20,
                 style: {
@@ -163,41 +155,33 @@ class CoverageChart {
                 data: [],
                 step: true
             }],
-
             exporting: {
-                enabled: false
+                enabled: true
             }
         });
 
-        return chart;
     }
 
     afterSelection(event) {
-
+        let min, max, newDetailSeries;
         event.preventDefault();
-
-        var min = Math.trunc(event.xAxis[0].min);
-        var max = Math.trunc(event.xAxis[0].max);
-
-        this._master_chart.xAxis[0].removePlotBand('mask-before');
-        this._master_chart.xAxis[0].addPlotBand({
+        min = Math.trunc(event.xAxis[0].min);
+        max = Math.trunc(event.xAxis[0].max);
+        this._masterChart.xAxis[0].removePlotBand('mask-before');
+        this._masterChart.xAxis[0].addPlotBand({
             id: 'mask-before',
             from: min,
             to: max,
             color: 'rgba(0, 0, 0, 0.2)'
         });
-
-        var new_serie = [];
-
-        for (var i = 0; i < this._master_chart.series[0].xData.length; i++) {
-
-            if (this._master_chart.series[0].xData[i] > min && this._master_chart.series[0].xData[i] < max) {
-                new_serie.push([this._master_chart.series[0].xData[i], this._master_chart.series[0].yData[i]]);
+        newDetailSeries = this._masterChart.series[0].options.data.slice(min, max + 1)
+        for (let i = min; i < this._masterChart.series[0].xData.length; i++) {
+            if (this._masterChart.series[0].xData[i] < max) {
+                newDetailSeries.push([this._masterChart.series[0].options.data[i]]);
             }
         }
-
-        this._detail_chart.series[0].setData(new_serie);
-        this._detail_chart.min = min;
-        this._detail_chart.max = max;
+        this._detailChart.series[0].setData(newDetailSeries);
+        this._detailChart.min = min;
+        this._detailChart.max = max;
     }
 }
