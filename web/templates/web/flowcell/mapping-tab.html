@@ -1,76 +1,81 @@
-<div class="card ">
-    <div class="card-heading">
-        <h3 class="card-header">Mapping Data</h3>
+<div class="card card-primary card-outline">
+    <div class="card-header">
+        <h4 class="card-title">
+            <i class="fas fa-chart-bar"></i>
+            Minimap2 Data
+        </h4>
     </div>
     <div class="card-body">
         <div class="row">
-
             <div class="col-md-12 highcharts">
                 <form class="form-horizontal">
                     <div class="form-group">
-                        <label class="col-sm-2 control-label">Chromosome</label>
-
-                        <div class="col-sm-10 control-label" style="height: 100%; text-align: left;">
-                            <select id="chromosome-id-select"
-                                    onchange="flowcellController.coverage_chart_controller.reload_master_chart()"></select>
-                            <a href="#" class="btn btn-primary"
-                               onclick="flowcellController.coverage_chart_controller.reload_master_chart()">Reset
-                                chart</a>
+                        <div class="col-md-12 control-label" style="height: 100%; text-align: left;">
+                            <label for="barcode-select" style="display: inline">Barcode:</label>
+                            <select id="barcode-select" class="form-control-sm" style="display: inline"
+                                    onchange="flowcellController.flowcellTabController.alignmentController.coverageChartController.reload_master_chart()"></select>
+                            <label for="read-type-select" style="display: inline">Read Type:</label>
+                            <select id="read-type-select" class="form-control-sm" style="display: inline"
+                                    onchange="flowcellController.flowcellTabController.alignmentController.coverageChartController.reload_master_chart()"></select>
+                            <label for="reference-select" style="display: inline">Reference</label>
+                            <select id="reference-select" class="form-control-sm" style="display: inline"
+                                    onchange="flowcellController.flowcellTabController.alignmentController.coverageChartController.reload_master_chart()"></select>
+                            <label for="chromosome-select" style="display: inline">Chromosome</label>
+                            <select id="chromosome-select" class="form-control-sm" style="display: inline"
+                                    onchange="flowcellController.flowcellTabController.alignmentController.coverageChartController.reload_master_chart()"></select>
+                            {#                            <a href="#" class="btn btn-primary"#}
+                            {#                               onclick="flowcellController.flowcellTabController.alignmentController.reload_master_chart()">Reset#}
+                            {#                                chart</a>#}
                         </div>
                     </div>
                 </form>
             </div>
-
             <div id="coverage_div" class="col-md-12 highcharts" style="width:100%">
                 <div id="coverage_div_detail" class="detail_chart" style="height: 400px"></div>
                 <div id="coverage_div_master" class="master_chart"></div>
             </div>
-
+        </div>
+        <div class="row">
             <div id="per-chrom-cov"
-                 class="col-md-12 highcharts"
+                 class="col-md-6 highcharts"
                  style="width:50%; height:300px;">
                 <i class="fa fa-cog fa-spin fa-3x"></i>
                 Calculating
             </div>
-
             <div id="per-chrom-avg"
-                 class="col-md-12 highcharts"
+                 class="col-md-6 highcharts"
                  style="width:50%; height:300px;">
                 <i class="fa fa-cog fa-spin fa-3x"></i>
                 Calculating
             </div>
-
-            <div class="row">
-
-                <div class="col-md-12" id="mapping-summary">
-                    <table class="table table-hover mapping-table" style="width: 100%">
-                        <thead>
-                        <tr>
-                            <th>Barcode</th>
-                            <th>Sequence Name</th>
-                            <th>Sequence Length</th>
-                            <th>Read Count</th>
-                            <th>Yield</th>
-                            <th>Average Read Length</th>
-                            <th>Coverage</th>
-                        </tr>
-                        </thead>
-                        <tfoot>
-                        <tr>
-                            <th>Barcode</th>
-                            <th>Sequence Name</th>
-                            <th>Sequence Length</th>
-                            <th>Read Count</th>
-                            <th>Yield</th>
-                            <th>Average Read Length</th>
-                            <th>Coverage</th>
-                        </tr>
-                        </tfoot>
-                    </table>
-                </div>
-
+        </div>
+        <div class="row">
+            <div class="col-md-12" id="mapping-summary">
+                <table class="table table-hover mapping-table" style="width: 100%">
+                    <thead>
+                    <tr>
+                        <th>Barcode</th>
+                        <th>Sequence Name</th>
+                        <th>Sequence Length</th>
+                        <th>Read Count</th>
+                        <th>Yield</th>
+                        <th>Average Read Length</th>
+                        <th>Coverage</th>
+                    </tr>
+                    </thead>
+                    <tfoot>
+                    <tr>
+                        <th>Barcode</th>
+                        <th>Sequence Name</th>
+                        <th>Sequence Length</th>
+                        <th>Read Count</th>
+                        <th>Yield</th>
+                        <th>Average Read Length</th>
+                        <th>Coverage</th>
+                    </tr>
+                    </tfoot>
+                </table>
             </div>
-
         </div>
     </div>
 </div>
