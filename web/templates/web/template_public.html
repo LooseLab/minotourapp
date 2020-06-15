@@ -13,7 +13,11 @@
             </div><!-- /.container-fluid -->
         </nav>
 {% endblock %}
-
-{% block sidebar %}
+{% block adjustment%}
+    <script>
+        // offset body to account for navbar stickyness, which pulls navbar out of DOM
+        let heightFooter = $("#sticky-footer").css("height")
+        let windowHeight = $(document).height()
+        $("body").css({"padding-bottom": heightFooter, "min-height": `${windowHeight}px`})
+    </script>
 {% endblock %}
-
