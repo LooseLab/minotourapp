@@ -1383,8 +1383,6 @@ def flowcell_list(request):
                 )
                 continue
 
-            obj = None
-
             obj = {
                 "id": record.id,
                 "name": record.name,
