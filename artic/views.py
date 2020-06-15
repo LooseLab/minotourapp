@@ -335,10 +335,8 @@ def get_artic_barcode_metadata_html(request):
     orm_object = ArticBarcodeMetadata.objects.filter(
         flowcell_id=flowcell_id, barcode__name=selected_barcode
     ).last()
-
     if not orm_object:
         return Response("No data found", status=status.HTTP_404_NOT_FOUND)
-
     # First iteration we may may not have FlowcellSumamryBarcodes, so cal
     if not orm_object.percentage_of_reads_in_barcode:
         try:
@@ -354,11 +352,9 @@ def get_artic_barcode_metadata_html(request):
             orm_object.percentage_of_reads_in_barcode = (
                     barcode_numbers.read_count / total_reads * 100
             )
-
         except FlowcellSummaryBarcode.DoesNotExist as e:
             orm_object.percentage_of_reads_in_barcode = 0
-
-            # [[new key, old key]]
+    # [[new key, old key]]
     new_key_names = [
         ["Avg. Coverage", "average_coverage"],
         ["Var. Coverage", "variance_coverage"],
@@ -386,7 +382,12 @@ def get_artic_barcode_metadata_html(request):
     context_dict["hidden_results_files"] = results_files
     context_dict["hidden_has_finished"] = old_dict["has_finished"]
     context_dict["hidden_has_suff"] = old_dict["has_sufficient_coverage"]
-
+    (flowcell, artic_results_path, artic_task_id,) = quick_get_artic_results_directory(
+        flowcell_id
+    )
+    df = pd.read_csv(artic_results_path / selected_barcode / "lineage_report.csv.gz")
+    html_string = df.T.to_html(classes="table table-striped", border=0)
+    context_dict["hidden_html_string"] = html_string
     return render(
         request,
         "artic-barcode-metadata.html",
@@ -467,7 +468,7 @@ def get_results_package(request):
     chosen = parse_qs(request.GET.get("string"))
     if not flowcell_id or not barcode:
         return Response(
-            "Flowcell Id or barocde required in request.",
+            "Flowcell Id or barcode required in request.",
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -480,8 +481,8 @@ def get_results_package(request):
     _, path_to_results, _, _ = quick_get_artic_results_directory(flowcell_id, barcode)
     results_files = {
         "consensus": f"{barcode}.consensus.fasta.gz",
-        "box-plot": f"{barcode}-boxplot.png.gz",
-        "bar-plot": f"{barcode}-barplot.png.gz",
+        "box-plot": f"{barcode}-boxplot.png",
+        "bar-plot": f"{barcode}-barplot.png",
         "fail-vcf": f"{barcode}.fail.vcf.gz",
         "pass-vcf": f"{barcode}.pass.vcf.gz",
         "input-fasta": f"{barcode}.fastq.gz",
@@ -497,7 +498,7 @@ def get_results_package(request):
             for filey in chosen_files:
                 tar.add(filey)
         except FileNotFoundError as e:
-            return Response(str(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(str(e), status=status.HTTP_404_NOT_FOUND)
 
     with open(results_file, "rb") as fh:
         response = HttpResponse(fh.read(), content_type="application/gzip")
@@ -531,9 +532,10 @@ def png_html(request):
     orm_object = ArticBarcodeMetadata.objects.filter(
         flowcell_id=flowcell_id, barcode__name=selected_barcode
     ).last()
-
     if not orm_object:
         return Response("No data found", status=status.HTTP_404_NOT_FOUND)
+    if not orm_object.has_finished:
+        return Response("No results yet.", status=status.HTTP_204_NO_CONTENT)
     (flowcell, artic_results_path, artic_task_id,) = quick_get_artic_results_directory(
         flowcell_id
     )
@@ -550,9 +552,7 @@ def png_html(request):
             "DESCRIPTION",
         ],
     ]
-    df = pd.read_csv(artic_results_path/selected_barcode/"lineage_report.csv.gz")
-    html_string = df.to_html()
-    png_dict = {"srcs": context_list, "has_finished": orm_object.has_finished, "lineages_table": html_string}
+    png_dict = {"srcs": context_list, "has_finished": orm_object.has_finished}
     return render(request, "artic-pngs.html", context={"png": png_dict})
 
 
