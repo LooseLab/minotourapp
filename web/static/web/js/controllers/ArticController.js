@@ -55,17 +55,23 @@ class ArticController {
             let bands = response.data.amplicon_band_coords
             let colourLookup = response.data.colours
             let highChartsBands = []
+            let detailsBands = []
             bands.forEach((band, index) => {
-                highChartsBands.push({
+                let masterBand = {
                     from: band[0],
                     to: band[1],
                     color: colourLookup[band[2]],
-                    label: {
-                        text: `# ${index + 1}`,
-                        style: {
-                            color: "grey"
-                        },
-                        rotation: 270
+                }
+                highChartsBands.push(masterBand)
+                detailsBands.push({
+                    ...masterBand, ...{
+                        label: {
+                            text: `# ${index + 1}`,
+                            style: {
+                                color: "grey"
+                            },
+                            rotation: 270
+                        }
                     }
                 })
             })
@@ -150,8 +156,9 @@ class ArticController {
                 }]
                 // Call back function, called after the master chart is drawn, draws the detail charts
             }, () => {
+                console.log(detailsBands)
                 that._articCoverageScatterDetail = that._createDetailChart("coverageArticDetail", data.coverage.ymax, "Coverage", "line"
-                    , false, false, highChartsBands);
+                    , false, false, detailsBands);
             });
         }).catch(error => {
             console.error(error)
@@ -520,14 +527,14 @@ class ArticController {
         if (!this._perBarcodeCoverageChart) {
             this._perBarcodeCoverageChart = makeColumnChart(
                 "artic-per-barcode-coverage",
-                "READ COUNTS PER BARCODE",
+                "PASS READ COUNTS PER BARCODE",
                 "READ COUNT"
             );
         }
         if (!this._perBarcodeAverageReadLengthChart) {
             this._perBarcodeAverageReadLengthChart = makeColumnChart(
                 "artic-per-barcode-average-length",
-                "MEAN READ LENGTH PER BARCODE",
+                "MEAN PASS READ LENGTH PER BARCODE",
                 "READ LENGTH (BASES)"
             );
         }
@@ -685,7 +692,7 @@ class ArticController {
         event.preventDefault()
         data["params"] = {flowcellId, selectedBarcode}
         console.log($(".results-builder-form").serialize());
-        this._axiosInstance.get("/api/v1/artic/build-results/",
+        this._axiosInstance.get("/api/v1/artic/build-results",
             {
                 params: data,
                 Accept: 'application/gzip',
@@ -733,5 +740,15 @@ class ArticController {
         $("#log-coverage").on("change", () => {
             this._drawSelectedBarcode(flowcellId, this._barcodeChosen)
         })
+    }
+
+    /**
+     *
+     * @param flowcellId {number}
+     * @param selectedBarcode {string}
+     * @param event {Object}
+     */
+    reRunArticCommand(flowcellId, selectedBarcode, event){
+        console.log("Here we would manually trigger the pipeline.")
     }
 }
