@@ -1,27 +1,25 @@
 class CoverageChartController {
     // controller for coverage chart
-    constructor(div_name, advanced) {
+    constructor(div_name) {
         // constructs new Coverage chart class, and link to chromosome select field
-        this._chromosome_select = document.querySelector('#' + advanced + 'chromosome-id-select');
-        if(advanced === ""){
-            this._coverage_chart = new CoverageChart(div_name);
-        }
+        this._chromosomeSelect = document.querySelector('#chromosome-id-select');
+        this._coverageChart = new CoverageChart(div_name);
     }
 
     get coverage_chart() {
-        return this._coverage_chart;
+        return this._coverageChart;
     }
 
     reload_master_chart() {
         // reload the data on click to reset or chromosome change
         let url = this.create_url();
-        this.load_chart_data(url);
+        this.loadChartData(url);
     }
 
     create_url() {
 
         // create the url to query for data
-        var selected_option = this._chromosome_select.value;
+        var selected_option = this._chromosomeSelect.value;
 
         if (parseInt(selected_option) < 0) {
 
@@ -45,15 +43,15 @@ class CoverageChartController {
         return url;
     }
 
-    load_chart_data(url) {
+    loadChartData(url) {
 
         let self = this;
 
         $.getJSON(url, (function (data) {
             var parsedData = JSON.parse(data);
-            self._coverage_chart.master_chart.series[0].setData(parsedData);
-            self._coverage_chart.detail_chart.series[0].setData(parsedData);
-            self._coverage_chart.master_chart.xAxis[0].removePlotBand('mask-before');
+            self._coverageChart.masterChart.series[0].setData(parsedData);
+            self._coverageChart.detailChart.series[0].setData(parsedData);
+            self._coverageChart.masterChart.xAxis[0].removePlotBand('mask-before');
             return data;
         }));
     }
