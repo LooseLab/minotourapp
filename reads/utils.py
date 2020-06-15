@@ -9,7 +9,7 @@ from reads.models import (
     FlowcellSummaryBarcode,
     FlowcellHistogramSummary,
     FlowcellChannelSummary,
-    FastqFile,
+    FastqFile, JobMaster,
 )
 
 
@@ -717,3 +717,18 @@ def pause_job(job_master):
     job_master.save()
     return_message = f"Successfully {paused_status} {job_master.job_type.name} task, id: {job_master.id}"
     return job_master, return_message
+
+
+def clear_artic_command_job_masters(flowcell_id):
+    """
+    Clear the non outdated JobMasters that ran commands
+    Parameters
+    ----------
+    flowcell_id: int
+        The primary key of the flowcell that has had the task reset
+
+    Returns
+    -------
+    None
+    """
+    JobMaster.objects.filter(flowcell_id=flowcell_id, job_type_id=17).delete()
