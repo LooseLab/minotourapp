@@ -16,8 +16,6 @@ class BasecalledDataController {
         });
         this._barcodesHtmlListElement = $("#nav-tabs-barcodes");
         this.barcodesList = [];
-        this.chartsInitialised = false;
-        this.barcodesElementsList = [];
         this._basecalledSummaryTable = null;
         this.initialiseCharts(flowcellId, this._currentBarcode);
     }
@@ -418,13 +416,10 @@ class BasecalledDataController {
                     });
                     // only check if there is already data in the same chart series
                     if (chartHasData && seriesToUpdate.length > 0) {
-                        console.log(seriesToUpdate)
-                        console.log(seriesToUpdate[0].options.data)
                         oldSeriesData = Array.isArray(seriesToUpdate[0].options.data) ? seriesToUpdate[0].options.data : seriesToUpdate[0].options.data.data
                         identical = checkHighChartsDataIsNew(newChartData, oldSeriesData)
                     }
                     if (identical) {
-                        console.log("Data is the same. Skipping update.")
                         return
                     } else {
                         // only update if there is already data in the same chart series
