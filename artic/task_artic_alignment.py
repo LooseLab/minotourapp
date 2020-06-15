@@ -63,11 +63,11 @@ def clear_unused_artic_files(artic_results_path, sample_name):
     files_to_keep_full.append("lineage_report.csv")
     artic_results_pathlib = Path(artic_results_path)
     for filey in artic_results_pathlib.iterdir():
-        if f"{filey.name}" not in files_to_keep_full:
-            filey.unlink()
-            # delete pangolin tree files
-        elif filey.is_dir():
+        # delete pangolin tree files
+        if filey.is_dir():
             rmtree(filey, ignore_errors=True)
+        elif f"{filey.name}" not in files_to_keep_full:
+            filey.unlink()
         elif not filey.suffix == ".gz" and filey.suffix not in [".dat", ".png"]:
             subprocess.Popen(["gzip", "-9", str(filey)]).communicate()
         elif filey.suffix == ".png":
