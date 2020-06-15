@@ -77,7 +77,7 @@ from reads.serializers import (
 )
 from reads.tasks.delete_flowcell_task import clear_artic_data
 from reads.tasks.redis_tasks_functions import save_reads_bulk
-from reads.utils import get_coords, return_temp_empty_summary, pause_job
+from reads.utils import get_coords, return_temp_empty_summary, pause_job, clear_artic_command_job_masters
 from readuntil.models import ExpectedBenefitChromosomes
 from reference.models import ReferenceInfo
 from web.delete_tasks import (
@@ -2945,6 +2945,9 @@ def task_control(request):
     elif job_master.job_type.id == 16:
         if action == "Reset":
             clear_artic_data(job_master)
+            clear_artic_command_job_masters(job_master.flowcell_id)
+            job_master.read_count = 0
+            job_master.last_read = 0
             job_master.running = False
             job_master.complete = False
             job_master.save()
@@ -2952,6 +2955,7 @@ def task_control(request):
         elif action == "Pause":
             job_master, return_message = pause_job(job_master)
         elif action == "Delete":
+            clear_artic_command_job_masters(job_master.flowcell_id)
             clear_artic_data(job_master)
             job_master.delete()
             return_message = "Successfully deleted artic Task."
