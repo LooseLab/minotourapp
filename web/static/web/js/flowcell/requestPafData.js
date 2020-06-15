@@ -33,66 +33,62 @@ function updateCoverageBasedCharts(chart, summarycoverage, field) {
     }
 }
 
-function requestMappedChromosomes(flowcell_id) {
-    /**
-     * Request the chromosomes that have reads mapped to using minimap2
-     * and update the select box on tab Mapping
-     * TODO THIS NEEDS STREAMLINING
-     */
-    var url = '/api/v1/flowcells/' + flowcell_id + '/references';
-
-    $.getJSON(url, function (data_unsorted) {
-        console.log(data_unsorted);
-        var data = data_unsorted.sort(function (a, b) {
-            return a['barcode_name'] - ['b.barcode_name'];
-        });
-
-        var select = document.getElementById('chromosome-id-select');
-        var selected_index = select.selectedIndex;
-        var selected_option = select[selected_index];
-
-        while (select.length > 0) {
-            select.remove(0);
-        }
-
-        var option = document.createElement('option');
-        option.text = '--- Select ---';
-        option.value = '-1';
-        select.add(option);
-
-        for (var i = 0; i < data.length; i++) {
-
-            var option = document.createElement('option');
-
-            var value_combination = data[i]['task_id'] + '_' + data[i]['barcode_name'] + '_' + data[i]['read_type_id'] + '_' + data[i]['chromosome_id'];
-
-            option.text = data[i]['barcode_name'] + ' - ' + data[i]['read_type_name'] + ' - ' + data[i]['reference_name'] + ' - ' + data[i]['chromosome_name'];
-            option.value = value_combination;
-
-            if (selected_option === undefined) {
-
-            } else {
-
-                if (option.text === selected_option.text) {
-                    option.selected = 'selected';
-                }
-
-            }
-
-            select.add(option);
-        }
-
-    });
-
-}
+// function requestMappedChromosomes(flowcell_id) {
+//     /**
+//      * Request the chromosomes that have reads mapped to using minimap2
+//      * and update the select box on tab Mapping
+//      * TODO THIS NEEDS STREAMLINING
+//      */
+//     var url = '/api/v1/flowcells/' + flowcell_id + '/references';
+//
+//     $.getJSON(url, function (data_unsorted) {
+//         console.log(data_unsorted);
+//         var data = data_unsorted.sort(function (a, b) {
+//             return a['barcode_name'] - ['b.barcode_name'];
+//         });
+//
+//         var select = document.getElementById('chromosome-id-select');
+//         var selected_index = select.selectedIndex;
+//         var selected_option = select[selected_index];
+//
+//         while (select.length > 0) {
+//             select.remove(0);
+//         }
+//
+//         var option = document.createElement('option');
+//         option.text = '--- Select ---';
+//         option.value = '-1';
+//         select.add(option);
+//
+//         for (var i = 0; i < data.length; i++) {
+//
+//             var option = document.createElement('option');
+//
+//             var value_combination = data[i]['task_id'] + '_' + data[i]['barcode_name'] + '_' + data[i]['read_type_id'] + '_' + data[i]['chromosome_id'];
+//
+//             option.text = data[i]['barcode_name'] + ' - ' + data[i]['read_type_name'] + ' - ' + data[i]['reference_name'] + ' - ' + data[i]['chromosome_name'];
+//             option.value = value_combination;
+//
+//             if (selected_option === undefined) {
+//
+//             } else {
+//
+//                 if (option.text === selected_option.text) {
+//                     option.selected = 'selected';
+//                 }
+//
+//             }
+//
+//             select.add(option);
+//         }
+//
+//     });
+//
+// }
 
 function drawPafSummaryTable(flowCellId) {
     // Get total reads table updates the total reads table at te bottom of the page
     // Get data from the api
-    let flowcell_selected_tab_input = document.querySelector('#flowcell-selected-tab');
-    if (flowcell_selected_tab_input.value !== "nav-sequence-mapping") {
-        return;
-    }
     // Jquery selector
     let table = $(".mapping-table");
     // If the table already exists, use the DataTable APi to update in place
