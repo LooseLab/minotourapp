@@ -13,7 +13,6 @@ from celery import task
 from celery.utils.log import get_task_logger
 
 from alignment.models import PafSummaryCov
-# from alignment.tasks_alignment import call_fetch_reads_alignment
 from artic.models import ArticBarcodeMetadata
 from minotourapp.settings import BASE_DIR
 from minotourapp.utils import get_env_variable
@@ -501,40 +500,23 @@ def run_artic_pipeline(task_id, streamed_reads=None):
     reference_location = getattr(settings, "REFERENCE_LOCATION", None)
     # The location of the mimimap2 executable
     minimap2 = getattr(settings, "MINIMAP2", None)
-
     task = JobMaster.objects.get(pk=task_id)
-
     if not task.reference:
         raise ValueError("Missing Reference file. Please sort out.")
-
     flowcell = task.flowcell
-
     avg_read_length = flowcell.average_read_length
-
     if avg_read_length == 0:
         logger.error(
             f"Average read length is zero Defaulting to 450, but this is an error."
         )
         avg_read_length = 450
-
     if not streamed_reads:
         runs = flowcell.runs.all()
         # The chunk size of reads from this flowcell to fetch from the database
-        # aim for 100 megabases
-        desired_yield = 100 * 1000000
-
+        # aim for 50 megabases
+        desired_yield = 50 * 1000000
         chunk_size = round(desired_yield / avg_read_length)
-
         logger.info(f"Fetching reads in chunks of {chunk_size} for alignment.")
-
-        # Get the fastq objects
-        # (
-        #     fasta_df_barcode,
-        #     last_read,
-        #     read_count,
-        #     fasta_objects,
-        # ) = call_fetch_reads_alignment(runs, chunk_size, task.last_read, pass_only=True)
-
         fasta_objects = FastqRead.objects.filter(
             flowcell_id=flowcell.id, id__gt=task.last_read
         )[:chunk_size]
@@ -543,50 +525,39 @@ def run_artic_pipeline(task_id, streamed_reads=None):
         )
         if fasta_objects:
             last_read = fasta_df_barcode.tail(1).iloc[0].id
-
         if fasta_df_barcode.shape[0] == 0:
             logger.info("No fastq found. Skipping this iteration.")
             task.running = False
             task.save()
             return
-
     else:
         last_read = task.last_read
         fasta_df_barcode = pd.DataFrame(streamed_reads)
         fasta_df_barcode = fasta_df_barcode[fasta_df_barcode["is_pass"]]
         fasta_objects = streamed_reads
-
     read_count = fasta_df_barcode.shape[0]
-
-    logger.info(f"Fetched reads.")
-    logger.info(fasta_df_barcode.shape)
-
+    logger.debug(f"Fetched reads.")
+    logger.debug(fasta_df_barcode.shape)
     min_read_length = 400
-
     max_read_length = 700
-
     fasta_df_barcode["sequence_length"] = fasta_df_barcode["sequence"].str.len()
-
     fasta_df_barcode = fasta_df_barcode[
         fasta_df_barcode["sequence_length"].between(
             min_read_length, max_read_length, inclusive=True
         )
     ]
-
-    logger.info(
+    logger.debug(
         f"Reads after filtering for read lengths between"
         f" {min_read_length} - {max_read_length}: {fasta_df_barcode.shape[0]}"
     )
-
     # ##Check if read_count is > 0 otherwise exit
     ## #We might want to check the minimum number of reads or the time
     # since the last read was entered to do a smaller chunk?
     if read_count > 0:
         if not minimap2:
             logger.error("Can not find minimap2 executable - stopping task.")
-            # This won't reset the tast?
+            # This won't reset the task?
             return
-
         reference_info = task.reference
         # Chromosome dict contains all the chromsome names keyed to all the info we have about that chromosome
         chromdict = dict()
