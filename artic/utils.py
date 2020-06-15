@@ -12,7 +12,8 @@ from artic.task_artic_alignment import make_results_directory_artic
 from minotourapp.utils import get_env_variable
 from reads.models import Flowcell, JobMaster
 
-colour_palette = ["#ffb3ba", "#ffdfba", "#ffffba", "#baffc9", "#bae1ff"]
+# Colour palette of amplicon bands
+colour_palette = ["#ffd9dc", "#ffefdc", "#ffffbc", "#dcffe4", "#bae1ff"]
 
 
 def get_amplicon_band_data(scheme, scheme_version):
