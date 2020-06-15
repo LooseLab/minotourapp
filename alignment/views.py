@@ -1,30 +1,16 @@
 import json
 from collections import defaultdict
 
-import numpy as np
 import pandas as pd
 from django.db.models import Sum
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
+from rest_framework import status
 from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
 from alignment.models import PafRoughCov, PafSummaryCov
 from alignment.utils import calculate_coverage_new
-from rest_framework.response import Response
-from rest_framework import status
-
 from reads.models import JobMaster
-
-
-class NumpyEncoder(json.JSONEncoder):
-    def default(self, obj):
-
-        if isinstance(obj, np.integer):
-            return int(obj)
-
-        elif isinstance(obj, np.floating):
-            return float(obj)
-
-        else:
-            return super(MyEncoder, self).default(obj)
 
 
 @api_view(["GET"])
@@ -90,7 +76,7 @@ def flowcell_paf_alignment_list(
         task_id, barcode_name, read_type_id, chromosome_id, start, end
     )
 
-    return JsonResponse(json.dumps(result_list, cls=NumpyEncoder), safe=False)
+    return JsonResponse(json.dumps(result_list), safe=False)
 
 
 @api_view(["GET"])
@@ -233,7 +219,7 @@ def flowcell_paf_summary_cov(request, pk):
 
 
 @api_view(["GET"])
-def flowcellreferences_used_by_run(request, flowcell_id):
+def mapped_references_by_flowcell_list(request, flowcell_id):
     """
     Get the references that have been used in any mapping jobs on a flowcell,
     return them to populate the dropdown box.
@@ -263,23 +249,15 @@ def flowcellreferences_used_by_run(request, flowcell_id):
         )
         .distinct()
     )
+    results = defaultdict(set)
+    for reference in references:
+        results["barcode_dropdown"].add((reference["barcode_name"], None))
+        results["read_type_dropdown"].add((reference["read_type__name"], reference["read_type__id"]))
+        results["reference_dropdown"].add(
+            (reference["job_master__reference__name"], reference["job_master__reference__id"]))
+        results["chromosome_dropdown"].add((reference["chromosome__line_name"], reference["chromosome__id"]))
 
-    result = [
-        {
-            "task_id": r["job_master__id"],
-            "flowcell_id": flowcell_id,
-            "chromosome_name": r["chromosome__line_name"],
-            "chromosome_id": r["chromosome__id"],
-            "barcode_name": r["barcode_name"],
-            "reference_name": r["job_master__reference__name"],
-            "reference_id": r["job_master__reference__id"],
-            "read_type_name": r["read_type__name"],
-            "read_type_id": r["read_type__id"]
-        }
-        for r in references
-    ]
-
-    return HttpResponse(json.dumps(list(result)), content_type="application/json")
+    return Response(results, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
