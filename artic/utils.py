@@ -106,7 +106,7 @@ def convert_amplicon_bed_file_to_json(filepath, json_file, artic_results_primer_
     )
     df = df.reset_index()
     df = df.set_index(["primer_start", "primer_end"])
-    df = df.loc[df.index.duplicated(keep="first")]
+    df = df.loc[~df.index.duplicated(keep="first")]
     df = df.reset_index()
     json_data = {
         "amplicons": df[["primer_start", "primer_end", 4]].to_json(orient="values"),
