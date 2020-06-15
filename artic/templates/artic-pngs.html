@@ -15,14 +15,6 @@
                     </div>
                 </div>
             </div>
-            {% if forloop.first %}
-                <div class="card card-primary card-outline">
-                    <div class="card-header"><h4 class="card-title">Pangolin lineages</h4></div>
-                    <div class="card-body">
-                        {{ png.lineages_table | safe }}
-                    </div>
-                </div>
-            {% endif %}
         </div>
     {% endfor %}
 {% endif %}
