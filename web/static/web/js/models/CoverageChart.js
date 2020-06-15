@@ -178,6 +178,8 @@ class CoverageChart {
         for (let i = min; i < this._masterChart.series[0].xData.length; i++) {
             if (this._masterChart.series[0].xData[i] < max) {
                 newDetailSeries.push([this._masterChart.series[0].options.data[i]]);
+            } else {
+                break
             }
         }
         this._detailChart.series[0].setData(newDetailSeries);
