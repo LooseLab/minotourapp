@@ -163,10 +163,10 @@ class Flowcell(models.Model):
         # If the current time minus two days is more than the last activity date, there has been no activity in 48 hours
         if (datetime.datetime.now(datetime.timezone.utc) - delta) > self.last_activity_date:
 
-            return False
+            return "Inactive"
         # Activity in the last 48 hours
 
-        return True
+        return "Active"
 
     class Meta:
         permissions = (
