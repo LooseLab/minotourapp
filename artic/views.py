@@ -385,9 +385,10 @@ def get_artic_barcode_metadata_html(request):
     (flowcell, artic_results_path, artic_task_id,) = quick_get_artic_results_directory(
         flowcell_id
     )
-    df = pd.read_csv(artic_results_path / selected_barcode / "lineage_report.csv.gz")
-    html_string = df.T.to_html(classes="table table-striped", border=0)
-    context_dict["hidden_html_string"] = html_string
+    if context_dict["hidden_has_finished"]:
+        df = pd.read_csv(artic_results_path / selected_barcode / "lineage_report.csv.gz")
+        html_string = df.T.to_html(classes="table table-striped", border=0)
+        context_dict["hidden_html_string"] = html_string
     return render(
         request,
         "artic-barcode-metadata.html",
