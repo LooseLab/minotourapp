@@ -93,7 +93,8 @@ class FlowcellTabController {
     showTabs(tabs) {
         let controllers = {
             "basecalled-data": ["baseCalledDataController", BasecalledDataController],
-            "artic": ["articController", ArticController]
+            "artic": ["articController", ArticController],
+            "sequence-mapping": ["alignmentController", AlignmentController]
         };
         Object.keys(controllers).forEach(controllerName=>{
             // if we have a controller for this tab, but we are no longer showing it as underlying data has been deleted
