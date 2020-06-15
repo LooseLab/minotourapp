@@ -24,9 +24,9 @@ urlpatterns = [
         name="flowcell_paf_summary_cov"
     ),
     url(
-        r'^api/v1/flowcells/(?P<flowcell_id>[0-9]+)/references/$',
-        views.flowcellreferences_used_by_run,
-        name="flowcellreferences_used_by_run"
+        r'^api/v1/flowcells/(?P<flowcell_id>[0-9]+)/mapped-references/$',
+        views.mapped_references_by_flowcell_list,
+        name="mapped_references_by_flowcell_list"
     ),
 
     url(
