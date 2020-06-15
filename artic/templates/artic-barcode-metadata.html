@@ -1,11 +1,13 @@
 {% load humanize %}
 <div class="card-header">
-    <h4 class="card-title"><i class="fas fa-chart-bar"></i>{{ artic_barcode_metadata.hidden_barcode_name }}</h4>
+    <h4 class="card-title"><i class="fas fa-chart-bar"></i>
+        {{ artic_barcode_metadata.hidden_barcode_name }}
+    </h4>
 </div>
 <div class="card-body ">
     <div class="col-md-12">
         <div style="height: 100%;">
-            <table class="table table-responsive-md table-sm table-bordered">
+            <table class="table table-responsive-md table-sm table-striped">
                 {% for key, value in artic_barcode_metadata.items %}
                     <tr>
                         {% if "hidden" not in key %}
@@ -20,17 +22,29 @@
                 {% endfor %}
             </table>
             {% if artic_barcode_metadata.hidden_has_finished %}
-                <button class="btn btn-primary" data-toggle="modal" data-target="#results-builder">Download Results Files
+                <button class="btn btn-primary" data-toggle="modal" data-target="#results-builder">Download Results
+                    Files
                 </button>
             {% endif %}
-            {% if not artic_barcode_metadata.hidden_has_finished or not artic_barcode_metadata.hidden_has_suff%}
-            <button class="btn btn-primary"
-                    onclick="flowcellController.flowcellTabController.articController.manuallyTriggerPipeline({{ artic_barcode_metadata.hidden_flowcell_id }}, {{ artic_barcode_metadata.hidden_barcode_name }}, event)">
-            Manually trigger
-            </button>
-        {% endif %}
+            {% if not artic_barcode_metadata.hidden_has_finished or not artic_barcode_metadata.hidden_has_suff %}
+                <button class="btn btn-primary"
+                        onclick="flowcellController.flowcellTabController.articController.manuallyTriggerPipeline({{ artic_barcode_metadata.hidden_flowcell_id }}, {{ artic_barcode_metadata.hidden_barcode_name }}, event)">
+                    Manually trigger
+                </button>
+                <button class="btn btn-primary" data-toggle="modal" data-target="#confirm-re-run">
+                    Re-run Artic Command
+                </button>
+
+            {% endif %}
         </div>
     </div>
+    {% if artic_barcode_metadata.hidden_has_finished %}
+        <div class="col-md-12" style="padding-top:1rem">
+            <div class="table table-responsive">
+                {{ artic_barcode_metadata.hidden_html_string | safe }}
+            </div>
+        </div>
+    {% endif %}
 </div>
 {% if artic_barcode_metadata.hidden_has_finished %}
     <div class="modal fade" id="results-builder" tabindex="-1" role="dialog"
@@ -58,6 +72,31 @@
                     <button id="submit-task" class="btn btn-success success" type="reset" data-dismiss="modal"
                             onclick="flowcellController.flowcellTabController.articController.buildResults({{ artic_barcode_metadata.hidden_flowcell_id }} ,`{{ artic_barcode_metadata.hidden_barcode_name }}`, event)">
                         Submit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="confirm-re-run" tabindex="-1" role="dialog"
+         aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div style="border-radius: 25px" class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title" id="modal-label">Confirm Re-run
+                    </h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                            aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                   Are you sure you wish to re-run this command? Current data will be overwritten.
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button id="submit-task" class="btn btn-success success" type="reset" data-dismiss="modal"
+                            onclick="flowcellController.flowcellTabController.articController.reRunArticCommand({{ artic_barcode_metadata.hidden_flowcell_id }} ,`{{ artic_barcode_metadata.hidden_barcode_name }}`, event)">
+                        Re-run
                     </button>
                 </div>
             </div>
