@@ -485,7 +485,7 @@ def get_results_package(request):
         "fail-vcf": f"{barcode}.fail.vcf.gz",
         "pass-vcf": f"{barcode}.pass.vcf.gz",
         "input-fasta": f"{barcode}.fastq.gz",
-        "pangolin-lineages": "lineage_report.csv"
+        "pangolin-lineages": "lineage_report.csv.gz"
     }
     chosen_files = [results_files[key] for key in chosen.keys()]
     # change into the directory
@@ -550,7 +550,7 @@ def png_html(request):
             "DESCRIPTION",
         ],
     ]
-    df = pd.read_csv(artic_results_path/selected_barcode/"lineage_report.csv")
+    df = pd.read_csv(artic_results_path/selected_barcode/"lineage_report.csv.gz")
     html_string = df.to_html()
     png_dict = {"srcs": context_list, "has_finished": orm_object.has_finished, "lineages_table": html_string}
     return render(request, "artic-pngs.html", context={"png": png_dict})
