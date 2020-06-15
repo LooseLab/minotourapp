@@ -204,6 +204,7 @@ class ArticController {
 
             yAxis: {
                 // Renders faster when we don"t have to compute min and max
+                // type: 'logarithmic',
                 softMin: 0,
                 max: ymax,
                 title: {
