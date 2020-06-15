@@ -76,7 +76,7 @@ class FlowcellTableController {
                     'targets': 3,
                     'data': "start_time",
                     'render': function (data, type, full, meta) {
-                        return `<a href="/web/private/${that._linkDestination}/${full["id"]}/">${new Date(data).toLocaleString('en-GB', { timeZone: 'UTC' })}</a>`;
+                        return `<a href="/web/private/${that._linkDestination}/${full["id"]}/">${new Date(data).toISOString()}</a>`;
                     }
                 },
                 {
