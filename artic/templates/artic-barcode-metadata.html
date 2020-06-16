@@ -5,48 +5,53 @@
     </h4>
 </div>
 <div class="card-body ">
+    <div class="col-md-12 alert alert-success" id="artic-message" role="alert" style="display: none;"></div>
     <div class="col-md-12">
-        <div>Summary of barcode data.</div>
-        <div>
-            <table class="table table-responsive-md table-sm table-striped">
-                {% for key, value in artic_barcode_metadata.items %}
-                    <tr>
-                        {% if "hidden" not in key %}
-                            <th>
-                                {{ key }}
-                            </th>
-                            <td>
-                                {{ value }}
-                            </td>
-                        {% endif %}
-                    </tr>
-                {% endfor %}
-            </table>
-            {% if artic_barcode_metadata.hidden_has_finished %}
-                <button class="btn btn-primary" data-toggle="modal" data-target="#results-builder">Download Results
-                    Files
-                </button>
-            {% endif %}
-            {% if not artic_barcode_metadata.hidden_has_finished or not artic_barcode_metadata.hidden_has_suff %}
-                <button class="btn btn-primary"
-                        onclick="flowcellController.flowcellTabController.articController.manuallyTriggerPipeline({{ artic_barcode_metadata.hidden_flowcell_id }}, {{ artic_barcode_metadata.hidden_barcode_name }}, event)">
-                    Manually trigger
-                </button>
-                <button class="btn btn-primary" data-toggle="modal" data-target="#confirm-re-run">
-                    Re-run Artic Command
-                </button>
-
-            {% endif %}
-        </div>
-    </div>
-    {% if artic_barcode_metadata.hidden_has_finished %}
-        <div class="col-md-12" style="padding-top:1rem">
-            <div>Pangolin Lineage Assignments.</div>
-            <div class="table table-responsive">
-                {{ artic_barcode_metadata.hidden_html_string | safe }}
+        <div>Summary of barcode data. {% if artic_barcode_metadata.hidden_marked_for_rerun %}
+            <div id="marked-rerun"><strong>MARKED FOR RERUN</strong></div. {% endif %}</div>
+            <div>
+                <table class="table table-responsive-md table-sm table-striped">
+                    {% for key, value in artic_barcode_metadata.items %}
+                        <tr>
+                            {% if "hidden" not in key %}
+                                <th>
+                                    {{ key }}
+                                </th>
+                                <td>
+                                    {{ value }}
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </table>
+                {% if artic_barcode_metadata.hidden_has_finished %}
+                    <button class="btn btn-primary" data-toggle="modal" data-target="#results-builder">Download Results
+                        Files
+                    </button>
+                    {% if not artic_barcode_metadata.hidden_marked_for_rerun %}
+                        <button class="btn btn-primary" data-toggle="modal" data-target="#confirm-re-run"
+                                id="rerun-btn">
+                            Re-run Artic Command
+                        </button>
+                    {% endif %}
+                {% endif %}
+                {% if not artic_barcode_metadata.hidden_has_finished or not artic_barcode_metadata.hidden_has_suff %}
+                    <button class="btn btn-primary" id="manual-trigger"
+                            onclick="flowcellController.flowcellTabController.articController.manuallyTriggerPipeline({{ artic_barcode_metadata.hidden_flowcell_id }}, {{ artic_barcode_metadata.hidden_barcode_name }}, event)">
+                        Manually trigger
+                    </button>
+                {% endif %}
             </div>
         </div>
-    {% endif %}
+        {% if artic_barcode_metadata.hidden_has_finished %}
+            <div class="col-md-12" style="padding-top:1rem">
+                <div>Pangolin Lineage Assignments.</div>
+                <div class="table table-responsive">
+                    {{ artic_barcode_metadata.hidden_html_string | safe }}
+                </div>
+            </div>
+        {% endif %}
+    </div>
 </div>
 {% if artic_barcode_metadata.hidden_has_finished %}
     <div class="modal fade" id="results-builder" tabindex="-1" role="dialog"
@@ -91,7 +96,7 @@
                     </button>
                 </div>
                 <div class="modal-body">
-                   Are you sure you wish to re-run this command? Current data will be overwritten.
+                    Are you sure you wish to re-run this command? Current data will be overwritten.
                 </div>
 
                 <div class="modal-footer">
