@@ -68,7 +68,7 @@ def clear_unused_artic_files(artic_results_path, sample_name):
         elif f"{filey.name}" not in files_to_keep_full:
             filey.unlink()
         elif not filey.suffix == ".gz" and filey.suffix not in [".dat", ".png"]:
-            subprocess.Popen(["gzip", "-9", str(filey)]).communicate()
+            subprocess.Popen(["gzip", "-9", "-f", str(filey)]).communicate()
         elif filey.suffix == ".png":
             # Copy the pngs to the artic static directory to be served
             if not Path(
@@ -129,6 +129,32 @@ def run_pangolin_command(base_results_directory, barcode_name):
     #    raise Exception(out)
 
 
+def clear_old_data(artic_results_path, barcode_name):
+    """
+    TODO kind of similar to clear_unused function, could be merged?
+    Clear old data of this is a rerun from the directory
+    Parameters
+    ----------
+    artic_results_path: pathlib.PosixPath
+        Path to the barcode level artic results directory
+    barcode_name: str
+        Name of the barcode results came from.
+    Returns
+    -------
+    None
+
+    """
+    files_to_keep_suffix = [".fasta", ".counts.dat", ".coverage.dat", ".fasta.gz"]
+    files_to_keep = [f"{barcode_name}{filey}" for filey in files_to_keep_suffix]
+    for filey in artic_results_path.iterdir():
+        if filey not in files_to_keep:
+            if filey.is_dir():
+                rmtree(filey, ignore_errors=True)
+            elif filey.is_file():
+                filey.unlink()
+
+
+
 @task()
 def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     """
@@ -154,6 +180,7 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     logger.info(fastq_path)
     scheme_dir = get_env_variable("MT_ARTIC_SCEHEME_DIR")
     os.chdir(f"{base_results_directory}/{barcode_name}")
+    # clear_old_data(Path(base_results_directory)/barcode_name, barcode_name)
     cmd = [
         "bash",
         "-c",
@@ -176,8 +203,8 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     # Update the Barcode Metadata to show the task has been run on this barcode
 
     ArticBarcodeMetadata.objects.filter(
-        flowcell=jm.flowcell, job_master__job_type__id=16, barcode__name=barcode_name
-    ).update(has_finished=True)
+        flowcell=jm.flowcell, job_master__job_type_id=16, barcode__name=barcode_name
+    ).update(has_finished=True, marked_for_rerun=False)
 
     clear_unused_artic_files(f"{base_results_directory}/{barcode_name}", barcode_name)
     jm = JobMaster.objects.get(pk=job_master_pk)
@@ -201,17 +228,20 @@ def save_artic_command_job_masters(flowcell, barcode_name, reference_info):
     -------
 
     """
+    # Don't automatically run unclassified barcode
+    if barcode_name=="unclassified":
+        return
     job_type = JobType.objects.get(name="Run Artic")
     # TODO potential bug here where the barcode name on the reads is not the barcode name we save
     barcode_object = Barcode.objects.get(run__in=flowcell.runs.all(), name=barcode_name)
-    job_master = JobMaster(
+    job_master, created = JobMaster.objects.get_or_create(
         job_type=job_type,
         reference=reference_info,
         barcode=barcode_object,
         flowcell=flowcell,
     )
-
-    job_master.save()
+    if not created:
+        logger.debug("Artic command JobMaster already exists.")
     return
 
 
