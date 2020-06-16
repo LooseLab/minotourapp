@@ -17,6 +17,7 @@ class ArticBarcodeMetadata(models.Model):
     percentage_bases_over_200x = models.FloatField(default=0.0)
     has_sufficient_coverage = models.BooleanField(default=False)
     has_finished = models.BooleanField(default=False)
+    marked_for_rerun = models.BooleanField(default=False)
     flowcell = models.ForeignKey(
         Flowcell,
         related_name="FlowcellsArticBarcodeMetadatas",
@@ -35,3 +36,6 @@ class ArticBarcodeMetadata(models.Model):
         on_delete=models.CASCADE,
         null=True
     )
+
+    def __str__(self):
+        return f"{self.flowcell} {self.job_master} {self.barcode}"
