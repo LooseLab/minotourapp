@@ -8,14 +8,15 @@ class ArticController {
         this._flowcellId = flowcellId;
         this._first = true;
         this._showWidth = 250000;
-        this._barcodeChosen = "banter";
+        this._barcodeChosen = null;
+        this._logged = $("#log-coverage")[0].checked ? 1 : 0;
         this._axiosInstance = axios.create({
             headers: {"X-CSRFToken": getCookie('csrftoken')}
         });
-        this._barcodeSelect = $("#select-artic-barcode");
         this._perBarcodeAverageReadLengthChart = null;
         this._perBarcodeCoverageChart = null;
         this._coverageSummaryTable = $("#artic-coverage-summary-table");
+        this._articProportionPieChart = null;
         this._drawArticCharts(this);
         this._interval = setInterval(this._drawArticCharts, 45000, this);
         $(window).on("unload", function () {
@@ -195,10 +196,10 @@ class ArticController {
                 }
             },
 
-            boost: {
-                useGPUTranslations: true,
-                usePreAllocated: true
-            },
+            // boost: {
+            //     useGPUTranslations: true,
+            //     usePreAllocated: true
+            // },
 
             xAxis: {
                 type: chartType,
@@ -216,7 +217,9 @@ class ArticController {
                 max: ymax,
                 title: {
                     text: null
-                }
+                },
+                startOnTick: false,
+                endOnTick: true
             },
 
             title: {
@@ -266,29 +269,10 @@ class ArticController {
         // The minimum and maximum value on the X axis
         let min = Math.trunc(event.xAxis[0].min);
         let max = Math.trunc(event.xAxis[0].max);
+        let logCoverage;
         // Prevent the default behaviour
         event.preventDefault();
-
-        // If the selected box is too large tell the selector to learn to be less greedy
-        if (max - min > that._showWidth) {
-            label = that._articCoverageScatterDetail.renderer.label('Please select a smaller region', 100, 120)
-                .attr({
-                    fill: Highcharts.getOptions().colors[0],
-                    padding: 10,
-                    r: 5,
-                    zIndex: 8
-                })
-                .css({
-                    color: '#FFFFFF'
-                })
-                .add();
-
-            setTimeout(function () {
-                label.fadeOut();
-            }, 2000);
-            return;
-        }
-
+        //
         // Change the grey plot band on the master chart to reflect the selected region
         that._articCoverageScatterMaster.xAxis[0].removePlotBand('mask-before');
         // Add the new one in the correct location
@@ -300,19 +284,19 @@ class ArticController {
         });
 
         // Show the loading screen on the charts
-
+        logCoverage = this._logged ? 1 : 0;
         charts.forEach(function (chart) {
             chart.showLoading('Fetching data from the server');
         });
-
         this._axiosInstance.get('/api/v1/artic/visualisation/detail', {
-            params: {min, max, barcodeChosen: this._barcodeChosen, flowcellId}
+            params: {min, max, barcodeChosen: this._barcodeChosen, flowcellId, logCoverage}
         }).then(response => {
+            console.log("response in selecetion")
             // if successful request, set the detail charts to show the newly retrieve data
             if (response.status === 200) {
                 that._updateAxesAndData(that._articCoverageScatterDetail, min, max, response.data.coverage, true);
             } else if (response.status === 404) {
-                console.error("Artic detail cahrt data not found.")
+                console.error("Artic detail chart data not found.")
             } else {
                 throw "Request error";
             }
@@ -331,14 +315,32 @@ class ArticController {
      * @private
      */
     _updateAxesAndData(chart, min, max, data, ymax) {
+        let yAxisType;
         // Y max let's us know we need to change the yAxis
         // Set the xAxis extremes to the newly selected values
         chart.xAxis[0].setExtremes(min, max);
         // if we need to update the yaxis as well
         if (ymax) {
-            // set the yAxisextremes
-            chart.yAxis[0].setExtremes(0, data.ymax);
+            // set the yAxisextremes, if it's logged set to 0.1
+            if (this._logged) {
+                yAxisType = "logarithmic"
+                chart.yAxis[0].setExtremes(0.1, data.ymax)
+                chart.update({
+                    yAxis: {type: yAxisType}
+                })
+            } else {
+                yAxisType = "linear"
+                chart.update({
+                    yAxis: {type: yAxisType}
+                })
+                chart.yAxis[0].setExtremes(0, data.ymax)
+            }
+            console.log("updating log type");
+            console.log(yAxisType)
+            console.log(chart)
+
         }
+        this._data = data
         // set the data for the chart to display
         chart.series[0].setData(data.data);
         // update the axes
@@ -410,8 +412,8 @@ class ArticController {
 
     /**
      * Update the master coverage chart and detail coverage chart with data from the selected barcode, triggered on change in the select box.
-     * @param flowcellId number - the primary key of the flowcell
-     * @param barcodeChosen str - the barcode that we are drawing the data for
+     * @param flowcellId {number} - the primary key of the flowcell
+     * @param barcodeChosen {string} - the barcode that we are drawing the data for
      */
     _drawSelectedBarcode(flowcellId, barcodeChosen) {
         /*
@@ -449,6 +451,7 @@ class ArticController {
         max = coverageDetail.xAxis[0].max;
         // If min is not undefined, the charts are already displaying data, so update them, otherwise we're good
         if (min !== undefined) {
+            console.log("Fetching coverage scatter dteail data");
             that._articCoverageScatterDetail.showLoading('Fetching data from the server')
             this._axiosInstance.get('/api/v1/artic/visualisation/detail', {
                 params: {
@@ -495,11 +498,13 @@ class ArticController {
             that._createOrUpdateSelectionBox(flowcellId);
             that._addListenerToLogSlider(flowcellId);
             that._drawColumnCharts()
+            that._createArticPieChart(flowcellId)
             that._drawOrUpdateSummaryTable(that._coverageSummaryTable, flowcellId)
             that._first = false;
         } else {
             // update the column charts
             that._updateColumnCharts(flowcellId)
+            that._updateArticPieChart(flowcellId)
             // update the table
             that._drawOrUpdateSummaryTable(that._coverageSummaryTable, flowcellId)
             // update the selection box
@@ -509,7 +514,7 @@ class ArticController {
             // Get the minimum and maximum values of the xAxis
             min = coverageDetail.xAxis[0].min;
             // if min is undefined we don't have a detail chart so don't update
-            if (min !== undefined) {
+            if (this._barcodeChosen) {
                 that._setBarcodeMetaDataHTMLTable(flowcellId, that._barcodeChosen)
                 that._drawSelectedBarcode(flowcellId, that._barcodeChosen)
                 that._renderPngs(flowcellId, that._barcodeChosen)
@@ -594,8 +599,8 @@ class ArticController {
 
     /**
      * Draw the Artic Summary Datatable, showing the Summary information for each barcode.
-     * @param {obj} DataTables object kept in the class.
-     * @param {number} The primary key of the flowcell
+     * @param datatableObj {obj} DataTables object kept in the class.
+     * @param flowcellId {number} The primary key of the flowcell
      * @private
      */
     _drawOrUpdateSummaryTable(datatableObj, flowcellId) {
@@ -606,6 +611,7 @@ class ArticController {
         } else {
             // else the datatable must be initialised
             datatableObj.DataTable({
+                    // callback run on each row create
                     "createdRow": (row, data, index) => {
                         if (data.has_finished) {
                             $(row).addClass(["finished-pipeline", "artic-tr-row"]);
@@ -614,6 +620,12 @@ class ArticController {
                         }
                         $(row).on("click", () => {
                             this._barcodeChosen = data["barcode_name"];
+                            // set value on select box
+                            $("#select-artic-barcode").val(data["barcode_name"])
+                            // remove placeholder option "Choose barcode"
+                            $("#place-holder").remove()
+                            // enable the log coverage toggle slider
+                            $("#log-coverage").attr("disabled", false);
                             this._drawSelectedBarcode(this._flowcellId, data["barcode_name"])
                         })
 
@@ -683,6 +695,8 @@ class ArticController {
         }).then(response => {
             console.log(response)
             let message = response.data
+            $("#manual-trigger").remove()
+            $("#artic-message").css("display", "block").html(message)
         }).catch(error => {
             console.error(error)
         })
@@ -724,7 +738,7 @@ class ArticController {
      * @private
      */
     _renderPngs(flowcellId, selectedBarcode) {
-        if (!$(".rendered").length) {
+        if (!$(".rendered").length && (!$("#artic-message").length || $("#marked-rerun").length)) {
             this._axiosInstance.get("/api/v1/artic/fetch-png-html", {
                 params: {
                     flowcellId,
@@ -745,17 +759,78 @@ class ArticController {
      */
     _addListenerToLogSlider(flowcellId) {
         $("#log-coverage").on("change", () => {
+            // set logarithmic on Y axis highcharts
+            this._logged = !this._logged
             this._drawSelectedBarcode(flowcellId, this._barcodeChosen)
         })
     }
 
     /**
-     *
-     * @param flowcellId {number}
-     * @param selectedBarcode {string}
-     * @param event {Object}
+     * Rerun artic command with the data we have accrued since it's completion
+     * @param flowcellId {number} The primary key of the flowcell in the database.
+     * @param selectedBarcode {string} The barcode to rerun the command on.
+     * @param event {Object} The event object
      */
     reRunArticCommand(flowcellId, selectedBarcode, event) {
-        alert("Here we would manually trigger the pipeline.")
+        event.preventDefault()
+        this._axiosInstance.patch("/api/v1/artic/rerun-command/", {flowcellId, selectedBarcode}).then(
+            response => {
+                if (!response.status === 204) {
+                    console.error(`Unexpected response status. Expected 204, received ${response.status}`)
+                    $("#artic-message").html("Errrorrrr.")
+                    setTimeout(5000, () => {
+                        $("#artic-message").empty()
+                    })
+                    return
+                }
+                $("#artic-message").html("Successfully listed artic task for rerunning.")
+                $("#rerun-btn").remove()
+                console.log("Successfully did a thing")
+            })
+    }
+A
+    /**
+     * Create the highcharts pie chart for barcode proportion of reads unclassified vs. classified
+     * @param flowcellId {number} The primary key of the flowcell in the database.
+     * @private
+     */
+    _createArticPieChart(flowcellId) {
+        if (!this._articProportionPieChart) {
+            this._articProportionPieChart = makePieChart("artic-per-barcode-classification", "PROPORTION OF READS BARCODE CLASSIFIED")
+            console.log("making")
+        }
+        this._updateArticPieChart(flowcellId)
+    }
+
+    /**
+     * Update the date in highcharts pie chart for barcode proportion of reads unclassified vs. classified
+     * @param flowcellId {number} The primary key of the flowcell in the database.
+     * @private
+     */
+    _updateArticPieChart(flowcellId) {
+        this._axiosInstance.get("/api/v1/artic/pie-chart-data", {params: {flowcellId}}).then(
+            response => {
+                let seriesData = response.data
+                console.log(seriesData)
+                let oldChartData = [], oldChartSeries;
+                if (this._articProportionPieChart.series.length) {
+                    oldChartSeries = this._articProportionPieChart.series
+                    oldChartData = oldChartSeries.filter(series => {
+                        return series.name === seriesData.name;
+                    })
+                }
+
+                if (!oldChartData.length) {
+                    this._articProportionPieChart.addSeries(seriesData[0])
+                } else {
+                    // if the data is the same
+                    if (checkHighChartsDataIsNew(oldChartData[0].options.data, seriesData[0].data.map(e => e.y))) {
+                        console.log("Skipping draw")
+                    } else {
+                        oldChartData[0].setData(seriesData[0].data)
+                    }
+                }
+            }
+        )
     }
 }
