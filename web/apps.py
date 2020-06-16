@@ -17,4 +17,5 @@ class WebConfig(AppConfig):
 
         """
         from web.utils import validate_envs
+
         validate_envs()
