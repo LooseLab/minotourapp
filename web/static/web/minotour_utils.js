@@ -159,7 +159,7 @@ function makeColumnChart(divId, chartTitle, yAxisTitle) {
             }]
         },
         lang: {
-            noData: "looking for data probably."
+            noData: "Looking for data probably."
         },
         legend: {
             enabled: true
@@ -495,12 +495,12 @@ function makeHeatmapChart(divName, chartTitle) {
 
 /**
  * Create a HighCharts pie chart. These are used on the basecalled data tab.
- * @param divName {string} The id of the div to render chart to.
+ * @param divId {string} The id of the div to render chart to.
  * @param chartTitle {string} The title of the chart.
  * @return {*}
  */
-function makePieChart(divName, chartTitle) {
-    let chart = Highcharts.chart(divName, {
+function makePieChart(divId, chartTitle) {
+    let chart = Highcharts.chart(divId, {
         chart: {
             plotBackgroundColor: null,
             plotBorderWidth: null,
@@ -517,6 +517,9 @@ function makePieChart(divName, chartTitle) {
             point: {
                 valueSuffix: '%'
             }
+        },
+        lang: {
+            noData: "Looking for data probably."
         },
         plotOptions: {
             pie: {
