@@ -9,6 +9,7 @@ import pandas as pd
 from django.shortcuts import get_object_or_404
 
 from artic.task_artic_alignment import make_results_directory_artic
+from minotourapp.settings import BASE_DIR
 from minotourapp.utils import get_env_variable
 from reads.models import Flowcell, JobMaster
 
@@ -240,3 +241,18 @@ def sampler(array):
     # Slice is step size
     sampled_array = array[0::step_size]
     return sampled_array
+
+
+def check_artic_static_exists():
+    """
+    Check the artic Static directory exists on startup
+    Returns
+    -------
+    None
+    """
+    if not (Path(BASE_DIR) / "artic" / "static").exists():
+        (Path(BASE_DIR) / "artic" / "static").mkdir()
+        print("Artic Doesn't exist")
+    if not (Path(BASE_DIR) / "artic" / "static" / "artic").exists():
+        (Path(BASE_DIR) / "artic" / "static" / "artic").mkdir()
+    print("Done")
