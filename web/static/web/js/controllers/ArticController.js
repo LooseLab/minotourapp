@@ -608,8 +608,14 @@ class ArticController {
             datatableObj.DataTable({
                     "createdRow": (row, data, index) => {
                         if (data.has_finished) {
-                            $(row).addClass("finished-pipeline");
+                            $(row).addClass(["finished-pipeline", "artic-tr-row"]);
+                        } else {
+                            $(row).addClass("artic-tr-row")
                         }
+                        $(row).on("click", () => {
+                            this._barcodeChosen = data["barcode_name"];
+                            this._drawSelectedBarcode(this._flowcellId, data["barcode_name"])
+                        })
 
                     },
                     "ajax": {
@@ -637,6 +643,7 @@ class ArticController {
                     ]
                 }
             );
+
         }
     }
 
@@ -748,7 +755,7 @@ class ArticController {
      * @param selectedBarcode {string}
      * @param event {Object}
      */
-    reRunArticCommand(flowcellId, selectedBarcode, event){
-        console.log("Here we would manually trigger the pipeline.")
+    reRunArticCommand(flowcellId, selectedBarcode, event) {
+        alert("Here we would manually trigger the pipeline.")
     }
 }
