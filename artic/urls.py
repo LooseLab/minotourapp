@@ -52,5 +52,15 @@ urlpatterns = [
         r'^api/v1/artic/fetch-amplicon-bands/$',
         views.get_amplicon_bands_for_master,
         name="amplicon-bands"
+    ),
+    url(
+        r'^api/v1/artic/rerun-command/$',
+        views.rerun_artic_command,
+        name="rerun-command"
+    ),
+    url(
+        r'^api/v1/artic/pie-chart-data/$',
+        views.get_artic_pie_chart_data,
+        name="pie-chart-data"
     )
 ]
