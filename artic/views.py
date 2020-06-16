@@ -102,9 +102,8 @@ def get_artic_master_chart_data(request):
         raise e
 
     if log_coverage:
-        coverage = coverage.astype(np.float32)
-        coverage = np.log10(coverage)
-        coverage[np.isneginf(coverage)] = 0
+        coverage = coverage.astype(np.float16)
+        coverage[coverage == 0] = 0.1
     # Remove duplicate elements in series
     x_y_cov, xmax_cov, ymax_cov, ymin_cov = remove_duplicate_sequences_numpy(
         coverage, True
@@ -163,11 +162,6 @@ def get_artic_detail_chart_data(request):
             status=status.HTTP_404_NOT_FOUND,
         )
 
-    # the file path and data type we need as a tuple
-    file_path_list = [
-        (coverage_path, np.uint16),
-    ]
-
     # We're gonna use the numpy memmap to read only the part of the array we need
     # Create a key matching the contents of this value
     coverage = np.memmap(
@@ -175,7 +169,8 @@ def get_artic_detail_chart_data(request):
     )[mini:maxi]
 
     if log_coverage:
-        coverage = np.log10(coverage, where=coverage != 0)
+        coverage = coverage.astype(np.float16)
+        coverage[coverage == 0] = 0.1
 
     # # Remove the duplicate values until a change in the array
     x_y_cov, xmax_cov, ymax_cov, ymin_cov = remove_duplicate_sequences_numpy(
@@ -230,7 +225,7 @@ def get_artic_column_chart_data(request):
         return_data = defaultdict(list)
         queryset = PafSummaryCov.objects.filter(
             job_master__id=artic_task.id
-        ).values_list("barcode_name", "average_read_length", "read_count")
+        ).exclude(barcode_name="unclassified").values_list("barcode_name", "average_read_length", "read_count")
         for barcode, read_length, read_count in queryset:
             return_data["barcodes"].append(barcode)
             return_data["average_read_length"].append(read_length)
@@ -382,6 +377,7 @@ def get_artic_barcode_metadata_html(request):
     context_dict["hidden_results_files"] = results_files
     context_dict["hidden_has_finished"] = old_dict["has_finished"]
     context_dict["hidden_has_suff"] = old_dict["has_sufficient_coverage"]
+    context_dict["hidden_marked_for_rerun"] = old_dict["marked_for_rerun"]
     (flowcell, artic_results_path, artic_task_id,) = quick_get_artic_results_directory(
         flowcell_id
     )
@@ -578,3 +574,90 @@ def get_amplicon_bands_for_master(request):
     amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
     data_dict = {"amplicon_band_coords": amplicon_band_coords, "colours": colours}
     return Response(data_dict, status=status.HTTP_200_OK)
+
+
+@api_view(["PATCH"])
+def rerun_artic_command(request):
+    """
+    Manually set a completed fire artic command jobmaster to be rerun
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The request object
+    Returns
+    -------
+
+    """
+    print(request.data)
+    flowcell_id = request.data.get("flowcellId", None)
+    selected_barcode = request.data.get("selectedBarcode", None)
+    if not flowcell_id or not selected_barcode:
+        return Response(
+            "No flowcell ID or barcode provided.", status=status.HTTP_400_BAD_REQUEST
+        )
+    orm_object = ArticBarcodeMetadata.objects.filter(
+        flowcell_id=flowcell_id, barcode__name=selected_barcode
+    ).last()
+    artic_command_task = JobMaster.objects.filter(
+        flowcell_id=flowcell_id, job_type_id=17, barcode__name=selected_barcode
+    ).last()
+    if not artic_command_task.complete:
+        return Response("Command not yet run.", status=status.HTTP_403_FORBIDDEN)
+    artic_command_task.complete = False
+    artic_command_task.save()
+    orm_object.marked_for_rerun = True
+    orm_object.save()
+    return Response("Task sucessfully listed for re-run", status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["GET"])
+def get_artic_pie_chart_data(request):
+    """
+    Get pie chart data for the artic page
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        Rest framework request object. Contains Flowcell ID
+    Returns
+    -------
+
+    """
+    flowcell_id = request.GET.get("flowcellId", None)
+    if not flowcell_id:
+        return Response(
+            "No flowcell ID provided.", status=status.HTTP_400_BAD_REQUEST
+        )
+    artic_task = JobMaster.objects.filter(
+        flowcell_id=flowcell_id, job_type__name="Track Artic Coverage"
+    ).last()
+    queryset = PafSummaryCov.objects.filter(
+        job_master__id=artic_task.id
+    ).values_list("barcode_name", "read_count")
+    if not queryset:
+        return Response("No data.", status=status.HTTP_204_NO_CONTENT)
+    total = 0
+    classified_total = 0
+    unclassified_total = 0
+    for barcode, read_count in queryset:
+        total += read_count
+        if barcode == "unclassified":
+            unclassified_total += read_count
+        else:
+            classified_total += read_count
+
+    classified_total = round(classified_total / total * 100, 2)
+    unclassified_total = round(unclassified_total / total * 100, 2)
+    series_data = [{
+        "name": "Proportion of Reads Classified",
+        "ColorByPoint": True,
+        "data": [{
+            "name": "Classified",
+            "y": classified_total,
+            "sliced": True,
+            "selected": True
+        }, {
+            "name": "Unclassified",
+            "y": unclassified_total
+        }]
+    }]
+    return Response(series_data, status=status.HTTP_200_OK)
