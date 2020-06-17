@@ -196,8 +196,8 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         logger.info("¯\_(ツ)_/¯")
         logger.warning(str(out))
         logger.warning(err)
-    if out and err:
-        raise Exception(err)
+    # if out and err:
+    #     raise Exception(out)
 
     run_pangolin_command(base_results_directory, barcode_name)
     # Update the Barcode Metadata to show the task has been run on this barcode
