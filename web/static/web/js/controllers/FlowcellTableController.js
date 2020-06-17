@@ -32,17 +32,14 @@ class FlowcellTableController {
         let that = this;
         var table_all_runs;
 
-        $.fn.dataTable.render.format_link = function () {
-            return function (data, type, full, meta) {
-
-                return `<a href="/web/private/${that._linkDestination}/${full["id"]}/">${data}</a>`;
-            };
-        };
-
         this._datatableObj = $(`#${this._elementId}`).DataTable({
             // callback for each created row, add styling class so cursor is pointer showing it's a link
             "createdRow": function (row, data, index) {
                 $(row).addClass("stylable");
+                $(row).on("click", () => {
+                    // When we draw a row, make the whole row clickable, links to href destination
+                    window.location.href = `/web/private/${that._linkDestination}/${data["id"]}`
+                })
             },
 
             "scrollX": true,
@@ -59,45 +56,40 @@ class FlowcellTableController {
                 {
                     'targets': 0,
                     'data': "name",
-                    'render': $.fn.dataTable.render.format_link()
 
                 },
                 {
                     'targets': 1,
                     'data': "size",
-                    'render': $.fn.dataTable.render.format_link()
                 },
                 {
                     'targets': 2,
                     'data': "sample_name",
-                    'render': $.fn.dataTable.render.format_link()
                 },
                 {
                     'targets': 3,
                     'data': "start_time",
                     'render': function (data, type, full, meta) {
-                        return `<a href="/web/private/${that._linkDestination}/${full["id"]}/">${new Date(data).toISOString()}</a>`;
+                        return `${new Date(data).toISOString()}`;
                     }
                 },
                 {
                     'targets': 4,
                     'data': "number_reads",
-                    'render': $.fn.dataTable.render.format_link()
+                    'render': $.fn.dataTable.render.number(',', '.')
                 },
                 {
                     'targets': 5,
                     'data': "number_reads_processed",
-                    'render': $.fn.dataTable.render.format_link()
+                    'render': $.fn.dataTable.render.number(',', '.')
                 },
                 {
                     'targets': 6,
                     'data': "number_runs",
-                    'render': $.fn.dataTable.render.format_link()
                 },
                 {
                     'targets': 7,
                     'data': "number_barcodes",
-                    'render': $.fn.dataTable.render.format_link()
                 },
                 {
                     'targets': 8,
@@ -114,7 +106,7 @@ class FlowcellTableController {
                                     if (/\.00$/.test(data)) {
                                         data = data.substr(0, data.length - 3);
                                     }
-                                    return `<a href="/web/private/${that._linkDestination}/${row["id"]}/">${`${data} ${UNITS[i]}${suffix}`}</a>`;
+                                    return `${`${data} ${UNITS[i]}${suffix}`}`;
                                 }
                                 data /= factor;
                             }
@@ -130,43 +122,26 @@ class FlowcellTableController {
                 {
                     'targets': 9,
                     'data': "average_read_length",
-                    'render': $.fn.dataTable.render.format_link()
+                    'render': $.fn.dataTable.render.number(',', '.')
+
                 },
                 {
                     'targets': 10,
                     'data': "is_active",
-                    'render': $.fn.dataTable.render.format_link()
                 },
                 {
                     'targets': 11,
                     'data': "has_fastq",
-                    'render': $.fn.dataTable.render.format_link()
                 },
                 {
                     'targets': 12,
                     'data': "owner",
-                    'render': $.fn.dataTable.render.format_link()
                 },
                 {
                     'targets': 13,
                     'data': "permission",
-                    'render': $.fn.dataTable.render.format_link()
                 },
             ]
         });
-        // When we've drawn the table, make the whole row clickable, links to href destination
-        that._datatableObj.on("draw", function () {
-
-            // create a fake element
-            // add the rows HTML
-            // Get the href from the Cell
-            that._datatableObj.on("click", "tbody tr", function () {
-                let el = $('<div></div>');
-                el.html($(this)[0].outerHTML);
-
-                window.location.href = $('a', el)[0].href
-            });
-        });
     }
-
 }
