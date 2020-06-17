@@ -410,6 +410,7 @@ class BasecalledDataController {
                     identical = false;
                     chartHasData = chart.series.length > 0
                     newChartData = newChartDataArray[index]
+                    console.log(newChartData)
                     // See if this series is already in the chart
                     seriesToUpdate = chart.series.filter(x => {
                         return x.name === key
@@ -420,14 +421,15 @@ class BasecalledDataController {
                         identical = checkHighChartsDataIsNew(newChartData, oldSeriesData)
                     }
                     if (identical) {
+                        console.log(`Skipping redraw for ${key}`)
                         return
                     } else {
                         // only update if there is already data in the same chart series
                         if (chartHasData && seriesToUpdate.length > 0) {
-                            seriesToUpdate[0].setData({
-                                name: key,
-                                data: newChartData
-                            })
+                            console.log(seriesToUpdate)
+                            seriesToUpdate[0].setData(
+                                newChartData
+                            )
                             // add a new series
                         } else {
                             chart.addSeries({
@@ -576,7 +578,6 @@ class BasecalledDataController {
             let otherData;
             let categories;
             let pieChartData;
-            console.log(pieChartData)
             let options;
             this._columnChartBarcodeProportion.showLoading(`<div class="spinner-border text-success" role="status">
                                         <span class = "sr-only"> Loading...</span></div>`);
@@ -616,7 +617,7 @@ class BasecalledDataController {
                     if (checkHighChartsDataIsNew([newSeries.data], [oldSeries[0].options.data])) {
                         console.log(`Skipping redraw for series: ${newSeries.name}`)
                     } else {
-                        oldChartData[0].setData(newSeries.data)
+                        oldSeries[0].setData(newSeries.data)
                     }
                 } else {
                     this._columnChartBarcodeProportion.addSeries(newSeries)
