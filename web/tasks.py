@@ -62,7 +62,7 @@ def run_monitor():
                 flowcell_job.running = True
                 flowcell_job.save()
 
-            if flowcell_job.job_type.name == "Minimap2":
+            if flowcell_job.job_type.name == "Minimap2" and flowcell_job.from_database:
 
                 run_minimap2_alignment.delay(flowcell_job.id,)
 
@@ -188,7 +188,7 @@ def update_run_start_time():
     This method update the field start_time of run based on the live data or
     the header of the first fastq read
     """
-    # TODO could this be improved?
+    # TODO could this be improved? Once we have a run start time no longer check it somehow
 
     runs = Run.objects.all()
 
