@@ -14,7 +14,6 @@ from django.db.models import Sum
 from django.utils import timezone
 from ete3 import NCBITaxa
 
-from alignment.models import PafStore
 from alignment.tasks_alignment import align_reads
 from centrifuge.models import (
     CentrifugeOutput,
