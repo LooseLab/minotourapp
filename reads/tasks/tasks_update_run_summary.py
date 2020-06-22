@@ -18,19 +18,15 @@ def update_run_summary():
     """
     logger.info("Updating run summaries")
     # For each active flowcell in all flowcells
-
     flowcell_list = [x for x in Flowcell.objects.all() if x.active()]
-
     for flowcell in flowcell_list:
         # For all the runs under that flowcell
-        logger.info(
+        logger.debug(
             "Flowcell id {} - Updating run summaries for flowcell {}".format(
                 flowcell.id, flowcell.id
             )
         )
-
         for run in flowcell.runs.all():
-
             try:
                 # Get the run summary for this run
                 run_summary_list = RunSummary.objects.filter(run=run)
@@ -75,14 +71,11 @@ def update_run_summary():
             # If the run summary running field is set to False, that means another celery
             # worker isn't currently updating it
             if not run_summary.running:
-
                 run_summary.running = True
-
                 run_summary.save()
                 reads = FastqRead.objects.filter(run=run).filter(
                     id__gt=int(run_summary.last_read)
                 )[:20000]
-
                 if reads.count() > 0:
                     logger.info(
                         "Flowcell id {} - New reads seen for run summary".format(
@@ -173,7 +166,6 @@ def update_run_summary():
                     run_summary.avg_read_length = round(
                         run_summary.total_read_length / run_summary.read_count
                     )
-
                 run_summary.running = False
                 # save the results
                 run_summary.save()
