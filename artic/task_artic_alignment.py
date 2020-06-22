@@ -284,7 +284,6 @@ def add_barcode_to_tofire_file(barcode_name, directory):
         If 0 successfully added, else returns 1 and the error.
     """
     path = directory / "barcodes_to_fire.txt"
-
     with open(path, "a") as fh:
         try:
             fh.write(f"{barcode_name}\n")
@@ -340,19 +339,14 @@ def make_results_directory_artic(flowcell_id, task_id, allow_create=True):
     artic_dir = Path(f"{environmental_results_directory}/artic/")
     if not artic_dir.exists() and allow_create:
         Path.mkdir(artic_dir)
-
     results_dir = Path(f"{environmental_results_directory}/artic/Temp_results")
-
     if not results_dir.exists() and allow_create:
         Path.mkdir(results_dir)
-
     results_dir = Path(
         f"{environmental_results_directory}/artic/Temp_results/{flowcell_id}_{task_id}_artic"
     )
-
     if not results_dir.exists() and allow_create:
         Path.mkdir(results_dir)
-
     return results_dir
 
 
@@ -541,7 +535,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
         )
         avg_read_length = 450
     if not streamed_reads:
-        runs = flowcell.runs.all()
         # The chunk size of reads from this flowcell to fetch from the database
         # aim for 50 megabases
         desired_yield = 50 * 1000000
@@ -612,7 +605,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
         cmd = "{} -x map-ont -t 1 --secondary=no -c --MD {} -".format(
             minimap2, Path(reference_location) / reference_info.filename
         )
-
         logger.info(
             "Flowcell id: {} - Calling minimap Artic - {}".format(flowcell.id, cmd)
         )
@@ -626,32 +618,24 @@ def run_artic_pipeline(task_id, streamed_reads=None):
         )
         # SubProcess communicate actually calls the function
         (out, err) = proc.communicate(input=fasta_data)
-
         if err:
             logger.error(err)
-
         logger.info(
             "Flowcell id: {} - Finished minimap EB - {}".format(flowcell.id, cmd)
         )
         # decode output from byte string
         paf = out
-
         if paf:
             reference_count_dict = {}
-
             chromosomes_seen_now = set()
-
             # Dictionary to store reads that have mapped under the correct barcode
             barcode_sorted_fastq_cache = defaultdict(list)
-
             reference_path = Path(reference_location) / reference_info.filename
-
             base_result_dir_path = make_results_directory_artic(flowcell.id, task.id)
             # We can save time by writing the empty numpy data struct and reloading it
             master_reference_count_path = Path(
                 f"{base_result_dir_path}/{reference_info.name}_counts.pickle"
             )
-
             if reference_info.filename.endswith(".gz"):
                 with gzip.open(reference_path, "rt") as fp:
                     reference_count_dict = populate_reference_count(
@@ -662,25 +646,16 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     reference_count_dict = populate_reference_count(
                         reference_count_dict, fp, master_reference_count_path
                     )
-
             run_id = fasta_df_barcode["run_id"].unique()[0]
-
             barcodes = np.unique(fasta_df_barcode["barcode_name"])
-
             logger.info(f"Barcodes in this iteration are {barcodes}")
-
             barcoded_counts_dict = replicate_counts_array_barcoded(
                 barcodes, reference_count_dict
             )
-
             paf_summary_cov_dict = {}
-
             make_barcoded_directories(barcodes, base_result_dir_path)
-
             logger.info(f"Parsing paf file. Please wait.")
-
             barcodes_with_mapped_results = set()
-
             for i, record in enumerate(
                     parse_PAF(
                         StringIO(paf),
@@ -702,7 +677,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     )
             ):
                 fastq_read = fastq_dict[record.qsn]
-
                 if streamed_reads:
                     barcode_of_read = fastq_read.get("barcode_name", "Failed")
                     read_id = fastq_read.get("read_id")
@@ -713,13 +687,10 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     read_id = fastq_read.read_id
                     sequence = fastq_read.sequence
                     read_type = fastq_read.type
-
                 barcodes_with_mapped_results.add(barcode_of_read)
-
                 barcode_sorted_fastq_cache[barcode_of_read].append(
                     f">{read_id}\n{sequence}"
                 )
-
                 chromosome = chromdict[record.tsn]
 
                 #########################################################
@@ -731,7 +702,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                 mapping_end = record.te
                 # The length of the mapping
                 mapping_length = mapping_end - mapping_start
-
                 if barcode_of_read not in paf_summary_cov_dict:
                     paf_summary_cov_dict[barcode_of_read] = {
                         "job_master": task,
@@ -742,20 +712,14 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         "read_count": 0,
                         "read_type": read_type,
                     }
-
                 paf_summary_cov = paf_summary_cov_dict[barcode_of_read]
-
                 paf_summary_cov["yield"] += mapping_length
-
                 paf_summary_cov["read_count"] += 1
-
                 chromosomes_seen_now.add(chromosome.line_name)
-
                 # Parse the cigar string, on the path file record, returns a dictionary of bases, with numpy arrays
                 d = parse_cigar(record.tags.get("cg", None), sequence, mapping_length, )
                 # Adds the mismatch count to the temporary dict, parsing the MD string
                 d["M"] = np.fromiter(parse_MD(record.tags.get("MD", None)), np.uint16)
-
                 # Loop through the dictionary of results, through each base
                 for base in d:
                     # add the counts for that base to the array that exists in the reference count dict for that base,
@@ -763,13 +727,11 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     barcoded_counts_dict[barcode_of_read][record.tsn][base][
                     mapping_start:mapping_end
                     ] += d[base].astype(reference_count_dict[record.tsn][base].dtype)
-
                 # TODO this needs to be reset, here we set the U to True to indicate that a count at this position
                 # ToDO has been changed this iteration, might offer speed up if we do this?
                 # reference_count_dict[record.tsn]["U"][
                 # mapping_start:mapping_end
                 # ] = True
-
             # iterate the paf_summary_cov objects
             for paf_summary_barcode, paf_summary_cov in paf_summary_cov_dict.items():
                 logger.info(f"Creating PafSummaryCov objects for {paf_summary_barcode}")
@@ -780,27 +742,24 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     reference_line_length=paf_summary_cov["reference_line_length"],
                     read_type=paf_summary_cov["read_type"],
                 )
-
-                paf_summary_cov_orm.total_length += paf_summary_cov["yield"]
+                paf_summary_cov_orm.total_yield += paf_summary_cov["yield"]
                 paf_summary_cov_orm.read_count += paf_summary_cov["read_count"]
                 paf_summary_cov_orm.coverage = round(
-                    paf_summary_cov_orm.total_length
+                    paf_summary_cov_orm.total_yield
                     / paf_summary_cov_orm.reference_line_length,
                     2,
                 )
                 paf_summary_cov_orm.average_read_length = round(
-                    paf_summary_cov_orm.total_length / paf_summary_cov_orm.read_count
+                    paf_summary_cov_orm.total_yield / paf_summary_cov_orm.read_count
                 )
 
                 paf_summary_cov_orm.save()
-
             # TODO only ever see one chromosome, so we can remove for loop?
             barcodes_already_fired = fetch_barcode_to_fire_list(base_result_dir_path)
             for chrom_key in chromosomes_seen_now:
                 # Write out the coverage
                 # TODO barcoding stuff goes here
                 for barcode in barcodes_with_mapped_results:
-
                     barcode_sorted_fastq_path = Path(
                         f"{base_result_dir_path}/{barcode}/{barcode}.fastq"
                     )
@@ -811,7 +770,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     counts_path = Path(
                         f"{base_result_dir_path}/{barcode}/{barcode}.counts.dat"
                     )
-
                     ############################################################################
                     # ###################### read in the Counts ############################ #
                     # ##################### Combine extant values ############################ #
@@ -819,9 +777,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     max_values = 0
                     if counts_path.exists():
                         # Read the old coverage counts into memory
-
                         with open(counts_path, "rb") as fh:
-
                             old_counts_array = np.fromfile(
                                 fh,
                                 dtype=[
@@ -848,7 +804,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                                 a = barcoded_counts_dict[barcode][chrom_key][name].max()
                                 if a > max_values:
                                     max_values = a
-
                     coverage = np.sum(
                         np.array(
                             barcoded_counts_dict[barcode][chrom_key][
@@ -859,29 +814,22 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         axis=1,
                         dtype=np.uint16,
                     )
-
                     # ################################################################ #
                     # ################# Write out coverage array ################ #
                     ####################################################################
                     # Add the max value for each of the arrays
-
                     with open(coverage_path, "wb") as fh:
                         fh.write(coverage.data)
-
                     # ################################################################ #
                     # ################### Write out counts arrays ######################
                     ####################################################################
-
                     with open(counts_path, "wb") as fhc:
                         fhc.write(barcoded_counts_dict[barcode][chrom_key].data)
-
                     with open(barcode_sorted_fastq_path, "a") as fh:
                         fh.write("\n".join(barcode_sorted_fastq_cache[barcode]))
-
                     logger.info(
                         f"Avg Coverage at iteration {task.iteration_count} for barcode {barcode} is {coverage.mean()}"
                     )
-
                     if barcode in barcodes_already_fired:
                         continue
                     number_bases_in_array = coverage.size
@@ -924,7 +872,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     )
     task.last_read = last_read
     task.iteration_count += 1
-
     logger.info("Finishing this batch of reads.")
     task.read_count += read_count
     task.running = False
