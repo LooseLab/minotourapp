@@ -600,3 +600,10 @@ line-height: 1.5;
 .artic-tr-row:hover{
     cursor: pointer;
 }
+
+.ms{
+    margin-right: .5rem;
+    display: inline;
+    min-width: 7rem;
+    width: unset;
+}
