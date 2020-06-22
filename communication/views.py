@@ -1,11 +1,16 @@
+from collections import defaultdict
+
+import pandas as pd
 from django.shortcuts import render
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from communication.models import NotificationConditions
+from alignment.models import PafSummaryCov
 from communication.models import Message
+from communication.models import NotificationConditions
 from communication.serializers import MessageSerializer, NotificationSerialiser
-from reads.models import Flowcell, Barcode, UserOptions
+from reads.models import Flowcell, Barcode, UserOptions, JobMaster
 from reference.models import ReferenceInfo, ReferenceLine
 
 
@@ -81,8 +86,10 @@ def create_notification_conditions(flowcell, user, **kwargs):
         flowcell=flowcell, creating_user=user, **kwargs
     )
     if check:
-        return f"An identical Condition already exists for the {noti_type}" \
-               f" condition you are trying to create."
+        return (
+            f"An identical Condition already exists for the {noti_type}"
+            f" condition you are trying to create."
+        )
 
     # Now we check we don't have more than 2 non unique notifications of the same type, as long as they aren't Coverage
     # As many coverages as the user wants are allowed
@@ -247,9 +254,96 @@ def get_create_delete_conditions(request):
 
         try:
 
-            deleted = NotificationConditions.objects.get(pk=int(notification_pk)).delete()
+            deleted = NotificationConditions.objects.get(
+                pk=int(notification_pk)
+            ).delete()
             return Response(f"Deleted {deleted}", status=200)
 
         except Exception as e:
             return Response(e, status=500)
 
+
+@api_view(["GET"])
+def get_coverage_summary(request, pk):
+    """
+    Get a list of all the chromosomes and their coverage.
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        Django rest framework object
+    pk: int
+        The primary key of the flowcell
+    Returns
+    -------
+    If names is True - Dict of Reference to Contig, Contig to Barcodes, else return coverage per contig
+
+    """
+    # if the request is from the Dropdown for notifications
+    if request.GET.get("names", False):
+        queryset = JobMaster.objects.filter(
+            flowcell__id=pk, job_type__name="minimap2"
+        ).values_list(
+            "reference__name",
+            "reference__referencelines__line_name",
+            "flowcell__runs__barcodes__name",
+            "reference__id",
+            "reference__referencelines__id",
+            "flowcell__runs__barcodes__id",
+        )
+
+        if not queryset:
+            return Response("No mapping tasks available on this flowcell.", status=404)
+
+        reference_to_contig_dict = defaultdict(list)
+
+        # create a dict of string keys and values to create the conditional drop downs
+        # contig[0] - reference name
+        # contig[1] - contig names
+        # contig[2] - barcode names
+        # contig[3] - reference pk
+        # contig[4] - contig id
+        # contig[5] - barcodes id
+        for contig in queryset:
+
+            contig_to_barcode_dict = defaultdict(list)
+
+            reference_to_contig_dict[contig[0]] = [contig_to_barcode_dict, contig[3]]
+
+            if not contig_to_barcode_dict[contig[1]]:
+
+                contig_to_barcode_dict[contig[1]].append(contig[4])
+
+            contig_to_barcode_dict[contig[1]].append((contig[2], contig[5]))
+
+        return Response(reference_to_contig_dict, status=200)
+
+    queryset = PafSummaryCov.objects.filter(job_master__flowcell__id=pk)
+
+    if not queryset:
+        return Response(
+            "No alignment results found for this flowcell",
+            status=status.HTTP_204_NO_CONTENT,
+        )
+
+    df = pd.DataFrame.from_records(
+        queryset.values(
+            "barcode_name",
+            "chromosome__line_name",
+            "total_yield",
+            "reference_line_length",
+        )
+    )
+
+    df["coverage"] = (
+        df["total_yield"].div(df["reference_line_length"]).round(decimals=3)
+    )
+
+    df = df.drop(columns=["reference_line_length", "total_yield"])
+
+    df.set_index("chromosome__line_name", inplace=True)
+
+    dictdf = df.to_dict("index")
+
+    result = {"data": dictdf}
+
+    return Response(result, status=200)
