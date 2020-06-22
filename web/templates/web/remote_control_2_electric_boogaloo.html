@@ -5,7 +5,7 @@
         //    document.getElementById("btn-copy-token").addEventListener("click", function() {
         //      copyToClipboardMsg(document.getElementById("token"), "msg");
         // });
-        set_active_navbar_item(1);
+        setActiveNavbarItem(1);
     </script>
 {% endblock %}
 {% block content %}
@@ -295,7 +295,7 @@
             <script src="{% static 'web/libraries/vuetify.js' %}"></script>
 
             <script>
-                {#set_active_navbar_item(1);#}
+                {#setActiveNavbarItem(1);#}
                 const topPadding = $(".main-header").height() + 16;
                 $(".content-wrapper").css("padding-top", `${topPadding}px`);
                 const vuetify = new Vuetify({
@@ -496,7 +496,7 @@
                 {#const remoteControlController = new RemoteControlController(vm);#}
                 {#remoteControlController.getActiveMinionsAndStats();#}
 
-                {#set_active_navbar_item(1);#}
+                {#setActiveNavbarItem(1);#}
 
                 // NOW TO RAM SOME DATA IN
                 {#vm.computers.append(remoteControlController.getActiveMinions())#}
