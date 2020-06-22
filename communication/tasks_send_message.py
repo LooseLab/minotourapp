@@ -106,17 +106,17 @@ def check_coverage(flowcell, target_coverage, reference_line_id, barcode):
         queryset.values(
             "barcode_name",
             "chromosome__line_name",
-            "total_length",
+            "total_yield",
             "reference_line_length",
             "chromosome_id",
         )
     )
 
     df["coverage"] = (
-        df["total_length"].div(df["reference_line_length"]).round(decimals=3)
+        df["total_yield"].div(df["reference_line_length"]).round(decimals=3)
     )
     logger.info(df.head())
-    df = df.drop(columns=["reference_line_length", "total_length"])
+    df = df.drop(columns=["reference_line_length", "total_yield"])
 
     ref_df = df[df["chromosome_id"] == reference_line_id]
     logger.info((flowcell, target_coverage, reference_line_id, barcode))
