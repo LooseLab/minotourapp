@@ -8,7 +8,6 @@ from celery.task import task
 from celery.utils.log import get_task_logger
 from django.db import connection
 
-from alignment.models import PafStore
 from minotourapp.settings import BASE_DIR
 from minotourapp.utils import get_env_variable
 from reads.models import JobMaster, FastqRead
@@ -104,13 +103,6 @@ def delete_flowcell(flowcell_job_id):
             f"Flowcell id: {flowcell.id} - Deleting {delete_chunk_size} records."
         )
         with connection.cursor() as cursor:
-            if PafStore.objects.filter(job_master__flowcell=flowcell).first():
-                # TODO this is slow - we want to store flowcell ID on pafstore, there 's already a field, just not used
-                cursor.execute(
-                    "DELETE alignment_pafstore FROM alignment_pafstore INNER JOIN reads_jobmaster ON alignment_pafstore.job_master_id = reads_jobmaster.id WHERE reads_jobmaster.flowcell_id=%s and alignment_pafstore.id < %s",
-                    [flowcell.id, PafStore.objects.filter(job_master__flowcell=flowcell).first().id + alignment_chunk_size],
-                )
-                logger.info(f"Deleted alignment entries.")
             cursor.execute(
                 "DELETE FROM reads_fastqread where flowcell_id=%s limit %s",
                 [flowcell.id, delete_chunk_size],
