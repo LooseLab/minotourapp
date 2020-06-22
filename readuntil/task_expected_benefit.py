@@ -4,14 +4,11 @@ import gzip
 import pickle
 import subprocess
 from io import StringIO
-from pathlib import Path
 
-import numpy as np
 from celery import task
 from celery.utils.log import get_task_logger
 
-from alignment.tasks_alignment import call_fetch_reads_alignment
-from reads.models import JobMaster
+from reads.models import JobMaster, FastqRead
 from readuntil.functions_EB import *
 from readuntil.models import ExpectedBenefitChromosomes
 
@@ -154,13 +151,24 @@ def calculate_expected_benefit_3dot0_final(task_id):
     # The chunk size of reads from this flowcell to fetch from the database
     chunk_size = 8000
     # Get the fastq objects
-    fasta_df_barcode, last_read, read_count, fasta_objects = call_fetch_reads_alignment(
-        runs, chunk_size, task.last_read
-    )
 
     ###Check if read_count is > 0 otherwise exit
     ###We might want to check the minimum number of reads or the time since the last read was entered to do a smaller chunk?
-
+    logger.debug(f"Fetching reads in chunks of {chunk_size} for alignment.")
+    fasta_objects = FastqRead.objects.filter(
+        flowcell_id=flowcell.id, id__gt=task.last_read
+    )[:chunk_size]
+    fasta_df_barcode = pd.DataFrame().from_records(
+        fasta_objects.values("read_id", "barcode_name", "sequence", "id", "run_id", "type__name", "type_id")
+    )
+    read_count = fasta_df_barcode.shape[0]
+    if fasta_objects:
+        last_read = fasta_df_barcode.tail(1).iloc[0].id
+    if fasta_df_barcode.shape[0] == 0:
+        logger.debug("No fastq found. Skipping this iteration.")
+        task.running = False
+        task.save()
+        return
     if read_count > 0:
         if not minimap2:
             logger.error("Can not find minimap2 executable - stopping task.")
