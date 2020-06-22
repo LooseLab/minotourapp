@@ -1,12 +1,17 @@
 """
 Functionality to delete a previously run task with a celery task
 """
-from reads.models import JobMaster
+import datetime
+import time
+from pathlib import Path
+
 from celery import task
 from celery.utils.log import get_task_logger
-from pathlib import Path
-import time
-import datetime
+from django.db import connection
+
+from alignment.models import PafRoughCov, PafSummaryCov
+from reads.models import JobMaster
+
 # from readuntil.models import ExpectedBenefitChromosomes
 
 logger = get_task_logger(__name__)
@@ -54,73 +59,36 @@ def delete_alignment_task(flowcell_job_id, restart=False):
         :type restart: bool
         :return:
     """
-
     # Get the flowcell jobMaster entry
     flowcell_job = JobMaster.objects.get(pk=flowcell_job_id)
     # set to complete so we don't generate new data
     flowcell_job.complete = True
     flowcell_job.save()
-    
-    # If the task is running,it might be producing new data, so wait until it's finished
-    running = flowcell_job.running
-
-    seconds_counter = 0
-
-    while running:
-        running = flowcell_job.running
-        time.sleep(1)
-        seconds_counter += 1
-        if seconds_counter is 60:
-            flowcell_job.running = False
-            flowcell_job.save()
-
     # Get the flowcell
     flowcell = flowcell_job.flowcell
-
-    logger.info('Flowcell id: {} - Deleting alignment data from flowcell {}'.format(flowcell.id, flowcell.name))
-    # keep looping
     delete = True
-    # Switch these to false when we have no task data left to delete
-    pafstore_remaining = True
-
+    delete_chunk_size = 100000
     paf_rough_cov_remaining = True
-
     while delete:
-
         if flowcell_job.job_type.name == "Minimap2" or flowcell_job.job_type.name == "Other":
-
             # If it's minimap2, we have tonnnes of alignment data, so delete it in batches of 1000
-
             # ######## Paf Rough cov ####### #
             if paf_rough_cov_remaining:
                 # get the first entry in the database for this job master
-                first_paf_rough_cov_row = flowcell_job.pafroughcov_list.first()
+                first_paf_rough_cov_row = PafRoughCov.objects.filter(job_master=flowcell_job)
                 # if there isn't one we've deleted all the pafroughcov entries
                 if not first_paf_rough_cov_row:
                     paf_rough_cov_remaining = False
                     logger.info(f"Deleted all Paf Rough Cov data. Job ID {flowcell_job.id}")
                 else:
-
-                    delete_rows(first_paf_rough_cov_row, 1000, flowcell_job, "pafroughcov_list")
-
-            # ####### Paf Store ###### #
-            if pafstore_remaining:
-                # Get the first database entry
-                first_pafstore_row = flowcell_job.pafstore_list.first()
-                # If there is no data left
-                if not first_pafstore_row:
-                    pafstore_remaining = False
-                    logger.info(f"Deleted all Paf Store data. Job ID {flowcell_job.id}")
-
-                else:
-                    delete_rows(first_pafstore_row, 1000, flowcell_job, "pafstore_list")
-
-            if not paf_rough_cov_remaining and not pafstore_remaining:
-                # We've deleted all the super large data
-
-                finshed = flowcell_job.delete()
-                logger.info(f"Finished! {finshed}")
-
+                    with connection.cursor() as cursor:
+                        cursor.execute(
+                            "DELETE FROM alignment_pafroughcov where flowcell_id=%s limit %s",
+                            [flowcell.id, delete_chunk_size],
+                        )
+            if not paf_rough_cov_remaining:
+                # Delete Paf Summary Cov
+                PafSummaryCov.objects.filter(job_master=flowcell_job).delete()
                 # if we are restarting the task, reset all the jobmaster fields to 0 and save them
                 if restart:
                     flowcell_job.last_read = 0
@@ -128,10 +96,12 @@ def delete_alignment_task(flowcell_job_id, restart=False):
                     flowcell_job.complete = False
                     flowcell_job.running = False
                     flowcell_job.save()
-                    
                     # We're restarting so set a new activity data so flowcell becomes active
                     flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
                     flowcell.save()
+                else:
+                    finished = flowcell_job.delete()
+                    logger.debug(f"Finished! {finished}")
 
                 delete = False
 
