@@ -74,33 +74,27 @@ def get_artic_master_chart_data(request):
 
     """
     flowcell_id = request.GET.get("flowcellId", None)
-
     barcode = request.GET.get("barcodeChosen", None)
     # Whether to log the data
     # 1 is true 0 is false
     log_coverage = int(request.GET.get("logCoverage", 0))
-
     if not flowcell_id or not barcode:
         return Response(
             "Flowcell ID and Barcode Name are required.",
             status=status.HTTP_400_BAD_REQUEST,
         )
-
     (
         flowcell,
         artic_results_path,
         artic_task_id,
         coverage_path,
     ) = quick_get_artic_results_directory(flowcell_id, barcode)
-
     try:
         with open(coverage_path, "rb") as fh:
             coverage = np.fromfile(fh, dtype=np.uint16)
-
     except FileNotFoundError as e:
         Response("Coverage file not found.", status=status.HTTP_404_NOT_FOUND)
         raise e
-
     if log_coverage:
         coverage = coverage.astype(np.float16)
         coverage[coverage == 0] = 0.1
@@ -108,12 +102,10 @@ def get_artic_master_chart_data(request):
     x_y_cov, xmax_cov, ymax_cov, ymin_cov = remove_duplicate_sequences_numpy(
         coverage, True
     )
-
     # The return dictionary
     data_dict = {
         "coverage": {"xmax": xmax_cov, "ymax": ymax_cov, "data": x_y_cov},
     }
-
     return Response(data_dict)
 
 
@@ -136,47 +128,36 @@ def get_artic_detail_chart_data(request):
     mini = int(request.GET.get("min"))
     maxi = int(request.GET.get("max"))
     log_coverage = int(request.GET.get("logCoverage", 0))
-
     flowcell_id = request.GET.get("flowcellId")
-
-    print("REQUEST {}".format(request.GET))
     # print (request.GET.get("chromosome_chosen"))
-
     barcode = request.GET.get("barcodeChosen", "NOTFOUND")
-
     (
         flowcell,
         artic_results_path,
         artic_task_id,
         coverage_path,
     ) = quick_get_artic_results_directory(flowcell_id, barcode)
-    print(coverage_path)
     if artic_task_id is None:
         return Response(
             "Artic task not found for this flowcell.", status=status.HTTP_404_NOT_FOUND
         )
-
     if not coverage_path.exists():
         return Response(
             "No results files found for this flowcell.",
             status=status.HTTP_404_NOT_FOUND,
         )
-
     # We're gonna use the numpy memmap to read only the part of the array we need
     # Create a key matching the contents of this value
     coverage = np.memmap(
         coverage_path, np.uint16
     )[mini:maxi]
-
     if log_coverage:
         coverage = coverage.astype(np.float16)
         coverage[coverage == 0] = 0.1
-
     # # Remove the duplicate values until a change in the array
     x_y_cov, xmax_cov, ymax_cov, ymin_cov = remove_duplicate_sequences_numpy(
         coverage, minimum=mini
     )
-
     # Get the primer bands
     scheme = "nCoV-2019"
     scheme_version = "V3"
@@ -278,7 +259,7 @@ def get_artic_summary_table_data(request):
         "coverage",
         "job_master__id",
         "read_count",
-        "total_length",
+        "total_yield",
         "reference_line_length",
     )
     artic_metadata = {
