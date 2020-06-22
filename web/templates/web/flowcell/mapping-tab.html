@@ -11,28 +11,26 @@
                 <form class="form-horizontal">
                     <div class="form-group">
                         <div class="col-md-12 control-label" style="height: 100%; text-align: left;">
-                            <label for="barcode-select" style="display: inline">Barcode:</label>
-                            <select id="barcode-select" class="form-control-sm" style="display: inline"
-                                    onchange="flowcellController.flowcellTabController.alignmentController.coverageChartController.reload_master_chart()"></select>
-                            <label for="read-type-select" style="display: inline">Read Type:</label>
-                            <select id="read-type-select" class="form-control-sm" style="display: inline"
-                                    onchange="flowcellController.flowcellTabController.alignmentController.coverageChartController.reload_master_chart()"></select>
-                            <label for="reference-select" style="display: inline">Reference</label>
-                            <select id="reference-select" class="form-control-sm" style="display: inline"
-                                    onchange="flowcellController.flowcellTabController.alignmentController.coverageChartController.reload_master_chart()"></select>
-                            <label for="chromosome-select" style="display: inline">Chromosome</label>
-                            <select id="chromosome-select" class="form-control-sm" style="display: inline"
-                                    onchange="flowcellController.flowcellTabController.alignmentController.coverageChartController.reload_master_chart()"></select>
-                            {#                            <a href="#" class="btn btn-primary"#}
-                            {#                               onclick="flowcellController.flowcellTabController.alignmentController.reload_master_chart()">Reset#}
-                            {#                                chart</a>#}
+                            <label for="referenceSelect" style="display: inline">Reference:</label>
+                            <select id="referenceSelect" class="custom-select ms">
+                            </select>
+
+                            <label for="readTypeSelect" style="display: inline">Read Type:</label>
+                            <select id="readTypeSelect" class="custom-select ms" >
+                            </select>
+                            <label for="chromosomeSelect" style="display: inline">Chromosome:</label>
+                            <select id="chromosomeSelect" class="custom-select ms" ></select>
+                            <label for="barcodeSelect" style="display: inline">Barcode:</label>
+                            <select id="barcodeSelect" class="custom-select ms" ></select>
+                            <button type="button" class="btn btn-light" id="reset-chart-zoom" disabled>Reset chart zoom</button>
+
                         </div>
                     </div>
                 </form>
             </div>
             <div id="coverage_div" class="col-md-12 highcharts" style="width:100%">
                 <div id="coverage_div_detail" class="detail_chart" style="height: 400px"></div>
-                <div id="coverage_div_master" class="master_chart"></div>
+                <div id="coverage_div_master" class="master_chart" style="height: 10rem"></div>
             </div>
         </div>
         <div class="row">
@@ -55,6 +53,7 @@
                     <thead>
                     <tr>
                         <th>Barcode</th>
+                        <th>Reference Name</th>
                         <th>Sequence Name</th>
                         <th>Sequence Length</th>
                         <th>Read Count</th>
@@ -66,6 +65,7 @@
                     <tfoot>
                     <tr>
                         <th>Barcode</th>
+                        <th>Reference Name</th>
                         <th>Sequence Name</th>
                         <th>Sequence Length</th>
                         <th>Read Count</th>
