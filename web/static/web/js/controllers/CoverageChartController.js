@@ -1,58 +1,59 @@
+/* global getCookie, CoverageChart, axios */
 class CoverageChartController {
-    // controller for coverage chart
-    constructor(div_name) {
-        // constructs new Coverage chart class, and link to chromosome select field
-        this._chromosomeSelect = document.querySelector('#chromosome-id-select');
-        this._coverageChart = new CoverageChart(div_name);
-    }
+  // controller for coverage chart
+  constructor (divId) {
+    // constructs new Coverage chart class, and link to chromosome select field
+    this._coverageChart = new CoverageChart(divId)
+    this._axiosInstance = axios.create({
+      headers: { 'X-CSRFToken': getCookie(`csrftoken`) }
+    })
+  }
 
-    get coverage_chart() {
-        return this._coverageChart;
-    }
+  /**
+   * Reload the master and detail chart data.
+   * @param url {string} The url to load data from
+   */
+  reloadCoverageCharts (url) {
+    // reload the data on click to reset or chromosome change
+    this.loadChartData(url)
+  }
 
-    reload_master_chart() {
-        // reload the data on click to reset or chromosome change
-        let url = this.create_url();
-        this.loadChartData(url);
-    }
-
-    create_url() {
-
-        // create the url to query for data
-        var selected_option = this._chromosomeSelect.value;
-
-        if (parseInt(selected_option) < 0) {
-
-            return "/api/v1/pafcoverage/0/0/0/1/";
+  /**
+   * Make the ajax call to get chart data and insert it if it is not identical
+   * @param url
+   */
+  loadChartData (url) {
+    const self = this
+    self._coverageChart.masterChart.showLoading(`<div class="spinner-border text-success" role="status">
+                        <span class = "sr-only"> Loading...</span></div>`)
+    self._coverageChart.detailChart.showLoading(`<div class="spinner-border text-success" role="status">
+                        <span class = "sr-only"> Loading...</span></div>`)
+    this._axiosInstance.get(url).then(
+      response => {
+        const data = response.data.chartData
+        self._refLength = response.data.refLength
+        if (!checkHighChartsDataIsIdentical(data, self._coverageChart.masterChart.series[0].options.data)) {
+          self._coverageChart.masterChart.xAxis[0].setExtremes(0, response.data.refLength)
+          self._coverageChart.masterChart.series[0].setData(data)
+          self._coverageChart.detailChart.series[0].setData(data)
+          self._coverageChart.masterChart.xAxis[0].removePlotBand(`mask-before`)
+          self._coverageChart.detailChart.hideLoading()
+          self._coverageChart.masterChart.hideLoading()
+        } else {
+          self._coverageChart.detailChart.hideLoading()
+          self._coverageChart.masterChart.hideLoading()
         }
+      }).catch(
+      error => {
+        console.error(error)
+      })
+  }
 
-        // get the selected option to view coverage
-        var value_combination = selected_option.split('_');
-        console.log(value_combination);
-        // get the task id for the jobmaster
-        var task_id = value_combination[0];
-        // get the barcode name
-        var barcode_name = value_combination[1];
-        // template
-        var read_type_id = value_combination[2];
-        // get the chromosome name
-        var chromosome_id = value_combination[3];
-        // create the url
-        var url = "/api/v1/pafcoverage/" + task_id + "/" + barcode_name + "/" + read_type_id + "/" + chromosome_id + "/";
-
-        return url;
-    }
-
-    loadChartData(url) {
-
-        let self = this;
-
-        $.getJSON(url, (function (data) {
-            var parsedData = JSON.parse(data);
-            self._coverageChart.masterChart.series[0].setData(parsedData);
-            self._coverageChart.detailChart.series[0].setData(parsedData);
-            self._coverageChart.masterChart.xAxis[0].removePlotBand('mask-before');
-            return data;
-        }));
-    }
+  /**
+   * Reset the chart zoom on the detail chart.
+   */
+  resetDetailChartZoom () {
+    this._coverageChart.detailChart.xAxis[0].setExtremes(0, self._refLength)
+    this._coverageChart.masterChart.xAxis[0].removePlotBand(`mask-before`)
+  }
 }
