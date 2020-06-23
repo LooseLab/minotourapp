@@ -2,7 +2,6 @@ from __future__ import absolute_import, unicode_literals
 
 import os
 import subprocess
-from collections import defaultdict
 from io import StringIO
 
 import numpy as np
@@ -10,7 +9,7 @@ import pandas as pd
 from celery import task
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from django.db.models import Max
+from django.db.models import Max, F
 
 from alignment.models import PafRoughCov, PafSummaryCov
 from reads.models import FastqRead, JobMaster
@@ -52,24 +51,23 @@ def run_minimap2_alignment(job_master_id, streamed_reads=[]):
         desired_yield = 50 * 1000000
         chunk_size = round(desired_yield / avg_read_length)
         logger.debug(f"Fetching reads in chunks of {chunk_size} for alignment.")
-        fasta_objects = FastqRead.objects.filter(
-            flowcell_id=flowcell.id, id__gt=job_master.last_read
-        )[:chunk_size]
         fasta_df_barcode = pd.DataFrame().from_records(
-            fasta_objects.values(
+            FastqRead.objects.filter(
+                flowcell_id=flowcell.id, id__gt=job_master.last_read
+            )[:chunk_size].values(
                 "read_id",
                 "barcode_name",
                 "sequence",
                 "id",
                 "run_id",
                 "type__name",
-                "type_id",
                 "run_id",
                 "barcode_id",
                 "is_pass",
+                read_type_id=F("type_id"),
             )
         )
-        if fasta_objects:
+        if not fasta_df_barcode.empty:
             last_read = fasta_df_barcode.tail(1).iloc[0].id
         if fasta_df_barcode.shape[0] == 0:
             logger.debug("No fastq found. Skipping this iteration.")
@@ -80,7 +78,6 @@ def run_minimap2_alignment(job_master_id, streamed_reads=[]):
         last_read = job_master.last_read
         fasta_df_barcode = pd.DataFrame(streamed_reads)
         fasta_df_barcode = fasta_df_barcode[fasta_df_barcode["is_pass"]]
-        fasta_objects = streamed_reads
 
     read_count = fasta_df_barcode.shape[0]
     # The chunk size of reads from this flowcell to fetch from the database
@@ -126,7 +123,7 @@ def save_paf_store_summary(row, job_master_id):
         barcode_id=row["barcode_id"],
         chromosome_id=row["chromosome_pk"],
         reference_line_length=row[6],
-        read_type_id=row["type_id"],
+        read_type_id=row["read_type_id"],
     )
 
     paf_summary_cov.total_yield += row["yield"]
@@ -136,6 +133,64 @@ def save_paf_store_summary(row, job_master_id):
         paf_summary_cov.total_yield / paf_summary_cov.read_count, 2
     )
     paf_summary_cov.save()
+
+
+def fetch_rough_cov_to_update(job_master_id):
+    """
+    Returns a DataFrame of PafRoughCov bins we have data for
+    Parameters
+    ----------
+    job_master_id: int
+        The primary key of the JobMaster record for this task
+
+    Returns
+    -------
+    pd.core.frame.DataFrame
+    """
+    queryset = PafRoughCov.objects.filter(job_master_id=job_master_id)
+    lookup_dict = {rough_cov.id: rough_cov for rough_cov in list(queryset)}
+    df_old_coverage = pd.DataFrame.from_records(
+        queryset.values(
+            "id",
+            "run_id",
+            "flowcell_id",
+            "read_type_id",
+            "barcode_id",
+            "bin_position_start",
+            "bin_position_end",
+            "bin_coverage",
+            chromosome_pk=F("chromosome_id"),
+        )
+    )
+    if not df_old_coverage.empty:
+        df_old_coverage["ORM"] = df_old_coverage["id"].map(lookup_dict)
+        df_old_coverage = df_old_coverage.set_index(
+            [
+                "chromosome_pk",
+                "read_type_id",
+                "barcode_id",
+                "bin_position_start",
+                "bin_position_end",
+            ]
+        )
+        df_old_coverage = df_old_coverage.loc[~df_old_coverage.index.duplicated()]
+    return df_old_coverage
+
+
+def update_orm_objects(row):
+    """
+    Update the orm objects for bulk updating
+
+    Parameters
+    ----------
+    row: pandas.core.series.Series
+
+    Returns
+    -------
+
+    """
+    row["ORM"].bin_coverage = row["bin_coverage"]
+    return row["ORM"]
 
 
 def generate_paf_summary_cov_objects(row, flowcell_pk, job_master_pk, reference_pk):
@@ -162,13 +217,13 @@ def generate_paf_summary_cov_objects(row, flowcell_pk, job_master_pk, reference_
         job_master_id=job_master_pk,
         run_id=row["run_id"],
         flowcell_id=flowcell_pk,
-        read_type_id=row["type_id"],
+        read_type_id=row["read_type_id"],
         is_pass=row["is_pass"],
         barcode_id=row["barcode_id"],
         reference_id=reference_pk,
         chromosome_id=row["chromosome_pk"],
-        bin_position_start=row["left_bin"],
-        bin_position_end=row["right_bin"],
+        bin_position_start=row["bin_position_start"],
+        bin_position_end=row["bin_position_end"],
         bin_coverage=row["bin_coverage"],
     )
 
@@ -189,23 +244,47 @@ def paf_rough_coverage_calculations(df, job_master, max_chromosome_length):
     -------
 
     """
+    df_old_coverage = fetch_rough_cov_to_update(job_master.id)
+
     bin_width = 10
     bins = [i for i in range(0, max_chromosome_length + bin_width, bin_width)]
     df["cut"] = pd.cut(df[7], bins)
-    df["left_bin"] = df["cut"].apply(lambda x: x.left)
-    df["right_bin"] = df["cut"].apply(lambda x: x.right)
+    df["bin_position_start"] = df["cut"].apply(lambda x: x.left)
+    df["bin_position_end"] = df["cut"].apply(lambda x: x.right)
     if "barcode_name" not in df.columns:
         df.reset_index(inplace=True)
     df.set_index(["type__name", "tsn", "barcode_name", "cut"], inplace=True)
     df["bin_coverage"] = df.groupby(["type__name", "tsn", "barcode_name", "cut"]).size()
     df = df.loc[~df.index.duplicated()]
-    df["model_objects"] = df.apply(
-        generate_paf_summary_cov_objects,
-        axis=1,
-        args=(job_master.flowcell.id, job_master.id, job_master.reference.id),
-    )
-
-    PafRoughCov.objects.bulk_create(df["model_objects"].values.tolist(), batch_size=5000)
+    df.reset_index(inplace=True)
+    if not df_old_coverage.empty:
+        df.set_index(
+            [
+                "chromosome_pk",
+                "read_type_id",
+                "barcode_id",
+                "bin_position_start",
+                "bin_position_end",
+            ],
+            inplace=True,
+        )
+        df_old_coverage = df_old_coverage.loc[df_old_coverage.index.isin(df.index.values)]
+        df_old_coverage["bin_coverage"] = (
+                df_old_coverage["bin_coverage"]
+                + df.loc[df.index.isin(df_old_coverage.index.values)]["bin_coverage"]
+        )
+        df_old_coverage["ORM"] = df_old_coverage.apply(update_orm_objects, axis=1)
+        PafRoughCov.objects.bulk_update(df_old_coverage["ORM"].values, ["bin_coverage"], batch_size=1000)
+        # Get rid of rows that were used in the update
+        df = df.loc[~df.index.isin(df_old_coverage.index.values)]
+        df.reset_index(inplace=True)
+    if not df.empty:
+        df["model_objects"] = df.apply(
+            generate_paf_summary_cov_objects,
+            axis=1,
+            args=(job_master.flowcell.id, job_master.id, job_master.reference.id),
+        )
+        PafRoughCov.objects.bulk_create(df["model_objects"].values.tolist(), batch_size=5000)
 
 
 def paf_summary_calculations(df, job_master_id):
@@ -283,7 +362,7 @@ def align_reads(job_master_id, fasta_df_barcode):
         chromosome_dict[chromosome.line_name] = chromosome.id
     # Create the series that contains the read_id and sequence as a correctly formatted fasta string
     fasta_df_barcode["fasta"] = (
-        ">" + fasta_df_barcode["read_id"] + "\n" + fasta_df_barcode["sequence"]
+            ">" + fasta_df_barcode["read_id"] + "\n" + fasta_df_barcode["sequence"]
     )
     # Create one string formatted correctly for fasta with input data
     fasta_data = "\n".join(list(fasta_df_barcode["fasta"]))
@@ -313,7 +392,6 @@ def align_reads(job_master_id, fasta_df_barcode):
     paf_line_count = paf.count("n")
     logger.debug(f"Flowcell id: {flowcell.id} - Found {paf_line_count} paf records")
     # Store the data to become a pafsumamrycov record in DB
-    paf_summary_cache = defaultdict(dict)
     paf_df = pd.read_csv(StringIO(out), sep="\t", header=None)
     paf_df = paf_df.rename(columns={5: "tsn"})
     paf_df["chromosome_pk"] = paf_df["tsn"].map(chromosome_dict)
@@ -323,7 +401,7 @@ def align_reads(job_master_id, fasta_df_barcode):
     df = pd.merge(
         paf_df,
         fasta_df_barcode[
-            ["barcode_name", "type__name", "type_id", "barcode_id", "is_pass", "run_id"]
+            ["barcode_name", "type__name", "read_type_id", "barcode_id", "is_pass", "run_id"]
         ],
         how="left",
         left_index=True,
@@ -333,15 +411,16 @@ def align_reads(job_master_id, fasta_df_barcode):
     if "no barcode" in fasta_df_barcode["barcode_name"].unique():
         df["barcode_name"] = "All reads"
         paf_summary_calculations(df, job_master_id)
+        paf_rough_coverage_calculations(df, job_master, max_chromosome_length)
     else:
         paf_summary_calculations(df, job_master_id)
         df.reset_index(inplace=True)
+        df2 = df
+        paf_rough_coverage_calculations(df2, job_master, max_chromosome_length)
+        if "barcode_name" not in df.keys():
+            df.reset_index(inplace=True)
         df["barcode_name"] = "All reads"
-        print("seconds call")
-        print(df.head())
-        print(df.keys())
         # save results for all reads
         paf_summary_calculations(df, job_master_id)
-    paf_rough_coverage_calculations(df, job_master, max_chromosome_length)
 
     return last_read
