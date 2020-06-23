@@ -55,7 +55,7 @@ class PafRoughCov(models.Model):
     bin_coverage = models.IntegerField(default=0)
 
     def __str__(self):
-        return f"{self.flowcell} {self.p}"
+        return f"{self.flowcell} {self.bin_position_start} - {self.bin_position_end}, Coverage: {self.bin_coverage}"
 
 
 class PafSummaryCov(models.Model):
@@ -103,3 +103,7 @@ class PafSummaryCov(models.Model):
     average_read_length = models.IntegerField(
         default=0
     )
+
+    def __str__(self):
+        return f"Id: {self.id}, FlowcellId: {self.flowcell.id}, Barcode: {self.barcode.name}," \
+               f" Chromosome: {self.chromosome.line_name}"
