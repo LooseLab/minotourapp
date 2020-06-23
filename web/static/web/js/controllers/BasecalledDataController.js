@@ -34,7 +34,7 @@ class BasecalledDataController {
     this._createFlowcellHeatMaps(flowcellId)
     this._createBarcodeProportionBarCharts(flowcellId)
     this.chartsInitialised = true
-    this._interval = setInterval(this.updateTab, 60000, flowcellId, this._currentBarcode, this, false)
+    this._interval = setInterval(this._updateTab, 60000, flowcellId, this._currentBarcode, this, false)
     $(window).on(`unload`, function () {
       console.log(`clearing base-called interval`)
       clearInterval(this._interval)
@@ -114,7 +114,7 @@ class BasecalledDataController {
     event.target.classList.add(`active`)
 
     // call the function to draw all the charts here.
-    this.updateTab(this._flowcellId, selectedBarcode, this, true)
+    this._updateTab(this._flowcellId, selectedBarcode, this, true)
   }
 
   /**
@@ -620,6 +620,13 @@ class BasecalledDataController {
   }
 
   /**
+   * Update the page data on tab switch in flowcell tab controller
+   */
+  updateTab () {
+    this._updateTab(this._flowcellId, this._currentBarcode, this, false)
+  }
+
+  /**
      * Update the data, called in interval in initialisation.
      * @param flowcellId {string} Primary key of the flowcell record in the mysql database.
      * @param barcodeName {string} Chose barcode of the tab.
@@ -627,7 +634,7 @@ class BasecalledDataController {
      * @param changeBarcode {boolean} If update is triggered by barcode change.
      * @private
      */
-  updateTab (flowcellId, barcodeName, that, changeBarcode) {
+  _updateTab (flowcellId, barcodeName, that, changeBarcode) {
     const barcode = getSelectedBarcode(`BasecalledData`)
     if (getSelectedTab() !== "basecalled-data"){
       return
