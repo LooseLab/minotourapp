@@ -2,7 +2,7 @@ import json
 
 import numpy as np
 import pandas as pd
-from django.db.models import Sum, F
+from django.db.models import F
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -35,20 +35,21 @@ def rough_coverage_complete_chromosome_flowcell(
     """
     queryset = (
         PafRoughCov.objects.filter(job_master__id=task_id)
-        .filter(flowcell__owner=request.user)
+          .filter(flowcell__owner=request.user)
         .filter(barcode__name=barcode_name)
         .filter(chromosome__id=chromosome_id)
         .filter(read_type__id=read_type_id)
-        .values("p")
-        .annotate(Sum("i"))
-        .order_by("p")
+        .order_by("bin_position_end")
+    ).values_list("bin_position_start", "bin_coverage")
+    # TODO limits to just one reference here when fetching length, could be an issue in the future
+    length = (
+        PafSummaryCov.objects.filter(job_master_id=task_id, chromosome_id=chromosome_id)
+        .first()
+        .chromosome.reference.length
     )
-    # TODO limits to just one reference here, could be an issue in the future
-    length = PafSummaryCov.objects.filter(job_master_id=task_id).first().chromosome.reference.length
-    queryset_df = pd.DataFrame.from_records(queryset.values("p", "i__sum"))
-    queryset_df["i__sum__cumsum"] = queryset_df["i__sum"].cumsum()
-    result = queryset_df[["p", "i__sum__cumsum"]]
-    return Response({"chartData": result.values, "refLength": length}, status=status.HTTP_200_OK)
+    return Response(
+        {"chartData": queryset, "refLength": length}, status=status.HTTP_200_OK
+    )
 
 
 @api_view(["GET"])
@@ -114,6 +115,8 @@ def flowcell_paf_summary_cov(request, pk):
     queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk).exclude(
         job_master__job_type_id=16
     )
+    if not queryset:
+        return Response("No data currently held in database.", status=status.HTTP_404_NOT_FOUND)
     df = pd.DataFrame.from_records(
         queryset.values(
             "job_master_id",
@@ -132,17 +135,18 @@ def flowcell_paf_summary_cov(request, pk):
     # TODO can soon be replaced once alignment task saves flowcellId, coverage and average read length iteratively
     df["coverage"] = round(df["total_yield"] / df["reference_line_length"], 0)
     df["coverage"] = df["coverage"].apply(lambda x: [x])
-
     df["average_read_length"] = round(df["total_yield"] / df["read_count"], 0)
     df["average_read_length"] = df["average_read_length"].apply(lambda x: [x])
+    # Weird group by iterations I wrote in a fugue to make the categories right for grouped columns,
+    # inserting correct number of 0s at start for each reference
     for index, name in enumerate(df["chromosome__line_name"].unique()):
         if index > 0:
-            df.loc[df["chromosome__line_name"] == name, "coverage"] = df[df["chromosome__line_name"] == name]["coverage"].apply(
-                lambda x: ([0] * index) + x
-            )
-            df.loc[df["chromosome__line_name"] == name, "average_read_length"] = df[df["chromosome__line_name"] == name][
-                "average_read_length"
-            ].apply(lambda x: ([0] * index) + x)
+            df.loc[df["chromosome__line_name"] == name, "coverage"] = df[
+                df["chromosome__line_name"] == name
+            ]["coverage"].apply(lambda x: ([0] * index) + x)
+            df.loc[df["chromosome__line_name"] == name, "average_read_length"] = df[
+                df["chromosome__line_name"] == name
+            ]["average_read_length"].apply(lambda x: ([0] * index) + x)
     df["coverage_series"] = df[
         [
             "chromosome__line_name",
