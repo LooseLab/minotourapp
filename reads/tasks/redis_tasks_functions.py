@@ -12,6 +12,7 @@ import redis
 from celery import task
 from celery.utils.log import get_task_logger
 
+from alignment.tasks_alignment import run_minimap2_alignment
 from artic.task_artic_alignment import run_artic_pipeline
 from reads.models import (
     FastqRead,
@@ -366,16 +367,16 @@ def check_if_flowcell_has_streamable_tasks(flowcell_pk):
         List of streamable job_masters IDs
     """
 
-    streamable_tasks_pks = [16]
+    streamable_tasks_pks = [16, 4]
     tasks = JobMaster.objects.filter(
         flowcell_id=flowcell_pk, job_type__id__in=streamable_tasks_pks
-    ).values("id", "job_type_id", "from_database")
+    ).exclude(from_database=True).values("id", "job_type_id", "from_database")
     return tasks
 
 
 def sort_reads_by_flowcell_fire_tasks(reads):
     """
-    Sort group reads by flowcell, check if
+    Sort group reads by flowcell, check if that flowcell has tasks we can stream reads to.
     Parameters
     ----------
     reads: list of dict
@@ -392,9 +393,9 @@ def sort_reads_by_flowcell_fire_tasks(reads):
         flowcell_reads = flowcell_gb.get_group(flowcell_id).to_dict(orient="records")
         for task in task_lookups:
             if task["job_type_id"] == 16 and not task["from_database"]:
-
                 run_artic_pipeline.delay(task["id"], flowcell_reads)
-
+            elif task["job_type_id"] == 4 and not task["from_database"]:
+                run_minimap2_alignment.delay(task["id"], flowcell_reads)
 
 
 @task()
