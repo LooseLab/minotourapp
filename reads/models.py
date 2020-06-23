@@ -2630,9 +2630,9 @@ class JobMaster(models.Model):
 
         if self.run is not None:
 
-            return f"{self.run} {self.job_type} { self.id} {self.barcode}"
+            return f"Run: {self.run} JobType: {self.job_type} Id: {self.id} Barcode: {self.barcode}"
 
-        return f"{self.flowcell_id} {self.job_type} {self.flowcell} {self.barcode}"
+        return f"Flowcell: {self.flowcell_id} JobType: {self.job_type} Id: {self.id} Barcode: {self.barcode}"
 
 
 class SampleTag(models.Model):
