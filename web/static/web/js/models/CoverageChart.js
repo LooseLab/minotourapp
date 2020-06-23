@@ -141,9 +141,11 @@ class CoverageChart {
         text: null
       },
       xAxis: {
-        minRange: 1500
+        minRange: 1500,
+        crosshair: true
       },
       yAxis: {
+        crosshair: true,
         title: {
           text: null
         },
@@ -169,10 +171,13 @@ class CoverageChart {
         type: `area`,
         name: null,
         data: [],
-        step: true
+        step: `left`
       }],
       exporting: {
         enabled: true
+      },
+      tooltip: {
+        pointFormat: `<span style="color:{point.color}">●</span> The coverage for bin starting {point.x}: <b>{point.y}</b><br/>`
       }
     })
   }
