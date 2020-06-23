@@ -13,6 +13,6 @@ class MView {
     garboCode.fadeIn()
     setTimeout(() => {
       garboCode.fadeOut()
-    }, 3000)
+    }, 10000)
   }
 }
