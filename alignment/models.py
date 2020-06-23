@@ -105,5 +105,9 @@ class PafSummaryCov(models.Model):
     )
 
     def __str__(self):
-        return f"Id: {self.id}, FlowcellId: {self.job_master.flowcell.id}, Barcode: {self.barcode.name}," \
-               f" Chromosome: {self.chromosome.line_name}"
+        if self.barcode:
+            return f"Id: {self.id}, FlowcellId: {self.job_master.flowcell.id}, Barcode: {self.barcode.name}," \
+                   f" Chromosome: {self.chromosome.line_name}"
+        else:
+            return f"Id: {self.id}, FlowcellId: {self.job_master.flowcell.id},"\
+                   f" Chromosome: {self.chromosome.line_name}"
