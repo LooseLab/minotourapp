@@ -69,7 +69,7 @@ def run_minimap2_alignment(job_master_id, streamed_reads=[]):
         )
         if not fasta_df_barcode.empty:
             last_read = fasta_df_barcode.tail(1).iloc[0].id
-        if fasta_df_barcode.shape[0] == 0:
+        if fasta_df_barcode.empty:
             logger.debug("No fastq found. Skipping this iteration.")
             job_master.running = False
             job_master.save()
@@ -102,7 +102,7 @@ def run_minimap2_alignment(job_master_id, streamed_reads=[]):
     job_master.save()
 
 
-def save_paf_store_summary(row, job_master_id):
+def save_summary_coverage(row, job_master_id):
     """
     Save the paf store summaries
     Parameters
@@ -193,7 +193,7 @@ def update_orm_objects(row):
     return row["ORM"]
 
 
-def generate_paf_summary_cov_objects(row, flowcell_pk, job_master_pk, reference_pk):
+def generate_paf_rough_cov_objects(row, flowcell_pk, job_master_pk, reference_pk):
     """
     Generate Paf summary coverage ORM objects on a dataframe row
     Parameters
@@ -244,47 +244,93 @@ def paf_rough_coverage_calculations(df, job_master, max_chromosome_length):
     -------
 
     """
-    df_old_coverage = fetch_rough_cov_to_update(job_master.id)
-
+    flowcell_id = int(job_master.flowcell.id)
+    reference_id = int(job_master.reference.id)
+    job_master_id = int(job_master.id)
+    df_old_coverage = fetch_rough_cov_to_update(job_master_id)
     bin_width = 10
-    bins = [i for i in range(0, max_chromosome_length + bin_width, bin_width)]
+    bins = np.arange(0, max_chromosome_length + bin_width, bin_width)
     df["cut"] = pd.cut(df[7], bins)
-    df["bin_position_start"] = df["cut"].apply(lambda x: x.left)
-    df["bin_position_end"] = df["cut"].apply(lambda x: x.right)
+    df["end_cut"] = pd.cut(df[8], bins)
     if "barcode_name" not in df.columns:
         df.reset_index(inplace=True)
     df.set_index(["type__name", "tsn", "barcode_name", "cut"], inplace=True)
+    df.sort_index(inplace=True)
     df["bin_coverage"] = df.groupby(["type__name", "tsn", "barcode_name", "cut"]).size()
-    df = df.loc[~df.index.duplicated()]
+    df_start_bins = df.loc[~df.index.duplicated()]["bin_coverage"]
     df.reset_index(inplace=True)
+    df.set_index(["type__name", "tsn", "barcode_name", "end_cut"], inplace=True)
+    df.sort_index(inplace=True)
+    df["end_bin_coverage"] = df.groupby(
+        ["type__name", "tsn", "barcode_name", "end_cut"]
+    ).size()
+    df_end_bins = df.loc[~df.index.duplicated()]["end_bin_coverage"]
+    df_end_bins = -df_end_bins
+    df_end_bins.index = df_end_bins.index.rename(
+        ["type__name", "tsn", "barcode_name", "cut"]
+    )
+    results = (
+        df_start_bins.append(df_end_bins)
+            .sort_index()
+            .groupby(df_start_bins.index.names[:-1])
+            .agg(np.cumsum)
+    )
+    results = results.loc[~results.index.duplicated(keep="first")]
+    results.index = results.index.rename(["type__name", "tsn", "barcode_name", "end_cut"])
+    results.name = "accurate_bin_coverage"
+    results.index = results.index.rename(["type__name", "tsn", "barcode_name", "end_cut"])
+    df.reset_index(inplace=True)
+    # Transform main dataframe into unique for bins whether start of mapped read based or end of mapped read based
+    df_end_bins = df.drop(columns="cut").set_index(
+        ["type__name", "tsn", "barcode_name", "end_cut"]
+    )
+    df_end_bins = df_end_bins.loc[~df_end_bins.index.duplicated()]
+    df_start_bins = df.drop(columns="end_cut").set_index(
+        ["type__name", "tsn", "barcode_name", "cut"]
+    )
+    df_start_bins = df_start_bins.loc[~df_start_bins.index.duplicated()]
+    df_end_bins = df_end_bins.append(df_start_bins)
+    df_end_bins.sort_index(inplace=True)
+    df_end_bins = df_end_bins.loc[~df_end_bins.index.duplicated()]
+    df_end_bins["accurate_coverage"] = results
+    df_end_bins.index = df_end_bins.index.rename(["type__name", "tsn", "barcode_name", "cut"])
+    df_end_bins.reset_index(inplace=True)
+    df_end_bins["bin_position_start"] = df_end_bins["cut"].apply(lambda x: x.left)
+    df_end_bins["bin_position_end"] = df_end_bins["cut"].apply(lambda x: x.right)
+    df_end_bins.reset_index(inplace=True)
+    df_end_bins.set_index(
+        [
+            "chromosome_pk",
+            "read_type_id",
+            "barcode_id",
+            "bin_position_start",
+            "bin_position_end",
+        ],
+        inplace=True,
+    )
     if not df_old_coverage.empty:
-        df.set_index(
-            [
-                "chromosome_pk",
-                "read_type_id",
-                "barcode_id",
-                "bin_position_start",
-                "bin_position_end",
-            ],
-            inplace=True,
-        )
-        df_old_coverage = df_old_coverage.loc[df_old_coverage.index.isin(df.index.values)]
+        df_old_coverage = df_old_coverage.loc[
+            df_old_coverage.index.isin(df_end_bins.index.values)
+        ]
         df_old_coverage["bin_coverage"] = (
                 df_old_coverage["bin_coverage"]
-                + df.loc[df.index.isin(df_old_coverage.index.values)]["bin_coverage"]
+                + df_end_bins.loc[df_end_bins.index.isin(df_old_coverage.index.values)][
+                    "accurate_coverage"
+                ]
         )
         df_old_coverage["ORM"] = df_old_coverage.apply(update_orm_objects, axis=1)
-        PafRoughCov.objects.bulk_update(df_old_coverage["ORM"].values, ["bin_coverage"], batch_size=1000)
-        # Get rid of rows that were used in the update
-        df = df.loc[~df.index.isin(df_old_coverage.index.values)]
-        df.reset_index(inplace=True)
-    if not df.empty:
-        df["model_objects"] = df.apply(
-            generate_paf_summary_cov_objects,
-            axis=1,
-            args=(job_master.flowcell.id, job_master.id, job_master.reference.id),
+        PafRoughCov.objects.bulk_update(
+            df_old_coverage["ORM"].values, ["bin_coverage"], batch_size=1000
         )
-        PafRoughCov.objects.bulk_create(df["model_objects"].values.tolist(), batch_size=5000)
+    df_end_bins = df_end_bins.loc[~df_end_bins.index.isin(df_old_coverage.index.values)]
+    df_end_bins.reset_index(inplace=True)
+    if not df_end_bins.empty:
+        df_end_bins["model_objects"] = df_end_bins.apply(
+            generate_paf_rough_cov_objects,
+            axis=1,
+            args=(flowcell_id, job_master_id, reference_id),
+        )
+        a = PafRoughCov.objects.bulk_create(df_end_bins["model_objects"].values.tolist(), batch_size=5000)
 
 
 def paf_summary_calculations(df, job_master_id):
@@ -310,7 +356,7 @@ def paf_summary_calculations(df, job_master_id):
     ).agg({"mapping_length": np.sum, 1: np.size})
     df = df.loc[~df.index.duplicated()]
     df.reset_index(inplace=True)
-    df.apply(save_paf_store_summary, args=(job_master_id,), axis=1)
+    df.apply(save_summary_coverage, args=(job_master_id,), axis=1)
 
 
 def align_reads(job_master_id, fasta_df_barcode):
