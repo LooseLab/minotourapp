@@ -572,7 +572,8 @@ class JobMasterSerializer(serializers.ModelSerializer):
             "running",
             "complete",
             "paused",
-            "server_initiated"
+            "server_initiated",
+            "from_database"
         )
 
 
