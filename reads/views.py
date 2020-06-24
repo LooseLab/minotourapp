@@ -21,6 +21,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from alignment.models import PafRoughCov
+from artic.models import ArticBarcodeMetadata
 from assembly.models import GfaStore
 from centrifuge.models import CentrifugeOutput
 from minotourapp import settings
@@ -2744,11 +2745,8 @@ def job_master_list(request):
     """
     # TODO this is hacky as well
     if request.method == "GET":
-
         search_criteria = request.GET.get("search_criteria", "flowcell")
-
         if search_criteria == "flowcell":
-
             flowcell_id = request.GET.get("search_value", -1)
             # If there was no flowcell ID provided
             if flowcell_id == -1:
@@ -2769,13 +2767,9 @@ def job_master_list(request):
                 else:
                     data["icon"] = "pause"
                     data["iconText"] = "Pause"
-
             result = {"data": serializer.data}
-
-            return JsonResponse(result)
-
+            return Response(result, status=200)
         else:
-
             return Response(
                 "Bad search criteria provided", status=status.HTTP_400_BAD_REQUEST
             )
@@ -2787,7 +2781,6 @@ def job_master_list(request):
                 Q(name=request.data["flowcell"])
                 | Q(pk=int(request.data["flowcell"]))
             )
-
             request.data["flowcell"] = flowcell.id
         # If that doesn't work
         except Flowcell.DoesNotExist as e:
@@ -2795,7 +2788,6 @@ def job_master_list(request):
             return Response(
                 "Flowcell not found. Please contact server admin.", status=status.HTTP_404_NOT_FOUND
             )
-
         if (
                 not request.user.has_perm("run_analysis", flowcell)
                 and not request.user == flowcell.owner
@@ -2946,6 +2938,7 @@ def task_control(request):
         if action == "Reset":
             clear_artic_data(job_master)
             clear_artic_command_job_masters(job_master.flowcell_id)
+            ArticBarcodeMetadata.objects.filter(job_master=job_master).delete()
             job_master.read_count = 0
             job_master.last_read = 0
             job_master.running = False
