@@ -13,6 +13,7 @@ class ArticBarcodeMetadata(models.Model):
     minimum_coverage = models.IntegerField(default=0)
     maximum_coverage = models.IntegerField(default=0)
     percentage_of_reads_in_barcode = models.FloatField(default=0)
+    percentage_bases_over_20x = models.FloatField(default=0.0)
     percentage_bases_over_250x = models.FloatField(default=0.0)
     percentage_bases_over_200x = models.FloatField(default=0.0)
     has_sufficient_coverage = models.BooleanField(default=False)
