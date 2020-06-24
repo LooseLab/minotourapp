@@ -71,7 +71,7 @@ def paf_summary_table_json(request, pk):
         The resultant data, contain the values for each column in the DataTables table.
 
     """
-    queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk)
+    queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk).exclude(job_master__job_type_id=16)
     df = pd.DataFrame.from_records(
         queryset.values(
             "barcode_name",
