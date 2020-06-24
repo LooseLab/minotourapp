@@ -273,6 +273,9 @@ def get_artic_summary_table_data(request):
         pafsummarycov["percent_200x"] = artic_metadata[
             barcode_name
         ].percentage_bases_over_200x
+        pafsummarycov["percent_20x"] = artic_metadata[
+            barcode_name
+        ].percentage_bases_over_20x
         pafsummarycov["percent_250x"] = artic_metadata[
             barcode_name
         ].percentage_bases_over_250x
@@ -337,6 +340,7 @@ def get_artic_barcode_metadata_html(request):
         ["Min. Coverage", "minimum_coverage"],
         ["Max. Coverage", "maximum_coverage"],
         ["% reads in run", "percentage_of_reads_in_barcode"],
+        ["% Bases over 20x", "percentage_bases_over_20x"],
         ["% Bases over 200x", "percentage_bases_over_200x"],
         ["% Bases over 250x", "percentage_bases_over_250x"],
         ["Has Finished", "has_finished"],
