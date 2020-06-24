@@ -28,7 +28,7 @@ from readuntil.functions_EB import *
 
 logger = get_task_logger(__name__)
 
-
+# TODO parsing cigar lends itself to numba nicely
 # TODO split artic task into a sexy chain, rather than blocking a worker for so long, start here
 def clear_unused_artic_files(artic_results_path, sample_name):
     """
@@ -72,7 +72,7 @@ def clear_unused_artic_files(artic_results_path, sample_name):
         elif filey.suffix == ".png":
             # Copy the pngs to the artic static directory to be served
             if not Path(
-                    f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}"
+                f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}"
             ).exists():
                 Path(
                     f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}"
@@ -95,8 +95,8 @@ def run_pangolin_command(base_results_directory, barcode_name):
     re_gzip = False
     os.chdir(f"{base_results_directory}/{barcode_name}")
     if (
-            not Path(f"{barcode_name}.consensus.fasta").exists()
-            and Path(f"{barcode_name}.consensus.fasta.gz").exists()
+        not Path(f"{barcode_name}.consensus.fasta").exists()
+        and Path(f"{barcode_name}.consensus.fasta.gz").exists()
     ):
         logger.debug(f"Unzipping {barcode_name}.consensus.fasta")
         subprocess.Popen(
@@ -152,7 +152,6 @@ def clear_old_data(artic_results_path, barcode_name):
                 rmtree(filey, ignore_errors=True)
             elif filey.is_file():
                 filey.unlink()
-
 
 
 @task()
@@ -229,7 +228,7 @@ def save_artic_command_job_masters(flowcell, barcode_name, reference_info):
 
     """
     # Don't automatically run unclassified barcode
-    if barcode_name=="unclassified":
+    if barcode_name == "unclassified":
         return
     job_type = JobType.objects.get(name="Run Artic")
     # TODO potential bug here where the barcode name on the reads is not the barcode name we save
@@ -351,7 +350,7 @@ def make_results_directory_artic(flowcell_id, task_id, allow_create=True):
 
 
 def populate_reference_count(
-        reference_count_dict, fp, master_reference_count_path,
+    reference_count_dict, fp, master_reference_count_path,
 ):
     """
     Populate the reference count dict so we can write it out with counts
@@ -412,14 +411,15 @@ def replicate_counts_array_barcoded(barcode_names, counts_dict):
 
 
 def save_artic_barcode_metadata_info(
-        coverage,
-        flowcell,
-        job_master,
-        run_id,
-        barcode_name,
-        percent200x,
-        percent250x,
-        has_sufficient_coverage,
+    coverage,
+    flowcell,
+    job_master,
+    run_id,
+    barcode_name,
+    percent20x,
+    percent200x,
+    percent250x,
+    has_sufficient_coverage,
 ):
     """
     Save the artic metadata info for this barcode.
@@ -439,6 +439,9 @@ def save_artic_barcode_metadata_info(
 
     barcode_name: str
         The name of the barcode.
+
+    percent20x: float
+        Percentage of bases covered above and including 20x across the reference
 
     percent200x: float
         Percentage of bases covered above and including 200x across the reference
@@ -483,12 +486,10 @@ def save_artic_barcode_metadata_info(
             f"Barcode {barcode_name} not found for run_id {run_id}. Skipping..."
         )
         return
-
     barcodes_minimum_coverage = round(coverage.min(), 2)
     barcodes_maximum_coverage = round(coverage.max(), 2)
     barcodes_variance_coverage = round(coverage.var(), 2)
     barcodes_average_coverage = round(coverage.mean(), 2)
-
     orm_object, created = ArticBarcodeMetadata.objects.update_or_create(
         flowcell=flowcell,
         job_master=job_master,
@@ -499,6 +500,7 @@ def save_artic_barcode_metadata_info(
             "minimum_coverage": barcodes_minimum_coverage,
             "variance_coverage": barcodes_variance_coverage,
             "percentage_of_reads_in_barcode": round(proportion, 2),
+            "percentage_bases_over_20x": round(percent20x, 2),
             "percentage_bases_over_250x": round(percent250x, 2),
             "percentage_bases_over_200x": round(percent200x, 2),
             "has_sufficient_coverage": has_sufficient_coverage,
@@ -592,7 +594,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
 
         # Create the series that contains the read_id and sequence as a correctly formatted fasta string
         fasta_df_barcode["fasta"] = (
-                ">" + fasta_df_barcode["read_id"] + "\n" + fasta_df_barcode["sequence"]
+            ">" + fasta_df_barcode["read_id"] + "\n" + fasta_df_barcode["sequence"]
         )
         # Create one string formatted correctly for fasta with input data
         fasta_data = "\n".join(list(fasta_df_barcode["fasta"]))
@@ -621,7 +623,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
         if err:
             logger.error(err)
         logger.info(
-            "Flowcell id: {} - Finished minimap EB - {}".format(flowcell.id, cmd)
+            "Flowcell id: {} - Finished minimap artic - {}".format(flowcell.id, cmd)
         )
         # decode output from byte string
         paf = out
@@ -657,24 +659,24 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             logger.info(f"Parsing paf file. Please wait.")
             barcodes_with_mapped_results = set()
             for i, record in enumerate(
-                    parse_PAF(
-                        StringIO(paf),
-                        fields=[
-                            "qsn",
-                            "qsl",
-                            "qs",
-                            "qe",
-                            "rs",
-                            "tsn",
-                            "tsl",
-                            "ts",
-                            "te",
-                            "nrm",
-                            "abl",
-                            "mq",
-                            "tags",
-                        ],
-                    )
+                parse_PAF(
+                    StringIO(paf),
+                    fields=[
+                        "qsn",
+                        "qsl",
+                        "qs",
+                        "qe",
+                        "rs",
+                        "tsn",
+                        "tsl",
+                        "ts",
+                        "te",
+                        "nrm",
+                        "abl",
+                        "mq",
+                        "tags",
+                    ],
+                )
             ):
                 fastq_read = fastq_dict[record.qsn]
                 if streamed_reads:
@@ -717,7 +719,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                 paf_summary_cov["read_count"] += 1
                 chromosomes_seen_now.add(chromosome.line_name)
                 # Parse the cigar string, on the path file record, returns a dictionary of bases, with numpy arrays
-                d = parse_cigar(record.tags.get("cg", None), sequence, mapping_length, )
+                d = parse_cigar(record.tags.get("cg", None), sequence, mapping_length,)
                 # Adds the mismatch count to the temporary dict, parsing the MD string
                 d["M"] = np.fromiter(parse_MD(record.tags.get("MD", None)), np.uint16)
                 # Loop through the dictionary of results, through each base
@@ -725,7 +727,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     # add the counts for that base to the array that exists in the reference count dict for that base,
                     # at the correct location
                     barcoded_counts_dict[barcode_of_read][record.tsn][base][
-                    mapping_start:mapping_end
+                        mapping_start:mapping_end
                     ] += d[base].astype(reference_count_dict[record.tsn][base].dtype)
                 # TODO this needs to be reset, here we set the U to True to indicate that a count at this position
                 # ToDO has been changed this iteration, might offer speed up if we do this?
@@ -835,13 +837,15 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     number_bases_in_array = coverage.size
                     number_of_bases_250x = coverage[coverage >= 250].size
                     number_of_bases_200x = coverage[coverage >= 200].size
+                    number_of_bases_20x = coverage[coverage >= 20].size
+                    percent_20x = number_of_bases_20x / number_bases_in_array * 100
                     percent_200x = number_of_bases_200x / number_bases_in_array * 100
                     percent_250x = number_of_bases_250x / number_bases_in_array * 100
                     has_sufficient_coverage = False
                     # 200x coverage
-                    if np.all(coverage >= 200):
+                    if percent_200x > 90:
                         logger.info(
-                            f"Creating artic command job_master here for barcode {barcode}"
+                            f"Creating artic command job_master here for barcode {barcode} due to 90% 200x xcoverage reached"
                         )
                         add_barcode_to_tofire_file(barcode, base_result_dir_path)
                         save_artic_command_job_masters(
@@ -852,7 +856,17 @@ def run_artic_pipeline(task_id, streamed_reads=None):
 
                         # So we have to set up the auto fire of the pipeline here if the task fails
                         logger.info(
-                            f"Creating artic command job_master here for barcode {barcode} due to 95% coverage reached"
+                            f"Creating artic command job_master here for barcode {barcode} due to 95% 250 xcoverage reached"
+                        )
+                        add_barcode_to_tofire_file(barcode, base_result_dir_path)
+                        save_artic_command_job_masters(
+                            flowcell, barcode, reference_info
+                        )
+                        has_sufficient_coverage = True
+                    elif percent_20x > 99.5:
+                        # So we have to set up the auto fire of the pipeline here if the task fails
+                        logger.info(
+                            f"Creating artic command job_master here for barcode {barcode} due to 100% 20X coverage reached"
                         )
                         add_barcode_to_tofire_file(barcode, base_result_dir_path)
                         save_artic_command_job_masters(
@@ -866,6 +880,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         task,
                         run_id,
                         barcode,
+                        percent_20x,
                         percent_200x,
                         percent_250x,
                         has_sufficient_coverage,
