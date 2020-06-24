@@ -661,9 +661,10 @@ class ArticController {
           { targets: 4, data: `total_yield` },
           { targets: 5, data: `average_read_length` },
           { targets: 6, data: `coverage` },
-          { targets: 7, data: `percent_200x` },
-          { targets: 8, data: `percent_250x` },
-          { targets: 9, data: `has_sufficient_coverage` }
+          { targets: 7, data: `percent_20x` },
+          { targets: 8, data: `percent_200x` },
+          { targets: 9, data: `percent_250x` },
+          { targets: 10, data: `has_sufficient_coverage` }
         ]
       }
       )
