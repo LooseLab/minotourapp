@@ -34,3 +34,4 @@ django-guardian
 pylint-django
 ipython
 ptpython
+numba
