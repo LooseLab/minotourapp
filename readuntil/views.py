@@ -1,19 +1,21 @@
 """
 Read Until views that do the work
 """
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
 from django.db.models import Q
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from pathlib import Path
+
 from reads.models import Flowcell, Run, JobMaster
-import numpy as np
-from readuntil.utils import get_or_create_results_directory
 from readuntil.models import (
     ExpectedBenefitChromosomes,
     RejectedFastqRead,
     AcceptedFastqRead,
 )
-import pandas as pd
+from readuntil.utils import get_or_create_results_directory
 
 
 def find_files_of_type(file_or_directory, file_extensions):
@@ -440,7 +442,7 @@ def get_or_create_rejected_reads(request):
 
     # Lookup for whether we are fetching Accepted or rejected data
 
-    if request.method is "GET":
+    if request.method == "GET":
         # get the flowcell id we are using in this request, sent by the browser
         flowcell_id = request.query_params.get("flowcell_id", -1)
 
@@ -532,7 +534,7 @@ def get_or_create_accepted_reads(request):
     """
     # Lookup for whether we are fetching Accepted or rejected data
 
-    if request.method is "GET":
+    if request.method == "GET":
         # get the flowcell id we are using in this request, sent by the browser
         flowcell_id = request.query_params.get("flowcell_id", -1)
 
