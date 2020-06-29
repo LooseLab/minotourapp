@@ -2,7 +2,7 @@ import json
 
 import numpy as np
 import pandas as pd
-from django.db.models import F
+from django.db.models import F, Sum, Avg
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -12,7 +12,7 @@ from alignment.models import PafRoughCov, PafSummaryCov
 
 @api_view(["GET"])
 def rough_coverage_complete_chromosome_flowcell(
-    request, task_id, barcode_name, read_type_id, chromosome_id
+    request, task_id, barcode_id, read_type_id, chromosome_id
 ):
     """
     Fetch data for coverage master charts
@@ -22,8 +22,8 @@ def rough_coverage_complete_chromosome_flowcell(
         Django rest framework request object.
     task_id: int
         The PK of the job master database row.
-    barcode_name: str
-        The name of the barcode.
+    barcode_id: int
+        The primary key of the barcode.
     read_type_id: int
         The PK of the read type database entry.
     chromosome_id: int
@@ -35,8 +35,8 @@ def rough_coverage_complete_chromosome_flowcell(
     """
     queryset = (
         PafRoughCov.objects.filter(job_master__id=task_id)
-          .filter(flowcell__owner=request.user)
-        .filter(barcode__name=barcode_name)
+        .filter(flowcell__owner=request.user)
+        .filter(barcode_id=barcode_id)
         .filter(chromosome__id=chromosome_id)
         .filter(read_type__id=read_type_id)
         .order_by("bin_position_end")
@@ -45,7 +45,7 @@ def rough_coverage_complete_chromosome_flowcell(
     length = (
         PafSummaryCov.objects.filter(job_master_id=task_id, chromosome_id=chromosome_id)
         .first()
-        .chromosome.reference.length
+        .chromosome.chromosome_length
     )
     return Response(
         {"chartData": queryset, "refLength": length}, status=status.HTTP_200_OK
@@ -71,7 +71,9 @@ def paf_summary_table_json(request, pk):
         The resultant data, contain the values for each column in the DataTables table.
 
     """
-    queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk).exclude(job_master__job_type_id=16)
+    queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk).exclude(
+        job_master__job_type_id=16
+    )
     df = pd.DataFrame.from_records(
         queryset.values(
             "barcode_name",
@@ -99,7 +101,7 @@ def paf_summary_table_json(request, pk):
 @api_view(["GET"])
 def flowcell_paf_summary_cov(request, pk):
     """
-    Return the data used to draw the columns charts on the mapping summary page.
+    Return the data used to draw the per barcode column charts on the mapping summary page.
     Parameters
     ----------
     request: rest_framework.request.Request
@@ -112,11 +114,14 @@ def flowcell_paf_summary_cov(request, pk):
     dict
         Contains the data for the charts.
     """
-    queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk).exclude(
-        job_master__job_type_id=16
-    )
+    chromosome_pk = request.GET.get("chromosomeId", None)
+    queryset = PafSummaryCov.objects.filter(
+        job_master__flowcell_id=pk, chromosome_id=chromosome_pk
+    ).exclude(job_master__job_type_id=16)
     if not queryset:
-        return Response("No data currently held in database.", status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            "No data currently held in database.", status=status.HTTP_404_NOT_FOUND
+        )
     df = pd.DataFrame.from_records(
         queryset.values(
             "job_master_id",
@@ -132,21 +137,19 @@ def flowcell_paf_summary_cov(request, pk):
             "average_read_length",
         )
     )
-    # TODO can soon be replaced once alignment task saves flowcellId, coverage and average read length iteratively
-    df["coverage"] = round(df["total_yield"] / df["reference_line_length"], 0)
-    df["coverage"] = df["coverage"].apply(lambda x: [x])
-    df["average_read_length"] = round(df["total_yield"] / df["read_count"], 0)
-    df["average_read_length"] = df["average_read_length"].apply(lambda x: [x])
     # Weird group by iterations I wrote in a fugue to make the categories right for grouped columns,
     # inserting correct number of 0s at start for each reference
-    for index, name in enumerate(df["chromosome__line_name"].unique()):
+    df["coverage"] = df["coverage"].apply(lambda x: [x])
+    df["average_read_length"] = df["average_read_length"].apply(lambda x: [x])
+    for index, name in enumerate(df["barcode_name"].unique()):
         if index > 0:
-            df.loc[df["chromosome__line_name"] == name, "coverage"] = df[
-                df["chromosome__line_name"] == name
+            df.loc[df["barcode_name"] == name, "coverage"] = df[
+                df["barcode_name"] == name
             ]["coverage"].apply(lambda x: ([0] * index) + x)
-            df.loc[df["chromosome__line_name"] == name, "average_read_length"] = df[
-                df["chromosome__line_name"] == name
+            df.loc[df["barcode_name"] == name, "average_read_length"] = df[
+                df["barcode_name"] == name
             ]["average_read_length"].apply(lambda x: ([0] * index) + x)
+
     df["coverage_series"] = df[
         [
             "chromosome__line_name",
@@ -208,7 +211,7 @@ def mapped_references_by_flowcell_list(request, flowcell_id):
             referenceName=F("job_master__reference__name"),
             referenceId=F("job_master__reference_id"),
             barcodeName=F("barcode_name"),
-            barcodeId=F("barcode_name"),
+            barcodeId=F("barcode_id"),
             chromosomeName=F("chromosome__line_name"),
             chromosomeId=F("chromosome_id"),
             readTypeId=F("read_type_id"),
@@ -218,3 +221,32 @@ def mapped_references_by_flowcell_list(request, flowcell_id):
     if not references:
         return Response("No data found", status=status.HTTP_204_NO_CONTENT)
     return Response(references, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def per_genome_coverage_summary(request, flowcell_pk):
+    """
+    Get the per genome (i.e chromosome level) coverage fot the top column charts
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The request rest framework object
+    flowcell_pk: int
+        The flowcell primary key in the database
+
+    Returns
+    -------
+    list of dict
+
+    """
+    queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk).values("chromosome__line_name").annotate(
+        Sum("total_yield"), Avg("average_read_length"))
+    chromosome_coverage = []
+    chromosome_average_read_length = []
+    for chromosome in queryset:
+        chromosome_coverage.append(
+            {"name": chromosome["chromosome__line_name"], "data": [chromosome["total_yield__sum"]]})
+        chromosome_average_read_length.append(
+            {"name": chromosome["chromosome__line_name"], "data": [chromosome["average_read_length__avg"]]})
+    results = {"coverageData": chromosome_coverage, "avgRLData": chromosome_average_read_length}
+    return Response(results, status=status.HTTP_200_OK)

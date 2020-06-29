@@ -27,7 +27,7 @@ class BasecalledDataController {
      */
   initialiseCharts (flowcellId, selectedBarcode) {
     // We have no data for this tab.
-    this._updateBarcodeNavTab(flowcellId)
+    // this._updateBarcodeNavTab(flowcellId)
     this._fetchSummaryDataHtmlTable(flowcellId)
     this._createHistogramCharts(flowcellId, this._currentBarcode)
     this._createBaseCalledReadCharts(flowcellId, this._currentBarcode)

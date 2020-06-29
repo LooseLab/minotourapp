@@ -799,7 +799,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                             chrom_key
                         ].dtype.names:
                             # Don't update U as True + True = 2, which would ruin everything
-                            if name is not "U":
+                            if name != "U":
                                 barcoded_counts_dict[barcode][chrom_key][
                                     name
                                 ] += old_counts_array[name]

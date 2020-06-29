@@ -577,7 +577,7 @@ def align_reads(job_master_id, fasta_df_barcode):
         right_index=True,
     )
     df["mapping_length"] = df[8] - df[7]
-    if "no barcode" in fasta_df_barcode["barcode_name"].unique():
+    if "No barcode" in fasta_df_barcode["barcode_name"].unique():
         df["barcode_name"] = "All reads"
         paf_summary_calculations(df, job_master_id)
         paf_rough_coverage_calculations(df, job_master, max_chromosome_length)
@@ -591,5 +591,8 @@ def align_reads(job_master_id, fasta_df_barcode):
         df["barcode_name"] = "All reads"
         # save results for all reads
         paf_summary_calculations(df, job_master_id)
+        paf_rough_coverage_calculations(df, job_master, max_chromosome_length)
+        paf_rough_coverage_calculations(df, job_master, max_chromosome_length)
+
 
     return last_read

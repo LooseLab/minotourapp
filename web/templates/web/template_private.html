@@ -57,15 +57,49 @@
                         <i class="fa fa-quidditch fa-fw"></i><span> Help </span>
                     </a>
                 </li>
+                {#                <li class="nav-item dropdown">#}
+                {#                    <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button"#}
+                {#                       aria-haspopup="true" aria-expanded="false">{{ request.user }}#}
+                {#                        {% if request.user.is_superuser %} (admin user) {% endif %} <span class="caret"></span></a>#}
+                {#                    <div class="dropdown-menu">#}
+                {#                <a class="dropdown-item" href="{% url 'password_change' %}">Change Password</a>#}
+                {#                <a class="dropdown-item" href="{% url 'profile' %}">{{ request.user }}'s Profile</a>#}
+                {#                <a class="dropdown-item" href="{% url 'logout' %}">Sign out</a>#}
+                {#                    </div>#}
+                {#                </li>#}
+            </ul>
+            <!-- Right hand buttons -->
+            <ul class="navbar-nav ml-auto">
+                <!-- Notifications Dropdown Menu -->
                 <li class="nav-item dropdown">
-                    <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button"
-                       aria-haspopup="true" aria-expanded="false">{{ request.user }}
-                        {% if request.user.is_superuser %} (admin user) {% endif %} <span class="caret"></span></a>
-                    <div class="dropdown-menu">
-                        <a class="dropdown-item" href="{% url 'password_change' %}">Change Password</a>
-                        <a class="dropdown-item" href="{% url 'profile' %}">{{ request.user }}'s Profile</a>
-                        <a class="dropdown-item" href="{% url 'logout' %}">Sign out</a>
+                    <a class="nav-link" data-toggle="dropdown" href="#">
+                        <i class="far fa-bell"></i>
+                        <span class="badge badge-warning navbar-badge">15</span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                        <span class="dropdown-header">15 Notifications</span>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-envelope mr-2"></i> 4 new messages
+                            <span class="float-right text-muted text-sm">3 mins</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-users mr-2"></i> 8 friend requests
+                            <span class="float-right text-muted text-sm">12 hours</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item">
+                            <i class="fas fa-file mr-2"></i> 3 new reports
+                            <span class="float-right text-muted text-sm">2 days</span>
+                        </a>
+                        <div class="dropdown-divider"></div>
+                        <a href="#" class="dropdown-item dropdown-footer">See All Notifications</a>
                     </div>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="control-sidebar" data-slide="true" href="#" role="button"><i
+                            class="fas fa-th-large"></i> <strong>{{ request.user }}</strong></a>
                 </li>
             </ul>
         </div><!-- /.navbar-collapse -->
@@ -79,14 +113,86 @@
             </div>
         </div>
     {% endif %}
+    <aside class="control-sidebar control-sidebar-dark" style="display: block;">
+        <!-- Control sidebar content goes here -->
+        <div class="p-3">
+            <h5>Settings</h5>
+            <a class="dropdown-item" data-toggle="modal" data-target="#add-reference">Add reference</a>
+            <a class="dropdown-item" href="{% url 'password_change' %}">Change Password</a>
+            <a class="dropdown-item" href="{% url 'profile' %}">Profile Details</a>
+            <a class="dropdown-item" href="{% url 'logout' %}">Sign out</a></div>
+    </aside>
+    <div class="modal fade" id="add-reference" tabindex="-1" role="dialog"
+         aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div style="border-radius: 25px" class="modal-content">
+                <div id="drop_zone" class="dropzone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);">
+                    <p>Drag one or more files to this Drop Zone ...</p>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button href="#" id="submit-task" class="btn btn-success success" disabled>Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 {% endblock %}
 {% block adjustment %}
     <script>
-        // offset body to account for navbar stickyness, which pulls navbar out of DOM
-        let heightNavBar = $("#tn").css("height")
-        let heightFooter = $("#sticky-footer").css("height")
-        let windowHeight = $(document).height()
-        $("body").css({"padding-top": heightNavBar,"padding-bottom": heightFooter, "min-height": `${windowHeight}px`})
+      // offset body to account for navbar stickyness, which pulls navbar out of DOM
+      let heightNavBar = $("#tn").css("height")
+      let heightFooter = $("#sticky-footer").css("height")
+      let windowHeight = $(document).height()
+      $("body").css({ "padding-top": heightNavBar, "padding-bottom": heightFooter, "min-height": `${windowHeight}px` })
+
+      function dropHandler (ev) {
+        // check the md5 checksum here
+        const formData = new FormData();
+
+        // have list of available md5 checksums
+        console.log('File(s) dropped');
+        // Prevent default behavior (Prevent file from being opened)
+        // TODO new md5 checksum check here, new private or public here
+        ev.preventDefault();
+        if (ev.dataTransfer.items) {
+          // Use DataTransferItemList interface to access the file(s)
+          for (var i = 0; i < ev.dataTransfer.items.length; i++) {
+            // If dropped items aren't files, reject them
+            if (ev.dataTransfer.items[i].kind === 'file') {
+              console.log("hello")
+              var file = ev.dataTransfer.items[i].getAsFile();
+                console.log(file)
+              file.text().then(text => {
+                console.log(file, file.name)
+                formData.append("file_location", file, file.name)
+                formData.append("md5_checksum", md5(text))
+                formData.append("filename", file.name)
+                axios(
+                  {
+                    url: '/api/v1/reference/upload/',
+                    data: formData,
+                    headers: {
+                      'X-CSRFToken': getCookie(`csrftoken`),
+                      'Content-Type': `multipart/form-data; boundary=${formData._boundary}`
+                    },
+                    method: "post"
+                  }
+                )
+              });
+            }
+          }
+        }
+
+      }
+
+      function dragOverHandler (ev) {
+        console.log('File(s) in drop zone');
+
+        // Prevent default behavior (Prevent file from being opened)
+        ev.preventDefault();
+      }
     </script>
 
 

@@ -2,12 +2,13 @@
 The django admin management command to add reference files locations to the database,
 for mapping and metagenomics validation
 """
-import gzip
 from pathlib import Path
-from Bio import SeqIO
+
+import pyfastx
 from django.core.management.base import BaseCommand, CommandError
-from reference.models import ReferenceInfo, ReferenceLine
 from rest_framework.authtoken.models import Token
+
+from reference.models import ReferenceInfo, ReferenceLine
 
 
 def validate_reference_checks(file_path):
@@ -62,7 +63,6 @@ class Command(BaseCommand):
         "Add a custom reference sequence to the minoTour database. "
         "Pass the full path to the reference file."
     )
-
     def add_arguments(self, parser):
         """
         Add the arguments to the base command class
@@ -99,7 +99,6 @@ class Command(BaseCommand):
             :param options: The values that have been added to the arguments
             :return:
             """
-
         try:
             reference_files = []
             # These should be lowercase and include the '.'
@@ -113,30 +112,23 @@ class Command(BaseCommand):
                 ".fasta.gz",
                 ".fsa.gz"
             ]
-
             if options["private"] and not options["key"]:
                 print("To add private references, your minotour api_key is required. "
                       "This can be found on the profile page of your account.")
                 return
-
             for file_or_directory in options["reference"]:
                 reference_files.extend(
                     find_files_of_type(file_or_directory, endings)
                 )
-
             private = False
-
             # If we want private references
             if options["private"]:
                 private = True
                 user = Token.objects.get(key=options["key"]).user
-
             else:
                 user = None
-
             # remove none from reference_files
             reference_files = list(filter(None.__ne__, reference_files))
-
             previous_ref = set(
                 ReferenceInfo.objects.filter(private=False).values_list("name", flat=True).distinct()
             )
@@ -144,13 +136,10 @@ class Command(BaseCommand):
             if options["private"]:
                 previous_ref = previous_ref.union(set(ReferenceInfo.objects.filter(private=True, owner=user)
                                                       .values_list("name", flat=True).distinct()))
-
             for ref_file in reference_files:
                 # Get the species name of this reference, no file suffixes
                 ref_file_stem = str(ref_file.stem).partition(".")[0]
-
                 print("Processing file: {}".format(ref_file.name))
-
                 if ref_file_stem in previous_ref:
                     print(
                         "A reference already exists for this species name: {}".format(
@@ -164,39 +153,25 @@ class Command(BaseCommand):
                     continue
                 # If the file is gzipped, unzip it
                 handle = (
-                    gzip.open(ref_file, "rt")
+                    pyfastx.Fastq
                     if ref_file.suffix == ".gz"
-                    else ref_file
+                    else pyfastx.Fasta
                 )
                 # Individual lines (I.E Chromosomes in the reference)
-                ref_lines = [
-                    {"line_name": rec.id, "chromosome_length": len(rec)}
-                    for rec in SeqIO.parse(handle, "fasta")
-                ]
-                # Length of the total reference
-                ref_length = sum(
-                    [
-                        v
-                        for r in ref_lines
-                        for k, v in r.items()
-                        if k == "chromosome_length"
-                    ]
-                )
-
+                fa = handle(ref_file, build_index=False)
                 # Create the Reference info entry in the database
                 ref_info, created = ReferenceInfo.objects.update_or_create(
                     name=ref_file_stem,
                     filename=ref_file.name,
-                    length=ref_length,
+                    length=fa.size,
                     private=private,
                     owner=user
                 )
                 # Create a Reference line entry for each "Chromosome/line"
-                for ref_line_dict in ref_lines:
-                    ref_line = ReferenceLine(
-                        reference=ref_info, **ref_line_dict
+                for contig in fa:
+                    ReferenceLine.objects.create(
+                        reference=ref_info, line_name=contig.name, chromosome_length=len(contig)
                     )
-                    ref_line.save()
                 print("Successfully handled file.")
 
         except Exception as e:

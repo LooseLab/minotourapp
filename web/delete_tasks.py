@@ -136,7 +136,7 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
         running = flowcell_job.running
         time.sleep(1)
         seconds_counter += 1
-        if seconds_counter is 120:
+        if seconds_counter == 120:
             flowcell_job.running = False
             flowcell_job.save()
 
@@ -236,7 +236,7 @@ def delete_expected_benefit_task(flowcell_job_id, restart=False):
         running = task.running
         time.sleep(1)
         seconds_counter += 1
-        if seconds_counter is 140:
+        if seconds_counter == 140:
             task.running = False
             task.save()
 
