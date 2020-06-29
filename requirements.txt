@@ -1,7 +1,7 @@
 numpy
 wheel
 watchdog
-django==2.2.10
+django>=3.0.7
 flower
 django-filter
 django-mailgun
@@ -13,7 +13,6 @@ python-dateutil
 pytz
 configargparse
 requests
-BioPython
 celery
 django_celery_beat
 twitter
@@ -35,3 +34,4 @@ pylint-django
 ipython
 ptpython
 numba
+pyfastx
