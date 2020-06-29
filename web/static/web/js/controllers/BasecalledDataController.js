@@ -538,8 +538,6 @@ class BasecalledDataController {
     const oldChartData = oldChartSeries.filter(series => {
       return series.name === data.name
     })
-    console.log(this._pieChartBarcodeClassUnclass)
-    console.log(newComparisonData)
 
     if (!oldChartData.length) {
       this._pieChartBarcodeClassUnclass.addSeries(data)
@@ -561,7 +559,6 @@ class BasecalledDataController {
   _updateBarcodeProportionCharts (flowcellId) {
     this._axiosInstance(`/api/v1/flowcells/${flowcellId}/barcode-proportion`).then(response => {
       const chartData = response.data
-      console.log(response.data)
       const oldChartData = this._columnChartBarcodeProportion.series
       let oldSeries
       let otherData
