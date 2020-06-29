@@ -1,8 +1,8 @@
+from collections import namedtuple
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from pathlib import Path
-from collections import namedtuple
-from django.conf import settings
 
 
 def make_results_directory(flowcell_id, task_id):
@@ -323,17 +323,17 @@ def parse_cigar(cigar_string, read_string, chunk_length):
     for count, operation in cg_generator(cigar_string):
         # print (operation,count)
         # Not aligned read section
-        if operation is "S":
+        if operation == "S":
             # print ("skipping")
             pass
 
         # Not a deletion or insertion. Its 0:M
-        elif operation is "M":
+        elif operation == "M":
             # Extend query_array with bases from read
             # print ("match")
             query_array.extend(read_bases[query_pos: query_pos + count])
 
-        elif operation is "I":
+        elif operation == "I":
             # Extend query_array with bases from read
             # query_array.extend(read_bases[query_pos:query_pos + count])
 
@@ -341,7 +341,7 @@ def parse_cigar(cigar_string, read_string, chunk_length):
             d["IC"][query_pos] += count
             count = 0
 
-        elif operation is "D":
+        elif operation == "D":
             # print ("deletion")
             query_array.extend(["D"] * count)
             continue
@@ -349,7 +349,7 @@ def parse_cigar(cigar_string, read_string, chunk_length):
             print("Operation: '{}' not accounted for.".format(operation))
         # Increment query position by count
         # TODO IS THIS BELOW CODE COOL
-        if operation is not "I":
+        if operation == "I":
             query_pos += count
 
     query_array = np.fromiter(query_array, "U1")
