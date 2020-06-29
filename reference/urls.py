@@ -6,16 +6,11 @@ urlpatterns = [
     url(
         r'^api/v1/reference/$',
         views.reference_list,
-        name="referenceinfo"
+        name="reference-info"
     ),
     url(
-        r'^api/v1/reference/(?P<pk>[0-9]+)/$',
-        views.reference_detail,
-        name="referenceinfo-detail"
-    ),
-    url(
-        r'^api/v1/chromosome/(?P<pk>[0-9]+)/$',
-        views.reference_line,
-        name="referenceline-detail"
-    ),
+        r'^api/v1/reference/upload/$',
+        views.reference_list,
+        name="reference_upload"
+    )
 ]
