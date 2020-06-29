@@ -23,9 +23,9 @@ class AlignmentController {
     }
     this._selects = [this._readTypeSelect, this._referenceSelect, this._chromosomeSelect, this._barcodeSelect]
     this._addChangeListenerToSelects()
-    this.requestMappedChromosomes(flowcellId)
-    this._drawPafSummaryTable(flowcellId)
-    this._requestColumnChartData(flowcellId)
+    // this._requestMappedChromosomes(flowcellId)
+    // this._drawPafSummaryTable(flowcellId)
+    this._createColumnCharts(flowcellId)
     this._addListenerToResetButton()
     this._interval = setInterval(this._reloadPageData, 45000, flowcellId, this)
     $(window).on(`unload`, function () {
@@ -51,13 +51,14 @@ class AlignmentController {
     if (getSelectedTab() === `sequence-mapping`) {
       that._updateOptionDropDowns(flowcellId)
       that._drawPafSummaryTable(flowcellId)
-      that._requestColumnChartData(flowcellId)
+      that._createColumnCharts(flowcellId)
+      that._fetchChromosomeInGenomeCoverageData(flowcellId)
     }
   }
 
   /**
-   *
-   * @param flowcellId
+   * Update the drop downs, setting values for uniqueness then adding them to class
+   * @param flowcellId {number} The flowcell primary key record
    * @private
    */
   _updateOptionDropDowns (flowcellId) {
@@ -72,7 +73,7 @@ class AlignmentController {
       }))
       this._selectData = response.data
       this._referenceSelect.html([...readTypes])
-      this.selectOnChange({ srcElement: { id: `referenceSelect` } })
+      this._selectOnChange({ srcElement: { id: `referenceSelect` } })
     }).catch(error => {
       console.error(error)
     })
@@ -95,24 +96,8 @@ class AlignmentController {
   _addChangeListenerToSelects () {
     this._selects.forEach(select => {
       select.on(`change`, () => {
-        this.selectOnChange(event)
+        this._selectOnChange(event)
       })
-    })
-  }
-
-  /**
-   * Request the mapped data and add it to the the first
-   * @param {number} flowcellId The primary key of the flowcell record in the database
-   */
-  requestMappedChromosomes (flowcellId) {
-    this._axiosInstance.get(`/api/v1/alignment/${flowcellId}/mapped-references`).then(response => {
-      const readTypes = new Set(response.data.map(el => {
-        return `<option value="${el.referenceId}" data-jm-id="${el.jmId}">${el.referenceName}</option>`
-      }))
-      this._selectData = response.data
-      console.log(readTypes)
-      this._referenceSelect.append([...readTypes])
-      // todo add code to append new options to the dropdowns here
     })
   }
 
@@ -120,9 +105,9 @@ class AlignmentController {
    * Request the chromosomes that have reads mapped to using minimap2
    * and update the select box on tab Mapping
    */
-  selectOnChange (event) {
+  _selectOnChange (event) {
     let url
-    let barcodeName
+    let barcodeId
     let readTypeId
     let chromosomeId
     const changedSelectId = event.srcElement.id
@@ -161,11 +146,12 @@ class AlignmentController {
     })) {
       // undisable the rest button
       $(`#reset-chart-zoom`).attr(`disabled`, false)
-      barcodeName = this._barcodeSelect.val()
+      barcodeId = this._barcodeSelect.val()
       readTypeId = this._readTypeSelect.val()
       chromosomeId = this._chromosomeSelect.val()
-      url = `/api/v1/alignment/coverage/${taskId}/${barcodeName}/${readTypeId}/${chromosomeId}`
+      url = `/api/v1/alignment/coverage/${taskId}/${barcodeId}/${readTypeId}/${chromosomeId}`
       this.coverageChartController.reloadCoverageCharts(url)
+      this._fetchChromosomeCoverageColumnChartsData(this._flowcellId, chromosomeId)
     }
   }
 
@@ -187,7 +173,7 @@ class AlignmentController {
       table.DataTable(
         {
           ajax: {
-            url: `/api/v1/alignment/${flowcellId}/pafsummarytable`,
+            url: `/api/v1/alignment/${flowcellId}/paf-summary-table`,
             async: true,
             error: (xhr, error, code) => {
               console.error(xhr)
@@ -209,28 +195,53 @@ class AlignmentController {
     }
   }
 
-  _requestColumnChartData (flowcellId) {
-    // TODO BELOW IS A HUGE NONO
-    if (!this.chart_per_chrom_cov) {
-      this.chart_per_chrom_cov = makeColumnChart(
-        `per-chrom-cov`,
-        `CHROMOSOME COVERAGE`,
-        `CHROMOSOME COVERAGE`
+  _createColumnCharts () {
+    const options = { lang: { noData: `Please select above` } }
+    if (!this.chart_per_barcode_cov) {
+      this.chart_per_barcode_cov = makeColumnChart(
+        `per-barcode-cov`,
+        `BARCODE COVERAGE`,
+        `BARCODE COVERAGE`
       )
     }
-    if (!this.chart_per_chrom_avg) {
-      this.chart_per_chrom_avg = makeColumnChart(
-        `per-chrom-avg`,
-        `MEAN READ LENGTH BY CHROMOSOME`,
-        `MEAN READ LENGTH BY CHROMOSOME`
+    if (!this.chart_per_barcode_avg) {
+      this.chart_per_barcode_avg = makeColumnChart(
+        `per-barcode-avg`,
+        `MEAN READ LENGTH BY BARCODE`,
+        `MEAN READ LENGTH BY BARCODE`
       )
     }
-    this._axiosInstance.get(`/api/v1/alignment/${flowcellId}/pafsummary/`).then(
+    if (!this.chart_per_genome_cov) {
+      this.chart_per_genome_cov = makeColumnChart(
+        `per-genome-cov`,
+        `GENOME COVERAGE`,
+        `GENOME COVERAGE`
+      )
+    }
+    if (!this.chart_per_genome_avg) {
+      this.chart_per_genome_avg = makeColumnChart(
+        `per-genome-avg`,
+        `MEAN READ LENGTH BY GENOME`,
+        `MEAN READ LENGTH BY GENOME`
+      )
+    }
+    this.chart_per_barcode_avg.update(options)
+    this.chart_per_barcode_cov.update(options)
+  }
+
+  /**
+   * Fetch the data for the per barcode in a chromosome chart data
+   * @param flowcellId {number} The primary key of the flowcell Record
+   * @param chromosomeId {number} The primary key of the Chromosome Record
+   * @private
+   */
+  _fetchChromosomeCoverageColumnChartsData (flowcellId, chromosomeId) {
+    this._axiosInstance.get(`/api/v1/alignment/${flowcellId}/pafsummary/`, { params: { chromosomeId } }).then(
       response => {
         const data = response.data
-        const charts = [[this.chart_per_chrom_cov, `coverageData`], [this.chart_per_chrom_avg, `avgRLData`]]
+        const charts = [[this.chart_per_barcode_cov, `coverageData`], [this.chart_per_barcode_avg, `avgRLData`]]
         charts.forEach(([chart, key]) => {
-          this.updateCoverageColumnCharts(chart, data[key], data.categories)
+          this._updateGenomeCoverageColumnCharts(chart, data[key], data.categories)
         })
       }
     ).catch(
@@ -239,14 +250,31 @@ class AlignmentController {
       })
   }
 
+  /** TODO almost duplicate of above, merge?
+   * TODO merge charts into one grouped chart
+   * Fetch per chromosome in Genome data for a flowcell with mapping tasks
+   * @param flowcellId {number} The primary key of the flowcell record
+   * @private
+   */
+  _fetchChromosomeInGenomeCoverageData (flowcellId) {
+    this._axiosInstance.get(`/api/v1/alignment/${flowcellId}/genome-coverage-summary/`).then(
+      response => {
+        const data = response.data
+        const charts = [[this.chart_per_genome_cov, `coverageData`], [this.chart_per_genome_avg, `avgRLData`]]
+        charts.forEach(([chart, key]) => {
+          this._updateGenomeCoverageColumnCharts(chart, data[key], data.categories)
+        })
+      }
+    )
+  }
+
   /**
-   * Update the coverage column chart data
+   * Update the column chart data
    * @param chart {Object} The highcharts class representing the column chart we are updating
    * @param seriesData {Array.Object} Array of new series to insert into this chart
    * @param categories {Array.String} Array of category names
    */
-  updateCoverageColumnCharts (chart, seriesData, categories) {
-    console.log(chart)
+  _updateGenomeCoverageColumnCharts (chart, seriesData, categories) {
     chart.xAxis[0].setCategories(categories)
     seriesData.forEach(series => {
       const oldSeries = chart.series.filter(el => {
