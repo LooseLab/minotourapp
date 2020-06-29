@@ -607,3 +607,6 @@ line-height: 1.5;
     min-width: 7rem;
     width: unset;
 }
+#tn{
+    z-index: 1032;
+}
