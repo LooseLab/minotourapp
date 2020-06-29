@@ -1,0 +1,35 @@
+{
+  "name": "minotourapp",
+  "version": "1.0.0",
+  "description": "This is the Eslint config package.json for linting javascript during development",
+  "directories": {
+    "doc": "docs"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "eslint": "^7.2.0",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-plugin-import": "^2.21.2",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LooseLab/minotourapp.git"
+  },
+  "keywords": [
+    "Linting",
+    "development",
+    "nanopore"
+  ],
+  "author": "Adonis",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/LooseLab/minotourapp/issues"
+  },
+  "homepage": "https://github.com/LooseLab/minotourapp#readme"
+}

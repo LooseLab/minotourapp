@@ -98,10 +98,17 @@ def get_artic_master_chart_data(request):
     if log_coverage:
         coverage = coverage.astype(np.float16)
         coverage[coverage == 0] = 0.1
+
+    print(coverage[coverage == np.inf])
     # Remove duplicate elements in series
     x_y_cov, xmax_cov, ymax_cov, ymin_cov = remove_duplicate_sequences_numpy(
         coverage, True
     )
+
+    x_y_cov = np.array(x_y_cov).round(1)
+    print(x_y_cov.min())
+    print(xmax_cov)
+    print(ymax_cov)
     # The return dictionary
     data_dict = {
         "coverage": {"xmax": xmax_cov, "ymax": ymax_cov, "data": x_y_cov},
