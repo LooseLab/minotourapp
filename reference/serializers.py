@@ -3,7 +3,7 @@ from rest_framework import serializers
 from reference.models import ReferenceInfo, ReferenceLine
 
 
-class ReferenceInfoSerializer(serializers.HyperlinkedModelSerializer):
+class ReferenceInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
 
@@ -11,7 +11,6 @@ class ReferenceInfoSerializer(serializers.HyperlinkedModelSerializer):
 
         fields = (
             'id',
-            'url',
             'name',
             'length',
             'private',
