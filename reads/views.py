@@ -688,7 +688,7 @@ def minion_messages_list(request, pk):
         )
 
         for message in serializer.data:
-            if message["full_text"] is not "":
+            if message["full_text"] == "":
                 message["message"] = message["full_text"]
 
         return Response(serializer.data)
@@ -2818,7 +2818,7 @@ def job_master_list(request):
         ):
             try:
                 # If a reference hasn't been selected.
-                if request.data["reference"] is "":
+                if request.data["reference"] == "":
                     return Response(
                         "Reference does not exist - Please select a reference",
                         status=400,
