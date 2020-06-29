@@ -1,0 +1,41 @@
+{
+    "env": {
+        "browser": true,
+        "es2020": true,
+        "jquery": true
+    },
+    "extends": [
+        "standard"
+    ],
+    "parserOptions": {
+        "ecmaVersion": 11,
+        "sourceType": "module"
+    },
+    "rules": {
+        "quotes": ["error", "backtick"],
+        "strict": "error"
+    },
+    "globals": {
+        "axios": "readonly",
+        "Highcharts": "writable",
+        "getSelectedTab": "readonly",
+        "setSelectedTab": "readonly",
+        "getSelectedFlowcell": "readonly",
+        "setSelectedFlowcell": "readonly",
+        "getSelectedBarcode": "readonly",
+        "setSelectedBarcode": "readonly",
+        "clearChartData": "readonly",
+        "checkHighChartsDataIsIdentical": "readonly",
+        "getCookie": "readonly",
+        "setActiveNavBarItem": "readonly",
+        "makeColumnChart": "writable",
+        "makeSplineChart": "writable",
+        "makeSplineChartNonDatetime": "writable",
+        "makeBoxPlot": "writable",
+        "makeLiveHistogram": "writable",
+        "makeAreaPlot": "writable",
+        "makeLiveChart": "writable",
+        "makeHeatmapChart": "writable",
+        "makePieChart": "writable"
+    }
+}
