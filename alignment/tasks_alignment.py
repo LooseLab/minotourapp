@@ -15,6 +15,8 @@ from alignment.models import PafRoughCov, PafSummaryCov
 from reads.models import FastqRead, JobMaster
 from reference.models import ReferenceInfo
 
+import requests
+
 # Set up the logger to write to logging file
 logger = get_task_logger(__name__)
 
@@ -76,8 +78,12 @@ def run_minimap2_alignment(job_master_id, streamed_reads=[]):
             return
     else:
         last_read = job_master.last_read
+        ## So these two dataframes do not have the same column names.
         fasta_df_barcode = pd.DataFrame(streamed_reads)
-        fasta_df_barcode = fasta_df_barcode[fasta_df_barcode["is_pass"]]
+        #Todo: this seems to only process pass reads?
+        #fasta_df_barcode = fasta_df_barcode[fasta_df_barcode["is_pass"]]
+        fasta_df_barcode = fasta_df_barcode.rename(columns={'type': 'read_type_id', 'barcode': 'barcode_id'})
+        fasta_df_barcode['type__name']=fasta_df_barcode["read_type_id"]
 
     read_count = fasta_df_barcode.shape[0]
     # The chunk size of reads from this flowcell to fetch from the database
@@ -92,7 +98,7 @@ def run_minimap2_alignment(job_master_id, streamed_reads=[]):
     logger.debug(f"Flowcell id: {flowcell.id} - number of reads found {read_count}")
     # If we have pulled back reads, call fasta
     if read_count > 0:
-        align_reads(job_master.id, fasta_df_barcode)
+        align_reads_factory(job_master.id, fasta_df_barcode)
 
     # Update the JobMaster with the metadata after finishing this iteration
     job_master = JobMaster.objects.get(pk=job_master_id)
@@ -247,20 +253,29 @@ def paf_rough_coverage_calculations(df, job_master, max_chromosome_length):
     flowcell_id = int(job_master.flowcell.id)
     reference_id = int(job_master.reference.id)
     job_master_id = int(job_master.id)
+    print ("running paf rough cov")
     df_old_coverage = fetch_rough_cov_to_update(job_master_id)
-    bin_width = 10
-    bins = np.arange(0, max_chromosome_length + bin_width, bin_width)
-    df["cut"] = pd.cut(df[7], bins)
-    df["end_cut"] = pd.cut(df[8], bins)
+    #bin_width = 1000
+    #bins = np.arange(0, max_chromosome_length + bin_width, bin_width)
+    ###ToDO: The use of cut here is incredibly slow on the scale of a human genome.
+    #df["cut"] = pd.cut(df[7], bins)
+    df["cut"] = (df[7] / 100).astype(int) *100
+    #df["end_cut"] = pd.cut(df[8], bins)
+    df["end_cut"] = (df[8] / 100).astype(int) *100
     if "barcode_name" not in df.columns:
         df.reset_index(inplace=True)
     df.set_index(["type__name", "tsn", "barcode_name", "cut"], inplace=True)
     df.sort_index(inplace=True)
+    ####ToDo: this is slow
     df["bin_coverage"] = df.groupby(["type__name", "tsn", "barcode_name", "cut"]).size()
     df_start_bins = df.loc[~df.index.duplicated()]["bin_coverage"]
+    # ToDo does this break things?
+    df.dropna(inplace=True)
+    # ToDo this line is giving an error.
     df.reset_index(inplace=True)
     df.set_index(["type__name", "tsn", "barcode_name", "end_cut"], inplace=True)
     df.sort_index(inplace=True)
+    ###ToDo: this is really slow
     df["end_bin_coverage"] = df.groupby(
         ["type__name", "tsn", "barcode_name", "end_cut"]
     ).size()
@@ -269,6 +284,7 @@ def paf_rough_coverage_calculations(df, job_master, max_chromosome_length):
     df_end_bins.index = df_end_bins.index.rename(
         ["type__name", "tsn", "barcode_name", "cut"]
     )
+    print ("at the bins")
     results = (
         df_start_bins.append(df_end_bins)
             .sort_index()
@@ -331,7 +347,7 @@ def paf_rough_coverage_calculations(df, job_master, max_chromosome_length):
             args=(flowcell_id, job_master_id, reference_id),
         )
         a = PafRoughCov.objects.bulk_create(df_end_bins["model_objects"].values.tolist(), batch_size=5000)
-
+    print ("finished rough cov")
 
 def paf_summary_calculations(df, job_master_id):
     """
@@ -357,6 +373,113 @@ def paf_summary_calculations(df, job_master_id):
     df = df.loc[~df.index.duplicated()]
     df.reset_index(inplace=True)
     df.apply(save_summary_coverage, args=(job_master_id,), axis=1)
+
+
+def align_reads_factory(job_master_id, fasta_df_barcode):
+    """
+    Sends reads to an alignment factory to map reads to the reference.
+    Parameters
+    ----------
+    job_master_id: int
+        The PK of the Jobmaster entry.
+    fasta_df_barcode: pandas.core.frame.DataFrame
+        DataFrame containing all the sequence data that we need.
+
+    Returns
+    -------
+    last_read: int
+        The ID of the last read that we dealt with.
+    """
+    # The on disk directory where we store the references
+    reference_location = getattr(settings, "REFERENCE_LOCATION", None)
+    # The location of the mimimap2 executable
+    minimap2 = getattr(settings, "MINIMAP2", None)
+    # The JobMaster object
+    job_master = JobMaster.objects.get(pk=job_master_id)
+    # Unpack metadata about this job
+    last_read = job_master.last_read
+    reference_pk = job_master.reference.id
+    flowcell = job_master.flowcell
+    #
+    if not minimap2:
+        logger.error("Can not find minimap2 executable - stopping task.")
+        return
+    # We're starting fresh boys
+    if last_read is None:
+        last_read = 0
+    # The debugrmation about the reference for this alignment
+    reference_info = ReferenceInfo.objects.get(pk=reference_pk)
+    # A dictionary with all the results for each chromosome
+    chromosome_dict = {}
+    # Get all the chromosomes for this reference
+    chromosomes = reference_info.referencelines.all()
+    max_chromosome_length = chromosomes.aggregate(max_length=Max("chromosome_length"))[
+        "max_length"
+    ]
+    # For each Chromosome in the chromosomes, set the name of the chromosome as key, and the object as the value
+    for chromosome in chromosomes:
+        chromosome_dict[chromosome.line_name] = chromosome.id
+
+    ## This gives us a json string that we can query against the alignment server.
+    query_json = fasta_df_barcode[['read_id', 'sequence']].to_json(orient='records')
+
+    url = "http://127.0.0.1:8123/references/human/map"
+
+    x = requests.post(url, data=query_json)
+
+    print ("results are back")
+
+    test_df = pd.read_json(x.text)
+
+    test_df = test_df.explode('results')
+
+    paf_df = test_df.results.str.split(expand=True)
+
+    paf_df = paf_df.rename(columns={5: "tsn"})
+    paf_df = paf_df.apply(pd.to_numeric, errors='ignore')
+
+    paf_df["chromosome_pk"] = paf_df["tsn"].map(chromosome_dict)
+    paf_df.set_index(0, inplace=True)
+    paf_df = paf_df[paf_df[11] >= 11]
+    fasta_df_barcode.set_index("read_id", inplace=True)
+    df = pd.merge(
+        paf_df,
+        fasta_df_barcode[
+            ["barcode_name", "type__name", "read_type_id", "barcode_id", "is_pass", "run_id"]
+        ],
+        how="left",
+        left_index=True,
+        right_index=True,
+    )
+    df["mapping_length"] = df[8] - df[7]
+
+    print ("paf mangled")
+    #Todo: should this be "No barcode" rather than "no barcode"?
+    if "no barcode" in fasta_df_barcode["barcode_name"].unique():
+        df["barcode_name"] = "All reads"
+        paf_summary_calculations(df, job_master_id)
+        paf_rough_coverage_calculations(df, job_master, max_chromosome_length)
+    else:
+        paf_summary_calculations(df, job_master_id)
+        df.reset_index(inplace=True)
+        df2 = df
+        paf_rough_coverage_calculations(df2, job_master, max_chromosome_length)
+        if "barcode_name" not in df.keys():
+            df.reset_index(inplace=True)
+        df["barcode_name"] = "All reads"
+        # save results for all reads
+        paf_summary_calculations(df, job_master_id)
+
+    return last_read
+
+
+
+
+
+
+
+
+
 
 
 def align_reads(job_master_id, fasta_df_barcode):
