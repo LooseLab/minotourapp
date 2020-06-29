@@ -139,6 +139,7 @@ class Command(BaseCommand):
             for ref_file in reference_files:
                 # Get the species name of this reference, no file suffixes
                 ref_file_stem = str(ref_file.stem).partition(".")[0]
+                print(ref_file)
                 print("Processing file: {}".format(ref_file.name))
                 if ref_file_stem in previous_ref:
                     print(
@@ -158,7 +159,7 @@ class Command(BaseCommand):
                     else pyfastx.Fasta
                 )
                 # Individual lines (I.E Chromosomes in the reference)
-                fa = handle(ref_file, build_index=False)
+                fa = handle(str(ref_file), build_index=False)
                 # Create the Reference info entry in the database
                 ref_info, created = ReferenceInfo.objects.update_or_create(
                     name=ref_file_stem,
@@ -175,4 +176,4 @@ class Command(BaseCommand):
                 print("Successfully handled file.")
 
         except Exception as e:
-            raise CommandError(repr(e))
+            raise CommandError(e)
