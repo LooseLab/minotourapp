@@ -1,18 +1,27 @@
 """
 views.py
 """
-from rest_framework.response import Response
-from rest_framework.decorators import api_view
-from centrifuge.models import CentrifugeOutput, MappingResult, Metadata, \
-    SankeyLink, DonutData, MappingTarget
-from django.utils import timezone
-from django.http import JsonResponse
-from django.db.models import Sum, Q
-import pandas as pd
-from reads.models import Flowcell, JobMaster
-import numpy as np
 import math
+
+import numpy as np
+import pandas as pd
+from django.db.models import Sum, Q
+from django.http import JsonResponse
+from django.utils import timezone
 from rest_framework.authtoken.models import Token
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+
+from centrifuge.models import (
+    CentrifugeOutput,
+    MappingResult,
+    Metadata,
+    SankeyLink,
+    DonutData,
+    MappingTarget,
+)
+from reads.models import Flowcell, JobMaster
+
 pd.options.mode.chained_assignment = None
 
 
@@ -35,12 +44,16 @@ def rounddown(x, sigfigs=1):
     :return:
     """
     # towards -inf
-    exponent = math.floor(math.log10(math.copysign(x,1))) #we don't want to accidentally try and get an
+    exponent = math.floor(
+        math.log10(math.copysign(x, 1))
+    )  # we don't want to accidentally try and get an
     #  imaginary log (it won't work anyway)
-    mantissa = x/10**exponent #get full precision mantissa
+    mantissa = x / 10 ** exponent  # get full precision mantissa
     # change floor here to ceil or round to round up or to zero
-    mantissa = math.floor(mantissa * 10**(sigfigs-1)) / 10**(sigfigs-1) #round mantissa to sigfigs
-    return int(mantissa * 10**exponent)
+    mantissa = math.floor(mantissa * 10 ** (sigfigs - 1)) / 10 ** (
+        sigfigs - 1
+    )  # round mantissa to sigfigs
+    return int(mantissa * 10 ** exponent)
 
 
 @api_view(["GET"])
@@ -57,10 +70,19 @@ def centrifuge_metadata(request):
     # The flowcell id for the flowcell that the fastq data came from, default to False if not present
     flowcell_id = request.GET.get("flowcellId", False)
     # The ids of the JobMaster entries for this flowcell
-    job_master = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last()
+    job_master = (
+        JobMaster.objects.filter(
+            flowcell__id=flowcell_id, job_type__name="Metagenomics"
+        )
+        .order_by("id")
+        .last()
+    )
 
     if not job_master:
-        return Response("No Centrifuge tasks. This is not the API you are looking for....", status=404)
+        return Response(
+            "No Centrifuge tasks. This is not the API you are looking for....",
+            status=404,
+        )
 
     # If there is no MetaGenomicsMeta object return an error
     try:
@@ -69,7 +91,9 @@ def centrifuge_metadata(request):
         return Response(e, status=404)
 
     if not queryset:
-        return Response("No Metadata. This is not the task you are looking for....", status=404)
+        return Response(
+            "No Metadata. This is not the task you are looking for....", status=404
+        )
 
     print(job_master.flowcell.number_reads)
     # Number of classified reads
@@ -102,19 +126,38 @@ def centrifuge_metadata(request):
     # this bool tells the javascript whether not to place the metadata in the validation
     #  set panel or the analysis results panel
     print(job_master.target_set)
-    if job_master.target_set == "-- select an option --" or job_master.target_set is "" or job_master.target_set is None:
+    if (
+        job_master.target_set == "-- select an option --"
+        or job_master.target_set == ""
+        or job_master.target_set is None
+    ):
         validation_table_present = False
     else:
         print("Showing validation table")
         validation_table_present = True
 
-    return_list = {"validation": validation_table_present, "result": [{"key": "Reads Sequenced: ", "value": number_of_reads},
-                   {"key": "Reads Analysed: ", "value": str(reads_class) + " (" + str(percentage) + "%)"},
-                   {"key": "Reads Classified: ", "value": str(reads_actually_classified) +
-                    " (" + str(class_percent)+"%)"},
-                   {"key": "Reads Unclassified: ", "value": str(reads_not_classified) +
-                    " (" + str(unclass_percent)+"%)"},
-                   {"key": "Runtime: ", "value": runtime}]}
+    return_list = {
+        "validation": validation_table_present,
+        "result": [
+            {"key": "Reads Sequenced: ", "value": number_of_reads},
+            {
+                "key": "Reads Analysed: ",
+                "value": str(reads_class) + " (" + str(percentage) + "%)",
+            },
+            {
+                "key": "Reads Classified: ",
+                "value": str(reads_actually_classified)
+                + " ("
+                + str(class_percent)
+                + "%)",
+            },
+            {
+                "key": "Reads Unclassified: ",
+                "value": str(reads_not_classified) + " (" + str(unclass_percent) + "%)",
+            },
+            {"key": "Runtime: ", "value": runtime},
+        ],
+    }
 
     return Response(return_list)
 
@@ -137,18 +180,32 @@ def centrifuge_sankey(request):
     # Selected barcode, default all reads
     selected_barcode = request.GET.get("barcode", "All reads")
     # The most up to date task_id
-    task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last().id
+    task_id = (
+        JobMaster.objects.filter(
+            flowcell__id=flowcell_id, job_type__name="Metagenomics"
+        )
+        .order_by("id")
+        .last()
+        .id
+    )
 
     # ## Get the jobMaster for calculate sankey
-    been_run = JobMaster.objects.filter(flowcell__id=flowcell_id,
-                                        job_type__name="CalculateMetagenomicsSankey").order_by("id").last()
+    been_run = (
+        JobMaster.objects.filter(
+            flowcell__id=flowcell_id, job_type__name="CalculateMetagenomicsSankey"
+        )
+        .order_by("id")
+        .last()
+    )
     # If the sankey task has been run
     if been_run:
         has_been_run = True
     else:
         return Response({"message": "No Sankey data has been found", "run": False})
     # Get the sankey links objects for this run
-    queryset = SankeyLink.objects.filter(task__id=task_id, barcode_name=selected_barcode).values()
+    queryset = SankeyLink.objects.filter(
+        task__id=task_id, barcode_name=selected_barcode
+    ).values()
     # If the queryset is empty, return an empty object
     if not queryset:
         return Response({"message": "No Sankey data has been found", "run": False})
@@ -158,11 +215,15 @@ def centrifuge_sankey(request):
     if source_target_df.empty:
         return Response({"message": "No Sankey data has been found", "run": False})
     # get a subset df of all the species rows
-    temp_species_df = source_target_df[source_target_df["target_tax_level"] == "species"]
+    temp_species_df = source_target_df[
+        source_target_df["target_tax_level"] == "species"
+    ]
     # get species limit (default 50) of the largest species
     temp_species_df = temp_species_df.nlargest(species_limit, ["value"])
     # get the values for those species
-    source_target_df = source_target_df[source_target_df["tax_id"].isin(temp_species_df["tax_id"])]
+    source_target_df = source_target_df[
+        source_target_df["tax_id"].isin(temp_species_df["tax_id"])
+    ]
     source_target_df.set_index(["source", "target"], inplace=True)
     # Group by rows where the source and target are the same
     st_gb = source_target_df.groupby(["source", "target"])
@@ -173,16 +234,25 @@ def centrifuge_sankey(request):
     # Drop all duplicate rows, only need one new entry
     source_target_df.drop_duplicates(["source", "target"], keep="first", inplace=True)
     # Drop any rows where the source and the target are the same and don't keep them
-    source_target_df = pd.concat([source_target_df, source_target_df[
-        source_target_df["source"] == source_target_df["target"]]]).drop_duplicates(["source", "target"], keep=False)
+    source_target_df = pd.concat(
+        [
+            source_target_df,
+            source_target_df[source_target_df["source"] == source_target_df["target"]],
+        ]
+    ).drop_duplicates(["source", "target"], keep=False)
     source_target_df.dropna(inplace=True)
 
     # Drop unnecessary columns from DataFrame
-    source_target_df.drop(columns=["tax_id", "target_tax_level",
-                                   "task_id"], inplace=True)
+    source_target_df.drop(
+        columns=["tax_id", "target_tax_level", "task_id"], inplace=True
+    )
     # Set MultiIndex to group source to target
-    source_target_df = pd.concat([source_target_df, source_target_df[
-        source_target_df["source"] == source_target_df["target"]]]).drop_duplicates(["source", "target"], keep=False)
+    source_target_df = pd.concat(
+        [
+            source_target_df,
+            source_target_df[source_target_df["source"] == source_target_df["target"]],
+        ]
+    ).drop_duplicates(["source", "target"], keep=False)
     # source_target_df.sort_values(["value"], ascending=False, inplace=True)
     # Create the links list of dicts to return
     links = source_target_df.to_dict(orient="records")
@@ -196,11 +266,15 @@ def centrifuge_sankey(request):
     # Remove duplicates
     nodes = pd.DataFrame({"name": nodes.unique()})
     # Merge the nodes and links dataframes together
-    merge = pd.merge(nodes, source_target_df, how="outer", right_on="source", left_on="name")
+    merge = pd.merge(
+        nodes, source_target_df, how="outer", right_on="source", left_on="name"
+    )
     # Get just the path and name for the nodes data
     merge = merge[["name", "path"]]
     # Do the same for the targets
-    merge = pd.merge(merge, source_target_df, how="outer", right_on="target", left_on="name")
+    merge = pd.merge(
+        merge, source_target_df, how="outer", right_on="target", left_on="name"
+    )
     # fill the missing values from not having the sources on the links with the values from merge
     merge["path_x"].fillna(merge["path_y"], inplace=True)
     # get the complete set of names and paths from the dataframe
@@ -236,16 +310,36 @@ def donut_data(request):
 
     barcode = request.GET.get("barcode", "All reads")
     # Get the most recent metagenomics job
-    task = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last()
+    task = (
+        JobMaster.objects.filter(
+            flowcell__id=flowcell_id, job_type__name="Metagenomics"
+        )
+        .order_by("id")
+        .last()
+    )
     # Initialise a dataframe
     results_df = pd.DataFrame()
     # The tax rank filter is the taxonomic ranks in order
-    tax_rank_filter = ["superkingdom", "phylum", "classy", "order", "family", "genus", "species"]
+    tax_rank_filter = [
+        "superkingdom",
+        "phylum",
+        "classy",
+        "order",
+        "family",
+        "genus",
+        "species",
+    ]
     # Get the data for each tax rank, append it to the all results results_df
     for rank in tax_rank_filter:
         data_df = pd.DataFrame(
-            list(DonutData.objects.filter(task=task, barcode_name=barcode, tax_rank=rank).values("name", "tax_rank")
-                 .distinct().annotate(sum_value=Sum("num_matches")).order_by("-sum_value")[0:10]))
+            list(
+                DonutData.objects.filter(task=task, barcode_name=barcode, tax_rank=rank)
+                .values("name", "tax_rank")
+                .distinct()
+                .annotate(sum_value=Sum("num_matches"))
+                .order_by("-sum_value")[0:10]
+            )
+        )
         results_df = results_df.append(data_df)
 
     if results_df.empty:
@@ -283,25 +377,40 @@ def get_target_mapping(request):
         return Response("Flowcell id has failed to be delivered", status=404)
 
     # Get the most recent jobmaster id, although there should only be one
-    task_id = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last().id
+    task_id = (
+        JobMaster.objects.filter(
+            flowcell__id=flowcell_id, job_type__name="Metagenomics"
+        )
+        .order_by("id")
+        .last()
+        .id
+    )
 
     # If the barcode is All reads, there is always four
-    queryset = MappingResult.objects.filter(task__id=task_id, barcode_name=barcode).values()
+    queryset = MappingResult.objects.filter(
+        task__id=task_id, barcode_name=barcode
+    ).values()
     results_df = pd.DataFrame(list(queryset))
     if results_df.empty:
-        return Response("No data has yet been produced for the target mappings", status=204)
+        return Response(
+            "No data has yet been produced for the target mappings", status=204
+        )
 
-    results_df.rename(columns={"num_mapped": "Num. mapped",
-                               "red_reads": "Target reads",
-                               "red_sum_unique": "Unique Target reads",
-                               "species": "Species",
-                               "tax_id": "Tax id",
-                               "num_matches": "Num. matches",
-                               "sum_unique": "Sum. Unique",
-                               "mapped_proportion_of_classified": "Mapped prop. matches (%)",
-                               "red_reads_proportion_of_classified": "Target prop. mapped (%)",
-                               "proportion_of_classified": "Prop. classified (%)"
-                               }, inplace=True)
+    results_df.rename(
+        columns={
+            "num_mapped": "Num. mapped",
+            "red_reads": "Target reads",
+            "red_sum_unique": "Unique Target reads",
+            "species": "Species",
+            "tax_id": "Tax id",
+            "num_matches": "Num. matches",
+            "sum_unique": "Sum. Unique",
+            "mapped_proportion_of_classified": "Mapped prop. matches (%)",
+            "red_reads_proportion_of_classified": "Target prop. mapped (%)",
+            "proportion_of_classified": "Prop. classified (%)",
+        },
+        inplace=True,
+    )
 
     results = results_df.to_dict(orient="records")
 
@@ -310,7 +419,7 @@ def get_target_mapping(request):
     return Response(return_dict)
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 def metagenomic_barcodes(request, pk):
     """
 
@@ -326,19 +435,34 @@ def metagenomic_barcodes(request, pk):
 
         flowcell = flowcell_list[0]
 
-        task = JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics").order_by('id').last()
+        task = (
+            JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics")
+            .order_by("id")
+            .last()
+        )
 
         if task:
-            metagenomics_barcodes = CentrifugeOutput.objects.filter(task__id=task.id).exclude(barcode_name="No") \
-                .values_list("barcode_name", flat=True).distinct()
+            metagenomics_barcodes = (
+                CentrifugeOutput.objects.filter(task__id=task.id)
+                .exclude(barcode_name="No")
+                .values_list("barcode_name", flat=True)
+                .distinct()
+            )
 
     else:
         return Response("No flowcells found for this owner", status=204)
 
     # #### Get the barcode alert levels #### #
-    task_id = JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics").order_by("id").last().id
+    task_id = (
+        JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics")
+        .order_by("id")
+        .last()
+        .id
+    )
 
-    barcode_df = pd.DataFrame(list(MappingResult.objects.filter(task__id=task_id).values()))
+    barcode_df = pd.DataFrame(
+        list(MappingResult.objects.filter(task__id=task_id).values())
+    )
 
     if not barcode_df.empty:
 
@@ -367,95 +491,111 @@ def all_results_table(request):
     :return:
     """
     query_columns = [
-        'barcode_name',
-        'superkingdom',
-        'phylum',
-        'classy',
-        'order',
-        'family',
-        'genus',
-        'species',
-        'num_matches',
-        'proportion_of_classified',
+        "barcode_name",
+        "superkingdom",
+        "phylum",
+        "classy",
+        "order",
+        "family",
+        "genus",
+        "species",
+        "num_matches",
+        "proportion_of_classified",
     ]
 
-    flowcell_id = int(request.GET.get('flowcell_id', 5))
+    flowcell_id = int(request.GET.get("flowcell_id", 5))
 
-    draw = int(request.GET.get('draw', 0))
+    draw = int(request.GET.get("draw", 0))
 
-    start = int(request.GET.get('start', 0))
+    start = int(request.GET.get("start", 0))
 
-    length = int(request.GET.get('length', 10))
+    length = int(request.GET.get("length", 10))
 
     end = start + length
     # Which column s
-    search_value = request.GET.get('search[value]', '')
+    search_value = request.GET.get("search[value]", "")
 
-    order_column = request.GET.get('order[0][column]', '')
+    order_column = request.GET.get("order[0][column]", "")
     # ascending descending
-    order_dir = request.GET.get('order[0][dir]', '')
+    order_dir = request.GET.get("order[0][dir]", "")
 
-    meta_task = JobMaster.objects.get(flowcell__id=flowcell_id, job_type__name="Metagenomics")
+    meta_task = JobMaster.objects.get(
+        flowcell__id=flowcell_id, job_type__name="Metagenomics"
+    )
 
     latest = meta_task.iteration_count
 
     if not search_value == "":
 
-        cent_out_temp = CentrifugeOutput.objects \
-            .filter(task__flowcell_id=flowcell_id, latest=latest) \
-            .filter(task__flowcell__owner=request.user) \
-            .filter(species__icontains=search_value) | CentrifugeOutput.objects \
-            .filter(task__flowcell_id=flowcell_id, latest=latest) \
-            .filter(task__flowcell__owner=request.user) \
-            .filter(genus__icontains=search_value) | CentrifugeOutput.objects \
-            .filter(task__flowcell_id=flowcell_id, latest=latest) \
-            .filter(task__flowcell__owner=request.user) \
-            .filter(family__icontains=search_value) | CentrifugeOutput.objects \
-            .filter(task__flowcell_id=flowcell_id, latest=latest) \
-            .filter(task__flowcell__owner=request.user) \
+        cent_out_temp = (
+            CentrifugeOutput.objects.filter(
+                task__flowcell_id=flowcell_id, latest=latest
+            )
+            .filter(task__flowcell__owner=request.user)
+            .filter(species__icontains=search_value)
+            | CentrifugeOutput.objects.filter(
+                task__flowcell_id=flowcell_id, latest=latest
+            )
+            .filter(task__flowcell__owner=request.user)
+            .filter(genus__icontains=search_value)
+            | CentrifugeOutput.objects.filter(
+                task__flowcell_id=flowcell_id, latest=latest
+            )
+            .filter(task__flowcell__owner=request.user)
+            .filter(family__icontains=search_value)
+            | CentrifugeOutput.objects.filter(
+                task__flowcell_id=flowcell_id, latest=latest
+            )
+            .filter(task__flowcell__owner=request.user)
             .filter(order__icontains=search_value)
+        )
 
     else:
 
-        cent_out_temp = CentrifugeOutput.objects \
-            .filter(task__flowcell_id=flowcell_id, latest=latest) \
-            .filter(task__flowcell__owner=request.user)
+        cent_out_temp = CentrifugeOutput.objects.filter(
+            task__flowcell_id=flowcell_id, latest=latest
+        ).filter(task__flowcell__owner=request.user)
 
     if order_column:
 
-        if order_dir == 'desc':
-            cent_out_temp = cent_out_temp.order_by('-{}'.format(query_columns[int(order_column)]))
+        if order_dir == "desc":
+            cent_out_temp = cent_out_temp.order_by(
+                "-{}".format(query_columns[int(order_column)])
+            )
 
         else:
-            cent_out_temp = cent_out_temp.order_by('{}'.format(query_columns[int(order_column)]))
+            cent_out_temp = cent_out_temp.order_by(
+                "{}".format(query_columns[int(order_column)])
+            )
 
-    cents = cent_out_temp.exclude(barcode_name="No").values('tax_id',
-                                 'barcode_name',
-                                 'name',
-                                 'num_matches',
-                                 'proportion_of_classified',
-                                 'superkingdom',
-                                 'phylum',
-                                 'classy',
-                                 'order',
-                                 'family',
-                                 'genus',
-                                 'species',
-                                 )
+    cents = cent_out_temp.exclude(barcode_name="No").values(
+        "tax_id",
+        "barcode_name",
+        "name",
+        "num_matches",
+        "proportion_of_classified",
+        "superkingdom",
+        "phylum",
+        "classy",
+        "order",
+        "family",
+        "genus",
+        "species",
+    )
 
     records_total = cent_out_temp.count()
 
     result = {
-        'draw': draw,
+        "draw": draw,
         "recordsTotal": records_total,
         "recordsFiltered": records_total,
-        "data": list(cents[start:end])
+        "data": list(cents[start:end]),
     }
 
     return JsonResponse(result, safe=True)
 
 
-@api_view(['GET'])
+@api_view(["GET"])
 def simple_target_mappings(request):
     """
         Get the target species
@@ -471,14 +611,23 @@ def simple_target_mappings(request):
         return Response("Flowcell id has failed to be delivered", status=402)
 
     # Get the most recent jobmaster id, although there should only be one
-    task = JobMaster.objects.filter(flowcell__id=flowcell_id, job_type__name="Metagenomics").order_by("id").last()
+    task = (
+        JobMaster.objects.filter(
+            flowcell__id=flowcell_id, job_type__name="Metagenomics"
+        )
+        .order_by("id")
+        .last()
+    )
 
-    number_species_identified = CentrifugeOutput.objects.filter(task=task,
-                                                                barcode_name=barcode
-                                                                ).exclude(species__contains="Unclassified")\
+    number_species_identified = (
+        CentrifugeOutput.objects.filter(task=task, barcode_name=barcode)
+        .exclude(species__contains="Unclassified")
         .aggregate(Sum("num_matches"))["num_matches__sum"]
+    )
 
-    confidence_detection_limit = round(1 / (1 - pow(0.01, 1/number_species_identified)))
+    confidence_detection_limit = round(
+        1 / (1 - pow(0.01, 1 / number_species_identified))
+    )
 
     if confidence_detection_limit > 100000:
         sig_fig = 2
@@ -496,10 +645,17 @@ def simple_target_mappings(request):
     results_df = pd.DataFrame(list(queryset))
 
     results_df.drop(
-        columns=["id", "mapped_proportion_of_classified", "num_matches", "red_reads_proportion_of_classified",
-                 'sum_unique',
-                 'task_id', 'tax_id'
-                 ], inplace=True)
+        columns=[
+            "id",
+            "mapped_proportion_of_classified",
+            "num_matches",
+            "red_reads_proportion_of_classified",
+            "sum_unique",
+            "task_id",
+            "tax_id",
+        ],
+        inplace=True,
+    )
 
     results_df["Detected"] = np.where(results_df["num_mapped"] > 0, True, False)
 
@@ -509,17 +665,23 @@ def simple_target_mappings(request):
 
     results_df["conf_limit"] = confidence_detection_limit
 
-    results_df["detected_at"] = np.floor(results_df["read_count"]/results_df["num_mapped"])
+    results_df["detected_at"] = np.floor(
+        results_df["read_count"] / results_df["num_mapped"]
+    )
 
     results_df.replace([np.inf, -np.inf], 0, inplace=True)
 
     results_df["detected_at"].fillna(0, inplace=True)
 
-    results_df.rename(columns={"num_mapped": "Num. mapped",
-                               "red_reads": "Target reads",
-                               "species": "Validation species",
-                               "tax_id": "Tax id",
-                               }, inplace=True)
+    results_df.rename(
+        columns={
+            "num_mapped": "Num. mapped",
+            "red_reads": "Target reads",
+            "species": "Validation species",
+            "tax_id": "Tax id",
+        },
+        inplace=True,
+    )
 
     results = results_df.to_dict(orient="records")
 
@@ -546,5 +708,9 @@ def get_target_sets(request):
 
     else:
         user_id = request.user.id
-    target_sets = MappingTarget.objects.filter(Q(owner_id=user_id) | Q(private=False)).values_list("target_set", flat=True).distinct()
+    target_sets = (
+        MappingTarget.objects.filter(Q(owner_id=user_id) | Q(private=False))
+        .values_list("target_set", flat=True)
+        .distinct()
+    )
     return Response(target_sets)
