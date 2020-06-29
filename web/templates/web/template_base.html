@@ -10,6 +10,7 @@
     <link rel="apple-touch-icon" sizes="72x72" href="{% static 'web/img/minitour72.png' %}">
     <link rel="apple-touch-icon" sizes="114x114" href="{% static 'web/img/minitour114.png' %}">
     <link rel="apple-touch-icon" sizes="144x144" href="{% static 'web/img/minitour144.png' %}">
+    <link rel="stylesheet", href="{% static 'web/css/dropzone.css' %}">
     <link rel="mask-icon" href="{% static 'web/img/minotour.svg' %}" color="yellow">
     <!-- Tell the browser to be responsive to screen width -->
     <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
@@ -81,6 +82,7 @@
     <script src="{% static 'web/js/controllers/ArticController.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/FlowcellPageApp.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/controllers/BasecalledDataController.js' %}"></script>
+    <script src="{% static 'web/libraries/md5.js' %}"></script>
     <!-- Data tables -->
     <script src="{% static 'web/libraries/DataTables/datatables.min.js' %}"></script>
 </head>
@@ -137,5 +139,6 @@
 <!-- Block to adjust sticky header and footer -->
 {% block adjustment %}
 {% endblock %}
+<script src="{% static 'web/libraries/AdminLTE-3.0.4/dist/js/adminlte.min.js' %}"></script>
 </body>
 </html>
