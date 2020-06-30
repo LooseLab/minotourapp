@@ -3,6 +3,7 @@ Contains code relating to tasks that interact with our redis cache for storing r
  flowcells.
 """
 import json
+import time
 from datetime import datetime
 
 import numpy as np
@@ -395,6 +396,7 @@ def sort_reads_by_flowcell_fire_tasks(reads):
             if task["job_type_id"] == 16 and not task["from_database"]:
                 run_artic_pipeline.delay(task["id"], flowcell_reads)
             elif task["job_type_id"] == 4 and not task["from_database"]:
+                redis_instance.incr("minimaptasks")
                 run_minimap2_alignment.delay(task["id"], flowcell_reads)
 
 
@@ -481,6 +483,19 @@ def save_reads_bulk(reads):
 
     # Save reads to redis for later processing of base-called data summaries.
     reads_as_json = json.dumps(reads)
+    ### We want to pause to let the number of chunks get below 10?
+    count = redis_instance.scard("reads")
+    while count > 10:
+        print ("waiting")
+        time.sleep(10)
+        count = redis_instance.scard("reads")
+
+    minimap2tasks = redis_instance.get("minimaptasks")
+    while int(minimap2tasks) > 2:
+        print ("waiting for minimap")
+        time.sleep(10)
+        minimap2tasks = redis_instance.get("minimaptasks")
+
     redis_instance.sadd("reads", reads_as_json)
     # Bulk create the entries
     FastqRead.objects.bulk_create(reads_list, batch_size=1000)

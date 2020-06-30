@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import os
 import subprocess
 from io import StringIO
+import redis
 
 import numpy as np
 import pandas as pd
@@ -19,6 +20,9 @@ import requests
 
 # Set up the logger to write to logging file
 logger = get_task_logger(__name__)
+redis_instance = redis.StrictRedis(
+    host="127.0.0.1", port=6379, db=0, decode_responses=True
+)
 
 
 @task()
@@ -101,6 +105,7 @@ def run_minimap2_alignment(job_master_id, streamed_reads=[]):
         align_reads_factory(job_master.id, fasta_df_barcode)
 
     # Update the JobMaster with the metadata after finishing this iteration
+    redis_instance.decr("minimaptasks")
     job_master = JobMaster.objects.get(pk=job_master_id)
     job_master.running = False
     job_master.last_read = last_read
@@ -163,7 +168,7 @@ def fetch_rough_cov_to_update(job_master_id):
             "read_type_id",
             "barcode_id",
             "bin_position_start",
-            "bin_position_end",
+            #"bin_position_end",
             "bin_coverage",
             chromosome_pk=F("chromosome_id"),
         )
@@ -176,7 +181,7 @@ def fetch_rough_cov_to_update(job_master_id):
                 "read_type_id",
                 "barcode_id",
                 "bin_position_start",
-                "bin_position_end",
+                #"bin_position_end",
             ]
         )
         df_old_coverage = df_old_coverage.loc[~df_old_coverage.index.duplicated()]
@@ -229,7 +234,7 @@ def generate_paf_rough_cov_objects(row, flowcell_pk, job_master_pk, reference_pk
         reference_id=reference_pk,
         chromosome_id=row["chromosome_pk"],
         bin_position_start=row["bin_position_start"],
-        bin_position_end=row["bin_position_end"],
+        #bin_position_end=row["bin_position_end"],
         bin_coverage=row["bin_coverage"],
     )
 
@@ -259,9 +264,9 @@ def paf_rough_coverage_calculations(df, job_master, max_chromosome_length):
     #bins = np.arange(0, max_chromosome_length + bin_width, bin_width)
     ###ToDO: The use of cut here is incredibly slow on the scale of a human genome.
     #df["cut"] = pd.cut(df[7], bins)
-    df["cut"] = (df[7] / 100).astype(int) *100
+    df["cut"] = (df[7] / 10).astype(int) *10
     #df["end_cut"] = pd.cut(df[8], bins)
-    df["end_cut"] = (df[8] / 100).astype(int) *100
+    df["end_cut"] = (df[8] / 10).astype(int) *10
     if "barcode_name" not in df.columns:
         df.reset_index(inplace=True)
     df.set_index(["type__name", "tsn", "barcode_name", "cut"], inplace=True)
@@ -294,7 +299,7 @@ def paf_rough_coverage_calculations(df, job_master, max_chromosome_length):
     results = results.loc[~results.index.duplicated(keep="first")]
     results.index = results.index.rename(["type__name", "tsn", "barcode_name", "end_cut"])
     results.name = "accurate_bin_coverage"
-    results.index = results.index.rename(["type__name", "tsn", "barcode_name", "end_cut"])
+    #results.index = results.index.rename(["type__name", "tsn", "barcode_name", "end_cut"])
     df.reset_index(inplace=True)
     # Transform main dataframe into unique for bins whether start of mapped read based or end of mapped read based
     df_end_bins = df.drop(columns="cut").set_index(
@@ -311,8 +316,11 @@ def paf_rough_coverage_calculations(df, job_master, max_chromosome_length):
     df_end_bins["accurate_coverage"] = results
     df_end_bins.index = df_end_bins.index.rename(["type__name", "tsn", "barcode_name", "cut"])
     df_end_bins.reset_index(inplace=True)
-    df_end_bins["bin_position_start"] = df_end_bins["cut"].apply(lambda x: x.left)
-    df_end_bins["bin_position_end"] = df_end_bins["cut"].apply(lambda x: x.right)
+    #df_end_bins["bin_position_start"] = df_end_bins["cut"].apply(lambda x: x.left)
+    #df_end_bins["bin_position_end"] = df_end_bins["cut"].apply(lambda x: x.right)
+    df_end_bins["bin_position_start"] = df_end_bins["cut"]
+    #df_end_bins["bin_position_end"] = df_end_bins["cut"]
+
     df_end_bins.reset_index(inplace=True)
     df_end_bins.set_index(
         [
@@ -320,7 +328,7 @@ def paf_rough_coverage_calculations(df, job_master, max_chromosome_length):
             "read_type_id",
             "barcode_id",
             "bin_position_start",
-            "bin_position_end",
+            #"bin_position_end",
         ],
         inplace=True,
     )
@@ -455,7 +463,7 @@ def align_reads_factory(job_master_id, fasta_df_barcode):
 
     print ("paf mangled")
     #Todo: should this be "No barcode" rather than "no barcode"?
-    if "no barcode" in fasta_df_barcode["barcode_name"].unique():
+    if "No barcode" in fasta_df_barcode["barcode_name"].unique():
         df["barcode_name"] = "All reads"
         paf_summary_calculations(df, job_master_id)
         paf_rough_coverage_calculations(df, job_master, max_chromosome_length)
@@ -469,9 +477,7 @@ def align_reads_factory(job_master_id, fasta_df_barcode):
         df["barcode_name"] = "All reads"
         # save results for all reads
         paf_summary_calculations(df, job_master_id)
-        paf_rough_coverage_calculations(df, job_master, max_chromosome_length)
-        paf_rough_coverage_calculations(df, job_master, max_chromosome_length)
-
+        paf_rough_coverage_calculations(df2, job_master, max_chromosome_length)
 
     return last_read
 
@@ -594,5 +600,7 @@ def align_reads(job_master_id, fasta_df_barcode):
         df["barcode_name"] = "All reads"
         # save results for all reads
         paf_summary_calculations(df, job_master_id)
+        paf_rough_coverage_calculations(df, job_master, max_chromosome_length)
+
 
     return last_read
