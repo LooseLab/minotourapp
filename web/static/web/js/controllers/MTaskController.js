@@ -87,15 +87,15 @@ class MTaskController {
           console.log(`Great Success`)
           icon.removeClass(`disallowed`)
           icon.addClass(`allowed`)
-          $(`#submit-task`).attr(`disabled`, false)
+          $(`#submit-taskdelete`).attr(`disabled`, false)
         } else {
           icon.removeClass(`allowed`)
           icon.addClass(`disallowed`)
           console.log(`Epic fail.`)
-          $(`#submit-task`).attr(`disabled`, true)
+          $(`#submit-taskdelete`).attr(`disabled`, true)
         }
       })
-      $(`#submit-task`).on(`click`, event => {
+      $(`#submit-taskdelete`).on(`click`, event => {
         $(`#confirm-submit`).modal(`hide`)
         this._submitDeleteTask(task_new)
       })
