@@ -471,5 +471,4 @@ def align_reads(job_master_id, fasta_df_barcode):
         paf_rough_coverage_calculations(df, job_master, max_chromosome_length)
         paf_rough_coverage_calculations(df, job_master, max_chromosome_length)
 
-
     return last_read
