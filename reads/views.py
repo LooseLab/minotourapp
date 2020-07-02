@@ -208,24 +208,25 @@ def flowcell_barcodes_list(request):
 
 
 @api_view(["POST"])
-def reactivate_flowcell(request):
+def reactivate_flowcell(request, pk):
     """
-    reactivate a flowcell manually - sent form the tasks tab via the mTaskController
-    :param request: the post request body
-    :return:
+    Reactivate a flowcell so it isn't ignored by celery run monitor
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+    pk: int
+        Primary key of the flowcell record to update
+
+    Returns
+    -------
+
     """
 
-    flowcell_id = request.data["flowcell"]
-
-    flowcell = Flowcell.objects.get(pk=flowcell_id)
-
+    flowcell = Flowcell.objects.get(pk=pk)
     if flowcell.active():
         return Response("Error - Flowcell already active", status=405)
-
     flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
-
     flowcell.save()
-
     return Response("Flowcell last activity date successfully updated", status=200)
 
 
@@ -2857,19 +2858,13 @@ def task_types_list(request):
         # These are the available tasks
         tasks = ["Metagenomics", "Minimap2", "Track Artic Coverage"]
         # Get the tasks
-        queryset = JobType.objects.filter(name__in=tasks)
+        result = JobType.objects.filter(name__in=tasks).values("id", "name", "description")
 
     else:
         # Otherwise it's for the site, so make all that are public available
-        queryset = JobType.objects.filter(private=False)
+        result = JobType.objects.filter(private=False).values("id", "name", "description")
 
-    # Create the result list
-    result = [
-        {"id": record.id, "name": record.name, "description": record.description}
-        for record in queryset
-    ]
-
-    return JsonResponse({"data": result})
+    return Response({"data": result}, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
