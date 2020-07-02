@@ -41,11 +41,11 @@ class PafRoughCov(models.Model):
     )
 
     reference = models.ForeignKey(
-        ReferenceInfo, related_name="pafreference", on_delete=models.CASCADE,
+        ReferenceInfo, related_name="pafreference", on_delete=models.DO_NOTHING,
     )
 
     chromosome = models.ForeignKey(
-        ReferenceLine, related_name="pafchromosome", on_delete=models.CASCADE,
+        ReferenceLine, related_name="pafchromosome", on_delete=models.DO_NOTHING,
     )
 
     bin_position_start = models.IntegerField(default=0)  # position
@@ -79,7 +79,7 @@ class PafSummaryCov(models.Model):
     chromosome = models.ForeignKey(
         ReferenceLine,
         related_name="paf_summary_chromosome",
-        on_delete=models.CASCADE,
+        on_delete=models.DO_NOTHING,
         null=True,
     )
     # TODO to be deleted, use field from chromosome
