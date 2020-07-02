@@ -532,7 +532,7 @@ def map_all_the_groups(
     try:
         # Get the reference for this species
         references = ReferenceInfo.objects.filter(
-            Q(owner_id=user_id) | Q(private=False)
+            Q(uploader_id=user_id) | Q(private=False)
         ).filter(name=species)[0]
         logger.info("References for this metganomics")
         logger.info(references)
