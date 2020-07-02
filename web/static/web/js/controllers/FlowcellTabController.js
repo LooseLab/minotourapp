@@ -52,7 +52,8 @@ class FlowcellTabController {
     const lookupController = {
       "sequence-mapping": `alignmentController`,
       "basecalled-data": `baseCalledDataController`,
-      artic: `articController`
+      artic: `articController`,
+      tasks: `tasksController`
     }
 
     if (getSelectedTab()) {
@@ -71,6 +72,7 @@ class FlowcellTabController {
     this.toggleContent(this.lookupElement[navName], this.lookupElement[tabName])
     controllerName = lookupController[name]
     if (Object.prototype.hasOwnProperty.call(this, controllerName)) {
+      // update the tab content by calling the classes update tab method
       console.log(`Updating tab ${name}`)
       this[controllerName].updateTab()
     }
@@ -99,15 +101,17 @@ class FlowcellTabController {
     const controllers = {
       "basecalled-data": [`baseCalledDataController`, BasecalledDataController],
       artic: [`articController`, ArticController],
-      "sequence-mapping": [`alignmentController`, AlignmentController]
+      "sequence-mapping": [`alignmentController`, AlignmentController],
+      tasks: [`tasksController`, TasksController]
     }
+    // if we have a controller for this tab, but we are no longer showing it as underlying data has been deleted
     Object.keys(controllers).forEach(controllerName => {
-      // if we have a controller for this tab, but we are no longer showing it as underlying data has been deleted
       if (!tabs.includes(controllerName) && this[controllers[controllerName][0]]) {
         // delete the controller
         delete this[controllers[controllerName][0]]
       }
     })
+    // Tabs that are shown have their controller initialised here
     tabs.forEach((name) => {
       this.lookupElement[`nav-${name}`].classList.remove(`hidden`)
       // if the name of the tab is in our list of controllers to initialise
