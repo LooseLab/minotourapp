@@ -39,7 +39,7 @@ def rough_coverage_complete_chromosome_flowcell(
         .filter(barcode_id=barcode_id)
         .filter(chromosome__id=chromosome_id)
         .filter(read_type__id=read_type_id)
-        .order_by("bin_position_end")
+        .order_by("bin_position_start")
     ).values_list("bin_position_start", "bin_coverage")
     # TODO limits to just one reference here when fetching length, could be an issue in the future
     length = (
@@ -240,12 +240,12 @@ def per_genome_coverage_summary(request, flowcell_pk):
 
     """
     queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk).values("chromosome__line_name").annotate(
-        Sum("total_yield"), Avg("average_read_length"))
+        Sum("coverage"), Avg("average_read_length"))
     chromosome_coverage = []
     chromosome_average_read_length = []
     for chromosome in queryset:
         chromosome_coverage.append(
-            {"name": chromosome["chromosome__line_name"], "data": [chromosome["total_yield__sum"]]})
+            {"name": chromosome["chromosome__line_name"], "data": [chromosome["coverage__sum"]]})
         chromosome_average_read_length.append(
             {"name": chromosome["chromosome__line_name"], "data": [chromosome["average_read_length__avg"]]})
     results = {"coverageData": chromosome_coverage, "avgRLData": chromosome_average_read_length}
