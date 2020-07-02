@@ -1,15 +1,17 @@
 """
 add_gff3_set - add a set of locations from a gff file as target regions for the metagenomics analysis
 """
+from pathlib import Path
+
+import numpy as np
 import pandas as pd
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
 from ete3 import NCBITaxa
+from rest_framework.authtoken.models import Token
+
 from centrifuge.models import MappingTarget
 from reference.models import ReferenceInfo
-import numpy as np
-from rest_framework.authtoken.models import Token
-from pathlib import Path
 
 
 def find_files_of_type(file_or_directory, file_extensions):
@@ -158,7 +160,7 @@ class Command(BaseCommand):
             user = Token.objects.get(key=options["key"]).user
 
             reference_list = list(
-                ReferenceInfo.objects.filter(Q(private=False) | Q(owner=user)).values_list("name", flat=True)
+                ReferenceInfo.objects.filter(Q(private=False) | Q(uploader=user)).values_list("name", flat=True)
             )
 
             set_name_list = list(
