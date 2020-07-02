@@ -12,18 +12,18 @@ class ReferenceInfo(models.Model):
     name = models.CharField(
         max_length=256
     )
-    filename = models.CharField(
+    file_name = models.CharField(
         max_length=256
     )
-    minimap2_index_file_location = models.FileField(
-        upload_to="minimap2_indexes/",
-        null=True,
-        blank=True
+    minimap2_index_file_location = models.CharField(
+        default="",
+        max_length=256
     )
     file_location = models.FileField(
         upload_to="reference_files",
         default="",
-        null=True
+        null=True,
+        max_length=256
     )
     length = models.BigIntegerField(
         default=0
@@ -31,7 +31,7 @@ class ReferenceInfo(models.Model):
     private = models.BooleanField(
         default=False
     )
-    owner = models.ForeignKey(
+    uploader = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name='user_references',
         on_delete=models.CASCADE,
@@ -49,8 +49,13 @@ class ReferenceInfo(models.Model):
         default=""
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["name", "private", "uploader"], name='unique_reference'),
+        ]
+
     def __str__(self):
-        return self.name
+        return f"Name: {self.name}, Private: {self.private}"
 
 
 class ReferenceLine(models.Model):
@@ -68,4 +73,4 @@ class ReferenceLine(models.Model):
     chromosome_length = models.BigIntegerField(
     )
     def __str__(self):
-        return "{} {}".format(self.reference, self.line_name)
+        return f"{self.reference} {self.line_name}"
