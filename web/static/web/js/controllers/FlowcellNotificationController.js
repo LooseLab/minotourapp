@@ -67,7 +67,7 @@ class FlowcellNotificationController {
   _addListenerToForms () {
     $(`#reference`).on(`change`, event => { this._referenceOnChange(event) })
     $(`.notification-form`).on(`submit`, event => { this._postNotificationCreation(event, this) })
-    $(`#multi-fomr-submit`).on(`click`, this.submitForms)
+    $(`#multi-form-submit`).on(`click`, this.submitForms)
   }
 
   _disableExtantNotifications () {
@@ -82,7 +82,9 @@ class FlowcellNotificationController {
         }
         extantTypes.forEach(type => {
           const a = $(`#${type}`)
-          a.remove()
+          if (type !== `cov`) {
+            a.remove()
+          }
         })
         $(`#${$(`#list-tab`).children().first().attr(`id`)}`).tab(`show`)
       }
@@ -107,7 +109,7 @@ class FlowcellNotificationController {
     console.log(formData)
     $(event.currentTarget).find(`.form-control`).each((index, field) => {
       console.log(field)
-      that._formData.append(field.id.replace(`-`, `_`), $(field).val())
+      formData.append(field.id.replace(`-`, `_`), $(field).val())
     })
     console.log(formData)
     axios({
