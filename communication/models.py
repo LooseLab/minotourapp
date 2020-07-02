@@ -1,4 +1,5 @@
 import uuid
+
 from django.conf import settings
 from django.db import models
 
@@ -136,7 +137,8 @@ class NotificationConditions(models.Model):
 
     NOTIFICATION_CHOICES = [("cov", "Coverage"), ("mux", "Mux Scan Results"), ("targ", "New Target Added"),
                             ("volt", "Voltage"), ("temp", "Temperature"),
-                            ("occu", "Occupancy"), ("w/e", "Warnings/Errors"), ("mino", "MinoTour")]
+                            ("occu", "Occupancy"), ("waer", "Warnings/Errors"), ("mino", "MinoTour"), ("sped", "Speed"),
+                            ("arti", "Artic"), ("suff", "Sufficient Coverage")]
 
     notification_type = models.CharField(
         max_length=4,
@@ -146,7 +148,7 @@ class NotificationConditions(models.Model):
     flowcell = models.ForeignKey(
         Flowcell,
         on_delete=models.CASCADE,
-        related_name="flowcell_for_conditon"
+        related_name="flowcell_for_condition"
     )
 
     creating_user = models.ForeignKey(
@@ -190,12 +192,12 @@ class NotificationConditions(models.Model):
         auto_now_add=True
     )
 
-    reference_file = models.ForeignKey(
+    reference = models.ForeignKey(
         ReferenceInfo,
         on_delete=models.SET_NULL,
-        name="conditional_reference",
         related_name="to_chosen_reference",
-        null=True
+        null=True,
+        blank=True
     )
 
     chromosome = models.ForeignKey(
@@ -203,7 +205,8 @@ class NotificationConditions(models.Model):
         on_delete=models.CASCADE,
         related_name="conditional_chromosome",
         null=True,
-        default=None
+        default=None,
+        blank=True
     )
 
     barcode = models.ForeignKey(
@@ -212,6 +215,10 @@ class NotificationConditions(models.Model):
         related_name="conditional_barcode",
         null=True,
         default=None
+    )
+
+    last_minions_stats_id = models.BigIntegerField(
+        default=0
     )
 
     def __str__(self):
