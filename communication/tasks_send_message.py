@@ -72,7 +72,7 @@ def return_tweet(
     return tweet_text
 
 
-def check_coverage(flowcell, target_coverage, reference_line_id, barcode):
+def check_coverage(flowcell, target_coverage, reference_line_id, barcode=""):
     """
     Check the coverage of a mapping task.
     Parameters
@@ -191,13 +191,16 @@ def coverage_notification(condition):
     chromosome = condition.chromosome
     reference = condition.reference
     flowcell = condition.flowcell
-    barcode_name = condition.barcode.name
+    # barcode_name = condition.barcode.name
+
     coverage_reached = check_coverage(
-        flowcell, int(condition.coverage_target), chromosome.id, barcode_name
+        flowcell, int(condition.coverage_target), chromosome.id
     )
 
     logger.debug("coverage reached!")
     logger.debug(coverage_reached)
+    if not coverage_reached:
+        return
 
     # Reached is a dictionary, one dict for each Paf Summary Cov pulled back in the check_coverage function
     for reached in coverage_reached:
