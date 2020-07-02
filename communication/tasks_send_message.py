@@ -4,13 +4,13 @@ Task_send_message.py. Code for sending tweets once a certain condition has been 
 import datetime
 import time
 
-import pandas as pd
 from celery import task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from twitter import Twitter, OAuth, TwitterHTTPError, TwitterError
 
 from alignment.models import PafSummaryCov
+from artic.models import ArticBarcodeMetadata
 from communication.models import NotificationConditions, Message
 from reads.models import UserOptions, MinionRunStats
 
@@ -68,9 +68,7 @@ def return_tweet(
         "new_target": f"New Target added on Read Until iteralign run: {target_added}",
         "volt_occu": f"Limit breached for {volt_occu} on Flowcell {flowcell}. Limit set was {limit}.",
     }
-
     tweet_text = text_lookup[tweet_type]
-
     return tweet_text
 
 
@@ -94,43 +92,17 @@ def check_coverage(flowcell, target_coverage, reference_line_id, barcode):
          list of dictionaries of results showing whether or not we have reached coverage for the chosen chromosomes.
     """
 
-    queryset = PafSummaryCov.objects.filter(job_master__flowcell=flowcell)
-
+    queryset = PafSummaryCov.objects.filter(
+        job_master__flowcell=flowcell,
+        chromosome_id=reference_line_id,
+        coverage__gte=target_coverage,
+    )
     if not queryset:
         logger.warning(
             f"No PafSummaryCov objects found for flowcell with id {flowcell.id}."
         )
         return
-
-    df = pd.DataFrame.from_records(
-        queryset.values(
-            "barcode_name",
-            "chromosome__line_name",
-            "total_yield",
-            "reference_line_length",
-            "chromosome_id",
-        )
-    )
-
-    df["coverage"] = (
-        df["total_yield"].div(df["reference_line_length"]).round(decimals=3)
-    )
-    logger.info(df.head())
-    df = df.drop(columns=["reference_line_length", "total_yield"])
-
-    ref_df = df[df["chromosome_id"] == reference_line_id]
-    logger.info((flowcell, target_coverage, reference_line_id, barcode))
-    logger.info(ref_df)
-
-    # ref_df = ref_df[ref_df["barcode_name"] == barcode]
-
-    logger.info(ref_df)
-
-    ref_df["coverage_reached"] = ref_df["coverage"] > int(target_coverage)
-
-    results = ref_df.to_dict(orient="records")
-
-    return results
+    return queryset.values("coverage")
 
 
 @task()
@@ -145,16 +117,17 @@ def send_messages():
     time_limit = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(
         hours=1
     )
-
+    # Set the messages to delivered if they are more than hour old
+    Message.objects.filter(created_date__lt=time_limit, delivered_date=None).update(
+        delivered_date=datetime.datetime.now()
+    )
+    # Get the new messages
     new_messages = Message.objects.filter(delivered_date=None)
-
     for new_message in new_messages:
-        # print('Sending message: {}'.format(new_message))
         if new_message.created_date < time_limit:
             continue
-
         message_sent = False
-
+        # If the user has set up twitter options
         if (
             new_message.recipient.extendedopts.tweet
             and new_message.recipient.extendedopts.twitterhandle != ""
@@ -163,7 +136,6 @@ def send_messages():
             TWITTOKEN_SECRET = settings.TWITTOKEN_SECRET
             TWITCONSUMER_KEY = settings.TWITCONSUMER_KEY
             TWITCONSUMER_SECRET = settings.TWITCONSUMER_SECRET
-
             t = Twitter(
                 auth=OAuth(
                     TWITTOKEN, TWITTOKEN_SECRET, TWITCONSUMER_KEY, TWITCONSUMER_SECRET
@@ -189,21 +161,129 @@ def send_messages():
                 logger.error(str(e))
                 return
             finally:
-
-                # status = '@{} {}'.format(new_message.recipient.extendedopts.twitterhandle,new_message.title)
-                # t.statuses.update(
-                #    status=status
-                # )
-
                 message_sent = True
-
-                time.sleep(1)
-
                 if message_sent:
                     new_message.delivered_date = datetime.datetime.now(
                         tz=datetime.timezone.utc
                     )
                     new_message.save()
+                    time.sleep(1)
+
+
+def coverage_notification(condition):
+    """
+    Run calculations for coverage statistics
+    Parameters
+    ----------
+    condition: communication.models.NotificationConditions
+        The condition we are dealing with
+    Returns
+    -------
+
+    """
+    logger.info("S'up in the cov hood")
+    if not condition.coverage_target:
+        logger.warning(
+            f"Condition {condition.id} of type {condition.notification_type}"
+            f" should have a target coverage. Please investigate. Skipping... "
+        )
+        return
+    chromosome = condition.chromosome
+    reference = condition.reference_file
+    flowcell = condition.flowcell
+    barcode_name = condition.barcode.name
+    coverage_reached = check_coverage(
+        flowcell, int(condition.coverage_target), chromosome.id, barcode_name
+    )
+
+    logger.debug("coverage reached!")
+    logger.debug(coverage_reached)
+
+    # Reached is a dictionary, one dict for each Paf Summary Cov pulled back in the check_coverage function
+    for reached in coverage_reached:
+        if reached.get("coverage_reached", None):
+            # Let's create a message
+            message_text = return_tweet(
+                "coverage",
+                target_coverage=int(condition.coverage_target),
+                reference_file_name=reference.name,
+                chromosome_name=chromosome.line_name,
+                observed_coverage=reached.get("coverage", "Undefined"),
+            )
+            message = Message(
+                recipient=condition.creating_user,
+                sender=condition.creating_user,
+                title=message_text,
+                flowcell=flowcell,
+            )
+            message.save()
+            condition.completed = True
+            condition.save()
+
+
+def minion_statistic_check(condition):
+    """
+        Run calculations for minion statistics, such as speed, occupation, voltage
+        Parameters
+        ----------
+        condition: communication.models.NotificationConditions
+            The condition we are dealing with
+        Returns
+        -------
+
+        """
+    # Limit for condition
+    upper_limit = condition.upper_limit
+    lower_limit = condition.lower_limit
+    if (
+        condition.last_minions_stats_id == 0
+        and MinionRunStats.objects.filter(run__flowcell=condition.flowcell).count()
+    ):
+        queryset = MinionRunStats.objects.filter(run__flowcell=condition.flowcell)[:10]
+        condition.last_minions_stats_id = queryset[9].id
+    elif not MinionRunStats.objects.filter(run__flowcell=condition.flowcell).count():
+        return
+    else:
+        queryset = MinionRunStats.objects.filter(
+            run__flowcell=condition.flowcell, id__gte=condition.last_minions_stats_id,
+        )
+        condition.last_minions_stats_id = queryset.last().id
+    if condition.notification_type == "volt":
+        queryset.values_list("voltage_value", flat=True)
+    else:
+        queryset = [minion_statistic.occupancy() for minion_statistic in queryset]
+    upper_list = list(filter(lambda x: x >= upper_limit, queryset))
+    lower_list = list(filter(lambda x: x <= lower_limit, queryset))
+    if len(upper_list) > 6:
+        text = return_tweet(
+            "volt_occu",
+            upper_limit,
+            "Voltage",
+            condition.flowcell.name,
+            queryset[len(queryset)],
+        )
+        message = Message(
+            recipient=condition.creating_user,
+            sender=condition.creating_user,
+            title=text,
+            flowcell=condition.flowcell,
+        )
+        message.save()
+    elif len(lower_list) > 6:
+        text = return_tweet(
+            "volt_occu",
+            lower_limit,
+            "Voltage",
+            condition.flowcell.name,
+            queryset[len(queryset)],
+        )
+        message = Message(
+            recipient=condition.creating_user,
+            sender=condition.creating_user,
+            title=text,
+            flowcell=condition.flowcell,
+        )
+        message.save()
 
 
 @task()
@@ -224,131 +304,70 @@ def check_condition_is_met():
     )
     logger.info(f"Active conditions {active_conditions}")
     for condition in active_conditions:
-        # Users twitter handle
-        print(condition.notification_type)
-
         twitter_details = UserOptions.objects.get(owner=condition.creating_user)
-
         if not twitter_details:
             logger.info(
                 f"User {condition.creating_user} does not have twitter details."
             )
-
         twitter_permission = twitter_details.tweet
-
         if not not not twitter_permission:
             logger.warning(f"This user does not have twitter permissions granted.")
             continue
-
+        if condition.type == "suff":
+            check_artic_sufficient_coverage(condition)
+        if condition.type == "arti":
+            check_artic_has_fired(condition)
         if condition.notification_type == "cov":
-            # Coverage condition
-            logger.info("S'up in the cov hood")
-            if not condition.coverage_target:
-                logger.warning(
-                    f"Condition {condition.id} of type {condition.notification_type}"
-                    f" should have a target coverage. Please investigate. Skipping... "
-                )
-                continue
+            coverage_notification(condition)
+        if condition.notification_type in ["occu", "volt", "sped"]:
+            minion_statistic_check(condition)
 
-            chromosome = condition.chromosome
 
-            reference = condition.conditional_reference
+def check_artic_has_fired(condition):
+    """
+    check if a barocde in the artic task has gone through the pipelin
+    Parameters
+    ----------
+    condition: communication.models.NotificationConditions
+        The condition of this type
+    Returns
+    -------
 
-            flowcell = condition.flowcell
+    """
+    queryset = ArticBarcodeMetadata.objects.filter(
+        flowcell_id=condition.flowcell, has_finished=True
+    ).values("barcode__name")
+    for barcode in queryset:
+        time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        m = Message(
+            recipient=condition.creating_user,
+            sender=condition.creating_user,
+            title=f"Artic pipeline has finished for barcode {barcode['barcode__name']} at {time}",
+            flowcell=condition.flowcell,
+        )
+        m.save()
 
-            barcode_name = condition.barcode.name
 
-            coverage_reached = check_coverage(
-                flowcell, int(condition.coverage_target), chromosome.id, barcode_name
-            )
+def check_artic_sufficient_coverage(condition):
+    """
+    Check if the artic coverage requiremnts are met
+    Parameters
+    ----------
+    condition: communication.models.NotificationConditions
+        The condition of this type
+    Returns
+    -------
 
-            logger.debug("coverage reached!")
-            logger.debug(coverage_reached)
-
-            # Reached is a dictionary, one dict for each Paf Summary Cov pulled back in the check_coverage function
-            for reached in coverage_reached:
-                if reached.get("coverage_reached", None):
-                    # Let's create a message
-                    message_text = return_tweet(
-                        "coverage",
-                        target_coverage=int(condition.coverage_target),
-                        reference_file_name=reference.name,
-                        chromosome_name=chromosome.line_name,
-                        observed_coverage=reached.get("coverage", "Undefined"),
-                    )
-                    print(message_text)
-
-                    message = Message(
-                        recipient=condition.creating_user,
-                        sender=condition.creating_user,
-                        title=message_text,
-                        flowcell=flowcell,
-                    )
-
-                    message.save()
-
-                    condition.completed = True
-
-                    condition.save()
-
-        if condition.notification_type in ["occu", "volt"]:
-            # Count for indexing as no negative indexing
-            num_entries = MinionRunStats.objects.filter(
-                run_id__flowcell=condition.flowcell
-            ).count()
-            # Limit for condition
-            upper_limit = condition.upper_limit
-            lower_limit = condition.lower_limit
-
-            if condition.notification_type == "volt":
-                queryset = (
-                    MinionRunStats.objects.filter(run_id__flowcell=condition.flowcell)
-                    .order_by("-id")[:10]
-                    .values_list("voltage_value", flat=True)
-                )
-            else:
-                # Else occupancy
-                queryset = MinionRunStats.objects.filter(
-                    run_id__flowcell=condition.flowcell
-                ).order_by("-id")[:10]
-                occupancy_list = []
-                # Get the occupancy
-                for run_stat in queryset:
-                    occupancy_list.append(run_stat.occupancy())
-
-                queryset = occupancy_list
-
-            upper_list = list(filter(lambda x: x >= upper_limit, queryset))
-            lower_list = list(filter(lambda x: x <= lower_limit, queryset))
-
-            if len(upper_list) > 6:
-                text = return_tweet(
-                    "volt_occu",
-                    upper_limit,
-                    "Voltage",
-                    condition.flowcell.name,
-                    queryset[len(queryset)],
-                )
-                message = Message(
-                    recipient=condition.creating_user,
-                    sender=condition.creating_user,
-                    title=text,
-                    flowcell=condition.flowcell,
-                )
-                message.save()
-
-            elif len(lower_list) > 6:
-                text = return_tweet(
-                    "volt_occu",
-                    lower_limit,
-                    "Voltage",
-                    condition.flowcell.name,
-                    queryset[len(queryset)],
-                )
-                message = Message(
-                    recipient=condition.creating_user,
-                    sender=condition.creating_user,
-                    title=text,
-                    flowcell=condition.flowcell,
-                )
-                message.save()
+    """
+    queryset = ArticBarcodeMetadata.objects.filter(
+        flowcell_id=condition.flowcell, has_sufficient_coverage=True
+    ).values("barcode__name", "average_coverage")
+    for barcode in queryset:
+        m = Message(
+            recipient=condition.creating_user,
+            sender=condition.creating_user,
+            title=f"Sufficient Coverage reached for Barocde {barcode['barcode__name']} in Artic task,"
+            f" with an average coverage of {barcode['average_coverage']}",
+            flowcell=condition.flowcell,
+        )
+        m.save()

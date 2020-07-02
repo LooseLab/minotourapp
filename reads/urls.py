@@ -14,7 +14,7 @@ urlpatterns = [
         name="minknow-messages-html"
     ),
     url(
-        r'^api/v1/flowcells/reactivate/$',
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/reactivate/$',
         views.reactivate_flowcell,
         name="reactivate_flowcell"
     ),
