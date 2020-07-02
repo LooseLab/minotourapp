@@ -163,8 +163,7 @@
         setSelectedFlowcell({{ flowcell.id }})
         const app = FlowcellPageApp;
         app.init();
-        const mTaskController = new MTaskController(flowcellId);
-        const mSharingController = new MSharingController(flowcellId);
+        const mSharingController = new SharingController(flowcellId);
         const flowcellController = new FlowcellController(flowcellId);
     </script>
 {% endblock %}
