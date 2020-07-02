@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 import pandas as pd
-from django.shortcuts import render
+from django.db.models import F
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -12,6 +12,52 @@ from communication.models import NotificationConditions
 from communication.serializers import MessageSerializer, NotificationSerialiser
 from reads.models import Flowcell, Barcode, UserOptions, JobMaster
 from reference.models import ReferenceInfo, ReferenceLine
+from .forms import NotificationConditionForm
+
+
+@api_view(["POST"])
+def simple_condition_create(request):
+    """
+    Simple create using form
+    Parameters
+    ----------
+    request
+
+    Returns
+    -------
+
+    """
+    print(request.data)
+    form = NotificationConditionForm(request.data)
+    if form.is_valid():
+        new_condition = form.save(commit=False)
+        new_condition.creating_user = request.user
+        new_condition.save()
+
+    return Response(status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def get_extant_condition_types(request, pk):
+    """
+    Get the extant condition types to disable the selection tabs
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The request object in the body
+    pk: int
+        The primary key of the flowcell record in the database
+    Returns
+    -------
+    list of str
+        List of distinct string names of conditions that exist
+    """
+    results = (
+        NotificationConditions.objects.filter(flowcell_id=pk)
+        .values_list("notification_type", flat=True)
+        .distinct()
+    )
+    return Response(results, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
@@ -33,21 +79,51 @@ def new_messages_list(request):
     return Response(serializer.data)
 
 
-def message_details(request, pk):
+@api_view(["GET"])
+def get_references_for_condtions(request, pk):
     """
-    Returns the htm
+    Get references for the coverage condition dropdowns
     Parameters
     ----------
-    request
-    pk
-
+    request: rest_framework.request.Request
+        The request object for this AJAX request
+    pk: int
+        The flowcell record primary key
     Returns
     -------
 
     """
-    message = Message.objects.get(pk=pk)
+    b = defaultdict(list)
+    for jobs in list(
+        JobMaster.objects.filter(job_type_id=4).values(
+            "reference_id",
+            reference_name=F("reference__name"),
+            contig_name=F("reference__referencelines__line_name"),
+            contig_id=F("reference__referencelines__id"),
+        )
+    ):
+        b[jobs["reference_name"]].append(
+            (jobs["contig_name"], jobs["contig_id"], jobs["referenceId"])
+        )
 
-    return render(request, "communication/message.html", context={"message": message,})
+    return Response(b, status=status.HTTP_200_OK)
+
+
+# def message_details(request, pk):
+#     """
+#     Returns the htm
+#     Parameters
+#     ----------
+#     request
+#     pk
+#
+#     Returns
+#     -------
+#
+#     """
+#     message = Message.objects.get(pk=pk)
+#
+#     return render(request, "communication/message.html", context={"message": message,})
 
 
 def create_notification_conditions(flowcell, user, **kwargs):
@@ -114,7 +190,7 @@ def create_notification_conditions(flowcell, user, **kwargs):
 
 
 @api_view(["GET", "POST", "DELETE"])
-def get_create_delete_conditions(request):
+def notification_conditions_list(request):
     """
     Get all the condition for a specific flowcell that a User has created
     Create the conditions that the user will be notified about if they are met. Chosen from notifications-manager.html.
@@ -133,7 +209,7 @@ def get_create_delete_conditions(request):
         "Mux alerts": "mux",
         "Voltage": "volt",
         "Temperature": "temp",
-        "Warnings/Errors": "w/e",
+        "Warnings/Errors": "waer",
         "Occupancy": "occu",
         "MinoTour": "mino",
     }
@@ -234,31 +310,22 @@ def get_create_delete_conditions(request):
         return Response(return_string, status=200)
 
     elif request.method == "GET":
-
         flowcell_id = request.GET.get("flowcellId", -1)
-
         if flowcell_id == -1:
             return Response("Flowcell ID not provided.", status=400)
-
         queryset = NotificationConditions.objects.filter(
             creating_user=request.user, flowcell_id=flowcell_id
         )
-
         notifications_serialiser = NotificationSerialiser(queryset, many=True)
-
         return Response({"data": notifications_serialiser.data}, status=200)
 
     elif request.method == "DELETE":
-
-        notification_pk = request.GET["ntpk"]
-
+        notification_pk = request.GET.get("pk", -1)
         try:
-
             deleted = NotificationConditions.objects.get(
                 pk=int(notification_pk)
             ).delete()
             return Response(f"Deleted {deleted}", status=200)
-
         except Exception as e:
             return Response(e, status=500)
 
