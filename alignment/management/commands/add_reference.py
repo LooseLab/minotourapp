@@ -2,12 +2,14 @@
 The django admin management command to add reference files locations to the database,
 for mapping and metagenomics validation
 """
+import subprocess
 from pathlib import Path
 
 import pyfastx
 from django.core.management.base import BaseCommand, CommandError
 from rest_framework.authtoken.models import Token
 
+from minotourapp.settings import MINIMAP2, MEDIA_ROOT
 from reference.models import ReferenceInfo, ReferenceLine
 
 
@@ -122,11 +124,12 @@ class Command(BaseCommand):
                 )
             private = False
             # If we want private references
-            if options["private"]:
-                private = True
+            if options["key"]:
                 user = Token.objects.get(key=options["key"]).user
             else:
                 user = None
+            if options["private"]:
+                private = True
             # remove none from reference_files
             reference_files = list(filter(None.__ne__, reference_files))
             previous_ref = set(
@@ -134,7 +137,7 @@ class Command(BaseCommand):
             )
             # If it's private check we aren't multiplying an already existing private reference
             if options["private"]:
-                previous_ref = previous_ref.union(set(ReferenceInfo.objects.filter(private=True, owner=user)
+                previous_ref = previous_ref.union(set(ReferenceInfo.objects.filter(private=True, uploader=user)
                                                       .values_list("name", flat=True).distinct()))
             for ref_file in reference_files:
                 # Get the species name of this reference, no file suffixes
@@ -152,21 +155,30 @@ class Command(BaseCommand):
                         " please change the filename"
                     )
                     continue
-                # If the file is gzipped, unzip it
+                ## get fastq or fasta
                 handle = (
-                    pyfastx.Fastq
-                    if ref_file.suffix == ".gz"
-                    else pyfastx.Fasta
+                    pyfastx.Fasta
+                    if set(ref_file.suffixes).intersection(
+                        {".fna", ".fa", ".fsa", ".fasta"}
+                    )
+                    else pyfastx.Fastq
                 )
+                # build minimap2 index
+                minimap2_index_path = f"{MEDIA_ROOT}/minimap2_indexes/{ref_file.stem}.mmi"
+                print("Building minimap2 index, please wait.....")
+                subprocess.Popen(f"{MINIMAP2} -d {minimap2_index_path}"
+                                 f" {ref_file.as_posix()}".split()).communicate()
                 # Individual lines (I.E Chromosomes in the reference)
-                fa = handle(str(ref_file), build_index=False)
+                fa = handle(ref_file.as_posix())
                 # Create the Reference info entry in the database
                 ref_info, created = ReferenceInfo.objects.update_or_create(
                     name=ref_file_stem,
-                    filename=ref_file.name,
+                    file_location=ref_file.as_posix(),
+                    file_name=ref_file.name,
                     length=fa.size,
                     private=private,
-                    owner=user
+                    uploader=user,
+                    minimap2_index_file_location=minimap2_index_path
                 )
                 # Create a Reference line entry for each "Chromosome/line"
                 for contig in fa:
