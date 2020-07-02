@@ -255,4 +255,3 @@ def check_artic_static_exists():
         print("Artic Doesn't exist")
     if not (Path(BASE_DIR) / "artic" / "static" / "artic").exists():
         (Path(BASE_DIR) / "artic" / "static" / "artic").mkdir()
-    print("Done")
