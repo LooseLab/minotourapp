@@ -705,12 +705,17 @@ def get_target_sets(request):
             return Response("The API key is needed to list the Target sets", status=403)
         else:
             user_id = Token.objects.get(key=api_key).user_id
+            target_sets = (
+                MappingTarget.objects.filter(Q(owner_id=user_id) | Q(private=False))
+                    .values_list("target_set", flat=True)
+                    .distinct()
+            )
 
     else:
         user_id = request.user.id
-    target_sets = (
-        MappingTarget.objects.filter(Q(owner_id=user_id) | Q(private=False))
-        .values_list("target_set", flat=True)
-        .distinct()
-    )
+        target_sets = (
+            MappingTarget.objects.filter(Q(owner_id=user_id) | Q(private=False))
+            .values("target_set", "id")
+            .distinct()
+        )
     return Response(target_sets)
