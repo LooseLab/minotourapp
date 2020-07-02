@@ -391,7 +391,7 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids, fasta_df):
     :param pd.Series row: The row of the target dataframe for species with plasmid danger regions
     :param str species: The species name
     :param list fastq_list: The reads sequences
-    :param reads.models.Flowcell flowcell: The flowcell for logging by flowcell_id
+    :param reads.models.Flowcell flowcell: The flowcell for logging by flowcellId
     :param read_ids: reads ids of the reads being mapped
     :param fasta_df: dataframe containing the sequence data for the centrifuge classified reads that have filtered to
     target reads
@@ -628,10 +628,10 @@ def map_all_the_groups(
                         # make the ndarray into a dataframe
                         df_append = pd.DataFrame(df_plas)
                         # set the column names
-                        # df_append.columns = ["alignment_block_length", "flowcell_id", "id", "job_master_id",
+                        # df_append.columns = ["alignment_block_length", "flowcellId", "id", "job_master_id",
                         #                      "mapping_qual", "num_residue_matches",
                         #                      "query_end", "query_start", "query_seq_len", "read_id", "read_pk",
-                        #                      "reference_id", "rel_strand",
+                        #                      "referenceId", "rel_strand",
                         #                      "target_end", "target_start", "target_seq_len", "target_seq_name"]
 
                         df_append.rename(
@@ -685,8 +685,8 @@ def map_all_the_groups(
         return
 
     # The column names
-    # columns = ["alignment_block_length", "flowcell_id", "id", "job_master_id", "mapping_qual", "num_residue_matches",
-    #            "query_end", "query_start", "query_seq_len", "read_id", "read_pk", "reference_id", "rel_strand",
+    # columns = ["alignment_block_length", "flowcellId", "id", "job_master_id", "mapping_qual", "num_residue_matches",
+    #            "query_end", "query_start", "query_seq_len", "read_id", "read_pk", "referenceId", "rel_strand",
     #            "target_end", "target_start", "target_seq_len", "target_seq_name"]
     # # set the column name to above
     # map_df.columns = columns
