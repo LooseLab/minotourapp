@@ -4,11 +4,11 @@ from reference.models import ReferenceInfo, ReferenceLine
 
 
 class ReferenceInfoSerializer(serializers.ModelSerializer):
-
+    """
+    Serialiser for ReferenceInfos
+    """
     class Meta:
-
         model = ReferenceInfo
-
         fields = (
             'id',
             'name',
