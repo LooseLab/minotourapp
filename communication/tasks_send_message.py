@@ -189,7 +189,7 @@ def coverage_notification(condition):
         )
         return
     chromosome = condition.chromosome
-    reference = condition.reference_file
+    reference = condition.reference
     flowcell = condition.flowcell
     barcode_name = condition.barcode.name
     coverage_reached = check_coverage(
@@ -313,9 +313,9 @@ def check_condition_is_met():
         if not not not twitter_permission:
             logger.warning(f"This user does not have twitter permissions granted.")
             continue
-        if condition.type == "suff":
+        if condition.notification_type == "suff":
             check_artic_sufficient_coverage(condition)
-        if condition.type == "arti":
+        if condition.notification_type == "arti":
             check_artic_has_fired(condition)
         if condition.notification_type == "cov":
             coverage_notification(condition)
