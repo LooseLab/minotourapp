@@ -49,12 +49,10 @@ class NotificationSerialiser(serializers.ModelSerializer):
     """
     Serialiser used to retrieve the Notifications to be displayed in a table.
     """
-
     ref_name = serializers.ReadOnlyField(source="conditional_reference.name", default="N/A")
     chrom_line_name = serializers.ReadOnlyField(source="chromosome.line_name", default="N/A")
     # Get human readable name of Choice
     notification_type = serializers.CharField(read_only=True, source='get_notification_type_display')
-
     class Meta:
         model = NotificationConditions
         fields = (
@@ -68,7 +66,6 @@ class NotificationSerialiser(serializers.ModelSerializer):
             "chrom_line_name"
 
         )
-
     def to_representation(self, instance):
         my_fields = {'upper_limit', 'lower_limit', 'coverage_target'}
         data = super().to_representation(instance)
