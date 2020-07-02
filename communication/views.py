@@ -103,7 +103,7 @@ def get_references_for_condtions(request, pk):
         )
     ):
         b[jobs["reference_name"]].append(
-            (jobs["contig_name"], jobs["contig_id"], jobs["referenceId"])
+            (jobs["contig_name"], jobs["contig_id"], jobs["reference_id"])
         )
 
     return Response(b, status=status.HTTP_200_OK)
