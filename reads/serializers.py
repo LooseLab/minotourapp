@@ -650,7 +650,7 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """
         Create a new job master, courtesy of jobs./views.py ge_or_create_tasks post function
-        :param validated_data: Sent validated form data from MTask Controller to jobs.views task_list
+        :param validated_data: Sent validated form data from MinotourTask Controller to jobs.views task_list
         :return:
         """
         print(validated_data)
