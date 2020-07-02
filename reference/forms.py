@@ -9,4 +9,4 @@ class ReferenceForm(forms.ModelForm):
     """
     class Meta:
         model = ReferenceInfo
-        fields = ('file_location', 'md5_checksum', 'filename')
+        fields = ('file_location', 'md5_checksum', 'file_name')
