@@ -1,17 +1,21 @@
+import subprocess
 from pathlib import Path
 
 import pyfastx
 from django.db.models import Q
+from django.db.utils import IntegrityError
+from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from minotourapp.settings import MINIMAP2, MEDIA_ROOT
 from reference.forms import ReferenceForm
 from reference.models import ReferenceInfo, ReferenceLine
-from reference.serializers import (ReferenceInfoSerializer)
+from reference.serializers import ReferenceInfoSerializer
 
 
-@api_view(['GET', 'POST'])
+@api_view(["GET", "POST"])
 def reference_list(request):
     """
     Get a list of all references available to the User making the request.
@@ -23,70 +27,92 @@ def reference_list(request):
     -------
     rest_framework.response.Response
     """
-    print(request)
-    print(request.FILES)
     if request.method == "GET":
         if request.GET.get("names", False):
-            data = ReferenceInfo.objects.filter(Q(private=False) | Q(owner=request.user)).values_list("name", "id")
+            data = ReferenceInfo.objects.filter(
+                Q(private=False) | Q(uploader=request.user)
+            ).values_list("name", "id")
         else:
-            queryset = ReferenceInfo.objects.filter(Q(private=False) | Q(owner=request.user))
-            serializer = ReferenceInfoSerializer(queryset, many=True, context={'request': request})
+            queryset = ReferenceInfo.objects.filter(
+                Q(private=False) | Q(uploader=request.user)
+            )
+            serializer = ReferenceInfoSerializer(
+                queryset, many=True, context={"request": request}
+            )
             data = serializer.data
-        return Response(data, status=status.HTTP_200_OK)
+        return Response({"data": data}, status=status.HTTP_200_OK)
     elif request.method == "POST":
-        print(request.data)
-        print(request.FILES)
-        file_names = request.data.get("filename", [])
-        print(file_names)
+        file_names = request.data.get("file_name", [])
         if not isinstance(file_names, list):
             file_names = [file_names]
-        # md5_checksums = request.data.get("md5", None)
-        # files = request.FILES
-        # for field_name, file in request.FILES.items():
-        #     print(file)
-        #     print(dir(file))
-        #     print(gzip.open(BytesIO(file.read()), "rt").read())
-        #     with open
         form = ReferenceForm(request.POST, request.FILES)
         if form.is_valid():
-            files = request.FILES.getlist('file_location')
-            print(files)
+            files = request.FILES.getlist("file_location")
             for index, file in enumerate(files):
-                print(file)
                 file_name = Path(file_names[index])
                 name = file_name.stem
                 ref_info = ReferenceInfo(
-                    filename=file_names[0],
+                    file_name=file_names[index],
                     name=name,
                     file_location=file,
-                    owner=request.user
+                    uploader=request.user,
                 )
-                ref_info.save()
-                # If the file is gzipped, unzip it
+                try:
+                    ref_info.save()
+                except IntegrityError as e:
+                    return Response(
+                        f"Duplicate upload attempted. File - {file_names[index]}",
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+                # get fastq or fasta
                 handle = (
-                    pyfastx.Fastq
-                    if file_name.suffix == ".gz"
-                    else pyfastx.Fasta
+                    pyfastx.Fasta
+                    if set(file_name.suffixes).intersection(
+                        {".fna", ".fa", ".fsa", ".fasta"}
+                    )
+                    else pyfastx.Fastq
                 )
+                # build minimap2 index
+                minimap2_index_file_location = (
+                    f"{MEDIA_ROOT}/minimap2_indexes/{file_name.stem}.mmi"
+                )
+                subprocess.Popen(
+                    f"{MINIMAP2} -d {minimap2_index_file_location}"
+                    f" {ref_info.file_location.path}".split()
+                ).communicate()
                 fa = handle(ref_info.file_location.path)
                 # Create the Reference info entry in the database
                 ref_info, created = ReferenceInfo.objects.update_or_create(
-                    length=fa.size,
+                    file_name=file_names[0],
+                    defaults={
+                        "length": fa.size,
+                        "minimap2_index_file_location": minimap2_index_file_location,
+                    },
                 )
                 # Create a Reference line entry for each "Chromosome/line"
                 for contig in fa:
                     ReferenceLine.objects.create(
-                        reference=ref_info, line_name=contig.name, chromosome_length=len(contig)
+                        reference=ref_info,
+                        line_name=contig.name,
+                        chromosome_length=len(contig),
                     )
-
-            # form.save()
-            # print(ReferenceInfo.objects.filter(filename__in=file_names))
-            # queryset = ReferenceInfo.objects.filter(filename__in=file_names)
-            # for new_ref_file in queryset:
-            #     print(new_ref_file.__dict__)
-            # # TODO handle file here
-
-            print("HRLLO")
-            return Response('Hello')
+            return Response("Hello")
         else:
-            return Response("INVALID FORM?", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response(
+                "INVALID FORM?", status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+@api_view(["GET"])
+def reference_manager(request):
+    """
+
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The request object of the AJAX request
+    Returns
+    -------
+
+    """
+    return render(request, "reference_manager.html", context={"request": request})
