@@ -533,39 +533,16 @@ def get_run_details(run_id):
 
             else:
 
-                element = {
-                    "runid": None,
-                    "run_start_time": None,
-                    "first_read": None,
-                    "last_read": None,
-                    "minknow_computer_name": None,
-                    "minion_id": None,
-                    "asic_id": None,
-                    "sequencing_kit": None,
-                    "purpose": None,
-                    "minknow_version": None,
-                    "flowcell_type": None,
-                    "flowcell_id": None,
-                    "sample_name": None,
-                    "experiment_name": None,
-                    "read_count": None,
-                    "total_read_length": None,
-                    "max_read_length": None,
-                    "min_read_length": None,
-                    "avg_read_length": None,
-                    "first_read_start_time": None,
-                    "last_read_start_time": None,
-                }
-
-                element["id"] = run.id
-                element["runid"] = run.summary.run.runid
-                element["read_count"] = run.summary.read_count
-                element["total_read_length"] = run.summary.total_read_length
-                element["max_read_length"] = run.summary.max_read_length
-                element["min_read_length"] = run.summary.min_read_length
-                element["avg_read_length"] = run.summary.avg_read_length
-                element["first_read_start_time"] = run.summary.first_read_start_time
-                element["last_read_start_time"] = run.summary.last_read_start_time
+                element = {"runid": run.summary.run.runid, "run_start_time": None, "first_read": None,
+                           "last_read": None, "minknow_computer_name": None, "minion_id": None, "asic_id": None,
+                           "sequencing_kit": None, "purpose": None, "minknow_version": None, "flowcell_type": None,
+                           "flowcellId": None, "sample_name": None, "experiment_name": None,
+                           "read_count": run.summary.read_count, "total_read_length": run.summary.total_read_length,
+                           "max_read_length": run.summary.max_read_length,
+                           "min_read_length": run.summary.min_read_length,
+                           "avg_read_length": run.summary.avg_read_length,
+                           "first_read_start_time": run.summary.first_read_start_time,
+                           "last_read_start_time": run.summary.last_read_start_time, "id": run.id}
 
                 result[element["runid"]] = element
 
