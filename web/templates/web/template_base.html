@@ -10,7 +10,6 @@
     <link rel="apple-touch-icon" sizes="72x72" href="{% static 'web/img/minitour72.png' %}">
     <link rel="apple-touch-icon" sizes="114x114" href="{% static 'web/img/minitour114.png' %}">
     <link rel="apple-touch-icon" sizes="144x144" href="{% static 'web/img/minitour144.png' %}">
-    <link rel="stylesheet", href="{% static 'web/css/dropzone.css' %}">
     <link rel="mask-icon" href="{% static 'web/img/minotour.svg' %}" color="yellow">
     <!-- Tell the browser to be responsive to screen width -->
     <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
@@ -56,7 +55,6 @@
     <script src="{% static 'web/js/models/CoverageChart.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/controllers/CoverageChartController.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/flowcell/requestMinknowMessages.js' %}?{% now 'c' %}"></script>
-    <script src="{% static 'web/js/flowcell/requestTasks.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/flowcell/requestGfaData.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/flowcell/requestData.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/flowcell/requestRunDetails.js' %}?{% now 'c' %}"></script>
@@ -70,14 +68,13 @@
     <script src="{% static 'web/js/controllers/FlowcellTableController.js' %}"></script>
     <script src="{% static 'web/js/views/MView.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/models/Flowcell.js' %}?{% now 'c' %}"></script>
-    <script src="{% static 'web/js/models/MTask.js' %}?{% now 'c' %}"></script>
-    <script src="{% static 'web/js/models/MTaskList.js' %}?{% now 'c' %}"></script>
-    <script src="{% static 'web/js/models/MMessage.js' %}?{% now 'c' %}"></script>
+    <script src="{% static 'web/js/models/MinotourTask.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/services/HttpService.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/services/FlowcellService.js' %}?{% now 'c' %}"></script>
-    <script src="{% static 'web/js/controllers/MTaskController.js' %}?{% now 'c' %}"></script>
-    <script src="{% static 'web/js/controllers/MSharingController.js' %}?{% now 'c' %}"></script>
-    <script src="{% static 'web/js/views/MMessageView.js' %}?{% now 'c' %}"></script>
+    <script src="{% static 'web/js/controllers/TasksController.js' %}?{% now 'c' %}"></script>
+    <script src="{% static 'web/js/controllers/SharingController.js' %}?{% now 'c' %}"></script>
+    <script src="{% static 'web/js/controllers/ReferenceManagementController.js' %}?{% now 'c' %}"></script>
+    <script src="{% static 'web/js/views/MessageView.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/controllers/FlowcellNotificationController.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/controllers/ArticController.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/FlowcellPageApp.js' %}?{% now 'c' %}"></script>
