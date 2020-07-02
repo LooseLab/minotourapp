@@ -36,6 +36,8 @@
         "makeAreaPlot": "writable",
         "makeLiveChart": "writable",
         "makeHeatmapChart": "writable",
-        "makePieChart": "writable"
+        "makePieChart": "writable",
+        "MinotourTask": "writable",
+        "MessageView": "writable"
     }
 }
