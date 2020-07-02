@@ -25,17 +25,10 @@ function requestData (flowcell_id) {
       this.requestRunDetails(flowcell_id)
       /// / append a messages html tableonto the messages div of the summaries tab
       requestMinknowMessages(flowcell_id, data)
-    } else if (flowcellSelectedTabInput == `tasks`) {
-      // If we are on the tasks tab
-      // Load the tasks form for selecting a task and reference and submitting a ne wtask
-      loadTasksForm()
-      // Load the flowcell tasks history table
-
-      this.flowcellTaskHistoryTable(flowcell_id)
     } else if (flowcellSelectedTabInput == `reads`) {
       requestReadData(flowcell_id)
     } else if (flowcellSelectedTabInput == `live-event-data`) {
-      // this.requestRunDetails(flowcell_id);
+      // this.requestRunDetails(flowcellId);
       this.requestLiveRunStats(flowcell_id)
     } else if (flowcellSelectedTabInput == `metagenomics`) {
       // The intervals for updating the charts are found in the individual files in the vis-d3 directory
@@ -69,12 +62,10 @@ function requestData (flowcell_id) {
         // update the metadata header
       })
     } else if (flowcellSelectedTabInput == `advanced-sequence-mapping`) {
-      // this.requestAdvancedPafData(flowcell_id);
+      // this.requestAdvancedPafData(flowcellId);
       this.drawReadUntilCharts()
     } else if (flowcellSelectedTabInput == `sequence-assembly`) {
       this.requestGfaData(flowcell_id)
-    } else if (flowcellSelectedTabInput == `notifications`) {
-      notificationsController.getReferencesForDataList()
     }
   }.bind(this))
 };
