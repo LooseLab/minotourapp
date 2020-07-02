@@ -4,6 +4,7 @@
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
+
 from reads.models import Barcode, JobMaster
 from reads.models import Flowcell
 from reference.models import ReferenceInfo
@@ -20,7 +21,7 @@ class SankeyLink(models.Model):
         :target: (str) - The target node, that the link ends at, for example proteobacteria
         :value: (int) - The num of matches illustrated by that link
         :tax_id: (int) - The tax_id of the target node
-        :flowcell_id: (int) - The flowcell id that the centrifuger class was run on
+        :flowcellId: (int) - The flowcell id that the centrifuger class was run on
         :task: (fk JobMaster) - The corresponding jobMaster object, used to separate the datasets
         :target_tax_level: - The taxa level of the target node, i.e Phylum for Bacteria (kingdom) \
         to ProteoBacteria (Phylum)
@@ -58,7 +59,7 @@ class Metadata(models.Model):
 
         :timestamp: (datetime) - Start of the analysis task
         :runtime: (str) - Time taken to run
-        :flowcell_id: (int) - The Flowcell ID
+        :flowcellId: (int) - The Flowcell ID
         :task: (JobMaster Object) FK - the task record in the JobMaster that started this analysis
         :running: (bool) - If the analysis is currently running
         :number_of_reads: (int) - Number of reads in Flowcell
@@ -93,7 +94,7 @@ class CentrifugeOutput(models.Model):
         :tax_id: (int) - The taxonomic ID of this species
         :num_matches: (int) - The number of centrifuge matches to this species in this analysis
         :sum_unique: (int) - The number of centrifuge matches that match uniquely to this species
-        :flowcell_id: (int) - The Id of the flowcell the reads came from
+        :flowcellId: (int) - The Id of the flowcell the reads came from
         :task: (JobMaster Object) FK - the task record in the JobMaster that started this analysis
     """
 
