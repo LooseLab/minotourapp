@@ -248,7 +248,7 @@ def get_artic_summary_table_data(request):
 
     if not flowcell_id:
         return Response(
-            "Please specify a flowcell_id parameter.",
+            "Please specify a flowcellId parameter.",
             status=status.HTTP_400_BAD_REQUEST,
         )
     artic_task = JobMaster.objects.filter(
@@ -391,7 +391,7 @@ def manually_create_artic_command_job_master(request):
     Parameters
     ----------
     request: rest_framework.request.Request
-        Django rest framework request object. Should contain flowcell_id, job_master_id, barcode_name as data.
+        Django rest framework request object. Should contain flowcellId, job_master_id, barcode_name as data.
     Returns
     -------
     status: int
@@ -403,7 +403,7 @@ def manually_create_artic_command_job_master(request):
     reference_name = "covid_19"
     if not job_type_id or not barcode_name or not flowcell_id:
         return Response(
-            "Flowcell id, barcode id, job_type_id are required fields.",
+            "Flowcell id, barcode id, jobTypeId are required fields.",
             status=status.HTTP_400_BAD_REQUEST,
         )
     try:
