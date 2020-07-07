@@ -239,14 +239,19 @@ def per_genome_coverage_summary(request, flowcell_pk):
     list of dict
 
     """
-    queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk).values("chromosome__line_name").annotate(
-        Sum("coverage"), Avg("average_read_length"))
+    query = PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk)
+    if query.count() < 30:
+        queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk).values(data_name=F("chromosome__line_name")).annotate(
+            Sum("coverage"), Avg("average_read_length"))
+    else:
+        queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk).values(data_name=F("chromosome__reference__name")).annotate(
+            Sum("coverage"), Avg("average_read_length"))
     chromosome_coverage = []
     chromosome_average_read_length = []
     for chromosome in queryset:
         chromosome_coverage.append(
-            {"name": chromosome["chromosome__line_name"], "data": [chromosome["coverage__sum"]]})
+            {"name": chromosome["data_name"], "data": [chromosome["coverage__sum"]]})
         chromosome_average_read_length.append(
-            {"name": chromosome["chromosome__line_name"], "data": [chromosome["average_read_length__avg"]]})
+            {"name": chromosome["data_name"], "data": [chromosome["average_read_length__avg"]]})
     results = {"coverageData": chromosome_coverage, "avgRLData": chromosome_average_read_length}
     return Response(results, status=status.HTTP_200_OK)
