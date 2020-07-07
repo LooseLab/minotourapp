@@ -5,15 +5,20 @@ from reference.models import ReferenceInfo, ReferenceLine
 
 
 class PafRoughCov(models.Model):
+    """
+    Stores the PafCoverage in bins of ten, stores data for the Mapping Master/Detail chart
+    """
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['bin_position_start'], name='position_index'),
+        ]
     job_master = models.ForeignKey(
-        JobMaster, on_delete=models.CASCADE, related_name="pafroughcov_list"
+        JobMaster, on_delete=models.CASCADE, related_name="paf_rough_cov_list"
     )
-
     run = models.ForeignKey(
         Run, on_delete=models.CASCADE, related_name="prc_run", null=True, blank=True
     )
-
     flowcell = models.ForeignKey(
         Flowcell,
         on_delete=models.CASCADE,
@@ -21,7 +26,6 @@ class PafRoughCov(models.Model):
         null=True,
         blank=True,
     )
-
     grouprun = models.ForeignKey(
         GroupRun,
         on_delete=models.CASCADE,
@@ -29,29 +33,21 @@ class PafRoughCov(models.Model):
         null=True,
         blank=True,
     )
-
     read_type = models.ForeignKey(
         FastqReadType, related_name="prc_type", on_delete=models.DO_NOTHING,
     )
-
     is_pass = models.BooleanField()  # pass = true, fail = false
-
     barcode = models.ForeignKey(
         Barcode, related_name="prc_barcode", null=True, on_delete=models.DO_NOTHING,
     )
-
     reference = models.ForeignKey(
-        ReferenceInfo, related_name="pafreference", on_delete=models.DO_NOTHING,
+        ReferenceInfo, related_name="paf_reference", on_delete=models.DO_NOTHING,
     )
-
     chromosome = models.ForeignKey(
-        ReferenceLine, related_name="pafchromosome", on_delete=models.DO_NOTHING,
+        ReferenceLine, related_name="paf_chromosome", on_delete=models.DO_NOTHING,
     )
-
     bin_position_start = models.IntegerField(default=0)  # position
-
     bin_position_end = models.IntegerField(default=0)
-
     bin_coverage = models.IntegerField(default=0)
 
     def __str__(self):
@@ -66,16 +62,13 @@ class PafSummaryCov(models.Model):
     job_master = models.ForeignKey(
         JobMaster, on_delete=models.CASCADE, related_name="paf_summary_cov_list"
     )
-
     barcode = models.ForeignKey(
         Barcode,
         on_delete=models.CASCADE,
         related_name="barcode_paf_summaries",
         null=True
     )
-
     barcode_name = models.CharField(max_length=32)
-
     chromosome = models.ForeignKey(
         ReferenceLine,
         related_name="paf_summary_chromosome",
@@ -84,22 +77,17 @@ class PafSummaryCov(models.Model):
     )
     # TODO to be deleted, use field from chromosome
     reference_line_length = models.BigIntegerField()
-
     read_count = models.BigIntegerField(default=0)
-
     total_yield = models.BigIntegerField(default=0)
-
     read_type = models.ForeignKey(
         FastqReadType,
         related_name="paf_summary_read_type",
         on_delete=models.SET_NULL,
         null=True,
     )
-
     coverage = models.IntegerField(
         default=0
     )
-
     average_read_length = models.IntegerField(
         default=0
     )
