@@ -14,7 +14,7 @@ from django.db.models import Sum
 from django.utils import timezone
 from ete3 import NCBITaxa
 
-from alignment.tasks_alignment import align_reads
+# from alignment.tasks_alignment import align_reads
 from centrifuge.models import (
     CentrifugeOutput,
     LineageValue,
@@ -418,7 +418,7 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids, fasta_df):
         job_type=map_job_type, flowcell=flowcell, reference=reference
     )
     # Call the align reads function from the web tasks-alignment file so we can map the reads against the reference
-    align_reads(fastq_list, mapping_task.id, fasta_df)
+    # align_reads(fastq_list, mapping_task.id, fasta_df)
     # Get the output of the align reads function
     map_output = PafStore.objects.filter(
         job_master=mapping_task, qsn__in=read_ids
@@ -572,16 +572,16 @@ def map_all_the_groups(
     fasta_df = pd.DataFrame(b)
 
     # Call the align_reads function to perform the mapping, funciton found in web tasks_alignment
-    align_reads(fastqs, mapping_task.id, fasta_df)
+    # align_reads(fastqs, mapping_task.id, fasta_df)
 
-    # Get the output for this mapping (if any) from the database
-    map_output = PafStore.objects.filter(
-        job_master=mapping_task, qsn__in=read_ids
-    )
+    # # Get the output for this mapping (if any) from the database
+    # map_output = PafStore.objects.filter(
+    #     job_master=mapping_task, qsn__in=read_ids
+    # )
 
-    logger.info(
-        "Flowcell id: {} - minimap output {} ".format(flowcell.id, map_output)
-    )
+    # logger.info(
+    #     "Flowcell id: {} - minimap output {} ".format(flowcell.id, map_output)
+    # )
 
     # Initialise a dataframe to store the results of mapping to the plasmid
     plasmid_red_df = pd.DataFrame()
@@ -672,6 +672,7 @@ def map_all_the_groups(
                 return
 
     # if there is mapping output (non plasmid) for the reference
+    map_output = None
     if map_output:
         # create a dataframe of the results
         map_df = pd.DataFrame(list(map_output.values()))
