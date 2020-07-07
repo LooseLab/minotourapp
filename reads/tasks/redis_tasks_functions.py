@@ -490,11 +490,12 @@ def save_reads_bulk(reads):
         time.sleep(10)
         count = redis_instance.scard("reads")
 
-    minimap2tasks = redis_instance.get("minimaptasks")
-    while int(minimap2tasks) > 2:
-        print ("waiting for minimap")
-        time.sleep(10)
-        minimap2tasks = redis_instance.get("minimaptasks")
+    # minimap2tasks = redis_instance.get("minimaptasks")
+    # if not min
+    # while int(minimap2tasks) > 2:
+    #     print ("waiting for minimap")
+    #     time.sleep(10)
+    #     minimap2tasks = redis_instance.get("minimaptasks")
 
     redis_instance.sadd("reads", reads_as_json)
     # Bulk create the entries
