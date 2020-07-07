@@ -32,6 +32,11 @@ class TasksController {
     this._targetSetList = new Set()
     this._addListenerToTasksForm()
     this._targetSetList.add(`<option value="-1">-- Please Choose --</option>`)
+    this._interval = setInterval(this._flowcellTaskHistoryTable, 30000, this._flowcellId)
+    $(window).on(`unload`, function () {
+      console.log(`clearing task interval`)
+      clearInterval(this._interval)
+    })
   }
 
   _addListenerToTasksForm () {
@@ -94,14 +99,14 @@ class TasksController {
         if (event.target.value === this._flowcellName) {
           icon.removeClass(`disallowed`)
           icon.addClass(`allowed`)
-          $(`#submit-task`).attr(`disabled`, false)
+          $(`#submit-task-delete`).attr(`disabled`, false)
         } else {
           icon.removeClass(`allowed`)
           icon.addClass(`disallowed`)
-          $(`#submit-task`).attr(`disabled`, true)
+          $(`#submit-task-delete`).attr(`disabled`, true)
         }
       })
-      $(`#submit-task`).on(`click`, event => {
+      $(`#submit-task-delete`).on(`click`, event => {
         $(`#confirm-submit`).modal(`hide`)
         this._submitDeleteTask(taskNew)
       })
