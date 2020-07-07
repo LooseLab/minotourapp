@@ -112,7 +112,7 @@ def new_minion_message(sender, instance=None, created=False, **kwargs):
         )
         # Messages sent as Warnings (Severity 2), Messages sent as Errors (Severity 3)
         if int(instance.severity) > 1:
-            queryset = queryset.filter(notification_type="w/e")
+            queryset = queryset.filter(notification_type="waer")
         # Mux messages me thinks
         elif instance.message.startswith("Flow cell"):
             queryset = queryset.filter(notification_type="mux")
