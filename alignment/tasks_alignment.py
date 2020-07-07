@@ -137,7 +137,6 @@ def save_summary_coverage(row, job_master_id):
         reference_line_length=row[6],
         read_type_id=row["read_type_id"],
     )
-
     paf_summary_cov.total_yield += row["yield"]
     paf_summary_cov.read_count += row["read_count"]
     paf_summary_cov.coverage = round(paf_summary_cov.total_yield / int(row[6]), 2)
