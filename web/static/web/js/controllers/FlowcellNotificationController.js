@@ -52,7 +52,6 @@ class FlowcellNotificationController {
           this._referenceSet.add(`<option value="${value[0][2]}">${key}</option>`)
           // Value [0] is the contig name, value[1] is the contig PK
           value.forEach(([contigName, contigPk, referenceId]) => {
-            console.log(contigPk)
             if (!(referenceId in this._contigSet)) {
               this._contigSet[referenceId] = new Set()
             }
