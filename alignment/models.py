@@ -85,7 +85,7 @@ class PafSummaryCov(models.Model):
         on_delete=models.SET_NULL,
         null=True,
     )
-    coverage = models.IntegerField(
+    coverage = models.FloatField(
         default=0
     )
     average_read_length = models.IntegerField(
