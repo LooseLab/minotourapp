@@ -99,7 +99,7 @@ def paf_summary_table_json(request, pk):
 
 
 @api_view(["GET"])
-def flowcell_paf_summary_cov(request, pk):
+def per_barcode_coverage_summary(request, pk):
     """
     Return the data used to draw the per barcode column charts on the mapping summary page.
     Parameters

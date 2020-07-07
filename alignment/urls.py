@@ -10,8 +10,8 @@ urlpatterns = [
     ),
     url(
         r'^api/v1/alignment/(?P<pk>[0-9]+)/pafsummary/$',
-        views.flowcell_paf_summary_cov,
-        name="flowcell_paf_summary_cov"
+        views.per_barcode_coverage_summary,
+        name="per_barcode_coverage_summary"
     ),
     url(
         r'^api/v1/alignment/(?P<flowcell_id>[0-9]+)/mapped-references/$',
