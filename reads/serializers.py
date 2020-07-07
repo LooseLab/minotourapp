@@ -493,13 +493,13 @@ class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
 
             JobMaster.objects.create(
                 flowcell=flowcell,
-                job_type=JobType.objects.filter(name="UpdateFlowcellDetails")[0],
+                job_type=JobType.objects.get(name="UpdateFlowcellDetails"),
                 last_read=0
             )
             # If user has allowed us to tweet them
             if UserOptions.objects.get(owner=flowcell.owner).tweet:
                 # Auto create a Warnings and error notification
-                NotificationConditions(notification_type="w/e", flowcell=flowcell,
+                NotificationConditions(notification_type="waer", flowcell=flowcell,
                                        creating_user=flowcell.owner).save()
                 # Auto create a mux notification
                 NotificationConditions(notification_type="mux", flowcell=flowcell,
