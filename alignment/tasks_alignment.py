@@ -129,7 +129,6 @@ def save_summary_coverage(row, job_master_id):
     -------
 
     """
-
     paf_summary_cov, created = PafSummaryCov.objects.get_or_create(
         job_master_id=job_master_id,
         barcode_name=row["barcode_name"],
@@ -141,7 +140,7 @@ def save_summary_coverage(row, job_master_id):
 
     paf_summary_cov.total_yield += row["yield"]
     paf_summary_cov.read_count += row["read_count"]
-    paf_summary_cov.coverage = round(paf_summary_cov.total_yield / row[6])
+    paf_summary_cov.coverage = round(paf_summary_cov.total_yield / int(row[6]), 2)
     paf_summary_cov.average_read_length = round(
         paf_summary_cov.total_yield / paf_summary_cov.read_count, 2
     )
@@ -292,7 +291,6 @@ def paf_rough_coverage_calculations(df, job_master):
         inplace=True,
     )
     # df.sort_index(inplace=True)
-    ###ToDo: this is really slow
     df["end_bin_coverage"] = df.groupby(
         ["read_type_id", "chromosome_pk", "barcode_id", "mapping_end_bin_start"]
     ).size()
@@ -363,7 +361,8 @@ def paf_summary_calculations(df, job_master_id):
         df.set_index(["type__name", "tsn", "barcode_name"], inplace=True)
     df[["yield", "read_count"]] = df.groupby(
         level=["type__name", "tsn", "barcode_name"]
-    ).agg({"mapping_length": np.sum, 1: np.size})
+    ).agg({"mapping_length": np.sum, "sequence_length": np.size})
+    df[6] = df[6].astype(int)
     df = df.loc[~df.index.duplicated()]
     df.reset_index(inplace=True)
     df.apply(save_summary_coverage, args=(job_master_id,), axis=1)
@@ -378,6 +377,8 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
         The PK of the Jobmaster entry.
     fasta_df_barcode: pandas.core.frame.DataFrame
         DataFrame containing all the sequence data that we need.
+    super_function: MappingServer
+        Mapping server class for managing mappy
 
     Returns
     -------
@@ -430,7 +431,7 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
     # return test_df
 
     paf_df = paf_df.rename(
-        columns={0: "read_id", 5: "tsn", 7: "mapping_start", 8: "mapping_end", 11: "mq"}
+        columns={0: "read_id", 1: "sequence_length", 5: "tsn", 7: "mapping_start", 8: "mapping_end", 11: "mq"}
     )
     paf_df = paf_df.apply(pd.to_numeric, errors="ignore")
 
@@ -454,7 +455,7 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
         left_index=True,
         right_index=True,
     )
-    df["mapping_length"] = df["mapping_end"] - df["mapping_end"]
+    df["mapping_length"] = df["mapping_end"] - df["mapping_start"]
     # return
     # Todo: should this be "No barcode" rather than "no barcode"?
     # TODO should these go to a chain, final in chain deletes the paf results in redis
