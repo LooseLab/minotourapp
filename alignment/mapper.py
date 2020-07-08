@@ -1,12 +1,12 @@
 import time
 
 import mappy as mp
-from celery import Task
 from celery.utils.log import get_task_logger
 
 logger = get_task_logger(__name__)
 
-class MappingServer(Task):
+
+class MappingServer:
 
     """
     This class exists to provide a stable list of references to map against.
@@ -21,13 +21,10 @@ class MappingServer(Task):
     interval: int
         The amount of time that a reference going unused will be tolerated before it is closed.
     """
-
-    # def __init__(self):
-
-    references = {""}
-    mapping_objects = {}
-    interval = 1800  # Check every 30 minutes to see if a reference has been used - delete it if it hasn't been used.
-        # self.references.add("camel")
+    def __init__(self):
+        self.references = {""}
+        self.mapping_objects = {}
+        self.interval = 1800  # Check every 30 minutes to see if a reference has been used - delete it if it hasn't been used.
 
     def reference_monitor(self):
         """
@@ -72,7 +69,6 @@ class MappingServer(Task):
         else:
             logger.info("Already loaded")
         logger.info(self.references)
-
 
     def delete_reference(self, reference):
         """
@@ -144,8 +140,8 @@ class MappingServer(Task):
         ----------
         reference: str
             The name of the reference to be mapped against
-        sequence: str
-            The string sequence to be mapped
+        sequence: collections.namedtuple
+            Named tuple of Sequence string and read ID
         Returns
         -------
         list of str
@@ -173,5 +169,6 @@ class MappingServer(Task):
         None
         """
         self.mapping_objects[reference]["last_used"] = time.time()
+
 
 MAP = MappingServer()
