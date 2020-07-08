@@ -22,7 +22,6 @@ from rest_framework.response import Response
 
 from alignment.models import PafRoughCov
 from artic.models import ArticBarcodeMetadata
-from assembly.models import GfaStore
 from centrifuge.models import CentrifugeOutput
 from minotourapp import settings
 from reads.models import (
@@ -2333,11 +2332,6 @@ def flowcell_tabs_list(request, pk):
         tabs.append("metagenomics")
 
     # Check for assembly data
-
-    assembly_output_list = GfaStore.objects.filter(flowcell=pk)
-
-    if assembly_output_list.count() > 0:
-        tabs.append("sequence-assembly")
 
     # TODO add an actual check here
     if JobMaster.objects.filter(
