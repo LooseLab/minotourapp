@@ -42,11 +42,11 @@ class MappingServer:
                     self.mapping_objects[reference]["last_used"]
                     < time.time() - self.interval
             ):
-                logger.info("This reference is old.")
+                logger.info(f"This reference is old {reference}")
                 self.delete_reference(reference)
                 self.mapping_objects.pop(reference)
             else:
-                logger.info("This reference is OK.")
+                logger.info(f"This reference is OK: {reference}")
             
     def add_reference(self, reference, filepath):
         """
