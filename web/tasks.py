@@ -64,7 +64,7 @@ def run_monitor():
 
             if flowcell_job.job_type.name == "Minimap2" and flowcell_job.from_database:
 
-                run_minimap2_alignment.delay(flowcell_job.id,)
+                run_minimap2_alignment.apply_async(args=(flowcell_job.id,), queue="minimap")
 
             if flowcell_job.job_type.name == "Metagenomics":
 
