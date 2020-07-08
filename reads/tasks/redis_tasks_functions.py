@@ -397,7 +397,7 @@ def sort_reads_by_flowcell_fire_tasks(reads):
                 run_artic_pipeline.delay(task["id"], flowcell_reads)
             elif task["job_type_id"] == 4 and not task["from_database"]:
                 redis_instance.incr("minimaptasks")
-                run_minimap2_alignment.delay(task["id"], flowcell_reads)
+                run_minimap2_alignment.apply_async(args=(task["id"], flowcell_reads), queue="minimap")
 
 
 @task()
