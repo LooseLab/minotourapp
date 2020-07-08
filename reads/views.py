@@ -2793,7 +2793,6 @@ def job_master_list(request):
                 },
                 status=status.HTTP_401_UNAUTHORIZED,
             )
-
         # Check to see if we have a string as the flowcell, not an Int for a PK based lookup
         # This is for starting a job from the client
 
@@ -2801,10 +2800,10 @@ def job_master_list(request):
         if int(request.data["job_type"]) not in [4, 15, 16]:
             request.data["reference"] = None
             # Hard set the covid reference
-        if int(request.data["job_type"]) == 16:
-            print("we are setting covid reference")
-            reference = ReferenceInfo.objects.get(name="covid_19")
-            request.data["reference"] = reference.id
+        # if int(request.data["job_type"]) == 16:
+        #     print("we are setting covid reference")
+        #     reference = ReferenceInfo.objects.get(name="covid_19")
+        #     request.data["reference"] = reference.id
 
         # For client side job starting, check if we have a reference and it's a string
         if (
@@ -2836,6 +2835,7 @@ def job_master_list(request):
             return JsonResponse(response_data)
 
         else:
+            print(serializer.errors)
             return JsonResponse({"error_messages": serializer.errors}, status=500)
 
 
