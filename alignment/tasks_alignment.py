@@ -11,7 +11,6 @@ from django.db.models import F
 
 from alignment.mapper import MAP
 from alignment.models import PafRoughCov, PafSummaryCov
-# from celery import task, Task
 from minotourapp.celery import app
 from reads.models import FastqRead, JobMaster
 from reference.models import ReferenceInfo
@@ -27,13 +26,12 @@ redis_instance = redis.StrictRedis(
 @app.task
 def remove_old_references():
     """
-    Remove old references from the mapping task
+    Remove old references from the mapping task, if they haven't been used for the pre specified time
     Returns
     -------
 
     """
-
-
+    MAP.reference_monitor()
 
 
 @app.task
