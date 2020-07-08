@@ -129,7 +129,7 @@ class TasksController {
       ).catch(
         error => {
           console.error(error)
-          self._messageView.update(`Problem creating task ${error.response.data}`)
+          self._messageView.update(`Problem creating task: ${error.response.data.error_messages.non_field_errors[0]}`)
         }
       )
   }
@@ -234,7 +234,6 @@ class TasksController {
       const jobTypeId = this._selectJobType.val()
       // If there is not a value set
       const label = $(`#select-label`)
-      console.log(event)
       if (jobTypeId === `10`) {
         label.html(`Target Sets`)
         axios.get(`/api/v1/metagenomics/targetsets`).then(
@@ -246,7 +245,7 @@ class TasksController {
           }
         )
         referenceSelect.attr(`disabled`, false)
-      } else if (jobTypeId === `4`) {
+      } else if ([`4`, `16`].includes(jobTypeId)) {
         referenceSelect.attr(`disabled`, false)
       } else {
         referenceSelect.attr(`disabled`, true)
