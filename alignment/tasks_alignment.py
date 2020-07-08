@@ -24,7 +24,18 @@ redis_instance = redis.StrictRedis(
 
 
 # TODO don't stream reads, pull them out of redis here pass UUid, add ignore results
-# @task(base=MappingServer)
+@app.task
+def remove_old_references():
+    """
+    Remove old references from the mapping task
+    Returns
+    -------
+
+    """
+
+
+
+
 @app.task
 def run_minimap2_alignment(job_master_id, streamed_reads=[]):
     """
@@ -54,7 +65,7 @@ def run_minimap2_alignment(job_master_id, streamed_reads=[]):
     if not streamed_reads:
         # The chunk size of reads from this flowcell to fetch from the database
         # aim for 50 megabases
-        desired_yield = 100 * 1000000
+        desired_yield = 1 * 1000000
         chunk_size = round(desired_yield / avg_read_length)
         logger.debug(f"Fetching reads in chunks of {chunk_size} for alignment.")
         fasta_df_barcode = pd.DataFrame().from_records(
