@@ -131,6 +131,7 @@ class ReferenceManagementController {
                     $(`#uploadProgressBar`).css(`width`, `${Math.round((progressEvent.loaded * 100) / totalLength)}%`)
                     console.log(Math.round((progressEvent.loaded * 100) / totalLength))
                   }
+                  this._datatableObj.ajax.reload(null, false)
                 },
                 method: `post`
               }
@@ -181,11 +182,11 @@ class ReferenceManagementController {
   }
 
   /**
-     *
-     * @param message {string} Message to display
-     * @param timeout {number} Time to wait until resetting modal
-     * @private
-     */
+   *
+   * @param message {string} Message to display
+   * @param timeout {number} Time to wait until resetting modal
+   * @private
+   */
   _modalError (message, timeout) {
     if (message.length) {
       $(`#mdbup`).html(message)
