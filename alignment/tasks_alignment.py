@@ -35,7 +35,7 @@ def remove_old_references():
 
 
 @app.task
-def run_minimap2_alignment(job_master_id, streamed_reads=[]):
+def run_minimap2_alignment(job_master_id, streamed_reads=None):
     """
     Run a minimap2 based alignment.
     Parameters
@@ -63,7 +63,7 @@ def run_minimap2_alignment(job_master_id, streamed_reads=[]):
     if not streamed_reads:
         # The chunk size of reads from this flowcell to fetch from the database
         # aim for 50 megabases
-        desired_yield = 1 * 1000000
+        desired_yield = 50 * 1000000
         chunk_size = round(desired_yield / avg_read_length)
         logger.debug(f"Fetching reads in chunks of {chunk_size} for alignment.")
         fasta_df_barcode = pd.DataFrame().from_records(
@@ -91,7 +91,6 @@ def run_minimap2_alignment(job_master_id, streamed_reads=[]):
             return
     else:
         last_read = job_master.last_read
-        ## So these two dataframes do not have the same column names.
         fasta_df_barcode = pd.DataFrame(streamed_reads)
         # Todo: this seems to only process pass reads?
         # fasta_df_barcode = fasta_df_barcode[fasta_df_barcode["is_pass"]]
@@ -344,7 +343,7 @@ def paf_rough_coverage_calculations(df, job_master):
             axis=1,
             args=(flowcell_id, job_master_id, reference_id),
         )
-        a = PafRoughCov.objects.bulk_create(
+        PafRoughCov.objects.bulk_create(
             results["model_objects"].values.tolist(), batch_size=5000
         )
 
@@ -416,7 +415,7 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
     # For each Chromosome in the chromosomes, set the name of the chromosome as key, and the object as the value
     for chromosome in chromosomes:
         chromosome_dict[chromosome.line_name] = chromosome.id
-    ## This gives us a json string that we can query against the alignment server.
+    # # This gives us a json string that we can query against the alignment server.
     MapSequence = namedtuple("MapSequence", ["read_id", "sequence"])
     query_list = (
         fasta_df_barcode[["read_id", "sequence"]]

@@ -21,6 +21,7 @@ class AlignmentController {
       chromosomeSelect: [this._barcodeSelect],
       barcodeSelect: []
     }
+    this._sumToCheck = 0
     this._selects = [this._readTypeSelect, this._referenceSelect, this._chromosomeSelect, this._barcodeSelect]
     this._addChangeListenerToSelects()
     // this._requestMappedChromosomes(flowcellId)
@@ -151,7 +152,7 @@ class AlignmentController {
       chromosomeId = this._chromosomeSelect.val()
       url = `/api/v1/alignment/coverage/${taskId}/${barcodeId}/${readTypeId}/${chromosomeId}`
       this.coverageChartController.reloadCoverageCharts(url)
-      this._fetchChromosomeCoverageColumnChartsData(this._flowcellId, chromosomeId)
+      this._fetchBarcodeCoverageColumnChartsData(this._flowcellId, chromosomeId)
     }
   }
 
@@ -235,13 +236,13 @@ class AlignmentController {
    * @param chromosomeId {number} The primary key of the Chromosome Record
    * @private
    */
-  _fetchChromosomeCoverageColumnChartsData (flowcellId, chromosomeId) {
+  _fetchBarcodeCoverageColumnChartsData (flowcellId, chromosomeId) {
     this._axiosInstance.get(`/api/v1/alignment/${flowcellId}/pafsummary/`, { params: { chromosomeId } }).then(
       response => {
         const data = response.data
         const charts = [[this.chart_per_barcode_cov, `coverageData`], [this.chart_per_barcode_avg, `avgRLData`]]
         charts.forEach(([chart, key]) => {
-          this._updateGenomeCoverageColumnCharts(chart, data[key], data.categories)
+          this._updateCoverageColumnCharts(chart, data[key], data.categories)
         })
       }
     ).catch(
@@ -262,7 +263,7 @@ class AlignmentController {
         const data = response.data
         const charts = [[this.chart_per_genome_cov, `coverageData`], [this.chart_per_genome_avg, `avgRLData`]]
         charts.forEach(([chart, key]) => {
-          this._updateGenomeCoverageColumnCharts(chart, data[key], data.categories)
+          this._updateCoverageColumnCharts(chart, data[key], data.categories)
         })
       }
     )
@@ -274,7 +275,7 @@ class AlignmentController {
    * @param seriesData {Array.Object} Array of new series to insert into this chart
    * @param categories {Array.String} Array of category names
    */
-  _updateGenomeCoverageColumnCharts (chart, seriesData, categories) {
+  _updateCoverageColumnCharts (chart, seriesData, categories) {
     chart.xAxis[0].setCategories(categories)
     seriesData.forEach(series => {
       const oldSeries = chart.series.filter(el => {
@@ -285,6 +286,9 @@ class AlignmentController {
           oldSeries[0].setData(series.data)
         }
       } else {
+        while (chart.series.length) {
+          chart.series[0].remove(false)
+        }
         chart.addSeries(series)
       }
     })

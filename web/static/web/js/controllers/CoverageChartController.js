@@ -4,6 +4,7 @@ class CoverageChartController {
   constructor (divId) {
     // constructs new Coverage chart class, and link to chromosome select field
     this._coverageChart = new CoverageChart(divId)
+    this._oldSumToCheck = 0
     this._axiosInstance = axios.create({
       headers: { 'X-CSRFToken': getCookie(`csrftoken`) }
     })
@@ -31,8 +32,9 @@ class CoverageChartController {
     this._axiosInstance.get(url).then(
       response => {
         const data = response.data.chartData
+        const sumToCheck = response.data.sumToCheck
         self._refLength = response.data.refLength
-        if (!checkHighChartsDataIsIdentical(data, self._coverageChart.masterChart.series[0].options.data)) {
+        if (!checkHighChartsDataIsIdentical([sumToCheck], [this._oldSumToCheck])) {
           self._coverageChart.masterChart.xAxis[0].setExtremes(0, response.data.refLength)
           self._coverageChart.masterChart.series[0].setData(data)
           self._coverageChart.detailChart.series[0].setData(data)
@@ -43,6 +45,7 @@ class CoverageChartController {
           self._coverageChart.detailChart.hideLoading()
           self._coverageChart.masterChart.hideLoading()
         }
+        this._oldSumToCheck = sumToCheck
       }).catch(
       error => {
         console.error(error)

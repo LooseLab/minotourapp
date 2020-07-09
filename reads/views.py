@@ -2943,6 +2943,6 @@ def task_control(request):
             return_message = "Successfully deleted artic Task."
 
     else:
-        raise NotImplementedError
+        return Response("Not implemented, please deal with as an admin.", status=status.HTTP_501_NOT_IMPLEMENTED)
 
     return Response(return_message, status=200)

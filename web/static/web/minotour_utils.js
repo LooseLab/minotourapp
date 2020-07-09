@@ -59,8 +59,8 @@ function setSelectedBarcode (barcode, tab) {
  * @param chart {object}
  */
 function clearChartData (chart) {
-  while (chart.series.length > 0) {
-    chart.series[0].remove()
+  while (chart.series.length) {
+    chart.series[0].remove(false)
   }
 }
 
