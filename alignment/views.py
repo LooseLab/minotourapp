@@ -34,11 +34,11 @@ def rough_coverage_complete_chromosome_flowcell(
 
     """
     queryset = (
-        PafRoughCov.objects.filter(job_master__id=task_id)
-        .filter(flowcell__owner=request.user)
-        .filter(barcode_id=barcode_id)
-        .filter(chromosome__id=chromosome_id)
-        .filter(read_type__id=read_type_id)
+        PafRoughCov.objects.filter(job_master__id=task_id,
+                                   flowcell__owner=request.user,
+                                   barcode_id=barcode_id,
+                                   chromosome_id=chromosome_id,
+                                   read_type_id=read_type_id)
         .order_by("bin_position_start")
     ).values_list("bin_position_start", "bin_coverage")
     # Sum is used client side to check if we have different data and whether to upload or not
