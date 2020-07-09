@@ -41,14 +41,17 @@ def rough_coverage_complete_chromosome_flowcell(
         .filter(read_type__id=read_type_id)
         .order_by("bin_position_start")
     ).values_list("bin_position_start", "bin_coverage")
-    # TODO limits to just one reference here when fetching length, could be an issue in the future
+    # Sum is used client side to check if we have different data and whether to upload or not
+    sum_to_check = np.array(queryset).sum()
+    # TODO limits to just one reference here when fetching length, could be an issue
+    #  in the future displaying multiple rferences on a plot
     length = (
         PafSummaryCov.objects.filter(job_master_id=task_id, chromosome_id=chromosome_id)
         .first()
         .chromosome.chromosome_length
     )
     return Response(
-        {"chartData": queryset, "refLength": length}, status=status.HTTP_200_OK
+        {"chartData": queryset, "refLength": length, "sumToCheck": sum_to_check}, status=status.HTTP_200_OK
     )
 
 

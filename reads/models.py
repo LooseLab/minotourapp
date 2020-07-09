@@ -2541,7 +2541,7 @@ class JobMaster(models.Model):
 
         Run,
         on_delete=models.DO_NOTHING,
-        related_name='runjobs',
+        related_name='run_jobs',
         null=True,
         blank=True,
     )
@@ -2550,7 +2550,7 @@ class JobMaster(models.Model):
 
         Flowcell,
         on_delete=models.CASCADE,
-        related_name='flowcelljobs',
+        related_name='flowcell_jobs',
         null=True,
         blank=True,
     )
@@ -2559,14 +2559,14 @@ class JobMaster(models.Model):
 
         JobType,
         on_delete=models.DO_NOTHING,
-        related_name='taskname',
+        related_name='task_name',
     )
 
     reference = models.ForeignKey(
 
         ReferenceInfo,
-        on_delete=models.CASCADE,
-        related_name='referencejob',
+        on_delete=models.SET_NULL,
+        related_name='reference_job',
         null=True,
         blank=True,
     )
@@ -2666,7 +2666,7 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
 @receiver(post_save, sender=Run)
 def create_run_barcodes(sender, instance=None, created=False, **kwargs):
     """
-    TODO
+    TODO No barcode shouldn't be part of default right??
     """
 
     if created:
