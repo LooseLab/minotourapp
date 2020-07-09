@@ -74,7 +74,7 @@ class AlignmentController {
       }))
       this._selectData = response.data
       this._referenceSelect.html([...readTypes])
-      this._selectOnChange({ srcElement: { id: `referenceSelect` } })
+      this._selectOnChange({ srcElement: { id: `referenceSelect` } }, false)
     }).catch(error => {
       console.error(error)
     })
@@ -97,7 +97,7 @@ class AlignmentController {
   _addChangeListenerToSelects () {
     this._selects.forEach(select => {
       select.on(`change`, () => {
-        this._selectOnChange(event)
+        this._selectOnChange(event, true)
       })
     })
   }
@@ -105,8 +105,9 @@ class AlignmentController {
   /**
    * Request the chromosomes that have reads mapped to using minimap2
    * and update the select box on tab Mapping
+   * @param userActivated {boolean} If the user has changed the select, not the interval call
    */
-  _selectOnChange (event) {
+  _selectOnChange (event, userActivated) {
     let url
     let barcodeId
     let readTypeId
@@ -151,8 +152,10 @@ class AlignmentController {
       readTypeId = this._readTypeSelect.val()
       chromosomeId = this._chromosomeSelect.val()
       url = `/api/v1/alignment/coverage/${taskId}/${barcodeId}/${readTypeId}/${chromosomeId}`
-      this.coverageChartController.reloadCoverageCharts(url)
-      this._fetchBarcodeCoverageColumnChartsData(this._flowcellId, chromosomeId)
+      if (userActivated){
+        this.coverageChartController.reloadCoverageCharts(url)
+      }
+      this._fetchBarcodeCoverageColumnChartsData(this._flowcellId, chromosomeId, true)
     }
   }
 
@@ -234,15 +237,16 @@ class AlignmentController {
    * Fetch the data for the per barcode in a chromosome chart data
    * @param flowcellId {number} The primary key of the flowcell Record
    * @param chromosomeId {number} The primary key of the Chromosome Record
+   * @param changedBarcode {boolean} Redraw is result of user changing barcode
    * @private
    */
-  _fetchBarcodeCoverageColumnChartsData (flowcellId, chromosomeId) {
+  _fetchBarcodeCoverageColumnChartsData (flowcellId, chromosomeId, changedBarcode) {
     this._axiosInstance.get(`/api/v1/alignment/${flowcellId}/pafsummary/`, { params: { chromosomeId } }).then(
       response => {
         const data = response.data
         const charts = [[this.chart_per_barcode_cov, `coverageData`], [this.chart_per_barcode_avg, `avgRLData`]]
         charts.forEach(([chart, key]) => {
-          this._updateCoverageColumnCharts(chart, data[key], data.categories)
+          this._updateCoverageColumnCharts(chart, data[key], data.categories, changedBarcode)
         })
       }
     ).catch(
@@ -263,7 +267,7 @@ class AlignmentController {
         const data = response.data
         const charts = [[this.chart_per_genome_cov, `coverageData`], [this.chart_per_genome_avg, `avgRLData`]]
         charts.forEach(([chart, key]) => {
-          this._updateCoverageColumnCharts(chart, data[key], data.categories)
+          this._updateCoverageColumnCharts(chart, data[key], data.categories, false)
         })
       }
     )
@@ -274,8 +278,12 @@ class AlignmentController {
    * @param chart {Object} The highcharts class representing the column chart we are updating
    * @param seriesData {Array.Object} Array of new series to insert into this chart
    * @param categories {Array.String} Array of category names
+   * @param changedBarcode {boolean} If redraw is a result of barcode change
    */
-  _updateCoverageColumnCharts (chart, seriesData, categories) {
+  _updateCoverageColumnCharts (chart, seriesData, categories, changedBarcode) {
+    while (chart.series.length) {
+        chart.series[0].remove(false)
+    }
     chart.xAxis[0].setCategories(categories)
     seriesData.forEach(series => {
       const oldSeries = chart.series.filter(el => {
@@ -286,9 +294,6 @@ class AlignmentController {
           oldSeries[0].setData(series.data)
         }
       } else {
-        while (chart.series.length) {
-          chart.series[0].remove(false)
-        }
         chart.addSeries(series)
       }
     })
