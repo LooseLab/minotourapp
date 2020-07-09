@@ -50,7 +50,7 @@ def reference_list(request):
             files = request.FILES.getlist("file_location")
             for index, file in enumerate(files):
                 file_name = Path(file_names[index])
-                name = file_name.stem
+                name = str(file_name.stem).partition(".")[0]
                 ref_info = ReferenceInfo(
                     file_name=file_names[index],
                     name=name,
@@ -73,6 +73,7 @@ def reference_list(request):
                     else pyfastx.Fastq
                 )
                 # build minimap2 index
+
                 minimap2_index_file_location = (
                     f"{MEDIA_ROOT}/minimap2_indexes/{file_name.stem}.mmi"
                 )
