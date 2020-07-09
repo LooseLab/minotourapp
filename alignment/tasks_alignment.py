@@ -172,7 +172,7 @@ def fetch_rough_cov_to_update(job_master_id, df):
         df.reset_index().groupby("chromosome_pk")[["chromosome_pk", "bin_position_start"]]
         .apply(
             lambda x: PafRoughCov.objects.filter(
-                chromosome_id=np.unique(x.chromosome_pk.values)
+                chromosome_id=np.unique(x.chromosome_pk.values), job_master_id=job_master_id
             ).filter(bin_position_start__in=np.unique(x.bin_position_start))
         )
         .values
