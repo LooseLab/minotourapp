@@ -72,7 +72,7 @@ class PafSummaryCov(models.Model):
     chromosome = models.ForeignKey(
         ReferenceLine,
         related_name="paf_summary_chromosome",
-        on_delete=models.DO_NOTHING,
+        on_delete=models.SET_NULL,
         null=True,
     )
     # TODO to be deleted, use field from chromosome
