@@ -114,6 +114,15 @@ Minotour uses a MySQL database, Celery (asynchronous workers responsible for run
 * [Python 3](https://www.python.org) - Minotour uses **Python >=3.6**, so make sure it is available on your system.
 
 
+
+## Conda Environments for Artic analyses
+To run Artic analyses, conda must be installed, and the Artic and Pangolin environments must be installed in it. We recommend installing miniconda to avoid bloat.
+
+The miniconda installation instructions can be found [here](https://docs.conda.io/en/latest/miniconda.html)
+
+The [Artic](https://artic.network/ncov-2019/ncov2019-bioinformatics-sop.html) instructions, and [Pangolin](https://github.com/cov-lineages/pangolin#install-pangolin) instructions.
+
+
 ---------------------
 Metagenomics analyses
 ---------------------
@@ -153,6 +162,8 @@ Before creating a metagenomics tasks, there are a few requirements that need to 
 ```
 
 If you are operating on a server, you may wish to raise the priority of the centrifuge process, as otherwise it may not be allocated enough RAM to load the whole index into memory.
+
+This step isn't necessary, but it might be useful if the centrifuge index is taking a long time to load. 
 
 In order to do this you'll need to edit the /etc/security/limits.conf file to allow non root users to set a processes niceness index to less than 0.
 
@@ -224,7 +235,6 @@ Add the following line to the bottom of the file, which will allow non root user
     *	-	nice	-10
 ```
 
-This step isn't necessary, but it might be useful if the centrifuge index is taking a long time to load. 
 
 
     
@@ -240,15 +250,15 @@ Environment config
         #!/bin/bash
         export MT_DB_ENGINE='django.db.backends.mysql'
         export MT_DB_HOST='localhost'
-        export MT_DB_NAME='minotourdb'
+        export MT_DB_NAME='<Database name>'
         export MT_DB_PASS='<minotourdb password>'
         export MT_DB_PORT='3306'
         export MT_DB_USER='minotour'
         export MT_DJANGO_DEBUG='True'
         export MT_MAILGUN_ACCESS_KEY=''
         export MT_MAILGUN_SERVER_NAME=''
-        export MT_MINIMAP2='/usr/bin/minimap2'
-        export MT_REFERENCE_LOCATION='/home/rory/data/minotour'
+        export MT_MINIMAP2='</Path/To/Minimap2/Executable>'
+        export MT_REFERENCE_LOCATION='<Path/To/Reference/Directory>'
         export MT_SECRET_KEY=''
         export MT_TWITCONSUMER_KEY=''
         export MT_TWITCONSUMER_SECRET=''
