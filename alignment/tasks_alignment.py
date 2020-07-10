@@ -6,8 +6,7 @@ import numpy as np
 import pandas as pd
 import redis
 from celery.utils.log import get_task_logger
-from django.conf import settings
-from django.db.models import F
+from django.db.models import F, Max
 
 from alignment.mapper import MAP
 from alignment.models import PafRoughCov, PafSummaryCov
@@ -173,7 +172,7 @@ def fetch_rough_cov_to_update(job_master_id, df):
         .apply(
             lambda x: PafRoughCov.objects.filter(
                 chromosome_id=np.unique(x.chromosome_pk.values), job_master_id=job_master_id
-            ).filter(bin_position_start__in=np.unique(x.bin_position_start))
+            )
         )
         .values
     )
@@ -255,7 +254,7 @@ def generate_paf_rough_cov_objects(row, flowcell_pk, job_master_pk, reference_pk
     )
 
 
-def paf_rough_coverage_calculations(df, job_master):
+def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     """
     Calculate the rough coverage binned by 10 base intervals in the paf, then dump them into database
     Parameters
@@ -264,6 +263,8 @@ def paf_rough_coverage_calculations(df, job_master):
         The pandas dataframe containing our paf output and the barcode, read type and chromosome name
     job_master: reads.models.JobMaster
         The primary key of the job master
+    longest_chromosome: int
+        The longest chromosome base length
 
     Returns
     -------
@@ -272,10 +273,12 @@ def paf_rough_coverage_calculations(df, job_master):
     flowcell_id = int(job_master.flowcell.id)
     reference_id = int(job_master.reference.id)
     job_master_id = int(job_master.id)
-    df["mapping_start_bin_start"] = df["mapping_start"].sub(5).div(10).round().mul(10)
-    df["mapping_start_bin_end"] = df["mapping_start_bin_start"].add(10)
-    df["mapping_end_bin_start"] = df["mapping_end"].sub(5).div(10).round().mul(10)
-    df["mapping_end_bin_end"] = df["mapping_end_bin_start"].add(10)
+    bin_width = 10
+    if longest_chromosome / bin_width > 500000:
+        bin_width = int(longest_chromosome / 500000 / 100) * 100
+    rounder = bin_width / 2
+    df["mapping_start_bin_start"] = df["mapping_start"].sub(rounder).div(bin_width).round().mul(bin_width)
+    df["mapping_end_bin_start"] = df["mapping_end"].sub(rounder).div(bin_width).round().mul(bin_width)
     if "barcode_name" not in df.columns:
         df.reset_index(inplace=True)
     df.set_index(
@@ -283,11 +286,11 @@ def paf_rough_coverage_calculations(df, job_master):
         inplace=True,
     )
     # df.sort_index(inplace=True)
-    df["bin_coverage"] = df.groupby(
+    df["bin_change"] = df.groupby(
         ["read_type_id", "chromosome_pk", "barcode_id", "mapping_start_bin_start"]
     ).size()
     df_mapping_start_bins = df.loc[~df.index.duplicated()][
-        ["bin_coverage", "run_id", "is_pass", "mapping_start_bin_end"]
+        ["bin_change", "run_id", "is_pass"]
     ]
     df_mapping_start_bins.index = df_mapping_start_bins.index.rename(
         ["read_type_id", "chromosome_pk", "barcode_id", "bin_position_start"]
@@ -298,53 +301,59 @@ def paf_rough_coverage_calculations(df, job_master):
         inplace=True,
     )
     # df.sort_index(inplace=True)
-    df["end_bin_coverage"] = df.groupby(
+    df["end_bin_change"] = df.groupby(
         ["read_type_id", "chromosome_pk", "barcode_id", "mapping_end_bin_start"]
     ).size()
     # end_bins are
     df_mapping_end_bins = df.loc[~df.index.duplicated()][
-        ["end_bin_coverage", "run_id", "is_pass", "mapping_start_bin_end"]
+        ["end_bin_change", "run_id", "is_pass"]
     ]
     df_mapping_end_bins = df_mapping_end_bins.rename(
-        columns={"end_bin_coverage": "bin_coverage"}
+        columns={"end_bin_change": "bin_change"}
     )
-    df_mapping_end_bins["bin_coverage"] = -df_mapping_end_bins["bin_coverage"]
+    df_mapping_end_bins["bin_change"] = -df_mapping_end_bins["bin_change"]
+    # If a read ends in a bin, it still covers it, so shift the neg incr to the next bin
+    df_mapping_end_bins["bin_change"] = df_mapping_end_bins["bin_change"].shift().fillna(0)
     df_mapping_end_bins.index = df_mapping_end_bins.index.rename(
         ["read_type_id", "chromosome_pk", "barcode_id", "bin_position_start"]
     )
     results = df_mapping_start_bins.append(df_mapping_end_bins).sort_index()
-    results["bin_coverage"] = results.groupby(df_mapping_start_bins.index.names[:-1])[
-        "bin_coverage"
-    ].agg(np.cumsum)
-    del df_mapping_end_bins, df_mapping_start_bins
-    df_old_coverage = fetch_rough_cov_to_update(job_master_id, results)
+    # Collapse duplicates on their start + end value
+    results["bin_change"] = results.groupby(results.index.names)["bin_change"].transform(np.sum)
     results = results.loc[~results.index.duplicated()]
-    if not df_old_coverage.empty:
-        df_old_coverage = df_old_coverage.loc[
-            df_old_coverage.index.isin(results.index.values)
-        ]
-        df_old_coverage["bin_coverage"] = (
-            df_old_coverage["bin_coverage"]
-            + results.loc[
-                results.index.isin(df_old_coverage.index.values)
-            ]["bin_coverage"]
-        )
-        df_old_coverage["ORM"] = df_old_coverage.apply(update_orm_objects, axis=1)
+    df_old_coverage = fetch_rough_cov_to_update(job_master_id, results)
+    df_to_process = results.append(df_old_coverage, sort=True).sort_index()
+    del df_old_coverage
+    if "bin_coverage" not in df_to_process.keys():
+        df_to_process["bin_coverage"] = 0
+    else:
+        df_to_process["bin_coverage"] = df_to_process["bin_coverage"].fillna(method="ffill").fillna(0)
+    df_to_process["bin_change"] = df_to_process["bin_change"].fillna(0)
+
+    # df_to_process = df_to_process[~df_to_process["reference_id"].isnull()]
+    df_to_process["summed_bin_change"] = df_to_process.groupby(df_mapping_start_bins.index.names[:-1])[
+        "bin_change"
+    ].agg(np.cumsum)
+    df_to_process["bin_coverage"] = df_to_process["summed_bin_change"] + df_to_process["bin_coverage"]
+    df_to_process = df_to_process.loc[~df_to_process.index.duplicated(keep="last")]
+    if "ORM" in df_to_process.keys():
+        df_to_update = df_to_process[~df_to_process["ORM"].isnull()]
+        df_to_create = df_to_process[df_to_process["ORM"].isnull()]
+        df_to_update["ORM"] = df_to_update.apply(update_orm_objects, axis=1)
         PafRoughCov.objects.bulk_update(
-            df_old_coverage["ORM"].values, ["bin_coverage"], batch_size=5000
+            df_to_update["ORM"].values, ["bin_coverage"], batch_size=5000
         )
-    results = results.loc[
-        ~results.index.isin(df_old_coverage.index.values)
-    ]
-    if not results.empty:
-        results.reset_index(inplace=True)
-        results["model_objects"] = results.apply(
+    else:
+        df_to_create = df_to_process
+    if not df_to_create.empty:
+        df_to_create.reset_index(inplace=True)
+        df_to_create["model_objects"] = df_to_create.apply(
             generate_paf_rough_cov_objects,
             axis=1,
             args=(flowcell_id, job_master_id, reference_id),
         )
         PafRoughCov.objects.bulk_create(
-            results["model_objects"].values.tolist(), batch_size=5000
+            df_to_create["model_objects"].values.tolist(), batch_size=5000
         )
 
 
@@ -392,17 +401,11 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
     last_read_pk: int
         The ID of the last read that we dealt with.
     """
-    # The location of the mimimap2 executable
-    minimap2 = getattr(settings, "MINIMAP2", None)
     # The JobMaster object
     job_master = JobMaster.objects.get(pk=job_master_id)
     # Unpack metadata about this job
     last_read_pk = int(job_master.last_read)
     reference_pk = int(job_master.reference.id)
-    #
-    if not minimap2:
-        logger.error("Can not find minimap2 executable - stopping task.")
-        # return
     # We're starting fresh boys
     if last_read_pk is None:
         last_read_pk = 0
@@ -412,6 +415,7 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
     chromosome_dict = {}
     # Get all the chromosomes for this reference
     chromosomes = reference_info.referencelines.all()
+    longest_chromosome = chromosomes.aggregate(Max("chromosome_length"))["chromosome_length__max"]
     # For each Chromosome in the chromosomes, set the name of the chromosome as key, and the object as the value
     for chromosome in chromosomes:
         chromosome_dict[chromosome.line_name] = chromosome.id
@@ -469,17 +473,17 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
     if "No barcode" in fasta_df_barcode["barcode_name"].unique():
         df["barcode_name"] = "All reads"
         paf_summary_calculations(df, job_master_id)
-        paf_rough_coverage_calculations(df, job_master)
+        paf_rough_coverage_calculations(df, job_master, longest_chromosome)
     else:
         paf_summary_calculations(df, job_master_id)
         df.reset_index(inplace=True)
         df2 = df
-        paf_rough_coverage_calculations(df2, job_master)
+        paf_rough_coverage_calculations(df2, job_master, longest_chromosome)
         if "barcode_name" not in df.keys():
             df.reset_index(inplace=True)
         df["barcode_name"] = "All reads"
         # save results for all reads
         paf_summary_calculations(df, job_master_id)
-        paf_rough_coverage_calculations(df2, job_master)
+        paf_rough_coverage_calculations(df2, job_master, longest_chromosome)
 
     return last_read_pk
