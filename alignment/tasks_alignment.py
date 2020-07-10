@@ -313,7 +313,7 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     )
     df_mapping_end_bins["bin_change"] = -df_mapping_end_bins["bin_change"]
     # If a read ends in a bin, it still covers it, so shift the neg incr to the next bin
-    df_mapping_end_bins["bin_change"] = df_mapping_end_bins["bin_change"].shift().fillna(0)
+    # df_mapping_end_bins["bin_change"] = df_mapping_end_bins["bin_change"].shift().fillna(0)
     df_mapping_end_bins.index = df_mapping_end_bins.index.rename(
         ["read_type_id", "chromosome_pk", "barcode_id", "bin_position_start"]
     )
