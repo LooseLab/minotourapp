@@ -19,3 +19,7 @@ env-*
 */migrations/
 */Temp_results/*
 db_changes
+*.json
+*/settings.py
+artic/static*
+artic/tests/*
