@@ -281,7 +281,7 @@ def go_fast2(start_stop_bools, bin_width):
             a = np.arange(start, stop + bin_width, bin_width, dtype=np.uint32)
             for position in a:
                 positions.append(position)
-            return positions
+    return positions
 
 
 def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
@@ -304,8 +304,8 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     reference_id = int(job_master.reference.id)
     job_master_id = int(job_master.id)
     bin_width = 10
-    if longest_chromosome / bin_width > 500000:
-        bin_width = round(longest_chromosome / 500000 / 10) * 10
+    if longest_chromosome / bin_width > 1000000:
+        bin_width = round(longest_chromosome / 1000000 / 10) * 10
     if bin_width < 10:
         bin_width = 10
     rounder = bin_width / 2
@@ -356,11 +356,9 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     results["bin_change"] = results.groupby(results.index.names)["bin_change"].transform(np.sum)
     results = results.loc[~results.index.duplicated()]
 
-    results["zero_change"] = results["bin_change"].values.cumsum()
     results.reset_index(inplace=True)
     results["bin_shift"] = results["bin_position_start"].shift(-1)
     results["next_is_start"] = results["is_start"].shift(-1)
-    # results = results[results["zero_change"] != 0]
 
     go_fast2(np.array([[0, 10, 0, 0]], dtype=np.uint32), np.uint32(10))
     results.reset_index(inplace=True)
