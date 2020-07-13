@@ -7,6 +7,7 @@ import pandas as pd
 import redis
 from celery.utils.log import get_task_logger
 from django.db.models import F, Max
+from numba import njit
 
 from alignment.mapper import MAP
 from alignment.models import PafRoughCov, PafSummaryCov
@@ -62,7 +63,7 @@ def run_minimap2_alignment(job_master_id, streamed_reads=None):
     if not streamed_reads:
         # The chunk size of reads from this flowcell to fetch from the database
         # aim for 50 megabases
-        desired_yield = 50 * 1000000
+        desired_yield = 25 * 1000000
         chunk_size = round(desired_yield / avg_read_length)
         logger.debug(f"Fetching reads in chunks of {chunk_size} for alignment.")
         fasta_df_barcode = pd.DataFrame().from_records(
@@ -153,29 +154,28 @@ def save_summary_coverage(row, job_master_id):
     paf_summary_cov.save()
 
 
-def fetch_rough_cov_to_update(job_master_id, df):
+def fetch_rough_cov_to_update(job_master_id, positions):
     """
     Returns a DataFrame of PafRoughCov bins we have data for
     Parameters
     ----------
     job_master_id: int
         The primary key of the JobMaster record for this task
-    df: pandas.core.frame.DataFrame
+    positions: pandas.core.frame.Series
         List of bin position_starts
     Returns
     -------
     pd.core.frame.DataFrame
     """
-
+    logger.info(positions)
     querysets = (
-        df.reset_index().groupby("chromosome_pk")[["chromosome_pk", "bin_position_start"]]
-        .apply(
-            lambda x: PafRoughCov.objects.filter(
-                chromosome_id=np.unique(x.chromosome_pk.values), job_master_id=job_master_id
-            )
-        )
-        .values
+        positions.groupby("chromosome_pk").apply(lambda x: PafRoughCov.objects.filter(
+            chromosome_id=x.name, job_master_id=job_master_id, bin_position_start__in=x.values[0]
+        )).values
     )
+    if not querysets[0]:
+        df_old_coverage = pd.DataFrame()
+        return df_old_coverage
     s = pd.Series(querysets).explode().to_frame()
     s.dropna(inplace=True)
     if not s.empty:
@@ -275,11 +275,13 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     job_master_id = int(job_master.id)
     bin_width = 10
     if longest_chromosome / bin_width > 500000:
-        bin_width = int(longest_chromosome / 500000 / 100) * 100
+        bin_width = round(longest_chromosome / 500000 / 10) * 10
+    if bin_width < 10:
+        bin_width = 10
     rounder = bin_width / 2
     df["mapping_start_bin_start"] = df["mapping_start"].sub(rounder).div(bin_width).round().mul(bin_width)
     df["mapping_end_bin_start"] = df["mapping_end"].sub(rounder).div(bin_width).round().mul(bin_width)
-    if "barcode_name" not in df.columns:
+    if "barcode_id" not in df.columns:
         df.reset_index(inplace=True)
     df.set_index(
         ["read_type_id", "chromosome_pk", "barcode_id", "mapping_start_bin_start"],
@@ -292,6 +294,7 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     df_mapping_start_bins = df.loc[~df.index.duplicated()][
         ["bin_change", "run_id", "is_pass"]
     ]
+    df_mapping_start_bins["is_start"] = True
     df_mapping_start_bins.index = df_mapping_start_bins.index.rename(
         ["read_type_id", "chromosome_pk", "barcode_id", "bin_position_start"]
     )
@@ -308,6 +311,7 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     df_mapping_end_bins = df.loc[~df.index.duplicated()][
         ["end_bin_change", "run_id", "is_pass"]
     ]
+    df_mapping_end_bins["is_start"] = False
     df_mapping_end_bins = df_mapping_end_bins.rename(
         columns={"end_bin_change": "bin_change"}
     )
@@ -321,7 +325,33 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     # Collapse duplicates on their start + end value
     results["bin_change"] = results.groupby(results.index.names)["bin_change"].transform(np.sum)
     results = results.loc[~results.index.duplicated()]
-    df_old_coverage = fetch_rough_cov_to_update(job_master_id, results)
+
+    results["zero_change"] = results["bin_change"].values.cumsum()
+    results.reset_index(inplace=True)
+    results["bin_shift"] = results["bin_position_start"].shift(-1)
+    results["next_is_start"] = results["is_start"].shift(-1)
+    # results = results[results["zero_change"] != 0]
+    @njit()
+    def go_fast2(start_stop_bools, bin_width):
+        positions = [np.uint32(0)]
+        for start, stop, is_start, next_is_start in start_stop_bools:
+            if not is_start and next_is_start:
+                continue
+            else:
+                a = np.arange(start, stop + bin_width, bin_width, dtype=np.uint32)
+                for position in a:
+                    positions.append(position)
+                return positions
+    go_fast2(np.array([[0, 10, 0, 0]], dtype=np.uint32), np.uint32(10))
+    results.reset_index(inplace=True)
+    positions = results.set_index(["read_type_id", "chromosome_pk"]).groupby(["read_type_id", "chromosome_pk"]).apply(
+        lambda x: go_fast2(x[["bin_position_start", "bin_shift", "is_start", "next_is_start"]].fillna(0).values.astype(np.uint32), np.uint32(bin_width)))
+    results.set_index(
+        ["read_type_id", "chromosome_pk", "barcode_id", "bin_position_start"], inplace=True
+    )
+    logger.debug(f"Positions {positions.head()}")
+    results = results.loc[~results.index.duplicated()]
+    df_old_coverage = fetch_rough_cov_to_update(job_master_id, positions)
     df_to_process = results.append(df_old_coverage, sort=True).sort_index()
     del df_old_coverage
     if "bin_coverage" not in df_to_process.keys():
@@ -331,9 +361,12 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     df_to_process["bin_change"] = df_to_process["bin_change"].fillna(0)
 
     # df_to_process = df_to_process[~df_to_process["reference_id"].isnull()]
+    # TODO we don't need this? Can do before not on group by
     df_to_process["summed_bin_change"] = df_to_process.groupby(df_mapping_start_bins.index.names[:-1])[
         "bin_change"
     ].agg(np.cumsum)
+    # Don't save where's
+    df_to_process = df_to_process[df_to_process["summed_bin_change"] != 0]
     df_to_process["bin_coverage"] = df_to_process["summed_bin_change"] + df_to_process["bin_coverage"]
     df_to_process = df_to_process.loc[~df_to_process.index.duplicated(keep="last")]
     if "ORM" in df_to_process.keys():
@@ -423,8 +456,8 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
     MapSequence = namedtuple("MapSequence", ["read_id", "sequence"])
     query_list = (
         fasta_df_barcode[["read_id", "sequence"]]
-        .apply(lambda x: MapSequence(x.read_id, x.sequence), axis=1)
-        .values.tolist()
+            .apply(lambda x: MapSequence(x.read_id, x.sequence), axis=1)
+            .values.tolist()
     )
 
     if not super_function.valid(reference_info.name):
@@ -438,6 +471,9 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
 
     test_df = pd.DataFrame(results)
     paf_df = test_df[0].str.split("\t", expand=True)
+    if paf_df.empty:
+        logger.debug("No mapping results.")
+        return
     del test_df
     # return test_df
 
