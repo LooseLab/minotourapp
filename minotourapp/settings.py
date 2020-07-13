@@ -243,7 +243,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     'remove_old_references': {
         'task': 'alignment.tasks_alignment.remove_old_references',
-        'schedule': 10,
+        'schedule': 1800,
         'options': {
             "queue": "minimap"
         }
