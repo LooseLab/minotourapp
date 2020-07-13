@@ -78,8 +78,8 @@ def delete_flowcell(flowcell_job_id):
     flowcell_job = JobMaster.objects.get(pk=flowcell_job_id)
     # Get the flowcell
     flowcell = flowcell_job.flowcell
-    delete_chunk_size = 100000
-    alignment_chunk_size = 150000
+    delete_chunk_size = 5000
+    alignment_chunk_size = 7500
     logger.info(
         "Flowcell id: {} - Deleting flowcell {}".format(flowcell.id, flowcell.name)
     )
