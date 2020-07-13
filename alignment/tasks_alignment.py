@@ -167,13 +167,17 @@ def fetch_rough_cov_to_update(job_master_id, positions):
     -------
     pd.core.frame.DataFrame
     """
-    logger.info(positions)
+    logger.debug("\nPositions")
+    logger.debug(positions)
     querysets = (
         positions.groupby("chromosome_pk").apply(lambda x: PafRoughCov.objects.filter(
             chromosome_id=x.name, job_master_id=job_master_id, bin_position_start__in=x.values[0]
         )).values
     )
+    logger.debug("Querysets:")
+    logger.debug(querysets)
     if not querysets[0]:
+        logger.debug("No previous bins found")
         df_old_coverage = pd.DataFrame()
         return df_old_coverage
     s = pd.Series(querysets).explode().to_frame()
@@ -254,6 +258,32 @@ def generate_paf_rough_cov_objects(row, flowcell_pk, job_master_pk, reference_pk
     )
 
 
+@njit
+def go_fast2(start_stop_bools, bin_width):
+    """
+    Expand all possible bins between the given starts and ends for a bin width
+    Parameters
+    ----------
+    start_stop_bools: np.ndarray
+    bin_width: np.uint32
+        The width of the bins
+
+    Returns
+    -------
+
+    """
+    print("Now we are creating the positions")
+    positions = [np.uint32(0)]
+    for start, stop, is_start, next_is_start in start_stop_bools:
+        if not is_start and next_is_start:
+            continue
+        else:
+            a = np.arange(start, stop + bin_width, bin_width, dtype=np.uint32)
+            for position in a:
+                positions.append(position)
+            return positions
+
+
 def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     """
     Calculate the rough coverage binned by 10 base intervals in the paf, then dump them into database
@@ -331,17 +361,7 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     results["bin_shift"] = results["bin_position_start"].shift(-1)
     results["next_is_start"] = results["is_start"].shift(-1)
     # results = results[results["zero_change"] != 0]
-    @njit()
-    def go_fast2(start_stop_bools, bin_width):
-        positions = [np.uint32(0)]
-        for start, stop, is_start, next_is_start in start_stop_bools:
-            if not is_start and next_is_start:
-                continue
-            else:
-                a = np.arange(start, stop + bin_width, bin_width, dtype=np.uint32)
-                for position in a:
-                    positions.append(position)
-                return positions
+
     go_fast2(np.array([[0, 10, 0, 0]], dtype=np.uint32), np.uint32(10))
     results.reset_index(inplace=True)
     positions = results.set_index(["read_type_id", "chromosome_pk"]).groupby(["read_type_id", "chromosome_pk"]).apply(
@@ -350,9 +370,14 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
         ["read_type_id", "chromosome_pk", "barcode_id", "bin_position_start"], inplace=True
     )
     logger.debug(f"Positions {positions.head()}")
+    logger.debug(f"positions length {positions.shape}")
+    logger.debug(f"positions thing {positions[0]}")
     results = results.loc[~results.index.duplicated()]
     df_old_coverage = fetch_rough_cov_to_update(job_master_id, positions)
     df_to_process = results.append(df_old_coverage, sort=True).sort_index()
+    logger.debug("our old coverage")
+    logger.debug(df_old_coverage.shape)
+    logger.debug(df_old_coverage.head())
     del df_old_coverage
     if "bin_coverage" not in df_to_process.keys():
         df_to_process["bin_coverage"] = 0
@@ -370,6 +395,7 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     df_to_process["bin_coverage"] = df_to_process["summed_bin_change"] + df_to_process["bin_coverage"]
     df_to_process = df_to_process.loc[~df_to_process.index.duplicated(keep="last")]
     if "ORM" in df_to_process.keys():
+        logger.debug("Coverage needs updating")
         df_to_update = df_to_process[~df_to_process["ORM"].isnull()]
         df_to_create = df_to_process[df_to_process["ORM"].isnull()]
         df_to_update["ORM"] = df_to_update.apply(update_orm_objects, axis=1)
