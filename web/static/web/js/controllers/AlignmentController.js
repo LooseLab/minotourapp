@@ -152,8 +152,9 @@ class AlignmentController {
       readTypeId = this._readTypeSelect.val()
       chromosomeId = this._chromosomeSelect.val()
       url = `/api/v1/alignment/coverage/${taskId}/${barcodeId}/${readTypeId}/${chromosomeId}`
-      if (userActivated){
+      if (userActivated) {
         this.coverageChartController.reloadCoverageCharts(url)
+        this.coverageChartController.resetDetailChartZoom()
       }
       this._fetchBarcodeCoverageColumnChartsData(this._flowcellId, chromosomeId, true)
     }
