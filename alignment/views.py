@@ -34,12 +34,13 @@ def rough_coverage_complete_chromosome_flowcell(
 
     """
     queryset = (
-        PafRoughCov.objects.filter(job_master__id=task_id,
-                                   flowcell__owner=request.user,
-                                   barcode_id=barcode_id,
-                                   chromosome_id=chromosome_id,
-                                   read_type_id=read_type_id)
-        .order_by("bin_position_start")
+        PafRoughCov.objects.filter(
+            job_master__id=task_id,
+            flowcell__owner=request.user,
+            barcode_id=barcode_id,
+            chromosome_id=chromosome_id,
+            read_type_id=read_type_id,
+        ).order_by("bin_position_start")
     ).values_list("bin_position_start", "bin_coverage")
     # Sum is used client side to check if we have different data and whether to upload or not
     sum_to_check = np.array(queryset).sum()
@@ -51,7 +52,8 @@ def rough_coverage_complete_chromosome_flowcell(
         .chromosome.chromosome_length
     )
     return Response(
-        {"chartData": queryset, "refLength": length, "sumToCheck": sum_to_check}, status=status.HTTP_200_OK
+        {"chartData": queryset, "refLength": length, "sumToCheck": sum_to_check},
+        status=status.HTTP_200_OK,
     )
 
 
@@ -229,7 +231,7 @@ def mapped_references_by_flowcell_list(request, flowcell_id):
 @api_view(["GET"])
 def per_genome_coverage_summary(request, flowcell_pk):
     """
-    Get the per genome (i.e chromosome level) coverage fot the top column charts
+    Get the per genome (i.e chromosome level) coverage (for the top column charts)
     Parameters
     ----------
     request: rest_framework.request.Request
@@ -244,17 +246,34 @@ def per_genome_coverage_summary(request, flowcell_pk):
     """
     query = PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk)
     if query.count() < 30:
-        queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk).values(data_name=F("chromosome__line_name")).annotate(
-            Sum("coverage"), Avg("average_read_length"))
+        queryset = (
+            PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk)
+            .values(data_name=F("chromosome__line_name"))
+            .annotate(Sum("coverage"), Avg("average_read_length"))
+        )
     else:
-        queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk).values(data_name=F("chromosome__reference__name")).annotate(
-            Sum("coverage"), Avg("average_read_length"))
+        queryset = (
+            PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk)
+            .values(data_name=F("chromosome__reference__name"))
+            .annotate(Sum("coverage"), Avg("average_read_length"))
+        )
     chromosome_coverage = []
     chromosome_average_read_length = []
     for chromosome in queryset:
         chromosome_coverage.append(
-            {"name": chromosome["data_name"], "data": [chromosome["coverage__sum"]]})
+            {
+                "name": chromosome["data_name"],
+                "data": [round(chromosome["coverage__sum"], 2)],
+            }
+        )
         chromosome_average_read_length.append(
-            {"name": chromosome["data_name"], "data": [chromosome["average_read_length__avg"]]})
-    results = {"coverageData": chromosome_coverage, "avgRLData": chromosome_average_read_length}
+            {
+                "name": chromosome["data_name"],
+                "data": [round(chromosome["average_read_length__avg"], 2)],
+            }
+        )
+    results = {
+        "coverageData": chromosome_coverage,
+        "avgRLData": chromosome_average_read_length,
+    }
     return Response(results, status=status.HTTP_200_OK)
