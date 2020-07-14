@@ -359,7 +359,7 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     results.reset_index(inplace=True)
     results["bin_shift"] = results["bin_position_start"].shift(-1)
     results["next_is_start"] = results["is_start"].shift(-1)
-
+    # compile the code that runs this, so it will run super fast for the next one
     go_fast2(np.array([[0, 10, 0, 0]], dtype=np.uint32), np.uint32(10))
     results.reset_index(inplace=True)
     positions = results.set_index(["read_type_id", "chromosome_pk"]).groupby(["read_type_id", "chromosome_pk"]).apply(
@@ -388,14 +388,14 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     df_to_process["summed_bin_change"] = df_to_process.groupby(df_mapping_start_bins.index.names[:-1])[
         "bin_change"
     ].agg(np.cumsum)
-    # Don't save where's
-    df_to_process = df_to_process[df_to_process["summed_bin_change"] != 0]
     df_to_process["bin_coverage"] = df_to_process["summed_bin_change"] + df_to_process["bin_coverage"]
     df_to_process = df_to_process.loc[~df_to_process.index.duplicated(keep="last")]
     if "ORM" in df_to_process.keys():
         logger.debug("Coverage needs updating")
         df_to_update = df_to_process[~df_to_process["ORM"].isnull()]
         df_to_create = df_to_process[df_to_process["ORM"].isnull()]
+        # Don't save where the change is 0
+        df_to_update = df_to_update[df_to_update["summed_bin_change"].ne(0)]
         df_to_update["ORM"] = df_to_update.apply(update_orm_objects, axis=1)
         PafRoughCov.objects.bulk_update(
             df_to_update["ORM"].values, ["bin_coverage"], batch_size=5000
