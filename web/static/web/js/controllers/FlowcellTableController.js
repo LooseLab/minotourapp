@@ -80,19 +80,14 @@ class FlowcellTableController {
         },
         {
           targets: 5,
-          data: `number_reads_processed`,
-          render: $.fn.dataTable.render.number(`,`, `.`)
-        },
-        {
-          targets: 6,
           data: `number_runs`
         },
         {
-          targets: 7,
+          targets: 6,
           data: `number_barcodes`
         },
         {
-          targets: 8,
+          targets: 7,
           data: `total_read_length`,
           render: function (data, type, row) {
             // The below function returns the yield in a human readable format
@@ -119,26 +114,30 @@ class FlowcellTableController {
           }
         },
         {
-          targets: 9,
+          targets: 8,
           data: `average_read_length`,
           render: $.fn.dataTable.render.number(`,`, `.`)
 
         },
         {
-          targets: 10,
+          targets: 9,
           data: `is_active`,
           render: (data, type, full, meta) => data.active ? `Active` : `Inactive`
         },
         {
+          targets: 10,
+          data: `archived`,
+          render: (data, type, full, meta) => data.archived ? `Yes` : `No`
+
+        },
+        {
           targets: 11,
-          data: `has_fastq`
+          data: `owner`,
+          render: (data, type, full, meta) => data.owner ? `Yes` : `No`
+
         },
         {
           targets: 12,
-          data: `owner`
-        },
-        {
-          targets: 13,
           data: `permission`
         }
       ]
