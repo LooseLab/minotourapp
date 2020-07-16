@@ -41,16 +41,15 @@ class ReferenceManagementController {
           },
           {
             targets: 2,
-            data: `private`
+            data: `private`,
+            render: (data, type, full, meta) => data.private ? `Private` : `Public`
           },
           {
             width: `1.5rem`,
             sortable: false,
             targets: 3,
             data: null,
-            render: function (data, type, full, meta) {
-              return `<a class="btn icon-task deletion" data-delete="delete_${data.id}"><i class="fa fa-minus-square"></i> Delete </a>`
-            }
+            render: (data, type, full, meta) => data.private ? `<a class="btn icon-task deletion" data-delete="delete_${data.id}"><i class="fa fa-minus-square"></i> Delete </a>` : ``
           }
         ]
       })
@@ -97,8 +96,6 @@ class ReferenceManagementController {
     $(`#mdbup`).html(`<div class="progress" id="uploadProgress">
           <div class="progress-bar progress-bar-striped progress-bar-animated" id="uploadProgressBar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
         </div>`)
-    console.log(ev)
-    console.log(`File(s) dropped`)
     if (ev.dataTransfer.items) {
       // Use DataTransferItemList interface to access the file(s)
       for (var i = 0; i < ev.dataTransfer.items.length; i++) {
@@ -110,48 +107,46 @@ class ReferenceManagementController {
           if (file.size > this._maxFileSize) {
             this._modalError(`${file.name} is too large (${file.size})! Upload refused.`, 3000)
           }
-          file.text().then(text => {
-            console.log(file, file.name)
-            formData.append(`file_location`, file, file.name)
-            formData.append(`md5_checksum`, md5(text))
-            formData.append(`file_name`, file.name)
-            // Post the files
-            axios(
-              {
-                url: `/api/v1/reference/upload/`,
-                data: formData,
-                headers: {
-                  'X-CSRFToken': getCookie(`csrftoken`),
-                  'Content-Type': `multipart/form-data; boundary=${formData._boundary}`
-                },
-                onUploadProgress: progressEvent => {
-                  const totalLength = progressEvent.lengthComputable ? progressEvent.total : progressEvent.target.getResponseHeader(`content-length`) || progressEvent.target.getResponseHeader(`x-decompressed-content-length`)
-                  console.log(`onUploadProgress`, totalLength)
-                  if (totalLength !== null) {
-                    $(`#uploadProgressBar`).css(`width`, `${Math.round((progressEvent.loaded * 100) / totalLength)}%`)
-                    console.log(Math.round((progressEvent.loaded * 100) / totalLength))
-                  }
-                  this._datatableObj.ajax.reload(null, false)
-                },
-                method: `post`
+          console.log(file, file.name)
+          formData.append(`file_location`, file, file.name)
+          formData.append(`file_name`, file.name)
+          // Post the files
+          axios(
+            {
+              url: `/api/v1/reference/upload/`,
+              data: formData,
+              headers: {
+                'X-CSRFToken': getCookie(`csrftoken`),
+                'Content-Type': `multipart/form-data; boundary=${formData._boundary}`
+              },
+              onUploadProgress: progressEvent => {
+                const totalLength = progressEvent.lengthComputable ? progressEvent.total : progressEvent.target.getResponseHeader(`content-length`) || progressEvent.target.getResponseHeader(`x-decompressed-content-length`)
+                console.log(`onUploadProgress`, totalLength)
+                if (totalLength !== null) {
+                  $(`#uploadProgressBar`).css(`width`, `${Math.round((progressEvent.loaded * 100) / totalLength)}%`)
+                  console.log(Math.round((progressEvent.loaded * 100) / totalLength))
+                }
+                this._datatableObj.DataTable().ajax.reload(null, false)
+              },
+              method: `post`
+            }
+          )
+            .then(
+              response => {
+                this._formData = new FormData()
+                this._modalError(``, 0)
+                this._datatableObj.DataTable().ajax.reload(null, false)
+              })
+            .catch(
+              error => {
+                console.error(error.response)
+                if (error.response.status === 403) {
+                  console.log(`SEE MY MODAL`)
+                  this._modalError(error.response.data, 6000)
+                }
+                this._formData = new FormData()
               }
             )
-              .then(
-                response => {
-                  this._formData = new FormData()
-                  this._modalError(``, 0)
-                  this._datatableObj.ajax.reload(null, false)
-                })
-              .catch(
-                error => {
-                  console.error(error)
-                  if (error.response.status === 403) {
-                    this._modalError(error.response.data, 3000)
-                  }
-                  this._formData = new FormData()
-                }
-              )
-          })
         }
       }
     } else {
@@ -189,7 +184,7 @@ class ReferenceManagementController {
    */
   _modalError (message, timeout) {
     if (message.length) {
-      $(`#mdbup`).html(message)
+      $(`#mdbup`).html(`<span style="font-size: 2rem">${message}</span>`)
     }
     setTimeout(() => {
       console.log(`hello`)
