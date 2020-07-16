@@ -7,6 +7,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
+from minotourapp.utils import get_env_variable
 from reference.models import ReferenceInfo
 
 
@@ -159,7 +160,7 @@ class Flowcell(models.Model):
         :return:
         """
         # time deltas are pythons measurement of time difference
-        delta = datetime.timedelta(days=7)
+        delta = datetime.timedelta(days=int(get_env_variable("MT_TIME_UNTIL_INACTIVE")))
         # If the current time minus two days is more than the last activity date, there has been no activity in 48 hours
         if (datetime.datetime.now(datetime.timezone.utc) - delta) > self.last_activity_date:
 
