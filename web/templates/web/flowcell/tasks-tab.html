@@ -17,7 +17,11 @@
                     <input style="display: none" type="hidden" name="flowcell" value="{{ flowcell.id }}"/>
                     <div class="form-group">
                         <label for="job-type-select">Task type</label>
+                        {% if flowcell.archived %}
+                        <select class="form-control" name="job-type" id="job-type-select" disabled></select>
+                        {% else %}
                         <select class="form-control" name="job-type" id="job-type-select"></select>
+                        {% endif %}
                     </div>
                     <div class="form-group">
                         <label id="select-label" for="reference-select">Reference</label>
