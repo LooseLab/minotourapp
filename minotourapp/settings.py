@@ -193,7 +193,7 @@ CELERY_QUEUES = (
     Queue('minimap', default_exchange, routing_key='alignment#', consumer_arguments={'x-priority': 5}),
 )
 CELERY_IMPORTS = ('web.tasks', 'reads.tasks.tasks_update_run_summary', 'communication.tasks_send_message',
-                  'alignment.tasks_alignment')
+                  'alignment.tasks_alignment', 'reads.tasks.tasks_archive_flowcell')
 CELERY_ROUTES = ({
     'run_minimap2_alignment': {
         'queue': 'minimap',
@@ -247,6 +247,11 @@ CELERY_BEAT_SCHEDULE = {
         'options': {
             "queue": "minimap"
         }
+    },
+    # Run this every midnight
+    'archive_flowcell': {
+        'task': 'reads.tasks.tasks_archive_flowcell.create_archive_tasks',
+        'schedule': crontab(minute=0, hour=0)
     }
 }
 
