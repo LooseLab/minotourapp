@@ -11,6 +11,7 @@ from shutil import copy, rmtree
 
 from celery import task
 from celery.utils.log import get_task_logger
+from django.conf import settings
 
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata
@@ -605,7 +606,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             fastq_dict = {fasta.read_id: fasta for fasta in fasta_objects}
         # create the command we are calling minimap with
         cmd = "{} -x map-ont -t 1 --secondary=no -c --MD {} -".format(
-            minimap2, Path(reference_location) / reference_info.filename
+            minimap2, Path(reference_location) / reference_info.file_name
         )
         logger.info(
             "Flowcell id: {} - Calling minimap Artic - {}".format(flowcell.id, cmd)
@@ -632,13 +633,13 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             chromosomes_seen_now = set()
             # Dictionary to store reads that have mapped under the correct barcode
             barcode_sorted_fastq_cache = defaultdict(list)
-            reference_path = Path(reference_location) / reference_info.filename
+            reference_path = Path(reference_location) / reference_info.file_name
             base_result_dir_path = make_results_directory_artic(flowcell.id, task.id)
             # We can save time by writing the empty numpy data struct and reloading it
             master_reference_count_path = Path(
                 f"{base_result_dir_path}/{reference_info.name}_counts.pickle"
             )
-            if reference_info.filename.endswith(".gz"):
+            if reference_info.file_name.endswith(".gz"):
                 with gzip.open(reference_path, "rt") as fp:
                     reference_count_dict = populate_reference_count(
                         reference_count_dict, fp, master_reference_count_path
