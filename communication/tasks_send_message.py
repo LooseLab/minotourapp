@@ -119,7 +119,7 @@ def send_messages():
     )
     # Set the messages to delivered if they are more than hour old
     Message.objects.filter(created_date__lt=time_limit, delivered_date=None).update(
-        delivered_date=datetime.datetime.now()
+        delivered_date=datetime.datetime.now(datetime.timezone.utc)
     )
     # Get the new messages
     new_messages = Message.objects.filter(delivered_date=None)
