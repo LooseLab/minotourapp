@@ -9,7 +9,25 @@ class ReferenceManagementController {
     this._datatableObj = $(`#reference-table`)
     this._addEventsToDropZone()
     this._createReferenceTable()
-    this._addEventsToDeleteButton()
+  }
+
+  /**
+   * Ajax request to delete a reference
+   * @param referencePk {number} The primary key of the reference
+   * @private
+   */
+  _deleteReference (referencePk) {
+    this._axiosInstance.delete(`/api/v1/references`, { referencePk }).then(
+      response => {
+        alert(response.data)
+        this._datatableObj.DataTable().ajax.reload(null, false)
+      }
+    ).catch(
+      error => {
+        console.error(error.response)
+        alert(`Reference failed to delete`)
+      }
+    )
   }
 
   /**
@@ -21,6 +39,12 @@ class ReferenceManagementController {
       this._datatableObj.DataTable().ajax.reload(null, false)
     } else {
       this._datatableObj.DataTable({
+        initComplete: (settings, json) => {
+          $(`.deletion`).on(`click`, event => {
+            console.log(event)
+            alert(`Not implemented yet.`)
+          })
+        },
         ajax: {
           url: `/api/v1/reference`,
           async: true,
@@ -49,32 +73,21 @@ class ReferenceManagementController {
             sortable: false,
             targets: 3,
             data: null,
-            render: (data, type, full, meta) => data.private ? `<a class="btn icon-task deletion" data-delete="delete_${data.id}"><i class="fa fa-minus-square"></i> Delete </a>` : ``
+            render: (data, type, full, meta) => data.deletable ? `<a class="btn icon-task deletion" data-delete="${data.id}"><i class="fa fa-minus-square"></i> Delete </a>` : ``
           }
         ]
+      })
+      this._datatableObj.on(`draw`, () => {
+
       })
     }
   }
 
-  _addEventsToDeleteButton () {
-    this._datatableObj.on(`draw`, () => {
-      $(`.deletion`).on(`click`, event => {
-        console.log(event)
-        alert(`Not implemented yet.`)
-      })
-    })
-  }
-
-  // ondrop="dropHandler(event);" ondragover="dragOverHandler(event);
   _addEventsToDropZone () {
     const dropZone = $(`#drop-zone`)
     dropZone.on(`dragover`, event => {
       this._dragOverHandler(event)
     })
-    // dropZone.on(`drop`, event => {
-    //   console.log(event)
-    //   this._dropHandler(event)
-    // })
     dropZone.on(`dragleave`, event => {
       this._dragLeaveHandler(event)
     })
@@ -141,7 +154,6 @@ class ReferenceManagementController {
               error => {
                 console.error(error.response)
                 if (error.response.status === 403) {
-                  console.log(`SEE MY MODAL`)
                   this._modalError(error.response.data, 6000)
                 }
                 this._formData = new FormData()
@@ -158,7 +170,6 @@ class ReferenceManagementController {
         file.text().then(text => {
           console.log(file, file.name)
           formData.append(`file_location`, file, file.name)
-          formData.append(`md5_checksum`, md5(text))
           formData.append(`filename`, file.name)
           axios(
             {
