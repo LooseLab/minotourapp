@@ -1,59 +1,82 @@
-from celery import task
+import datetime
+import time
+
+from celery.task import task
 from celery.utils.log import get_task_logger
-from reads.models import FastqRead, JobMaster
+from django.db import connection
+
+from minotourapp.utils import get_env_variable
+from reads.models import JobMaster, FastqRead, Flowcell
 
 logger = get_task_logger(__name__)
 
 @task()
-def archive_flowcell(task_id, archive=True):
+def archive_flowcell(flowcell_job_id):
     """
-    Asynchronous celery task to archive a flowcell, removing all fastq and rendering it permanently inactive.
-        Data cannot be added to it.
+    Delete all reads from a flowcell, then delete the flowcell itself.
     Parameters
     ----------
-    task_id: int
-        The primary key of the task (JobMaster)
-    archive: bool
-        Whether we archive the flowcell, or keep it but without the fastq, for new data to be re-uploaded later
+    flowcell_job_id: int
+        The PK of the job_master database record of this task
 
     Returns
     -------
-    None
+
     """
-
-    task = JobMaster.objects.get(pk=task_id)
-
-    flowcell = task.flowcell
-
-    logger.info('Flowcell id: {} - Deleting flowcell {}'.format(flowcell.id, flowcell.name))
-
-    # Get the first FastQRead object
-    first_fastqread = FastqRead.objects.filter(flowcell=flowcell).order_by('id').first()
-    # Get the last FastQRead object
-    last_fastqread = FastqRead.objects.filter(flowcell=flowcell).order_by('id').last()
+    # Get the flowcell jobMaster entry
+    start_time = time.time()
+    flowcell_job = JobMaster.objects.get(pk=flowcell_job_id)
+    # Get the flowcell
+    flowcell = flowcell_job.flowcell
+    delete_chunk_size = 5000
+    alignment_chunk_size = 7500
+    logger.info(
+        "Flowcell id: {} - Deleting flowcell {}".format(flowcell.id, flowcell.name)
+    )
+    JobMaster.objects.filter(flowcell=flowcell).update(complete=True)
+    # Get the last FastQRead object, wayyy faster than count
+    last_fastq_read = FastqRead.objects.filter(flowcell=flowcell).last()
     # if we have both a first and last read PK
-    if first_fastqread and last_fastqread:
-        # Get the first fastqread primary key
-        first_read = first_fastqread.id
+    if last_fastq_read:
         # Get the last fastqread primary key
-        last_read = last_fastqread.id
-
-        logger.info(
-            'Flowcell id: {} - First and last fastqread id are {} {}'.format(flowcell.id, first_read, last_read))
+        last_read = last_fastq_read.id
         # Counter is the first read primary key
-        counter = first_read
-
         # Whilst we still have reads left
-        while counter <= last_read:
-            counter = counter + 500
+        # counter = counter + 20000
+        logger.info(
+            f"Flowcell id: {flowcell.id} - Deleting {delete_chunk_size} records."
+        )
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "DELETE FROM reads_fastqread where flowcell_id=%s limit %s",
+                [flowcell.id, delete_chunk_size],
+            )
+        logger.info(
+            f"Flowcell id: {flowcell.id} - Deleted {delete_chunk_size} fastqread records in {time.time()-start_time}."
+        )
+        # TODO could this be rewritten into celery chunks?
+        # time.sleep(3)
+        archive_flowcell.apply_async(args=(flowcell_job_id,))
 
-            logger.info('Flowcell id: {} - Deleting records with id < {}'.format(flowcell.id, counter))
-
-            affected = FastqRead.objects.filter(flowcell=flowcell).filter(id__lt=counter).delete()
-
-            logger.info('Flowcell id: {} - Deleted {} fastqread records'.format(flowcell.id, affected))
-
-    if archive:
+    else:
         #TODO sort out difference between archived flowcell so things to keep and just clearing a flowcell
         flowcell.archived = True
         flowcell.save()
+
+
+@task()
+def create_archive_tasks():
+    """
+    Create archive tasks for flowcells that are more than X days since last use, don't archive if set to -1
+    Returns
+    -------
+
+    """
+    time_until_inactive = get_env_variable("MT_TIME_UNTIL_ARCHIVE")
+    if time_until_inactive == 0:
+        return
+    delta = datetime.timedelta(days=int(time_until_inactive))
+    for flowcell in Flowcell.objects.filter(archived=False):
+        if flowcell.last_activity_date < datetime.datetime.now(datetime.timezone.utc) - delta:
+            JobMaster.objects.create(job_type_id=18, flowcell=flowcell)
+            logger.info(f"Marking flowcell: {flowcell} for archiving.")
