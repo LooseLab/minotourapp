@@ -116,19 +116,6 @@
   },
   {
     "model": "reads.jobtype",
-    "pk": 5,
-    "fields": {
-      "name": "Assembly",
-      "description": "Rapid rough assembly of reads.",
-      "long_description": "Using minimap and miniasm a rapid assembly of your data will be performed every n reads generated.",
-      "reference": false,
-      "transcriptome": false,
-      "readcount": true,
-      "private": false
-    }
-  },
-  {
-    "model": "reads.jobtype",
     "pk": 8,
     "fields": {
       "name": "ExportLive",
@@ -170,7 +157,7 @@
     "model": "reads.jobtype",
     "pk": 11,
     "fields": {
-      "name": "Delete_Flowcell",
+      "name": "Delete Flowcell",
       "description": "Delete a flowcell",
       "long_description": "Delete a flowcell from the database",
       "reference": false,
@@ -224,11 +211,11 @@
     "fields": {
       "name": "Archive Flowcell",
       "description": "Delete all Fastq data attached to a flowcell, preserving the summaries.",
-      "long_description": "When a flowcell has a last activity date of more than 30 days ago, we remove all the data attached to it.",
+      "long_description": "User has chosen to Archive a flowcell",
       "reference": false,
       "transcriptome": false,
       "readcount": true,
-      "private": true
+      "private": false
     }
   },
   {
@@ -252,6 +239,19 @@
       "description": "JobType to alert celery to run artic when we can. ",
       "long_description": "",
       "reference": true,
+      "transcriptome": false,
+      "readcount": true,
+      "private": true
+    }
+  },
+    {
+    "model": "reads.jobtype",
+    "pk": 18,
+    "fields": {
+      "name": "Archive Flowcell Auto",
+      "description": "Delete all Fastq data attached to a flowcell, preserving the summaries.",
+      "long_description": "When a flowcell has a last activity date of more than 30 days ago, we remove all the data attached to it.",
+      "reference": false,
       "transcriptome": false,
       "readcount": true,
       "private": true
