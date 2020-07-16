@@ -17,7 +17,7 @@ class ReferenceManagementController {
    * @private
    */
   _deleteReference (referencePk) {
-    this._axiosInstance.delete(`/api/v1/references`, { referencePk }).then(
+    this._axiosInstance.delete(`/api/v1/reference`, { referencePk }).then(
       response => {
         alert(response.data)
         this._datatableObj.DataTable().ajax.reload(null, false)
