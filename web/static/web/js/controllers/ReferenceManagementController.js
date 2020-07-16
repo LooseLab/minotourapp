@@ -17,7 +17,7 @@ class ReferenceManagementController {
    * @private
    */
   _deleteReference (referencePk) {
-    this._axiosInstance.delete(`/api/v1/reference`, { referencePk }).then(
+    this._axiosInstance.delete(`/api/v1/reference`, { data: { referencePk } }).then(
       response => {
         alert(response.data)
         this._datatableObj.DataTable().ajax.reload(null, false)
@@ -42,7 +42,7 @@ class ReferenceManagementController {
         initComplete: (settings, json) => {
           $(`.deletion`).on(`click`, event => {
             console.log(event)
-            this._deleteReference(event.currentTarget.id)
+            this._deleteReference(event.currentTarget.getAttribute(`data-delete`))
           })
         },
         ajax: {

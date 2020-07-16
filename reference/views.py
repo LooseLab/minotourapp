@@ -115,9 +115,12 @@ def reference_list(request):
             )
     elif request.method == "DELETE":
         reference_id = request.data.get("referencePk", None)
+        print(request.data)
         if reference_id:
             ReferenceInfo.objects.get(pk=int(reference_id)).delete()
             return Response("Reference deleted.", status=status.HTTP_200_OK)
+        else:
+            return Response("Error", status=status.HTTP_503_SERVICE_UNAVAILABLE)
         # Let's delete a reference, with mappings
         pass
 
