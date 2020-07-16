@@ -2,6 +2,8 @@
 """
 from __future__ import absolute_import, unicode_literals
 
+import datetime
+
 import redis
 from celery import task
 from celery.utils.log import get_task_logger
@@ -19,9 +21,10 @@ from reads.models import (
     Flowcell,
     JobMaster,
 )
-from reads.tasks.delete_flowcell_task import delete_flowcell
 from reads.tasks.redis_tasks_functions import harvest_reads
-from reads.tasks.update_flowcell_tasks import update_flowcell_details
+from reads.tasks.task_delete_flowcell import delete_flowcell
+from reads.tasks.tasks_archive_flowcell import archive_flowcell
+from reads.tasks.tasks_update_flowcell import update_flowcell_details
 from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
 
 redis_instance = redis.StrictRedis(
@@ -51,62 +54,45 @@ def run_monitor():
     flowcell_list = [x for x in Flowcell.objects.all() if x.active()]
     # iterate them
     for flowcell in flowcell_list:
-
+        if flowcell.archived:
+            continue
         flowcell_job_list = JobMaster.objects.filter(flowcell=flowcell).filter(
             running=False, complete=False, paused=False
         )
-
         for flowcell_job in flowcell_job_list:
-
             if not flowcell_job.job_type.name == "Run Artic":
                 flowcell_job.running = True
                 flowcell_job.save()
-
             if flowcell_job.job_type.name == "Minimap2" and flowcell_job.from_database:
-
                 run_minimap2_alignment.apply_async(args=(flowcell_job.id,), queue="minimap")
-
             if flowcell_job.job_type.name == "Metagenomics":
-
                 run_centrifuge.delay(flowcell_job.id)
-
             if flowcell_job.job_type.name == "UpdateFlowcellDetails":
-
                 update_flowcell_details.delay(flowcell_job.id)
-
             if flowcell_job.job_type.name == "CalculateMetagenomicsSankey":
-
                 run_sankey(flowcell_job.id)
-
             if flowcell_job.job_type.name == "Delete_Flowcell":
-
                 delete_flowcell.delay(flowcell_job.id)
-
+            if flowcell_job.job_type.name == "Archive Flowcell":
+                archive_flowcell.delay(flowcell_job.id)
             if flowcell_job.job_type.name == "ExpectedBenefit":
-
                 calculate_expected_benefit_3dot0_final.delay(flowcell_job.id)
-
             if flowcell_job.job_type.name == "Track Artic Coverage" and flowcell_job.from_database:
-
                 run_artic_pipeline.delay(flowcell_job.id)
-
             if flowcell_job.job_type.name == "Run Artic":
                 logger.info("Running the check for the Artic code.")
                 # Get the maximum number of pipelines to have running
                 max_artic_pipeline_instances = int(
                     get_env_variable("MT_ARTIC_MAX_PIPELINES")
                 )
-
                 logger.info(max_artic_pipeline_instances)
                 # TODO replace with celery 4.0 magic queues etc
                 running_artic_jobs = JobMaster.objects.filter(
                     job_type=flowcell_job.job_type, running=True
                 ).count()
-
                 logger.info(
                     f" Running this many artic jobs currently {running_artic_jobs}"
                 )
-
                 if running_artic_jobs < max_artic_pipeline_instances:
 
                     flowcell_job.running = True
@@ -132,12 +118,10 @@ def run_monitor():
                     )
 
                     logger.info("Added Artic to the redis cli queue.")
-
                 elif running_artic_jobs >= max_artic_pipeline_instances:
                     logger.warning(
                         f"Sadly we do not have enough available compute power to run more than {max_artic_pipeline_instances} Artic pipelines simultaneously"
                     )
-
                 else:
                     logger.error("¯\_(ツ)_/¯")
 
@@ -189,13 +173,10 @@ def update_run_start_time():
     the header of the first fastq read
     """
     # TODO could this be improved? Once we have a run start time no longer check it somehow
-
-    runs = Run.objects.all()
-
+    delta = datetime.timedelta(days=int(get_env_variable("MT_TIME_UNTIL_INACTIVE")))
+    runs = Run.objects.filter(flowcell__last_activity_date__lt=datetime.datetime.now(datetime.timezone.utc)-delta)
     for run in runs:
-
         if run.RunDetails.all().count():
-
             run.start_time = run.RunDetails.last().minKNOW_start_time
             origin = "Live data"
             run.save()
