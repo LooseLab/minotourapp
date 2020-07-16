@@ -6,9 +6,15 @@
     <div style="background-color: white; flex: 1 0 auto;">
         <section>
             <div class="container-fluid">
-                <h5 class="mt-4 mb-2">Flowcell name: <strong id="name-flowcell">{{ flowcell.name }}</strong> Sample
+                {% if flowcell.archived %}
+                        <h5 class="mt-4 mb-2">Flowcell name: <strong id="name-flowcell">{{ flowcell.name }} (Archived)</strong> Sample
                     name:
                     <strong>{{ flowcell.sample_name }}</strong></h5>
+                        {% else %}
+                        <h5 class="mt-4 mb-2">Flowcell name: <strong id="name-flowcell">{{ flowcell.name }}</strong> Sample
+                    name:
+                    <strong>{{ flowcell.sample_name }}</strong></h5>
+                        {% endif %}
                 <div class="row">
                     <div class="col-12">
                         <!-- Custom Tabs -->
