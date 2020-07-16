@@ -13,9 +13,10 @@ from minotourapp.settings import MINIMAP2, MEDIA_ROOT
 from reference.forms import ReferenceForm
 from reference.models import ReferenceInfo, ReferenceLine
 from reference.serializers import ReferenceInfoSerializer
+from reference.utils import validate_reference_checks
 
 
-@api_view(["GET", "POST"])
+@api_view(["GET", "POST", "DELETE"])
 def reference_list(request):
     """
     Get a list of all references available to the User making the request.
@@ -51,19 +52,6 @@ def reference_list(request):
             for index, file in enumerate(files):
                 file_name = Path(file_names[index])
                 name = str(file_name.stem).partition(".")[0]
-                ref_info = ReferenceInfo(
-                    file_name=file_names[index],
-                    name=name,
-                    file_location=file,
-                    uploader=request.user,
-                )
-                try:
-                    ref_info.save()
-                except IntegrityError as e:
-                    return Response(
-                        f"Duplicate upload attempted. File - {file_names[index]}",
-                        status=status.HTTP_403_FORBIDDEN,
-                    )
                 # get fastq or fasta
                 handle = (
                     pyfastx.Fasta
@@ -73,7 +61,24 @@ def reference_list(request):
                     else pyfastx.Fastq
                 )
                 # build minimap2 index
-
+                duplicated, sha256_hash = validate_reference_checks(file, request.user)
+                if duplicated:
+                    # ref_info.delete()
+                    return Response(f"Exact reference already exists. Please use {sha256_hash}", status=status.HTTP_403_FORBIDDEN)
+                ref_info = ReferenceInfo(
+                    file_name=file_names[index],
+                    name=name,
+                    file_location=file,
+                    uploader=request.user,
+                )
+                try:
+                    ref_info.save()
+                except IntegrityError as e:
+                    ref_info.save()
+                    return Response(
+                        f"Duplicate upload attempted. File - {file_names[index]}",
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
                 minimap2_index_file_location = (
                     f"{MEDIA_ROOT}/minimap2_indexes/{file_name.stem}.mmi"
                 )
@@ -88,6 +93,7 @@ def reference_list(request):
                     defaults={
                         "length": fa.size,
                         "minimap2_index_file_location": minimap2_index_file_location,
+                        "sha256_checksum": sha256_hash
                     },
                 )
                 # Create a Reference line entry for each "Chromosome/line"
@@ -102,6 +108,10 @@ def reference_list(request):
             return Response(
                 "INVALID FORM?", status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+    elif request.method == "DELETE":
+
+        # Let's delete a reference, with mappings
+        pass
 
 
 @api_view(["GET"])
