@@ -403,7 +403,8 @@ def sort_reads_by_flowcell_fire_tasks(reads):
 @task()
 def harvest_reads():
     """
-    Celery task to pull all reads JSON accrued out of redis cache and run base-called metadata calculations on it.
+    Celery task to pull all reads JSON accrued out of redis cache and run base-called metadata calculations on it,
+    and any streaming tasks (minmap2 or artic)
     Parameters
     ----------
 
@@ -448,11 +449,15 @@ def save_reads_bulk(reads):
     None
 
     """
-
+    flowcell_dict = {}
     reads_list = []
     run_dict = {}
     for read in reads:
         run_pk = read.get("run", -1)
+        if read["flowcell_id"] not in flowcell_dict:
+            f = Flowcell.objects.get(pk=read["flowcell_id"])
+            f.archived = False
+            f.save()
         if run_pk not in run_dict and run_pk != -1:
             run = Run.objects.get(pk=run_pk)
             run_dict[run_pk] = run
@@ -487,16 +492,8 @@ def save_reads_bulk(reads):
     count = redis_instance.scard("reads")
     while count > 10:
         print ("waiting")
-        time.sleep(10)
+        time.sleep(5)
         count = redis_instance.scard("reads")
-
-    # minimap2tasks = redis_instance.get("minimaptasks")
-    # if not min
-    # while int(minimap2tasks) > 2:
-    #     print ("waiting for minimap")
-    #     time.sleep(10)
-    #     minimap2tasks = redis_instance.get("minimaptasks")
-
     redis_instance.sadd("reads", reads_as_json)
     # Bulk create the entries
     FastqRead.objects.bulk_create(reads_list, batch_size=1000)
