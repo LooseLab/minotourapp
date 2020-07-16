@@ -41,6 +41,11 @@ def reference_list(request):
                 queryset, many=True, context={"request": request}
             )
             data = serializer.data
+            for d in data:
+                if d["uploader_id"] == request.user.id:
+                    d["deletable"] = True
+                else:
+                    d["deletable"] = False
         return Response({"data": data}, status=status.HTTP_200_OK)
     elif request.method == "POST":
         file_names = request.data.get("file_name", [])
@@ -109,7 +114,10 @@ def reference_list(request):
                 "INVALID FORM?", status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     elif request.method == "DELETE":
-
+        reference_id = request.data.get("referencePk", None)
+        if reference_id:
+            ReferenceInfo.objects.get(pk=reference_id).delete()
+            return Response("Reference deleted.", status=status.HTTP_200_OK)
         # Let's delete a reference, with mappings
         pass
 
