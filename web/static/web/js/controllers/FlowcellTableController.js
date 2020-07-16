@@ -126,7 +126,8 @@ class FlowcellTableController {
         },
         {
           targets: 10,
-          data: `is_active`
+          data: `is_active`,
+          render: (data, type, full, meta) => data.active ? `Active` : `Inactive`
         },
         {
           targets: 11,
