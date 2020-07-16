@@ -14,6 +14,7 @@ class ReferenceInfoSerializer(serializers.ModelSerializer):
             'name',
             'length',
             'private',
+            'uploader_id'
         )
         read_only = (
             'id',
