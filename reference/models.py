@@ -44,7 +44,7 @@ class ReferenceInfo(models.Model):
     transcripts = models.BooleanField(
         default=False
     )
-    md5_checksum = models.CharField(
+    sha256_checksum = models.CharField(
         max_length=256,
         default=""
     )
