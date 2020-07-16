@@ -187,8 +187,8 @@ class AlignmentController {
           },
           columns: [
             { data: `barcode_name` },
-            { data: `chromosome__reference__name` },
-            { data: `chromosome__line_name` },
+            { data: `reference_name` },
+            { data: `chromosome_name` },
             { data: `reference_line_length` },
             { data: `read_count` },
             { data: `total_yield` },
