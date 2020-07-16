@@ -11,24 +11,12 @@ from rest_framework.authtoken.models import Token
 
 from minotourapp.settings import MINIMAP2, MEDIA_ROOT
 from reference.models import ReferenceInfo, ReferenceLine
-
-
-def validate_reference_checks(file_path):
-    """
-    Perform all the checks that we need to do to.
-    1. If the reference filename exists in any of the references available to the user, reject it
-    2. Check if the md5 of the gzipped file matches any references, if it does, silently backref to that rather
-     than add a new file.
-    3. If the md5 exists then rename the file to a uuid, move it to the right location and create a md5 checksum for it
-    :param file_path: The file path to the reference
-    :type file_path: pathlib.Path
-    :return:
-    """
-    pass
+from reference.utils import validate_reference_checks
 
 
 def find_files_of_type(file_or_directory, file_extensions):
-    """Return a list of pathlib.Path of files with chosen extensions
+    """
+    Return a list of pathlib.Path of files with chosen extensions
     Parameters
     ----------
     file_or_directory : str
@@ -114,8 +102,8 @@ class Command(BaseCommand):
                 ".fasta.gz",
                 ".fsa.gz"
             ]
-            if options["private"] and not options["key"]:
-                print("To add private references, your minotour api_key is required. "
+            if not options["key"]:
+                print("To add references, your minotour api_key is required. "
                       "This can be found on the profile page of your account.")
                 return
             for file_or_directory in options["reference"]:
@@ -124,10 +112,7 @@ class Command(BaseCommand):
                 )
             private = False
             # If we want private references
-            if options["key"]:
-                user = Token.objects.get(key=options["key"]).user
-            else:
-                user = None
+            user = Token.objects.get(key=options["key"]).user
             if options["private"]:
                 private = True
             # remove none from reference_files
@@ -155,6 +140,9 @@ class Command(BaseCommand):
                         " please change the filename"
                     )
                     continue
+                duplicated, sha256_hash = validate_reference_checks(ref_file, user)
+                if duplicated:
+                    return
                 ## get fastq or fasta
                 handle = (
                     pyfastx.Fasta
@@ -163,11 +151,13 @@ class Command(BaseCommand):
                     )
                     else pyfastx.Fastq
                 )
-                # build minimap2 index
+                # build minimap2 inde
                 minimap2_index_path = f"{MEDIA_ROOT}/minimap2_indexes/{ref_file.stem}.mmi"
                 print("Building minimap2 index, please wait.....")
                 subprocess.Popen(f"{MINIMAP2} -d {minimap2_index_path}"
                                  f" {ref_file.as_posix()}".split()).communicate()
+                print("Built index. Parsing file...")
+
                 # Individual lines (I.E Chromosomes in the reference)
                 fa = handle(ref_file.as_posix())
                 # Create the Reference info entry in the database
@@ -178,7 +168,8 @@ class Command(BaseCommand):
                     length=fa.size,
                     private=private,
                     uploader=user,
-                    minimap2_index_file_location=minimap2_index_path
+                    minimap2_index_file_location=minimap2_index_path,
+                    sha256_checksum=sha256_hash
                 )
                 # Create a Reference line entry for each "Chromosome/line"
                 for contig in fa:
