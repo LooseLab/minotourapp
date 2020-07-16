@@ -52,6 +52,7 @@ class Command(BaseCommand):
     help = (
         "Add a custom reference sequence to the minoTour database. "
         "Pass the full path to the reference file."
+        "Requires an API key that can be found on your profile page."
     )
     def add_arguments(self, parser):
         """
@@ -74,6 +75,7 @@ class Command(BaseCommand):
                  " set with your account. Found in the"
                  " profile section of your minotour page,"
                  " once logged in.",
+            required=True
         )
         parser.add_argument(
             "-p",
