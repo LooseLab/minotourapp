@@ -42,7 +42,7 @@ class ReferenceManagementController {
         initComplete: (settings, json) => {
           $(`.deletion`).on(`click`, event => {
             console.log(event)
-            alert(`Not implemented yet.`)
+            this._deleteReference(event.currentTarget.id)
           })
         },
         ajax: {
