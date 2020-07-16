@@ -75,8 +75,8 @@ from reads.serializers import (
     JobMasterSerializer,
     JobMasterInsertSerializer,
 )
-from reads.tasks.delete_flowcell_task import clear_artic_data
 from reads.tasks.redis_tasks_functions import save_reads_bulk
+from reads.tasks.task_delete_flowcell import clear_artic_data
 from reads.utils import get_coords, return_temp_empty_summary, pause_job, clear_artic_command_job_masters
 from readuntil.models import ExpectedBenefitChromosomes
 from reference.models import ReferenceInfo
@@ -1397,7 +1397,7 @@ def flowcell_list(request):
                 "average_read_length": record.average_read_length,
                 "is_active": record.active(),
                 "sample_name": record.sample_name,
-                "has_fastq": record.has_fastq,
+                "archived": record.archived,
                 "owner": owner,
                 "permission": permission,
             }
@@ -2514,31 +2514,6 @@ def read_list_new(request):
             status=status.HTTP_201_CREATED,
         )
 
-        #
-        # serializer = FastqReadSerializer(data=request.data, many=True)
-        #
-        # if serializer.is_valid():
-        #
-        #     # print(serializer.validated_data)
-        #
-        #     logger.info(
-        #         ">>> received reads post - calling task - request.data size: {}".format(
-        #             len(request.data)
-        #         )
-        #     )
-
-            # save_reads.delay(request.data)
-        #     save_reads(request.data)
-        #
-        #     return Response({}, status=status.HTTP_201_CREATED)
-        #
-        # else:
-        #
-        #     logger.info(">>> received reads post - no valid data")
-        #     return Response(
-        #         {"message": "no valid data"}, status=status.HTTP_400_BAD_REQUEST
-        #     )
-
 
 @api_view(["GET"])
 def readextra_list(request):
@@ -2793,6 +2768,8 @@ def job_master_list(request):
                 },
                 status=status.HTTP_401_UNAUTHORIZED,
             )
+        if flowcell.archived and request.data["job_type"] != 11:
+            return Response("Flowcell Archived, no data to analyse", status=status.HTTP_403_FORBIDDEN)
         # Check to see if we have a string as the flowcell, not an Int for a PK based lookup
         # This is for starting a job from the client
 
