@@ -38,7 +38,7 @@ def rough_coverage_complete_chromosome_flowcell(
             job_master__id=task_id,
             flowcell__owner=request.user,
             barcode_id=barcode_id,
-            chromosome_id=chromosome_id,
+            chromosome_pk=chromosome_id,
             read_type_id=read_type_id,
         ).order_by("bin_position_start")
     ).values_list("bin_position_start", "bin_coverage")
@@ -47,9 +47,9 @@ def rough_coverage_complete_chromosome_flowcell(
     # TODO limits to just one reference here when fetching length, could be an issue
     #  in the future displaying multiple rferences on a plot
     length = (
-        PafSummaryCov.objects.filter(job_master_id=task_id, chromosome_id=chromosome_id)
+        PafSummaryCov.objects.filter(job_master_id=task_id, chromosome_pk=chromosome_id)
         .first()
-        .chromosome.chromosome_length
+        .reference_line_length
     )
     return Response(
         {"chartData": queryset, "refLength": length, "sumToCheck": sum_to_check},
@@ -78,27 +78,19 @@ def paf_summary_table_json(request, pk):
     """
     queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk).exclude(
         job_master__job_type_id=16
-    )
-    df = pd.DataFrame.from_records(
-        queryset.values(
+    ).values(
             "barcode_name",
-            "chromosome__line_name",
-            "chromosome__reference__name",
+            "chromosome_name",
+            "reference_name",
             "job_master_id",
             "read_count",
             "total_yield",
             "reference_line_length",
+            "coverage",
+            "average_read_length"
         )
-    )
-    df["average_read_length"] = (
-        df["total_yield"].div(df["read_count"]).round(decimals=3)
-    )
-    df["coverage"] = (
-        df["total_yield"].div(df["reference_line_length"]).round(decimals=3)
-    )
-    dictdf = df.to_dict("records")
     result = {
-        "data": dictdf,
+        "data": queryset,
     }
     return Response(result, status=200)
 
@@ -121,7 +113,7 @@ def per_barcode_coverage_summary(request, pk):
     """
     chromosome_pk = request.GET.get("chromosomeId", None)
     queryset = PafSummaryCov.objects.filter(
-        job_master__flowcell_id=pk, chromosome_id=chromosome_pk
+        job_master__flowcell_id=pk, chromosome_pk=chromosome_pk
     ).exclude(job_master__job_type_id=16)
     if not queryset:
         return Response(
@@ -132,7 +124,7 @@ def per_barcode_coverage_summary(request, pk):
             "job_master_id",
             "barcode_name",
             "chromosome_id",
-            "chromosome__line_name",
+            "chromosome_name",
             "reference_line_length",
             "read_count",
             "total_yield",
@@ -157,7 +149,7 @@ def per_barcode_coverage_summary(request, pk):
 
     df["coverage_series"] = df[
         [
-            "chromosome__line_name",
+            "chromosome_name",
             "coverage",
             "average_read_length",
             "barcode_name",
@@ -168,7 +160,7 @@ def per_barcode_coverage_summary(request, pk):
     )
     df["average_read_length_series"] = df[
         [
-            "chromosome__line_name",
+            "chromosome_name",
             "coverage",
             "average_read_length",
             "barcode_name",
@@ -177,7 +169,7 @@ def per_barcode_coverage_summary(request, pk):
     ].T.apply(
         lambda col: {"name": col[3] + " " + col[4] + " " + col[0], "data": col[2]}
     )
-    categories = np.unique(df["chromosome__line_name"].values)
+    categories = np.unique(df["chromosome_name"].values)
     return Response(
         {
             "coverageData": df["coverage_series"].values,
@@ -213,12 +205,12 @@ def mapped_references_by_flowcell_list(request, flowcell_id):
         .exclude(job_master__job_type_id=16)
         .values(
             jmId=F("job_master_id"),
-            referenceName=F("job_master__reference__name"),
-            referenceId=F("job_master__reference_id"),
+            referenceName=F("reference_name"),
+            referenceId=F("reference_pk"),
             barcodeName=F("barcode_name"),
             barcodeId=F("barcode_id"),
-            chromosomeName=F("chromosome__line_name"),
-            chromosomeId=F("chromosome_id"),
+            chromosomeName=F("chromosome_name"),
+            chromosomeId=F("chromosome_pk"),
             readTypeId=F("read_type_id"),
             readTypeName=F("read_type__name"),
         )
@@ -248,13 +240,13 @@ def per_genome_coverage_summary(request, flowcell_pk):
     if query.count() < 30:
         queryset = (
             PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk)
-            .values(data_name=F("chromosome__line_name"))
+            .values(data_name=F("chromosome_name"))
             .annotate(Sum("coverage"), Avg("average_read_length"))
         )
     else:
         queryset = (
             PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk)
-            .values(data_name=F("chromosome__reference__name"))
+            .values(data_name=F("reference_name"))
             .annotate(Sum("coverage"), Avg("average_read_length"))
         )
     chromosome_coverage = []
