@@ -13,9 +13,9 @@ class ArticBarcodeMetadata(models.Model):
     minimum_coverage = models.IntegerField(default=0)
     maximum_coverage = models.IntegerField(default=0)
     percentage_of_reads_in_barcode = models.FloatField(default=0)
-    percentage_bases_over_20x = models.FloatField(default=0.0)
-    percentage_bases_over_250x = models.FloatField(default=0.0)
-    percentage_bases_over_200x = models.FloatField(default=0.0)
+    percentage_bases_at_90_value = models.FloatField(default=0.0)
+    percentage_bases_at_95_value = models.FloatField(default=0.0)
+    percentage_bases_at_99_value = models.FloatField(default=0.0)
     has_sufficient_coverage = models.BooleanField(default=False)
     has_finished = models.BooleanField(default=False)
     marked_for_rerun = models.BooleanField(default=False)
@@ -40,3 +40,17 @@ class ArticBarcodeMetadata(models.Model):
 
     def __str__(self):
         return f"{self.flowcell} {self.job_master} {self.barcode}"
+
+
+class ArticFireConditions(models.Model):
+    """
+    Shows the conditions for each task that wil cause the Fire Artic JobMaster to be created
+    """
+    flowcell = models.ForeignKey(
+        Flowcell,
+        related_name="flowcell_firing_conditions",
+        on_delete=models.CASCADE,
+    )
+    ninety_percent_bases_at = models.IntegerField(default=250)
+    ninety_five_percent_bases_at = models.IntegerField(default=200)
+    ninety_nine_percent_bases_at = models.IntegerField(default=20)

@@ -14,7 +14,7 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 
 from alignment.models import PafSummaryCov
-from artic.models import ArticBarcodeMetadata
+from artic.models import ArticBarcodeMetadata, ArticFireConditions
 from minotourapp.settings import BASE_DIR
 from minotourapp.utils import get_env_variable
 from reads.models import (
@@ -56,6 +56,7 @@ def clear_unused_artic_files(artic_results_path, sample_name):
         ".fastq",
         ".counts.dat",
         ".coverage.dat",
+        ".sorted.bam"
     ]
     files_to_keep_full = []
     files_to_keep_full.extend([f"{sample_name}{filey}" for filey in files_to_keep])
@@ -417,9 +418,9 @@ def save_artic_barcode_metadata_info(
     job_master,
     run_id,
     barcode_name,
-    percent20x,
-    percent200x,
-    percent250x,
+    percent_99_value,
+    percent_95_value,
+    percent_90_value,
     has_sufficient_coverage,
 ):
     """
@@ -441,14 +442,14 @@ def save_artic_barcode_metadata_info(
     barcode_name: str
         The name of the barcode.
 
-    percent20x: float
-        Percentage of bases covered above and including 20x across the reference
+    percent_99_value: float
+        Percentage of bases at the 99% of reference bases at this coverage value (See ARticFireConditions model)
 
-    percent200x: float
-        Percentage of bases covered above and including 200x across the reference
+    percent_95_value: float
+        Percentage of bases at the 95% of reference bases at this coverage value (See ARticFireConditions model)
 
-    percent250x: float
-        Percentage of bases covered above and including 250x across the reference
+    percent_90_value: float
+        Percentage of bases at the 90% of reference bases at this coverage value (See ARticFireConditions model)
 
     has_sufficient_coverage: bool
         If True, the barcode has sufficient coverage to fire the artic command
@@ -501,9 +502,9 @@ def save_artic_barcode_metadata_info(
             "minimum_coverage": barcodes_minimum_coverage,
             "variance_coverage": barcodes_variance_coverage,
             "percentage_of_reads_in_barcode": round(proportion, 2),
-            "percentage_bases_over_20x": round(percent20x, 2),
-            "percentage_bases_over_250x": round(percent250x, 2),
-            "percentage_bases_over_200x": round(percent200x, 2),
+            "percentage_bases_at_99_value": round(percent_99_value, 2),
+            "percentage_bases_at_90_value": round(percent_90_value, 2),
+            "percentage_bases_at_95_value": round(percent_95_value, 2),
             "has_sufficient_coverage": has_sufficient_coverage,
         },
     )
@@ -835,16 +836,17 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     )
                     if barcode in barcodes_already_fired:
                         continue
+                    afc = ArticFireConditions.objects.get(flowcell=flowcell).__dict__
                     number_bases_in_array = coverage.size
-                    number_of_bases_250x = coverage[coverage >= 250].size
-                    number_of_bases_200x = coverage[coverage >= 200].size
-                    number_of_bases_20x = coverage[coverage >= 20].size
-                    percent_20x = number_of_bases_20x / number_bases_in_array * 100
-                    percent_200x = number_of_bases_200x / number_bases_in_array * 100
-                    percent_250x = number_of_bases_250x / number_bases_in_array * 100
+                    coverage_for_90_percent = coverage[coverage >= afc["ninety_percent_bases_at"]].size
+                    coverage_for_95_percent = coverage[coverage >= afc["ninety_five_percent_bases_at"]].size
+                    coverage_for_99_percent = coverage[coverage >= afc["ninety_nine_percent_bases_at"]].size
+                    percent_ninety_percent_bases_at = coverage_for_90_percent / number_bases_in_array * 100
+                    percent_ninety_five_percent_bases_at = coverage_for_95_percent / number_bases_in_array * 100
+                    percent_ninety_nine_percent_bases_at = coverage_for_99_percent / number_bases_in_array * 100
                     has_sufficient_coverage = False
                     # 200x coverage
-                    if percent_200x > 90:
+                    if percent_ninety_percent_bases_at > 90:
                         logger.info(
                             f"Creating artic command job_master here for barcode {barcode} due to 90% 200x xcoverage reached"
                         )
@@ -853,7 +855,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                             flowcell, barcode, reference_info
                         )
                         has_sufficient_coverage = True
-                    elif percent_250x >= 95:
+                    elif percent_ninety_five_percent_bases_at >= 95:
 
                         # So we have to set up the auto fire of the pipeline here if the task fails
                         logger.info(
@@ -864,7 +866,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                             flowcell, barcode, reference_info
                         )
                         has_sufficient_coverage = True
-                    elif percent_20x > 99.5:
+                    elif percent_ninety_nine_percent_bases_at > 99:
                         # So we have to set up the auto fire of the pipeline here if the task fails
                         logger.info(
                             f"Creating artic command job_master here for barcode {barcode} due to 100% 20X coverage reached"
@@ -881,9 +883,9 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         task,
                         run_id,
                         barcode,
-                        percent_20x,
-                        percent_200x,
-                        percent_250x,
+                        percent_ninety_nine_percent_bases_at,
+                        percent_ninety_five_percent_bases_at,
+                        percent_ninety_percent_bases_at,
                         has_sufficient_coverage,
                     )
     task.last_read = last_read

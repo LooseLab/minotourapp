@@ -2042,8 +2042,6 @@ class FlowcellChannelSummary(models.Model):  # TODO to be deleted
         constraints = [
             models.UniqueConstraint(fields=['flowcell', 'channel'], name='flowcell_channel')
         ]
-        #UniqueConstraint(fields=['flowcell', 'channel'], name='flowcell_channel')
-        #unique_together = ('flowcell','channel')
 
     def __str__(self):
         return "{} {} {}".format(self.flowcell, self.channel, self.read_count)

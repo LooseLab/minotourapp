@@ -14,12 +14,34 @@ from rest_framework.response import Response
 
 from alignment.models import PafSummaryCov
 # Create your views here.
-from artic.models import ArticBarcodeMetadata
+from artic.models import ArticBarcodeMetadata, ArticFireConditions
 from artic.task_artic_alignment import np
 from artic.utils import get_amplicon_band_data, quick_get_artic_results_directory, remove_duplicate_sequences_numpy
 from reads.models import Flowcell, JobMaster, FlowcellSummaryBarcode, Barcode
 from reference.models import ReferenceInfo
 
+
+@api_view(["GET"])
+def fire_conditions_list(request, pk):
+    """
+    Get the fire conditions for the artic pipeline for this flowcell
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+    pk: int
+        The primary key of the flowcell record
+
+    Returns
+    -------
+
+    """
+    if request.method == "GET":
+        data = ArticFireConditions.objects.get(flowcell_id=pk).__dict__
+        data.pop("_state")
+        return Response(data, status=status.HTTP_200_OK)
+    elif request.method == "POST":
+        print(request.data)
+        return Response("hello", status=status.HTTP_201_CREATED)
 
 @api_view(["GET"])
 def get_artic_barcodes(request):
@@ -277,15 +299,15 @@ def get_artic_summary_table_data(request):
     }
     for pafsummarycov in queryset:
         barcode_name = pafsummarycov["barcode_name"]
-        pafsummarycov["percent_200x"] = artic_metadata[
+        pafsummarycov["95%_value"] = artic_metadata[
             barcode_name
-        ].percentage_bases_over_200x
-        pafsummarycov["percent_20x"] = artic_metadata[
+        ].percentage_bases_at_95_value
+        pafsummarycov["99%_value"] = artic_metadata[
             barcode_name
-        ].percentage_bases_over_20x
-        pafsummarycov["percent_250x"] = artic_metadata[
+        ].percentage_bases_at_99_value
+        pafsummarycov["90%_value"] = artic_metadata[
             barcode_name
-        ].percentage_bases_over_250x
+        ].percentage_bases_at_90_value
         pafsummarycov["has_finished"] = artic_metadata[barcode_name].has_finished
         pafsummarycov["has_sufficient_coverage"] = artic_metadata[
             barcode_name
@@ -347,9 +369,9 @@ def get_artic_barcode_metadata_html(request):
         ["Min. Coverage", "minimum_coverage"],
         ["Max. Coverage", "maximum_coverage"],
         ["% reads in run", "percentage_of_reads_in_barcode"],
-        ["% Bases over 20x", "percentage_bases_over_20x"],
-        ["% Bases over 200x", "percentage_bases_over_200x"],
-        ["% Bases over 250x", "percentage_bases_over_250x"],
+        ["% Bases over 99% value", "percentage_bases_at_99_value"],
+        ["% Bases over 95% value", "percentage_bases_at_95_value"],
+        ["% Bases over 90% value", "percentage_bases_at_90_value"],
         ["Has Finished", "has_finished"],
         ["Has Sufficient Coverage", "has_sufficient_coverage"],
     ]
@@ -360,7 +382,8 @@ def get_artic_barcode_metadata_html(request):
         ("Fail VCF", "fail-vcf"),
         ("Pass VCF", "pass-vcf"),
         ("Input fasta", "input-fasta"),
-        ("Pangolin lineages CSV", "pangolin-lineages")
+        ("Pangolin lineages CSV", "pangolin-lineages"),
+        ("Sorted Bam", "sorted-bam")
     ]
     old_dict = orm_object.__dict__
     context_dict = {key[0]: old_dict[key[1]] for key in new_key_names}
@@ -475,7 +498,8 @@ def get_results_package(request):
         "fail-vcf": f"{barcode}.fail.vcf.gz",
         "pass-vcf": f"{barcode}.pass.vcf.gz",
         "input-fasta": f"{barcode}.fastq.gz",
-        "pangolin-lineages": "lineage_report.csv.gz"
+        "pangolin-lineages": "lineage_report.csv.gz",
+        "sorted-bam": f"{barcode}.sorted.bam"
     }
     chosen_files = [results_files[key] for key in chosen.keys()]
     # change into the directory

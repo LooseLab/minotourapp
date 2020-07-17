@@ -605,3 +605,6 @@ transition-timing-function: ease-out;
 .notification-row >td:last-child:hover{
     cursor: pointer;
 }
+.rb{
+    display: block;
+}

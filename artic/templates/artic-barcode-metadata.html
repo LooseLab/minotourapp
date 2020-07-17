@@ -69,7 +69,7 @@
                     <form class="results-builder-form">
                         {% for title, id in artic_barcode_metadata.hidden_results_files %}
                             <input type="checkbox" checked class="form-check-input" id="{{ id }}" name="{{ id }}">
-                            <label class="form-check-label" for="{{ id }}">{{ title }}</label>
+                            <label class="form-check-label rb" for="{{ id }}">{{ title }}</label>
                         {% endfor %}
                     </form>
                 </div>

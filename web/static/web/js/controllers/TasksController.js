@@ -31,11 +31,18 @@ class TasksController {
     this._referenceSelectOptionsList.add(`<option value="-1">-- Please Choose --</option>`)
     this._targetSetList = new Set()
     this._addListenerToTasksForm()
+    this._addListenerToReactivateButton()
     this._targetSetList.add(`<option value="-1">-- Please Choose --</option>`)
     this._interval = setInterval(this._flowcellTaskHistoryTable, 30000, this._flowcellId)
     $(window).on(`unload`, function () {
       console.log(`clearing task interval`)
       clearInterval(this._interval)
+    })
+  }
+
+  _addListenerToReactivateButton () {
+    $(`#reactivate_flowcell`).on(`click`, () => {
+      this.reactivateFlowcell(event)
     })
   }
 
@@ -140,14 +147,14 @@ class TasksController {
    */
   reactivateFlowcell (event) {
     event.preventDefault()
-    this._axiosInstance.post(`/api/v1/${this._flowcellId}flowcells/reactivate/`).then(
+    this._axiosInstance.post(`/api/v1/flowcells/${this._flowcellId}/reactivate/`).then(
       response => {
-        self._reactivatemessageView.update(`Flowcell successfully reactivated`)
+        this._reactivatemessageView.update(`Flowcell successfully reactivated`)
       }
     ).catch(
       error => {
         console.error(error)
-        self._reactivatemessageView.update(`Issue updating flowcell - ${error.response.data}`)
+        this._reactivatemessageView.update(`Issue updating flowcell - ${error.response.data}`)
       }
     )
   }

@@ -23,6 +23,55 @@ class ArticController {
       console.log(`clearing Artic interval`)
       clearInterval(this._interval)
     })
+    this._90Input = $(`#90-input`)
+    this._95Input = $(`#95-input`)
+    this._99Input = $(`#99-input`)
+    this._fireButton = $(`#update-fire-params`)
+    this._fireInputs = [this._90Input, this._95Input, this._99Input]
+    this._showFiringConditions(flowcellId)
+    this._addListenerToFireInputs()
+  }
+
+  /**
+   * Submit fire choices for the Artic pipeline
+   * @private
+   */
+  _submitFireChoices() {
+    this._axiosInstance.post(`/api/v1/artic/update-fire-conds`, {})
+  }
+
+  /**
+   * Add on change to listeners to change the submit button to enabled
+   * @private
+   */
+  _addListenerToFireInputs () {
+    this._fireInputs.forEach(input => {
+      input.on(`change`, (event) => {
+        this._fireButton.attr(`disabled`, false)
+      })
+    })
+    this._fireButton.on(`click`, () => {
+      this._submitFireChoices()
+    })
+  }
+
+  /**
+   * Fetch and display the firing conditions for this Artic task
+   * @param flowcellId {number} The primary key of the flowcell record in the database
+   * @private
+   */
+  _showFiringConditions (flowcellId) {
+    this._axiosInstance.get(`/api/v1/artic/${flowcellId}/firing-conditions`).then(
+      response => {
+        const data = response.data
+        console.log(response.data)
+        this._90Input.val(data.ninety_percent_bases_at)
+        this._95Input.val(data.ninety_five_percent_bases_at)
+        this._99Input.val(data.ninety_nine_percent_bases_at)
+      }).catch(
+      error => {
+        console.error(error.response)
+      })
   }
 
   /**
@@ -657,9 +706,9 @@ class ArticController {
           { targets: 4, data: `total_yield` },
           { targets: 5, data: `average_read_length` },
           { targets: 6, data: `coverage` },
-          { targets: 7, data: `percent_20x` },
-          { targets: 8, data: `percent_200x` },
-          { targets: 9, data: `percent_250x` },
+          { targets: 7, data: `99%_value` },
+          { targets: 8, data: `95%_value` },
+          { targets: 9, data: `90%_value` },
           { targets: 10, data: `has_sufficient_coverage` }
         ]
       }

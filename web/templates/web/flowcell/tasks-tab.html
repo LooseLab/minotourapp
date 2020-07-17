@@ -18,9 +18,9 @@
                     <div class="form-group">
                         <label for="job-type-select">Task type</label>
                         {% if flowcell.archived %}
-                        <select class="form-control" name="job-type" id="job-type-select" disabled></select>
+                            <select class="form-control" name="job-type" id="job-type-select" disabled></select>
                         {% else %}
-                        <select class="form-control" name="job-type" id="job-type-select"></select>
+                            <select class="form-control" name="job-type" id="job-type-select"></select>
                         {% endif %}
                     </div>
                     <div class="form-group">
@@ -105,8 +105,8 @@
                     <div class="row">
                         <div class="col-md-2"
                              style="display: flex; justify-content: center; align-content: center; flex-direction: column;">
-                            <button name="reactivate_flowcell" class="btn btn-warning"
-                                    onclick="taskController.reactivateFlowcell(event)">Reactivate
+                            <button name="reactivate_flowcell" id="reactivate_flowcell" class="btn btn-warning">
+                                Reactivate flowcell
                             </button>
                         </div>
                         <div class="col-md-10">

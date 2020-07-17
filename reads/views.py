@@ -21,7 +21,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from alignment.models import PafRoughCov
-from artic.models import ArticBarcodeMetadata
+from artic.models import ArticBarcodeMetadata, ArticFireConditions
 from centrifuge.models import CentrifugeOutput
 from minotourapp import settings
 from reads.models import (
@@ -2776,6 +2776,9 @@ def job_master_list(request):
         # If the job isn't EB or minimap2 or artic
         if int(request.data["job_type"]) not in [4, 15, 16]:
             request.data["reference"] = None
+
+        if int(request.data["job_type"]) == 16:
+            ArticFireConditions.objects.create(flowcell=flowcell)
             # Hard set the covid reference
         # if int(request.data["job_type"]) == 16:
         #     print("we are setting covid reference")
@@ -2808,6 +2811,8 @@ def job_master_list(request):
         # If the serialiser is valid
         if serializer.is_valid():
             task = serializer.save()
+            flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
+            flowcell.save()
             response_data = {"message": "Task created successfully!", "pk": task.id}
             return JsonResponse(response_data)
 

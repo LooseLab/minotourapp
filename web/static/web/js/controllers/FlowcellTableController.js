@@ -122,18 +122,24 @@ class FlowcellTableController {
         {
           targets: 9,
           data: `is_active`,
-          render: (data, type, full, meta) => data.active ? `Active` : `Inactive`
+          render: (data, type, full, meta) => {
+            return data ? `Active` : `Inactive`
+          }
         },
         {
           targets: 10,
           data: `archived`,
-          render: (data, type, full, meta) => data.archived ? `Yes` : `No`
+          render: (data, type, full, meta) => {
+            return data ? `Yes` : `No`
+          }
 
         },
         {
           targets: 11,
           data: `owner`,
-          render: (data, type, full, meta) => data.owner ? `Yes` : `No`
+          render: (data, type, full, meta) => {
+            return data ? `Yes` : `No`
+          }
 
         },
         {

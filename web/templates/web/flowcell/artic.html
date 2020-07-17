@@ -24,6 +24,33 @@
 </div>
 <div class="card card-primary card-outline">
     <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-chart-bar"></i>
+            Pipeline firing conditions
+        </h3>
+    </div>
+    <div class="card-body">
+        <div class="container-fluid">
+            <div class="row">
+                <form class="form-horizontal" id="fire-conditions">
+                    <div class="form-group">
+                        <div class="col-md-12 control-label" style="height: 100%; text-align: left;">
+                            <label for="90-input" style="display: inline">X Coverage at 90% of bases:</label>
+                            <input type="number" id="90-input" class="ms" min="150" max="500">
+                            <label for="95-input" style="display: inline">X Coverage at 95% of bases:</label>
+                            <input type="number" id="95-input" class="ms" min="150" max="500">
+                            <label for="99-input" style="display: inline">X Coverage at 99% of bases:</label>
+                            <input type="number" id="99-input" class="ms" min="150" max="500">
+                            <button type="button" class="btn btn-light" id="update-fire-params" disabled>Submit changes</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="card card-primary card-outline">
+    <div class="card-header">
         <h4 class="card-title">
             <i class="fas fa-chart-bar"></i>
             Summary Table (Pass reads only)
