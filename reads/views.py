@@ -2777,8 +2777,8 @@ def job_master_list(request):
         if int(request.data["job_type"]) not in [4, 15, 16]:
             request.data["reference"] = None
 
-        if int(request.data["job_type"]) == 16:
-            ArticFireConditions.objects.create(flowcell=flowcell)
+        # if int(request.data["job_type"]) == 16:
+        #     ArticFireConditions.objects.create(flowcell=flowcell)
             # Hard set the covid reference
         # if int(request.data["job_type"]) == 16:
         #     print("we are setting covid reference")
@@ -2921,6 +2921,7 @@ def task_control(request):
         elif action == "Delete":
             clear_artic_command_job_masters(job_master.flowcell_id)
             clear_artic_data(job_master)
+            ArticFireConditions.objects.filter(flowcell=job_master.flowcell).delete()
             job_master.delete()
             return_message = "Successfully deleted artic Task."
 
