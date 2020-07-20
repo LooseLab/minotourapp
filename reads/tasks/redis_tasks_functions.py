@@ -454,10 +454,6 @@ def save_reads_bulk(reads):
     run_dict = {}
     for read in reads:
         run_pk = read.get("run", -1)
-        if read["flowcell_id"] not in flowcell_dict:
-            f = Flowcell.objects.get(pk=read["flowcell_id"])
-            f.archived = False
-            f.save()
         if run_pk not in run_dict and run_pk != -1:
             run = Run.objects.get(pk=run_pk)
             run_dict[run_pk] = run
@@ -466,6 +462,10 @@ def save_reads_bulk(reads):
         else:
             read["run_id"] = run_dict[run_pk].id
             read["flowcell_id"] = run_dict[run_pk].flowcell.id
+        if read["flowcell_id"] not in flowcell_dict:
+            f = Flowcell.objects.get(pk=read["flowcell_id"])
+            f.archived = False
+            f.save()
         fastq_read = FastqRead(
             read_id=read["read_id"],
             read=read["read"],
