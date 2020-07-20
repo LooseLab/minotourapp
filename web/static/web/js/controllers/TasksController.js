@@ -33,6 +33,10 @@ class TasksController {
     this._addListenerToTasksForm()
     this._addListenerToReactivateButton()
     this._targetSetList.add(`<option value="-1">-- Please Choose --</option>`)
+    this._90Input = $(`#90-input-og`)
+    this._95Input = $(`#95-input-og`)
+    this._99Input = $(`#99-input-og`)
+    this._fireInputs = [this._90Input, this._95Input, this._99Input]
     this._interval = setInterval(this._flowcellTaskHistoryTable, 30000, this._flowcellId)
     $(window).on(`unload`, function () {
       console.log(`clearing task interval`)
@@ -83,6 +87,26 @@ class TasksController {
     })
   }
 
+  /**
+   * Submit Artic fire conditions
+   * @param event
+   * @private
+   */
+  _submitArticFire () {
+    const newConditions = {}
+    this._fireInputs.forEach(input => {
+      newConditions[input.attr(`id`).split(`-`).slice(0, 2).join("-")] = input.val()
+    })
+    this._axiosInstance.post(`/api/v1/artic/${this._flowcellId}/firing-conditions`, { newConditions }).then(
+      response => {
+        console.log(response.data)
+      }
+    ).catch(
+      error => {
+        console.error(error)
+      })
+  }
+
   // Create a new event handler for when we submit a new job
   _createNewJob (event) {
     const fromDatabase = this._fromDatabase[0].checked
@@ -120,6 +144,32 @@ class TasksController {
       return
     }
 
+    if (taskNew.jobTypeId === `16`) {
+      new Promise((resolve, reject, taskNew, taskTabel) => {
+        $(`#set-artic-fire`).modal(`show`)
+        $(`#submit-artic-choices`).click(function () {
+          resolve(`user clicked`)
+        })
+        $(`#confirmation .btn-danger`).click(function () {
+          reject(`user clicked cancel`)
+        })
+      }).then(val => {
+        self._postTask(taskNew, taskTable)
+        self._submitArticFire()
+        $(`#set-artic-fire`).modal(`hide`)
+        console.log(val)
+      }).catch(err => {
+        // user clicked cancel
+        console.log(`user clicked cancel`, err)
+      })
+    }
+    if (taskNew.jobTypeId === `16`) {
+      return
+    }
+    this._postTask(taskNew, taskTable)
+  }
+
+  _postTask (taskNew, taskTable) {
     this._axiosInstance.post(`/api/v1/tasks/`, {
       flowcell: taskNew.flowcellId,
       reference: taskNew.referenceId,
@@ -129,14 +179,14 @@ class TasksController {
     })
       .then(
         response => {
-          self._messageView.update(`Task successfully created!`)
+          this._messageView.update(`Task successfully created!`)
           // reload the task table to include the new task
           taskTable.DataTable().ajax.reload(null, false)
         }
       ).catch(
         error => {
           console.error(error)
-          self._messageView.update(`Problem creating task: ${error.response.data.error_messages.non_field_errors[0]}`)
+          this._messageView.update(`Problem creating task: ${error.response.data.error_messages.non_field_errors[0]}`)
         }
       )
   }
