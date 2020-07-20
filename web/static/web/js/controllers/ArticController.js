@@ -7,7 +7,6 @@ class ArticController {
     this._articCoverageScatterDetail = `world`
     this._flowcellId = flowcellId
     this._first = true
-    this._showWidth = 250000
     this._barcodeChosen = null
     this._logged = $(`#log-coverage`)[0].checked ? 1 : 0
     this._axiosInstance = axios.create({
@@ -37,7 +36,20 @@ class ArticController {
    * @private
    */
   _submitFireChoices() {
-    this._axiosInstance.post(`/api/v1/artic/update-fire-conds`, {})
+    const newConditions = {}
+    this._fireInputs.forEach(input => {
+      newConditions[input.attr(`id`)] = input.val()
+    })
+    this._axiosInstance.post(`/api/v1/artic/${this._flowcellId}/firing-conditions`, newConditions).then(
+      response => {
+        alert(response.data)
+        console.log(response.data)
+      }
+    ).catch(
+      error => {
+        console.error(error)
+      }
+    )
   }
 
   /**
