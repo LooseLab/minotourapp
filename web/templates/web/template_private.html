@@ -7,14 +7,14 @@
         <a class="navbar-brand" href="{% url 'flowcells' %}"> minoTour </a>
 
         <!-- Brand and toggle get grouped for better mobile display -->
-        <div class="navbar-header">
-            <button type="button" class="navbar-toggler collapse" data-toggle="collapse"
-                    data-target="#navbar-minotour-content" aria-expanded="false"
-                    aria-controls="navbar-minotour-content" aria-label="Toggle navigation">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="navbar-toggler-icono"></span>
-            </button>
-        </div>
+        <div class="mobile">
+                    <a class="collapsed" data-toggle="collapse"
+                            data-target="#navbar-minotour-content" aria-expanded="false">
+                        <span class="sr-only">Toggle navigation</span>
+                        <i style="font-size: 1.5rem; cursor: pointer" class="fa fa-bars"></i>
+                    </a>
+{#                    <a class="navbar-brand" href="{% url 'flowcells' %}"> minoTour </a>#}
+            </div>
 
         <!-- Collect the nav links, forms, and other content for toggling -->
         <div class="collapse navbar-collapse" id="navbar-minotour-content">
