@@ -21,7 +21,7 @@ from reads.models import Flowcell, JobMaster, FlowcellSummaryBarcode, Barcode
 from reference.models import ReferenceInfo
 
 
-@api_view(["GET"])
+@api_view(["GET", "POST"])
 def fire_conditions_list(request, pk):
     """
     Get the fire conditions for the artic pipeline for this flowcell
@@ -41,7 +41,14 @@ def fire_conditions_list(request, pk):
         return Response(data, status=status.HTTP_200_OK)
     elif request.method == "POST":
         print(request.data)
-        return Response("hello", status=status.HTTP_201_CREATED)
+        obj, created = ArticFireConditions.objects.update_or_create(
+            flowcell_id=int(pk),
+            defaults={"ninety_percent_bases_at": request.data.get("90-input", 0),
+                      "ninety_five_percent_bases_at": request.data.get("95-input", 0),
+                      "ninety_nine_percent_bases_at": request.data.get("99-input", 0)},
+        )
+        print(created)
+        return Response("Artic firing conditions updated.", status=status.HTTP_201_CREATED)
 
 @api_view(["GET"])
 def get_artic_barcodes(request):
