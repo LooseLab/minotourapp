@@ -9,7 +9,7 @@ from io import StringIO
 import numpy as np
 import pandas as pd
 from celery.utils.log import get_task_logger
-from django.db.models import ObjectDoesNotExist, Q
+from django.db.models import ObjectDoesNotExist, Q, F
 from django.db.models import Sum
 from django.utils import timezone
 from ete3 import NCBITaxa
@@ -31,121 +31,7 @@ pd.options.mode.chained_assignment = None
 logger = get_task_logger(__name__)
 
 
-def call_fetch_reads_cent(runs, chunk_size, last_read):
-    """
-    Call the fetch reads function to create a fastq for the process
-    :param runs: List of all runs on the flowcell
-    :param chunk_size: The target number of reads we want
-    :param last_read: The previous last read we took
-    :return:
-    """
-    # a list of the fastqs object to pass into the mapping function
-    fasta_objects = list()
-    # Initialise the data frame
-    fastq_df_barcode = pd.DataFrame()
-    while True:
-        # Call fetch_reads_cent to actually query the database
-        reads, last_read, read_count, fastasmchunk = fetch_reads_cent(
-            runs, chunk_size, last_read
-        )
-        # Add fasta_objects chunk to the list
-        fasta_objects += fastasmchunk
-        # Append the reads_df to the fastq_df
-        fastq_df_barcode = fastq_df_barcode.append(reads)
-        # If we have enough reads (more than chunk_size) or no reads
-        if len(fastq_df_barcode) >= chunk_size or len(reads) == 0:
-            break
-    # Update the read count with the number of reads we just fetched
-    read_count = len(fastq_df_barcode)
-    return fastq_df_barcode, last_read, read_count, fasta_objects
-
-
-def fetch_reads_cent(runs, chunk_size, last_read):
-    """
-    Query the database for runs from a flowcell
-    :param runs: The list of runs objects for this flowcell
-    :param chunk_size: The target number of reads to have pulled back
-    :param last_read: The id of the last read
-    :return:
-    """
-    # Store the first read id and which run it's from this dict
-    countsdict = dict()
-    # The list of fastqread objects
-    fasta_objects = list()
-    # loop through the runs
-    for run in runs:
-        # fastqs = FastqRead.objects.filter(run=run, id__gt=int(last_read)).first()
-        # Query the database for the reads objects
-        fastqs = (
-            FastqRead.objects.values_list("id")
-            .filter(run=run, id__gt=int(last_read))
-            .first()
-        )
-        # If there are fastqs store the object
-        if fastqs:
-            # Store the first id you get and the urn it's from
-            countsdict[fastqs[0]] = run
-    # initialise the count
-    count = 1
-    # initialise the a dataframe to append reads to
-    fastq_df_barcode = pd.DataFrame()
-    # If you have reads from more than one run
-    if len(countsdict) > 1:
-        # Start with first read entry from this run
-        for entry in sorted(countsdict):
-            # If we haven't done more iterations than we have dict entries
-            if count < len(countsdict):
-                # Do the query
-                fastqs = FastqRead.objects.filter(
-                    run=countsdict[entry],
-                    id__gt=int(last_read),
-                    id__lt=int(sorted(countsdict)[count]),
-                )[:chunk_size]
-                # Append new results to barcode
-                fastq_df_barcode = fastq_df_barcode.append(
-                    pd.DataFrame.from_records(
-                        fastqs.values(
-                            "read_id", "barcode_name", "sequence", "id"
-                        )
-                    )
-                )
-
-                # add to list of the fastQRead objects new objects
-                fasta_objects += list(fastqs)
-                # Set the new last read id
-                last_read = fastq_df_barcode.id.max()
-                # If we have enough reads, stop
-                if len(fastq_df_barcode) >= chunk_size:
-                    break
-            count += 1
-    # If we only have one run
-    elif len(countsdict) == 1:
-        """TODO This is risky and it breaks the logic - we may end up skipping reads from other runs"""
-        # The key is the first fastqreads object retrieved
-        mykey = list(countsdict.keys())[0]
-        # Get the fastq objects from the database
-        fastqs = FastqRead.objects.filter(
-            run=countsdict[mykey], id__gt=int(last_read)
-        )[:chunk_size]
-        # append the results to the fastq dataframe
-        fastq_df_barcode = fastq_df_barcode.append(
-            pd.DataFrame.from_records(
-                fastqs.values("read_id", "barcode_name", "sequence", "id")
-            )
-        )
-        # Create a list of the fastQRead objects we will use in this objects
-        fasta_objects += list(fastqs)
-        # get the new last read id
-        last_read = fastq_df_barcode.id.max()
-    # get the read count of the new reads pulled out to later update the job_master total
-    read_count = len(fastq_df_barcode)
-    # Return everything to be used above
-    return fastq_df_barcode, last_read, read_count, fasta_objects
-
-
 # TODO del unused df and things
-
-
 def calculate_barcoded_values(
     barcode_group_df, barcode_df, classified_per_barcode
 ):
@@ -156,7 +42,6 @@ def calculate_barcoded_values(
     :param classified_per_barcode: The number of classified reads in a barcode
     :return: A new df with the result for barcode appended
     """
-
     # Get the barcodes for this run
     barcode = barcode_group_df["barcode_name"].unique()[0]
     # Get The total number of reads classified in this barcode from a dict containing all the values, keyed by barcode
@@ -182,7 +67,6 @@ def calculate_barcoded_values(
         .mul(100)
         .round(decimals=3)
     )
-
     # Create a dataframe from the series of useful information we just calculated
     values_df = pd.concat(
         [
@@ -193,9 +77,7 @@ def calculate_barcoded_values(
         ],
         axis=1,
     )
-
     barcode_df = barcode_df.append(values_df, sort=True)
-
     return barcode_df
 
 
@@ -280,11 +162,9 @@ def insert_new_lineages(ncbi, df, tax_rank_filter, flowcell):
     already_lineaged_tax_ids = LineageValue.objects.values_list(
         "tax_id", flat=True
     )
-
     # Check the taxIDs we have in the dataframe, to see if they have matching lineages already.
     # If not the set subtraction means that unique, lineage-less taxIDs end up in the not_prev_lineaged dict
     not_prev_lineaged = list(set(taxid_list) - set(already_lineaged_tax_ids))
-
     # Get the lineages for these taxIDs in the new centrifuge output,
     # returns a dict keyed by taxID,
     # value is listof taxIDS in lineage
@@ -306,7 +186,6 @@ def insert_new_lineages(ncbi, df, tax_rank_filter, flowcell):
             for tax_id, rank in lineage_ranked.items()
             if rank in tax_rank_filter or key == tax_id
         }
-
     # create dataframe, the .T means that the dataframe is transposed, so dict key is the series title
     lineages_df = pd.DataFrame.from_records(lineage_dict).T
     # rename the no rank column to strain
@@ -345,14 +224,11 @@ def insert_new_lineages(ncbi, df, tax_rank_filter, flowcell):
     lineages_df["subspecies"].fillna(
         lineages_df["subStrainSpecies"], inplace=True
     )
-
     unclassified_row = {key: np.NaN for key in lineages_df.keys()}
     row = pd.DataFrame(unclassified_row, index=[0])
     lineages_df = lineages_df.append(row, sort=True)
-
     # delete the new subspecies column
     delete_series(["subStrainSpecies"], lineages_df)
-
     return lineages_df
 
 
@@ -420,10 +296,7 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids, fasta_df):
     # Call the align reads function from the web tasks-alignment file so we can map the reads against the reference
     # align_reads(fastq_list, mapping_task.id, fasta_df)
     # Get the output of the align reads function
-    map_output = PafStore.objects.filter(
-        job_master=mapping_task, qsn__in=read_ids
-    )
-
+    # TODO this is where we fall down, just do the mapping here
     logger.info(
         "Flowcell id: {} - Plasmid mapping map output is {}".format(
             flowcell.id, map_output
@@ -573,6 +446,7 @@ def map_all_the_groups(
 
     # Call the align_reads function to perform the mapping, funciton found in web tasks_alignment
     # align_reads(fastqs, mapping_task.id, fasta_df)
+    # TODO this is where we fall down, just do the mapping here
 
     # # Get the output for this mapping (if any) from the database
     # map_output = PafStore.objects.filter(
@@ -1527,95 +1401,92 @@ def run_centrifuge(flowcell_job_id):
     chunk_size = 10000
     # The flowcell the reads are from
     flowcell = task.flowcell
-
-    logger.info(
-        "Flowcell id: {} - Running centrifuge on flowcell {}".format(
-            flowcell.id, flowcell.name
-        )
+    logger.debug(
+        f"Flowcell id: {flowcell.id} - Running centrifuge on flowcell {flowcell.name}"
     )
-    logger.info(
-        "Flowcell id: {} - job_master_id {}".format(flowcell.id, task.id)
+    logger.debug(
+        f"Flowcell id: {flowcell.id} - job_master_id {task.id}"
     )
-    logger.info(
-        "Flowcell id: {} - last_read {}".format(flowcell.id, task.last_read)
+    logger.debug(
+        f"Flowcell id: {flowcell.id} - last_read {task.last_read}"
     )
-    logger.info(
-        "Flowcell id: {} - read_count {}".format(flowcell.id, task.read_count)
+    logger.debug(
+        f"Flowcell id: {flowcell.id} - read_count { task.read_count}"
     )
-
-    # The path to the centrifuge executable
-    centrifuge_path = get_env_variable("MT_CENTRIFUGE")
-    # The path to the Centrifuge Index
-    index_path = get_env_variable("MT_CENTRIFUGE_INDEX")
-    # The command to run centrifuge
-    cmd = "perl " + centrifuge_path + " -f --mm -k 1 -x " + index_path + " -"
-
-    logger.info("Flowcell id: {} - {}".format(flowcell.id, cmd))
-
+    logger.debug(f"Flowcell id: {flowcell.id} - {cmd}")
     # Counter for total centOut
     total_centrifuge_output = 0
-
     # Instance of the Ncbi taxa class, for taxonomic id manipulation
     ncbi = NCBITaxa()
-
     runs = flowcell.runs.all()
-
-    fastq_df_barcode, last_read, read_count, fasta_objects = call_fetch_reads_cent(
-        runs, chunk_size, task.last_read
-    )
-
-    if read_count == 0:
-        # task.complete = True
-        logger.info(
-            "Flowcell id: {} - Found 0 reads in the database, for this flowcell. Aborting...".format(
-                flowcell.id, chunk_size
-            )
+    desired_yield = 25 * 1000000
+    avg_read_length = flowcell.average_read_length
+    if avg_read_length == 0:
+        logger.error(
+            f"Average read length is zero Defaulting to 450, but this is an error."
         )
-        task = JobMaster.objects.filter(pk=flowcell_job_id).first()
-        if task.first() is None:
-            logger.error("Task appears to have been deleted.")
-            pass
+        avg_read_length = 450
+    chunk_size = round(desired_yield / avg_read_length)
+    logger.debug(f"Fetching reads in chunks of {chunk_size} for alignment.")
+    fasta_df_barcode = pd.DataFrame().from_records(
+        FastqRead.objects.filter(
+            flowcell_id=flowcell.id, id__gt=task.last_read
+        )[:chunk_size].values(
+            "read_id",
+            "barcode_name",
+            "sequence",
+            "id",
+            "run_id",
+            "type__name",
+            "run_id",
+            "barcode_id",
+            "is_pass",
+            read_type_id=F("type_id"),
+        )
+    )
+    if not fasta_df_barcode.empty:
+        last_read = fasta_df_barcode.tail(1).iloc[0].id
+    if fasta_df_barcode.empty:
+        logger.debug("No fastq found. Skipping this iteration.")
         task.running = False
         task.save()
         return
-
+    read_count = fasta_df_barcode.shape[0]
+    # fastq_df_barcode, last_read, read_count, fasta_objects = call_fetch_reads_cent(
+    #     runs, chunk_size, task.last_read
+    # )
     logger.info(
         "Flowcell id: {} - number of reads found {}".format(
             flowcell.id, read_count
         )
     )
-
     try:
         # Get the metadata object. Contains the start time, end time and runtime of the task
         metadata = Metadata.objects.get(task=task)
-
     except (Metadata.DoesNotExist, Metadata.MultipleObjectsReturned):
-
         metadata = Metadata(task=task)
-
         metadata.save()
-
     # Create a fastq string to pass to Centrifuge
-
-    fastq_df_barcode["fasta"] = (
+    fasta_df_barcode["fasta"] = (
         ">read_id="
-        + fastq_df_barcode["read_id"]
+        + fasta_df_barcode["read_id"]
         + ",barcode="
-        + fastq_df_barcode["barcode_name"]
+        + fasta_df_barcode["barcode_name"]
         + "\n"
-        + fastq_df_barcode["sequence"]
+        + fasta_df_barcode["sequence"]
     )
-
-    fastqs_data = "\n".join(list(fastq_df_barcode["fasta"]))
-    # fastqs_data = "".join([str(">read_id=" + c[0] + ",barcode=" + c[1] + "\n" + c[2] + "\n") for c in fastqs_list
-    #                       if c[2] is not None])
-
-    logger.info(
+    fastqs_data = "\n".join(list(fasta_df_barcode["fasta"]))
+    logger.debug(
         "Flowcell id: {} - Loading index and Centrifuging".format(flowcell.id)
     )
-
     # Write the generated fastq file to stdin, passing it to the command
     # Use Popen to run the centrifuge command
+    # The path to the centrifuge executable
+    centrifuge_path = get_env_variable("MT_CENTRIFUGE")
+    # The path to the Centrifuge Index
+    index_path = get_env_variable("MT_CENTRIFUGE_INDEX")
+    # The command to run centrifuge
+    cmd = "perl " + centrifuge_path + " -f --mm -k 3 -x " + index_path + " -"
     try:
         out, err = subprocess.Popen(
             cmd.split(),
@@ -1637,22 +1508,17 @@ def run_centrifuge(flowcell_job_id):
         logger.info(
             "Flowcell id: {} - Centrifuge error!! {}".format(flowcell.id, err)
         )
-
     # out is a bytestring so it needs decoding
     centrifuge_output = out.decode()
-
     # total number of lines of centrifuge output dealt with
     total_centrifuge_output += centrifuge_output.count("\n") - 1
-
-    logger.info(
+    logger.debug(
         "Flowcell id: {} - number of centrifuge output lines is {}".format(
             flowcell.id, total_centrifuge_output
         )
     )
-
     # output fields is the column headers for the pandas data frame
     output_fields = ["readID", "seqID", "taxID", "numMatches"]
-
     # create the DataFrame from the output
     df = pd.read_csv(
         StringIO(centrifuge_output), sep="\t", usecols=output_fields
@@ -1663,11 +1529,9 @@ def run_centrifuge(flowcell_job_id):
             "Flowcell id: {} - No reads found or no centrifuge output."
             " Check above for error".format(flowcell.id)
         )
-
         task.running = False
         task.save()
         return
-
     # create DataFrame column unique, where if the number of matches is 1, unique is 1, if matches is more than
     # 1 unique is 0, using numpy condition
     df["unique"] = np.where(
@@ -1677,16 +1541,6 @@ def run_centrifuge(flowcell_job_id):
     df = pd.concat(
         [df, df["readID"].str.split(",").str[1].str.split("=").str[1]], axis=1
     )
-    # Add the extra column name
-    df.columns = [
-        "readID",
-        "seqID",
-        "tax_id",
-        "numMatches",
-        "unique",
-        "barcode_name",
-    ]
-    # split out the read_id from the readID string
     df = pd.concat(
         [df, df["readID"].str.split(",").str[0].str.split("=").str[1]], axis=1
     )
@@ -1700,36 +1554,26 @@ def run_centrifuge(flowcell_job_id):
         "barcode_name",
         "read_id",
     ]
-
     # get np array of the taxids
     taxid_list = np.unique(df["tax_id"].values)
-
     # use the ncbi thing to get the species names for the tax ids in the tax ids list
     taxid2name_df = pd.DataFrame.from_dict(
         ncbi.get_taxid_translator(taxid_list), orient="index", columns=["name"]
     )
-
     # insert the taxid2name dict items into the dataframe name columns
     df = pd.merge(
         df, taxid2name_df, how="outer", left_on="tax_id", right_index=True
     )
-
     # any NaNs replace with Unclassified
     df["name"].fillna("Unclassified", inplace=True)
-
     #  set the index to be taxID
     df = df.set_index("tax_id")
-    # group by the barcode
-    gb_bc = df.groupby(["barcode_name"])
-
     # create lots of mini data frames grouping by taxID
     gb = df.groupby(level="tax_id")
-
     # create a sumUnique column in the DataFrame, where the value
     # is the sum of the unique column in the corresponding
     # grouped_by table
     df["sum_unique"] = gb["unique"].sum()
-
     # create a number of reads column in the data frame by getting
     # the number of rows in the corresponding grouped_by
     # table
@@ -1740,6 +1584,7 @@ def run_centrifuge(flowcell_job_id):
     barcodes.append("All reads")
     # Get the reads classified in each barcode into a lookup dictionary
     #  so we can work out proportions inside the barcode
+    # Todo check if this is the best way to get this
     classified_per_barcode = {
         barcode: CentrifugeOutput.objects.filter(
             task=task, barcode_name=barcode
@@ -1750,22 +1595,23 @@ def run_centrifuge(flowcell_job_id):
     if classified_per_barcode["All reads"] is None:
         # Set it to 0
         classified_per_barcode["All reads"] = 0
+    # group by the barcode
+    gb_bc = df.groupby(["barcode_name"])
     # for the name and group_df in the barcode group by object
+    # todo can be improved
     for name, group in gb_bc:
         # If there is no value for that barcode
         if classified_per_barcode[name] is None:
             classified_per_barcode[name] = 0
         # set the value
         classified_per_barcode[name] += group.shape[0]
-
     # Unique targets in this set of regions
     temp_targets = (
         MappingTarget.objects.filter(target_set=task.target_set)
         .values_list("species", flat=True)
         .distinct()
     )
-
-    logger.info(
+    logger.debug(
         "Flowcell id: {} - Targets are {}".format(flowcell.id, temp_targets)
     )
     # Get the target reads rows in a seperate dataframe

@@ -285,7 +285,6 @@ def go_fast2(start_stop_bools, bin_width):
     -------
 
     """
-    print("Now we are creating the positions")
     positions = [np.uint32(0)]
     for start, stop, is_start, next_is_start in start_stop_bools:
         if not is_start and next_is_start:

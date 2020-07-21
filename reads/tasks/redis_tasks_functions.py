@@ -449,6 +449,7 @@ def save_reads_bulk(reads):
     None
 
     """
+    task_start_time = time.time()
     flowcell_dict = {}
     reads_list = []
     run_dict = {}
@@ -464,8 +465,10 @@ def save_reads_bulk(reads):
             read["flowcell_id"] = run_dict[run_pk].flowcell.id
         if read["flowcell_id"] not in flowcell_dict:
             f = Flowcell.objects.get(pk=read["flowcell_id"])
-            f.archived = False
-            f.save()
+            if f.archived:
+                f.archived = False
+                f.save()
+            flowcell_dict[read["flowcell_id"]] = 1
         fastq_read = FastqRead(
             read_id=read["read_id"],
             read=read["read"],
@@ -490,14 +493,20 @@ def save_reads_bulk(reads):
     reads_as_json = json.dumps(reads)
     ### We want to pause to let the number of chunks get below 10?
     count = redis_instance.scard("reads")
+
     while count > 10:
-        print ("waiting")
+        print("waiting")
         time.sleep(5)
         count = redis_instance.scard("reads")
+    print(f"read set count is {count}")
     redis_instance.sadd("reads", reads_as_json)
     # Bulk create the entries
+    start_time = time.time()
     FastqRead.objects.bulk_create(reads_list, batch_size=1000)
-
+    print("Bulk create time is:")
+    print(time.time() - start_time)
+    print("Task time taken is:")
+    print(f"{time.time() - task_start_time}")
 
 def get_values_and_delete_key_redis_hash(r, key):
     """
