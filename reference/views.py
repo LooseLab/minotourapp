@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 
 import pyfastx
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db.models import Q
 from django.db.utils import IntegrityError
 from django.shortcuts import render
@@ -67,9 +68,14 @@ def reference_list(request):
                 )
                 # build minimap2 index
                 duplicated, sha256_hash = validate_reference_checks(file, request.user)
+                print(f"Hash is {sha256_hash}")
+                print(file)
+                print(type(file))
                 if duplicated:
                     # ref_info.delete()
                     return Response(f"Exact reference already exists. Please use {sha256_hash}", status=status.HTTP_403_FORBIDDEN)
+                if isinstance(file, InMemoryUploadedFile):
+                    print("is instance")
                 ref_info = ReferenceInfo(
                     file_name=file_names[index],
                     name=name,
