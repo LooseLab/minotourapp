@@ -156,7 +156,7 @@ class AlignmentController {
         this.coverageChartController.reloadCoverageCharts(url)
         this.coverageChartController.resetDetailChartZoom()
       }
-      this._fetchBarcodeCoverageColumnChartsData(this._flowcellId, chromosomeId, true)
+      this._fetchBarcodeCoverageColumnChartsData(this._flowcellId, chromosomeId, true, barcodeId)
     }
   }
 
@@ -239,10 +239,11 @@ class AlignmentController {
    * @param flowcellId {number} The primary key of the flowcell Record
    * @param chromosomeId {number} The primary key of the Chromosome Record
    * @param changedBarcode {boolean} Redraw is result of user changing barcode
+   * @param barcodePk {number} The primary key of the barcode
    * @private
    */
-  _fetchBarcodeCoverageColumnChartsData (flowcellId, chromosomeId, changedBarcode) {
-    this._axiosInstance.get(`/api/v1/alignment/${flowcellId}/pafsummary/`, { params: { chromosomeId } }).then(
+  _fetchBarcodeCoverageColumnChartsData (flowcellId, chromosomeId, changedBarcode, barcodePk) {
+    this._axiosInstance.get(`/api/v1/alignment/${flowcellId}/pafsummary/`, { params: { chromosomeId, barcodePk } }).then(
       response => {
         const data = response.data
         const charts = [[this.chart_per_barcode_cov, `coverageData`], [this.chart_per_barcode_avg, `avgRLData`]]
@@ -282,8 +283,10 @@ class AlignmentController {
    * @param changedBarcode {boolean} If redraw is a result of barcode change
    */
   _updateCoverageColumnCharts (chart, seriesData, categories, changedBarcode) {
-    while (chart.series.length) {
+    if (changedBarcode){
+      while (chart.series.length) {
         chart.series[0].remove(false)
+      }
     }
     chart.xAxis[0].setCategories(categories)
     seriesData.forEach(series => {

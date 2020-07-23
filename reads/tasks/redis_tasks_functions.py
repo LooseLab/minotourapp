@@ -488,12 +488,11 @@ def save_reads_bulk(reads):
             fastqfile_id=read["fastqfile"],
         )
         reads_list.append(fastq_read)
-
+    print(f"number of reads is {len(reads)}")
     # Save reads to redis for later processing of base-called data summaries.
     reads_as_json = json.dumps(reads)
     ### We want to pause to let the number of chunks get below 10?
     count = redis_instance.scard("reads")
-
     while count > 10:
         print("waiting")
         time.sleep(5)
@@ -507,6 +506,7 @@ def save_reads_bulk(reads):
     print(time.time() - start_time)
     print("Task time taken is:")
     print(f"{time.time() - task_start_time}")
+
 
 def get_values_and_delete_key_redis_hash(r, key):
     """

@@ -9,10 +9,6 @@ class PafRoughCov(models.Model):
     Stores the PafCoverage in bins of ten, stores data for the Mapping Master/Detail chart
     """
 
-    class Meta:
-        indexes = [
-            models.Index(fields=['bin_position_start'], name='position_index'),
-        ]
     job_master = models.ForeignKey(
         JobMaster, on_delete=models.CASCADE, related_name="paf_rough_cov_list"
     )
@@ -69,6 +65,78 @@ class PafRoughCov(models.Model):
         null=True
     )
 
+    def __str__(self):
+        return f"{self.flowcell} {self.bin_position_start} - {self.bin_position_end}, Coverage: {self.bin_coverage}"
+
+
+class PafRoughCovIntermediate(models.Model):
+    """
+    Stores the PafCoverage in bins of ten, stores data for the Mapping Master/Detail chart
+    """
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['bin_position_start'], name='bin_position_index'),
+        ]
+    job_master = models.ForeignKey(
+        JobMaster, on_delete=models.CASCADE, related_name="paf_rough_cov_intermediates"
+    )
+    run = models.ForeignKey(
+        Run, on_delete=models.CASCADE, related_name="run_paf_rough_cov_intermediates", null=True, blank=True
+    )
+    flowcell = models.ForeignKey(
+        Flowcell,
+        on_delete=models.CASCADE,
+        related_name="flowcell_paf_rough_cov_intermediates",
+        null=True,
+        blank=True,
+    )
+    grouprun = models.ForeignKey(
+        GroupRun,
+        on_delete=models.CASCADE,
+        related_name="paf_rough_cov_intermediates",
+        null=True,
+        blank=True,
+    )
+    read_type = models.ForeignKey(
+        FastqReadType, related_name="paf_rough_cov_intermediates", on_delete=models.SET_NULL, null=True
+    )
+    is_pass = models.BooleanField()  # pass = true, fail = false
+    barcode = models.ForeignKey(
+        Barcode, related_name="paf_rough_cov_intermediates", null=True, on_delete=models.SET_NULL,
+    )
+    reference = models.ForeignKey(
+        ReferenceInfo, related_name="paf_rough_cov_intermediates", on_delete=models.SET_NULL, null=True
+    )
+    chromosome = models.ForeignKey(
+        ReferenceLine, related_name="paf_rough_cov_intermediates", on_delete=models.SET_NULL, null=True
+    )
+    bin_position_start = models.IntegerField(default=0)  # position
+    bin_position_end = models.IntegerField(default=0)
+    bin_change = models.IntegerField(default=0)
+    # TODO I don't like this solution
+    # TODO we could(should?) have this as a third table
+    reference_pk = models.IntegerField(
+        default=0
+    )
+    reference_name = models.CharField(
+        max_length=256,
+        null=True
+    )
+    chromosome_length = models.IntegerField(
+        default=0
+    )
+    chromosome_pk = models.IntegerField(
+        default=0
+    )
+    chromosome_name = models.CharField(
+        max_length=256,
+        null=True
+    )
+    # Is the bin from a start of a mapping or an end
+    is_start = models.BooleanField(
+        default=False
+    )
     def __str__(self):
         return f"{self.flowcell} {self.bin_position_start} - {self.bin_position_end}, Coverage: {self.bin_coverage}"
 

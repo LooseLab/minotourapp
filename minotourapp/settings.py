@@ -252,6 +252,14 @@ CELERY_BEAT_SCHEDULE = {
     'archive_flowcell': {
         'task': 'reads.tasks.tasks_archive_flowcell.create_archive_tasks',
         'schedule': crontab(minute=0, hour=0)
+    },
+    # Run the thing on the thing
+    'clear_intermediate_alignment': {
+        'task': 'alignment.tasks_alignment.aggregate_intermediate_table',
+        'schedule': 120,
+        'options': {
+            "queue": "minimap"
+        }
     }
 }
 

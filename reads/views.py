@@ -20,6 +20,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from alignment.mapper import MAP
 from alignment.models import PafRoughCov
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
 from centrifuge.models import CentrifugeOutput
@@ -2794,7 +2795,7 @@ def job_master_list(request):
                 # If a reference hasn't been selected.
                 if request.data["reference"] == "":
                     return Response(
-                        "Reference does not exist - Please select a reference",
+                        "Reference not chosen - Please select a reference",
                         status=400,
                     )
                 reference = ReferenceInfo.objects.get(
@@ -2807,6 +2808,9 @@ def job_master_list(request):
                 return Response(
                     "Reference not found Please contact server admin", status=500
                 )
+
+            if request.data["job_type"] == 4:
+                MAP.add_reference(reference.name, reference.minimap2_index_file_location)
         serializer = JobMasterInsertSerializer(data=request.data)
         # If the serialiser is valid
         if serializer.is_valid():

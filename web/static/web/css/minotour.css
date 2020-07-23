@@ -527,7 +527,12 @@ line-height: 1.5;
 
 /* Increase all font sizes on mobile */
 @media (max-width: 767px) {
-
+    .mobile{
+        display: none;
+    }
+    .desktop{
+        display: block;
+    }
     body {
     /* default is 1rem or 16px */
     font-size: 25px;

@@ -112,8 +112,9 @@ def per_barcode_coverage_summary(request, pk):
         Contains the data for the charts.
     """
     chromosome_pk = request.GET.get("chromosomeId", None)
+    barcode_pk = request.GET.get("barcodePk", None)
     queryset = PafSummaryCov.objects.filter(
-        job_master__flowcell_id=pk, chromosome_pk=chromosome_pk
+        job_master__flowcell_id=pk, chromosome_pk=chromosome_pk, barcode_id=barcode_pk
     ).exclude(job_master__job_type_id=16)
     if not queryset:
         return Response(
@@ -236,11 +237,11 @@ def per_genome_coverage_summary(request, flowcell_pk):
     list of dict
 
     """
-    query = PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk)
+    query = PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk).exclude(job_master__job_type_id=16)
     if query.count() < 30:
         queryset = (
             PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk)
-            .values(data_name=F("chromosome_name"))
+            .values(data_name=F("chromosome_name")).exclude(chromosome_name=None)
             .annotate(Sum("coverage"), Avg("average_read_length"))
         )
     else:
@@ -249,6 +250,7 @@ def per_genome_coverage_summary(request, flowcell_pk):
             .values(data_name=F("reference_name"))
             .annotate(Sum("coverage"), Avg("average_read_length"))
         )
+    print(queryset)
     chromosome_coverage = []
     chromosome_average_read_length = []
     for chromosome in queryset:
