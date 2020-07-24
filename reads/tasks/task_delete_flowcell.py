@@ -8,9 +8,11 @@ from celery.task import task
 from celery.utils.log import get_task_logger
 from django.db import connection
 
+from alignment.models import PafRoughCov
 from minotourapp.settings import BASE_DIR
 from minotourapp.utils import get_env_variable
 from reads.models import JobMaster, FastqRead
+from web.delete_tasks import delete_alignment_task
 
 logger = get_task_logger(__name__)
 
@@ -111,8 +113,11 @@ def delete_flowcell(flowcell_job_id):
             f"Flowcell id: {flowcell.id} - Deleted {delete_chunk_size} fastqread records in {time.time()-start_time}."
         )
         # TODO could this be rewritten into celery chunks?
-        time.sleep(3)
         delete_flowcell.apply_async(args=(flowcell_job_id,))
     else:
-        affected = flowcell.delete()
-        logger.info(f"Flowcell id: {flowcell.id} - Deleted {affected} flowcell.")
+        if PafRoughCov.objects.filter(flowcell=flowcell).count() > 50000:
+            fj = flowcell.flowcell_jobs.filter(job_type_id=4)
+            delete_alignment_task.delay(fj[0].id)
+        else:
+            affected = flowcell.delete()
+            logger.info(f"Flowcell id: {flowcell.id} - Deleted {affected} flowcell.")
