@@ -23,7 +23,7 @@ from rest_framework.response import Response
 from alignment.mapper import MAP
 from alignment.models import PafRoughCov
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
-from centrifuge.models import CentrifugeOutput
+from metagenomics.models import CentrifugeOutput
 from minotourapp import settings
 from reads.models import (
     Barcode,

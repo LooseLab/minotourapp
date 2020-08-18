@@ -7,8 +7,8 @@ import os
 
 from django.core.management import BaseCommand, CommandError
 
+from metagenomics.sankey import calculate_sankey
 from reads.models import Flowcell, JobMaster
-from centrifuge.sankey import calculate_sankey
 
 log_folder = os.environ.get('MT_LOG_FOLDER')
 
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
 
-    help = 'Run task centrifuge'
+    help = 'Run task metagenomics'
 
     def handle(self, *args, **options):
 

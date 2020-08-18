@@ -13,8 +13,8 @@ from artic.task_artic_alignment import (
     make_results_directory_artic,
     run_artic_command, run_artic_pipeline,
 )
-from centrifuge import centrifuge
-from centrifuge.sankey import calculate_sankey
+from metagenomics import centrifuge
+from metagenomics.sankey import calculate_sankey
 from minotourapp.utils import get_env_variable
 from reads.models import (
     Run,
@@ -149,7 +149,7 @@ def run_centrifuge(flowcell_job_id):
     job_master = JobMaster.objects.get(pk=flowcell_job_id)
 
     logger.info(
-        "Flowcell id: {} - Starting centrifuge task".format(job_master.flowcell.id)
+        "Flowcell id: {} - Starting metagenomics task".format(job_master.flowcell.id)
     )
 
     centrifuge.run_centrifuge(flowcell_job_id)

@@ -19,11 +19,15 @@
 # along with HISAT 2.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import sys, os, subprocess, inspect
-import math, random, re
-from collections import defaultdict, Counter
-from argparse import ArgumentParser, FileType
-
+import inspect
+import math
+import os
+import random
+import re
+import subprocess
+import sys
+from argparse import ArgumentParser
+from collections import defaultdict
 
 """
 """
@@ -591,7 +595,7 @@ def simulate_reads(index_fname, base_fname, \
     # Current script directory
     curr_script = os.path.realpath(inspect.getsourcefile(simulate_reads))
     ex_path = os.path.dirname(curr_script)
-    centrifuge_inspect = os.path.join(ex_path, "../centrifuge-inspect")
+    centrifuge_inspect = os.path.join(ex_path, "../metagenomics-inspect")
 
     err_rand_src = ErrRandomSource(error_rate / 100.0)
     

@@ -4,8 +4,8 @@ from pathlib import Path
 from django.conf import settings
 from rest_framework import serializers
 
-from centrifuge.models import CentrifugeOutput, MappingTarget
 from communication.models import NotificationConditions
+from metagenomics.models import CentrifugeOutput, MappingTarget
 from reads.models import (Barcode, FastqFile, FastqRead,
                           FastqReadType, MinionControl,
                           MinionEvent, MinionEventType, MinionMessage,
@@ -672,7 +672,7 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
                 job_type = JobType.objects.get(name="Other")
 
                 # get the target set we need
-                if "target_set" is not None:
+                if "target_set" != None:
                     mapping_target = list(MappingTarget.objects.filter(target_set=validated_data["target_set"])
                                           .values_list("species", "name", "gff_line_type"))
 

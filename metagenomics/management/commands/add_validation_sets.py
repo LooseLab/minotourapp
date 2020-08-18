@@ -10,7 +10,7 @@ from django.db.models import Q
 from ete3 import NCBITaxa
 from rest_framework.authtoken.models import Token
 
-from centrifuge.models import MappingTarget
+from metagenomics.models import MappingTarget
 from reference.models import ReferenceInfo
 
 

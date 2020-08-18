@@ -26,7 +26,7 @@ urlpatterns = [
     url(r'^', include('alignment.urls')),
     url(r'^', include('reference.urls')),
     url(r'^', include('communication.urls')),
-    url(r'^', include('centrifuge.urls')),
+    url(r'^', include('metagenomics.urls')),
     url(r'^', include('artic.urls')),
     url(r'^', include('readuntil.urls')),
     url(r'^$', index),

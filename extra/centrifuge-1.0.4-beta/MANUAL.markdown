@@ -722,9 +722,9 @@ The descendants from these IDs will also be exclude.
 
 <table>
 
-<tr><td id="centrifuge-options-n-ceil">
+<tr><td id="metagenomics-options-n-ceil">
 
-[`--n-ceil`]: #centrifuge-options-n-ceil
+[`--n-ceil`]: #metagenomics-options-n-ceil
 
     --n-ceil <func>
 
@@ -740,9 +740,9 @@ exceeding this ceiling are [filtered out].  Default: `L,0,0.15`.
 
 </td></tr>
 
-<tr><td id="centrifuge-options-ignore-quals">
+<tr><td id="metagenomics-options-ignore-quals">
 
-[`--ignore-quals`]: #centrifuge-options-ignore-quals
+[`--ignore-quals`]: #metagenomics-options-ignore-quals
 
     --ignore-quals
 
@@ -755,19 +755,19 @@ default behavior when the input doesn't specify quality values (e.g. in [`-f`],
 [`-r`], or [`-c`] modes).
 
 </td></tr>
-<tr><td id="centrifuge-options-nofw">
+<tr><td id="metagenomics-options-nofw">
 
-[`--nofw`]: #centrifuge-options-nofw
+[`--nofw`]: #metagenomics-options-nofw
 
     --nofw/--norc
 
 </td><td>
 
-If `--nofw` is specified, `centrifuge` will not attempt to align unpaired reads to
-the forward (Watson) reference strand.  If `--norc` is specified, `centrifuge` will
+If `--nofw` is specified, `metagenomics` will not attempt to align unpaired reads to
+the forward (Watson) reference strand.  If `--norc` is specified, `metagenomics` will
 not attempt to align unpaired reads against the reverse-complement (Crick)
 reference strand. In paired-end mode, `--nofw` and `--norc` pertain to the
-fragments; i.e. specifying `--nofw` causes `centrifuge` to explore only those
+fragments; i.e. specifying `--nofw` causes `metagenomics` to explore only those
 paired-end configurations corresponding to fragments from the reverse-complement
 (Crick) strand.  Default: both strands enabled. 
 
@@ -779,12 +779,12 @@ paired-end configurations corresponding to fragments from the reverse-complement
 
 <table>
 
-<tr><td id="centrifuge-options-fr">
+<tr><td id="metagenomics-options-fr">
 
-[`--fr`/`--rf`/`--ff`]: #centrifuge-options-fr
-[`--fr`]: #centrifuge-options-fr
-[`--rf`]: #centrifuge-options-fr
-[`--ff`]: #centrifuge-options-fr
+[`--fr`/`--rf`/`--ff`]: #metagenomics-options-fr
+[`--fr`]: #metagenomics-options-fr
+[`--rf`]: #metagenomics-options-fr
+[`--ff`]: #metagenomics-options-fr
 
     --fr/--rf/--ff
 
@@ -823,11 +823,11 @@ This is printed to the "standard error" ("stderr") filehandle.  Default: off.
 </td></tr>
 
 <!--
-<tr><td id="centrifuge-options-un">
+<tr><td id="metagenomics-options-un">
 
-[`--un`]: #centrifuge-options-un
-[`--un-gz`]: #centrifuge-options-un
-[`--un-bz2`]: #centrifuge-options-un
+[`--un`]: #metagenomics-options-un
+[`--un-gz`]: #metagenomics-options-un
+[`--un-bz2`]: #metagenomics-options-un
 
     --un <path>
     --un-gz <path>
@@ -845,11 +845,11 @@ encoding).  Reads will not necessarily appear in the same order as they did in
 the input.
 
 </td></tr>
-<tr><td id="centrifuge-options-al">
+<tr><td id="metagenomics-options-al">
 
-[`--al`]: #centrifuge-options-al
-[`--al-gz`]: #centrifuge-options-al
-[`--al-bz2`]: #centrifuge-options-al
+[`--al`]: #metagenomics-options-al
+[`--al-gz`]: #metagenomics-options-al
+[`--al-bz2`]: #metagenomics-options-al
 
     --al <path>
     --al-gz <path>
@@ -866,11 +866,11 @@ sequence, same name, same quality string, same quality encoding).  Reads will
 not necessarily appear in the same order as they did in the input.
 
 </td></tr>
-<tr><td id="centrifuge-options-un-conc">
+<tr><td id="metagenomics-options-un-conc">
 
-[`--un-conc`]: #centrifuge-options-un-conc
-[`--un-conc-gz`]: #centrifuge-options-un-conc
-[`--un-conc-bz2`]: #centrifuge-options-un-conc
+[`--un-conc`]: #metagenomics-options-un-conc
+[`--un-conc-gz`]: #metagenomics-options-un-conc
+[`--un-conc-bz2`]: #metagenomics-options-un-conc
 
     --un-conc <path>
     --un-conc-gz <path>
@@ -891,11 +891,11 @@ quality string, same quality encoding).  Reads will not necessarily appear in
 the same order as they did in the inputs.
 
 </td></tr>
-<tr><td id="centrifuge-options-al-conc">
+<tr><td id="metagenomics-options-al-conc">
 
-[`--al-conc`]: #centrifuge-options-al-conc
-[`--al-conc-gz`]: #centrifuge-options-al-conc
-[`--al-conc-bz2`]: #centrifuge-options-al-conc
+[`--al-conc`]: #metagenomics-options-al-conc
+[`--al-conc-gz`]: #metagenomics-options-al-conc
+[`--al-conc-bz2`]: #metagenomics-options-al-conc
 
     --al-conc <path>
     --al-conc-gz <path>

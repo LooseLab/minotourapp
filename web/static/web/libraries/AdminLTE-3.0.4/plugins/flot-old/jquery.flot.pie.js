@@ -306,7 +306,7 @@ More detail and specific examples can be found in the included HTML file.
 			var slices = plot.getData(),
 				attempts = 0;
 
-			// Keep shrinking the pie's radius until drawPie returns true,
+			// Keep shrinking the pie's radius until _drawPie returns true,
 			// indicating that all the labels fit, or we try too many times.
 
 			do {
@@ -524,7 +524,7 @@ More detail and specific examples can be found in the included HTML file.
 						return true;
 					} // end individual label function
 				} // end drawLabels function
-			} // end drawPie function
+			} // end _drawPie function
 		} // end draw function
 
 		// Placed here because it needs to be accessed from multiple locations

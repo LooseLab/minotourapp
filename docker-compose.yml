@@ -109,7 +109,7 @@ services:
             MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2/minimap2'
             MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
             MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
-            MT_CENTRIFUGE: "/var/lib/minotour/apps/minotourapp/extra/centrifuge-1.0.4-beta/centrifuge"
+            MT_CENTRIFUGE: "/var/lib/minotour/apps/minotourapp/extra/metagenomics-1.0.4-beta/metagenomics"
             MT_CENTRIFUGE_INDEX: "/var/lib/minotour/apps/localdata/centrifuge_files/p_compressed"
         depends_on:
             - db

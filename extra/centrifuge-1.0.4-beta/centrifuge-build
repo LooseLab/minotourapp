@@ -20,10 +20,10 @@
 """
 
 
-import os
-import sys
 import inspect
 import logging
+import os
+import sys
 
 
 def build_args():
@@ -54,8 +54,8 @@ def main():
                         )
     delta               = 200
     small_index_max_size= 4 * 1024**3 - delta
-    build_bin_name      = "centrifuge-build-bin"
-    build_bin_s         = "centrifuge-build-bin"
+    build_bin_name      = "metagenomics-build-bin"
+    build_bin_s         = "metagenomics-build-bin"
     curr_script         = os.path.realpath(inspect.getsourcefile(main))
     ex_path             = os.path.dirname(curr_script)
     build_bin_spec      = os.path.join(ex_path,build_bin_s)

@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'reference',
     'communication',
     'devices',
-    'centrifuge',
+    'metagenomics',
     'readuntil',
     'guardian',
     'artic'
@@ -204,8 +204,8 @@ CELERY_ROUTES = ({
         'routing_key': "alignment#"
     },
     'web.tasks_centrifuge': {
-        'queue': 'centrifuge',
-        'routing_key': 'centrifuge'
+        'queue': 'metagenomics',
+        'routing_key': 'metagenomics'
     }
 })
 

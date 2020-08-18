@@ -1,5 +1,5 @@
 class TasksController {
-  /* TODO rewrite this trash and redocument
+  /*
     Create a task controller that is in charge of fetching and creating new tasks - used on the task-tab.html page,
      separate from Javascript that creates the drop-downs themselves
      */
@@ -293,6 +293,7 @@ class TasksController {
       const label = $(`#select-label`)
       if (jobTypeId === `10`) {
         label.html(`Target Sets`)
+        referenceSelect.empty()
         axios.get(`/api/v1/metagenomics/targetsets`).then(
           response => {
             response.data.forEach(targetSet => {
@@ -302,10 +303,11 @@ class TasksController {
           }
         )
         referenceSelect.attr(`disabled`, false)
-      } else if ([`4`, `16`].includes(jobTypeId)) {
-        referenceSelect.attr(`disabled`, false)
       } else {
         referenceSelect.attr(`disabled`, true)
+        if ([`4`, `16`].includes(jobTypeId)) {
+          referenceSelect.attr(`disabled`, false)
+        }
         if (label.html() !== `Reference`) {
           label.html(`Reference`)
           axios.get(`/api/v1/reference/`).then(

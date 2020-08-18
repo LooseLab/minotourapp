@@ -12,9 +12,9 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from centrifuge.models import CentrifugeOutput
 from communication.models import Message
 from communication.serializers import MessageSerializer
+from metagenomics.models import CentrifugeOutput
 from reads.models import (
     Run,
     UserOptions,
@@ -483,7 +483,7 @@ def flowcell_run_stats_download(request, pk):
 def metagenomics_data_download(request, pk):
     """
     Send the Metagenomics data back in CSV format, used by the download button found on the metagenomics tab
-    centrifuge/templates/centrifuge/visualisation.html
+    metagenomics/templates/metagenomics/visualisation.html
     :param request:
     :return:
     """

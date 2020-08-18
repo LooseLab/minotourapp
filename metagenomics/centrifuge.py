@@ -15,7 +15,7 @@ from django.utils import timezone
 from ete3 import NCBITaxa
 
 # from alignment.tasks_alignment import align_reads
-from centrifuge.models import (
+from metagenomics.models import (
     CentrifugeOutput,
     LineageValue,
     Metadata,
@@ -143,7 +143,7 @@ def delete_series(series, df):
             df = df.drop(s, 1)
     return df
 
-
+# fixme delete this code!
 def insert_new_lineages(ncbi, df, tax_rank_filter, flowcell):
     """
     Insert any new lineages of species that are in our results into the database, and fetch all that we need for these
@@ -165,7 +165,7 @@ def insert_new_lineages(ncbi, df, tax_rank_filter, flowcell):
     # Check the taxIDs we have in the dataframe, to see if they have matching lineages already.
     # If not the set subtraction means that unique, lineage-less taxIDs end up in the not_prev_lineaged dict
     not_prev_lineaged = list(set(taxid_list) - set(already_lineaged_tax_ids))
-    # Get the lineages for these taxIDs in the new centrifuge output,
+    # Get the lineages for these taxIDs in the new metagenomics output,
     # returns a dict keyed by taxID,
     # value is listof taxIDS in lineage
     lineages_taxidlist_dict = ncbi.get_lineage_translator(taxid_list)
@@ -261,7 +261,7 @@ def update_mapped_non_dangerous(row, task):
     mapped_result.save()
 
 
-def plasmid_mapping(row, species, fastq_list, flowcell, read_ids, fasta_df):
+def plasmid_mapping(row, species, flowcell, read_ids):
     """Map the reads for groups that have danger regions on plasmids
 
     :param pd.Series row: The row of the target dataframe for species with plasmid danger regions
@@ -269,7 +269,7 @@ def plasmid_mapping(row, species, fastq_list, flowcell, read_ids, fasta_df):
     :param list fastq_list: The reads sequences
     :param reads.models.Flowcell flowcell: The flowcell for logging by flowcellId
     :param read_ids: reads ids of the reads being mapped
-    :param fasta_df: dataframe containing the sequence data for the centrifuge classified reads that have filtered to
+    :param fasta_df: dataframe containing the sequence data for the metagenomics classified reads that have filtered to
     target reads
     :return plasmid_map_df: A list of dicts containing the information about the plasmid mappings
     """
@@ -375,7 +375,6 @@ def map_all_the_groups(
     gff3_df,
     targets_results_df,
     task,
-    fastas,
 ):
     """
     Map the reads from the target data frames, after they've been grouped by species, so this is run once fpor each species
@@ -420,7 +419,7 @@ def map_all_the_groups(
 
         return
 
-    # Get the read_ids for the reads that centrifuge has classified as target species
+    # Get the read_ids for the reads that metagenomics has classified as target species
     read_ids = target_species_group_df["read_id"].values.tolist()
 
     # Filter the list of FastqRead objects so we only have the objects that have the desired read_ids
@@ -894,7 +893,6 @@ def map_the_reads(
     num_matches_targets_barcoded_df,
     targets,
     class_per_bar,
-    fastas,
 ):
     """
     Map the reads is called on the dataframe of targets that have been split out, splits them into a group by name, and
@@ -905,7 +903,6 @@ def map_the_reads(
     :param num_matches_targets_barcoded_df: The number of matches per barcode for each target species in a data frame
     :param targets: The targets in this set of targets
     :param class_per_bar: The number of reads classified per barcode as a dict
-    :param fastas: List of fastqread objects for this iteration
     :return:
     """
     logger.info(
@@ -915,7 +912,7 @@ def map_the_reads(
     targets_df = name_df
     # TODO currently hardcoded below
     target_set = task.target_set
-    # if there are no targets identified by centrifuge in this iteration
+    # if there are no targets identified by metagenomics in this iteration
     if targets_df.empty:
         logger.info(
             "Flowcell id: {} - No targets in this batch of reads".format(
@@ -993,7 +990,6 @@ def map_the_reads(
                 target_regions_df,
                 targets_df,
                 task,
-                fastas,
             )
         )
 
@@ -1006,7 +1002,7 @@ def map_the_reads(
         )
         return
 
-    # results df contains all centrifuge details on reads that mapped to target areas
+    # results df contains all metagenomics details on reads that mapped to target areas
     results_df = pd.merge(
         targets_df,
         red_reads_df,
@@ -1080,14 +1076,14 @@ def create_donut_data_models(row, task):
 def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
     """
     Calculate the donut data for the donut chart and table
-    :param df: The dataframe of centrifuge output, with barcodes as well as all reads, post calculations
-    :param lineages_df: The dataframe of lineages for centrifuge output species in this analysis iteration
+    :param df: The dataframe of metagenomics output, with barcodes as well as all reads, post calculations
+    :param lineages_df: The dataframe of lineages for metagenomics output species in this analysis iteration
     :param task: The task object for this analysis
     :param flowcell: The flowcell
     :param tax_rank_filter: A list of the taxonomic ranks in order from superkingdom to species
     :return:
     """
-    # Merge the lineages dataframe onto the centrifuge output dataframe so each species has it's lineage
+    # Merge the lineages dataframe onto the metagenomics output dataframe so each species has it's lineage
     data_df = pd.merge(df, lineages_df, left_on="tax_id", right_index=True)
     data_df.fillna("Unclassified", inplace=True)
     # Set the index to a multi index of all 7 taxonomic ranks
@@ -1135,7 +1131,7 @@ def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
 
 def create_centrifuge_models(row, classified_per_barcode, first):
     """
-    Append a CentOutput object to a list for each row in the centrifuge output
+    Append a CentOutput object to a list for each row in the metagenomics output
     :param row: the row from the data frame
     :param classified_per_barcode: The number of reads classified for each barcode as a dictionary
     :param first: Boolean saying if this is the first iteration, if it isn't a pandas merge adds a suffix onto the code
@@ -1192,7 +1188,7 @@ def create_centrifuge_models(row, classified_per_barcode, first):
 
 def output_parser(task, new_data_df, donut_or_output, metadata):
     """
-    Parse the centrifuge output or Donut data, update the values and save into a site readable format
+    Parse the metagenomics output or Donut data, update the values and save into a site readable format
     :param task: The reference to the JobMaster for this metagenomics task
     :param new_data_df: The donut or CentrifugeOutput dataframe calculated this iteration
     :param donut_or_output: Whether the data type is DonutData or CentrifugeOutput
@@ -1202,7 +1198,7 @@ def output_parser(task, new_data_df, donut_or_output, metadata):
 
     metagenomics_task = task
     # If CentrifugeOutput
-    if donut_or_output is "output":
+    if donut_or_output == "output":
         # Get the results from the last Iteration, using the iteration_count (Iteration count) value from the jobmaster
         parsed_data = CentrifugeOutput.objects.filter(
             task=metagenomics_task, latest=task.iteration_count
@@ -1389,7 +1385,7 @@ def run_centrifuge(flowcell_job_id):
 
     Returns nothing.
     -------
-     Run the centrifuge command, and open the subprocess to run it. Keep the process open and pipe the reads into
+     Run the metagenomics command, and open the subprocess to run it. Keep the process open and pipe the reads into
      it Write the reads incrementally to the processes stdin, capture the stdout and parse it into a useful format.
      Once parsed it's deposited into the database, updating any existing records. The organising key is a uuid,
      stored in self.foreign key.
@@ -1397,28 +1393,24 @@ def run_centrifuge(flowcell_job_id):
 
     # The JobMaster object
     task = JobMaster.objects.get(pk=flowcell_job_id)
-    # The number of reads for this iteration
-    chunk_size = 10000
     # The flowcell the reads are from
     flowcell = task.flowcell
-    logger.debug(
-        f"Flowcell id: {flowcell.id} - Running centrifuge on flowcell {flowcell.name}"
+    print(
+        f"Flowcell id: {flowcell.id} - Running metagenomics on flowcell {flowcell.name}"
     )
-    logger.debug(
+    print(
         f"Flowcell id: {flowcell.id} - job_master_id {task.id}"
     )
-    logger.debug(
+    print(
         f"Flowcell id: {flowcell.id} - last_read {task.last_read}"
     )
-    logger.debug(
+    print(
         f"Flowcell id: {flowcell.id} - read_count { task.read_count}"
     )
-    logger.debug(f"Flowcell id: {flowcell.id} - {cmd}")
     # Counter for total centOut
     total_centrifuge_output = 0
     # Instance of the Ncbi taxa class, for taxonomic id manipulation
     ncbi = NCBITaxa()
-    runs = flowcell.runs.all()
     desired_yield = 25 * 1000000
     avg_read_length = flowcell.average_read_length
     if avg_read_length == 0:
@@ -1427,7 +1419,7 @@ def run_centrifuge(flowcell_job_id):
         )
         avg_read_length = 450
     chunk_size = round(desired_yield / avg_read_length)
-    logger.debug(f"Fetching reads in chunks of {chunk_size} for alignment.")
+    print(f"Fetching reads in chunks of {chunk_size} for alignment.")
     fasta_df_barcode = pd.DataFrame().from_records(
         FastqRead.objects.filter(
             flowcell_id=flowcell.id, id__gt=task.last_read
@@ -1447,15 +1439,12 @@ def run_centrifuge(flowcell_job_id):
     if not fasta_df_barcode.empty:
         last_read = fasta_df_barcode.tail(1).iloc[0].id
     if fasta_df_barcode.empty:
-        logger.debug("No fastq found. Skipping this iteration.")
+        print("No fastq found. Skipping this iteration.")
         task.running = False
         task.save()
         return
     read_count = fasta_df_barcode.shape[0]
-    # fastq_df_barcode, last_read, read_count, fasta_objects = call_fetch_reads_cent(
-    #     runs, chunk_size, task.last_read
-    # )
-    logger.info(
+    print(
         "Flowcell id: {} - number of reads found {}".format(
             flowcell.id, read_count
         )
@@ -1476,17 +1465,18 @@ def run_centrifuge(flowcell_job_id):
         + fasta_df_barcode["sequence"]
     )
     fastqs_data = "\n".join(list(fasta_df_barcode["fasta"]))
-    logger.debug(
+    print(
         "Flowcell id: {} - Loading index and Centrifuging".format(flowcell.id)
     )
     # Write the generated fastq file to stdin, passing it to the command
-    # Use Popen to run the centrifuge command
-    # The path to the centrifuge executable
+    # Use Popen to run the metagenomics command
+    # The path to the metagenomics executable
     centrifuge_path = get_env_variable("MT_CENTRIFUGE")
     # The path to the Centrifuge Index
     index_path = get_env_variable("MT_CENTRIFUGE_INDEX")
-    # The command to run centrifuge
+    # The command to run metagenomics
     cmd = "perl " + centrifuge_path + " -f --mm -k 3 -x " + index_path + " -"
+    print(cmd)
     try:
         out, err = subprocess.Popen(
             cmd.split(),
@@ -1504,16 +1494,25 @@ def run_centrifuge(flowcell_job_id):
             stderr=subprocess.PIPE,
         ).communicate(input=str.encode(fastqs_data))
     # The standard error
+    print(out, err)
     if err:
-        logger.info(
+        print(
             "Flowcell id: {} - Centrifuge error!! {}".format(flowcell.id, err)
         )
     # out is a bytestring so it needs decoding
+    if not out:
+        print(
+            "Flowcell id: {} - No reads found or no metagenomics output."
+            " Check above for error".format(flowcell.id)
+        )
+        task.running = False
+        task.save()
+        return
     centrifuge_output = out.decode()
-    # total number of lines of centrifuge output dealt with
+    # total number of lines of metagenomics output dealt with
     total_centrifuge_output += centrifuge_output.count("\n") - 1
-    logger.debug(
-        "Flowcell id: {} - number of centrifuge output lines is {}".format(
+    print(
+        "Flowcell id: {} - number of metagenomics output lines is {}".format(
             flowcell.id, total_centrifuge_output
         )
     )
@@ -1523,28 +1522,22 @@ def run_centrifuge(flowcell_job_id):
     df = pd.read_csv(
         StringIO(centrifuge_output), sep="\t", usecols=output_fields
     )
-    # If there is no output the dataframe will be empty
-    if df.empty:
-        logger.info(
-            "Flowcell id: {} - No reads found or no centrifuge output."
-            " Check above for error".format(flowcell.id)
-        )
-        task.running = False
-        task.save()
-        return
+
     # create DataFrame column unique, where if the number of matches is 1, unique is 1, if matches is more than
     # 1 unique is 0, using numpy condition
     df["unique"] = np.where(
         df["numMatches"] == 1, 1, 0  # condition  # True  # False
     )
     # split out the barcode_name from the readID string
+    barcode_name_series = df["readID"].str.split(",").str[1].str.split("=").str[1]
+    barcode_name_series = barcode_name_series.rename("barcode_name")
     df = pd.concat(
-        [df, df["readID"].str.split(",").str[1].str.split("=").str[1]], axis=1
+        [df, barcode_name_series], axis=1
     )
     df = pd.concat(
         [df, df["readID"].str.split(",").str[0].str.split("=").str[1]], axis=1
     )
-    # Add the column name
+    # Add the column names
     df.columns = [
         "readID",
         "seqID",
@@ -1624,7 +1617,6 @@ def run_centrifuge(flowcell_job_id):
     )
     # initialise the barcode_df
     barcode_df = pd.DataFrame()
-
     # TODO vectorise these bad boys
     logger.info(
         "Flowcell id: {} - The dataframe shape is {}".format(
@@ -1635,7 +1627,7 @@ def run_centrifuge(flowcell_job_id):
     df2 = df.reset_index()
     # Drop duplicates in the dataframe
     df2 = df2.drop_duplicates(keep="first")
-    # Make this the results for all reads in the centrifuge output
+    # Make this the results for all reads in the metagenomics output
     df2["barcode_name"] = "All reads"
 
     # Include these reads in the lookup dict
@@ -1661,19 +1653,16 @@ def run_centrifuge(flowcell_job_id):
     ).values("species", "tax_id", "num_matches", "barcode_name", "sum_unique")
     # Get the results into  a dataframe
     num_matches_per_target_df = pd.DataFrame(list(df_data))
-
     logger.info(
         "Flowcell id: {} - The previous number of matches dataframe is {}".format(
             flowcell.id, num_matches_per_target_df
         )
     )
-
     already_created_barcodes = list(
         MappingResult.objects.filter(task=task)
         .values_list("barcode_name", flat=True)
         .distinct()
     )
-
     # for each barcode in the target_df
     for barcode in barcodes:
         # Check if barcode has mapping result objects created for it already
@@ -1698,7 +1687,6 @@ def run_centrifuge(flowcell_job_id):
         num_matches_per_target_df,
         temp_targets,
         classified_per_barcode,
-        fasta_objects,
     )
 
     # delete these columns, no longer needed
@@ -1733,7 +1721,7 @@ def run_centrifuge(flowcell_job_id):
 
     df = df.drop_duplicates(keep="first")
 
-    # Make this the results for all reads in the centrifuge output
+    # Make this the results for all reads in the metagenomics output
     df["barcode_name"] = "All reads"
 
     df.set_index("tax_id", inplace=True)
@@ -1765,7 +1753,7 @@ def run_centrifuge(flowcell_job_id):
             flowcell.id, lineages_df.head()
         )
     )
-    # Merge the lineages dataframe onto the centrifuge dataframe, so each row has the lineage of the species of that row
+    # Merge the lineages dataframe onto the metagenomics dataframe, so each row has the lineage of the species of that row
     cent_to_create_df = pd.merge(
         cent_to_create_df,
         lineages_df,

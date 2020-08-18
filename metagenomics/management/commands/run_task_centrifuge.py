@@ -21,12 +21,12 @@ logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
 
-    help = 'Run task centrifuge'
+    help = 'Run task metagenomics'
 
     def handle(self, *args, **options):
 
         try:
-            logger.info('Running centrifuge task')
+            logger.info('Running metagenomics task')
 
             flowcell_list = Flowcell.objects.filter(is_active=True)
 
@@ -45,7 +45,7 @@ class Command(BaseCommand):
                                 flowcell_job.last_read
                             ))
 
-                            logger.info("starting centrifuge task")
+                            logger.info("starting metagenomics task")
                             run_centrifuge(flowcell_job.id)
 
 

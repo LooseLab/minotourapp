@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 
-import sys, os, subprocess, inspect
-import platform, multiprocessing
-import string, re
-from datetime import datetime, date, time
-import copy
-from argparse import ArgumentParser, FileType
-
+import inspect
+import os
+import subprocess
+import sys
+from argparse import ArgumentParser
 
 """
 """
@@ -150,7 +148,7 @@ def evaluate(index_base,
     assert check_files(index_fnames)
 
     # Read taxonomic IDs
-    centrifuge_inspect = os.path.join(path_base, "../centrifuge-inspect")
+    centrifuge_inspect = os.path.join(path_base, "../metagenomics-inspect")
     tax_ids = set()
     tax_cmd = [centrifuge_inspect,
                "--conversion-table",
@@ -175,7 +173,7 @@ def evaluate(index_base,
     read_fnames = [read_fname, scm_fname]
 
     program_bin_base = "%s/.." % path_base
-    centrifuge_cmd = ["%s/centrifuge" % program_bin_base,
+    centrifuge_cmd = ["%s/metagenomics" % program_bin_base,
                       # "-k", "20",
                       # "--min-hitlen", "15",
                       "-f",
@@ -186,7 +184,7 @@ def evaluate(index_base,
     if verbose:
         print >> sys.stderr, ' '.join(centrifuge_cmd)
 
-    out_fname = "centrifuge.output"
+    out_fname = "metagenomics.output"
     proc = subprocess.Popen(centrifuge_cmd, stdout=open(out_fname, "w"), stderr=subprocess.PIPE)
     proc.communicate()
 
@@ -260,8 +258,8 @@ def evaluate(index_base,
     print >> sys.stderr, "number of uniq species:", len(true_abundance)
 
     read_fname = "centrifuge_data/bacteria_sim10M/bacteria_sim10M.fa"
-    summary_fname = "centrifuge.summary"
-    centrifuge_cmd = ["%s/centrifuge" % program_bin_base,
+    summary_fname = "metagenomics.summary"
+    centrifuge_cmd = ["%s/metagenomics" % program_bin_base,
                       # "-k", "20",
                       # "--min-hitlen", "15",
                       "--report-file", summary_fname,
@@ -273,7 +271,7 @@ def evaluate(index_base,
     if verbose:
         print >> sys.stderr, ' '.join(centrifuge_cmd)
 
-    out_fname = "centrifuge.output"
+    out_fname = "metagenomics.output"
     proc = subprocess.Popen(centrifuge_cmd, stdout=open(out_fname, "w"), stderr=subprocess.PIPE)
     proc.communicate()
 

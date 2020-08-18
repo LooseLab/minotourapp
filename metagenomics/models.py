@@ -12,8 +12,8 @@ from reference.models import ReferenceInfo
 
 class SankeyLink(models.Model):
     """
-        :purpose: Store the centrifuge classifier output in the format for the sankey diagram
-        Used in centrifuge class, and all the sankey diagram view
+        :purpose: Store the metagenomics classifier output in the format for the sankey diagram
+        Used in metagenomics class, and all the sankey diagram view
         :author: Rory
         Fields:
 
@@ -92,8 +92,8 @@ class CentrifugeOutput(models.Model):
 
         :name: (str) - The name of the Species
         :tax_id: (int) - The taxonomic ID of this species
-        :num_matches: (int) - The number of centrifuge matches to this species in this analysis
-        :sum_unique: (int) - The number of centrifuge matches that match uniquely to this species
+        :num_matches: (int) - The number of metagenomics matches to this species in this analysis
+        :sum_unique: (int) - The number of metagenomics matches that match uniquely to this species
         :flowcellId: (int) - The Id of the flowcell the reads came from
         :task: (JobMaster Object) FK - the task record in the JobMaster that started this analysis
     """
@@ -229,7 +229,7 @@ class LineageValue(models.Model):
     """
         :purpose: Store the complete Lineages that are produced by NCBI taxa,
         manipulated into this more helpful format
-        Used in centrifuge class, and all the views
+        Used in metagenomics class, and all the views
         :author: Rory
         Fields:
 

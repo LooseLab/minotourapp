@@ -38,6 +38,7 @@
         "makeHeatmapChart": "writable",
         "makePieChart": "writable",
         "MinotourTask": "writable",
-        "MessageView": "writable"
+        "MessageView": "writable",
+        "d3": "readonly"
     }
 }

@@ -6,13 +6,12 @@ import math
 import numpy as np
 import pandas as pd
 from django.db.models import Sum, Q
-from django.http import JsonResponse
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from centrifuge.models import (
+from metagenomics.models import (
     CentrifugeOutput,
     MappingResult,
     Metadata,
@@ -305,9 +304,7 @@ def donut_data(request):
     visType  - Whether this is a a request for donut chart or results table data
     :return:
     """
-    print(type(request))
     flowcell_id = request.GET.get("flowcellId", 0)
-
     barcode = request.GET.get("barcode", "All reads")
     # Get the most recent metagenomics job
     task = (
@@ -323,7 +320,7 @@ def donut_data(request):
     tax_rank_filter = [
         "superkingdom",
         "phylum",
-        "classy",
+        "class",
         "order",
         "family",
         "genus",
@@ -341,7 +338,6 @@ def donut_data(request):
             )
         )
         results_df = results_df.append(data_df)
-
     if results_df.empty:
         return Response("No results", status=204)
     # We only need this data
@@ -372,10 +368,8 @@ def get_target_mapping(request):
     flowcell_id = request.GET.get("flowcellId", 0)
     # The barcode that is currently selected to be viewed on the page
     barcode = request.GET.get("barcode", "All reads")
-
     if flowcell_id == 0:
         return Response("Flowcell id has failed to be delivered", status=404)
-
     # Get the most recent jobmaster id, although there should only be one
     task_id = (
         JobMaster.objects.filter(
@@ -385,7 +379,6 @@ def get_target_mapping(request):
         .last()
         .id
     )
-
     # If the barcode is All reads, there is always four
     queryset = MappingResult.objects.filter(
         task__id=task_id, barcode_name=barcode
@@ -395,7 +388,6 @@ def get_target_mapping(request):
         return Response(
             "No data has yet been produced for the target mappings", status=204
         )
-
     results_df.rename(
         columns={
             "num_mapped": "Num. mapped",
@@ -411,36 +403,27 @@ def get_target_mapping(request):
         },
         inplace=True,
     )
-
     results = results_df.to_dict(orient="records")
-
     return_dict = {"table": results}
-
     return Response(return_dict)
 
 
 @api_view(["GET"])
 def metagenomic_barcodes(request, pk):
     """
-
     :param request:
     :param pk:
     :return:
     """
     flowcell_list = Flowcell.objects.filter(owner=request.user).filter(id=pk)
-
     metagenomics_barcodes = []
-
     if flowcell_list.count() > 0:
-
         flowcell = flowcell_list[0]
-
         task = (
             JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics")
             .order_by("id")
             .last()
         )
-
         if task:
             metagenomics_barcodes = (
                 CentrifugeOutput.objects.filter(task__id=task.id)
@@ -448,10 +431,8 @@ def metagenomic_barcodes(request, pk):
                 .values_list("barcode_name", flat=True)
                 .distinct()
             )
-
     else:
         return Response("No flowcells found for this owner", status=204)
-
     # #### Get the barcode alert levels #### #
     task_id = (
         JobMaster.objects.filter(flowcell=flowcell, job_type__name="Metagenomics")
@@ -459,36 +440,35 @@ def metagenomic_barcodes(request, pk):
         .last()
         .id
     )
-
     barcode_df = pd.DataFrame(
         list(MappingResult.objects.filter(task__id=task_id).values())
     )
-
     if not barcode_df.empty:
-
         calc_df = barcode_df[["num_matches", "num_mapped", "red_reads"]]
-
         hodf = calc_df.apply(alert_level)
-
         barcode_df["alert_level"] = hodf.max(axis=1)
-
         alert_level_results = barcode_df.groupby("barcode_name")["alert_level"].max()
-
         alert_level_results = alert_level_results.to_dict()
-
     else:
-
         alert_level_results = {}
     # Metagenomics barcodes is a list of the barcode_names found in this flowcell, tabs is the alert level 0-3,
     #  3 being target found
     return Response({"data": metagenomics_barcodes, "tabs": alert_level_results})
 
-
-def all_results_table(request):
+@api_view(["GET"])
+def all_results_table(request, pk):
     """
-    Returns the data for the metagenomics tab all results table
-    :param request:
-    :return:
+    Returns data for metagenomics results table, containing all species matched
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        Request object body
+    pk: int
+        Primary key of the flowcell record in database
+
+    Returns
+    -------
+
     """
     query_columns = [
         "barcode_name",
@@ -502,31 +482,23 @@ def all_results_table(request):
         "num_matches",
         "proportion_of_classified",
     ]
-
-    flowcell_id = int(request.GET.get("flowcell_id", 5))
-
+    print(request.GET)
+    flowcell_id = pk
+    print(flowcell_id)
     draw = int(request.GET.get("draw", 0))
-
     start = int(request.GET.get("start", 0))
-
     length = int(request.GET.get("length", 10))
-
     end = start + length
-    # Which column s
+    # Which column
     search_value = request.GET.get("search[value]", "")
-
     order_column = request.GET.get("order[0][column]", "")
     # ascending descending
     order_dir = request.GET.get("order[0][dir]", "")
-
     meta_task = JobMaster.objects.get(
         flowcell__id=flowcell_id, job_type__name="Metagenomics"
     )
-
     latest = meta_task.iteration_count
-
     if not search_value == "":
-
         cent_out_temp = (
             CentrifugeOutput.objects.filter(
                 task__flowcell_id=flowcell_id, latest=latest
@@ -551,23 +523,19 @@ def all_results_table(request):
         )
 
     else:
-
         cent_out_temp = CentrifugeOutput.objects.filter(
             task__flowcell_id=flowcell_id, latest=latest
         ).filter(task__flowcell__owner=request.user)
 
     if order_column:
-
         if order_dir == "desc":
             cent_out_temp = cent_out_temp.order_by(
                 "-{}".format(query_columns[int(order_column)])
             )
-
         else:
             cent_out_temp = cent_out_temp.order_by(
                 "{}".format(query_columns[int(order_column)])
             )
-
     cents = cent_out_temp.exclude(barcode_name="No").values(
         "tax_id",
         "barcode_name",
@@ -582,17 +550,14 @@ def all_results_table(request):
         "genus",
         "species",
     )
-
     records_total = cent_out_temp.count()
-
     result = {
         "draw": draw,
         "recordsTotal": records_total,
         "recordsFiltered": records_total,
         "data": list(cents[start:end]),
     }
-
-    return JsonResponse(result, safe=True)
+    return Response(result)
 
 
 @api_view(["GET"])
@@ -707,8 +672,8 @@ def get_target_sets(request):
             user_id = Token.objects.get(key=api_key).user_id
             target_sets = (
                 MappingTarget.objects.filter(Q(owner_id=user_id) | Q(private=False))
-                    .values_list("target_set", flat=True)
-                    .distinct()
+                .values_list("target_set", flat=True)
+                .distinct()
             )
 
     else:

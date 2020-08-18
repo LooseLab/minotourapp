@@ -1,11 +1,12 @@
 """
 sankey.py
 """
-from centrifuge.models import CentrifugeOutput, SankeyLink
-from reads.models import JobMaster
+import numpy as np
 import pandas as pd
 from celery.utils.log import get_task_logger
-import numpy as np
+
+from metagenomics.models import CentrifugeOutput, SankeyLink
+from reads.models import JobMaster
 
 logger = get_task_logger(__name__)
 
@@ -29,7 +30,7 @@ def create_sankeylink_models(row):
 def calculate_sankey_values(lineages_df, flowcell, tax_rank_filter, metagenomics_task, sankey_task, barcode_name):
     """
     Calculate the values for the sankey diagram and save them into the database.
-    :param lineages_df: A dataframe of lineages created from the current centrifuge output
+    :param lineages_df: A dataframe of lineages created from the current metagenomics output
     :param flowcell: The flowcell for these reads
     :param tax_rank_filter: The taxonomic ranks in descending order
     :param metagenomics_task: The task object relating to this metagenomics analysis

@@ -3,7 +3,7 @@ Admin.py
 """
 from django.contrib import admin
 
-from centrifuge.models import CentrifugeOutput, LineageValue, Metadata, SankeyLink, \
+from metagenomics.models import CentrifugeOutput, LineageValue, Metadata, SankeyLink, \
     MappingResult, TargetMappedReadId, MappingTarget
 
 # Register all the Models to the django admin site for this app

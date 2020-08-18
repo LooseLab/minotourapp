@@ -1,11 +1,12 @@
 from rest_framework import serializers
-from centrifuge.models import CentrifugeOutput
+
+from metagenomics.models import CentrifugeOutput
 
 
 class CentListSerialiser(serializers.ModelSerializer):
     """
         :purpose: Serialise and deserialise Django Model objects from the CentOutput model.
-        Used in centrifuge class
+        Used in metagenomics class
         :author: Rory
     """
     class Meta:

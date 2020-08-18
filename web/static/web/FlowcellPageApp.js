@@ -72,16 +72,16 @@ var FlowcellPageApp = {
 
     this.lastread = 0
 
-    this.drawSankey = drawSankey
-    this.metaHeader = metaHeader
-    this.drawDonut = drawDonut
-    this.getTotalReadsTable = getTotalReadsTable
-    this.drawDonutRankTable = drawDonutRankTable
-    this.addMetaBarcodeTabs = addMetaBarcodeTabs.bind(this)
-    this.update_mapping_table = update_mapping_table
-    this.draw_simple_table = draw_simple_table
+    // this.drawSankey = drawSankey
+    // this.metaHeader = metaHeader
+    // this.drawDonut = drawDonut
+    // this._getTotalReadsTable = _getTotalReadsTable
+    // this.drawDonutRankTable = drawDonutRankTable
+    // this.addMetaBarcodeTabs = addMetaBarcodeTabs.bind(this)
+    // this.update_mapping_table = update_mapping_table
+    // this.draw_simple_table = draw_simple_table
 
-    this.drawReadUntilCharts = drawReadUntilCharts
+    // this.drawReadUntilCharts = drawReadUntilCharts
 
     this.updateAssemblyCharts = updateAssemblyCharts
 
