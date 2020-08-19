@@ -13,11 +13,11 @@ urlpatterns = [
     # Return the data for the total reads table, called from allResultsTable.js
     url(r"^api/v1/metagenomics/(?P<pk>[0-9]+)/table/$", views.all_results_table),
     # Return the data for the header containing metadata at the top of the vis page
-    url(r"^api/v1/metagenomics/centrifuge_metadata/$", views.centrifuge_metadata),
+    url(r"^api/v1/metagenomics/centrifuge-metadata/$", views.centrifuge_metadata),
     # Return the data on for the target table
-    url(r"^api/v1/metagenomics/mapped_targets/$", views.get_target_mapping),
+    url(r"^api/v1/metagenomics/mapped-targets/$", views.get_target_mapping),
     # Return barcodes that we have metagenomics data for
-    url(r'^api/v1/metagenomics/(?P<pk>[0-9]+)/metagenomic_barcodes/$', views.metagenomic_barcodes),
+    url(r'^api/v1/metagenomics/(?P<pk>[0-9]+)/metagenomic-barcodes/$', views.metagenomic_barcodes),
     # Return the data for the simple metagenomics table
     url(r'^api/v1/metagenomics/alerts$', views.simple_target_mappings),
     # Return the data for a choice of target sets

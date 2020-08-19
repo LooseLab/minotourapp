@@ -625,3 +625,6 @@ transition-timing-function: ease-out;
     overflow: scroll;
     margin-left: 1rem;
 }
+.barcode-meta-tab:hover{
+    cursor: pointer;
+}

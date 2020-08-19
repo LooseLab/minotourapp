@@ -55,30 +55,30 @@ class BasecalledDataController {
      * @private
      */
   _updateBarcodeNavTab (flowcellId) {
-    let firstIteration; let that; let index
-    let barcode_names = []; let active; const newBarcodeElementsArray = []
-    that = this
-    firstIteration = this.barcodesList.length === 0
+    let index
+    let barcodeNames = []; let active; const newBarcodeElementsArray = []
+    const that = this
+    const firstIteration = this.barcodesList.length === 0
     this._axiosInstance.get(`/api/v1/flowcells/barcodes`, { params: { flowcellId } }).then((response) => {
       if (response.status !== 200) console.error(`Error ${response.status}`)
-      barcode_names = response.data
+      barcodeNames = response.data
       // Remove no barcode
-      barcode_names = barcode_names.filter(el => {
+      barcodeNames = barcodeNames.filter(el => {
         return el !== `No barcode`
       })
       // If we already have HTML elements
       if (!firstIteration) {
         that.barcodesList.forEach(presBarcode => {
           // if the barcode in controller in the list of barcodes fetched from the server
-          if (barcode_names.includes(presBarcode)) {
+          if (barcodeNames.includes(presBarcode)) {
             // get the index,
-            index = barcode_names.findIndex(b => b === presBarcode)
+            index = barcodeNames.findIndex(b => b === presBarcode)
             // remove it from the freshly fetched barcodes
-            barcode_names.splice(index, 1)
+            barcodeNames.splice(index, 1)
           }
         })
       }
-      barcode_names.forEach(barcode => {
+      barcodeNames.forEach(barcode => {
         that.barcodesList.push(barcode)
         active = barcode === that._currentBarcode ? `active` : ``
         // that.barcodesElementsList.push(`<li class="barcode-tab nav-item">
@@ -89,7 +89,7 @@ class BasecalledDataController {
                                         </li>`)
       })
       // this.barcodesElementsList = this.barcodesElementsList.sort()
-      if (barcode_names.length > 0) {
+      if (barcodeNames.length > 0) {
         // TODO this means that they won't be ordered. Go back to setting HTML ?
 
         this._barcodesHtmlElement.append(newBarcodeElementsArray)
@@ -112,7 +112,6 @@ class BasecalledDataController {
     setSelectedBarcode(selectedBarcode, `BasecalledData`)
     this._currentBarcode = selectedBarcode
     event.target.classList.add(`active`)
-
     // call the function to draw all the charts here.
     this._updateTab(this._flowcellId, selectedBarcode, this, true)
   }

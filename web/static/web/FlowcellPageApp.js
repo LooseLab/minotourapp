@@ -83,14 +83,6 @@ var FlowcellPageApp = {
 
     // this.drawReadUntilCharts = drawReadUntilCharts
 
-    this.updateAssemblyCharts = updateAssemblyCharts
-
-    this.updateAssemblyBoxplot = updateAssemblyBoxplot
-
-    this.createAssemblyTable = createAssemblyTable
-
-    this.requestGfaData = requestGfaData
-
     // this.requestAdvancedPafData = requestAdvancedPafData.bind(this);
 
     this.requestRunDetails = requestRunDetails.bind(this)
