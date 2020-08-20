@@ -17,7 +17,6 @@ from ete3 import NCBITaxa
 # from alignment.tasks_alignment import align_reads
 from metagenomics.models import (
     CentrifugeOutput,
-    LineageValue,
     Metadata,
     MappingResult,
     MappingTarget,
@@ -1083,8 +1082,8 @@ def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
     :param tax_rank_filter: A list of the taxonomic ranks in order from superkingdom to species
     :return:
     """
+    data_df = df
     # Merge the lineages dataframe onto the metagenomics output dataframe so each species has it's lineage
-    data_df = pd.merge(df, lineages_df, left_on="tax_id", right_index=True)
     data_df.fillna("Unclassified", inplace=True)
     # Set the index to a multi index of all 7 taxonomic ranks
     data_df.set_index(tax_rank_filter, inplace=True)
@@ -1122,9 +1121,7 @@ def calculate_donut_data(df, lineages_df, flowcell, task, tax_rank_filter):
             flowcell.id
         )
     )
-
     donut_to_create_df = donut_df
-
     # Call output parser to insert the results dataframe
     output_parser(task, donut_to_create_df, "donut", None)
 
@@ -1184,6 +1181,8 @@ def create_centrifuge_models(row, classified_per_barcode, first):
             species=row["species_x"],
             latest=row["latest"],
         )
+
+
 
 
 def output_parser(task, new_data_df, donut_or_output, metadata):
@@ -1273,7 +1272,7 @@ def output_parser(task, new_data_df, donut_or_output, metadata):
             "sum_unique_x": 0,
             "sum_unique_y": 0,
         }
-        # Fill those NaNs with ) so we can combine the columns
+        # Fill those NaNs with 0 so we can combine the columns
         merged_data_df.fillna(value=values, inplace=True)
         # Set the task column to the task objects
         merged_data_df["task"] = metagenomics_task
@@ -1303,36 +1302,19 @@ def output_parser(task, new_data_df, donut_or_output, metadata):
 
         to_save_df = new_data_df
 
-    def divd(row, cl_bar):
-        """
-        Calculate_proportion_of_classified
-        :param row: The df row
-        :param cl_bar: The number of reads classified in a barcode, in dict form keyed to the barcode_name
-        :return:
-        """
-        return round(
-            (row["num_matches"] / cl_bar[row["barcode_name"]]) * 100, 4
-        )
-
     # Set latest to the updated iteration count
     to_save_df["latest"] = new_iteration_count
-
     to_save_df["task"] = metagenomics_task
-
     # If this is for CentrifugeOutput
     if not donut:
         to_save_df["proportion_of_classified"] = to_save_df.apply(
             divd, args=(classed_per_barcode,), axis=1
         )
-
         to_save_df.rename(columns={"classy": "class"}, inplace=True)
-
         to_save_df["proportion_of_classified"].fillna(
             "Unclassified", inplace=True
         )
-
         to_save_df.fillna("Unclassified", inplace=True)
-
         # The number of reads we have any form of classification for
         reads_classified = to_save_df[
             to_save_df["tax_id"].ne(0)

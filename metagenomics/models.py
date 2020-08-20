@@ -97,6 +97,10 @@ class CentrifugeOutput(models.Model):
         :flowcellId: (int) - The Id of the flowcell the reads came from
         :task: (JobMaster Object) FK - the task record in the JobMaster that started this analysis
     """
+    class Meta:
+        indexes = [
+            models.Index(fields=['tax_id'], name='tax_id_index'),
+        ]
 
     name = models.CharField(max_length=250, null=True)
 
@@ -223,53 +227,6 @@ class MappingTarget(models.Model):
 
     def __str__(self):
         return "{} {} {}-{} {}".format(self.species, self.target_set, self.start, self.end, self.gff_line_type)
-
-
-class LineageValue(models.Model):
-    """
-        :purpose: Store the complete Lineages that are produced by NCBI taxa,
-        manipulated into this more helpful format
-        Used in metagenomics class, and all the views
-        :author: Rory
-        Fields:
-
-        :tax_id: (int) - The taxonomic ID of this species
-        :superkingdom: (str) - superkingdom member name if present
-        :phylum: (str) - phylum member name if present
-        :classy: (str) - class member name if present
-        :order: (str) - order member name if present
-        :family: (str) - fmaily member name if present
-        :genus: (str) - genus member name if present
-        :species: (str) - species member name if present
-        :subspecies: (str) - subspecies member name if present
-        :strain: (str) - strain member name if present
-        :leaf: (str) - leaf member name if present
-        :substrainspecies: (str) - subspecies strain member name if present
-
-        """
-    tax_id = models.IntegerField()
-
-    superkingdom = models.CharField(null=True, max_length=100)
-
-    phylum = models.CharField(null=True, max_length=100)
-
-    classy = models.CharField(null=True, max_length=100)
-
-    order = models.CharField(null=True, max_length=100)
-
-    family = models.CharField(null=True, max_length=100)
-
-    genus = models.CharField(null=True, max_length=100)
-
-    species = models.CharField(null=True, max_length=100)
-
-    subspecies = models.CharField(null=True, max_length=100)
-
-    strain = models.CharField(null=True, max_length=100)
-
-    leaf = models.CharField(null=True, max_length=100)
-
-    substrainspecies = models.CharField(null=True, max_length=100)
 
 
 class DonutData(models.Model):

@@ -25,7 +25,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = get_env_variable("MT_SECRET_KEY")
-# SECRET_KEY = os.environ.get('MT_SECRET_KEY', '@z+2b+7hj5w6zce6!6puz$s!&amy)j@10#qlzuh9w^p#0zwzvm')
 
 # DEBUG = bool(os.environ.get('MT_DJANGO_DEBUG', True))
 ALLOWED_HOSTS = ['*', ]

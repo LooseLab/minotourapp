@@ -1,5 +1,8 @@
 import datetime
 
+import pandas as pd
+from django.db.models import F
+
 from communication.models import Message
 from reads.models import (
     Flowcell,
@@ -732,3 +735,51 @@ def clear_artic_command_job_masters(flowcell_id):
     None
     """
     JobMaster.objects.filter(flowcell_id=flowcell_id, job_type_id=17).delete()
+
+def get_fastq_df(desired_yield, flowcell_pk, avg_read_len, task):
+    """
+    Get a set yield of fastq from the database, and return as a dataframe
+
+    Parameters
+    ----------
+    desired_yield: int
+        Desired yield in megabases
+    flowcell_pk: int
+        The flowcell primary key
+    avg_read_len: int
+        The average read length in bases
+    task: reads.models.JobMaster
+        The task that we are fetching the fastq for
+
+    Returns
+    -------
+
+    """
+    desired_yield = desired_yield * 1000000
+    chunk_size = round(desired_yield / avg_read_len)
+    print(f"Fetching reads in chunks of {chunk_size} for alignment.")
+    fasta_df_barcode = pd.DataFrame().from_records(
+        FastqRead.objects.filter(
+            flowcell_id=flowcell_pk, id__gt=task.last_read
+        )[:chunk_size].values(
+            "read_id",
+            "barcode_name",
+            "sequence",
+            "id",
+            "run_id",
+            "type__name",
+            "run_id",
+            "barcode_id",
+            "is_pass",
+            read_type_id=F("type_id"),
+        )
+    )
+    if not fasta_df_barcode.empty:
+        last_read = fasta_df_barcode.tail(1).iloc[0].id
+    if fasta_df_barcode.empty:
+        print("No fastq found. Skipping this iteration.")
+        task.running = False
+        task.save()
+        return
+    read_count = fasta_df_barcode.shape[0]
+    return read_count, last_read, fasta_df_barcode
