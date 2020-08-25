@@ -39,11 +39,14 @@ class ReferenceManagementController {
       this._datatableObj.DataTable().ajax.reload(null, false)
     } else {
       this._datatableObj.DataTable({
-        initComplete: (settings, json) => {
-          $(`.deletion`).on(`click`, event => {
+        createdRow: (row, data, dataIndex, cells) => {
+          console.log($(row).find(`.ref-deletion`).on(`click`, () => {
             console.log(event)
             this._deleteReference(event.currentTarget.getAttribute(`data-delete`))
-          })
+          }))
+        },
+        initComplete: (settings, json) => {
+          console.log(`hello`)
         },
         ajax: {
           url: `/api/v1/reference`,
@@ -73,12 +76,9 @@ class ReferenceManagementController {
             sortable: false,
             targets: 3,
             data: null,
-            render: (data, type, full, meta) => data.deletable ? `<a class="btn icon-task deletion" data-delete="${data.id}"><i class="fa fa-minus-square"></i> Delete </a>` : ``
+            render: (data, type, full, meta) => data.deletable ? `<a class="btn icon-task ref-deletion" data-delete="${data.id}"><i class="fa fa-minus-square"></i> Delete </a>` : ``
           }
         ]
-      })
-      this._datatableObj.on(`draw`, () => {
-
       })
     }
   }
@@ -117,73 +117,71 @@ class ReferenceManagementController {
           $(`#drop-zone`)
           console.log(`hello`)
           var file = ev.dataTransfer.items[i].getAsFile()
+          console.log(file.name)
           if (file.size > this._maxFileSize) {
             this._modalError(`${file.name} is too large (${file.size})! Upload refused.`, 3000)
           }
           console.log(file, file.name)
           formData.append(`file_location`, file, file.name)
           formData.append(`file_name`, file.name)
-          // Post the files
-          axios(
-            {
-              url: `/api/v1/reference/upload/`,
-              data: formData,
-              headers: {
-                'X-CSRFToken': getCookie(`csrftoken`),
-                'Content-Type': `multipart/form-data; boundary=${formData._boundary}`
-              },
-              onUploadProgress: progressEvent => {
-                const totalLength = progressEvent.lengthComputable ? progressEvent.total : progressEvent.target.getResponseHeader(`content-length`) || progressEvent.target.getResponseHeader(`x-decompressed-content-length`)
-                console.log(`onUploadProgress`, totalLength)
-                if (totalLength !== null) {
-                  $(`#uploadProgressBar`).css(`width`, `${Math.round((progressEvent.loaded * 100) / totalLength)}%`)
-                  console.log(Math.round((progressEvent.loaded * 100) / totalLength))
-                }
-                this._datatableObj.DataTable().ajax.reload(null, false)
-              },
-              method: `post`
+        }
+        // Post the files
+        axios(
+          {
+            url: `/api/v1/reference/upload/`,
+            data: formData,
+            headers: {
+              'X-CSRFToken': getCookie(`csrftoken`),
+              'Content-Type': `multipart/form-data; boundary=${formData._boundary}`
+            },
+            onUploadProgress: progressEvent => {
+              const totalLength = progressEvent.lengthComputable ? progressEvent.total : progressEvent.target.getResponseHeader(`content-length`) || progressEvent.target.getResponseHeader(`x-decompressed-content-length`)
+              console.log(`onUploadProgress`, totalLength)
+              if (totalLength !== null) {
+                $(`#uploadProgressBar`).css(`width`, `${Math.round((progressEvent.loaded * 100) / totalLength)}%`)
+                console.log(Math.round((progressEvent.loaded * 100) / totalLength))
+              }
+              this._datatableObj.DataTable().ajax.reload(null, false)
+            },
+            method: `post`
+          }
+        )
+          .then(
+            response => {
+              this._formData = new FormData()
+              this._modalError(``, 0)
+              this._datatableObj.DataTable().ajax.reload(null, false)
+            })
+          .catch(
+            error => {
+              console.error(error)
+              if (error.status === 403) {
+                this._modalError(error.response.data, 6000)
+              }
+              this._formData = new FormData()
             }
           )
-            .then(
-              response => {
-                this._formData = new FormData()
-                this._modalError(``, 0)
-                this._datatableObj.DataTable().ajax.reload(null, false)
-              })
-            .catch(
-              error => {
-                console.error(error.response)
-                if (error.response.status === 403) {
-                  this._modalError(error.response.data, 6000)
-                }
-                this._formData = new FormData()
-              }
-            )
-        }
       }
     } else {
       // Use DataTransfer interface to access the file(s)
       for (let i = 0; i < ev.dataTransfer.files.length; i++) {
-        console.log(`hello`)
+        console.log(`hello2`)
         const file = ev.dataTransfer.items[i].getAsFile()
-        console.log(file)
-        file.text().then(text => {
-          console.log(file, file.name)
-          formData.append(`file_location`, file, file.name)
-          formData.append(`filename`, file.name)
-          axios(
-            {
-              url: `/api/v1/reference/upload/`,
-              data: formData,
-              headers: {
-                'X-CSRFToken': getCookie(`csrftoken`),
-                'Content-Type': `multipart/form-data; boundary=${formData._boundary}`
-              },
-              method: `post`
-            }
-          )
-        })
+        console.log(file, file.name)
+        formData.append(`file_location`, file, file.name)
+        formData.append(`filename`, file.name)
       }
+      axios(
+        {
+          url: `/api/v1/reference/upload/`,
+          data: formData,
+          headers: {
+            'X-CSRFToken': getCookie(`csrftoken`),
+            'Content-Type': `multipart/form-data; boundary=${formData._boundary}`
+          },
+          method: `post`
+        }
+      )
     }
   }
 
