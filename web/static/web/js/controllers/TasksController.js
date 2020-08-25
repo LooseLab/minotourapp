@@ -29,10 +29,10 @@ class TasksController {
     this._selectOptionsList.add(`<option value="-1">-- Please Choose --</option>`)
     this._referenceSelectOptionsList = new Set()
     this._referenceSelectOptionsList.add(`<option value="-1">-- Please Choose --</option>`)
-    this._targetSetList = new Set()
+    this._targetSetSet = new Set()
     this._addListenerToTasksForm()
     this._addListenerToReactivateButton()
-    this._targetSetList.add(`<option value="-1">-- Please Choose --</option>`)
+    this._targetSetSet.add(`<option value="-1">-- Please Choose --</option>`)
     this._90Input = $(`#90-input-og`)
     this._95Input = $(`#95-input-og`)
     this._99Input = $(`#99-input-og`)
@@ -95,7 +95,7 @@ class TasksController {
   _submitArticFire () {
     const newConditions = {}
     this._fireInputs.forEach(input => {
-      newConditions[input.attr(`id`).split(`-`).slice(0, 2).join("-")] = input.val()
+      newConditions[input.attr(`id`).split(`-`).slice(0, 2).join(`-`)] = input.val()
     })
     this._axiosInstance.post(`/api/v1/artic/${this._flowcellId}/firing-conditions`, { newConditions }).then(
       response => {
@@ -297,7 +297,7 @@ class TasksController {
         axios.get(`/api/v1/metagenomics/targetsets`).then(
           response => {
             response.data.forEach(targetSet => {
-              this._targetSetList.add(`<option value="${targetSet.target_set}">${targetSet.target_set}</option>`)
+              this._targetSetSet.add(`<option value="${targetSet.target_set}">${targetSet.target_set}</option>`)
             })
             referenceSelect.html([...this._targetSetSet].join(``))
           }
