@@ -13,7 +13,7 @@ from artic.task_artic_alignment import (
     make_results_directory_artic,
     run_artic_command, run_artic_pipeline,
 )
-from metagenomics import centrifuge
+from metagenomics.new_centrifuge import run_centrifuge_pipeline
 from metagenomics.sankey import calculate_sankey
 from minotourapp.utils import get_env_variable
 from reads.models import (
@@ -66,7 +66,7 @@ def run_monitor():
             if flowcell_job.job_type.name == "Minimap2" and flowcell_job.from_database:
                 run_minimap2_alignment.apply_async(args=(flowcell_job.id,), queue="minimap")
             if flowcell_job.job_type.name == "Metagenomics":
-                run_centrifuge.delay(flowcell_job.id)
+                run_centrifuge_pipeline.delay(flowcell_job.id)
             if flowcell_job.job_type.name == "UpdateFlowcellDetails":
                 update_flowcell_details.delay(flowcell_job.id)
             if flowcell_job.job_type.name == "CalculateMetagenomicsSankey":
@@ -142,17 +142,6 @@ def run_sankey(flowcell_job_id):
     )
     calculate_sankey(flowcell_job_id)
 
-
-@task()
-def run_centrifuge(flowcell_job_id):
-
-    job_master = JobMaster.objects.get(pk=flowcell_job_id)
-
-    logger.info(
-        "Flowcell id: {} - Starting metagenomics task".format(job_master.flowcell.id)
-    )
-
-    centrifuge.run_centrifuge(flowcell_job_id)
 
 
 @task()
