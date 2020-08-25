@@ -63,6 +63,8 @@ def run_centrifuge(flowcell_job_id):
         avg_read_len=avg_read_length,
         task=task,
     )
+    if not read_count:
+        return
     print("Flowcell id: {} - number of reads found {}".format(flowcell.id, read_count))
     # Create a fastq string to pass to Centrifuge
     fasta_df_barcode["fasta"] = (
