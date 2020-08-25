@@ -117,39 +117,22 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
     :type restart: bool
     :return:
     """
-
     # Get the flowcell jobMaster entry
     flowcell_job = JobMaster.objects.get(pk=flowcell_job_id)
     # Get the flowcell
     flowcell = flowcell_job.flowcell
-
     # Set complete to True so no new data is generated
     flowcell_job.complete = True
     flowcell_job.save()
-    
     # If the task is running,it might be producing new data, so wait until it's finished
     running = flowcell_job.running
-
     seconds_counter = 0
-
-    while running:
-        running = flowcell_job.running
-        time.sleep(1)
-        seconds_counter += 1
-        if seconds_counter == 120:
-            flowcell_job.running = False
-            flowcell_job.save()
-
     logger.info('Flowcell id: {} - Deleting alignment data from flowcell {}'.format(flowcell.id, flowcell.name))
     # keep looping
     delete = True
-
     centrifuge_output_remaining = True
-
     donut_data_remaining = True
-
     logger.info(f"Flowcell job type {flowcell_job.job_type.name}")
-
     if flowcell_job.job_type.name == "Metagenomics":
 
         # ## delete the alignment data from the target set validation ## #
@@ -160,43 +143,30 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
             for mapping_job in metagenomics_mapping_jobs:
                 logger.info(f"Deleting alignment data for {mapping_job.reference.name}")
                 delete_alignment_task(mapping_job.id)
-
         else:
             logger.info("No mapping data found for this metagenomics run")
         # while we have data left
         while delete:
-
             if centrifuge_output_remaining:
                 # Get the django ORM object representing the first row of the database entries to delete
                 centrifuge_output_first_row = flowcell_job.centrifuge_output.first()
                 # If there is no data left to delete
                 if not centrifuge_output_first_row:
-
                     centrifuge_output_remaining = False
-
                 else:
-
                     delete_rows(centrifuge_output_first_row, 1000, flowcell_job, "centrifuge_output")
-
             if donut_data_remaining:
                 # Get the first row of the donut data database rows
-
                 donut_data_first_row = flowcell_job.donut_data.first()
                 # If there is no data left to delete
                 if not donut_data_first_row:
-
                     donut_data_remaining = False
-
                 else:
 
                     delete_rows(donut_data_first_row, 1000, flowcell_job, "donut_data")
-
             if not centrifuge_output_remaining and not donut_data_remaining:
-
                 finished = flowcell_job.delete()
-
                 logger.info(f"Finished deleting Task data for metagenomics {finished}")
-
                 # if we are resetting the task reinsert a new fresh JobMaster
                 if restart:
                     flowcell_job.last_read = 0
@@ -204,11 +174,9 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
                     flowcell_job.iteration_count = 0
                     flowcell_job.complete = False
                     flowcell_job.save()
-                    
                     # We're restarting so set a new activity data so flowcell becomes active
                     flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
                     flowcell.save()
-                    
                 delete = False
 
 
