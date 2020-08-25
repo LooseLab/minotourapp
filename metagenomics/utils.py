@@ -216,3 +216,61 @@ def calculate_lineages_df(ncbi, df, tax_rank_filter, flowcell):
     # delete the new subspecies column
     delete_series(["subStrainSpecies"], lineages_df)
     return lineages_df
+
+
+def update_targets_no_mapping(row, task):
+    """
+    Update the targets to reflect the number of matches, if we've classified reads that don't map
+
+    :param row: The target dataframe row
+    :param task: The task database model object
+    :return: None
+    """
+    # Get the Mapping result object for each target reads
+    obj = MappingResult.objects.get(
+        tax_id=row["tax_id"], task=task, barcode_name=row["barcode_name"]
+    )
+    # Set the number of matches
+    obj.num_matches = row["num_matches"]
+    # Set the number of unique matches
+    obj.sum_unique = row["sum_unique"]
+    # Get the number of mapped from teh database
+    nm = obj.num_mapped
+    # Get the proportion of classified
+    obj.proportion_of_classified = row["prop_classed"]
+    # Calculate the new proportion of mapped against total reads classified
+    obj.mapped_proportion_of_classified = round(
+        nm / row["num_matches"] * 100, 3
+    )
+    # Save the new values
+    obj.save()
+
+
+def falls_in_region(row, map_df):
+    """
+    Does this reads mapping fall within or encompass any of the regions we have defined?
+    :param row: The gff3 dataframe row
+    :param map_df_by_species: The results of the mapping step in a pandas dataframe
+    :return:
+    """
+    # TODO include which region it maps to
+    # If the start is higher than the region start
+    map_df_by_species = map_df[map_df["name"] == row["species"].replace(" ", "_")]
+    start_low = map_df_by_species["target_start"] > row["start"]
+    # If the start is lower than the region end
+    start_high = map_df_by_species["target_start"] < row["end"]
+    # If the end is higher than the region end
+    end_low = map_df_by_species["target_end"] > row["start"]
+    # If the end is lower than the region end
+    end_high = map_df_by_species["target_end"] < row["end"]
+    # If the read completely spans the gene/region
+    read_is_wider_than_region = ((map_df_by_species["target_start"] < row["start"]) & (map_df_by_species["target_end"] > row["end"]))
+    # Concat the series together, create "truth" dataframe
+    map_bool_df = pd.concat(
+        [start_low, start_high, end_low, end_high, read_is_wider_than_region], axis=1, ignore_index=True
+    )
+    # Keep where the start is in the region,
+    map_bool_df["keep"] = np.where(
+        (map_bool_df[0] & map_bool_df[1]) | (map_bool_df[2] & map_bool_df[3] | map_bool_df[4]), True, False
+    )
+    return map_bool_df["keep"].any()
