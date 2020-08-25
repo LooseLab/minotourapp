@@ -90,9 +90,7 @@ def create_mapping_result_objects(barcodes, task):
             )
             if created:
                 print(
-                    "Flowcell id: {} - Result Mapping object created for {}".format(
-                        task.flowcell.id, obj.species
-                    )
+                    f"Flowcell id: {task.flowcell.id} - Result Mapping object created for {obj.species}, barcode {barcode}"
                 )
     return target_regions_df
 
@@ -192,7 +190,9 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
         .values_list("reference_lines__line_name", "name")
         .distinct()
     )
-    contig_to_reference_dict = {contig_name: ref_species for contig_name, ref_species in reference_contig_names}
+    contig_to_reference_dict = {
+        contig_name: ref_species for contig_name, ref_species in reference_contig_names
+    }
     if not out:
         print("No values for target mapping.")
     map_out_df = pd.read_csv(StringIO(out.decode()), sep="\t", header=None)
@@ -221,6 +221,7 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
     # map_out_df = map_out_df.query("mapping_qual >= 40 & num_residue_matches >= 200")
     if map_out_df.empty:
         print("Insufficient quality mappings.")
+        return pd.DataFrame()
     # See whether the start or end of a mapping falls into the region
     map_out_df["read_is_red"] = target_region_df.apply(
         falls_in_region, args=(map_out_df,), axis=1
@@ -228,9 +229,15 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
     map_out_df["read_is_red"] = np.where(map_out_df["read_is_red"], 1, 0)
     map_out_df["name"] = map_out_df["name"].str.replace("_", " ")
     map_out_df = pd.merge(map_out_df, target_df, how="left", on=["read_id", "name"])
-    map_out_df["barcode_name"] = map_out_df["read_id"].map(target_df.set_index("read_id")["barcode_name"])
+    map_out_df["barcode_name"] = map_out_df["read_id"].map(
+        target_df.set_index("read_id")["barcode_name"]
+    )
     map_out_df = map_out_df.fillna(0)
-    map_out_df[map_out_df["barcode_name"] == "No barcode"]["barcode_name"] = "All reads"
+    map_out_df["barcode_name"] = np.where(
+        map_out_df["barcode_name"] == "No barcode",
+        "All reads",
+        map_out_df["barcode_name"],
+    )
     gb = map_out_df.groupby(["barcode_name", "name"])
     map_out_df.set_index(["barcode_name", "name"], inplace=True)
     map_out_df["num_mapped"] = gb.size()
@@ -249,11 +256,12 @@ def save_mapping_results(row, task):
     -------
 
     """
+    print(row["barcode_name"], row["name"], task)
     map_result = MappingResult.objects.get(
         task=task, species=row["name"], barcode_name=row["barcode_name"]
     )
     map_result.num_mapped += row["num_mapped"]
     map_result.num_matches += row["num_matches"]
     map_result.sum_unique += row["sum_unique"]
-    map_result.red_reads += row["red_reads"]
+    map_result.red_reads += row["num_red_reads"]
     map_result.save()
