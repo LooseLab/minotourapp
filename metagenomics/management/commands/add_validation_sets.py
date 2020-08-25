@@ -59,7 +59,10 @@ def gff_create(row, species_name, tax_id, set_name, user, private):
         name = row["name"]
     else:
         name = "danger_zone"
-
+    reference_name = species_name.replace(" ", "_")
+    reference_name = reference_name if row["type"] != "plasmid" else f"{reference_name}_{row['name']}"
+    print(reference_name)
+    reference = ReferenceInfo.objects.get(name=reference_name)
     obj, created = MappingTarget.objects.get_or_create(
         species=species_name,
         tax_id=tax_id[species_name.replace("_", " ")][0],
@@ -67,6 +70,7 @@ def gff_create(row, species_name, tax_id, set_name, user, private):
         start=row["start"],
         end=row["end"],
         gff_line_type=row["type"],
+        reference=reference,
         owner=user,
         private=private,
         defaults={"name": name},
