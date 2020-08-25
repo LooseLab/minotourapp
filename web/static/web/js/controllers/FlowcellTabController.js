@@ -110,6 +110,7 @@ class FlowcellTabController {
     Object.keys(controllers).forEach(controllerName => {
       if (!tabs.includes(controllerName) && this[controllers[controllerName][0]]) {
         // delete the controller
+        this.lookupElement[`nav-${name}`].classList.add(`hidden`)
         delete this[controllers[controllerName][0]]
       }
     })
