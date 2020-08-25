@@ -9,6 +9,7 @@ from io import StringIO
 
 import numpy as np
 import pandas as pd
+from celery import task
 from celery.utils.log import get_task_logger
 from django.db.models import Sum
 from django.utils import timezone
@@ -84,7 +85,6 @@ def run_centrifuge(flowcell_job_id):
     index_path = get_env_variable("MT_CENTRIFUGE_INDEX")
     # The command to run metagenomics
     cmd = "perl " + centrifuge_path + " -f --mm -k 3 -x " + index_path + " -"
-    print(cmd)
     try:
         out, err = subprocess.Popen(
             cmd.split(),
@@ -102,7 +102,6 @@ def run_centrifuge(flowcell_job_id):
             stderr=subprocess.PIPE,
         ).communicate(input=str.encode(fastqs_data))
     # The standard error
-    print(out, err)
     if err:
         print("Flowcell id: {} - Centrifuge error!! {}".format(flowcell.id, err))
     # out is a bytestring so it needs decoding
@@ -727,12 +726,14 @@ def update_metadata_and_task(last_read, read_count, flowcell_job_id, total_centr
     print("Flowcell id: {} - Finished!".format(flowcell.id))
 
 
-def Testetest(flowcell_job_id):
+@task()
+def run_centrifuge_pipeline(flowcell_job_id):
     """
-
+    Run the centrifuge pipeline. TOdo could be split into a chain if slow
     Parameters
     ----------
-    flowcell_job_id
+    flowcell_job_id: int
+        The primary key of the JobMaster record in the database
 
     Returns
     -------
@@ -757,7 +758,9 @@ def Testetest(flowcell_job_id):
     target_region_df = create_mapping_result_objects(barcodes, task)
     path_to_reference = fetch_concat_reference_path(task)
     map_output_df = map_target_reads(task, path_to_reference, targets_df, to_save_df, target_region_df)
-    map_output_df.apply(save_mapping_results, axis=1, args=(task,))
+    print(map_output_df.head())
+    if not map_output_df.empty:
+        map_output_df.apply(save_mapping_results, axis=1, args=(task,))
 
     # #####  donut chart calculations
     donut_df = calculate_donut_data(df, task.flowcell, tax_rank_filter)
@@ -765,4 +768,3 @@ def Testetest(flowcell_job_id):
     save_analyses_output_in_db(to_save_df, True, task)
 
     update_metadata_and_task(last_read, read_count, flowcell_job_id, total_centrifuge_output)
-    return df, to_save_df
