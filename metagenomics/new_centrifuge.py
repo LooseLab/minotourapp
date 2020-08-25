@@ -14,12 +14,12 @@ from django.db.models import Sum
 from django.utils import timezone
 from ete3 import NCBITaxa
 
-# from alignment.tasks_alignment import align_reads
 from metagenomics.centrifuge import delete_series, create_donut_data_models
+from metagenomics.centrigue_validation import separate_target_cent_output, create_mapping_result_objects, \
+    fetch_concat_reference_path, map_target_reads, save_mapping_results
 from metagenomics.models import (
     CentrifugeOutput,
     Metadata,
-    MappingTarget,
     DonutData,
 )
 from metagenomics.utils import convert_species_to_subspecies, divd, create_centrifuge_models
@@ -29,6 +29,7 @@ from reads.utils import get_fastq_df
 
 pd.options.mode.chained_assignment = None
 logger = get_task_logger(__name__)
+
 
 def run_centrifuge(flowcell_job_id):
     """
@@ -40,8 +41,9 @@ def run_centrifuge(flowcell_job_id):
 
     Returns
     -------
-    pd.core.frame.DataFrame, int
-        Dataframe of centrifuge results, and total output lines from centrifuge
+    pd.core.frame.DataFrame, int, int, int, pandas.core.frame.DataFrame
+        Dataframe of centrifuge results, total output lines from centrifuge, last read primary key,
+        total count of reads analysed, dataframe of any reads that identified as targets
 
     """
     # The JobMaster object
@@ -124,7 +126,41 @@ def run_centrifuge(flowcell_job_id):
     output_fields = ["readID", "seqID", "taxID", "numMatches"]
     # create the DataFrame from the output
     df = pd.read_csv(StringIO(centrifuge_output), sep="\t", usecols=output_fields)
-    return df, total_centrifuge_output, read_count, last_read
+    # split out the barcode_name from the readID string
+    df = split_read_id_and_barcodes(df)
+    targets_df = separate_target_cent_output(df, task, fasta_df_barcode)
+    return df, total_centrifuge_output, read_count, last_read, targets_df
+
+
+def split_read_id_and_barcodes(df):
+    """
+    Split the combined read_id and barcode field into separate read_id and barcode columns
+    Parameters
+    ----------
+    df: pd.core.frame.DataFrame
+        Dataframe of centrifuge output results
+
+    Returns
+    -------
+    pd.core.frame.DataFrame
+        Dataframe of the output results with a split read id column
+    """
+    barcode_name_series = df["readID"].str.split(",").str[1].str.split("=").str[1]
+    barcode_name_series = barcode_name_series.rename("barcode_name")
+    df = pd.concat([df, barcode_name_series], axis=1)
+    df = pd.concat(
+        [df, df["readID"].str.split(",").str[0].str.split("=").str[1]], axis=1
+    )
+    # Add the column names
+    df.columns = [
+        "readID",
+        "seqID",
+        "tax_id",
+        "numMatches",
+        "barcode_name",
+        "read_id",
+    ]
+    return df
 
 
 def process_centrifuge_output(df, task):
@@ -140,24 +176,10 @@ def process_centrifuge_output(df, task):
         The results
 
     """
+    barcodes = df["barcode_name"].unique().tolist()
+    # Add an all reads string to the list
+    barcodes.append("All reads")
     df["unique"] = np.where(df["numMatches"] == 1, 1, 0)  # condition  # True  # False
-    # split out the barcode_name from the readID string
-    barcode_name_series = df["readID"].str.split(",").str[1].str.split("=").str[1]
-    barcode_name_series = barcode_name_series.rename("barcode_name")
-    df = pd.concat([df, barcode_name_series], axis=1)
-    df = pd.concat(
-        [df, df["readID"].str.split(",").str[0].str.split("=").str[1]], axis=1
-    )
-    # Add the column names
-    df.columns = [
-        "readID",
-        "seqID",
-        "tax_id",
-        "numMatches",
-        "unique",
-        "barcode_name",
-        "read_id",
-    ]
     # get np array of the taxids
     taxid_list = np.unique(df["tax_id"].values)
     # use the ncbi thing to get the species names for the tax ids in the tax ids list
@@ -182,7 +204,7 @@ def process_centrifuge_output(df, task):
     # table
     df["num_matches"] = gb.size()
     # Create a list of all the barcodes, one element for this list
-    return df, task
+    return df, task, barcodes
 
 
 def calculate_barcoded_values(barcode_group_df, barcode_df, classified_per_barcode):
@@ -248,7 +270,7 @@ def barcode_output_calculations(df, task):
 
     """
 
-    barcodes = list(df["barcode_name"].unique())
+    barcodes = np.unique(df["barcode_name"].values).tolist()
     # Add an all reads string to the list
     barcodes.append("All reads")
     classified_per_barcode = {
@@ -281,27 +303,6 @@ def barcode_output_calculations(df, task):
     # Set the tax_id as the index
     barcode_df.set_index("tax_id", inplace=True)
     return barcode_df, task
-
-
-def seperate_target_reads(df, task):
-    targets = (
-        MappingTarget.objects.filter(target_set=task.target_set)
-        .values_list("species", flat=True)
-        .distinct()
-    )
-    print("Flowcell id: {} - Targets are {}".format(task.flowcell.id, targets))
-    # Get the target reads rows in a seperate dataframe
-    name_df = df[df["name"].isin(targets)]
-    df_data = CentrifugeOutput.objects.filter(
-        species__in=targets, task=task, barcode_name__in=barcodes
-    ).values("species", "tax_id", "num_matches", "barcode_name", "sum_unique")
-    # Get the results into  a dataframe
-    num_matches_per_target_df = pd.DataFrame(list(df_data))
-    print(
-        "Flowcell id: {} - The previous number of matches dataframe is {}".format(
-            flowcell.id, num_matches_per_target_df
-        )
-    )
 
 
 def calculate_lineages_df(ncbi, df, tax_rank_filter, flowcell):
@@ -364,6 +365,7 @@ def calculate_lineages_df(ncbi, df, tax_rank_filter, flowcell):
     # delete the new subspecies column
     delete_series(["subStrainSpecies"], lineages_df)
     return lineages_df
+
 
 def calculate_donut_data(df, flowcell, tax_rank_filter):
     """
@@ -433,7 +435,7 @@ def calculate_donut_data(df, flowcell, tax_rank_filter):
     return donut_to_create_df
 
 
-def process_centrifuge_barcode_data(df, barcode_df, task):
+def process_centrifuge_barcode_data(df, barcode_df, task, tax_rank_filter):
     """
     Process the centrifuge per barcode output dataframe append lineages for each species
     Parameters
@@ -444,6 +446,8 @@ def process_centrifuge_barcode_data(df, barcode_df, task):
         Dataframe containing per barcode results
     task: reads.models.JobMaster
         The task ORM
+    tax_rank_filter: list of str
+        List of taxonomic ranks in hierarchical order
 
     Returns
     -------
@@ -453,29 +457,18 @@ def process_centrifuge_barcode_data(df, barcode_df, task):
     """
     flowcell = task.flowcell
     df.drop(
-        columns=["readID", "seqID", "numMatches", "unique", "barcode_name", "read_id", ],
+        columns=["readID", "seqID", "numMatches", "unique", "barcode_name", "read_id"],
         inplace=True,
     )
-    # remove duplicate rows in the data frame,so we only have one entry for each species
-    df.drop_duplicates(keep="first", inplace=True)
-    # filter out no ranks, like root and cellular organism
-    tax_rank_filter = [
-        "superkingdom",
-        "phylum",
-        "class",
-        "order",
-        "family",
-        "genus",
-        "species",
-    ]
-    # drop all duplicated lines to keep only one for each entry, creating atomicity
-    df.reset_index(inplace=True)
-    df = df.drop_duplicates(keep="first")
+
     # Make this the results for all reads in the metagenomics output
     df["barcode_name"] = "All reads"
-    df.set_index("tax_id", inplace=True)
     # Add the barcode dataframe onto the dataframe, so now we have all reads and barcodes
     df = df.append(barcode_df, sort=True)
+    # drop all duplicated lines to keep only one for each entry, creating atomicity
+    df.reset_index(inplace=True)
+    df = df.set_index(["tax_id", "barcode_name"])
+    df = df.loc[~df.index.duplicated()]
     # Set the flowcell object into a series, broadcast to each row
     df["flowcell"] = flowcell
 
@@ -491,12 +484,13 @@ def process_centrifuge_barcode_data(df, barcode_df, task):
     cent_to_create_df = pd.merge(
         df, lineages_df, how="inner", left_on="tax_id", right_index=True,
     )
+    print("Merged in lineages")
     cent_to_create_df["task"] = task
     cent_to_create_df = cent_to_create_df[cent_to_create_df["barcode_name"] != "No"]
     return cent_to_create_df
 
 
-def output_aggragator(task, new_data_df, is_donut):
+def output_aggregator(task, new_data_df, is_donut):
     """
     Parse the metagenomics output or Donut data, update analyses values and return
 
@@ -519,7 +513,7 @@ def output_aggragator(task, new_data_df, is_donut):
     metagenomics_task = task
     parsed_data = CentrifugeOutput.objects.filter(
         task=metagenomics_task, latest=task.iteration_count
-    )  if not is_donut else DonutData.objects.filter(task=metagenomics_task, latest=task.iteration_count)
+    ) if not is_donut else DonutData.objects.filter(task=metagenomics_task, latest=task.iteration_count)
     # Create a dataframe of the previous values
     parsed_data_df = pd.DataFrame.from_records(parsed_data.values())
     # class throws a key error cause of poor choices I made, so rename it classy
@@ -528,7 +522,9 @@ def output_aggragator(task, new_data_df, is_donut):
     # If we have previous data
     if not parsed_data_df.empty:
         # Add one to the iteration count
-        new_iteration_count = task.iteration_count + 1
+        iteration_count = task.iteration_count
+        if not is_donut:
+            iteration_count = task.iteration_count + 1
         # If this is for CentrifugeOutput
         if not is_donut:
             # Merge the lsat Iterations values with this Iterations values
@@ -547,8 +543,8 @@ def output_aggragator(task, new_data_df, is_donut):
                               ("species_x", "species_y", "species"),
                               ("name_x", "name_y", "name")]
             fill_na_values = {x[0]: x[1] for x in df_values}
-            merged_data_df.fillna(
-                value=fill_na_values, inplace=True
+            merged_data_df = merged_data_df.fillna(
+                value=fill_na_values
             )
             rename_values = {x[0]: x[2] for x in df_values}
             merged_data_df.rename(columns=rename_values, inplace=True)
@@ -589,15 +585,18 @@ def output_aggragator(task, new_data_df, is_donut):
     # Else this is the first iteration as we have no previous data
     else:
         # Set iteration count to one
-        new_iteration_count = 1
+        iteration_count = 1
         # Group by barcode name
         gb_bc = new_data_df.groupby("barcode_name")
         # The number of matches per barcode as a dictionary
         classed_per_barcode = gb_bc["num_matches"].sum().to_dict()
         to_save_df = new_data_df
 
+    to_save_df["proportion_of_classified"] = to_save_df.apply(
+        divd, args=(classed_per_barcode,), axis=1
+    )
     # Set latest to the updated iteration count
-    to_save_df["latest"] = new_iteration_count
+    to_save_df["latest"] = iteration_count
     to_save_df["task"] = metagenomics_task
     return to_save_df, classed_per_barcode
 
@@ -621,9 +620,6 @@ def save_analyses_output_in_db(to_save_df, donut, task, classed_per_barcode=0):
 
     """
     if not donut:
-        to_save_df["proportion_of_classified"] = to_save_df.apply(
-            divd, args=(classed_per_barcode,), axis=1
-        )
         to_save_df.rename(columns={"classy": "class"}, inplace=True)
         to_save_df["proportion_of_classified"].fillna(
             "Unclassified", inplace=True
@@ -731,7 +727,7 @@ def update_metadata_and_task(last_read, read_count, flowcell_job_id, total_centr
     print("Flowcell id: {} - Finished!".format(flowcell.id))
 
 
-def Testetest (flowcell_job_id):
+def Testetest(flowcell_job_id):
     """
 
     Parameters
@@ -752,16 +748,21 @@ def Testetest (flowcell_job_id):
         "species",
     ]
     task = JobMaster.objects.get(pk=flowcell_job_id)
-    df, total_cent_out, read_count, last_read = run_centrifuge(flowcell_job_id)
-    df, task = process_centrifuge_output(df, task)
+    df, total_centrifuge_output, read_count, last_read, targets_df = run_centrifuge(flowcell_job_id)
+    df, task, barcodes = process_centrifuge_output(df, task)
     barcode_df, task = barcode_output_calculations(df, task)
-    df = process_centrifuge_barcode_data(df, barcode_df, task)
-    to_save_df, classified_per_barcode = output_aggragator(task, df, False)
+    df = process_centrifuge_barcode_data(df, barcode_df, task, tax_rank_filter)
+    to_save_df, classified_per_barcode = output_aggregator(task, df, False)
     save_analyses_output_in_db(to_save_df, False, task, classified_per_barcode)
+    target_region_df = create_mapping_result_objects(barcodes, task)
+    path_to_reference = fetch_concat_reference_path(task)
+    map_output_df = map_target_reads(task, path_to_reference, targets_df, to_save_df, target_region_df)
+    map_output_df.apply(save_mapping_results, axis=1, args=(task,))
+
     # #####  donut chart calculations
     donut_df = calculate_donut_data(df, task.flowcell, tax_rank_filter)
-    to_save_df, classified_per_barcode = output_aggragator(task, donut_df, True)
+    to_save_df, classified_per_barcode = output_aggregator(task, donut_df, True)
     save_analyses_output_in_db(to_save_df, True, task)
 
-    update_metadata_and_task(read_count, last_read, flowcell_job_id, total_cent_out)
+    update_metadata_and_task(last_read, read_count, flowcell_job_id, total_centrifuge_output)
     return df, to_save_df
