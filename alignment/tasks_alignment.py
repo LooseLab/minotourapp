@@ -645,7 +645,6 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
         }
     )
     paf_df = paf_df.apply(pd.to_numeric, errors="ignore")
-
     paf_df["chromosome_pk"] = paf_df["tsn"].map(chromosome_dict)
     paf_df.set_index("read_id", inplace=True)
     paf_df = paf_df[paf_df["mq"] >= 40]
