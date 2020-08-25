@@ -482,9 +482,7 @@ def all_results_table(request, pk):
         "num_matches",
         "proportion_of_classified",
     ]
-    print(request.GET)
     flowcell_id = pk
-    print(flowcell_id)
     draw = int(request.GET.get("draw", 0))
     start = int(request.GET.get("start", 0))
     length = int(request.GET.get("length", 10))
