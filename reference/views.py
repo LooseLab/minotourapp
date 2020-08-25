@@ -49,14 +49,16 @@ def reference_list(request):
                     d["deletable"] = False
         return Response({"data": data}, status=status.HTTP_200_OK)
     elif request.method == "POST":
-        file_names = request.data.get("file_name", [])
-        if not isinstance(file_names, list):
-            file_names = [file_names]
+        print(request.data)
         form = ReferenceForm(request.POST, request.FILES)
+        print(f"form is {form.is_valid()}\n")
         if form.is_valid():
             files = request.FILES.getlist("file_location")
+            print(f"files is {files}")
             for index, file in enumerate(files):
-                file_name = Path(file_names[index])
+                print(dir(file))
+                print(file)
+                file_name = Path(file.name)
                 name = str(file_name.stem).partition(".")[0]
                 # get fastq or fasta
                 handle = (
@@ -71,13 +73,16 @@ def reference_list(request):
                 print(f"Hash is {sha256_hash}")
                 print(file)
                 print(type(file))
-                if duplicated:
+                print(duplicated)
+                if duplicated and len(files) == 1:
                     # ref_info.delete()
                     return Response(f"Exact reference already exists. Please use {sha256_hash}", status=status.HTTP_403_FORBIDDEN)
+                elif duplicated:
+                    continue
                 if isinstance(file, InMemoryUploadedFile):
                     print("is instance")
                 ref_info = ReferenceInfo(
-                    file_name=file_names[index],
+                    file_name=file.name,
                     name=name,
                     file_location=file,
                     uploader=request.user,
@@ -85,11 +90,13 @@ def reference_list(request):
                 try:
                     ref_info.save()
                 except IntegrityError as e:
-                    ref_info.save()
-                    return Response(
-                        f"Duplicate upload attempted. File - {file_names[index]}",
-                        status=status.HTTP_403_FORBIDDEN,
-                    )
+                    if len(files) > 1:
+                        print(f"File is duplicated! {file.name}")
+                    else:
+                        return Response(
+                            f"Duplicate upload attempted. File - {file.name}",
+                            status=status.HTTP_403_FORBIDDEN,
+                        )
                 minimap2_index_file_location = (
                     f"{MEDIA_ROOT}/minimap2_indexes/{file_name.stem}.mmi"
                 )
@@ -100,7 +107,7 @@ def reference_list(request):
                 fa = handle(ref_info.file_location.path)
                 # Create the Reference info entry in the database
                 ref_info, created = ReferenceInfo.objects.update_or_create(
-                    file_name=file_names[0],
+                    file_name=file.name,
                     defaults={
                         "length": fa.size,
                         "minimap2_index_file_location": minimap2_index_file_location,
