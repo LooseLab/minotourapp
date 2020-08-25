@@ -65,7 +65,7 @@ class ReferenceLine(models.Model):
     reference = models.ForeignKey(
         ReferenceInfo,
         on_delete=models.CASCADE,
-        related_name='referencelines'
+        related_name='reference_lines'
     )
     line_name = models.CharField(
         max_length=512
