@@ -12,6 +12,7 @@ from ete3 import NCBITaxa
 from metagenomics.models import (
     MappingTarget,
     MappingResult,
+    CentrifugeOutput,
 )
 from metagenomics.utils import falls_in_region
 from minotourapp.utils import get_env_variable
@@ -24,7 +25,7 @@ def separate_target_cent_output(df, task, fasta_df_barcode):
     Parameters
     ----------
     df: pandas.core.frame.DataFrame
-         The centrifuge output dataframe
+         The metagenomics output dataframe
     task: reads.models.JobMaster
         The task ORM that is representing this metagenomics task
     Returns
@@ -150,7 +151,7 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
     target_df: pd.core.frame.DataFrame
         Target reads dataframe, containing read sequence
     to_save_df: pd.core.frame.DataFrame
-        The finalised centrifuge output data, with num_matches, lineages etc.
+        The finalised metagenomics output data, with num_matches, lineages etc.
     target_region_df: pd.core.frame.DataFrame
         The regions defined in the GFF file that contain virulence areas
 
@@ -182,6 +183,9 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
         stderr=subprocess.PIPE,
     )
     out, err = process.communicate(input=fasta_sequence_to_map.encode())
+    if not out:
+        print(f"No reads mapped.")
+        return pd.DataFrame()
     target_set_plasmids_ref_pks = MappingTarget.objects.filter(
         target_set=task.target_set
     ).values_list("reference_id", flat=True)
@@ -193,8 +197,6 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
     contig_to_reference_dict = {
         contig_name: ref_species for contig_name, ref_species in reference_contig_names
     }
-    if not out:
-        print("No values for target mapping.")
     map_out_df = pd.read_csv(StringIO(out.decode()), sep="\t", header=None)
     map_out_df.rename(
         columns={
@@ -218,7 +220,7 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
         np.int64
     )
     # Filter out low quality matches or the
-    # map_out_df = map_out_df.query("mapping_qual >= 40 & num_residue_matches >= 200")
+    map_out_df = map_out_df.query("mapping_qual >= 40 & num_residue_matches >= 200")
     if map_out_df.empty:
         print("Insufficient quality mappings.")
         return pd.DataFrame()
@@ -257,12 +259,21 @@ def save_mapping_results(row, task):
     -------
 
     """
-    print(row["barcode_name"], row["name"], task)
+    species_info = CentrifugeOutput.objects.filter(
+        task=task, species=row["name"], barcode_name=row["barcode_name"]
+    ).last()
+    num_matches, sum_unique = (
+        (species_info.num_matches, species_info.sum_unique)
+        if species_info
+        else (row["num_matches"], row["sum_unique"])
+    )
+    print(num_matches, sum_unique)
     map_result = MappingResult.objects.get(
         task=task, species=row["name"], barcode_name=row["barcode_name"]
     )
+    print(map_result.__dict__)
     map_result.num_mapped += row["num_mapped"]
-    map_result.num_matches += row["num_matches"]
-    map_result.sum_unique += row["sum_unique"]
+    map_result.num_matches += num_matches
+    map_result.sum_unique += sum_unique
     map_result.red_reads += row["num_red_reads"]
     map_result.save()
