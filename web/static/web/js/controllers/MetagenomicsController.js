@@ -520,8 +520,8 @@ class MetagenomicsController {
         // sort the data aphabetically on the Validation species column
         data.sort(this._compare2)
         // if the table has been created on the page drawing, select it so we can update the existing table
-        const tableInitialised = d3.select(`.alert-table`).classed(`has-tabley?`)
-        table = tableInitialised ? d3.select(`.alert-table`).select(`table`) : d3.select(`.alert-table`).classed(`has-tabley?`, true).style(`width`, `100%`).append(`table`).attr(`class`, `table map-alert`)
+        const tableInitialised = d3.select(`.simple-alert-table`).classed(`has-tabley?`)
+        table = tableInitialised ? d3.select(`.simple-alert-table`).select(`table`) : d3.select(`.simple-alert-table`).classed(`has-tabley?`, true).style(`width`, `100%`).append(`table`).attr(`class`, `table map-alert`)
         thead = tableInitialised ? table.select(`thead`) : table.append(`thead`).append(`tr`)
         tbody = tableInitialised ? table.select(`tbody`) : table.append(`tbody`).attr(`class`, `alert-tbody`)
         // select all the th elements
