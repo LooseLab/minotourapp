@@ -271,6 +271,6 @@ def falls_in_region(row, map_df):
     )
     # Keep where the start is in the region,
     map_bool_df["keep"] = np.where(
-        (map_bool_df[0] & map_bool_df[1]) | (map_bool_df[2] & map_bool_df[3] | map_bool_df[4]), True, False
+        (map_bool_df[0] & map_bool_df[1]) | (map_bool_df[2] & map_bool_df[3] | map_bool_df[4]), 1, 0
     )
     return map_bool_df["keep"].any()
