@@ -265,10 +265,8 @@ def plasmid_mapping(row, species, flowcell, read_ids):
 
     :param pd.Series row: The row of the target dataframe for species with plasmid danger regions
     :param str species: The species name
-    :param list fastq_list: The reads sequences
     :param reads.models.Flowcell flowcell: The flowcell for logging by flowcellId
     :param read_ids: reads ids of the reads being mapped
-    :param fasta_df: dataframe containing the sequence data for the metagenomics classified reads that have filtered to
     target reads
     :return plasmid_map_df: A list of dicts containing the information about the plasmid mappings
     """
@@ -409,22 +407,17 @@ def map_all_the_groups(
         logger.info(references)
         logger.info("\n")
     except ObjectDoesNotExist:
-
-        logger.info(
+        logger.error(
             "Flowcell id: {} - No reference found for species {}!".format(
                 flowcell.id, species
             )
         )
-
         return
 
     # Get the read_ids for the reads that metagenomics has classified as target species
     read_ids = target_species_group_df["read_id"].values.tolist()
 
     # Filter the list of FastqRead objects so we only have the objects that have the desired read_ids
-    fastqs = list(
-        filter(lambda fastq: fastq.read_id in read_ids, list(fastas))
-    )
 
     # Get the metagenomics mapping job type
     map_job_type = JobType.objects.get(name="Other")
@@ -434,26 +427,13 @@ def map_all_the_groups(
     )
     if created:
         logger.info(f"Created mapping target object for reference {references}")
-
-    b = [
-        {"read_id": fastq.read_id, "sequence": fastq.sequence}
-        for fastq in fastqs
-    ]
+    minimap2_executable_path = get_env_variable("MT_MINIMAP2")
+    cmd = f"{minimap2_executable_path} -x map-ont {path_to_reference} -"
 
     fasta_df = pd.DataFrame(b)
 
-    # Call the align_reads function to perform the mapping, funciton found in web tasks_alignment
-    # align_reads(fastqs, mapping_task.id, fasta_df)
-    # TODO this is where we fall down, just do the mapping here
+    # TODO this is where we fall down, just do the mapping here with sub process call
 
-    # # Get the output for this mapping (if any) from the database
-    # map_output = PafStore.objects.filter(
-    #     job_master=mapping_task, qsn__in=read_ids
-    # )
-
-    # logger.info(
-    #     "Flowcell id: {} - minimap output {} ".format(flowcell.id, map_output)
-    # )
 
     # Initialise a dataframe to store the results of mapping to the plasmid
     plasmid_red_df = pd.DataFrame()
@@ -610,24 +590,24 @@ def map_all_the_groups(
             "mapping_qual >= 40 & num_residue_matches >= 200"
         )
         red_df = red_df.append(plasmid_red_df, sort=True)
-
-    logger.info(
-        "Flowcell id: {} - The target df after plasmid mapping results is {}".format(
-            flowcell.id, red_df
-        )
-    )
-
-    logger.info(
-        "Flowcell id: {} - This many reads mapped evilly on this reference {} for species {}".format(
-            flowcell.id, red_df.shape[0], species
-        )
-    )
-
-    logger.info(
-        "Flowcell id: {} - This many reads mapped elsewhere on this reference {}".format(
-            flowcell.id, map_df.shape[0]
-        )
-    )
+    #
+    # logger.info(
+    #     "Flowcell id: {} - The target df after plasmid mapping results is {}".format(
+    #         flowcell.id, red_df
+    #     )
+    # )
+    #
+    # logger.info(
+    #     "Flowcell id: {} - This many reads mapped evilly on this reference {} for species {}".format(
+    #         flowcell.id, red_df.shape[0], species
+    #     )
+    # )
+    #
+    # logger.info(
+    #     "Flowcell id: {} - This many reads mapped elsewhere on this reference {}".format(
+    #         flowcell.id, map_df.shape[0]
+    #     )
+    # )
     # Inner join Merge the mapped reads into the original dataframe, so we have only
     # the information for reads that mapped
     update_num_mapped_df = pd.merge(
@@ -684,12 +664,14 @@ def map_all_the_groups(
 
 def falls_in_region(row, map_df):
     """
+    TODO if region os
     Does this reads mapping fall within any of the regions we have defined?
     :param row: The gff3 dataframe row
     :param map_df: The results of the mapping step in a pandas dataframe
     :return:
     """
-    # TODO which region?
+    # TODO include which region it maps to
+    # TODO also what if the read is entirely in the region?
     # If the start is higher than the region start
     start_low = map_df["target_start"] > row["start"]
     # If the start is lower than the region end
@@ -698,15 +680,17 @@ def falls_in_region(row, map_df):
     end_low = map_df["target_end"] > row["start"]
     # If the end is lower than the region end
     end_high = map_df["target_end"] < row["end"]
+    # If the read completely spans the gene/region
+    read_is_wider_than_region = ((map_df["target_start"] < row["start"]) & (map_df["target_end"] > row["end"]))
     # Concat the series together, create "truth" dataframe
-    bool_df = pd.concat(
-        [start_low, start_high, end_low, end_high], axis=1, ignore_index=True
+    map_bool_df = pd.concat(
+        [start_low, start_high, end_low, end_high, read_is_wider_than_region], axis=1, ignore_index=True
     )
     # Keep where the start is in the region,
-    bool_df["keep"] = np.where(
-        (bool_df[0] & bool_df[1]) | (bool_df[2] & bool_df[3]), True, False
+    map_bool_df["keep"] = np.where(
+        (map_bool_df[0] & map_bool_df[1]) | (map_bool_df[2] & map_bool_df[3] | map_bool_df[4]), True, False
     )
-    return bool_df["keep"]
+    return map_bool_df["keep"]
 
 
 def update_targets_no_mapping(row, task):
@@ -737,108 +721,6 @@ def update_targets_no_mapping(row, task):
     obj.save()
 
 
-def calculate_num_matches_update(
-    target_df, task, num_matches_targets_barcoded_df, classed_per_bar
-):
-    """
-    Update the number of matches and sum_unique for target reads
-    :param target_df: The dataframe containing the target reads
-    :param task: The task model object
-    :param num_matches_targets_barcoded_df: The number of matches per barcode for each target species in a dataframe
-    :param classed_per_bar: The number of reads classified per barcode as a dict
-    :return:
-    """
-
-    # create a dataframe for barcoded calculations
-    barcode_df = target_df.reset_index()
-    # create a dataframe for non barcoded calculations
-    all_reads_df = target_df.copy(deep=True)
-
-    all_reads_df.reset_index(inplace=True)
-    # Set the barcode as all reads, as it is all reads irrespective of barcoding
-    all_reads_df["barcode_name"] = "All reads"
-    # Drop duplicates of species in the dataframe
-    all_reads_df.drop_duplicates(subset="name", inplace=True)
-    # If this dataframe is not empty, it means it isn't the first iteration
-    if not num_matches_targets_barcoded_df.empty:
-        # Merge the two dataframes on barcode and target idea, with a left join,
-        # so all values are kept in left (target species rows) dataframe
-        all_reads_df = pd.merge(
-            all_reads_df,
-            num_matches_targets_barcoded_df,
-            how="left",
-            on=["tax_id", "barcode_name"],
-        )
-        # set the num_matches_y to 0 for any columns that haven't got a match
-        all_reads_df["num_matches_y"].fillna(0, inplace=True)
-        # set the sum unqiue y to 0 for any columns that haven't got a match
-        all_reads_df["sum_unique_y"].fillna(0, inplace=True)
-        # Combine the two series to get a new number matches
-        all_reads_df["num_matches"] = (
-            all_reads_df["num_matches_x"] + all_reads_df["num_matches_y"]
-        )
-        # Combine the two series to get a new sum unique matches
-        all_reads_df["sum_unique"] = (
-            all_reads_df["sum_unique_x"] + all_reads_df["sum_unique_y"]
-        )
-    # Calculate the proportion of classifed for this species against all reads classified
-    all_reads_df["prop_classed"] = (
-        all_reads_df["num_matches"]
-        .div(classed_per_bar["All reads"])
-        .mul(100)
-        .round(decimals=3)
-    )
-
-    # Apply the update_targets_no_mapping function to the dataframe to update the targets num_matches and sum_unique
-    all_reads_df.apply(update_targets_no_mapping, args=(task,), axis=1)
-    # Barcoded calculations now
-    # Group the barcoded datframe by barcode_name and species name
-    gb_bc = barcode_df.groupby(["barcode_name", "name"])
-    # Set the index so we can map values back from the group_by back onto the dataframe by index
-    barcode_df.set_index(["barcode_name", "name"], inplace=True)
-    # Get the number of matches for each species in a barcode by the size of it's respective group
-    barcode_df["num_matches"] = gb_bc.size()
-    # Get the sum unique by the sum of unique series in each respective group
-    barcode_df["sum_unique"] = gb_bc["unique"].sum()
-    # Reset index
-    barcode_df.reset_index(inplace=True)
-    # If this isn't the first iteration, and we have previous data
-    if not num_matches_targets_barcoded_df.empty:
-        # merge the two dataframe together, keeping all the target rows
-        barcode_df = pd.merge(
-            barcode_df,
-            num_matches_targets_barcoded_df,
-            how="left",
-            on=["tax_id", "barcode_name"],
-        )
-        # fill nans with 0
-        barcode_df["num_matches_y"].fillna(0, inplace=True)
-        # fill nans with 0
-        barcode_df["sum_unique_y"].fillna(0, inplace=True)
-        # Sum the two series to get the new number of matches value
-        barcode_df["num_matches"] = (
-            barcode_df["num_matches_x"] + barcode_df["num_matches_y"]
-        )
-        # Sum the two series to get the new sum unique matches value
-        barcode_df["sum_unique"] = (
-            barcode_df["sum_unique_x"] + barcode_df["sum_unique_y"]
-        )
-    # Set the total matches in barcode series, contains total matches in that barcode
-    barcode_df["total_in_barcode"] = barcode_df["barcode_name"].map(
-        classed_per_bar
-    )
-    # Calculate the proportion classed matches for this species against all matches in a barcode
-    barcode_df["prop_classed"] = (
-        barcode_df["num_matches"]
-        .div(barcode_df["total_in_barcode"])
-        .mul(100)
-        .round(decimals=3)
-    )
-    # Drop duplicates of barcode_name and tax_id, so species are unique inside each barcode
-    barcode_df.drop_duplicates(subset=["barcode_name", "tax_id"], inplace=True)
-    # Update the target species objects num_matches and sum_unique fields
-    barcode_df.apply(update_targets_no_mapping, args=(task,), axis=1)
-
 
 def create_mapping_results_objects(task, flowcell, target_set):
     """
@@ -849,8 +731,8 @@ def create_mapping_results_objects(task, flowcell, target_set):
     :return:
     """
     # Get the targets set in the gff files and uploaded
-    target_regions_df = pd.DataFrame(
-        list(MappingTarget.objects.filter(target_set=target_set).values())
+    target_regions_df = pd.DataFrame.from_records(
+        MappingTarget.objects.filter(target_set=target_set).values()
     )
     # If there are no target regions found for the set name
     if target_regions_df.empty:
@@ -861,7 +743,6 @@ def create_mapping_results_objects(task, flowcell, target_set):
         )
         return
     # Get np array of the target species
-    # TODO split into function so code is DRYER
     target_species = target_regions_df["species"].unique()
     # Get np array of their tax_ids
     target_tax_id = target_regions_df["tax_id"].unique()
@@ -909,7 +790,6 @@ def map_the_reads(
     )
     # get the targets dataframe
     targets_df = name_df
-    # TODO currently hardcoded below
     target_set = task.target_set
     # if there are no targets identified by metagenomics in this iteration
     if targets_df.empty:
@@ -920,7 +800,6 @@ def map_the_reads(
         )
         # Create the mapping targets
         create_mapping_results_objects(task, flowcell, target_set)
-
         return
 
     # Reset the index
@@ -946,7 +825,7 @@ def map_the_reads(
         .values_list("barcode_name", flat=True)
         .distinct()
     )
-
+    # Create objects that we don't have results for so they appear in the table
     # for each barcode in the target_df
     for barcode in barcodes:
         # Check if barcode has mapping result objects created for it already
@@ -964,11 +843,10 @@ def map_the_reads(
 
     del ncbi
     # Deep copy the target reads dataframe so changes aren't reflected in the original
-    update_num_matches_df = name_df.copy(deep=True)
     # If there's data, update the num_matches and sum_unique fields on mapping results objects for matching rows
-    if not update_num_matches_df.empty:
+    if not name_df.empty:
         calculate_num_matches_update(
-            update_num_matches_df,
+            name_df,
             task,
             num_matches_targets_barcoded_df,
             class_per_bar,
@@ -1630,16 +1508,6 @@ def run_centrifuge(flowcell_job_id):
     barcode_df.set_index("tax_id", inplace=True)
     # TODO this may be slow
     # Get the previous Centrifuge Output objects so we can get there num matches and sum unique
-    df_data = CentrifugeOutput.objects.filter(
-        species__in=temp_targets, task=task, barcode_name__in=barcodes
-    ).values("species", "tax_id", "num_matches", "barcode_name", "sum_unique")
-    # Get the results into  a dataframe
-    num_matches_per_target_df = pd.DataFrame(list(df_data))
-    logger.info(
-        "Flowcell id: {} - The previous number of matches dataframe is {}".format(
-            flowcell.id, num_matches_per_target_df
-        )
-    )
     already_created_barcodes = list(
         MappingResult.objects.filter(task=task)
         .values_list("barcode_name", flat=True)
@@ -1661,6 +1529,7 @@ def run_centrifuge(flowcell_job_id):
                 )
                 mr.save()
     # Call map the reads on the targets dataframe
+
 
     map_the_reads(
         name_df,
