@@ -97,8 +97,8 @@ def get_references_for_condtions(request, pk):
         JobMaster.objects.filter(job_type_id=4).values(
             "reference_id",
             reference_name=F("reference__name"),
-            contig_name=F("reference__referencelines__line_name"),
-            contig_id=F("reference__referencelines__id"),
+            contig_name=F("reference__reference_lines__line_name"),
+            contig_id=F("reference__reference_lines__id"),
         )
     ):
         b[jobs["reference_name"]].append(
