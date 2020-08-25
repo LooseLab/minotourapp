@@ -223,7 +223,8 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
         print("Insufficient quality mappings.")
         return pd.DataFrame()
     # See whether the start or end of a mapping falls into the region
-    map_out_df["read_is_red"] = target_region_df.apply(
+    map_out_df["read_is_red"] = 0
+    map_out_df["read_is_red"] += target_region_df.apply(
         falls_in_region, args=(map_out_df,), axis=1
     )
     map_out_df["read_is_red"] = np.where(map_out_df["read_is_red"], 1, 0)
