@@ -86,7 +86,7 @@ class Metadata(models.Model):
 class CentrifugeOutput(models.Model):
     """
         :purpose: Store the unsummarised output of the metagenomics task for all reads
-        ,to be parsed and put into the next table
+        , to be parsed and put into the next table
         :author: Rory
         Fields:
 
