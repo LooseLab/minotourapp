@@ -108,9 +108,10 @@ class FlowcellTabController {
     }
     // if we have a controller for this tab, but we are no longer showing it as underlying data has been deleted
     Object.keys(controllers).forEach(controllerName => {
+      console.log()
       if (!tabs.includes(controllerName) && this[controllers[controllerName][0]]) {
         // delete the controller
-        this.lookupElement[`nav-${name}`].classList.add(`hidden`)
+        this.lookupElement[`nav-${controllerName}`].classList.add(`hidden`)
         delete this[controllers[controllerName][0]]
       }
     })
