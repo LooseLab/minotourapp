@@ -328,16 +328,16 @@ class MetagenomicsController {
 
   _metaDataTable (flowcellId) {
     // AJAX request for the metadata
-    this._axiosInstance.get(`/api/v1/metagenomics/centrifuge-metadata/`, { params: { flowcellId } }).then(
+    this._axiosInstance.get(`/api/v1/metagenomics/metagenomics-metadata/`, { params: { flowcellId } }).then(
       result => {
         // Metaheader draws or updates the metadata header at the top of the visualisation page
         // initialise variables
         let table, head, row
         const data = result.data.result
-        const targetDiv = result.data.validation ? `.meta_taberu` : `.meta_taberu_alt`
-        if (this._first) {
+        const targetDiv = result.data.validation ? `.metadata-table` : `.metadata-table-alt`
+        if (!d3.select(`.metadata-table`).classed(`has-table`)) {
           // append the table to the page
-          table = d3.select(targetDiv).append(`table`).attr(`class`, `table table-striped`).attr(`table-layout`, `fixed`)
+          table = d3.select(targetDiv).attr(`class`, `has-table`).append(`table`).attr(`class`, `table table-striped`).attr(`table-layout`, `fixed`)
           head = table.append(`thead`)
           row = head.append(`tr`)
         } else {
