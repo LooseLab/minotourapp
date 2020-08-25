@@ -34,7 +34,7 @@ logger = get_task_logger(__name__)
 
 def run_centrifuge(flowcell_job_id):
     """
-    Run the centrifuge subprocess command, returning the data from it as a DataFrame.
+    Run the metagenomics subprocess command, returning the data from it as a DataFrame.
     Parameters
     ----------
     flowcell_job_id: int
@@ -43,7 +43,7 @@ def run_centrifuge(flowcell_job_id):
     Returns
     -------
     pd.core.frame.DataFrame, int, int, int, pandas.core.frame.DataFrame
-        Dataframe of centrifuge results, total output lines from centrifuge, last read primary key,
+        Dataframe of metagenomics results, total output lines from metagenomics, last read primary key,
         total count of reads analysed, dataframe of any reads that identified as targets
 
     """
@@ -51,7 +51,6 @@ def run_centrifuge(flowcell_job_id):
     task = JobMaster.objects.get(pk=flowcell_job_id)
     # The flowcell the reads are from
     flowcell = task.flowcell
-    total_centrifuge_output = 0
     avg_read_length = int(flowcell.average_read_length)
     if avg_read_length == 0:
         logger.error(
@@ -65,7 +64,6 @@ def run_centrifuge(flowcell_job_id):
         task=task,
     )
     print("Flowcell id: {} - number of reads found {}".format(flowcell.id, read_count))
-
     # Create a fastq string to pass to Centrifuge
     fasta_df_barcode["fasta"] = (
         ">read_id="
@@ -115,7 +113,7 @@ def run_centrifuge(flowcell_job_id):
         sys.exit(0)
     centrifuge_output = out.decode()
     # total number of lines of metagenomics output dealt with
-    total_centrifuge_output += centrifuge_output.count("\n") - 1
+    total_centrifuge_output = centrifuge_output.count("\n") - 1
     print(
         "Flowcell id: {} - number of metagenomics output lines is {}".format(
             flowcell.id, total_centrifuge_output
@@ -127,8 +125,9 @@ def run_centrifuge(flowcell_job_id):
     df = pd.read_csv(StringIO(centrifuge_output), sep="\t", usecols=output_fields)
     # split out the barcode_name from the readID string
     df = split_read_id_and_barcodes(df)
+    individual_reads_classified = np.unique(df["readID"].values).size
     targets_df = separate_target_cent_output(df, task, fasta_df_barcode)
-    return df, total_centrifuge_output, read_count, last_read, targets_df
+    return df, individual_reads_classified, read_count, last_read, targets_df
 
 
 def split_read_id_and_barcodes(df):
@@ -137,7 +136,7 @@ def split_read_id_and_barcodes(df):
     Parameters
     ----------
     df: pd.core.frame.DataFrame
-        Dataframe of centrifuge output results
+        Dataframe of metagenomics output results
 
     Returns
     -------
@@ -164,11 +163,11 @@ def split_read_id_and_barcodes(df):
 
 def process_centrifuge_output(df, task):
     """
-    Process the output of the centrifuge DataFrame, add in lineages of the classified taxa
+    Process the output of the metagenomics DataFrame, add in lineages of the classified taxa
     Parameters
     ----------
     df: pandas.core.frame.DataFrame
-        Dataframe of the centrifuge output
+        Dataframe of the metagenomics output
     Returns
     -------
     pd.core.frame.DataFrame
@@ -373,7 +372,7 @@ def calculate_donut_data(df, flowcell, tax_rank_filter):
     Parameters
     ----------
     df: pandas.core.frame.DataFrame
-        The dataframe of the centrifuge output, aggregated
+        The dataframe of the metagenomics output, aggregated
     flowcell: reads.models.Flowcell
         The flowcell ORM object
     tax_rank_filter: list
@@ -436,7 +435,7 @@ def calculate_donut_data(df, flowcell, tax_rank_filter):
 
 def process_centrifuge_barcode_data(df, barcode_df, task, tax_rank_filter):
     """
-    Process the centrifuge per barcode output dataframe append lineages for each species
+    Process the metagenomics per barcode output dataframe append lineages for each species
     Parameters
     ----------
     df: pandas.core.frame.DataFrame
@@ -498,14 +497,14 @@ def output_aggregator(task, new_data_df, is_donut):
     task: reads.models.JobMaster
         The django ORM task
     new_data_df: pandas.core.frame.DataFrame
-        The dataframe containing the parsed and aggregated centrifuge output results of this iteration
+        The dataframe containing the parsed and aggregated metagenomics output results of this iteration
     is_donut: bool
         If analyses is for donut chart data
 
     Returns
     -------
-    (pandas.core.frame.DataFrame, dict)
-        Updated dataframe, number of total matches per barcode
+    (pandas.core.frame.DataFrame, dict, int)
+        Updated dataframe, number of total matches per barcode, the latest iteration count
 
     """
 
@@ -521,9 +520,7 @@ def output_aggregator(task, new_data_df, is_donut):
     # If we have previous data
     if not parsed_data_df.empty:
         # Add one to the iteration count
-        iteration_count = task.iteration_count
-        if not is_donut:
-            iteration_count = task.iteration_count + 1
+        iteration_count = task.iteration_count + 1
         # If this is for CentrifugeOutput
         if not is_donut:
             # Merge the lsat Iterations values with this Iterations values
@@ -534,17 +531,17 @@ def output_aggregator(task, new_data_df, is_donut):
                 how="outer",
             )
             df_values = [("superkingdom_x", "superkingdom_y", "superkingdom"),
-                              ("phylum_x", "phylum_y", "phylum"),
-                              ("classy_x", "classy_y", "classy"),
-                              ("order_x", "order_y", "order"),
-                              ("family_x", "family_y", "family"),
-                              ("genus_x", "genus_y", "genus"),
-                              ("species_x", "species_y", "species"),
-                              ("name_x", "name_y", "name")]
-            fill_na_values = {x[0]: x[1] for x in df_values}
-            merged_data_df = merged_data_df.fillna(
-                value=fill_na_values
-            )
+                         ("phylum_x", "phylum_y", "phylum"),
+                         ("classy_x", "classy_y", "classy"),
+                         ("order_x", "order_y", "order"),
+                         ("family_x", "family_y", "family"),
+                         ("genus_x", "genus_y", "genus"),
+                         ("species_x", "species_y", "species"),
+                         ("name_x", "name_y", "name")]
+            for x in df_values:
+                merged_data_df[x[0]].fillna(
+                    merged_data_df[x[1]], inplace=True
+                )
             rename_values = {x[0]: x[2] for x in df_values}
             merged_data_df.rename(columns=rename_values, inplace=True)
         # If this is for a donut
@@ -570,11 +567,11 @@ def output_aggregator(task, new_data_df, is_donut):
         merged_data_df["task"] = metagenomics_task
         # Combine the columns to get the updated number of matches
         merged_data_df["num_matches"] = (
-            merged_data_df["num_matches_x"] + merged_data_df["num_matches_y"]
+                merged_data_df["num_matches_x"] + merged_data_df["num_matches_y"]
         )
         # Combine the columns to get the updated sum_unique
         merged_data_df["sum_unique"] = (
-            merged_data_df["sum_unique_x"] + merged_data_df["sum_unique_y"]
+                merged_data_df["sum_unique_x"] + merged_data_df["sum_unique_y"]
         )
         # Group by barcode
         gb_bc = merged_data_df.groupby("barcode_name")
@@ -597,10 +594,10 @@ def output_aggregator(task, new_data_df, is_donut):
     # Set latest to the updated iteration count
     to_save_df["latest"] = iteration_count
     to_save_df["task"] = metagenomics_task
-    return to_save_df, classed_per_barcode
+    return to_save_df, classed_per_barcode, iteration_count
 
 
-def save_analyses_output_in_db(to_save_df, donut, task, classed_per_barcode=0):
+def save_analyses_output_in_db(to_save_df, donut, task, iteration_count, classed_per_barcode=0):
     """
     Save the aggregated output of the analyses into the database
     Parameters
@@ -611,8 +608,10 @@ def save_analyses_output_in_db(to_save_df, donut, task, classed_per_barcode=0):
         Whether the data is for the donut charts or not
     task: reads.models.JobMaster
         The task django ORM object
+    iteration_count: int
+        The latest iteration number
     classed_per_barcode: dict
-        Dictionary containing the number of total centrifuge matches in a barcode
+        Dictionary containing the number of total metagenomics matches in a barcode
 
     Returns
     -------
@@ -651,6 +650,8 @@ def save_analyses_output_in_db(to_save_df, donut, task, classed_per_barcode=0):
         CentrifugeOutput.objects.bulk_create(
             to_bulk_save_series.values.tolist(), batch_size=1000
         )
+        # Delete the values from the old iteration for the Centrifuge Output data
+        CentrifugeOutput.objects.filter(task=task, latest__lt=iteration_count).delete()
     # If this is for a Donut
     else:
         # Create a series of DonutData objects, one for each row in the dataframe
@@ -662,16 +663,12 @@ def save_analyses_output_in_db(to_save_df, donut, task, classed_per_barcode=0):
             to_bulk_save_series.values.tolist(), batch_size=1000
         )
         logger.info(" Created donut data ")
-    new_latest = np.unique(to_save_df["latest"].values)
-    task = JobMaster.objects.get(pk=task.id)
-    # Set the iteration count on the job master
-    task.iteration_count = new_latest
-    # Save the new value
-    task.save()
-    # Delete the values from the old iteration for the Centrifuge Output data
-    CentrifugeOutput.objects.filter(task=task, latest__lt=new_latest).delete()
-    # Delete the values from the old iteration from the Donut Data
-    DonutData.objects.filter(task=task, latest__lt=new_latest).delete()
+        # Set the iteration count on the job master
+        task = JobMaster.objects.get(pk=task.id)
+        task.iteration_count = iteration_count
+        task.save()
+        # Delete the values from the old iteration from the Donut Data
+        DonutData.objects.filter(task=task, latest__lt=iteration_count).delete()
 
 
 def update_metadata_and_task(last_read, read_count, flowcell_job_id, total_centrifuge_output):
@@ -688,7 +685,7 @@ def update_metadata_and_task(last_read, read_count, flowcell_job_id, total_centr
     flowcell_job_id: int
         The primary key of the job_master record in the database
     total_centrifuge_output: int
-        The total centrifuge output
+        The total metagenomics output
 
     Returns
     -------
@@ -729,7 +726,7 @@ def update_metadata_and_task(last_read, read_count, flowcell_job_id, total_centr
 @task()
 def run_centrifuge_pipeline(flowcell_job_id):
     """
-    Run the centrifuge pipeline. TOdo could be split into a chain if slow
+    Run the metagenomics pipeline. TOdo could be split into a chain if slow
     Parameters
     ----------
     flowcell_job_id: int
@@ -753,18 +750,17 @@ def run_centrifuge_pipeline(flowcell_job_id):
     df, task, barcodes = process_centrifuge_output(df, task)
     barcode_df, task = barcode_output_calculations(df, task)
     df = process_centrifuge_barcode_data(df, barcode_df, task, tax_rank_filter)
-    to_save_df, classified_per_barcode = output_aggregator(task, df, False)
-    save_analyses_output_in_db(to_save_df, False, task, classified_per_barcode)
+    to_save_df, classified_per_barcode, iteration_count = output_aggregator(task, df, False)
+    save_analyses_output_in_db(to_save_df, False, task, iteration_count, classified_per_barcode)
+    # ## mapping section
     target_region_df = create_mapping_result_objects(barcodes, task)
     path_to_reference = fetch_concat_reference_path(task)
     map_output_df = map_target_reads(task, path_to_reference, targets_df, to_save_df, target_region_df)
-    print(map_output_df.head())
     if not map_output_df.empty:
         map_output_df.apply(save_mapping_results, axis=1, args=(task,))
 
     # #####  donut chart calculations
     donut_df = calculate_donut_data(df, task.flowcell, tax_rank_filter)
-    to_save_df, classified_per_barcode = output_aggregator(task, donut_df, True)
-    save_analyses_output_in_db(to_save_df, True, task)
-
+    to_save_df, classified_per_barcode, iteration_count = output_aggregator(task, donut_df, True)
+    save_analyses_output_in_db(to_save_df, True, task, iteration_count)
     update_metadata_and_task(last_read, read_count, flowcell_job_id, total_centrifuge_output)
