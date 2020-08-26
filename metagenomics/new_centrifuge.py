@@ -84,7 +84,7 @@ def run_centrifuge(flowcell_job_id):
     # The path to the Centrifuge Index
     index_path = get_env_variable("MT_CENTRIFUGE_INDEX")
     # The command to run metagenomics
-    cmd = "perl " + centrifuge_path + " -f --mm -k 3 -x " + index_path + " -"
+    cmd = "perl " + centrifuge_path + " -f --mm -k 3 -x -p 3 " + index_path + " -"
     try:
         out, err = subprocess.Popen(
             cmd.split(),
