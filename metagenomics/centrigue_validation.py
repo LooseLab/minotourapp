@@ -233,7 +233,7 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
     map_out_df["name"] = map_out_df["name"].str.replace("_", " ")
     map_out_df = pd.merge(map_out_df, target_df, how="left", on=["read_id", "name"])
     map_out_df["barcode_name"] = map_out_df["read_id"].map(
-        target_df.set_index("read_id")["barcode_name"]
+        target_df.set_index("read_id")["barcode_name"].loc[~target_df.set_index("read_id")["barcode_name"].index.duplicated()]
     )
     map_out_df = map_out_df.fillna(0)
     map_out_df["barcode_name"] = np.where(
