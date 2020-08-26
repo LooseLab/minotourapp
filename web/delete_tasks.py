@@ -173,6 +173,7 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
                     flowcell_job.read_count = 0
                     flowcell_job.iteration_count = 0
                     flowcell_job.complete = False
+                    flowcell_job.running = False
                     flowcell_job.save()
                     # We're restarting so set a new activity data so flowcell becomes active
                     flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
