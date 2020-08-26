@@ -102,6 +102,7 @@ class ReferenceManagementController {
   _dropHandler (ev) {
     // Prevent default behavior (Prevent file from being opened)
     ev.preventDefault()
+    ev.stopImmediatePropagation()
     // check the md5 checksum here
     const formData = this._formData
     $(`#drop-zone`).removeClass(`drop-zone-entered`)
@@ -125,43 +126,43 @@ class ReferenceManagementController {
           formData.append(`file_location`, file, file.name)
           formData.append(`file_name`, file.name)
         }
-        // Post the files
-        axios(
-          {
-            url: `/api/v1/reference/upload/`,
-            data: formData,
-            headers: {
-              'X-CSRFToken': getCookie(`csrftoken`),
-              'Content-Type': `multipart/form-data; boundary=${formData._boundary}`
-            },
-            onUploadProgress: progressEvent => {
-              const totalLength = progressEvent.lengthComputable ? progressEvent.total : progressEvent.target.getResponseHeader(`content-length`) || progressEvent.target.getResponseHeader(`x-decompressed-content-length`)
-              console.log(`onUploadProgress`, totalLength)
-              if (totalLength !== null) {
-                $(`#uploadProgressBar`).css(`width`, `${Math.round((progressEvent.loaded * 100) / totalLength)}%`)
-                console.log(Math.round((progressEvent.loaded * 100) / totalLength))
-              }
-              this._datatableObj.DataTable().ajax.reload(null, false)
-            },
-            method: `post`
+      }
+      // Post the files
+      axios(
+        {
+          url: `/api/v1/reference/upload/`,
+          data: formData,
+          headers: {
+            'X-CSRFToken': getCookie(`csrftoken`),
+            'Content-Type': `multipart/form-data; boundary=${formData._boundary}`
+          },
+          onUploadProgress: progressEvent => {
+            const totalLength = progressEvent.lengthComputable ? progressEvent.total : progressEvent.target.getResponseHeader(`content-length`) || progressEvent.target.getResponseHeader(`x-decompressed-content-length`)
+            console.log(`onUploadProgress`, totalLength)
+            if (totalLength !== null) {
+              $(`#uploadProgressBar`).css(`width`, `${Math.round((progressEvent.loaded * 100) / totalLength)}%`)
+              console.log(Math.round((progressEvent.loaded * 100) / totalLength))
+            }
+            this._datatableObj.DataTable().ajax.reload(null, false)
+          },
+          method: `post`
+        }
+      )
+        .then(
+          response => {
+            this._formData = new FormData()
+            this._modalError(``, 0)
+            this._datatableObj.DataTable().ajax.reload(null, false)
+          })
+        .catch(
+          error => {
+            console.error(error)
+            if (error.status === 403) {
+              this._modalError(error.response.data, 6000)
+            }
+            this._formData = new FormData()
           }
         )
-          .then(
-            response => {
-              this._formData = new FormData()
-              this._modalError(``, 0)
-              this._datatableObj.DataTable().ajax.reload(null, false)
-            })
-          .catch(
-            error => {
-              console.error(error)
-              if (error.status === 403) {
-                this._modalError(error.response.data, 6000)
-              }
-              this._formData = new FormData()
-            }
-          )
-      }
     } else {
       // Use DataTransfer interface to access the file(s)
       for (let i = 0; i < ev.dataTransfer.files.length; i++) {
