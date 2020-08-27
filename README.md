@@ -2,71 +2,14 @@
 
 Minotour is a work in progress, therefore features may change, and any bug reports/feature requests and pull requests will be gratefully recieved.
 
-## Running minoTour with Docker
-minoTour is developed on docker so docker must be installed and rightly set up to develop and test miniTour
+#Table of contents
+insert TOC
+* [Introduction](#setting-up-a-development-environment)  
 
-Docker is a set of platform as a service products that use OS-level virtualization to deliver software in packages called containers. 
-Containers are isolated from one another and bundle their own software, libraries and configuration files;
-they can communicate with each other through well-defined channels.
-
-If Docker is not installed - instructions for installing can be found here <https://docs.docker.com/install/>
-Make sure Docker is installed and running at the end of the installation. You can check this by running the command below:
-
-```bash
-docker --version
-```
-## Building and starting Docker containers
-The following commands build and start several minoTour docker containers and create an admin user.
-clone the minoTour repository unto your local machine 
-```bash
-git clone https://github.com/LooseLab/minotourapp.git
-``` 
-
-Change to the minotourapp directory and then use the git checkout command to switch to the develop branch
-```bash
-cd minotourapp
-
-git checkout develop
-``` 
- 
-Use the following commands to build and start docker services 
-- <!-- Use 'docker-compose up web' if celere is not running -->-
-
-```bash
-docker-compose build
-
-docker-compose up -d 
-``` 
-
-Create an admin user:
-
-```bash
-docker-compose exec web python manage.py createsuperuser
-``` 
-
-After a few seconds, you should be able to access minoTour at <http://localhost:8100/>
+# MinoTour environment
 
 
-### Uploading references and other files
-
-Once a instance is up and running, a local data folder should have appeared alongside the minotourapp directory. This is for any reference files and the centrifuge index (if you want to run real).
- We do not distribute this index, it can be dowloaded from [JHU](ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data/p_compressed_2018_4_15.tar.gz).
- 
- After placing any files into the localdata folder on you host system, run the following the commands to
- make them available to minoTour.
- 
- ```bash 
-docker exec celery_worker python3 manage.py add_reference /var/lib/minotour/apps/localdata
-```
-
-To add the centrifuge index to the docker container, create a folder called centrifuge_files in the localdata folder on your host system.
-Place the 4 .cf files in the newly created folder. 
- 
-
-## Development environment
-
-
-## Setting up development environment
+## Setting up a development environment
 
 To set up a development environment, first clone or download the code from [our github page](https://github.com/LooseLab/minotourapp.git "Looselab's github page").
 
@@ -86,18 +29,11 @@ Now create a virtual environment for the project dependencies and install them:
     source minotourenv/bin/activate
     pip install -r requirements.txt
 
-minoTour is seperated into three main modules:
+Minotour uses MySQL as a database backend, Celery (asynchronous workers responsible for running server tasks), Redis (a database in memory similar to memcached, required by Celery as a message broker), Flower (optional - a useful Celery task monitor tool).
 
-1. The upload client, minFQ
+The following tools must be installed:
 
-2. The minoTour web app, the interface that provides the end user access to active and archived runs
-
-3. The rest API, that connects minFQ and the web app to the back end data and analyses.
-
-Minotour uses a MySQL database, Celery (asynchronous workers responsible for running server tasks), Redis (a database in memory similar to memcached, required by Celery as a message broker), Flower (optional - a useful Celery task monitor tool).
-
-
-* [Redis](https://redis.io/download) - Minotour uses **Redis** as a cache memory system and message broker for Celery. Follow the linked installation instructions.
+* [Redis](https://redis.io/download) - Minotour uses **Redis** as a memory cache system and message broker for Celery. Follow the linked installation instructions.
 
 * [MySQL Community edition](https://dev.mysql.com/downloads/) - Minotour requires a running instance of mySQL server. To set up mySQL community edition follow the instructions found in the [official installation documentation](https://dev.mysql.com/doc/mysql-getting-started/en/). Another good tutorial can be found [here](https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-16-04). Once the server is up and running, you can either use the root user created during set up, setting it in the below environment variables file.   
  Otherwise you can create a user using the mysql shell, whilst logged in as the root user or as an admin user:
@@ -105,14 +41,11 @@ Minotour uses a MySQL database, Celery (asynchronous workers responsible for run
     CREATE USER minotour;
     CREATE TABLE minotourdb;
     GRANT ALL PRIVILEGES ON minotourdb TO 'minotour'@'localhost' IDENTIFIED BY '<password>'
-
     ```
-    
 
-* [Minimap2](https://github.com/lh3/minimap2) - Minotour uses **Minimap2** to run alignments, and for metagenomics target validation.
+* [Python 3](https://www.python.org) - Minotour uses **Python >=3.6**, so please make sure it is available on your system.
 
-* [Python 3](https://www.python.org) - Minotour uses **Python >=3.6**, so make sure it is available on your system.
-
+To upload data, it is also necessary to install the upload client, [minFQ](https://github.com/LooseLab/minotourcli)
 
 
 ## Conda Environments for Artic analyses
@@ -122,6 +55,27 @@ The miniconda installation instructions can be found [here](https://docs.conda.i
 
 The [Artic](https://artic.network/ncov-2019/ncov2019-bioinformatics-sop.html) instructions, and [Pangolin](https://github.com/cov-lineages/pangolin#install-pangolin) instructions.
 
+#Running minoTour with tmux (Recommended)
+
+tmux is a [terminal multiplexer](https://en.wikipedia.org/wiki/Tmux) for Unix-like operating systems, namely linux and mac OSX. Installation instructions can be found [here for linux](https://tmuxguide.readthedocs.io/en/latest/tmux/tmux.html).
+To install tmux on mac, use homebrew:
+```bash
+brew install tmux
+```
+Once installed, minoTour has a [bash script](scripts/run_minotour_tmux.sh) that runs all the tmux commands to open minoTour in Tmux. The configuration of the file is necessary to provide all the correct paths.
+
+## Setting up the environment variable file
+
+Setting up environment variables - many of minoTour's config parameters are stored in the environment. There is a file to be configured,
+[envs.sh](envs.sh)
+For the secret key, we recommend generating your own, which can be done as follows:
+```bash
+$ python manage.py shell -c 'from django.core.management import utils; print(utils.get_random_secret_key())'
+```
+And stored under MT_SECRET_KEY in envs.sh.
+
+
+# Final configurations
 
 ---------------------
 Metagenomics analyses
@@ -131,12 +85,11 @@ minoTour uses [Centrifuge](https://ccb.jhu.edu/software/centrifuge/) to run meta
 Before creating a metagenomics tasks, there are a few requirements that need to be met.
 
 - A centrifuge index is required - Choose one of the centrifuge [indexes](ftp://ftp.ccb.jhu.edu/pub/infphilo/centrifuge/data), download it and save it to the local disk. We recommend the compressed index, p_compressed. This index contains Bacteria and Archaea down to the species level.
+Instructions to build a custom index can be found [here](http://www.ccb.jhu.edu/software/centrifuge/manual.shtml#database-download-and-index-building). 
 
-- Centrifuge itself - [Download](https://github.com/infphilo/centrifuge/releases) and compile the most recent version.
+- Centrifuge itself - Included in minotourapp/extras
 
-- Set the environment variables MT_CENTRIFUGE (the path to the executable) and MT_CENTRIFUGE_INDEX (the path to indexes without the suffix) to the location of your chosen Index and the centrifuge executable:
-
-    export MT_CENTRIFUGE="/path/to/centrifuge-executable/centrifuge-1.0.4-beta/centrifuge"
+- Set the environment variable MT_CENTRIFUGE_INDEX (the path to indexes without the suffix) to the location of your chosen Index and the centrifuge executable in the envs.sh file.
 
     export MT_CENTRIFUGE_INDEX="/path/to/centrifuge_indexes/p_compressed"
 
@@ -150,7 +103,7 @@ Before creating a metagenomics tasks, there are a few requirements that need to 
     
     * p_compressed.4.cf
 
-- minoTour uses the ete3 package for Id'ing species from there taxonomic IDs. The installation of ete3's database during the first Metagenomics analysis will happen automatically, but requires internet access.
+- minoTour uses the ete3 package for Id'ing species from their taxonomic IDs. The installation of ete3's database during the first Metagenomics analysis will happen automatically, but requires internet access.
 
  - Alternatively, to force the download (this step just need to be executed once), type the following instructions into the python shell in the minoTour virtual environment:
 ```bash
@@ -160,6 +113,8 @@ Before creating a metagenomics tasks, there are a few requirements that need to 
 
     n = NCBITaxa()
 ```
+
+## Raise the Niceness index allowed
 
 If you are operating on a server, you may wish to raise the priority of the centrifuge process, as otherwise it may not be allocated enough RAM to load the whole index into memory.
 
@@ -230,50 +185,24 @@ Which will show you a file that looks like this:
 ```
 
 Add the following line to the bottom of the file, which will allow non root users to set a limit of -10 to the niceness index, giving the process a higher priority.
-
+The centrifuge process is then launched with a niceness index of -10.
 ```bash
-    *	-	nice	-10
+   <username> - nice -10
 ```
 
-
-
-    
-
---------------------------------
-Environment config
---------------------------------
-
-* Setting up environment variables - many of minoTour's config parameters are stored in the environment. To store these variables,
- create a bash script file, for example envs.sh, place it in the main application directory (The directory that contains manage.py)
-  and copy the following into it:
-    ```bash
-        #!/bin/bash
-        export MT_DB_ENGINE='django.db.backends.mysql'
-        export MT_DB_HOST='localhost'
-        export MT_DB_NAME='<Database name>'
-        export MT_DB_PASS='<minotourdb password>'
-        export MT_DB_PORT='3306'
-        export MT_DB_USER='minotour'
-        export MT_DJANGO_DEBUG='True'
-        export MT_MAILGUN_ACCESS_KEY=''
-        export MT_MAILGUN_SERVER_NAME=''
-        export MT_MINIMAP2='</Path/To/Minimap2/Executable>'
-        export MT_REFERENCE_LOCATION='<Path/To/Reference/Directory>'
-        export MT_SECRET_KEY=''
-        export MT_TWITCONSUMER_KEY=''
-        export MT_TWITCONSUMER_SECRET=''
-        export MT_CENTRIFUGE="</path/to/centrifuge/executable>"
-        export MT_CENTRIFUGE_INDEX="/path/to/centrifuge/indexes"
-        export MT_TWITTOKEN=''
-        export MT_TWITTOKEN_SECRET=''
-        export MT_LOG_FOLDER='/path/to/where/you/want/logs'
-        export MT_CELERY_BROKER_URL='redis://localhost:6379/0'
-        export MT_CELERY_RESULT_BACKEND='redis://localhost:6379/0'
-    ```
+## Setting up Twitter
+minoTour can tweet users when certain criteria are met - such as average coverage reaching nX, or minKNOW issuing warnings. To do this a twitter API account is needed. The steps for setting one up can be found here,
+and once the details have been issued to an account, the following environment variables need to be filled in [envs.sh](envs.sh)
+MT_TWITCONSUMER_KEY='<Twitter consumer key>'
+MT_TWITCONSUMER_SECRET='<Twitter consumer secret>'
+MT_TWITTOKEN='<Twitter token>'
+MT_TWITTOKEN_SECRET='<Twitter token secret>' 
     
 -------------------
 Starting the server
 -------------------
+
+We recommend using the tmux script for starting the server, but if you wish you can start each if the below processes in terminal.
 * Redis:
     ```bash
       redis-server &
