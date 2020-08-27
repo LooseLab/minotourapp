@@ -23,3 +23,5 @@ db_changes
 */settings.py
 artic/static*
 artic/tests/*
+extra/*
+/envs.sh
