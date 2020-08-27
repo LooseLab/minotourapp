@@ -24,4 +24,3 @@ db_changes
 artic/static*
 artic/tests/*
 extra/*
-/envs.sh
