@@ -14,7 +14,6 @@ django_redis
 django_extensions
 pandas
 isort
-psycopg2-binary
 ete3
 gunicorn
 django-guardian

@@ -547,4 +547,3 @@ def get_run_details(run_id):
                 result[element["runid"]] = element
 
     return result.values()
-

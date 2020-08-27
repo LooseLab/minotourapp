@@ -7,7 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.forms import formset_factory
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
-from django.views.generic import ListView, DeleteView
+from django.views.generic import DeleteView, ListView
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -15,23 +15,11 @@ from rest_framework.response import Response
 from communication.models import Message
 from communication.serializers import MessageSerializer
 from metagenomics.models import CentrifugeOutput
-from reads.models import (
-    Run,
-    UserOptions,
-    FastqRead,
-    Experiment,
-    Flowcell,
-    MinionRunStats,
-    JobType,
-    JobMaster,
-)
+from reads.models import (Experiment, FastqRead, Flowcell, JobMaster, JobType,
+                          MinionRunStats, Run, UserOptions)
 from reads.tasks.redis_tasks_functions import split_flowcell
-from web.forms import (
-    SignUpForm,
-    UserOptionsForm,
-    ExperimentForm,
-    ExperimentFlowcellForm,
-)
+from web.forms import (ExperimentFlowcellForm, ExperimentForm, SignUpForm,
+                       UserOptionsForm)
 from web.utils import get_run_details
 
 
