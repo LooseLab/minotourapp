@@ -47,7 +47,6 @@ INSTALLED_APPS = [
     'alignment',
     'reference',
     'communication',
-    'devices',
     'metagenomics',
     'readuntil',
     'guardian',
