@@ -47,7 +47,8 @@ git clone https://github.com/LooseLab/minotourapp.git
 ```
 
 Checkout the development branch:
-
+    
+    cd minotourapp
     git checkout develop
 
 To use the python package mysqlclient, it is necessary to have two dependencies installed, libmysqlclinet-dev and python3-dev. These can be installed with the following command:
