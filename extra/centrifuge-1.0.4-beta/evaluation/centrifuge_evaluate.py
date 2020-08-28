@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 
-import inspect
-import multiprocessing
-import os
-import platform
-import subprocess
-import sys
-from argparse import ArgumentParser
-from datetime import datetime
+import sys, os, subprocess, inspect
+import platform, multiprocessing
+import string, re
+from datetime import datetime, date, time
+import copy
+from argparse import ArgumentParser, FileType
+
 
 """
 """
@@ -153,7 +152,7 @@ def compare_abundance(centrifuge_out, true_out, taxonomy_tree, debug):
         if tax_id in db_dic:
             SSR += (abundance - db_dic[tax_id]) ** 2;
             if debug:
-                print >> sys.stderr, "\t\t\t\t{:<10}: {:.6} vs. {:.6} (truth vs. metagenomics)".format(tax_id, abundance, db_dic[tax_id])
+                print >> sys.stderr, "\t\t\t\t{:<10}: {:.6} vs. {:.6} (truth vs. centrifuge)".format(tax_id, abundance, db_dic[tax_id])
         else:
             SSR += (abundance) ** 2
 
@@ -323,7 +322,7 @@ def evaluate(index_base,
         assert check_files(index_fnames)        
 
     # Read taxonomic IDs
-    centrifuge_inspect = os.path.join(path_base, "../metagenomics-inspect")
+    centrifuge_inspect = os.path.join(path_base, "../centrifuge-inspect")
     tax_ids = set()
     tax_cmd = [centrifuge_inspect,
                "--conversion-table",
@@ -387,7 +386,7 @@ def evaluate(index_base,
     program_bin_base = "%s/.." % path_base
     def get_program_version(program, version):
         version = ""
-        if program == "metagenomics":
+        if program == "centrifuge":
             if version:
                 cmd = ["%s/%s_%s/%s" % (program_bin_base, program, version, program)]
             else:
@@ -403,11 +402,11 @@ def evaluate(index_base,
 
     def get_program_cmd(program, version, read1_fname, read2_fname, out_fname):
         cmd = []
-        if program == "metagenomics":
+        if program == "centrifuge":
             if version:
-                cmd = ["%s/centrifuge_%s/metagenomics" % (program_bin_base, version)]
+                cmd = ["%s/centrifuge_%s/centrifuge" % (program_bin_base, version)]
             else:
-                cmd = ["%s/metagenomics" % (program_bin_base)]
+                cmd = ["%s/centrifuge" % (program_bin_base)]
             cmd += ["-f",
                     "-p", str(num_threads),
                     "%s/%s" % (index_path, index_base)]
@@ -423,7 +422,7 @@ def evaluate(index_base,
 
         return cmd
 
-    init_time = {"metagenomics" : 0.0}
+    init_time = {"centrifuge" : 0.0}
     for program, version in programs:
         program_name = program
         if version:
@@ -439,7 +438,7 @@ def evaluate(index_base,
             os.mkdir(program_dir)
         os.chdir(program_dir)
 
-        out_fname = "metagenomics.output"
+        out_fname = "centrifuge.output"
         if runtime_only:
             out_fname = "/dev/null"
 
@@ -451,7 +450,7 @@ def evaluate(index_base,
         start_time = datetime.now()
         if verbose:
             print >> sys.stderr, "\t", start_time, " ".join(program_cmd)
-        if program in ["metagenomics"]:
+        if program in ["centrifuge"]:
             proc = subprocess.Popen(program_cmd, stdout=open(out_fname, "w"), stderr=subprocess.PIPE)
         else:
             proc = subprocess.Popen(program_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -569,8 +568,8 @@ if __name__ == "__main__":
     parser.add_argument("--program-list",
                         dest="programs",
                         type=str,
-                        default="metagenomics",
-                        help="A comma-separated list of aligners (default: metagenomics)")
+                        default="centrifuge",
+                        help="A comma-separated list of aligners (default: centrifuge)")
     parser.add_argument("--runtime-only",
                         dest='runtime_only',
                         action='store_true',

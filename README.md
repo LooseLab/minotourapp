@@ -14,7 +14,9 @@ minoTour is a web-based real-time laboratory information management system (LIMS
 * [Running minotour with tmux](#running-minotour-with-tmux-recommended)
 * [Starting the server manually](#starting-the-server-manually)
 * [Final configurations](#final-configurations)
+    * [Adding references](#adding-references)   
     * [Metagenomics analyses](#metagenomics-analyses)
+    * [Adding validation sets](#add-validation-sets-for-metagenomics)
     * [Raise allowed Niceness index](#raise-the-niceness-index-allowed)
     * [Setting up a twitter API account](#setting-up-twitter)
 * [Uploading data to minoTour](#uploading-data-to-minotour)
@@ -100,7 +102,7 @@ To install tmux on mac, use homebrew:
 ```bash
 brew install tmux
 ```
-Once installed, minoTour has a [bash script](scripts/run_minotour_tmux.sh) that runs all the tmux commands to open minoTour in Tmux. The configuration of the file is necessary to provide all the correct paths.
+Once installed, minoTour has a [bash script](scripts/run_minotour_tmux.sh) that runs all the tmux commands to open minoTour in Tmux. The file may need configuring to provide all the correct paths, but should run without any issue.
 It can be run simply from the **main minotourapp directory**:
 ```bash
 ./scripts/run_minotour_tmux.sh
@@ -114,23 +116,35 @@ We recommend using the tmux script for starting the server, but if you wish you 
       redis-server &
     ```
 
-
-* If you created the environment variable bash file, add the following to the beginning of the celery, flower and minoTour commands to set the environment variables:
-    ```bash
-      . envs.sh &&
-    ```
-
 * Start Celery::
     ```bash
         cd /path/to/minotour/code/ 
         source minotourenv/bin/activate
-        celery -A minotourapp worker -l info -B
+        source envs.sh
+        celery -A minotourapp worker -l info -f ~/data/logs/celery.log --concurrency $WORKER_COUNT -Ofair
+    ```
+  
+* Start Celery worker for minimap2::
+    ```bash
+        cd /path/to/minotour/code/ 
+        source minotourenv/bin/activate
+        source envs.sh
+        celery -A minotourapp worker -l info -f $MT_LOG_FOLDER/celery.log -n minimap2 --concurrency $MT_CELERY_MINIMAP2_WORKER_COUNT -Ofair -Q minimap --pool threads
+    ```
+  
+* Start Celery beat for periodic tasks::
+    ```bash
+        cd /path/to/minotour/code/ 
+        source minotourenv/bin/activate
+        source envs.sh
+        celery beat -A minotourapp -l info
     ```
 
 * Start Flower::
     ```bash
         cd /path/to/minotour/code/
         source minotourenv/bin/activate
+        source envs.sh
         flower -A minotourapp --port=5555
     ```
 
@@ -138,6 +152,7 @@ We recommend using the tmux script for starting the server, but if you wish you 
     ```bash
         cd /path/to/minotour/code
         source minotourenv/bin/activate
+        source envs.sh
         python manage.py runserver 8100
     ```
 
@@ -146,6 +161,36 @@ We recommend using the tmux script for starting the server, but if you wish you 
 
 ## Final configurations
 
+### Adding References
+In order to perform alignments, it is necessary for the user to provide references to align to. There are currently two ways of doing this in minoTour,
+using the GUI reference addition feature, or on the command line.
+
+**1. Using the GUI reference addition:**
+    It is possible to add references in the settings side bar, on the tab manage references. By clicking the plus icon on the page in the top right of the references table, a drag and drop area is popped up.
+    However **the maximum file size for this method is 256Mb**, for larger references the other method must be used. If an identical reference has already been uploaded, minoTour will reject the upload, and will indicate which reference to use.
+    References can be uploaded privately (only visible to the account) or publicly, visible to all users.
+    
+**2. Using the command line:**
+    There is a command line command for adding larger references. **It requires an account api-key**, found in the sidebar under the profile tab. If running minoTour in tmux, there is a window pre-prepared for this, called zshelly. You can switch to it by typing 
+```bash
+CTRL+B, then 3
+```
+The command itself to add references is:
+```bash
+python manage.py add_references -k <account api key> /path/to/reference/file/or/directory/of/files
+```
+more help for the command can be received by typing
+```bash
+python manage.py add_references -h
+```
+If you are not using tmux (why not?) in a terminal shell run:
+```bash
+cd /path/to/minotour/code
+source minotourenv/bin/activate
+source envs.sh
+python manage.py add_references -k <account api key> /path/to/reference/file/or/directory/of/files
+``` 
+   
 ---------------------
 Metagenomics analyses
 ---------------------
@@ -182,6 +227,10 @@ Instructions to build a custom index can be found [here](http://www.ccb.jhu.edu/
 
     n = NCBITaxa()
 ```
+
+## Add validation sets for metagenomics
+Todo add this information
+Remember that the name of the gff file must have an exact matching reference already uploaded.
 
 ## Raise the Niceness index allowed
 
