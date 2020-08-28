@@ -283,7 +283,7 @@ class AlignmentController {
    * @param changedBarcode {boolean} If redraw is a result of barcode change
    */
   _updateCoverageColumnCharts (chart, seriesData, categories, changedBarcode) {
-    if (changedBarcode){
+    if (changedBarcode) {
       while (chart.series.length) {
         chart.series[0].remove(false)
       }

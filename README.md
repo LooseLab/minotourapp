@@ -3,31 +3,20 @@
 Minotour is a work in progress, therefore features may change, and any bug reports/feature requests and pull requests will be gratefully recieved.
 
 #Table of contents
-insert TOC
-* [Introduction](#setting-up-a-development-environment)  
+* [Preconfiguration](#preconf)  
+* [Setting up minoTour](#setup)  
+    * [Set up minoTour and requirements](#set-up-minotour)
+    * [Set up environment variables](#setting-up-the-environment-variable-file)
+    * [Create database tables and admin](#create-database-tables-and-administrator-account)
+    * [Conda environments](#conda-environments-for-artic-analyses)
+* [Running minotour with tmux](#running-minotour-with-tmux-recommended)
+* [Starting the server manually](#starting-the-server-manually)
+* [Final configurations](#final-configurations)
+    * [Metagenomics analyses](#metagenomics-analyses)
+    * [Raise allowed Niceness index](#raise-the-niceness-index-allowed)
+    * [Setting up a twitter API account](#setting-up-twitter)
 
-# MinoTour environment
-
-
-## Setting up a development environment
-
-To set up a development environment, first clone or download the code from [our github page](https://github.com/LooseLab/minotourapp.git "Looselab's github page").
-
-Checkout the development branch:
-
-    git checkout develop
-
-To use the python package mysqlclient, it is necessary to have two dependencies installed, libmysqlclinet-dev and python3-dev. These can be installed with the following command:
-
-    sudo apt-get install libmysqlclient-dev
-    sudo apt-get install python3-dev
-
-Now create a virtual environment for the project dependencies and install them:
-
-    cd /path/to/minotourapp/code
-    python3 -m venv minotourenv
-    source minotourenv/bin/activate
-    pip install -r requirements.txt
+## <a name="preconf"></a>Preconfiguration
 
 Minotour uses MySQL as a database backend, Celery (asynchronous workers responsible for running server tasks), Redis (a database in memory similar to memcached, required by Celery as a message broker), Flower (optional - a useful Celery task monitor tool).
 
@@ -46,25 +35,29 @@ The following tools must be installed:
 * [Python 3](https://www.python.org) - Minotour uses **Python >=3.6**, so please make sure it is available on your system.
 
 To upload data, it is also necessary to install the upload client, [minFQ](https://github.com/LooseLab/minotourcli)
+##<a name="setup"></a> Setting up the minoTour environment
 
 
-## Conda Environments for Artic analyses
-To run Artic analyses, conda must be installed, and the Artic and Pangolin environments must be installed in it. We recommend installing miniconda to avoid bloat.
+### Set up minoTour
+To set up a development environment, first clone or download the code from [our github page](https://github.com/LooseLab/minotourapp.git "Looselab's github page").
 
-The miniconda installation instructions can be found [here](https://docs.conda.io/en/latest/miniconda.html)
+Checkout the development branch:
 
-The [Artic](https://artic.network/ncov-2019/ncov2019-bioinformatics-sop.html) instructions, and [Pangolin](https://github.com/cov-lineages/pangolin#install-pangolin) instructions.
+    git checkout develop
 
-#Running minoTour with tmux (Recommended)
+To use the python package mysqlclient, it is necessary to have two dependencies installed, libmysqlclinet-dev and python3-dev. These can be installed with the following command:
 
-tmux is a [terminal multiplexer](https://en.wikipedia.org/wiki/Tmux) for Unix-like operating systems, namely linux and mac OSX. Installation instructions can be found [here for linux](https://tmuxguide.readthedocs.io/en/latest/tmux/tmux.html).
-To install tmux on mac, use homebrew:
-```bash
-brew install tmux
-```
-Once installed, minoTour has a [bash script](scripts/run_minotour_tmux.sh) that runs all the tmux commands to open minoTour in Tmux. The configuration of the file is necessary to provide all the correct paths.
+    sudo apt-get install libmysqlclient-dev
+    sudo apt-get install python3-dev
 
-## Setting up the environment variable file
+Now create a virtual environment for the project dependencies and install them:
+
+    cd /path/to/minotourapp/
+    python3 -m venv minotourenv
+    source minotourenv/bin/activate
+    pip install -r requirements.txt
+    
+### Setting up the environment variable file
 
 Setting up environment variables - many of minoTour's config parameters are stored in the environment. There is a file to be configured,
 [envs.sh](envs.sh)
@@ -74,8 +67,77 @@ $ python manage.py shell -c 'from django.core.management import utils; print(uti
 ```
 And stored under MT_SECRET_KEY in envs.sh.
 
+### Create database tables and administrator account:
+Once the environment variable file has been configured, we need to make the tables to store the data and if desired we need to create and admin account to manage the data. Luckily django makes this easy...
+```bash
+    cd /path/to/minotour/code;
+    source ~/minotourenv/bin/activate;
+    source envs.sh
+    python3 manage.py makemigrations;
+    python3 manage.py migrate;
+    python3 manage.py loaddata fixtures/auxiliary_data.json
+    python3 manage.py createsuperuser
+```
 
-# Final configurations
+## Conda Environments for Artic analyses
+To run Artic analyses, conda must be installed, and the Artic and Pangolin environments must be installed in it. We recommend installing miniconda to avoid bloat.
+
+The miniconda installation instructions can be found [here](https://docs.conda.io/en/latest/miniconda.html)
+
+The [Artic](https://artic.network/ncov-2019/ncov2019-bioinformatics-sop.html) instructions, and [Pangolin](https://github.com/cov-lineages/pangolin#install-pangolin) instructions.
+
+## Running minoTour with tmux (Recommended)
+
+tmux is a [terminal multiplexer](https://en.wikipedia.org/wiki/Tmux) for Unix-like operating systems, namely linux and mac OSX. Installation instructions can be found [here for linux](https://tmuxguide.readthedocs.io/en/latest/tmux/tmux.html).
+To install tmux on mac, use homebrew:
+```bash
+brew install tmux
+```
+Once installed, minoTour has a [bash script](scripts/run_minotour_tmux.sh) that runs all the tmux commands to open minoTour in Tmux. The configuration of the file is necessary to provide all the correct paths.
+It can be run simply from the **main minotourapp directory**:
+```bash
+./scripts/run_minotour_tmux.sh
+```
+
+## Starting the server manually
+
+We recommend using the tmux script for starting the server, but if you wish you can start each if the below processes in terminal.
+* Redis:
+    ```bash
+      redis-server &
+    ```
+
+
+* If you created the environment variable bash file, add the following to the beginning of the celery, flower and minoTour commands to set the environment variables:
+    ```bash
+      . envs.sh &&
+    ```
+
+* Start Celery::
+    ```bash
+        cd /path/to/minotour/code/ 
+        source minotourenv/bin/activate
+        celery -A minotourapp worker -l info -B
+    ```
+
+* Start Flower::
+    ```bash
+        cd /path/to/minotour/code/
+        source minotourenv/bin/activate
+        flower -A minotourapp --port=5555
+    ```
+
+* Start Minotour::
+    ```bash
+        cd /path/to/minotour/code
+        source minotourenv/bin/activate
+        python manage.py runserver 8100
+    ```
+
+* Time to test - if all went well, you should be able to access the web interface on http://localhost:8100.
+
+
+## Final configurations
 
 ---------------------
 Metagenomics analyses
@@ -191,57 +253,10 @@ The centrifuge process is then launched with a niceness index of -10.
 ```
 
 ## Setting up Twitter
-minoTour can tweet users when certain criteria are met - such as average coverage reaching nX, or minKNOW issuing warnings. To do this a twitter API account is needed. The steps for setting one up can be found here,
-and once the details have been issued to an account, the following environment variables need to be filled in [envs.sh](envs.sh)
+minoTour can tweet users when certain criteria are met - such as average coverage reaching nX, or minKNOW issuing warnings. To do this a twitter API account is needed. The steps for setting one up can be found [on twitters dev website]( https://developer.twitter.com/en/application/use-case),
+and once the details have been issued to an account, the following environment variables need to be filled in [envs.sh](envs.sh). A twitter account is required.
 MT_TWITCONSUMER_KEY='<Twitter consumer key>'
 MT_TWITCONSUMER_SECRET='<Twitter consumer secret>'
 MT_TWITTOKEN='<Twitter token>'
 MT_TWITTOKEN_SECRET='<Twitter token secret>' 
     
--------------------
-Starting the server
--------------------
-
-We recommend using the tmux script for starting the server, but if you wish you can start each if the below processes in terminal.
-* Redis:
-    ```bash
-      redis-server &
-    ```
-
-* Create tables and administrator account:
-    ```bash
-        cd /path/to/minotour/code;
-        source ~/minotourenv/bin/activate;
-        python3 manage.py makemigrations;
-        python3 manage.py migrate;
-        python3 manage.py loaddata fixtures/auxiliary_data.json
-        python3 manage.py createsuperuser
-    ```
-    
-* If you created the environment variable bash file, add the following to the beginning of the celery, flower and minoTour commands to set the environment variables:
-    ```bash
-      . envs.sh &&
-    ```
-
-* Start Celery::
-    ```bash
-        cd /path/to/minotour/code/ 
-        source minotourenv/bin/activate
-        celery -A minotourapp worker -l info -B
-    ```
-
-* Start Flower::
-    ```bash
-        cd /path/to/minotour/code/
-        source minotourenv/bin/activate
-        flower -A minotourapp --port=5555
-    ```
-
-* Start Minotour::
-    ```bash
-        cd /path/to/minotour/code
-        source minotourenv/bin/activate
-        python manage.py runserver 8100
-    ```
-
-* Time to test - if all went well, you should be able to access the web interface on http://localhost:8100.
