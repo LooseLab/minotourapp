@@ -561,9 +561,6 @@ def paf_summary_calculations(df, job_master_id, reference):
     df["chromosome_length"] = df["chromosome_length"].astype(int)
     df = df.loc[~df.index.duplicated()]
     df.reset_index(inplace=True)
-    print("summary df being saved is:")
-    print(df.head())
-    print(df.keys())
     df.apply(
         save_summary_coverage,
         args=(job_master_id, reference_pk, reference_name),
@@ -601,7 +598,7 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
     # A dictionary with all the results for each chromosome
     chromosome_dict = {}
     # Get all the chromosomes for this reference
-    chromosomes = reference_info.referencelines.all()
+    chromosomes = reference_info.reference_lines.all()
     longest_chromosome = chromosomes.aggregate(Max("chromosome_length"))[
         "chromosome_length__max"
     ]
