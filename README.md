@@ -42,6 +42,9 @@ To upload data, it is also necessary to install the upload client, [minFQ](https
 
 ### Set up minoTour
 To set up a development environment, first clone or download the code from [our github page](https://github.com/LooseLab/minotourapp.git "Looselab's github page").
+```bash
+git clone https://github.com/LooseLab/minotourapp.git
+```
 
 Checkout the development branch:
 
