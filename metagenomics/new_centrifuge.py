@@ -64,7 +64,7 @@ def run_centrifuge(flowcell_job_id):
         task=task,
     )
     if not read_count:
-        return
+        return pd.DataFrame(), None, None, None, None
     print("Flowcell id: {} - number of reads found {}".format(flowcell.id, read_count))
     # Create a fastq string to pass to Centrifuge
     fasta_df_barcode["fasta"] = (
@@ -749,6 +749,9 @@ def run_centrifuge_pipeline(flowcell_job_id):
     ]
     task = JobMaster.objects.get(pk=flowcell_job_id)
     df, total_centrifuge_output, read_count, last_read, targets_df = run_centrifuge(flowcell_job_id)
+    if df.empty:
+        logger.info("No Centrifuge output, skipping iteration...")
+        return
     df, task, barcodes = process_centrifuge_output(df, task)
     barcode_df, task = barcode_output_calculations(df, task)
     df = process_centrifuge_barcode_data(df, barcode_df, task, tax_rank_filter)
