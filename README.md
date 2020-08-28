@@ -37,7 +37,7 @@ The following tools must be installed:
 * [Python 3](https://www.python.org) - Minotour uses **Python >=3.6**, so please make sure it is available on your system.
 
 To upload data, it is also necessary to install the upload client, [minFQ](https://github.com/LooseLab/minotourcli)
-##<a name="setup"></a> Setting up the minoTour environment
+## <a name="setup"></a> Setting up the minoTour environment
 
 
 ### Set up minoTour
