@@ -17,6 +17,7 @@ minoTour is a web-based real-time laboratory information management system (LIMS
     * [Metagenomics analyses](#metagenomics-analyses)
     * [Raise allowed Niceness index](#raise-the-niceness-index-allowed)
     * [Setting up a twitter API account](#setting-up-twitter)
+* [Uploading data to minoTour](#uploading-data-to-minotour)
 
 ## <a name="preconf"></a>Preconfiguration
 
@@ -66,7 +67,7 @@ Now create a virtual environment for the project dependencies and install them:
 ### Setting up the environment variable file
 
 Setting up environment variables - many of minoTour's config parameters are stored in the environment. There is a file to be configured,
-[envs.sh](envs.sh).
+[envs.sh](envs.sh). The fields required and what they represent are **explained in the file**.
 For the secret key, we recommend generating your own, which can be done as follows:
 ```bash
 $ python manage.py shell -c 'from django.core.management import utils; print(utils.get_random_secret_key())'
@@ -261,8 +262,15 @@ The centrifuge process is then launched with a niceness index of -10.
 ## Setting up Twitter
 minoTour can tweet users when certain criteria are met - such as average coverage reaching nX, or minKNOW issuing warnings. To do this a twitter API account is needed. The steps for setting one up can be found [on twitters dev website]( https://developer.twitter.com/en/application/use-case),
 and once the details have been issued to an account, the following environment variables need to be filled in [envs.sh](envs.sh). A twitter account is required.
+
 MT_TWITCONSUMER_KEY='<Twitter consumer key>'
+
 MT_TWITCONSUMER_SECRET='<Twitter consumer secret>'
+
 MT_TWITTOKEN='<Twitter token>'
+
 MT_TWITTOKEN_SECRET='<Twitter token secret>' 
+
+## Uploading data to minoTour
+To upload data, in both base-called and minKnow metrics format, we use a separate upload script, [minFQ](https://github.com/LooseLab/minotourcli "minFQ github page"). Example commands and how to upload data are found on the minFQ github. 
     
