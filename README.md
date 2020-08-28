@@ -66,7 +66,7 @@ Now create a virtual environment for the project dependencies and install them:
 ### Setting up the environment variable file
 
 Setting up environment variables - many of minoTour's config parameters are stored in the environment. There is a file to be configured,
-[envs.sh](envs.sh)
+[envs.sh](envs.sh).
 For the secret key, we recommend generating your own, which can be done as follows:
 ```bash
 $ python manage.py shell -c 'from django.core.management import utils; print(utils.get_random_secret_key())'
