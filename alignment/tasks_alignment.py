@@ -622,12 +622,11 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
     for read_tuple in query_list:
         results.extend(super_function.map_sequence(reference_info.name, read_tuple))
 
-    test_df = pd.DataFrame(results)
-    paf_df = test_df[0].str.split("\t", expand=True)
-    if paf_df.empty:
+    print(results)
+    if not results:
         print("No mapping results.")
         return
-    del test_df
+    paf_df = pd.DataFrame(results)[0].str.split("\t", expand=True)
     # return test_df
 
     paf_df = paf_df.rename(
