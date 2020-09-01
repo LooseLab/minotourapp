@@ -126,9 +126,8 @@ def centrifuge_metadata(request):
     #  set panel or the analysis results panel
     print(job_master.target_set)
     if (
-        job_master.target_set == "-- select an option --"
-        or job_master.target_set == ""
-        or job_master.target_set is None
+        job_master.target_set == "-1"
+        or job_master.target_set == None
     ):
         validation_table_present = False
     else:
