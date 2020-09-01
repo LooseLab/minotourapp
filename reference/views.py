@@ -1,8 +1,6 @@
-import subprocess
 from pathlib import Path
 
 import pyfastx
-from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db.models import Q
 from django.db.utils import IntegrityError
 from django.shortcuts import render
@@ -10,11 +8,10 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from minotourapp.settings import MINIMAP2, MEDIA_ROOT
 from reference.forms import ReferenceForm
 from reference.models import ReferenceInfo, ReferenceLine
 from reference.serializers import ReferenceInfoSerializer
-from reference.utils import validate_reference_checks
+from reference.utils import validate_reference_checks, create_minimap2_index
 
 
 @api_view(["GET", "POST", "DELETE"])
@@ -49,15 +46,10 @@ def reference_list(request):
                     d["deletable"] = False
         return Response({"data": data}, status=status.HTTP_200_OK)
     elif request.method == "POST":
-        print(request.data)
         form = ReferenceForm(request.POST, request.FILES)
-        print(f"form is {form.is_valid()}\n")
         if form.is_valid():
             files = request.FILES.getlist("file_location")
-            print(f"files is {files}")
             for index, file in enumerate(files):
-                print(dir(file))
-                print(file)
                 file_name = Path(file.name)
                 name = str(file_name.stem).partition(".")[0]
                 # get fastq or fasta
@@ -70,17 +62,11 @@ def reference_list(request):
                 )
                 # build minimap2 index
                 duplicated, sha256_hash = validate_reference_checks(file, request.user)
-                print(f"Hash is {sha256_hash}")
-                print(file)
-                print(type(file))
-                print(duplicated)
                 if duplicated and len(files) == 1:
                     # ref_info.delete()
                     return Response(f"Exact reference already exists. Please use {sha256_hash}", status=status.HTTP_403_FORBIDDEN)
                 elif duplicated:
                     continue
-                if isinstance(file, InMemoryUploadedFile):
-                    print("is instance")
                 ref_info = ReferenceInfo(
                     file_name=file.name,
                     name=name,
@@ -97,13 +83,7 @@ def reference_list(request):
                             f"Duplicate upload attempted. File - {file.name}",
                             status=status.HTTP_403_FORBIDDEN,
                         )
-                minimap2_index_file_location = (
-                    f"{MEDIA_ROOT}/minimap2_indexes/{file_name.stem}.mmi"
-                )
-                subprocess.Popen(
-                    f"{MINIMAP2} -d {minimap2_index_file_location}"
-                    f" {ref_info.file_location.path}".split()
-                ).communicate()
+                minimap2_index_file_location = create_minimap2_index(ref_info, file_name)
                 fa = handle(ref_info.file_location.path)
                 # Create the Reference info entry in the database
                 ref_info, created = ReferenceInfo.objects.update_or_create(
