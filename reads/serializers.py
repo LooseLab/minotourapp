@@ -579,10 +579,12 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
     Serialiser to validate and insert the JobMasters into the database, upon job creation via the reads/views.py
     get_or_create_jobs function
     """
+
     class Meta:
-
+        """
+        Meta options about model
+        """
         model = JobMaster
-
         fields = (
             "job_type",
             "flowcell",
