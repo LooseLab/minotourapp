@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# configure your environment variable file found at minotourapp/envs.sh
+# configure your environment variable file found at minotourapp/envs.sh, then list the path to it below
 ENVIRONMENT_FILE="../data/envs.sh"
 source $ENVIRONMENT_FILE
 NAME=$1
