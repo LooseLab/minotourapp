@@ -2495,39 +2495,31 @@ class JobMaster(models.Model):
     The JobMaster model is used to store the tasks that we wish celery to pick up and run
     """
     run = models.ForeignKey(
-
         Run,
         on_delete=models.DO_NOTHING,
         related_name='run_jobs',
         null=True,
         blank=True,
     )
-
     flowcell = models.ForeignKey(
-
         Flowcell,
         on_delete=models.CASCADE,
         related_name='flowcell_jobs',
         null=True,
         blank=True,
     )
-
     job_type = models.ForeignKey(
-
         JobType,
         on_delete=models.DO_NOTHING,
         related_name='task_name',
     )
-
     reference = models.ForeignKey(
-
         ReferenceInfo,
         on_delete=models.SET_NULL,
         related_name='reference_job',
         null=True,
         blank=True,
     )
-
     barcode = models.ForeignKey(
         Barcode,
         on_delete=models.CASCADE,
@@ -2535,34 +2527,23 @@ class JobMaster(models.Model):
         null=True,
         blank=True
     )
-
     last_read = models.BigIntegerField(
-
         default=0,
     )
-
     tempfile_name = models.CharField(
-
         max_length=256,
         blank=True,
         null=True,
     )
-
     read_count = models.BigIntegerField(
-
         default=0
     )
-
     complete = models.BooleanField(
-
         default=False,
     )
-
     running = models.BooleanField(
-
         default=False,
     )
-
     paused = models.BooleanField(
         default=False
     )
@@ -2570,25 +2551,18 @@ class JobMaster(models.Model):
         default=False
     )
     iteration_count = models.IntegerField(
-
         null=True,
         default=0,
     )
-
     target_set = models.CharField(
-
         default=None,
         null=True,
         max_length=100,
         blank=True,
     )
-
     def __str__(self):
-
         if self.run is not None:
-
             return f"Run: {self.run} JobType: {self.job_type} Id: {self.id} Barcode: {self.barcode}"
-
         return f"Flowcell: {self.flowcell_id} JobType: {self.job_type} Id: {self.id} Barcode: {self.barcode}"
 
 
