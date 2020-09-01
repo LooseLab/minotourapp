@@ -3,13 +3,40 @@ Util functions that don't belong in any one view
 """
 import gzip
 import hashlib
+import subprocess
 from pathlib import Path
 
 from django.conf import settings
 from django.core.files.uploadedfile import TemporaryUploadedFile, InMemoryUploadedFile
 from django.db.models import Q
 
+from minotourapp.settings import MINIMAP2, MEDIA_ROOT
 from reference.models import ReferenceInfo
+
+
+def create_minimap2_index(ref_info, file_name):
+    """
+    Create the minimap2 index for the reference file that we are uploading
+    Parameters
+    ----------
+    ref_info: reference.models.ReferenceInfo
+        The django ORM object
+    file_name: pathlib.PosixPath
+        The filename we are uploading
+
+    Returns
+    -------
+    str
+        File path to the newly created minimap2 index file
+    """
+    minimap2_index_file_location = (
+        f"{MEDIA_ROOT}/minimap2_indexes/{file_name.stem}.mmi"
+    )
+    subprocess.Popen(
+        f"{MINIMAP2} -d {minimap2_index_file_location}"
+        f" {ref_info.file_location.path}".split()
+    ).communicate()
+    return minimap2_index_file_location
 
 
 def check_for_duplicate_references(hash_string, user):
