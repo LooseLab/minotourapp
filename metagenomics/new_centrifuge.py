@@ -52,9 +52,10 @@ def run_centrifuge(flowcell_job_id):
 
     Returns
     -------
-    pd.core.frame.DataFrame, int, int, int, pandas.core.frame.DataFrame
+    pd.core.frame.DataFrame, int, int, int, pandas.core.frame.DataFrame, int, int
         Dataframe of metagenomics results, total output lines from metagenomics, last read primary key,
-        total count of reads analysed, dataframe of any reads that identified as targets
+        total count of reads analysed, dataframe of any reads that identified as targets,
+         number of reads with classifications, number of reads without classifications
 
     """
     # The JobMaster object
@@ -74,7 +75,7 @@ def run_centrifuge(flowcell_job_id):
         task=task,
     )
     if not read_count:
-        return pd.DataFrame(), None, None, None, None
+        return pd.DataFrame(), None, None, None, None, 0, 0
     print("Flowcell id: {} - number of reads found {}".format(flowcell.id, read_count))
     # Create a fastq string to pass to Centrifuge
     fasta_df_barcode["fasta"] = (
@@ -139,7 +140,17 @@ def run_centrifuge(flowcell_job_id):
     df = split_read_id_and_barcodes(df)
     individual_reads_classified = np.unique(df["readID"].values).size
     targets_df = separate_target_cent_output(df, task, fasta_df_barcode)
-    return df, individual_reads_classified, read_count, last_read, targets_df
+    # The number of reads we have any form of classification for
+    reads_classified = np.unique(df[
+        df["tax_id"].ne(0)
+        ]["read_id"].values).size
+    # The number of reads we have completely failed to classify
+    reads_unclassified = np.unique(df[
+        df["tax_id"].eq(0)
+        ]["read_id"].values).size    # save the values
+    # Get the metadata object. Contains the start time, end time and runtime of the task
+    metadata, created = Metadata.objects.get_or_create(task=task)
+    return df, individual_reads_classified, read_count, last_read, targets_df, reads_classified, reads_unclassified
 
 
 def split_read_id_and_barcodes(df):
@@ -634,20 +645,6 @@ def save_analyses_output_in_db(
         to_save_df.rename(columns={"classy": "class"}, inplace=True)
         to_save_df["proportion_of_classified"].fillna("Unclassified", inplace=True)
         to_save_df.fillna("Unclassified", inplace=True)
-        # The number of reads we have any form of classification for
-        reads_classified = to_save_df[
-            to_save_df["tax_id"].ne(0) & to_save_df["barcode_name"].eq("All reads")
-        ]["num_matches"].sum()
-        # The number of reads we have completely failed to classify
-        reads_unclassified = to_save_df[
-            to_save_df["tax_id"].eq(0) & to_save_df["barcode_name"].eq("All reads")
-        ]["num_matches"].sum()
-        # save the values
-        # Get the metadata object. Contains the start time, end time and runtime of the task
-        metadata, created = Metadata.objects.get_or_create(task=task)
-        metadata.classified = reads_classified
-        metadata.unclassified = reads_unclassified
-        metadata.save()
 
         # Create a series of CentrifugeOutput objects, one for each row in the dataframe
         to_bulk_save_series = to_save_df.apply(
@@ -679,7 +676,7 @@ def save_analyses_output_in_db(
 
 
 def update_metadata_and_task(
-    last_read, read_count, flowcell_job_id, total_centrifuge_output
+    last_read, read_count, flowcell_job_id, total_centrifuge_output, reads_classified, reads_unclassified
 ):
     """
     Update metadata and task after job has finished
@@ -695,13 +692,19 @@ def update_metadata_and_task(
         The primary key of the job_master record in the database
     total_centrifuge_output: int
         The total metagenomics output
+    reads_classified: int
+        Number of reads with classifications
+    reads_unclassified: int
+        Number of reads without classifications
 
     Returns
     -------
 
     """
     task = JobMaster.objects.get(pk=flowcell_job_id)
-    metadata = Metadata.objects.get(task=task)
+    metadata, created = Metadata.objects.get_or_create(task=task)
+    metadata.classified += reads_classified
+    metadata.unclassified += reads_unclassified
     start_time = metadata.start_time.replace(tzinfo=None)
     # Get the end time
     end_time = timezone.now().replace(tzinfo=None)
@@ -753,7 +756,7 @@ def run_centrifuge_pipeline(flowcell_job_id):
         "species",
     ]
     task = JobMaster.objects.get(pk=flowcell_job_id)
-    df, total_centrifuge_output, read_count, last_read, targets_df = run_centrifuge(
+    df, total_centrifuge_output, read_count, last_read, targets_df, reads_classified, reads_unclassified = run_centrifuge(
         flowcell_job_id
     )
     if df.empty:
@@ -775,8 +778,8 @@ def run_centrifuge_pipeline(flowcell_job_id):
         map_output_df = map_target_reads(
             task, path_to_reference, targets_df, to_save_df, target_region_df
         )
-    if not map_output_df.empty:
-        map_output_df.apply(save_mapping_results, axis=1, args=(task,))
+        if not map_output_df.empty:
+            map_output_df.apply(save_mapping_results, axis=1, args=(task,))
 
     # #####  donut chart calculations
     donut_df = calculate_donut_data(df, task.flowcell, tax_rank_filter)
@@ -785,5 +788,5 @@ def run_centrifuge_pipeline(flowcell_job_id):
     )
     save_analyses_output_in_db(to_save_df, True, task, iteration_count)
     update_metadata_and_task(
-        last_read, read_count, flowcell_job_id, total_centrifuge_output
+        last_read, read_count, flowcell_job_id, total_centrifuge_output, reads_classified, reads_unclassified
     )
