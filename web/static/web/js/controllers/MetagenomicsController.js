@@ -334,8 +334,9 @@ class MetagenomicsController {
         // initialise variables
         let table, head, row
         const data = result.data.result
+        // if we have validation results for this flowcell
         const targetDiv = result.data.validation ? `.metadata-table` : `.metadata-table-alt`
-        if (!d3.select(`.metadata-table`).classed(`has-table`)) {
+        if (!d3.select(targetDiv).classed(`has-table`)) {
           // append the table to the page
           table = d3.select(targetDiv).attr(`class`, `has-table`).append(`table`).attr(`class`, `table table-striped`).attr(`table-layout`, `fixed`)
           head = table.append(`thead`)
