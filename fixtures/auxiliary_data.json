@@ -263,7 +263,7 @@
       "name": "Metagenomics Mapping",
       "description": "Mapping job that is run in parallel to the Metagenomics task",
       "long_description": "We run this task in parallel with the Metagenomics task automatically so we see where are mapped reads have mapped to.",
-      "reference": false,
+      "reference": true,
       "transcriptome": false,
       "readcount": true,
       "private": true
