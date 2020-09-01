@@ -44,9 +44,17 @@ def delete_rows(first_row_object, rows_to_delete, job_master_object, reverse_loo
     # Let's delete the next thousand rows
     last_row_to_be_deleted = first_row_object_pk + rows_to_delete
     # delete them
-    affected = getattr(job_master_object, reverse_lookup).filter(pk__lte=last_row_to_be_deleted).delete()
+    affected = (
+        getattr(job_master_object, reverse_lookup)
+        .filter(pk__lte=last_row_to_be_deleted)
+        .delete()
+    )
 
-    logger.info('Flowcell id: {} - Deleted {} records'.format(job_master_object.flowcell.id, affected))
+    logger.info(
+        "Flowcell id: {} - Deleted {} records".format(
+            job_master_object.flowcell.id, affected
+        )
+    )
 
 
 @task()
@@ -70,16 +78,23 @@ def delete_alignment_task(flowcell_job_id, restart=False):
     delete_chunk_size = 100000
     paf_rough_cov_remaining = True
     while delete:
-        if flowcell_job.job_type.name == "Minimap2" or flowcell_job.job_type.name == "Other":
+        if (
+            flowcell_job.job_type.name == "Minimap2"
+            or flowcell_job.job_type.id == 19
+        ):
             # If it's minimap2, we have tonnnes of alignment data, so delete it in batches of 1000
             # ######## Paf Rough cov ####### #
             if paf_rough_cov_remaining:
                 # get the first entry in the database for this job master
-                first_paf_rough_cov_row = PafRoughCov.objects.filter(job_master=flowcell_job)
+                first_paf_rough_cov_row = PafRoughCov.objects.filter(
+                    job_master=flowcell_job
+                )
                 # if there isn't one we've deleted all the pafroughcov entries
                 if not first_paf_rough_cov_row:
                     paf_rough_cov_remaining = False
-                    logger.info(f"Deleted all Paf Rough Cov data. Job ID {flowcell_job.id}")
+                    logger.info(
+                        f"Deleted all Paf Rough Cov data. Job ID {flowcell_job.id}"
+                    )
                 else:
                     with connection.cursor() as cursor:
                         cursor.execute(
@@ -97,7 +112,9 @@ def delete_alignment_task(flowcell_job_id, restart=False):
                     flowcell_job.running = False
                     flowcell_job.save()
                     # We're restarting so set a new activity data so flowcell becomes active
-                    flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
+                    flowcell.last_activity_date = datetime.datetime.now(
+                        datetime.timezone.utc
+                    )
                     flowcell.save()
                 else:
                     finished = flowcell_job.delete()
@@ -125,19 +142,21 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
     flowcell_job.complete = True
     flowcell_job.save()
     # If the task is running,it might be producing new data, so wait until it's finished
-    running = flowcell_job.running
-    seconds_counter = 0
-    logger.info('Flowcell id: {} - Deleting alignment data from flowcell {}'.format(flowcell.id, flowcell.name))
+    logger.info(
+        "Flowcell id: {} - Deleting alignment data from flowcell {}".format(
+            flowcell.id, flowcell.name
+        )
+    )
     # keep looping
     delete = True
     centrifuge_output_remaining = True
     donut_data_remaining = True
     logger.info(f"Flowcell job type {flowcell_job.job_type.name}")
     if flowcell_job.job_type.name == "Metagenomics":
-
         # ## delete the alignment data from the target set validation ## #
-
-        metagenomics_mapping_jobs = JobMaster.objects.filter(flowcell=flowcell, job_type__name="Other")
+        metagenomics_mapping_jobs = JobMaster.objects.filter(
+            flowcell=flowcell, job_type_id=19, target_set=flowcell_job.target_set
+        )
         # if there are mapping jobs
         if metagenomics_mapping_jobs:
             for mapping_job in metagenomics_mapping_jobs:
@@ -154,7 +173,12 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
                 if not centrifuge_output_first_row:
                     centrifuge_output_remaining = False
                 else:
-                    delete_rows(centrifuge_output_first_row, 1000, flowcell_job, "centrifuge_output")
+                    delete_rows(
+                        centrifuge_output_first_row,
+                        1000,
+                        flowcell_job,
+                        "centrifuge_output",
+                    )
             if donut_data_remaining:
                 # Get the first row of the donut data database rows
                 donut_data_first_row = flowcell_job.donut_data.first()
@@ -176,7 +200,9 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
                     flowcell_job.running = False
                     flowcell_job.save()
                     # We're restarting so set a new activity data so flowcell becomes active
-                    flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
+                    flowcell.last_activity_date = datetime.datetime.now(
+                        datetime.timezone.utc
+                    )
                     flowcell.save()
                 delete = False
 
@@ -219,19 +245,41 @@ def delete_expected_benefit_task(flowcell_job_id, restart=False):
 
     for chromosome in chromosomes:
         chrom_key = chromosome.chromosome.line_name
-        Path(f"{base_result_dir_path}/coverage_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-        Path(f"{base_result_dir_path}/counts_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-        Path(f"{base_result_dir_path}/mask_forward_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-        Path(f"{base_result_dir_path}/mask_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-        Path(f"{base_result_dir_path}/scores_forward_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-        Path(f"{base_result_dir_path}/scores_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-        Path(f"{base_result_dir_path}/cost_forward_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-        Path(f"{base_result_dir_path}/cost_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-        Path(f"{base_result_dir_path}/benefits_{chrom_key}_{flowcell.id}_{task.id}.dat").unlink()
-        Path(f"{base_result_dir_path}/fixed_benefits_forward{chrom_key}"
-             f"_{flowcell.id}_{task.id}.dat").unlink()
-        Path(f"{base_result_dir_path}/fixed_benefits_reverse{chrom_key}"
-             f"_{flowcell.id}_{task.id}.dat").unlink()
+        Path(
+            f"{base_result_dir_path}/coverage_{chrom_key}_{flowcell.id}_{task.id}.dat"
+        ).unlink()
+        Path(
+            f"{base_result_dir_path}/counts_{chrom_key}_{flowcell.id}_{task.id}.dat"
+        ).unlink()
+        Path(
+            f"{base_result_dir_path}/mask_forward_{chrom_key}_{flowcell.id}_{task.id}.dat"
+        ).unlink()
+        Path(
+            f"{base_result_dir_path}/mask_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat"
+        ).unlink()
+        Path(
+            f"{base_result_dir_path}/scores_forward_{chrom_key}_{flowcell.id}_{task.id}.dat"
+        ).unlink()
+        Path(
+            f"{base_result_dir_path}/scores_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat"
+        ).unlink()
+        Path(
+            f"{base_result_dir_path}/cost_forward_{chrom_key}_{flowcell.id}_{task.id}.dat"
+        ).unlink()
+        Path(
+            f"{base_result_dir_path}/cost_reverse_{chrom_key}_{flowcell.id}_{task.id}.dat"
+        ).unlink()
+        Path(
+            f"{base_result_dir_path}/benefits_{chrom_key}_{flowcell.id}_{task.id}.dat"
+        ).unlink()
+        Path(
+            f"{base_result_dir_path}/fixed_benefits_forward{chrom_key}"
+            f"_{flowcell.id}_{task.id}.dat"
+        ).unlink()
+        Path(
+            f"{base_result_dir_path}/fixed_benefits_reverse{chrom_key}"
+            f"_{flowcell.id}_{task.id}.dat"
+        ).unlink()
 
     finished = task.delete()
 
@@ -243,7 +291,7 @@ def delete_expected_benefit_task(flowcell_job_id, restart=False):
         task.last_read = 0
         task.read_count = 0
         task.iteration_count = 0
-        
+
         task.save()
         flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
         flowcell.save()
