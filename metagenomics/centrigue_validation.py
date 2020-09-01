@@ -5,10 +5,11 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from celery.utils.log import get_task_logger
 from django.conf import settings
-# from alignment.tasks_alignment import align_reads
 from ete3 import NCBITaxa
 
+from alignment.tasks_alignment import run_minimap2_alignment
 from metagenomics.models import (
     MappingTarget,
     MappingResult,
@@ -16,7 +17,11 @@ from metagenomics.models import (
 )
 from metagenomics.utils import falls_in_region
 from minotourapp.utils import get_env_variable
+from reads.models import JobMaster
 from reference.models import ReferenceInfo
+from reference.utils import create_minimap2_index
+
+logger = get_task_logger(__name__)
 
 
 def separate_target_cent_output(df, task, fasta_df_barcode):
@@ -38,7 +43,7 @@ def separate_target_cent_output(df, task, fasta_df_barcode):
         .values_list("tax_id", flat=True)
         .distinct()
     )
-    print("Flowcell id: {} - Targets are {}".format(task.flowcell.id, targets))
+    logger.info("Flowcell id: {} - Targets are {}".format(task.flowcell.id, targets))
     # Get the target reads rows in a separate dataframe
     targets_cent_out_df = df[df["tax_id"].isin(targets)]
     target_species_df = pd.merge(
@@ -71,7 +76,7 @@ def create_mapping_result_objects(barcodes, task):
     )
     # If there are no target regions found for the set name
     if target_regions_df.empty:
-        print(f"No target set pk {task.target_set}")
+        logger.info(f"No target set pk {task.target_set}")
         return
     # Get np array of the target species
     target_species = target_regions_df["species"].unique()
@@ -90,10 +95,34 @@ def create_mapping_result_objects(barcodes, task):
                 defaults={"red_reads": 0, "num_mapped": 0},
             )
             if created:
-                print(
+                logger.info(
                     f"Flowcell id: {task.flowcell.id} - Result Mapping object created for {obj.species}, barcode {barcode}"
                 )
     return target_regions_df
+
+
+def create_concat_reference_info(task, concat_file_path):
+    """
+    Create a reference info database entry for the concatenated reference
+    Parameters
+    ----------
+    task: reads.models.JobMaster
+        Django ORM object for the JobMaster
+    concat_file_path: pathlib.PosixPath
+        The file path to the concatenated reference file.
+    Returns
+    -------
+    None
+
+    """
+    ref_info, created = ReferenceInfo.objects.get_or_create(
+        name=task.target_set,
+        file_location=str(concat_file_path.resolve()),
+        file_name=concat_file_path.stem,
+    )
+    minimap2_index_path = create_minimap2_index(ref_info, concat_file_path)
+    ref_info.minimap2_index_file_location = minimap2_index_path
+    ref_info.save()
 
 
 def fetch_concat_reference_path(task):
@@ -113,9 +142,9 @@ def fetch_concat_reference_path(task):
     """
     concat_reference_path = Path(
         f"{settings.MEDIA_ROOT}/reference_files/{task.target_set}.fna.gz"
-    )
+    ).resolve()
     if not concat_reference_path.exists():
-        print(
+        logger.info(
             f"Concatenated reference for target set {task.target_set} does not exist."
             f" Creating at location {concat_reference_path.as_posix()}"
         )
@@ -136,7 +165,36 @@ def fetch_concat_reference_path(task):
                     handle(ref_file.file_location.path, "rt").read().strip().encode()
                 )
                 fh.write(b"\n")
+        create_concat_reference_info(task, concat_reference_path)
     return concat_reference_path
+
+
+def start_metagenomics_mapping_task(flowcell_id, target_set, target_reads_df):
+    """
+    Start a job type of metagenomics mapping that calls the alignment pipeline on this data
+    Parameters
+    ----------
+    flowcell_id: int
+        The primary key of the flowcell record in the database
+    target_set: str
+        The target set that we are working on
+    target_reads_df: pd.core.frame.DataFrame
+        Target reads dataframe of sequence read_id etc.
+    Returns
+    -------
+    None
+    """
+    # TODO need a way of rerunning metagenomics analyses
+    reference_info = ReferenceInfo.objects.get(name=target_set)
+    jm, created = JobMaster.objects.get_or_create(
+        job_type_id=19,
+        flowcell_id=flowcell_id,
+        target_set=target_set,
+        reference_id=reference_info.id,
+    )
+    run_minimap2_alignment.apply_async(
+        args=(jm.id, target_reads_df.to_dict(orient="records")), queue="minimap"
+    )
 
 
 def map_target_reads(task, path_to_reference, target_df, to_save_df, target_region_df):
@@ -157,7 +215,8 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
 
     Returns
     -------
-
+    pd.core.frame.DataFrame
+        Dataframe of minimap2 output from mapped target reads and num_mapped
     """
     minimap2_executable_path = get_env_variable("MT_MINIMAP2")
     cmd = f"{minimap2_executable_path} -x map-ont {path_to_reference} -"
@@ -176,6 +235,8 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
     fasta_sequence_to_map = "\n".join(
         (">" + target_df["read_id"] + "\n" + target_df["sequence"]).values.tolist()
     )
+    start_metagenomics_mapping_task(task.flowcell.id, task.target_set, target_df)
+    # TODO merge mapping task into this function rather than above seperate mapping task creation
     process = subprocess.Popen(
         cmd.split(),
         stdin=subprocess.PIPE,
@@ -184,7 +245,7 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
     )
     out, err = process.communicate(input=fasta_sequence_to_map.encode())
     if not out:
-        print(f"No reads mapped.")
+        logger.info(f"No reads mapped.")
         return pd.DataFrame()
     target_set_plasmids_ref_pks = MappingTarget.objects.filter(
         target_set=task.target_set
@@ -222,7 +283,7 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
     # Filter out low quality matches or the
     map_out_df = map_out_df.query("mapping_qual >= 40 & num_residue_matches >= 200")
     if map_out_df.empty:
-        print("Insufficient quality mappings.")
+        logger.info("Insufficient quality mappings.")
         return pd.DataFrame()
     # See whether the start or end of a mapping falls into the region
     map_out_df["read_is_red"] = 0
@@ -233,7 +294,9 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
     map_out_df["name"] = map_out_df["name"].str.replace("_", " ")
     map_out_df = pd.merge(map_out_df, target_df, how="left", on=["read_id", "name"])
     map_out_df["barcode_name"] = map_out_df["read_id"].map(
-        target_df.set_index("read_id")["barcode_name"].loc[~target_df.set_index("read_id")["barcode_name"].index.duplicated()]
+        target_df.set_index("read_id")["barcode_name"].loc[
+            ~target_df.set_index("read_id")["barcode_name"].index.duplicated()
+        ]
     )
     map_out_df = map_out_df.fillna(0)
     map_out_df["barcode_name"] = np.where(
@@ -267,11 +330,11 @@ def save_mapping_results(row, task):
         if species_info
         else (row["num_matches"], row["sum_unique"])
     )
-    print(num_matches, sum_unique)
+    logger.info(num_matches, sum_unique)
     map_result = MappingResult.objects.get(
         task=task, species=row["name"], barcode_name=row["barcode_name"]
     )
-    print(map_result.__dict__)
+    logger.info(map_result.__dict__)
     map_result.num_mapped += row["num_mapped"]
     map_result.num_matches += num_matches
     map_result.sum_unique += sum_unique
