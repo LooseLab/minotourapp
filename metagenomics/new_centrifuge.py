@@ -15,7 +15,7 @@ from django.db.models import Sum
 from django.utils import timezone
 from ete3 import NCBITaxa
 
-from metagenomics.centrigue_validation import (
+from metagenomics.centrifuge_validation import (
     separate_target_cent_output,
     create_mapping_result_objects,
     fetch_concat_reference_path,

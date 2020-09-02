@@ -640,11 +640,6 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
     print(paf_df.keys())
     paf_df["chromosome_pk"] = paf_df["tsn"].map(chromosome_dict)
     paf_df.set_index("read_id", inplace=True)
-    # todo ask matt if we want to filter mapping quality
-    # paf_df = paf_df[paf_df["mq"] >= 40]
-    # if paf_df.empty:
-    #     logger.info("No mappings over 40 mapping quality")
-
     fasta_df_barcode.set_index("read_id", inplace=True)
     print(fasta_df_barcode.head())
     df = pd.merge(
