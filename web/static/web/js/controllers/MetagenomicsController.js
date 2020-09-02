@@ -150,7 +150,7 @@ class MetagenomicsController {
     // setup the donut chart
     // the taxas in the order we want, to access them from the AJAX get request results
     // Calculate the width
-    const width = ($(window).width() * 0.25) - 50
+    const width = ($(window).width() * 0.25) - 76
     // Calculate the height
     const height = $(window).height() * 0.27
     // the radius, the smallest of the width and height /2 so it fits in hte svg
@@ -338,7 +338,7 @@ class MetagenomicsController {
         const targetDiv = result.data.validation ? `.metadata-table` : `.metadata-table-alt`
         if (!d3.select(targetDiv).classed(`has-table`)) {
           // append the table to the page
-          table = d3.select(targetDiv).attr(`class`, `has-table`).append(`table`).attr(`class`, `table table-striped`).attr(`table-layout`, `fixed`)
+          table = d3.select(targetDiv).classed(`has-table`, true).append(`table`).attr(`class`, `table table-striped`).attr(`table-layout`, `fixed`)
           head = table.append(`thead`)
           row = head.append(`tr`)
         } else {

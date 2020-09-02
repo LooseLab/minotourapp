@@ -2,12 +2,10 @@
 {% load static %}
 {% block header %}
     <!-- Public NavBar -->
-        <nav class="nav navbar-static-top" style="background-color: #6bb9f0">
+        <nav class="navbar navbar-expand-md navbar-dark topnav-primary" id="tn">
+        <a class="navbar-brand" href="{% url 'login' %}"> minoTour </a>
 
-            <a class="navbar-brand" href="{% url 'login' %}" style="height: 100%; background-color: #3498db"><img src="{% static 'web/img/minotourlogo.png' %}"
-                                                                  style="max-width: 80px;padding-right: .5rem; padding-left: .5rem;"></a>
-
-            <div class="container-fluid">
+            <div class="container-fluid"  style="padding-top: 2rem">
                 <div class="navbar-header">
                 </div><!-- /.navbar-collapse -->
             </div><!-- /.container-fluid -->
