@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import pyfastx
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from ete3 import NCBITaxa
@@ -18,7 +19,7 @@ from metagenomics.models import (
 from metagenomics.utils import falls_in_region
 from minotourapp.utils import get_env_variable
 from reads.models import JobMaster
-from reference.models import ReferenceInfo
+from reference.models import ReferenceInfo, ReferenceLine
 from reference.utils import create_minimap2_index
 
 logger = get_task_logger(__name__)
@@ -120,6 +121,18 @@ def create_concat_reference_info(task, concat_file_path):
         file_location=str(concat_file_path.resolve()),
         file_name=concat_file_path.stem,
     )
+    handle = (
+        pyfastx.Fasta
+        if set(concat_file_path.suffixes).intersection(
+            {".fna", ".fa", ".fsa", ".fasta"}
+        )
+        else pyfastx.Fastq
+    )
+    fa = handle(concat_file_path.as_posix())
+    for contig in fa:
+        ReferenceLine.objects.create(
+            reference=ref_info, line_name=contig.name, chromosome_length=len(contig)
+        )
     minimap2_index_path = create_minimap2_index(ref_info, concat_file_path)
     ref_info.minimap2_index_file_location = minimap2_index_path
     ref_info.save()

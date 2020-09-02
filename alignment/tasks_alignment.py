@@ -548,7 +548,6 @@ def paf_summary_calculations(df, job_master_id, reference):
     """
     reference_name = str(reference.name)
     reference_pk = int(reference.id)
-
     if "type__name" in df.keys():
         df.set_index(["type__name", "tsn", "barcode_name"], inplace=True)
     df[["yield", "read_count"]] = df.groupby(
