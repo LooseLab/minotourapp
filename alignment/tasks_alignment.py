@@ -253,9 +253,8 @@ def fetch_final_rough_cov_to_update(df_aggregate_intmd):
             )
         )
     )
-    logger.debug(f"Positions {positions.head()}")
-    logger.debug(f"positions length {positions.shape}")
-    logger.debug(f"positions thing {positions[0]}")
+    logger.info(f"Positions {positions.head()}")
+    logger.info(f"positions length {positions.shape}")
     querysets = (
         positions.groupby(["job_master_id", "chromosome_pk"]).apply(lambda x: PafRoughCov.objects.filter(
             chromosome_id=x.name[1], job_master_id=x.name[0], bin_position_start__in=x.values[0]
