@@ -537,9 +537,7 @@ def active_minion_list(request):
 
     """
     active_minion_list = []
-
     extra_data = {}
-
     blank_stats = {
         "id": -1,
         "minion_id": -1,
@@ -580,17 +578,13 @@ def active_minion_list(request):
     for minion in Minion.objects.filter(owner=request.user):
         # Store extra data about actively sequencing minions here
         extra_data[minion.name] = {}
-
         minion_event_list = MinionEvent.objects.filter(minION=minion).order_by(
             "datetime"
         )
-
         extra_data[minion.name]["freespace"] = minion.space_available()
         extra_data[minion.name]["space_till_shutdown"] = minion.space_till_shutdown()
         extra_data[minion.name]["minknow_version"] = minion.minknow_version()
-
         if minion_event_list.count() > 0:
-
             last_minion_event = minion_event_list.last()
             five_minute_check = datetime.datetime.now(
                 datetime.timezone.utc
@@ -602,6 +596,9 @@ def active_minion_list(request):
             ):
 
                 if minion.currentdetails.minKNOW_status in [
+                    "ACQUISITION_COMPLETED",
+                    "ACQUISITION_STARTING",
+                    "No Run",
                     "ACQUISITION_RUNNING",
                     "ACQUISITION_PROCESSING",
                     "ACQUISITION_FINISHING",
@@ -629,13 +626,10 @@ def active_minion_list(request):
                         )
 
                         data[minion.name] = mrs_serialiser.data
-
                 active_minion_list.append(minion)
-
     serializer = MinionSerializer(
         active_minion_list, many=True, context={"request": request}
     )
-
     return_data = list(serializer.data)
 
     for active_minion in return_data:
@@ -954,7 +948,6 @@ def minion_run_stats_list(request, pk):
 
     """
     if request.method == "POST":
-
         serializer = MinionRunStatsSerializer(
             data=request.data, context={"request": request}
         )
@@ -965,7 +958,6 @@ def minion_run_stats_list(request, pk):
 
     try:
         crazy_minion_run_stats = MinionRunStats.objects.filter(run_id=pk)
-
     except MinionRunStats.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
@@ -1188,46 +1180,29 @@ def minION_detail(request, pk):
     print(pk)
 
     if request.method == "GET":
-
         search_criteria = request.GET.get("search_criteria", "id")
-
         if search_criteria == "id":
-
             minion_list = Minion.objects.filter(owner=request.user, id=pk)
-
         elif search_criteria == "name":
-
             minion_list = Minion.objects.filter(owner=request.user, name=pk)
-
         else:
-
             minion_list = Minion.objects.none()
-
         print(minion_list)
-
         if len(minion_list) == 0:
             return Response(status=status.HTTP_404_NOT_FOUND)
-
         minion = minion_list[0]
-
         serializer = MinionSerializer(minion, context={"request": request})
-
         return Response(serializer.data)
 
     elif request.method == "POST":
-
         minion = Minion.objects.get(pk=pk)
-
         serializer = MinionSerializer(
             minion, data=request.data, partial=True, context={"request": request}
         )
-
         if serializer.is_valid():
             serializer.save()
-
         else:
             print("PROBLEM")
-
         return Response(serializer.data)
 
 
@@ -1666,8 +1641,7 @@ def flowcell_statistics(request, pk):
             .order_by("sample_time")
     )
 
-    df = pd.DataFrame(
-        list(
+    df = pd.DataFrame.from_records(
             queryset.values(
                 "read_type_name",
                 "sample_time",
@@ -1679,39 +1653,28 @@ def flowcell_statistics(request, pk):
                 "quality_sum",
                 "rejection_status",
             )
-        )
     )
-
     df["read_type"] = np.where(df["status"] == "True", "Pass", "Fail")
-
     agg = {
         "max_length": "max",
         "quality_sum": "sum",
         "read_count": "sum",
         "total_length": "sum",
     }
-
     df2 = df.groupby(
         ["barcode_name", "read_type_name", "sample_time", "rejection_status"]
     ).agg(agg)
-
     df = df.drop("status", axis=1)
-
     df2["read_type"] = "All"
-
     df2 = df2.reset_index()
-
     df3 = pd.concat([df, df2], ignore_index=True, sort=True)
-
     # TODO np.cumsum()
     df3["cumulative_read_count"] = df3.groupby(
         ["barcode_name", "read_type_name", "read_type", "rejection_status"]
     )["read_count"].apply(lambda x: x.cumsum())
-
     df3["cumulative_bases"] = df3.groupby(
         ["barcode_name", "read_type_name", "read_type", "rejection_status"]
     )["total_length"].apply(lambda x: x.cumsum())
-
     df3["key"] = (
             df3["barcode_name"].astype("str")
             + " - "
@@ -1721,26 +1684,18 @@ def flowcell_statistics(request, pk):
             + " - "
             + df3["rejection_status"].astype("str")
     )
-
     df3["average_quality"] = (
         df3["quality_sum"].div(df3["read_count"]).astype("float").round(decimals=2)
     )
-
     df3["average_quality"] = df3["average_quality"].astype("float")
-
     df3["average_length"] = df3["total_length"].div(df3["read_count"]).round(decimals=0)
-
     df3["sequence_rate"] = df3["total_length"].div(60).round(decimals=0)
-
     df3["corrected_time"] = df3["sample_time"].astype(np.int64) // 10 ** 6
-
     if barcode_name != "All reads":
         df3 = df3.drop(
             df3.index[(df3.barcode_name == "All reads") & (df3.read_type != "All")]
         )
-
     data_keys = df3["key"].unique().tolist()
-
     result_dict = {
         k: df3[df3["key"].eq(k)][
             [
@@ -1756,7 +1711,6 @@ def flowcell_statistics(request, pk):
         for k in df3.key.unique()
     }
     run_data = []
-
     for run in run_list:
         run_dict = {
             "id": run.id,
@@ -1765,88 +1719,16 @@ def flowcell_statistics(request, pk):
             "start_time": run.start_time,
             "last_read": run.last_read(),
         }
-
         run_data.append(run_dict)
-
     res = {
         "runs": run_data,
         "data_keys": data_keys,
         "data": result_dict,
         "date_created": datetime.datetime.now(),
     }
-
     return HttpResponse(
         json.dumps(res, cls=DjangoJSONEncoder), content_type="application/json"
     )
-
-
-# @api_view(["GET"])
-# def flowcell_speed(request, pk):
-#     window = 5
-#     flowcell = Flowcell.objects.get(pk=pk)
-#
-#     queryset = (
-#         FlowcellStatisticBarcode.objects.filter(flowcell=flowcell)
-#         .filter(barcode_name="All Reads")
-#         .order_by("sample_time")
-#     )
-#
-#     df = pd.DataFrame(
-#         list(
-#             queryset.values("sample_time", "status", "channel_presence", "total_length")
-#         )
-#     )
-#     if len(df.status.unique()) == 2:
-#         # We have pass and fail reads in the dataset
-#         # Convert channel presence strings to numpy array for later manipulation.
-#         df["channel_presence"] = df["channel_presence"].apply(
-#             lambda x: np.asarray(list(x), dtype=int)
-#         )
-#         # Convert the dataframe to stack channel_presence and total_length
-#         df = (
-#             df.groupby("sample_time")[["channel_presence", "total_length"]]
-#             .apply(lambda df: df.reset_index(drop=True))
-#             .unstack()
-#         )
-#         # Generate the total length across both pass and fail
-#         df["sum_total_length"] = df["total_length"][0] + df["total_length"][1]
-#         # Add the two channel presence arrays to obtain 0 values and values greater than 1 where a channel has been used
-#         df["sum_channel_presence"] = (
-#             df["channel_presence"][0] + df["channel_presence"][1]
-#         )
-#         # Calculate our channel count by counting the number of nonzero values in the array.
-#         # This gets around the fact that a channel might produce both a pass and fail read in the same one minute window
-#         df["chan_count"] = df["sum_channel_presence"].apply(
-#             lambda x: np.count_nonzero(x)
-#         )
-#         # calculate the mean channel count over a 10 minute window.
-#         df["mean_chan_count"] = df["chan_count"].rolling(window=window).mean()
-#         # calculate the mean read length seen in a rolling 10 minute window.
-#         df["mean_total_length"] = df["sum_total_length"].rolling(window=window).mean()
-#         # calculate the mean speed over those rolling windows in bases per second
-#         df["mean_speed"] = (
-#             df["mean_total_length"]
-#             .div(df["mean_chan_count"])
-#             .div(600)
-#             .round(decimals=0)
-#         )
-#     elif len(df.status.unique()) == 1:
-#         # We only have either pass or fail reads in the dataset
-#         df["channel_presence"] = df["channel_presence"].apply(
-#             lambda x: np.asarray(list(x), dtype=int)
-#         )
-#         df = df.groupby("sample_time")[["channel_presence", "total_length"]].apply(
-#             lambda df: df.reset_index(drop=True)
-#         )
-#         df["chan_count"] = df["channel_presence"].apply(lambda x: np.count_nonzero(x))
-#         df["mean_chan_count"] = df["chan_count"].rolling(window=window).mean()
-#         df["mean_total_length"] = df["total_length"].rolling(window=window).mean()
-#         df["mean_speed"] = (
-#             df["mean_total_length"].div(df["mean_chan_count"]).round(decimals=0)
-#         )
-#         df.reset_index(level=1, drop=True, inplace=True)
-#
-#     return Response(df["mean_speed"].to_json(orient="columns"))
 
 
 @api_view(["GET"])
@@ -2298,42 +2180,29 @@ def flowcell_tabs_list(request, pk):
         List of tabs with data for flowcell.
 
     """
-
     tabs = ["summary-data", "tasks", "sharing", "notifications"]
-
     #
     # Check for basecalled data
     #
     flowcell_summary_barcode_list = FlowcellSummaryBarcode.objects.filter(
         flowcell__id=pk
     )
-
     if flowcell_summary_barcode_list.count() > 0:
         tabs.append("basecalled-data")
         tabs.append("reads")
-
     minion_run_stats_list = MinionRunStats.objects.filter(run_id__flowcell__id=pk)
-
     if minion_run_stats_list.count() > 0:
         tabs.append("live-event-data")
-
     paf_rough_cov_list = PafRoughCov.objects.filter(flowcell_id=pk)
-
     if paf_rough_cov_list.count() > 0:
         tabs.append("sequence-mapping")
-
     chromosome = ExpectedBenefitChromosomes.objects.filter(task__flowcell__id=pk).last()
-
     if chromosome is not None:
         tabs.append("advanced-sequence-mapping")
-
     centrifuge_output_list = CentrifugeOutput.objects.filter(task__flowcell_id=pk)
-
     if centrifuge_output_list.count() > 0:
         tabs.append("metagenomics")
-
     # Check for assembly data
-
     # TODO add an actual check here
     if JobMaster.objects.filter(
             flowcell__id=pk, job_type__name="Track Artic Coverage"
@@ -2346,7 +2215,6 @@ def flowcell_tabs_list(request, pk):
                         .read_count
         ):
             tabs.append("artic")
-
     return Response(tabs)
 
 
