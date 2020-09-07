@@ -125,12 +125,6 @@ class MinionSerializer(serializers.HyperlinkedModelSerializer):
             return obj.currentrundetails.last().run.flowcell.size
         return "Unknown"
 
-    def get_flow_cell_id(self, obj):
-        try:
-            return obj.currentrundetails.last().run.flowcell.name
-        except AttributeError as e:
-            return "Unknown"
-
 
 class FastqReadTypeSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
