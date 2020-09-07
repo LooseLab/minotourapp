@@ -461,28 +461,19 @@ class RunHistogramSummarySerializer(serializers.ModelSerializer):
 class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
 
     barcodes = BarcodeSerializer(many=True, read_only=False, required=False)
-
     runs = RunSerializer(many=True, read_only=False, required=False)
-
-
-
     class Meta:
-
         model = Flowcell
-
         fields = ('url', 'name', 'runs', 'barcodes', 'id', 'has_fastq')
 
     def create(self, validated_data):
-
         #
         # Flowcell names must be unique for a particular user
         #
         flowcell, created = Flowcell.objects.get_or_create(**validated_data)
         flowcell.save()
-
         # Create tasks that need to be auto-created
         if created:
-
             JobMaster.objects.create(
                 flowcell=flowcell,
                 job_type=JobType.objects.get(name="UpdateFlowcellDetails"),
@@ -496,7 +487,6 @@ class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
                 # Auto create a mux notification
                 NotificationConditions(notification_type="mux", flowcell=flowcell,
                                        creating_user=flowcell.owner).save()
-
         return flowcell
 
 
