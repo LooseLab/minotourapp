@@ -41,7 +41,7 @@ def new_flowcell_message(sender, instance=None, created=False, **kwargs):
     """
     if created:
         create_and_save_message(
-            **{#
+            **{
                 "created": True,
                 "run": None,
                 "user": instance.owner,

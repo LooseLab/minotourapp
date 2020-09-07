@@ -242,7 +242,7 @@ def minion_statistic_check(condition):
         condition.last_minions_stats_id == 0
         and MinionRunStats.objects.filter(run__flowcell=condition.flowcell).count()
     ):
-        queryset = MinionRunStats.objects.filter(run__flowcell=condition.flowcell)[:10]
+        queryset = MinionRunStats.objects.filter(run__flowcell=condition.flowcell).order_by("-id")[:10]
         condition.last_minions_stats_id = queryset[9].id
     elif not MinionRunStats.objects.filter(run__flowcell=condition.flowcell).count():
         return

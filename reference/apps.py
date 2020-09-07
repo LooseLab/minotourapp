@@ -1,6 +1,8 @@
 """Apps config"""
 from django.apps import AppConfig
 
+from reference.utils import check_media_roots_exist
+
 
 class ReferenceConfig(AppConfig):
     """
@@ -15,5 +17,4 @@ class ReferenceConfig(AppConfig):
         -------
 
         """
-        from reference.utils import check_media_roots_exist
         check_media_roots_exist()
