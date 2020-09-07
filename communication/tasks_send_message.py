@@ -251,8 +251,9 @@ def minion_statistic_check(condition):
             run__flowcell=condition.flowcell, id__gte=condition.last_minions_stats_id,
         )
         condition.last_minions_stats_id = queryset.last().id
+    condition.save()
     if condition.notification_type == "volt":
-        queryset.values_list("voltage_value", flat=True)
+        queryset = queryset.values_list("voltage_value", flat=True)
     else:
         queryset = [minion_statistic.occupancy() for minion_statistic in queryset]
     upper_list = list(filter(lambda x: x >= upper_limit, queryset))
@@ -260,10 +261,9 @@ def minion_statistic_check(condition):
     if len(upper_list) > 6:
         text = return_tweet(
             "volt_occu",
-            upper_limit,
-            "Voltage",
-            condition.flowcell.name,
-            queryset[len(queryset)],
+            volt_occu="Voltage",
+            limit=upper_limit,
+            flowcell=condition.flowcell.name,
         )
         message = Message(
             recipient=condition.creating_user,
@@ -275,10 +275,9 @@ def minion_statistic_check(condition):
     elif len(lower_list) > 6:
         text = return_tweet(
             "volt_occu",
-            lower_limit,
-            "Voltage",
-            condition.flowcell.name,
-            queryset[len(queryset)],
+            volt_occu="Voltage",
+            limit=lower_limit,
+            flowcell=condition.flowcell.name,
         )
         message = Message(
             recipient=condition.creating_user,
