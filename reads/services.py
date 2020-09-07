@@ -41,7 +41,8 @@ def new_flowcell_message(sender, instance=None, created=False, **kwargs):
     """
     if created:
         create_and_save_message(
-            **{
+            **{#
+                "created": True,
                 "run": None,
                 "user": instance.owner,
                 "title": f"New flowcell {instance.name} created with sample name "
@@ -74,6 +75,7 @@ def new_run_message(sender, instance=None, created=False, **kwargs):
     if created:
         create_and_save_message(
             **{
+                "created": True,
                 "user": instance.owner,
                 "title": f"New run {instance.name} created on flowcell "
                 f"{instance.flowcell.name} at {datetime.datetime.now()}.",
@@ -128,6 +130,7 @@ def new_minion_message(sender, instance=None, created=False, **kwargs):
             for chunk in chunks:
                 create_and_save_message(
                     **{
+                        "created": True,
                         "user": user,
                         "title": chunk,
                         "run": instance.run,
