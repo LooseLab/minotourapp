@@ -7,98 +7,104 @@
 
         <!-- Main content -->
         <section class="content">
-        <div class="container-fluid">
-            <div class="card card-outline card-primary">
+            <div class="container-fluid">
+                <div class="card card-outline card-primary">
 
-                <h5 class="card-header">User Profile - Below are your registered user details. Your access token is
-                    required to upload data to minoTour.</h5>
-                <!-- /.box-header -->
-                <!-- form start -->
-                {{ form.non_field_errors }}
-                <div class="card-body">
-
+                    <h5 class="card-header">User Profile - Below are your registered user details. Your access token is
+                        required to upload data to minoTour.</h5>
+                    <!-- /.box-header -->
+                    <!-- form start -->
+                    {{ form.non_field_errors }}
                     <form class="form-horizontal" method="post" action="{% url 'profile' %}">
                         {% csrf_token %}
-                        <div class="form-group">
-                            <label class="col-sm-2 ">Username</label>
+                        <div class="card-body">
 
-                            <div class="col-sm-10 " style="height: 100%; text-align: left;">
-                                {{ request.user.username }}
+
+                            <div class="form-group">
+                                <label class="col-sm-2 ">Username</label>
+
+                                <div class="col-sm-10 " style="height: 100%; text-align: left;">
+                                    {{ request.user.username }}
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="id_email" class="col-sm-2 ">Email</label>
+                            <div class="form-group">
+                                <label for="id_email" class="col-sm-2 ">Email</label>
 
-                            <div class="col-sm-10">
-                                {{ form.email.errors }}
-                                <input class="stretchy profile" type="email" name="email" id="id_email" maxlength="120"
-                                       required
-                                       value="{{ request.user.email }}">
+                                <div class="col-sm-10">
+                                    {{ form.email.errors }}
+                                    <input class="stretchy profile" type="email" name="email" id="id_email"
+                                           maxlength="120"
+                                           required
+                                           value="{{ request.user.email }}">
+                                </div>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="col-sm-2 ">Access Token</label>
+                            <div class="form-group">
+                                <label class="col-sm-2 ">Access Token</label>
 
-                            <div class="col-sm-10 " style="height: 100%; text-align: left;">
-                                <span id="token">{{ authToken }}</span>&nbsp;<span id="btn-copy-token"
-                                                                                   class="btn btn-info btn-sm">Copy
+                                <div class="col-sm-10 " style="height: 100%; text-align: left;">
+                                    <span id="token">{{ authToken }}</span>&nbsp;<span id="btn-copy-token"
+                                                                                       class="btn btn-info btn-sm">Copy
                             </span>
-                                <span id="copy-msg"></span><br>
-                            </div>
+                                    <span id="copy-msg"></span><br>
+                                </div>
 
-                        </div>
-                        <div class="form-group">
-                            <label for="id_twitter_handle" class="col-sm-2 ">Twitter Handle</label>
-
-                            <div class="col-sm-10">
-                                {{ form.twitter_handle.errors }}
-                                <input class="stretchy" type="text" name="twitter_handle" id="id_twitter_handle"
-                                       maxlength="32"
-                                       value="{{ userDetails.twitterhandle }}">
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="col-sm-10">
-                                <div class="checkbox">
-                                    <label>
+                            <div class="form-group">
+                                <label for="id_twitter_handle" class="col-sm-2 ">Twitter Handle</label>
+
+                                <div class="col-sm-10">
+                                    {{ form.twitter_handle.errors }}
+                                    <input class="stretchy" type="text" name="twitter_handle" id="id_twitter_handle"
+                                           maxlength="32"
+                                           value="{{ userDetails.twitterhandle }}">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-sm-10">
+                                    <div class="checkbox">
                                         {{ form.receive_emails.errors }}
                                         {% if userDetails.email %}
-                                            <input type="checkbox" name="receive_emails" id="id_receive_emails" checked>
-                                            Receive Emails
+                                            <label class="centered-label" for="id_receive_emails">
+                                                Receive Emails:
+                                            </label>
+                                            <input class="centered-checkbox" type="checkbox" name="receive_emails" id="id_receive_emails"
+                                                   checked>
                                         {% else %}
-                                            <input type="checkbox" name="receive_emails" id="id_receive_emails"> Receive
-                                            Emails
+                                            <label class="centered-label" for="id_receive_emails">
+                                                Receive Emails:
+                                            </label>
+                                            <input class="centered-checkbox" type="checkbox" name="receive_emails" id="id_receive_emails">
                                         {% endif %}
-                                    </label>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="col-sm-10">
-                                <div class="checkbox">
-                                    <label>
+                                <div class="col-sm-10">
+                                    <div class="checkbox">
                                         {{ form.receive_tweets.errors }}
                                         {% if userDetails.tweet %}
-                                            <input type="checkbox" name="receive_tweets" id="id_receive_tweets" checked>
-                                            Receive Tweets
+                                            <label class="centered-label" for="id_receive_tweets">
+                                                Receive Tweets:
+                                            </label>
+                                            <input class="centered-checkbox" type="checkbox" name="receive_tweets" id="id_receive_tweets"
+                                                   checked>
                                         {% else %}
-                                            <input type="checkbox" name="receive_tweets" id="id_receive_tweets"> Receive
-                                            Tweets
+                                            <label class="centered-label" for="id_receive_tweets">
+                                                Receive Tweets:
+                                            </label>
+                                            <input class="centered-checkbox" type="checkbox" name="receive_tweets" id="id_receive_tweets">
                                         {% endif %}
-                                    </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        <!-- /.box-body -->
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-info pull-right">Save</button>
+                        </div>
+                        <!-- /.box-footer -->
                     </form>
 
                 </div>
-                <!-- /.box-body -->
-                <div class="card-footer">
-                    <button type="submit" class="btn btn-info pull-right">Save</button>
-                </div>
-                <!-- /.box-footer -->
             </div>
-        </div>
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 
@@ -107,30 +113,30 @@
 {% block javascript %}
 
     <script>
-        /**
-         * Set a message and clear it three seconds later.
-         * @param {string} msg The messsage to set on resolution of the promise.
-         */
-        function setMessage(msg) {
-            $("#copy-msg").text(msg)
-            setInterval(() => {
-                $("#copy-msg").text("")
-            }, 3000)
-        }
+      /**
+       * Set a message and clear it three seconds later.
+       * @param {string} msg The messsage to set on resolution of the promise.
+       */
+      function setMessage (msg) {
+        $("#copy-msg").text(msg)
+        setInterval(() => {
+          $("#copy-msg").text("")
+        }, 3000)
+      }
 
-        $(function () {
-            $('#btn-copy-token').click(function () {
-                navigator.clipboard.writeText($("#token").text()).then(() => {
-                    setMessage("Text copied to clipboard.")
-                }, (err) => {
-                    setMessage("Copy not supported or blocked.  Press Ctrl+c to copy.")
-                    console.error(err)
-                })
-            });
+      $(function () {
+        $('#btn-copy-token').click(function () {
+          navigator.clipboard.writeText($("#token").text()).then(() => {
+            setMessage("Text copied to clipboard.")
+          }, (err) => {
+            setMessage("Copy not supported or blocked.  Press Ctrl+c to copy.")
+            console.error(err)
+          })
         });
-        const topPadding = $(".main-header").height() + 16;
-        $(".content-wrapper").css("padding-top", `${topPadding}px`);
+      });
+      const topPadding = $(".main-header").height() + 16;
+      $(".content-wrapper").css("padding-top", `${topPadding}px`);
 
-        setActiveNavbarItem(7);
+      setActiveNavbarItem(7);
     </script>
 {% endblock %}

@@ -303,14 +303,6 @@ h1 {
     }
 }
 
-/*p {*/
-/*    color: #f1c40f;*/
-/*    font-size: 1.2rem;*/
-/*    width: 100%;*/
-/*    !*padding: 20px;*!*/
-/*    !*text-align: center;*!*/
-/*}*/
-
 .btn-cust {
     box-sizing: border-box;
     -webkit-appearance: none;
@@ -627,4 +619,10 @@ transition-timing-function: ease-out;
 }
 .barcode-meta-tab:hover{
     cursor: pointer;
+}
+.centered-checkbox{
+    vertical-align: middle;
+}
+.centered-label{
+    margin-bottom: 0;
 }
