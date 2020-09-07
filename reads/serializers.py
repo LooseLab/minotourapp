@@ -107,7 +107,6 @@ class MinionSerializer(serializers.HyperlinkedModelSerializer):
     Serialiser for the Minion model.
     """
     channel_count = serializers.SerializerMethodField()
-    flow_cell_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Minion
