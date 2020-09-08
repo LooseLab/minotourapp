@@ -1,5 +1,7 @@
 from django.apps import AppConfig
 
+from artic.utils import check_artic_static_exists
+
 
 class ArticConfig(AppConfig):
     """
@@ -14,5 +16,4 @@ class ArticConfig(AppConfig):
         -------
 
         """
-        from artic.utils import check_artic_static_exists
         check_artic_static_exists()
