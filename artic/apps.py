@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 
 
+
 class ArticConfig(AppConfig):
     """
     The config file for the Artic app.
