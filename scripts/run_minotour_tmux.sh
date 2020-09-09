@@ -35,7 +35,7 @@ tmux split-window -v -p 70 \;
 #tmux send-keys "cd .." C-m \;
 tmux send-keys "source $PYTHON_VENV" C-m \;
 tmux send-keys "source $ENVIRONMENT_FILE" C-m \;
-tmux send-keys "celery -A minotourapp worker -l info -f ~/data/logs/celery.log --concurrency $WORKER_COUNT -Ofair" C-m \;
+tmux send-keys "celery -A minotourapp worker -l info -f $MT_LOG_FOLDER/celery.log --concurrency $WORKER_COUNT -Ofair" C-m \;
 tmux split-window -h \; 
 tmux send-keys "mtlog" C-m \;
 tmux new-window -a -n zshelly \;
