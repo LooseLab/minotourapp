@@ -589,7 +589,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
         # Chromosome dict contains all the chromsome names keyed to all the info we have about that chromosome
         chromdict = dict()
         # Get the chromosome we have from this reference
-        chromosomes = reference_info.referencelines.all()
+        chromosomes = reference_info.reference_lines.all()
         # For each chromosome
         for chromosome in chromosomes:
             chromdict[chromosome.line_name] = chromosome
