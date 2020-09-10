@@ -67,22 +67,18 @@ def split_flowcell(
             sample_name=to_flowcell_name,
             owner=from_flowcell.owner,
         )
-
         JobMaster.objects.create(
             flowcell=to_flowcell,
             job_type=JobType.objects.filter(name="UpdateFlowcellDetails")[0],
             last_read=0,
         )
-
         logger.info(
             "Moving run {} from flowcell {} to flowcell {}".format(
                 run.id, from_flowcell.id, to_flowcell.id
             )
         )
-
         run.flowcell = to_flowcell
         run.save()
-
     else:
         from_flowcell = Flowcell.objects.get(pk=from_flowcell_id)
         to_flowcell = Flowcell.objects.get(pk=to_flowcell_id)
