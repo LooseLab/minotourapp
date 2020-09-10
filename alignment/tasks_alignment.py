@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import redis
 from celery.utils.log import get_task_logger
+from django.db import connection
 from django.db.models import F, Max
 from numba import njit
 
@@ -325,6 +326,12 @@ def fetch_intmd_rough_cov_to_aggregate():
         return
     # lookup_dict = {prc.id: prc for prc in querysets}
     df_to_aggregate = pd.DataFrame.from_records(querysets.values())
+    last_id = querysets.last().id
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "DELETE FROM reads_fastqread where id<=%s",
+            [last_id],
+        )
     querysets.delete()
     # df_to_aggregate["ORM"] = df_to_aggregate["id"].map(lookup_dict)
     df_to_aggregate["bin_shift"] = df_to_aggregate["bin_position_start"].shift(-1)
