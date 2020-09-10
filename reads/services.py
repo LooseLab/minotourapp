@@ -39,7 +39,6 @@ def new_flowcell_message(sender, instance=None, created=False, **kwargs):
         None
 
     """
-    print ("!!!!!!!!!!!!!!! FLOWCELL_POST_SAVE")
     if created:
         create_and_save_message(
             **{
