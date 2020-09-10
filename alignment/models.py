@@ -138,7 +138,7 @@ class PafRoughCovIntermediate(models.Model):
         default=False
     )
     def __str__(self):
-        return f"{self.flowcell} {self.bin_position_start} - {self.bin_position_end}, Coverage: {self.bin_coverage}"
+        return f"{self.flowcell} {self.bin_position_start} - {self.bin_position_end}, Change: {self.bin_change}"
 
 
 class PafSummaryCov(models.Model):
