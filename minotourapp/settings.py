@@ -253,7 +253,7 @@ CELERY_BEAT_SCHEDULE = {
     # Run the thing on the thing
     'clear_intermediate_alignment': {
         'task': 'alignment.tasks_alignment.aggregate_intermediate_table',
-        'schedule': 120,
+        'schedule': 45,
         'options': {
             "queue": "minimap"
         }
