@@ -5,51 +5,46 @@
 {% block content %}
 
     <div style="background-color: white">
-
-        <!-- Content Header (Page header) -->
-        <section class="content-header">
-            <h1>Flowcell Management
-                <small> - select a Run.</small>
-            </h1>
-        </section>
-
         <!-- Main content -->
-        <section class="content">
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-md-12">
-
                         <div class="alert alert-success text-center" role="alert">
                             Thanks. The splitting process has started.
                             Links for the origin and destination flowcells are below.
                             This process can take some time to finish, in particular with large flowcells.
                         </div>
 
-                        <div class='card '>
+                        <div class='card card-primary card-outline'>
                             <div class='card-header'>
-                                <h3 class='card-header'>Origin</h3>
+                                <h5>
+                                    Origin
+                                <i class="fas fa-arrow-right"></i>
+                                </h5>
                             </div>
                             <div class='card-body'>
-                                Run {{ run.runid }}, Flowcell <a
+                                <h6>Run: {{ run.runid }} moved from Flowcell: <a
                                     href="{% url 'flowcell-index' from_flowcell.id %}">{{ from_flowcell.name }}
-                                ({{ from_flowcell.sample_name }})</a>
+                                ({{ from_flowcell.sample_name }})</a></h6>
                             </div>
                         </div>
 
-                        <div class='card '>
+                        <div class='card card-primary card-outline'>
                             <div class='card-header'>
-                                <h3 class='card-header'>Destination</h3>
+                                <h5>
+                                    Destination
+                                <i class="fas fa-arrow-left"></i>
+                                </h5>
                             </div>
                             <div class='card-body'>
-                                Flowcell <a href="{% url 'flowcell-index' to_flowcell.id %}">{{ to_flowcell.name }}
-                                ({{ to_flowcell.sample_name }})</a>
+                                <h6>Run: {{ run.runid }} moved to Flowcell: <a href="{% url 'flowcell-index' to_flowcell.id %}">{{ to_flowcell.name }}
+                                ({{ to_flowcell.sample_name }})</a></h6>
                             </div>
                         </div>
 
                     </div>
                 </div>
             </div>
-        </section>
     </div>
 {% endblock %}
 
