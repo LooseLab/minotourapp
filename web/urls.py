@@ -16,7 +16,6 @@ urlpatterns = [
     url(r'^private/experiments/create/$', views.experiments_create, name='experiment-create'),
     url(r'^private/experiments/(?P<pk>[0-9]+)/delete/$', views.ExperimentDelete.as_view(), name='experiment-delete'),
     url(r'^private/messages/$', views.render_messages, name="messages"),
-    url(r'^private/sent_tweets/$', views.new_messages_list, name='sent-messages-list'),
     url(r'^private/flowcell_manager/$', views.flowcell_manager, name='flowcell-manager'),
     url(r'^private/flowcell_manager/(?P<pk>[0-9]+)/$', views.flowcell_manager_runs, name='flowcell-manager-runs'),
     url(r'^private/flowcell_manager/(?P<pk>[0-9]+)/split/$', views.flowcell_manager_runs_split,
