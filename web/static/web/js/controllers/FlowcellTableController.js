@@ -30,8 +30,6 @@ class FlowcellTableController {
      */
   renderTable () {
     const that = this
-    var table_all_runs
-
     this._datatableObj = $(`#${this._elementId}`).DataTable({
       // callback for each created row, add styling class so cursor is pointer showing it's a link
       createdRow: function (row, data, index) {
@@ -69,9 +67,7 @@ class FlowcellTableController {
         {
           targets: 3,
           data: `start_time`,
-          render: function (data, type, full, meta) {
-            return `${new Date(data).toISOString()}`
-          }
+          render: (data, type, full, meta) => `${new Date(data).toISOString()}`
         },
         {
           targets: 4,
@@ -89,7 +85,7 @@ class FlowcellTableController {
         {
           targets: 7,
           data: `total_read_length`,
-          render: function (data, type, row) {
+          render: (data, type, row) => {
             // The below function returns the yield in a human readable format
             if (type === `display` || type === `filter`) {
               var UNITS = [``, `k`, `M`, `G`, `T`, `P`, `E`, `Z`]
