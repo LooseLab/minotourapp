@@ -159,15 +159,13 @@ def send_messages():
                 )
             except (TwitterHTTPError, TwitterError) as e:
                 logger.error(str(e))
-                return
             finally:
-                message_sent = True
-                if message_sent:
-                    new_message.delivered_date = datetime.datetime.now(
-                        tz=datetime.timezone.utc
-                    )
-                    new_message.save()
-                    time.sleep(1)
+                new_message.delivered_date = datetime.datetime.now(
+                    tz=datetime.timezone.utc
+                )
+                new_message.save()
+                time.sleep(1)
+                return
 
 
 def coverage_notification(condition):
@@ -342,7 +340,7 @@ def check_artic_has_fired(condition):
     ).values("barcode__name")
     for barcode in queryset:
         time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        m = Message(
+        m, created = Message.objects.get_or_create(
             recipient=condition.creating_user,
             sender=condition.creating_user,
             title=f"Artic pipeline has finished for barcode {barcode['barcode__name']} at {time}",
@@ -366,11 +364,11 @@ def check_artic_sufficient_coverage(condition):
         flowcell_id=condition.flowcell, has_sufficient_coverage=True
     ).values("barcode__name", "average_coverage")
     for barcode in queryset:
-        m = Message(
+        time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        m, created = Message.objects.get_or_create(
             recipient=condition.creating_user,
             sender=condition.creating_user,
             title=f"Sufficient Coverage reached for Barocde {barcode['barcode__name']} in Artic task,"
-            f" with an average coverage of {barcode['average_coverage']}",
+            f" with an average coverage of {barcode['average_coverage']} at {time}.",
             flowcell=condition.flowcell,
         )
-        m.save()
