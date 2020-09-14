@@ -11,6 +11,7 @@ class MessageController {
         url: `/web/private/sent_tweets/`,
         method: `GET`
       },
+      order: [[1, `desc`]],
       columns: [
         { data: `title` },
         { data: `created_date` },
