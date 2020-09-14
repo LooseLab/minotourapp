@@ -194,17 +194,11 @@ def flowcell_reads_data(request):
         "run__runid",
         "barcode__name",
     ]
-
     flowcell_id = int(request.GET.get("flowcell_id", 0))
-
     draw = int(request.GET.get("draw", 0))
-
     search_value = request.GET.get("search[value]", "")
-
     start = int(request.GET.get("start", 0))
-
     length = int(request.GET.get("length", 10))
-
     end = start + length
     # Which column is ordering
     order_column = request.GET.get("order[0][column]", "")
@@ -214,77 +208,45 @@ def flowcell_reads_data(request):
     run_list = Run.objects.filter(flowcell__id=flowcell_id).filter(
         flowcell__owner=request.user
     )
-
     run_id_list = []
-
     for run in run_list:
-
         run_id_list.append(run.id)
-
     if not search_value == "":
-
         if search_value[0] == ">":
-
             reads_temp = FastqRead.objects.filter(run__in=run_id_list).filter(
                 sequence_length__gt=search_value[1:]
             )
-            # .filter(run__flowcell_id=flowcell_id)\
-            # .filter(run__flowcell__owner=request.user)\
-
         elif search_value[0] == "<":
-
             reads_temp = FastqRead.objects.filter(run__in=run_id_list).filter(
                 sequence_length__lt=search_value[1:]
             )
-            # .filter(run__flowcell_id=flowcell_id) \
-            # .filter(run__flowcell__owner=request.user)\
-
         else:
-
             reads_temp = FastqRead.objects.filter(run__in=run_id_list).filter(
                 read_id__contains=search_value
             )
-            # .filter(run__flowcell_id=flowcell_id) \
-            # .filter(run__flowcell__owner=request.user) \
-
     else:
-
         reads_temp = FastqRead.objects.filter(run__in=run_id_list)
-        # .filter(run__flowcell_id=flowcell_id)\
-        # .filter(run__flowcell__owner=request.user)\
-    print(order_column)
     if order_column:
-
-        print("ITS TRUE")
         if order_dir == "desc":
-
             reads_temp2 = reads_temp.order_by(
                 "-{}".format(query_columns[int(order_column)])
             )
-
         else:
-
             reads_temp2 = reads_temp.order_by(
                 "{}".format(query_columns[int(order_column)])
             )
-
     else:
         reads_temp2 = reads_temp
-    print(start, end)
     reads = reads_temp2[start:end].values(
         "run__runid", "barcode__name", "read_id", "read", "channel", "sequence_length"
     )
-    print(reads)
-
     records_total = reads_temp.count()
-
     result = {
         "draw": draw,
         "recordsTotal": records_total,
         "recordsFiltered": records_total,
         "data": list(reads),
     }
-
     return JsonResponse(result, safe=True)
 
 

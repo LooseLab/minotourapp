@@ -114,13 +114,12 @@ def run_pangolin_command(base_results_directory, barcode_name):
 
     out, err = proc.communicate()
     if not out and err:
-        print("We are done here. Pangolin out!")
-        print(out)
-        print(err)
+        logger.debug(out)
+        logger.debug(err)
     else:
-        print("¯\_(ツ)_/¯")
-        print(str(out))
-        print(err)
+        logger.info("¯\_(ツ)_/¯")
+        logger.debug(str(out))
+        logger.debug(err)
 
     if re_gzip:
         logger.debug(f"ReGzipping {barcode_name}.consensus.fasta")

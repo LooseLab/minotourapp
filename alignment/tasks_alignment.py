@@ -626,9 +626,7 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
     if not results:
         logger.info("No mapping results.")
         return
-    print(results)
     paf_df = pd.DataFrame(results)[0].str.split("\t", expand=True)
-    print(paf_df)
     paf_df = paf_df.rename(
         columns={
             0: "read_id",
@@ -641,12 +639,9 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
         }
     )
     paf_df = paf_df.apply(pd.to_numeric, errors="ignore")
-    print(paf_df.head())
-    print(paf_df.keys())
     paf_df["chromosome_pk"] = paf_df["tsn"].map(chromosome_dict)
     paf_df.set_index("read_id", inplace=True)
     fasta_df_barcode.set_index("read_id", inplace=True)
-    print(fasta_df_barcode.head())
     df = pd.merge(
         paf_df,
         fasta_df_barcode[
@@ -663,8 +658,6 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
         left_index=True,
         right_index=True,
     )
-    print(df.head())
-
     df["mapping_length"] = df["mapping_end"] - df["mapping_start"]
     # All reads barcode Id
     run_id = np.unique(df["run_id"].values)[0]

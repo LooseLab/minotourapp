@@ -98,7 +98,6 @@ def convert_amplicon_bed_file_to_json(filepath, json_file, artic_results_primer_
     """
     # TODO not dynamic, how make dynamic, very hardcoded
     # TODO Dropdown on task start for scheme dir?
-    print(filepath)
     df = pd.read_csv(filepath, sep="\t", header=None)
     df = df[df.columns[~df.isnull().all()]]
     df["primer_number"] = pd.to_numeric(df[3].str.split("_").str[1])
@@ -223,7 +222,6 @@ def remove_duplicate_sequences_numpy(array, master=False, minimum=None):
 
     # if this is for the coverage master chart we need 50000 values or less for the sake of the browser
     if len(x_y_values) > 50000 and master:
-        print("Down sampling for master")
         x_y_values = sampler(x_y_values)
 
     return x_y_values, xmax, ymax, ymin

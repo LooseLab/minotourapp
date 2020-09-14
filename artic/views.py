@@ -40,14 +40,12 @@ def fire_conditions_list(request, pk):
         data.pop("_state")
         return Response(data, status=status.HTTP_200_OK)
     elif request.method == "POST":
-        print(request.data)
         obj, created = ArticFireConditions.objects.update_or_create(
             flowcell_id=int(pk),
             defaults={"ninety_percent_bases_at": request.data.get("90-input", 0),
                       "ninety_five_percent_bases_at": request.data.get("95-input", 0),
                       "ninety_nine_percent_bases_at": request.data.get("99-input", 0)},
         )
-        print(created)
         return Response("Artic firing conditions updated.", status=status.HTTP_201_CREATED)
 
 @api_view(["GET"])
@@ -127,17 +125,12 @@ def get_artic_master_chart_data(request):
     if log_coverage:
         coverage = coverage.astype(np.float16)
         coverage[coverage == 0] = 0.1
-
-    print(coverage[coverage == np.inf])
     # Remove duplicate elements in series
     x_y_cov, xmax_cov, ymax_cov, ymin_cov = remove_duplicate_sequences_numpy(
         coverage, True
     )
 
     x_y_cov = np.array(x_y_cov).round(1)
-    print(x_y_cov.min())
-    print(xmax_cov)
-    print(ymax_cov)
     # The return dictionary
     data_dict = {
         "coverage": {"xmax": xmax_cov, "ymax": ymax_cov, "data": x_y_cov},
@@ -611,7 +604,6 @@ def rerun_artic_command(request):
     -------
 
     """
-    print(request.data)
     flowcell_id = request.data.get("flowcellId", None)
     selected_barcode = request.data.get("selectedBarcode", None)
     if not flowcell_id or not selected_barcode:

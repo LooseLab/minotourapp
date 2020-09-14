@@ -129,7 +129,6 @@ class Command(BaseCommand):
             for ref_file in reference_files:
                 # Get the species name of this reference, no file suffixes
                 ref_file_stem = str(ref_file.stem).partition(".")[0]
-                print(ref_file)
                 print("Processing file: {}".format(ref_file.name))
                 if ref_file_stem in previous_ref:
                     print(

@@ -26,7 +26,6 @@ def simple_condition_create(request):
     -------
 
     """
-    print(request.data)
     form = NotificationConditionForm(request.data)
     if form.is_valid():
         new_condition = form.save(commit=False)
@@ -143,20 +142,10 @@ def create_notification_conditions(flowcell, user, **kwargs):
         Any error message (If any.)
 
     """
-    print(kwargs)
-    # reference = kwargs.get("reference", None)
-    # chromosome = kwargs.get("chromosome", None)
-    # barcode = kwargs.get("barcode", None)
-    # set_repeat = kwargs.get("set_repeat", False)
-    # coverage_target = kwargs.get("coverage_target", 0)
-
     lookup_dict = dict(NotificationConditions.NOTIFICATION_CHOICES)
-
     # Lookup the human readable notification type
     noti_type = lookup_dict[kwargs.get("notification_type")]
-
     # Check for my uniqueness
-
     check = NotificationConditions.objects.filter(
         flowcell=flowcell, creating_user=user, **kwargs
     )
