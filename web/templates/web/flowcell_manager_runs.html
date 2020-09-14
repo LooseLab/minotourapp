@@ -5,123 +5,111 @@
 {% block content %}
 
     <div class="content-wrapper" style="background-color: white">
-
-        <!-- Content Header (Page header) -->
-        <section class="content-header">
-        </section>
-
         <!-- Main content -->
-        <section class="content">
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="card ">
-                            <div class="card-header">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card card-outline card-primary">
+                        <div class="card-header">
 
-                                <h2>Flowcell Management
-                                    <small> - select a Run.</small>
-                                </h2>
-                            </div>
-                            <h3 class="card-subtitle mb-2 text-muted" style="padding: 10px 10px 0px 1.25rem;">Flowcell name: <strong
-                                    id="name-flowcell">{{ flowcell.name }}</strong> Sample name:
-                                <strong>{{ flowcell.sample_name }}</strong></h3>
-                            <form method="POST" action="{% url "flowcell-manager-runs-split" 1 %}">
-
-                                <div class="card-body">
-
-                                    {% for record in run_list %}
-
-                                        {% if forloop.first %}
-
-                                            <div class="table-responsive">
-                                            <input type="hidden" name="flowcell_id" value="{{ flowcell.id }}"/>
-                                            {% csrf_token %}
-
-                                            <table class="table">
-                                            <thead>
-                                            <th colspan="2"></th>
-                                            <th colspan="4" align="center">Live data</th>
-                                            <th colspan="7" align="center">Basecalled data</th>
-                                            </thead>
-                                            <thead>
-                                            <th>Run</th>
-                                            <th>Runid</th>
-                                            <th>Run Start Time</th>
-                                            <th align="right">Flowcell ID</th>
-                                            <th>Sample Name</th>
-                                            <th>Experiment Name</th>
-                                            <th align="right">First Read</th>
-                                            <th align="right">Last Read</th>
-                                            <th align="right">Read Count</th>
-                                            <th align="right">Yield</th>
-                                            <th align="right">Min Read Length</th>
-                                            <th align="right">Avg Read Length</th>
-                                            <th align="right">Max Read Length</th>
-                                            </thead>
-                                            <tbody>
-
-                                        {% endif %}
-
-                                        <tr>
-                                            <td><input type="radio" name="run_id" value="{{ record.id }}"></td>
-                                            <td>{{ record.runid }}</td>
-                                            <td align="right">{{ record.run_start_time }}</td>
-                                            <td align="right">{{ record.flowcell_id }}</td>
-                                            <td>{{ record.sample_name }}</td>
-                                            <td>{{ record.experiment_name }}</td>
-                                            <td align="right">{{ record.first_read_start_time }}</td>
-                                            <td align="right">{{ record.last_read_start_time }}</td>
-                                            <td align="right">{{ record.read_count|intcomma }}</td>
-                                            <td align="right">{{ record.total_read_length|intcomma }}</td>
-                                            <td align="right">{{ record.min_read_length|intcomma }}</td>
-                                            <td align="right">{{ record.avg_read_length|intcomma }}</td>
-                                            <td align="right">{{ record.max_read_length|intcomma }}</td>
-                                        </tr>
-
-                                    {% endfor %}
-
-                                    </tbody>
-                                    </table>
-
-                                    <div class="radio">
-                                        <label>
-                                            <input type="radio" name="new_or_existing_flowcell" value="new">
-                                            Move to new flowcell
-                                        </label>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <input class="form-control" type="text" name="new_flowcell_name">
-                                    </div>
-
-                                    <div class="radio">
-                                        <label>
-                                            <input type="radio" name="new_or_existing_flowcell" value="existing">
-                                            Move to existing flowcell
-                                        </label>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <select class="form-control" name="existing_flowcell_id">
-                                            {% for flowcell in flowcell_list %}
-                                                <option value="{{ flowcell.id }}">{{ flowcell.name }}
-                                                    - {{ flowcell.sample_name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                    </div>
-                                </div>
-                                <div class="card-footer">
-                                    <input type="submit" value="Split flowcell" class="btn btn-primary"
-                                           id="btn_task_create">
-                                </div>
-
-                            </form>
+                            <h5><i class="fas fa-table"></i>
+                                Flowcell Management
+                                <small> - select a Run to move.</small>
+                            </h5>
                         </div>
+                        <h6 class="card-subtitle mb-2 text-muted" style="padding: 10px 10px 0 1.25rem;">Flowcell name:
+                            <strong
+                                    id="name-flowcell">{{ flowcell.name }}</strong> Sample name:
+                            <strong>{{ flowcell.sample_name }}</strong></h6>
+                        <form method="POST" action="{% url "flowcell-manager-runs-split" 1 %}">
+                            <div class="card-body">
+                                {% for record in run_list %}
+
+                                    {% if forloop.first %}
+                                        <div class="table-responsive">
+                                        <input type="hidden" name="flowcell_id" value="{{ flowcell.id }}"/>
+                                        {% csrf_token %}
+                                        <table class="table">
+                                        <thead>
+                                        <th colspan="2"></th>
+                                        <th colspan="4" style="text-align:left">Live data</th>
+                                        <th colspan="7" style="text-align:left">Basecalled data</th>
+                                        </thead>
+                                        <thead>
+                                        <th>Run</th>
+                                        <th>Runid</th>
+                                        <th>Run Start Time</th>
+                                        <th>Flowcell ID</th>
+                                        <th>Sample Name</th>
+                                        <th>Experiment Name</th>
+                                        <th>First Read</th>
+                                        <th>Last Read</th>
+                                        <th>Read Count</th>
+                                        <th>Yield</th>
+                                        <th>Min Read Length</th>
+                                        <th>Avg Read Length</th>
+                                        <th>Max Read Length</th>
+                                        </thead>
+                                        <tbody>
+                                    {% endif %}
+                                    <tr>
+                                        <td><input type="radio" name="run_id" value="{{ record.id }}"></td>
+                                        <td>{{ record.runid }}</td>
+                                        <td>{{ record.run_start_time }}</td>
+                                        <td>{{ record.flowcell_id }}</td>
+                                        <td>{{ record.sample_name }}</td>
+                                        <td>{{ record.experiment_name }}</td>
+                                        <td>{{ record.first_read_start_time }}</td>
+                                        <td>{{ record.last_read_start_time }}</td>
+                                        <td>{{ record.read_count|intcomma }}</td>
+                                        <td>{{ record.total_read_length|intcomma }}</td>
+                                        <td>{{ record.min_read_length|intcomma }}</td>
+                                        <td>{{ record.avg_read_length|intcomma }}</td>
+                                        <td>{{ record.max_read_length|intcomma }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                                </table>
+
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="new_or_existing_flowcell" value="new">
+                                        Move to new flowcell
+                                    </label>
+                                </div>
+
+                                <div class="form-group">
+                                    <input class="form-control" type="text" name="new_flowcell_name">
+                                </div>
+
+                                <div class="radio">
+                                    <label>
+                                        <input type="radio" name="new_or_existing_flowcell" value="existing">
+                                        Move to existing flowcell
+                                    </label>
+                                </div>
+
+                                <div class="form-group">
+                                    <select class="form-control" name="existing_flowcell_id">
+                                        {% for flowcell in flowcell_list %}
+                                            <option value="{{ flowcell.id }}">{{ flowcell.name }}
+                                                - {{ flowcell.sample_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <input type="submit" value="Split flowcell" class="btn btn-primary"
+                                       id="btn_task_create">
+                            </div>
+
+                        </form>
                     </div>
                 </div>
             </div>
-            <!-- Main top nav bar -->
+        </div>
+        <!-- Main top nav bar -->
 
     </div>
     </div>
@@ -131,13 +119,8 @@
 
 {% block javascript %}
     <script>
-
-        var table_all_runs;
-
-        $(document).ready(function () {
-
-            setActiveNavbarItem(3);
-
-        });
+      $(document).ready(function () {
+        setActiveNavbarItem(3);
+      });
     </script>
 {% endblock %}
