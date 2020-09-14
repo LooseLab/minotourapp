@@ -9,7 +9,8 @@
             <!-- Main top nav bar -->
             <div class="container-fluid">
                 <div class="card card-primary card-outline">
-                    <h5 class="card-header">Flowcell Splitting Management <small> - select a Flowcell to split.</small>
+                    <h5 class="card-header"><i class="fas fa-table"></i>
+                        Flowcell Splitting Management <small> - select a Flowcell to split.</small>
                     </h5>
                     <div class="card-body">
                         <div id="messages"></div>
@@ -17,24 +18,40 @@
                         <table id="splitting-all-flowcells" class="table table-bordered table-striped table-hover"
                                style="width:100%"
                                cellspacing="0">
-                            <thead>
+                                <thead>
                             <tr>
                                 <th>Flowcell<br/>Name</th>
                                 <th>Flowcell<br/>Size</th>
                                 <th>Sample<br/>Name</th>
-                                <th>Start<br/>Time</th>
-                                <th>Number<br/>of Reads</th>
-                                <th>Number<br/>of Reads Processed</th>
-                                <th>Number<br/>of Runs</th>
-                                <th>Number<br/>of Barcodes</th>
+                                <th>Start<br/>Time (UTC)</th>
+                                <th>Read<br/> Count</th>
+                                <th>Runs</th>
+                                <th>Barcodes</th>
                                 <th>Yield</th>
-                                <th>Average<br/>Read Length</th>
-                                <th>Status</th>
-                                <th>Contains<br/>sequence data</th>
-                                <th>Is Owner</th>
-                                <th>Permission</th>
+                                <th>Avg.<br/>Read Length</th>
+                                <th>Is Active</th>
+                                <th>Archived</th>
+                                <th>Is<br/>Uploader</th>
+                                <th>Permission<br/>Level</th>
                             </tr>
                             </thead>
+                            <tfoot>
+                            <tr>
+                                <th>Flowcell<br/>Name</th>
+                                <th>Flowcell<br/>Size</th>
+                                <th>Sample<br/>Name</th>
+                                <th>Start<br/>Time (UTC)</th>
+                                <th>Number<br/>of Reads</th>
+                                <th>Runs</th>
+                                <th>Barcodes</th>
+                                <th>Yield</th>
+                                <th>Avg.<br/>Read Length</th>
+                                <th>Is Active</th>
+                                <th>Archived</th>
+                                <th>Is<br/> Uploader</th>
+                                <th>Permission<br/>Level</th>
+                            </tr>
+                            </tfoot>
                         </table>
                     </div>
                 </div>
