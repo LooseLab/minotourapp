@@ -114,35 +114,36 @@ def move_reads_to_flowcell(run_id, flowcell_id, from_flowcell_id):
     -------
     None
     """
+    start_time = time.time()
     flowcell = Flowcell.objects.get(pk=flowcell_id)
     old_flowcell = Flowcell.objects.get(pk=from_flowcell_id)
     run = Run.objects.get(pk=run_id)
-    chunk_size = 100000
+    chunk_size = 50000
     reads = FastqRead.objects.filter(flowcell=old_flowcell, run=run)[0:chunk_size]
     reads_len = reads.count()
-
+    last_read_in_chunk = reads[reads_len - 1]
     logger.info(
         f"Moving {reads_len} reads from run {run.runid} to flowcell {flowcell.name}"
     )
-
     if reads:
         # bulk update
-        reads.update(flowcell=flowcell)
+        num_updated = FastqRead.objects.filter(
+            run_id=run_id, id__lte=last_read_in_chunk.id, flowcell_id=from_flowcell_id
+        ).update(flowcell=flowcell)
+        print(f"Updated {num_updated}")
         # get list of dict of the flowcell
-        reads = reads.values()
+        reads = list(reads.values())
         update_flowcell.delay(reads)
         logger.info(
             f"Finished moving reads from run {run.runid} to flowcell {flowcell.name}"
         )
-
     # Update tasks on old flowcell
     if not reads:
         reset_flowcell_info.delay(old_flowcell.id)
-
     # If there are reads left, call the task again.
-    if FastqRead.objects.filter(flowell=old_flowcell, run=run).last():
+    if FastqRead.objects.filter(flowcell=old_flowcell, run=run).count():
         move_reads_to_flowcell.apply_async(args=(run_id, flowcell_id, from_flowcell_id))
-
+    print(f"finished in {time.time() - start_time}")
 
 @task()
 def reset_flowcell_info(old_flowcell_id):
@@ -163,7 +164,6 @@ def reset_flowcell_info(old_flowcell_id):
     FlowcellStatisticBarcode.objects.filter(flowcell=old_flowcell).delete()
     FlowcellHistogramSummary.objects.filter(flowcell=old_flowcell).delete()
     FlowcellChannelSummary.objects.filter(flowcell=old_flowcell).delete()
-
     old_flowcell.start_time = datetime.datetime.now()
     old_flowcell.max_channel = 0
     old_flowcell.number_reads = 0
@@ -173,25 +173,14 @@ def reset_flowcell_info(old_flowcell_id):
     old_flowcell.total_read_length = 0
     old_flowcell.has_fastq = False
     old_flowcell.save()
-
     # recalculate old flowcell
-
     chunk_size = 100000
-
     total_reads = FastqRead.objects.filter(flowcell=old_flowcell).count()
-
     steps = int((total_reads - total_reads % chunk_size) / chunk_size + 1)
-
     for i in range(0, steps):
-
         modstart = i * chunk_size
-
         modend = (i + 1) * chunk_size
-
         reads = FastqRead.objects.filter(flowcell=old_flowcell)[modstart:modend]
-
-        reads_len = reads.count()
-
         update_flowcell.delay(reads.values())
 
 
@@ -365,9 +354,13 @@ def check_if_flowcell_has_streamable_tasks(flowcell_pk):
     """
 
     streamable_tasks_pks = [16, 4]
-    tasks = JobMaster.objects.filter(
-        flowcell_id=flowcell_pk, job_type__id__in=streamable_tasks_pks
-    ).exclude(from_database=True).values("id", "job_type_id", "from_database")
+    tasks = (
+        JobMaster.objects.filter(
+            flowcell_id=flowcell_pk, job_type__id__in=streamable_tasks_pks
+        )
+        .exclude(from_database=True)
+        .values("id", "job_type_id", "from_database")
+    )
     return tasks
 
 
@@ -393,7 +386,9 @@ def sort_reads_by_flowcell_fire_tasks(reads):
                 run_artic_pipeline.delay(task["id"], flowcell_reads)
             elif task["job_type_id"] == 4 and not task["from_database"]:
                 redis_instance.incr("minimaptasks")
-                run_minimap2_alignment.apply_async(args=(task["id"], flowcell_reads), queue="minimap")
+                run_minimap2_alignment.apply_async(
+                    args=(task["id"], flowcell_reads), queue="minimap"
+                )
 
 
 @task()
