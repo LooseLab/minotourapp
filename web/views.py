@@ -9,11 +9,8 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.generic import DeleteView, ListView
 from rest_framework.authtoken.models import Token
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
 
 from communication.models import Message
-from communication.serializers import MessageSerializer
 from metagenomics.models import CentrifugeOutput
 from reads.models import (Experiment, FastqRead, Flowcell, JobMaster, JobType,
                           MinionRunStats, Run, UserOptions)
@@ -502,25 +499,6 @@ def render_messages(request):
     The messages page HTML template
     """
     return render(request, "web/message.html")
-
-
-@api_view(["GET"])
-def new_messages_list(request):
-    """
-    API endpoint, returns a list of tweet/emails sent by minotour to a user
-    Parameters
-    ----------
-    request: rest_framework.request.Request
-
-    Returns
-    -------
-    serializer.data: list
-        List of all messages sent to user ordered by date.
-
-    """
-    queryset = Message.objects.filter(recipient=request.user).order_by("-created_date")
-    serializer = MessageSerializer(queryset, many=True, context={"request": request})
-    return Response({"data": serializer.data})
 
 
 @login_required
