@@ -71,10 +71,34 @@ def new_messages_list(request):
     -------
 
     """
-
-    queryset = Message.objects.filter(recipient=request.user).order_by("-created_date")
+    query_columns = [
+        "title",
+        "created_date",
+        "sender_first_name",
+        "flowcell_name",
+    ]
+    draw = int(request.GET.get("draw", 0))
+    search_value = request.GET.get("search[value]", "")
+    start = int(request.GET.get("start", 0))
+    length = int(request.GET.get("length", 10))
+    end = start + length
+    order_column = query_columns[int(request.GET.get("order[0][column]", ""))]
+    # ascending descending
+    order_dir = "-" if request.GET.get("order[0][dir]", "") == "desc" else ""
+    queryset = Message.objects.filter(recipient=request.user)
+    records_total = queryset.count()
+    if search_value:
+        queryset.filter(title__contains=search_value)
+    queryset = queryset.order_by(f"{order_dir}{order_column}")[start:end]
+    records_filter = queryset.count()
     serializer = MessageSerializer(queryset, many=True, context={"request": request})
-    return Response(serializer.data)
+    result = {
+        "draw": draw,
+        "recordsTotal": records_total,
+        "recordsFiltered": records_filter,
+        "data": serializer.data,
+    }
+    return Response(result)
 
 
 @api_view(["GET"])
@@ -103,25 +127,7 @@ def get_references_for_condtions(request, pk):
         b[jobs["reference_name"]].append(
             (jobs["contig_name"], jobs["contig_id"], jobs["reference_id"])
         )
-
     return Response(b, status=status.HTTP_200_OK)
-
-
-# def message_details(request, pk):
-#     """
-#     Returns the htm
-#     Parameters
-#     ----------
-#     request
-#     pk
-#
-#     Returns
-#     -------
-#
-#     """
-#     message = Message.objects.get(pk=pk)
-#
-#     return render(request, "communication/message.html", context={"message": message,})
 
 
 def create_notification_conditions(flowcell, user, **kwargs):
