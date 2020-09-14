@@ -69,7 +69,6 @@
             </div>
         </div>
     </div>
-
     {% if qs|length > 3 %}
         <div class="card card-primary card-outline">
             <div class="card-header" id="headingTwo">
@@ -91,13 +90,13 @@
                         <th>Read type</th>
                         <th>Rejection</th>
                         <th>Pass/Fail</th>
-                        <td align="right"><strong>Reads called</strong></td>
-                        <td align="right"><strong>Yield</strong></td>
-                        <td align="right"><strong>Percentage(bases)</strong></td>
-                        <td align="right"><strong>Min read length</strong></td>
-                        <td align="right"><strong>Average read length</strong></td>
-                        <td align="right"><strong>Max read length</strong></td>
-                        <td align="right"><strong>Average Quality</strong></td>
+                        <th>Reads called</th>
+                        <th>Yield</th>
+                        <th>Percentage(bases)</th>
+                        <th>Min read length</th>
+                        <th>Average read length</th>
+                        <th>Max read length</th>
+                        <th>Average Quality</th>
                         </thead>
                         <tbody>
                         {% for record in qs|dictsortreversed:"read_type"|dictsort:"barcode_name" %}
@@ -120,13 +119,13 @@
                             <td>{{ record.rejection_status }}</td>
 
                             <td>{{ record.read_type }}</td>
-                            <td align="right">{{ record.read_count|intcomma }}</td>
-                            <td align="right">{{ record.total_length|intcomma }}</td>
-                            <td align="right">{{ record.percentage|floatformat:"2" }}</td>
-                            <td align="right">{{ record.min_length|intcomma }}</td>
-                            <td align="right">{{ record.avg_length|floatformat:"0"|intcomma }}</td>
-                            <td align="right">{{ record.max_length|intcomma }}</td>
-                            <td align="right">{{ record.avg_quality|floatformat:"1" }}</td>
+                            <td>{{ record.read_count|intcomma }}</td>
+                            <td>{{ record.total_length|intcomma }}</td>
+                            <td>{{ record.percentage|floatformat:"2" }}</td>
+                            <td>{{ record.min_length|intcomma }}</td>
+                            <td>{{ record.avg_length|floatformat:"0"|intcomma }}</td>
+                            <td>{{ record.max_length|intcomma }}</td>
+                            <td>{{ record.avg_quality|floatformat:"1" }}</td>
                             </tr>
                             {% endif %}
                         {% endfor %}
