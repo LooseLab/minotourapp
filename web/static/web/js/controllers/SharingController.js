@@ -1,7 +1,8 @@
 class SharingController {
-  /* TODO rewrite and redocument all this
-    Create a sharing controller that is in charge of fetching and creating new user permissions on flowcells - used on the sharing-tab.html page
-    */
+  /**
+   *
+   * Create a sharing controller that is in charge of fetching and creating new user permissions on flowcells - used on the sharing-tab.html page
+   */
 
   constructor (flowcellId) {
     this._flowcellId = flowcellId
@@ -19,9 +20,7 @@ class SharingController {
         {
           targets: 2,
           data: 2,
-          render: function (data, type, full, meta) {
-            return `<a href="#" onclick="mSharingController.delete('` + full.permission_code + `', ` + full.user + `, ` + full.flowcell + `)">DELETE</a>`
-          }
+          render: (data, type, full, meta) => `<a href="#" onclick="mSharingController.delete('${full.permission_code}', ${full.user}, ${full.flowcell})">DELETE</a>`
         }]
     })
 
@@ -30,23 +29,20 @@ class SharingController {
 
   create (event) {
     event.preventDefault()
-
     const self = this
-
     const csrftoken = getCookie(`csrftoken`)
-
     const axios_instance = axios.create({
       headers: { 'X-CSRFToken': csrftoken }
     })
 
-    axios_instance.post(`/api/v1/flowcells/` + this._flowcellId + `/sharing/`, {
+    axios_instance.post(`/api/v1/flowcells/${this._flowcellId}/sharing/`, {
       flowcell: this._flowcell_id,
       permission: this._permission.value,
       username: this._username.value
-    }).then(function (response) {
+    }).then(response => {
       self.getAll()
       self._messageView.update(`New permission successfully created!`)
-    }).catch(function (error) {
+    }).catch(error => {
       self._messageView.update(`Something went wrong! Please check the following message: ${error.response.data.message}`)
     })
   }
@@ -59,29 +55,27 @@ class SharingController {
     const axiosInstance = axios.create({
       headers: { 'X-CSRFToken': csrftoken }
     })
-
-    var url = `/api/v1/flowcells/` + this._flowcellId + `/sharing/delete/`
-
+    var url = `/api/v1/flowcells/${this._flowcellId}/sharing/delete/`
     axiosInstance.post(url, {
       user_id: userId,
       permission
-    }).then(function (response) {
+    }).then(response => {
       self.getAll()
       self._messageView.update(`Permission deleted!`)
-    }).catch(function (error) {
+    }).catch(error => {
       self._messageView.update(`Something went wrong! Please check the following message: ${error.response.data.message}`)
     })
   }
 
   getAll () {
     var self = this
-    var url = `/api/v1/flowcells/` + this._flowcellId + `/sharing/`
+    var url = `/api/v1/flowcells/${this._flowcellId}/sharing/`
 
     axios.get(url)
-      .then(function (response) {
+      .then(response => {
         self._dataTable.clear().rows.add(response.data).draw()
       })
-      .catch(function (error) {
+      .catch(error => {
         console.log(error)
       })
   }
