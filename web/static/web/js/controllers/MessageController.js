@@ -7,9 +7,16 @@ class MessageController {
   drawMessageTable () {
     console.log(`drawing table`)
     $(`#message-table`).DataTable({
+      processing: true,
+      serverSide: true,
       ajax: {
-        url: `/web/private/sent_tweets/`,
-        method: `GET`
+        url: `/api/v1/communication/sent-tweets/`,
+        method: `GET`,
+        async: true,
+        error: (xhr, error, code) => {
+          console.error(xhr)
+          console.error(code)
+        }
       },
       order: [[1, `desc`]],
       columns: [
