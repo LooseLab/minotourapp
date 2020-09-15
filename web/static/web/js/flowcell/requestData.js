@@ -17,16 +17,10 @@ function requestData (flowcell_id) {
     }
 
     var flowcellSelectedTabInput = getSelectedTab()
-
-    if (flowcellSelectedTabInput == `summary-data`) {
-      // if we are on the summary page - cal l requestRunDetail from the monitor app scope
-      // appends the Run summary table HTML onto the summary page
-      this.requestRunDetails(flowcell_id)
-      /// / append a messages html tableonto the messages div of the summaries tab
-      requestMinknowMessages(flowcell_id, data)
-    } else if (flowcellSelectedTabInput == `reads`) {
+    if (flowcellSelectedTabInput === `reads`) {
       requestReadData(flowcell_id)
-    } else if (flowcellSelectedTabInput == `live-event-data`) {
+    } else if (flowcellSelectedTabInput === `live-event-data`) {
+      this.makePageUnscrollable()
       // this.requestRunDetails(flowcellId);
       this.requestLiveRunStats(flowcell_id)
     }
