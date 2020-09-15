@@ -9,9 +9,9 @@ urlpatterns = [
         name="barcode-proportion"
     ),
     url(
-        r'^api/v1/flowcells/(?P<pk>[0-9]+)/minknow-messages-html/$',
-        views.minknow_message_html,
-        name="minknow-messages-html"
+        r'^api/v1/flowcells/(?P<pk>[0-9]+)/minknow-messages/$',
+        views.minknow_message,
+        name="minknow-messages"
     ),
     url(
         r'^api/v1/flowcells/(?P<pk>[0-9]+)/reactivate/$',
@@ -238,23 +238,23 @@ urlpatterns = [
     # The links below generated html
     #
     url(
-        r'^flowcells/(?P<pk>[0-9]+)/run_summaries_html/$',
+        r'^api/v1/reads/flowcells/(?P<pk>[0-9]+)/run-summaries-html/$',
         views.flowcell_run_summaries_html,
         name="flowcell_run_summaries_html"
     ),
 
     url(
-        r'^flowcells/(?P<pk>[0-9]+)/flowcell_run_basecalled_summary_html/$',
+        r'^api/v1/reads/flowcells/(?P<pk>[0-9]+)/flowcell-run-basecalled-summary-html/$',
         views.flowcell_run_basecalled_summary_html,
         name="flowcell_run_basecalled_summary_html"
     ),
     url(
-        r'^flowcells/(?P<pk>[0-9]+)/basecalled-summary-html/$',
+        r'^api/v1/reads/flowcells/(?P<pk>[0-9]+)/basecalled-summary-html/$',
         views.flowcell_basecalled_summary_html,
         name="flowcell-summary-html"
     ),
     url(
-        r'^api/v1/tasks/action$',
+        r'^api/v1/reads/tasks/action$',
         views.task_control,
         name="restart-task",
     ),
