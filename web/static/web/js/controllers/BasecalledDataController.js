@@ -122,10 +122,10 @@ class BasecalledDataController {
      * @private
      */
   _fetchSummaryDataHtmlTable (flowcellId) {
-    const that = this; const collapsedBarcodeDatatableClassList = []; const collapsedAllReadsHTMLTableClassList = []
+    const that = this
     this._basecalledSummaryTable = $(`#basecalled-summary`)
 
-    this._axiosInstance.get(`/flowcells/${flowcellId}/basecalled-summary-html`).then((response) => {
+    this._axiosInstance.get(`/api/v1/reads/flowcells/${flowcellId}/basecalled-summary-html`).then((response) => {
       if (response.status !== 200) {
         console.error(`Error, incorrect status, expected 200, got ${response.status}`)
       }
@@ -137,13 +137,11 @@ class BasecalledDataController {
           this._funHTML[0].children[1].children[1].classList = $(`#collapseTwo`).get(0).classList
         }
         // set the classes to be as they were for the collapsable element
-
         this._funHTML[0].children[0].children[1].classList = $(`#collapseOne`).get(0).classList
         that._basecalledSummaryTable.html(this._funHTML)
       } else {
         that._basecalledSummaryTable.html(response.data)
       }
-
       setTimeout(this._revealResults, 100)
     }).catch(error => {
       console.error(error)
@@ -273,12 +271,14 @@ class BasecalledDataController {
       if (response.status !== 200) {
         console.error(`Error, incorrect status, expected 200, got ${response.status}`)
       }
-      charts.forEach(chart => {
-        let difference, union;
-        const newDataKey = chart[0]
-        const chartReference = chart[1]
+      charts.forEach(([newDataKey, chartReference]) => {
+        let difference, union
         if (changeBarcode) {
           clearChartData(chartReference)
+        }
+        if (!chartReference) {
+          console.log(`${newDataKey} chart is undefined`)
+          return
         }
         preExistingSeriesNames = chartReference.series.map(e => e.name)
 
@@ -632,7 +632,7 @@ class BasecalledDataController {
      */
   _updateTab (flowcellId, barcodeName, that, changeBarcode) {
     const barcode = getSelectedBarcode(`BasecalledData`)
-    if (getSelectedTab() !== "basecalled-data"){
+    if (getSelectedTab() !== `basecalled-data`) {
       return
     }
     that._fetchSummaryDataHtmlTable(flowcellId)
