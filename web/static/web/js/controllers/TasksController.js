@@ -220,7 +220,7 @@ class TasksController {
     }
     self._messageView.update(`${action}ing task with ID ${flowcellJobId} - please wait for confirmation`)
     this._axiosInstance.post(
-      `/api/v1/tasks/action`,
+      `/api/v1/reads/tasks/action`,
       {
         flowcellJobId,
         actionType
