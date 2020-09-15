@@ -1,6 +1,5 @@
 function requestReadData (id) {
-  var table
-
+  let table
   if ($.fn.dataTable.isDataTable(`#example`)) {
     table = $(`#example`).DataTable()
   } else {
@@ -30,7 +29,6 @@ function requestReadData (id) {
         }
       ]
     })
-
     $(`#example`).on(`click`, `td.details-control`, function () {
       var tr = $(this).closest(`tr`)
       var row = table.row(tr)
