@@ -120,8 +120,8 @@ h1 {
 }
 
 #loader-wrapper .loader-section {
-    position: fixed;
-    /*top: 0;*/
+    position: absolute;
+    top: 0;
     width: 51%;
     height: 100%;
     background: #fff;
@@ -381,6 +381,9 @@ h1 {
     }
 }
 
+.disable-scroll {
+    overflow: hidden;
+}
 /* 
 	Ok so you have made it this far, that means you are very keen to on my code. 
 	Anyway I don't really mind it. This is a great way to learn so you actually doing the right thing:)
