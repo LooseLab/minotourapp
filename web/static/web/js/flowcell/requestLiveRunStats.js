@@ -225,6 +225,20 @@ function calculatereadtoeventscaling () { // TODO is it still being used?
   }
 }
 
+/**
+ * Make the page unscrollable whilst we are drawing the charts
+ */
+function makePageUnscrollable () {
+  $(`html`).addClass(`disable-scroll`)
+}
+/**
+ * Reveal the live data tab by removing loder divs once charts are drawn
+ */
+function revealPage () {
+  $(`#tab-live-event-data`).addClass(`loaded`)
+  $(`html`).removeClass(`disable-scroll`)
+}
+
 function requestLiveRunStats (id) {
   console.log(`This is lastRead from flowcellcontroller: ` + flowcellController.lastRead)
 
@@ -344,6 +358,7 @@ function requestLiveRunStats (id) {
       updateLiveHistogram(liveHistogram, data)
       updateLiveCumuYield(liveCumuYield, liveOccupancy, liveInStrand, liveTemperature, liveVoltage, live_data)
       updatePoreStats(poreShizzle, live_data)
+      revealPage()
     }
   })
 };
