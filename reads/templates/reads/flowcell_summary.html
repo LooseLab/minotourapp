@@ -86,17 +86,19 @@
                 <div class="card-body">
                     <table id="barcode_table" class="table table-sm table-hover">
                         <thead>
-                        <th>Barcode</th>
-                        <th>Read type</th>
-                        <th>Rejection</th>
-                        <th>Pass/Fail</th>
-                        <th>Reads called</th>
-                        <th>Yield</th>
-                        <th>Percentage(bases)</th>
-                        <th>Min read length</th>
-                        <th>Average read length</th>
-                        <th>Max read length</th>
-                        <th>Average Quality</th>
+                        <tr>
+                            <th>Barcode</th>
+                            <th>Read type</th>
+                            <th>Rejection</th>
+                            <th>Pass/Fail</th>
+                            <th>Reads called</th>
+                            <th>Yield</th>
+                            <th>Percentage(bases)</th>
+                            <th>Min read length</th>
+                            <th>Average read length</th>
+                            <th>Max read length</th>
+                            <th>Average Quality</th>
+                        </tr>
                         </thead>
                         <tbody>
                         {% for record in qs|dictsortreversed:"read_type"|dictsort:"barcode_name" %}
@@ -141,9 +143,9 @@
 
 {% block javascript %}
     <script>
-        //$(document).ready(function () {
-        //    $('#barcode_table').DataTable();
-        //});
+      //$(document).ready(function () {
+      //    $('#barcode_table').DataTable();
+      //});
 
     </script>
 {% endblock %}
