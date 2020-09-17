@@ -78,7 +78,13 @@ from reads.serializers import (
 )
 from reads.tasks.redis_tasks_functions import save_reads_bulk
 from reads.tasks.task_delete_flowcell import clear_artic_data
-from reads.utils import get_coords, return_temp_empty_summary, pause_job, clear_artic_command_job_masters
+from reads.utils import (
+    get_coords,
+    return_temp_empty_summary,
+    pause_job,
+    clear_artic_command_job_masters,
+    create_histogram_series,
+)
 from readuntil.models import ExpectedBenefitChromosomes
 from reference.models import ReferenceInfo
 from web.delete_tasks import (
@@ -112,7 +118,9 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
     """
 
     if not pk:
-        return Response("No Flowcell primary key provided", status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            "No Flowcell primary key provided", status=status.HTTP_400_BAD_REQUEST
+        )
     flowcell = Flowcell.objects.get(pk=pk)
     if flowcell.number_barcodes > 3:
         qs = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).exclude(
@@ -134,20 +142,34 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
         categories = df["name"].unique().tolist()
         # get the barcodes that have a pass status and no corresponding fail data
         no_fail_pass_df = df[
-            (df["status"] == "Pass") & (~df["barcode_name"].isin(df[df["status"] == "Fail"]["barcode_name"].values))]
+            (df["status"] == "Pass")
+            & (
+                ~df["barcode_name"].isin(
+                    df[df["status"] == "Fail"]["barcode_name"].values
+                )
+            )
+        ]
         no_fail_pass_df["status"] = "Fail"
         no_fail_pass_df["data"] = 0
         # append new entries with 0
         # Get the barcode rows that have a fail status and no cprreponding pass data
         df = df.append(no_fail_pass_df)
         no_pass_fail_df = df[
-            (df["status"] == "Fail") & (~df["barcode_name"].isin(df[df["status"] == "Pass"]["barcode_name"].values))]
+            (df["status"] == "Fail")
+            & (
+                ~df["barcode_name"].isin(
+                    df[df["status"] == "Pass"]["barcode_name"].values
+                )
+            )
+        ]
         no_pass_fail_df["status"] = "Pass"
         no_pass_fail_df["data"] = 0
         df = df.append(no_pass_fail_df)
         df = df.sort_values("barcode_name")
         # Get the proportion unclassified for pie chart
-        df["is_unclassified"] = np.where(df["barcode_name"] == "unclassified", "Classified", "Unclassified")
+        df["is_unclassified"] = np.where(
+            df["barcode_name"] == "unclassified", "Classified", "Unclassified"
+        )
         # use this array for easy comparison of current data on client side in BaseCalledData controller
         array_data = []
         pie_chart_data = []
@@ -161,7 +183,11 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
                 results["selected"] = True
             pie_chart_data.append(results)
         pie_chart_data.append(array_data)
-        series = {"data": pie_chart_data, "name": "Classification Proportions", "colorByPoint": True}
+        series = {
+            "data": pie_chart_data,
+            "name": "Classification Proportions",
+            "colorByPoint": True,
+        }
 
         # drop unclassified from prop charts
         df = df[df["barcode_name"] != "unclassified"]
@@ -195,9 +221,9 @@ def flowcell_barcodes_list(request):
     # TODO this could become slow if we ended up with 10000s of barcodes
     barcodes = sorted(
         list(
-            Barcode.objects.filter(run__in=flowcell.runs.all()).values_list(
-                "name", flat=True
-            ).distinct()
+            Barcode.objects.filter(run__in=flowcell.runs.all())
+            .values_list("name", flat=True)
+            .distinct()
         )
     )
     if "Unblocked" not in barcodes and "Sequenced" in barcodes:
@@ -364,8 +390,8 @@ def fastq_file(request, pk):
 
         run = (
             Run.objects.filter(runid=request.data["runid"])
-                .filter(owner=request.user)
-                .first()
+            .filter(owner=request.user)
+            .first()
         )
 
         obj, created = FastqFile.objects.get_or_create(
@@ -404,9 +430,9 @@ def run_list(request):
 
         for flowcell in Flowcell.objects.all():
             if (
-                    request.user == flowcell.owner
-                    or request.user.has_perm("view_data", flowcell)
-                    or request.user.has_perm("run_analysis", flowcell)
+                request.user == flowcell.owner
+                or request.user.has_perm("view_data", flowcell)
+                or request.user.has_perm("run_analysis", flowcell)
             ):
                 flowcell_list.append(flowcell)
 
@@ -457,9 +483,9 @@ def run_detail(request, pk):
 
     for flowcell in Flowcell.objects.all():
         if (
-                request.user == flowcell.owner
-                or request.user.has_perm("view_data", flowcell)
-                or request.user.has_perm("run_analysis", flowcell)
+            request.user == flowcell.owner
+            or request.user.has_perm("view_data", flowcell)
+            or request.user.has_perm("run_analysis", flowcell)
         ):
             flowcell_list.append(flowcell)
 
@@ -589,8 +615,8 @@ def active_minion_list(request):
             ) - datetime.timedelta(minutes=5)
 
             if (
-                    last_minion_event.event.name != "unplugged"
-                    and minion.currentdetails.last_modified > five_minute_check
+                last_minion_event.event.name != "unplugged"
+                and minion.currentdetails.last_modified > five_minute_check
             ):
 
                 if minion.currentdetails.minKNOW_status in [
@@ -729,7 +755,7 @@ def minion_messages_list(request, pk):
 #     return Response(serializer.data)
 
 
-@api_view(["GET"], )
+@api_view(["GET"],)
 def recentminion_messages_list(request, pk):
     queryset = MinionMessage.objects.filter(minION=pk).filter(
         minKNOW_message_timestamp__gte=timezone.now() - datetime.timedelta(hours=24)
@@ -764,11 +790,13 @@ def minknow_message(request, pk):
     return_list = []
     for message in messages:
         message_text = message.message if not message.full_text else message.full_text
-        return_list.append({"messageText": message_text, "timestamp": message.timestamp})
+        return_list.append(
+            {"messageText": message_text, "timestamp": message.timestamp}
+        )
     return Response({"data": return_list})
 
 
-@api_view(["GET", "POST"], )
+@api_view(["GET", "POST"],)
 def minION_control_list(request, pk):
     """
     TODO describe function
@@ -791,7 +819,7 @@ def minION_control_list(request, pk):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(["GET", "POST"], )
+@api_view(["GET", "POST"],)
 def minION_control_update(request, pk, checkid):
     """
     TODO describe function
@@ -817,7 +845,7 @@ def minION_control_update(request, pk, checkid):
 
 
 @api_view(
-    ["GET", ]
+    ["GET",]
 )
 def minION_currentrun_list(request, pk):
     """
@@ -1430,7 +1458,7 @@ def flowcell_detail(request, pk):
             for f in all_flowcell_list:
 
                 if request.user.has_perm("view_data", f) or request.user.has_perm(
-                        "run_analysis", f
+                    "run_analysis", f
                 ):
 
                     if search_criteria == "id":
@@ -1571,8 +1599,8 @@ def flowcell_basecalled_summary_html(request, pk):
     # and creating the columns for the results
     df2 = (
         df[df["barcode_name"].eq("All reads")]
-            .groupby(["barcode_name", "read_type_name", "rejection_status"])
-            .agg(agg)
+        .groupby(["barcode_name", "read_type_name", "rejection_status"])
+        .agg(agg)
     )
 
     df2 = df2.reset_index()
@@ -1585,8 +1613,8 @@ def flowcell_basecalled_summary_html(request, pk):
     # Same aggregations on other barcodes
     df2 = (
         df[df["barcode_name"].ne("All reads")]
-            .groupby(["barcode_name", "read_type_name", "rejection_status"])
-            .agg(agg)
+        .groupby(["barcode_name", "read_type_name", "rejection_status"])
+        .agg(agg)
     )
 
     if df2.shape[0] > 0:
@@ -1635,24 +1663,24 @@ def flowcell_statistics(request, pk):
     """
     queryset = (
         FlowcellStatisticBarcode.objects.filter(flowcell=flowcell)
-            .filter(
+        .filter(
             Q(barcode_name__in=barcodes_list) | Q(rejection_status__in=barcodes_list)
         )
-            .order_by("sample_time")
+        .order_by("sample_time")
     )
 
     df = pd.DataFrame.from_records(
-            queryset.values(
-                "read_type_name",
-                "sample_time",
-                "barcode_name",
-                "status",
-                "read_count",
-                "max_length",
-                "total_length",
-                "quality_sum",
-                "rejection_status",
-            )
+        queryset.values(
+            "read_type_name",
+            "sample_time",
+            "barcode_name",
+            "status",
+            "read_count",
+            "max_length",
+            "total_length",
+            "quality_sum",
+            "rejection_status",
+        )
     )
     df["read_type"] = np.where(df["status"] == "True", "Pass", "Fail")
     agg = {
@@ -1676,13 +1704,13 @@ def flowcell_statistics(request, pk):
         ["barcode_name", "read_type_name", "read_type", "rejection_status"]
     )["total_length"].apply(lambda x: x.cumsum())
     df3["key"] = (
-            df3["barcode_name"].astype("str")
-            + " - "
-            + df3["read_type_name"].astype("str")
-            + " - "
-            + df3["read_type"].astype("str")
-            + " - "
-            + df3["rejection_status"].astype("str")
+        df3["barcode_name"].astype("str")
+        + " - "
+        + df3["read_type_name"].astype("str")
+        + " - "
+        + df3["read_type"].astype("str")
+        + " - "
+        + df3["rejection_status"].astype("str")
     )
     df3["average_quality"] = (
         df3["quality_sum"].div(df3["read_count"]).astype("float").round(decimals=2)
@@ -1753,8 +1781,8 @@ def flowcell_histogram_summary(request, pk):
 
     max_bin_index = (
         FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-            .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
-            .aggregate(Max("bin_index"))
+        .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
+        .aggregate(Max("bin_index"))
     )
     # create the categories for the x asis, they are the bins * the bin width (default 1000)
     categories = list(
@@ -1772,9 +1800,9 @@ def flowcell_histogram_summary(request, pk):
     # A list of tuples, distinct on barcode name, pass/fail, template
     key_list = (
         FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-            .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
-            .values_list("barcode_name", "read_type_name", "rejection_status", "status")
-            .distinct()
+        .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
+        .values_list("barcode_name", "read_type_name", "rejection_status", "status")
+        .distinct()
     )
 
     chart_data = defaultdict(list)
@@ -1783,11 +1811,11 @@ def flowcell_histogram_summary(request, pk):
         # query flowcell Histogram summary objects for all of the combinations under this barcode
         histogram_queryset = (
             FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-                .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
-                .filter(read_type_name=read_type_name)
-                .filter(status=is_pass)
-                .filter(rejection_status=rejection_status)
-                .order_by("bin_index")
+            .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
+            .filter(read_type_name=read_type_name)
+            .filter(status=is_pass)
+            .filter(rejection_status=rejection_status)
+            .order_by("bin_index")
         )
         # make a list of 0s one element for each bin
         result_read_count_sum = np.zeros(
@@ -1839,17 +1867,17 @@ def flowcell_histogram_summary(request, pk):
 
             result_collect_read_count_sum = list(
                 (
-                        -pd.concat(
-                            [
-                                pd.Series([0]),
-                                pd.Series(result_collect_read_count_sum).replace(
-                                    to_replace=0, method="ffill"
-                                ),
-                            ]
-                        )
-                        + pd.Series(result_collect_read_count_sum)
-                        .replace(to_replace=0, method="ffill")
-                        .max()
+                    -pd.concat(
+                        [
+                            pd.Series([0]),
+                            pd.Series(result_collect_read_count_sum).replace(
+                                to_replace=0, method="ffill"
+                            ),
+                        ]
+                    )
+                    + pd.Series(result_collect_read_count_sum)
+                    .replace(to_replace=0, method="ffill")
+                    .max()
                 )
                 / total_reads_count
                 * 100
@@ -1857,17 +1885,17 @@ def flowcell_histogram_summary(request, pk):
 
             result_collect_read_length_sum = list(
                 (
-                        -pd.concat(
-                            [
-                                pd.Series([0]),
-                                pd.Series(result_collect_read_length_sum).replace(
-                                    to_replace=0, method="ffill"
-                                ),
-                            ]
-                        )
-                        + pd.Series(result_collect_read_length_sum)
-                        .replace(to_replace=0, method="ffill")
-                        .max()
+                    -pd.concat(
+                        [
+                            pd.Series([0]),
+                            pd.Series(result_collect_read_length_sum).replace(
+                                to_replace=0, method="ffill"
+                            ),
+                        ]
+                    )
+                    + pd.Series(result_collect_read_length_sum)
+                    .replace(to_replace=0, method="ffill")
+                    .max()
                 )
                 / total_reads_length
                 * 100
@@ -1880,10 +1908,10 @@ def flowcell_histogram_summary(request, pk):
                 {"name": series_name, "data": result_read_length_sum}
             )
             chart_data["collect_read_count"].append(
-                {"name": series_name, "data": result_collect_read_count_sum, }
+                {"name": series_name, "data": result_collect_read_count_sum,}
             )
             chart_data["collect_read_length"].append(
-                {"name": series_name, "data": result_collect_read_length_sum, }
+                {"name": series_name, "data": result_collect_read_length_sum,}
             )
 
     return Response({"data": chart_data, "categories": categories})
@@ -2032,83 +2060,167 @@ def flowcell_run_basecalled_summary_html(request, pk):
 
 
 @api_view(["GET"])
-def flowcell_run_stats_latest(request, pk, checkid):
+def flowcell_minknow_stats_list(request, pk, check_id):
     """
-    API endpoint for getting the live events chart data.
-    :param request: DRF request body
-    :param pk: The flowcell ID
-    :param checkid: Check ID is defaulted to 0 at this time
-    :return:
+    Fetch pre parsed minknow metrics about this flowcell
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The ajax request body
+    pk: int
+        Primary key of the flowcell
+    check_id: int
+        Last read id to read from.
+
+    Returns
+    -------
+    dict
+        Dictionary of prepared minKnow stats to be displayed on the live data page
     """
-    flowcell = Flowcell.objects.get(pk=pk)
-    # Get all the Minion Run status objects for this flowcell
-    minion_run_status_list = MinionRunInfo.objects.filter(
-        run_id__flowcell=flowcell
-    ).exclude(experiment_type="platform_qc")
-    # If we have more than 0
-    if minion_run_status_list.count() > 0:
-        # Take the first entry to be the run status
-        minion_run_status = minion_run_status_list[0]
-
-    else:
-
-        minion_run_status = None
-
-    # Temporary work around to show all data.
-    crazy_minion_run_stats = MinionRunStats.objects.filter(
-        run_id__in=flowcell.runs.all().exclude(name="mux scan"), id__gt=checkid
+    # Take the first entry to be the run status
+    minion_run_meta_information = (
+        MinionRunInfo.objects.filter(run_id__flowcell_id=pk)
+        .exclude(experiment_type="platform_qc")
+        .last()
     )
-
-    result = []
-
-    for minion_run_stats in crazy_minion_run_stats:
-        element = {
-            "id": minion_run_stats.id,
-            # "minION": None,
-            # "run_id": None,
-            "sample_time": minion_run_stats.sample_time,
-            "event_yield": minion_run_stats.event_yield,
-            "asic_temp": round(minion_run_stats.asic_temp, 2),
-            "heat_sink_temp": round(minion_run_stats.heat_sink_temp, 2),
-            "voltage_value": minion_run_stats.voltage_value,
-            # "mean_ratio": minion_run_stats.mean_ratio,
-            "open_pore": minion_run_stats.open_pore,
-            "in_strand": minion_run_stats.in_strand,
-            "multiple": minion_run_stats.multiple,
-            "unavailable": minion_run_stats.unavailable,
-            "unknown": minion_run_stats.unknown,
-            "adapter": minion_run_stats.adapter,
-            "pending_mux_change": minion_run_stats.pending_mux_change,
-            "unclassified": minion_run_stats.unclassified,
-            "below": minion_run_stats.below,
-            "unblocking": minion_run_stats.unblocking,
-            "above": minion_run_stats.above,
-            "good_single": minion_run_stats.good_single,
-            "saturated": minion_run_stats.saturated,
-            "inrange": minion_run_stats.inrange,
-            "strand": minion_run_stats.strand,
-            "pore": minion_run_stats.pore,
-            "no_pore": minion_run_stats.no_pore,
-            "zero": minion_run_stats.zero,
-            "occupancy": minion_run_stats.occupancy(),
-            "minKNOW_read_count": minion_run_stats.minKNOW_read_count,
-            "minKNOW_histogram_values": minion_run_stats.minKNOW_histogram_values,
-            "minKNOW_histogram_bin_width": minion_run_stats.minKNOW_histogram_bin_width,
+    flowcell = Flowcell.objects.get(pk=pk)
+    runs = Run.objects.filter(flowcell=flowcell)
+    run_info = [(run_id, (run_start.timestamp() * 1000)) for name, run_start in runs.values_list("runid", "start_time")]
+    if not MinionRunStats.objects.filter(
+        run_id__in=flowcell.runs.all().exclude(name="mux scan"), id__gt=check_id
+    ).count():
+        return Response({"last_minion_run_stats_id": check_id}, status=status.HTTP_206_PARTIAL_CONTENT)
+    minion_run_stats_gen = (
+        x
+        for x in list(
+            MinionRunStats.objects.filter(
+                run_id__in=flowcell.runs.all().exclude(name="mux scan"), id__gt=check_id
+            )
+        )
+    )
+    result = defaultdict(list)
+    result_pore = defaultdict(dict)
+    result_strand = defaultdict(dict)
+    result_temperature = defaultdict(dict)
+    possible_pore_states = {
+        "above",
+        "adapter",
+        "below",
+        "good_single",
+        "strand",
+        "inrange",
+        "multiple",
+        "pending_mux_change",
+        "saturated",
+        "unavailable",
+        "unblocking",
+        "unclassified",
+        "unknown",
+        "zero",
+        "pore",
+        "no_pore",
+    }
+    strand_counts = ["strand", "pore", "adapter", "good_single"]
+    result_temperature["temperature_history"]["asic_temp"] = {
+        "name": "Asic temp",
+        "data": [],
+    }
+    result_temperature["temperature_history"]["heat_sink_temp"] = {
+        "name": "HeatSink temp",
+        "data": [],
+    }
+    minknow_colours = {}
+    # Create a lookup dictionary of labels and styles for each pore state
+    for x in json.loads(minion_run_meta_information.minKNOW_colours_string)["groups"]:
+        print(x)
+        if "states" in x:
+            for j in x["states"]:
+                print(j)
+                minknow_colours[j["name"]] = j.get(
+                    "style", {"label": j["name"], "colour": "#000000"}
+                )
+        else:
+            minknow_colours[x] = {"label": j["name"], "colour": "000000"}
+    # Manually add in some of the other that aren't recorded anymore, should be fixed later
+    minknow_colours["good_single"] = {"label": "Good single", "colour": "limegreen"}
+    # Create the entry in the results dicionary for each pore state
+    # TODO check the pore states match
+    print(minknow_colours)
+    for x in possible_pore_states:
+        _ = {
+            "name": minknow_colours.get(x, {"label": x})["label"],
+            "color": f"#{minknow_colours.get(x, {'colour': '000000'})['colour']}",
+            "data": [],
         }
+        result_pore[x] = _
+        if x in strand_counts:
+            result_strand[x] = _
 
-        result.append(element)
-
-    myresult = dict()
-
-    myresult["data"] = result
-
-    if minion_run_status:
-        myresult["minKNOW_colours_string"] = minion_run_status.minKNOW_colours_string
-
-    else:
-        myresult["minKNOW_colours_string"] = None
-
-    return JsonResponse(myresult, safe=False)
+    histogram_series_suffix = (
+        "Bases" if minion_run_meta_information.local_basecalling else "ev"
+    )
+    # Loop our results
+    for mrs in minion_run_stats_gen:
+        sample_time_microseconds = int(
+            mrs.sample_time.replace(microsecond=0).timestamp() * 1000
+        )
+        result["yield_history"].append([sample_time_microseconds, mrs.event_yield])
+        for x in possible_pore_states:
+            a = [sample_time_microseconds, mrs.__dict__.get(x, 0)]
+            result_pore[x]["data"].append(a)
+            # strand calculations
+            # if x in strand_counts:
+            #     result_strand[x]["data"].append(a)
+        histogram_values = (
+            mrs.minKNOW_histogram_values.replace("'", "")
+            .replace('"', "")[1:-1]
+            .split(", ")
+        )
+        histogram_bin_width = int(mrs.minKNOW_histogram_bin_width)
+        n50 = int(mrs.n50_data)
+        result["histogram_history"].append(
+            {
+                "histogram_series": [
+                    create_histogram_series(
+                        int(value),
+                        n50,
+                        histogram_bin_width,
+                        ind,
+                        histogram_series_suffix,
+                    )
+                    for ind, value in enumerate(histogram_values)
+                ],
+                "histogram_bin_with": histogram_bin_width,
+                "n50_data": n50,
+                "sample_time": mrs.sample_time,
+                "categories": [
+                    f"{x*histogram_bin_width} - {(x+1)*histogram_bin_width} ev"
+                    for x in range(len(histogram_values))
+                ],
+            }
+        )
+        result_temperature["temperature_history"]["asic_temp"]["data"].append(
+            [sample_time_microseconds, round(mrs.asic_temp, 2)]
+        )
+        result_temperature["temperature_history"]["heat_sink_temp"]["data"].append(
+            [sample_time_microseconds, round(mrs.heat_sink_temp)]
+        )
+        result["voltage_history"].append([sample_time_microseconds, mrs.voltage_value])
+        result["occupancy_history"].append([sample_time_microseconds, mrs.occupancy()])
+        last_minion_run_stats_id = mrs.id
+    # TOdo here is where we need a check for events or basecalled data, maybe add to model
+    yield_name = "Bases" if minion_run_meta_information.local_basecalling else "Events"
+    result["yield_history"] = [{"name": yield_name, "data": result["yield_history"]}]
+    result["voltage_history"] = [{"name": "Voltage", "data": result["voltage_history"]}]
+    result["occupancy_history"] = [
+        {"name": "% Occupancy", "data": result["occupancy_history"]}
+    ]
+    result["pore_history"] = result_pore.values()
+    result["in_strand_history"] = result_strand.values()
+    result["temperature_history"] = result_temperature["temperature_history"].values()
+    result["last_minion_run_stats_id"] = last_minion_run_stats_id
+    result["run_info"] = run_info
+    return Response(result, status=200)
 
 
 @api_view(["GET"])
@@ -2205,14 +2317,14 @@ def flowcell_tabs_list(request, pk):
     # Check for assembly data
     # TODO add an actual check here
     if JobMaster.objects.filter(
-            flowcell__id=pk, job_type__name="Track Artic Coverage"
+        flowcell__id=pk, job_type__name="Track Artic Coverage"
     ).last():
         if (
-                JobMaster.objects.filter(
-                    flowcell__id=pk, job_type__name="Track Artic Coverage"
-                )
-                        .last()
-                        .read_count
+            JobMaster.objects.filter(
+                flowcell__id=pk, job_type__name="Track Artic Coverage"
+            )
+            .last()
+            .read_count
         ):
             tabs.append("artic")
     return Response(tabs)
@@ -2355,13 +2467,13 @@ def read_list_new(request):
 
         if search_criteria == "run":
 
-            qs = FastqRead.objects.filter(run__id=search_value)[offset: offset + limit]
+            qs = FastqRead.objects.filter(run__id=search_value)[offset : offset + limit]
 
         elif search_criteria == "fastqfile":
 
             qs = FastqRead.objects.filter(fastqfile_id=search_value)[
-                 offset: offset + limit
-                 ]
+                offset : offset + limit
+            ]
 
         else:
 
@@ -2489,7 +2601,7 @@ def flowcell_sharing(request, pk):
             return Response(
                 {
                     "message": "User already has permission. If you want to change the permission"
-                               " level, delete the current permission first."
+                    " level, delete the current permission first."
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
@@ -2617,19 +2729,19 @@ def job_master_list(request):
         try:
             # Get the flowcell by name
             flowcell = Flowcell.objects.get(
-                Q(name=request.data["flowcell"])
-                | Q(pk=int(request.data["flowcell"]))
+                Q(name=request.data["flowcell"]) | Q(pk=int(request.data["flowcell"]))
             )
             request.data["flowcell"] = flowcell.id
         # If that doesn't work
         except Flowcell.DoesNotExist as e:
             print("Exception: {}".format(e))
             return Response(
-                "Flowcell not found. Please contact server admin.", status=status.HTTP_404_NOT_FOUND
+                "Flowcell not found. Please contact server admin.",
+                status=status.HTTP_404_NOT_FOUND,
             )
         if (
-                not request.user.has_perm("run_analysis", flowcell)
-                and not request.user == flowcell.owner
+            not request.user.has_perm("run_analysis", flowcell)
+            and not request.user == flowcell.owner
         ):
             return Response(
                 {
@@ -2638,7 +2750,10 @@ def job_master_list(request):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
         if flowcell.archived and request.data["job_type"] != 11:
-            return Response("Flowcell Archived, no data to analyse", status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                "Flowcell Archived, no data to analyse",
+                status=status.HTTP_403_FORBIDDEN,
+            )
         # Check to see if we have a string as the flowcell, not an Int for a PK based lookup
         # This is for starting a job from the client
 
@@ -2648,7 +2763,7 @@ def job_master_list(request):
 
         # if int(request.data["job_type"]) == 16:
         #     ArticFireConditions.objects.create(flowcell=flowcell)
-            # Hard set the covid reference
+        # Hard set the covid reference
         # if int(request.data["job_type"]) == 16:
         #     print("we are setting covid reference")
         #     reference = ReferenceInfo.objects.get(name="covid_19")
@@ -2663,8 +2778,7 @@ def job_master_list(request):
                 # If a reference hasn't been selected.
                 if request.data["reference"] == "":
                     return Response(
-                        "Reference not chosen - Please select a reference",
-                        status=400,
+                        "Reference not chosen - Please select a reference", status=400,
                     )
                 reference = ReferenceInfo.objects.get(
                     Q(name=request.data["reference"])
@@ -2678,7 +2792,9 @@ def job_master_list(request):
                 )
 
             if request.data["job_type"] == 4:
-                MAP.add_reference(reference.name, reference.minimap2_index_file_location)
+                MAP.add_reference(
+                    reference.name, reference.minimap2_index_file_location
+                )
         serializer = JobMasterInsertSerializer(data=request.data)
         # If the serialiser is valid
         if serializer.is_valid():
@@ -2706,11 +2822,15 @@ def task_types_list(request):
         # These are the available tasks
         tasks = ["Metagenomics", "Minimap2", "Track Artic Coverage"]
         # Get the tasks
-        result = JobType.objects.filter(name__in=tasks).values("id", "name", "description")
+        result = JobType.objects.filter(name__in=tasks).values(
+            "id", "name", "description"
+        )
 
     else:
         # Otherwise it's for the site, so make all that are public available
-        result = JobType.objects.filter(private=False).values("id", "name", "description")
+        result = JobType.objects.filter(private=False).values(
+            "id", "name", "description"
+        )
 
     return Response({"data": result}, status=status.HTTP_200_OK)
 
@@ -2726,8 +2846,8 @@ def task_control(request):
 
     job_master = JobMaster.objects.get(pk=request.data["flowcellJobId"])
     if not (
-            request.user == job_master.flowcell.owner
-            or request.user.has_perm("run_analysis", job_master.flowcell)
+        request.user == job_master.flowcell.owner
+        or request.user.has_perm("run_analysis", job_master.flowcell)
     ):
         return Response(
             "You do not have permission to perform this action.", status=403
@@ -2798,6 +2918,9 @@ def task_control(request):
             return_message = "Successfully deleted artic Task."
 
     else:
-        return Response("Not implemented, please deal with as an admin.", status=status.HTTP_501_NOT_IMPLEMENTED)
+        return Response(
+            "Not implemented, please deal with as an admin.",
+            status=status.HTTP_501_NOT_IMPLEMENTED,
+        )
 
     return Response(return_message, status=200)
