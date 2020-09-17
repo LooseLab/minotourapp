@@ -2085,7 +2085,7 @@ def flowcell_minknow_stats_list(request, pk, check_id):
     )
     flowcell = Flowcell.objects.get(pk=pk)
     runs = Run.objects.filter(flowcell=flowcell)
-    run_info = [(run_id, (run_start.timestamp() * 1000)) for name, run_start in runs.values_list("runid", "start_time")]
+    run_info = [(run_start, (run_start.timestamp() * 1000)) for name, run_start in runs.values_list("runid", "start_time")]
     if not MinionRunStats.objects.filter(
         run_id__in=flowcell.runs.all().exclude(name="mux scan"), id__gt=check_id
     ).count():
