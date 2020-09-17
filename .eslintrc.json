@@ -39,6 +39,8 @@
         "makePieChart": "writable",
         "MinotourTask": "writable",
         "MessageView": "writable",
-        "d3": "readonly"
+        "d3": "readonly",
+        "LiveMinKnowController": "readonly",
+        "SummaryTabController": "readonly"
     }
 }
