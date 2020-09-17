@@ -118,7 +118,7 @@ def move_reads_to_flowcell(run_id, flowcell_id, from_flowcell_id):
     flowcell = Flowcell.objects.get(pk=flowcell_id)
     old_flowcell = Flowcell.objects.get(pk=from_flowcell_id)
     run = Run.objects.get(pk=run_id)
-    chunk_size = 50000
+    chunk_size = 10000
     reads = FastqRead.objects.filter(flowcell=old_flowcell, run=run)[0:chunk_size]
     reads_len = reads.count()
     last_read_in_chunk = reads[reads_len - 1]
