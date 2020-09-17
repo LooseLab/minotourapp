@@ -1177,11 +1177,21 @@ class MinionRunStats(models.Model):
 
     ## This is something to look at for optimisation
     def occupancy(self):
-        if (self.strand > 0 and (self.inrange > 0 or self.pore > 0)):
+        if self.strand > 0 and (self.inrange > 0 or self.pore > 0):
             occupancy = round(((self.strand + self.adapter) / (self.strand + self.adapter + self.good_single + self.pore)) * 100)
         else:
             occupancy = 0
         return occupancy
+
+    def has_basecalling(self):
+        """
+        Return if the run has basecalling enabled, so we display those values on the live event page
+        Returns
+        -------
+        bool
+            Whether basecalling is switched on or off
+        """
+        return self.basecalled_bases > 0
 
 
 class MinionRunInfo(models.Model):
