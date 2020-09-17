@@ -30,7 +30,7 @@
           </div>
     <div class="card-body">
         <div class="row">
-            <div id="poreshizzle" class="col-md-12 highcharts"
+            <div id="pore-states" class="col-md-12 highcharts"
                  style="height:400px;display:block;">
                 <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
             </div>
@@ -54,6 +54,10 @@
                  style="width:100%; height:400px;display:block;">
                 <i class="fa fa-cog fa-spin fa-3x"></i> Calculating Read Numbers
             </div>
+        </div>
+        <div class="row">
+            <label for="histogram-date-picker" style="display: block; font-size: 2rem">Displayed date: <span style="font-size: 2rem" id="displayed-date"></span></label>
+            <input id="histogram-date-picker" style="width: 100%" name="histogram-date-picker" min="0" step="1" value="0" type="range">
         </div>
         The histogram data are derived from the same source as the MinKNOW read length histogram.<br>
         We currently report these in events, not bases.<br>
