@@ -1,4 +1,5 @@
 import datetime
+import itertools
 
 import pandas as pd
 from django.db.models import F
@@ -14,6 +15,52 @@ from reads.models import (
     FlowcellChannelSummary,
     FastqFile, JobMaster,
 )
+
+
+def peek(iterable):
+    """
+    Peek at the first, return None if the generator is empty
+    Parameters
+    ----------
+    iterable: generator
+        Generator to peek at
+    Returns
+    -------
+
+    """
+    try:
+        first = next(iterable)
+    except StopIteration:
+        return None
+    return first, itertools.chain([first], iterable)
+
+
+def create_histogram_series(histogram_value, n50, bin_width, index, name_suffix):
+    """
+    Return a dictionary of the series values required by the histogram on the live page
+    Parameters
+    ----------
+    histogram_value: int
+        The value in bases/estimated bases for that bin
+    n50: int
+        The n50 value
+    bin_width: int
+        the width of the bin
+    index: int
+        The index required
+    name_suffix: str
+        Suffix to add to the series name. Bases if basecalling enabled else ev
+
+
+    Returns
+    -------
+
+    """
+    color = "red" if n50 >= index*bin_width and n50 <= (index+1)*bin_width else "blue"
+    name = f"{index*bin_width} - {(index+1)*bin_width} {name_suffix}"
+    if color == "red":
+        return {"name": name, "color": color, "y": histogram_value, "n50": True}
+    return {"name": name, "color": color, "y": histogram_value}
 
 
 def create_and_save_message(**kwargs):
