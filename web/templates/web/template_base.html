@@ -63,6 +63,7 @@
     <script src="{% static 'web/js/controllers/SharingController.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/controllers/ReferenceManagementController.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/controllers/SummaryTabController.js' %}?{% now 'c' %}"></script>
+    <script src="{% static 'web/js/controllers/LiveMinKnowController.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/views/MessageView.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/controllers/FlowcellNotificationController.js' %}?{% now 'c' %}"></script>
     <script src="{% static 'web/js/controllers/ArticController.js' %}?{% now 'c' %}"></script>
@@ -91,7 +92,7 @@
         </div>
 
     <!-- Main Footer -->
-    <footer class="footer bg-light" id="sticky-footer">
+    <footer class="footer bg-light" id="sticky-footer" style="z-index: 11">
         <!-- To the right -->
         <div class="container-fluid">
             <div class="row">
