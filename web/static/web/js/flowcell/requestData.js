@@ -19,10 +19,6 @@ function requestData (flowcell_id) {
     var flowcellSelectedTabInput = getSelectedTab()
     if (flowcellSelectedTabInput === `reads`) {
       requestReadData(flowcell_id)
-    } else if (flowcellSelectedTabInput === `live-event-data`) {
-      this.makePageUnscrollable()
-      // this.requestRunDetails(flowcellId);
-      this.requestLiveRunStats(flowcell_id)
     }
   }.bind(this))
 };
