@@ -55,7 +55,8 @@ class FlowcellTabController {
       artic: `articController`,
       tasks: `tasksController`,
       metagenomics: `metagenomicsController`,
-      "summary-data": `summaryDataController`
+      "summary-data": `summaryDataController`,
+      "live-event-data": `liveEventController`
     }
 
     if (getSelectedTab()) {
@@ -106,7 +107,8 @@ class FlowcellTabController {
       "sequence-mapping": [`alignmentController`, AlignmentController],
       tasks: [`tasksController`, TasksController],
       metagenomics: [`metagenomicsController`, MetagenomicsController],
-      "summary-data": [`summaryDataController`, SummaryTabController]
+      "summary-data": [`summaryDataController`, SummaryTabController],
+      "live-event-data": [`liveEventController`, LiveMinKnowController]
     }
     // if we have a controller for this tab, but we are no longer showing it as underlying data has been deleted
     Object.keys(controllers).forEach(controllerName => {
