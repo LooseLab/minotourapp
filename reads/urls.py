@@ -187,9 +187,9 @@ urlpatterns = [
         name="flowcell-channel-summary"
     ),
     url(
-        r'^api/v1/flowcells/(?P<pk>[0-9]+)/runstats/(?P<checkid>[0-9]+)/$',
-        views.flowcell_run_stats_latest,
-        name="flowcellrunstats_latest"
+        r'^api/v1/reads/flowcells/(?P<pk>[0-9]+)/runstats/(?P<check_id>[0-9]+)/$',
+        views.flowcell_minknow_stats_list,
+        name="flowcell-run-stats-list"
     ),
     # TODO IS THIS VIEW USED
     url(
