@@ -89,9 +89,9 @@ function checkHighChartsDataIsIdentical (newChartData, oldChartData) {
  * @returns {string} The value of the given cookie.
  */
 function getCookie (name) {
-  let cookie;
-  let cookies;
-  let cookieValue = null;
+  let cookie
+  let cookies
+  let cookieValue = null
   if (document.cookie && document.cookie !== ``) {
     cookies = document.cookie.split(`;`)
     for (var i = 0; i < cookies.length; i++) {
@@ -164,10 +164,10 @@ function makeColumnChart (divId, chartTitle, yAxisTitle) {
 
 /**
  * Function abstracting creation of a HighCharts Spline chart.
- * @param divName {str} ID of div to initialise chart inside.
- * @param chartTitle {str} Title of chart.
- * @param yAxisTitle {str} Title of Y axis.
- * @returns {*}
+ * @param divId {string} ID of div to initialise chart inside.
+ * @param chartTitle {string} Title of chart.
+ * @param yAxisTitle {string} Title of Y axis.
+ * @returns {*} HighCharts Api object
  */
 function makeSplineChart (divId, chartTitle, yAxisTitle) {
   const chart = Highcharts.chart(divId, {
@@ -210,13 +210,13 @@ function makeSplineChart (divId, chartTitle, yAxisTitle) {
   return chart
 }
 
-/** TODO docstring
- * Make chart
- * @param divName
- * @param chartTitle
- * @param yAxisTitle
- * @param xAxisTitle
- * @return {*}
+/**
+ * Function abstracting creation of a HighCharts Spline chart without date time slider.
+ * @param divName {string} ID of div to initialise chart inside.
+ * @param chartTitle {string} Title of chart.
+ * @param yAxisTitle {string} Title of Y axis.
+ * @param xAxisTitle {string} Title of the X axis
+ * @return {*} Highcharts API object
  */
 function makeSplineChartNonDatetime (divName, chartTitle, yAxisTitle, xAxisTitle) {
   return Highcharts.chart(divName, {
@@ -287,13 +287,13 @@ function makeBoxPlot (divName, chartTitle, yAxisTitle) {
 
 /**
  *
- * @param divName
+ * @param divId
  * @param chartTitle
  * @param yAxisTitle
  * @return {*}
  */
-function makeLiveHistogram (divName, chartTitle, yAxisTitle) {
-  return Highcharts.chart(divName, {
+function makeLiveHistogram (divId, chartTitle, yAxisTitle) {
+  return Highcharts.chart(divId, {
     chart: {
       type: `column`,
       // marginRight: 10,
@@ -323,12 +323,12 @@ function makeLiveHistogram (divName, chartTitle, yAxisTitle) {
 
 /**
  *
- * @param divName
- * @param chartTitle
- * @param yAxisTitle
+ * @param divName {string} The name of the Div that we are drawing the chart in
+ * @param chartTitle {string} The Title of the area chart
+ * @param yAxisTitle {string} The y axis title of the area chart
  */
 function makeAreaPlot (divName, chartTitle, yAxisTitle) {
-  return  Highcharts.stockChart(divName, {
+  return Highcharts.stockChart(divName, {
     chart: {
       renderTo: `container-porehist` + this.title,
       type: `area`,
@@ -381,8 +381,16 @@ function makeAreaPlot (divName, chartTitle, yAxisTitle) {
   })
 }
 
-function makeLiveChart (divName, chartTitle, yAxisTitle) {
-  return Highcharts.stockChart(divName, {
+// Todo can these spline chart creation functions be merged??
+/**
+ * Crate a spline chart with date range slider
+ * @param divId {string} The id of the div that we are appending to
+ * @param chartTitle {string} The chart title to be displayed
+ * @param yAxisTitle {string} The chart yAxis title to be displayed
+ * @return {*} HighCharts api object
+ */
+function makeLiveChart (divId, chartTitle, yAxisTitle) {
+  return Highcharts.stockChart(divId, {
     chart: {
       type: `spline`,
       zoomType: `xy`
