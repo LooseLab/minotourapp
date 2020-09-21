@@ -495,8 +495,13 @@ function makeHeatmapChart (divName, chartTitle) {
       layout: `horizontal`
     },
     exporting: {
-      enabled: false
+      enabled: true
+    },
+    series: {
+      nullColor: `#EFEFEF`,
+      type: `heatmap`
     }
+
   })
 }
 

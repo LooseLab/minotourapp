@@ -1929,38 +1929,24 @@ def flowcell_channel_summary(request, pk):
     """
 
     flowcell = Flowcell.objects.get(pk=pk)
-
     qs = FlowcellChannelSummary.objects.filter(flowcell=flowcell)
-
     #
     # set all channels with value 0
     #
-
-    result_mapped_to_flowcell = {}
-
-    for i in range(1, flowcell.size + 1):
-        coordinate = get_coords(i, flowcell.size)
-
-        result_mapped_to_flowcell[i] = [coordinate[0], coordinate[1], 0, 0]
-
+    result = []
     #
     # fill the channels with correct value
     #
-
     for record in qs:
         coordinate = get_coords(record.channel, flowcell.size)
-
-        result_mapped_to_flowcell[record.channel] = [
+        result.append([
             coordinate[0],
             coordinate[1],
             record.read_count,
             record.read_length,
-        ]
-
-    return HttpResponse(
-        json.dumps(list(result_mapped_to_flowcell.values()), cls=DjangoJSONEncoder),
-        content_type="application/json",
-    )
+        ])
+    result.sort(key=lambda x: (x[0], x[1]))
+    return Response(result)
 
 
 @api_view(["GET"])
