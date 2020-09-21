@@ -2140,7 +2140,7 @@ def flowcell_minknow_stats_list(request, pk, check_id):
             for j in x["states"]:
                 print(j)
                 minknow_colours[j["name"]] = j.get(
-                    "style", {"label": j["name"], "colour": "#000000"}
+                    "style", {"label": j["name"], "colour": "000000"}
                 )
         else:
             minknow_colours[x] = {"label": j["name"], "colour": "000000"}
