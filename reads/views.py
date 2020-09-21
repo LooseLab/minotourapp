@@ -21,7 +21,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from alignment.mapper import MAP
-from alignment.models import PafRoughCov
+from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
 from metagenomics.models import CentrifugeOutput
 from minotourapp import settings
@@ -2308,8 +2308,7 @@ def flowcell_tabs_list(request, pk):
     minion_run_stats_list = MinionRunStats.objects.filter(run_id__flowcell__id=pk)
     if minion_run_stats_list.count() > 0:
         tabs.append("live-event-data")
-    paf_rough_cov_list = PafRoughCov.objects.filter(flowcell_id=pk)
-    if paf_rough_cov_list.count() > 0:
+    if PafSummaryCov.objects.filter(flowcell_id=pk):
         tabs.append("sequence-mapping")
     chromosome = ExpectedBenefitChromosomes.objects.filter(task__flowcell__id=pk).last()
     if chromosome is not None:
