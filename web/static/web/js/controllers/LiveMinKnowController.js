@@ -45,7 +45,7 @@ class LiveMinKnowController {
     this._histogramHistory = null
     this._first = true
     this._makePageUnscrollable()
-    this._interval = setInterval(this.updateTab, 60000, this)
+    this._interval = setInterval(this.fetchLiveEventsData, 60000, this.flowcellId, this)
     $(window).on(`unload`, function () {
       console.log(`clearing base-called interval`)
       clearInterval(this._interval)
@@ -80,11 +80,8 @@ class LiveMinKnowController {
     $(`html`).removeClass(`disable-scroll`)
   }
 
-  updateTab (that) {
-    if (getSelectedTab() !== `live-event-data`) {
-      return
-    }
-    that.fetchLiveEventsData(that._flowcellId, that)
+  updateTab () {
+    this.fetchLiveEventsData(this._flowcellId, this)
   }
 
   /**
@@ -196,6 +193,9 @@ class LiveMinKnowController {
   }
 
   fetchLiveEventsData (flowcellId, that) {
+    if (getSelectedTab() !== `live-event-data`) {
+      return
+    }
     that._axiosInstance.get(`/api/v1/reads/flowcells/${flowcellId}/runstats/${that._lastMinionRunStatsId}`).then(
       response => {
         if (response.status === 206) { return }
