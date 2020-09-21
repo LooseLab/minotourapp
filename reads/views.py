@@ -80,7 +80,6 @@ from reads.tasks.redis_tasks_functions import save_reads_bulk
 from reads.tasks.task_delete_flowcell import clear_artic_data
 from reads.utils import (
     get_coords,
-    return_temp_empty_summary,
     pause_job,
     clear_artic_command_job_masters,
     create_histogram_series,
@@ -2004,13 +2003,9 @@ def flowcell_run_summaries_html(request, pk):
 @api_view(["GET"])
 def flowcell_run_basecalled_summary_html(request, pk):
     flowcell = Flowcell.objects.get(pk=pk)
-
     result_basecalled_summary = []
-
     for run in flowcell.runs.all():
-
         if hasattr(run, "summary"):
-
             run_summary = {
                 "runid": run.summary.run.runid,
                 "read_count": run.summary.read_count,
@@ -2021,13 +2016,8 @@ def flowcell_run_basecalled_summary_html(request, pk):
                 "first_read_start_time": run.summary.first_read_start_time,
                 "last_read_start_time": run.summary.last_read_start_time,
             }
-
         else:
-
             print("RunSummary does not exist for run {}".format(run.id))
-
-            run_summary_obj = return_temp_empty_summary(run)
-
             run_summary = {
                 "runid": "Unavailable",
                 "read_count": "Unavailable",
@@ -2137,7 +2127,7 @@ def flowcell_minknow_stats_list(request, pk, check_id):
     print(minknow_colours)
     last_time = MinionRunStats.objects.filter(run__flowcell_id=167).last().sample_time
     first_time = MinionRunStats.objects.filter(run__flowcell_id=167).first().sample_time
-    div, rem = divmod((last_time - first_time).total_seconds(), 12*3600)
+    div, rem = divmod((last_time - first_time).total_seconds(), 24*3600)
     counter = div
     for x in possible_pore_states:
         _ = {
@@ -2154,7 +2144,7 @@ def flowcell_minknow_stats_list(request, pk, check_id):
     )
     # Loop our results
     for mrs in minion_run_stats_gen:
-        if not counter % div == 0:
+        if not div == 0 and counter % div == 0:
             counter += 1
             continue
         else:

@@ -109,7 +109,8 @@ class CoverageChart {
           position: `absolute`
         },
         boost: {
-          useGPUTranslations: true
+          useGPUTranslations: true,
+          usePreAllocated: true
         },
         resetZoomButton: {
           fill: `white`,
