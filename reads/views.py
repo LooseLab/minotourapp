@@ -2169,7 +2169,7 @@ def flowcell_minknow_stats_list(request, pk, check_id):
     # Loop our results
     for mrs in minion_run_stats_gen:
         if not counter % div == 0:
-            return
+            continue
         else:
             counter += 1
         sample_time_microseconds = int(
