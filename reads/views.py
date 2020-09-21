@@ -2145,7 +2145,7 @@ def flowcell_minknow_stats_list(request, pk, check_id):
         else:
             minknow_colours[x] = {"label": j["name"], "colour": "000000"}
     # Manually add in some of the other that aren't recorded anymore, should be fixed later
-    minknow_colours["good_single"] = {"label": "Good single", "colour": "limegreen"}
+    minknow_colours["good_single"] = {"label": "Good single", "colour": "32CD32"}
     # Create the entry in the results dicionary for each pore state
     # TODO check the pore states match
     print(minknow_colours)
