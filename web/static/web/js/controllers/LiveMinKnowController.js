@@ -168,24 +168,24 @@ class LiveMinKnowController {
       } else {
         console.log(`addIngSeties`)
         chart.addSeries(chartReadySeries, false)
-        runStarts.forEach(([runName, runStart]) => {
-          chart.xAxis[0].addPlotLine({
-            label: {
-              text: `Run: ${runName}`,
-              x: 10,
-              verticalAlign: `top`,
-              style: {
-                color: `blue`,
-                fontWeight: `bold`,
-                fontSize: `.5rem`
-              }
-            },
-            color: `red`,
-            value: runStart,
-            dashStyle: `longdashdot`,
-            width: 2
-          })
-        })
+        // runStarts.forEach(([runName, runStart]) => {
+        //   chart.xAxis[0].addPlotLine({
+        //     label: {
+        //       text: `Run: ${runName}`,
+        //       x: 10,
+        //       verticalAlign: `top`,
+        //       style: {
+        //         color: `blue`,
+        //         fontWeight: `bold`,
+        //         fontSize: `.5rem`
+        //       }
+        //     },
+        //     color: `red`,
+        //     value: runStart,
+        //     dashStyle: `longdashdot`,
+        //     width: 2
+        //   })
+        // })
         redraw = true
       }
     })
@@ -204,6 +204,7 @@ class LiveMinKnowController {
         that._first = false
         that._histogramHistory = response.data.histogram_history
         that.updateLiveTabChart(response.data.yield_history, that._liveYieldChart, runInfo)
+        console.log(response.data.pore_history)
         that.updateLiveTabChart(response.data.pore_history, that._livePoreStatesChart, runInfo)
         that._prepareHistogramSlider()
         that._updateLiveHistogram(response.data.histogram_history, index)

@@ -9,7 +9,7 @@ class FlowcellTabController {
     this.tabs = []
     this._first = true
     this._createElementLookupObjects()
-    this._redraw_interval = setInterval(() => this._drawTabs(), 30000)
+    this._redraw_interval = setInterval(() => this._drawTabs(), 60000)
   }
 
   /**
