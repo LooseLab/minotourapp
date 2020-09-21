@@ -45,7 +45,7 @@ class LiveMinKnowController {
     this._histogramHistory = null
     this._first = true
     this._makePageUnscrollable()
-    this._interval = setInterval(this.updateTab, 60000)
+    this._interval = setInterval(this.updateTab, 60000, this)
     $(window).on(`unload`, function () {
       console.log(`clearing base-called interval`)
       clearInterval(this._interval)
@@ -80,11 +80,11 @@ class LiveMinKnowController {
     $(`html`).removeClass(`disable-scroll`)
   }
 
-  updateTab () {
+  updateTab (that) {
     if (getSelectedTab() !== `live-event-data`) {
       return
     }
-    this.fetchLiveEventsData(this._flowcellId)
+    that.fetchLiveEventsData(that._flowcellId, that)
   }
 
   /**
@@ -192,27 +192,27 @@ class LiveMinKnowController {
         redraw = true
       }
     })
-    if (redraw) { chart.redraw() }
+    if (redraw) { console.log(chart); chart.redraw() }
   }
 
-  fetchLiveEventsData (flowcellId) {
-    this._axiosInstance.get(`/api/v1/reads/flowcells/${flowcellId}/runstats/${this._lastMinionRunStatsId}`).then(
+  fetchLiveEventsData (flowcellId, that) {
+    that._axiosInstance.get(`/api/v1/reads/flowcells/${flowcellId}/runstats/${that._lastMinionRunStatsId}`).then(
       response => {
         if (response.status === 206) { return }
-        const index = this._first ? response.data.histogram_history.length - 1 : parseInt($(`#histogram-date-picker`).val())
+        const index = that._first ? response.data.histogram_history.length - 1 : parseInt($(`#histogram-date-picker`).val())
         const runInfo = response.data.run_info
-        this._first = false
-        this._histogramHistory = response.data.histogram_history
-        this.updateLiveTabChart(response.data.yield_history, this._liveYieldChart, runInfo)
-        this.updateLiveTabChart(response.data.pore_history, this._livePoreStatesChart, runInfo)
-        this._prepareHistogramSlider()
-        this._updateLiveHistogram(response.data.histogram_history, index)
-        this.updateLiveTabChart(response.data.occupancy_history, this._liveOccupancyChart, runInfo)
-        this.updateLiveTabChart(response.data.in_strand_history, this._liveInStrandChart, runInfo)
-        this.updateLiveTabChart(response.data.temperature_history, this._liveTemperatureChart, runInfo)
-        this.updateLiveTabChart(response.data.voltage_history, this._liveVoltageChart, runInfo)
-        this._revealPage()
-        this._lastMinionRunStatsId = response.data.last_minion_run_stats_id
+        that._first = false
+        that._histogramHistory = response.data.histogram_history
+        that.updateLiveTabChart(response.data.yield_history, that._liveYieldChart, runInfo)
+        that.updateLiveTabChart(response.data.pore_history, that._livePoreStatesChart, runInfo)
+        that._prepareHistogramSlider()
+        that._updateLiveHistogram(response.data.histogram_history, index)
+        that.updateLiveTabChart(response.data.occupancy_history, that._liveOccupancyChart, runInfo)
+        that.updateLiveTabChart(response.data.in_strand_history, that._liveInStrandChart, runInfo)
+        that.updateLiveTabChart(response.data.temperature_history, that._liveTemperatureChart, runInfo)
+        that.updateLiveTabChart(response.data.voltage_history, that._liveVoltageChart, runInfo)
+        that._revealPage()
+        that._lastMinionRunStatsId = response.data.last_minion_run_stats_id
       }
     )
   }

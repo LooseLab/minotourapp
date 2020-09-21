@@ -173,10 +173,13 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
         # use this array for easy comparison of current data on client side in BaseCalledData controller
         array_data = []
         pie_chart_data = []
+        # color for unclassified then classified
+        pie_chart_colors = ["#7cb5ec", "orange"]
         for key, value in df.groupby("is_unclassified")["data"].sum().to_dict().items():
             results = {}
             results["name"] = key
             results["y"] = round(value, 2)
+            results["color"]  =  pie_chart_colors.pop()
             array_data.append(round(value, 2))
             if key == "Classified":
                 results["sliced"] = True
