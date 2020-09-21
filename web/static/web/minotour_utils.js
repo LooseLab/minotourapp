@@ -178,6 +178,7 @@ function makeSplineChart (divId, chartTitle, yAxisTitle) {
       zoomType: `x`
     },
     boost: {
+      enabled: false,
       useGPUTranslations: true
     },
     title: {
@@ -335,6 +336,9 @@ function makeAreaPlot (divName, chartTitle, yAxisTitle) {
       // type: 'spline',
       height: 350,
       marginRight: 200
+    },
+    boost: {
+      useGPUTranslations: true
     },
     title: {
       text: chartTitle

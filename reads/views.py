@@ -2149,6 +2149,10 @@ def flowcell_minknow_stats_list(request, pk, check_id):
     # Create the entry in the results dicionary for each pore state
     # TODO check the pore states match
     print(minknow_colours)
+    last_time = MinionRunStats.objects.filter(run__flowcell_id=167).last().sample_time
+    first_time = MinionRunStats.objects.filter(run__flowcell_id=167).first().sample_time
+    div, rem = divmod((last_time - first_time).total_seconds(), 12*3600)
+    counter = div
     for x in possible_pore_states:
         _ = {
             "name": minknow_colours.get(x, {"label": x})["label"],
@@ -2164,6 +2168,10 @@ def flowcell_minknow_stats_list(request, pk, check_id):
     )
     # Loop our results
     for mrs in minion_run_stats_gen:
+        if not counter % div == 0:
+            return
+        else:
+            counter += 1
         sample_time_microseconds = int(
             mrs.sample_time.replace(microsecond=0).timestamp() * 1000
         )
