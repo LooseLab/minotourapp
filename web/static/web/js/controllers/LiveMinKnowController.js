@@ -45,11 +45,11 @@ class LiveMinKnowController {
     this._histogramHistory = null
     this._first = true
     this._makePageUnscrollable()
-    this._interval = setInterval(this.fetchLiveEventsData, 60000, this.flowcellId, this)
-    $(window).on(`unload`, function () {
-      console.log(`clearing base-called interval`)
-      clearInterval(this._interval)
-    })
+    // this._interval = setInterval(this.fetchLiveEventsData, 60000, this._flowcellId, this)
+    // $(window).on(`unload`, function () {
+    //   console.log(`clearing base-called interval`)
+    //   clearInterval(this._interval)
+    // })
     $(`#loader-wrapper`).css(`width`, $(`#tab-live-event-data`).css(`width`))
   }
 
