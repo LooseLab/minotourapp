@@ -618,7 +618,7 @@ class MetagenomicsController {
       .data(nodesObj.links)
       .enter().append(`g`)
       .style(`mix-blend-mode`, `multiply`)
-
+    console.log(nodesObj)
     link.append(`path`)
       .attr(`d`, d3.sankeyLinkHorizontal())
       .attr(`stroke`, (d, i) => color(d.path))
