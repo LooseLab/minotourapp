@@ -524,7 +524,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
     -------
 
     """
-    reference_location = getattr(settings, "REFERENCE_LOCATION", None)
     # The location of the mimimap2 executable
     minimap2 = getattr(settings, "MINIMAP2", None)
     task = JobMaster.objects.get(pk=task_id)
@@ -597,6 +596,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
         fasta_df_barcode["fasta"] = (
             ">" + fasta_df_barcode["read_id"] + "\n" + fasta_df_barcode["sequence"]
         )
+        barcodes = fasta_df_barcode["barcode_name"].unique()
         # Create one string formatted correctly for fasta with input data
         fasta_data = "\n".join(list(fasta_df_barcode["fasta"]))
         if streamed_reads:
@@ -606,7 +606,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             fastq_dict = {fasta.read_id: fasta for fasta in fasta_objects}
         # create the command we are calling minimap with
         cmd = "{} -x map-ont -t 1 --secondary=no -c --MD {} -".format(
-            minimap2, Path(reference_location) / reference_info.file_name
+            minimap2, reference_info.file_location.path
         )
         logger.info(
             "Flowcell id: {} - Calling minimap Artic - {}".format(flowcell.id, cmd)
@@ -633,7 +633,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             chromosomes_seen_now = set()
             # Dictionary to store reads that have mapped under the correct barcode
             barcode_sorted_fastq_cache = defaultdict(list)
-            reference_path = Path(reference_location) / reference_info.file_name
+            reference_path = reference_info.file_location.path
             base_result_dir_path = make_results_directory_artic(flowcell.id, task.id)
             # We can save time by writing the empty numpy data struct and reloading it
             master_reference_count_path = Path(
@@ -651,6 +651,13 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     )
             run_id = fasta_df_barcode["run_id"].unique()[0]
             barcodes = np.unique(fasta_df_barcode["barcode_name"])
+            for barcode in barcodes:
+                barcode_orm = Barcode.objects.get(run_id=run_id, name=barcode)
+                orm_object, created = ArticBarcodeMetadata.objects.get_or_create(
+                    flowcell=flowcell,
+                    job_master=task,
+                    barcode=barcode_orm
+                )
             logger.info(f"Barcodes in this iteration are {barcodes}")
             barcoded_counts_dict = replicate_counts_array_barcoded(
                 barcodes, reference_count_dict
@@ -835,7 +842,8 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     )
                     if barcode in barcodes_already_fired:
                         continue
-                    afc = ArticFireConditions.objects.get(flowcell=flowcell).__dict__
+                    afc, created = ArticFireConditions.objects.get_or_create(flowcell=flowcell)
+                    afc = afc.__dict__
                     number_bases_in_array = coverage.size
                     coverage_for_90_percent = coverage[coverage >= afc["ninety_percent_bases_at"]].size
                     coverage_for_95_percent = coverage[coverage >= afc["ninety_five_percent_bases_at"]].size
