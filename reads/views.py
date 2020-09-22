@@ -24,6 +24,7 @@ from alignment.mapper import MAP
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
 from metagenomics.models import CentrifugeOutput
+from metagenomics.sankey import calculate_sankey
 from minotourapp import settings
 from reads.models import (
     Barcode,
@@ -2839,7 +2840,7 @@ def task_control(request):
         return Response(
             "You do not have permission to perform this action.", status=403
         )
-
+    return_message = ""
     action_type = request.data["actionType"]
     lookup_action_type = {1: "Reset", 2: "Pause", 3: "Delete"}
     action = lookup_action_type[action_type]
@@ -2847,40 +2848,25 @@ def task_control(request):
         "Apologies, but this action type was not recognised."
         "It may have not been implemented yet."
     )
-
+    task_type_name = job_master.job_type.name
     if job_master.job_type.name == "Metagenomics":
         if action == "Reset":
             delete_metagenomics_task.delay(job_master.id, True)
-            return_message = (
-                f"Successfully started to reset this metagenomics task, id: {job_master.id}."
-                f" Clearing previous data may take a while, please be patient!"
-            )
         elif action == "Pause":
             job_master, return_message = pause_job(job_master)
         elif action == "Delete":
             delete_metagenomics_task.delay(job_master.id)
-            return_message = (
-                f"Successfully started deletion of this metagenomics task, id: {job_master.id}."
-                f" Clearing previous data may take a while, please be patient!"
-            )
+
         else:
             return Response(unrecognised_action_message, status=500)
 
     elif job_master.job_type.name == "Minimap2":
         if action == "Reset":
             delete_alignment_task.delay(job_master.id, True)
-            return_message = (
-                f"Successfully began reset of minimap2 task, id: {job_master.id}"
-                f" Clearing previous data may take a while, please be patient!"
-            )
         elif action == "Pause":
             job_master, return_message = pause_job(job_master)
         elif action == "Delete":
             delete_alignment_task.delay(job_master.id)
-            return_message = (
-                f"Successfully began deletion of minimap2 task, id: {job_master.id}"
-                f" Clearing previous data may take a while, please be patient!"
-            )
         else:
             return Response(unrecognised_action_message, status=500)
     # for artic tasks
@@ -2894,7 +2880,6 @@ def task_control(request):
             job_master.running = False
             job_master.complete = False
             job_master.save()
-            return_message = "Successfully reset artic Task."
         elif action == "Pause":
             job_master, return_message = pause_job(job_master)
         elif action == "Delete":
@@ -2902,12 +2887,22 @@ def task_control(request):
             clear_artic_data(job_master)
             ArticFireConditions.objects.filter(flowcell=job_master.flowcell).delete()
             job_master.delete()
-            return_message = "Successfully deleted artic Task."
-
+    # sankey
+    elif job_master.job_type_id.id == 13:
+        if action == "Reset":
+            calculate_sankey(job_master.id)
+        elif action == "Pause":
+            job_master, return_message = pause_job(job_master)
+        elif action == "Delete":
+            job_master.delete()
     else:
         return Response(
             "Not implemented, please deal with as an admin.",
             status=status.HTTP_501_NOT_IMPLEMENTED,
         )
-
+    if not return_message:
+        return_message = (
+            f"Successfully began {action} for {task_type_name} task, id: {job_master.id}."
+            f" Clearing previous data may take a while, please be patient!"
+        )
     return Response(return_message, status=200)
