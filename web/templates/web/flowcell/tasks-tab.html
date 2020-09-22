@@ -14,7 +14,6 @@
 
                 <form method="post" id="post-form-task-create">
                     {% csrf_token %}
-                    <input style="display: none" type="hidden" name="flowcell" value="{{ flowcell.id }}"/>
                     <div class="form-group">
                         <label for="job-type-select">Task type</label>
                         {% if flowcell.archived %}
@@ -27,9 +26,11 @@
                         <label id="select-label" for="reference-select">Reference</label>
                         <select class="form-control" name="reference" id="reference-select" disabled></select>
                     </div>
-                    <div class="form-check form-check-inline">
+                    <div class="form-check form-check-inline" style="display: none" id="run-from-database">
                         <label class="form-check-label" id="checkbox-label" for="from-database">Run from
-                            database</label>
+                            database
+                            <span data-tooltip="Run task with reads already in the database. Leave unchecked to use reads being uploaded to flowcell." data-flow="top"><i style="padding-right: 3px" class="fas fa-question-circle" id="run-from-database"></i></span>
+                        </label>
                         <input class="form-check-input" name="from-database" id="from-database" type="checkbox">
                     </div>
 
