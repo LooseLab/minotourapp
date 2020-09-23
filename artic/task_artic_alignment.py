@@ -606,7 +606,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             fastq_dict = {fasta.read_id: fasta for fasta in fasta_objects}
         # create the command we are calling minimap with
         cmd = "{} -x map-ont -t 1 --secondary=no -c --MD {} -".format(
-            minimap2, reference_info.file_location.path
+            minimap2, reference_info.file_location.path.strip()
         )
         logger.info(
             "Flowcell id: {} - Calling minimap Artic - {}".format(flowcell.id, cmd)
