@@ -94,16 +94,11 @@ def run_monitor():
                     f" Running this many artic jobs currently {running_artic_jobs}"
                 )
                 if running_artic_jobs < max_artic_pipeline_instances:
-
                     flowcell_job.running = True
-
                     flowcell_job.save()
-
                     logger.info("Running the task for the Artic code.")
-
                     barcode_name = flowcell_job.barcode.name
                     # generate the base results path
-
                     track_coverage_task_id = JobMaster.objects.get(
                         flowcell=flowcell_job.flowcell,
                         job_type__name="Track Artic Coverage",
@@ -111,7 +106,6 @@ def run_monitor():
                     base_result_dir_path = make_results_directory_artic(
                         flowcell_job.flowcell.id, track_coverage_task_id
                     )
-
                     # run the command task.
                     run_artic_command.delay(
                         str(base_result_dir_path), barcode_name, flowcell_job.id
