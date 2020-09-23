@@ -203,7 +203,6 @@ def mapped_references_by_flowcell_list(request, flowcell_id):
         )
     references = (
         PafSummaryCov.objects.filter(job_master__flowcell__id=flowcell_id)
-        .exclude(job_master__job_type_id=16)
         .values(
             jmId=F("job_master_id"),
             referenceName=F("reference_name"),
