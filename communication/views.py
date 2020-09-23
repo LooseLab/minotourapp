@@ -88,14 +88,13 @@ def new_messages_list(request):
     queryset = Message.objects.filter(recipient=request.user)
     records_total = queryset.count()
     if search_value:
-        queryset.filter(title__contains=search_value)
+        queryset = queryset.filter(title__contains=search_value)
     queryset = queryset.order_by(f"{order_dir}{order_column}")[start:end]
-    records_filter = queryset.count()
     serializer = MessageSerializer(queryset, many=True, context={"request": request})
     result = {
         "draw": draw,
         "recordsTotal": records_total,
-        "recordsFiltered": records_filter,
+        "recordsFiltered": records_total,
         "data": serializer.data,
     }
     return Response(result)
