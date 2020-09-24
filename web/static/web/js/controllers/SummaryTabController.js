@@ -39,6 +39,7 @@ class SummaryTabController {
           console.error(code)
         }
       },
+      order: [[1, `desc`]],
       columnDefs: [
         {
           targets: 0,
