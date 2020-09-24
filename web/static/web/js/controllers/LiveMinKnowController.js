@@ -44,7 +44,7 @@ class LiveMinKnowController {
     )
     this._histogramHistory = null
     this._first = true
-    this._makePageUnscrollable()
+    if (getSelectedTab() === `live-event-data`) { this._makePageUnscrollable() }
     // this._interval = setInterval(this.fetchLiveEventsData, 60000, this._flowcellId, this)
     // $(window).on(`unload`, function () {
     //   console.log(`clearing base-called interval`)
@@ -81,6 +81,9 @@ class LiveMinKnowController {
   }
 
   updateTab () {
+    if (!$(`#tab-live-event-data`).hasClass(`loaded`)){
+      this._makePageUnscrollable()
+    }
     this.fetchLiveEventsData(this._flowcellId, this)
   }
 
