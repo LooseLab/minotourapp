@@ -1114,19 +1114,15 @@ def list_minion_run_status(request, pk):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     try:
         minion_run_info = MinionRunInfo.objects.filter(run_id=pk)
-
     except MinionRunInfo.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
-
     if request.method == "GET":
         serializer = MinionRunInfoSerializer(
             minion_run_info, many=True, context={"request": request}
         )
         return Response(serializer.data)
-
     elif request.method == "PUT":
         serializer = MinionRunInfoSerializer(
             minion_run_info, data=request.data, context={"request": request}
@@ -1135,7 +1131,6 @@ def list_minion_run_status(request, pk):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     elif request.method == "DELETE":
         minion_run_info.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -1150,11 +1145,9 @@ def minION_scripts_detail(request, pk, nk):
         script = MinionScripts.objects.get(pk=nk)
     except MinionScripts.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
-
     if request.method == "GET":
         serializer = MinIONScriptsSerializer(script, context={"request": request})
         return Response(serializer.data)
-
     elif request.method == "PUT":
         serializer = MinIONScriptsSerializer(
             script, data=request.data, context={"request": request}
@@ -1163,7 +1156,6 @@ def minION_scripts_detail(request, pk, nk):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     elif request.method == "DELETE":
         script.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -2288,19 +2280,19 @@ def flowcell_tabs_list(request, pk):
     flowcell_summary_barcode_list = FlowcellSummaryBarcode.objects.filter(
         flowcell__id=pk
     )
-    if flowcell_summary_barcode_list.count() > 0:
+    if flowcell_summary_barcode_list.count():
         tabs.append("basecalled-data")
         tabs.append("reads")
     minion_run_stats_list = MinionRunStats.objects.filter(run_id__flowcell__id=pk)
-    if minion_run_stats_list.count() > 0:
+    if minion_run_stats_list.count():
         tabs.append("live-event-data")
-    if PafSummaryCov.objects.filter(job_master__flowcell_id=pk):
+    if PafSummaryCov.objects.filter(job_master__flowcell_id=pk).exclude(job_master__job_type__id=16).count():
         tabs.append("sequence-mapping")
     chromosome = ExpectedBenefitChromosomes.objects.filter(task__flowcell__id=pk).last()
     if chromosome is not None:
         tabs.append("advanced-sequence-mapping")
     centrifuge_output_list = CentrifugeOutput.objects.filter(task__flowcell_id=pk)
-    if centrifuge_output_list.count() > 0:
+    if centrifuge_output_list.count():
         tabs.append("metagenomics")
     # Check for assembly data
     # TODO add an actual check here
@@ -2888,7 +2880,7 @@ def task_control(request):
             ArticFireConditions.objects.filter(flowcell=job_master.flowcell).delete()
             job_master.delete()
     # sankey
-    elif job_master.job_type_id.id == 13:
+    elif job_master.job_type_id == 13:
         if action == "Reset":
             calculate_sankey(job_master.id)
         elif action == "Pause":
