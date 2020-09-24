@@ -2,6 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.db.models import UniqueConstraint
 
 from reads.models import Flowcell, Barcode, Run
 from reference.models import ReferenceInfo, ReferenceLine
@@ -219,6 +220,11 @@ class NotificationConditions(models.Model):
 
     last_minions_stats_id = models.BigIntegerField(
         default=0
+    )
+
+    UniqueConstraint(
+        name='unique_communication',
+        fields=['chromosome', 'reference', 'notification_type', 'coverage_target'],
     )
 
     def __str__(self):
