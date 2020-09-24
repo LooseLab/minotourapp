@@ -751,6 +751,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     chromosome=paf_summary_cov["chromosome"],
                     reference_line_length=paf_summary_cov["reference_line_length"],
                     read_type=paf_summary_cov["read_type"],
+
                 )
                 paf_summary_cov_orm.total_yield += paf_summary_cov["yield"]
                 paf_summary_cov_orm.read_count += paf_summary_cov["read_count"]
