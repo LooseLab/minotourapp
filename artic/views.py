@@ -213,9 +213,7 @@ def get_artic_column_chart_data(request):
     -------
 
     """
-
     flowcell_id = request.GET.get("flowcellId", None)
-
     if not flowcell_id:
         return Response(
             "No flowcellId specified. Please check request.",
@@ -224,13 +222,11 @@ def get_artic_column_chart_data(request):
     artic_task = JobMaster.objects.filter(
         flowcell_id=flowcell_id, job_type__name="Track Artic Coverage"
     ).last()
-
     if not artic_task:
         return Response(
             "no coverage tracking task running on this flowcell.",
             status=status.HTTP_400_BAD_REQUEST,
         )
-
     try:
         return_data = defaultdict(list)
         queryset = PafSummaryCov.objects.filter(
@@ -240,11 +236,9 @@ def get_artic_column_chart_data(request):
             return_data["barcodes"].append(barcode)
             return_data["average_read_length"].append(read_length)
             return_data["read_counts"].append(read_count)
-
     except TypeError as e:
         print(e.args)
         return Response(e, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
     if not queryset:
         return Response(
             "No values for this flowcell found. Please check task has been created.",
