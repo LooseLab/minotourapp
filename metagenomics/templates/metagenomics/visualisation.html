@@ -18,7 +18,7 @@
         </div>
         <div id="validation" class="row">
             <div class="card card-primary card-outline col-md-12">
-                <div class="card-header text-center">
+                <div class="card-header ">
                     <h3 class="card-title" style="text-align: center">
                         Validated species
                     </h3>
@@ -32,11 +32,12 @@
                     <!-- Simplified visualisation -->
                     <div class="col-md-12">
                         <div class="card card-primary card-outline alert-table-simple">
-                            <div class="card-header text-center">
-                                <h3 class="card-title">Target results &nbsp;</h3><i
+                            <div class="card-header ">
+                                <h3 class="card-title">Target results &nbsp;
+                                <i
                                     class="fa fa-question-circle masterTooltip" tooltip="Alert table for the target species. <br/>
                                         Threats move to the left after hitting a 99% confidence of absence at less than 1 in 50000 reads. <br/>
-                                        Otherwise they remain in the middle, showing the number of reads that aren't present at."></i>
+                                        Otherwise they remain in the middle, showing the number of reads that aren't present at."></i></h3>
                             </div>
                             <div class="card-body">
                                 <div class="row">
@@ -68,15 +69,16 @@
                             <div class="col-md-12">
                                 <div class="card card-primary card-outline alert-table-complex">
                                     <!--<div class="col-md-3" style="height: 100%;"></div>-->
-                                    <div class="card-header text-center">
-                                        <h3 class="card-title">Target Species</h3><i
+                                    <div class="card-header ">
+                                        <h3 class="card-title">Target Species
+                                        <i
                                             class="fa fa-question-circle masterTooltip" tooltip="More information about the threat detection.<br/>
                                                 Num matches is the number of reads centrifuge classified as this species.<br/>
                                                 Num mapped is the number of reads that mapped to the reference, or plasmid reference.<br/>
                                                 Prop classified is the percentage of reads classified against the total number of classified reads.<br/>
                                                 Mapped prop matches is the number of the reads that mapped against the reads classified as this threat.<br/>
                                                 Target Reads is the number of reads that we mapped to regions of concern on the reference.<br/>
-                                                Target prop. mapped is the number of target reads against the total number of mapped reads."></i>
+                                            Target prop. mapped is the number of target reads against the total number of mapped reads."></i> </h3>
                                     </div>
                                     <div class="card-body">
                                         <div class="row">
@@ -93,10 +95,11 @@
                             <!-- The proportion table and donut-->
                             <div class="col-md-3 ">
                                 <div class="card card-primary card-outline donut">
-                                    <div class="card-header text-center">
-                                        <h3 class="card-title">Composition Breakdown</h3><i
+                                    <div class="card-header ">
+                                        <h3 class="card-title">Composition Breakdown
+                                        <i
                                             class="fa fa-question-circle masterTooltip"
-                                            tooltip="Breakdown of the top ten species in the sample, by Centrifuge classifications"></i>
+                                            tooltip="Breakdown of the top ten species in the sample, by Centrifuge classifications"></i></h3>
                                     </div>
                                     <div class="card-body donutContainer ">
 
@@ -118,7 +121,7 @@
                             <!-- End of donut directive card -->
                             <div class="col-md-9">
                                 <div class="card card-primary card-outline" style="width: 100%;">
-                                    <div class="card-header text-center">
+                                    <div class="card-header ">
                                         <h3 class="card-title">Composition Breakdown</h3>
                                     </div>
                                     <div class="card-body rank-table-container" style="">
@@ -130,11 +133,14 @@
                         <div class="row">
                             <div class="col-md-12 sankeyContainer" style="min-width: 1200px; display:none">
                                 <div class="card card-primary card-outline" style="width:100%;">
-                                    <div class="card-header text-center">
-                                        <h4 class="card-title" data-toggle="collapse" data-target=".svg-container">
-                                            Lineages</h4>
+                                    <div class="card-header arrow-toggle" data-toggle="collapse" data-target=".svg-container" style="cursor: pointer">
+                                        <h3 class="card-title">
+                                            Lineages
+                                            <i class="fa fa-arrow-down"></i>
+                                        <i class="fa fa-arrow-up"></i></h3>
+
                                     </div>
-                                    <div class="card-body svg-container collapse in" style="min-width: 1200px;">
+                                    <div class="card-body svg-container collapse show in" style="min-width: 1200px;">
                                     </div>
                                 </div>
                             </div>
@@ -143,10 +149,11 @@
                         <div class="row">
                             <div class="col-md-12 all-reads-table">
                                 <div class="card card-primary card-outline">
-                                    <div class="card-header text-center">
-                                        <h3 class="card-title">All Results &nbsp;</h3><i
+                                    <div class="card-header ">
+                                        <h3 class="card-title">All Results
+                                            <i
                                             class="fa fa-question-circle masterTooltip"
-                                            tooltip="All the compiled results for all the reads in the sample, sortable and searchable."></i>
+                                            tooltip="All the compiled results for all the reads in the sample, sortable and searchable."></i>&nbsp;</h3>
                                     </div>
                                     <div class="card-body" style="">
                                         <table class="table table-hover tableLand display" style="width: 100%">
