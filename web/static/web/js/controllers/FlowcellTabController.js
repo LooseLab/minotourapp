@@ -38,6 +38,8 @@ class FlowcellTabController {
         this.toggleTabContent(activeTab)
         this._first = false
       }
+    }, reason => {
+      console.error(reason)
     })
   }
 
@@ -56,7 +58,8 @@ class FlowcellTabController {
       tasks: `tasksController`,
       metagenomics: `metagenomicsController`,
       "summary-data": `summaryDataController`,
-      "live-event-data": `liveEventController`
+      "live-event-data": `liveEventController`,
+      notifications: `notificationsController`
     }
 
     if (getSelectedTab()) {
@@ -108,7 +111,8 @@ class FlowcellTabController {
       tasks: [`tasksController`, TasksController],
       metagenomics: [`metagenomicsController`, MetagenomicsController],
       "summary-data": [`summaryDataController`, SummaryTabController],
-      "live-event-data": [`liveEventController`, LiveMinKnowController]
+      "live-event-data": [`liveEventController`, LiveMinKnowController],
+      notifications: [`notificationsController`, FlowcellNotificationController]
     }
     // if we have a controller for this tab, but we are no longer showing it as underlying data has been deleted
     Object.keys(controllers).forEach(controllerName => {
