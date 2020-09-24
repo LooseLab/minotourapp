@@ -726,3 +726,13 @@ transition-timing-function: ease-out;
 [data-tooltip=""]::after, [data-tooltip=""]::before {
   display: none !important;
 }
+.form-check-inline>label{
+    margin-bottom: 0;
+}
+.form-check-inline>input{
+    margin-left: .25rem;
+}
+#data-list .btn {
+    font-size: .75rem; !important;
+    width: 7.5rem;
+}
