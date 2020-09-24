@@ -10,7 +10,7 @@ class FlowcellNotificationController {
     })
     this._flowcellId = flowcellId
     this._contigSet = {}
-    this._referenceSet = new Set()
+    this._referenceSet = new Set([`<option id="ref-place-holder" value="${-1}" selected>Please Choose</option>`])
     this._referenceSelect = $(`#reference`)
     this._contigSelect = $(`#chromosome`)
     this._table = $(`.extantNotif`)
@@ -19,10 +19,12 @@ class FlowcellNotificationController {
     }
     this._formData = new FormData()
     this._table = null
-    this.getNotificationsForTable(flowcellId)
-    this._disableExtantNotifications()
+    this._disabledNotificationsHTML = {}
+    this._type2Id = {
+      arti: [`list-artic-top`, `list-artic`],
+      suff: [`list-artic-top`, `list-artic`]
+    }
     this._addListenerToForms()
-    this._getReferencesForCoverage()
   }
 
   /**
@@ -31,11 +33,12 @@ class FlowcellNotificationController {
    */
   _referenceOnChange (event) {
     const referencePk = $(event.currentTarget).val()
-    console.log(event)
-    console.log(referencePk)
+    this._referenceSelect.find(`#ref-place-holder`).remove()
     this._contigSelect.attr(`disabled`, false)
     this._contigSelect.html([...this._contigSet[referencePk]].join(``))
   }
+
+
 
   /**
    * Get the references and contigs for the coverage selects on condition create
@@ -44,7 +47,17 @@ class FlowcellNotificationController {
     this._axiosInstance.get(`/api/v1/communication/${this._flowcellId}/conditions/references`).then(
       response => {
         const references = response.data
-        console.log(references)
+        const mappingOptions = $(`#list-mapping-top`)
+        console.log(Object.keys(references))
+        if (!Object.keys(references).length) {
+          mappingOptions.addClass(`disabled`)
+          mappingOptions.css(`cursor`, `not-allowed`)
+          mappingOptions.attr(`title`, `No mapping tasks running`)
+        } else {
+          mappingOptions.removeClass(`disabled`)
+          mappingOptions.css(`cursor`, `pointer`)
+          mappingOptions.removeAttr(`title`)
+        }
         Object.entries(references).forEach(([key, value]) => {
           console.log(key)
           console.log(value)
@@ -54,6 +67,7 @@ class FlowcellNotificationController {
           value.forEach(([contigName, contigPk, referenceId]) => {
             if (!(referenceId in this._contigSet)) {
               this._contigSet[referenceId] = new Set()
+              this._contigSet[referenceId].add(`<option id="place-holder" value="0" selected>Genome Coverage</option>`)
             }
             this._contigSet[referenceId].add(`<option value="${contigPk}">${contigName}</option>`)
           })
@@ -69,23 +83,35 @@ class FlowcellNotificationController {
     $(`#multi-form-submit`).on(`click`, this.submitForms)
   }
 
+  /**
+   * Pull back extant notifications and remove them from the datalist, store their HTML in class, to be added if deleted
+   * @private
+   */
   _disableExtantNotifications () {
-    console.log(this)
+    const that = this
     this._axiosInstance.get(`/api/v1/communication/${this._flowcellId}/conditions/extant-types`).then(
       response => {
         const extantTypes = response.data
         if (extantTypes.includes(`arti`) && extantTypes.includes(`suff`)) {
           console.log(`hello`)
-          $(`#list-artic-top`).remove()
-          $(`#list-artic`).remove()
+          if (!Object.prototype.hasOwnProperty.call(this._disabledNotificationsHTML, `list-artic-top`)) {
+            that._disabledNotificationsHTML[`list-artic-top`] = $(`#list-artic-top`)[0].outerHTML
+            $(`#list-artic-top`).remove()
+          }
         }
         extantTypes.forEach(type => {
-          const a = $(`#${type}`)
-          if (type !== `cov`) {
-            a.remove()
-          }
+          console.log(type)
+          console.log(![`arti`, `suff`].includes(type))
+          const a = $(`#${type}-btn`)
+          if (![`cov`, `arti`, `suff`].includes(type)) {
+            if (!Object.prototype.hasOwnProperty.call(this._disabledNotificationsHTML, type)) {
+              a.removeClass(`active`)
+              that._disabledNotificationsHTML[type] = a[0].outerHTML
+              a.remove()
+            }
+          } else if ([`arti`, `suff`].includes(type)) { $(`#${type}`).find(`#${type}`).prop(`disabled`, true) }
         })
-        $(`#${$(`#list-tab`).children().first().attr(`id`)}`).tab(`show`)
+        $(`#${$(`#list-tab-top`).children().first().attr(`id`)}`).tab(`show`)
       }
     ).catch(
       error => {
@@ -100,17 +126,22 @@ class FlowcellNotificationController {
   }
 
   _postNotificationCreation (event, that) {
-    console.log($(event.currentTarget))
-    console.log(that)
     const formData = new FormData()
-    formData.append(`notification_type`, $(event.currentTarget).attr(`id`))
-    formData.append(`flowcell`, that._flowcellId)
-    console.log(formData)
-    $(event.currentTarget).find(`.form-control`).each((index, field) => {
+    event.preventDefault()
+
+    console.log(event)
+    $(event.currentTarget).find(`.noti-control`).each((index, field) => {
+      console.log(index)
       console.log(field)
-      formData.append(field.id.replace(`-`, `_`), $(field).val())
+      const value = field.type === `checkbox` ? $(field).prop(`checked`) : $(field).val()
+      if (value) {
+        if (!formData.has(`flowcell`)) {
+          formData.append(`notification_type`, $(event.currentTarget).attr(`id`))
+          formData.append(`flowcell`, that._flowcellId)
+        }
+        formData.append(field.id.replace(`-`, `_`), value)
+      }
     })
-    console.log(formData)
     axios({
       url: `/api/v1/communication/conditions/create-condition/`,
       data: formData,
@@ -121,9 +152,9 @@ class FlowcellNotificationController {
       method: `POST`
     }).then(
       response => {
-        console.log(response)
         that._disableExtantNotifications()
         that.getNotificationsForTable()
+        $(event.currentTarget)[0].reset()
         that._formData = new FormData()
       }
     ).catch(
@@ -132,9 +163,6 @@ class FlowcellNotificationController {
         that._formData = new FormData()
       }
     )
-
-    console.log(event)
-    event.preventDefault()
   }
 
   /**
@@ -148,7 +176,7 @@ class FlowcellNotificationController {
       this._table.DataTable({
         createdRow: (row, data, index) => {
           $(row).addClass(`notification-row`)
-          $(row).last().on(`click`, event => { this._deleteNotification(data.id) })
+          $(row).last().on(`click`, event => { this._deleteNotification(data.id, data.notification_type) })
         },
         language: {
           infoEmpty: `No records available.`
@@ -184,17 +212,44 @@ class FlowcellNotificationController {
    */
   _deleteNotification (notificationID) {
     const csrftoken = getCookie(`csrftoken`)
-
     const axiosInstance = axios.create({
       headers: { "X-CSRFToken": csrftoken }
     })
-    console.log(notificationID)
-
+    console.log(this._disabledNotificationsHTML)
     axiosInstance.delete(`/api/v1/communication/messages/conditions`, { params: { pk: notificationID } }).then(response => {
-      console.log(response)
+      const notificationType = response.data
+      console.log(this._disabledNotificationsHTML[notificationType])
+      console.log(notificationType)
       $(`.extantNotif`).DataTable().ajax.reload(null, false)
+      if ([`arti`, `suff`].includes(notificationType)) {
+        console.log(`appending artic`)
+        if (!$(`#list-tab-tasks`).find(`#list-artic-top`).length) {
+          $(`#list-tab-tasks`).append(this._disabledNotificationsHTML[`list-artic-top`])
+        }
+      } else if (notificationType !== `cov`) {
+        console.log(`WE ARE APP{EFNM`)
+        $(`#list-tab-top`).append(this._disabledNotificationsHTML[notificationType])
+      }
     }).catch(error => {
       console.error(error)
     })
+  }
+
+  // /**
+  //  * Get the HTML
+  //  * @private
+  //  */
+  // _getDataListHtml () {
+  //
+  // }
+
+  /**
+   * Render the page HTML anew. TODO this means we have to slightly change how we are doing this page
+   */
+  updateTab () {
+    console.log(`updating tab`)
+    this.getNotificationsForTable(this._flowcellId)
+    this._disableExtantNotifications()
+    this._getReferencesForCoverage()
   }
 }

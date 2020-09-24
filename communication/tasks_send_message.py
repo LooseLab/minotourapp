@@ -7,6 +7,7 @@ import time
 from celery import task
 from celery.utils.log import get_task_logger
 from django.conf import settings
+from django.db.models import F, Sum, Avg
 from twitter import Twitter, OAuth, TwitterHTTPError, TwitterError
 
 from alignment.models import PafSummaryCov
@@ -21,7 +22,7 @@ def return_tweet(
     tweet_type,
     target_coverage=None,
     reference_file_name=None,
-    chromosome_name=None,
+    chromosome=None,
     observed_coverage=None,
     target_added=None,
     limit=None,
@@ -39,7 +40,7 @@ def return_tweet(
         The target coverage that has been reached by a mapping task. Default None.
     reference_file_name: str
         The name of the reference that the coverage has been reached against. Default None.
-    chromosome_name: str
+    chromosome: reference.models.ReferenceLine
         The name of the chromosome we have recorded coverage against.
     observed_coverage: int
         Depth of coverage that we have seen across the genome.
@@ -61,7 +62,7 @@ def return_tweet(
         The text to be contained in the twitter DM.
 
     """
-
+    chromosome_name = chromosome if chromosome else "Complete genome"
     text_lookup = {
         "coverage": f"Target coverage: {target_coverage}x reached against reference file:"
         f" {reference_file_name}, chromosome name: {chromosome_name}. Recorded coverage is: {observed_coverage}x.",
@@ -72,7 +73,7 @@ def return_tweet(
     return tweet_text
 
 
-def check_coverage(flowcell, target_coverage, reference_line_id, barcode=""):
+def check_coverage(flowcell, target_coverage, reference_line, barcode=""):
     """
     Check the coverage of a mapping task.
     Parameters
@@ -81,8 +82,8 @@ def check_coverage(flowcell, target_coverage, reference_line_id, barcode=""):
         The flowcell that sequenced the reads for this mapping task.
     target_coverage: int
         The desired amount of coverage to be reached
-    reference_line_id: id
-        The name of the chromosome or contig to have the coverage checked.
+    reference_line: reference.models.ReferenceLine
+        Could be null for genome level coverage, otherwise reference line obejct
     barcode: str
         The name of the barcode
 
@@ -91,18 +92,38 @@ def check_coverage(flowcell, target_coverage, reference_line_id, barcode=""):
     results: list
          list of dictionaries of results showing whether or not we have reached coverage for the chosen chromosomes.
     """
-
-    queryset = PafSummaryCov.objects.filter(
-        job_master__flowcell=flowcell,
-        chromosome_id=reference_line_id,
-        coverage__gte=target_coverage,
-    )
+    if reference_line:
+        queryset = PafSummaryCov.objects.filter(
+            job_master__flowcell=flowcell,
+            chromosome_id=reference_line.id,
+            coverage__gte=target_coverage,
+        ).values("coverage")
+        queryset = [{"coverage_reached": True, "coverage": coverage} for coverage in queryset]
+    else:
+        queryset = (
+            PafSummaryCov.objects.filter(job_master__flowcell=flowcell)
+            .values(data_name=F("reference_name"))
+            .annotate(
+                Sum("total_yield"),
+                Sum("reference_line_length"),
+                Avg("average_read_length"),
+            )
+        )
+        queryset = [
+            {
+                "coverage": q["total_yield__sum"]
+                / q["reference_line_length__sum"],
+                "coverage_reached": True
+            }
+            for q in queryset if q["total_yield__sum"]
+                / q["reference_line_length__sum"] > target_coverage
+        ]
     if not queryset:
         logger.warning(
             f"No PafSummaryCov objects found for flowcell with id {flowcell.id}."
         )
         return
-    return queryset.values("coverage")
+    return queryset
 
 
 @task()
@@ -192,7 +213,7 @@ def coverage_notification(condition):
     # barcode_name = condition.barcode.name
 
     coverage_reached = check_coverage(
-        flowcell, int(condition.coverage_target), chromosome.id
+        flowcell, int(condition.coverage_target), chromosome
     )
 
     logger.debug("coverage reached!")
@@ -202,13 +223,13 @@ def coverage_notification(condition):
 
     # Reached is a dictionary, one dict for each Paf Summary Cov pulled back in the check_coverage function
     for reached in coverage_reached:
-        if reached.get("coverage_reached", None):
+        if reached.get("coverage_reached", False):
             # Let's create a message
             message_text = return_tweet(
                 "coverage",
                 target_coverage=int(condition.coverage_target),
                 reference_file_name=reference.name,
-                chromosome_name=chromosome.line_name,
+                chromosome=chromosome,
                 observed_coverage=reached.get("coverage", "Undefined"),
             )
             message = Message(
@@ -346,7 +367,6 @@ def check_artic_has_fired(condition):
             title=f"Artic pipeline has finished for barcode {barcode['barcode__name']} at {time}",
             flowcell=condition.flowcell,
         )
-        m.save()
 
 
 def check_artic_sufficient_coverage(condition):

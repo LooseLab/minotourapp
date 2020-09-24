@@ -31,7 +31,18 @@ def simple_condition_create(request):
         new_condition = form.save(commit=False)
         new_condition.creating_user = request.user
         new_condition.save()
-
+    else:
+        # If we are doing genome level coverage, we have a chromosome of 0
+        if form.data.get("chromosome", False) == "0":
+            data = form.data.dict()
+            data.pop("chromosome")
+            form = NotificationConditionForm(data)
+            if form.is_valid():
+                new_condition = form.save(commit=False)
+                new_condition.creating_user = request.user
+                new_condition.save()
+            else:
+                print(form.errors)
     return Response(status=status.HTTP_200_OK)
 
 
@@ -116,7 +127,7 @@ def get_references_for_condtions(request, pk):
     """
     b = defaultdict(list)
     for jobs in list(
-        JobMaster.objects.filter(job_type_id=4).values(
+        JobMaster.objects.filter(job_type_id=4, flowcell_id=pk).values(
             "reference_id",
             reference_name=F("reference__name"),
             contig_name=F("reference__reference_lines__line_name"),
@@ -126,6 +137,7 @@ def get_references_for_condtions(request, pk):
         b[jobs["reference_name"]].append(
             (jobs["contig_name"], jobs["contig_id"], jobs["reference_id"])
         )
+
     return Response(b, status=status.HTTP_200_OK)
 
 
@@ -159,7 +171,6 @@ def create_notification_conditions(flowcell, user, **kwargs):
             f"An identical Condition already exists for the {noti_type}"
             f" condition you are trying to create."
         )
-
     # Now we check we don't have more than 2 non unique notifications of the same type, as long as they aren't Coverage
     # As many coverages as the user wants are allowed
     check_not_excess = 0
@@ -169,14 +180,11 @@ def create_notification_conditions(flowcell, user, **kwargs):
             creating_user=user,
             notification_type=kwargs.get("notification_type"),
         ).count()
-
-    if check_not_excess > 2:
-
+    if check_not_excess > 4:
         return (
             f"Too many conditions of type {noti_type} already exist on this flowcell."
             f" Please delete an existing one."
         )
-
     if not check or not check_not_excess > 2:
         cond = NotificationConditions(flowcell=flowcell, creating_user=user, **kwargs)
         cond.save()
@@ -202,8 +210,10 @@ def notification_conditions_list(request):
         try:
             deleted = NotificationConditions.objects.get(
                 pk=int(notification_pk)
-            ).delete()
-            return Response(f"Deleted {deleted}", status=200)
+            )
+            type = deleted.notification_type
+            deleted.delete()
+            return Response(type, status=200)
         except Exception as e:
             return Response(e, status=500)
     elif request.method == "GET":
@@ -243,12 +253,9 @@ def get_coverage_summary(request, pk):
             "reference__referencelines__id",
             "flowcell__runs__barcodes__id",
         )
-
         if not queryset:
             return Response("No mapping tasks available on this flowcell.", status=404)
-
         reference_to_contig_dict = defaultdict(list)
-
         # create a dict of string keys and values to create the conditional drop downs
         # contig[0] - reference name
         # contig[1] - contig names
@@ -257,27 +264,18 @@ def get_coverage_summary(request, pk):
         # contig[4] - contig id
         # contig[5] - barcodes id
         for contig in queryset:
-
             contig_to_barcode_dict = defaultdict(list)
-
             reference_to_contig_dict[contig[0]] = [contig_to_barcode_dict, contig[3]]
-
             if not contig_to_barcode_dict[contig[1]]:
-
                 contig_to_barcode_dict[contig[1]].append(contig[4])
-
             contig_to_barcode_dict[contig[1]].append((contig[2], contig[5]))
-
         return Response(reference_to_contig_dict, status=200)
-
     queryset = PafSummaryCov.objects.filter(job_master__flowcell__id=pk)
-
     if not queryset:
         return Response(
             "No alignment results found for this flowcell",
             status=status.HTTP_204_NO_CONTENT,
         )
-
     df = pd.DataFrame.from_records(
         queryset.values(
             "barcode_name",
@@ -286,17 +284,11 @@ def get_coverage_summary(request, pk):
             "reference_line_length",
         )
     )
-
     df["coverage"] = (
         df["total_yield"].div(df["reference_line_length"]).round(decimals=3)
     )
-
     df = df.drop(columns=["reference_line_length", "total_yield"])
-
     df.set_index("chromosome__line_name", inplace=True)
-
     dictdf = df.to_dict("index")
-
     result = {"data": dictdf}
-
     return Response(result, status=200)
