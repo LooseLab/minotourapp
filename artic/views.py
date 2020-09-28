@@ -1,11 +1,8 @@
 import json
-import os
-import tarfile
 from collections import defaultdict
 from urllib.parse import parse_qs
 
 import pandas as pd
-from django.http import HttpResponse
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import api_view, renderer_classes
@@ -19,7 +16,7 @@ from artic.task_artic_alignment import np
 from artic.utils import (
     get_amplicon_band_data,
     quick_get_artic_results_directory,
-    remove_duplicate_sequences_numpy,
+    remove_duplicate_sequences_numpy, get_all_results,
 )
 from reads.models import Flowcell, JobMaster, FlowcellSummaryBarcode, Barcode
 from reference.models import ReferenceInfo
@@ -47,6 +44,8 @@ def fire_conditions_list(request, pk):
         print(request.data)
         try:
             afc = ArticFireConditions.objects.filter(flowcell_id=int(pk))
+            if not afc:
+                raise ArticFireConditions.DoesNotExist
             afc.update(
                 ninety_percent_bases_at=int(request.data.get("90-input", 0)),
                 ninety_five_percent_bases_at=int(request.data.get("95-input", 0)),
@@ -84,7 +83,7 @@ def get_artic_barcodes(request):
             "Please provide a flowcell id.", status=status.HTTP_400_BAD_REQUEST
         )
 
-    flowcell, artic_results_path, artic_task_id = quick_get_artic_results_directory(
+    flowcell, artic_results_path, artic_task_id, _ = quick_get_artic_results_directory(
         flowcell_id
     )
 
@@ -405,7 +404,7 @@ def get_artic_barcode_metadata_html(request):
     context_dict["hidden_has_finished"] = old_dict["has_finished"]
     context_dict["hidden_has_suff"] = old_dict["has_sufficient_coverage"]
     context_dict["hidden_marked_for_rerun"] = old_dict["marked_for_rerun"]
-    (flowcell, artic_results_path, artic_task_id,) = quick_get_artic_results_directory(
+    (flowcell, artic_results_path, artic_task_id, _) = quick_get_artic_results_directory(
         flowcell_id
     )
     if context_dict["hidden_has_finished"]:
@@ -485,12 +484,13 @@ def get_results_package(request):
 
     """
     params = json.loads(request.GET.get("params", None))
-
+    all_barcodes = params.get("all", False)
     flowcell_id = params.get("flowcellId", None)
-    barcode = params.get("selectedBarcode", None)
+    barcode_pk = int(params.get("selectedBarcode", None))
     chosen = parse_qs(request.GET.get("string"))
-    barcode_name = Barcode.objects.get(pk=barcode).name
-    if not flowcell_id or not barcode_name:
+    barcode_name = Barcode.objects.get(pk=barcode_pk).name if barcode_pk != -1 else None
+    barcode_name = "" if all_barcodes else barcode_name
+    if not flowcell_id or not barcode_name and not all_barcodes:
         return Response(
             "Flowcell Id or barcode required in request.",
             status=status.HTTP_400_BAD_REQUEST,
@@ -505,37 +505,39 @@ def get_results_package(request):
     _, path_to_results, _, _ = quick_get_artic_results_directory(
         flowcell_id, barcode_name
     )
-    results_files = {
-        "consensus": f"{barcode_name}.consensus.fasta.gz",
-        "box-plot": f"{barcode_name}-boxplot.png",
-        "bar-plot": f"{barcode_name}-barplot.png",
-        "fail-vcf": f"{barcode_name}.fail.vcf.gz",
-        "pass-vcf": f"{barcode_name}.pass.vcf.gz",
-        "input-fasta": f"{barcode_name}.fastq.gz",
-        "pangolin-lineages": "lineage_report.csv.gz",
-        "sorted-bam": f"{barcode_name}.sorted.bam.gz",
-    }
-    chosen_files = [results_files[key] for key in chosen.keys()]
-    # change into the directory
-    os.chdir(path_to_results / barcode_name)
-    results_file = (
-        path_to_results / barcode_name / f"results_artic_{flowcell.name}.tar.gz"
-    )
+    response = get_all_results(path_to_results, flowcell, barcode_name, chosen.keys())
+    return response
 
-    with tarfile.open(results_file, "w:gz") as tar:
-        try:
-            for filey in chosen_files:
-                tar.add(filey)
-        except FileNotFoundError as e:
-            return Response(str(e), status=status.HTTP_404_NOT_FOUND)
+@api_view(["GET"])
+@renderer_classes((TemplateHTMLRenderer, JSONRenderer))
+def get_results_modal_html(request, pk):
+    """
+    return the html for the modal for the all results download functionality
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The ajax request body
+    pk: int
+        The primary key of the flowcell object in the database
 
-    with open(results_file, "rb") as fh:
-        response = HttpResponse(fh.read(), content_type="application/gzip")
-        response[
-            "Content-Disposition"
-        ] = f"attachment; filename=results_artic_{flowcell.name}.tar.gz"
-        response["x-file-name"] = f"results_artic_{flowcell.name}.tar.gz"
-        return response
+    Returns
+    -------
+    html
+
+    """
+    results_files = [
+        ("Consensus sequence", "consensus"),
+        ("Box plot", "box-plot"),
+        ("Bar plot", "bar-plot"),
+        ("Fail VCF", "fail-vcf"),
+        ("Pass VCF", "pass-vcf"),
+        ("Input fasta", "input-fasta"),
+        ("Pangolin lineages CSV", "pangolin-lineages"),
+        ("Sorted Bam", "sorted-bam"),
+    ]
+    context_dict = {"hidden_results_files": results_files}
+    return render(request, "all-results-modal.html", context={"context": context_dict})
+
 
 
 @api_view(["GET"])
@@ -565,7 +567,7 @@ def png_html(request):
         return Response("No data found", status=status.HTTP_404_NOT_FOUND)
     if not orm_object.has_finished:
         return Response("No results yet.", status=status.HTTP_204_NO_CONTENT)
-    (flowcell, artic_results_path, artic_task_id,) = quick_get_artic_results_directory(
+    (flowcell, artic_results_path, artic_task_id, _) = quick_get_artic_results_directory(
         flowcell_id
     )
     context_list = [

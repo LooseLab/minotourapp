@@ -25,7 +25,7 @@
                     {% endfor %}
                 </table>
                 {% if artic_barcode_metadata.hidden_has_finished %}
-                    <button class="btn btn-primary" data-toggle="modal" data-target="#results-builder">Download Results
+                    <button class="btn btn-primary" data-toggle="modal" data-target="#results-builder" data-all="" data-barcode="{{ artic_barcode_metadata.hidden_barcode_pk }}">Download Results
                         Files
                     </button>
                     {% if not artic_barcode_metadata.hidden_marked_for_rerun %}
@@ -54,36 +54,36 @@
     </div>
 </div>
 {% if artic_barcode_metadata.hidden_has_finished %}
-    <div class="modal fade" id="results-builder" tabindex="-1" role="dialog"
-         aria-labelledby="myModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div style="border-radius: 25px" class="modal-content">
-                <div class="modal-header">
-                    <h4 class="modal-title" id="exampleModalLabel">Choose results to download
-                    </h4>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
-                            aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form class="results-builder-form">
-                        {% for title, id in artic_barcode_metadata.hidden_results_files %}
-                            <input type="checkbox" checked class="form-check-input" id="{{ id }}" name="{{ id }}">
-                            <label class="form-check-label rb" for="{{ id }}">{{ title }}</label>
-                        {% endfor %}
-                    </form>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <button id="submit-task" class="btn btn-success success" type="reset" data-dismiss="modal"
-                            onclick="flowcellController.flowcellTabController.articController.buildResults({{ artic_barcode_metadata.hidden_flowcell_id }} ,`{{ artic_barcode_metadata.hidden_barcode_pk }}`, event)">
-                        Submit
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+{#    <div class="modal fade" id="results-builder-single" tabindex="-1" role="dialog"#}
+{#         aria-labelledby="myModalLabel" aria-hidden="true">#}
+{#        <div class="modal-dialog" role="document">#}
+{#            <div style="border-radius: 25px" class="modal-content">#}
+{#                <div class="modal-header">#}
+{#                    <h4 class="modal-title" id="exampleModalLabel">Choose results to download#}
+{#                    </h4>#}
+{#                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span#}
+{#                            aria-hidden="true">&times;</span>#}
+{#                    </button>#}
+{#                </div>#}
+{#                <div class="modal-body">#}
+{#                    <form class="results-builder-form">#}
+{#                        {% for title, id in artic_barcode_metadata.hidden_results_files %}#}
+{#                            <input type="checkbox" checked class="form-check-input" id="{{ id }}" name="{{ id }}">#}
+{#                            <label class="form-check-label rb" for="{{ id }}">{{ title }}</label>#}
+{#                        {% endfor %}#}
+{#                    </form>#}
+{#                </div>#}
+{##}
+{#                <div class="modal-footer">#}
+{#                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>#}
+{#                    <button id="submit-task" class="btn btn-success success" type="reset" data-dismiss="modal" data-all=""#}
+{#                            onclick="flowcellController.flowcellTabController.articController.buildResults({{ artic_barcode_metadata.hidden_flowcell_id }} ,`{{ artic_barcode_metadata.hidden_barcode_pk }}`, event, false)">#}
+{#                        Submit#}
+{#                    </button>#}
+{#                </div>#}
+{#            </div>#}
+{#        </div>#}
+{#    </div>#}
     <div class="modal fade" id="confirm-re-run" tabindex="-1" role="dialog"
          aria-labelledby="myModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
