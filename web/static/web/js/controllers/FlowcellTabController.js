@@ -72,6 +72,9 @@ class FlowcellTabController {
     }
     // set the new tab in Session Storage.
     setSelectedTab(name)
+    if (name !== `live-event-data`){
+      $(`html`).removeClass(`disable-scroll`)
+    }
     // add active to newly selected nav time child element, the link
     this.lookupElement[navName].firstElementChild.classList.add(`active`)
     // show the content of the newly selected Div
