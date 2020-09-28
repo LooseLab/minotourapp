@@ -750,17 +750,19 @@ class ArticController {
   /**
    * Manually trigger the artic command to be run on this barcode.
    * @param flowcellId {number} The primary key of the flowcell we are running this on.
-   * @param barcodeNameString {string} The primary key of the barcode that we want the data from.
+   * @param barcodePk {number} The primary key of the barcode that we want the data from.
+   * @param jobPk {number} The primary key of the artic Jobmaster
    * @param event {obj} Event object created on trigger.
    */
-  manuallyTriggerPipeline (flowcellId, barcodeNameString, event) {
+  manuallyTriggerPipeline (flowcellId, barcodePk, jobPk, event) {
     const jobTypeId = 17
     event.preventDefault()
-    console.log(barcodeNameString.id)
+    console.log(barcodePk)
     this._axiosInstance.post(`/api/v1/artic/manual-trigger/`, {
       flowcellId,
-      barcodeName: barcodeNameString.id,
-      jobTypeId
+      barcodePk,
+      jobTypeId,
+      jobPk
     }).then(response => {
       const message = response.data
       $(`#manual-trigger`).remove()
@@ -773,7 +775,7 @@ class ArticController {
   /**
    * Submit the user choices from the modal to the server then offer the selected files as a .tar.gz
    * @param flowcellId {number} Primary key of the flowcell
-   * @param selectedBarcode {string} The chosen barcode name
+   * @param selectedBarcode {number} The chosen barcode primary key
    * @param event {obj} Auto generatee event object
    */
   buildResults (flowcellId, selectedBarcode, event) {
@@ -795,6 +797,7 @@ class ArticController {
       document.body.appendChild(link)
       link.click()
     }).catch(error => {
+      alert(error)
       console.error(error)
     })
   }
@@ -838,12 +841,12 @@ class ArticController {
   /**
    * Rerun artic command with the data we have accrued since it's completion
    * @param flowcellId {number} The primary key of the flowcell in the database.
-   * @param selectedBarcode {string} The barcode to rerun the command on.
+   * @param selectedBarcodePk {number} The barcode primary key to re run
    * @param event {Object} The event object
    */
-  reRunArticCommand (flowcellId, selectedBarcode, event) {
+  reRunArticCommand (flowcellId, selectedBarcodePk, event) {
     event.preventDefault()
-    this._axiosInstance.patch(`/api/v1/artic/rerun-command/`, { flowcellId, selectedBarcode }).then(
+    this._axiosInstance.patch(`/api/v1/artic/rerun-command/`, { flowcellId, selectedBarcodePk }).then(
       response => {
         if (!response.status === 204) {
           console.error(`Unexpected response status. Expected 204, received ${response.status}`)
