@@ -364,7 +364,6 @@ class JobSerializer(serializers.ModelSerializer):
 
 
 class BarcodeSerializer(serializers.HyperlinkedModelSerializer):
-
     class Meta:
         model = Barcode
 
@@ -491,12 +490,10 @@ class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class GroupRunSerializer(serializers.HyperlinkedModelSerializer):
-
     runs = RunSerializer(
         many=True,
         read_only=True
     )
-
     class Meta:
 
         model = GroupRun
@@ -504,8 +501,6 @@ class GroupRunSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class FlowcellSummaryBarcodeSerializer(serializers.ModelSerializer):
-
-
     class Meta:
         model = FlowcellSummaryBarcode
         fields = (
@@ -521,7 +516,6 @@ class FlowcellSummaryBarcodeSerializer(serializers.ModelSerializer):
             'channel_count',
             'average_read_length',
         )
-
         read_only = ('id',)
 
 
@@ -539,8 +533,6 @@ class JobMasterSerializer(serializers.ModelSerializer):
     server_initiated = serializers.ReadOnlyField(
         source="job_type.private"
     )
-
-
     class Meta:
         model = JobMaster
         fields = (
@@ -562,7 +554,6 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
     Serialiser to validate and insert the JobMasters into the database, upon job creation via the reads/views.py
     get_or_create_jobs function
     """
-
     class Meta:
         """
         Meta options about model
@@ -588,6 +579,7 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
             if not Path.exists(Path(getattr(settings, "MINIMAP2", None))):
                 raise serializers.ValidationError("Minimap2 executable not found."
                                                   " Please configure in the environmental variables file.")
+
         # If it is not metagenomics double check the target set is None
         if data["job_type"].id != 10:
             data["target_set"] = None
