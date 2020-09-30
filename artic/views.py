@@ -54,9 +54,9 @@ def fire_conditions_list(request, pk):
         except ArticFireConditions.DoesNotExist:
             afc = ArticFireConditions(
                 flowcell_id=int(pk),
-                ninety_percent_bases_at=int(request.data.get("90-input", 0)),
-                ninety_five_percent_bases_at=int(request.data.get("95-input", 0)),
-                ninety_nine_percent_bases_at=int(request.data.get("99-input", 0)),
+                ninety_percent_bases_at=int(request.data.get("90-input", 300)),
+                ninety_five_percent_bases_at=int(request.data.get("95-input", 250)),
+                ninety_nine_percent_bases_at=int(request.data.get("99-input", 30)),
             )
             afc.save()
         return Response(

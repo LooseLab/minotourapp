@@ -104,7 +104,7 @@ class TasksController {
       console.log(input.attr(`id`).split(`-`).slice(0, 2).join(`-`))
       newConditions[input.attr(`id`).split(`-`).slice(0, 2).join(`-`)] = input.val()
     })
-    this._axiosInstance.post(`/api/v1/artic/${this._flowcellId}/firing-conditions`, { newConditions }).then(
+    this._axiosInstance.post(`/api/v1/artic/${this._flowcellId}/firing-conditions`, newConditions).then(
       response => {
         console.log(response.data)
       }
