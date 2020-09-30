@@ -651,19 +651,21 @@ def active_minion_list(request):
                         mrs_serialiser = MinionRunStatsSerializer(
                             mrs, context={"request": request}
                         )
-
                         data[minion.name] = mrs_serialiser.data
+
                 active_minion_list.append(minion)
     serializer = MinionSerializer(
         active_minion_list, many=True, context={"request": request}
     )
+    print(serializer.data)
     return_data = list(serializer.data)
 
     for active_minion in return_data:
         active_minion.update(extra_data[active_minion["name"]])
         if active_minion.get("name", 0) in data:
-            print("Hello")
-            pprint(extra_data)
+            data_to_add = data.get(active_minion["name"], blank_stats)
+            # Remove the minion run stats id so we don't overwrite the minion ID
+            data_to_add.pop("id")
             active_minion.update(data.get(active_minion["name"], blank_stats))
             active_minion.update(extra_data[active_minion["name"]])
 
@@ -800,7 +802,7 @@ def minknow_message(request, pk):
 
 
 @api_view(["GET", "POST"],)
-def minION_control_list(request, pk):
+def minion_control_list(request, pk):
     """
     TODO describe function
     """
@@ -815,7 +817,6 @@ def minION_control_list(request, pk):
         serializer = MinIONControlSerializer(
             data=request.data, context={"request": request}
         )
-
         if serializer.is_valid():
             serializer.save(owner=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -2118,8 +2119,8 @@ def flowcell_minknow_stats_list(request, pk, check_id):
     # Create the entry in the results dicionary for each pore state
     # TODO check the pore states match
     print(minknow_colours)
-    last_time = MinionRunStats.objects.filter(run__flowcell_id=167).last().sample_time
-    first_time = MinionRunStats.objects.filter(run__flowcell_id=167).first().sample_time
+    last_time = MinionRunStats.objects.filter(run__flowcell_id=pk).last().sample_time
+    first_time = MinionRunStats.objects.filter(run__flowcell_id=pk).first().sample_time
     div, rem = divmod((last_time - first_time).total_seconds(), 24*3600)
     counter = div
     for x in possible_pore_states:
