@@ -98,7 +98,9 @@ def check_coverage(flowcell, target_coverage, reference_line, barcode=""):
             chromosome_id=reference_line.id,
             coverage__gte=target_coverage,
         ).values("coverage")
-        queryset = [{"coverage_reached": True, "coverage": coverage} for coverage in queryset]
+        queryset = [
+            {"coverage_reached": True, "coverage": coverage} for coverage in queryset
+        ]
     else:
         queryset = (
             PafSummaryCov.objects.filter(job_master__flowcell=flowcell)
@@ -111,12 +113,11 @@ def check_coverage(flowcell, target_coverage, reference_line, barcode=""):
         )
         queryset = [
             {
-                "coverage": q["total_yield__sum"]
-                / q["reference_line_length__sum"],
-                "coverage_reached": True
+                "coverage": q["total_yield__sum"] / q["reference_line_length__sum"],
+                "coverage_reached": True,
             }
-            for q in queryset if q["total_yield__sum"]
-                / q["reference_line_length__sum"] > target_coverage
+            for q in queryset
+            if q["total_yield__sum"] / q["reference_line_length__sum"] > target_coverage
         ]
     if not queryset:
         logger.warning(
@@ -261,7 +262,9 @@ def minion_statistic_check(condition):
         condition.last_minions_stats_id == 0
         and MinionRunStats.objects.filter(run__flowcell=condition.flowcell).count()
     ):
-        queryset = MinionRunStats.objects.filter(run__flowcell=condition.flowcell).order_by("-id")[:10]
+        queryset = MinionRunStats.objects.filter(
+            run__flowcell=condition.flowcell
+        ).order_by("-id")[:10]
         condition.last_minions_stats_id = queryset[9].id
     elif not MinionRunStats.objects.filter(run__flowcell=condition.flowcell).count():
         return
@@ -364,8 +367,11 @@ def check_artic_has_fired(condition):
         m, created = Message.objects.get_or_create(
             recipient=condition.creating_user,
             sender=condition.creating_user,
-            title=f"Artic pipeline has finished for barcode {barcode['barcode__name']} at {time}",
+            title__startswith=f"Artic pipeline has finished for barcode {barcode['barcode__name']}",
             flowcell=condition.flowcell,
+            defaults={
+                "title": f"Artic pipeline has finished for barcode {barcode['barcode__name']} at {time}"
+            },
         )
 
 
@@ -382,13 +388,17 @@ def check_artic_sufficient_coverage(condition):
     """
     queryset = ArticBarcodeMetadata.objects.filter(
         flowcell_id=condition.flowcell, has_sufficient_coverage=True
-    ).values("barcode__name", "average_coverage")
+    ).values("barcode__name", "average_coverage", "job_master_id")
     for barcode in queryset:
         time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         m, created = Message.objects.get_or_create(
             recipient=condition.creating_user,
             sender=condition.creating_user,
-            title=f"Sufficient Coverage reached for Barocde {barcode['barcode__name']} in Artic task,"
-            f" with an average coverage of {barcode['average_coverage']} at {time}.",
+            title__startswith=f"Sufficient Coverage reached for Barcode {barcode['barcode__name']} in Artic task {barcode['job_master_id']}",
             flowcell=condition.flowcell,
+            defaults={
+                "title": f"Sufficient Coverage reached for Barcode {barcode['barcode__name']} in Artic task {barcode['job_master_id']} with an average coverage of {barcode['average_coverage']} at {time}."
+            },
         )
+        print(created)
+        print(m)
