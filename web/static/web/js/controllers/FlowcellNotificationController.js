@@ -97,6 +97,7 @@ class FlowcellNotificationController {
           if (!Object.prototype.hasOwnProperty.call(this._disabledNotificationsHTML, `list-artic-top`)) {
             that._disabledNotificationsHTML[`list-artic-top`] = $(`#list-artic-top`)[0].outerHTML
             $(`#list-artic-top`).remove()
+            $(`#list-artic`).css(`display`, `none`)
           }
         }
         extantTypes.forEach(type => {
@@ -218,13 +219,13 @@ class FlowcellNotificationController {
     console.log(this._disabledNotificationsHTML)
     axiosInstance.delete(`/api/v1/communication/messages/conditions`, { params: { pk: notificationID } }).then(response => {
       const notificationType = response.data
-      console.log(this._disabledNotificationsHTML[notificationType])
-      console.log(notificationType)
       $(`.extantNotif`).DataTable().ajax.reload(null, false)
       if ([`arti`, `suff`].includes(notificationType)) {
-        console.log(`appending artic`)
+        // append back thea artic tab
         if (!$(`#list-tab-tasks`).find(`#list-artic-top`).length) {
           $(`#list-tab-tasks`).append(this._disabledNotificationsHTML[`list-artic-top`])
+          $(`#list-artic`).css(`display`, `block`)
+          $(`#${notificationType}`).prop(`disabled`, false)
         }
       } else if (notificationType !== `cov`) {
         console.log(`WE ARE APP{EFNM`)
