@@ -56,7 +56,8 @@ def clear_unused_artic_files(artic_results_path, sample_name):
         ".fastq",
         ".counts.dat",
         ".coverage.dat",
-        ".sorted.bam"
+        ".sorted.bam",
+        ".sorted.bam.bai"
     ]
     files_to_keep_full = []
     files_to_keep_full.extend([f"{sample_name}{filey}" for filey in files_to_keep])

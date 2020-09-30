@@ -54,6 +54,7 @@ def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
         "input-fasta": [f"{barcode_name}/{barcode_name}.fastq.gz" for barcode_name in finished_barcodes],
         "pangolin-lineages": [f"{barcode_name}/lineage_report.csv.gz" for barcode_name in finished_barcodes],
         "sorted-bam": [f"{barcode_name}/{barcode_name}.sorted.bam.gz" for barcode_name in finished_barcodes],
+        "sorted-bam-bai": [f"{barcode_name}/{barcode_name}.sorted.bam.bai.gz" for barcode_name in finished_barcodes],
     }
     chosen_files = [results_files[key] for key in chosen]
     # change into the directory

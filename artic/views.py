@@ -394,6 +394,7 @@ def get_artic_barcode_metadata_html(request):
         ("Input fasta", "input-fasta"),
         ("Pangolin lineages CSV", "pangolin-lineages"),
         ("Sorted Bam", "sorted-bam"),
+        ("Sorted Bam index", "sorted-bam-bai")
     ]
     old_dict = orm_object.__dict__
     context_dict = {key[0]: old_dict[key[1]] for key in new_key_names}
@@ -534,6 +535,7 @@ def get_results_modal_html(request, pk):
         ("Input fasta", "input-fasta"),
         ("Pangolin lineages CSV", "pangolin-lineages"),
         ("Sorted Bam", "sorted-bam"),
+        ("Sorted Bam Index", "sorted-bam-bai")
     ]
     context_dict = {"hidden_results_files": results_files}
     return render(request, "all-results-modal.html", context={"context": context_dict})
