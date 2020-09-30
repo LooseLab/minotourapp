@@ -736,3 +736,6 @@ transition-timing-function: ease-out;
     font-size: .75rem; !important;
     width: 7.5rem;
 }
+.vue-row td{
+    padding: 0 .5rem; !important;
+}
