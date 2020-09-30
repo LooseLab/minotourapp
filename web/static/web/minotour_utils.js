@@ -178,6 +178,7 @@ function makeSplineChart (divId, chartTitle, yAxisTitle) {
       zoomType: `x`
     },
     boost: {
+      enabled: false,
       useGPUTranslations: true
     },
     title: {
@@ -336,6 +337,9 @@ function makeAreaPlot (divName, chartTitle, yAxisTitle) {
       height: 350,
       marginRight: 200
     },
+    boost: {
+      useGPUTranslations: true
+    },
     title: {
       text: chartTitle
     },
@@ -491,8 +495,13 @@ function makeHeatmapChart (divName, chartTitle) {
       layout: `horizontal`
     },
     exporting: {
-      enabled: false
+      enabled: true
+    },
+    series: {
+      nullColor: `#EFEFEF`,
+      type: `heatmap`
     }
+
   })
 }
 

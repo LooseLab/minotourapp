@@ -2,12 +2,18 @@
 Useful functions that don't belong in views or tasks
 """
 import json
+import os
+import tarfile
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from rest_framework import status
+from rest_framework.response import Response
 
+from artic.models import ArticBarcodeMetadata
 from artic.task_artic_alignment import make_results_directory_artic
 from minotourapp.settings import BASE_DIR
 from minotourapp.utils import get_env_variable
@@ -15,6 +21,63 @@ from reads.models import Flowcell, JobMaster
 
 # Colour palette of amplicon bands
 colour_palette = ["#ffd9dc", "#ffefdc", "#ffffbc", "#dcffe4", "#bae1ff"]
+
+def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
+    """
+    
+    Parameters
+    ----------
+    artic_results_dir: pathlib.PosixPath
+        The path to the artic results directory
+    flowcell: reads.models.Flowcell
+        The ORM object of the flowcell
+    selected_barcode: str
+        The name of the selected barcode, empty string if downloading all barcodes
+    chosen: list
+        List of files that were chosen for download
+    Returns
+    -------
+    list
+        List of completed barcodes for this flowcell
+    """
+    if not selected_barcode:
+        queryset = ArticBarcodeMetadata.objects.filter(flowcell=flowcell, has_finished=True)
+        finished_barcodes = [q.barcode.name for q in queryset]
+    else:
+        finished_barcodes = [selected_barcode]
+    results_files = {
+        "consensus": [f"{barcode_name}/{barcode_name}.consensus.fasta.gz" for barcode_name in finished_barcodes],
+        "box-plot": [f"{barcode_name}/{barcode_name}-boxplot.png" for barcode_name in finished_barcodes],
+        "bar-plot": [f"{barcode_name}/{barcode_name}-barplot.png" for barcode_name in finished_barcodes],
+        "fail-vcf": [f"{barcode_name}/{barcode_name}.fail.vcf.gz" for barcode_name in finished_barcodes],
+        "pass-vcf": [f"{barcode_name}/{barcode_name}.pass.vcf.gz" for barcode_name in finished_barcodes],
+        "input-fasta": [f"{barcode_name}/{barcode_name}.fastq.gz" for barcode_name in finished_barcodes],
+        "pangolin-lineages": [f"{barcode_name}/lineage_report.csv.gz" for barcode_name in finished_barcodes],
+        "sorted-bam": [f"{barcode_name}/{barcode_name}.sorted.bam.gz" for barcode_name in finished_barcodes],
+        "sorted-bam-bai": [f"{barcode_name}/{barcode_name}.sorted.bam.bai.gz" for barcode_name in finished_barcodes],
+    }
+    chosen_files = [results_files[key] for key in chosen]
+    # change into the directory
+    os.chdir(artic_results_dir)
+        
+    results_file = (
+            artic_results_dir / f"results_artic_{flowcell.name}.tar.gz"
+    )
+    with tarfile.open(results_file, "w:gz") as tar:
+        try:
+            for filey in chosen_files:
+                for barcode_file in filey:
+                    tar.add(barcode_file)
+        except FileNotFoundError as e:
+            return Response(str(e), status=status.HTTP_404_NOT_FOUND)
+
+    with open(results_file, "rb") as fh:
+        response = HttpResponse(fh.read(), content_type="application/gzip")
+        response[
+            "Content-Disposition"
+        ] = f"attachment; filename=results_artic_{flowcell.name}.tar.gz"
+        response["x-file-name"] = f"results_artic_{flowcell.name}.tar.gz"
+        return response
 
 
 def get_amplicon_band_data(scheme, scheme_version):
@@ -143,26 +206,21 @@ def quick_get_artic_results_directory(flowcell_id, barcodeName="", check=False):
 
     """
     flowcell = Flowcell.objects.get(pk=flowcell_id)
-
     artic_task = get_object_or_404(
         JobMaster, flowcell=flowcell, job_type__name="Track Artic Coverage"
     )
-
     artic_results_path = make_results_directory_artic(
         flowcell.id, artic_task.id, allow_create=False
     )
-
     if check:
         return artic_results_path.exists()
-
     if barcodeName:
         # The path to the coverage array for this barcode
         coverage_path = Path(
             f"{artic_results_path}/{barcodeName}/{barcodeName}.coverage.dat"
         )
         return flowcell, artic_results_path, artic_task.id, coverage_path
-
-    return flowcell, artic_results_path, artic_task.id
+    return flowcell, artic_results_path, artic_task.id, ""
 
 
 def remove_duplicate_sequences_numpy(array, master=False, minimum=None):

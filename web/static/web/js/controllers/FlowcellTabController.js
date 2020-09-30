@@ -9,7 +9,7 @@ class FlowcellTabController {
     this.tabs = []
     this._first = true
     this._createElementLookupObjects()
-    this._redraw_interval = setInterval(() => this._drawTabs(), 30000)
+    this._redraw_interval = setInterval(() => this._drawTabs(), 60000)
   }
 
   /**
@@ -38,6 +38,8 @@ class FlowcellTabController {
         this.toggleTabContent(activeTab)
         this._first = false
       }
+    }, reason => {
+      console.error(reason)
     })
   }
 
@@ -56,7 +58,8 @@ class FlowcellTabController {
       tasks: `tasksController`,
       metagenomics: `metagenomicsController`,
       "summary-data": `summaryDataController`,
-      "live-event-data": `liveEventController`
+      "live-event-data": `liveEventController`,
+      notifications: `notificationsController`
     }
 
     if (getSelectedTab()) {
@@ -69,6 +72,9 @@ class FlowcellTabController {
     }
     // set the new tab in Session Storage.
     setSelectedTab(name)
+    if (name !== `live-event-data`){
+      $(`html`).removeClass(`disable-scroll`)
+    }
     // add active to newly selected nav time child element, the link
     this.lookupElement[navName].firstElementChild.classList.add(`active`)
     // show the content of the newly selected Div
@@ -108,7 +114,8 @@ class FlowcellTabController {
       tasks: [`tasksController`, TasksController],
       metagenomics: [`metagenomicsController`, MetagenomicsController],
       "summary-data": [`summaryDataController`, SummaryTabController],
-      "live-event-data": [`liveEventController`, LiveMinKnowController]
+      "live-event-data": [`liveEventController`, LiveMinKnowController],
+      notifications: [`notificationsController`, FlowcellNotificationController]
     }
     // if we have a controller for this tab, but we are no longer showing it as underlying data has been deleted
     Object.keys(controllers).forEach(controllerName => {

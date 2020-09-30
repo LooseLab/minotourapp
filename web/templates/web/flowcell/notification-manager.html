@@ -1,6 +1,5 @@
 <div class="row">
-
-    <div class="col-md-6">
+    <div class="col-md-6" id="data-list">
         <div class="card card-primary card-outline" style="min-height: 400px">
             <div class="card-header">
                 <h3 class="card-title">
@@ -16,21 +15,18 @@
                     <blockquote>
                         <div class="row">
                             <div class="col-3">
-                                <div class="list-group" id="list-tab" role="tablist">
-                                    <a class="list-group-item list-group-item-action active" id="mux"
+                                <div class="list-group" id="list-tab-top" role="tablist">
+                                    <a class="list-group-item list-group-item-action active" id="mux-btn"
                                        data-toggle="list" href="#list-mux" role="tab" aria-controls="home">Mux Scan
                                         Alerts</a>
-                                    <a class="list-group-item list-group-item-action" id="volt"
+                                    <a class="list-group-item list-group-item-action" id="volt-btn"
                                        data-toggle="list" href="#list-voltage" role="tab" aria-controls="profile">Voltage</a>
-                                    <a class="list-group-item list-group-item-action" id="occu"
+                                    <a class="list-group-item list-group-item-action" id="occu-btn"
                                        data-toggle="list" href="#list-occupancy" role="tab"
                                        aria-controls="messages">Occupancy</a>
-                                    <a class="list-group-item list-group-item-action" id="sped"
-                                       data-toggle="list" href="#list-occupancy" role="tab"
-                                       aria-controls="messages">Speed</a>
-                                    <a class="list-group-item list-group-item-action" id="waer"
+                                    <a class="list-group-item list-group-item-action" id="waer-btn"
                                        data-toggle="list" href="#list-warnings" role="tab" aria-controls="settings">Warnings/Errors</a>
-                                    <a class="list-group-item list-group-item-action" id="tasks"
+                                    <a class="list-group-item list-group-item-action" id="tasks-btn"
                                        data-toggle="list" href="#list-task" role="tab"
                                        aria-controls="settings">Tasks</a>
                                 </div>
@@ -42,11 +38,14 @@
                                          aria-labelledby="list-home-list">
                                         <form id="mux" class="notification-form">
                                             <div class="form-group">
-                                                <label for="mux-alert-check" class="minotour-label">Receive Mux alert
-                                                    notifications?</label>
-                                                <input type="checkbox" name="mux-alert-check" id="mux-alert-check">
+                                                <div class="form-check form-check-inline">
+                                                    <label for="mux-alert-check" class="minotour-label">Receive Mux
+                                                        alert
+                                                        notifications?</label>
+                                                    <input type="checkbox" name="mux-alert-check" id="mux-alert-check" class="form-control-sm noti-control">
+                                                </div>
                                             </div>
-                                            <input type="submit" class="btn-cust third btn-primary"
+                                            <input type="submit" class="btn btn-primary"
                                                    value="Submit Choice">
                                         </form>
                                     </div>
@@ -57,7 +56,7 @@
                                             <div class="form-group">
                                                 <label for="lower-limit" class="control-label">Lower
                                                     Limit</label>
-                                                <input type="number" class="form-control" id="lower-limit"
+                                                <input type="number" class="form-control noti-control" id="lower-limit"
                                                        value="-180" min="-220"
                                                        max="-180"
                                                        required>
@@ -65,12 +64,12 @@
                                             <div class="form-group">
                                                 <label for="upper-limit" class="control-label">Upper
                                                     Limit</label>
-                                                <input type="number" class="form-control" id="upper-limit"
+                                                <input type="number" class="form-control noti-control" id="upper-limit"
                                                        min="-160" max="0"
                                                        value="-160"
                                                        required>
                                             </div>
-                                            <input type="submit" class="btn-cust third btn-primary"
+                                            <input type="submit" class="btn btn-primary"
                                                    value="Submit Range">
                                         </form>
                                     </div>
@@ -81,7 +80,7 @@
                                             <div class="form-group">
                                                 <label for="recipient-name" class="control-label">Lower
                                                     Limit</label>
-                                                <input type="number" class="form-control" id="lower-limit"
+                                                <input type="number" class="form-control noti-control" id="lower-limit"
                                                        min="0" max="100"
                                                        value="70"
                                                        required>
@@ -89,12 +88,12 @@
                                             <div class="form-group">
                                                 <label for="recipient-name" class="control-label">Upper
                                                     Limit</label>
-                                                <input type="number" class="form-control" id="upper-limit"
+                                                <input type="number" class="form-control noti-control" id="upper-limit"
                                                        min="50" max="100"
                                                        value="95"
                                                        required>
                                             </div>
-                                            <input type="submit" class="btn-cust third btn-primary"
+                                            <input type="submit" class="btn btn-primary"
                                                    value="Submit Range">
                                         </form>
                                     </div>
@@ -103,13 +102,16 @@
                                          aria-labelledby="list-settings-list">
                                         <form id="waer" class="notification-form">
                                             <div class="form-group">
-                                                <label for=warnings-alert-check" class="minotour-label">
-                                                    Receive Notifications for MinKNOW warnings and Errors?
-                                                </label>
-                                                <input type="checkbox" name="warnings-alert-check"
-                                                       id="warnings-alert-check">
+                                                <div class="form-check form-check-inline">
+
+                                                    <label for=warnings-alert-check" class="minotour-label">
+                                                        Receive Notifications for MinKNOW warnings and Errors?
+                                                    </label>
+                                                    <input type="checkbox" name="warnings-alert-check" class="form-control-sm noti-control"
+                                                           id="warnings-alert-check">
+                                                </div>
                                             </div>
-                                            <input type="submit" class="btn-cust third btn-primary"
+                                            <input type="submit" class="btn btn-primary"
                                                    value="Submit Choice">
                                         </form>
                                     </div>
@@ -118,9 +120,9 @@
                                          aria-labelledby="list-settings-list">
                                         <div class="row">
                                             <div class="col-2">
-                                                <div class="list-group" id="list-tab" role="tablist">
+                                                <div class="list-group" id="list-tab-tasks" role="tablist">
                                                     <a class="list-group-item list-group-item-action"
-                                                       id="list-mapping1=-top"
+                                                       id="list-mapping-top"
                                                        data-toggle="list" href="#list-mapping" role="tab"
                                                        aria-controls="settings">Mapping</a>
                                                     <a class="list-group-item list-group-item-action"
@@ -130,7 +132,7 @@
                                                 </div>
                                             </div>
                                             <!-- Mapping tab pane form -->
-                                            <div class="col-10 tab-content">
+                                            <div class="col-10 tab-content" id="list-tab-tasks-content">
                                                 <div class="tab-pane fade" id="list-mapping" role="tabpanel"
                                                      aria-labelledby="list-messages-list">
                                                     <form id="cov" class="notification-form">
@@ -138,7 +140,7 @@
                                                             <label for="coverage-amount" class="control-label"> Average
                                                                 Coverage Depth:
                                                             </label>
-                                                            <input id="coverage-target" value="" class="form-control"
+                                                            <input id="coverage-target" value="" class="form-control noti-control"
                                                                    placeholder="Set target coverage..." type="text"
                                                                    name="coverageAmount">
                                                         </div>
@@ -147,7 +149,7 @@
                                                                 Reference:
                                                             </label>
                                                             <select name="reference" id="reference"
-                                                                    data-select="false" class="form-control">
+                                                                    data-select="false" class="form-control noti-control">
                                                                 <option value="-1" id="reference-condition-placeholder"
                                                                         disabled selected hidden>Please
                                                                     Select...
@@ -160,14 +162,14 @@
                                                                 required):
                                                             </label>
                                                             <select name="contig" id="chromosome" disabled
-                                                                    class="form-control">
+                                                                    class="form-control noti-control">
                                                                 <option value="-1" id="contig-conditon-placeholder"
                                                                         disabled selected hidden>Please
                                                                     Select...
                                                                 </option>
                                                             </select>
                                                         </div>
-                                                        <input type="submit" class="btn-cust third btn-primary"
+                                                        <input type="submit" class="btn btn-primary"
                                                                value="Submit Choice">
                                                     </form>
                                                 </div>
@@ -176,31 +178,36 @@
                                                      aria-labelledby="list-settings-list">
                                                     <form id="arti" class="notification-form">
                                                         <div class="form-group">
-                                                            <label for="arti" class="minotour-label">
-                                                                Receive Notifications when Artic Pipeline fires?
-                                                            </label>
-                                                            <input type="checkbox" class="form-control-sm"
-                                                                   name="artic-check"
-                                                                   id="arti">
+                                                            <div class="form-check form-check-inline">
+                                                                <label for="arti" class="minotour-label"
+                                                                       style="margin-bottom: 0">
+                                                                    Artic Pipeline completes:
+                                                                </label>
+                                                                <input type="checkbox" class="form-control-sm noti-control"
+                                                                       name="artic-check"
+                                                                       id="arti" style="margin-left: .25rem">
+                                                            </div>
                                                         </div>
                                                     </form>
                                                     <form id="suff" class="notification-form">
                                                         <div class="form-group">
-                                                            <label for="suff" class="minotour-label">
-                                                                Receive Notifications when Sufficient coverage is
-                                                                reached?
-                                                            </label>
-                                                            <input type="checkbox" class="form-control-sm"
-                                                                   name="artic-check"
-                                                                   id="suff">
+                                                            <div class="form-check form-check-inline">
+                                                                <label for="suff" class="minotour-label"
+                                                                       style="margin-bottom: 0;">
+                                                                    Sufficient coverage reached:
+                                                                </label>
+                                                                <input type="checkbox" class="form-control-sm noti-control"
+                                                                       name="artic-check"
+                                                                       id="suff" style="margin-left: .25rem">
+                                                            </div>
                                                         </div>
                                                     </form>
                                                     <input id="multi-form-submit"
-                                                           class="btn-cust third btn-primary"
-                                                           value="Submit Choices">
+                                                           class="btn btn-primary"
+                                                           value="Submit Choices"
+                                                    style="width: 8.25rem">
                                                 </div>
                                             </div>
-
                                         </div>
                                     </div>
                                 </div>
@@ -254,7 +261,6 @@
         </div>
     </div>
 </div>
-
 {# Success modal #}
 <div class="modal fade" id="basicModal" tabindex="-1" role="dialog" aria-labelledby="basicModal"
      aria-hidden="true">
@@ -275,8 +281,3 @@
         </div>
     </div>
 </div>
-
-
-<script>
-  const notificationsController = new FlowcellNotificationController({{ flowcell.id }});
-</script>

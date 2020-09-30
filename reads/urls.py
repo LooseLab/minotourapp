@@ -112,7 +112,7 @@ urlpatterns = [
         name="minIONevents-list"),
     url(
         r'^api/v1/minions/(?P<pk>[0-9]+)/control/$',
-        views.minION_control_list,
+        views.minion_control_list,
         name="minIONcontrol-list"),
     url(
         r'^api/v1/minions/(?P<pk>[0-9]+)/control/(?P<checkid>[0-9]+)/$',

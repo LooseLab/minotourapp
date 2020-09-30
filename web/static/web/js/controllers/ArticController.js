@@ -29,13 +29,15 @@ class ArticController {
     this._fireInputs = [this._90Input, this._95Input, this._99Input]
     this._showFiringConditions(flowcellId)
     this._addListenerToFireInputs()
+    // this._addListenerToDownloadResults(flowcellId)
+    this._renderAllResultsModal(flowcellId)
   }
 
   /**
    * Submit fire choices for the Artic pipeline
    * @private
    */
-  _submitFireChoices() {
+  _submitFireChoices () {
     const newConditions = {}
     this._fireInputs.forEach(input => {
       newConditions[input.attr(`id`)] = input.val()
@@ -685,6 +687,7 @@ class ArticController {
         createdRow: (row, data, index) => {
           if (data.has_finished) {
             $(row).addClass([`finished-pipeline`, `artic-tr-row`])
+            $(`#download-results-all`).prop(`disabled`, false)
           } else {
             $(row).addClass(`artic-tr-row`)
           }
@@ -750,17 +753,19 @@ class ArticController {
   /**
    * Manually trigger the artic command to be run on this barcode.
    * @param flowcellId {number} The primary key of the flowcell we are running this on.
-   * @param barcodeNameString {string} The primary key of the barcode that we want the data from.
+   * @param barcodePk {number} The primary key of the barcode that we want the data from.
+   * @param jobPk {number} The primary key of the artic Jobmaster
    * @param event {obj} Event object created on trigger.
    */
-  manuallyTriggerPipeline (flowcellId, barcodeNameString, event) {
+  manuallyTriggerPipeline (flowcellId, barcodePk, jobPk, event) {
     const jobTypeId = 17
     event.preventDefault()
-    console.log(barcodeNameString.id)
+    console.log(barcodePk)
     this._axiosInstance.post(`/api/v1/artic/manual-trigger/`, {
       flowcellId,
-      barcodeName: barcodeNameString.id,
-      jobTypeId
+      barcodePk,
+      jobTypeId,
+      jobPk
     }).then(response => {
       const message = response.data
       $(`#manual-trigger`).remove()
@@ -773,13 +778,14 @@ class ArticController {
   /**
    * Submit the user choices from the modal to the server then offer the selected files as a .tar.gz
    * @param flowcellId {number} Primary key of the flowcell
-   * @param selectedBarcode {string} The chosen barcode name
+   * @param selectedBarcode {number} The chosen barcode primary key
    * @param event {obj} Auto generatee event object
+   * @param all {boolean} If true download results from all barcodes
    */
-  buildResults (flowcellId, selectedBarcode, event) {
+  buildResults (flowcellId, selectedBarcode, event, all) {
     const data = { string: $(`.results-builder-form`).serialize() }
     event.preventDefault()
-    data.params = { flowcellId, selectedBarcode }
+    data.params = { flowcellId, selectedBarcode, all }
     console.log($(`.results-builder-form`).serialize())
     this._axiosInstance.get(`/api/v1/artic/build-results`,
       {
@@ -795,6 +801,7 @@ class ArticController {
       document.body.appendChild(link)
       link.click()
     }).catch(error => {
+      alert(error)
       console.error(error)
     })
   }
@@ -836,14 +843,63 @@ class ArticController {
   }
 
   /**
+   * Add the on click listener to the Download all completed barcodes button
+   * @param flowcellId {number} The primary key of the flowcell
+   * @private
+   */
+  _addListenerToDownloadResults (flowcellId) {
+    $(`#submit-download`).on(`click`, (event) => {
+      console.log(event)
+      // Check if this is to download all or just one
+      const data = $(event.currentTarget).data()
+      console.log(data)
+      const all = Boolean(data.all)
+      const barcodePk = data.barcode
+      this.buildResults(this._flowcellId, barcodePk, event, all)
+    })
+  }
+
+  /**
+   * Determine if we are downloading all the barcodes or just one. If just one, provide the barcode primary key to
+   * the modal
+   * @private
+   */
+  _getAllOrNot () {
+    $(`#results-builder`).on(`show.bs.modal`, function (event) {
+      const button = $(event.relatedTarget) // Button that triggered the modal
+      const downloadAll = Boolean(button.data(`all`)) // Extract info from data-* attributes
+      const barcodePk = button.data(`barcode`)
+      // Update the modal's content.
+      const submitButton = $(`#submit-download`)
+      submitButton.data({ all: downloadAll, barcode: barcodePk })
+    })
+  }
+
+  /**
+   * Render the modal to select what to download for each flowcell
+   * @param flowcellId {number} The flowcell primary key in the database
+   * @private
+   */
+  _renderAllResultsModal (flowcellId) {
+    this._axiosInstance.get(`/api/v1/artic/${flowcellId}/results-modal`).then(response => {
+      const modalHtml = response.data
+      $(`#modal-container`).html(modalHtml)
+      this._getAllOrNot()
+      this._addListenerToDownloadResults(flowcellId)
+    }).catch(error => {
+      console.error(error)
+    })
+  }
+
+  /**
    * Rerun artic command with the data we have accrued since it's completion
    * @param flowcellId {number} The primary key of the flowcell in the database.
-   * @param selectedBarcode {string} The barcode to rerun the command on.
+   * @param selectedBarcodePk {number} The barcode primary key to re run
    * @param event {Object} The event object
    */
-  reRunArticCommand (flowcellId, selectedBarcode, event) {
+  reRunArticCommand (flowcellId, selectedBarcodePk, event) {
     event.preventDefault()
-    this._axiosInstance.patch(`/api/v1/artic/rerun-command/`, { flowcellId, selectedBarcode }).then(
+    this._axiosInstance.patch(`/api/v1/artic/rerun-command/`, { flowcellId, selectedBarcodePk }).then(
       response => {
         if (!response.status === 204) {
           console.error(`Unexpected response status. Expected 204, received ${response.status}`)

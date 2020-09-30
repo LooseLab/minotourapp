@@ -81,9 +81,6 @@ class BasecalledDataController {
       barcodeNames.forEach(barcode => {
         that.barcodesList.push(barcode)
         active = barcode === that._currentBarcode ? `active` : ``
-        // that.barcodesElementsList.push(`<li class="barcode-tab nav-item">
-        //                             <a class="nav-link ${active}" data-toggle="pill" id="${barcode.name.replace(" ", "_")}" onclick="basecalledDataController._changeBarcode(event)">${barcode.name}</a>
-        //                         </li>`)
         newBarcodeElementsArray.push(`<li class="barcode-tab nav-item">
                                             <a class="nav-link ${active}" data-toggle="pill" id="${barcode.replace(` `, `_`)}" onclick="flowcellController.flowcellTabController.baseCalledDataController._changeBarcode(event)">${barcode}</a>
                                         </li>`)
@@ -421,9 +418,18 @@ class BasecalledDataController {
               )
               // add a new series
             } else {
+              const visible = !key.includes(`All reads`) | barcodeName === `All reads`
+              if (barcodeName !== `All reads`) {
+                chart.series.forEach(serial => {
+                  if (serial.name.includes(`All reads`)) {
+                    serial.update({ visible: false })
+                  }
+                })
+              }
               chart.addSeries({
                 name: key,
-                data: newChartData
+                data: newChartData,
+                visible
               })
             }
           }

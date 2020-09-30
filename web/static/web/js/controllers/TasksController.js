@@ -33,6 +33,7 @@ class TasksController {
     this._addListenerToTasksForm()
     this._addListenerToReactivateButton()
     this._targetSetSet.add(`<option value="-1">-- Please Choose --</option>`)
+    this._runFromDatabase = $(`#run-from-database`)
     this._90Input = $(`#90-input-og`)
     this._95Input = $(`#95-input-og`)
     this._99Input = $(`#99-input-og`)
@@ -42,6 +43,10 @@ class TasksController {
       console.log(`clearing task interval`)
       clearInterval(this._interval)
     })
+  }
+
+  _addListenerToRunFromDatabaseHelp () {
+    $(`#run-from-database`).hover($(this))
   }
 
   _addListenerToReactivateButton () {
@@ -95,9 +100,11 @@ class TasksController {
   _submitArticFire () {
     const newConditions = {}
     this._fireInputs.forEach(input => {
+      console.log(input.val())
+      console.log(input.attr(`id`).split(`-`).slice(0, 2).join(`-`))
       newConditions[input.attr(`id`).split(`-`).slice(0, 2).join(`-`)] = input.val()
     })
-    this._axiosInstance.post(`/api/v1/artic/${this._flowcellId}/firing-conditions`, { newConditions }).then(
+    this._axiosInstance.post(`/api/v1/artic/${this._flowcellId}/firing-conditions`, newConditions).then(
       response => {
         console.log(response.data)
       }
@@ -307,6 +314,9 @@ class TasksController {
         referenceSelect.attr(`disabled`, true)
         if ([`4`, `16`].includes(jobTypeId)) {
           referenceSelect.attr(`disabled`, false)
+          this._runFromDatabase.css(`display`, `inline-flex`)
+        } else {
+          this._runFromDatabase.css(`display`, `none`)
         }
         if (label.html() !== `Reference`) {
           label.html(`Reference`)

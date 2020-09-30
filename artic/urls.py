@@ -67,5 +67,10 @@ urlpatterns = [
         r'^api/v1/artic/(?P<pk>[0-9]+)/firing-conditions',
         views.fire_conditions_list,
         name="fire-conditions-data"
+    ),
+    url(
+        r'^api/v1/artic/(?P<pk>[0-9]+)/results-modal',
+        views.get_results_modal_html,
+        name="results-modal-html"
     )
 ]

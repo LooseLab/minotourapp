@@ -2,10 +2,7 @@
 {% load static %}
 {% block javascript %}
     <script>
-        //    document.getElementById("btn-copy-token").addEventListener("click", function() {
-        //      copyToClipboardMsg(document.getElementById("token"), "msg");
-        // });
-        setActiveNavbarItem(1);
+      setActiveNavbarItem(1);
     </script>
 {% endblock %}
 {% block content %}
@@ -35,25 +32,9 @@
                             >
                                 <template>
                                     <v-simple-table dense>
-
-                                        <!--
-                                        read_count 267851
-                                  selected_raw_samples 12575862438
-                                  selected_events 684462434
-                                  estimated_selected_bases 1232032384
-                                  written_read_count 0
-                                  basecalled_pass_read_count 0
-                                  basecalled_fail_read_count 0
-                                  basecalled_skipped_read_count 0
-                                  basecalled_bases 0
-                                  basecalled_samples 0
-                                  bytes_to_write_produced 0
-                                  bytes_to_write_failed 0
-                                  bytes_to_write_completed 0
-                                  -->
                                         <template v-slot:default>
                                             <thead>
-                                            <tr>
+                                            <tr class="vue-row">
                                                 <th class="text-left">Computer Name<br>Device<br>Experiment<br>Sample
                                                 </th>
                                                 <th class="text-left">Run Start</th>
@@ -68,75 +49,86 @@
                                                 <th class="text-left">Occupancy</th>
                                                 <th class="text-left">Strand %<br>Adapter %<br>Pore %</th>
                                                 <th class="text-left">Voltage</th>
-                                                <th class="text-left">Temp/Target</th>
-                                                <th class="text-left">ASIC Temp</th>
-                                                <th class="text-left">Speed</th>
-                                                <th class="text-left">Quality</th>
+                                                <th class="text-left">Temp/Target<br>ASIC Temp</th>
+                                                <th class="text-left">Send <br> Message</th>
+                                                <th class="text-left">Stop<br>Run</th>
                                             </tr>
                                             </thead>
-                                            <tbody>
-                                            <tr v-for="item in activeDevices" :key="item.device">
-                                                <td>{{ item.computer }}<br>{{ item.name }}<br>{{
+                                            <tbody style="word-wrap: anywhere">
+                                            <tr v-for="item in activeDevices" :key="item.device" class="vue-row">
+                                                <td>{{ item.computer }}
+                                                    <v-divider class="m-0"></v-divider>
+                                                    {{ item.name }}
+                                                    <v-divider class="m-0"></v-divider>
+                                                    {{
                                                     item.sample_name
-                                                    }}<br>{{ item.experiment_name }}
+                                                    }}
+                                                    <v-divider class="m-0"></v-divider>
+                                                    {{ item.experiment_name }}
+                                                    <v-divider class="m-0"></v-divider>
+
                                                 </td>
                                                 <td>{{ item.start_time }}</td>
-                                                <td>{{ item.flow_cell_id }}<br>{{ item.flowcell_type }}<br>
+                                                <td>{{ item.flow_cell_id }}
+                                                    <v-divider class="m-0"></v-divider>
+                                                    {{ item.flowcell_type }}
+                                                    <v-divider class="m-0"></v-divider>
                                                     {{item.current_script}}
+                                                    <v-divider class="m-0"></v-divider>
                                                 </td>
                                                 <td>{{ item.channel_count }}<br>{{item.wells_per_channel}}</td>
                                                 <td>
                                                     <div v-if="item.read_length_type == 'BASECALLED_BASES'">
-                                                        <v-icon>mdi-checkbox-marked-circle-outline</v-icon>
+                                                        <i class="fa fa-check"></i>
                                                     </div>
                                                     <div v-else>
-                                                        <v-icon>mdi-checkbox-blank-circle-outline</v-icon>
+                                                        <i class="far fa-times-circle"></i>
                                                     </div>
                                                 </td>
-                                                <td>{{ item.n50_data | humnum}}<br>{{ (item.basecalled_bases /
+                                                <td>{{ item.n50_data | humNum}}<br>{{ (item.basecalled_bases /
                                                     item.minKNOW_read_count)
-                                                    | humnum}} ({{ (item.estimated_selected_bases /
+                                                    | humNum}} ({{ (item.estimated_selected_bases /
                                                     item.minKNOW_read_count)
                                                     |
-                                                    humnum}})
+                                                    humNum}})
                                                 </td>
-                                                <td>{{ item.actual_max_val | humnum}}</td>
-                                                <td>{{ item.minKNOW_read_count | humnum}} <br> {{
+                                                <td>{{ item.actual_max_val | humNum}}</td>
+                                                <td>{{ item.minKNOW_read_count | humNum}} <br> {{
                                                     (parseInt(item.basecalled_pass_read_count)+parseInt(item.basecalled_fail_read_count))
-                                                    | humnum}} <br> {{
+                                                    | humNum}} <br> {{
                                                     (parseInt(item.basecalled_pass_read_count)+parseInt(item.basecalled_fail_read_count))
-                                                    / item.minKNOW_read_count *100 | humnum}}%
+                                                    / item.minKNOW_read_count *100 | humNum}}%
                                                 </td>
                                                 <td>{{ item.basecalled_pass_read_count / item.minKNOW_read_count * 100 |
-                                                    humnum}}%
+                                                    humNum}}%
                                                 </td>
-                                                <td>{{item.basecalled_bases | humnum }}b<br>{{
+                                                <td>{{item.basecalled_bases | humNum }}b<br>{{
                                                     item.estimated_selected_bases
                                                     |
-                                                    humnum}}b
+                                                    humNum}}b
                                                 </td>
                                                 <td>
                                                     <v-chip :color="testValue(((item.strand + item.adapter)/ (item.strand + item.adapter + item.pore) * 100) , 'occupancy')">
                                                         {{ (item.strand + item.adapter)/ (item.strand +
                                                         item.adapter
                                                         +
-                                                        item.pore) * 100 | humnum}}%
+                                                        item.pore) * 100 | humNum}}%
                                                     </v-chip>
                                                 </td>
                                                 <td>
                                                     <v-chip :color="testValue(item.strand , 'strand')" small
                                                             outlined>{{
-                                                        item.strand }}%
+                                                        item.strand / item.channel_count * 100 | round }}%
                                                     </v-chip>
                                                     <br>
                                                     <v-chip :color="testValue(item.adapter , 'adapter')" small
                                                             outlined>{{
-                                                        item.adapter }}%
+                                                        item.adapter / item.channel_count * 100 | round }}%
                                                     </v-chip>
                                                     <br>
                                                     <v-chip :color="testValue(item.pore , 'pore')" small
                                                             outlined>{{
-                                                        item.pore
+                                                        item.pore / item.channel_count * 100 | round
                                                         }}%
                                                     </v-chip>
                                                 </td>
@@ -145,13 +137,27 @@
                                                         item.voltage_value}}
                                                     </v-chip>
                                                 </td>
-                                                <td>{{item.heat_sink_temp | humnum}}&#8451; <br>
+                                                <td>{{item.heat_sink_temp | humNum}}&#8451;/
                                                     {{item.target_temp
-                                                    | humnum}}&#8451;
+                                                    | humNum}}&#8451; <br>
+                                                    {{item.asic_temp |humNum}}&#8451;
                                                 </td>
-                                                <td>{{item.asic_temp |humnum}}&#8451;</td>
-                                                <td>{{item.speed_q50 | humnum}} b/s</td>
-                                                <td>{{item.QUALITY_q50 | humnum}}</td>
+                                                <td>
+                                                    <button :id='item.id' @click="updateMinionToMessage(item.id)"
+                                                            type='button' data-toggle="modal"
+                                                            data-target="#custom-message"
+                                                            class='btn btn-primary btn-sm'><i
+                                                            class='fas fa-broadcast-tower'></i>
+                                                    </button>
+                                                </td>
+                                                <td>
+                                                    <button :id='item.id' @click="updateMinionToStop(item.id, item.name)"
+                                                            type='button' data-toggle="modal"
+                                                            data-target="#confirm-stop"
+                                                            class='btn btn-primary btn-sm'><i
+                                                            class='fa fa-ban'></i>
+                                                    </button>
+                                                </td>
                                             </tr>
                                             </tbody>
                                         </template>
@@ -165,6 +171,49 @@
                                 <v-col>
                                     <v-row
                                             align="center"
+                                            justify="center"
+                                    >
+                                        Currently Inactive Devices:
+                                    </v-row>
+                                    <v-row
+                                            align="center"
+                                            justify="center"
+                                            class="mb-4"
+                                    >
+                                        <template>
+                                            <v-simple-table dense>
+                                                <template v-slot:default>
+                                                    <thead>
+                                                    <tr>
+                                                        <th class="text-left">Computer Name</th>
+                                                        <th class="text-left">Device</th>
+                                                        <th class="text-left">Flowcell ID/Type</th>
+                                                        <th class="text-left">Channels/Mux</th>
+                                                        <th class="text-left">Test Comms</th>
+                                                    </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    <tr v-for="item in inactiveDevices" :key="item.device">
+                                                        <td>{{ item.computer }}</td>
+                                                        <td>{{ item.minION_name }}</td>
+                                                        <td>{{ item.flow_cell_id }}/{{ item.product_code }}</td>
+                                                        <td>{{ item.channel_count }}/{{item.wells_per_channel}}</td>
+                                                        <td>
+                                                            <button v-on:click="sendMessage($event, false)"
+                                                                    :id='item.id'
+                                                                    type='button'
+                                                                    class='btn btn-primary btn-sm'><i
+                                                                    class='fas fa-broadcast-tower' :id='item.id'></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    </tbody>
+                                                </template>
+                                            </v-simple-table>
+                                        </template>
+                                    </v-row>
+                                    <v-row
+                                            align="end"
                                             justify="center"
                                     >
                                         <v-alert
@@ -186,7 +235,6 @@
                                     </v-row>
                                 </v-col>
                                 <v-col>
-
                                     <template>
                                         <v-container fluid>
                                             <v-data-iterator
@@ -214,22 +262,18 @@
                                                                                 dense
                                                                                 type="error">
                                                                             Space Free:{{item.space_available |
-                                                                            humnum}}%<br>Stops:{{item.space_till_shutdown
-                                                                            | humnum}}%<br>
+                                                                            humNum}}%<br>Stops:{{item.space_till_shutdown
+                                                                            | humNum}}%<br>
                                                                         </v-alert>
                                                                     </div>
                                                                     <div v-else>
                                                                         <v-alert
                                                                                 dense
                                                                                 type="success">
-                                                                            Space Free:{{item.space_available | humnum}}<br>Stops:{{item.space_till_shutdown
-                                                                            | humnum}}<br>
+                                                                            Space Free:{{item.space_available | humNum}}<br>Stops:{{item.space_till_shutdown
+                                                                            | humNum}}<br>
                                                                         </v-alert>
                                                                     </div>
-                                                                    <v-btn x-small dark
-                                                                           @click="removeme(item.ipaddress)">
-                                                                        Refresh
-                                                                    </v-btn>
                                                                 </v-card-text>
                                                             </v-card>
                                                         </v-col>
@@ -238,270 +282,337 @@
                                             </v-data-iterator>
                                         </v-container>
                                     </template>
-
                                 </v-col>
                             </v-row>
-                            <v-row
-                                    align="center"
-                                    justify="center"
-                            >
-                                Currently Inactive Devices:
-                            </v-row>
-                            <v-row
-                                    align="center"
-                                    justify="center"
-                            >
-                                <template>
-                                    <v-simple-table dense>
-                                        <template v-slot:default>
-                                            <thead>
-                                            <tr>
-                                                <th class="text-left">Computer Name</th>
-                                                <th class="text-left">Device</th>
-                                                <th class="text-left">Flowcell ID/Type</th>
-                                                <th class="text-left">Channels/Mux</th>
-                                                <th class="text-left">Test Coms</th>
-
-                                            </tr>
-                                            </thead>
-                                            <tbody>
-                                            <tr v-for="item in inactiveDevices" :key="item.device">
-                                                <td>{{ item.computer }}</td>
-                                                <td>{{ item.minION_name }}</td>
-                                                <td>{{ item.flow_cell_id }}/{{ item.product_code }}</td>
-                                                <td>{{ item.channel_count }}/{{item.wells_per_channel}}</td>
-                                                <td>
-                                                    <button v-on:click="testMessage" :id='item.minION_name'
-                                                            type='button'
-                                                            class='btn btn-info btn-sm'><i class='fa fa-magic'></i>
-                                                        Test
-                                                    </button>
-                                                </td>
-
-
-                                            </tr>
-                                            </tbody>
-                                        </template>
-                                    </v-simple-table>
-                                </template>
-                            </v-row>
                         </v-container>
+                        <div class="modal fade" id="confirm-stop" tabindex="-1" role="dialog"
+                             aria-labelledby="myModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div style="border-radius: 25px" class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="exampleModalLabel">Confirm Run Stop?
+                                        </h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p>Are you sure you wish to stop this run? MinoTour cannot restart it.
+                                            </p>
+                                        <label for="minion-name">Please enter minion device name as confirmation.</label>
+                                        {{ minionCheck }}
+                                        <input type="text" id="minion-name" v-on:input="checkName($event)"> <i
+                                            class="fab fa-galactic-republic" v-bind:class="{disallowed: isDisallowed, allowed: !isDisallowed}"></i>
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel
+                                        </button>
+                                        <button href="#" id="submit-task-delete" data-dismiss="modal" class="btn btn-success success" @click="stopMinion($event)"
+                                                :disabled="disabled" type="reset">Stop run
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal fade" id="custom-message" tabindex="-1" role="dialog"
+                             aria-labelledby="myModalLabel" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div style="border-radius: 25px" class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="exampleModalLabel">Enter custom message text
+                                        </h5>
+                                        <button type="button" class="close" data-dismiss="modal"
+                                                aria-label="Close"><span
+                                                aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form>
+                                            <textarea style="width:100%" v-model="message"
+                                                      placeholder="Greetings"></textarea>
+                                        </form>
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel
+                                        </button>
+                                        <button v-bind:id="minionToMessage" class="btn btn-success success" type="reset"
+                                                data-dismiss="modal" @click="sendMessage($event, true)">
+                                            Submit
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </v-app>
                 </template>
                 {% endverbatim %}
             </div>
-
             <script src="{% static 'web/libraries/vue.js' %}"></script>
             <script src="{% static 'web/libraries/vuetify.js' %}"></script>
-
             <script>
-                {#setActiveNavbarItem(1);#}
-                const topPadding = $(".main-header").height() + 16;
-                $(".content-wrapper").css("padding-top", `${topPadding}px`);
-                const vuetify = new Vuetify({
-                    theme: {
-                        themes: {
-                            light: {
-                                primary: "#E53935",
-                                secondary: "#FFCDD2",
-                                accent: "#3F51B5"
-                            },
-                        },
+              const topPadding = $(".main-header").height() + 16;
+              $(".content-wrapper").css("padding-top", `${topPadding}px`);
+              const vuetify = new Vuetify({
+                theme: {
+                  themes: {
+                    light: {
+                      primary: "#E53935",
+                      secondary: "#FFCDD2",
+                      accent: "#3F51B5"
                     },
-                });
-                // TODO move to a getter on RemoteControlController
-                const vm = new Vue({
-                    vuetify,
-                    el: "#app",
-                    name: 'App',
-                    created() {
-                        this.getData();
-                        this.timer = setInterval(this.getData, 15000)
-                    },
-                    methods: {
-                        testMessage(event) {
+                  },
+                },
+              });
+              const _axiosInstance = axios.create({
+                headers: { 'X-CSRFToken': getCookie(`csrftoken`) }
+              })
+              // TODO move to a getter on RemoteControlController
+              const vm = new Vue({
+                vuetify,
+                el: "#app",
+                name: 'App',
+                created () {
+                  this.getData();
+                  this.timer = setInterval(this.getData, 15000)
+                },
+                methods: {
+                  /**
+                   * Check if the entered name matches the Minion name, allow the stop button to be pressed if it does
+                   * @param event {obj} The DOM event object
+                   */
+                  checkName (event) {
+                    console.log(event)
+                    console.log(event.target.value)
+                    console.log(this.minionCheck)
+                    this.isDisallowed = !(event.target.value === this.minionCheck)
+                    this.disabled = !(event.target.value === this.minionCheck)
+                  },
+                  updateMinionToMessage (id) {
+                    this.minionToMessage = id
+                  },
+                  /**
+                   * @param id {number} The primary key of the minion to stop
+                   * @param name {string} The name of the flowcell
+                   */
+                  updateMinionToStop (id, name) {
+                    this.minionToStop = id
+                    this.minionCheck = name
+                  },
+                  sendMessage (event, custom) {
+                    const jobType = custom ? `custommessage` : `testmessage`
+                    const minionPk = parseInt(event.target.id);
+                    const minionUrl = this.devices.find(e => e.id === minionPk).url
+                    _axiosInstance.post(`/api/v1/minions/${minionPk}/control/`,
+                      {
+                        "custom": this.message,
+                        "job": jobType,
+                        "minION": minionUrl,
+                        "complete": 'False'
+                      }
+                    ).then(response => {
+                      // todo do something to let people k>now that the test message has been sent, that isn't ugly alert box
+                      if (response.status === 201) {
+                        alert(`Test message created. Waiting for minFQ to pick up.`)
+                      }
+                    }).finally(() => {
+                      this.message = ""
+                      this.minionToMessage = 0
+                    });
+                  },
+                  stopMinion (event) {
+                    const minionPk = event.target.id;
+                    console.log(this)
+                    console.log(this.devices)
+                    const minionUrl = this.devices.find(e => e.id === this.minionToStop).url
+                    _axiosInstance.post(`/api/v1/minions/${this.minionToStop}/control/`,
+                      {
+                        "custom": "",
+                        "job": "stopminion",
+                        "minION": minionUrl,
+                        "complete": 'False'
+                      }
+                    ).then((result) => {
+                      alert(`Run stop request created. Waiting on minFQ.`)
+                      }).catch(error=>{
+                        console.error(error)
+                    }).finally(()=>{
+                      this.minionToStop = 0
+                      this.minionCheck = null
 
-                            var minionid = event.target.id.split("/");
-                            var url_mask = "{% url 'minIONcontrol-list' pk=12345 %}".replace(/12345/, minionid[minionid.length - 2].toString());
-                            axios.post(url_mask, {
-
-                                    "custom": "",
-                                    "job": "testmessage",
-                                    "minION": event.target.id,
-                                    "complete": 'False'
-                                }
-                            ).then(response => {
-                                console.log(response)
-                            });
-                            //ws.send(JSON.stringify(instructionmessage));
-                        },
-                        testValue(value, type) {
-                            /* eslint-disable no-console */
-                            switch (type) {
-                                case "occupancy":
-                                    if (value === 100) {
-                                        return "red"
-                                    } else if (value <= 80) {
-                                        return "orange"
-                                    } else if (value <= 50) {
-                                        return "red"
-                                    } else if (isNaN(value)) {
-                                        return "red"
-                                    } else {
-                                        return "green"
-                                    }
-                                case "voltage": {
-                                    if (value >= -220 && value <= -160) {
-                                        return "green"
-                                    } else {
-                                        return "red"
-                                    }
-                                }
-                                case "strand": {
-                                    if (value <= 50) {
-                                        return "red"
-                                    } else {
-                                        return "green"
-                                    }
-                                }
-                                case "adapter": {
-                                    if (value >= 50) {
-                                        return "red"
-                                    } else {
-                                        return "green"
-                                    }
-
-                                }
-                                case "pore": {
-                                    if (value >= 50) {
-                                        return "red"
-                                    } else {
-                                        return "green"
-                                    }
-                                }
-                            }
-                        },
-                        getData() {
-                            axios
-                                .get('/api/v1/active_minions')
-                                .then(response => {
-                                    this.devices = response.data;
-                                    this.parseComputerData()
-                                })
-                                .catch(error => console.log(error))
-                        },
-                        cancelAutoUpdate() {
-                            clearInterval(this.timer)
-                        },
-                        parseComputerData() {
-                            // Add computers temp here
-                            let tempComputerList = [];
-                            this.devices.forEach(minion => {
-                                if (!tempComputerList.some(e => e.computer === minion.computer)) {
-                                    tempComputerList.push((
-                                            (
-                                                {computer, space_available, space_till_shutdown, minknow_version}) => (
-                                                {
-                                                    computer,
-                                                    space_available,
-                                                    space_till_shutdown,
-                                                    minknow_version
-                                                }
-                                            )
-                                        )
-                                        (minion)
-                                    );
-                                }
-                            });
-                            // Get number unique computers
-                            this.computer_info.number = tempComputerList.length;
-                            this.computers = tempComputerList
-                        },
-                    },
-                    computed: {
-                        activeDevices() {
-                            if (typeof this.devices === 'undefined') {
-                                return
-                            } else {
-                                return this.devices.filter(function (devices) {
-                                    console.log(devices);
-                                    return devices.run_status.match(/^(ACQUISITION_PROCESSING|STARTING|FINISHING|ACQUISITION_RUNNING|)$/) //("PROCESSING","STARTING","FINISHING")
-                                })
-                            }
-                        },
-                        inactiveDevices() {
-                            if (typeof this.devices === 'undefined') {
-                                return
-                            } else {
-                                return this.devices.filter(function (devices) {
-                                    return devices.run_status.match(/^(active|COMPLETED|No Run|ACQUISITION_COMPLETED)$/)
-                                })
-                            }
-                        },
-                        numActive() {
-                            return this.activeDevices.length
-                        },
-                        numInactive() {
-                            return this.inactiveDevices.length
-                        },
-
-
-                    },
-                    filters: {
-                        humnum(num) {
-                            var si = [
-                                {value: 0, symbol: ""},
-                                {value: 1, symbol: ""},
-                                {value: 1E3, symbol: "k"},
-                                {value: 1E6, symbol: "M"},
-                                {value: 1E9, symbol: "G"},
-                                {value: 1E12, symbol: "T"},
-                                {value: 1E15, symbol: "P"},
-                                {value: 1E18, symbol: "E"}
-                            ];
-                            var rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
-                            var i;
-                            for (i = si.length - 1; i > 0; i--) {
-                                if (num >= si[i].value && num !== 0) {
-                                    break;
-                                }
-                            }
-                            return (num / si[i].value).toFixed(2).replace(rx, "$1") + si[i].symbol;
+                    })
+                  },
+                  testValue (value, type) {
+                    /* eslint-disable no-console */
+                    switch (type) {
+                      case "occupancy":
+                        if (value === 100) {
+                          return "red"
+                        } else if (value <= 80) {
+                          return "orange"
+                        } else if (value <= 50) {
+                          return "red"
+                        } else if (isNaN(value)) {
+                          return "red"
+                        } else {
+                          return "green"
                         }
-                    },
-                    destroyed() {
-                        this.cancelAutoUpdate()
-                    },
-                    data: {
-                        CustomAlertType: "warning",
-                        GeneralResponseAlert: false,
-                        add_computer: false,
-                        ip_to_add: null,
-                        computer_info: {
-                            number: 0,
-                            message: "",
-                            alert_type: "danger"
-                        },
-                        timer: null,
-                        alert: true,
-                        itemsPerPageOptions: [3, 6, 9, 12],
-                        itemsPerPage: 3,
-                        computers: [],
-                        devices: [],
-                        humnum: null
-                        //
+                      case "voltage": {
+                        if (value >= -220 && value <= -160) {
+                          return "green"
+                        } else {
+                          return "red"
+                        }
+                      }
+                      case "strand": {
+                        if (value <= 50) {
+                          return "red"
+                        } else {
+                          return "green"
+                        }
+                      }
+                      case "adapter": {
+                        if (value >= 50) {
+                          return "red"
+                        } else {
+                          return "green"
+                        }
+
+                      }
+                      case "pore": {
+                        if (value >= 50) {
+                          return "red"
+                        } else {
+                          return "green"
+                        }
+                      }
                     }
-                    {#render: h => h(App)#}
-                });
-                {#const remoteControlController = new RemoteControlController(vm);#}
-                {#remoteControlController.getActiveMinionsAndStats();#}
+                  }
+                  ,
+                  getData () {
+                    axios
+                    .get('/api/v1/active_minions')
+                    .then(response => {
+                      this.devices = response.data;
+                      this.parseComputerData()
+                    })
+                    .catch(error => console.log(error))
+                  }
+                  ,
+                  cancelAutoUpdate () {
+                    clearInterval(this.timer)
+                  }
+                  ,
+                  parseComputerData () {
+                    // Add computers temp here
+                    let tempComputerList = [];
+                    this.devices.forEach(minion => {
+                      if (!tempComputerList.some(e => e.computer === minion.computer)) {
+                        tempComputerList.push((
+                            (
+                              { computer, space_available, space_till_shutdown, minknow_version }) => (
+                              {
+                                computer,
+                                space_available,
+                                space_till_shutdown,
+                                minknow_version
+                              }
+                            )
+                          )
+                          (minion)
+                        );
+                      }
+                    });
+                    // Get number unique computers
+                    this.computer_info.number = tempComputerList.length;
+                    this.computers = tempComputerList
+                  }
+                  ,
+                },
+                computed: {
+                  activeDevices () {
+                    if (typeof this.devices === 'undefined') {
+                      return
+                    } else {
+                      return this.devices.filter(function (devices) {
+                        return devices.run_status.match(/^(ACQUISITION_PROCESSING|STARTING|FINISHING|ACQUISITION_RUNNING|)$/) //("PROCESSING","STARTING","FINISHING")
+                      })
+                    }
+                  },
+                  inactiveDevices () {
+                    if (typeof this.devices === 'undefined') {
+                      return
+                    } else {
+                      return this.devices.filter(function (devices) {
+                        return devices.run_status.match(/^(active|COMPLETED|No Run|ACQUISITION_COMPLETED)$/)
+                      })
+                    }
+                  },
+                  numActive () {
+                    return this.activeDevices.length
+                  },
+                  numInactive () {
+                    return this.inactiveDevices.length
+                  },
 
-                {#setActiveNavbarItem(1);#}
 
-                // NOW TO RAM SOME DATA IN
-                {#vm.computers.append(remoteControlController.getActiveMinions())#}
-
-
+                },
+                filters: {
+                  humNum (num) {
+                    var si = [
+                      { value: 0, symbol: "" },
+                      { value: 1, symbol: "" },
+                      { value: 1E3, symbol: "k" },
+                      { value: 1E6, symbol: "M" },
+                      { value: 1E9, symbol: "G" },
+                      { value: 1E12, symbol: "T" },
+                      { value: 1E15, symbol: "P" },
+                      { value: 1E18, symbol: "E" }
+                    ];
+                    var rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
+                    var i;
+                    for (i = si.length - 1; i > 0; i--) {
+                      if (num >= si[i].value && num !== 0) {
+                        break;
+                      }
+                    }
+                    return (num / si[i].value).toFixed(2).replace(rx, "$1") + si[i].symbol;
+                  },
+                  round (num) {
+                    return Math.round(num)
+                  }
+                },
+                destroyed () {
+                  this.cancelAutoUpdate()
+                },
+                data: {
+                  CustomAlertType: "warning",
+                  GeneralResponseAlert: false,
+                  add_computer: false,
+                  ip_to_add: null,
+                  computer_info: {
+                    number: 0,
+                    message: "",
+                    alert_type: "danger"
+                  },
+                  timer: null,
+                  alert: true,
+                  itemsPerPageOptions: [3, 6, 9, 12],
+                  itemsPerPage: 3,
+                  computers: [],
+                  devices: [],
+                  message: "",
+                  humNum: null,
+                  round: null,
+                  minionToMessage: "0",
+                  minionCheck: null,
+                  disabled: true,
+                  isDisallowed: true
+                  //
+                }
+                {#render: h => h(App)#}
+              });
             </script>
             {#    </div>#}
         </section>

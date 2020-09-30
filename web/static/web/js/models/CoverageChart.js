@@ -6,8 +6,8 @@ class CoverageChart {
 
   constructor (divId) {
     // the chart
-    this._divIdMaster = divId + `_master`
-    this._divIdDetail = divId + `_detail`
+    this._divIdMaster = `${divId}_master`
+    this._divIdDetail = `${divId}_detail`
 
     this._masterChart = this.createMasterChart()
     this._detailChart = this.createDetailChart()
@@ -107,6 +107,10 @@ class CoverageChart {
         marginRight: 20,
         style: {
           position: `absolute`
+        },
+        boost: {
+          useGPUTranslations: true,
+          usePreAllocated: true
         },
         resetZoomButton: {
           fill: `white`,

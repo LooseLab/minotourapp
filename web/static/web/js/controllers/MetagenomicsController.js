@@ -46,14 +46,14 @@ class MetagenomicsController {
 
   _addTooltips () {
     // function actually totally unrelated to the donut, does the tooltips for the help icons
-    d3.selectAll(`.masterTooltip`).on(`mouseover`, function () {
+    d3.selectAll(`.masterTooltip`).on(`mouseover`, function (event, d) {
       const text = d3.select(this).attr(`tooltip`)
       const tooltip = d3.select(`body`)
         .append(`div`)
         .attr(`class`, `toolTip`)
       tooltip
-        .style(`left`, `${d3.event.pageX + 25}px`)
-        .style(`top`, `${d3.event.pageY - 25}px`)
+        .style(`left`, `${event.pageX + 25}px`)
+        .style(`top`, `${event.pageY - 25}px`)
         .style(`display`, `inline-block`)
         .html(text)
     }).on(`mouseout`, d => {
@@ -112,8 +112,10 @@ class MetagenomicsController {
     }
   }
 
-  move () {
-    d3.select(`.badCopNoDonut`).attr(`transform`, d3.event.transform)
+  move (event, d) {
+    console.log(event)
+    console.log(d)
+    d3.select(`.${event.sourceEvent.srcElement.firstChild.classList[0]}`).attr(`transform`, event.transform)
   }
 
   _drawPie (countedData, pie, arc, svg) {
@@ -614,18 +616,16 @@ class MetagenomicsController {
     link.attr(`class`, `links`)
       .attr(`fill`, `none`)
       .attr(`stroke-opacity`, 0.5)
-      .selectAll(`g`)
+      .selectAll(`path`)
       .data(nodesObj.links)
-      .enter().append(`g`)
-      .style(`mix-blend-mode`, `multiply`)
-
-    link.append(`path`)
-      .attr(`d`, d3.sankeyLinkHorizontal())
-      .attr(`stroke`, (d, i) => color(d.path))
-      .attr(`stroke-width`, d => Math.max(0.5, d.width))
-    // append the title
-    link.append(`title`)
+  .join("path")
+    .attr("d", d3.sankeyLinkHorizontal())
+    .attr(`stroke`, (d, i) => color(d.path))
+      .attr(`stroke-width`, d => Math.max(0.5, d.width)).append(`title`)
       .text(d => `${d.source.name} → ${d.target.name}\n${format(d.value)}`)
+    // append the title
+    // link.append(`title`)
+    //   .text(d => `${d.source.name} → ${d.target.name}\n${format(d.value)}`)
     // Append the nodes to the svg
     g.append(`g`).attr(`class`, `nodes`)
       .selectAll(`rect`)
@@ -658,6 +658,7 @@ class MetagenomicsController {
     this._axiosInstance.get(`/api/v1/metagenomics/sankey`, { params: { flowcellId, barcode: selectedBarcode } }).then(
       result => {
         const sankeyData = result.data.sankey; const hasRun = result.data.run
+        console.log(hasRun)
         // if theres no data from the server
         if (sankeyData === undefined && hasRun === true) {
           svg.select(`.contain`).selectAll(`*`).remove()
@@ -700,19 +701,13 @@ class MetagenomicsController {
       .nodePadding(3)
       .size([width, hi * 0.95]).nodeId(d => d.name)
     // panning and zoom function
-    function move () {
-      d3.select(`.contain`)
-        .attr(`transform`, d3.event.transform)
-    }
-    const zoom = d3.zoom()
-      .scaleExtent([1, 6]).translateExtent([[0, 0], [width, hi]])
-      .on(`zoom`, move)
+
     if ($(`.svg-sankey`).length) {
       svg = d3.select(`.svg-sankey`)
       g = d3.select(`.contain`)
     } else {
       svg = d3.select(`.svg-container`).append(`svg`).attr(`width`, width).attr(`class`, `svg-sankey`)
-        .attr(`height`, hi).call(zoom)
+        .attr(`height`, hi)
       g = svg.append(`g`).attr(`class`, `contain`)
     }
     this._updateSankey(flowcellId, sankey, checkForData, svg, g, format, color, width, selectedBarcode)

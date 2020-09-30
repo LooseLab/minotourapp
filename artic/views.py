@@ -1,11 +1,8 @@
 import json
-import os
-import tarfile
 from collections import defaultdict
 from urllib.parse import parse_qs
 
 import pandas as pd
-from django.http import HttpResponse
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import api_view, renderer_classes
@@ -16,7 +13,11 @@ from alignment.models import PafSummaryCov
 # Create your views here.
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
 from artic.task_artic_alignment import np
-from artic.utils import get_amplicon_band_data, quick_get_artic_results_directory, remove_duplicate_sequences_numpy
+from artic.utils import (
+    get_amplicon_band_data,
+    quick_get_artic_results_directory,
+    remove_duplicate_sequences_numpy, get_all_results,
+)
 from reads.models import Flowcell, JobMaster, FlowcellSummaryBarcode, Barcode
 from reference.models import ReferenceInfo
 
@@ -40,13 +41,28 @@ def fire_conditions_list(request, pk):
         data.pop("_state")
         return Response(data, status=status.HTTP_200_OK)
     elif request.method == "POST":
-        obj, created = ArticFireConditions.objects.update_or_create(
-            flowcell_id=int(pk),
-            defaults={"ninety_percent_bases_at": request.data.get("90-input", 0),
-                      "ninety_five_percent_bases_at": request.data.get("95-input", 0),
-                      "ninety_nine_percent_bases_at": request.data.get("99-input", 0)},
+        print(request.data)
+        try:
+            afc = ArticFireConditions.objects.filter(flowcell_id=int(pk))
+            if not afc:
+                raise ArticFireConditions.DoesNotExist
+            afc.update(
+                ninety_percent_bases_at=int(request.data.get("90-input", 0)),
+                ninety_five_percent_bases_at=int(request.data.get("95-input", 0)),
+                ninety_nine_percent_bases_at=int(request.data.get("99-input", 0)),
+            )
+        except ArticFireConditions.DoesNotExist:
+            afc = ArticFireConditions(
+                flowcell_id=int(pk),
+                ninety_percent_bases_at=int(request.data.get("90-input", 300)),
+                ninety_five_percent_bases_at=int(request.data.get("95-input", 250)),
+                ninety_nine_percent_bases_at=int(request.data.get("99-input", 30)),
+            )
+            afc.save()
+        return Response(
+            "Artic firing conditions updated.", status=status.HTTP_201_CREATED
         )
-        return Response("Artic firing conditions updated.", status=status.HTTP_201_CREATED)
+
 
 @api_view(["GET"])
 def get_artic_barcodes(request):
@@ -67,7 +83,7 @@ def get_artic_barcodes(request):
             "Please provide a flowcell id.", status=status.HTTP_400_BAD_REQUEST
         )
 
-    flowcell, artic_results_path, artic_task_id = quick_get_artic_results_directory(
+    flowcell, artic_results_path, artic_task_id, _ = quick_get_artic_results_directory(
         flowcell_id
     )
 
@@ -177,9 +193,7 @@ def get_artic_detail_chart_data(request):
         )
     # We're gonna use the numpy memmap to read only the part of the array we need
     # Create a key matching the contents of this value
-    coverage = np.memmap(
-        coverage_path, np.uint16
-    )[mini:maxi]
+    coverage = np.memmap(coverage_path, np.uint16)[mini:maxi]
     if log_coverage:
         coverage = coverage.astype(np.float16)
         coverage[coverage == 0] = 0.1
@@ -213,9 +227,7 @@ def get_artic_column_chart_data(request):
     -------
 
     """
-
     flowcell_id = request.GET.get("flowcellId", None)
-
     if not flowcell_id:
         return Response(
             "No flowcellId specified. Please check request.",
@@ -224,27 +236,25 @@ def get_artic_column_chart_data(request):
     artic_task = JobMaster.objects.filter(
         flowcell_id=flowcell_id, job_type__name="Track Artic Coverage"
     ).last()
-
     if not artic_task:
         return Response(
             "no coverage tracking task running on this flowcell.",
             status=status.HTTP_400_BAD_REQUEST,
         )
-
     try:
         return_data = defaultdict(list)
-        queryset = PafSummaryCov.objects.filter(
-            job_master__id=artic_task.id
-        ).exclude(barcode_name="unclassified").values_list("barcode_name", "average_read_length", "read_count")
+        queryset = (
+            PafSummaryCov.objects.filter(job_master__id=artic_task.id)
+            .exclude(barcode_name="unclassified")
+            .values_list("barcode_name", "average_read_length", "read_count")
+        )
         for barcode, read_length, read_count in queryset:
             return_data["barcodes"].append(barcode)
             return_data["average_read_length"].append(read_length)
             return_data["read_counts"].append(read_count)
-
     except TypeError as e:
         print(e.args)
         return Response(e, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
     if not queryset:
         return Response(
             "No values for this flowcell found. Please check task has been created.",
@@ -358,7 +368,7 @@ def get_artic_barcode_metadata_html(request):
             for all_number in all_numbers:
                 total_reads += all_number
             orm_object.percentage_of_reads_in_barcode = (
-                    barcode_numbers.read_count / total_reads * 100
+                barcode_numbers.read_count / total_reads * 100
             )
         except FlowcellSummaryBarcode.DoesNotExist as e:
             orm_object.percentage_of_reads_in_barcode = 0
@@ -383,21 +393,25 @@ def get_artic_barcode_metadata_html(request):
         ("Pass VCF", "pass-vcf"),
         ("Input fasta", "input-fasta"),
         ("Pangolin lineages CSV", "pangolin-lineages"),
-        ("Sorted Bam", "sorted-bam")
+        ("Sorted Bam", "sorted-bam"),
+        ("Sorted Bam index", "sorted-bam-bai")
     ]
     old_dict = orm_object.__dict__
     context_dict = {key[0]: old_dict[key[1]] for key in new_key_names}
-    context_dict["hidden_barcode_name"] = orm_object.barcode.name
+    context_dict["hidden_barcode_pk"] = orm_object.barcode.id
     context_dict["hidden_flowcell_id"] = flowcell_id
+    context_dict["hidden_job_master_id"] = orm_object.job_master.id
     context_dict["hidden_results_files"] = results_files
     context_dict["hidden_has_finished"] = old_dict["has_finished"]
     context_dict["hidden_has_suff"] = old_dict["has_sufficient_coverage"]
     context_dict["hidden_marked_for_rerun"] = old_dict["marked_for_rerun"]
-    (flowcell, artic_results_path, artic_task_id,) = quick_get_artic_results_directory(
+    (flowcell, artic_results_path, artic_task_id, _) = quick_get_artic_results_directory(
         flowcell_id
     )
     if context_dict["hidden_has_finished"]:
-        df = pd.read_csv(artic_results_path / selected_barcode / "lineage_report.csv.gz")
+        df = pd.read_csv(
+            artic_results_path / selected_barcode / "lineage_report.csv.gz"
+        )
         html_string = df.T.to_html(classes="table table-striped", border=0)
         context_dict["hidden_html_string"] = html_string
     return render(
@@ -421,24 +435,21 @@ def manually_create_artic_command_job_master(request):
         The HTTP code of the request.
     """
     job_type_id = request.data.get("jobTypeId", None)
-    barcode_name = request.data.get("barcodeName", None)
+    barcode_pk = request.data.get("barcodePk", None)
     flowcell_id = request.data.get("flowcellId", None)
-    reference_name = "covid_19"
-    if not job_type_id or not barcode_name or not flowcell_id:
+    job_master_pk = request.data.get("jobPk", None)
+    if not job_type_id or not barcode_pk or not flowcell_id:
         return Response(
             "Flowcell id, barcode id, jobTypeId are required fields.",
             status=status.HTTP_400_BAD_REQUEST,
         )
     try:
-        reference = ReferenceInfo.objects.get(name="covid_19")
-        barcode = Barcode.objects.filter(
-            name=barcode_name, run__in=Flowcell.objects.get(pk=flowcell_id).runs.all()
-        ).last()
+        reference = JobMaster.objects.get(pk=job_master_pk).reference
+        barcode = Barcode.objects.get(pk=barcode_pk)
 
     except [ReferenceInfo.DoesNotExist, ReferenceInfo.MultipleObjectsReturned] as e:
         return Response(
-            f"Task was expecting reference of name {reference_name}, and only one. Exception: {e}",
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            f"Exception: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
     # TODO potential bug here where the barcode name on the reads is not the barcode name we save
     job_master, created = JobMaster.objects.get_or_create(
@@ -474,11 +485,13 @@ def get_results_package(request):
 
     """
     params = json.loads(request.GET.get("params", None))
-
+    all_barcodes = params.get("all", False)
     flowcell_id = params.get("flowcellId", None)
-    barcode = params.get("selectedBarcode", None)
+    barcode_pk = int(params.get("selectedBarcode", None))
     chosen = parse_qs(request.GET.get("string"))
-    if not flowcell_id or not barcode:
+    barcode_name = Barcode.objects.get(pk=barcode_pk).name if barcode_pk != -1 else None
+    barcode_name = "" if all_barcodes else barcode_name
+    if not flowcell_id or not barcode_name and not all_barcodes:
         return Response(
             "Flowcell Id or barcode required in request.",
             status=status.HTTP_400_BAD_REQUEST,
@@ -490,36 +503,43 @@ def get_results_package(request):
         return Response("Flowcell not found.", status=status.HTTP_404_NOT_FOUND)
 
     # TODO add check to see if task is complete
-    _, path_to_results, _, _ = quick_get_artic_results_directory(flowcell_id, barcode)
-    results_files = {
-        "consensus": f"{barcode}.consensus.fasta.gz",
-        "box-plot": f"{barcode}-boxplot.png",
-        "bar-plot": f"{barcode}-barplot.png",
-        "fail-vcf": f"{barcode}.fail.vcf.gz",
-        "pass-vcf": f"{barcode}.pass.vcf.gz",
-        "input-fasta": f"{barcode}.fastq.gz",
-        "pangolin-lineages": "lineage_report.csv.gz",
-        "sorted-bam": f"{barcode}.sorted.bam"
-    }
-    chosen_files = [results_files[key] for key in chosen.keys()]
-    # change into the directory
-    os.chdir(path_to_results / barcode)
-    results_file = path_to_results / barcode / f"results_artic_{flowcell.name}.tar.gz"
+    _, path_to_results, _, _ = quick_get_artic_results_directory(
+        flowcell_id, barcode_name
+    )
+    response = get_all_results(path_to_results, flowcell, barcode_name, chosen.keys())
+    return response
 
-    with tarfile.open(results_file, "w:gz") as tar:
-        try:
-            for filey in chosen_files:
-                tar.add(filey)
-        except FileNotFoundError as e:
-            return Response(str(e), status=status.HTTP_404_NOT_FOUND)
+@api_view(["GET"])
+@renderer_classes((TemplateHTMLRenderer, JSONRenderer))
+def get_results_modal_html(request, pk):
+    """
+    return the html for the modal for the all results download functionality
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The ajax request body
+    pk: int
+        The primary key of the flowcell object in the database
 
-    with open(results_file, "rb") as fh:
-        response = HttpResponse(fh.read(), content_type="application/gzip")
-        response[
-            "Content-Disposition"
-        ] = f"attachment; filename=results_artic_{flowcell.name}.tar.gz"
-        response["x-file-name"] = f"results_artic_{flowcell.name}.tar.gz"
-        return response
+    Returns
+    -------
+    html
+
+    """
+    results_files = [
+        ("Consensus sequence", "consensus"),
+        ("Box plot", "box-plot"),
+        ("Bar plot", "bar-plot"),
+        ("Fail VCF", "fail-vcf"),
+        ("Pass VCF", "pass-vcf"),
+        ("Input fasta", "input-fasta"),
+        ("Pangolin lineages CSV", "pangolin-lineages"),
+        ("Sorted Bam", "sorted-bam"),
+        ("Sorted Bam Index", "sorted-bam-bai")
+    ]
+    context_dict = {"hidden_results_files": results_files}
+    return render(request, "all-results-modal.html", context={"context": context_dict})
+
 
 
 @api_view(["GET"])
@@ -549,7 +569,7 @@ def png_html(request):
         return Response("No data found", status=status.HTTP_404_NOT_FOUND)
     if not orm_object.has_finished:
         return Response("No results yet.", status=status.HTTP_204_NO_CONTENT)
-    (flowcell, artic_results_path, artic_task_id,) = quick_get_artic_results_directory(
+    (flowcell, artic_results_path, artic_task_id, _) = quick_get_artic_results_directory(
         flowcell_id
     )
     context_list = [
@@ -605,16 +625,16 @@ def rerun_artic_command(request):
 
     """
     flowcell_id = request.data.get("flowcellId", None)
-    selected_barcode = request.data.get("selectedBarcode", None)
-    if not flowcell_id or not selected_barcode:
+    selected_barcode_pk = request.data.get("selectedBarcodePk", None)
+    if not flowcell_id or not selected_barcode_pk:
         return Response(
             "No flowcell ID or barcode provided.", status=status.HTTP_400_BAD_REQUEST
         )
     orm_object = ArticBarcodeMetadata.objects.filter(
-        flowcell_id=flowcell_id, barcode__name=selected_barcode
+        flowcell_id=flowcell_id, barcode_id=selected_barcode_pk
     ).last()
     artic_command_task = JobMaster.objects.filter(
-        flowcell_id=flowcell_id, job_type_id=17, barcode__name=selected_barcode
+        flowcell_id=flowcell_id, job_type_id=17, barcode_id=selected_barcode_pk
     ).last()
     if not artic_command_task.complete:
         return Response("Command not yet run.", status=status.HTTP_403_FORBIDDEN)
@@ -622,7 +642,9 @@ def rerun_artic_command(request):
     artic_command_task.save()
     orm_object.marked_for_rerun = True
     orm_object.save()
-    return Response("Task sucessfully listed for re-run", status=status.HTTP_204_NO_CONTENT)
+    return Response(
+        "Task sucessfully listed for re-run", status=status.HTTP_204_NO_CONTENT
+    )
 
 
 @api_view(["GET"])
@@ -639,15 +661,13 @@ def get_artic_pie_chart_data(request):
     """
     flowcell_id = request.GET.get("flowcellId", None)
     if not flowcell_id:
-        return Response(
-            "No flowcell ID provided.", status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response("No flowcell ID provided.", status=status.HTTP_400_BAD_REQUEST)
     artic_task = JobMaster.objects.filter(
         flowcell_id=flowcell_id, job_type__name="Track Artic Coverage"
     ).last()
-    queryset = PafSummaryCov.objects.filter(
-        job_master__id=artic_task.id
-    ).values_list("barcode_name", "read_count")
+    queryset = PafSummaryCov.objects.filter(job_master__id=artic_task.id).values_list(
+        "barcode_name", "read_count"
+    )
     if not queryset:
         return Response("No data.", status=status.HTTP_204_NO_CONTENT)
     total = 0
@@ -662,17 +682,19 @@ def get_artic_pie_chart_data(request):
 
     classified_total = round(classified_total / total * 100, 2)
     unclassified_total = round(unclassified_total / total * 100, 2)
-    series_data = [{
-        "name": "Proportion of Reads Classified",
-        "ColorByPoint": True,
-        "data": [{
-            "name": "Classified",
-            "y": classified_total,
-            "sliced": True,
-            "selected": True
-        }, {
-            "name": "Unclassified",
-            "y": unclassified_total
-        }]
-    }]
+    series_data = [
+        {
+            "name": "Proportion of Reads Classified",
+            "ColorByPoint": True,
+            "data": [
+                {
+                    "name": "Classified",
+                    "y": classified_total,
+                    "sliced": True,
+                    "selected": True,
+                },
+                {"name": "Unclassified", "y": unclassified_total},
+            ],
+        }
+    ]
     return Response(series_data, status=status.HTTP_200_OK)

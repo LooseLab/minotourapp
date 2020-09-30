@@ -44,12 +44,12 @@ class LiveMinKnowController {
     )
     this._histogramHistory = null
     this._first = true
-    this._makePageUnscrollable()
-    this._interval = setInterval(this.updateTab, 60000)
-    $(window).on(`unload`, function () {
-      console.log(`clearing base-called interval`)
-      clearInterval(this._interval)
-    })
+    if (getSelectedTab() === `live-event-data`) { this._makePageUnscrollable() }
+    // this._interval = setInterval(this.fetchLiveEventsData, 60000, this._flowcellId, this)
+    // $(window).on(`unload`, function () {
+    //   console.log(`clearing base-called interval`)
+    //   clearInterval(this._interval)
+    // })
     $(`#loader-wrapper`).css(`width`, $(`#tab-live-event-data`).css(`width`))
   }
 
@@ -81,10 +81,10 @@ class LiveMinKnowController {
   }
 
   updateTab () {
-    if (getSelectedTab() !== `live-event-data`) {
-      return
+    if (!$(`#tab-live-event-data`).hasClass(`loaded`)){
+      this._makePageUnscrollable()
     }
-    this.fetchLiveEventsData(this._flowcellId)
+    this.fetchLiveEventsData(this._flowcellId, this)
   }
 
   /**
@@ -171,48 +171,52 @@ class LiveMinKnowController {
       } else {
         console.log(`addIngSeties`)
         chart.addSeries(chartReadySeries, false)
-        runStarts.forEach(([runName, runStart]) => {
-          chart.xAxis[0].addPlotLine({
-            label: {
-              text: `Run: ${runName}`,
-              x: 10,
-              verticalAlign: `top`,
-              style: {
-                color: `blue`,
-                fontWeight: `bold`,
-                fontSize: `.5rem`
-              }
-            },
-            color: `red`,
-            value: runStart,
-            dashStyle: `longdashdot`,
-            width: 2
-          })
-        })
+        // runStarts.forEach(([runName, runStart]) => {
+        //   chart.xAxis[0].addPlotLine({
+        //     label: {
+        //       text: `Run: ${runName}`,
+        //       x: 10,
+        //       verticalAlign: `top`,
+        //       style: {
+        //         color: `blue`,
+        //         fontWeight: `bold`,
+        //         fontSize: `.5rem`
+        //       }
+        //     },
+        //     color: `red`,
+        //     value: runStart,
+        //     dashStyle: `longdashdot`,
+        //     width: 2
+        //   })
+        // })
         redraw = true
       }
     })
-    if (redraw) { chart.redraw() }
+    if (redraw) { console.log(chart); chart.redraw() }
   }
 
-  fetchLiveEventsData (flowcellId) {
-    this._axiosInstance.get(`/api/v1/reads/flowcells/${flowcellId}/runstats/${this._lastMinionRunStatsId}`).then(
+  fetchLiveEventsData (flowcellId, that) {
+    if (getSelectedTab() !== `live-event-data`) {
+      return
+    }
+    that._axiosInstance.get(`/api/v1/reads/flowcells/${flowcellId}/runstats/${that._lastMinionRunStatsId}`).then(
       response => {
         if (response.status === 206) { return }
-        const index = this._first ? response.data.histogram_history.length - 1 : parseInt($(`#histogram-date-picker`).val())
+        const index = that._first ? response.data.histogram_history.length - 1 : parseInt($(`#histogram-date-picker`).val())
         const runInfo = response.data.run_info
-        this._first = false
-        this._histogramHistory = response.data.histogram_history
-        this.updateLiveTabChart(response.data.yield_history, this._liveYieldChart, runInfo)
-        this.updateLiveTabChart(response.data.pore_history, this._livePoreStatesChart, runInfo)
-        this._prepareHistogramSlider()
-        this._updateLiveHistogram(response.data.histogram_history, index)
-        this.updateLiveTabChart(response.data.occupancy_history, this._liveOccupancyChart, runInfo)
-        this.updateLiveTabChart(response.data.in_strand_history, this._liveInStrandChart, runInfo)
-        this.updateLiveTabChart(response.data.temperature_history, this._liveTemperatureChart, runInfo)
-        this.updateLiveTabChart(response.data.voltage_history, this._liveVoltageChart, runInfo)
-        this._revealPage()
-        this._lastMinionRunStatsId = response.data.last_minion_run_stats_id
+        that._first = false
+        that._histogramHistory = response.data.histogram_history
+        that.updateLiveTabChart(response.data.yield_history, that._liveYieldChart, runInfo)
+        console.log(response.data.pore_history)
+        that.updateLiveTabChart(response.data.pore_history, that._livePoreStatesChart, runInfo)
+        that._prepareHistogramSlider()
+        that._updateLiveHistogram(response.data.histogram_history, index)
+        that.updateLiveTabChart(response.data.occupancy_history, that._liveOccupancyChart, runInfo)
+        that.updateLiveTabChart(response.data.in_strand_history, that._liveInStrandChart, runInfo)
+        that.updateLiveTabChart(response.data.temperature_history, that._liveTemperatureChart, runInfo)
+        that.updateLiveTabChart(response.data.voltage_history, that._liveVoltageChart, runInfo)
+        that._revealPage()
+        that._lastMinionRunStatsId = response.data.last_minion_run_stats_id
       }
     )
   }

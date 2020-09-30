@@ -76,9 +76,10 @@ def paf_summary_table_json(request, pk):
         The resultant data, contain the values for each column in the DataTables table.
 
     """
-    queryset = PafSummaryCov.objects.filter(job_master__flowcell_id=pk).exclude(
-        job_master__job_type_id=16
-    ).values(
+    queryset = (
+        PafSummaryCov.objects.filter(job_master__flowcell_id=pk)
+        .exclude(job_master__job_type_id=16)
+        .values(
             "barcode_name",
             "chromosome_name",
             "reference_name",
@@ -87,8 +88,9 @@ def paf_summary_table_json(request, pk):
             "total_yield",
             "reference_line_length",
             "coverage",
-            "average_read_length"
+            "average_read_length",
         )
+    )
     result = {
         "data": queryset,
     }
@@ -237,20 +239,34 @@ def per_genome_coverage_summary(request, flowcell_pk):
     list of dict
 
     """
-    query = PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk).exclude(job_master__job_type_id=16)
+    query = PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk).exclude(
+        job_master__job_type_id=16
+    )
     if query.count() < 30:
         queryset = (
             PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk)
-            .values(data_name=F("chromosome_name")).exclude(chromosome_name=None)
+            .values(data_name=F("chromosome_name"))
+            .exclude(chromosome_name=None)
             .annotate(Sum("coverage"), Avg("average_read_length"))
         )
     else:
         queryset = (
             PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk)
             .values(data_name=F("reference_name"))
-            .annotate(Sum("coverage"), Avg("average_read_length"))
+            .annotate(
+                Sum("total_yield"),
+                Sum("reference_line_length"),
+                Avg("average_read_length"),
+            )
         )
-    print(queryset)
+        queryset = [
+            {
+                "data_name": q["data_name"],
+                "coverage__sum": q["total_yield__sum"]
+                / q["reference_line_length__sum"],
+            }
+            for q in queryset
+        ]
     chromosome_coverage = []
     chromosome_average_read_length = []
     for chromosome in queryset:

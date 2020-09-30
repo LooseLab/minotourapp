@@ -21,9 +21,10 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from alignment.mapper import MAP
-from alignment.models import PafRoughCov
+from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
 from metagenomics.models import CentrifugeOutput
+from metagenomics.sankey import calculate_sankey
 from minotourapp import settings
 from reads.models import (
     Barcode,
@@ -80,7 +81,6 @@ from reads.tasks.redis_tasks_functions import save_reads_bulk
 from reads.tasks.task_delete_flowcell import clear_artic_data
 from reads.utils import (
     get_coords,
-    return_temp_empty_summary,
     pause_job,
     clear_artic_command_job_masters,
     create_histogram_series,
@@ -173,10 +173,13 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
         # use this array for easy comparison of current data on client side in BaseCalledData controller
         array_data = []
         pie_chart_data = []
+        # color for unclassified then classified
+        pie_chart_colors = ["#7cb5ec", "orange"]
         for key, value in df.groupby("is_unclassified")["data"].sum().to_dict().items():
             results = {}
             results["name"] = key
             results["y"] = round(value, 2)
+            results["color"]  =  pie_chart_colors.pop()
             array_data.append(round(value, 2))
             if key == "Classified":
                 results["sliced"] = True
@@ -648,19 +651,21 @@ def active_minion_list(request):
                         mrs_serialiser = MinionRunStatsSerializer(
                             mrs, context={"request": request}
                         )
-
                         data[minion.name] = mrs_serialiser.data
+
                 active_minion_list.append(minion)
     serializer = MinionSerializer(
         active_minion_list, many=True, context={"request": request}
     )
+    print(serializer.data)
     return_data = list(serializer.data)
 
     for active_minion in return_data:
         active_minion.update(extra_data[active_minion["name"]])
         if active_minion.get("name", 0) in data:
-            print("Hello")
-            pprint(extra_data)
+            data_to_add = data.get(active_minion["name"], blank_stats)
+            # Remove the minion run stats id so we don't overwrite the minion ID
+            data_to_add.pop("id")
             active_minion.update(data.get(active_minion["name"], blank_stats))
             active_minion.update(extra_data[active_minion["name"]])
 
@@ -797,7 +802,7 @@ def minknow_message(request, pk):
 
 
 @api_view(["GET", "POST"],)
-def minION_control_list(request, pk):
+def minion_control_list(request, pk):
     """
     TODO describe function
     """
@@ -812,7 +817,6 @@ def minION_control_list(request, pk):
         serializer = MinIONControlSerializer(
             data=request.data, context={"request": request}
         )
-
         if serializer.is_valid():
             serializer.save(owner=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -1111,19 +1115,15 @@ def list_minion_run_status(request, pk):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     try:
         minion_run_info = MinionRunInfo.objects.filter(run_id=pk)
-
     except MinionRunInfo.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
-
     if request.method == "GET":
         serializer = MinionRunInfoSerializer(
             minion_run_info, many=True, context={"request": request}
         )
         return Response(serializer.data)
-
     elif request.method == "PUT":
         serializer = MinionRunInfoSerializer(
             minion_run_info, data=request.data, context={"request": request}
@@ -1132,7 +1132,6 @@ def list_minion_run_status(request, pk):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     elif request.method == "DELETE":
         minion_run_info.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -1147,11 +1146,9 @@ def minION_scripts_detail(request, pk, nk):
         script = MinionScripts.objects.get(pk=nk)
     except MinionScripts.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
-
     if request.method == "GET":
         serializer = MinIONScriptsSerializer(script, context={"request": request})
         return Response(serializer.data)
-
     elif request.method == "PUT":
         serializer = MinIONScriptsSerializer(
             script, data=request.data, context={"request": request}
@@ -1160,7 +1157,6 @@ def minION_scripts_detail(request, pk, nk):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
     elif request.method == "DELETE":
         script.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -1926,38 +1922,24 @@ def flowcell_channel_summary(request, pk):
     """
 
     flowcell = Flowcell.objects.get(pk=pk)
-
     qs = FlowcellChannelSummary.objects.filter(flowcell=flowcell)
-
     #
     # set all channels with value 0
     #
-
-    result_mapped_to_flowcell = {}
-
-    for i in range(1, flowcell.size + 1):
-        coordinate = get_coords(i, flowcell.size)
-
-        result_mapped_to_flowcell[i] = [coordinate[0], coordinate[1], 0, 0]
-
+    result = []
     #
     # fill the channels with correct value
     #
-
     for record in qs:
         coordinate = get_coords(record.channel, flowcell.size)
-
-        result_mapped_to_flowcell[record.channel] = [
+        result.append([
             coordinate[0],
             coordinate[1],
             record.read_count,
             record.read_length,
-        ]
-
-    return HttpResponse(
-        json.dumps(list(result_mapped_to_flowcell.values()), cls=DjangoJSONEncoder),
-        content_type="application/json",
-    )
+        ])
+    result.sort(key=lambda x: (x[0], x[1]))
+    return Response(result)
 
 
 @api_view(["GET"])
@@ -2015,13 +1997,9 @@ def flowcell_run_summaries_html(request, pk):
 @api_view(["GET"])
 def flowcell_run_basecalled_summary_html(request, pk):
     flowcell = Flowcell.objects.get(pk=pk)
-
     result_basecalled_summary = []
-
     for run in flowcell.runs.all():
-
         if hasattr(run, "summary"):
-
             run_summary = {
                 "runid": run.summary.run.runid,
                 "read_count": run.summary.read_count,
@@ -2032,13 +2010,8 @@ def flowcell_run_basecalled_summary_html(request, pk):
                 "first_read_start_time": run.summary.first_read_start_time,
                 "last_read_start_time": run.summary.last_read_start_time,
             }
-
         else:
-
             print("RunSummary does not exist for run {}".format(run.id))
-
-            run_summary_obj = return_temp_empty_summary(run)
-
             run_summary = {
                 "runid": "Unavailable",
                 "read_count": "Unavailable",
@@ -2137,15 +2110,19 @@ def flowcell_minknow_stats_list(request, pk, check_id):
             for j in x["states"]:
                 print(j)
                 minknow_colours[j["name"]] = j.get(
-                    "style", {"label": j["name"], "colour": "#000000"}
+                    "style", {"label": j["name"], "colour": "000000"}
                 )
         else:
             minknow_colours[x] = {"label": j["name"], "colour": "000000"}
     # Manually add in some of the other that aren't recorded anymore, should be fixed later
-    minknow_colours["good_single"] = {"label": "Good single", "colour": "limegreen"}
+    minknow_colours["good_single"] = {"label": "Good single", "colour": "32CD32"}
     # Create the entry in the results dicionary for each pore state
     # TODO check the pore states match
     print(minknow_colours)
+    last_time = MinionRunStats.objects.filter(run__flowcell_id=pk).last().sample_time
+    first_time = MinionRunStats.objects.filter(run__flowcell_id=pk).first().sample_time
+    div, rem = divmod((last_time - first_time).total_seconds(), 24*3600)
+    counter = div
     for x in possible_pore_states:
         _ = {
             "name": minknow_colours.get(x, {"label": x})["label"],
@@ -2161,6 +2138,11 @@ def flowcell_minknow_stats_list(request, pk, check_id):
     )
     # Loop our results
     for mrs in minion_run_stats_gen:
+        if not div == 0 and counter % div == 0:
+            counter += 1
+            continue
+        else:
+            counter += 1
         sample_time_microseconds = int(
             mrs.sample_time.replace(microsecond=0).timestamp() * 1000
         )
@@ -2299,20 +2281,19 @@ def flowcell_tabs_list(request, pk):
     flowcell_summary_barcode_list = FlowcellSummaryBarcode.objects.filter(
         flowcell__id=pk
     )
-    if flowcell_summary_barcode_list.count() > 0:
+    if flowcell_summary_barcode_list.count():
         tabs.append("basecalled-data")
         tabs.append("reads")
     minion_run_stats_list = MinionRunStats.objects.filter(run_id__flowcell__id=pk)
-    if minion_run_stats_list.count() > 0:
+    if minion_run_stats_list.count():
         tabs.append("live-event-data")
-    paf_rough_cov_list = PafRoughCov.objects.filter(flowcell_id=pk)
-    if paf_rough_cov_list.count() > 0:
+    if PafSummaryCov.objects.filter(job_master__flowcell_id=pk).exclude(job_master__job_type__id=16).count():
         tabs.append("sequence-mapping")
     chromosome = ExpectedBenefitChromosomes.objects.filter(task__flowcell__id=pk).last()
     if chromosome is not None:
         tabs.append("advanced-sequence-mapping")
     centrifuge_output_list = CentrifugeOutput.objects.filter(task__flowcell_id=pk)
-    if centrifuge_output_list.count() > 0:
+    if centrifuge_output_list.count():
         tabs.append("metagenomics")
     # Check for assembly data
     # TODO add an actual check here
@@ -2852,7 +2833,7 @@ def task_control(request):
         return Response(
             "You do not have permission to perform this action.", status=403
         )
-
+    return_message = ""
     action_type = request.data["actionType"]
     lookup_action_type = {1: "Reset", 2: "Pause", 3: "Delete"}
     action = lookup_action_type[action_type]
@@ -2860,40 +2841,25 @@ def task_control(request):
         "Apologies, but this action type was not recognised."
         "It may have not been implemented yet."
     )
-
+    task_type_name = job_master.job_type.name
     if job_master.job_type.name == "Metagenomics":
         if action == "Reset":
             delete_metagenomics_task.delay(job_master.id, True)
-            return_message = (
-                f"Successfully started to reset this metagenomics task, id: {job_master.id}."
-                f" Clearing previous data may take a while, please be patient!"
-            )
         elif action == "Pause":
             job_master, return_message = pause_job(job_master)
         elif action == "Delete":
             delete_metagenomics_task.delay(job_master.id)
-            return_message = (
-                f"Successfully started deletion of this metagenomics task, id: {job_master.id}."
-                f" Clearing previous data may take a while, please be patient!"
-            )
+
         else:
             return Response(unrecognised_action_message, status=500)
 
     elif job_master.job_type.name == "Minimap2":
         if action == "Reset":
             delete_alignment_task.delay(job_master.id, True)
-            return_message = (
-                f"Successfully began reset of minimap2 task, id: {job_master.id}"
-                f" Clearing previous data may take a while, please be patient!"
-            )
         elif action == "Pause":
             job_master, return_message = pause_job(job_master)
         elif action == "Delete":
             delete_alignment_task.delay(job_master.id)
-            return_message = (
-                f"Successfully began deletion of minimap2 task, id: {job_master.id}"
-                f" Clearing previous data may take a while, please be patient!"
-            )
         else:
             return Response(unrecognised_action_message, status=500)
     # for artic tasks
@@ -2907,7 +2873,6 @@ def task_control(request):
             job_master.running = False
             job_master.complete = False
             job_master.save()
-            return_message = "Successfully reset artic Task."
         elif action == "Pause":
             job_master, return_message = pause_job(job_master)
         elif action == "Delete":
@@ -2915,12 +2880,22 @@ def task_control(request):
             clear_artic_data(job_master)
             ArticFireConditions.objects.filter(flowcell=job_master.flowcell).delete()
             job_master.delete()
-            return_message = "Successfully deleted artic Task."
-
+    # sankey
+    elif job_master.job_type_id == 13:
+        if action == "Reset":
+            calculate_sankey(job_master.id)
+        elif action == "Pause":
+            job_master, return_message = pause_job(job_master)
+        elif action == "Delete":
+            job_master.delete()
     else:
         return Response(
             "Not implemented, please deal with as an admin.",
             status=status.HTTP_501_NOT_IMPLEMENTED,
         )
-
+    if not return_message:
+        return_message = (
+            f"Successfully began {action} for {task_type_name} task, id: {job_master.id}."
+            f" Clearing previous data may take a while, please be patient!"
+        )
     return Response(return_message, status=200)
