@@ -329,7 +329,7 @@ def fetch_intmd_rough_cov_to_aggregate():
     last_id = querysets.last().id
     with connection.cursor() as cursor:
         cursor.execute(
-            "DELETE FROM reads_fastqread where id<=%s",
+            "DELETE FROM alignment_pafroughcovintermediate where id<=%s",
             [last_id],
         )
     querysets.delete()
