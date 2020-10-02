@@ -14,8 +14,6 @@ class SummaryTabController {
     const htmlTables = [[`flowcell-run-basecalled-summary-html`, `#flowcell-run-basecalled-summary-html-div`], [`run-summaries-html`, `#run-summaries-div`]]
     this._dataTableObj ? this._dataTableObj.ajax.reload(null, false) : this._drawMinknowMessagesTable(this._flowcellId)
     htmlTables.forEach(([urlEnd, divId]) => {
-      console.log(urlEnd)
-      console.log(divId)
       this._requestHtmlSummaries(this._flowcellId, urlEnd, divId)
     })
   }
@@ -61,7 +59,6 @@ class SummaryTabController {
    * @private
    */
   _requestHtmlSummaries (flowcellId, urlEnd, divId) {
-    console.log(urlEnd)
     const runSummariesTable = $(`${divId}`)
     this._axiosInstance.get(`/api/v1/reads/flowcells/${flowcellId}/${urlEnd}/`, {
       responseType: `html`
