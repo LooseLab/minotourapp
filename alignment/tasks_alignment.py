@@ -329,8 +329,7 @@ def fetch_intmd_rough_cov_to_aggregate():
     last_id = querysets.last().id
     with connection.cursor() as cursor:
         cursor.execute(
-            "DELETE FROM alignment_pafroughcovintermediate where id<=%s",
-            [last_id],
+            "DELETE FROM alignment_pafroughcovintermediate where id<=%s", [last_id],
         )
     querysets.delete()
     # df_to_aggregate["ORM"] = df_to_aggregate["id"].map(lookup_dict)

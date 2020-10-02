@@ -2108,34 +2108,35 @@ def flowcell_minknow_stats_list(request, pk, check_id):
             # strand calculations
             # if x in strand_counts:
             #     result_strand[x]["data"].append(a)
-        histogram_values = (
-            mrs.minKNOW_histogram_values.replace("'", "")
-            .replace('"', "")[1:-1]
-            .split(", ")
-        )
-        histogram_bin_width = int(mrs.minKNOW_histogram_bin_width)
-        n50 = int(mrs.n50_data)
-        result["histogram_history"].append(
-            {
-                "histogram_series": [
-                    create_histogram_series(
-                        int(value),
-                        n50,
-                        histogram_bin_width,
-                        ind,
-                        histogram_series_suffix,
-                    )
-                    for ind, value in enumerate(histogram_values)
-                ],
-                "histogram_bin_with": histogram_bin_width,
-                "n50_data": n50,
-                "sample_time": mrs.sample_time,
-                "categories": [
-                    f"{x*histogram_bin_width} - {(x+1)*histogram_bin_width} ev"
-                    for x in range(len(histogram_values))
-                ],
-            }
-        )
+        if mrs.minKNOW_histogram_bin_width:
+            histogram_values = (
+                mrs.minKNOW_histogram_values.replace("'", "")
+                .replace('"', "")[1:-1]
+                .split(", ")
+            )
+            histogram_bin_width = int(mrs.minKNOW_histogram_bin_width)
+            n50 = int(mrs.n50_data)
+            result["histogram_history"].append(
+                {
+                    "histogram_series": [
+                        create_histogram_series(
+                            int(value),
+                            n50,
+                            histogram_bin_width,
+                            ind,
+                            histogram_series_suffix,
+                        )
+                        for ind, value in enumerate(histogram_values)
+                    ],
+                    "histogram_bin_with": histogram_bin_width,
+                    "n50_data": n50,
+                    "sample_time": mrs.sample_time,
+                    "categories": [
+                        f"{x*histogram_bin_width} - {(x+1)*histogram_bin_width} ev"
+                        for x in range(len(histogram_values))
+                    ],
+                }
+            )
         result_temperature["temperature_history"]["asic_temp"]["data"].append(
             [sample_time_microseconds, round(mrs.asic_temp, 2)]
         )
