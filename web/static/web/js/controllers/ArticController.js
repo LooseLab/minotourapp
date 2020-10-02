@@ -45,7 +45,6 @@ class ArticController {
     this._axiosInstance.post(`/api/v1/artic/${this._flowcellId}/firing-conditions`, newConditions).then(
       response => {
         alert(response.data)
-        console.log(response.data)
       }
     ).catch(
       error => {
@@ -78,7 +77,6 @@ class ArticController {
     this._axiosInstance.get(`/api/v1/artic/${flowcellId}/firing-conditions`).then(
       response => {
         const data = response.data
-        console.log(response.data)
         this._90Input.val(data.ninety_percent_bases_at)
         this._95Input.val(data.ninety_five_percent_bases_at)
         this._99Input.val(data.ninety_nine_percent_bases_at)
@@ -104,9 +102,7 @@ class ArticController {
   _updateExistingChart (chart, newSeries, index) {
     // Set the data on an existing series on a chart, either master or detail
     // if the data is identical
-    if (checkHighChartsDataIsIdentical(newSeries, chart.series[index].options.data)) {
-      console.log(`Data is identical , skip redraw`)
-    } else {
+    if (!checkHighChartsDataIsIdentical(newSeries, chart.series[index].options.data)) {
       chart.series[index].setData(newSeries)
     }
   }
@@ -350,7 +346,6 @@ class ArticController {
     this._axiosInstance.get(`/api/v1/artic/visualisation/detail`, {
       params: { min, max, barcodeChosen: this._barcodeChosen, flowcellId, logCoverage }
     }).then(response => {
-      console.log(`response in selecetion`)
       // if successful request, set the detail charts to show the newly retrieve data
       if (response.status === 200) {
         that._updateAxesAndData(that._articCoverageScatterDetail, min, max, response.data.coverage, true)
@@ -492,11 +487,8 @@ class ArticController {
       }
     }).then(response => {
       // update the extremes on the y axis
-      console.log(response.data.coverage.ymax)
       // log the axis if we have to
-      console.log(this._logged)
       if (this._logged) {
-        console.log(`logged`)
         yAxisType = `logarithmic`
         that._updateExistingChart(that._articCoverageScatterMaster, response.data.coverage.data, 0)
         that._articCoverageScatterMaster.yAxis[0].setExtremes(0.1, response.data.coverage.ymax)
@@ -515,10 +507,7 @@ class ArticController {
           yAxis: { type: yAxisType }
         })
         that._articCoverageScatterMaster.yAxis[0].setExtremes(0, response.data.coverage.ymax, true)
-        console.log(that._articCoverageScatterMaster.yAxis[0].getExtremes())
-
         that._updateExistingChart(that._articCoverageScatterMaster, response.data.coverage.data, 0)
-        console.log(that._articCoverageScatterMaster.yAxis[0].getExtremes())
       }
       that._articCoverageScatterMaster.yAxis[0].setTitle({ text: yAxisTitle })
       that._articCoverageScatterMaster.hideLoading()
@@ -531,7 +520,6 @@ class ArticController {
     max = coverageDetail.xAxis[0].max
     // If min is not undefined, the charts are already displaying data, so update them, otherwise we're good
     if (min !== undefined) {
-      console.log(`Fetching coverage scatter detail data`)
       that._articCoverageScatterDetail.showLoading(`Fetching data from the server`)
       this._axiosInstance.get(`/api/v1/artic/visualisation/detail`, {
         params: {
@@ -649,9 +637,7 @@ class ArticController {
                         <span class = "sr-only"> Loading...</span></div>`)
       if (indexInArray >= 0) {
         // if the data is not new, i.e it is identical don't draw
-        if (checkHighChartsDataIsIdentical(data.read_counts, chartSeriesCoverage[indexInArray].options.data)) {
-          console.log(`data is identical, don't draw`)
-        } else {
+        if (!checkHighChartsDataIsIdentical(data.read_counts, chartSeriesCoverage[indexInArray].options.data)) {
           chartSeriesCoverage[indexInArray].setData(data.read_counts)
           chartSeriesReadLength[indexInArray].setData(data.average_read_length)
         }
@@ -760,7 +746,6 @@ class ArticController {
   manuallyTriggerPipeline (flowcellId, barcodePk, jobPk, event) {
     const jobTypeId = 17
     event.preventDefault()
-    console.log(barcodePk)
     this._axiosInstance.post(`/api/v1/artic/manual-trigger/`, {
       flowcellId,
       barcodePk,
@@ -786,7 +771,6 @@ class ArticController {
     const data = { string: $(`.results-builder-form`).serialize() }
     event.preventDefault()
     data.params = { flowcellId, selectedBarcode, all }
-    console.log($(`.results-builder-form`).serialize())
     this._axiosInstance.get(`/api/v1/artic/build-results`,
       {
         params: data,
@@ -849,10 +833,8 @@ class ArticController {
    */
   _addListenerToDownloadResults (flowcellId) {
     $(`#submit-download`).on(`click`, (event) => {
-      console.log(event)
       // Check if this is to download all or just one
       const data = $(event.currentTarget).data()
-      console.log(data)
       const all = Boolean(data.all)
       const barcodePk = data.barcode
       this.buildResults(this._flowcellId, barcodePk, event, all)
@@ -911,7 +893,6 @@ class ArticController {
         }
         $(`#artic-message`).html(`Successfully listed artic task for rerunning.`)
         $(`#rerun-btn`).remove()
-        console.log(`Successfully did a thing`)
       }).catch(
       error => {
         $(`#artic-message`).html(error.message)
@@ -951,9 +932,7 @@ class ArticController {
           this._articProportionPieChart.addSeries(seriesData[0])
         } else {
           // if the data is the same
-          if (checkHighChartsDataIsIdentical(oldChartData[0].options.data.map(e => e.y), seriesData[0].data.map(e => e.y))) {
-            console.log(`Skipping draw`)
-          } else {
+          if (!checkHighChartsDataIsIdentical(oldChartData[0].options.data.map(e => e.y), seriesData[0].data.map(e => e.y))) {
             oldChartData[0].setData(seriesData[0].data)
           }
         }
