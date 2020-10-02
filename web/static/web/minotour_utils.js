@@ -397,7 +397,7 @@ function makeLiveChart (divId, chartTitle, yAxisTitle) {
   return Highcharts.stockChart(divId, {
     chart: {
       type: `spline`,
-      zoomType: `xy`
+      zoomType: `x`
     },
     boost: {
       useGPUTranslations: true
