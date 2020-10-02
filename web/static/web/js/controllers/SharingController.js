@@ -20,23 +20,21 @@ class SharingController {
         {
           targets: 2,
           data: 2,
-          render: (data, type, full, meta) => `<a href="#" onclick="mSharingController.delete('${full.permission_code}', ${full.user}, ${full.flowcell})">DELETE</a>`
+          render: (data, type, full, meta) => `<span href="#" onclick="mSharingController.delete('${full.permission_code}', ${full.user}, ${full.flowcell})">DELETE</span>`
         }]
     })
-
     this.getAll()
   }
 
   create (event) {
     event.preventDefault()
     const self = this
-    const csrftoken = getCookie(`csrftoken`)
-    const axios_instance = axios.create({
-      headers: { 'X-CSRFToken': csrftoken }
+    const axiosInstance = axios.create({
+      headers: { 'X-CSRFToken': getCookie(`csrftoken`) }
     })
 
-    axios_instance.post(`/api/v1/flowcells/${this._flowcellId}/sharing/`, {
-      flowcell: this._flowcell_id,
+    axiosInstance.post(`/api/v1/flowcells/${this._flowcellId}/sharing/`, {
+      flowcell: this._flowcellId,
       permission: this._permission.value,
       username: this._username.value
     }).then(response => {
@@ -49,9 +47,7 @@ class SharingController {
 
   delete (permission, userId, flowcell) {
     const csrftoken = getCookie(`csrftoken`)
-
     const self = this
-
     const axiosInstance = axios.create({
       headers: { 'X-CSRFToken': csrftoken }
     })
