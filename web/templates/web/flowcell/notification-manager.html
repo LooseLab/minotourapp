@@ -1,6 +1,6 @@
 <div class="row">
     <div class="col-md-6" id="data-list">
-        <div class="card card-primary card-outline" style="min-height: 400px">
+        <div class="card card-primary card-outline" style="min-height: 400px; overflow-wrap: normal">
             <div class="card-header">
                 <h3 class="card-title">
                     <i class="far fa-comment-alt"></i>
@@ -13,8 +13,8 @@
                         (Click for suggestions)
                     </p>
                     <blockquote>
-                        <div class="row">
-                            <div class="col-3">
+                        <div class="row" style="overflow: scroll">
+                            <div class="col-md-3">
                                 <div class="list-group" id="list-tab-top" role="tablist">
                                     <a class="list-group-item list-group-item-action active" id="mux-btn"
                                        data-toggle="list" href="#list-mux" role="tab" aria-controls="home">Mux Scan
@@ -31,7 +31,7 @@
                                        aria-controls="settings">Tasks</a>
                                 </div>
                             </div>
-                            <div class="col-9">
+                            <div class="col-md-9">
                                 <div class="tab-content" id="nav-tabContent">
                                     <!-- Mux alerts -->
                                     <div class="tab-pane fade show active" id="list-mux" role="tabpanel"
@@ -119,7 +119,7 @@
                                     <div class="tab-pane fade" id="list-task" role="tabpanel"
                                          aria-labelledby="list-settings-list">
                                         <div class="row">
-                                            <div class="col-2">
+                                            <div class="col-md-2">
                                                 <div class="list-group" id="list-tab-tasks" role="tablist">
                                                     <a class="list-group-item list-group-item-action"
                                                        id="list-mapping-top"
@@ -227,8 +227,8 @@
                 </h3>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover extantNotif dataTable dtr-inline responsive">
+                <div class="table" style="overflow: scroll">
+                    <table class="table table-hover extantNotif dataTable dtr-inline">
                         <thead>
                         <tr>
                             <th>Id</th>
