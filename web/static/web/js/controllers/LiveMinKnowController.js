@@ -150,7 +150,6 @@ class LiveMinKnowController {
   updateLiveTabChart (data, chart, runStarts) {
     let redraw = false
     data.forEach(chartReadySeries => {
-      console.log(chartReadySeries)
       // check if this series has already been added
       if (chart.series.findIndex(e => e.name === chartReadySeries.name) + 1) {
         const seriesToUpdate = chart.series.find(e => e.name === chart.name)
@@ -169,30 +168,29 @@ class LiveMinKnowController {
           }
         }
       } else {
-        console.log(`addIngSeties`)
         chart.addSeries(chartReadySeries, false)
-        // runStarts.forEach(([runName, runStart]) => {
-        //   chart.xAxis[0].addPlotLine({
-        //     label: {
-        //       text: `Run: ${runName}`,
-        //       x: 10,
-        //       verticalAlign: `top`,
-        //       style: {
-        //         color: `blue`,
-        //         fontWeight: `bold`,
-        //         fontSize: `.5rem`
-        //       }
-        //     },
-        //     color: `red`,
-        //     value: runStart,
-        //     dashStyle: `longdashdot`,
-        //     width: 2
-        //   })
-        // })
+        runStarts.forEach(([runName, runStart]) => {
+          chart.xAxis[0].addPlotLine({
+            label: {
+              text: `Run: ${runName}`,
+              x: 10,
+              verticalAlign: `top`,
+              style: {
+                color: `blue`,
+                fontSize: `.8rem`,
+                fontFamily: `arial`
+              }
+            },
+            color: `red`,
+            value: runStart,
+            dashStyle: `longdashdot`,
+            width: 2
+          })
+        })
         redraw = true
       }
     })
-    if (redraw) { console.log(chart); chart.redraw() }
+    if (redraw) { chart.redraw() }
   }
 
   fetchLiveEventsData (flowcellId, that) {
@@ -204,10 +202,10 @@ class LiveMinKnowController {
         if (response.status === 206) { return }
         const index = that._first ? response.data.histogram_history.length - 1 : parseInt($(`#histogram-date-picker`).val())
         const runInfo = response.data.run_info
+        console.log(runInfo)
         that._first = false
         that._histogramHistory = response.data.histogram_history
         that.updateLiveTabChart(response.data.yield_history, that._liveYieldChart, runInfo)
-        console.log(response.data.pore_history)
         that.updateLiveTabChart(response.data.pore_history, that._livePoreStatesChart, runInfo)
         that._prepareHistogramSlider()
         that._updateLiveHistogram(response.data.histogram_history, index)
