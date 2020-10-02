@@ -40,13 +40,9 @@ class ReferenceManagementController {
     } else {
       this._datatableObj.DataTable({
         createdRow: (row, data, dataIndex, cells) => {
-          console.log($(row).find(`.ref-deletion`).on(`click`, () => {
-            console.log(event)
+          $(row).find(`.ref-deletion`).on(`click`, (event) => {
             this._deleteReference(event.currentTarget.getAttribute(`data-delete`))
-          }))
-        },
-        initComplete: (settings, json) => {
-          console.log(`hello`)
+          })
         },
         ajax: {
           url: `/api/v1/reference`,
@@ -95,7 +91,50 @@ class ReferenceManagementController {
       this._dragEnterHandler(event)
     })
     $(`#reference-upload`).on(`change`, event => {
-      console.log(event)
+      const formData = this._formData
+      for (var i = 0; i < event.currentTarget.files.length; i++) {
+        // If dropped items aren't files, reject them
+        var file = event.currentTarget.files[i]
+        if (file.size > this._maxFileSize) {
+          this._modalError(`${file.name} is too large (${file.size})! Upload refused.`, 3000)
+        }
+        formData.append(`file_location`, file, file.name)
+        formData.append(`file_name`, file.name)
+      }
+      // Post the files
+      axios(
+        {
+          url: `/api/v1/reference/upload/`,
+          data: formData,
+          headers: {
+            'X-CSRFToken': getCookie(`csrftoken`),
+            'Content-Type': `multipart/form-data; boundary=${formData._boundary}`
+          },
+          onUploadProgress: progressEvent => {
+            const totalLength = progressEvent.lengthComputable ? progressEvent.total : progressEvent.target.getResponseHeader(`content-length`) || progressEvent.target.getResponseHeader(`x-decompressed-content-length`)
+            if (totalLength !== null) {
+              $(`#uploadProgressBar`).css(`width`, `${Math.round((progressEvent.loaded * 100) / totalLength)}%`)
+            }
+            this._datatableObj.DataTable().ajax.reload(null, false)
+          },
+          method: `post`
+        }
+      )
+        .then(
+          response => {
+            this._formData = new FormData()
+            this._modalError(``, 0)
+            this._datatableObj.DataTable().ajax.reload(null, false)
+          })
+        .catch(
+          error => {
+            console.error(error)
+            if (error.status === 403) {
+              this._modalError(error.response.data, 6000)
+            }
+            this._formData = new FormData()
+          }
+        )
     })
   }
 
@@ -106,7 +145,6 @@ class ReferenceManagementController {
     // check the md5 checksum here
     const formData = this._formData
     $(`#drop-zone`).removeClass(`drop-zone-entered`)
-    // TODO new md5 checksum check here, new private or public here
     $(`#mdbup`).html(`<div class="progress" id="uploadProgress">
           <div class="progress-bar progress-bar-striped progress-bar-animated" id="uploadProgressBar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
         </div>`)
@@ -115,14 +153,10 @@ class ReferenceManagementController {
       for (var i = 0; i < ev.dataTransfer.items.length; i++) {
         // If dropped items aren't files, reject them
         if (ev.dataTransfer.items[i].kind === `file`) {
-          $(`#drop-zone`)
-          console.log(`hello`)
           var file = ev.dataTransfer.items[i].getAsFile()
-          console.log(file.name)
           if (file.size > this._maxFileSize) {
             this._modalError(`${file.name} is too large (${file.size})! Upload refused.`, 3000)
           }
-          console.log(file, file.name)
           formData.append(`file_location`, file, file.name)
           formData.append(`file_name`, file.name)
         }
@@ -138,10 +172,8 @@ class ReferenceManagementController {
           },
           onUploadProgress: progressEvent => {
             const totalLength = progressEvent.lengthComputable ? progressEvent.total : progressEvent.target.getResponseHeader(`content-length`) || progressEvent.target.getResponseHeader(`x-decompressed-content-length`)
-            console.log(`onUploadProgress`, totalLength)
             if (totalLength !== null) {
               $(`#uploadProgressBar`).css(`width`, `${Math.round((progressEvent.loaded * 100) / totalLength)}%`)
-              console.log(Math.round((progressEvent.loaded * 100) / totalLength))
             }
             this._datatableObj.DataTable().ajax.reload(null, false)
           },
@@ -166,9 +198,7 @@ class ReferenceManagementController {
     } else {
       // Use DataTransfer interface to access the file(s)
       for (let i = 0; i < ev.dataTransfer.files.length; i++) {
-        console.log(`hello2`)
         const file = ev.dataTransfer.items[i].getAsFile()
-        console.log(file, file.name)
         formData.append(`file_location`, file, file.name)
         formData.append(`filename`, file.name)
       }
@@ -197,7 +227,6 @@ class ReferenceManagementController {
       $(`#mdbup`).html(`<span style="font-size: 2rem">${message}</span>`)
     }
     setTimeout(() => {
-      console.log(`hello`)
       $(`#add-reference`).modal(`hide`)
       $(`#mdbup`).html(`<label id="drop-zone" class="dropzone" for="reference-upload">
                         Drag and drop or click to upload ...
@@ -211,12 +240,10 @@ class ReferenceManagementController {
   _dragOverHandler (ev) {
     // Prevent default behavior (Prevent file from being opened)
     ev.preventDefault()
-    console.log(`File(s) in drop zone`)
     $(ev.currentTarget).addClass(`drop-zone-entered`)
   }
 
   _dragEnterHandler (ev) {
-    console.log(ev)
     $(ev.currentTarget).addClass(`drop-zone-entered`)
   }
 
