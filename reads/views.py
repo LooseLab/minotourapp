@@ -2108,7 +2108,7 @@ def flowcell_minknow_stats_list(request, pk, check_id):
             # strand calculations
             # if x in strand_counts:
             #     result_strand[x]["data"].append(a)
-        if mrs.minKNOW_histogram_bin_width:
+        if mrs.minKNOW_histogram_values:
             histogram_values = (
                 mrs.minKNOW_histogram_values.replace("'", "")
                 .replace('"', "")[1:-1]
