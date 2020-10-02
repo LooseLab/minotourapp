@@ -102,7 +102,6 @@ class BasecalledDataController {
      * @private
      */
   _changeBarcode (event) {
-    console.log(`change BArcode`)
     const selectedBarcode = event.target.innerText
     // Remove active from the selected barcode class
     $(`#${this._currentBarcode.replace(` `, `_`)}`).removeClass(`active`)
@@ -274,7 +273,6 @@ class BasecalledDataController {
           clearChartData(chartReference)
         }
         if (!chartReference) {
-          console.log(`${newDataKey} chart is undefined`)
           return
         }
         preExistingSeriesNames = chartReference.series.map(e => e.name)
@@ -291,9 +289,7 @@ class BasecalledDataController {
           const seriesToUpdate = chartReference.series.filter(e => {
             return e.name === updateToSeries.name
           })
-          if (checkHighChartsDataIsIdentical(updateToSeries.data, seriesToUpdate[0].options.data)) {
-            console.log(`data is identical skipping redraw.`)
-          } else {
+          if (!checkHighChartsDataIsIdentical(updateToSeries.data, seriesToUpdate[0].options.data)) {
             seriesToUpdate[0].setData(updateToSeries.data)
           }
         })
@@ -407,12 +403,9 @@ class BasecalledDataController {
             oldSeriesData = Array.isArray(seriesToUpdate[0].options.data) ? seriesToUpdate[0].options.data : seriesToUpdate[0].options.data.data
             identical = checkHighChartsDataIsIdentical(newChartData, oldSeriesData)
           }
-          if (identical) {
-            console.log(`Skipping redraw for ${key}`)
-          } else {
+          if (!identical) {
             // only update if there is already data in the same chart series
             if (chartHasData && seriesToUpdate.length > 0) {
-              console.log(seriesToUpdate)
               seriesToUpdate[0].setData(
                 newChartData
               )
@@ -492,9 +485,7 @@ class BasecalledDataController {
       charts.forEach(([key, chart]) => {
         chartHasData = chart.series.length > 0
         if (chartHasData) {
-          if (checkHighChartsDataIsIdentical(chartReadyData[key], chart.series[0].options.data)) {
-            console.log(`Data is identical, skipping redraw.`)
-          } else {
+          if (!checkHighChartsDataIsIdentical(chartReadyData[key], chart.series[0].options.data)) {
             chart.series[0].setData(chartReadyData[key])
           }
         } else {
@@ -548,9 +539,7 @@ class BasecalledDataController {
       this._pieChartBarcodeClassUnclass.addSeries(data)
     } else {
       // if the data is the same
-      if (checkHighChartsDataIsIdentical(oldChartData[0].options.data, newComparisonData)) {
-        console.log(`Skipping draw`)
-      } else {
+      if (!checkHighChartsDataIsIdentical(oldChartData[0].options.data, newComparisonData)) {
         oldChartData[0].setData(data.data)
       }
     }
@@ -577,7 +566,6 @@ class BasecalledDataController {
         return
       }
       if (response.status === 204) {
-        console.log(`Not a barcoded run, deleting proportion chart.`)
         $(`#barcode-proportion-cards`).remove()
         return
       }
@@ -605,9 +593,7 @@ class BasecalledDataController {
         })
         if (oldSeries.length) {
           // If the data is the same
-          if (checkHighChartsDataIsIdentical([newSeries.data], [oldSeries[0].options.data])) {
-            console.log(`Skipping redraw for series: ${newSeries.name}`)
-          } else {
+          if (!checkHighChartsDataIsIdentical([newSeries.data], [oldSeries[0].options.data])) {
             oldSeries[0].setData(newSeries.data)
           }
         } else {
