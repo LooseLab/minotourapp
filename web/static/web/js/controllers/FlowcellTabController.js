@@ -82,7 +82,6 @@ class FlowcellTabController {
     controllerName = lookupController[name]
     if (Object.prototype.hasOwnProperty.call(this, controllerName)) {
       // update the tab content by calling the classes update tab method
-      console.log(`Updating tab ${name}`)
       this[controllerName].updateTab()
     }
   }
@@ -119,7 +118,6 @@ class FlowcellTabController {
     }
     // if we have a controller for this tab, but we are no longer showing it as underlying data has been deleted
     Object.keys(controllers).forEach(controllerName => {
-      console.log()
       if (!tabs.includes(controllerName) && this[controllers[controllerName][0]]) {
         // delete the controller
         this.lookupElement[`nav-${controllerName}`].classList.add(`hidden`)
