@@ -1,7 +1,6 @@
 import datetime
 import json
 from collections import defaultdict
-from pprint import pprint
 
 import numpy as np
 import pandas as pd
@@ -168,7 +167,7 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
         df = df.sort_values("barcode_name")
         # Get the proportion unclassified for pie chart
         df["is_unclassified"] = np.where(
-            df["barcode_name"] == "unclassified", "Classified", "Unclassified"
+            df["barcode_name"] == "unclassified", "Unclassified", "Classified"
         )
         # use this array for easy comparison of current data on client side in BaseCalledData controller
         array_data = []
@@ -657,9 +656,7 @@ def active_minion_list(request):
     serializer = MinionSerializer(
         active_minion_list, many=True, context={"request": request}
     )
-    print(serializer.data)
     return_data = list(serializer.data)
-
     for active_minion in return_data:
         active_minion.update(extra_data[active_minion["name"]])
         if active_minion.get("name", 0) in data:
@@ -669,7 +666,6 @@ def active_minion_list(request):
             active_minion.update(data.get(active_minion["name"], blank_stats))
             active_minion.update(extra_data[active_minion["name"]])
 
-    pprint(serializer.data)
     return Response(serializer.data)
 
 
@@ -730,34 +726,6 @@ def minion_messages_list(request, pk):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# @api_view(["GET"],)
-# def sinceminion_messages_list(request, pk, starttime, endtime):
-#
-#     correctedstart = parser.parse(starttime) - datetime.timedelta(minutes=180)
-#
-#     correctedend = parser.parse(endtime) + datetime.timedelta(minutes=180)
-#
-#     queryset = (
-#         MinionMessage.objects.filter(minION=pk)
-#         .filter(
-#             minKNOW_message_timestamp__gte=correctedstart.isoformat().replace(
-#                 "+00:00", "Z"
-#             )
-#         )
-#         .filter(
-#             minKNOW_message_timestamp__lte=correctedend.isoformat().replace(
-#                 "+00:00", "Z"
-#             )
-#         )
-#     )
-#
-#     serializer = MinionMessageSerializer(
-#         queryset, many=True, context={"request": request}
-#     )
-#
-#     return Response(serializer.data)
 
 
 @api_view(["GET"],)
@@ -1105,8 +1073,6 @@ def list_minion_run_status(request, pk):
     -------
 
     """
-    print(request.data)
-    print("minion tun info")
     if request.method == "POST":
         serializer = MinionRunInfoSerializer(
             data=request.data, context={"request": request}
@@ -1198,10 +1164,6 @@ def minION_detail(request, pk):
     # """
     # TODO describe function
     # """
-    print(request.user)
-    print(type(request.user))
-    print(request.GET.get("search_criteria", "LOLNO"))
-    print(pk)
 
     if request.method == "GET":
         search_criteria = request.GET.get("search_criteria", "id")
@@ -1769,12 +1731,9 @@ def flowcell_histogram_summary(request, pk):
     barcode_name = request.GET.get("barcodeName", "All reads").replace("_", " ")
     # Get the information for the flowcell the data is attached to
     flowcell = Flowcell.objects.get(pk=pk)
-
     initialise = request.GET.get("initialise", False)
-
     total_reads_length = flowcell.total_read_length
     total_reads_count = flowcell.number_reads
-
     max_bin_index = (
         FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
         .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
@@ -1784,7 +1743,7 @@ def flowcell_histogram_summary(request, pk):
     categories = list(
         range(
             1 * FlowcellHistogramSummary.BIN_WIDTH,
-            (max_bin_index["bin_index__max"] + 1) * FlowcellHistogramSummary.BIN_WIDTH,
+            (max_bin_index["bin_index__max"] + 2) * FlowcellHistogramSummary.BIN_WIDTH,
             FlowcellHistogramSummary.BIN_WIDTH,
         )
     )
@@ -1861,8 +1820,7 @@ def flowcell_histogram_summary(request, pk):
                     seriesbin_index
                 ] = seriescollect_read_length_sum
 
-            result_collect_read_count_sum = list(
-                (
+            result_collect_read_count_sum = (
                     -pd.concat(
                         [
                             pd.Series([0]),
@@ -1874,28 +1832,25 @@ def flowcell_histogram_summary(request, pk):
                     + pd.Series(result_collect_read_count_sum)
                     .replace(to_replace=0, method="ffill")
                     .max()
-                )
-                / total_reads_count
-                * 100
-            )
+                ) / total_reads_count * 100
 
-            result_collect_read_length_sum = list(
-                (
+            result_collect_read_length_sum = (
                     -pd.concat(
                         [
                             pd.Series([0]),
                             pd.Series(result_collect_read_length_sum).replace(
                                 to_replace=0, method="ffill"
-                            ),
+                            )
                         ]
                     )
                     + pd.Series(result_collect_read_length_sum)
                     .replace(to_replace=0, method="ffill")
                     .max()
-                )
-                / total_reads_length
-                * 100
-            )
+                ) / total_reads_length * 100
+            result_collect_read_length_sum = result_collect_read_length_sum[result_collect_read_length_sum != 0]
+            result_collect_read_count_sum = result_collect_read_count_sum[result_collect_read_count_sum != 0]
+
+
 
             chart_data["read_count"].append(
                 {"name": series_name, "data": result_read_count_sum}
@@ -2058,7 +2013,7 @@ def flowcell_minknow_stats_list(request, pk, check_id):
     )
     flowcell = Flowcell.objects.get(pk=pk)
     runs = Run.objects.filter(flowcell=flowcell)
-    run_info = [(run_start, (run_start.timestamp() * 1000)) for name, run_start in runs.values_list("name", "start_time")]
+    run_info = [(name, (run_start.timestamp() * 1000)) for name, run_start in runs.values_list("name", "start_time")]
     if not MinionRunStats.objects.filter(
         run_id__in=flowcell.runs.all().exclude(name="mux scan"), id__gt=check_id
     ).count():
