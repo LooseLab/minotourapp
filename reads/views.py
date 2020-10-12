@@ -95,7 +95,7 @@ logger = get_task_logger(__name__)
 @api_view(["GET"])
 def proportion_of_total_reads_in_barcode_list(request, pk):
     """
-    Return a list of the proportion of the total make up of a flowcells read data each barcode is.
+    Return a list of the proportion of the total make up of a flowcells read data each barcode is for base-called summary tab.
 
     Author
     ------
@@ -105,7 +105,7 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
     ----------
     request: rest_framework.request.Request
         Django rest framework object.
-    pk: str
+    pk: int
         Primary key of the flowcell
     Returns`
     -------
@@ -132,11 +132,22 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
                 "status",
             )
         )
+        if df.empty:
+            return Response("No data found", status=status.HTTP_404_NOT_FOUND)
         df["status"] = np.where(df["status"] == "True", "Pass", "Fail")
         total_read_count = df["read_count"].sum()
-        df["data"] = round(df["read_count"] / total_read_count * 100, 2)
-        df["name"] = df["barcode_name"]
-        categories = df["name"].unique().tolist()
+        if len(df["rejection_status"].unique()) >= 2:
+            df["data"] = df.groupby(
+                ["barcode_name", "rejection_status", "status"]
+            )["read_count"].transform(
+                lambda x: x / total_read_count * 100
+            ).round(2)
+            categories = [" - ".join(x) for x in np.unique(df.set_index(["barcode_name", "rejection_status"]).index.values).tolist()]
+            df.reset_index(inplace=True)
+        else:
+            df["name"] = df["barcode_name"]
+            df["data"] = round(df["read_count"] / total_read_count * 100, 2)
+            categories = df["name"].unique().tolist()
         # get the barcodes that have a pass status and no corresponding fail data
         no_fail_pass_df = df[
             (df["status"] == "Pass")
@@ -145,11 +156,11 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
                     df[df["status"] == "Fail"]["barcode_name"].values
                 )
             )
-        ]
+            ]
         no_fail_pass_df["status"] = "Fail"
         no_fail_pass_df["data"] = 0
         # append new entries with 0
-        # Get the barcode rows that have a fail status and no cprreponding pass data
+        # Get the barcode rows that have a fail status and no corresponding pass data
         df = df.append(no_fail_pass_df)
         no_pass_fail_df = df[
             (df["status"] == "Fail")
@@ -158,7 +169,7 @@ def proportion_of_total_reads_in_barcode_list(request, pk):
                     df[df["status"] == "Pass"]["barcode_name"].values
                 )
             )
-        ]
+            ]
         no_pass_fail_df["status"] = "Pass"
         no_pass_fail_df["data"] = 0
         df = df.append(no_pass_fail_df)
@@ -1599,33 +1610,23 @@ def flowcell_statistics(request, pk):
     # TODO comment and REWRITE OOFT
     barcode_name = request.GET.get("barcodeName", "All reads")
     # sequenced or unblocked
-    read_until_barcode = request.GET.get("ruBarcodeName", "Sequenced")
+    read_until_barcode_name = request.GET.get("ruBarcodeName", "Combined")
     barcodes_list = [barcode_name]
-
     if barcode_name != "All reads":
         barcodes_list.append("All reads")
-
     flowcell = Flowcell.objects.get(pk=pk)
     # Reverse lookup a queryset of all the runs in this flowcell
     run_list = flowcell.runs.all()
-
-    """
-    queryset = (
-        FlowcellStatisticBarcode.objects.filter(flowcell=flowcell, iteration_count=job_master_iteration)
-            .filter(
-            Q(barcode_name__in=barcodes_list) | Q(rejection_status__in=barcodes_list)
-        )
-            .order_by("sample_time")
+    queryset = FlowcellStatisticBarcode.objects.filter(
+        flowcell=flowcell,
+        barcode_name=barcode_name
     )
-    """
-    queryset = (
-        FlowcellStatisticBarcode.objects.filter(flowcell=flowcell)
-        .filter(
-            Q(barcode_name__in=barcodes_list) | Q(rejection_status__in=barcodes_list)
-        )
-        .order_by("sample_time")
-    )
-
+    print(read_until_barcode_name)
+    # combined will display all results under a barcode, but if other chosen we need to filter down to it
+    if read_until_barcode_name != "Combined":
+        print("hellda")
+        queryset = queryset.filter(rejection_status=read_until_barcode_name)
+    print(queryset)
     df = pd.DataFrame.from_records(
         queryset.values(
             "read_type_name",
@@ -1639,6 +1640,9 @@ def flowcell_statistics(request, pk):
             "rejection_status",
         )
     )
+    if df.empty:
+        return Response("No data found for statistics charts", status=status.HTTP_404_NOT_FOUND)
+    print(df)
     df["read_type"] = np.where(df["status"] == "True", "Pass", "Fail")
     agg = {
         "max_length": "max",

@@ -10,14 +10,17 @@ class BasecalledDataController {
     // TODO BUG could clash if multiple browser tabs open
     setSelectedBarcode(`All reads`, `BasecalledData`)
     this._currentBarcode = getSelectedBarcode(`BasecalledData`)
+    this._currentRuBarcode = `Combined`
     this._flowcellId = flowcellId
     this._axiosInstance = axios.create({
       headers: { "X-CSRFToken": getCookie(`csrftoken`) }
     })
     this._barcodesHtmlElement = $(`#nav-tabs-barcodes`)
     this.barcodesList = []
+    this._ruBarcodesSet = new Set()
     this._basecalledSummaryTable = null
     this.initialiseCharts(flowcellId, this._currentBarcode)
+    this._addListenerToRuSelect()
   }
 
   /**
@@ -34,11 +37,18 @@ class BasecalledDataController {
     this._createFlowcellHeatMaps(flowcellId)
     this._createBarcodeProportionBarCharts(flowcellId)
     this.chartsInitialised = true
-    this._interval = setInterval(this._updateTab, 60000, flowcellId, this._currentBarcode, this, false)
+    this._interval = setInterval(() => { this.updateTab() }, 60000)
     $(window).on(`unload`, function () {
       console.log(`clearing base-called interval`)
       clearInterval(this._interval)
     })
+  }
+
+  /**
+   * Add on change lsitener to Ru select
+   */
+  _addListenerToRuSelect () {
+    $(`#ru-barcodes`).on(`change`, (event) => { this._ruSelectChange(event, this) })
   }
 
   /**
@@ -47,6 +57,25 @@ class BasecalledDataController {
      */
   _revealResults () {
     $(`#tab-basecalled-data`).addClass(`loaded`)
+  }
+
+  /**
+   * Update the Unblocked/Sequenced drop down shown if this a barcoded run
+   * @private
+   */
+  _updateRuSelect () {
+    const possibleBarcodes = [`<option value="Sequenced">Sequenced</option>`, `<option value="Unblocked">Unblocked</option>`]
+    const ruSelect = $(`#ru-barcodes`)
+    ruSelect.css(`visibility`, `visible`)
+    if (!this._ruBarcodesSet.has(possibleBarcodes[0]) && !this._ruBarcodesSet.has(possibleBarcodes[1])) ruSelect.append(possibleBarcodes)
+    this._ruBarcodesSet = new Set([...this._ruBarcodesSet, ...possibleBarcodes])
+  }
+
+  /**
+   * On change of Read Until select redraw dependent charts on with the correctly chosen RU status (Unblocked/Sequenced)
+   */
+  _ruSelectChange (event, that) {
+    that._changeBarcode(event, true)
   }
 
   /**
@@ -62,9 +91,13 @@ class BasecalledDataController {
     this._axiosInstance.get(`/api/v1/flowcells/barcodes`, { params: { flowcellId } }).then((response) => {
       if (response.status !== 200) console.error(`Error ${response.status}`)
       barcodeNames = response.data
-      // Remove no barcode
+      // Read until run so we need the drop down
+      if (barcodeNames.includes(`Unblocked`)) {
+        this._updateRuSelect()
+      }
+      // Remove no barcode, sequenced and unblocked
       barcodeNames = barcodeNames.filter(el => {
-        return el !== `No barcode`
+        return ![`No barcode`, `Sequenced`, `Unblocked`].includes(el)
       })
       // If we already have HTML elements
       if (!firstIteration) {
@@ -99,17 +132,25 @@ class BasecalledDataController {
   /**
      * Change the active barcode. Add active class to new barcode, remove from old, call function to draw new charts.
      * @param event - Event object from event listener
+     * @param ru {boolean} If this change is from a read until barcode change, default false
      * @private
      */
-  _changeBarcode (event) {
-    const selectedBarcode = event.target.innerText
-    // Remove active from the selected barcode class
-    $(`#${this._currentBarcode.replace(` `, `_`)}`).removeClass(`active`)
-    setSelectedBarcode(selectedBarcode, `BasecalledData`)
-    this._currentBarcode = selectedBarcode
-    event.target.classList.add(`active`)
+  _changeBarcode (event, ru = false) {
+    // Remove active from the selected barcode class and it's not an RU update
+    const selectedBarcode = ru ? event.target.value : event.target.innerText
+    const tab = ru ? `BasecalledDataRu` : `BasecalledData`
+    if (!ru) {
+      $(`#${this._currentBarcode.replace(` `, `_`)}`).removeClass(`active`)
+      this._currentBarcode = selectedBarcode
+      event.target.classList.add(`active`)
+    } else {
+      this._currentRuBarcode = selectedBarcode
+      console.log(selectedBarcode)
+      console.log(this._currentRuBarcode)
+    }
+    setSelectedBarcode(selectedBarcode, tab)
     // call the function to draw all the charts here.
-    this._updateTab(this._flowcellId, selectedBarcode, this, true)
+    this._updateTab(this._flowcellId, this._currentBarcode, this, true, this._currentRuBarcode)
   }
 
   /**
@@ -351,19 +392,21 @@ class BasecalledDataController {
      * @param flowcellId {string} The primary key of the flowcell record in the database.
      * @param barcodeName {string} The name of the selected barcode.
      * @param changeBarcode {boolean} If update is triggered by barcode change.
+     * @param ruBarcodeName {string} The name of the read until barocde, (sequenced/unblocked/combined)
      * @private
      */
-  _updateBaseCalledReadCharts (flowcellId, barcodeName, changeBarcode) {
+  _updateBaseCalledReadCharts (flowcellId, barcodeName, changeBarcode, ruBarcodeName = `Sequenced`) {
     const charts = [this._averageQualityOverTime,
       this._averageReadLengthsOverTime,
       this._cumulativeYieldOverTime,
       this._cumulativeNumberReadsOverTime,
       this._maxReadLengthsOverTime,
       this._sequencingRate]
-    this._axiosInstance.get(`/api/v1/flowcells/${flowcellId}/statistics/`, { params: { barcodeName } }).then(response => {
+    this._axiosInstance.get(`/api/v1/flowcells/${flowcellId}/statistics/`, { params: { barcodeName, ruBarcodeName } }).then(response => {
       let key, value
       // TODO add in the run start lines.
       const runData = response.data.runs
+      console.log(runData)
       const chartData = response.data.data
       let newChartDataArray
       let newChartData
@@ -611,7 +654,7 @@ class BasecalledDataController {
    * Update the page data on tab switch in flowcell tab controller
    */
   updateTab () {
-    this._updateTab(this._flowcellId, this._currentBarcode, this, false)
+    this._updateTab(this._flowcellId, this._currentBarcode, this, false, this._currentRuBarcode)
   }
 
   /**
@@ -620,16 +663,17 @@ class BasecalledDataController {
      * @param barcodeName {string} Chose barcode of the tab.
      * @param that {BasecalledDataController} The scope of the class
      * @param changeBarcode {boolean} If update is triggered by barcode change.
+     * @param ruBarcodeName {string} If a read until run, the barcode name (selected/unblocked/combined)
      * @private
      */
-  _updateTab (flowcellId, barcodeName, that, changeBarcode) {
+  _updateTab (flowcellId, barcodeName, that, changeBarcode, ruBarcodeName) {
     const barcode = getSelectedBarcode(`BasecalledData`)
     if (getSelectedTab() !== `basecalled-data`) {
       return
     }
     that._fetchSummaryDataHtmlTable(flowcellId)
     that._updateHistogramChartsData(flowcellId, barcode, changeBarcode)
-    that._updateBaseCalledReadCharts(flowcellId, barcode, changeBarcode)
+    that._updateBaseCalledReadCharts(flowcellId, barcode, changeBarcode, ruBarcodeName)
     that._updateBarcodeNavTab(flowcellId, changeBarcode)
     if (!changeBarcode) {
       that._updateBarcodeProportionCharts(flowcellId)
