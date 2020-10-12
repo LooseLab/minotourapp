@@ -66,7 +66,7 @@ class BasecalledDataController {
   _updateRuSelect () {
     const possibleBarcodes = [`<option value="Sequenced">Sequenced</option>`, `<option value="Unblocked">Unblocked</option>`]
     const ruSelect = $(`#ru-barcodes`)
-    ruSelect.css(`visibility`, `visible`)
+    $(`#ru-container`).css(`visibility`, `visible`)
     if (!this._ruBarcodesSet.has(possibleBarcodes[0]) && !this._ruBarcodesSet.has(possibleBarcodes[1])) ruSelect.append(possibleBarcodes)
     this._ruBarcodesSet = new Set([...this._ruBarcodesSet, ...possibleBarcodes])
   }
