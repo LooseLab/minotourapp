@@ -210,21 +210,6 @@ urlpatterns = [
         name="tabs-details"
     ),
     url(
-        r'^api/v1/grouprun/$',
-        views.grouprun_list,
-        name="grouprun-list"
-    ),
-    url(
-        r'^api/v1/grouprun/(?P<pk>[0-9A-Za-z-_]+)/$',
-        views.grouprun_detail,
-        name="grouprun-detail"
-    ),
-    url(
-        r'^api/v1/grouprun-membership/$',
-        views.grouprun_membership_list,
-        name="grouprun-membership-list"
-    ),
-    url(
         r'^api/v1/barcode/$',
         views.barcode_list_new,
         name="barcode-list-new"
