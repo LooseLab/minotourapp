@@ -35,7 +35,6 @@ from reads.models import (
     FlowcellHistogramSummary,
     FlowcellStatisticBarcode,
     FlowcellSummaryBarcode,
-    GroupRun,
     Minion,
     MinionControl,
     MinionEvent,
@@ -58,7 +57,6 @@ from reads.serializers import (
     FastqReadTypeSerializer,
     FlowcellSerializer,
     FlowcellSummaryBarcodeSerializer,
-    GroupRunSerializer,
     MinIONControlSerializer,
     MinIONEventSerializer,
     MinIONEventTypeSerializer,
@@ -1600,7 +1598,8 @@ def flowcell_statistics(request, pk):
     """
     # TODO comment and REWRITE OOFT
     barcode_name = request.GET.get("barcodeName", "All reads")
-
+    # sequenced or unblocked
+    read_until_barcode = request.GET.get("ruBarcodeName", "Sequenced")
     barcodes_list = [barcode_name]
 
     if barcode_name != "All reads":
@@ -1721,6 +1720,7 @@ def flowcell_statistics(request, pk):
 def flowcell_histogram_summary(request, pk):
     """
     Return the data for histograms on the basecalled data page
+    # TODO this is a bit complex
     :param request: Get request body
     :type request: rest_framework.request.Request
     :param pk: The primary key of the flowcell that the basecalled data metrics are attached to
@@ -1849,9 +1849,6 @@ def flowcell_histogram_summary(request, pk):
                 ) / total_reads_length * 100
             result_collect_read_length_sum = result_collect_read_length_sum[result_collect_read_length_sum != 0]
             result_collect_read_count_sum = result_collect_read_count_sum[result_collect_read_count_sum != 0]
-
-
-
             chart_data["read_count"].append(
                 {"name": series_name, "data": result_read_count_sum}
             )
@@ -1899,58 +1896,58 @@ def flowcell_channel_summary(request, pk):
 
 @api_view(["GET"])
 def flowcell_run_summaries_html(request, pk):
+    """
+    Return a HTML summary for the summary tab of the flowcell, wuth live event info
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+    pk: int
+        The primary key of the flowcell
+
+    Returns
+    -------
+    application/html
+        Html summary table about each run with live event data
+    """
     flowcell = Flowcell.objects.get(pk=pk)
-
     result = []
-
     for run in flowcell.runs.all():
-
         # Create an element with information from the run (originally from the fastq files)
-
-        element = {
-            "runid": None,
-            "run_start_time": None,
-            "first_read": None,
-            "last_read": None,
-            "minknow_computer_name": None,
-            "minion_id": None,
-            "asic_id": None,
-            "sequencing_kit": None,
-            "purpose": None,
-            "minknow_version": None,
-            "flowcell_type": None,
-            "flowcell_id": None,
-            "sample_name": None,
-            "experiment_name": None,
-        }
-
-        minion_run_status_list = MinionRunInfo.objects.filter(run_id=run).order_by(
-            "minKNOW_start_time"
-        )
-
-        if len(minion_run_status_list) > 0:
+        minion_run_status_list = MinionRunInfo.objects.filter(run=run).first()
+        if minion_run_status_list:
             minion_run_status = minion_run_status_list[0]
-
-            element["runid"] = minion_run_status.run.runid
-            element["run_start_time"] = minion_run_status.minKNOW_start_time
-            element["minknow_computer_name"] = minion_run_status.minKNOW_computer
-            element["minion_id"] = minion_run_status.minion.minION_name
-            element["asic_id"] = minion_run_status.minKNOW_asic_id
-            element["sequencing_kit"] = minion_run_status.sequencing_kit
-            element["purpose"] = minion_run_status.minKNOW_exp_script_purpose
-            element["minknow_version"] = minion_run_status.minKNOW_version
-            element["flowcell_type"] = minion_run_status.flowcell_type
-            element["flowcell_id"] = minion_run_status.minKNOW_flow_cell_id
-            element["sample_name"] = minion_run_status.minKNOW_sample_name
-            element["experiment_name"] = minion_run_status.experiment_id
-
-            result.append(element)
+            result.append({"runid": minion_run_status.run.runid,
+                           "run_start_time": minion_run_status.minKNOW_start_time,
+                           "minknow_computer_name": minion_run_status.minKNOW_computer,
+                           "minion_id": minion_run_status.minion.minION_name,
+                           "asic_id": minion_run_status.minKNOW_asic_id,
+                           "sequencing_kit": minion_run_status.sequencing_kit,
+                           "purpose": minion_run_status.minKNOW_exp_script_purpose,
+                           "minknow_version": minion_run_status.minKNOW_version,
+                           "flowcell_type": minion_run_status.flowcell_type,
+                           "flowcell_id": minion_run_status.minKNOW_flow_cell_id,
+                           "sample_name": minion_run_status.minKNOW_sample_name,
+                           "experiment_name": minion_run_status.experiment_id})
 
     return render(request, "reads/flowcell_runs_summary.html", {"run_list": result})
 
 
 @api_view(["GET"])
 def flowcell_run_basecalled_summary_html(request, pk):
+    """
+    HTML summary table of the base-called run data for each run in a flowcell
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+    pk: int
+        The primary key of the flowcell
+
+    Returns
+    -------
+    application/html
+        HTML summary table of the base-called run data for each run in a flowcell
+
+    """
     flowcell = Flowcell.objects.get(pk=pk)
     result_basecalled_summary = []
     for run in flowcell.runs.all():
@@ -2268,121 +2265,6 @@ def flowcell_tabs_list(request, pk):
 
 
 @api_view(["GET", "POST"])
-def grouprun_list(request):
-    """
-    Not implemented
-    Parameters
-    ----------
-    request
-
-    Returns
-    -------
-
-    """
-
-    if request.method == "GET":
-
-        queryset = GroupRun.objects.distinct().filter(owner=request.user)
-
-        serializer = GroupRunSerializer(
-            queryset, many=True, context={"request": request}
-        )
-
-        return Response(serializer.data)
-
-    elif request.method == "POST":
-
-        serializer = GroupRunSerializer(data=request.data, context={"request": request})
-
-        if serializer.is_valid():
-            serializer.save(owner=request.user)
-
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(["GET"])
-def grouprun_detail(request, pk):
-    """
-    nOT IMPLEMENTED
-    Parameters
-    ----------
-    request
-    pk
-
-    Returns
-    -------
-
-    """
-
-    search_criteria = request.GET.get("search_criteria", "id")
-
-    if search_criteria == "id":
-
-        grouprun_list = GroupRun.objects.filter(owner=request.user).filter(id=pk)
-
-    elif search_criteria == "name":
-
-        grouprun_list = GroupRun.objects.filter(owner=request.user).filter(name=pk)
-
-    else:
-
-        grouprun_list = GroupRun.objects.none()
-
-    if len(grouprun_list) != 1:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    grouprun = grouprun_list[0]
-
-    serializer = GroupRunSerializer(grouprun, context={"request": request})
-
-    return Response(serializer.data)
-
-
-@api_view(["GET", "POST"])
-def grouprun_membership_list(request):
-    """
-    Not implemented
-    Parameters
-    ----------
-    request
-
-    Returns
-    -------
-
-    """
-
-    if request.method == "GET":
-
-        grouprun_id = request.GET.get("grouprun_id")
-
-        queryset = GroupRun.objects.filter(id=grouprun_id).filter(owner=request.user)
-
-        if len(queryset) == 1:
-            serializer = RunSerializer(
-                queryset.first().runs, many=True, context={"request": request}
-            )
-
-            return Response(serializer.data)
-
-    elif request.method == "POST":
-
-        grouprun_id = request.data["grouprun_id"]
-        run_id = request.data["run_id"]
-
-        grouprun = GroupRun.objects.get(pk=grouprun_id)
-        run = Run.objects.get(pk=run_id)
-
-        run.groupruns.add(grouprun)
-        run.save()
-
-        serializer = RunSerializer(run, context={"request": request})
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-@api_view(["GET", "POST"])
 def read_list_new(request):
     """
     API endpoint for either getting a list of reads to display in the read data table,
@@ -2391,39 +2273,24 @@ def read_list_new(request):
     :type request: rest_framework.request.Request
     :return:
     """
-
     search_criteria = request.GET.get("search_criteria", "name")
-
     search_value = request.GET.get("search_value", "name")
-
     offset = int(request.GET.get("offset", "0"))
-
     limit = int(request.GET.get("limit", "10"))
-
     if request.method == "GET":
-
         if search_criteria == "run":
-
-            qs = FastqRead.objects.filter(run__id=search_value)[offset : offset + limit]
-
+            qs = FastqRead.objects.filter(run_id=search_value)[offset: offset + limit]
         elif search_criteria == "fastqfile":
-
             qs = FastqRead.objects.filter(fastqfile_id=search_value)[
                 offset : offset + limit
             ]
-
         else:
-
             qs = FastqRead.objects.none()
-
         serializer = FastqReadGetSerializer(qs, many=True, context={"request": request})
-
         return Response(serializer.data)
 
     elif request.method == "POST":
-
         reads = request.data
-
         if not reads:
             return Response("No reads in post request", status=status.HTTP_200_OK)
         save_reads_bulk(reads)
@@ -2435,6 +2302,16 @@ def read_list_new(request):
 
 @api_view(["GET"])
 def readextra_list(request):
+    """
+    TODO what the hell is using this?
+    Parameters
+    ----------
+    request
+
+    Returns
+    -------
+
+    """
     search_criteria = request.GET.get("search_criteria", "read_id")
 
     search_value = request.GET.get("search_value", "name")
@@ -2467,7 +2344,7 @@ def readextra_list(request):
 @api_view(["POST", "GET"])
 def barcode_list_new(request):
     """
-
+    # TODO find usages for this
     Parameters
     ----------
     request
@@ -2476,33 +2353,35 @@ def barcode_list_new(request):
     -------
 
     """
-
     if request.method == "GET":
-
         barcode_list = Barcode.objects.all()
-
         serializer = BarcodeSerializer(
             barcode_list, many=True, context={"request": request}
         )
-
         return Response(serializer.data)
 
     elif request.method == "POST":
-
         serializer = BarcodeSerializer(data=request.data, context={"request": request})
-
         if serializer.is_valid():
             serializer.save()
-
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["GET"])
 def version(request):
-    resp = {"server": "1.0", "clients": ["1.0"], "minknow": ["3.6.5"]}
-
+    """
+    Return the version of the server being run, and the supported version of minknow and minFQ
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The request
+    Returns
+    -------
+    json
+        Dict of server version, clients supported and minknow version supported
+    """
+    resp = {"server": "1.0", "clients": ["1.0"], "minknow": ["3.6.5", "4.0.4"]}
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
 
@@ -2511,16 +2390,11 @@ def flowcell_sharing(request, pk):
     """
     list and add user permissions on a flowcell
     """
-
     flowcell = Flowcell.objects.get(pk=pk)
-
     if request.method == "POST":
-
         try:
             user = User.objects.get(username=request.data["username"])
-
         except User.DoesNotExist:
-
             return Response(
                 {"message": "User does not exist."}, status=status.HTTP_404_NOT_FOUND
             )
@@ -2530,11 +2404,8 @@ def flowcell_sharing(request, pk):
                 {"message": "You are not authorised to share this flowcell."},
                 status=status.HTTP_404_NOT_FOUND,
             )
-
         permission = request.data["permission"].lower()
-
         if user.has_perm(permission, flowcell):
-
             return Response(
                 {
                     "message": "User already has permission. If you want to change the permission"
@@ -2542,23 +2413,15 @@ def flowcell_sharing(request, pk):
                 },
                 status=status.HTTP_404_NOT_FOUND,
             )
-
         else:
-
             assign_perm(permission, user, flowcell)
-
             return Response({}, status=status.HTTP_201_CREATED)
 
     else:
-
         users = User.objects.all()
-
         permission_list = []
-
         for user in users:
-
             if user != flowcell.owner:
-
                 if user.has_perm("view_data", flowcell):
                     permission_list.append(
                         {
@@ -2569,7 +2432,6 @@ def flowcell_sharing(request, pk):
                             "flowcell": flowcell.id,
                         }
                     )
-
                 if user.has_perm("run_analysis", flowcell):
                     permission_list.append(
                         {
@@ -2580,7 +2442,6 @@ def flowcell_sharing(request, pk):
                             "flowcell": flowcell.id,
                         }
                     )
-
         return Response(permission_list)
 
 
@@ -2589,34 +2450,22 @@ def flowcell_sharing_delete(request, pk):
     """
     delete a user from a flowcell list of sharing
     """
-
     flowcell = Flowcell.objects.get(pk=pk)
-
     data = request.data
-
     try:
         user = User.objects.get(pk=data["user_id"])
-
     except User.DoesNotExist:
-
         return Response(
             {"message": "User does not exist."}, status=status.HTTP_404_NOT_FOUND
         )
-
     permission = data["permission"]
-
     if request.user == user and user.has_perm(permission, flowcell):
-
         remove_perm(permission, user, flowcell)
         return Response({"message": "Permission deleted"}, status=status.HTTP_200_OK)
-
     elif request.user == flowcell.owner:
-
         remove_perm(permission, user, flowcell)
         return Response({"message": "Permission deleted"}, status=status.HTTP_200_OK)
-
     else:
-
         return Response(
             {"message": "You do not have the permission to execute this action."},
             status=status.HTTP_400_BAD_REQUEST,
