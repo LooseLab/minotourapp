@@ -157,8 +157,8 @@ class ReferenceManagementController {
           if (file.size > this._maxFileSize) {
             this._modalError(`${file.name} is too large (${file.size})! Upload refused.`, 3000)
           }
-          formData.append(`file_location`, file, file.name)
-          formData.append(`file_name`, file.name)
+          formData.append(`file_location`, file, file.name.replace(` `, `_`))
+          formData.append(`file_name`, file.name.replace(` `, `_`))
         }
       }
       // Post the files
@@ -199,8 +199,8 @@ class ReferenceManagementController {
       // Use DataTransfer interface to access the file(s)
       for (let i = 0; i < ev.dataTransfer.files.length; i++) {
         const file = ev.dataTransfer.items[i].getAsFile()
-        formData.append(`file_location`, file, file.name)
-        formData.append(`filename`, file.name)
+        formData.append(`file_location`, file, file.name.replace(` `, `_`))
+        formData.append(`filename`, file.name.replace(` `, `_`))
       }
       axios(
         {
