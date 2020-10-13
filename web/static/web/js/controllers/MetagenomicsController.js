@@ -46,19 +46,19 @@ class MetagenomicsController {
 
   _addTooltips () {
     // function actually totally unrelated to the donut, does the tooltips for the help icons
-    d3.selectAll(`.masterTooltip`).on(`mouseover`, function (event, d) {
-      const text = d3.select(this).attr(`tooltip`)
-      const tooltip = d3.select(`body`)
-        .append(`div`)
-        .attr(`class`, `toolTip`)
-      tooltip
-        .style(`left`, `${event.pageX + 25}px`)
-        .style(`top`, `${event.pageY - 25}px`)
-        .style(`display`, `inline-block`)
-        .html(text)
-    }).on(`mouseout`, d => {
-      d3.select(`.toolTip`).remove(`*`)
-    })
+    // d3.selectAll(`.masterTooltip`).on(`mouseover`, function (event, d) {
+    //   const text = d3.select(this).attr(`tooltip`)
+    //   const tooltip = d3.select(`body`)
+    //     .append(`div`)
+    //     .attr(`class`, `toolTip`)
+    //   tooltip
+    //     .style(`left`, `${event.pageX + 25}px`)
+    //     .style(`top`, `${event.pageY - 25}px`)
+    //     .style(`display`, `inline-block`)
+    //     .html(text)
+    // }).on(`mouseout`, d => {
+    //   d3.select(`.toolTip`).remove(`*`)
+    // })
   }
 
   _revealMetagenomicsPage () {
