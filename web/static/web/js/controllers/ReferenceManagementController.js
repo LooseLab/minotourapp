@@ -175,7 +175,6 @@ class ReferenceManagementController {
             if (totalLength !== null) {
               $(`#uploadProgressBar`).css(`width`, `${Math.round((progressEvent.loaded * 100) / totalLength)}%`)
             }
-            this._datatableObj.DataTable().ajax.reload(null, false)
           },
           method: `post`
         }
