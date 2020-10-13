@@ -1917,9 +1917,8 @@ def flowcell_run_summaries_html(request, pk):
     result = []
     for run in flowcell.runs.all():
         # Create an element with information from the run (originally from the fastq files)
-        minion_run_status_list = MinionRunInfo.objects.filter(run=run).first()
-        if minion_run_status_list:
-            minion_run_status = minion_run_status_list[0]
+        minion_run_status = MinionRunInfo.objects.filter(run=run).first()
+        if minion_run_status:
             result.append({"runid": minion_run_status.run.runid,
                            "run_start_time": minion_run_status.minKNOW_start_time,
                            "minknow_computer_name": minion_run_status.minKNOW_computer,
