@@ -6,6 +6,7 @@ Highcharts.setOptions({
     }
   }
 })
+
 /**
  * Get the selected flowcell tab
  */
@@ -544,5 +545,19 @@ function makePieChart (divId, chartTitle) {
       }
     },
     series: []
+  })
+}
+
+/**
+ * Add the tooltips to help icons
+ */
+function addJqueryTooltip () {
+  $(`.masterTooltip`).on(`mouseover`, (event) => {
+    const text = event.target.attributes.tooltip.textContent
+    $(`body`)
+      .append(`<div class="toolTip" style="left:${event.pageX + 25}px;
+ top: ${event.pageY - 25}px; display: inline-block">${text}</div>`)
+  }).on(`mouseout`, event => {
+    $(`.toolTip`).remove()
   })
 }
