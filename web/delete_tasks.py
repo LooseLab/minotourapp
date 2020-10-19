@@ -75,7 +75,7 @@ def delete_alignment_task(flowcell_job_id, restart=False):
     # Get the flowcell
     flowcell = flowcell_job.flowcell
     delete = True
-    delete_chunk_size = 100000
+    delete_chunk_size = 25000
     paf_rough_cov_remaining = True
     while delete:
         if (
