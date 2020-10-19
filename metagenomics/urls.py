@@ -22,4 +22,7 @@ urlpatterns = [
     url(r'^api/v1/metagenomics/alerts$', views.simple_target_mappings),
     # Return the data for a choice of target sets
     url(r'^api/v1/metagenomics/targetsets$', views.get_target_sets),
+    # Return the simple alert table data
+    url(r'^api/v1/metagenomics/(?P<pk>[0-9]+)/simple-alert/(?P<barcode_name>[0-9A-Za-z-_]+)/$', views.super_simple_alert_list),
+
 ]
