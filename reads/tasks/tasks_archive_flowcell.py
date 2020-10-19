@@ -78,5 +78,6 @@ def create_archive_tasks():
     delta = datetime.timedelta(days=int(time_until_inactive))
     for flowcell in Flowcell.objects.filter(archived=False):
         if flowcell.last_activity_date < datetime.datetime.now(datetime.timezone.utc) - delta:
-            JobMaster.objects.create(job_type_id=18, flowcell=flowcell)
-            logger.info(f"Marking flowcell: {flowcell} for archiving.")
+            jm, created = JobMaster.objects.get_or_create(job_type_id=18, flowcell=flowcell)
+            if created:
+                logger.info(f"Marking flowcell: {flowcell} for archiving.")
