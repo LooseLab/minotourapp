@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from django.db.models import Sum, Q
 from django.utils import timezone
+from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -22,6 +23,67 @@ from metagenomics.models import (
 from reads.models import Flowcell, JobMaster
 
 pd.options.mode.chained_assignment = None
+
+
+def check_run_is_legit(flowcell, task):
+    """
+    Check run has enough data, and other metrics are met
+
+    Parameters
+    ----------
+    flowcell: reads.models.Flowcell
+        Flowcell ORM
+    task: reads.models.JobMaster
+        JobMaster ORM object
+
+    Returns
+    -------
+    (bool, list of str)
+        bool if the run is legit or not, if not the reason it isn't. Default is a blank string.
+    """
+    queryset = Metadata.objects.filter(task=task).last()
+    read_threshold = 50000
+    classified_ratio = 20
+    num_reads_check = task.read_count <= read_threshold
+    # data_generated_hour_rate_check =
+    twenty_classified_check =( queryset.classified/task.read_count * 100) <= classified_ratio
+    reason = np.array([f"Number reads is below threshold {read_threshold}", f"Ratio of classified to unclassified is below {classified_ratio}"])
+    success = [num_reads_check, twenty_classified_check]
+    reason = reason[success]
+    return any(success), reason.tolist()
+
+
+@api_view(["GET"])
+def super_simple_alert_list(request, pk, barcode_name):
+    """
+    SUper simple alert table. Checks if run meets conditions for trustworthyness and if the alerts
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        Ajax request body
+
+    Returns
+    -------
+
+    """
+    flowcell = Flowcell.objects.get(pk=pk)
+    task = (
+        JobMaster.objects.filter(flowcell__id=pk, job_type__name="Metagenomics")
+        .order_by("id")
+        .last()
+    )
+    task_id = int(task.id)
+    queryset = MappingResult.objects.filter(
+        task__id=task_id, barcode_name=barcode_name.replace("_", " ")
+    ).values()
+    results_df = pd.DataFrame.from_records(queryset)
+    results_df["detected"] = np.where(results_df["num_mapped"] > 0, True, False)
+    results_df["percent"] = results_df["num_mapped"].div(task.read_count).mul(100).round(2).astype(str)
+    results_df["reason"] = "Species " + results_df["species"] + " identified at " + results_df["percent"] + "% of reads sampled."
+    alert = results_df["detected"].any()
+    run_status_bool, run_reasons = check_run_is_legit(flowcell, task)
+    return Response([{"Alert": alert, "run_status": run_status_bool, "run_status_reasons": run_reasons, "alert_reasons": results_df[results_df["detected"]]["reason"].values.tolist()}], status=status.HTTP_200_OK)
+    # results_df
 
 
 def alert_level(col):
@@ -125,10 +187,7 @@ def centrifuge_metadata(request):
     # this bool tells the javascript whether not to place the metadata in the validation
     #  set panel or the analysis results panel
     print(job_master.target_set)
-    if (
-        job_master.target_set == "-1"
-        or job_master.target_set == None
-    ):
+    if job_master.target_set == "-1" or job_master.target_set == None:
         validation_table_present = False
     else:
         print("Showing validation table")
@@ -454,6 +513,7 @@ def metagenomic_barcodes(request, pk):
     #  3 being target found
     return Response({"data": metagenomics_barcodes, "tabs": alert_level_results})
 
+
 @api_view(["GET"])
 def all_results_table(request, pk):
     """
@@ -568,10 +628,8 @@ def simple_target_mappings(request):
     flowcell_id = request.GET.get("flowcellId", 0)
     # The barcode that is currently selected to be viewed on the page
     barcode = request.GET.get("barcode", "All reads")
-
     if flowcell_id == 0:
         return Response("Flowcell id has failed to be delivered", status=402)
-
     # Get the most recent jobmaster id, although there should only be one
     task = (
         JobMaster.objects.filter(
@@ -580,32 +638,24 @@ def simple_target_mappings(request):
         .order_by("id")
         .last()
     )
-
     number_species_identified = (
         CentrifugeOutput.objects.filter(task=task, barcode_name=barcode)
         .exclude(species__contains="Unclassified")
         .aggregate(Sum("num_matches"))["num_matches__sum"]
     )
-
     confidence_detection_limit = round(
         1 / (1 - pow(0.01, 1 / number_species_identified))
     )
-
     if confidence_detection_limit > 100000:
         sig_fig = 2
     else:
         sig_fig = 1
-
     confidence_detection_limit = rounddown(confidence_detection_limit, sig_fig)
-
     # If the barcode is All reads, there is always four
     queryset = MappingResult.objects.filter(task=task, barcode_name=barcode).values()
-
     if not queryset:
         return Response("Metagenomics task has no validation set", status=204)
-
     results_df = pd.DataFrame(list(queryset))
-
     results_df.drop(
         columns=[
             "id",
@@ -618,23 +668,15 @@ def simple_target_mappings(request):
         ],
         inplace=True,
     )
-
     results_df["Detected"] = np.where(results_df["num_mapped"] > 0, True, False)
-
     results_df["Not detected"] = np.where(results_df["num_mapped"] == 0, True, False)
-
     results_df["read_count"] = task.read_count
-
     results_df["conf_limit"] = confidence_detection_limit
-
     results_df["detected_at"] = np.floor(
         results_df["read_count"] / results_df["num_mapped"]
     )
-
     results_df.replace([np.inf, -np.inf], 0, inplace=True)
-
     results_df["detected_at"].fillna(0, inplace=True)
-
     results_df.rename(
         columns={
             "num_mapped": "Num. mapped",
@@ -644,11 +686,8 @@ def simple_target_mappings(request):
         },
         inplace=True,
     )
-
     results = results_df.to_dict(orient="records")
-
     return_dict = {"table": results, "conf_detect_limit": confidence_detection_limit}
-
     return Response(return_dict)
 
 
@@ -659,7 +698,6 @@ def get_target_sets(request):
     :param request: The django rest framework request object
     :return: A list of the names of the objects
     """
-
     cli = request.GET.get("cli", False)
     if cli:
         api_key = request.GET.get("api_key", False)
@@ -672,7 +710,6 @@ def get_target_sets(request):
                 .values_list("target_set", flat=True)
                 .distinct()
             )
-
     else:
         user_id = request.user.id
         target_sets = (

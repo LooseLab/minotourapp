@@ -12,7 +12,6 @@ class MetagenomicsController {
     })
     setSelectedBarcode(`All reads`, `Metagenomics`)
     this._selectedBarcode = getSelectedBarcode(`Metagenomics`)
-    this._addTooltips()
     this._addExpandButtonListener()
     this.colour = d3.scaleOrdinal(d3.schemeCategory10)
     this._first = true
@@ -28,6 +27,7 @@ class MetagenomicsController {
   }
 
   updateTab () {
+    this._drawSuperSimpleTable(this._flowcellId)
     this._getTotalReadsTable(this._flowcellId)
     this._drawDonutAndTable(this._flowcellId)
     this._metaDataTable(this._flowcellId)
@@ -42,23 +42,6 @@ class MetagenomicsController {
     $(`#expand-button`).click(function () {
       $(this).text((i, old) => old.replace(/(\r\n|\n|\r|\s)/gm, ``) === `Expanddata` ? `Hide data` : `Expand data`)
     })
-  }
-
-  _addTooltips () {
-    // function actually totally unrelated to the donut, does the tooltips for the help icons
-    // d3.selectAll(`.masterTooltip`).on(`mouseover`, function (event, d) {
-    //   const text = d3.select(this).attr(`tooltip`)
-    //   const tooltip = d3.select(`body`)
-    //     .append(`div`)
-    //     .attr(`class`, `toolTip`)
-    //   tooltip
-    //     .style(`left`, `${event.pageX + 25}px`)
-    //     .style(`top`, `${event.pageY - 25}px`)
-    //     .style(`display`, `inline-block`)
-    //     .html(text)
-    // }).on(`mouseout`, d => {
-    //   d3.select(`.toolTip`).remove(`*`)
-    // })
   }
 
   _revealMetagenomicsPage () {
@@ -82,9 +65,6 @@ class MetagenomicsController {
     } else {
       // else the databale must be initialised
       table.DataTable({
-        initComplete: (settings, json) => {
-          that._revealMetagenomicsPage()
-        },
         processing: true,
         serverSide: true,
         ajax: {
@@ -504,6 +484,114 @@ class MetagenomicsController {
       })
   }
 
+  _drawSuperSimpleTable (flowcellId) {
+    console.log(`hello`)
+    // declare variables at scope start
+    let table; let thead; let tbody; let rows; let cells; let data
+    const columns = [`Experiment Result`, `Explanation`]
+    const barcodeName = getSelectedBarcode(`Metagenomics`).replace(` `, `_`)
+    // get the alerts
+    this._axiosInstance.get(`/api/v1/metagenomics/${flowcellId}/simple-alert/${barcodeName}`).then(
+      response => {
+        // If there is no validation mapping results objects in the database for this run
+        if (response.status === 204) {
+          d3.select(`#simple-validation`).remove()
+          d3.select(`#analysis`).classed(`show`, true)
+          return
+        }
+        data = response.data
+        console.log(data)
+        // limit = response.data.conf_detect_limit
+        // sort the data aphabetically on the Validation species column
+        // data.sort(this._compare2)
+        // if the table has been created on the page drawing, select it so we can update the existing table
+        const tableInitialised = d3.select(`.super-simple-alert-table`).classed(`has-tabley?`)
+        table = tableInitialised ? d3.select(`.super-simple-alert-table`).select(`table`) : d3.select(`.super-simple-alert-table`).classed(`has-tabley?`, true).style(`width`, `100%`).append(`table`).attr(`class`, `table simple-map-alert`)
+        thead = tableInitialised ? table.select(`thead`) : table.append(`thead`).append(`tr`)
+        tbody = tableInitialised ? table.select(`tbody`) : table.append(`tbody`).attr(`class`, `simple-alert-tbody`)
+        // select all the th elements
+        thead.selectAll(`th`)
+        // bind the columns array
+          .data(columns).enter()
+        // enter the selection, so enter is a selection of data that isn't already bound to an html element
+          .append(`th`)
+        // give it an id matching the column name
+          .attr(`class`, (d, i) => {
+            // give it a class of it's index base 0 - used for to populate the table below
+            return i
+            // make the status column 10% of the table width
+          }).style(`width`, d => {
+            return `33%`
+            // return the column text
+          }).text(column => column)
+
+        // select all the rows
+        rows = tbody.selectAll(`tr`)
+        // same binding of new elements as above
+        rows
+          .data(data)
+          .enter()
+          .append(`tr`).attr(`id`, (d, i) => {
+            console.log(d)
+            // give each row an id of the species title
+            return i
+          }).style(
+            `height`, `3rem`
+          )
+        // exit is a selection of html elements who's bound data in the array has been removed, so remove the html
+        rows.data(data).exit().remove()
+        // select all the new rows
+        rows = tbody.selectAll(`tr`)
+        // select all the cells in the rows
+        cells = rows.selectAll(`td`)
+        // for each column in each row, pass a dictionary down the chain of column and that columns value in each row
+        cells.data(row => columns.map(column => ({ column: column, value: row[column] })))
+        // enter the new data, anything not bound to a html element append a cell
+          .enter()
+          .append(`td`)
+        // select all the newly created and exisiting html td elements
+        cells = rows.selectAll(`td`)
+        // for each row return a mapped dictionary of all possible values for that rows columns
+        cells.data(row => {
+          console.log(row)
+          return columns.map(column => ({
+            column,
+            alert: row.Alert,
+            runStatus: row.run_status,
+            runStatusReasons: row.run_status_reasons,
+            alertReason: row.alert_reasons
+          }))
+          // set the id of the cell as the column id
+        }).attr(`id`, (d, i) => columns[i].replace(` `, `_`)).style(`width`, d => { return d.column === `Experiment Result` ? `33%` : `66%` })
+          .append(`div`).attr(`class`, (d, i) => { if (d.column === `Experiment Result`) { return `alerty` } })
+          .style(`background-color`, d => {
+          // change status cell colour depending on findings
+            if (d.column === `Experiment Result` && !d.alert && !d.runStatus) {
+              return `rgba(0, 128, 0, 0.7)`
+            } else if (d.column === `Experiment Result` && d.runStatus) {
+            // a nice pastely amber colour
+              return `rgba(255, 191, 0, 0.9)`
+            } else if (d.column === `Experiment Result` && !d.runStatus && d.alert) {
+              return `rgba(255, 0, 0, 0.7)`
+            }
+          }).html(
+            d => {
+              console.log(d)
+              const reasonList = d3.select(`#Explanation`).classed(`listed`) ? d3.select(`#Explanation`) : d3.select(`#Explanation`).append(`ul`).classed(`listed`, true)
+              // Set the reasons in the righthand column
+              if (d.column === `Explanation` && d.runStatus) {
+                reasonList.selectAll(`li`).data(d.runStatusReasons).exit().remove()
+                reasonList.selectAll(`li`).data(d.runStatusReasons).enter().append(`li`).html(d => { return `${d}` })
+              } else if (d.column === `Explanation` && d.alert) {
+                reasonList.selectAll(`li`).data(d.alertReason).exit().remove()
+                reasonList.selectAll(`li`).data(d.alertReason).enter().append(`li`).html(d => { return `${d}` })
+              }
+            }
+          )
+        this._revealMetagenomicsPage()
+      })
+  }
+
   _drawSimpleTable (flowcellId) {
   // declare variables at scope start
     let table; let thead; let tbody; let rows; let cells; let data; let limit
@@ -618,9 +706,9 @@ class MetagenomicsController {
       .attr(`stroke-opacity`, 0.5)
       .selectAll(`path`)
       .data(nodesObj.links)
-  .join("path")
-    .attr("d", d3.sankeyLinkHorizontal())
-    .attr(`stroke`, (d, i) => color(d.path))
+      .join(`path`)
+      .attr(`d`, d3.sankeyLinkHorizontal())
+      .attr(`stroke`, (d, i) => color(d.path))
       .attr(`stroke-width`, d => Math.max(0.5, d.width)).append(`title`)
       .text(d => `${d.source.name} → ${d.target.name}\n${format(d.value)}`)
     // append the title

@@ -739,3 +739,8 @@ transition-timing-function: ease-out;
 .vue-row td{
     padding: 0 .5rem; !important;
 }
+.alerty{
+    width: 8rem;
+    height: 8rem;
+    border-radius: 50%;
+}
