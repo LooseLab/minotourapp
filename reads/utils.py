@@ -783,6 +783,7 @@ def clear_artic_command_job_masters(flowcell_id):
     """
     JobMaster.objects.filter(flowcell_id=flowcell_id, job_type_id=17).delete()
 
+
 def get_fastq_df(desired_yield, flowcell_pk, avg_read_len, task):
     """
     Get a set yield of fastq from the database, and return as a dataframe
