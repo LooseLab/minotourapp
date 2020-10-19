@@ -10,7 +10,7 @@ class BasecalledDataController {
     // TODO BUG could clash if multiple browser tabs open
     setSelectedBarcode(`All reads`, `BasecalledData`)
     this._currentBarcode = getSelectedBarcode(`BasecalledData`)
-    this._currentRuBarcode = `Combined`
+    this._currentRuBarcode = `None`
     this._flowcellId = flowcellId
     this._axiosInstance = axios.create({
       headers: { "X-CSRFToken": getCookie(`csrftoken`) }

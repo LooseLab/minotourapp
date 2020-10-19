@@ -1610,7 +1610,7 @@ def flowcell_statistics(request, pk):
     # TODO comment and REWRITE OOFT
     barcode_name = request.GET.get("barcodeName", "All reads")
     # sequenced or unblocked
-    read_until_barcode_name = request.GET.get("ruBarcodeName", "Combined")
+    read_until_barcode_name = request.GET.get("ruBarcodeName", "None")
     barcodes_list = [barcode_name]
     if barcode_name != "All reads":
         barcodes_list.append("All reads")
@@ -1623,7 +1623,7 @@ def flowcell_statistics(request, pk):
     )
     print(read_until_barcode_name)
     # combined will display all results under a barcode, but if other chosen we need to filter down to it
-    if read_until_barcode_name != "Combined":
+    if read_until_barcode_name != "None":
         print("hellda")
         queryset = queryset.filter(rejection_status=read_until_barcode_name)
     print(queryset)
