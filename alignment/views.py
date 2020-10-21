@@ -242,48 +242,24 @@ def per_genome_coverage_summary(request, flowcell_pk):
     query = PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk).exclude(
         job_master__job_type_id=16
     )
-    if query.count() < 30:
-        queryset = (
-            PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk)
-            .values(data_name=F("chromosome_name"))
-            .exclude(chromosome_name=None)
-            .annotate(Sum("coverage"), Avg("average_read_length"))
+    categories = query.values_list("chromosome_name", flat=True).distinct()
+    queryset = list(
+        query
+        .values("chromosome_name", "barcode_name", "reference_line_length")
+        .annotate(
+            Sum("total_yield"),
+            Avg("average_read_length"),
         )
-    else:
-        queryset = (
-            PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk)
-            .values(data_name=F("reference_name"))
-            .annotate(
-                Sum("total_yield"),
-                Sum("reference_line_length"),
-                Avg("average_read_length"),
-            )
-        )
-        queryset = [
-            {
-                "data_name": q["data_name"],
-                "coverage__sum": q["total_yield__sum"]
-                / q["reference_line_length__sum"],
-            }
-            for q in queryset
-        ]
-    chromosome_coverage = []
-    chromosome_average_read_length = []
-    for chromosome in queryset:
-        chromosome_coverage.append(
-            {
-                "name": chromosome["data_name"],
-                "data": [round(chromosome["coverage__sum"], 2)],
-            }
-        )
-        chromosome_average_read_length.append(
-            {
-                "name": chromosome["data_name"],
-                "data": [round(chromosome["average_read_length__avg"], 2)],
-            }
-        )
+    )
+    a = {f"{q['chromosome_name']}--{q['barcode_name']}": q["total_yield__sum"]/q["reference_line_length"] for q in queryset}
+    cov_series = [{"name": barcode_name, "data": [a.get(f"{cat}--{barcode_name}", 0) for cat in categories]} for
+              barcode_name in query.values_list("barcode_name", flat=True).distinct()]
+    a = {f"{q['chromosome_name']}--{q['barcode_name']}": q["average_read_length__avg"] for q in queryset}
+    read_len_series = [{"name": barcode_name, "data": [a.get(f"{cat}--{barcode_name}", 0) for cat in categories]} for
+                  barcode_name in query.values_list("barcode_name", flat=True).distinct()]
     results = {
-        "coverageData": chromosome_coverage,
-        "avgRLData": chromosome_average_read_length,
+        "coverageData": cov_series,
+        "avgRLData": read_len_series,
+        "categories": categories
     }
     return Response(results, status=status.HTTP_200_OK)

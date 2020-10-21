@@ -63,6 +63,10 @@ class CoverageChart {
       credits: {
         enabled: false
       },
+      boost: {
+        useGPUTranslations: true,
+        usePreAllocated: true
+      },
       plotOptions: {
         series: {
           fillColor: {
