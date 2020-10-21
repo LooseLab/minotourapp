@@ -57,7 +57,6 @@ class MetagenomicsController {
     // Get total reads table updates the total reads table at te bottom of the page
     // Get data from the api
     // Jquery selector
-    const that = this
     const table = $(`.tableLand`)
     // If the table already exists, use the DataTable APi to update in place
     if ($.fn.DataTable.isDataTable(table)) {
@@ -393,8 +392,12 @@ class MetagenomicsController {
 
   _compare2 (a, b) {
     // sorting function to put results in alphabetical order
-    if (a[`Validation species`] < b[`Validation species`]) { return -1 }
-    if (a[`Validation species`] > b[`Validation species`]) { return 1 }
+    if (a[`Validation species`] < b[`Validation species`]) {
+      return -1
+    }
+    if (a[`Validation species`] > b[`Validation species`]) {
+      return 1
+    }
     return 0
   }
 
@@ -487,7 +490,12 @@ class MetagenomicsController {
   _drawSuperSimpleTable (flowcellId) {
     console.log(`hello`)
     // declare variables at scope start
-    let table; let thead; let tbody; let rows; let cells; let data
+    let table
+    let thead
+    let tbody
+    let rows
+    let cells
+    let data
     const columns = [`Experiment Result`, `Explanation`]
     const barcodeName = getSelectedBarcode(`Metagenomics`).replace(` `, `_`)
     // get the alerts
@@ -517,12 +525,12 @@ class MetagenomicsController {
           .append(`th`)
         // give it an id matching the column name
           .attr(`class`, (d, i) => {
-            // give it a class of it's index base 0 - used for to populate the table below
+          // give it a class of it's index base 0 - used for to populate the table below
             return i
-            // make the status column 10% of the table width
+          // make the status column 10% of the table width
           }).style(`width`, d => {
             return `33%`
-            // return the column text
+          // return the column text
           }).text(column => column)
 
         // select all the rows
@@ -536,7 +544,7 @@ class MetagenomicsController {
             // give each row an id of the species title
             return i
           }).style(
-            `height`, `3rem`
+          `height`, `3rem`
           )
         // exit is a selection of html elements who's bound data in the array has been removed, so remove the html
         rows.data(data).exit().remove()
@@ -553,48 +561,56 @@ class MetagenomicsController {
         cells = rows.selectAll(`td`)
         // for each row return a mapped dictionary of all possible values for that rows columns
         cells.data(row => {
-          console.log(row)
-          return columns.map(column => ({
-            column,
-            alert: row.Alert,
-            runStatus: row.run_status,
-            runStatusReasons: row.run_status_reasons,
-            alertReason: row.alert_reasons
-          }))
+          return columns.map(column => {
+            return {
+              column,
+              alert: row.Alert,
+              runStatus: row.run_status,
+              runStatusReasons: row.run_status_reasons,
+              alertReason: row.alert_reasons
+            }
+          })
           // set the id of the cell as the column id
-        }).attr(`id`, (d, i) => columns[i].replace(` `, `_`)).style(`width`, d => { return d.column === `Experiment Result` ? `33%` : `66%` })
-          .append(`div`).attr(`class`, (d, i) => { if (d.column === `Experiment Result`) { return `alerty` } })
-          .style(`background-color`, d => {
-          // change status cell colour depending on findings
-            if (d.column === `Experiment Result` && !d.alert && !d.runStatus) {
-              return `rgba(0, 128, 0, 0.7)`
-            } else if (d.column === `Experiment Result` && d.runStatus) {
-            // a nice pastely amber colour
-              return `rgba(255, 191, 0, 0.9)`
-            } else if (d.column === `Experiment Result` && !d.runStatus && d.alert) {
-              return `rgba(255, 0, 0, 0.7)`
-            }
-          }).html(
-            d => {
-              console.log(d)
-              const reasonList = d3.select(`#Explanation`).classed(`listed`) ? d3.select(`#Explanation`) : d3.select(`#Explanation`).append(`ul`).classed(`listed`, true)
-              // Set the reasons in the righthand column
-              if (d.column === `Explanation` && d.runStatus) {
-                reasonList.selectAll(`li`).data(d.runStatusReasons).exit().remove()
-                reasonList.selectAll(`li`).data(d.runStatusReasons).enter().append(`li`).html(d => { return `${d}` })
-              } else if (d.column === `Explanation` && d.alert) {
-                reasonList.selectAll(`li`).data(d.alertReason).exit().remove()
-                reasonList.selectAll(`li`).data(d.alertReason).enter().append(`li`).html(d => { return `${d}` })
-              }
-            }
-          )
-        this._revealMetagenomicsPage()
+        }).attr(`id`, (d, i) => columns[i].replace(` `, `_`)).style(`width`, d => {
+          return d.column === `Experiment Result` ? `33%` : `66%`
+        })
+        const d = data[0]
+        const a = d3.select(`#Experiment_Result`).classed(`circled`) ? d3.select(`.alerty`) : d3.select(`#Experiment_Result`).attr(`class`, `circled`).append(`div`).classed(`alerty`, true)
+        const reasonList = d3.select(`#Explanation`).classed(`listed`) ? d3.select(`#reason`) : d3.select(`#Explanation`).attr(`class`, `listed`).append(`ul`).attr(`id`, `reason`)
+        if (!d.Alert && !d.run_status) {
+          a.style(`background-color`, `rgba(0, 128, 0, 0.7)`)
+        } else if (d.run_status) {
+          // a nice pastely amber colour
+          a.style(`background-color`, `rgba(255, 191, 0, 0.9)`)
+        } else if (!d.run_status && d.Alert) {
+          a.style(`background-color`, `rgba(255, 0, 0, 0.7)`)
+        }
+        // Set the reasons in the righthand column
+        if (d.run_status) {
+          reasonList.selectAll(`li`).data(d.run_status_reasons).exit().remove()
+          reasonList.selectAll(`li`).data(d.run_status_reasons).enter().append(`li`).html(d => {
+            console.log(d)
+            return `${d}`
+          })
+        } else if (d.Alert) {
+          reasonList.selectAll(`li`).data(d.alert_reasons).exit().remove()
+          reasonList.selectAll(`li`).data(d.alert_reasons).enter().append(`li`).html(d => {
+            return `${d}`
+          })
+        }
       })
+    this._revealMetagenomicsPage()
   }
 
   _drawSimpleTable (flowcellId) {
-  // declare variables at scope start
-    let table; let thead; let tbody; let rows; let cells; let data; let limit
+    // declare variables at scope start
+    let table
+    let thead
+    let tbody
+    let rows
+    let cells
+    let data
+    let limit
     const columns = [`Status`, `Low probability`, `Validation species`, `Detected`]
     const barcode = getSelectedBarcode(`Metagenomics`)
     // get the alerts
@@ -623,14 +639,14 @@ class MetagenomicsController {
           .append(`th`).style(`text-align`, `center`)
         // give it an id matching the column name
           .attr(`id`, column => column.replace(` `, `_`)).attr(`class`, (d, i) => {
-            // give it a class of it's index base 0 - used for to populate the table below
+          // give it a class of it's index base 0 - used for to populate the table below
             return i
-            // make the status column 10% of the table width
+          // make the status column 10% of the table width
           }).style(`width`, d => {
             if (d === `Status`) {
               return `10%`
             }
-            // return the column text
+          // return the column text
           }).text(column => column)
 
         // select all the rows
@@ -640,7 +656,7 @@ class MetagenomicsController {
           .data(data)
           .enter()
           .append(`tr`).attr(`id`, d => {
-            // give each row an id of the species title
+          // give each row an id of the species title
             return d[`Validation species`].replace(/ /g, `_`)
           })
         // exit is a selection of html elements who's bound data in the array has been removed, so remove the html
@@ -696,8 +712,8 @@ class MetagenomicsController {
   }
 
   _drawSankeyDiagram (nodesObj, sankey, g, format, color, width) {
-  // Draw the diagram
-  // use d3-sankey to sankeyify the data, providing path coordinates
+    // Draw the diagram
+    // use d3-sankey to sankeyify the data, providing path coordinates
     const link = g.append(`g`)
     sankey(nodesObj)
     // draw the links
@@ -742,10 +758,11 @@ class MetagenomicsController {
 
   // update or draw the existing svg using the AJAX results from the server
   _updateSankey (flowcellId, sankey, checkForData, svg, g, format, color, width, selectedBarcode) {
-  // TODO species limit one day
+    // TODO species limit one day
     this._axiosInstance.get(`/api/v1/metagenomics/sankey`, { params: { flowcellId, barcode: selectedBarcode } }).then(
       result => {
-        const sankeyData = result.data.sankey; const hasRun = result.data.run
+        const sankeyData = result.data.sankey
+        const hasRun = result.data.run
         console.log(hasRun)
         // if theres no data from the server
         if (sankeyData === undefined && hasRun === true) {
