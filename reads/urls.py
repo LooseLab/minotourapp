@@ -34,7 +34,7 @@ urlpatterns = [
     # ),
     url(
         r'^api/v1/read/$',
-        views.read_list_new,
+        views.read_list,
         name="fastqread-list-new"
     ),
     url(

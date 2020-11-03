@@ -25,6 +25,7 @@ from artic.models import ArticBarcodeMetadata, ArticFireConditions
 from metagenomics.models import CentrifugeOutput
 from metagenomics.sankey import calculate_sankey
 from minotourapp import settings
+from minotourapp.utils import get_env_variable
 from reads.models import (
     Barcode,
     FastqFile,
@@ -2268,7 +2269,7 @@ def flowcell_tabs_list(request, pk):
 
 
 @api_view(["GET", "POST"])
-def read_list_new(request):
+def read_list(request):
     """
     API endpoint for either getting a list of reads to display in the read data table,
     or Posting new reads from the client.
@@ -2280,6 +2281,7 @@ def read_list_new(request):
     search_value = request.GET.get("search_value", "name")
     offset = int(request.GET.get("offset", "0"))
     limit = int(request.GET.get("limit", "10"))
+
     if request.method == "GET":
         if search_criteria == "run":
             qs = FastqRead.objects.filter(run_id=search_value)[offset: offset + limit]
@@ -2294,9 +2296,11 @@ def read_list_new(request):
 
     elif request.method == "POST":
         reads = request.data
+        skip_sequence_saving = int(get_env_variable("MT_SKIP_SAVING_SEQUENCE"))
         if not reads:
             return Response("No reads in post request", status=status.HTTP_200_OK)
-        save_reads_bulk(reads)
+        if not skip_sequence_saving:
+            save_reads_bulk(reads)
         return Response(
             "The task has started. It's in gods hands now...",
             status=status.HTTP_201_CREATED,

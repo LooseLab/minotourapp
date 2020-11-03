@@ -281,7 +281,7 @@ USE_X_FORWARDED_HOST = True
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
-DEBUG = get_env_variable("MT_DJANGO_DEBUG")
+DEBUG = bool(int(get_env_variable("MT_DJANGO_DEBUG")))
 
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',  # default
