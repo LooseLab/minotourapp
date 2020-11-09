@@ -12,6 +12,7 @@ from rest_framework.authtoken.models import Token
 
 from communication.models import Message
 from metagenomics.models import CentrifugeOutput
+from minotourapp.utils import get_env_variable
 from reads.models import (Experiment, FastqRead, Flowcell, JobMaster, JobType,
                           MinionRunStats, Run, UserOptions)
 from reads.tasks.redis_tasks_functions import split_flowcell
@@ -55,36 +56,36 @@ def private_index(request):
 
 @login_required
 def profile(request):
+    """
+    Return profile page
+    Parameters
+    ----------
+    request
 
+    Returns
+    -------
+
+    """
     try:
-
         user_options = UserOptions.objects.get(owner=request.user)
-
     except ObjectDoesNotExist:
-
         user_options = UserOptions.objects.create(owner=request.user)
-
-    auth_token = Token.objects.get(user=request.user)
-
-    messages = Message.objects.filter(recipient=request.user).order_by("-created_date")
-
+    upload_allowed = get_env_variable("MT_ALLOW_UPLOAD")
+    if upload_allowed:
+        auth_token = Token.objects.get(user=request.user)
+    else:
+        auth_token = "WARNING: UPLOAD DISABLED ON SERVER"
     if request.method == "POST":
-
         form = UserOptionsForm(request.POST)
-
         if form.is_valid():
-
             user = User.objects.get(pk=user_options.owner_id)
             user.email = form.cleaned_data["email"]
             user.save()
-
             user_options.twitterhandle = form.cleaned_data["twitter_handle"]
             user_options.tweet = form.cleaned_data["receive_tweets"]
             user_options.email = form.cleaned_data["receive_emails"]
             user_options.save()
-
     else:
-
         form = UserOptionsForm()
 
     return render(
@@ -93,7 +94,6 @@ def profile(request):
         context={
             "authToken": auth_token,
             "userDetails": user_options,
-            "messages": messages,
             "form": form,
         },
     )

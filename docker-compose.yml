@@ -21,7 +21,7 @@ services:
         build:
             dockerfile: docker/celery-worker.dockerfile
             context: .
-        command: "uwsgi --ini minotourapp_uwgsi.ini && /etc/init.d/celeryd start && /etc/init.d/celerybeat start && nginx -g 'daemon off;' "
+        command: bash -c "uwsgi --ini minotourapp_uwsgi.ini && /etc/init.d/celeryd start && nginx -g 'daemon off;'"
         container_name: web
         environment:
             MT_DB_ENGINE: 'django.db.backends.mysql'
@@ -51,13 +51,13 @@ services:
             MT_TIME_UNTIL_ARCHIVE: "14" # Number of days since last flowcell activity until a flowcell is archived and fastq data deleted
             MT_SKIP_SAVING_SEQUENCE: "1"
         ports:
-            - 8100:8100
+            - 8100:4200
         depends_on:
             - db
             - redis
         volumes:
             - .:/var/lib/minotour/apps/minotourapp
-            - ../data:/var/lib/minotour/apps/data
+            - ../data_minotour:/var/lib/minotour/apps/data
         restart: on-failure
 
 #    celery:

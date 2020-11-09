@@ -82,6 +82,8 @@ RUN conda install -y -c conda-forge uwsgi
 
 RUN pip install -U setuptools
 
+RUN pip install -U wheel
+
 RUN pip install -r /var/lib/minotour/apps/minotourapp/requirements.txt && apt-get install -y nginx
 
 COPY . /var/lib/minotour/apps/minotourapp/
@@ -105,8 +107,9 @@ RUN cd extra/centrifuge-1.0.4-beta && make && cd ..
 RUN useradd -ms /bin/bash celery
 
 RUN usermod -a -G www-data root
+RUN usermod -a -G root www-data
 
-RUN wpython manage.py collectstatic
+RUN python manage.py collectstatic
 
 RUN chmod -R 755 extra/* && chmod 755 /etc/init.d/celeryd && chmod 640 /etc/default/celeryd && chmod 755 /etc/init.d/celerybeat
 
