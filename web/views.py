@@ -70,7 +70,7 @@ def profile(request):
         user_options = UserOptions.objects.get(owner=request.user)
     except ObjectDoesNotExist:
         user_options = UserOptions.objects.create(owner=request.user)
-    upload_allowed = get_env_variable("MT_ALLOW_UPLOAD")
+    upload_allowed = int(get_env_variable("MT_ALLOW_UPLOAD"))
     if upload_allowed:
         auth_token = Token.objects.get(user=request.user)
     else:

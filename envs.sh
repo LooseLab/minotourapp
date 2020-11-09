@@ -31,3 +31,4 @@ export MT_CELERY_MINIMAP2_WORKER_COUNT="1" # Number of celery minimap2 threads t
 export MT_TIME_UNTIL_INACTIVE="7" # Number of days since last flowcell activity until a flowcell is listed as inactive
 export MT_TIME_UNTIL_ARCHIVE="14" # Number of days since last flowcell activity until a flowcell is archived and fastq data deleted
 export MT_SKIP_SAVING_SEQUENCE=0
+export MT_ALLOW_UPLOAD=1
