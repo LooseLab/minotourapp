@@ -7,7 +7,6 @@ from functools import lru_cache
 
 import numpy as np
 
-from minotourapp.utils import get_env_variable
 from reads.models import Flowcell, MinionRunInfo
 
 
@@ -52,15 +51,15 @@ def validate_envs():
     TODO finish this
     """
     # Artic checks
-    if " " in get_env_variable("MT_ARTIC_RESULTS_DIR"):
-        raise ValueError("Please remove whitespace from the Artic results directory variable name.")
-    if not file_folder_exists(get_env_variable("MT_ARTIC_RESULTS_DIR")):
-        raise ValueError("The Artic results directory specified in the environment variables file does not exist.")
-
-    # Minimap2 checks
-    if not is_executable(get_env_variable("MT_MINIMAP2")):
-        raise ValueError("The Minimap2 executable is either not there, or not executable. Please double check.")
-
+    # if " " in get_env_variable("MT_ARTIC_RESULTS_DIR"):
+    #     raise ValueError("Please remove whitespace from the Artic results directory variable name.")
+    # if not file_folder_exists(get_env_variable("MT_ARTIC_RESULTS_DIR")):
+    #     raise ValueError("The Artic results directory specified in the environment variables file does not exist.")
+    #
+    # # Minimap2 checks
+    # if not is_executable(get_env_variable("MT_MINIMAP2")):
+    #     raise ValueError("The Minimap2 executable is either not there, or not executable. Please double check.")
+    pass
 
 def update_last_activity_time(flowcell):
     """

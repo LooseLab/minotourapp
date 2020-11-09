@@ -5,11 +5,11 @@ import datetime
 import time
 from pathlib import Path
 
-from celery import task
 from celery.utils.log import get_task_logger
 from django.db import connection
 
 from alignment.models import PafRoughCov, PafSummaryCov
+from minotourapp.celery import app
 from reads.models import JobMaster
 
 # from readuntil.models import ExpectedBenefitChromosomes
@@ -57,7 +57,7 @@ def delete_rows(first_row_object, rows_to_delete, job_master_object, reverse_loo
     )
 
 
-@task()
+@app.task
 def delete_alignment_task(flowcell_job_id, restart=False):
     """
         The function called in monitor app to delete an alignment task,
@@ -123,7 +123,7 @@ def delete_alignment_task(flowcell_job_id, restart=False):
                 delete = False
 
 
-@task()
+@app.task
 def delete_metagenomics_task(flowcell_job_id, restart=False):
     """
     Delete the data from a metagenomics task, and then the database entry
@@ -207,7 +207,7 @@ def delete_metagenomics_task(flowcell_job_id, restart=False):
                 delete = False
 
 
-@task()
+@app.task
 def delete_expected_benefit_task(flowcell_job_id, restart=False):
     """
     Delete an expected benefit task along with the binary files it writes out

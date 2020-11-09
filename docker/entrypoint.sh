@@ -1,5 +1,6 @@
-#!/bin/sh
-python3 manage.py makemigrations;
-python3 manage.py migrate;
-python3 manage.py loaddata fixtures/auxiliary_data.json;
-exec python3 manage.py runserver 0.0.0.0:8000;
+#!/bin/bash
+
+#/etc/init.d/celeryd start
+#/etc/init.d/celerybeat start
+uwsgi --ini minotourapp_uwgsi.ini
+nginx -g 'daemon off;'

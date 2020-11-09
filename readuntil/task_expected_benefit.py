@@ -5,9 +5,9 @@ import pickle
 import subprocess
 from io import StringIO
 
-from celery import task
 from celery.utils.log import get_task_logger
 
+from minotourapp.celery import app
 from reads.models import JobMaster, FastqRead
 from readuntil.functions_EB import *
 from readuntil.models import ExpectedBenefitChromosomes
@@ -92,7 +92,7 @@ def populate_priors_dict(
     return priors_dict, reference_count_dict
 
 
-@task()
+@app.task
 def calculate_expected_benefit_3dot0_final(task_id):
     """
     Calculate the matches, mismatches and expected benefit banter

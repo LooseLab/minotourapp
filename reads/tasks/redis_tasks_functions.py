@@ -10,11 +10,12 @@ import numpy as np
 import pandas as pd
 import pytz
 import redis
-from celery import task
 from celery.utils.log import get_task_logger
 
 from alignment.tasks_alignment import run_minimap2_alignment
 from artic.task_artic_alignment import run_artic_pipeline
+from metagenomics.new_centrifuge import run_centrifuge_pipeline
+from minotourapp.celery import app
 from reads.models import (
     FastqRead,
     Flowcell,
@@ -59,7 +60,6 @@ def split_flowcell(
 
     """
     run = Run.objects.get(pk=run_id)
-
     if existing_or_new_flowcell == "new":
         from_flowcell = Flowcell.objects.get(pk=from_flowcell_id)
         to_flowcell = Flowcell.objects.create(
@@ -82,22 +82,18 @@ def split_flowcell(
     else:
         from_flowcell = Flowcell.objects.get(pk=from_flowcell_id)
         to_flowcell = Flowcell.objects.get(pk=to_flowcell_id)
-
         logger.info(
             "Moving run {} from flowcell {} to flowcell {}".format(
                 run.id, from_flowcell.id, to_flowcell.id
             )
         )
-
         run.flowcell = to_flowcell
         run.save()
-
     move_reads_to_flowcell.delay(run.id, to_flowcell.id, from_flowcell.id)
-
     return run, from_flowcell, to_flowcell
 
 
-@task()
+@app.task
 def move_reads_to_flowcell(run_id, flowcell_id, from_flowcell_id):
     """
     Move reads from a flowcell run to a different flowcell
@@ -145,7 +141,7 @@ def move_reads_to_flowcell(run_id, flowcell_id, from_flowcell_id):
         move_reads_to_flowcell.apply_async(args=(run_id, flowcell_id, from_flowcell_id))
     print(f"finished in {time.time() - start_time}")
 
-@task()
+@app.task
 def reset_flowcell_info(old_flowcell_id):
     """
     Update the old flowcell base-called summaries and flowcell metadata.
@@ -215,7 +211,7 @@ def save_flowcell_summary_barcode(row):
 
 
 # TODO dump to redis, message key and retreive
-@task()
+@app.task
 def update_flowcell(reads_list):
     """
     Update the flowcell metadata, including read counts, yield,max_channel, base-called data summaries
@@ -353,7 +349,7 @@ def check_if_flowcell_has_streamable_tasks(flowcell_pk):
         List of streamable job_masters IDs
     """
 
-    streamable_tasks_pks = [16, 4]
+    streamable_tasks_pks = [16, 4, 10]
     tasks = (
         JobMaster.objects.filter(
             flowcell_id=flowcell_pk, job_type__id__in=streamable_tasks_pks
@@ -389,9 +385,11 @@ def sort_reads_by_flowcell_fire_tasks(reads):
                 run_minimap2_alignment.apply_async(
                     args=(task["id"], flowcell_reads), queue="minimap"
                 )
+            elif task["job_type_id"] == 10 and not task["from_database"]:
+                run_centrifuge_pipeline(task["id"], flowcell_reads)
 
 
-@task()
+@app.task
 def harvest_reads():
     """
     Celery task to pull all reads JSON accrued out of redis cache and run base-called metadata calculations on it,
@@ -426,7 +424,7 @@ def harvest_reads():
         redis_instance.set("harvesting", 0)
 
 
-@task()
+@app.task
 def save_reads_bulk(reads):
     """
     Save reads into redis after they arrive from minFQ, and to the database for tasks

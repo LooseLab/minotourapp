@@ -9,7 +9,6 @@ from io import StringIO
 
 import numpy as np
 import pandas as pd
-from celery import task
 from celery.utils.log import get_task_logger
 from django.db.models import Sum
 from django.utils import timezone
@@ -34,6 +33,7 @@ from metagenomics.utils import (
     delete_series,
     create_donut_data_models,
 )
+from minotourapp.celery import app
 from minotourapp.utils import get_env_variable
 from reads.models import JobMaster
 from reads.utils import get_fastq_df
@@ -42,13 +42,15 @@ pd.options.mode.chained_assignment = None
 logger = get_task_logger(__name__)
 
 
-def run_centrifuge(flowcell_job_id):
+def run_centrifuge(flowcell_job_id, streamed_reads=None):
     """
     Run the metagenomics subprocess command, returning the data from it as a DataFrame.
     Parameters
     ----------
     flowcell_job_id: int
         The primary key of the flowcell ID
+    streamed_reads: list of dict
+        A list of dictionaries containing read information
 
     Returns
     -------
@@ -68,13 +70,24 @@ def run_centrifuge(flowcell_job_id):
             f"Average read length is zero Defaulting to 450, but this is an error."
         )
         avg_read_length = 1000
-    read_count, last_read, fasta_df_barcode = get_fastq_df(
-        flowcell_pk=int(flowcell.id),
-        desired_yield=50,
-        avg_read_len=avg_read_length,
-        task=task,
-    )
-    if not read_count:
+    if not streamed_reads and not isinstance(streamed_reads, list):
+        read_count, last_read, fasta_df_barcode = get_fastq_df(
+            flowcell_pk=int(flowcell.id),
+            desired_yield=50,
+            avg_read_len=avg_read_length,
+            task=task,
+        )
+    else:
+        last_read = task.last_read
+        fasta_df_barcode = pd.DataFrame(streamed_reads)
+        if not fasta_df_barcode.empty:
+            fasta_df_barcode = fasta_df_barcode.rename(
+                columns={"type": "read_type_id", "barcode": "barcode_id"}
+            )
+            fasta_df_barcode["type__name"] = fasta_df_barcode["read_type_id"]
+        read_count = fasta_df_barcode.shape[0]
+    print(fasta_df_barcode)
+    if fasta_df_barcode.empty:
         return pd.DataFrame(), None, None, None, None, 0, 0
     print("Flowcell id: {} - number of reads found {}".format(flowcell.id, read_count))
     # Create a fastq string to pass to Centrifuge
@@ -733,15 +746,16 @@ def update_metadata_and_task(
     print("Flowcell id: {} - Finished!".format(flowcell.id))
 
 
-@task()
-def run_centrifuge_pipeline(flowcell_job_id):
+@app.task
+def run_centrifuge_pipeline(flowcell_job_id, streamed_reads=None):
     """
     Run the metagenomics pipeline. TOdo could be split into a chain if slow
     Parameters
     ----------
     flowcell_job_id: int
         The primary key of the JobMaster record in the database
-
+    streamed_reads: list of dict
+        List of dictionaries pertaining to reads
     Returns
     -------
 
@@ -757,7 +771,7 @@ def run_centrifuge_pipeline(flowcell_job_id):
     ]
     task = JobMaster.objects.get(pk=flowcell_job_id)
     df, total_centrifuge_output, read_count, last_read, targets_df, reads_classified, reads_unclassified = run_centrifuge(
-        flowcell_job_id
+        flowcell_job_id, streamed_reads
     )
     if df.empty:
         logger.info("No Centrifuge output, skipping iteration...")

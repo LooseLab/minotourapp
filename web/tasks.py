@@ -5,7 +5,6 @@ from __future__ import absolute_import, unicode_literals
 import datetime
 
 import redis
-from celery import task
 from celery.utils.log import get_task_logger
 
 from alignment.tasks_alignment import run_minimap2_alignment
@@ -15,6 +14,7 @@ from artic.task_artic_alignment import (
 )
 from metagenomics.new_centrifuge import run_centrifuge_pipeline
 from metagenomics.sankey import calculate_sankey
+from minotourapp.celery import app
 from minotourapp.utils import get_env_variable
 from reads.models import (
     Run,
@@ -34,7 +34,7 @@ redis_instance = redis.StrictRedis(
 logger = get_task_logger(__name__)
 
 
-@task()
+@app.task
 def run_monitor():
     """
     Run monitor is the task that is run every 30 seconds by Django celery beat -
@@ -120,7 +120,7 @@ def run_monitor():
                     logger.error("¯\_(ツ)_/¯")
 
 
-@task()
+@app.task
 def run_sankey(flowcell_job_id):
     """
     Calculate sankeys for a flowcell on demand of the user
@@ -138,7 +138,7 @@ def run_sankey(flowcell_job_id):
 
 
 
-@task()
+@app.task
 def delete_runs():
     """
     Delete runs that have been marked for deletion. Called by Celery beat.
@@ -149,7 +149,7 @@ def delete_runs():
     Run.objects.filter(to_delete=True).delete()
 
 
-@task()
+@app.task
 def update_run_start_time():
     """
     This method update the field start_time of run based on the live data or

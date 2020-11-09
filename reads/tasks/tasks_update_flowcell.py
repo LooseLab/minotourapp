@@ -5,10 +5,10 @@ Celery task to update flowcell metadata
 import numpy as np
 import redis
 from celery import chain
-from celery.task import task
 from celery.utils.log import get_task_logger
 from dateutil import parser
 
+from minotourapp.celery import app
 from reads.models import (
     FlowcellHistogramSummary,
     FlowcellStatisticBarcode,
@@ -29,7 +29,7 @@ redis_instance = redis.StrictRedis(
 logger = get_task_logger(__name__)
 
 
-@task()
+@app.task
 def calculate_flowcell_summary_barcode(flowcell_id):
     """
     Flowcell summary barcode, get all keys related to the flowcell summary barcode values of this flowcell
@@ -93,7 +93,7 @@ def calculate_flowcell_summary_barcode(flowcell_id):
     return None
 
 
-@task()
+@app.task
 def calculate_flowcell_histogram_summary(flowcell_id):
     """
     Flowcell histogram summary. Get all keys related to the flowcell histogram values of this flowcell
@@ -138,7 +138,7 @@ def calculate_flowcell_histogram_summary(flowcell_id):
     return flowcell_id
 
 
-@task()
+@app.task
 def calculate_flowcell_statistic_barcodes(flowcell_id):
     """
     Flowcell statistic Barcode. Get all keys related to the flowcell summary barcode values of this flowcell
@@ -204,7 +204,7 @@ def calculate_flowcell_statistic_barcodes(flowcell_id):
     return flowcell_id
 
 
-@task()
+@app.task
 def update_flowcell_details(job_master_id):
     """
     Update flowcell details by pulling Using the MinionRunInfo if it exists. If base-called data present,

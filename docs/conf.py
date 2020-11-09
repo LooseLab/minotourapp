@@ -13,9 +13,6 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys
-import os
-
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
@@ -50,8 +47,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'Minotour'
-copyright = '2019, Matt Loose Roberto Santos Rory Munro'
-author = 'Matt Loose Roberto Santos Rory Munro'
+copyright = '2019, Matt Loose Rory Munro'
+author = 'Matt Loose Rory Munro'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -236,7 +233,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'Minotour.tex', 'Minotour Documentation',
-     'Matt Loose, Roberto Santos, Rory Munro', 'manual'),
+     'Matt Loose, Rory Munro', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

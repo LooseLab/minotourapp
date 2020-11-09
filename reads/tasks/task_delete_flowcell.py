@@ -4,11 +4,11 @@ import time
 from pathlib import Path
 from shutil import rmtree
 
-from celery.task import task
 from celery.utils.log import get_task_logger
 from django.db import connection
 
 from alignment.models import PafRoughCov
+from minotourapp.celery import app
 from minotourapp.settings import BASE_DIR
 from minotourapp.utils import get_env_variable
 from reads.models import JobMaster, FastqRead
@@ -62,7 +62,7 @@ def clear_artic_data(job_master):
         return 0
 
 
-@task()
+@app.task
 def delete_flowcell(flowcell_job_id):
     """
     Delete all reads from a flowcell, then delete the flowcell itself.

@@ -1,15 +1,15 @@
 from __future__ import absolute_import, unicode_literals
 
-from celery import task
 from celery.utils.log import get_task_logger
 from django.db.models import Count, Max, Min, Sum
 
+from minotourapp.celery import app
 from reads.models import FastqRead, Flowcell, RunSummary
 
 logger = get_task_logger(__name__)
 
 # TODO earmark for rewrite, it is slow
-@task()
+@app.task
 def update_run_summary():
     """
     Update the run summary to be displayed on the flowcell summary tab. Query the mysql client to

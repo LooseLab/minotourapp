@@ -9,12 +9,12 @@ from copy import deepcopy
 from io import StringIO
 from shutil import copy, rmtree
 
-from celery import task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
+from minotourapp.celery import app
 from minotourapp.settings import BASE_DIR
 from minotourapp.utils import get_env_variable
 from reads.models import (
@@ -86,7 +86,7 @@ def clear_unused_artic_files(artic_results_path, sample_name):
             )
 
 
-@task()
+@app.task
 def run_pangolin_command(base_results_directory, barcode_name):
     """
 
@@ -156,7 +156,7 @@ def clear_old_data(artic_results_path, barcode_name):
                 filey.unlink()
 
 
-@task()
+@app.task
 def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     """
     Run the artic pipeline in this first pass method of dirty bash script
@@ -510,7 +510,7 @@ def save_artic_barcode_metadata_info(
     )
 
 
-@task()
+@app.task
 def run_artic_pipeline(task_id, streamed_reads=None):
     """
     Run the artic pipeline on a flowcells amount of reads

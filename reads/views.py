@@ -2310,7 +2310,7 @@ def read_list(request):
 @api_view(["GET"])
 def readextra_list(request):
     """
-    TODO what the hell is using this?
+    reads tab
     Parameters
     ----------
     request

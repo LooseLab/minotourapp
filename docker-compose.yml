@@ -19,30 +19,37 @@ services:
 
     web:
         build:
-            dockerfile: docker/web.dockerfile
+            dockerfile: docker/celery-worker.dockerfile
             context: .
-        command: bash -c "python3 manage.py makemigrations && python3 manage.py migrate && python3 manage.py loaddata fixtures/auxiliary_data.json && python3 manage.py runserver 0.0.0.0:8100"
+        command: "uwsgi --ini minotourapp_uwgsi.ini && /etc/init.d/celeryd start && /etc/init.d/celerybeat start && nginx -g 'daemon off;' "
         container_name: web
         environment:
             MT_DB_ENGINE: 'django.db.backends.mysql'
             MT_DB_NAME: minotour
             MT_DB_USER: dba
-            MT_DB_PASS: dba
+            MT_DB_PASS: test
             MT_DB_PORT: 3306
             MT_DB_HOST: db
-            MT_SECRET_KEY: ''
-            MT_DJANGO_DEBUG: 'True'
+            MT_SECRET_KEY: 'hello_secret_key!!'
+            MT_DJANGO_DEBUG: '0'
             MT_MAILGUN_ACCESS_KEY: ''
             MT_MAILGUN_SERVER_NAME: ''
             MT_TWITTOKEN: ''
             MT_TWITTOKEN_SECRET: ''
             MT_TWITCONSUMER_KEY: ''
             MT_TWITCONSUMER_SECRET: ''
-            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/localdata'
-#            MT_REFERENCE_LOCATION: '/var/lib/minotour/data'
-            MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2/minimap2'
+            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/data'
+            MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2-2.17_x64-linux/minimap2'
             MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
             MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
+            MT_ARTIC_RESULTS_DIR: '/var/lib/minotour/apps/data' # Store the Artic results in this directory
+            MT_ARTIC_SCEHEME_DIR: '<Path/To/Artic/Code/Scheme_Directories>' # Read the Artic scheme directories, found where the Artic NCOV piprline github repo was clones.
+            MT_ARTIC_MAX_PIPELINES: "1" # Maximum number of Artic tasks to be run at any one time
+            MT_CELERY_WORKER_COUNT: "2" # Number of Celery workers to start, no more than number of CPU cores
+            MT_CELERY_MINIMAP2_WORKER_COUNT: "1" # Number of celery minimap2 threads to start, no more than num CPU cores
+            MT_TIME_UNTIL_INACTIVE: "7" # Number of days since last flowcell activity until a flowcell is listed as inactive
+            MT_TIME_UNTIL_ARCHIVE: "14" # Number of days since last flowcell activity until a flowcell is archived and fastq data deleted
+            MT_SKIP_SAVING_SEQUENCE: "1"
         ports:
             - 8100:8100
         depends_on:
@@ -50,73 +57,130 @@ services:
             - redis
         volumes:
             - .:/var/lib/minotour/apps/minotourapp
-            - ../localdata:/var/lib/minotour/apps/localdata
+            - ../data:/var/lib/minotour/apps/data
         restart: on-failure
 
-    celery:
-        build:
-            dockerfile: docker/celery.dockerfile
-            context: .
-        command: bash -c "celery -A minotourapp beat --pidfile=/opt/celeryd.pid -l info"
-        container_name: celery
-        environment:
-            MT_DB_ENGINE: 'django.db.backends.mysql'
-            MT_DB_NAME: minotour
-            MT_DB_USER: dba
-            MT_DB_PASS: dba
-            MT_DB_PORT: 3306
-            MT_DB_HOST: db
-            MT_SECRET_KEY: ''
-            MT_DJANGO_DEBUG: 'True'
-            MT_MAILGUN_ACCESS_KEY: ''
-            MT_MAILGUN_SERVER_NAME: ''
-            MT_TWITTOKEN: ''
-            MT_TWITTOKEN_SECRET: ''
-            MT_TWITCONSUMER_KEY: ''
-            MT_TWITCONSUMER_SECRET: ''
-            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/localdata'
-            MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2/minimap2'
-            MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
-            MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
-        depends_on:
-            - db
-            - redis
-            - web
-        restart: on-failure
-
-    celery_worker:
-        build:
-            dockerfile: docker/celery-worker.dockerfile
-            context: .
-        command: "celery -A minotourapp worker --pidfile=/opt/celeryd.pid -l info"
-        container_name: celery_worker
-        environment:
-            MT_DB_ENGINE: 'django.db.backends.mysql'
-            MT_DB_NAME: minotour
-            MT_DB_USER: dba
-            MT_DB_PASS: dba
-            MT_DB_PORT: 3306
-            MT_DB_HOST: db
-            MT_SECRET_KEY: ''
-            MT_DJANGO_DEBUG: 'True'
-            MT_MAILGUN_ACCESS_KEY: ''
-            MT_MAILGUN_SERVER_NAME: ''
-            MT_TWITTOKEN: ''
-            MT_TWITTOKEN_SECRET: ''
-            MT_TWITCONSUMER_KEY: ''
-            MT_TWITCONSUMER_SECRET: ''
-            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/localdata'
-            MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2/minimap2'
-            MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
-            MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
-            MT_CENTRIFUGE: "/var/lib/minotour/apps/minotourapp/extra/metagenomics-1.0.4-beta/metagenomics"
-            MT_CENTRIFUGE_INDEX: "/var/lib/minotour/apps/localdata/centrifuge_files/p_compressed"
-        depends_on:
-            - db
-            - redis
-            - web
-            - celery
-        restart: on-failure
-        volumes:
-            - ../localdata:/var/lib/minotour/apps/localdata
-            #- .:/var/lib/minotour/apps/minotourapp
+#    celery:
+#        build:
+#            dockerfile: docker/celery.dockerfile
+#            context: .
+#        command: bash -c "celery -A minotourapp beat --pidfile=/opt/celeryd.pid -l INFO"
+#        container_name: celery
+#        environment:
+#            MT_DB_ENGINE: 'django.db.backends.mysql'
+#            MT_DB_NAME: minotour
+#            MT_DB_USER: dba
+#            MT_DB_PASS: dba
+#            MT_DB_PORT: 3306
+#            MT_DB_HOST: db
+#            MT_DJANGO_DEBUG: '0'
+#            MT_MAILGUN_ACCESS_KEY: ''
+#            MT_MAILGUN_SERVER_NAME: ''
+#            MT_TWITTOKEN: ''
+#            MT_TWITTOKEN_SECRET: ''
+#            MT_TWITCONSUMER_KEY: ''
+#            MT_TWITCONSUMER_SECRET: ''
+#            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/data'
+#            MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2-2.17_x64-linux/minimap2'
+#            MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
+#            MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
+#            MT_SECRET_KEY: 'hello_secret_key!!'
+#
+#        depends_on:
+#            - db
+#            - redis
+#            - web
+#        restart: on-failure
+#        volumes:
+#            - ../data:/var/lib/minotour/apps/data
+#
+#
+#    celery_minimap:
+#        build:
+#            dockerfile: docker/celery_minimap.dockerfile
+#            context: .
+#        command: bash -c "celery -A minotourapp worker -l info -f /var/lib/minotour/logs/celery.log -n minimap2 --concurrency 1 -Ofair -Q minimap --pool threads --pidfile=/opt/celeryd.pid"
+#        container_name: celery_minimap
+#        environment:
+#            MT_DB_ENGINE: 'django.db.backends.mysql'
+#            MT_DB_NAME: minotour
+#            MT_DB_USER: dba
+#            MT_DB_PASS: dba
+#            MT_DB_PORT: 3306
+#            MT_DB_HOST: db
+#            MT_SECRET_KEY: 'hello_secret_key!!'
+#            MT_DJANGO_DEBUG: '0'
+#            MT_MAILGUN_ACCESS_KEY: ''
+#            MT_MAILGUN_SERVER_NAME: ''
+#            MT_TWITTOKEN: ''
+#            MT_TWITTOKEN_SECRET: ''
+#            MT_TWITCONSUMER_KEY: ''
+#            MT_TWITCONSUMER_SECRET: ''
+#            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/data'
+#            MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2-2.17_x64-linux/minimap2'
+#            MT_LOG_FOLDER: '/var/lib/minotour/logs' # Write Celery log file in this directory
+#            MT_WORKER_COUNT: 3
+#            MT_CELERY_MINIMAP2_WORKER_COUNT: "1" # Number of celery minimap2 threads to start, no more than num CPU cores
+#            MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
+#            MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
+#            MT_ARTIC_RESULTS_DIR: '/var/lib/minotour/apps/data' # Store the Artic results in this directory
+#            MT_ARTIC_SCEHEME_DIR: '<Path/To/Artic/Code/Scheme_Directories>' # Read the Artic scheme directories, found where the Artic NCOV piprline github repo was clones.
+#            MT_ARTIC_MAX_PIPELINES: "1" # Maximum number of Artic tasks to be run at any one time
+#            MT_CELERY_WORKER_COUNT: "2" # Number of Celery workers to start, no more than number of CPU cores
+#            MT_TIME_UNTIL_INACTIVE: "7" # Number of days since last flowcell activity until a flowcell is listed as inactive
+#            MT_TIME_UNTIL_ARCHIVE: "14" # Number of days since last flowcell activity until a flowcell is archived and fastq data deleted
+#            MT_SKIP_SAVING_SEQUENCE: "1"
+#        depends_on:
+#            - db
+#            - redis
+#            - web
+#            - celery
+#        restart: on-failure
+#        volumes:
+#            - ../data:/var/lib/minotour/apps/data
+#
+#    celery_worker:
+#        build:
+#            dockerfile: docker/celery-worker.dockerfile
+#            context: .
+#        command: bash -c "celery -A minotourapp worker -l info -f /var/lib/minotour/logs/celery.log --concurrency 3 -Ofair --pidfile=/opt/celeryd.pid"
+#        container_name: celery_worker
+#        environment:
+#            MT_DB_ENGINE: 'django.db.backends.mysql'
+#            MT_DB_NAME: minotour
+#            MT_DB_USER: dba
+#            MT_DB_PASS: dba
+#            MT_DB_PORT: 3306
+#            MT_DB_HOST: db
+#            MT_SECRET_KEY: 'hello_secret_key!!'
+#            MT_DJANGO_DEBUG: '0'
+#            MT_MAILGUN_ACCESS_KEY: ''
+#            MT_MAILGUN_SERVER_NAME: ''
+#            MT_TWITTOKEN: ''
+#            MT_TWITTOKEN_SECRET: ''
+#            MT_TWITCONSUMER_KEY: ''
+#            MT_TWITCONSUMER_SECRET: ''
+#            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/data'
+#            MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2-2.17_x64-linux/minimap2'
+#            MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
+#            MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
+#            MT_CENTRIFUGE: "/var/lib/minotour/apps/minotourapp/extra/centrifuge-1.0.4-beta/centrifuge"
+#            MT_CENTRIFUGE_INDEX: "/var/lib/minotour/apps/data/centrifuge_files/p_compressed"
+#            MT_ARTIC_RESULTS_DIR: '/var/lib/minotour/apps/data' # Store the Artic results in this directory
+#            MT_ARTIC_SCEHEME_DIR: '<Path/To/Artic/Code/Scheme_Directories>' # Read the Artic scheme directories, found where the Artic NCOV piprline github repo was clones.
+#            MT_ARTIC_MAX_PIPELINES: "1" # Maximum number of Artic tasks to be run at any one time
+#            MT_CELERY_WORKER_COUNT: "2" # Number of Celery workers to start, no more than number of CPU cores
+#            MT_TIME_UNTIL_INACTIVE: "7" # Number of days since last flowcell activity until a flowcell is listed as inactive
+#            MT_TIME_UNTIL_ARCHIVE: "14" # Number of days since last flowcell activity until a flowcell is archived and fastq data deleted
+#            MT_SKIP_SAVING_SEQUENCE: "1"
+#            MT_LOG_FOLDER: '/var/lib/minotour/logs' # Write Celery log file in this directory
+#            MT_WORKER_COUNT: 3
+#            MT_CELERY_MINIMAP2_WORKER_COUNT: "1" # Number of celery minimap2 threads to start, no more than num CPU cores
+#        depends_on:
+#            - db
+#            - redis
+#            - web
+#            - celery
+#        restart: on-failure
+#        volumes:
+#            - ../data:/var/lib/minotour/apps/data
