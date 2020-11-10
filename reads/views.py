@@ -25,7 +25,6 @@ from artic.models import ArticBarcodeMetadata, ArticFireConditions
 from metagenomics.models import CentrifugeOutput
 from metagenomics.sankey import calculate_sankey
 from minotourapp import settings
-from minotourapp.utils import get_env_variable
 from reads.models import (
     Barcode,
     FastqFile,
@@ -2296,11 +2295,9 @@ def read_list(request):
 
     elif request.method == "POST":
         reads = request.data
-        skip_sequence_saving = int(get_env_variable("MT_SKIP_SAVING_SEQUENCE"))
         if not reads:
             return Response("No reads in post request", status=status.HTTP_200_OK)
-        if not skip_sequence_saving:
-            save_reads_bulk(reads)
+        save_reads_bulk(reads)
         return Response(
             "The task has started. It's in gods hands now...",
             status=status.HTTP_201_CREATED,

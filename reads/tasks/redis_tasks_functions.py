@@ -16,6 +16,7 @@ from alignment.tasks_alignment import run_minimap2_alignment
 from artic.task_artic_alignment import run_artic_pipeline
 from metagenomics.new_centrifuge import run_centrifuge_pipeline
 from minotourapp.celery import app
+from minotourapp.utils import get_env_variable
 from reads.models import (
     FastqRead,
     Flowcell,
@@ -490,7 +491,9 @@ def save_reads_bulk(reads):
     redis_instance.sadd("reads", reads_as_json)
     # Bulk create the entries
     start_time = time.time()
-    FastqRead.objects.bulk_create(reads_list, batch_size=1000)
+    skip_sequence_saving = int(get_env_variable("MT_SKIP_SAVING_SEQUENCE"))
+    if not skip_sequence_saving:
+        FastqRead.objects.bulk_create(reads_list, batch_size=1000)
     print("Bulk create time is:")
     print(time.time() - start_time)
     print("Task time taken is:")
