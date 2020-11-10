@@ -30,6 +30,7 @@ from reads.models import (
     FastqReadType,
     Barcode,
     HistogramSummary,
+    RunSummary,
 )
 
 logger = get_task_logger(__name__)
@@ -141,6 +142,7 @@ def move_reads_to_flowcell(run_id, flowcell_id, from_flowcell_id):
     if FastqRead.objects.filter(flowcell=old_flowcell, run=run).count():
         move_reads_to_flowcell.apply_async(args=(run_id, flowcell_id, from_flowcell_id))
     print(f"finished in {time.time() - start_time}")
+
 
 @app.task
 def reset_flowcell_info(old_flowcell_id):
@@ -259,6 +261,7 @@ def update_flowcell(reads_list):
     read_df["start_time_truncate"] = read_df["start_time_round"].apply(
         lambda dt: datetime(dt.year, dt.month, dt.day, dt.hour, 10 * (dt.minute // 10))
     )
+    update_run_summaries(read_df)
 
     read_df_all_reads = read_df.copy()
     read_df_all_reads["barcode_name"] = "All reads"
@@ -423,6 +426,79 @@ def harvest_reads():
             update_flowcell.delay(reads)
             sort_reads_by_flowcell_fire_tasks(reads)
         redis_instance.set("harvesting", 0)
+
+
+def update_run_summaries(fastq_df):
+    """
+    Update the run summaries for the run responsible for this batch of reads
+    Parameters
+    ----------
+    fastq_df: pandas.core.frame.DataFrame
+        Dataframe with fastq reads and all their header information
+    Returns
+    -------
+    None
+
+    """
+    run_summaries = (
+        fastq_df.groupby("run_id")
+        .agg(
+            {
+                "run_id": "count",
+                "sequence_length": [np.sum, np.max, np.min, np.mean],
+                "start_time": [np.min, np.max],
+            }
+        )
+        .reset_index()
+    )
+    lookup = {
+        ("run_id", ""): "run_id",
+        ("run_id", "count"): "read_count",
+        ("sequence_length", "sum"): "total_read_length",
+        ("sequence_length", "amax"): "max_read_length",
+        ("sequence_length", "amin"): "min_read_length",
+        ("sequence_length", "mean"): "avg_read_length",
+        ("start_time", "amin"): "first_read_start_time",
+        ("start_time", "amax"): "last_read_start_time",
+    }
+    run_summaries.columns = run_summaries.columns.to_flat_index()
+    run_summaries = run_summaries.rename(columns=lookup)
+    run_summaries = run_summaries.to_dict(orient="records")
+    print(run_summaries)
+    for run_summary in run_summaries:
+        run_summary_orm, created = RunSummary.objects.get_or_create(
+            run_id=run_summary["run_id"], defaults=run_summary
+        )
+        print(run_summary_orm.__dict__)
+        if not created:
+            if (
+                datetime.strptime(
+                    run_summary["first_read_start_time"], "%Y-%m-%dT%H:%M:%S%z"
+                )
+                < run_summary_orm.first_read_start_time
+            ):
+                run_summary_orm.first_read_start_time = run_summary[
+                    "first_read_start_time"
+                ]
+            if (
+                datetime.strptime(
+                    run_summary["last_read_start_time"], "%Y-%m-%dT%H:%M:%S%z"
+                )
+                > run_summary_orm.last_read_start_time
+            ):
+                run_summary_orm.last_read_start_time = run_summary[
+                    "last_read_start_time"
+                ]
+            if int(run_summary["max_read_length"]) > run_summary_orm.max_read_length:
+                run_summary_orm.max_read_length = run_summary["max_read_length"]
+            if int(run_summary["min_read_length"]) < run_summary_orm.min_read_length:
+                run_summary_orm.min_read_length = run_summary["min_read_length"]
+            run_summary_orm.total_read_length += int(run_summary["total_read_length"])
+            run_summary_orm.read_count += int(run_summary["read_count"])
+            run_summary_orm.avg_read_length = (
+                run_summary_orm.total_read_length / run_summary_orm.read_count
+            )
+            run_summary_orm.save()
 
 
 @app.task
