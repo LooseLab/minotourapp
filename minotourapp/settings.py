@@ -189,7 +189,7 @@ priority_exchange = Exchange('priority_queue', type='direct')
 CELERY_QUEUES = (
     Queue('minimap', default_exchange, routing_key='alignment#', consumer_arguments={'x-priority': 5}),
 )
-CELERY_IMPORTS = ('web.tasks', 'reads.tasks.tasks_update_run_summary', 'communication.tasks_send_message',
+CELERY_IMPORTS = ('web.tasks', 'communication.tasks_send_message',
                   'alignment.tasks_alignment', 'reads.tasks.tasks_archive_flowcell')
 CELERY_ROUTES = ({
     'run_minimap2_alignment': {
@@ -225,10 +225,6 @@ CELERY_BEAT_SCHEDULE = {
     'update_run_list_details': {
         'task': 'web.tasks.update_run_start_time',
         'schedule': 600,
-    },
-    'run_summary': {
-        'task': 'reads.tasks.tasks_update_run_summary.update_run_summary',
-        'schedule': 30,
     },
     'send_messages': {
         'task': 'communication.tasks_send_message.send_messages',
