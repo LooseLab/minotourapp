@@ -86,7 +86,6 @@ def run_centrifuge(flowcell_job_id, streamed_reads=None):
             )
             fasta_df_barcode["type__name"] = fasta_df_barcode["read_type_id"]
         read_count = fasta_df_barcode.shape[0]
-    print(fasta_df_barcode)
     if fasta_df_barcode.empty:
         return pd.DataFrame(), None, None, None, None, 0, 0
     print("Flowcell id: {} - number of reads found {}".format(flowcell.id, read_count))
