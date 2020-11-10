@@ -65,7 +65,7 @@ def run_monitor():
                 flowcell_job.save()
             if flowcell_job.job_type.name == "Minimap2" and flowcell_job.from_database:
                 run_minimap2_alignment.apply_async(args=(flowcell_job.id,), queue="minimap")
-            if flowcell_job.job_type.name == "Metagenomics":
+            if flowcell_job.job_type.name == "Metagenomics" and flowcell_job.from_database:
                 run_centrifuge_pipeline.delay(flowcell_job.id)
             if flowcell_job.job_type.name == "UpdateFlowcellDetails":
                 update_flowcell_details.delay(flowcell_job.id)
