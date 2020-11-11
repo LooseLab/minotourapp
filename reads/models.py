@@ -1575,7 +1575,7 @@ class MinionScripts(models.Model):
         null=True
     )
 
-    base_calling = models.NullBooleanField(
+    base_calling = models.BooleanField(
 
         blank=True,
         null=True

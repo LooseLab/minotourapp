@@ -390,7 +390,7 @@ def sort_reads_by_flowcell_fire_tasks(reads):
                     args=(task["id"], flowcell_reads), queue="minimap"
                 )
             elif task["job_type_id"] == 10 and not task["from_database"]:
-                run_centrifuge_pipeline(task["id"], flowcell_reads)
+                run_centrifuge_pipeline.delay(task["id"], flowcell_reads)
 
 
 @app.task
