@@ -4,7 +4,6 @@ from __future__ import absolute_import, unicode_literals
 
 import datetime
 
-import redis
 from celery.utils.log import get_task_logger
 
 from alignment.tasks_alignment import run_minimap2_alignment
@@ -26,10 +25,6 @@ from reads.tasks.task_delete_flowcell import delete_flowcell
 from reads.tasks.tasks_archive_flowcell import archive_flowcell
 from reads.tasks.tasks_update_flowcell import update_flowcell_details
 from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
-
-redis_instance = redis.StrictRedis(
-    host="127.0.0.1", port=6379, db=0, decode_responses=True
-)
 
 logger = get_task_logger(__name__)
 

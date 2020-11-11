@@ -3,12 +3,12 @@ Celery task to update flowcell metadata
 """
 
 import numpy as np
-import redis
 from celery import chain
 from celery.utils.log import get_task_logger
 from dateutil import parser
 
 from minotourapp.celery import app
+from minotourapp.redis import redis_instance
 from reads.models import (
     FlowcellHistogramSummary,
     FlowcellStatisticBarcode,
@@ -23,9 +23,6 @@ from reads.tasks.redis_tasks_functions import (
     get_values_and_delete_redis_key,
 )
 
-redis_instance = redis.StrictRedis(
-    host="127.0.0.1", port=6379, db=0, decode_responses=True
-)
 logger = get_task_logger(__name__)
 
 

@@ -4,7 +4,6 @@ from collections import namedtuple
 
 import numpy as np
 import pandas as pd
-import redis
 from celery.utils.log import get_task_logger
 from django.db import connection
 from django.db.models import F, Max
@@ -13,14 +12,12 @@ from numba import njit
 from alignment.mapper import MAP
 from alignment.models import PafRoughCov, PafSummaryCov, PafRoughCovIntermediate
 from minotourapp.celery import app
+from minotourapp.redis import redis_instance
 from reads.models import FastqRead, JobMaster, Barcode
 from reference.models import ReferenceInfo
 
 # Set up the logger to write to logging file
 logger = get_task_logger(__name__)
-redis_instance = redis.StrictRedis(
-    host="127.0.0.1", port=6379, db=0, decode_responses=True
-)
 
 
 @app.task

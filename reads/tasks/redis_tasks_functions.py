@@ -16,6 +16,7 @@ from alignment.tasks_alignment import run_minimap2_alignment
 from artic.task_artic_alignment import run_artic_pipeline
 from metagenomics.new_centrifuge import run_centrifuge_pipeline
 from minotourapp.celery import app
+from minotourapp.redis import redis_instance
 from minotourapp.utils import get_env_variable
 from reads.models import (
     FastqRead,
@@ -34,9 +35,6 @@ from reads.models import (
 )
 
 logger = get_task_logger(__name__)
-redis_instance = redis.StrictRedis(
-    host="127.0.0.1", port=6379, db=0, decode_responses=True
-)
 
 
 def split_flowcell(
