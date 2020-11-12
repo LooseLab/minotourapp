@@ -80,7 +80,7 @@ def clear_unused_artic_files(artic_results_path, sample_name):
                 f"{static_path}/{artic_results_pathlib.parent.stem}"
             ).exists():
                 Path(
-                    f"{static_path}/{artic_results_pathlib.parent.stem}"
+                    f"{static_path}/{artic_results_pathlib.parent.stem}", parents=True
                 ).mkdir()
             copy(
                 str(filey),
