@@ -1088,6 +1088,11 @@ def list_minion_run_status(request, pk):
         )
         if serializer.is_valid():
             serializer.save()
+            # update the run start time
+            run = serializer.data["run"]
+            if serializer.data["minKNOW_start_time"] < run.start_time:
+                run.start_time = serializer.data["minKNOW_start_time"]
+                run.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     try:

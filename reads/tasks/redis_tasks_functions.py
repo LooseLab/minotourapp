@@ -462,19 +462,24 @@ def update_run_summaries(fastq_df):
     run_summaries.columns = run_summaries.columns.to_flat_index()
     run_summaries = run_summaries.rename(columns=lookup)
     run_summaries = run_summaries.to_dict(orient="records")
-    print(run_summaries)
     for run_summary in run_summaries:
         run_summary_orm, created = RunSummary.objects.get_or_create(
             run_id=run_summary["run_id"], defaults=run_summary
         )
-        print(run_summary_orm.__dict__)
+        run = run_summary_orm.run
         if not created:
+            # if this batch of reads earliest read start time is earlier than out recorded earliest
+            # read time on the run summary in th DB update it and vice versa for last read
             if (
                 datetime.strptime(
                     run_summary["first_read_start_time"], "%Y-%m-%dT%H:%M:%S%z"
                 )
                 < run_summary_orm.first_read_start_time
             ):
+                run.start_time = run_summary[
+                    "first_read_start_time"
+                ]
+                run.save()
                 run_summary_orm.first_read_start_time = run_summary[
                     "first_read_start_time"
                 ]

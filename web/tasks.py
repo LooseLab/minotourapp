@@ -152,7 +152,7 @@ def update_run_start_time():
     """
     # TODO could this be improved? Once we have a run start time no longer check it somehow
     delta = datetime.timedelta(days=int(get_env_variable("MT_TIME_UNTIL_INACTIVE")))
-    runs = Run.objects.filter(flowcell__last_activity_date__lt=datetime.datetime.now(datetime.timezone.utc)-delta)
+    runs = Run.objects.filter(flowcell__last_activity_date__gt=datetime.datetime.now(datetime.timezone.utc)-delta)
     for run in runs:
         if run.RunDetails.all().count():
             run.start_time = run.RunDetails.last().minKNOW_start_time
