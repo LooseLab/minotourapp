@@ -15,7 +15,7 @@ from django.conf import settings
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
 from minotourapp.celery import app
-from minotourapp.settings import BASE_DIR
+from minotourapp.settings import BASE_DIR, STATIC_ROOT
 from minotourapp.utils import get_env_variable
 from reads.models import (
     JobMaster,
@@ -73,9 +73,11 @@ def clear_unused_artic_files(artic_results_path, sample_name):
         elif not filey.suffix == ".gz" and filey.suffix not in [".dat", ".png"]:
             subprocess.Popen(["gzip", "-9", "-f", str(filey)]).communicate()
         elif filey.suffix == ".png":
+            debug = int(get_env_variable("MT_DJANGO_DEBUG"))
+            static_path = f"{BASE_DIR}/artic/static/artic/" if debug else f"{STATIC_ROOT}/artic/"
             # Copy the pngs to the artic static directory to be served
             if not Path(
-                f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}"
+                f"{static_path}/{artic_results_pathlib.parent.stem}"
             ).exists():
                 Path(
                     f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}"
@@ -181,7 +183,7 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     logger.info(fastq_path)
     scheme_dir = get_env_variable("MT_ARTIC_SCEHEME_DIR")
     os.chdir(f"{base_results_directory}/{barcode_name}")
-    # clear_old_data(Path(base_results_directory)/barcode_name, barcode_name)
+    # clear_old_data(Path(ba[[se_results_directory)/barcode_name, barcode_name)
     cmd = [
         "bash",
         "-c",
