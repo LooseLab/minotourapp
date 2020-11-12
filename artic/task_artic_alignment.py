@@ -74,17 +74,17 @@ def clear_unused_artic_files(artic_results_path, sample_name):
             subprocess.Popen(["gzip", "-9", "-f", str(filey)]).communicate()
         elif filey.suffix == ".png":
             debug = int(get_env_variable("MT_DJANGO_DEBUG"))
-            static_path = f"{BASE_DIR}/artic/static/artic/" if debug else f"{STATIC_ROOT}/artic/"
+            static_path = f"{BASE_DIR}/artic/static/artic" if debug else f"{STATIC_ROOT}/artic"
             # Copy the pngs to the artic static directory to be served
             if not Path(
                 f"{static_path}/{artic_results_pathlib.parent.stem}"
             ).exists():
                 Path(
-                    f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}"
+                    f"{static_path}/{artic_results_pathlib.parent.stem}"
                 ).mkdir()
             copy(
                 str(filey),
-                f"{BASE_DIR}/artic/static/artic/{artic_results_pathlib.parent.stem}",
+                f"{static_path}/{artic_results_pathlib.parent.stem}",
             )
 
 
