@@ -158,7 +158,7 @@ def clear_old_data(artic_results_path, barcode_name):
                 filey.unlink()
 
 
-@app.task
+@app.task(time_limit=1200, soft_time_limit=1200)
 def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     """
     Run the artic pipeline in this first pass method of dirty bash script
