@@ -15,7 +15,6 @@ django_extensions
 pandas
 isort
 ete3
-gunicorn
 django-guardian
 pylint-django
 ipython
