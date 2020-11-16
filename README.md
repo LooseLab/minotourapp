@@ -2,7 +2,12 @@
 
 minoTour is a **work in progress**, therefore features may change, and any bug reports/feature requests and pull requests will be gratefully recieved.
 
-minoTour is a web-based real-time laboratory information management system (LIMS) for Oxford Nanopore Technology (ONT) sequencers built using the Django framework. minoTour can be hosted offline and locally on a laptop, or online and accessed remotely.  It aims to enable monitoring of Nanopore sequencers in real time, allowing for analysis of performance and basic downstream data analysis. minoTour can monitor the activity of a sequencer in real time independent of analysing basecalled files providing a breakdown and analysis of live sequencing metrics via integration with ONT’s minKNOW API and parsing of sequence files as they are generated. These features enable remote control of a sequencer, as well as tracking flow cell QC and all messages received by MinKNOW during a sequencing run. The client for monitoring and uploading data, minFQ, is available via PyPI. Simple analyses, such as base calling summaries, alignment and metagenomics can be completed in real-time or after sequencing. minoTour is open source (https://www.github.com/LooseLab/minotourapp)
+minoTour is a web-based real-time laboratory information management system (LIMS) for Oxford Nanopore Technology (ONT) sequencers built using the Django framework. minoTour can be hosted offline and locally on a laptop, or online and accessed remotely.  It aims to enable monitoring of Nanopore sequencers in real time, allowing for analysis of performance and basic downstream data analysis. minoTour can monitor the activity of a sequencer in real time independent of analysing basecalled files providing a breakdown and analysis of live sequencing metrics via integration with ONT’s minKNOW API and parsing of sequence files as they are generated. These features enable remote control of a sequencer, as well as tracking flow cell QC and all messages received by MinKNOW during a sequencing run. The client for monitoring and uploading data, minFQ, is available via PyPI. Simple analyses, such as base calling summaries, alignment and metagenomics can be completed in real-time or after sequencing. minoTour is open source (https://www.github.com/LooseLab/minotourapp). 
+
+An example instance can be found at http://137.44.59.170. Credentials to log in to a deactivated account (one which cannot upload data) are: 
+
+    Username: demo-account
+    Password: Welcome-to-minotour
 
 # Table of contents
 * [Preconfiguration](#preconf)  
