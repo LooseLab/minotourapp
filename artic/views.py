@@ -414,7 +414,6 @@ def get_artic_barcode_metadata_html(request):
     fastq_path = artic_results_path / selected_barcode / f"{selected_barcode}.fastq"
     fastq_path_gz = fastq_path.with_suffix(".fastq.gz")
     context_dict["hidden_has_fastq"] = fastq_path.exists() or fastq_path_gz.exists()
-    print(context_dict["hidden_has_fastq"])
     if context_dict["hidden_has_finished"]:
         df = pd.read_csv(
             artic_results_path / selected_barcode / "lineage_report.csv.gz"
