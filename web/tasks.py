@@ -2,8 +2,6 @@
 """
 from __future__ import absolute_import, unicode_literals
 
-import datetime
-
 from celery.utils.log import get_task_logger
 
 from alignment.tasks_alignment import run_minimap2_alignment
@@ -16,15 +14,16 @@ from metagenomics.sankey import calculate_sankey
 from minotourapp.celery import app
 from minotourapp.utils import get_env_variable
 from reads.models import (
-    Run,
     Flowcell,
     JobMaster,
 )
 from reads.tasks.redis_tasks_functions import harvest_reads
 from reads.tasks.task_delete_flowcell import delete_flowcell
+from reads.tasks.task_secure_artic_runs import secure_artic_runs
 from reads.tasks.tasks_archive_flowcell import archive_flowcell
 from reads.tasks.tasks_update_flowcell import update_flowcell_details
 from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
+from web.utils import fun
 
 logger = get_task_logger(__name__)
 
@@ -42,8 +41,10 @@ def run_monitor():
     logger.info("Running run_monitor celery task.")
     logger.info("--------------------------------")
 
-    # This fires a new task every 90 seconds to collect any uploaded reads and basically process them.
+    # This fires a new task every 30 seconds to collect any uploaded reads and basically process them.
     harvest_reads.delay()
+    if int(get_env_variable("MT_DESTROY_ARTIC_EVIDENCE")):
+        secure_artic_runs.delay()
 
     # Create a list of all flowcells that have been active in the last 48 hours
     flowcell_list = [x for x in Flowcell.objects.all() if x.active()]
@@ -115,7 +116,7 @@ def run_monitor():
                     logger.error("¯\_(ツ)_/¯")
 
 
-@app.task
+@app.task(on_failure=fun)
 def run_sankey(flowcell_job_id):
     """
     Calculate sankeys for a flowcell on demand of the user
@@ -130,33 +131,4 @@ def run_sankey(flowcell_job_id):
         )
     )
     calculate_sankey(flowcell_job_id)
-
-
-
-@app.task
-def delete_runs():
-    """
-    Delete runs that have been marked for deletion. Called by Celery beat.
-    Returns
-    -------
-
-    """
-    Run.objects.filter(to_delete=True).delete()
-
-
-@app.task
-def update_run_start_time():
-    """
-    This method update the field start_time of run based on the live data or
-    the header of the first fastq read
-    """
-    # TODO could this be improved? Once we have a run start time no longer check it somehow
-    delta = datetime.timedelta(days=int(get_env_variable("MT_TIME_UNTIL_INACTIVE")))
-    runs = Run.objects.filter(flowcell__last_activity_date__gt=datetime.datetime.now(datetime.timezone.utc)-delta)
-    for run in runs:
-        if run.RunDetails.all().count():
-            run.start_time = run.RunDetails.last().minKNOW_start_time
-            origin = "Live data"
-            run.save()
-            logger.info(f"Updating start_time for run {run.runid} from {origin}")
 
