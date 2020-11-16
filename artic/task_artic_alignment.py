@@ -6,6 +6,7 @@ import pickle
 import subprocess
 from collections import defaultdict
 from copy import deepcopy
+from datetime import datetime, timezone, timedelta
 from io import StringIO
 from shutil import copy, rmtree
 
@@ -23,15 +24,16 @@ from reads.models import (
     Barcode,
     FastqReadType,
     FlowcellSummaryBarcode,
-    FastqRead,
+    FastqRead, Flowcell,
 )
 from readuntil.functions_EB import *
 
 logger = get_task_logger(__name__)
 
+
 # TODO parsing cigar lends itself to numba nicely
 # TODO split artic task into a sexy chain, rather than blocking a worker for so long, start here
-def clear_unused_artic_files(artic_results_path, sample_name):
+def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
     """
     Clear the leftover files from the artic command from the directory, gzip remaining files
     Parameters
@@ -40,29 +42,43 @@ def clear_unused_artic_files(artic_results_path, sample_name):
         Path to directory that artic results were produced in.
     sample_name: str
         The sample name provided to the artic command. Assume the barcode name.
+    flowcell_id: int
+        The flowcell primary key for this artic task, so we can check that is has reads uploaded recently
     Returns
     -------
     None
     """
+    flowcell = Flowcell.objects.get(pk=flowcell_id)
+    print(flowcell.__dict__)
     logger.info(
         f"Clearing non necessary results for {artic_results_path} for sample name {sample_name}"
     )
+    files_to_keep_extra = [".fastq", ".sorted.bam", ".sorted.bam.bai"]
     files_to_keep = [
         ".pass.vcf",
         ".fail.vcf",
         "-barplot.png",
         "-boxplot.png",
         ".consensus.fasta",
-        ".fastq",
         ".counts.dat",
         ".coverage.dat",
-        ".sorted.bam",
-        ".sorted.bam.bai"
     ]
+    if int(
+        get_env_variable("MT_DESTROY_ARTIC_EVIDENCE")
+    ) and flowcell.last_activity_date < datetime.now(timezone.utc) - timedelta(
+        hours=12
+    ):
+        logger.info(
+            f"Clearing sensitive files from {artic_results_path} for sample name {sample_name}"
+        )
+    else:
+        logger.info("Extending files to ke[ep")
+        files_to_keep.extend(files_to_keep_extra)
     files_to_keep_full = []
     files_to_keep_full.extend([f"{sample_name}{filey}" for filey in files_to_keep])
     files_to_keep_full.extend([f"{el}.gz" for el in files_to_keep_full])
     files_to_keep_full.append("lineage_report.csv")
+    files_to_keep_full.append("lineage_report.csv.gz")
     artic_results_pathlib = Path(artic_results_path)
     for filey in artic_results_pathlib.iterdir():
         # delete pangolin tree files
@@ -74,17 +90,16 @@ def clear_unused_artic_files(artic_results_path, sample_name):
             subprocess.Popen(["gzip", "-9", "-f", str(filey)]).communicate()
         elif filey.suffix == ".png":
             debug = int(get_env_variable("MT_DJANGO_DEBUG"))
-            static_path = f"{BASE_DIR}/artic/static/artic" if debug else f"{STATIC_ROOT}/artic"
+            static_path = (
+                f"{BASE_DIR}/artic/static/artic" if debug else f"{STATIC_ROOT}/artic"
+            )
             # Copy the pngs to the artic static directory to be served
-            if not Path(
-                f"{static_path}/{artic_results_pathlib.parent.stem}"
-            ).exists():
+            if not Path(f"{static_path}/{artic_results_pathlib.parent.stem}").exists():
                 Path(
                     f"{static_path}/{artic_results_pathlib.parent.stem}", parents=True
                 ).mkdir()
             copy(
-                str(filey),
-                f"{static_path}/{artic_results_pathlib.parent.stem}",
+                str(filey), f"{static_path}/{artic_results_pathlib.parent.stem}",
             )
 
 
@@ -121,8 +136,8 @@ def run_pangolin_command(base_results_directory, barcode_name):
         logger.debug(err)
     else:
         logger.info("¯\_(ツ)_/¯")
-        logger.debug(str(out))
-        logger.debug(err)
+        logger.info(str(out))
+        logger.info(err)
 
     if re_gzip:
         logger.debug(f"ReGzipping {barcode_name}.consensus.fasta")
@@ -148,7 +163,7 @@ def clear_old_data(artic_results_path, barcode_name):
     None
 
     """
-    files_to_keep_suffix = [".fasta", ".counts.dat", ".coverage.dat", ".fasta.gz"]
+    files_to_keep_suffix = ["consensus.fasta", ".counts.dat", ".coverage.dat", ".fasta.gz", "lineage_report.csv.gz", ]
     files_to_keep = [f"{barcode_name}{filey}" for filey in files_to_keep_suffix]
     for filey in artic_results_path.iterdir():
         if filey not in files_to_keep:
@@ -179,11 +194,13 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     jm.save()
     # Path to barcode fastq
     fastq_path = f"{base_results_directory}/{barcode_name}/{barcode_name}.fastq"
+    if not Path(fastq_path).exists():
+        fastq_path += ".gz"
     # TODO get the barcode from the posix path for the sample name
     logger.info(fastq_path)
     scheme_dir = get_env_variable("MT_ARTIC_SCEHEME_DIR")
     os.chdir(f"{base_results_directory}/{barcode_name}")
-    # clear_old_data(Path(ba[[se_results_directory)/barcode_name, barcode_name)
+    # clear_old_data(Path(base_results_directory) / barcode_name, barcode_name)
     cmd = [
         "bash",
         "-c",
@@ -209,7 +226,9 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         flowcell=jm.flowcell, job_master__job_type_id=16, barcode__name=barcode_name
     ).update(has_finished=True, marked_for_rerun=False)
 
-    clear_unused_artic_files(f"{base_results_directory}/{barcode_name}", barcode_name)
+    clear_unused_artic_files(
+        f"{base_results_directory}/{barcode_name}", barcode_name, jm.flowcell.id
+    )
     jm = JobMaster.objects.get(pk=job_master_pk)
     jm.running = False
     jm.complete = True
@@ -657,9 +676,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             for barcode in barcodes:
                 barcode_orm = Barcode.objects.get(run_id=run_id, name=barcode)
                 orm_object, created = ArticBarcodeMetadata.objects.get_or_create(
-                    flowcell=flowcell,
-                    job_master=task,
-                    barcode=barcode_orm
+                    flowcell=flowcell, job_master=task, barcode=barcode_orm
                 )
             logger.info(f"Barcodes in this iteration are {barcodes}")
             barcoded_counts_dict = replicate_counts_array_barcoded(
@@ -754,7 +771,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     chromosome=paf_summary_cov["chromosome"],
                     reference_line_length=paf_summary_cov["reference_line_length"],
                     read_type=paf_summary_cov["read_type"],
-
                 )
                 paf_summary_cov_orm.total_yield += paf_summary_cov["yield"]
                 paf_summary_cov_orm.read_count += paf_summary_cov["read_count"]
@@ -844,27 +860,41 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     logger.info(
                         f"Avg Coverage at iteration {task.iteration_count} for barcode {barcode} is {coverage.mean()}"
                     )
-                    if barcode in barcodes_already_fired:
-                        continue
-                    afc, created = ArticFireConditions.objects.get_or_create(flowcell=flowcell)
+
+                    afc, created = ArticFireConditions.objects.get_or_create(
+                        flowcell=flowcell
+                    )
                     afc = afc.__dict__
                     number_bases_in_array = coverage.size
-                    coverage_for_90_percent = coverage[coverage >= afc["ninety_percent_bases_at"]].size
-                    coverage_for_95_percent = coverage[coverage >= afc["ninety_five_percent_bases_at"]].size
-                    coverage_for_99_percent = coverage[coverage >= afc["ninety_nine_percent_bases_at"]].size
-                    percent_ninety_percent_bases_at = coverage_for_90_percent / number_bases_in_array * 100
-                    percent_ninety_five_percent_bases_at = coverage_for_95_percent / number_bases_in_array * 100
-                    percent_ninety_nine_percent_bases_at = coverage_for_99_percent / number_bases_in_array * 100
+                    coverage_for_90_percent = coverage[
+                        coverage >= afc["ninety_percent_bases_at"]
+                    ].size
+                    coverage_for_95_percent = coverage[
+                        coverage >= afc["ninety_five_percent_bases_at"]
+                    ].size
+                    coverage_for_99_percent = coverage[
+                        coverage >= afc["ninety_nine_percent_bases_at"]
+                    ].size
+                    percent_ninety_percent_bases_at = (
+                        coverage_for_90_percent / number_bases_in_array * 100
+                    )
+                    percent_ninety_five_percent_bases_at = (
+                        coverage_for_95_percent / number_bases_in_array * 100
+                    )
+                    percent_ninety_nine_percent_bases_at = (
+                        coverage_for_99_percent / number_bases_in_array * 100
+                    )
                     has_sufficient_coverage = False
                     # 200x coverage
                     if percent_ninety_percent_bases_at > 90:
                         logger.info(
                             f"Creating artic command job_master here for barcode {barcode} due to 90% 200x xcoverage reached"
                         )
-                        add_barcode_to_tofire_file(barcode, base_result_dir_path)
-                        save_artic_command_job_masters(
-                            flowcell, barcode, reference_info
-                        )
+                        if barcode not in barcodes_already_fired:
+                            add_barcode_to_tofire_file(barcode, base_result_dir_path)
+                            save_artic_command_job_masters(
+                                flowcell, barcode, reference_info
+                            )
                         has_sufficient_coverage = True
                     elif percent_ninety_five_percent_bases_at >= 95:
 
@@ -872,20 +902,22 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         logger.info(
                             f"Creating artic command job_master here for barcode {barcode} due to 95% 250 xcoverage reached"
                         )
-                        add_barcode_to_tofire_file(barcode, base_result_dir_path)
-                        save_artic_command_job_masters(
-                            flowcell, barcode, reference_info
-                        )
+                        if barcode not in barcodes_already_fired:
+                            add_barcode_to_tofire_file(barcode, base_result_dir_path)
+                            save_artic_command_job_masters(
+                                flowcell, barcode, reference_info
+                            )
                         has_sufficient_coverage = True
                     elif percent_ninety_nine_percent_bases_at > 99:
                         # So we have to set up the auto fire of the pipeline here if the task fails
                         logger.info(
                             f"Creating artic command job_master here for barcode {barcode} due to 100% 20X coverage reached"
                         )
-                        add_barcode_to_tofire_file(barcode, base_result_dir_path)
-                        save_artic_command_job_masters(
-                            flowcell, barcode, reference_info
-                        )
+                        if barcode not in barcodes_already_fired:
+                            add_barcode_to_tofire_file(barcode, base_result_dir_path)
+                            save_artic_command_job_masters(
+                                flowcell, barcode, reference_info
+                            )
                         has_sufficient_coverage = True
                     # save the artic per barcode metadata
                     save_artic_barcode_metadata_info(
