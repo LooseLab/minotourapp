@@ -53,4 +53,4 @@ class ArticFireConditions(models.Model):
     )
     ninety_percent_bases_at = models.IntegerField(default=250)
     ninety_five_percent_bases_at = models.IntegerField(default=200)
-    ninety_nine_percent_bases_at = models.IntegerField(default=20)
+    ninety_nine_percent_bases_at = models.IntegerField(default=60)
