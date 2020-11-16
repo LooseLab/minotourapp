@@ -33,6 +33,7 @@ from reads.models import (
     HistogramSummary,
     RunSummary,
 )
+from web.utils import fun
 
 logger = get_task_logger(__name__)
 
@@ -126,7 +127,6 @@ def move_reads_to_flowcell(run_id, flowcell_id, from_flowcell_id):
         num_updated = FastqRead.objects.filter(
             run_id=run_id, id__lte=last_read_in_chunk.id, flowcell_id=from_flowcell_id
         ).update(flowcell=flowcell)
-        print(f"Updated {num_updated}")
         # get list of dict of the flowcell
         reads = list(reads.values())
         update_flowcell.delay(reads)
@@ -139,7 +139,6 @@ def move_reads_to_flowcell(run_id, flowcell_id, from_flowcell_id):
     # If there are reads left, call the task again.
     if FastqRead.objects.filter(flowcell=old_flowcell, run=run).count():
         move_reads_to_flowcell.apply_async(args=(run_id, flowcell_id, from_flowcell_id))
-    print(f"finished in {time.time() - start_time}")
 
 
 @app.task
@@ -236,34 +235,26 @@ def update_flowcell(reads_list):
             "fastqfile": "fastqfile_id",
         }
     )
-
     read_df = read_df.drop(columns=["sequence", "quality"])
-
     results = read_df.groupby(["flowcell_id"]).agg(
         {"read_id": "count", "channel": "max", "sequence_length": "sum"}
     )
     results.reset_index().apply(lambda row: update_flowcell_counts(row), axis=1)
-
     # We can assume that we will always have only a single flowcell in a b
     # batch of reads to process due to the way that minFQ behaves.
     # Todo: catch problems with multiple flowcells in a single transaction
-
     read_df["status"] = np.where(read_df["is_pass"] == False, "Fail", "Pass")
-
     read_df["start_time_round"] = np.array(
         ### Converting to store data in 10 minute windows.
         read_df["start_time"],
         dtype="datetime64[m]",
     )
-
     read_df["start_time_truncate"] = read_df["start_time_round"].apply(
         lambda dt: datetime(dt.year, dt.month, dt.day, dt.hour, 10 * (dt.minute // 10))
     )
     update_run_summaries(read_df)
-
     read_df_all_reads = read_df.copy()
     read_df_all_reads["barcode_name"] = "All reads"
-
     fastq_df = read_df.append(read_df_all_reads, sort=False)
     fastq_df["barcode_name"] = fastq_df["barcode_name"].fillna("No barcode")
     #
@@ -278,15 +269,12 @@ def update_flowcell(reads_list):
             "channel": ["unique"],
         }
     )
-
     fastq_df_result.reset_index().apply(
         lambda row: save_flowcell_summary_barcode(row), axis=1
     )
-
     #
     # Calculates statistics for FlowcellStatisticsBarcode
     #
-
     fastq_df_result = fastq_df.groupby(
         [
             "flowcell_id",
@@ -303,16 +291,13 @@ def update_flowcell(reads_list):
             "channel": ["unique"],
         }
     )
-
     fastq_df_result.reset_index().apply(
         lambda row: save_flowcell_statistic_barcode(row), axis=1,
     )
-
     fastq_df["bin_index"] = (
         fastq_df["sequence_length"]
         - fastq_df["sequence_length"] % HistogramSummary.BIN_WIDTH
     ) / HistogramSummary.BIN_WIDTH
-
     fastq_df_result = fastq_df.groupby(
         [
             "flowcell_id",
@@ -323,7 +308,6 @@ def update_flowcell(reads_list):
             "rejected_barcode_id",
         ]
     ).agg({"sequence_length": ["sum", "count"]})
-
     fastq_df_result.reset_index().apply(
         lambda row: save_flowcell_histogram_summary(row), axis=1,
     )
@@ -391,7 +375,29 @@ def sort_reads_by_flowcell_fire_tasks(reads):
                 run_centrifuge_pipeline.delay(task["id"], flowcell_reads)
 
 
-@app.task
+def _set_harvesting_zero(self, exc, task_id, args, kwargs, einfo):
+    """
+    If harvest reads crashes for some unforeseen reason, we need it to cleanly exit,
+     to set the harvesting key in redis to 0, otherwise data upload is halted.
+    Parameters
+    ----------
+    self
+    exc
+    task_id
+    args
+    kwargs
+    einfo
+
+    Returns
+    -------
+
+    """
+    logger.info(f"Task {self.name} crashed. Cleanly setting Harvesting key to 0.")
+    fun(self, exc, task_id, args, kwargs, einfo)
+    redis_instance.set("harvesting", 0)
+
+
+@app.task(on_failure=_set_harvesting_zero)
 def harvest_reads():
     """
     Celery task to pull all reads JSON accrued out of redis cache and run base-called metadata calculations on it,
@@ -414,7 +420,8 @@ def harvest_reads():
 
         while count > 0:
             read_chunk = redis_instance.spop("reads")
-            read_chunk = json.loads(read_chunk)
+            if read_chunk is not None:
+                read_chunk = json.loads(read_chunk)
             reads.extend(read_chunk)
             count -= 1
 
@@ -614,6 +621,8 @@ def update_flowcell_counts(row):
     """
     flowcell_id = int(row["flowcell_id"])
     # TODO this is where we would set no fastq of we WEREN't saving te data but were uploading it
+    # TODO but we need this flag in redis
+    # fixme this is set for each row, when it only needs to be set once
     redis_instance.set(f"{flowcell_id}_has_fastq", 1)
     # Increment by the count of the read_ids on this flowcell for total read number
     redis_instance.incrby(f"{flowcell_id}_number_reads", int(row["read_id"]))
