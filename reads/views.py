@@ -446,9 +446,6 @@ def run_list(request):
                 or request.user.has_perm("run_analysis", flowcell)
             ):
                 flowcell_list.append(flowcell)
-
-        print(flowcell_list)
-
         queryset = Run.objects.filter(flowcell__in=flowcell_list).filter(
             to_delete=False
         )
@@ -549,8 +546,6 @@ def minion_list(request):
         return Response(serializer.data)
 
     elif request.method == "POST":
-        print(f"request data for minion POST is:")
-        print(request.data)
         serializer = MinionSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             serializer.save(owner=request.user)
@@ -912,7 +907,6 @@ def list_minion_info(request, pk):
         if serializer.is_valid(raise_exception=True):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     try:
@@ -1626,12 +1620,9 @@ def flowcell_statistics(request, pk):
         flowcell=flowcell,
         barcode_name=barcode_name
     )
-    print(read_until_barcode_name)
     # combined will display all results under a barcode, but if other chosen we need to filter down to it
     if read_until_barcode_name != "None":
-        print("hellda")
         queryset = queryset.filter(rejection_status=read_until_barcode_name)
-    print(queryset)
     df = pd.DataFrame.from_records(
         queryset.values(
             "read_type_name",
@@ -1647,7 +1638,6 @@ def flowcell_statistics(request, pk):
     )
     if df.empty:
         return Response("No data found for statistics charts", status=status.HTTP_404_NOT_FOUND)
-    print(df)
     df["read_type"] = np.where(df["status"] == "True", "Pass", "Fail")
     agg = {
         "max_length": "max",
@@ -2065,10 +2055,8 @@ def flowcell_minknow_stats_list(request, pk, check_id):
     minknow_colours = {}
     # Create a lookup dictionary of labels and styles for each pore state
     for x in json.loads(minion_run_meta_information.minKNOW_colours_string)["groups"]:
-        print(x)
         if "states" in x:
             for j in x["states"]:
-                print(j)
                 minknow_colours[j["name"]] = j.get(
                     "style", {"label": j["name"], "colour": "000000"}
                 )
@@ -2078,7 +2066,6 @@ def flowcell_minknow_stats_list(request, pk, check_id):
     minknow_colours["good_single"] = {"label": "Good single", "colour": "32CD32"}
     # Create the entry in the results dicionary for each pore state
     # TODO check the pore states match
-    print(minknow_colours)
     last_time = MinionRunStats.objects.filter(run__flowcell_id=pk).last().sample_time
     first_time = MinionRunStats.objects.filter(run__flowcell_id=pk).first().sample_time
     div, rem = divmod((last_time - first_time).total_seconds(), 24*3600)
@@ -2594,8 +2581,6 @@ def job_master_list(request):
         # If the serialiser is valid
         if serializer.is_valid():
             task = serializer.save()
-            flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
-            flowcell.save()
             response_data = {"message": "Task created successfully!", "pk": task.id}
             return JsonResponse(response_data)
 
