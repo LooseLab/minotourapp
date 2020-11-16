@@ -1,6 +1,7 @@
 """
 Celery task to update flowcell metadata
 """
+from datetime import datetime, timezone
 
 import numpy as np
 from celery import chain
@@ -259,12 +260,13 @@ def update_flowcell_details(job_master_id):
                         flowcell.start_time = run.start_time
                 break
 
-    # Get flowcell max_channel number.
+    # Get presence of fastq data in redis
     has_fastq = get_values_and_delete_redis_key(
         redis_instance, f"{flowcell.id}_has_fastq"
     )
     if has_fastq:
         flowcell.has_fastq = has_fastq
+        flowcell.last_activity_date = datetime.now(timezone.utc)
         total_read_length = get_values_and_delete_redis_key(
             redis_instance, f"{flowcell.id}_total_read_length"
         )
@@ -319,15 +321,12 @@ def update_flowcell_details(job_master_id):
                 flowcellChannelSummary.save()
 
         #Now try and update all the flowcellsummarystatistics
-
         res = chain(
             calculate_flowcell_statistic_barcodes.s(flowcell.id),
             calculate_flowcell_histogram_summary.s(),
             calculate_flowcell_summary_barcode.s(),
         ).apply_async()
-
     flowcell.number_runs = Run.objects.filter(flowcell=flowcell).count()
-
     barcode_count = (
         Barcode.objects.filter(run_id__flowcell=flowcell).values("name").distinct().count() - 1
     )
