@@ -619,7 +619,7 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         job_master, created = JobMaster.objects.get_or_create(**validated_data)
         job_master.save()
         # If we have created a new job
-        if created:
+        if created and not job_master.job_type_id == 17:
             # Get the flowcell that the JobMaster is for
             flowcell_to_update_activity = validated_data["flowcell"]
             # Update the last activity date
