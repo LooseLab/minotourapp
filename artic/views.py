@@ -350,6 +350,11 @@ def get_artic_barcode_metadata_html(request):
         return Response(
             "No flowcell ID or barcode provided.", status=status.HTTP_400_BAD_REQUEST
         )
+    # see if we have a command waiting to be run
+    try:
+        artic_command_jm = bool(JobMaster.objects.get(job_type_id=17, barcode__name=selected_barcode, flowcell_id=flowcell_id))
+    except JobMaster.DoesNotExist:
+        artic_command_jm = False
     orm_object = ArticBarcodeMetadata.objects.filter(
         flowcell_id=flowcell_id, barcode__name=selected_barcode
     ).last()
@@ -408,6 +413,7 @@ def get_artic_barcode_metadata_html(request):
     context_dict["hidden_marked_for_rerun"] = old_dict["marked_for_rerun"]
     context_dict["hidden_destroy_evidence"] = bool(int(get_env_variable("MT_DESTROY_ARTIC_EVIDENCE")))
     context_dict["hidden_triggered_by_cleanup"] = orm_object.has_finished and not orm_object.has_sufficient_coverage
+    context_dict["hidden_has_command_job_master"] = artic_command_jm
     (flowcell, artic_results_path, artic_task_id, _) = quick_get_artic_results_directory(
         flowcell_id
     )

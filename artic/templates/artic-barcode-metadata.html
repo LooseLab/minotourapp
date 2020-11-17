@@ -42,7 +42,7 @@
                         </button>
                     {% endif %}
                 {% endif %}
-                {% if not artic_barcode_metadata.hidden_has_finished or not artic_barcode_metadata.hidden_has_suff or not artic_barcode_metadata.hidden_destroy_evidence %}
+                {% if not artic_barcode_metadata.hidden_has_command_job_master %}
                     <button class="btn btn-primary" id="manual-trigger"
                             onclick="flowcellController.flowcellTabController.articController.manuallyTriggerPipeline({{ artic_barcode_metadata.hidden_flowcell_id }}, {{ artic_barcode_metadata.hidden_barcode_pk }}, {{ artic_barcode_metadata.hidden_job_master_id }}, event)">
                         Manually trigger

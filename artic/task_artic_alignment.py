@@ -285,7 +285,7 @@ def make_barcoded_directories(barcodes, results_dir):
     for barcode in barcodes:
         path = results_dir / barcode
         if not path.exists():
-            Path.mkdir(path)
+            Path.mkdir(path, parents=True)
             logger.info(f"Created directory {path} for barcode {barcode}.")
         else:
             logger.info(f"Directory {path} already exists.")
