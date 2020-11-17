@@ -25,6 +25,7 @@ from artic.models import ArticBarcodeMetadata, ArticFireConditions
 from metagenomics.models import CentrifugeOutput
 from metagenomics.sankey import calculate_sankey
 from minotourapp import settings
+from minotourapp.utils import get_env_variable
 from reads.models import (
     Barcode,
     FastqFile,
@@ -2289,11 +2290,14 @@ def read_list(request):
         reads = request.data
         if not reads:
             return Response("No reads in post request", status=status.HTTP_200_OK)
-        save_reads_bulk(reads)
-        return Response(
-            "The task has started. It's in gods hands now...",
-            status=status.HTTP_201_CREATED,
-        )
+        if int(get_env_variable("MT_ALLOW_UPLOAD")):
+            save_reads_bulk(reads)
+            return Response(
+                "The task has started. It's in gods hands now...",
+                status=status.HTTP_201_CREATED,
+            )
+        else:
+            return Response("I'm afraid read upload has been disabled on this server. Apologies.", status=status.HTTP_403_FORBIDDEN)
 
 
 @api_view(["GET"])
@@ -2518,7 +2522,7 @@ def job_master_list(request):
         except Flowcell.DoesNotExist as e:
             print("Exception: {}".format(e))
             return Response(
-                "Flowcell not found. Please contact server admin.",
+                {"message": "Flowcell not found. Please contact server admin."},
                 status=status.HTTP_404_NOT_FOUND,
             )
         if (
@@ -2533,7 +2537,9 @@ def job_master_list(request):
             )
         if flowcell.archived and request.data["job_type"] != 11:
             return Response(
-                "Flowcell Archived, no data to analyse",
+                {
+                    "message": "Permission denied - flowcell archived."
+                },
                 status=status.HTTP_403_FORBIDDEN,
             )
         # Check to see if we have a string as the flowcell, not an Int for a PK based lookup
@@ -2560,7 +2566,8 @@ def job_master_list(request):
                 # If a reference hasn't been selected.
                 if request.data["reference"] == "":
                     return Response(
-                        "Reference not chosen - Please select a reference", status=400,
+                        {"message": "Reference not chosen - Please select a reference"}
+                        , status=400,
                     )
                 reference = ReferenceInfo.objects.get(
                     Q(name=request.data["reference"])
@@ -2569,8 +2576,10 @@ def job_master_list(request):
                 request.data["reference"] = reference.id
             except ReferenceInfo.DoesNotExist as e:
                 print("Exception: {}".format(e))
-                return Response(
-                    "Reference not found Please contact server admin", status=500
+                return Response({
+                    "message": "Reference not found, Please contact server admin"
+                },
+                    status=500
                 )
 
             if request.data["job_type"] == 4:
@@ -2586,7 +2595,7 @@ def job_master_list(request):
 
         else:
             print(serializer.errors)
-            return JsonResponse({"error_messages": serializer.errors}, status=500)
+            return JsonResponse({"message": serializer.errors}, status=500)
 
 
 @api_view(["GET"])
