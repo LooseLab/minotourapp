@@ -193,7 +193,12 @@ class TasksController {
       ).catch(
         error => {
           console.error(error)
-          this._messageView.update(`Problem creating task: ${error.response.data.error_messages.non_field_errors[0]}`)
+          if (error.response.status === 401) {
+            alert(`Permission denied.`)
+          } else {
+            const message = typeof error.response.data.message === `object` ? error.response.data.message.non_field_errors[0] : error.response.data.message
+            this._messageView.update(`Problem creating task: ${message}`)
+          }
         }
       )
   }
