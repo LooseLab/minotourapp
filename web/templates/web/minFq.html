@@ -9,14 +9,11 @@
                     <h5 class="card-header">minFQ - How to upload data to minoTour.</h5>
                     <div class="card-body">
                         <h4>Installing minFQ</h4>
-                        <p>minFQ is available from pypi for python3. Installation in a python3 environment is simple:</p>
-                        <code>pip install minFQ</code>
-                        <p>If you have both python2 and 3 installed you may need to use:</p>
-                        <code>pip3 install minFQ</code>
-                        <p><strong>We recommend installing minFQ in its own environment:</strong></p>
+                        <p>minFQ is available from pypi for python3. <strong>Installation in a python3 environment is simple:</strong></p>
                         <code>python3 -m venv /path/to/your/environment<br>
                             source /path/to/your/environment/bin/activate<br>
                             pip install minFQ</code>
+                        <p></p>
                         <p>The source code for minFQ is available from <a
                                 href='https://github.com/LooseLab/minotourcli'>https://github.com/LooseLab/minotourcli</a>
                         </p>
@@ -33,6 +30,7 @@
                             token can be found under your user name in the 'profile' section.</p>
                         <p>After installation test minFQ by typing:</p>
                         <code>minFQ</code>
+                        <p></p>
                         <p>This will output a basic usage message:</p>
                         <pre>usage: minFQ [-h] -w WATCHDIR [-ip IP] [-v] [-nf] [-nm] -n RUN_NAME [-f] [-e]
              -k API_KEY [-p PORT_NUMBER] [-hn HOST_NAME]
@@ -41,6 +39,7 @@
 minFQ: error: the following arguments are required: -w/--watch-dir, -n/--name, -k/--key</pre>
                         <p>To see the full help type:</p>
                         <code>minFQ -h</code>
+                        <p></p>
                         <h4>Example Commands</h4>
                         <p> In the command below the port for your server will vary depending on how you run minoTour,
                             but if run locally is probably 8100. -ip is the ip address at which minKNOW is hosted. Most likely 127.0.0.1.</p>
@@ -65,9 +64,11 @@ minFQ: error: the following arguments are required: -w/--watch-dir, -n/--name, -
                             server which requires sequence data).</h5>
                         <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -hn {{ server_url }} -p
                             [port_for_your_server_-_eg_80] -nm -s</code>
+                        <p></p>
                         <h5>To start an analysis remotely whilst uploading data. Note reference Id may not be required.</h5>
                         <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -hn {{ server_url }}
                             -p [port_for_your_server] -nm -j [job_id] -r [reference_id]</code>
+                        <p></p>
                         <p>In order to see what jobs, references and target sets are available you can run the --list flag</p>
                         <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -hn {{ server_url }}
                             -p [port_for_your_server] -nm --list</code>
