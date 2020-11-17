@@ -2297,7 +2297,7 @@ def read_list(request):
                 status=status.HTTP_201_CREATED,
             )
         else:
-            return Response("I'm afraid read upload has been disabled on this server. Apologies.")
+            return Response("I'm afraid read upload has been disabled on this server. Apologies.", status=status.HTTP_403_FORBIDDEN)
 
 
 @api_view(["GET"])
