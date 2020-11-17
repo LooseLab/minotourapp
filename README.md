@@ -2,7 +2,12 @@
 
 minoTour is a **work in progress**, therefore features may change, and any bug reports/feature requests and pull requests will be gratefully recieved.
 
-minoTour is a web-based real-time laboratory information management system (LIMS) for Oxford Nanopore Technology (ONT) sequencers built using the Django framework. minoTour can be hosted offline and locally on a laptop, or online and accessed remotely.  It aims to enable monitoring of Nanopore sequencers in real time, allowing for analysis of performance and basic downstream data analysis. minoTour can monitor the activity of a sequencer in real time independent of analysing basecalled files providing a breakdown and analysis of live sequencing metrics via integration with ONT’s minKNOW API and parsing of sequence files as they are generated. These features enable remote control of a sequencer, as well as tracking flow cell QC and all messages received by MinKNOW during a sequencing run. The client for monitoring and uploading data, minFQ, is available via PyPI. Simple analyses, such as base calling summaries, alignment and metagenomics can be completed in real-time or after sequencing. minoTour is open source (https://www.github.com/LooseLab/minotourapp)
+minoTour is a web-based real-time laboratory information management system (LIMS) for Oxford Nanopore Technology (ONT) sequencers built using the Django framework. minoTour can be hosted offline and locally on a laptop, or online and accessed remotely.  It aims to enable monitoring of Nanopore sequencers in real time, allowing for analysis of performance and basic downstream data analysis. minoTour can monitor the activity of a sequencer in real time independent of analysing basecalled files providing a breakdown and analysis of live sequencing metrics via integration with ONT’s minKNOW API and parsing of sequence files as they are generated. These features enable remote control of a sequencer, as well as tracking flow cell QC and all messages received by MinKNOW during a sequencing run. The client for monitoring and uploading data, minFQ, is available via PyPI. Simple analyses, such as base calling summaries, alignment and metagenomics can be completed in real-time or after sequencing. minoTour is open source (https://www.github.com/LooseLab/minotourapp). 
+
+An example instance can be found at http://137.44.59.170. Credentials to log in to a deactivated account (one which cannot upload data) are: 
+
+    Username: demo-account
+    Password: Welcome-to-minotour
 
 # Table of contents
 * [Preconfiguration](#preconf)  
@@ -75,6 +80,16 @@ For the secret key, we recommend generating your own, which can be done as follo
 $ python manage.py shell -c 'from django.core.management import utils; print(utils.get_random_secret_key())'
 ```
 And stored under MT_SECRET_KEY in envs.sh.
+
+### Skipping the saving of sequence data
+
+At the cost of not being able to go back and run analyses outside of real time against your upload of data,
+ you can enable the skipping of saving the sequence data that is uploaded. This has the benefit of speeding up data upload substantially,
+ and drastically reducing disk space usage by minoTour. This setting can be enabled in the environment variables file by setting:  
+ 
+ ```bash
+    MT_SKIP_SAVING_SEQUENCE=1
+```
 
 ### Create database tables and administrator account:
 Once the environment variable file has been configured, we need to make the tables to store the data and if desired we need to create and admin account to manage the data. Luckily django makes this easy...
@@ -321,5 +336,7 @@ MT_TWITTOKEN='<Twitter token>'
 MT_TWITTOKEN_SECRET='<Twitter token secret>' 
 
 ## Uploading data to minoTour
-To upload data, in both base-called and minKnow metrics format, we use a separate upload script, [minFQ](https://github.com/LooseLab/minotourcli "minFQ github page"). Example commands and how to upload data are found on the minFQ github. 
+To upload data, in both base-called and minKnow metrics format, we use a separate upload script, [minFQ](https://github.com/LooseLab/minotourcli "minFQ github page"). Example commands and how to upload data are found on the minFQ github.
+
+ 
     

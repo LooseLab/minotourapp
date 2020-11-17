@@ -12,6 +12,7 @@ from rest_framework.authtoken.models import Token
 
 from communication.models import Message
 from metagenomics.models import CentrifugeOutput
+from minotourapp.utils import get_env_variable
 from reads.models import (Experiment, FastqRead, Flowcell, JobMaster, JobType,
                           MinionRunStats, Run, UserOptions)
 from reads.tasks.redis_tasks_functions import split_flowcell
@@ -21,13 +22,9 @@ from web.utils import get_run_details
 
 
 def index(request):
-
     if request.user.is_authenticated:
-
         return redirect("flowcells")
-
     else:
-
         return redirect("login")
 
 
@@ -55,45 +52,43 @@ def private_index(request):
 
 @login_required
 def profile(request):
+    """
+    Return profile page
+    Parameters
+    ----------
+    request
 
+    Returns
+    -------
+
+    """
     try:
-
         user_options = UserOptions.objects.get(owner=request.user)
-
     except ObjectDoesNotExist:
-
         user_options = UserOptions.objects.create(owner=request.user)
-
-    auth_token = Token.objects.get(user=request.user)
-
-    messages = Message.objects.filter(recipient=request.user).order_by("-created_date")
-
+    upload_allowed = int(get_env_variable("MT_ALLOW_UPLOAD"))
+    if upload_allowed:
+        auth_token = Token.objects.get(user=request.user)
+    else:
+        auth_token = "WARNING: UPLOAD DISABLED ON SERVER"
     if request.method == "POST":
-
         form = UserOptionsForm(request.POST)
-
         if form.is_valid():
-
             user = User.objects.get(pk=user_options.owner_id)
             user.email = form.cleaned_data["email"]
             user.save()
-
             user_options.twitterhandle = form.cleaned_data["twitter_handle"]
             user_options.tweet = form.cleaned_data["receive_tweets"]
             user_options.email = form.cleaned_data["receive_emails"]
             user_options.save()
-
     else:
-
         form = UserOptionsForm()
-
     return render(
         request,
         "web/profile.html",
         context={
             "authToken": auth_token,
             "userDetails": user_options,
-            "messages": messages,
             "form": form,
         },
     )
@@ -102,21 +97,17 @@ def profile(request):
 @login_required
 def user_message(request):
     try:
-
         user_options = UserOptions.objects.get(owner=request.user)
-
     except ObjectDoesNotExist:
-
         user_options = UserOptions.objects.create(owner=request.user)
-
     auth_token = Token.objects.get(user=request.user)
-
     messages = Message.objects.filter(recipient=request.user).order_by("-created_date")
 
 
 @login_required
-def minup(request):
-    return render(request, "web/minFq.html")
+def minfq(request):
+    server_url = get_env_variable("MT_SERVER_URL")
+    return render(request, "web/minFq.html", context={"server_url": server_url})
 
 
 @login_required

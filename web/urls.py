@@ -5,7 +5,7 @@ from . import views
 urlpatterns = [
     url(r'^signup/$', views.signup, name='signup'),
     url(r'^private/index/$', views.private_index, name='private-index'),
-    url(r'^private/minup/$', views.minup, name='minup'),
+    url(r'^private/minfq/$', views.minfq, name='minfq'),
     url(r'^private/profile/$', views.profile, name='profile'),
     url(r'^private/tutorial/$', views.tutorial, name='tutorial'),
     url(r'^private/flowcells/$', views.flowcells, name='flowcells'),

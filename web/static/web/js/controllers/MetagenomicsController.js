@@ -72,6 +72,7 @@ class MetagenomicsController {
           error: (xhr, error, code) => {
             console.error(xhr)
             console.error(code)
+            console.error(error)
           }
         },
         columns: [

@@ -529,6 +529,7 @@ def all_results_table(request, pk):
     -------
 
     """
+    print("STARTED")
     query_columns = [
         "barcode_name",
         "superkingdom",
@@ -614,7 +615,8 @@ def all_results_table(request, pk):
         "recordsFiltered": records_total,
         "data": list(cents[start:end]),
     }
-    return Response(result)
+    print(result)
+    return Response(result, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])

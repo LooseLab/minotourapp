@@ -26,7 +26,7 @@ class AlignmentController {
     this._addChangeListenerToSelects()
     // this._requestMappedChromosomes(flowcellId)
     // this._drawPafSummaryTable(flowcellId)
-    this._createColumnCharts(flowcellId)
+    this._createColumnCharts()
     this._addListenerToResetButton()
     this._interval = setInterval(this._reloadPageData, 45000, flowcellId, this)
     $(window).on(`unload`, function () {
@@ -52,7 +52,7 @@ class AlignmentController {
     if (getSelectedTab() === `sequence-mapping`) {
       that._updateOptionDropDowns(flowcellId)
       that._drawPafSummaryTable(flowcellId)
-      that._createColumnCharts(flowcellId)
+      that._createColumnCharts()
       that._fetchChromosomeInGenomeCoverageData(flowcellId)
     }
   }

@@ -18,6 +18,7 @@ from artic.utils import (
     quick_get_artic_results_directory,
     remove_duplicate_sequences_numpy, get_all_results,
 )
+from minotourapp.utils import get_env_variable
 from reads.models import Flowcell, JobMaster, FlowcellSummaryBarcode, Barcode
 from reference.models import ReferenceInfo
 
@@ -41,7 +42,6 @@ def fire_conditions_list(request, pk):
         data.pop("_state")
         return Response(data, status=status.HTTP_200_OK)
     elif request.method == "POST":
-        print(request.data)
         try:
             afc = ArticFireConditions.objects.filter(flowcell_id=int(pk))
             if not afc:
@@ -56,7 +56,7 @@ def fire_conditions_list(request, pk):
                 flowcell_id=int(pk),
                 ninety_percent_bases_at=int(request.data.get("90-input", 300)),
                 ninety_five_percent_bases_at=int(request.data.get("95-input", 250)),
-                ninety_nine_percent_bases_at=int(request.data.get("99-input", 30)),
+                ninety_nine_percent_bases_at=int(request.data.get("99-input", 60)),
             )
             afc.save()
         return Response(
@@ -350,6 +350,11 @@ def get_artic_barcode_metadata_html(request):
         return Response(
             "No flowcell ID or barcode provided.", status=status.HTTP_400_BAD_REQUEST
         )
+    # see if we have a command waiting to be run
+    try:
+        artic_command_jm = bool(JobMaster.objects.get(job_type_id=17, barcode__name=selected_barcode, flowcell_id=flowcell_id))
+    except JobMaster.DoesNotExist:
+        artic_command_jm = False
     orm_object = ArticBarcodeMetadata.objects.filter(
         flowcell_id=flowcell_id, barcode__name=selected_barcode
     ).last()
@@ -399,15 +404,22 @@ def get_artic_barcode_metadata_html(request):
     old_dict = orm_object.__dict__
     context_dict = {key[0]: old_dict[key[1]] for key in new_key_names}
     context_dict["hidden_barcode_pk"] = orm_object.barcode.id
+    context_dict["hidden_barcode_name"] = orm_object.barcode.name
     context_dict["hidden_flowcell_id"] = flowcell_id
     context_dict["hidden_job_master_id"] = orm_object.job_master.id
     context_dict["hidden_results_files"] = results_files
     context_dict["hidden_has_finished"] = old_dict["has_finished"]
     context_dict["hidden_has_suff"] = old_dict["has_sufficient_coverage"]
     context_dict["hidden_marked_for_rerun"] = old_dict["marked_for_rerun"]
+    context_dict["hidden_destroy_evidence"] = bool(int(get_env_variable("MT_DESTROY_ARTIC_EVIDENCE")))
+    context_dict["hidden_triggered_by_cleanup"] = orm_object.has_finished and not orm_object.has_sufficient_coverage
+    context_dict["hidden_has_command_job_master"] = artic_command_jm
     (flowcell, artic_results_path, artic_task_id, _) = quick_get_artic_results_directory(
         flowcell_id
     )
+    fastq_path = artic_results_path / selected_barcode / f"{selected_barcode}.fastq"
+    fastq_path_gz = fastq_path.with_suffix(".fastq.gz")
+    context_dict["hidden_has_fastq"] = fastq_path.exists() or fastq_path_gz.exists()
     if context_dict["hidden_has_finished"]:
         df = pd.read_csv(
             artic_results_path / selected_barcode / "lineage_report.csv.gz"
@@ -526,17 +538,21 @@ def get_results_modal_html(request, pk):
     html
 
     """
+    results_files_extra = [
+        ("Input fasta", "input-fasta"),
+        ("Sorted Bam", "sorted-bam"),
+        ("Sorted Bam Index", "sorted-bam-bai")
+    ]
     results_files = [
         ("Consensus sequence", "consensus"),
         ("Box plot", "box-plot"),
         ("Bar plot", "bar-plot"),
         ("Fail VCF", "fail-vcf"),
         ("Pass VCF", "pass-vcf"),
-        ("Input fasta", "input-fasta"),
         ("Pangolin lineages CSV", "pangolin-lineages"),
-        ("Sorted Bam", "sorted-bam"),
-        ("Sorted Bam Index", "sorted-bam-bai")
     ]
+    if not int(get_env_variable("MT_DESTROY_ARTIC_EVIDENCE")):
+        results_files.extend(results_files_extra)
     context_dict = {"hidden_results_files": results_files}
     return render(request, "all-results-modal.html", context={"context": context_dict})
 

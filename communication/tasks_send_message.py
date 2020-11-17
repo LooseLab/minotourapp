@@ -4,7 +4,6 @@ Task_send_message.py. Code for sending tweets once a certain condition has been 
 import datetime
 import time
 
-from celery import task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.db.models import F, Sum, Avg
@@ -13,6 +12,7 @@ from twitter import Twitter, OAuth, TwitterHTTPError, TwitterError
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata
 from communication.models import NotificationConditions, Message
+from minotourapp.celery import app
 from reads.models import UserOptions, MinionRunStats
 
 logger = get_task_logger(__name__)
@@ -127,7 +127,7 @@ def check_coverage(flowcell, target_coverage, reference_line, barcode=""):
     return queryset
 
 
-@task()
+@app.task
 def send_messages():
     """
     Send any unsent Messages stored in the database to the destined user using the Twitter API
@@ -311,7 +311,7 @@ def minion_statistic_check(condition):
         message.save()
 
 
-@task()
+@app.task
 def check_condition_is_met():
     """
     This function is executed by django beat. It checks the database for a set of conditions the user has chosen, and

@@ -584,9 +584,9 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         if data["job_type"].id != 10:
             data["target_set"] = None
         # Check if a metagenomics task is already running on this flowcell, if so refuse to create a new one
-        elif JobMaster.objects.filter(
-                flowcell=data["flowcell"]).filter(job_type__name="Metagenomics").count() > 0:
-            raise serializers.ValidationError("A metagenomics task is already running for this flowcell.")
+        # elif JobMaster.objects.filter(
+        #         flowcell=data["flowcell"]).filter(job_type__name="Metagenomics").count() > 0:
+        #     raise serializers.ValidationError("A metagenomics task is already running for this flowcell.")
         # If the job isn't EB or minimap2 or artic
         if data["job_type"].id not in [4, 15, 16]:
             data["reference"] = None
@@ -619,12 +619,11 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         job_master, created = JobMaster.objects.get_or_create(**validated_data)
         job_master.save()
         # If we have created a new job
-        if created:
+        if created and not job_master.job_type_id == 17:
             # Get the flowcell that the JobMaster is for
             flowcell_to_update_activity = validated_data["flowcell"]
             # Update the last activity date
             flowcell_to_update_activity.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
             # save the changes
             flowcell_to_update_activity.save()
-
         return job_master

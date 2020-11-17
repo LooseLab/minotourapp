@@ -1,16 +1,16 @@
 import datetime
 import time
 
-from celery.task import task
 from celery.utils.log import get_task_logger
 from django.db import connection
 
+from minotourapp.celery import app
 from minotourapp.utils import get_env_variable
 from reads.models import JobMaster, FastqRead, Flowcell
 
 logger = get_task_logger(__name__)
 
-@task()
+@app.task
 def archive_flowcell(flowcell_job_id):
     """
     Delete all reads from a flowcell, then delete the flowcell itself.
@@ -64,7 +64,7 @@ def archive_flowcell(flowcell_job_id):
         flowcell.save()
 
 
-@task()
+@app.task
 def create_archive_tasks():
     """
     Create archive tasks for flowcells that are more than X days since last use, don't archive if set to -1

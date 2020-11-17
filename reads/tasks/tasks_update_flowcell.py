@@ -1,14 +1,15 @@
 """
 Celery task to update flowcell metadata
 """
+from datetime import datetime, timezone
 
 import numpy as np
-import redis
 from celery import chain
-from celery.task import task
 from celery.utils.log import get_task_logger
 from dateutil import parser
 
+from minotourapp.celery import app
+from minotourapp.redis import redis_instance
 from reads.models import (
     FlowcellHistogramSummary,
     FlowcellStatisticBarcode,
@@ -23,13 +24,10 @@ from reads.tasks.redis_tasks_functions import (
     get_values_and_delete_redis_key,
 )
 
-redis_instance = redis.StrictRedis(
-    host="127.0.0.1", port=6379, db=0, decode_responses=True
-)
 logger = get_task_logger(__name__)
 
 
-@task()
+@app.task
 def calculate_flowcell_summary_barcode(flowcell_id):
     """
     Flowcell summary barcode, get all keys related to the flowcell summary barcode values of this flowcell
@@ -93,7 +91,7 @@ def calculate_flowcell_summary_barcode(flowcell_id):
     return None
 
 
-@task()
+@app.task
 def calculate_flowcell_histogram_summary(flowcell_id):
     """
     Flowcell histogram summary. Get all keys related to the flowcell histogram values of this flowcell
@@ -138,7 +136,7 @@ def calculate_flowcell_histogram_summary(flowcell_id):
     return flowcell_id
 
 
-@task()
+@app.task
 def calculate_flowcell_statistic_barcodes(flowcell_id):
     """
     Flowcell statistic Barcode. Get all keys related to the flowcell summary barcode values of this flowcell
@@ -204,7 +202,7 @@ def calculate_flowcell_statistic_barcodes(flowcell_id):
     return flowcell_id
 
 
-@task()
+@app.task
 def update_flowcell_details(job_master_id):
     """
     Update flowcell details by pulling Using the MinionRunInfo if it exists. If base-called data present,
@@ -262,12 +260,13 @@ def update_flowcell_details(job_master_id):
                         flowcell.start_time = run.start_time
                 break
 
-    # Get flowcell max_channel number.
+    # Get presence of fastq data in redis
     has_fastq = get_values_and_delete_redis_key(
         redis_instance, f"{flowcell.id}_has_fastq"
     )
     if has_fastq:
         flowcell.has_fastq = has_fastq
+        flowcell.last_activity_date = datetime.now(timezone.utc)
         total_read_length = get_values_and_delete_redis_key(
             redis_instance, f"{flowcell.id}_total_read_length"
         )
@@ -322,15 +321,12 @@ def update_flowcell_details(job_master_id):
                 flowcellChannelSummary.save()
 
         #Now try and update all the flowcellsummarystatistics
-
         res = chain(
             calculate_flowcell_statistic_barcodes.s(flowcell.id),
             calculate_flowcell_histogram_summary.s(),
             calculate_flowcell_summary_barcode.s(),
         ).apply_async()
-
     flowcell.number_runs = Run.objects.filter(flowcell=flowcell).count()
-
     barcode_count = (
         Barcode.objects.filter(run_id__flowcell=flowcell).values("name").distinct().count() - 1
     )

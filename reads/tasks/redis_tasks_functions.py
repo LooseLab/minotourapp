@@ -10,11 +10,14 @@ import numpy as np
 import pandas as pd
 import pytz
 import redis
-from celery import task
 from celery.utils.log import get_task_logger
 
 from alignment.tasks_alignment import run_minimap2_alignment
 from artic.task_artic_alignment import run_artic_pipeline
+from metagenomics.new_centrifuge import run_centrifuge_pipeline
+from minotourapp.celery import app
+from minotourapp.redis import redis_instance
+from minotourapp.utils import get_env_variable
 from reads.models import (
     FastqRead,
     Flowcell,
@@ -28,12 +31,11 @@ from reads.models import (
     FastqReadType,
     Barcode,
     HistogramSummary,
+    RunSummary,
 )
+from web.utils import fun
 
 logger = get_task_logger(__name__)
-redis_instance = redis.StrictRedis(
-    host="127.0.0.1", port=6379, db=0, decode_responses=True
-)
 
 
 def split_flowcell(
@@ -59,7 +61,6 @@ def split_flowcell(
 
     """
     run = Run.objects.get(pk=run_id)
-
     if existing_or_new_flowcell == "new":
         from_flowcell = Flowcell.objects.get(pk=from_flowcell_id)
         to_flowcell = Flowcell.objects.create(
@@ -82,22 +83,18 @@ def split_flowcell(
     else:
         from_flowcell = Flowcell.objects.get(pk=from_flowcell_id)
         to_flowcell = Flowcell.objects.get(pk=to_flowcell_id)
-
         logger.info(
             "Moving run {} from flowcell {} to flowcell {}".format(
                 run.id, from_flowcell.id, to_flowcell.id
             )
         )
-
         run.flowcell = to_flowcell
         run.save()
-
     move_reads_to_flowcell.delay(run.id, to_flowcell.id, from_flowcell.id)
-
     return run, from_flowcell, to_flowcell
 
 
-@task()
+@app.task
 def move_reads_to_flowcell(run_id, flowcell_id, from_flowcell_id):
     """
     Move reads from a flowcell run to a different flowcell
@@ -130,7 +127,6 @@ def move_reads_to_flowcell(run_id, flowcell_id, from_flowcell_id):
         num_updated = FastqRead.objects.filter(
             run_id=run_id, id__lte=last_read_in_chunk.id, flowcell_id=from_flowcell_id
         ).update(flowcell=flowcell)
-        print(f"Updated {num_updated}")
         # get list of dict of the flowcell
         reads = list(reads.values())
         update_flowcell.delay(reads)
@@ -143,9 +139,9 @@ def move_reads_to_flowcell(run_id, flowcell_id, from_flowcell_id):
     # If there are reads left, call the task again.
     if FastqRead.objects.filter(flowcell=old_flowcell, run=run).count():
         move_reads_to_flowcell.apply_async(args=(run_id, flowcell_id, from_flowcell_id))
-    print(f"finished in {time.time() - start_time}")
 
-@task()
+
+@app.task
 def reset_flowcell_info(old_flowcell_id):
     """
     Update the old flowcell base-called summaries and flowcell metadata.
@@ -215,7 +211,7 @@ def save_flowcell_summary_barcode(row):
 
 
 # TODO dump to redis, message key and retreive
-@task()
+@app.task
 def update_flowcell(reads_list):
     """
     Update the flowcell metadata, including read counts, yield,max_channel, base-called data summaries
@@ -239,33 +235,26 @@ def update_flowcell(reads_list):
             "fastqfile": "fastqfile_id",
         }
     )
-
     read_df = read_df.drop(columns=["sequence", "quality"])
-
     results = read_df.groupby(["flowcell_id"]).agg(
         {"read_id": "count", "channel": "max", "sequence_length": "sum"}
     )
     results.reset_index().apply(lambda row: update_flowcell_counts(row), axis=1)
-
     # We can assume that we will always have only a single flowcell in a b
     # batch of reads to process due to the way that minFQ behaves.
     # Todo: catch problems with multiple flowcells in a single transaction
-
     read_df["status"] = np.where(read_df["is_pass"] == False, "Fail", "Pass")
-
     read_df["start_time_round"] = np.array(
         ### Converting to store data in 10 minute windows.
         read_df["start_time"],
         dtype="datetime64[m]",
     )
-
     read_df["start_time_truncate"] = read_df["start_time_round"].apply(
         lambda dt: datetime(dt.year, dt.month, dt.day, dt.hour, 10 * (dt.minute // 10))
     )
-
+    update_run_summaries(read_df)
     read_df_all_reads = read_df.copy()
     read_df_all_reads["barcode_name"] = "All reads"
-
     fastq_df = read_df.append(read_df_all_reads, sort=False)
     fastq_df["barcode_name"] = fastq_df["barcode_name"].fillna("No barcode")
     #
@@ -280,15 +269,12 @@ def update_flowcell(reads_list):
             "channel": ["unique"],
         }
     )
-
     fastq_df_result.reset_index().apply(
         lambda row: save_flowcell_summary_barcode(row), axis=1
     )
-
     #
     # Calculates statistics for FlowcellStatisticsBarcode
     #
-
     fastq_df_result = fastq_df.groupby(
         [
             "flowcell_id",
@@ -305,16 +291,13 @@ def update_flowcell(reads_list):
             "channel": ["unique"],
         }
     )
-
     fastq_df_result.reset_index().apply(
         lambda row: save_flowcell_statistic_barcode(row), axis=1,
     )
-
     fastq_df["bin_index"] = (
         fastq_df["sequence_length"]
         - fastq_df["sequence_length"] % HistogramSummary.BIN_WIDTH
     ) / HistogramSummary.BIN_WIDTH
-
     fastq_df_result = fastq_df.groupby(
         [
             "flowcell_id",
@@ -325,7 +308,6 @@ def update_flowcell(reads_list):
             "rejected_barcode_id",
         ]
     ).agg({"sequence_length": ["sum", "count"]})
-
     fastq_df_result.reset_index().apply(
         lambda row: save_flowcell_histogram_summary(row), axis=1,
     )
@@ -353,7 +335,7 @@ def check_if_flowcell_has_streamable_tasks(flowcell_pk):
         List of streamable job_masters IDs
     """
 
-    streamable_tasks_pks = [16, 4]
+    streamable_tasks_pks = [16, 4, 10]
     tasks = (
         JobMaster.objects.filter(
             flowcell_id=flowcell_pk, job_type__id__in=streamable_tasks_pks
@@ -389,9 +371,33 @@ def sort_reads_by_flowcell_fire_tasks(reads):
                 run_minimap2_alignment.apply_async(
                     args=(task["id"], flowcell_reads), queue="minimap"
                 )
+            elif task["job_type_id"] == 10 and not task["from_database"]:
+                run_centrifuge_pipeline.delay(task["id"], flowcell_reads)
 
 
-@task()
+def _set_harvesting_zero(self, exc, task_id, args, kwargs, einfo):
+    """
+    If harvest reads crashes for some unforeseen reason, we need it to cleanly exit,
+     to set the harvesting key in redis to 0, otherwise data upload is halted.
+    Parameters
+    ----------
+    self
+    exc
+    task_id
+    args
+    kwargs
+    einfo
+
+    Returns
+    -------
+
+    """
+    logger.info(f"Task {self.name} crashed. Cleanly setting Harvesting key to 0.")
+    fun(self, exc, task_id, args, kwargs, einfo)
+    redis_instance.set("harvesting", 0)
+
+
+@app.task(on_failure=_set_harvesting_zero)
 def harvest_reads():
     """
     Celery task to pull all reads JSON accrued out of redis cache and run base-called metadata calculations on it,
@@ -414,7 +420,8 @@ def harvest_reads():
 
         while count > 0:
             read_chunk = redis_instance.spop("reads")
-            read_chunk = json.loads(read_chunk)
+            if read_chunk is not None:
+                read_chunk = json.loads(read_chunk)
             reads.extend(read_chunk)
             count -= 1
 
@@ -426,7 +433,85 @@ def harvest_reads():
         redis_instance.set("harvesting", 0)
 
 
-@task()
+def update_run_summaries(fastq_df):
+    """
+    Update the run summaries for the run responsible for this batch of reads
+    Parameters
+    ----------
+    fastq_df: pandas.core.frame.DataFrame
+        Dataframe with fastq reads and all their header information
+    Returns
+    -------
+    None
+
+    """
+    run_summaries = (
+        fastq_df.groupby("run_id")
+        .agg(
+            {
+                "run_id": "count",
+                "sequence_length": [np.sum, np.max, np.min, np.mean],
+                "start_time": [np.min, np.max],
+            }
+        )
+        .reset_index()
+    )
+    lookup = {
+        ("run_id", ""): "run_id",
+        ("run_id", "count"): "read_count",
+        ("sequence_length", "sum"): "total_read_length",
+        ("sequence_length", "amax"): "max_read_length",
+        ("sequence_length", "amin"): "min_read_length",
+        ("sequence_length", "mean"): "avg_read_length",
+        ("start_time", "amin"): "first_read_start_time",
+        ("start_time", "amax"): "last_read_start_time",
+    }
+    run_summaries.columns = run_summaries.columns.to_flat_index()
+    run_summaries = run_summaries.rename(columns=lookup)
+    run_summaries = run_summaries.to_dict(orient="records")
+    for run_summary in run_summaries:
+        run_summary_orm, created = RunSummary.objects.get_or_create(
+            run_id=run_summary["run_id"], defaults=run_summary
+        )
+        run = run_summary_orm.run
+        if not created:
+            # if this batch of reads earliest read start time is earlier than out recorded earliest
+            # read time on the run summary in th DB update it and vice versa for last read
+            if (
+                datetime.strptime(
+                    run_summary["first_read_start_time"], "%Y-%m-%dT%H:%M:%S%z"
+                )
+                < run_summary_orm.first_read_start_time
+            ):
+                run.start_time = run_summary[
+                    "first_read_start_time"
+                ]
+                run.save()
+                run_summary_orm.first_read_start_time = run_summary[
+                    "first_read_start_time"
+                ]
+            if (
+                datetime.strptime(
+                    run_summary["last_read_start_time"], "%Y-%m-%dT%H:%M:%S%z"
+                )
+                > run_summary_orm.last_read_start_time
+            ):
+                run_summary_orm.last_read_start_time = run_summary[
+                    "last_read_start_time"
+                ]
+            if int(run_summary["max_read_length"]) > run_summary_orm.max_read_length:
+                run_summary_orm.max_read_length = run_summary["max_read_length"]
+            if int(run_summary["min_read_length"]) < run_summary_orm.min_read_length:
+                run_summary_orm.min_read_length = run_summary["min_read_length"]
+            run_summary_orm.total_read_length += int(run_summary["total_read_length"])
+            run_summary_orm.read_count += int(run_summary["read_count"])
+            run_summary_orm.avg_read_length = (
+                run_summary_orm.total_read_length / run_summary_orm.read_count
+            )
+            run_summary_orm.save()
+
+
+@app.task
 def save_reads_bulk(reads):
     """
     Save reads into redis after they arrive from minFQ, and to the database for tasks
@@ -492,7 +577,9 @@ def save_reads_bulk(reads):
     redis_instance.sadd("reads", reads_as_json)
     # Bulk create the entries
     start_time = time.time()
-    FastqRead.objects.bulk_create(reads_list, batch_size=1000)
+    skip_sequence_saving = int(get_env_variable("MT_SKIP_SAVING_SEQUENCE"))
+    if not skip_sequence_saving:
+        FastqRead.objects.bulk_create(reads_list, batch_size=1000)
     print("Bulk create time is:")
     print(time.time() - start_time)
     print("Task time taken is:")
@@ -534,6 +621,8 @@ def update_flowcell_counts(row):
     """
     flowcell_id = int(row["flowcell_id"])
     # TODO this is where we would set no fastq of we WEREN't saving te data but were uploading it
+    # TODO but we need this flag in redis
+    # fixme this is set for each row, when it only needs to be set once
     redis_instance.set(f"{flowcell_id}_has_fastq", 1)
     # Increment by the count of the read_ids on this flowcell for total read number
     redis_instance.incrby(f"{flowcell_id}_number_reads", int(row["read_id"]))
