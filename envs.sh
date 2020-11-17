@@ -33,4 +33,5 @@ export MT_SKIP_SAVING_SEQUENCE=0 # Boolean value of 1 or 0. If true (1) fastq da
 export MT_ALLOW_UPLOAD=1 # Boolean value, 1 or 0. If true, data can be uplaoded to the server. If false, it cannot be.
 export MT_DESTROY_ARTIC_EVIDENCE=0 # Boolean value if True, data that could potentially hold sensitive patient data that is fed into the artic pipeline is removed 12 hours after the run is finished.
 export MT_TWEET_CELERY_FAILURES=1 # Boolean value if True, failures in some celery tasks are tweeted to the administrator account for this minoTour instance.
+export MT_SERVER_URL="localhost" # if not setting up a server don't worry about this - it just shows the url on the client page for the example commands
 

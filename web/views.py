@@ -22,13 +22,9 @@ from web.utils import get_run_details
 
 
 def index(request):
-
     if request.user.is_authenticated:
-
         return redirect("flowcells")
-
     else:
-
         return redirect("login")
 
 
@@ -87,7 +83,6 @@ def profile(request):
             user_options.save()
     else:
         form = UserOptionsForm()
-
     return render(
         request,
         "web/profile.html",
@@ -102,21 +97,17 @@ def profile(request):
 @login_required
 def user_message(request):
     try:
-
         user_options = UserOptions.objects.get(owner=request.user)
-
     except ObjectDoesNotExist:
-
         user_options = UserOptions.objects.create(owner=request.user)
-
     auth_token = Token.objects.get(user=request.user)
-
     messages = Message.objects.filter(recipient=request.user).order_by("-created_date")
 
 
 @login_required
-def minup(request):
-    return render(request, "web/minFq.html")
+def minfq(request):
+    server_url = get_env_variable("MT_SERVER_URL")
+    return render(request, "web/minFq.html", context={"server_url": server_url})
 
 
 @login_required

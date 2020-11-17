@@ -81,6 +81,16 @@ $ python manage.py shell -c 'from django.core.management import utils; print(uti
 ```
 And stored under MT_SECRET_KEY in envs.sh.
 
+### Skipping the saving of sequence data
+
+At the cost of not being able to go back and run analyses outside of real time against your upload of data,
+ you can enable the skipping of saving the sequence data that is uploaded. This has the benefit of speeding up data upload substantially,
+ and drastically reducing disk space usage by minoTour. This setting can be enabled in the environment variables file by setting:  
+ 
+ ```bash
+    MT_SKIP_SAVING_SEQUENCE=1
+```
+
 ### Create database tables and administrator account:
 Once the environment variable file has been configured, we need to make the tables to store the data and if desired we need to create and admin account to manage the data. Luckily django makes this easy...
 ```bash
@@ -326,5 +336,7 @@ MT_TWITTOKEN='<Twitter token>'
 MT_TWITTOKEN_SECRET='<Twitter token secret>' 
 
 ## Uploading data to minoTour
-To upload data, in both base-called and minKnow metrics format, we use a separate upload script, [minFQ](https://github.com/LooseLab/minotourcli "minFQ github page"). Example commands and how to upload data are found on the minFQ github. 
+To upload data, in both base-called and minKnow metrics format, we use a separate upload script, [minFQ](https://github.com/LooseLab/minotourcli "minFQ github page"). Example commands and how to upload data are found on the minFQ github.
+
+ 
     

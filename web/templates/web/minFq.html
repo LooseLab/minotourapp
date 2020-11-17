@@ -5,40 +5,33 @@
         <!-- Main content -->
         <section class="content">
             <div class="container-fluid">
-
                 <div class="card card-primary card-outline">
                     <h5 class="card-header">minFQ - How to upload data to minoTour.</h5>
                     <div class="card-body">
                         <h4>Installing minFQ</h4>
-                        <p>minFQ is available from pypi for python3. Installation in a python3 setting is simple:</p>
+                        <p>minFQ is available from pypi for python3. Installation in a python3 environment is simple:</p>
                         <code>pip install minFQ</code>
                         <p>If you have both python2 and 3 installed you may need to use:</p>
                         <code>pip3 install minFQ</code>
-                        <p>We recommend installing minFQ in its own environment:</p>
+                        <p><strong>We recommend installing minFQ in its own environment:</strong></p>
                         <code>python3 -m venv /path/to/your/environment<br>
                             source /path/to/your/environment/bin/activate<br>
                             pip install minFQ</code>
                         <p>The source code for minFQ is available from <a
                                 href='https://github.com/LooseLab/minotourcli'>https://github.com/LooseLab/minotourcli</a>
                         </p>
-                        <p>minFQ is also distributed via PyPI.</p>
-                        <code>pip install minFQ</code>
-                        <p>Please note that communication between minoTour and MinKNOW is mediated through the MinKNOW
-                            API.
-                            We do not distribute this code. However, installation of minFQ on a computer with MinKNOW
-                            installed will allow minFQ to access MinKNOW. These features have to be activated by the
-                            user
-                            and are used at the users own risk.</p>
+                        <p>Please note that communication between minoTour and MinKNOW is mediated through the official Oxford nanopore technologies
+                            MinKNOW
+                            API, however users use minFQ at their own risk.</p>
                         <h4>Using minFQ</h4>
-                        <p>The minFQ package can be used in at least three different ways.</p>
                         <p>The main command, minFQ provides two means of uploading run data to minoTour. minFQ can
                             monitor
-                            both the fastq data in nanopore fastq read files and can DIRECTLY monitors MinKNOW
+                            both fastq data in nanopore fastq read files and can DIRECTLY monitor MinKNOW
                             itself. </p>
                         <p>To use minFQ you require an access token obtained from your own account on a minoTour server.
                             The
                             token can be found under your user name in the 'profile' section.</p>
-                        <p>To test minFQ type:</p>
+                        <p>After installation test minFQ by typing:</p>
                         <code>minFQ</code>
                         <p>This will output a basic usage message:</p>
                         <pre>usage: minFQ [-h] -w WATCHDIR [-ip IP] [-v] [-nf] [-nm] -n RUN_NAME [-f] [-e]
@@ -48,83 +41,36 @@
 minFQ: error: the following arguments are required: -w/--watch-dir, -n/--name, -k/--key</pre>
                         <p>To see the full help type:</p>
                         <code>minFQ -h</code>
-                        <p>which will give:</p>
-                        <pre>  -w WATCHDIR, --watch-dir WATCHDIR
-                        The path to the folder containing the downloads
-                        directory with fast5 reads to analyse - e.g.
-                        C:\data\minion\downloads (for windows).
-  -i, --ignore_existing
-                        The client will ignore previously existing fastq files
-                        and will only monitor newly created files..
-  -s, --skip_sequence   If selected only read metrics, not sequence, will be
-                        uploaded to the databse.
-  -nf, --no_fastq       Run minFQ without monitoring fastq files.
-  -nm, --no_minKNOW     Run minFQ without monitoring minKNOW for live
-                        activity.
-  -rc, --remote_control
-                        This option allows your runs to be remotely started
-                        and stopped and for runs to be remotely renamed. As
-                        standard this is not enbabled.
-  -ip IP, --ip-address IP
-                        The IP address of the minKNOW machine - Typically
-                        127.0.0.1.
-  -n RUN_NAME, --name RUN_NAME
-                        This provides a backup name for a flowcell. MinoTour
-                        will use the run names and flowcell ids it finds in
-                        reads if available.
-  --unique              If you are flushing a flowcell, this option will force
-                        the flowcell to be named as a combination of flowcell
-                        ID and sample name. Thus data will be grouped
-                        appropriately. Default true.
-  -f, --is_flowcell     If you add this flag, all runs added here will be
-                        considered as a single flow cell with the name set by
-                        the name flag.
-  -tc TREATMENT_CONTROL, --treatment-control TREATMENT_CONTROL
-                        Optionally split reads based in treatment and control
-                        groups based on the channel number. The integer value
-                        informed is used to mover ish read to the control
-                        group.
-  -j JOB, --job JOB     An optional minotour job to run on your server. Please
-                        enter the ID shown on the side when running --list, or
-                        the name separated by _.
-  -r REFERENCE, --reference REFERENCE
-                        An optional minotour reference to map against.
-  --list                List available tasks, target sets and references at
-                        this server.
-  -ts TARGETS, --targets TARGETS
-                        Set the target set for the metagenomics
-  -v, --verbose         Display debugging information.
-  -ll {DEBUG,INFO,WARNING,ERROR,CRITICAL}, --loglevel {DEBUG,INFO,WARNING,ERROR,CRITICAL}
-                        Set the logging level
-  -g, --gui             Configure the code for GUI use - not yet implemented.
-  -V, --version         show program's version number and exit
-  -T TOML, --toml TOML  Path to the configuration file for an experiment
-  -U UNBLOCKS, --unblocks UNBLOCKS
-                        Path to an unblocked read_ids text file.
-</pre>
                         <h4>Example Commands</h4>
+                        <p> In the command below the port for your server will vary depending on how you run minoTour,
+                            but if run locally is probably 8100. -ip is the ip address at which minKNOW is hosted. Most likely 127.0.0.1.</p>
                         <h5>To monitor both live and fastq data.</h5>
                         <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -ip 127.0.0.1 -hn
-                            [url_to_your_minotour_server] -p [port_for_your_server_-_eg_80] -n
-                            [name_for_your_data] </code>
-                        <p></p>
+{{ server_url }} -p [port_for_your_server]</code>
+                        <br>
                         <h5>To monitor just live data from minKNOW.</h5>
-                        <code>minFQ -k [your_user_key] -ip 127.0.0.1 -hn [url_to_your_minotour_server] -p
-                            [port_for_your_server_-_eg_80] -nf</code>
+                        <code>minFQ -k [your_user_key] -ip 127.0.0.1 -hn {{ server_url }} -p
+                            [port_for_your_server] -nf</code>
                         <p></p>
-                        <h5>To monitor live data and enable full remote control of minKNOW.</h5>
-                        <code>minFQ -k [your_user_key] -ip 127.0.0.1 -hn [url_to_your_minotour_server] -p
-                            [port_for_your_server_-_eg_80] -nf -e</code>
+                        <h5>To monitor live data and enable limited remote control of minKNOW.</h5>
+                        <code>minFQ -k [your_user_key] -ip 127.0.0.1 -hn {{ server_url }} -p
+                            [port_for_your_server] -nf -rc</code>
                         <p></p>
                         <h5>To monitor just fastq data.</h5>
-                        <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -hn [url_to_your_minotour_server] -p
-                            [port_for_your_server_-_eg_80] -nm</code>
+                        <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -hn {{ server_url }} -p
+                            [port_for_your_server] -nm</code>
                         <p></p>
                         <h5>To monitor fastq statistics only. (Note you will not be able to run subsequent analysis on
                             the
                             server which requires sequence data).</h5>
-                        <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -hn [url_to_your_minotour_server] -p
+                        <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -hn {{ server_url }} -p
                             [port_for_your_server_-_eg_80] -nm -s</code>
+                        <h5>To start an analysis remotely whilst uploading data. Note reference Id may not be required.</h5>
+                        <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -hn {{ server_url }}
+                            -p [port_for_your_server] -nm -j [job_id] -r [reference_id]</code>
+                        <p>In order to see what jobs, references and target sets are available you can run the --list flag</p>
+                        <code>minFQ -k [your_user_key] -w /path/to/your/fastq/files -hn {{ server_url }}
+                            -p [port_for_your_server] -nm --list</code>
                         <h4>minFQ Gui</h4>
                         <p>We are in the process of rebuilding the minFQ gui. Watch this space.</p>
                     </div>
@@ -133,9 +79,7 @@ minFQ: error: the following arguments are required: -w/--watch-dir, -n/--name, -
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
 {% endblock %}
-
 {% block javascript %}
-
     <script>
         setActiveNavbarItem(2);
     </script>
