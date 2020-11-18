@@ -1,5 +1,6 @@
 FROM ubuntu:latest
-MAINTAINER Rory Munroniconda3/bin:${PATH}"
+MAINTAINER Rory Munro
+SHELL [ "/bin/bash", "--login", "-c" ]
 ENV MT_DB_ENGINE='django.db.backends.mysql'
 ENV MT_DB_HOST='localhost'
 #ENV MT_DB_NAME='django_test'
@@ -43,6 +44,7 @@ ENV MT_TIME_UNTIL_INACTIVE="7"
 ENV MT_TIME_UNTIL_ARCHIVE="14"
 ENV MT_SKIP_SAVING_SEQUENCE=0
 ARG PATH="/root/miniconda3/bin:${PATH}"
+ENV PATH="/root/miniconda3/bin:${PATH}"
 ENV TZ=Europe/London
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 ENV PYTHONUNBUFFERED 1
@@ -56,13 +58,13 @@ COPY requirements.txt /var/lib/minotour/apps/minotourapp/
 RUN apt-get update && apt-get install -y git build-essential libz-dev python3-dev libssl-dev python3-pip mariadb-client default-libmysqlclient-dev
 
 RUN apt-get install wget
-RUN wget \
+RUN wget --quiet \
     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     && mkdir /root/.conda \
     && bash Miniconda3-latest-Linux-x86_64.sh -b \
     && rm -f Miniconda3-latest-Linux-x86_64.sh \
-    && conda init bash
 
+RUN conda init bash
 WORKDIR /var/lib/minotour/apps
 
 RUN git clone https://github.com/artic-network/artic-ncov2019.git
@@ -87,6 +89,8 @@ RUN pip install -r /var/lib/minotour/apps/minotourapp/requirements.txt && apt-ge
 
 COPY . /var/lib/minotour/apps/minotourapp/
 
+WORKDIR /var/lib/minotour/apps/minotourapp
+
 COPY docker/celeryd /etc/init.d/celeryd
 
 COPY docker/celeryd.cnf /etc/default/celeryd
@@ -98,8 +102,6 @@ COPY minotourapp_nginx.conf /etc/nginx/sites-available/
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 RUN ln -s /etc/nginx/sites-available/minotourapp_nginx.conf /etc/nginx/sites-enabled/
-
-WORKDIR /var/lib/minotour/apps/minotourapp
 
 RUN cd extra/centrifuge-1.0.4-beta && make && cd ..
 
