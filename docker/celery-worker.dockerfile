@@ -1,6 +1,5 @@
 FROM ubuntu:latest
-MAINTAINER Rory Munro
-ENV PATH="/root/miniconda3/bin:${PATH}"
+MAINTAINER Rory Munroniconda3/bin:${PATH}"
 ENV MT_DB_ENGINE='django.db.backends.mysql'
 ENV MT_DB_HOST='localhost'
 #ENV MT_DB_NAME='django_test'
@@ -112,5 +111,5 @@ RUN usermod -a -G root www-data
 RUN python manage.py collectstatic
 
 RUN chmod -R 755 extra/* && chmod 755 /etc/init.d/celeryd && chmod 640 /etc/default/celeryd && chmod 755 /etc/init.d/celerybeat
-
+EXPOSE 8100
 

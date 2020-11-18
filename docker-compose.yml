@@ -27,7 +27,7 @@ services:
             MT_DB_ENGINE: 'django.db.backends.mysql'
             MT_DB_NAME: minotour
             MT_DB_USER: dba
-            MT_DB_PASS: test
+            MT_DB_PASS: dba
             MT_DB_PORT: 3306
             MT_DB_HOST: db
             MT_SECRET_KEY: 'hello_secret_key!!'
@@ -50,8 +50,12 @@ services:
             MT_TIME_UNTIL_INACTIVE: "7" # Number of days since last flowcell activity until a flowcell is listed as inactive
             MT_TIME_UNTIL_ARCHIVE: "14" # Number of days since last flowcell activity until a flowcell is archived and fastq data deleted
             MT_SKIP_SAVING_SEQUENCE: "1"
+            MT_ALLOW_UPLOAD: "1" # Boolean value, 1 or 0. If true, data can be uplaoded to the server. If false, it cannot be.
+            MT_DESTROY_ARTIC_EVIDENCE: "0" # Boolean value if True, data that could potentially hold sensitive patient data that is fed into the artic pipeline is removed 12 hours after the run is finished.
+            MT_TWEET_CELERY_FAILURES: 0 # Boolean value if True, failures in some celery tasks are tweeted to the administrator account for this minoTour instance.
+            MT_SERVER_URL: "localhost" # if not setting up a server don't worry about this - it just shows the url on the client page for the example commands
         ports:
-            - 8100:4200
+            - 8100:42000
         depends_on:
             - db
             - redis
