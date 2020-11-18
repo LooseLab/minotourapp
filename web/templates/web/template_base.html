@@ -40,9 +40,8 @@
     <script src="{% static 'web/minotour_utils.min.js' %}?{% now 'c' %}"></script>
     <!-- Multi input code -->
     <script src="{% static 'web/js/flowcell/requestReadData.js' %}"></script>
-{#    TODO get local copies#}
-<script src="https://d3js.org/d3.v6.min.js"></script>{#    <script src="{% static 'web/libraries/d3-sankey-0.12.3/src/sankey.js' %}"></script>#}
-    <script src="https://unpkg.com/d3-sankey@0"></script>
+    <script src="{% static 'web/libraries/d3.v6.min.js' %}"></script>{#    <script src="{% static 'web/libraries/d3-sankey-0.12.3/src/sankey.js' %}"></script>#}
+    <script src="{% static 'web/libraries/d3-sankey@0' %}"></script>
     <script src="{% static 'web/js/models/CoverageChart.js' %}"></script>
     <script src="{% static 'web/js/controllers/CoverageChartController.min.js' %}"></script>
     <script src="{% static 'web/js/flowcell/requestData.js' %}"></script>
