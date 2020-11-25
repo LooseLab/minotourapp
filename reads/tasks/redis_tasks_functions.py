@@ -489,10 +489,10 @@ def update_run_summaries(fastq_df):
             except ValueError as e:
                 first_read_time_date = datetime.strptime(
                     first_read_time_str.split("Z")[0], "%Y-%m-%dT%H:%M:%S"
-                )
+                ).replace(tzinfo=pytz.UTC)
                 last_read_time_date = datetime.strptime(
                     last_read_time_str.split("Z")[0], "%Y-%m-%dT%H:%M:%S"
-                )
+                ).replace(tzinfo=pytz.UTC)
             if first_read_time_date < run_summary_orm.first_read_start_time:
                 run.start_time = run_summary[
                     "first_read_start_time"
