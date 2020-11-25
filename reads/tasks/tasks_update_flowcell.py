@@ -220,11 +220,9 @@ def update_flowcell_details(job_master_id):
     job_master.running = True
     job_master.save()
     flowcell = job_master.flowcell
-
     logger.info(
         f"Flowcell id: {flowcell.id} - Updating details of flowcell {flowcell.name}"
     )
-
     #
     # Get the first MinIONRunStatus for a particular flowcell - but we want to ignore platform QCs
     #

@@ -245,7 +245,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^api/v1/tasktypes/$',
+        r'^api/v1/reads/tasktypes/$',
         views.task_types_list,
         name="task-types-list"),
     url(
@@ -258,6 +258,7 @@ urlpatterns = [
         r'^api/v1/active_minions/run_stats/$',
         views.remote_control_run_stats,
         name="remote-control-run_stats"
-    ),
+    ),url(r'^api/v1/test_connect/$', views.test_connection, name="testy-test"),
+
 
 ]

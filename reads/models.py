@@ -1464,12 +1464,9 @@ class MinionEventType(models.Model):
 
     :name: The name of the event.
     """
-
     name = models.CharField(
-
         max_length=64
     )
-
     class Meta:
         verbose_name = 'MinION Event Type'
         verbose_name_plural = 'MinION Event Types'

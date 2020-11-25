@@ -314,7 +314,6 @@ def events_type_list(request):
     """
     :purpose: Returns a list of all possible events to the client
     :used_by: minotour client
-    :author: Roberto Santos
 
     ChangeLog
     2018-07-09 Add documentation - Rory
@@ -1211,11 +1210,8 @@ def readname_list(request, pk):
     """
     if request.method == "GET":
         queryset = FastqRead.objects.filter(fastqfile_id=pk).order_by("id")
-
         paginator = Paginator(queryset, settings.PAGINATION_PAGE_SIZE)
-
         page = request.GET.get("page")
-
         try:
             result = paginator.page(page)
         except PageNotAnInteger:
@@ -2004,7 +2000,6 @@ def flowcell_minknow_stats_list(request, pk, check_id):
     # Take the first entry to be the run status
     minion_run_meta_information = (
         MinionRunInfo.objects.filter(run_id__flowcell_id=pk)
-        .exclude(experiment_type="platform_qc")
         .last()
     )
     flowcell = Flowcell.objects.get(pk=pk)
@@ -2381,7 +2376,7 @@ def version(request):
     json
         Dict of server version, clients supported and minknow version supported
     """
-    resp = {"server": "1.0", "clients": ["1.0"], "minknow": ["3.6.5", "4.0.4", "4.0.5"]}
+    resp = {"server": "1.0", "clients": ["1.0", "1.1", "1.2"], "minknow": ["3.6.5", "4.0.4", "4.0.5"]}
     return HttpResponse(json.dumps(resp), content_type="application/json")
 
 
@@ -2707,3 +2702,19 @@ def task_control(request):
             f" Clearing previous data may take a while, please be patient!"
         )
     return Response(return_message, status=200)
+
+
+@api_view(["GET"])
+def test_connection(request):
+    """
+    Test a connection from the minFQ client
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        Ajax request object
+    Returns
+    -------
+    rest_framework.response.Response
+        A status code of 200.
+    """
+    return Response("Hello from the other siddde. Here we can use F strings. Wow", status=status.HTTP_200_OK)

@@ -339,7 +339,7 @@ class TasksController {
     })
     // url to fetch all the available task types
     // fetch all available tasks types
-    axios.get(`/api/v1/tasktypes/`).then(
+    axios.get(`/api/v1/reads/tasktypes/`).then(
       response => {
         // get the data
         const data = response.data.data

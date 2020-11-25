@@ -477,12 +477,23 @@ def update_run_summaries(fastq_df):
         if not created:
             # if this batch of reads earliest read start time is earlier than out recorded earliest
             # read time on the run summary in th DB update it and vice versa for last read
-            if (
-                datetime.strptime(
-                    run_summary["first_read_start_time"], "%Y-%m-%dT%H:%M:%S%z"
+            first_read_time_str = run_summary["first_read_start_time"]
+            last_read_time_str = run_summary["last_read_start_time"]
+            try:
+                first_read_time_date = datetime.strptime(
+                    first_read_time_str, "%Y-%m-%dT%H:%M:%S%z"
                 )
-                < run_summary_orm.first_read_start_time
-            ):
+                last_read_time_date = datetime.strptime(
+                        last_read_time_str, "%Y-%m-%dT%H:%M:%S%z"
+                )
+            except ValueError as e:
+                first_read_time_date = datetime.strptime(
+                    first_read_time_str.split("Z")[0], "%Y-%m-%dT%H:%M:%S"
+                )
+                last_read_time_date = datetime.strptime(
+                    last_read_time_str.split("Z")[0], "%Y-%m-%dT%H:%M:%S"
+                )
+            if first_read_time_date < run_summary_orm.first_read_start_time:
                 run.start_time = run_summary[
                     "first_read_start_time"
                 ]
@@ -490,12 +501,7 @@ def update_run_summaries(fastq_df):
                 run_summary_orm.first_read_start_time = run_summary[
                     "first_read_start_time"
                 ]
-            if (
-                datetime.strptime(
-                    run_summary["last_read_start_time"], "%Y-%m-%dT%H:%M:%S%z"
-                )
-                > run_summary_orm.last_read_start_time
-            ):
+            if last_read_time_date > run_summary_orm.last_read_start_time:
                 run_summary_orm.last_read_start_time = run_summary[
                     "last_read_start_time"
                 ]
@@ -506,7 +512,7 @@ def update_run_summaries(fastq_df):
             run_summary_orm.total_read_length += int(run_summary["total_read_length"])
             run_summary_orm.read_count += int(run_summary["read_count"])
             run_summary_orm.avg_read_length = (
-                run_summary_orm.total_read_length / run_summary_orm.read_count
+                    run_summary_orm.total_read_length / run_summary_orm.read_count
             )
             run_summary_orm.save()
 
