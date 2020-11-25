@@ -27,11 +27,6 @@ urlpatterns = [
         views.run_detail,
         name="run-detail"
     ),
-    # url(
-    #     r'^api/v1/runs/(?P<pk>[0-9]+)/reads/$',
-    #     views.read_list,
-    #     name="fastqread-list"
-    # ),
     url(
         r'^api/v1/read/$',
         views.read_list,
@@ -245,7 +240,7 @@ urlpatterns = [
     ),
 
     url(
-        r'^api/v1/reads/tasktypes/$',
+        r'^api/v1/tasktypes/$',
         views.task_types_list,
         name="task-types-list"),
     url(
@@ -258,7 +253,8 @@ urlpatterns = [
         r'^api/v1/active_minions/run_stats/$',
         views.remote_control_run_stats,
         name="remote-control-run_stats"
-    ),url(r'^api/v1/test_connect/$', views.test_connection, name="testy-test"),
+    ),
+    url(r'^api/v1/test_connect/$', views.test_connection, name="testy-test"),
 
 
 ]
