@@ -453,7 +453,6 @@ def readname_list(request, pk):
     """
     if request.method == "GET":
         queryset = FastqRead.objects.filter(fastqfile_id=pk).order_by("id")
-        print(queryset)
         paginator = Paginator(queryset, settings.PAGINATION_PAGE_SIZE)
         page = request.GET.get("page")
         try:
@@ -470,7 +469,6 @@ def readname_list(request, pk):
         result3 = {}
         result3["number_pages"] = paginator.num_pages
         result3["data"] = list(result2)
-        print(result3)
         return HttpResponse(json.dumps(result3), content_type="application/json")
 
 
@@ -1594,7 +1592,7 @@ def job_master_list(request):
                     reference.name, reference.minimap2_index_file_location
                 )
         # the int value for cli target sets is the index, so we have to get the actual target set name
-        if "target_set" in request.data and request.data.get("cli", False):
+        if "target_set" in request.data and request.data.get("cli", False) and request.data["target_set"]:
             api_key = request.data.get("api_key", "")
             target_set_index = request.data.get("target_set", -1)
             user_id = Token.objects.get(key=api_key).user_id
@@ -1604,6 +1602,9 @@ def job_master_list(request):
                 .distinct()
             )
             request.data["target_set"] = target_sets[int(target_set_index)-1]
+        if request.data["job_type"] == 16:
+            if JobMaster.objects.filter(flowcell=flowcell, job_type_id=16).count() > 0:
+                return Response({"message": "Artic task already running"}, status=200)
         serializer = JobMasterInsertSerializer(data=request.data)
         # If the serialiser is valid
         if serializer.is_valid():

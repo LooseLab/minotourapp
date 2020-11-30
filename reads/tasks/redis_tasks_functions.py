@@ -255,7 +255,7 @@ def update_flowcell(reads_list):
     read_df_all_reads = read_df.copy()
     read_df_all_reads["barcode_name"] = "All reads"
     fastq_df = read_df.append(read_df_all_reads, sort=False)
-    fastq_df["barcode_name"] = fastq_df["barcode_name"].fillna("No barcode")
+    fastq_df["barcode_name"] = fastq_df["barcode_name"].fillna("No_barcode")
     #
     # Calculates statistics for flowcellSummaryBarcode
     #

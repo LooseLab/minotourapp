@@ -199,11 +199,10 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     logger.info(fastq_path)
     scheme_dir = get_env_variable("MT_ARTIC_SCEHEME_DIR")
     os.chdir(f"{base_results_directory}/{barcode_name}")
-    # clear_old_data(Path(base_results_directory) / barcode_name, barcode_name)
     cmd = [
         "bash",
         "-c",
-        f"source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate artic-ncov2019 && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V1 {barcode_name}",
+        f"source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate artic-ncov2019 && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V3 {barcode_name}",
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
@@ -781,7 +780,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                 paf_summary_cov_orm.average_read_length = round(
                     paf_summary_cov_orm.total_yield / paf_summary_cov_orm.read_count
                 )
-
                 paf_summary_cov_orm.save()
             # TODO only ever see one chromosome, so we can remove for loop?
             barcodes_already_fired = fetch_barcode_to_fire_list(base_result_dir_path)

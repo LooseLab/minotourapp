@@ -78,30 +78,23 @@ def get_artic_barcodes(request):
 
     """
     flowcell_id = int(request.GET.get("flowcellId", None))
-
     if not flowcell_id:
         return Response(
             "Please provide a flowcell id.", status=status.HTTP_400_BAD_REQUEST
         )
-
     flowcell, artic_results_path, artic_task_id, _ = quick_get_artic_results_directory(
         flowcell_id
     )
-
     barcodes_list = []
-
     if not artic_results_path.exists():
         return Response(
             "Artic results directory not found.", status=status.HTTP_404_NOT_FOUND
         )
-
     for item in artic_results_path.iterdir():
         if item.is_dir():
             barcodes_list.append(item.stem)
-
     if not barcodes_list:
         return Response("No results found.", status=status.HTTP_404_NOT_FOUND)
-
     return Response(barcodes_list, status=status.HTTP_200_OK)
 
 
@@ -278,7 +271,6 @@ def get_artic_summary_table_data(request):
 
     """
     flowcell_id = request.GET.get("flowcellId", None)
-
     if not flowcell_id:
         return Response(
             "Please specify a flowcellId parameter.",

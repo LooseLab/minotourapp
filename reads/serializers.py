@@ -398,10 +398,7 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         # If the job isn't EB or minimap2 or artic
         if data["job_type"].id not in [4, 15, 16]:
             data["reference"] = None
-        if data["job_type"].id == 16:
-            if JobMaster.objects.filter(
-                flowcell=data["flowcell"]).filter(job_type_id=16).count() > 0:
-                raise serializers.ValidationError("An artic task is already running for this flowcell.")
+
         # If the job is to calculate a sankey diagram
         if data["job_type"].id == 13:
             # Get the metagenomics task object
