@@ -3,7 +3,8 @@ import os
 
 from django.core.management.base import BaseCommand, CommandError
 
-from reads.models import Flowcell, JobType, JobMaster
+from minknow_data.models import Flowcell
+from reads.models import JobType, JobMaster
 from readuntil.task_expected_benefit import run_eb_by_job_master
 from reference.models import ReferenceInfo
 

@@ -4,7 +4,9 @@ class FlowcellTabController {
      */
   constructor (flowcellId) {
     this._flowcellId = flowcellId
-    this._flowcellServices = new FlowcellService()
+    this._axiosInstance = axios.create({
+      headers: { 'X-CSRFToken': getCookie(`csrftoken`) }
+    })
     this._drawTabs()
     this.tabs = []
     this._first = true
@@ -27,21 +29,35 @@ class FlowcellTabController {
   /**
    * Draw the tabs for the first time on the flowcell index.html page, then show one tab of data
    */
+  getFlowcellTabs (flowcellId) {
+    return this._axiosInstance
+      .get(`/api/v1/reads/flowcells/${flowcellId}/tabs/`)
+      .then(tabs => {
+        return tabs
+      })
+      .catch(error => {
+        console.log(error)
+        throw new Error(`Error getting the flowcell tabs.`)
+      })
+  }
+
   _drawTabs () {
-    const promise = this._flowcellServices.getFlowcellTabs(this._flowcellId)
-    promise.then((tabs) => {
-      const seshTab = getSelectedTab()
-      // We are getting the previous tab here and checking it still is available. If it is we show it.
-      this.showTabs(tabs)
-      this.tabs = tabs
-      if (this._first) {
-        const activeTab = seshTab !== null && tabs.includes(seshTab) ? seshTab : `summary-data`
-        this.toggleTabContent(activeTab)
-        this._first = false
-      }
-    }, reason => {
-      console.error(reason)
-    })
+    this._axiosInstance.get(`/api/v1/reads/flowcells/${this._flowcellId}/tabs/`).then(
+      response => {
+        const tabs = response.data
+        const seshTab = getSelectedTab()
+        // We are getting the previous tab here and checking it still is available. If it is we show it.
+        this.showTabs(tabs)
+        this.tabs = tabs
+        if (this._first) {
+          const activeTab = seshTab !== null && tabs.includes(seshTab) ? seshTab : `summary-data`
+          this.toggleTabContent(activeTab)
+          this._first = false
+        }
+      }).catch(
+      error => {
+        console.error(error)
+      })
   }
 
   /**
@@ -73,7 +89,7 @@ class FlowcellTabController {
     }
     // set the new tab in Session Storage.
     setSelectedTab(name)
-    if (name !== `live-event-data`){
+    if (name !== `live-event-data`) {
       $(`html`).removeClass(`disable-scroll`)
     }
     // add active to newly selected nav time child element, the link

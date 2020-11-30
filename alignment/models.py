@@ -1,6 +1,7 @@
 from django.db import models
 
-from reads.models import Barcode, FastqRead, FastqReadType, Run, GroupRun, Flowcell, JobMaster
+from minknow_data.models import Run, Flowcell
+from reads.models import Barcode, FastqRead, FastqReadType, JobMaster
 from reference.models import ReferenceInfo, ReferenceLine
 
 
@@ -19,13 +20,6 @@ class PafRoughCov(models.Model):
         Flowcell,
         on_delete=models.CASCADE,
         related_name="flowcell_prc_run",
-        null=True,
-        blank=True,
-    )
-    grouprun = models.ForeignKey(
-        GroupRun,
-        on_delete=models.CASCADE,
-        related_name="pafroughcovs",
         null=True,
         blank=True,
     )
@@ -88,13 +82,6 @@ class PafRoughCovIntermediate(models.Model):
         Flowcell,
         on_delete=models.CASCADE,
         related_name="flowcell_paf_rough_cov_intermediates",
-        null=True,
-        blank=True,
-    )
-    grouprun = models.ForeignKey(
-        GroupRun,
-        on_delete=models.CASCADE,
-        related_name="paf_rough_cov_intermediates",
         null=True,
         blank=True,
     )

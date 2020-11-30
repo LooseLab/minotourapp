@@ -8,6 +8,7 @@ from celery import chain
 from celery.utils.log import get_task_logger
 from dateutil import parser
 
+from minknow_data.models import MinionRunInfo, Run
 from minotourapp.celery import app
 from minotourapp.redis import redis_instance
 from reads.models import (
@@ -15,8 +16,6 @@ from reads.models import (
     FlowcellStatisticBarcode,
     FlowcellSummaryBarcode,
     JobMaster,
-    MinionRunInfo,
-    Run,
     FlowcellChannelSummary, Barcode,
 )
 from reads.tasks.redis_tasks_functions import (

@@ -1,7 +1,8 @@
 """Model classes for the artic app."""
 from django.db import models
 
-from reads.models import Flowcell, JobMaster, Barcode
+from minknow_data.models import Flowcell
+from reads.models import JobMaster, Barcode
 
 
 class ArticBarcodeMetadata(models.Model):
@@ -53,4 +54,4 @@ class ArticFireConditions(models.Model):
     )
     ninety_percent_bases_at = models.IntegerField(default=250)
     ninety_five_percent_bases_at = models.IntegerField(default=200)
-    ninety_nine_percent_bases_at = models.IntegerField(default=60)
+    ninety_nine_percent_bases_at = models.IntegerField(default=30)

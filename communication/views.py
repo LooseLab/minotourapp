@@ -146,7 +146,7 @@ def create_notification_conditions(flowcell, user, **kwargs):
     Create and save a notification conditions
     Parameters
     ----------
-    flowcell: reads.models.Flowcell
+    flowcell: minknow_data.models.Flowcell
         The flowcell these notifications are being created for
     user:
         The user that we are creating this flowcell for

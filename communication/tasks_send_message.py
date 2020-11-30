@@ -12,8 +12,9 @@ from twitter import Twitter, OAuth, TwitterHTTPError, TwitterError
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata
 from communication.models import NotificationConditions, Message
+from minknow_data.models import MinionRunStats
 from minotourapp.celery import app
-from reads.models import UserOptions, MinionRunStats
+from reads.models import UserOptions
 
 logger = get_task_logger(__name__)
 
@@ -78,7 +79,7 @@ def check_coverage(flowcell, target_coverage, reference_line, barcode=""):
     Check the coverage of a mapping task.
     Parameters
     ----------
-    flowcell: reads.models.Flowcell
+    flowcell: minknow_data.models.Flowcell
         The flowcell that sequenced the reads for this mapping task.
     target_coverage: int
         The desired amount of coverage to be reached

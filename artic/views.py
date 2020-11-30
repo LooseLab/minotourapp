@@ -18,8 +18,9 @@ from artic.utils import (
     quick_get_artic_results_directory,
     remove_duplicate_sequences_numpy, get_all_results,
 )
+from minknow_data.models import Flowcell
 from minotourapp.utils import get_env_variable
-from reads.models import Flowcell, JobMaster, FlowcellSummaryBarcode, Barcode
+from reads.models import JobMaster, FlowcellSummaryBarcode, Barcode
 from reference.models import ReferenceInfo
 
 
@@ -56,7 +57,7 @@ def fire_conditions_list(request, pk):
                 flowcell_id=int(pk),
                 ninety_percent_bases_at=int(request.data.get("90-input", 300)),
                 ninety_five_percent_bases_at=int(request.data.get("95-input", 250)),
-                ninety_nine_percent_bases_at=int(request.data.get("99-input", 60)),
+                ninety_nine_percent_bases_at=int(request.data.get("99-input", 30)),
             )
             afc.save()
         return Response(

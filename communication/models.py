@@ -4,7 +4,8 @@ from django.conf import settings
 from django.db import models
 from django.db.models import UniqueConstraint
 
-from reads.models import Flowcell, Barcode, Run
+from minknow_data.models import Run, Flowcell
+from reads.models import Barcode
 from reference.models import ReferenceInfo, ReferenceLine
 
 
@@ -110,7 +111,7 @@ class NotificationConditions(models.Model):
         ---------
         notification_type: str
             A choicefield of notification type
-        flowcell: reads.models.Flowcell
+        flowcell: minknow_data.models.Flowcell
             The flowcell that this condition is created against
         creating_user: django.contrib.auth.models.User
             The user that created this notification. Could be linked from flowcell...

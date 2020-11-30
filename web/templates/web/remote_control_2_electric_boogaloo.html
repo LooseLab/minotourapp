@@ -401,10 +401,10 @@
                     this.minionCheck = name
                   },
                   sendMessage (event, custom) {
-                    const jobType = custom ? `custommessage` : `testmessage`
+                    const jobType = custom ? `custom_message` : `test_message`
                     const minionPk = parseInt(event.target.id);
                     const minionUrl = this.devices.find(e => e.id === minionPk).url
-                    _axiosInstance.post(`/api/v1/minions/${minionPk}/control/`,
+                    _axiosInstance.post(`/api/v1/minknow/minions/${minionPk}/control/`,
                       {
                         "custom": this.message,
                         "job": jobType,
@@ -426,10 +426,10 @@
                     console.log(this)
                     console.log(this.devices)
                     const minionUrl = this.devices.find(e => e.id === this.minionToStop).url
-                    _axiosInstance.post(`/api/v1/minions/${this.minionToStop}/control/`,
+                    _axiosInstance.post(`/api/v1/minknow/minions/${this.minionToStop}/control/`,
                       {
                         "custom": "",
-                        "job": "stopminion",
+                        "job": "stop_minion",
                         "minION": minionUrl,
                         "complete": 'False'
                       }
@@ -492,7 +492,7 @@
                   ,
                   getData () {
                     axios
-                    .get('/api/v1/active_minions')
+                    .get('/api/v1/minknow/active_minions')
                     .then(response => {
                       this.devices = response.data;
                       this.parseComputerData()

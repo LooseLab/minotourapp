@@ -6,7 +6,8 @@ import os
 
 from django.core.management import BaseCommand, CommandError
 
-from reads.models import Flowcell, JobMaster
+from minknow_data.models import Flowcell
+from reads.models import JobMaster
 from web.tasks import run_centrifuge
 
 log_folder = os.environ.get('MT_LOG_FOLDER')

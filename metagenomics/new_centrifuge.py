@@ -406,7 +406,7 @@ def calculate_donut_data(df, flowcell, tax_rank_filter):
     ----------
     df: pandas.core.frame.DataFrame
         The dataframe of the metagenomics output, aggregated
-    flowcell: reads.models.Flowcell
+    flowcell: minknow_data.models.Flowcell
         The flowcell ORM object
     tax_rank_filter: list
         List of taxonomic ranks

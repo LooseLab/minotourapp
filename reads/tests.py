@@ -6,7 +6,8 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from .models import Barcode, FastqRead, FastqReadType, Run, Flowcell
+from minknow_data.models import Run, Flowcell
+from .models import Barcode, FastqRead, FastqReadType
 
 
 class MinionRunTestCase(APITestCase):

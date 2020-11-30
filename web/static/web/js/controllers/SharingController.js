@@ -33,7 +33,7 @@ class SharingController {
       headers: { 'X-CSRFToken': getCookie(`csrftoken`) }
     })
 
-    axiosInstance.post(`/api/v1/flowcells/${this._flowcellId}/sharing/`, {
+    axiosInstance.post(`/api/v1/reads/lowcells/${this._flowcellId}/sharing/`, {
       flowcell: this._flowcellId,
       permission: this._permission.value,
       username: this._username.value
@@ -51,7 +51,7 @@ class SharingController {
     const axiosInstance = axios.create({
       headers: { 'X-CSRFToken': csrftoken }
     })
-    var url = `/api/v1/flowcells/${this._flowcellId}/sharing/delete/`
+    var url = `/api/v1/reads/flowcells/${this._flowcellId}/sharing/delete/`
     axiosInstance.post(url, {
       user_id: userId,
       permission
@@ -65,7 +65,7 @@ class SharingController {
 
   getAll () {
     var self = this
-    var url = `/api/v1/flowcells/${this._flowcellId}/sharing/`
+    var url = `/api/v1/reads/flowcells/${this._flowcellId}/sharing/`
 
     axios.get(url)
       .then(response => {

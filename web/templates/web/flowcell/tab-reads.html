@@ -52,20 +52,15 @@
         var div = $('<div/>')
             .addClass('loading')
             .text('Loading...');
-
         $.ajax({
-            url: '/api/v1/readsextra/?search_criteria=read_id&search_value=' + rowData.read_id,
+            url: '/api/v1/reads/reads-extra/?search_criteria=read_id&search_value=' + rowData.read_id,
             //dataType: 'json',
             success: function (json) {
-
                 var textarea = $('<textarea rows=10 cols=100/>');
-
                 div
                     .html('')
                     .removeClass('loading');
-
                 textarea.text(json.sequence);
-
                 div.append(textarea);
             }
         });

@@ -28,38 +28,38 @@
     }
   },
   {
-    "model": "reads.minioneventtype",
+    "model": "minknow_data.minioneventtype",
     "pk": 1,
     "fields": {
-      "name": "active"
+      "name": "ACQUISITION_RUNNING"
     }
   },
   {
-    "model": "reads.minioneventtype",
+    "model": "minknow_data.minioneventtype",
     "pk": 2,
     "fields": {
-      "name": "inactive"
+      "name": "ACQUISITION_FINISHING"
     }
   },
   {
-    "model": "reads.minioneventtype",
+    "model": "minknow_data.minioneventtype",
     "pk": 3,
     "fields": {
-      "name": "sequencing"
+      "name": "ACQUISITION_STARTING"
     }
   },
-  {
-    "model": "reads.minioneventtype",
+    {
+    "model": "minknow_data.minioneventtype",
     "pk": 4,
     "fields": {
       "name": "unplugged"
     }
   },
   {
-    "model": "reads.minioneventtype",
+    "model": "minknow_data.minioneventtype",
     "pk": 5,
     "fields": {
-      "name": "connected"
+      "name": "ACQUISITION_COMPLETED"
     }
   },
   {

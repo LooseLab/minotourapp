@@ -41,7 +41,7 @@ class FlowcellTableController {
       },
       order: [[3, `desc`]],
       ajax: {
-        url: `/api/v1/flowcells/`,
+        url: `/api/v1/reads/flowcells/`,
         async: true,
         error: (xhr, error, code) => {
           console.error(xhr)

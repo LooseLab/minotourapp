@@ -5,8 +5,8 @@ import pandas as pd
 from django.db.models import F
 
 from communication.models import Message
+from minknow_data.models import Flowcell
 from reads.models import (
-    Flowcell,
     RunSummary,
     FastqRead,
     FlowcellStatisticBarcode,
@@ -92,7 +92,7 @@ def return_temp_empty_summary(run):
     """
     If a run has no summary - return an empty RunSummary rather than fail
     :param run: The run that has no summary
-    :type run: reads.models.Run
+    :type run: minknow_data.models.Run
     :return:
     """
     run_summary = RunSummary(

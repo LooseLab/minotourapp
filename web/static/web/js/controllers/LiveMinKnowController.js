@@ -197,7 +197,7 @@ class LiveMinKnowController {
     if (getSelectedTab() !== `live-event-data`) {
       return
     }
-    that._axiosInstance.get(`/api/v1/reads/flowcells/${flowcellId}/runstats/${that._lastMinionRunStatsId}`).then(
+    that._axiosInstance.get(`/api/v1/minknow/flowcells/${flowcellId}/runstats/${that._lastMinionRunStatsId}`).then(
       response => {
         if (response.status === 206) { return }
         const index = that._first ? response.data.histogram_history.length - 1 : parseInt($(`#histogram-date-picker`).val())

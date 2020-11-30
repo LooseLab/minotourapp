@@ -4,8 +4,8 @@ import os
 from django.contrib.auth.models import User
 
 from communication.models import Message
+from minknow_data.models import MinionRunInfo, Flowcell
 from minotourapp.utils import get_env_variable
-from reads.models import Flowcell, MinionRunInfo
 
 
 def file_folder_exists(filepath):
