@@ -313,7 +313,7 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
     )
     map_out_df = map_out_df.fillna(0)
     map_out_df["barcode_name"] = np.where(
-        map_out_df["barcode_name"] == "No barcode",
+        map_out_df["barcode_name"] == "No_barcode",
         "All reads",
         map_out_df["barcode_name"],
     )

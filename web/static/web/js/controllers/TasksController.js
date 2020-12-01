@@ -306,7 +306,7 @@ class TasksController {
       if (jobTypeId === `10`) {
         label.html(`Target Sets`)
         referenceSelect.empty()
-        axios.get(`/api/v1/metagenomics/targetsets`).then(
+        axios.get(`/api/v1/metagenomics/target-sets`).then(
           response => {
             response.data.forEach(targetSet => {
               this._targetSetSet.add(`<option value="${targetSet.target_set}">${targetSet.target_set}</option>`)

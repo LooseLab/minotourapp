@@ -662,7 +662,7 @@ def test_connection(request):
     rest_framework.response.Response
         A status code of 200.
     """
-    return Response("Hello from the other siddde. Here we can use F strings. Wow", status=status.HTTP_200_OK)
+    return Response("Successfully connected to minoTour api.", status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])
