@@ -9,3 +9,4 @@ rename table reads_minionmessage to minknow_data_minionmessage;
 rename table reads_minion to minknow_data_minion;
 rename table reads_run to minknow_data_run;
 rename table reads_flowcell to minknow_data_flowcell;
+update minknow_data_run set name = "mux_scan" where name = "mux scan";

@@ -588,13 +588,11 @@ def minion_run_status_list(request, pk):
         if serializer.is_valid():
             serializer.save()
             # update the run start time
-            run = serializer.data["run"]
-            print(run)
-            if serializer.data["minKNOW_start_time"] < run["start_time"]:
+            run = Run.objects.get(pk=pk)
+            if serializer.data["minKNOW_start_time"] < run.start_time:
                 run.start_time = serializer.data["minKNOW_start_time"]
                 run.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     try:
         minion_run_info = MinionRunInfo.objects.filter(run_id=pk)
@@ -703,14 +701,14 @@ def flowcell_minknow_stats_list(request, pk, check_id):
     runs = Run.objects.filter(flowcell=flowcell)
     run_info = [(name, (run_start.timestamp() * 1000)) for name, run_start in runs.values_list("name", "start_time") if run_start is not None]
     if not MinionRunStats.objects.filter(
-        run_id__in=flowcell.runs.all().exclude(name="mux scan"), id__gt=check_id
+        run_id__in=flowcell.runs.all().exclude(name="mux_scan"), id__gt=check_id
     ).count():
         return Response({"last_minion_run_stats_id": check_id}, status=status.HTTP_206_PARTIAL_CONTENT)
     minion_run_stats_gen = (
         x
         for x in list(
             MinionRunStats.objects.filter(
-                run_id__in=flowcell.runs.all().exclude(name="mux scan"), id__gt=check_id
+                run_id__in=flowcell.runs.all().exclude(name="mux_scan"), id__gt=check_id
             )
         )
     )
