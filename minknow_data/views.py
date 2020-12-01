@@ -2,6 +2,7 @@ import datetime
 import json
 from collections import defaultdict
 
+import pytz
 from django.http import HttpResponse
 # Create your views here.
 from django.utils import timezone
@@ -589,8 +590,15 @@ def minion_run_status_list(request, pk):
             serializer.save()
             # update the run start time
             run = Run.objects.get(pk=pk)
-            if serializer.data["minKNOW_start_time"] < run.start_time:
-                run.start_time = serializer.data["minKNOW_start_time"]
+            try:
+                run_start_date = datetime.datetime.strptime(serializer.data["minKNOW_start_time"],
+                                                    "%Y-%m-%dT%H:%M:%S%z")
+            except ValueError as e:
+                run_start_date = datetime.datetime.strptime(
+                    serializer.data["minKNOW_start_time"], "%Y-%m-%dT%H:%M:%S"
+                ).replace(tzinfo=pytz.UTC)
+            if run_start_date < run.start_time:
+                run.start_time = run_start_date
                 run.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
