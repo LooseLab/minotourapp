@@ -595,7 +595,7 @@ def minion_run_status_list(request, pk):
                                                     "%Y-%m-%dT%H:%M:%S%z")
             except ValueError as e:
                 run_start_date = datetime.datetime.strptime(
-                    serializer.data["minKNOW_start_time"], "%Y-%m-%dT%H:%M:%S"
+                    serializer.data["minKNOW_start_time"].split("Z")[0], "%Y-%m-%dT%H:%M:%S"
                 ).replace(tzinfo=pytz.UTC)
             if run_start_date < run.start_time:
                 run.start_time = run_start_date
