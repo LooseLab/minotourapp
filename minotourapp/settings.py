@@ -166,24 +166,24 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 MAILGUN_ACCESS_KEY = get_env_variable("MT_MAILGUN_ACCESS_KEY")
 MAILGUN_SERVER_NAME = get_env_variable("MT_MAILGUN_SERVER_NAME")
 
-"""LOGGING = {
+LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
         'file': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(tempfile.gettempdir(), 'minotour.log'),
+            'filename': os.path.join(BASE_DIR, 'minotour.log'),
         },
     },
     'loggers': {
         'django': {
             'handlers': ['file'],
-            'level': 'INFO',
+            'level': 'DEBUG',
             'propagate': True,
         },
     },
-}"""
+}
 
 default_exchange = Exchange('default', type='direct')
 priority_exchange = Exchange('priority_queue', type='direct')

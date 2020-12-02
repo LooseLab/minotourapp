@@ -343,11 +343,10 @@ def save_mapping_results(row, task):
         if species_info
         else (row["num_matches"], row["sum_unique"])
     )
-    logger.info(num_matches, sum_unique)
+    species = " ".join(row["name"].split(" ")[:2])
     map_result = MappingResult.objects.get(
-        task=task, species=row["name"], barcode_name=row["barcode_name"]
+        task=task, species=species, barcode_name=row["barcode_name"]
     )
-    logger.info(map_result.__dict__)
     map_result.num_mapped += row["num_mapped"]
     map_result.num_matches += num_matches
     map_result.sum_unique += sum_unique
