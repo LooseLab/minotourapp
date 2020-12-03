@@ -401,5 +401,3 @@ def check_artic_sufficient_coverage(condition):
                 "title": f"Sufficient Coverage reached for Barcode {barcode['barcode__name']} in Artic task {barcode['job_master_id']} with an average coverage of {barcode['average_coverage']} at {time}."
             },
         )
-        print(created)
-        print(m)
