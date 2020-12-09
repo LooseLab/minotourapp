@@ -15,9 +15,10 @@ from rest_framework.response import Response
 
 from artic.models import ArticBarcodeMetadata
 from artic.task_artic_alignment import make_results_directory_artic
+from minknow_data.models import Flowcell
 from minotourapp.settings import BASE_DIR
 from minotourapp.utils import get_env_variable
-from reads.models import Flowcell, JobMaster
+from reads.models import JobMaster
 
 # Colour palette of amplicon bands
 colour_palette = ["#ffd9dc", "#ffefdc", "#ffffbc", "#dcffe4", "#bae1ff"]
@@ -29,7 +30,7 @@ def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
     ----------
     artic_results_dir: pathlib.PosixPath
         The path to the artic results directory
-    flowcell: reads.models.Flowcell
+    flowcell: minknow_data.models.Flowcell
         The ORM object of the flowcell
     selected_barcode: str
         The name of the selected barcode, empty string if downloading all barcodes

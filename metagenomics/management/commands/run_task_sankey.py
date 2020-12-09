@@ -8,7 +8,8 @@ import os
 from django.core.management import BaseCommand, CommandError
 
 from metagenomics.sankey import calculate_sankey
-from reads.models import Flowcell, JobMaster
+from minknow_data.models import Flowcell
+from reads.models import JobMaster
 
 log_folder = os.environ.get('MT_LOG_FOLDER')
 

@@ -4,9 +4,10 @@ import time
 from celery.utils.log import get_task_logger
 from django.db import connection
 
+from minknow_data.models import Flowcell
 from minotourapp.celery import app
 from minotourapp.utils import get_env_variable
-from reads.models import JobMaster, FastqRead, Flowcell
+from reads.models import JobMaster, FastqRead
 
 logger = get_task_logger(__name__)
 

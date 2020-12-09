@@ -10,7 +10,6 @@ python ../manage.py dumpdata --indent 2 \
     reads.FlowcellStatisticBarcode \
     reads.FlowcellSummaryBarcode \
     reads.FlowcellTab \
-    reads.GroupRun \
     reads.HistogramSummary \
     reads.MinION \
     reads.MinIONControl \

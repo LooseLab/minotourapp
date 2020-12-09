@@ -9,7 +9,8 @@ from django.db.models import Q
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from reads.models import Flowcell, Run, JobMaster
+from minknow_data.models import Run, Flowcell
+from reads.models import JobMaster
 from readuntil.models import (
     ExpectedBenefitChromosomes,
     RejectedFastqRead,

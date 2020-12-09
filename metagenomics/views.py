@@ -20,7 +20,8 @@ from metagenomics.models import (
     DonutData,
     MappingTarget,
 )
-from reads.models import Flowcell, JobMaster
+from minknow_data.models import Flowcell
+from reads.models import JobMaster
 
 pd.options.mode.chained_assignment = None
 
@@ -31,7 +32,7 @@ def check_run_is_legit(flowcell, task):
 
     Parameters
     ----------
-    flowcell: reads.models.Flowcell
+    flowcell: minknow_data.models.Flowcell
         Flowcell ORM
     task: reads.models.JobMaster
         JobMaster ORM object

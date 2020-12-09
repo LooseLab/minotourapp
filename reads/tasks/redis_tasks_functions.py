@@ -15,18 +15,17 @@ from celery.utils.log import get_task_logger
 from alignment.tasks_alignment import run_minimap2_alignment
 from artic.task_artic_alignment import run_artic_pipeline
 from metagenomics.new_centrifuge import run_centrifuge_pipeline
+from minknow_data.models import Run, Flowcell
 from minotourapp.celery import app
 from minotourapp.redis import redis_instance
 from minotourapp.utils import get_env_variable
 from reads.models import (
     FastqRead,
-    Flowcell,
     FlowcellChannelSummary,
     FlowcellStatisticBarcode,
     FlowcellHistogramSummary,
     FlowcellSummaryBarcode,
     JobMaster,
-    Run,
     JobType,
     FastqReadType,
     Barcode,
@@ -256,7 +255,7 @@ def update_flowcell(reads_list):
     read_df_all_reads = read_df.copy()
     read_df_all_reads["barcode_name"] = "All reads"
     fastq_df = read_df.append(read_df_all_reads, sort=False)
-    fastq_df["barcode_name"] = fastq_df["barcode_name"].fillna("No barcode")
+    fastq_df["barcode_name"] = fastq_df["barcode_name"].fillna("No_barcode")
     #
     # Calculates statistics for flowcellSummaryBarcode
     #
@@ -570,26 +569,18 @@ def save_reads_bulk(reads):
             fastqfile_id=read["fastqfile"],
         )
         reads_list.append(fastq_read)
-    print(f"number of reads is {len(reads)}")
     # Save reads to redis for later processing of base-called data summaries.
     reads_as_json = json.dumps(reads)
     ### We want to pause to let the number of chunks get below 10?
     count = redis_instance.scard("reads")
     while count > 10:
-        print("waiting")
         time.sleep(5)
         count = redis_instance.scard("reads")
-    print(f"read set count is {count}")
     redis_instance.sadd("reads", reads_as_json)
     # Bulk create the entries
-    start_time = time.time()
     skip_sequence_saving = int(get_env_variable("MT_SKIP_SAVING_SEQUENCE"))
     if not skip_sequence_saving:
         FastqRead.objects.bulk_create(reads_list, batch_size=1000)
-    print("Bulk create time is:")
-    print(time.time() - start_time)
-    print("Task time taken is:")
-    print(f"{time.time() - task_start_time}")
 
 
 def get_values_and_delete_key_redis_hash(r, key):

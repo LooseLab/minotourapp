@@ -313,7 +313,7 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
     )
     map_out_df = map_out_df.fillna(0)
     map_out_df["barcode_name"] = np.where(
-        map_out_df["barcode_name"] == "No barcode",
+        map_out_df["barcode_name"] == "No_barcode",
         "All reads",
         map_out_df["barcode_name"],
     )
@@ -343,11 +343,10 @@ def save_mapping_results(row, task):
         if species_info
         else (row["num_matches"], row["sum_unique"])
     )
-    logger.info(num_matches, sum_unique)
+    species = " ".join(row["name"].split(" ")[:2])
     map_result = MappingResult.objects.get(
-        task=task, species=row["name"], barcode_name=row["barcode_name"]
+        task=task, species=species, barcode_name=row["barcode_name"]
     )
-    logger.info(map_result.__dict__)
     map_result.num_mapped += row["num_mapped"]
     map_result.num_matches += num_matches
     map_result.sum_unique += sum_unique

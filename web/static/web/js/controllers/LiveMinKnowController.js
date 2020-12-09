@@ -197,18 +197,20 @@ class LiveMinKnowController {
     if (getSelectedTab() !== `live-event-data`) {
       return
     }
-    that._axiosInstance.get(`/api/v1/reads/flowcells/${flowcellId}/runstats/${that._lastMinionRunStatsId}`).then(
+    that._axiosInstance.get(`/api/v1/minknow/flowcells/${flowcellId}/runstats/${that._lastMinionRunStatsId}`).then(
       response => {
         if (response.status === 206) { return }
-        const index = that._first ? response.data.histogram_history.length - 1 : parseInt($(`#histogram-date-picker`).val())
+        if (`histogram_history` in response.data) {
+          const index = that._first ? response.data.histogram_history.length - 1 : parseInt($(`#histogram-date-picker`).val())
+          that._histogramHistory = response.data.histogram_history
+          that._updateLiveHistogram(response.data.histogram_history, index)
+        }
         const runInfo = response.data.run_info
         console.log(runInfo)
         that._first = false
-        that._histogramHistory = response.data.histogram_history
         that.updateLiveTabChart(response.data.yield_history, that._liveYieldChart, runInfo)
         that.updateLiveTabChart(response.data.pore_history, that._livePoreStatesChart, runInfo)
         that._prepareHistogramSlider()
-        that._updateLiveHistogram(response.data.histogram_history, index)
         that.updateLiveTabChart(response.data.occupancy_history, that._liveOccupancyChart, runInfo)
         that.updateLiveTabChart(response.data.in_strand_history, that._liveInStrandChart, runInfo)
         that.updateLiveTabChart(response.data.temperature_history, that._liveTemperatureChart, runInfo)

@@ -15,6 +15,7 @@ from django.conf import settings
 
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
+from minknow_data.models import Flowcell
 from minotourapp.celery import app
 from minotourapp.settings import BASE_DIR, STATIC_ROOT
 from minotourapp.utils import get_env_variable
@@ -24,8 +25,7 @@ from reads.models import (
     Barcode,
     FastqReadType,
     FlowcellSummaryBarcode,
-    FastqRead, Flowcell,
-)
+    FastqRead, )
 from readuntil.functions_EB import *
 
 logger = get_task_logger(__name__)
@@ -49,7 +49,6 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
     None
     """
     flowcell = Flowcell.objects.get(pk=flowcell_id)
-    print(flowcell.__dict__)
     logger.info(
         f"Clearing non necessary results for {artic_results_path} for sample name {sample_name}"
     )
@@ -72,7 +71,7 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
             f"Clearing sensitive files from {artic_results_path} for sample name {sample_name}"
         )
     else:
-        logger.info("Extending files to ke[ep")
+        logger.info("Extending files to keep")
         files_to_keep.extend(files_to_keep_extra)
     files_to_keep_full = []
     files_to_keep_full.extend([f"{sample_name}{filey}" for filey in files_to_keep])
@@ -200,11 +199,10 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     logger.info(fastq_path)
     scheme_dir = get_env_variable("MT_ARTIC_SCEHEME_DIR")
     os.chdir(f"{base_results_directory}/{barcode_name}")
-    # clear_old_data(Path(base_results_directory) / barcode_name, barcode_name)
     cmd = [
         "bash",
         "-c",
-        f"source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate artic-ncov2019 && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V1 {barcode_name}",
+        f"source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate artic-ncov2019 && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V3 {barcode_name}",
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
@@ -240,7 +238,7 @@ def save_artic_command_job_masters(flowcell, barcode_name, reference_info):
     Save the JobMasters that we need to manage the queue of tasks.
     Parameters
     ----------
-    flowcell: reads.models.Flowcell
+    flowcell: minknow_data.models.Flowcell
         Flowcell these runs are on
     barcode_name: str
         Barcode name for these reads
@@ -451,7 +449,7 @@ def save_artic_barcode_metadata_info(
     coverage: np.ndarray
         Array of coverage, element for each base.
 
-    flowcell: reads.models.Flowcell
+    flowcell: minknow_data.models.Flowcell
         Flowcell Django ORM object for the flowcell that produced these reads.
 
     job_master: reads.models.JobMaster
@@ -782,7 +780,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                 paf_summary_cov_orm.average_read_length = round(
                     paf_summary_cov_orm.total_yield / paf_summary_cov_orm.read_count
                 )
-
                 paf_summary_cov_orm.save()
             # TODO only ever see one chromosome, so we can remove for loop?
             barcodes_already_fired = fetch_barcode_to_fire_list(base_result_dir_path)

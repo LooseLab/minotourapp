@@ -73,7 +73,7 @@ class TasksController {
    * @private
    */
   _submitDeleteTask (taskNew) {
-    this._axiosInstance.post(`/api/v1/tasks/`, {
+    this._axiosInstance.post(`/api/v1/reads/tasks/`, {
       flowcell: taskNew.flowcellId,
       reference: taskNew.referenceId,
       job_type: taskNew.jobTypeId,
@@ -177,7 +177,7 @@ class TasksController {
   }
 
   _postTask (taskNew, taskTable) {
-    this._axiosInstance.post(`/api/v1/tasks/`, {
+    this._axiosInstance.post(`/api/v1/reads/tasks/`, {
       flowcell: taskNew.flowcellId,
       reference: taskNew.referenceId,
       job_type: taskNew.jobTypeId,
@@ -209,7 +209,7 @@ class TasksController {
    */
   reactivateFlowcell (event) {
     event.preventDefault()
-    this._axiosInstance.post(`/api/v1/flowcells/${this._flowcellId}/reactivate/`).then(
+    this._axiosInstance.post(`/api/v1/reads/flowcells/${this._flowcellId}/reactivate/`).then(
       response => {
         this._reactivatemessageView.update(`Flowcell successfully reactivated`)
       }
@@ -259,7 +259,7 @@ class TasksController {
     } else {
       table.DataTable({
         ajax: {
-          url: `/api/v1/tasks/?search_criteria=flowcell&search_value=${flowcellId.toString()}`,
+          url: `/api/v1/reads/tasks/?search_criteria=flowcell&search_value=${flowcellId.toString()}`,
           method: `GET`,
           async: true,
           error: (xhr, error, code) => {
@@ -306,7 +306,7 @@ class TasksController {
       if (jobTypeId === `10`) {
         label.html(`Target Sets`)
         referenceSelect.empty()
-        axios.get(`/api/v1/metagenomics/targetsets`).then(
+        axios.get(`/api/v1/metagenomics/target-sets`).then(
           response => {
             response.data.forEach(targetSet => {
               this._targetSetSet.add(`<option value="${targetSet.target_set}">${targetSet.target_set}</option>`)
@@ -339,7 +339,7 @@ class TasksController {
     })
     // url to fetch all the available task types
     // fetch all available tasks types
-    axios.get(`/api/v1/tasktypes/`).then(
+    axios.get(`/api/v1/reads/task-types/`).then(
       response => {
         // get the data
         const data = response.data.data

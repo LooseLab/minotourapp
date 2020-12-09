@@ -88,7 +88,7 @@ class BasecalledDataController {
     let barcodeNames = []; let active; const newBarcodeElementsArray = []
     const that = this
     const firstIteration = this.barcodesList.length === 0
-    this._axiosInstance.get(`/api/v1/flowcells/barcodes`, { params: { flowcellId } }).then((response) => {
+    this._axiosInstance.get(`/api/v1/reads/flowcells/barcodes`, { params: { flowcellId } }).then((response) => {
       if (response.status !== 200) console.error(`Error ${response.status}`)
       barcodeNames = response.data
       // Read until run so we need the drop down
@@ -242,7 +242,7 @@ class BasecalledDataController {
          * Request histogram data - Request data for the two histograms on the basecalled data tab
          */
     const initialise = true
-    this._axiosInstance.get(`/api/v1/flowcells/${flowcellId}/histogram-summary/`, {
+    this._axiosInstance.get(`/api/v1/reads/flowcells/${flowcellId}/histogram-summary/`, {
       params: {
         barcodeName,
         initialise
@@ -303,7 +303,7 @@ class BasecalledDataController {
     let preExistingSeriesNames
     let chartData
 
-    this._axiosInstance.get(`/api/v1/flowcells/${flowcellId}/histogram-summary/`, { params: { barcodeName } }).then(response => {
+    this._axiosInstance.get(`/api/v1/reads/flowcells/${flowcellId}/histogram-summary/`, { params: { barcodeName } }).then(response => {
       const chartPoints = response.data.data
       if (response.status !== 200) {
         console.error(`Error, incorrect status, expected 200, got ${response.status}`)
@@ -402,7 +402,7 @@ class BasecalledDataController {
       this._cumulativeNumberReadsOverTime,
       this._maxReadLengthsOverTime,
       this._sequencingRate]
-    this._axiosInstance.get(`/api/v1/flowcells/${flowcellId}/statistics/`, { params: { barcodeName, ruBarcodeName } }).then(response => {
+    this._axiosInstance.get(`/api/v1/reads/flowcells/${flowcellId}/statistics/`, { params: { barcodeName, ruBarcodeName } }).then(response => {
       let key, value
       // TODO add in the run start lines.
       const runData = response.data.runs
@@ -513,7 +513,7 @@ class BasecalledDataController {
     let chartData
     let chartHasData
     let size // size of the flowcell. 512 for minIon etc.
-    this._axiosInstance(`/api/v1/flowcells/${flowcellId}/channel-summary`).then(response => {
+    this._axiosInstance(`/api/v1/reads/flowcells/${flowcellId}/channel-summary`).then(response => {
       if (response.status !== 200) {
         console.error(`Error, incorrect status, expected 200, got ${response.status}`)
       }
@@ -594,7 +594,7 @@ class BasecalledDataController {
      * @private
      */
   _updateBarcodeProportionCharts (flowcellId) {
-    this._axiosInstance(`/api/v1/flowcells/${flowcellId}/barcode-proportion`).then(response => {
+    this._axiosInstance(`/api/v1/reads/flowcells/${flowcellId}/barcode-proportion`).then(response => {
       const chartData = response.data
       const oldChartData = this._columnChartBarcodeProportion.series
       let oldSeries

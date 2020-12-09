@@ -4,8 +4,8 @@ import os
 from django.contrib.auth.models import User
 
 from communication.models import Message
+from minknow_data.models import MinionRunInfo, Flowcell
 from minotourapp.utils import get_env_variable
-from reads.models import Flowcell, MinionRunInfo
 
 
 def file_folder_exists(filepath):
@@ -58,6 +58,7 @@ def validate_envs():
     # if not is_executable(get_env_variable("MT_MINIMAP2")):
     #     raise ValueError("The Minimap2 executable is either not there, or not executable. Please double check.")
     pass
+
 
 def update_last_activity_time(flowcell):
     """
@@ -148,16 +149,30 @@ def get_run_details(run_id):
 
             else:
 
-                element = {"runid": run.summary.run.runid, "run_start_time": None, "first_read": None,
-                           "last_read": None, "minknow_computer_name": None, "minion_id": None, "asic_id": None,
-                           "sequencing_kit": None, "purpose": None, "minknow_version": None, "flowcell_type": None,
-                           "flowcellId": None, "sample_name": None, "experiment_name": None,
-                           "read_count": run.summary.read_count, "total_read_length": run.summary.total_read_length,
-                           "max_read_length": run.summary.max_read_length,
-                           "min_read_length": run.summary.min_read_length,
-                           "avg_read_length": run.summary.avg_read_length,
-                           "first_read_start_time": run.summary.first_read_start_time,
-                           "last_read_start_time": run.summary.last_read_start_time, "id": run.id}
+                element = {
+                    "runid": run.summary.run.runid,
+                    "run_start_time": None,
+                    "first_read": None,
+                    "last_read": None,
+                    "minknow_computer_name": None,
+                    "minion_id": None,
+                    "asic_id": None,
+                    "sequencing_kit": None,
+                    "purpose": None,
+                    "minknow_version": None,
+                    "flowcell_type": None,
+                    "flowcellId": None,
+                    "sample_name": None,
+                    "experiment_name": None,
+                    "read_count": run.summary.read_count,
+                    "total_read_length": run.summary.total_read_length,
+                    "max_read_length": run.summary.max_read_length,
+                    "min_read_length": run.summary.min_read_length,
+                    "avg_read_length": run.summary.avg_read_length,
+                    "first_read_start_time": run.summary.first_read_start_time,
+                    "last_read_start_time": run.summary.last_read_start_time,
+                    "id": run.id,
+                }
 
                 result[element["runid"]] = element
 
@@ -183,4 +198,9 @@ def fun(self, exc, task_id, args, kwargs, einfo):
     u = User.objects.filter(is_superuser=True)[0]
     if u and int(get_env_variable("MT_TWEET_CELERY_FAILURES")):
         error_string = einfo.__str__().split("\n")[-2]
-        Message.objects.create(recipient=u, title=f"Celery task {self.name} failed. Final stack trace line: {error_string} ")
+        Message.objects.create(
+            recipient=u,
+            title=f"Celery task {self.name} failed at"
+            f" {str(datetime.datetime.now())}. Final stack trace line: "
+            f"{error_string} ",
+        )

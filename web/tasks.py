@@ -11,10 +11,10 @@ from artic.task_artic_alignment import (
 )
 from metagenomics.new_centrifuge import run_centrifuge_pipeline
 from metagenomics.sankey import calculate_sankey
+from minknow_data.models import Flowcell
 from minotourapp.celery import app
 from minotourapp.utils import get_env_variable
 from reads.models import (
-    Flowcell,
     JobMaster,
 )
 from reads.tasks.redis_tasks_functions import harvest_reads

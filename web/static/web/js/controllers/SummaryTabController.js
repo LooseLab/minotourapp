@@ -30,7 +30,7 @@ class SummaryTabController {
         $(`#minknow-messages-div`).remove()
       },
       ajax: {
-        url: `/api/v1/flowcells/${flowcellId}/minknow-messages/`,
+        url: `/api/v1/minknow/flowcells/${flowcellId}/minknow-messages/`,
         async: true,
         error: (xhr, error, code) => {
           console.error(xhr)

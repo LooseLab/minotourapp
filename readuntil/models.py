@@ -1,6 +1,7 @@
 from django.db import models
 
-from reads.models import Run, Flowcell, JobMaster
+from minknow_data.models import Run, Flowcell
+from reads.models import JobMaster
 from reference.models import ReferenceLine
 
 

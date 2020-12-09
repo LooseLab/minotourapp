@@ -3,14 +3,12 @@ Register models with the admin interface
 """
 from django.contrib import admin
 
+from minknow_data.models import Run, Flowcell
 from .models import (Barcode, FastqFile, FastqRead, FastqReadType,
-                     MinionControl, MinionEvent, MinionEventType,
-                     MinionMessage, MinionRunStats, MinionRunInfo,
-                     MinionScripts, MinionInfo, Run, RunSummary, UserOptions, ChannelSummary, HistogramSummary,
-                     RunStatisticBarcode, RunSummaryBarcode, GroupRun, FlowcellHistogramSummary,
+                     RunSummary, UserOptions, ChannelSummary, HistogramSummary,
+                     RunStatisticBarcode, RunSummaryBarcode, FlowcellHistogramSummary,
                      FlowcellStatisticBarcode,
-                     FlowcellSummaryBarcode, Flowcell, Minion,
-                     JobMaster, JobType, SampleTag)
+                     FlowcellSummaryBarcode, JobMaster, JobType, SampleTag)
 
 
 class RunStatisticsBarcodeAdmin(admin.ModelAdmin):
@@ -28,7 +26,6 @@ class RunSummaryBarcodeAdmin(admin.ModelAdmin):
 class FlowcellAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'sample_name')
 
-
 admin.site.register(FastqRead)
 admin.site.register(FastqFile)
 admin.site.register(FastqReadType)
@@ -36,24 +33,14 @@ admin.site.register(FlowcellStatisticBarcode)
 admin.site.register(FlowcellSummaryBarcode)
 admin.site.register(FlowcellHistogramSummary)
 admin.site.register(Run)
-admin.site.register(MinionEventType)
-admin.site.register(MinionEvent)
-admin.site.register(MinionScripts)
-admin.site.register(MinionInfo)
-admin.site.register(MinionRunInfo)
-admin.site.register(MinionRunStats)
-admin.site.register(MinionMessage)
-admin.site.register(MinionControl)
 admin.site.register(RunStatisticBarcode, RunStatisticsBarcodeAdmin)
 admin.site.register(RunSummaryBarcode, RunSummaryBarcodeAdmin)
 admin.site.register(ChannelSummary)
 admin.site.register(HistogramSummary)
 admin.site.register(UserOptions)
 admin.site.register(Barcode)
-admin.site.register(GroupRun)
 admin.site.register(RunSummary)
 admin.site.register(Flowcell, FlowcellAdmin)
-admin.site.register(Minion)
 admin.site.register(JobMaster)
 admin.site.register(JobType)
 admin.site.register(SampleTag)

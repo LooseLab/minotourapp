@@ -284,7 +284,7 @@ def fetch_final_rough_cov_to_update(df_aggregate_intmd):
         lookup_dict = {}
     if not df_old_coverage.empty:
         df_old_coverage.drop(
-            columns=["_state", "grouprun_id", "bin_position_end", "is_pass", "chromosome_id"], inplace=True
+            columns=["_state", "bin_position_end", "is_pass", "chromosome_id"], inplace=True
         )
         # df_old_coverage.rename(columns={"chromosome_id": "chromosome_pk"}, inplace=True)
         df_old_coverage["ORM"] = df_old_coverage["id"].map(lookup_dict)
