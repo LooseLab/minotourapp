@@ -12,4 +12,4 @@ class NotificationConditionForm(forms.ModelForm):
     """
     class Meta:
         model = NotificationConditions
-        fields = ("upper_limit", "lower_limit", "notification_type", "flowcell", "chromosome", "reference", "coverage_target")
+        fields = ("upper_limit", "lower_limit", "notification_type", "flowcell", "chromosome", "reference", "coverage_target", "run_until")
