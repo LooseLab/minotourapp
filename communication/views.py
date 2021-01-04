@@ -141,60 +141,11 @@ def get_references_for_condtions(request, pk):
     return Response(b, status=status.HTTP_200_OK)
 
 
-def create_notification_conditions(flowcell, user, **kwargs):
-    """
-    Create and save a notification conditions
-    Parameters
-    ----------
-    flowcell: minknow_data.models.Flowcell
-        The flowcell these notifications are being created for
-    user:
-        The user that we are creating this flowcell for
-    kwargs: dict
-        Key word arguments to create the flowcell with
 
-    Returns
-    -------
-    cond: str
-        Any error message (If any.)
-
-    """
-    lookup_dict = dict(NotificationConditions.NOTIFICATION_CHOICES)
-    # Lookup the human readable notification type
-    noti_type = lookup_dict[kwargs.get("notification_type")]
-    # Check for my uniqueness
-    check = NotificationConditions.objects.filter(
-        flowcell=flowcell, creating_user=user, **kwargs
-    )
-    if check:
-        return (
-            f"An identical Condition already exists for the {noti_type}"
-            f" condition you are trying to create."
-        )
-    # Now we check we don't have more than 2 non unique notifications of the same type, as long as they aren't Coverage
-    # As many coverages as the user wants are allowed
-    check_not_excess = 0
-    if not kwargs.get("notification_type") == "cov":
-        check_not_excess = NotificationConditions.objects.filter(
-            flowcell=flowcell,
-            creating_user=user,
-            notification_type=kwargs.get("notification_type"),
-        ).count()
-    if check_not_excess > 4:
-        return (
-            f"Too many conditions of type {noti_type} already exist on this flowcell."
-            f" Please delete an existing one."
-        )
-    if not check or not check_not_excess > 2:
-        cond = NotificationConditions(flowcell=flowcell, creating_user=user, **kwargs)
-        cond.save()
-
-
-@api_view(["GET", "POST", "DELETE"])
+@api_view(["GET", "DELETE"])
 def notification_conditions_list(request):
     """
     Get all the condition for a specific flowcell that a User has created
-    Create the conditions that the user will be notified about if they are met. Chosen from notifications-manager.html.
     Parameters
     ----------
     request: rest_framework.request.Request
