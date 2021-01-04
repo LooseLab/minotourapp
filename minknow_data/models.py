@@ -544,13 +544,13 @@ class Run(models.Model):
 
 class MinionControl(models.Model):
     """
-    :purpose: Store a new job for the minion to pickup and perform  TODO could probably be expanded with example job, why it exists
+    :purpose: Store a new job for the minion to pickup and perform, example stop_minion to stop run
 
     Fields:
     :minion: The minion name as stored in the Minion table
     :owner: The Owner as the user
     :job: The Job that you want the minion to perform
-    :custom: TODO to be completed
+    :custom: The contents of a custom message
     :complete: Whether the job is complete or not
     :created_date: The date that the job was created
     :modified_date: The date that this as last modified
