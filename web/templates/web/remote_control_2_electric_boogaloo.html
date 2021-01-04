@@ -10,7 +10,6 @@
     <div class="content-wrapper" style="background-color: white">
         <section class="content">
             {#            <div id="app">#}
-
             <div id="app">
                 {% verbatim %}
                 <template>
@@ -19,7 +18,6 @@
                                 class="fill-height"
                                 fluid
                         >
-
                             <v-row
                                     align="center"
                                     justify="center"
@@ -383,9 +381,6 @@
                    * @param event {obj} The DOM event object
                    */
                   checkName (event) {
-                    console.log(event)
-                    console.log(event.target.value)
-                    console.log(this.minionCheck)
                     this.isDisallowed = !(event.target.value === this.minionCheck)
                     this.disabled = !(event.target.value === this.minionCheck)
                   },
@@ -536,7 +531,7 @@
                       return
                     } else {
                       return this.devices.filter(function (devices) {
-                        return devices.run_status.match(/^(ACQUISITION_PROCESSING|STARTING|FINISHING|ACQUISITION_RUNNING|)$/) //("PROCESSING","STARTING","FINISHING")
+                        return devices.run_status.match(/(ACQUISITION_PROCESSING|ACQUISITION_STARTING|FINISHING|ACQUISITION_RUNNING|)$/) //("PROCESSING","STARTING","FINISHING")
                       })
                     }
                   },
