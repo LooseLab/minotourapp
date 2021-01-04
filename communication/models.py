@@ -223,6 +223,10 @@ class NotificationConditions(models.Model):
         default=0
     )
 
+    run_until = models.BooleanField(
+        default=False
+    )
+
     UniqueConstraint(
         name='unique_communication',
         fields=['chromosome', 'reference', 'notification_type', 'coverage_target'],
