@@ -18,6 +18,7 @@ class FlowcellNotificationController {
       backdrop: `true`
     }
     this._formData = new FormData()
+    this._formElement = null
     this._table = null
     this._disabledNotificationsHTML = {}
     this._type2Id = {
@@ -37,8 +38,6 @@ class FlowcellNotificationController {
     this._contigSelect.attr(`disabled`, false)
     this._contigSelect.html([...this._contigSet[referencePk]].join(``))
   }
-
-
 
   /**
    * Get the references and contigs for the coverage selects on condition create
@@ -76,8 +75,9 @@ class FlowcellNotificationController {
 
   _addListenerToForms () {
     $(`#reference`).on(`change`, event => { this._referenceOnChange(event) })
-    $(`.notification-form`).on(`submit`, event => { this._postNotificationCreation(event, this) })
+    $(`.notification-form`).on(`submit`, event => { event.preventDefault(); this._postNotificationCreation(event, this) })
     $(`#multi-form-submit`).on(`click`, this.submitForms)
+    $(`#submit-condition-modal`).on(`click`, event => { this._confirmRunUntil() })
   }
 
   /**
@@ -120,20 +120,12 @@ class FlowcellNotificationController {
     $(`#suff`).submit()
   }
 
-  _postNotificationCreation (event, that) {
-    const formData = new FormData()
-    event.preventDefault()
+  _confirmRunUntil () {
+    this._post(this._formData, this._formElement)
+  }
 
-    $(event.currentTarget).find(`.noti-control`).each((index, field) => {
-      const value = field.type === `checkbox` ? $(field).prop(`checked`) : $(field).val()
-      if (value) {
-        if (!formData.has(`flowcell`)) {
-          formData.append(`notification_type`, $(event.currentTarget).attr(`id`))
-          formData.append(`flowcell`, that._flowcellId)
-        }
-        formData.append(field.id.replace(`-`, `_`), value)
-      }
-    })
+  _post (formData, formElement) {
+    const that = this
     axios({
       url: `/api/v1/communication/conditions/create-condition/`,
       data: formData,
@@ -146,15 +138,40 @@ class FlowcellNotificationController {
       response => {
         that._disableExtantNotifications()
         that.getNotificationsForTable()
-        $(event.currentTarget)[0].reset()
+        formElement.reset()
         that._formData = new FormData()
+        that._formElement = null
       }
     ).catch(
       error => {
         console.error(error)
         that._formData = new FormData()
+        that._formElement = null
       }
     )
+  }
+
+  _postNotificationCreation (event, that) {
+    event.preventDefault()
+    const formData = new FormData()
+    $(event.currentTarget).find(`.noti-control`).each((index, field) => {
+      const value = field.type === `checkbox` ? $(field).prop(`checked`) : $(field).val()
+      if (value) {
+        console.log(`Hello ${value}`)
+        if (!formData.has(`flowcell`)) {
+          formData.append(`notification_type`, $(event.currentTarget).attr(`id`))
+          formData.append(`flowcell`, that._flowcellId)
+        }
+        formData.append(field.id.replaceAll(`-`, `_`), value)
+      }
+    })
+    if (formData.get(`run_until`)) {
+      $(`#run-until-modal`).modal(`show`)
+      this._formData = formData
+      this._formElement = $(event.currentTarget)[0]
+    } else {
+      this._post(formData, $(event.currentTarget)[0])
+    }
   }
 
   /**
@@ -187,6 +204,7 @@ class FlowcellNotificationController {
           { data: `ref_name` },
           { data: `chrom_line_name` },
           { data: `coverage_target` },
+          { data: `run_until` },
           {
             data: null,
             orderable: false,
@@ -219,19 +237,12 @@ class FlowcellNotificationController {
         }
       } else if (notificationType !== `cov`) {
         $(`#list-tab-top`).append(this._disabledNotificationsHTML[notificationType])
+        delete this._disabledNotificationsHTML[notificationType]
       }
     }).catch(error => {
       console.error(error)
     })
   }
-
-  // /**
-  //  * Get the HTML
-  //  * @private
-  //  */
-  // _getDataListHtml () {
-  //
-  // }
 
   /**
    * Render the page HTML anew. TODO this means we have to slightly change how we are doing this page
