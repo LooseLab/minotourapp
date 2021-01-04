@@ -566,7 +566,7 @@ def save_reads_bulk(reads):
             run_id=read["run_id"],
             flowcell_id=read["flowcell_id"],
             type_id=read["type"],
-            fastqfile_id=read["fastqfile"],
+            fastqfile_id=read["fastq_file"],
         )
         reads_list.append(fastq_read)
     # Save reads to redis for later processing of base-called data summaries.
