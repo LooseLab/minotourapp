@@ -12,7 +12,7 @@ from twitter import Twitter, OAuth, TwitterHTTPError, TwitterError
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata
 from communication.models import NotificationConditions, Message
-from minknow_data.models import MinionRunStats
+from minknow_data.models import MinionRunStats, MinionControl
 from minotourapp.celery import app
 from reads.models import UserOptions
 
@@ -245,9 +245,27 @@ def coverage_notification(condition):
             condition.save()
 
 
+def create_stop_run(minion):
+    """
+    Create a stop run minion control command that is picked up by minFQ.
+    Parameters
+    ----------
+    minion: minknow_data.models.Minion
+        The minion that the run is currently active on
+    Returns
+    -------
+    None
+    """
+    MinionControl.objects.create(
+        custom="", job="stop_minion", minion=minion, complete=False
+    )
+
+
 def minion_statistic_check(condition):
     """
-        Run calculations for minion statistics, such as speed, occupation, voltage
+        Run calculations for minion statistics, such as speed, occupation, voltage, if 10 of the last 10 MinionStatitics
+        are out of the limits
+        on the notification condition, send tweet and if run until enabled stop run
         Parameters
         ----------
         condition: communication.models.NotificationConditions
@@ -259,58 +277,42 @@ def minion_statistic_check(condition):
     # Limit for condition
     upper_limit = condition.upper_limit
     lower_limit = condition.lower_limit
-    if (
-        condition.last_minions_stats_id == 0
-        and MinionRunStats.objects.filter(run__flowcell=condition.flowcell).count()
-    ):
-        queryset = MinionRunStats.objects.filter(
-            run__flowcell=condition.flowcell
-        ).order_by("-id")[:10]
-        condition.last_minions_stats_id = queryset[9].id
-    elif not MinionRunStats.objects.filter(run__flowcell=condition.flowcell).count():
-        return
-    else:
+    if MinionRunStats.objects.filter(run__flowcell=condition.flowcell).count():
         queryset = MinionRunStats.objects.filter(
             run__flowcell=condition.flowcell, id__gte=condition.last_minions_stats_id,
-        )
-        condition.last_minions_stats_id = queryset.last().id
-    condition.save()
-    print(condition.notification_type)
+        ).order_by("-id")[:10]
+    else:
+        return
+    last_mrs = queryset.last()
     if condition.notification_type == "volt":
         queryset = queryset.values_list("voltage_value", flat=True)
     else:
         queryset = [minion_statistic.occupancy() for minion_statistic in queryset]
     upper_list = list(filter(lambda x: x >= upper_limit, queryset))
     lower_list = list(filter(lambda x: x <= lower_limit, queryset))
-    if len(upper_list) > 6:
-        text = return_tweet(
-            tweet_type="volt_occu",
-            volt_occu="Voltage",
-            limit=upper_limit,
-            flowcell=condition.flowcell.name,
-        )
-        message = Message(
-            recipient=condition.creating_user,
-            sender=condition.creating_user,
-            title=text,
-            flowcell=condition.flowcell,
-        )
-        message.save()
-    elif len(lower_list) > 6:
-        text = return_tweet(
-            tweet_type="volt_occu",
-            volt_occu="Voltage",
-            limit=lower_limit,
-            flowcell=condition.flowcell.name,
-        )
-        message = Message(
-            recipient=condition.creating_user,
-            sender=condition.creating_user,
-            title=text,
-            flowcell=condition.flowcell,
-        )
-        message.save()
-
+    if len(upper_list) == 10 or len(lower_list) == 10:
+        limit = upper_limit if len(upper_list) == 10 else lower_limit
+        twitter_details = UserOptions.objects.get(owner=condition.creating_user)
+        if twitter_details.twitterhandle and twitter_details.tweet:
+            text = return_tweet(
+                tweet_type="volt_occu",
+                volt_occu="Voltage",
+                limit=limit,
+                flowcell=condition.flowcell.name,
+            )
+            message = Message(
+                recipient=condition.creating_user,
+                sender=condition.creating_user,
+                title=text,
+                flowcell=condition.flowcell,
+            )
+            message.save()
+        if condition.run_until:
+            # TODO if we have a run until bug look here as conditions should really be run aware?
+            create_stop_run(last_mrs.minion)
+        condition.last_minions_stats_id = queryset.last().id
+        condition.completed = True
+        condition.save()
 
 @app.task
 def check_condition_is_met():
@@ -330,13 +332,15 @@ def check_condition_is_met():
     )
     logger.info(f"Active conditions {active_conditions}")
     for condition in active_conditions:
+        if condition.notification_type in ["occu", "volt", "sped"]:
+            minion_statistic_check(condition)
         twitter_details = UserOptions.objects.get(owner=condition.creating_user)
         if not twitter_details:
-            logger.info(
+            logger.warning(
                 f"User {condition.creating_user} does not have twitter details."
             )
         twitter_permission = twitter_details.tweet
-        if not not not twitter_permission:
+        if not not not twitter_permission and twitter_details.twitterhandle:
             logger.warning(f"This user does not have twitter permissions granted.")
             continue
         if condition.notification_type == "suff":
@@ -345,8 +349,6 @@ def check_condition_is_met():
             check_artic_has_fired(condition)
         if condition.notification_type == "cov":
             coverage_notification(condition)
-        if condition.notification_type in ["occu", "volt", "sped"]:
-            minion_statistic_check(condition)
 
 
 def check_artic_has_fired(condition):
