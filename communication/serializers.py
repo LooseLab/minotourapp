@@ -63,8 +63,8 @@ class NotificationSerialiser(serializers.ModelSerializer):
             "upper_limit",
             "lower_limit",
             "ref_name",
-            "chrom_line_name"
-
+            "chrom_line_name",
+            "run_until"
         )
     def to_representation(self, instance):
         my_fields = {'upper_limit', 'lower_limit', 'coverage_target'}
