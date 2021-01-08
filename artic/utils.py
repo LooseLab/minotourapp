@@ -10,8 +10,6 @@ import numpy as np
 import pandas as pd
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-from rest_framework import status
-from rest_framework.response import Response
 
 from artic.models import ArticBarcodeMetadata
 from artic.task_artic_alignment import make_results_directory_artic
@@ -22,6 +20,7 @@ from reads.models import JobMaster
 
 # Colour palette of amplicon bands
 colour_palette = ["#ffd9dc", "#ffefdc", "#ffffbc", "#dcffe4", "#bae1ff"]
+
 
 def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
     """
@@ -65,12 +64,12 @@ def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
             artic_results_dir / f"results_artic_{flowcell.name}.tar.gz"
     )
     with tarfile.open(results_file, "w:gz") as tar:
-        try:
-            for filey in chosen_files:
+        for filey in chosen_files:
+            try:
                 for barcode_file in filey:
                     tar.add(barcode_file)
-        except FileNotFoundError as e:
-            return Response(str(e), status=status.HTTP_404_NOT_FOUND)
+            except FileNotFoundError as e:
+                print("file not found")
 
     with open(results_file, "rb") as fh:
         response = HttpResponse(fh.read(), content_type="application/gzip")
