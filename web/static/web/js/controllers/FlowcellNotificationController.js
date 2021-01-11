@@ -1,6 +1,5 @@
 class FlowcellNotificationController {
   /**
-   * Straight up just sorry about the code below
    * Summary. Controller to handle the display of sent messages and the creation of conditions for messages
    * @class flowcellID
    */
@@ -10,9 +9,11 @@ class FlowcellNotificationController {
     })
     this._flowcellId = flowcellId
     this._contigSet = {}
+    this._barcodeSet = {}
     this._referenceSet = new Set([`<option id="ref-place-holder" value="${-1}" selected>Please Choose</option>`])
     this._referenceSelect = $(`#reference`)
     this._contigSelect = $(`#chromosome`)
+    this._barcodeSelect = $(`#barcodes`)
     this._table = $(`.extantNotif`)
     this.options = {
       backdrop: `true`
@@ -36,7 +37,9 @@ class FlowcellNotificationController {
     const referencePk = $(event.currentTarget).val()
     this._referenceSelect.find(`#ref-place-holder`).remove()
     this._contigSelect.attr(`disabled`, false)
+    this._barcodeSelect.attr(`disabled`, false)
     this._contigSelect.html([...this._contigSet[referencePk]].join(``))
+    this._barcodeSelect.html([...this._barcodeSet[referencePk]].join(``))
   }
 
   /**
@@ -57,6 +60,15 @@ class FlowcellNotificationController {
           mappingOptions.removeAttr(`title`)
         }
         Object.entries(references).forEach(([key, value]) => {
+          if (key.includes(`barcodes`)) {
+            value.forEach(([barcodePk, barcodeName, referenceId]) => {
+              if (!(referenceId in this._barcodeSet)) {
+                this._barcodeSet[referenceId] = new Set()
+              }
+              this._barcodeSet[referenceId].add(`<option value="${barcodePk}">${barcodeName}</option>`)
+            })
+            return
+          }
           // key is the reference name, value[0][2] is the reference PK
           this._referenceSet.add(`<option value="${value[0][2]}">${key}</option>`)
           // Value [0] is the contig name, value[1] is the contig PK
@@ -157,7 +169,6 @@ class FlowcellNotificationController {
     $(event.currentTarget).find(`.noti-control`).each((index, field) => {
       const value = field.type === `checkbox` ? $(field).prop(`checked`) : $(field).val()
       if (value) {
-        console.log(`Hello ${value}`)
         if (!formData.has(`flowcell`)) {
           formData.append(`notification_type`, $(event.currentTarget).attr(`id`))
           formData.append(`flowcell`, that._flowcellId)
