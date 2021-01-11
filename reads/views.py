@@ -1091,7 +1091,7 @@ def flowcell_channel_summary(request, pk):
 @api_view(["GET"])
 def flowcell_run_summaries_html(request, pk):
     """
-    Return a HTML summary for the summary tab of the flowcell, wuth live event info
+    Return a HTML summary for the summary tab of the flowcell, with live event info
     Parameters
     ----------
     request: rest_framework.request.Request
