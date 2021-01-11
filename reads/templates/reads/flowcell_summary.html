@@ -22,13 +22,13 @@
                     <th>Read type</th>
                     <th>Rejection</th>
                     <th>Pass/Fail</th>
-                    <td align="right"><strong>Reads called</strong></td>
-                    <td align="right"><strong>Yield</strong></td>
-                    <td align="right"><strong>Percentage(bases)</strong></td>
-                    <td align="right"><strong>Min read length</strong></td>
-                    <td align="right"><strong>Average read length</strong></td>
-                    <td align="right"><strong>Max read length</strong></td>
-                    <td align="right"><strong>Average Quality</strong></td>
+                    <th ><strong>Reads called</strong></th>
+                    <th ><strong>Yield</strong></th>
+                    <th ><strong>Percentage(bases)</strong></th>
+                    <th ><strong>Min read length</strong></th>
+                    <th ><strong>Average read length</strong></th>
+                    <th ><strong>Max read length</strong></th>
+                    <th ><strong>Average Quality</strong></th>
                     </thead>
                     <tbody>
 
@@ -43,21 +43,21 @@
                                 <tr class="table-info" style="font-weight:bold;font-style: italic">
                             {% endif %}
                         {% if record.read_type == "all" %}
-                            <td>{{ record.barcode_name }}</td>
-                            <td>{{ record.read_type_name }}</td>
+                            <th>{{ record.barcode_name }}</th>
+                            <th>{{ record.read_type_name }}</th>
                         {% else %}
-                            <td></td>
-                            <td></td>
+                            <th></th>
+                            <th></th>
                         {% endif %}
-                        <td>{{ record.rejection_status }}</td>
-                        <td>{{ record.read_type }}</td>
-                        <td align="right">{{ record.read_count|intcomma }}</td>
-                        <td align="right">{{ record.total_length|intcomma }}</td>
-                        <td align="right">{{ record.percentage|floatformat:"2" }}</td>
-                        <td align="right">{{ record.min_length|intcomma }}</td>
-                        <td align="right">{{ record.avg_length|floatformat:"0"|intcomma }}</td>
-                        <td align="right">{{ record.max_length|intcomma }}</td>
-                        <td align="right">{{ record.avg_quality|floatformat:"1" }}</td>
+                        <th>{{ record.rejection_status }}</th>
+                        <th>{{ record.read_type }}</th>
+                        <th >{{ record.read_count|intcomma }}</th>
+                        <th >{{ record.total_length|intcomma }}</th>
+                        <th >{{ record.percentage|floatformat:"2" }}</th>
+                        <th >{{ record.min_length|intcomma }}</th>
+                        <th >{{ record.avg_length|floatformat:"0"|intcomma }}</th>
+                        <th >{{ record.max_length|intcomma }}</th>
+                        <th >{{ record.avg_quality|floatformat:"1" }}</th>
                         </tr>
                         {% endif %}
                     {% endfor %}
@@ -112,22 +112,22 @@
                                     <tr class="table-info" style="font-weight:bold;font-style: italic">
                                 {% endif %}
                             {% if record.read_type == "all" %}
-                                <td>{{ record.barcode_name }}</td>
-                                <td>{{ record.read_type_name }}</td>
+                                <th>{{ record.barcode_name }}</th>
+                                <th>{{ record.read_type_name }}</th>
                             {% else %}
-                                <td></td>
-                                <td></td>
+                                <th></th>
+                                <th></th>
                             {% endif %}
-                            <td>{{ record.rejection_status }}</td>
+                            <th>{{ record.rejection_status }}</th>
 
-                            <td>{{ record.read_type }}</td>
-                            <td>{{ record.read_count|intcomma }}</td>
-                            <td>{{ record.total_length|intcomma }}</td>
-                            <td>{{ record.percentage|floatformat:"2" }}</td>
-                            <td>{{ record.min_length|intcomma }}</td>
-                            <td>{{ record.avg_length|floatformat:"0"|intcomma }}</td>
-                            <td>{{ record.max_length|intcomma }}</td>
-                            <td>{{ record.avg_quality|floatformat:"1" }}</td>
+                            <th>{{ record.read_type }}</th>
+                            <th>{{ record.read_count|intcomma }}</th>
+                            <th>{{ record.total_length|intcomma }}</th>
+                            <th>{{ record.percentage|floatformat:"2" }}</th>
+                            <th>{{ record.min_length|intcomma }}</th>
+                            <th>{{ record.avg_length|floatformat:"0"|intcomma }}</th>
+                            <th>{{ record.max_length|intcomma }}</th>
+                            <th>{{ record.avg_quality|floatformat:"1" }}</th>
                             </tr>
                             {% endif %}
                         {% endfor %}
