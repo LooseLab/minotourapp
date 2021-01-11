@@ -23,7 +23,6 @@ from reads.models import (
     JobMaster,
     JobType,
     Barcode,
-    FastqReadType,
     FlowcellSummaryBarcode,
     FastqRead, )
 from readuntil.functions_EB import *
@@ -252,7 +251,7 @@ def save_artic_command_job_masters(flowcell, barcode_name, reference_info):
     if barcode_name == "unclassified":
         return
     job_type = JobType.objects.get(name="Run Artic")
-    # TODO potential bug here where the barcode name on the reads is not the barcode name we save
+    # TODO potential bug here where the barcode name on the reads is not the barcode name we save and alos multiple runs. if force unique is false
     barcode_object = Barcode.objects.get(run__in=flowcell.runs.all(), name=barcode_name)
     job_master, created = JobMaster.objects.get_or_create(
         job_type=job_type,
@@ -684,6 +683,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             make_barcoded_directories(barcodes, base_result_dir_path)
             logger.info(f"Parsing paf file. Please wait.")
             barcodes_with_mapped_results = set()
+
             for i, record in enumerate(
                 parse_PAF(
                     StringIO(paf),
@@ -709,12 +709,12 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     barcode_of_read = fastq_read.get("barcode_name", "Failed")
                     read_id = fastq_read.get("read_id")
                     sequence = fastq_read.get("sequence")
-                    read_type = FastqReadType.objects.get(pk=fastq_read.get("type", 1))
+                    read_type_pk = fastq_read.get("type", 1)
                 else:
                     barcode_of_read = fastq_read.barcode_name
                     read_id = fastq_read.read_id
                     sequence = fastq_read.sequence
-                    read_type = fastq_read.type
+                    read_type_pk = fastq_read.type.id
                 barcodes_with_mapped_results.add(barcode_of_read)
                 barcode_sorted_fastq_cache[barcode_of_read].append(
                     f">{read_id}\n{sequence}"
@@ -738,7 +738,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         "reference_line_length": chromosome.chromosome_length,
                         "yield": 0,
                         "read_count": 0,
-                        "read_type": read_type,
+                        "read_type_id": read_type_pk,
                     }
                 paf_summary_cov = paf_summary_cov_dict[barcode_of_read]
                 paf_summary_cov["yield"] += mapping_length
@@ -768,7 +768,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     barcode_name=paf_summary_cov["barcode_name"],
                     chromosome=paf_summary_cov["chromosome"],
                     reference_line_length=paf_summary_cov["reference_line_length"],
-                    read_type=paf_summary_cov["read_type"],
+                    read_type_id=paf_summary_cov["read_type"],
                 )
                 paf_summary_cov_orm.total_yield += paf_summary_cov["yield"]
                 paf_summary_cov_orm.read_count += paf_summary_cov["read_count"]
