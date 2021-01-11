@@ -423,17 +423,13 @@ def minion_messages_list(request, pk):
     """
 
     if request.method == "GET":
-
         queryset = MinionMessage.objects.filter(minION=pk)
-
         serializer = MinionMessageSerializer(
             queryset, many=True, context={"request": request}
         )
-
         for message in serializer.data:
             if message["full_text"] == "":
                 message["message"] = message["full_text"]
-
         return Response(serializer.data)
 
     elif request.method == "POST":
@@ -441,7 +437,6 @@ def minion_messages_list(request, pk):
             request.data["full_text"] = request.data["message"]
 
             request.data["message"] = request.data["message"][:256]
-
         serializer = MinionMessageSerializer(
             data=request.data, context={"request": request}
         )
@@ -456,11 +451,9 @@ def recentminion_messages_list(request, pk):
     queryset = MinionMessage.objects.filter(minION=pk).filter(
         minKNOW_message_timestamp__gte=timezone.now() - datetime.timedelta(hours=24)
     )
-
     serializer = MinionMessageSerializer(
         queryset, many=True, context={"request": request}
     )
-
     return Response(serializer.data)
 
 
@@ -763,12 +756,14 @@ def flowcell_minknow_stats_list(request, pk, check_id):
             minknow_colours[x] = {"label": j["name"], "colour": "000000"}
     # Manually add in some of the other that aren't recorded anymore, should be fixed later
     minknow_colours["good_single"] = {"label": "Good single", "colour": "32CD32"}
-    # Create the entry in the results dicionary for each pore state
-    # TODO check the pore states match
+
     last_time = MinionRunStats.objects.filter(run__flowcell_id=pk).last().sample_time
     first_time = MinionRunStats.objects.filter(run__flowcell_id=pk).first().sample_time
-    div, rem = divmod((last_time - first_time).total_seconds(), 24*3600)
-    counter = div
+    run_in_days, remaining_seconds = divmod((last_time - first_time).total_seconds(), 24*3600)
+    run_in_days += 1
+    counter = 0
+    # Create the entry in the results dicionary for each pore state
+    # TODO check the pore states matchdiv
     for x in possible_pore_states:
         _ = {
             "name": minknow_colours.get(x, {"label": x})["label"],
@@ -783,8 +778,9 @@ def flowcell_minknow_stats_list(request, pk, check_id):
         "Bases" if minion_run_meta_information.local_basecalling else "ev"
     )
     # Loop our results
+    last_minion_run_stats_id = 0
     for mrs in minion_run_stats_gen:
-        if not div == 0 and counter % div == 0:
+        if not counter == 0 and not counter % run_in_days:
             counter += 1
             continue
         else:
