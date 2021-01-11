@@ -683,7 +683,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             make_barcoded_directories(barcodes, base_result_dir_path)
             logger.info(f"Parsing paf file. Please wait.")
             barcodes_with_mapped_results = set()
-
             for i, record in enumerate(
                 parse_PAF(
                     StringIO(paf),
@@ -720,7 +719,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     f">{read_id}\n{sequence}"
                 )
                 chromosome = chromdict[record.tsn]
-
                 #########################################################
                 # ########## Now for the parse cigar string ########### #
                 #########################################################
