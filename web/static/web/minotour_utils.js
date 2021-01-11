@@ -561,3 +561,36 @@ function addJqueryTooltip () {
     $(`.toolTip`).remove()
   })
 }
+
+/**
+ * Transform yield in bases to make human readable yields for table columns i.e 100Mb, 1Gb etc.
+ * @param data {[]} Data for the whole table
+ * @param type {string} Data for the
+ * @param row  {[]} data for the row
+ * @return {string|*}
+ */
+function humanReadableYield (data, type, row) {
+  // The below function returns the yield in a human readable format
+  if (type === `display` || type === `filter`) {
+    var UNITS = [``, `k`, `M`, `G`, `T`, `P`, `E`, `Z`]
+    var factor = 1000
+    var suffix = `b`
+    for (var i = 0; i < UNITS.length; i++) {
+      if (Math.abs(data) < factor) {
+        data = data.toFixed(2)
+        if (/\.00$/.test(data)) {
+          data = data.substr(0, data.length - 3)
+        }
+        return `${`${data} ${UNITS[i]}${suffix}`}`
+      }
+      data /= factor
+    }
+    data = data.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, `,`)
+    if (/\.00$/.test(data)) {
+      data = data.substr(0, data.length - 3)
+    }
+    return `<a href="/web/private/${that._linkDestination}/${row.id}/">${`${data} Y${suffix}`}</a>`
+  } else {
+    return data
+  }
+}
