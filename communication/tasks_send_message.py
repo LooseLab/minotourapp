@@ -74,7 +74,7 @@ def return_tweet(
     return tweet_text
 
 
-def check_coverage(flowcell, target_coverage, reference_line, barcode=""):
+def check_coverage(flowcell, target_coverage, reference_line, barcodes):
     """
     Check the coverage of a mapping task.
     Parameters
@@ -84,9 +84,9 @@ def check_coverage(flowcell, target_coverage, reference_line, barcode=""):
     target_coverage: int
         The desired amount of coverage to be reached
     reference_line: reference.models.ReferenceLine
-        Could be null for genome level coverage, otherwise reference line obejct
-    barcode: str
-        The name of the barcode
+        Could be null for genome level coverage, otherwise reference line object
+    barcodes: list
+        The primary key of the barcodes
 
     Returns
     -------
@@ -98,13 +98,14 @@ def check_coverage(flowcell, target_coverage, reference_line, barcode=""):
             job_master__flowcell=flowcell,
             chromosome_id=reference_line.id,
             coverage__gte=target_coverage,
+            barocde_id__in=barcodes
         ).values("coverage")
         queryset = [
             {"coverage_reached": True, "coverage": coverage} for coverage in queryset
         ]
     else:
         queryset = (
-            PafSummaryCov.objects.filter(job_master__flowcell=flowcell)
+            PafSummaryCov.objects.filter(job_master__flowcell=flowcell, barcode_id__in=barcodes)
             .values(data_name=F("reference_name"))
             .annotate(
                 Sum("total_yield"),
@@ -193,7 +194,7 @@ def send_messages():
 
 def coverage_notification(condition):
     """
-    Run calculations for coverage statistics
+    Run calculations for coverage statistics - this is pretty gahbahj
     Parameters
     ----------
     condition: communication.models.NotificationConditions
@@ -202,7 +203,6 @@ def coverage_notification(condition):
     -------
 
     """
-    logger.info("S'up in the cov hood")
     if not condition.coverage_target:
         logger.warning(
             f"Condition {condition.id} of type {condition.notification_type}"
@@ -212,17 +212,15 @@ def coverage_notification(condition):
     chromosome = condition.chromosome
     reference = condition.reference
     flowcell = condition.flowcell
-    # barcode_name = condition.barcode.name
-
+    run = flowcell.runs.last()
+    barcodes = list(condition.mapping_condition_barcodes.all().values_list("barcode_id", flat=True))
     coverage_reached = check_coverage(
-        flowcell, int(condition.coverage_target), chromosome
+        flowcell, int(condition.coverage_target), chromosome, barcodes
     )
-
     logger.debug("coverage reached!")
     logger.debug(coverage_reached)
     if not coverage_reached:
         return
-
     # Reached is a dictionary, one dict for each Paf Summary Cov pulled back in the check_coverage function
     for reached in coverage_reached:
         if reached.get("coverage_reached", False):
@@ -241,6 +239,8 @@ def coverage_notification(condition):
                 flowcell=flowcell,
             )
             message.save()
+            if condition.run_until:
+                create_stop_run(run.minion)
             condition.completed = True
             condition.save()
 
@@ -340,7 +340,7 @@ def check_condition_is_met():
                 f"User {condition.creating_user} does not have twitter details."
             )
         twitter_permission = twitter_details.tweet
-        if not not not twitter_permission and twitter_details.twitterhandle:
+        if not twitter_permission and twitter_details.twitterhandle:
             logger.warning(f"This user does not have twitter permissions granted.")
             continue
         if condition.notification_type == "suff":
