@@ -32,7 +32,7 @@ class FlowcellTableController {
     const that = this
     this._datatableObj = $(`#${this._elementId}`).DataTable({
       // callback for each created row, add styling class so cursor is pointer showing it's a link
-      createdRow: function (row, data, index) {
+      createdRow: (row, data, index) => {
         $(row).addClass(`stylable`)
         $(row).on(`click`, () => {
           // When we draw a row, make the whole row clickable, links to href destination
@@ -84,27 +84,7 @@ class FlowcellTableController {
           targets: 7,
           data: `total_read_length`,
           render: (data, type, row) => {
-            // The below function returns the yield in a human readable format
-            if (type === `display` || type === `filter`) {
-              var UNITS = [``, `k`, `M`, `G`, `T`, `P`, `E`, `Z`]
-              var factor = 1000
-              var suffix = `b`
-              for (var i = 0; i < UNITS.length; i++) {
-                if (Math.abs(data) < factor) {
-                  data = data.toFixed(2)
-                  if (/\.00$/.test(data)) {
-                    data = data.substr(0, data.length - 3)
-                  }
-                  return `${`${data} ${UNITS[i]}${suffix}`}`
-                }
-                data /= factor
-              }
-              data = data.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, `,`)
-              if (/\.00$/.test(data)) { data = data.substr(0, data.length - 3) }
-              return `<a href="/web/private/${that._linkDestination}/${row.id}/">${`${data} Y${suffix}`}</a>`
-            } else {
-              return data
-            }
+            return humanReadableYield(data, type, row)
           }
         },
         {
