@@ -241,3 +241,34 @@ class NotificationConditions(models.Model):
             The string representation of the object
         """
         return f"{self.flowcell} {self.notification_type}"
+
+
+class NotificationConditionsBarcode(models.Model):
+    """
+        Many to one for the Barcodes on Mapping conditions, so multiple of these is linked to one condition
+
+        Fields
+        ---------
+        barcode: reads.models.Barcode
+            One of the Barcodes this condition refers to
+        condition: communication.models.NotificationConditions
+            The condition this barcode belongs to
+        barcode_name: str
+            The name of the barcode as a string in case the Barcode is somehow deleted or corrupted
+    """
+    barcode = models.ForeignKey(
+        Barcode,
+        on_delete=models.CASCADE,
+        related_name="notification_condition_barcode"
+    )
+    condition = models.ForeignKey(
+        NotificationConditions,
+        on_delete=models.CASCADE,
+        related_name="mapping_condition_barcodes"
+    )
+    barcode_name = models.CharField(
+        max_length=256,
+        default=None,
+        null=True,
+        blank=True
+    )
