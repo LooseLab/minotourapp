@@ -530,7 +530,6 @@ def save_reads_bulk(reads):
     None
 
     """
-    task_start_time = time.time()
     flowcell_dict = {}
     reads_list = []
     run_dict = {}
