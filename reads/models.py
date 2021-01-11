@@ -103,16 +103,13 @@ class Barcode(models.Model):
     :name: Barcode Name - derived from the read name.
 
     """
-
     run = models.ForeignKey(
-
         Run,
         on_delete=models.CASCADE,
         related_name='barcodes'
     )
 
     name = models.CharField(
-
         max_length=32
     )
 
