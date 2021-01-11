@@ -72,5 +72,15 @@ urlpatterns = [
         r'^api/v1/artic/(?P<pk>[0-9]+)/results-modal',
         views.get_results_modal_html,
         name="results-modal-html"
-    )
+    ),
+    url(
+        r'^api/v1/artic/(?P<pk>[0-9]+)/run-all-incomplete/',
+        views.run_all_incomplete,
+        name="run-all-incomplete"
+    ),
+    url(
+        r'^api/v1/artic/(?P<pk>[0-9]+)/re-run-all/',
+        views.mark_all_barcodes_for_pipeline,
+        name="run-all-incomplete"
+    ),
 ]
