@@ -1,6 +1,6 @@
 <div class="row">
     <div class="col-md-6" id="data-list">
-        <div class="card card-primary card-outline" style="min-height: 400px; overflow-wrap: normal">
+        <div class="card card-primary card-outline" style="min-height: 400px; overflow-wrap: anywhere">
             <div class="card-header">
                 <h3 class="card-title">
                     <i class="far fa-comment-alt"></i>
@@ -15,7 +15,7 @@
                     <blockquote>
                         <div class="row" style="overflow: auto; position: relative">
                             <div class="col-sm-4">
-                                <div class="list-group" id="list-tab-top" role="tablist" style="min-width: 8rem">
+                                <div class="list-group" id="list-tab-top" role="tablist">
                                     <a class="list-group-item list-group-item-action active" id="mux-btn"
                                        data-toggle="list" href="#list-mux" role="tab" aria-controls="home">Mux Scan
                                         Alerts</a>
@@ -73,7 +73,7 @@
                                             <div class="form-group">
                                                 <label for="run-until" class="minotour-label">Run Until (Stop Run)
                                                     <i
-                                                        class="fa fa-question-circle masterTooltip" tooltip="If checked and remote control is enabled
+                                                            class="fa fa-question-circle masterTooltip" tooltip="If checked and remote control is enabled
 on your minFQ client,<br> we will stop the run if the average flowcell voltage is measured outside of these values for 10 minutes.<br> Use at your own risk!"></i>
                                                 </label>
                                                 <input type="checkbox" name="run-until" id="run-until"
@@ -106,7 +106,7 @@ on your minFQ client,<br> we will stop the run if the average flowcell voltage i
                                             <div class="form-group">
                                                 <label for="run-until" class="minotour-label">Run Until (Stop Run)
                                                     <i
-                                                        class="fa fa-question-circle masterTooltip" tooltip="If checked and remote control is enabled
+                                                            class="fa fa-question-circle masterTooltip" tooltip="If checked and remote control is enabled
 on your minFQ client,<br> we will stop the run if the average flowcell occupancy is measured outside of these values for 10 minutes.<br> Use at your own risk!"></i>
                                                 </label>
                                                 <input type="checkbox" name="run-until" id="run-until"
@@ -159,9 +159,9 @@ on your minFQ client,<br> we will stop the run if the average flowcell occupancy
                                                             <label for="coverage-amount" class="control-label"> Average
                                                                 Coverage Depth:
                                                             </label>
-                                                            <input id="coverage-target" value=""
+                                                            <input id="coverage-target" min="1"
                                                                    class="form-control noti-control"
-                                                                   placeholder="Set target coverage..." type="text"
+                                                                   placeholder=0 type="number"
                                                                    name="coverageAmount">
                                                         </div>
                                                         <div class="form-group">
@@ -178,17 +178,37 @@ on your minFQ client,<br> we will stop the run if the average flowcell occupancy
                                                             </select>
                                                         </div>
                                                         <div class="form-group">
-                                                            <label for="contig" class="control-label"> Contig (blank if
-                                                                Genome level avg coverage
-                                                                required):
+                                                            <label for="contig" class="control-label"> Contig:
                                                             </label>
                                                             <select name="contig" id="chromosome" disabled
                                                                     class="form-control noti-control">
-                                                                <option value="-1" id="contig-conditon-placeholder"
+                                                                <option value="-1" id="contig-condition-placeholder"
                                                                         disabled selected hidden>Please
                                                                     Select...
                                                                 </option>
                                                             </select>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="barcodes" class="control-label"> Barcodes (Ctrl click multiple)
+                                                            </label>
+                                                            <select name="barcodes" id="barcodes" disabled
+                                                                    class="form-control noti-control" multiple>
+                                                                <option value="-1" id="barcode-condition-placeholder"
+                                                                        disabled selected hidden>Please
+                                                                    Select...
+                                                                </option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="run-until" class="minotour-label">Run Until
+                                                                (Stop Run)
+                                                                <i
+                                                                        class="fa fa-question-circle masterTooltip"
+                                                                        tooltip="If checked and remote control is enabled
+on your minFQ client,<br> we will stop the run if the average flowcell occupancy is measured outside of these values for 10 minutes.<br> Use at your own risk!"></i>
+                                                            </label>
+                                                            <input type="checkbox" name="run-until" id="run-until"
+                                                                   class="form-control-sm noti-control">
                                                         </div>
                                                         <input type="submit" class="btn btn-primary"
                                                                value="Submit Choice">
@@ -318,8 +338,10 @@ on your minFQ client,<br> we will stop the run if the average flowcell occupancy
                 </button>
             </div>
             <div class="modal-body">
-                Run Until is used at your own risk, and will lead to your run being stopped early. If you are happy with the
-                conditions you have chosen leading to your run stopping, please continue. Else, cancel, and un-check run until.
+                Run Until is used at your own risk, and will lead to your run being stopped early. If you are happy with
+                the
+                conditions you have chosen leading to your run stopping, please continue. Else, cancel, and un-check run
+                until.
             </div>
             <div class="modal-footer">
                 <button type="button" id="cancel-submit" class="btn btn-default" data-dismiss="modal">Close</button>
