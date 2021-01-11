@@ -300,21 +300,73 @@ def get_artic_summary_table_data(request):
             flowcell_id=flowcell_id, job_master=artic_task
         )
     }
-    for pafsummarycov in queryset:
-        barcode_name = pafsummarycov["barcode_name"]
-        pafsummarycov["95%_value"] = artic_metadata[
+    # dictionaries change in place
+    for paf_summary_cov in queryset:
+        barcode_name = paf_summary_cov["barcode_name"]
+        paf_summary_cov["95%_value"] = artic_metadata[
             barcode_name
         ].percentage_bases_at_95_value
-        pafsummarycov["99%_value"] = artic_metadata[
+        paf_summary_cov["99%_value"] = artic_metadata[
             barcode_name
         ].percentage_bases_at_99_value
-        pafsummarycov["90%_value"] = artic_metadata[
+        paf_summary_cov["90%_value"] = artic_metadata[
             barcode_name
         ].percentage_bases_at_90_value
-        pafsummarycov["has_finished"] = artic_metadata[barcode_name].has_finished
-        pafsummarycov["has_sufficient_coverage"] = artic_metadata[
-            barcode_name
-        ].has_sufficient_coverage
+        paf_summary_cov["has_finished"] = artic_metadata[barcode_name].has_finished
+        scheme = "nCoV-2019"
+        scheme_version = "V3"
+        amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
+        a = np.array(amplicon_band_coords)[:, :2]
+        a = a.astype(np.int16)
+        flowcell = Flowcell.objects.get(pk=38)
+        (
+            flowcell,
+            artic_results_path,
+            artic_task_id,
+            coverage_path,
+        ) = quick_get_artic_results_directory(flowcell.id, barcode_name)
+        log_coverage = False
+        try:
+            with open(coverage_path, "rb") as fh:
+                coverage = np.fromfile(fh, dtype=np.uint16)
+        except FileNotFoundError as e:
+            raise e
+        amplicon_coverages = []
+        failed_amplicon_count = 0
+        partial_amplicon_count = 0
+        if log_coverage:
+            coverage = coverage.astype(np.float16)
+            coverage[coverage == 0] = 0.1
+
+        for bin_start, bin_end in a:
+            amplicon_coverage = coverage[bin_start: bin_end]
+            amplicon_coverages.append(np.mean(amplicon_coverage))
+            amplicon_median_coverage = np.median(amplicon_coverage)
+            if int(amplicon_median_coverage) == 0:
+                failed_amplicon_count += 1
+            elif int(amplicon_median_coverage) < 20:
+                partial_amplicon_count += 1
+        mean_of_amplicon_means = np.array(amplicon_coverages).mean()
+        # get the lineage if it's finished
+        if paf_summary_cov["has_finished"]:
+            try:
+                lineage = pd.read_csv(
+                    artic_results_path / barcode_name / "lineage_report.csv.gz"
+                )["lineage"][0]
+            except FileNotFoundError:
+                lineage = "Unknown"
+        else:
+            lineage = "Currently unknown"
+        if barcode_name == "unclassified":
+            paf_summary_cov["has_sufficient_coverage"] = "ignore"
+        else:
+            paf_summary_cov["has_sufficient_coverage"] = artic_metadata[
+                barcode_name
+            ].has_sufficient_coverage
+        paf_summary_cov["partial_amplicon_count"] = partial_amplicon_count
+        paf_summary_cov["failed_amplicon_count"] = failed_amplicon_count
+        paf_summary_cov["mean_of_amplicon_means"] = int(mean_of_amplicon_means)
+        paf_summary_cov["lineage"] = lineage
     if not queryset:
         return Response(
             f"No coverage summaries found for this task {artic_task.id}.",
@@ -457,6 +509,7 @@ def manually_create_artic_command_job_master(request):
             f"Exception: {e}", status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
     # TODO potential bug here where the barcode name on the reads is not the barcode name we save
+
     job_master, created = JobMaster.objects.get_or_create(
         job_type_id=job_type_id,
         reference=reference,
@@ -707,3 +760,65 @@ def get_artic_pie_chart_data(request):
         }
     ]
     return Response(series_data, status=status.HTTP_200_OK)
+
+
+@api_view(["PATCH"])
+def run_all_incomplete(request, pk):
+    """
+    Manually run all incomplete barcodes on an artic task through the artic pipeline
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The Ajax request object
+    pk: int
+        Flowcell primary key
+
+    Returns
+    -------
+    str
+        Message pertaining to success or failure of view
+    """
+    jm = JobMaster.objects.get(flowcell_id=pk, job_type_id=16)
+    incomplete_barcodes = jm.JobMastersArticBarcodeMetadatas.filter(has_finished=False)
+    for barcode in incomplete_barcodes:
+        job_master, created = JobMaster.objects.get_or_create(
+            job_type_id=17,
+            reference=jm.reference,
+            barcode=barcode.barcode,
+            flowcell=jm.flowcell,
+        )
+    return Response("Marked all incomplete barcodes for rerun.")
+
+
+@api_view(["PATCH"])
+def mark_all_barcodes_for_pipeline(request, pk):
+    """
+    Mark all barcodes under an artic task to be run through the pipeline,
+     irrespective of whether they have been run before or not.
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The Ajax request object
+    pk: int
+        The primary key of the object.
+
+    Returns
+    -------
+    str
+        Message pertaining to success or failure of the view.
+    """
+    jm = JobMaster.objects.get(flowcell_id=pk, job_type_id=16)
+    barcodes = jm.JobMastersArticBarcodeMetadatas.all()
+    for barcode in barcodes:
+        job_master, created = JobMaster.objects.get_or_create(
+            job_type_id=17,
+            reference=jm.reference,
+            barcode=barcode.barcode,
+            flowcell=jm.flowcell,
+        )
+        if not created:
+            job_master.complete = False
+            job_master.save()
+            barcode.marked_for_rerun = True
+            barcode.save()
+    return Response("Marked all barcodes to be run.")
