@@ -71,6 +71,10 @@
                     <th>Percent Bases at 20x</th>
                     <th>Percent Bases at 200x</th>
                     <th>Percent Bases at 250x</th>
+                    <th># Partial Amplicons</th>
+                    <th># Failed Amplicons</th>
+                    <th>Mean of amplicons</th>
+                    <th>Lineage</th>
                     <th>Sufficient Coverage</th>
                 </tr>
                 </thead>
@@ -86,6 +90,10 @@
                     <th>Percent Bases at 20x</th>
                     <th>Percent Bases at 200x</th>
                     <th>Percent Bases at 250x</th>
+                    <th># Partial Amplicons</th>
+                    <th># Failed Amplicons</th>
+                    <th>Mean of amplicons</th>
+                    <th>Lineage</th>
                     <th>Sufficient Coverage</th>
                 </tr>
                 </tfoot>
@@ -97,8 +105,15 @@
     <div class="col-md-12">
         <div class="card card-outline card-primary">
             <div class="card-body">
+                <div id="all-command-artic-messages"></div>
                 <button class="btn btn-primary" id="download-results-all" data-toggle="modal" data-target="#results-builder" data-all="true" data-barcode="-1" disabled>
                         Download all completed
+                </button>
+                <button class="btn btn-primary" id="run-all-incomplete">
+                        Run all Incomplete
+                </button>
+                <button class="btn btn-primary" id="rerun-all">
+                        Re-Run All
                 </button>
             </div>
         </div>
