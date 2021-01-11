@@ -207,7 +207,7 @@ def quick_get_artic_results_directory(flowcell_id, barcodeName="", check=False):
     """
     flowcell = Flowcell.objects.get(pk=flowcell_id)
     artic_task = get_object_or_404(
-        JobMaster, flowcell=flowcell, job_type__name="Track Artic Coverage"
+        JobMaster, flowcell=flowcell, job_type_id=16
     )
     artic_results_path = make_results_directory_artic(
         flowcell.id, artic_task.id, allow_create=False

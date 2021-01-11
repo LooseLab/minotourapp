@@ -318,7 +318,7 @@ def get_artic_summary_table_data(request):
         amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
         a = np.array(amplicon_band_coords)[:, :2]
         a = a.astype(np.int16)
-        flowcell = Flowcell.objects.get(pk=38)
+        flowcell = artic_task.flowcell
         (
             flowcell,
             artic_results_path,
