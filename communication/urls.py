@@ -10,7 +10,7 @@ urlpatterns = [
     ),
     url(
         r"^api/v1/communication/(?P<pk>[0-9]+)/conditions/references$",
-        views.get_references_for_condtions,
+        views.get_references_for_conditions,
         name="get-references",
     ),
     url(
