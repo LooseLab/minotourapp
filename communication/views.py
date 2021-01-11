@@ -7,11 +7,55 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from alignment.models import PafSummaryCov
-from communication.models import Message
+from communication.models import Message, NotificationConditionsBarcode
 from communication.models import NotificationConditions
 from communication.serializers import MessageSerializer, NotificationSerialiser
-from reads.models import JobMaster
+from reads.models import JobMaster, Barcode
 from .forms import NotificationConditionForm
+
+
+def create_condition_barcodes(barcodes, condition):
+    """
+    Create the Notification condition barcodes for all barcodes selected for coverage type conditions
+    Parameters
+    ----------
+    barcodes: list
+        List of barcode primary keys to creat for each condition
+    condition: NotificationConditions
+        The notification condition that we are creating
+
+    Returns
+    -------
+    None
+    """
+    for barcode_pk in barcodes:
+        barcode = Barcode.objects.get(pk=barcode_pk)
+        NotificationConditionsBarcode.objects.get_or_create(
+            barcode=barcode, barcode_name=barcode.name, condition=condition
+        )
+
+
+def save_condition(data, form, user):
+    """
+    Save the notification condition
+    Parameters
+    ----------
+    data: dict
+        The data that ahs been sent from post request
+    form: communication.forms.NotificationConditionForm
+        The form for this form
+    user:
+        django user
+    Returns
+    -------
+
+    """
+    new_condition = form.save(commit=False)
+    new_condition.creating_user = user
+    new_condition.save()
+    if new_condition.notification_type == "cov":
+        barcodes = list(map(int, data.get("barcodes", None).split(",")))
+        create_condition_barcodes(barcodes, new_condition)
 
 
 @api_view(["POST"])
@@ -20,17 +64,15 @@ def simple_condition_create(request):
     Simple create using form
     Parameters
     ----------
-    request
-
+    request: rest_framework.request.Request
+        Post request from the communications page
     Returns
     -------
 
     """
     form = NotificationConditionForm(request.data)
     if form.is_valid():
-        new_condition = form.save(commit=False)
-        new_condition.creating_user = request.user
-        new_condition.save()
+        save_condition(request.data, form, request.user)
     else:
         # If we are doing genome level coverage, we have a chromosome of 0
         if form.data.get("chromosome", False) == "0":
@@ -38,9 +80,7 @@ def simple_condition_create(request):
             data.pop("chromosome")
             form = NotificationConditionForm(data)
             if form.is_valid():
-                new_condition = form.save(commit=False)
-                new_condition.creating_user = request.user
-                new_condition.save()
+                save_condition(data, form, request.user)
             else:
                 print(form.errors)
     return Response(status=status.HTTP_200_OK)
@@ -77,7 +117,7 @@ def new_messages_list(request):
     ----------
     request: rest_framework.request.Request
         Django request framework request object.
-
+reads_
     Returns
     -------
 
@@ -112,9 +152,9 @@ def new_messages_list(request):
 
 
 @api_view(["GET"])
-def get_references_for_condtions(request, pk):
+def get_references_for_conditions(request, pk):
     """
-    Get references for the coverage condition dropdowns
+    Get references, contigs and barcodes for the coverage condition dropdowns
     Parameters
     ----------
     request: rest_framework.request.Request
@@ -126,20 +166,28 @@ def get_references_for_condtions(request, pk):
 
     """
     b = defaultdict(list)
-    for jobs in list(
-        JobMaster.objects.filter(job_type_id=4, flowcell_id=pk).values(
+    barcodes = set()
+    for contig in list(
+        JobMaster.objects.filter(job_type_id=4, flowcell_id=pk)
+        .values(
             "reference_id",
+            "id",
             reference_name=F("reference__name"),
             contig_name=F("reference__reference_lines__line_name"),
             contig_id=F("reference__reference_lines__id"),
         )
+        .distinct()
     ):
-        b[jobs["reference_name"]].append(
-            (jobs["contig_name"], jobs["contig_id"], jobs["reference_id"])
+        b[contig["reference_name"]].append(
+            (contig["contig_name"], contig["contig_id"], contig["reference_id"])
         )
-
+        barcodes.update(
+            PafSummaryCov.objects.filter(job_master_id=contig["id"])
+            .exclude(barcode_name="No_barcode")
+            .values_list("barcode_id", "barcode__name", "reference_pk")
+        )
+        b[f"{contig['reference_name']}_barcodes"] = list(barcodes)
     return Response(b, status=status.HTTP_200_OK)
-
 
 
 @api_view(["GET", "DELETE"])
@@ -159,9 +207,7 @@ def notification_conditions_list(request):
     if request.method == "DELETE":
         notification_pk = request.GET.get("pk", -1)
         try:
-            deleted = NotificationConditions.objects.get(
-                pk=int(notification_pk)
-            )
+            deleted = NotificationConditions.objects.get(pk=int(notification_pk))
             type = deleted.notification_type
             deleted.delete()
             return Response(type, status=200)
@@ -176,6 +222,7 @@ def notification_conditions_list(request):
         )
         notifications_serialiser = NotificationSerialiser(queryset, many=True)
         return Response({"data": notifications_serialiser.data}, status=200)
+
 
 @api_view(["GET"])
 def get_coverage_summary(request, pk):
