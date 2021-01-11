@@ -31,6 +31,7 @@ class ArticController {
     this._addListenerToFireInputs()
     // this._addListenerToDownloadResults(flowcellId)
     this._renderAllResultsModal(flowcellId)
+    this._addListenerToAllButtons()
   }
 
   /**
@@ -696,21 +697,31 @@ class ArticController {
           async: true,
           error: (xhr, error, code) => {
             console.error(xhr)
-            console.error(code)
+            console.error(error)
           }
         },
         columnDefs: [
           { targets: 0, data: `barcode_name` },
           { targets: 1, data: `chromosome__line_name` },
-          { targets: 2, data: `reference_line_length` },
-          { targets: 3, data: `read_count` },
-          { targets: 4, data: `total_yield` },
+          { targets: 2, data: `reference_line_length`, render: $.fn.dataTable.render.number(`,`, `.`) },
+          { targets: 3, data: `read_count`, render: $.fn.dataTable.render.number(`,`, `.`) },
+          {
+            targets: 4,
+            data: `total_yield`,
+            render: (data, type, row) => {
+              return humanReadableYield(data, type, row)
+            }
+          },
           { targets: 5, data: `average_read_length` },
           { targets: 6, data: `coverage` },
           { targets: 7, data: `99%_value` },
           { targets: 8, data: `95%_value` },
           { targets: 9, data: `90%_value` },
-          { targets: 10, data: `has_sufficient_coverage` }
+          { targets: 10, data: `partial_amplicon_count` },
+          { targets: 11, data: `failed_amplicon_count` },
+          { targets: 12, data: `mean_of_amplicon_means` },
+          { targets: 13, data: `lineage` },
+          { targets: 14, data: `has_sufficient_coverage` }
         ]
       }
       )
@@ -938,5 +949,65 @@ class ArticController {
         }
       }
     )
+  }
+
+  /**
+   * Manually trigger all incomplete barcodes
+   * @param flowcellId {number}
+   * @private
+   */
+  // eslint-disable-next-line camelcase
+  _runAllIncomplete (flowcellId) {
+    const messageView = $(`#all-command-artic-messages`)
+    this._axiosInstance.patch(`/api/v1/artic/${flowcellId}/run-all-incomplete/`).then(
+      response => {
+        messageView.html(response.data)
+        setTimeout(5000, () => {
+          messageView.empty()
+        })
+      }
+    ).catch(
+      error => {
+        messageView.html(error.message)
+        setTimeout(5000, () => {
+          messageView.empty()
+        })
+        console.error(error)
+      }
+    )
+  }
+
+  /**
+   * Re run all barcodes irrespective of if they've been run before or not.
+   * @param flowcellId {number} The primray key of the flowcell that this Artic task is on.
+   * @private
+   */
+  _rerunAll (flowcellId) {
+    const messageView = $(`#all-command-artic-messages`)
+    this._axiosInstance.patch(`/api/v1/artic/${flowcellId}/re-run-all/`).then(
+      response => {
+        messageView.html(response.data)
+        setTimeout(5000, () => {
+          messageView.empty()
+        })
+      }
+    ).catch(
+      error => {
+        messageView.html(error.message)
+        setTimeout(5000, () => {
+          messageView.empty()
+        })
+        console.error(error)
+      }
+    )
+  }
+
+  /**
+   * Add listeners to Rerun all and Run incomplete buttons
+   * @private
+   */
+  _addListenerToAllButtons () {
+    $(`#rerun-all`).on(`click`, event => { this._rerunAll(this._flowcellId) })
+    $(`#run-all-incomplete`).on(`click`, event => { this._runAllIncomplete(this._flowcellId) })
   }
 }
