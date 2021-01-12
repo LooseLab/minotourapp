@@ -780,11 +780,12 @@ def flowcell_minknow_stats_list(request, pk, check_id):
     # Loop our results
     last_minion_run_stats_id = 0
     for mrs in minion_run_stats_gen:
-        if not counter == 0 and not counter % run_in_days:
-            counter += 1
-            continue
-        else:
-            counter += 1
+        if not run_in_days == 1:
+            if not counter == 0 and not counter % run_in_days:
+                counter += 1
+                continue
+            else:
+                counter += 1
         sample_time_microseconds = int(
             mrs.sample_time.replace(microsecond=0).timestamp() * 1000
         )
