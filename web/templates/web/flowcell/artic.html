@@ -41,7 +41,9 @@
                             <input type="number" id="95-input" class="ms" min="150" max="500">
                             <label for="99-input" style="display: inline">X Coverage at 99% of bases:</label>
                             <input type="number" id="99-input" class="ms" min="20" max="500">
-                            <button type="button" class="btn btn-light" id="update-fire-params" disabled>Submit changes</button>
+                            <button type="button" class="btn btn-light" id="update-fire-params" disabled>Submit
+                                changes
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -68,12 +70,12 @@
                     <th>Yield</th>
                     <th>Average Read Length</th>
                     <th>Coverage</th>
-                    <th>Percent Bases at 20x</th>
-                    <th>Percent Bases at 200x</th>
-                    <th>Percent Bases at 250x</th>
                     <th># Partial Amplicons</th>
                     <th># Failed Amplicons</th>
+                    <th># Success Amplicons</th>
                     <th>Mean of amplicons</th>
+                    <th>Var of amplicons</th>
+                    <th>Amplicon Std. Dev</th>
                     <th>Lineage</th>
                     <th>Sufficient Coverage</th>
                 </tr>
@@ -87,12 +89,12 @@
                     <th>Yield</th>
                     <th>Average Read Length</th>
                     <th>Coverage</th>
-                    <th>Percent Bases at 20x</th>
-                    <th>Percent Bases at 200x</th>
-                    <th>Percent Bases at 250x</th>
                     <th># Partial Amplicons</th>
                     <th># Failed Amplicons</th>
+                    <th># Success Amplicons</th>
                     <th>Mean of amplicons</th>
+                    <th>Var of amplicons</th>
+                    <th>Amplicon Std. Dev</th>
                     <th>Lineage</th>
                     <th>Sufficient Coverage</th>
                 </tr>
@@ -106,14 +108,15 @@
         <div class="card card-outline card-primary">
             <div class="card-body">
                 <div id="all-command-artic-messages"></div>
-                <button class="btn btn-primary" id="download-results-all" data-toggle="modal" data-target="#results-builder" data-all="true" data-barcode="-1" disabled>
-                        Download all completed
+                <button class="btn btn-primary" id="download-results-all" data-toggle="modal"
+                        data-target="#results-builder" data-all="true" data-barcode="-1" disabled>
+                    Download all completed
                 </button>
                 <button class="btn btn-primary" id="run-all-incomplete">
-                        Run all Incomplete
+                    Run all Incomplete
                 </button>
                 <button class="btn btn-primary" id="rerun-all">
-                        Re-Run All
+                    Re-Run All
                 </button>
             </div>
         </div>

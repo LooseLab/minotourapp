@@ -301,6 +301,10 @@ def get_artic_summary_table_data(request):
         )
     }
     # dictionaries change in place
+    scheme = "nCoV-2019"
+    scheme_version = "V3"
+    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
+    num_amplicons = len(amplicon_band_coords)
     for paf_summary_cov in queryset:
         barcode_name = paf_summary_cov["barcode_name"]
         paf_summary_cov["95%_value"] = artic_metadata[
@@ -313,9 +317,7 @@ def get_artic_summary_table_data(request):
             barcode_name
         ].percentage_bases_at_90_value
         paf_summary_cov["has_finished"] = artic_metadata[barcode_name].has_finished
-        scheme = "nCoV-2019"
-        scheme_version = "V3"
-        amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
+
         a = np.array(amplicon_band_coords)[:, :2]
         a = a.astype(np.int16)
         flowcell = artic_task.flowcell
@@ -346,7 +348,10 @@ def get_artic_summary_table_data(request):
                 failed_amplicon_count += 1
             elif int(amplicon_median_coverage) < 20:
                 partial_amplicon_count += 1
-        mean_of_amplicon_means = np.array(amplicon_coverages).mean()
+        amplicon_mean_array = np.array(amplicon_coverages)
+        mean_of_amplicon_means = amplicon_mean_array.mean()
+        std_dev = amplicon_mean_array.std()
+        variance = amplicon_mean_array.var()
         # get the lineage if it's finished
         if paf_summary_cov["has_finished"]:
             try:
@@ -366,6 +371,9 @@ def get_artic_summary_table_data(request):
         paf_summary_cov["partial_amplicon_count"] = partial_amplicon_count
         paf_summary_cov["failed_amplicon_count"] = failed_amplicon_count
         paf_summary_cov["mean_of_amplicon_means"] = int(mean_of_amplicon_means)
+        paf_summary_cov["variance"] = round(variance,2)
+        paf_summary_cov["std_dev"] = round(std_dev, 2)
+        paf_summary_cov["success_amplicon_count"] = num_amplicons - partial_amplicon_count - failed_amplicon_count
         paf_summary_cov["lineage"] = lineage
     if not queryset:
         return Response(
