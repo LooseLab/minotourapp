@@ -117,7 +117,6 @@ def new_messages_list(request):
     ----------
     request: rest_framework.request.Request
         Django request framework request object.
-reads_
     Returns
     -------
 
