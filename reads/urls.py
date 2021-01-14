@@ -24,17 +24,6 @@ urlpatterns = [
         views.readname_list,
         name="fastqreadnames-list",
     ),
-    #
-    # url(
-    #     r"^api/v1/reads/runs/(?P<pk>[0-9]+)/summarybarcode/$",
-    #     views.run_summary_barcode,
-    #     name="runsummarybarcode-detail",
-    # ),
-    # url(
-    #     r"^api/v1/reads/runs/(?P<pk>[0-9]+)/summarybarcodebyminute/$",
-    #     views.run_summary_barcode_by_minute,
-    #     name="runsummarybarcodebyminute-detail",
-    # ),
     url(
         r"^api/v1/reads/runs/(?P<pk>[0-9A-Za-z-_]+)/files/$",
         views.fastq_file,
