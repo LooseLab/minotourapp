@@ -185,11 +185,12 @@ def fun(self, exc, task_id, args, kwargs, einfo):
     Parameters
     ----------
     self
-    exc
-    task_id
-    args
-    kwargs
-    einfo
+    exc: Exception raised by the task
+    task_id: Unique Id of the failed task
+    args: original arguments of the faield task
+    kwargs: keyword arguments of the failed task
+    einfo: ExceptionInfo
+        Info about the exception raised
 
     Returns
     -------
