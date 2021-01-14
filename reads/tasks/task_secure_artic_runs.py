@@ -26,7 +26,7 @@ def trigger_all_barcodes_after_run(artic_job_master):
     for sub_cov_barcode in artic_barcodes:
         if sub_cov_barcode.barcode.name == "unclassified":
             continue
-        logger.info(f"Creating final artic run for {sub_cov_barcode} and then tidying up sensitive files...")
+        logger.debug(f"Creating final artic run for {sub_cov_barcode} and then tidying up sensitive files...")
         # fixme - lazy here, we should really find a way to only create once from the sub cov barcode
         created, jm = JobMaster.objects.get_or_create(
             job_type_id=17,
