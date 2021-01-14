@@ -16,7 +16,8 @@ from artic.task_artic_alignment import np
 from artic.utils import (
     get_amplicon_band_data,
     quick_get_artic_results_directory,
-    remove_duplicate_sequences_numpy, get_all_results,
+    remove_duplicate_sequences_numpy,
+    get_all_results,
 )
 from minknow_data.models import Flowcell
 from minotourapp.utils import get_env_variable
@@ -39,29 +40,52 @@ def fire_conditions_list(request, pk):
 
     """
     if request.method == "GET":
-        data = ArticFireConditions.objects.get(flowcell_id=pk).__dict__
-        data.pop("_state")
-        return Response(data, status=status.HTTP_200_OK)
-    elif request.method == "POST":
         try:
-            afc = ArticFireConditions.objects.filter(flowcell_id=int(pk))
-            if not afc:
-                raise ArticFireConditions.DoesNotExist
-            afc.update(
-                ninety_percent_bases_at=int(request.data.get("90-input", 0)),
-                ninety_five_percent_bases_at=int(request.data.get("95-input", 0)),
-                ninety_nine_percent_bases_at=int(request.data.get("99-input", 0)),
-            )
+            data = ArticFireConditions.objects.filter(flowcell_id=pk).values()
+            return Response({"data": data}, status=status.HTTP_200_OK)
         except ArticFireConditions.DoesNotExist:
-            afc = ArticFireConditions(
-                flowcell_id=int(pk),
-                ninety_percent_bases_at=int(request.data.get("90-input", 300)),
-                ninety_five_percent_bases_at=int(request.data.get("95-input", 250)),
-                ninety_nine_percent_bases_at=int(request.data.get("99-input", 30)),
+            return Response({"data": []}, status=status.HTTP_404_NOT_FOUND)
+    elif request.method == "POST":
+        percent_amplicons = request.data.get("num-amplicons-input", False)
+        x_coverage = request.data.get("x-coverage-input", False)
+        if not all([percent_amplicons, x_coverage]):
+            return (
+                "Error in request - missing percent amplicons or x coverage choice.",
+                status.HTTP_400_BAD_REQUEST,
             )
-            afc.save()
+        ArticFireConditions.objects.create(
+            flowcell_id=pk,
+            percent_of_amplicons=percent_amplicons,
+            x_coverage=x_coverage,
+        )
         return Response(
             "Artic firing conditions updated.", status=status.HTTP_201_CREATED
+        )
+
+
+@api_view(["DELETE"])
+def fire_condition_detail(request, pk, f_id):
+    """
+    detail for deleting a specific fire condition by its id
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The Ajax request body
+    pk: int
+        The primary key of the flowcell for the artic task
+    f_id: int
+        Primary key of fire condition to be deleted
+
+    Returns
+    -------
+    str
+        Message string to be displayed
+
+    """
+    if request.method == "DELETE":
+        ArticFireConditions.objects.get(pk=f_id).delete()
+        return Response(
+            "Condition was deleted successfully.", status=status.HTTP_204_NO_CONTENT
         )
 
 
@@ -341,7 +365,7 @@ def get_artic_summary_table_data(request):
             coverage[coverage == 0] = 0.1
 
         for bin_start, bin_end in a:
-            amplicon_coverage = coverage[bin_start: bin_end]
+            amplicon_coverage = coverage[bin_start:bin_end]
             amplicon_coverages.append(np.mean(amplicon_coverage))
             amplicon_median_coverage = np.median(amplicon_coverage)
             if int(amplicon_median_coverage) == 0:
@@ -371,9 +395,11 @@ def get_artic_summary_table_data(request):
         paf_summary_cov["partial_amplicon_count"] = partial_amplicon_count
         paf_summary_cov["failed_amplicon_count"] = failed_amplicon_count
         paf_summary_cov["mean_of_amplicon_means"] = int(mean_of_amplicon_means)
-        paf_summary_cov["variance"] = round(variance,2)
+        paf_summary_cov["variance"] = round(variance, 2)
         paf_summary_cov["std_dev"] = round(std_dev, 2)
-        paf_summary_cov["success_amplicon_count"] = num_amplicons - partial_amplicon_count - failed_amplicon_count
+        paf_summary_cov["success_amplicon_count"] = (
+            num_amplicons - partial_amplicon_count - failed_amplicon_count
+        )
         paf_summary_cov["lineage"] = lineage
     if not queryset:
         return Response(
@@ -405,7 +431,11 @@ def get_artic_barcode_metadata_html(request):
         )
     # see if we have a command waiting to be run
     try:
-        artic_command_jm = bool(JobMaster.objects.get(job_type_id=17, barcode__name=selected_barcode, flowcell_id=flowcell_id))
+        artic_command_jm = bool(
+            JobMaster.objects.get(
+                job_type_id=17, barcode__name=selected_barcode, flowcell_id=flowcell_id
+            )
+        )
     except JobMaster.DoesNotExist:
         artic_command_jm = False
     orm_object = ArticBarcodeMetadata.objects.filter(
@@ -452,7 +482,7 @@ def get_artic_barcode_metadata_html(request):
         ("Input fasta", "input-fasta"),
         ("Pangolin lineages CSV", "pangolin-lineages"),
         ("Sorted Bam", "sorted-bam"),
-        ("Sorted Bam index", "sorted-bam-bai")
+        ("Sorted Bam index", "sorted-bam-bai"),
     ]
     old_dict = orm_object.__dict__
     context_dict = {key[0]: old_dict[key[1]] for key in new_key_names}
@@ -464,12 +494,19 @@ def get_artic_barcode_metadata_html(request):
     context_dict["hidden_has_finished"] = old_dict["has_finished"]
     context_dict["hidden_has_suff"] = old_dict["has_sufficient_coverage"]
     context_dict["hidden_marked_for_rerun"] = old_dict["marked_for_rerun"]
-    context_dict["hidden_destroy_evidence"] = bool(int(get_env_variable("MT_DESTROY_ARTIC_EVIDENCE")))
-    context_dict["hidden_triggered_by_cleanup"] = orm_object.has_finished and not orm_object.has_sufficient_coverage
-    context_dict["hidden_has_command_job_master"] = artic_command_jm
-    (flowcell, artic_results_path, artic_task_id, _) = quick_get_artic_results_directory(
-        flowcell_id
+    context_dict["hidden_destroy_evidence"] = bool(
+        int(get_env_variable("MT_DESTROY_ARTIC_EVIDENCE"))
     )
+    context_dict["hidden_triggered_by_cleanup"] = (
+        orm_object.has_finished and not orm_object.has_sufficient_coverage
+    )
+    context_dict["hidden_has_command_job_master"] = artic_command_jm
+    (
+        flowcell,
+        artic_results_path,
+        artic_task_id,
+        _,
+    ) = quick_get_artic_results_directory(flowcell_id)
     fastq_path = artic_results_path / selected_barcode / f"{selected_barcode}.fastq"
     fastq_path_gz = fastq_path.with_suffix(".fastq.gz")
     context_dict["hidden_has_fastq"] = fastq_path.exists() or fastq_path_gz.exists()
@@ -575,6 +612,7 @@ def get_results_package(request):
     response = get_all_results(path_to_results, flowcell, barcode_name, chosen.keys())
     return response
 
+
 @api_view(["GET"])
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
 def get_results_modal_html(request, pk):
@@ -595,7 +633,7 @@ def get_results_modal_html(request, pk):
     results_files_extra = [
         ("Input fasta", "input-fasta"),
         ("Sorted Bam", "sorted-bam"),
-        ("Sorted Bam Index", "sorted-bam-bai")
+        ("Sorted Bam Index", "sorted-bam-bai"),
     ]
     results_files = [
         ("Consensus sequence", "consensus"),
@@ -609,7 +647,6 @@ def get_results_modal_html(request, pk):
         results_files.extend(results_files_extra)
     context_dict = {"hidden_results_files": results_files}
     return render(request, "all-results-modal.html", context={"context": context_dict})
-
 
 
 @api_view(["GET"])
@@ -639,9 +676,12 @@ def png_html(request):
         return Response("No data found", status=status.HTTP_404_NOT_FOUND)
     if not orm_object.has_finished:
         return Response("No results yet.", status=status.HTTP_204_NO_CONTENT)
-    (flowcell, artic_results_path, artic_task_id, _) = quick_get_artic_results_directory(
-        flowcell_id
-    )
+    (
+        flowcell,
+        artic_results_path,
+        artic_task_id,
+        _,
+    ) = quick_get_artic_results_directory(flowcell_id)
     context_list = [
         [
             # TODO we need to add the flowcell_pk_job_master_pk folder before here

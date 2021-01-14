@@ -4,83 +4,84 @@ from artic import views
 
 urlpatterns = [
     url(
-        r'^api/v1/artic/visualisation/barcodes/$',
+        r"^api/v1/artic/visualisation/barcodes/$",
         views.get_artic_barcodes,
-        name="get-artic-barcodes"
+        name="get-artic-barcodes",
     ),
     url(
-        r'^api/v1/artic/visualisation/master/$',
+        r"^api/v1/artic/visualisation/master/$",
         views.get_artic_master_chart_data,
-        name="get-artic-barcodes"
+        name="get-artic-barcodes",
     ),
     url(
-        r'^api/v1/artic/visualisation/detail/$',
+        r"^api/v1/artic/visualisation/detail/$",
         views.get_artic_detail_chart_data,
-        name="get-artic-detail"
+        name="get-artic-detail",
     ),
     url(
-        r'^api/v1/artic/visualisation/column-charts/$',
+        r"^api/v1/artic/visualisation/column-charts/$",
         views.get_artic_column_chart_data,
-        name="get-artic-column"
+        name="get-artic-column",
     ),
     url(
-        r'^api/v1/artic/visualisation/summary-table-data/$',
+        r"^api/v1/artic/visualisation/summary-table-data/$",
         views.get_artic_summary_table_data,
-        name="get-summary-table-data"
+        name="get-summary-table-data",
     ),
     url(
-        r'^api/v1/artic/barcode-metadata/$',
+        r"^api/v1/artic/barcode-metadata/$",
         views.get_artic_barcode_metadata_html,
-        name="get-barcode-metadata"
+        name="get-barcode-metadata",
     ),
     url(
-        r'^api/v1/artic/manual-trigger/$',
+        r"^api/v1/artic/manual-trigger/$",
         views.manually_create_artic_command_job_master,
-        name="manual-trigger"
+        name="manual-trigger",
     ),
     url(
-        r'^api/v1/artic/build-results/$',
+        r"^api/v1/artic/build-results/$",
         views.get_results_package,
-        name="create-results-bundle"
+        name="create-results-bundle",
     ),
+    url(r"^api/v1/artic/fetch-png-html/$", views.png_html, name="png-html"),
     url(
-        r'^api/v1/artic/fetch-png-html/$',
-        views.png_html,
-        name="png-html"
-    ),
-    url(
-        r'^api/v1/artic/fetch-amplicon-bands/$',
+        r"^api/v1/artic/fetch-amplicon-bands/$",
         views.get_amplicon_bands_for_master,
-        name="amplicon-bands"
+        name="amplicon-bands",
     ),
     url(
-        r'^api/v1/artic/rerun-command/$',
+        r"^api/v1/artic/rerun-command/$",
         views.rerun_artic_command,
-        name="rerun-command"
+        name="rerun-command",
     ),
     url(
-        r'^api/v1/artic/pie-chart-data/$',
+        r"^api/v1/artic/pie-chart-data/$",
         views.get_artic_pie_chart_data,
-        name="pie-chart-data"
+        name="pie-chart-data",
     ),
     url(
-        r'^api/v1/artic/(?P<pk>[0-9]+)/firing-conditions',
+        r"^api/v1/artic/(?P<pk>[0-9]+)/firing-conditions$",
         views.fire_conditions_list,
-        name="fire-conditions-data"
+        name="fire-conditions-data",
     ),
     url(
-        r'^api/v1/artic/(?P<pk>[0-9]+)/results-modal',
+        r"^api/v1/artic/(?P<pk>[0-9]+)/firing-conditions/(?P<f_id>[0-9]+)$",
+        views.fire_condition_detail,
+        name="fire-condition-detail",
+    ),
+    url(
+        r"^api/v1/artic/(?P<pk>[0-9]+)/results-modal",
         views.get_results_modal_html,
-        name="results-modal-html"
+        name="results-modal-html",
     ),
     url(
-        r'^api/v1/artic/(?P<pk>[0-9]+)/run-all-incomplete/',
+        r"^api/v1/artic/(?P<pk>[0-9]+)/run-all-incomplete/",
         views.run_all_incomplete,
-        name="run-all-incomplete"
+        name="run-all-incomplete",
     ),
     url(
-        r'^api/v1/artic/(?P<pk>[0-9]+)/re-run-all/',
+        r"^api/v1/artic/(?P<pk>[0-9]+)/re-run-all/",
         views.mark_all_barcodes_for_pipeline,
-        name="run-all-incomplete"
+        name="run-all-incomplete",
     ),
 ]

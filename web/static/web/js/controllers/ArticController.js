@@ -22,11 +22,11 @@ class ArticController {
       console.log(`clearing Artic interval`)
       clearInterval(this._interval)
     })
-    this._90Input = $(`#90-input`)
-    this._95Input = $(`#95-input`)
-    this._99Input = $(`#99-input`)
+    this._numAmpliconsInput = $(`#num-amplicons-input`)
+    this._xCoverageInput = $(`#x-coverage-input`)
     this._fireButton = $(`#update-fire-params`)
-    this._fireInputs = [this._90Input, this._95Input, this._99Input]
+    this._fireConditionsTable = $(`#artic-fire-conditions-table`)
+    this._fireInputs = [this._numAmpliconsInput, this._xCoverageInput]
     this._showFiringConditions(flowcellId)
     this._addListenerToFireInputs()
     // this._addListenerToDownloadResults(flowcellId)
@@ -40,12 +40,15 @@ class ArticController {
    */
   _submitFireChoices () {
     const newConditions = {}
+    const messageDiv = $(`#firing-conditions-message`)
     this._fireInputs.forEach(input => {
       newConditions[input.attr(`id`)] = input.val()
     })
     this._axiosInstance.post(`/api/v1/artic/${this._flowcellId}/firing-conditions`, newConditions).then(
       response => {
-        alert(response.data)
+        messageDiv.html(`<div class="alert-success">${response.data}</div>`)
+        this._fireConditionsTable.DataTable().ajax.reload(null, false)
+        messageDiv.empty(messageDiv.empty(), 3000)
       }
     ).catch(
       error => {
@@ -75,16 +78,57 @@ class ArticController {
    * @private
    */
   _showFiringConditions (flowcellId) {
-    this._axiosInstance.get(`/api/v1/artic/${flowcellId}/firing-conditions`).then(
-      response => {
-        const data = response.data
-        this._90Input.val(data.ninety_percent_bases_at)
-        this._95Input.val(data.ninety_five_percent_bases_at)
-        this._99Input.val(data.ninety_nine_percent_bases_at)
-      }).catch(
-      error => {
-        console.error(error.response)
+    if ($.fn.DataTable.isDataTable(this._fireConditionsTable)) {
+      // null for callback function, false for reset paging
+      this._fireConditionsTable.DataTable().ajax.reload(null, false)
+    } else {
+      this._fireConditionsTable.DataTable({
+        language: {
+          emptyTable: `No data available in table`,
+          zeroRecords: `No records to display`
+        },
+        createdRow: (row, data, index) => {
+          $(row).find(`.delete-fc`).on(`click`, () => {
+            const messageDiv = $(`#firing-conditions-message`)
+            this._axiosInstance.delete(`/api/v1/artic/${this._flowcellId}/firing-conditions/${data.id}`)
+              .then(
+                response => {
+                  this._fireConditionsTable.DataTable().ajax.reload(null, false)
+                  messageDiv.html(`<div class="alert-success">${response.data}</div>`)
+                  messageDiv.empty(messageDiv.empty(), 3000)
+                }
+              ).catch(
+                error => {
+                  messageDiv.html(`<div class="alert-danger">${error.data}</div>`)
+                  setTimeout(messageDiv.empty(), 3000)
+                }
+              )
+          })
+        },
+        ajax: {
+          url: `/api/v1/artic/${flowcellId}/firing-conditions`,
+          method: `GET`,
+          async: true,
+          error: (xhr, error, code) => {
+            console.error(xhr)
+            console.error(error)
+          }
+        },
+        columns: [
+          { data: `percent_of_amplicons` },
+          { data: `x_coverage` },
+          {
+            data: null,
+            orderable: false,
+            width: `15%`,
+            render: (data, type, id) => {
+              return `<a class="btn icon-task delete-fc"><i class="fa fa-times task-icon"></i> Delete </a>`
+            }
+          }
+        ]
+
       })
+    }
   }
 
   /**
@@ -1010,7 +1054,11 @@ class ArticController {
    * @private
    */
   _addListenerToAllButtons () {
-    $(`#rerun-all`).on(`click`, event => { this._rerunAll(this._flowcellId) })
-    $(`#run-all-incomplete`).on(`click`, event => { this._runAllIncomplete(this._flowcellId) })
+    $(`#rerun-all`).on(`click`, event => {
+      this._rerunAll(this._flowcellId)
+    })
+    $(`#run-all-incomplete`).on(`click`, event => {
+      this._runAllIncomplete(this._flowcellId)
+    })
   }
 }

@@ -32,21 +32,39 @@
     <div class="card-body">
         <div class="container-fluid">
             <div class="row">
-                <form class="form-horizontal" id="fire-conditions">
-                    <div class="form-group">
-                        <div class="col-md-12 control-label" style="height: 100%; text-align: left;">
-                            <label for="90-input" style="display: inline">X Coverage at 90% of bases:</label>
-                            <input type="number" id="90-input" class="ms" min="150" max="500">
-                            <label for="95-input" style="display: inline">X Coverage at 95% of bases:</label>
-                            <input type="number" id="95-input" class="ms" min="150" max="500">
-                            <label for="99-input" style="display: inline">X Coverage at 99% of bases:</label>
-                            <input type="number" id="99-input" class="ms" min="20" max="500">
+                <div id="firing-conditions-message" class=""></div>
+                <div class="col-md-6 control-label" style="height: 100%; text-align: left;">
+                    <form class="form-horizontal" id="fire-conditions">
+                        <div class="form-group">
+                            <label for="90-input" style="display: inline"><input type="number" id="x-coverage-input" class="ms"
+                                                                                 min="15" max="1000" value="30">X Coverage at
+                                <input
+                                        type="number" id="num-amplicons-input" class="ms" min="50" max="100" value="90">% of
+                                amplicons</label>
                             <button type="button" class="btn btn-light" id="update-fire-params" disabled>Submit
                                 changes
                             </button>
                         </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-hover" id="artic-fire-conditions-table" style="width:100%">
+                        <thead>
+                        <tr>
+                            <th>% of amplicons</th>
+                            <th>X coverage</th>
+                            <th>Delete</th>
+                        </tr>
+                        </thead>
+                        <tfoot>
+                        <tr>
+                            <th>% of amplicons</th>
+                            <th>X coverage</th>
+                            <th>Delete</th>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
         </div>
     </div>

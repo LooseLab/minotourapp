@@ -52,6 +52,5 @@ class ArticFireConditions(models.Model):
         related_name="flowcell_firing_conditions",
         on_delete=models.CASCADE,
     )
-    ninety_percent_bases_at = models.IntegerField(default=250)
-    ninety_five_percent_bases_at = models.IntegerField(default=200)
-    ninety_nine_percent_bases_at = models.IntegerField(default=30)
+    percent_of_amplicons = models.IntegerField(default=90)
+    x_coverage = models.IntegerField(default=30)
