@@ -9,6 +9,7 @@ from artic.task_artic_alignment import (
     make_results_directory_artic,
     run_artic_command, run_artic_pipeline,
 )
+from artic.task_secure_artic_runs import secure_artic_runs
 from metagenomics.new_centrifuge import run_centrifuge_pipeline
 from metagenomics.sankey import calculate_sankey
 from minknow_data.models import Flowcell
@@ -19,7 +20,6 @@ from reads.models import (
 )
 from reads.tasks.redis_tasks_functions import harvest_reads
 from reads.tasks.task_delete_flowcell import delete_flowcell
-from reads.tasks.task_secure_artic_runs import secure_artic_runs
 from reads.tasks.tasks_archive_flowcell import archive_flowcell
 from reads.tasks.tasks_update_flowcell import update_flowcell_details
 from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
@@ -28,7 +28,7 @@ from web.utils import fun
 logger = get_task_logger(__name__)
 
 
-@app.task
+@app.task(ignore_results=True)
 def run_monitor():
     """
     Run monitor is the task that is run every 30 seconds by Django celery beat -
