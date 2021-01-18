@@ -163,16 +163,14 @@
                   >
                 {% csrf_token %}
                 <div class="modal-body">
-                    <p>Please set the conditions to fire the artic pipeline, with a certain minimum coverage at 90, 95
-                        or 99% bases covered at.</p>
+                    <p>Please set a condition to fire the artic pipeline. More can be created on the task page.</p>
                     <div class="form-group">
                         <div class="col-md-12 control-label" style="height: 100%; text-align: left;">
-                            <label for="90-input-og" style="">X Coverage at 90% of bases:</label>
-                            <input type="number" id="90-input-og" class="ms" min="150" max="500" value="250">
-                            <label for="95-input-og" style="">X Coverage at 95% of bases:</label>
-                            <input type="number" id="95-input-og" class="ms" min="150" max="500" value="200">
-                            <label for="99-input-og" style="">X Coverage at 99% of bases:</label>
-                            <input type="number" id="99-input-og" class="ms" min="20" max="500" value="20">
+                            <label for="num-amplicons-input" style="display: inline"><input type="number" id="x-coverage-input-task" class="ms"
+                                                                                 min="15" max="1000" value="30">X Coverage at
+                                <input
+                                        type="number" id="num-amplicons-input-task" class="ms" min="50" max="100" value="90">% of
+                                amplicons</label>
                         </div>
                     </div>
                 </div>
