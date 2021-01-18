@@ -4,6 +4,7 @@ Useful functions that don't belong in views or tasks
 import json
 import os
 import tarfile
+from collections import namedtuple
 from pathlib import Path
 
 import numpy as np
@@ -12,7 +13,6 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 
 from artic.models import ArticBarcodeMetadata
-from artic.task_artic_alignment import make_results_directory_artic
 from minknow_data.models import Flowcell
 from minotourapp.settings import BASE_DIR
 from minotourapp.utils import get_env_variable
@@ -41,28 +41,55 @@ def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
         List of completed barcodes for this flowcell
     """
     if not selected_barcode:
-        queryset = ArticBarcodeMetadata.objects.filter(flowcell=flowcell, has_finished=True)
+        queryset = ArticBarcodeMetadata.objects.filter(
+            flowcell=flowcell, has_finished=True
+        )
         finished_barcodes = [q.barcode.name for q in queryset]
     else:
         finished_barcodes = [selected_barcode]
     results_files = {
-        "consensus": [f"{barcode_name}/{barcode_name}.consensus.fasta.gz" for barcode_name in finished_barcodes],
-        "box-plot": [f"{barcode_name}/{barcode_name}-boxplot.png" for barcode_name in finished_barcodes],
-        "bar-plot": [f"{barcode_name}/{barcode_name}-barplot.png" for barcode_name in finished_barcodes],
-        "fail-vcf": [f"{barcode_name}/{barcode_name}.fail.vcf.gz" for barcode_name in finished_barcodes],
-        "pass-vcf": [f"{barcode_name}/{barcode_name}.pass.vcf.gz" for barcode_name in finished_barcodes],
-        "input-fasta": [f"{barcode_name}/{barcode_name}.fastq.gz" for barcode_name in finished_barcodes],
-        "pangolin-lineages": [f"{barcode_name}/lineage_report.csv.gz" for barcode_name in finished_barcodes],
-        "sorted-bam": [f"{barcode_name}/{barcode_name}.sorted.bam.gz" for barcode_name in finished_barcodes],
-        "sorted-bam-bai": [f"{barcode_name}/{barcode_name}.sorted.bam.bai.gz" for barcode_name in finished_barcodes],
+        "consensus": [
+            f"{barcode_name}/{barcode_name}.consensus.fasta.gz"
+            for barcode_name in finished_barcodes
+        ],
+        "box-plot": [
+            f"{barcode_name}/{barcode_name}-boxplot.png"
+            for barcode_name in finished_barcodes
+        ],
+        "bar-plot": [
+            f"{barcode_name}/{barcode_name}-barplot.png"
+            for barcode_name in finished_barcodes
+        ],
+        "fail-vcf": [
+            f"{barcode_name}/{barcode_name}.fail.vcf.gz"
+            for barcode_name in finished_barcodes
+        ],
+        "pass-vcf": [
+            f"{barcode_name}/{barcode_name}.pass.vcf.gz"
+            for barcode_name in finished_barcodes
+        ],
+        "input-fasta": [
+            f"{barcode_name}/{barcode_name}.fastq.gz"
+            for barcode_name in finished_barcodes
+        ],
+        "pangolin-lineages": [
+            f"{barcode_name}/lineage_report.csv.gz"
+            for barcode_name in finished_barcodes
+        ],
+        "sorted-bam": [
+            f"{barcode_name}/{barcode_name}.sorted.bam.gz"
+            for barcode_name in finished_barcodes
+        ],
+        "sorted-bam-bai": [
+            f"{barcode_name}/{barcode_name}.sorted.bam.bai.gz"
+            for barcode_name in finished_barcodes
+        ],
     }
     chosen_files = [results_files[key] for key in chosen]
     # change into the directory
     os.chdir(artic_results_dir)
-        
-    results_file = (
-            artic_results_dir / f"results_artic_{flowcell.name}.tar.gz"
-    )
+
+    results_file = artic_results_dir / f"results_artic_{flowcell.name}.tar.gz"
     with tarfile.open(results_file, "w:gz") as tar:
         for filey in chosen_files:
             try:
@@ -206,9 +233,7 @@ def quick_get_artic_results_directory(flowcell_id, barcodeName="", check=False):
 
     """
     flowcell = Flowcell.objects.get(pk=flowcell_id)
-    artic_task = get_object_or_404(
-        JobMaster, flowcell=flowcell, job_type_id=16
-    )
+    artic_task = get_object_or_404(JobMaster, flowcell=flowcell, job_type_id=16)
     artic_results_path = make_results_directory_artic(
         flowcell.id, artic_task.id, allow_create=False
     )
@@ -251,37 +276,25 @@ def remove_duplicate_sequences_numpy(array, master=False, minimum=None):
     else:
         xmax = array.size
         index_start = 1
-
     # Get largest value
     ymax = array.max()
-
     ymin = array.min()
-
     a = array
-
     # create an index position, so we can draw the point above the correct base on the graph
     index_position = np.arange(index_start, index_start + a.size, dtype=np.uint32)
     # Remove all the indexes where there is duplicated numbers in sequence
-
     a = np.insert(a, 0, -1)
-
     a = np.append(a, -1)
-
     index_position = index_position[a[2:] != a[:-2]]
     # remove all the duplicate sequential values from the array of actual data values
     a = array[a[2:] != a[:-2]]
-
     a[a == np.inf] = 0
-
     a[a == 1.7976931348623157e308] = 0
-
     # Create a list of tuples, with the x coord as first tuple element and the y value as second
     x_y_values = list(zip(index_position, a))
-
     # if this is for the coverage master chart we need 50000 values or less for the sake of the browser
     if len(x_y_values) > 50000 and master:
         x_y_values = sampler(x_y_values)
-
     return x_y_values, xmax, ymax, ymin
 
 
@@ -311,3 +324,136 @@ def check_artic_static_exists():
         print("Artic Doesn't exist")
     if not (Path(BASE_DIR) / "artic" / "static" / "artic").exists():
         (Path(BASE_DIR) / "artic" / "static" / "artic").mkdir()
+
+
+def make_results_directory_artic(flowcell_id, task_id, allow_create=True):
+    """
+    Make a results directory
+    Parameters
+    ----------
+    flowcell_id: int
+        Primary key of the flowcell entry in the database
+    task_id: int
+        Primary key of the task record in the database.
+    allow_create: bool
+        Allow the creation of the directory if it doesn't already exist
+
+    Returns
+    -------
+    results_dir: pathlib.PosixPath
+        PosixPath pointing to the results directory
+    """
+    environmental_results_directory = get_env_variable("MT_ARTIC_RESULTS_DIR")
+    artic_dir = Path(f"{environmental_results_directory}/artic/")
+    if not artic_dir.exists() and allow_create:
+        Path.mkdir(artic_dir)
+    results_dir = Path(f"{environmental_results_directory}/artic/Temp_results")
+    if not results_dir.exists() and allow_create:
+        Path.mkdir(results_dir)
+    results_dir = Path(
+        f"{environmental_results_directory}/artic/Temp_results/{flowcell_id}_{task_id}_artic"
+    )
+    if not results_dir.exists() and allow_create:
+        Path.mkdir(results_dir)
+    return results_dir
+
+
+def get_amplicon_stats(
+    amplicon_band_coords,
+    num_amplicons,
+    flowcell_id,
+    barcode_name,
+    time_stamp,
+    read_count,
+    coverage_array=None
+):
+    """
+    Get statistics about each amplicon across the coverage array, such as # failed, partial and succesful, mean, std dev
+    Parameters
+    ----------
+    amplicon_band_coords: list of tuple
+        list of tuples of start stop across the genome
+    num_amplicons: int
+        The number of amplicons, equivalent to len(amplicon_band_coords)
+    flowcell_id: int
+        The primary key of this flowcell
+    barcode_name: str
+        The name of the barcode
+    time_stamp: datetime.datetime
+        The time stamp for all these metrics
+    read_count: int
+        The read count of total mapped reads for this barcode
+    coverage_array: np.ndarray
+        The array of coverage across the genome
+
+    Returns
+    -------
+    collection.NamedTuple
+    """
+    Stats = namedtuple(
+        "Stats",
+        [
+            "time_stamp",
+            "coverage",
+            "partial_amplicon_count",
+            "success_amplicon_count",
+            "failed_amplicon_count",
+            "read_count",
+            "mean_of_amplicon_means",
+            "std_dev",
+            "variance",
+            "would_fire",
+        ],
+    )
+    a = np.array(amplicon_band_coords)[:, :2]
+    a = a.astype(np.int16)
+    (
+        flowcell,
+        artic_results_path,
+        artic_task_id,
+        coverage_path,
+    ) = quick_get_artic_results_directory(flowcell_id, barcode_name)
+    if not coverage_array:
+        try:
+            with open(coverage_path, "rb") as fh:
+                coverage = np.fromfile(fh, dtype=np.uint16)
+        except FileNotFoundError as e:
+            raise e
+    else:
+        coverage = coverage_array
+    amplicon_coverages = []
+    failed_amplicon_count = 0
+    partial_amplicon_count = 0
+
+    for bin_start, bin_end in a:
+        amplicon_coverage = coverage[bin_start:bin_end]
+        amplicon_coverages.append(np.mean(amplicon_coverage))
+        amplicon_median_coverage = np.median(amplicon_coverage)
+        if int(amplicon_median_coverage) == 0:
+            failed_amplicon_count += 1
+        elif int(amplicon_median_coverage) < 20:
+            partial_amplicon_count += 1
+    successful_amplicon_counts = (
+        num_amplicons - partial_amplicon_count - failed_amplicon_count
+    )
+    amplicon_mean_array = np.array(amplicon_coverages)
+    mean_of_amplicon_means = round(amplicon_mean_array.mean(), 2)
+    std_dev = round(amplicon_mean_array.std(), 2)
+    variance = round(amplicon_mean_array.var(), 2)
+    mean_coverage = round(coverage.mean(), 2)
+    would_fire = (
+        amplicon_mean_array[amplicon_mean_array > 20] / num_amplicons * 100
+    ) > 90
+    barcode_stats = Stats(
+        time_stamp=time_stamp,
+        coverage=mean_coverage,
+        partial_amplicon_count=partial_amplicon_count,
+        success_amplicon_count=successful_amplicon_counts,
+        failed_amplicon_count=failed_amplicon_count,
+        read_count=read_count,
+        mean_of_amplicon_means=mean_of_amplicon_means,
+        std_dev=std_dev,
+        variance=variance,
+        would_fire=would_fire,
+    )
+    return barcode_stats
