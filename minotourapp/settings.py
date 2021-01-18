@@ -239,8 +239,8 @@ CELERY_BEAT_SCHEDULE = {
         }
     },
     # Run this every midnight
-    'archive_flowcell': {
-        'task': 'reads.tasks.tasks_archive_flowcell.create_archive_tasks',
+    'secure_artic_runs': {
+        'task': 'artic.task_secure_artic_runs.secure_artic_runs',
         'schedule': crontab(minute=0, hour=0)
     },
     # Run the thing on the thing
