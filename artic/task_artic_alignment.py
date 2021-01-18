@@ -15,6 +15,7 @@ from django.conf import settings
 
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
+from artic.utils import get_amplicon_band_data, make_results_directory_artic
 from minknow_data.models import Flowcell
 from minotourapp.celery import app
 from minotourapp.settings import BASE_DIR, STATIC_ROOT
@@ -28,6 +29,42 @@ from reads.models import (
 from readuntil.functions_EB import *
 
 logger = get_task_logger(__name__)
+
+
+def check_afc_values_met(afc, coverage_array):
+    """
+    Check if this artic fire condition has been met on this barcode
+    Parameters
+    ----------
+    afc: artic.models.ArticFireConditions
+        The model that we are checking
+    coverage_array: np.ndarray
+        Array containing an entry for each base
+
+    Returns
+    -------
+    bool
+        Whether the Artic Firing Condition has been met
+
+    """
+    return (coverage_array[coverage_array > afc.x_coverage].size / coverage_array.size * 100) >= afc.percent_of_amplicons
+
+
+def get_amplicon_infos():
+    """
+    get amplicon band coordinates
+    Returns
+    -------
+    (num_amplicons, amplicon_band_coords): (int, list)
+        Tuple containing number of amplicons and the amplicon band coordinates
+
+    """
+    # todo hardcoded scheme atm, need to attach to JobMaster somehow
+    scheme = "nCoV-2019"
+    scheme_version = "V3"
+    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
+    num_amplicons = len(amplicon_band_coords)
+    return(num_amplicons, amplicon_band_coords)
 
 
 # TODO parsing cigar lends itself to numba nicely
@@ -337,38 +374,6 @@ def fetch_barcode_to_fire_list(directory):
     return barcodes
 
 
-def make_results_directory_artic(flowcell_id, task_id, allow_create=True):
-    """
-    Make a results directory
-    Parameters
-    ----------
-    flowcell_id: int
-        Primary key of the flowcell entry in the database
-    task_id: int
-        Primary key of the task record in the database.
-    allow_create: bool
-        Allow the creation of the directory if it doesn't already exist
-
-    Returns
-    -------
-    results_dir: pathlib.PosixPath
-        PosixPath pointing to the results directory
-    """
-    environmental_results_directory = get_env_variable("MT_ARTIC_RESULTS_DIR")
-    artic_dir = Path(f"{environmental_results_directory}/artic/")
-    if not artic_dir.exists() and allow_create:
-        Path.mkdir(artic_dir)
-    results_dir = Path(f"{environmental_results_directory}/artic/Temp_results")
-    if not results_dir.exists() and allow_create:
-        Path.mkdir(results_dir)
-    results_dir = Path(
-        f"{environmental_results_directory}/artic/Temp_results/{flowcell_id}_{task_id}_artic"
-    )
-    if not results_dir.exists() and allow_create:
-        Path.mkdir(results_dir)
-    return results_dir
-
-
 def populate_reference_count(
     reference_count_dict, fp, master_reference_count_path,
 ):
@@ -436,10 +441,7 @@ def save_artic_barcode_metadata_info(
     job_master,
     run_id,
     barcode_name,
-    percent_99_value,
-    percent_95_value,
-    percent_90_value,
-    has_sufficient_coverage,
+    has_sufficient_coverage=False,
 ):
     """
     Save the artic metadata info for this barcode.
@@ -459,15 +461,6 @@ def save_artic_barcode_metadata_info(
 
     barcode_name: str
         The name of the barcode.
-
-    percent_99_value: float
-        Percentage of bases at the 99% of reference bases at this coverage value (See ARticFireConditions model)
-
-    percent_95_value: float
-        Percentage of bases at the 95% of reference bases at this coverage value (See ARticFireConditions model)
-
-    percent_90_value: float
-        Percentage of bases at the 90% of reference bases at this coverage value (See ARticFireConditions model)
 
     has_sufficient_coverage: bool
         If True, the barcode has sufficient coverage to fire the artic command
@@ -520,9 +513,6 @@ def save_artic_barcode_metadata_info(
             "minimum_coverage": barcodes_minimum_coverage,
             "variance_coverage": barcodes_variance_coverage,
             "percentage_of_reads_in_barcode": round(proportion, 2),
-            "percentage_bases_at_99_value": round(percent_99_value, 2),
-            "percentage_bases_at_90_value": round(percent_90_value, 2),
-            "percentage_bases_at_95_value": round(percent_95_value, 2),
             "has_sufficient_coverage": has_sufficient_coverage,
         },
     )
@@ -683,6 +673,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             make_barcoded_directories(barcodes, base_result_dir_path)
             logger.info(f"Parsing paf file. Please wait.")
             barcodes_with_mapped_results = set()
+            num_amplicons, amplicon_band_coords = get_amplicon_infos()
             for i, record in enumerate(
                 parse_PAF(
                     StringIO(paf),
@@ -783,7 +774,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             barcodes_already_fired = fetch_barcode_to_fire_list(base_result_dir_path)
             for chrom_key in chromosomes_seen_now:
                 # Write out the coverage
-                # TODO barcoding stuff goes here
                 for barcode in barcodes_with_mapped_results:
                     barcode_sorted_fastq_path = Path(
                         f"{base_result_dir_path}/{barcode}/{barcode}.fastq"
@@ -855,59 +845,10 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     logger.info(
                         f"Avg Coverage at iteration {task.iteration_count} for barcode {barcode} is {coverage.mean()}"
                     )
-
-                    afc, created = ArticFireConditions.objects.get_or_create(
-                        flowcell=flowcell
-                    )
-                    afc = afc.__dict__
-                    number_bases_in_array = coverage.size
-                    coverage_for_90_percent = coverage[
-                        coverage >= afc["ninety_percent_bases_at"]
-                    ].size
-                    coverage_for_95_percent = coverage[
-                        coverage >= afc["ninety_five_percent_bases_at"]
-                    ].size
-                    coverage_for_99_percent = coverage[
-                        coverage >= afc["ninety_nine_percent_bases_at"]
-                    ].size
-                    percent_ninety_percent_bases_at = (
-                        coverage_for_90_percent / number_bases_in_array * 100
-                    )
-                    percent_ninety_five_percent_bases_at = (
-                        coverage_for_95_percent / number_bases_in_array * 100
-                    )
-                    percent_ninety_nine_percent_bases_at = (
-                        coverage_for_99_percent / number_bases_in_array * 100
-                    )
+                    # get artic fire conditions
+                    afcs = ArticFireConditions.objects.filter(flowcell=flowcell)
                     has_sufficient_coverage = False
-                    # 200x coverage
-                    if percent_ninety_percent_bases_at > 90:
-                        logger.info(
-                            f"Creating artic command job_master here for barcode {barcode} due to 90% 200x xcoverage reached"
-                        )
-                        if barcode not in barcodes_already_fired:
-                            add_barcode_to_tofire_file(barcode, base_result_dir_path)
-                            save_artic_command_job_masters(
-                                flowcell, barcode, reference_info
-                            )
-                        has_sufficient_coverage = True
-                    elif percent_ninety_five_percent_bases_at >= 95:
-
-                        # So we have to set up the auto fire of the pipeline here if the task fails
-                        logger.info(
-                            f"Creating artic command job_master here for barcode {barcode} due to 95% 250 xcoverage reached"
-                        )
-                        if barcode not in barcodes_already_fired:
-                            add_barcode_to_tofire_file(barcode, base_result_dir_path)
-                            save_artic_command_job_masters(
-                                flowcell, barcode, reference_info
-                            )
-                        has_sufficient_coverage = True
-                    elif percent_ninety_nine_percent_bases_at > 99:
-                        # So we have to set up the auto fire of the pipeline here if the task fails
-                        logger.info(
-                            f"Creating artic command job_master here for barcode {barcode} due to 100% 20X coverage reached"
-                        )
+                    if any([check_afc_values_met(afc, coverage) for afc in afcs]):
                         if barcode not in barcodes_already_fired:
                             add_barcode_to_tofire_file(barcode, base_result_dir_path)
                             save_artic_command_job_masters(
@@ -921,9 +862,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         task,
                         run_id,
                         barcode,
-                        percent_ninety_nine_percent_bases_at,
-                        percent_ninety_five_percent_bases_at,
-                        percent_ninety_percent_bases_at,
                         has_sufficient_coverage,
                     )
     task.last_read = last_read
