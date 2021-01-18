@@ -122,14 +122,15 @@ def delete_flowcell(flowcell_job_id):
 
 
 @app.task(base=MyTask)
-def reset_flowcell(flowcell_pk):
+def reset_flowcell(flowcell_pk, jm_pk):
     """
     Reset the basecalled data related aspects of a flowcell. Clears Fastq data, Fastq Files and all basecalled data summaries, and resets the flowcell values
     Parameters
     ----------
     flowcell_pk: int
         Primary key of the flowcell to be reset.
-
+    jm_pk: int
+        The primary key of the job master for this clear data
     Returns
     -------
 
@@ -152,21 +153,23 @@ def reset_flowcell(flowcell_pk):
         for run in flowcell.runs.all():
             if hasattr(run, "summary"):
                 run.summary.delete()
-        print(f"Finished deleting fastq at {datetime.datetime.now()}")
-        print("Deleting Fastq file records...")
+        logger.info(f"Finished deleting fastq at {datetime.datetime.now()}")
+        logger.info("Deleting Fastq file records...")
         affected = FastqFile.objects.filter(run__in=flowcell.runs.all()).delete()
-        print(f"Deleted: {affected}")
-        print("Deleting Basecalled data summaries...")
+        logger.info(f"Deleted: {affected}")
+        logger.info("Deleting Basecalled data summaries...")
         affected = FlowcellChannelSummary.objects.filter(flowcell=flowcell).delete()
-        print(f"Deleted: {affected}")
+        logger.info(f"Deleted: {affected}")
         affected = FlowcellHistogramSummary.objects.filter(flowcell=flowcell).delete()
-        print(f"Deleted: {affected}")
+        logger.info(f"Deleted: {affected}")
         affected = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).delete()
-        print(f"Deleted: {affected}")
+        logger.info(f"Deleted: {affected}")
         affected = FlowcellStatisticBarcode.objects.filter(flowcell=flowcell).delete()
-        print(f"Deleted: {affected}")
-        print("Finished resetting flowcell!")
+        logger.info(f"Deleted: {affected}")
+        logger.info("Finished resetting flowcell!")
     left = FastqRead.objects.filter(flowcell=flowcell).count()
-    print(f"Time: {datetime.datetime.now()}, Reads Left: {left}")
+    logger.info(f"Time: {datetime.datetime.now()}, Reads Left: {left}")
     if left:
         reset_flowcell.apply_async(args=(flowcell_pk,))
+    else:
+        JobMaster.objects.get(pk=jm_pk).delete()
