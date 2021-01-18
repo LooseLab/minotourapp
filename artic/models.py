@@ -14,9 +14,6 @@ class ArticBarcodeMetadata(models.Model):
     minimum_coverage = models.IntegerField(default=0)
     maximum_coverage = models.IntegerField(default=0)
     percentage_of_reads_in_barcode = models.FloatField(default=0)
-    percentage_bases_at_90_value = models.FloatField(default=0.0)
-    percentage_bases_at_95_value = models.FloatField(default=0.0)
-    percentage_bases_at_99_value = models.FloatField(default=0.0)
     has_sufficient_coverage = models.BooleanField(default=False)
     has_finished = models.BooleanField(default=False)
     marked_for_rerun = models.BooleanField(default=False)
@@ -53,4 +50,5 @@ class ArticFireConditions(models.Model):
         on_delete=models.CASCADE,
     )
     percent_of_amplicons = models.IntegerField(default=90)
-    x_coverage = models.IntegerField(default=30)
+    x_coverage = models.IntegerField(default=20)
+    percent_amp_at_x_cov = models.FloatField(default=0.0)
