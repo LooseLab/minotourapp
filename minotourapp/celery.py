@@ -21,20 +21,19 @@ class MyRequest(Request):
         print(dir(self))
         with open(error_log_file, "a") as fh:
             fh.write(
-                f"{self.task.name} timed out at {datetime.datetime.now()}"
-                f" processing {self.task.args} \n {self.task.kwargs}"
+                f"{self.task.name} failed at {datetime.datetime.now()}"
+                f" processing:\n {str(self.info())}"
             )
 
     def on_failure(self, exc_info, send_failed_event=True, return_ok=False):
-        super(Request, self).on_failure(
+        super(MyRequest, self).on_failure(
             exc_info, send_failed_event=send_failed_event, return_ok=return_ok
         )
         error_log_file = f"{BASE_DIR}/celery_error.log"
-        print(dir(self))
         with open(error_log_file, "a") as fh:
             fh.write(
-                f"{self.task.name} failed at {datetime.datetime.now()}"
-                f" processing {self.task.args} \n {self.task.kwargs}"
+                f"{self.task.name} failed at {datetime.datetime.now()} with {str(exc_info.traceback)}"
+                f" processing:\n {str(self.info())}"
             )
 
 
