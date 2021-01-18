@@ -112,7 +112,7 @@ def run_monitor():
                 else:
                     logger.error("¯\_(ツ)_/¯")
             if flowcell_job.job_type.id == 20:
-                reset_flowcell.apply_async(args=(flowcell.id,))
+                reset_flowcell.apply_async(args=(flowcell.id, flowcell_job.id))
 
 
 

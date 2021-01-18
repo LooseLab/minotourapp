@@ -170,6 +170,6 @@ def reset_flowcell(flowcell_pk, jm_pk):
     left = FastqRead.objects.filter(flowcell=flowcell).count()
     logger.info(f"Time: {datetime.datetime.now()}, Reads Left: {left}")
     if left:
-        reset_flowcell.apply_async(args=(flowcell_pk,))
+        reset_flowcell.apply_async(args=(flowcell_pk, jm_pk))
     else:
         JobMaster.objects.get(pk=jm_pk).delete()
