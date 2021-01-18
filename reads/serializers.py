@@ -4,6 +4,7 @@ from pathlib import Path
 from django.conf import settings
 from rest_framework import serializers
 
+from artic.models import ArticFireConditions
 from communication.models import NotificationConditions
 from metagenomics.models import CentrifugeOutput
 from minknow_data.models import Run, Flowcell
@@ -424,6 +425,9 @@ class JobMasterInsertSerializer(serializers.ModelSerializer):
         job_master, created = JobMaster.objects.get_or_create(**validated_data)
         job_master.save()
         # If we have created a new job
+        if job_master.job_type_id == 16:
+            if not ArticFireConditions.objects.filter(flowcell=validated_data["flowcell"]).count():
+                ArticFireConditions.objects.create(flowcell=validated_data["flowcell"])
         if created and not job_master.job_type_id == 17:
             # Get the flowcell that the JobMaster is for
             flowcell_to_update_activity = validated_data["flowcell"]
