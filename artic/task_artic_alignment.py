@@ -15,9 +15,10 @@ from django.conf import settings
 
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
-from artic.utils import get_amplicon_band_data, make_results_directory_artic
+from artic.task_write_out_artic_metrics import write_out_artic_metrics, get_or_create_metrics_df
+from artic.utils import get_amplicon_band_data, make_results_directory_artic, get_amplicon_stats
 from minknow_data.models import Flowcell
-from minotourapp.celery import app
+from minotourapp.celery import app, MyTask
 from minotourapp.settings import BASE_DIR, STATIC_ROOT
 from minotourapp.utils import get_env_variable
 from reads.models import (
@@ -25,13 +26,14 @@ from reads.models import (
     JobType,
     Barcode,
     FlowcellSummaryBarcode,
-    FastqRead, )
+    FastqRead,
+)
 from readuntil.functions_EB import *
 
 logger = get_task_logger(__name__)
 
 
-def check_afc_values_met(afc, coverage_array):
+def check_afc_values_met(afc, coverage_array, num_amplicons):
     """
     Check if this artic fire condition has been met on this barcode
     Parameters
@@ -39,15 +41,18 @@ def check_afc_values_met(afc, coverage_array):
     afc: artic.models.ArticFireConditions
         The model that we are checking
     coverage_array: np.ndarray
-        Array containing an entry for each base
-
+        Array with the mean coverage of each amplicon
+    num_amplicons: int
+        The number of amplicons
     Returns
     -------
     bool
         Whether the Artic Firing Condition has been met
 
     """
-    return (coverage_array[coverage_array > afc.x_coverage].size / coverage_array.size * 100) >= afc.percent_of_amplicons
+    return (
+        coverage_array[coverage_array > afc.x_coverage].size / num_amplicons * 100
+    ) >= afc.percent_of_amplicons
 
 
 def get_amplicon_infos():
@@ -64,7 +69,7 @@ def get_amplicon_infos():
     scheme_version = "V3"
     amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
     num_amplicons = len(amplicon_band_coords)
-    return(num_amplicons, amplicon_band_coords)
+    return (num_amplicons, amplicon_band_coords)
 
 
 # TODO parsing cigar lends itself to numba nicely
@@ -198,7 +203,13 @@ def clear_old_data(artic_results_path, barcode_name):
     None
 
     """
-    files_to_keep_suffix = ["consensus.fasta", ".counts.dat", ".coverage.dat", ".fasta.gz", "lineage_report.csv.gz", ]
+    files_to_keep_suffix = [
+        "consensus.fasta",
+        ".counts.dat",
+        ".coverage.dat",
+        ".fasta.gz",
+        "lineage_report.csv.gz",
+    ]
     files_to_keep = [f"{barcode_name}{filey}" for filey in files_to_keep_suffix]
     for filey in artic_results_path.iterdir():
         if filey not in files_to_keep:
@@ -436,12 +447,7 @@ def replicate_counts_array_barcoded(barcode_names, counts_dict):
 
 
 def save_artic_barcode_metadata_info(
-    coverage,
-    flowcell,
-    job_master,
-    run_id,
-    barcode_name,
-    has_sufficient_coverage=False,
+    coverage, flowcell, job_master, run_id, barcode_name, has_sufficient_coverage=False,
 ):
     """
     Save the artic metadata info for this barcode.
@@ -518,7 +524,7 @@ def save_artic_barcode_metadata_info(
     )
 
 
-@app.task
+@app.task(base=MyTask)
 def run_artic_pipeline(task_id, streamed_reads=None):
     """
     Run the artic pipeline on a flowcells amount of reads
@@ -673,7 +679,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             make_barcoded_directories(barcodes, base_result_dir_path)
             logger.info(f"Parsing paf file. Please wait.")
             barcodes_with_mapped_results = set()
-            num_amplicons, amplicon_band_coords = get_amplicon_infos()
             for i, record in enumerate(
                 parse_PAF(
                     StringIO(paf),
@@ -750,6 +755,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                 # mapping_start:mapping_end
                 # ] = True
             # iterate the paf_summary_cov objects
+            read_counts_dict = {}
             for paf_summary_barcode, paf_summary_cov in paf_summary_cov_dict.items():
                 logger.info(f"Creating PafSummaryCov objects for {paf_summary_barcode}")
                 paf_summary_cov_orm, created = PafSummaryCov.objects.get_or_create(
@@ -761,6 +767,9 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                 )
                 paf_summary_cov_orm.total_yield += paf_summary_cov["yield"]
                 paf_summary_cov_orm.read_count += paf_summary_cov["read_count"]
+                read_counts_dict[
+                    paf_summary_cov["barcode_name"]
+                ] = paf_summary_cov_orm.read_count
                 paf_summary_cov_orm.coverage = round(
                     paf_summary_cov_orm.total_yield
                     / paf_summary_cov_orm.reference_line_length,
@@ -772,6 +781,11 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                 paf_summary_cov_orm.save()
             # TODO only ever see one chromosome, so we can remove for loop?
             barcodes_already_fired = fetch_barcode_to_fire_list(base_result_dir_path)
+            num_amplicons, amplicon_band_coords = get_amplicon_infos()
+            time_stamp = datetime.now()
+            df_old = get_or_create_metrics_df(base_result_dir_path)
+            df_new_dict = {}
+            # TODO split into own function
             for chrom_key in chromosomes_seen_now:
                 # Write out the coverage
                 for barcode in barcodes_with_mapped_results:
@@ -848,7 +862,16 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     # get artic fire conditions
                     afcs = ArticFireConditions.objects.filter(flowcell=flowcell)
                     has_sufficient_coverage = False
-                    if any([check_afc_values_met(afc, coverage) for afc in afcs]):
+                    amplicon_stats = get_amplicon_stats(
+                        amplicon_band_coords=amplicon_band_coords,
+                        num_amplicons=num_amplicons,
+                        flowcell_id=flowcell.id,
+                        barcode_name=barcode,
+                        time_stamp=time_stamp,
+                        read_count=read_count,
+                        coverage_array=coverage,
+                    )
+                    if any([check_afc_values_met(afc, amplicon_stats.amplicon_coverage_means, num_amplicons) for afc in afcs]):
                         if barcode not in barcodes_already_fired:
                             add_barcode_to_tofire_file(barcode, base_result_dir_path)
                             save_artic_command_job_masters(
@@ -864,6 +887,9 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         barcode,
                         has_sufficient_coverage,
                     )
+                    df_new_dict.update({barcode: amplicon_stats._asdict()})
+            df_new = pd.DataFrame.from_dict(df_new_dict, orient="index")
+            write_out_artic_metrics(df_old=df_old, df_new=df_new, dir_to_write_to=base_result_dir_path)
     task.last_read = last_read
     task.iteration_count += 1
     logger.info("Finishing this batch of reads.")
