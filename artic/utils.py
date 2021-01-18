@@ -365,7 +365,7 @@ def get_amplicon_stats(
     barcode_name,
     time_stamp,
     read_count,
-    coverage_array=None
+    coverage_array=None,
 ):
     """
     Get statistics about each amplicon across the coverage array, such as # failed, partial and succesful, mean, std dev
@@ -403,6 +403,7 @@ def get_amplicon_stats(
             "std_dev",
             "variance",
             "would_fire",
+            "amplicon_coverage_means"
         ],
     )
     a = np.array(amplicon_band_coords)[:, :2]
@@ -413,7 +414,7 @@ def get_amplicon_stats(
         artic_task_id,
         coverage_path,
     ) = quick_get_artic_results_directory(flowcell_id, barcode_name)
-    if not coverage_array:
+    if coverage_array is None:
         try:
             with open(coverage_path, "rb") as fh:
                 coverage = np.fromfile(fh, dtype=np.uint16)
@@ -424,7 +425,6 @@ def get_amplicon_stats(
     amplicon_coverages = []
     failed_amplicon_count = 0
     partial_amplicon_count = 0
-
     for bin_start, bin_end in a:
         amplicon_coverage = coverage[bin_start:bin_end]
         amplicon_coverages.append(np.mean(amplicon_coverage))
@@ -442,7 +442,7 @@ def get_amplicon_stats(
     variance = round(amplicon_mean_array.var(), 2)
     mean_coverage = round(coverage.mean(), 2)
     would_fire = (
-        amplicon_mean_array[amplicon_mean_array > 20] / num_amplicons * 100
+        amplicon_mean_array[amplicon_mean_array > 20].size / num_amplicons * 100
     ) > 90
     barcode_stats = Stats(
         time_stamp=time_stamp,
@@ -455,5 +455,6 @@ def get_amplicon_stats(
         std_dev=std_dev,
         variance=variance,
         would_fire=would_fire,
+        amplicon_coverage_means=amplicon_mean_array
     )
     return barcode_stats
