@@ -6,10 +6,10 @@ from celery.utils.log import get_task_logger
 
 from alignment.tasks_alignment import run_minimap2_alignment
 from artic.task_artic_alignment import (
-    make_results_directory_artic,
     run_artic_command, run_artic_pipeline,
 )
 from artic.task_secure_artic_runs import secure_artic_runs
+from artic.utils import make_results_directory_artic
 from metagenomics.new_centrifuge import run_centrifuge_pipeline
 from metagenomics.sankey import calculate_sankey
 from minknow_data.models import Flowcell
