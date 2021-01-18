@@ -9,7 +9,7 @@ from celery.utils.log import get_task_logger
 from dateutil import parser
 
 from minknow_data.models import MinionRunInfo, Run
-from minotourapp.celery import app
+from minotourapp.celery import app, MyTask
 from minotourapp.redis import redis_instance
 from reads.models import (
     FlowcellHistogramSummary,
@@ -135,7 +135,7 @@ def calculate_flowcell_histogram_summary(flowcell_id):
     return flowcell_id
 
 
-@app.task
+@app.task(base=MyTask)
 def calculate_flowcell_statistic_barcodes(flowcell_id):
     """
     Flowcell statistic Barcode. Get all keys related to the flowcell summary barcode values of this flowcell
@@ -163,7 +163,6 @@ def calculate_flowcell_statistic_barcodes(flowcell_id):
         sequence_length_max = int(result["max_length"])
         sequence_length_min = int(result["min_length"])
         new_channel_list = list(result["channel_presence"])
-
         (
             flowcellStatisticBarcode,
             created,
