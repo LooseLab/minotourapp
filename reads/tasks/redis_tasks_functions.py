@@ -726,21 +726,15 @@ def do_whatever_this_does(row, unique_key_base):
     quality_average_sum = int(row["quality_average"]["sum"])
     read_count = int(row["sequence_length"]["count"])
     channels = row["channel"]["unique"]
-    if unique_key_base == "flowcellStatisticBarcode":
-        utc = pytz.utc
-        start_time = utc.localize(row["start_time_truncate"][0])
-        unique_key = (
-            f"{flowcell_id}_{unique_key_base}_{start_time}_{barcode_name}"
-            f"_{rejection_status}_{type_name}_{status}"
-        )
-    else:
-        unique_key = f"{flowcell_id}_{unique_key_base}_{barcode_name}_{rejection_status}_{type_name}_{status}"
+    unique_key = f"{flowcell_id}_{unique_key_base}_{barcode_name}_{rejection_status}_{type_name}_{status}"
     prev_channel_list = redis_instance.hget(unique_key, "channel_presence")
     min_prev = redis_instance.hget(unique_key, "min_length")
     max_prev = redis_instance.hget(unique_key, "max_length")
     p = redis_instance.pipeline()
     p.multi()
     if unique_key_base == "flowcellStatisticBarcode":
+        utc = pytz.utc
+        start_time = utc.localize(row["start_time_truncate"][0])
         p.hset(unique_key, "sample_time", str(start_time))
     p.hset(unique_key, "barcode_name", barcode_name)
     p.hset(unique_key, "rejection_status", rejection_status)
@@ -749,31 +743,25 @@ def do_whatever_this_does(row, unique_key_base):
     p.hincrby(unique_key, "total_length", sequence_length_sum)
     p.hincrby(unique_key, "quality_sum", quality_average_sum)
     p.hincrby(unique_key, "read_count", read_count)
-
     if min_prev:
         min_prev = int(min_prev)
         if min_prev > sequence_length_min:
             p.hset(unique_key, "min_length", sequence_length_min)
     else:
         p.hset(unique_key, "min_length", sequence_length_min)
-
     if max_prev:
         max_prev = int(max_prev)
         if max_prev < sequence_length_max:
             p.hset(unique_key, "max_length", sequence_length_max)
     else:
         p.hset(unique_key, "max_length", sequence_length_max)
-
     if prev_channel_list:
         channel_list = list(prev_channel_list)
     else:
         channel_list = list("0" * 3000)
-
     for c in channels:
         channel_list[int(c) - 1] = "1"
-
     channel_presence = "".join(channel_list)
-
     p.hset(unique_key, "channel_presence", channel_presence)
     p.execute()
 
