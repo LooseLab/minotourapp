@@ -34,10 +34,9 @@ class TasksController {
     this._addListenerToReactivateButton()
     this._targetSetSet.add(`<option value="-1">-- Please Choose --</option>`)
     this._runFromDatabase = $(`#run-from-database`)
-    this._90Input = $(`#90-input-og`)
-    this._95Input = $(`#95-input-og`)
-    this._99Input = $(`#99-input-og`)
-    this._fireInputs = [this._90Input, this._95Input, this._99Input]
+    this._numAmpliconsInput = $(`#num-amplicons-input-task`)
+    this._xCoverageInput = $(`#x-coverage-input-task`)
+    this._fireInputs = [this._numAmpliconsInput, this._xCoverageInput]
     this._interval = setInterval(this._flowcellTaskHistoryTable, 30000, this._flowcellId)
     $(window).on(`unload`, function () {
       console.log(`clearing task interval`)
@@ -100,9 +99,7 @@ class TasksController {
   _submitArticFire () {
     const newConditions = {}
     this._fireInputs.forEach(input => {
-      console.log(input.val())
-      console.log(input.attr(`id`).split(`-`).slice(0, 2).join(`-`))
-      newConditions[input.attr(`id`).split(`-`).slice(0, 2).join(`-`)] = input.val()
+      newConditions[input.attr(`id`).split(`-`).slice(0, 3).join(`-`)] = input.val()
     })
     this._axiosInstance.post(`/api/v1/artic/${this._flowcellId}/firing-conditions`, newConditions).then(
       response => {
