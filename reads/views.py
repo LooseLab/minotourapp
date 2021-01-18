@@ -1555,14 +1555,6 @@ def job_master_list(request):
         if int(request.data["job_type"]) not in [4, 15, 16]:
             request.data["reference"] = None
 
-        # if int(request.data["job_type"]) == 16:
-        #     ArticFireConditions.objects.create(flowcell=flowcell)
-        # Hard set the covid reference
-        # if int(request.data["job_type"]) == 16:
-        #     print("we are setting covid reference")
-        #     reference = ReferenceInfo.objects.get(name="covid_19")
-        #     request.data["reference"] = reference.id
-
         if (
             "reference" in request.data.keys()
             and type(request.data["reference"]) is str
