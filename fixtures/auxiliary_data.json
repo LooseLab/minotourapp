@@ -268,5 +268,17 @@
       "readcount": true,
       "private": true
     }
+  },{
+    "model": "reads.jobtype",
+    "pk": 20,
+    "fields": {
+      "name": "Clear Base-called Data",
+      "description": "Clear base-called data summaries and reads (if present).",
+      "long_description": "Clear base-called data and reads (if present), to allow re-upload whilst keeping live event data.",
+      "reference": false,
+      "transcriptome": false,
+      "readcount": false,
+      "private": false
+    }
   }
 ]

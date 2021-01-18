@@ -5,15 +5,10 @@ import pandas as pd
 from django.db.models import F
 
 from communication.models import Message
-from minknow_data.models import Flowcell
 from reads.models import (
     RunSummary,
     FastqRead,
-    FlowcellStatisticBarcode,
-    FlowcellSummaryBarcode,
-    FlowcellHistogramSummary,
-    FlowcellChannelSummary,
-    FastqFile, JobMaster,
+    JobMaster,
 )
 
 
@@ -697,52 +692,6 @@ def getn50(lens):
         t += l
         if t >= h:
             return l
-
-
-def reset_flowcell(flowcell_pk):
-    """
-    Reset the basecalled data related aspects of a flowcell. Clears Fastq data, Fastq Files and all basecalled data summaries, and resets the flowcell values
-    Parameters
-    ----------
-    flowcell_pk: int
-        Primary key of the flowcell to be reset.
-
-    Returns
-    -------
-
-    """
-    flowcell = Flowcell.objects.get(pk=flowcell_pk)
-    # first_fastqread = FastqRead.objects.filter(flowcell=flowcell).first()
-    # left = 1
-    # while first_fastqread and left:
-    #     first_fastqread.id += 5000
-    #     affected = FastqRead.objects.filter(
-    #         flowcell=flowcell, id__lte=first_fastqread.id
-    #     ).delete()
-    #     left = FastqRead.objects.filter(flowcell=flowcell).count()
-    #     print(f"Time: {datetime.datetime.now()}, Deleted: {affected}, Left: {left}")
-
-    flowcell.number_reads = 0
-    flowcell.average_read_length = 0
-    flowcell.total_read_length = 0
-    flowcell.save()
-    for run in flowcell.runs.all():
-        run.summary.delete()
-    print(f"Finished deleting fastq at {datetime.datetime.now()}")
-    print("Deleting Fastq file records...")
-    affected = FastqFile.objects.filter(run__in=flowcell.runs.all()).delete()
-    print(f"Deleted: {affected}")
-    print("Deleting Basecalled data summaries...")
-    affected = FlowcellChannelSummary.objects.filter(flowcell=flowcell).delete()
-    print(f"Deleted: {affected}")
-    affected = FlowcellHistogramSummary.objects.filter(flowcell=flowcell).delete()
-    print(f"Deleted: {affected}")
-    affected = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).delete()
-    print(f"Deleted: {affected}")
-    affected = FlowcellStatisticBarcode.objects.filter(flowcell=flowcell).delete()
-    print(f"Deleted: {affected}")
-
-    print("Finished resetting flowcell!")
 
 
 def pause_job(job_master):

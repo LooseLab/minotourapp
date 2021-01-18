@@ -18,7 +18,7 @@ from reads.models import (
     JobMaster,
 )
 from reads.tasks.redis_tasks_functions import harvest_reads
-from reads.tasks.task_delete_flowcell import delete_flowcell
+from reads.tasks.task_delete_flowcell import delete_flowcell, reset_flowcell
 from reads.tasks.tasks_archive_flowcell import archive_flowcell
 from reads.tasks.tasks_update_flowcell import update_flowcell_details
 from readuntil.task_expected_benefit import calculate_expected_benefit_3dot0_final
@@ -111,6 +111,9 @@ def run_monitor():
                     )
                 else:
                     logger.error("¯\_(ツ)_/¯")
+            if flowcell_job.job_type.id == 20:
+                reset_flowcell.apply_async(args=(flowcell.id,))
+
 
 
 @app.task(on_failure=fun)

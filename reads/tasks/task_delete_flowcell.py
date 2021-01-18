@@ -1,5 +1,6 @@
 """Delete a flowcell by first deleting it's reads, then it's database record
 """
+import datetime
 import time
 from pathlib import Path
 from shutil import rmtree
@@ -8,10 +9,12 @@ from celery.utils.log import get_task_logger
 from django.db import connection
 
 from alignment.models import PafRoughCov
-from minotourapp.celery import app
+from minknow_data.models import Flowcell
+from minotourapp.celery import app, MyTask
 from minotourapp.settings import BASE_DIR
 from minotourapp.utils import get_env_variable
-from reads.models import JobMaster, FastqRead
+from reads.models import JobMaster, FastqRead, FastqFile, FlowcellChannelSummary, FlowcellHistogramSummary, \
+    FlowcellSummaryBarcode, FlowcellStatisticBarcode
 from web.delete_tasks import delete_alignment_task
 
 logger = get_task_logger(__name__)
@@ -81,25 +84,20 @@ def delete_flowcell(flowcell_job_id):
     # Get the flowcell
     flowcell = flowcell_job.flowcell
     delete_chunk_size = 5000
-    alignment_chunk_size = 7500
     logger.info(
         "Flowcell id: {} - Deleting flowcell {}".format(flowcell.id, flowcell.name)
     )
-
     JobMaster.objects.filter(flowcell=flowcell).update(complete=True)
     # Clear Artic data away
     for job in JobMaster.objects.filter(job_type__name="Track Artic Coverage", flowcell=flowcell):
         clear_artic_data(job)
-
     # Get the last FastQRead object, wayyy faster than count
     last_fastq_read = FastqRead.objects.filter(flowcell=flowcell).last()
     # if we have both a first and last read PK
     if last_fastq_read:
         # Get the last fastqread primary key
-        last_read = last_fastq_read.id
         # Counter is the first read primary key
         # Whilst we still have reads left
-
         # counter = counter + 20000
         logger.info(
             f"Flowcell id: {flowcell.id} - Deleting {delete_chunk_size} records."
@@ -121,3 +119,54 @@ def delete_flowcell(flowcell_job_id):
         else:
             affected = flowcell.delete()
             logger.info(f"Flowcell id: {flowcell.id} - Deleted {affected} flowcell.")
+
+
+@app.task(base=MyTask)
+def reset_flowcell(flowcell_pk):
+    """
+    Reset the basecalled data related aspects of a flowcell. Clears Fastq data, Fastq Files and all basecalled data summaries, and resets the flowcell values
+    Parameters
+    ----------
+    flowcell_pk: int
+        Primary key of the flowcell to be reset.
+
+    Returns
+    -------
+
+    """
+    flowcell = Flowcell.objects.get(pk=flowcell_pk)
+    # delete fastq read records
+    first_fastqread = FastqRead.objects.filter(flowcell=flowcell).first()
+    delete_chunk_size = 5000
+    if first_fastqread:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "DELETE FROM reads_fastqread where flowcell_id=%s limit %s",
+                [flowcell.id, delete_chunk_size],
+            )
+    else:
+        flowcell.number_reads = 0
+        flowcell.average_read_length = 0
+        flowcell.total_read_length = 0
+        flowcell.save()
+        for run in flowcell.runs.all():
+            if hasattr(run, "summary"):
+                run.summary.delete()
+        print(f"Finished deleting fastq at {datetime.datetime.now()}")
+        print("Deleting Fastq file records...")
+        affected = FastqFile.objects.filter(run__in=flowcell.runs.all()).delete()
+        print(f"Deleted: {affected}")
+        print("Deleting Basecalled data summaries...")
+        affected = FlowcellChannelSummary.objects.filter(flowcell=flowcell).delete()
+        print(f"Deleted: {affected}")
+        affected = FlowcellHistogramSummary.objects.filter(flowcell=flowcell).delete()
+        print(f"Deleted: {affected}")
+        affected = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).delete()
+        print(f"Deleted: {affected}")
+        affected = FlowcellStatisticBarcode.objects.filter(flowcell=flowcell).delete()
+        print(f"Deleted: {affected}")
+        print("Finished resetting flowcell!")
+    left = FastqRead.objects.filter(flowcell=flowcell).count()
+    print(f"Time: {datetime.datetime.now()}, Reads Left: {left}")
+    if left:
+        reset_flowcell.apply_async(args=(flowcell_pk,))

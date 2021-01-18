@@ -351,9 +351,7 @@ def run_list(request):
     """
 
     if request.method == "GET":
-
         flowcell_list = []
-
         for flowcell in Flowcell.objects.all():
             if (
                 request.user == flowcell.owner
@@ -365,32 +363,18 @@ def run_list(request):
             to_delete=False
         )
         serializer = RunSerializer(queryset, many=True, context={"request": request})
-
         return Response(serializer.data)
 
     elif request.method == "POST":
-
         serializer = RunSerializer(data=request.data, context={"request": request})
-
         if serializer.is_valid():
             run = serializer.save(owner=request.user)
             # Change the flowcell to active
             flowcell = run.flowcell
-
             flowcell.last_activity_date = datetime.datetime.now(datetime.timezone.utc)
-
             flowcell.save()
             # Create the rejected accepted barcodes
-            # accepted_barcode = Barcode(run=run, name="S")
-
-            # rejected_barcode = Barcode(run=run, name="U")
-
-            # accepted_barcode.save()
-
-            # rejected_barcode.save()
-
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -399,11 +383,8 @@ def run_detail(request, pk):
     """
     Retrieve, update or delete a run instance.
     """
-
     search_criteria = request.GET.get("search_criteria", "id")
-
     flowcell_list = []  # TODO move the next 3 lines to a function
-
     for flowcell in Flowcell.objects.all():
         if (
             request.user == flowcell.owner
@@ -411,30 +392,20 @@ def run_detail(request, pk):
             or request.user.has_perm("run_analysis", flowcell)
         ):
             flowcell_list.append(flowcell)
-
     if search_criteria == "runid":
-
         run_list = Run.objects.filter(flowcell__in=flowcell_list).filter(runid=pk)
-
     elif search_criteria == "id":
-
         run_list = Run.objects.filter(flowcell__in=flowcell_list).filter(id=pk)
-
     else:
-
         run_list = Run.objects.none()
-
-    if len(run_list) < 1:
+    if not run_list:
         return Response(status=status.HTTP_404_NOT_FOUND)
-
     run = run_list[
         0
     ]  # TODO what if by any means we have more than one run if the same runid?
-
     if request.method == "GET":
         serializer = RunSerializer(run, context={"request": request})
         return Response(serializer.data)
-
     elif request.method == "PUT":
         serializer = RunSerializer(run, data=request.data, context={"request": request})
         if serializer.is_valid():
@@ -471,39 +442,6 @@ def readname_list(request, pk):
         result3["data"] = list(result2)
         return HttpResponse(json.dumps(result3), content_type="application/json")
 
-
-
-# # TODO do we even use????
-# @api_view(["GET"])
-# def run_summary_barcode(request, pk):
-#     """
-#     Return a list with summaries for each read type of a given run.
-#     """
-#     queryset = RunSummaryBarcode.objects.filter(run_id__owner=request.user).filter(
-#         run_id=pk
-#     )
-#
-#     serializer = RunSummaryBarcodeSerializer(
-#         queryset, many=True, context={"request": request}
-#     )
-#
-#     return Response(serializer.data)
-#
-#
-# @api_view(["GET"])
-# def run_summary_barcode_by_minute(request, pk):
-#     """
-#     Return a list with summaries for a particular run grouped by minute.
-#     """
-#     queryset = RunStatisticBarcode.objects.filter(run_id__owner=request.user).filter(
-#         run_id=pk
-#     )
-#
-#     serializer = RunStatisticBarcodeSerializer(
-#         queryset, many=True, context={"request": request}
-#     )
-#
-#     return Response(serializer.data)
 
 
 @api_view(["GET"])
@@ -673,15 +611,11 @@ def flowcell_detail(request, pk):
 @api_view(["GET"])
 def flowcell_summary_barcode(request, pk):
     q = request.GET.get("barcode_name", "All reads")
-
     flowcell = Flowcell.objects.get(pk=pk)
-
     qs = FlowcellSummaryBarcode.objects.filter(flowcell=flowcell).filter(
         barcode_name=q
     )  # .filter(run_id__owner=request.user)
-
     serializer = FlowcellSummaryBarcodeSerializer(qs, many=True)
-
     return Response(serializer.data)
 
 
@@ -1179,16 +1113,12 @@ def flowcell_run_basecalled_summary_html(request, pk):
 
 @api_view(["GET"])
 def flowcell_tasks_detail_all(request, pk):
+    # Todo rewrite one day
     flowcell = Flowcell.objects.get(pk=pk)
-
     run_list = Run.objects.filter(flowcell=flowcell)
-
     queryset = JobType.objects.filter(private=False)
-
     result = []
-
     for jobtype in queryset:
-
         obj = {}
         obj.update(
             {
@@ -1200,12 +1130,10 @@ def flowcell_tasks_detail_all(request, pk):
                 "transcriptome": jobtype.transcriptome,
             }
         )
-
         jobmasterlist = JobMaster.objects.filter(
             Q(run__in=run_list) | Q(flowcell=flowcell)
         ).filter(job_type=jobtype)
-
-        if len(jobmasterlist) > 0:
+        if jobmasterlist:
             obj2 = {}
             if jobmasterlist[0].reference:
                 reference_name = jobmasterlist[0].reference.reference_name
@@ -1221,12 +1149,9 @@ def flowcell_tasks_detail_all(request, pk):
                     "running": jobmasterlist[0].running,
                 }
             )
-
             if len(obj2) > 0:
                 obj.update({"job_details": obj2})
-
         result.append(obj)
-
     return HttpResponse(json.dumps(result), content_type="application/json")
 
 
