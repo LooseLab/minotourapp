@@ -8,7 +8,6 @@ from alignment.tasks_alignment import run_minimap2_alignment
 from artic.task_artic_alignment import (
     run_artic_command, run_artic_pipeline,
 )
-from artic.task_secure_artic_runs import secure_artic_runs
 from artic.utils import make_results_directory_artic
 from metagenomics.new_centrifuge import run_centrifuge_pipeline
 from metagenomics.sankey import calculate_sankey
@@ -43,8 +42,6 @@ def run_monitor():
 
     # This fires a new task every 30 seconds to collect any uploaded reads and basically process them.
     harvest_reads.delay()
-    if int(get_env_variable("MT_DESTROY_ARTIC_EVIDENCE")):
-        secure_artic_runs.delay()
 
     # Create a list of all flowcells that have been active in the last 48 hours
     flowcell_list = [x for x in Flowcell.objects.all() if x.active()]
