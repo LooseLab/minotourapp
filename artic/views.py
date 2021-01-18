@@ -1,3 +1,4 @@
+import datetime
 import json
 from collections import defaultdict
 from urllib.parse import parse_qs
@@ -18,6 +19,7 @@ from artic.utils import (
     quick_get_artic_results_directory,
     remove_duplicate_sequences_numpy,
     get_all_results,
+    get_amplicon_stats,
 )
 from minknow_data.models import Flowcell
 from minotourapp.utils import get_env_variable
@@ -300,9 +302,8 @@ def get_artic_summary_table_data(request):
             "Please specify a flowcellId parameter.",
             status=status.HTTP_400_BAD_REQUEST,
         )
-    artic_task = JobMaster.objects.filter(
-        flowcell_id=flowcell_id, job_type__name="Track Artic Coverage"
-    ).last()
+    flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(flowcell_id)
+    artic_task = JobMaster.objects.get(pk=jm_id)
     if not artic_task:
         return Response(
             "no coverage tracking task running on this flowcell.",
@@ -329,53 +330,19 @@ def get_artic_summary_table_data(request):
     scheme_version = "V3"
     amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
     num_amplicons = len(amplicon_band_coords)
+    time_stamp = datetime.datetime.now()
     for paf_summary_cov in queryset:
         barcode_name = paf_summary_cov["barcode_name"]
-        paf_summary_cov["95%_value"] = artic_metadata[
-            barcode_name
-        ].percentage_bases_at_95_value
-        paf_summary_cov["99%_value"] = artic_metadata[
-            barcode_name
-        ].percentage_bases_at_99_value
-        paf_summary_cov["90%_value"] = artic_metadata[
-            barcode_name
-        ].percentage_bases_at_90_value
+        amplicon_stats = get_amplicon_stats(
+            amplicon_band_coords,
+            num_amplicons,
+            flowcell_id,
+            barcode_name,
+            time_stamp,
+            paf_summary_cov.get("read_count", "Unknown"),
+        )
         paf_summary_cov["has_finished"] = artic_metadata[barcode_name].has_finished
 
-        a = np.array(amplicon_band_coords)[:, :2]
-        a = a.astype(np.int16)
-        flowcell = artic_task.flowcell
-        (
-            flowcell,
-            artic_results_path,
-            artic_task_id,
-            coverage_path,
-        ) = quick_get_artic_results_directory(flowcell.id, barcode_name)
-        log_coverage = False
-        try:
-            with open(coverage_path, "rb") as fh:
-                coverage = np.fromfile(fh, dtype=np.uint16)
-        except FileNotFoundError as e:
-            raise e
-        amplicon_coverages = []
-        failed_amplicon_count = 0
-        partial_amplicon_count = 0
-        if log_coverage:
-            coverage = coverage.astype(np.float16)
-            coverage[coverage == 0] = 0.1
-
-        for bin_start, bin_end in a:
-            amplicon_coverage = coverage[bin_start:bin_end]
-            amplicon_coverages.append(np.mean(amplicon_coverage))
-            amplicon_median_coverage = np.median(amplicon_coverage)
-            if int(amplicon_median_coverage) == 0:
-                failed_amplicon_count += 1
-            elif int(amplicon_median_coverage) < 20:
-                partial_amplicon_count += 1
-        amplicon_mean_array = np.array(amplicon_coverages)
-        mean_of_amplicon_means = amplicon_mean_array.mean()
-        std_dev = amplicon_mean_array.std()
-        variance = amplicon_mean_array.var()
         # get the lineage if it's finished
         if paf_summary_cov["has_finished"]:
             try:
@@ -392,14 +359,7 @@ def get_artic_summary_table_data(request):
             paf_summary_cov["has_sufficient_coverage"] = artic_metadata[
                 barcode_name
             ].has_sufficient_coverage
-        paf_summary_cov["partial_amplicon_count"] = partial_amplicon_count
-        paf_summary_cov["failed_amplicon_count"] = failed_amplicon_count
-        paf_summary_cov["mean_of_amplicon_means"] = int(mean_of_amplicon_means)
-        paf_summary_cov["variance"] = round(variance, 2)
-        paf_summary_cov["std_dev"] = round(std_dev, 2)
-        paf_summary_cov["success_amplicon_count"] = (
-            num_amplicons - partial_amplicon_count - failed_amplicon_count
-        )
+        paf_summary_cov.update(amplicon_stats._asdict())
         paf_summary_cov["lineage"] = lineage
     if not queryset:
         return Response(
@@ -467,9 +427,6 @@ def get_artic_barcode_metadata_html(request):
         ["Min. Coverage", "minimum_coverage"],
         ["Max. Coverage", "maximum_coverage"],
         ["% reads in run", "percentage_of_reads_in_barcode"],
-        ["% Bases over 99% value", "percentage_bases_at_99_value"],
-        ["% Bases over 95% value", "percentage_bases_at_95_value"],
-        ["% Bases over 90% value", "percentage_bases_at_90_value"],
         ["Has Finished", "has_finished"],
         ["Has Sufficient Coverage", "has_sufficient_coverage"],
     ]
