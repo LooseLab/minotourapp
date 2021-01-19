@@ -403,7 +403,8 @@ def get_amplicon_stats(
             "std_dev",
             "variance",
             "would_fire",
-            "amplicon_coverage_means"
+            "amplicon_coverage_means",
+            "amplicon_coverage_medians",
         ],
     )
     a = np.array(amplicon_band_coords)[:, :2]
@@ -422,13 +423,15 @@ def get_amplicon_stats(
             raise e
     else:
         coverage = coverage_array
-    amplicon_coverages = []
+    amplicon_coverages_median = []
+    amplicon_coverages_mean = []
     failed_amplicon_count = 0
     partial_amplicon_count = 0
     for bin_start, bin_end in a:
         amplicon_coverage = coverage[bin_start:bin_end]
-        amplicon_coverages.append(np.mean(amplicon_coverage))
+        amplicon_coverages_mean.append(np.mean(amplicon_coverage))
         amplicon_median_coverage = np.median(amplicon_coverage)
+        amplicon_coverages_median.append(amplicon_median_coverage)
         if int(amplicon_median_coverage) == 0:
             failed_amplicon_count += 1
         elif int(amplicon_median_coverage) < 20:
@@ -436,7 +439,8 @@ def get_amplicon_stats(
     successful_amplicon_counts = (
         num_amplicons - partial_amplicon_count - failed_amplicon_count
     )
-    amplicon_mean_array = np.array(amplicon_coverages)
+    amplicon_mean_array = np.array(amplicon_coverages_mean)
+    amplicon_median_array = np.array(amplicon_coverages_median)
     mean_of_amplicon_means = round(amplicon_mean_array.mean(), 2)
     std_dev = round(amplicon_mean_array.std(), 2)
     variance = round(amplicon_mean_array.var(), 2)
@@ -455,6 +459,41 @@ def get_amplicon_stats(
         std_dev=std_dev,
         variance=variance,
         would_fire=would_fire,
-        amplicon_coverage_means=amplicon_mean_array
+        amplicon_coverage_means=amplicon_mean_array,
+        amplicon_coverage_medians=amplicon_median_array,
     )
     return barcode_stats
+
+
+def predict_barcode_will_finish(
+    amplicon_median_array, num_barcodes, total_mapped_reads_count
+):
+    """
+    Predict if after
+    Parameters
+    ----------
+    amplicon_median_array: np.ndarray
+        Median coverage for each amplicon
+    num_barcodes: int
+        The total number of barcodes detected in the run
+    total_mapped_reads_count:
+        Total number of reads that have mapped to n-cov in this task
+
+    Returns
+    -------
+    bool
+        If this equation thinks the barcode will finish given enough time sequencing
+
+    """
+    ideal_reads_count_constant = 100000
+    minimum_required_amplicons = 70
+    predicted_coverages = (
+        amplicon_median_array
+        / total_mapped_reads_count
+        * num_barcodes
+        * ideal_reads_count_constant
+    )
+    return (
+        predicted_coverages[predicted_coverages > 20].size / amplicon_median_array.size
+    ) * 100 > minimum_required_amplicons
+

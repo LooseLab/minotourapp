@@ -758,9 +758,6 @@ class ArticController {
           },
           { targets: 5, data: `average_read_length` },
           { targets: 6, data: `coverage` },
-          // { targets: 7, data: `99%_value` },
-          // { targets: 8, data: `95%_value` },
-          // { targets: 9, data: `90%_value` },
           { targets: 7, data: `partial_amplicon_count` },
           { targets: 8, data: `failed_amplicon_count` },
           { targets: 9, data: `success_amplicon_count` },
@@ -768,7 +765,8 @@ class ArticController {
           { targets: 11, data: `variance` },
           { targets: 12, data: `std_dev` },
           { targets: 13, data: `lineage` },
-          { targets: 14, data: `has_sufficient_coverage` }
+          { targets: 14, data: `has_sufficient_coverage` },
+          { targets: 15, data: `projected_to_finish` }
         ]
       }
       )

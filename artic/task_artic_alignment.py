@@ -15,8 +15,16 @@ from django.conf import settings
 
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
-from artic.task_write_out_artic_metrics import write_out_artic_metrics, get_or_create_metrics_df
-from artic.utils import get_amplicon_band_data, make_results_directory_artic, get_amplicon_stats
+from artic.task_write_out_artic_metrics import (
+    write_out_artic_metrics,
+    get_or_create_metrics_df,
+)
+from artic.utils import (
+    get_amplicon_band_data,
+    make_results_directory_artic,
+    get_amplicon_stats,
+    predict_barcode_will_finish,
+)
 from minknow_data.models import Flowcell
 from minotourapp.celery import app, MyTask
 from minotourapp.settings import BASE_DIR, STATIC_ROOT
@@ -447,7 +455,13 @@ def replicate_counts_array_barcoded(barcode_names, counts_dict):
 
 
 def save_artic_barcode_metadata_info(
-    coverage, flowcell, job_master, run_id, barcode_name, has_sufficient_coverage=False,
+    coverage,
+    flowcell,
+    job_master,
+    run_id,
+    barcode_name,
+    has_sufficient_coverage=False,
+    projected_to_finish=False,
 ):
     """
     Save the artic metadata info for this barcode.
@@ -471,11 +485,11 @@ def save_artic_barcode_metadata_info(
     has_sufficient_coverage: bool
         If True, the barcode has sufficient coverage to fire the artic command
 
+
     Returns
     -------
     None
     """
-
     try:
         barcode_numbers = FlowcellSummaryBarcode.objects.filter(
             flowcell=flowcell, barcode_name=barcode_name, status="True"
@@ -520,6 +534,7 @@ def save_artic_barcode_metadata_info(
             "variance_coverage": barcodes_variance_coverage,
             "percentage_of_reads_in_barcode": round(proportion, 2),
             "has_sufficient_coverage": has_sufficient_coverage,
+            "projected_to_finish": projected_to_finish
         },
     )
 
@@ -871,7 +886,16 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         read_count=read_count,
                         coverage_array=coverage,
                     )
-                    if any([check_afc_values_met(afc, amplicon_stats.amplicon_coverage_means, num_amplicons) for afc in afcs]):
+                    if any(
+                        [
+                            check_afc_values_met(
+                                afc,
+                                amplicon_stats.amplicon_coverage_medians,
+                                num_amplicons,
+                            )
+                            for afc in afcs
+                        ]
+                    ):
                         if barcode not in barcodes_already_fired:
                             add_barcode_to_tofire_file(barcode, base_result_dir_path)
                             save_artic_command_job_masters(
@@ -879,6 +903,11 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                             )
                         has_sufficient_coverage = True
                     # save the artic per barcode metadata
+                    projected_to_finish = predict_barcode_will_finish(
+                        amplicon_stats.amplicon_coverage_medians,
+                        flowcell.number_barcodes,
+                        task.read_count + read_count,
+                    )
                     save_artic_barcode_metadata_info(
                         coverage,
                         flowcell,
@@ -886,10 +915,19 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         run_id,
                         barcode,
                         has_sufficient_coverage,
+                        projected_to_finish
                     )
-                    df_new_dict.update({barcode: amplicon_stats._asdict()})
+                    df_new_dict.update(
+                        {
+                            barcode: amplicon_stats._asdict().update(
+                                {"projected_to_finish": projected_to_finish}
+                            )
+                        }
+                    )
             df_new = pd.DataFrame.from_dict(df_new_dict, orient="index")
-            write_out_artic_metrics(df_old=df_old, df_new=df_new, dir_to_write_to=base_result_dir_path)
+            write_out_artic_metrics(
+                df_old=df_old, df_new=df_new, dir_to_write_to=base_result_dir_path
+            )
     task.last_read = last_read
     task.iteration_count += 1
     logger.info("Finishing this batch of reads.")

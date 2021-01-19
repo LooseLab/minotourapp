@@ -359,8 +359,12 @@ def get_artic_summary_table_data(request):
             paf_summary_cov["has_sufficient_coverage"] = artic_metadata[
                 barcode_name
             ].has_sufficient_coverage
-        paf_summary_cov.update(amplicon_stats._asdict())
+        amp_stats_dict = amplicon_stats._asdict()
+        amp_stats_dict.pop("amplicon_coverage_medians")
+        amp_stats_dict.pop("amplicon_coverage_means")
+        paf_summary_cov.update(amp_stats_dict)
         paf_summary_cov["lineage"] = lineage
+        paf_summary_cov["projected_to_finish"] = artic_metadata[barcode_name].projected_to_finish
     if not queryset:
         return Response(
             f"No coverage summaries found for this task {artic_task.id}.",

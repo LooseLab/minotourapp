@@ -17,6 +17,7 @@ class ArticBarcodeMetadata(models.Model):
     has_sufficient_coverage = models.BooleanField(default=False)
     has_finished = models.BooleanField(default=False)
     marked_for_rerun = models.BooleanField(default=False)
+    projected_to_finish = models.BooleanField(default=False)
     flowcell = models.ForeignKey(
         Flowcell,
         related_name="FlowcellsArticBarcodeMetadatas",
