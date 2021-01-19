@@ -481,14 +481,9 @@ def flowcell_list(request):
     :return:  A list of each flowcell details in dictionary form
     """
     if request.method == "GET":
-
         flowcells = []
-
-        # queryset = Flowcell.objects.filter(owner=request.user)
         queryset = Flowcell.objects.all()
-
         for record in queryset:
-
             if request.user == record.owner:
                 owner = True
                 permission = "Owner"
@@ -503,7 +498,6 @@ def flowcell_list(request):
                     f"Flowcell {record.name} retrieved for user {request.user} that should not have been."
                 )
                 continue
-
             obj = {
                 "id": record.id,
                 "name": record.name,
@@ -521,9 +515,7 @@ def flowcell_list(request):
                 "owner": owner,
                 "permission": permission,
             }
-
             flowcells.append(obj)
-
         return Response({"data": flowcells})
     # If the method is not GET, it must be post
     else:
@@ -1612,6 +1604,7 @@ def task_control(request):
             clear_artic_data(job_master)
             clear_artic_command_job_masters(job_master.flowcell_id)
             ArticBarcodeMetadata.objects.filter(job_master=job_master).delete()
+            PafSummaryCov.objects.filter(job_master=job_master).delete()
             job_master.read_count = 0
             job_master.last_read = 0
             job_master.running = False
