@@ -572,7 +572,7 @@ def save_reads_bulk(reads):
     reads_as_json = json.dumps(reads)
     ### We want to pause to let the number of chunks get below 10?
     count = redis_instance.scard("reads")
-    while count > 10:
+    while count > 40:
         time.sleep(5)
         count = redis_instance.scard("reads")
     redis_instance.sadd("reads", reads_as_json)
