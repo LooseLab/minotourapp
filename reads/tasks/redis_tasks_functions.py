@@ -16,7 +16,7 @@ from alignment.tasks_alignment import run_minimap2_alignment
 from artic.task_artic_alignment import run_artic_pipeline
 from metagenomics.new_centrifuge import run_centrifuge_pipeline
 from minknow_data.models import Run, Flowcell
-from minotourapp.celery import app
+from minotourapp.celery import app, MyTask
 from minotourapp.redis import redis_instance
 from minotourapp.utils import get_env_variable
 from reads.models import (
@@ -210,7 +210,7 @@ def save_flowcell_summary_barcode(row):
 
 
 # TODO dump to redis, message key and retreive
-@app.task
+@app.task(base=MyTask)
 def update_flowcell(reads_list):
     """
     Update the flowcell metadata, including read counts, yield,max_channel, base-called data summaries
@@ -249,7 +249,7 @@ def update_flowcell(reads_list):
         dtype="datetime64[m]",
     )
     read_df["start_time_truncate"] = read_df["start_time_round"].apply(
-        lambda dt: datetime(dt.year, dt.month, dt.day, dt.hour, 10 * (dt.minute // 10))
+        lambda dt: datetime(dt.year, dt.month, dt.day, dt.hour, int(np.nan_to_num(10 * (dt.minute // 10))))
     )
     update_run_summaries(read_df)
     read_df_all_reads = read_df.copy()
