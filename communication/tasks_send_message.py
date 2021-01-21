@@ -367,8 +367,8 @@ def check_artic_run_until(condition):
     """
     if hasattr(condition.flowcell.runs.last(), "summary"):
         if condition.flowcell.runs.last().summary.first_read_start_time < datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1):
-            if ArticBarcodeMetadata.objects.filter(
-                flowcell_id=condition.flowcell, projected_to_finish=True, has_finished=False
+            if not ArticBarcodeMetadata.objects.filter(
+                flowcell_id=condition.flowcell, projected_to_finish=True, has_sufficient_coverage=False
             ).count():
                 m, created = Message.objects.get_or_create(
                     recipient=condition.creating_user,
