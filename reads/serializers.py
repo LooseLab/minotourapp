@@ -306,6 +306,8 @@ class FlowcellSerializer(serializers.HyperlinkedModelSerializer):
                 # Auto create a mux notification
                 NotificationConditions(notification_type="mux", flowcell=flowcell,
                                        creating_user=flowcell.owner).save()
+                NotificationConditions(notification_type="pred", flowcell=flowcell,
+                                       creating_user=flowcell.owner).save()
         return flowcell
 
 
