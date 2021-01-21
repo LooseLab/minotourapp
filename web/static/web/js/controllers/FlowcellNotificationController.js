@@ -101,7 +101,7 @@ class FlowcellNotificationController {
     this._axiosInstance.get(`/api/v1/communication/${this._flowcellId}/conditions/extant-types`).then(
       response => {
         const extantTypes = response.data
-        if (extantTypes.includes(`arti`) && extantTypes.includes(`suff`)) {
+        if (extantTypes.includes(`arti`) && extantTypes.includes(`suff`) && extantTypes.includes(`pred`)) {
           if (!Object.prototype.hasOwnProperty.call(this._disabledNotificationsHTML, `list-artic-top`)) {
             that._disabledNotificationsHTML[`list-artic-top`] = $(`#list-artic-top`)[0].outerHTML
             $(`#list-artic-top`).remove()
@@ -110,13 +110,13 @@ class FlowcellNotificationController {
         }
         extantTypes.forEach(type => {
           const a = $(`#${type}-btn`)
-          if (![`cov`, `arti`, `suff`].includes(type)) {
+          if (![`cov`, `arti`, `suff`, `pred`].includes(type)) {
             if (!Object.prototype.hasOwnProperty.call(this._disabledNotificationsHTML, type)) {
               a.removeClass(`active`)
               that._disabledNotificationsHTML[type] = a[0].outerHTML
               a.remove()
             }
-          } else if ([`arti`, `suff`].includes(type)) { $(`#${type}`).find(`#${type}`).prop(`disabled`, true) }
+          } else if ([`arti`, `suff`, `pred`].includes(type)) { $(`#${type}`).find(`#${type}`).prop(`disabled`, true) }
         })
         $(`#${$(`#list-tab-top`).children().first().attr(`id`)}`).tab(`show`)
       }
@@ -130,6 +130,7 @@ class FlowcellNotificationController {
   submitForms () {
     $(`#arti`).submit()
     $(`#suff`).submit()
+    $(`#pred`).submit()
   }
 
   _confirmRunUntil () {
@@ -239,7 +240,7 @@ class FlowcellNotificationController {
     axiosInstance.delete(`/api/v1/communication/messages/conditions`, { params: { pk: notificationID } }).then(response => {
       const notificationType = response.data
       $(`.extantNotif`).DataTable().ajax.reload(null, false)
-      if ([`arti`, `suff`].includes(notificationType)) {
+      if ([`arti`, `suff`, `pred`].includes(notificationType)) {
         // append back thea artic tab
         if (!$(`#list-tab-tasks`).find(`#list-artic-top`).length) {
           $(`#list-tab-tasks`).append(this._disabledNotificationsHTML[`list-artic-top`])
