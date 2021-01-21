@@ -140,7 +140,7 @@ class NotificationConditions(models.Model):
     NOTIFICATION_CHOICES = [("cov", "Coverage"), ("mux", "Mux Scan Results"), ("targ", "New Target Added"),
                             ("volt", "Voltage"), ("temp", "Temperature"),
                             ("occu", "Occupancy"), ("waer", "Warnings/Errors"), ("mino", "MinoTour"), ("sped", "Speed"),
-                            ("arti", "Artic"), ("suff", "Sufficient Coverage")]
+                            ("arti", "Artic"), ("suff", "Sufficient Coverage"), ("pred", "Artic Run Until")]
 
     notification_type = models.CharField(
         max_length=4,
