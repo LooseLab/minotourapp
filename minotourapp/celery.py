@@ -5,6 +5,7 @@ import logging
 import os
 import pickle
 import uuid
+from pathlib import Path
 
 from celery import Celery, Task
 from celery.worker.request import Request
@@ -20,7 +21,6 @@ class MyRequest(Request):
     def on_timeout(self, soft, timeout):
         super(MyRequest, self).on_timeout(soft, timeout)
         error_log_file = f"{BASE_DIR}/celery_error.log"
-        print(dir(self))
         with open(error_log_file, "a") as fh:
             fh.write(
                 f"{self.task.name} failed at {datetime.datetime.now()}"
@@ -32,7 +32,8 @@ class MyRequest(Request):
             exc_info, send_failed_event=send_failed_event, return_ok=return_ok
         )
         error_log_file = f"{BASE_DIR}/celery_error.log"
-        uuid_str  = uuid.uuid4()
+        uuid_str = uuid.uuid4()
+        Path(f"{BASE_DIR}/pickled_args/").mkdir(exist_ok=True, parents=True)
         pickle_file = f"{BASE_DIR}/pickled_args/{uuid_str}.pickle"
         with open(error_log_file, "a") as fh:
             fh.write(
