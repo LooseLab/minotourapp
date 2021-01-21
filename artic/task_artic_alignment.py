@@ -873,7 +873,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         fhc.write(barcoded_counts_dict[barcode][chrom_key].data)
                     with open(barcode_sorted_fastq_path, "a") as fh:
                         fh.write("\n".join(barcode_sorted_fastq_cache[barcode]))
-                    logger.info(
+                    logger.debug(
                         f"Avg Coverage at iteration {task.iteration_count} for barcode {barcode} is {coverage.mean()}"
                     )
                     # get artic fire conditions
@@ -885,7 +885,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         flowcell_id=flowcell.id,
                         barcode_name=barcode,
                         time_stamp=time_stamp,
-                        read_count=read_count,
+                        read_count=read_counts_dict[barcode],
                         coverage_array=coverage,
                     )
                     if any(
@@ -921,6 +921,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     )
                     amp_stat_dict = amplicon_stats._asdict()
                     amp_stat_dict["projected_to_finish"] = projected_to_finish
+                    amp_stat_dict["total_read_count"] = read_count
                     df_new_dict.update(
                         {
                             barcode: amp_stat_dict
