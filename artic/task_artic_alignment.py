@@ -288,7 +288,7 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     jm.save()
 
 
-def save_artic_command_job_masters(flowcell, barcode_name, reference_info):
+def save_artic_command_job_masters(flowcell, barcode_name, reference_info, run_id):
     """
     Save the JobMasters that we need to manage the queue of tasks.
     Parameters
@@ -299,6 +299,8 @@ def save_artic_command_job_masters(flowcell, barcode_name, reference_info):
         Barcode name for these reads
     reference_info: reference.models.ReferenceInfo
         Covid Reference
+    run_id: int
+        The primary key of the run
     Returns
     -------
 
@@ -308,7 +310,7 @@ def save_artic_command_job_masters(flowcell, barcode_name, reference_info):
         return
     job_type = JobType.objects.get(name="Run Artic")
     # TODO potential bug here where the barcode name on the reads is not the barcode name we save and alos multiple runs. if force unique is false
-    barcode_object = Barcode.objects.get(run__in=flowcell.runs.all(), name=barcode_name)
+    barcode_object = Barcode.objects.get(run_id=run_id, name=barcode_name)
     job_master, created = JobMaster.objects.get_or_create(
         job_type=job_type,
         reference=reference_info,
@@ -899,7 +901,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         if barcode not in barcodes_already_fired:
                             add_barcode_to_tofire_file(barcode, base_result_dir_path)
                             save_artic_command_job_masters(
-                                flowcell, barcode, reference_info
+                                flowcell, barcode, reference_info, run_id
                             )
                         has_sufficient_coverage = True
                     # save the artic per barcode metadata
