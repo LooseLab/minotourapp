@@ -245,6 +245,23 @@ on your minFQ client,<br> we will stop the run if the average flowcell occupancy
                                                             </div>
                                                         </div>
                                                     </form>
+                                                    <form id="pred" class="notification-form">
+                                                        <div class="form-group">
+                                                            <div class="form-check form-check-inline">
+                                                                <label for="pred" class="minotour-label"
+                                                                       style="margin-bottom: 0;">
+                                                                    Run Until alert: <i
+                                                                        class="fa fa-question-circle masterTooltip"
+                                                                        tooltip="We will try to predict when any barcodes that will complete during your run have call completed,
+                                                                         then notify you via twitter so you may decide if you wish to stop the run. NOTE THIS WILL NOT AUTOMATICALLY STOP YOUR RUN."></i>
+                                                                </label>
+                                                                <input type="checkbox"
+                                                                       class="form-control-sm noti-control"
+                                                                       name="pred"
+                                                                       id="pred" style="margin-left: .25rem">
+                                                            </div>
+                                                        </div>
+                                                    </form>
                                                     <input id="multi-form-submit"
                                                            class="btn btn-primary"
                                                            value="Submit Choices"
