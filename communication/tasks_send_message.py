@@ -349,6 +349,41 @@ def check_condition_is_met():
             check_artic_has_fired(condition)
         if condition.notification_type == "cov":
             coverage_notification(condition)
+        if condition.notification_type == "pred":
+            check_artic_run_until(condition)
+
+
+def check_artic_run_until(condition):
+    """
+    Check that Artic has finished Run Until
+    Parameters
+    ----------
+    condition: communication.models.NotificationConditions
+        The artic notification condition
+
+    Returns
+    -------
+
+    """
+    if hasattr(condition.flowcell.runs.last(), "summary"):
+        if condition.flowcell.runs.last().summary.first_read_start_time < datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1):
+            if ArticBarcodeMetadata.objects.filter(
+                flowcell_id=condition.flowcell, projected_to_finish=True, has_finished=False
+            ).count():
+                m, created = Message.objects.get_or_create(
+                    recipient=condition.creating_user,
+                    sender=condition.creating_user,
+                    title__startswith=f"Artic run on {condition.flowcell.name} has potentially finished,"
+                                      f" further sequencing may be a waste. Consider stopping this run.",
+                    flowcell=condition.flowcell,
+                    defaults={
+                        "title": f"Artic run on {condition.flowcell.name} has potentially finished,"
+                                 f" further sequencing may be a waste. Consider stopping this run.",
+                    },
+                )
+                condition.completed = True
+                condition.save()
+
 
 
 def check_artic_has_fired(condition):
