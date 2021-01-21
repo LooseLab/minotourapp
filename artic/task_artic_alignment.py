@@ -917,11 +917,11 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         has_sufficient_coverage,
                         projected_to_finish
                     )
+                    amp_stat_dict = amplicon_stats._asdict()
+                    amp_stat_dict["projected_to_finish"] = projected_to_finish
                     df_new_dict.update(
                         {
-                            barcode: amplicon_stats._asdict().update(
-                                {"projected_to_finish": projected_to_finish}
-                            )
+                            barcode: amp_stat_dict
                         }
                     )
             df_new = pd.DataFrame.from_dict(df_new_dict, orient="index")
