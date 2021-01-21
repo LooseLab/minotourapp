@@ -114,7 +114,6 @@ def calculate_flowcell_histogram_summary(flowcell_id):
         status = result["status"]
         sequence_length_sum = int(result["read_length"])
         read_count = int(result["read_count"])
-
         (
             flowcell_histogram_summary,
             created,
@@ -126,12 +125,9 @@ def calculate_flowcell_histogram_summary(flowcell_id):
             status=status,
             bin_index=bin_index,
         )
-
         flowcell_histogram_summary.read_length += sequence_length_sum
         flowcell_histogram_summary.read_count += read_count
-
         flowcell_histogram_summary.save()
-
     return flowcell_id
 
 
