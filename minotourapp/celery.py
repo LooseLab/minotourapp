@@ -3,6 +3,8 @@ from __future__ import absolute_import, unicode_literals
 import datetime
 import logging
 import os
+import pickle
+import uuid
 
 from celery import Celery, Task
 from celery.worker.request import Request
@@ -30,11 +32,15 @@ class MyRequest(Request):
             exc_info, send_failed_event=send_failed_event, return_ok=return_ok
         )
         error_log_file = f"{BASE_DIR}/celery_error.log"
+        uuid_str  = uuid.uuid4()
+        pickle_file = f"{BASE_DIR}/pickled_args/{uuid_str}.pickle"
         with open(error_log_file, "a") as fh:
             fh.write(
                 f"{self.task.name} failed at {datetime.datetime.now()} with {str(exc_info.traceback)}"
-                f" processing:\n {str(self.info())}"
+                f" processing:\n args stored in pickle at {uuid_str}.pickle\n"
             )
+        with open(pickle_file, "wb") as fh:
+            pickle.dump(self._args, fh, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 class MyTask(Task):
