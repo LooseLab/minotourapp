@@ -98,7 +98,7 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
     None
     """
     flowcell = Flowcell.objects.get(pk=flowcell_id)
-    logger.info(
+    logger.debug(
         f"Clearing non necessary results for {artic_results_path} for sample name {sample_name}"
     )
     files_to_keep_extra = [".fastq", ".sorted.bam", ".sorted.bam.bai"]
@@ -116,11 +116,11 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
     ) and flowcell.last_activity_date < datetime.now(timezone.utc) - timedelta(
         hours=12
     ):
-        logger.info(
+        logger.debug(
             f"Clearing sensitive files from {artic_results_path} for sample name {sample_name}"
         )
     else:
-        logger.info("Extending files to keep")
+        logger.debug("Extending files to keep")
         files_to_keep.extend(files_to_keep_extra)
     files_to_keep_full = []
     files_to_keep_full.extend([f"{sample_name}{filey}" for filey in files_to_keep])
@@ -262,11 +262,11 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
     if not out and err:
-        logger.info("We are done here. Artic out!")
-        logger.info(out)
-        logger.info(err)
+        logger.debug("We are done here. Artic out!")
+        logger.debug(out)
+        logger.debug(err)
     else:
-        logger.info("¯\_(ツ)_/¯")
+        logger.debug("¯\_(ツ)_/¯")
         logger.warning(str(out))
         logger.warning(err)
     # if out and err:
@@ -341,9 +341,9 @@ def make_barcoded_directories(barcodes, results_dir):
         path = results_dir / barcode
         if not path.exists():
             Path.mkdir(path, parents=True)
-            logger.info(f"Created directory {path} for barcode {barcode}.")
+            logger.debug(f"Created directory {path} for barcode {barcode}.")
         else:
-            logger.info(f"Directory {path} already exists.")
+            logger.debug(f"Directory {path} already exists.")
 
 
 def add_barcode_to_tofire_file(barcode_name, directory):
@@ -389,7 +389,7 @@ def fetch_barcode_to_fire_list(directory):
         with open(path, "r") as fh:
             barcodes = fh.read().split("\n")
     except FileNotFoundError as e:
-        logger.info("File not found. First iteration? Continuing...")
+        logger.debug("File not found. First iteration? Continuing...")
         return []
 
     return barcodes
@@ -573,7 +573,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
         # aim for 50 megabases
         desired_yield = 50 * 1000000
         chunk_size = round(desired_yield / avg_read_length)
-        logger.info(f"Fetching reads in chunks of {chunk_size} for alignment.")
+        logger.debug(f"Fetching reads in chunks of {chunk_size} for alignment.")
         fasta_objects = FastqRead.objects.filter(
             flowcell_id=flowcell.id, id__gt=task.last_read
         )[:chunk_size]
@@ -583,7 +583,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
         if fasta_objects:
             last_read = fasta_df_barcode.tail(1).iloc[0].id
         if fasta_df_barcode.shape[0] == 0:
-            logger.info("No fastq found. Skipping this iteration.")
+            logger.debug("No fastq found. Skipping this iteration.")
             task.running = False
             task.save()
             return
@@ -640,7 +640,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
         cmd = "{} -x map-ont -t 1 --secondary=no -c --MD {} -".format(
             minimap2, reference_info.file_location.path.strip()
         )
-        logger.info(
+        logger.debug(
             "Flowcell id: {} - Calling minimap Artic - {}".format(flowcell.id, cmd)
         )
         # Setup minimap call
@@ -655,7 +655,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
         (out, err) = proc.communicate(input=fasta_data)
         if err:
             logger.error(err)
-        logger.info(
+        logger.debug(
             "Flowcell id: {} - Finished minimap artic - {}".format(flowcell.id, cmd)
         )
         # decode output from byte string
@@ -688,13 +688,13 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                 orm_object, created = ArticBarcodeMetadata.objects.get_or_create(
                     flowcell=flowcell, job_master=task, barcode=barcode_orm
                 )
-            logger.info(f"Barcodes in this iteration are {barcodes}")
+            logger.debug(f"Barcodes in this iteration are {barcodes}")
             barcoded_counts_dict = replicate_counts_array_barcoded(
                 barcodes, reference_count_dict
             )
             paf_summary_cov_dict = {}
             make_barcoded_directories(barcodes, base_result_dir_path)
-            logger.info(f"Parsing paf file. Please wait.")
+            logger.debug(f"Parsing paf file. Please wait.")
             barcodes_with_mapped_results = set()
             for i, record in enumerate(
                 parse_PAF(
@@ -774,7 +774,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             # iterate the paf_summary_cov objects
             read_counts_dict = {}
             for paf_summary_barcode, paf_summary_cov in paf_summary_cov_dict.items():
-                logger.info(f"Creating PafSummaryCov objects for {paf_summary_barcode}")
+                logger.debug(f"Creating PafSummaryCov objects for {paf_summary_barcode}")
                 paf_summary_cov_orm, created = PafSummaryCov.objects.get_or_create(
                     job_master=task,
                     barcode_name=paf_summary_cov["barcode_name"],
@@ -933,7 +933,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             )
     task.last_read = last_read
     task.iteration_count += 1
-    logger.info("Finishing this batch of reads.")
+    logger.debug("Finishing this batch of reads.")
     task.read_count += read_count
     task.running = False
     task.save()
