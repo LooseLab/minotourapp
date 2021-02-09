@@ -921,7 +921,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     )
                     amp_stat_dict = amplicon_stats._asdict()
                     amp_stat_dict["projected_to_finish"] = projected_to_finish
-                    amp_stat_dict["total_read_count"] = read_count
+                    amp_stat_dict["total_read_count"] = task.read_count + read_count
                     df_new_dict.update(
                         {
                             barcode: amp_stat_dict

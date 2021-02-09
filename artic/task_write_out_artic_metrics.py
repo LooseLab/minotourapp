@@ -16,7 +16,10 @@ def get_or_create_metrics_df(dir_to_write_to):
     if not dataframe_destination.exists():
         df_old = pd.DataFrame()
     else:
-        df_old = pd.read_pickle(str(dataframe_destination))
+        try:
+            df_old = pd.read_pickle(str(dataframe_destination))
+        except EOFError as e:
+            df_old = pd.DataFrame()
     return df_old
 
 
@@ -37,5 +40,6 @@ def write_out_artic_metrics(df_new, df_old, dir_to_write_to):
 
     """
     df_old = df_old.append(df_new)
-    df_old.to_pickle(str(dir_to_write_to / DATAFRAME_NAME))
+    if not df_old.empty:
+        df_old.to_pickle(str(dir_to_write_to / DATAFRAME_NAME))
 
