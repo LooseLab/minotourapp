@@ -1,10 +1,10 @@
 import datetime
 import json
+import logging
 from collections import defaultdict
 
 import numpy as np
 import pandas as pd
-from celery.utils.log import get_task_logger
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
@@ -67,7 +67,7 @@ from web.delete_tasks import (
     delete_alignment_task,
 )
 
-logger = get_task_logger(__name__)
+logger = logging.getLogger("django")
 
 
 @api_view(["GET"])
@@ -301,13 +301,10 @@ def fastq_file(request, pk):
     """
 
     if request.method == "GET":
-
         queryset = FastqFile.objects.filter(runid=pk).filter(owner=request.user)
-
         serializer = FastqFileSerializer(
             queryset, many=True, context={"request": request}
         )
-
         return Response(serializer.data)
 
     elif request.method == "POST":
