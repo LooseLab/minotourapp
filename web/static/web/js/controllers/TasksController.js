@@ -312,6 +312,7 @@ class TasksController {
           }
         )
         referenceSelect.attr(`disabled`, false)
+        this._runFromDatabase.css(`display`, `inline-flex`)
       } else {
         referenceSelect.attr(`disabled`, true)
         if ([`4`, `16`].includes(jobTypeId)) {
