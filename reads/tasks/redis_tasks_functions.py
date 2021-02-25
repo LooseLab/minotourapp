@@ -414,14 +414,14 @@ def harvest_reads():
         or not redis_instance.get("harvesting") == "1"
     ):
         redis_instance.set("harvesting", 1)
-        reads = list()
+        reads = []
         count = redis_instance.scard("reads")
 
         while count > 0:
             read_chunk = redis_instance.spop("reads")
             if read_chunk is not None:
                 read_chunk = json.loads(read_chunk)
-            reads.extend(read_chunk)
+                reads.extend(read_chunk)
             count -= 1
 
         if reads:
