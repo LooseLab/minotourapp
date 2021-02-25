@@ -55,6 +55,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'minotourapp.utils.GZIPBodyDecompressMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -154,7 +155,11 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
-    )
+    ),
+    # 'DEFAULT_RENDERER_CLASSES': [
+    #     'minotourapp.renderers.GzipJsonRenderer',
+    #     'rest_framework.renderers.BrowsableAPIRenderer',
+    # ]
 }
 
 LOGIN_URL = '/login'
@@ -169,6 +174,12 @@ MAILGUN_SERVER_NAME = get_env_variable("MT_MAILGUN_SERVER_NAME")
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'file': {
             'level': 'ERROR',
@@ -177,7 +188,8 @@ LOGGING = {
         },
         'console': {
             'level': 'INFO',
-            'class': 'logging.StreamHandler'
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         }
     },
     'loggers': {
