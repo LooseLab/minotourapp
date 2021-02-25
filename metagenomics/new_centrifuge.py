@@ -107,7 +107,7 @@ def run_centrifuge(flowcell_job_id, streamed_reads=None):
     # The path to the Centrifuge Index
     index_path = get_env_variable("MT_CENTRIFUGE_INDEX")
     # The command to run metagenomics
-    cmd = "perl " + centrifuge_path + " -f --mm -k 3 -p 3 -x " + index_path + " -"
+    cmd = "perl " + centrifuge_path + " -f --mm -k 3 -x " + index_path + " -"
     try:
         out, err = subprocess.Popen(
             cmd.split(),
@@ -745,6 +745,26 @@ def update_metadata_and_task(
     print("Flowcell id: {} - Finished!".format(flowcell.id))
 
 
+def get_all_reads_that_have_targets(df, target_read_ids):
+    """
+    Create dataframe of all reads that have at least one Target classification amongst there classifications
+    Parameters
+    ----------
+    df: pandas.core.frame.DataFrame
+        The dataframe of the centrifuge output
+    target_read_ids: pandas.core.series.Series
+        The reads ids from the target dataframe
+
+    Returns
+    -------
+    pd.core.frame.DataFrame
+        All classifications for reads where at least one classification was a target
+    """
+    all_classifcation_targets_df = df.set_index("read_id").loc[target_read_ids]
+    return all_classifcation_targets_df
+
+
+
 @app.task
 def run_centrifuge_pipeline(flowcell_job_id, streamed_reads=None):
     """
@@ -772,6 +792,8 @@ def run_centrifuge_pipeline(flowcell_job_id, streamed_reads=None):
     df, total_centrifuge_output, read_count, last_read, targets_df, reads_classified, reads_unclassified = run_centrifuge(
         flowcell_job_id, streamed_reads
     )
+    all_target_reads_class_df = get_all_reads_that_have_targets(df, targets_df["read_id"])
+
     if df.empty:
         logger.info("No Centrifuge output, skipping iteration...")
         return
