@@ -530,8 +530,8 @@
                     if (typeof this.devices === 'undefined') {
                       return
                     } else {
-                      return this.devices.filter(function (devices) {
-                        return devices.run_status.match(/(ACQUISITION_PROCESSING|ACQUISITION_STARTING|FINISHING|ACQUISITION_RUNNING|)$/) //("PROCESSING","STARTING","FINISHING")
+                      return this.devices.filter(device => {
+                        return devices.run_status.match(/^(ACQUISITION_PROCESSING|ACQUISITION_STARTING|FINISHING|ACQUISITION_RUNNING)$/) //("PROCESSING","STARTING","FINISHING")
                       })
                     }
                   },
@@ -540,7 +540,7 @@
                       return
                     } else {
                       return this.devices.filter(function (devices) {
-                        return devices.run_status.match(/^(active|COMPLETED|No Run|ACQUISITION_COMPLETED)$/)
+                        return devices.run_status.match(/^(COMPLETED|No Run|ACQUISITION_COMPLETED)$/)
                       })
                     }
                   },
