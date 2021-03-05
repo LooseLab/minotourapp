@@ -531,7 +531,7 @@
                       return
                     } else {
                       return this.devices.filter(device => {
-                        return devices.run_status.match(/^(ACQUISITION_PROCESSING|ACQUISITION_STARTING|FINISHING|ACQUISITION_RUNNING)$/) //("PROCESSING","STARTING","FINISHING")
+                        return device.run_status.match(/^(ACQUISITION_PROCESSING|ACQUISITION_STARTING|FINISHING|ACQUISITION_RUNNING)$/) //("PROCESSING","STARTING","FINISHING")
                       })
                     }
                   },
