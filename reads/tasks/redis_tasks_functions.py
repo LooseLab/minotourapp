@@ -782,8 +782,8 @@ def get_values_and_delete_redis_key(r, key):
     p.multi()
     p.get(key)
     p.delete(key)
-    returnvalue = p.execute()[0]
-    return returnvalue
+    return p.execute()[0]
+
 
 
 def scan_keys(r, pattern):
