@@ -23,7 +23,6 @@ class Minion(models.Model):
     )
 
     owner = models.ForeignKey(
-
         settings.AUTH_USER_MODEL,
         related_name='minIONs',
         on_delete=models.DO_NOTHING,
