@@ -4,6 +4,7 @@ Celery task to update flowcell metadata
 from datetime import datetime, timezone
 
 import numpy as np
+from billiard.exceptions import SoftTimeLimitExceeded
 from celery import chain
 from celery.utils.log import get_task_logger
 from dateutil import parser
@@ -196,10 +197,10 @@ def calculate_flowcell_statistic_barcodes(flowcell_id):
     return flowcell_id
 
 
-@app.task
+@app.task(autoretry_for=(SoftTimeLimitExceeded,), soft_time_limit=20, max_retries=5)
 def update_flowcell_details(job_master_id):
     """
-    Update flowcell details by pulling Using the MinionRunInfo if it exists. If base-called data present,
+    Update flowcell details by Using the MinionRunInfo if it exists. If base-called data present,
      pull down aggregated numbers from Redis and create database emtries for them.
     Parameters
     ----------
@@ -220,36 +221,26 @@ def update_flowcell_details(job_master_id):
     #
     # Get the first MinIONRunStatus for a particular flowcell - but we want to ignore platform QCs
     #
-    minion_run_status_first = (
-        MinionRunInfo.objects.filter(run_id__flowcell=flowcell)
-        .exclude(experiment_type="platform_qc")
-        .order_by("minKNOW_start_time")
-        .first()
-    )
-    #
-    # If the MinIONRunStatus exists, than update start time
-    #
-    if minion_run_status_first:
-        flowcell.start_time = minion_run_status_first.minKNOW_start_time
-
-    # Get minionRunInfos looking for sample name
     minion_run_info_list = MinionRunInfo.objects.filter(
         run_id__flowcell=flowcell
     ).exclude(experiment_type="platform_qc")
+    #
+    # If the MinIONRunStatus exists, than update start time
+    #
+    first_sample_info = minion_run_info_list.first()
+    if first_sample_info:
+        flowcell.start_time = first_sample_info.minKNOW_start_time
+        flowcell.sample_name = first_sample_info.minKNOW_sample_name
 
-    if minion_run_info_list.count() > 0:
-        for minion_run_status in minion_run_info_list:
-            if minion_run_status.minKNOW_sample_name != "undefined":
-                flowcell.sample_name = minion_run_status_first.minKNOW_sample_name
-                break
+    # Get minionRunInfos looking for sample name
+
     # No live data? No problem!
-    else:
-        for run in Run.objects.filter(flowcell=flowcell).exclude(name="mux_scan"):
-            if run.name != "undefined":
-                flowcell.sample_name = run.name
-                if run.start_time is not None:
-                    if run.start_time <= flowcell.start_time:
-                        flowcell.start_time = run.start_time
+    if not minion_run_info_list and not all([flowcell.start_time, flowcell.sample_name]):
+        for name, start_time in Run.objects.filter(flowcell=flowcell).exclude(name="mux_scan").values_list("name", "start_time"):
+            if name != "undefined":
+                flowcell.sample_name = name
+                if start_time is not None and start_time < flowcell.start_time:
+                    flowcell.start_time = start_time
                 break
 
     # Get presence of fastq data in redis
@@ -324,13 +315,5 @@ def update_flowcell_details(job_master_id):
     )
     flowcell.number_barcodes = barcode_count
     flowcell.save()
-    logger.info(
-        "Flowcell id: {} - Number runs {}".format(flowcell.id, flowcell.number_runs)
-    )
-    logger.info(
-        "Flowcell id: {} - Number barcodes {}".format(
-            flowcell.id, flowcell.number_barcodes
-        )
-    )
     job_master.running = False
     job_master.save()
