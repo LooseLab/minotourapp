@@ -197,7 +197,7 @@ def calculate_flowcell_statistic_barcodes(flowcell_id):
     return flowcell_id
 
 
-@app.task(autoretry_for=(SoftTimeLimitExceeded,), soft_time_limit=20, max_retries=5)
+@app.task(autoretry_for=(SoftTimeLimitExceeded,), soft_time_limit=60, retry_kwargs={'max_retries': 5})
 def update_flowcell_details(job_master_id):
     """
     Update flowcell details by Using the MinionRunInfo if it exists. If base-called data present,
@@ -247,6 +247,7 @@ def update_flowcell_details(job_master_id):
     has_fastq = get_values_and_delete_redis_key(
         redis_instance, f"{flowcell.id}_has_fastq"
     )
+    logger.info(f"{flowcell.id} has fastq: {has_fastq}")
     if has_fastq:
         flowcell.has_fastq = has_fastq
         flowcell.last_activity_date = datetime.now(timezone.utc)
@@ -282,7 +283,11 @@ def update_flowcell_details(job_master_id):
             flowcell.size = 512
 
         # Now to try and update all the channel values that we need to update...
-
+        # TODO is this where this is slow??
+        bulk_create = not FlowcellChannelSummary.objects.filter(flowcell=flowcell)
+        if not bulk_create:
+            extant_channel_objects = list(FlowcellChannelSummary.objects.filter(flowcell=flowcell))
+        channel_objects = []
         for channel in range(1, flowcell.max_channel + 1):
             read_count = get_values_and_delete_redis_key(
                 redis_instance, f"{flowcell.id}_{channel}_read_count"
@@ -290,19 +295,40 @@ def update_flowcell_details(job_master_id):
             pore_yield = get_values_and_delete_redis_key(
                 redis_instance, f"{flowcell.id}_{channel}_pore_yield"
             )
-            if read_count or pore_yield:
-                (
-                    flowcellChannelSummary,
-                    created,
-                ) = FlowcellChannelSummary.objects.get_or_create(
-                    flowcell=flowcell, channel=channel
-                )
-                if read_count:
-                    flowcellChannelSummary.read_count += int(read_count)
-                if pore_yield:
-                    flowcellChannelSummary.read_length += int(pore_yield)
-                flowcellChannelSummary.save()
-
+            read_count = 0 if not read_count else int(read_count)
+            pore_yield = 0 if not pore_yield else int(pore_yield)
+            if bulk_create:
+                channel_objects.append(FlowcellChannelSummary(flowcell=flowcell, channel=channel, read_length=pore_yield, read_count=read_count))
+                continue
+            else:
+                if pore_yield or read_count:
+                    try:
+                        fcs = next(filter(lambda x: x.channel == channel, extant_channel_objects))
+                        fcs.read_count += read_count
+                        fcs.read_length += pore_yield
+                        channel_objects.append(fcs)
+                    except StopIteration:
+                        # This means we don't have a Flowcell Channel Summary for this channel
+                        FlowcellChannelSummary.objects.create(flowcell=flowcell, channel=channel, read_length=pore_yield, read_count=read_count)
+                        continue
+                else:
+                    continue
+        if bulk_create:
+            FlowcellChannelSummary.objects.bulk_create(channel_objects)
+        else:
+            FlowcellChannelSummary.objects.bulk_update(channel_objects, ["read_count", "read_length"])
+            # if read_count or pore_yield:
+            #     (
+            #         flowcellChannelSummary,
+            #         created,
+            #     ) = FlowcellChannelSummary.objects.get_or_create(
+            #         flowcell=flowcell, channel=channel
+            #     )
+            #     if read_count:
+            #         flowcellChannelSummary.read_count += int(read_count)
+            #     if pore_yield:
+            #         flowcellChannelSummary.read_length += int(pore_yield)
+            #     flowcellChannelSummary.save()
         #Now try and update all the flowcellsummarystatistics
         res = chain(
             calculate_flowcell_statistic_barcodes.s(flowcell.id),
