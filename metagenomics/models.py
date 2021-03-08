@@ -10,6 +10,24 @@ from reads.models import Barcode, JobMaster
 from reference.models import ReferenceInfo
 
 
+class CAllValues(models.Model):
+    """
+    :purpose: Store the C_all values for abundance estimation across iterations for a metagenomics task
+    :author: Rory Munro
+    """
+    task = models.ForeignKey(
+        JobMaster,
+        related_name="c_all_values",
+        on_delete=models.CASCADE
+    )
+    classification_count = models.IntegerField(
+        default=0
+    )
+    classification_number = models.IntegerField(
+        default=0
+    )
+
+
 class SankeyLink(models.Model):
     """
         :purpose: Store the metagenomics classifier output in the format for the sankey diagram
