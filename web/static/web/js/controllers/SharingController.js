@@ -33,7 +33,7 @@ class SharingController {
       headers: { 'X-CSRFToken': getCookie(`csrftoken`) }
     })
 
-    axiosInstance.post(`/api/v1/reads/lowcells/${this._flowcellId}/sharing/`, {
+    axiosInstance.post(`/api/v1/reads/flowcells/${this._flowcellId}/sharing/`, {
       flowcell: this._flowcellId,
       permission: this._permission.value,
       username: this._username.value
