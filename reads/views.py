@@ -492,7 +492,7 @@ def flowcell_list(request):
                 permission = "Run analysis"
             else:
                 logger.error(
-                    f"Flowcell {record.name} retrieved for user {request.user} that should not have been."
+                    f"Flowcell {record.name} discarded for user {request.user}, insufficient permission."
                 )
                 continue
             obj = {
@@ -1230,7 +1230,7 @@ def read_list(request):
         if int(get_env_variable("MT_ALLOW_UPLOAD")):
             save_reads_bulk(reads)
             return Response(
-                "The task has started. It's in gods hands now...",
+                "Read Batch Saved. Send more Reads please",
                 status=status.HTTP_201_CREATED,
             )
         else:
