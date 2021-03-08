@@ -491,7 +491,7 @@ def flowcell_list(request):
                 owner = False
                 permission = "Run analysis"
             else:
-                logger.error(
+                logger.debug(
                     f"Flowcell {record.name} discarded for user {request.user}, insufficient permission."
                 )
                 continue
