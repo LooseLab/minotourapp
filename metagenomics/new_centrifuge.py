@@ -6,6 +6,7 @@ import subprocess
 import sys
 from collections import defaultdict
 from io import StringIO
+from itertools import combinations
 
 import numpy as np
 import pandas as pd
@@ -21,6 +22,7 @@ from metagenomics.centrifuge_validation import (
     map_target_reads,
     save_mapping_results,
 )
+from metagenomics.confidence_modelling import generate_c_all, generate_c_all_values, grammy_fit
 from metagenomics.models import (
     CentrifugeOutput,
     Metadata,
@@ -153,16 +155,22 @@ def run_centrifuge(flowcell_job_id, streamed_reads=None):
     individual_reads_classified = np.unique(df["readID"].values).size
     targets_df = separate_target_cent_output(df, task, fasta_df_barcode)
     # The number of reads we have any form of classification for
-    reads_classified = np.unique(df[
-        df["tax_id"].ne(0)
-        ]["read_id"].values).size
+    reads_classified = np.unique(df[df["tax_id"].ne(0)]["read_id"].values).size
     # The number of reads we have completely failed to classify
-    reads_unclassified = np.unique(df[
-        df["tax_id"].eq(0)
-        ]["read_id"].values).size    # save the values
+    reads_unclassified = np.unique(
+        df[df["tax_id"].eq(0)]["read_id"].values
+    ).size  # save the values
     # Get the metadata object. Contains the start time, end time and runtime of the task
     metadata, created = Metadata.objects.get_or_create(task=task)
-    return df, individual_reads_classified, read_count, last_read, targets_df, reads_classified, reads_unclassified
+    return (
+        df,
+        individual_reads_classified,
+        read_count,
+        last_read,
+        targets_df,
+        reads_classified,
+        reads_unclassified,
+    )
 
 
 def split_read_id_and_barcodes(df):
@@ -688,7 +696,12 @@ def save_analyses_output_in_db(
 
 
 def update_metadata_and_task(
-    last_read, read_count, flowcell_job_id, total_centrifuge_output, reads_classified, reads_unclassified
+    last_read,
+    read_count,
+    flowcell_job_id,
+    total_centrifuge_output,
+    reads_classified,
+    reads_unclassified,
 ):
     """
     Update metadata and task after job has finished
@@ -745,7 +758,7 @@ def update_metadata_and_task(
     print("Flowcell id: {} - Finished!".format(flowcell.id))
 
 
-def get_all_reads_that_have_targets(df, target_read_ids):
+def get_all_reads_that_have_targets(df, target_read_ids, task):
     """
     Create dataframe of all reads that have at least one Target classification amongst there classifications
     Parameters
@@ -754,15 +767,63 @@ def get_all_reads_that_have_targets(df, target_read_ids):
         The dataframe of the centrifuge output
     target_read_ids: pandas.core.series.Series
         The reads ids from the target dataframe
+    task: reads.models.JobMaster
 
     Returns
     -------
-    pd.core.frame.DataFrame
-        All classifications for reads where at least one classification was a target
-    """
-    all_classifcation_targets_df = df.set_index("read_id").loc[target_read_ids]
-    return all_classifcation_targets_df
+    (pd.core.frame.DataFrame, int, list, dict)
+        All classifications for reads where at least one classification was a target, number representing unclassified
+        ,list of targets as tax_ids and the classifcation number to tuple of tax_ids
 
+    """
+    all_classifcation_targets_df = (
+        df.reset_index().set_index("read_id").loc[target_read_ids]
+    )
+    targets = (261594, 1491, 632, 263)
+    class_number = 0
+    classification_converter = {}
+    for x in range(1, len(targets) + 1):
+        for combo in combinations(targets, x):
+            classification_converter[combo] = class_number
+            class_number += 1
+    unclassed_number = class_number
+    targets_classification_series = all_classifcation_targets_df.groupby(
+        "read_id"
+    ).apply(
+        lambda group: classification_converter[
+            tuple(np.unique(group[group["tax_id"].isin(targets)]["tax_id"].values))
+        ]
+    )
+    return (
+        targets_classification_series,
+        unclassed_number,
+        targets,
+        classification_converter,
+    )
+
+
+def set_classification_number(df, classification_num_series, unclassed_number):
+    """
+    Set the classification number on the centrifuge results dataframe
+    Parameters
+    ----------
+    df: pd.core.frame.DataFrame
+        The core centrifuge results dataframe
+    classification_num_series: pd.core.series.Series
+        The classification series with the corresponding numbers for the series
+    unclassed_number: int
+        The number for unclassified species
+    Returns
+    -------
+    df: pd.core.frame.DataFrame
+        The core centrifuge dataframe, with the classification series dataframe on it
+    """
+    df = df.reset_index().set_index("read_id")
+    df["classification_number"] = classification_num_series
+    df["classification_number"] = df["classification_number"].fillna(unclassed_number)
+    df["classification_number"] = df["classification_number"].astype(int)
+    df = df.reset_index().set_index("tax_id")
+    return df
 
 
 @app.task
@@ -779,6 +840,8 @@ def run_centrifuge_pipeline(flowcell_job_id, streamed_reads=None):
     -------
 
     """
+    # flowcell_job_id = 341
+    # streamed_reads = None
     tax_rank_filter = [
         "superkingdom",
         "phylum",
@@ -789,15 +852,38 @@ def run_centrifuge_pipeline(flowcell_job_id, streamed_reads=None):
         "species",
     ]
     task = JobMaster.objects.get(pk=flowcell_job_id)
-    df, total_centrifuge_output, read_count, last_read, targets_df, reads_classified, reads_unclassified = run_centrifuge(
-        flowcell_job_id, streamed_reads
-    )
-    all_target_reads_class_df = get_all_reads_that_have_targets(df, targets_df["read_id"])
+    (
+        df,
+        total_centrifuge_output,
+        read_count,
+        last_read,
+        targets_df,
+        reads_classified,
+        reads_unclassified,
+    ) = run_centrifuge(flowcell_job_id, streamed_reads)
 
-    if df.empty:
-        logger.info("No Centrifuge output, skipping iteration...")
-        return
+    # if df.empty:
+    #     logger.info("No Centrifuge output, skipping iteration...")
+    #     return
     df, task, barcodes = process_centrifuge_output(df, task)
+    (
+        all_target_reads_class_series,
+        unclassed_number,
+        targets,
+        classification_converter,
+    ) = get_all_reads_that_have_targets(df, targets_df["read_id"], task)
+    df = set_classification_number(df, all_target_reads_class_series, unclassed_number)
+    # time for some shiny new modelling
+    c_all_probabilities_series = generate_c_all_values(df, task)
+    c_all = generate_c_all(
+        targets, classification_converter, c_all_probabilities_series
+    )
+    # todo apparently p_true is a garbo approximation of a starting point so that's something worth noting
+    p_true = np.random.default_rng().dirichlet(size=1, alpha=[1]*len(targets))
+    sizes = np.array([1, 3, 5, 7])
+    p_true = p_true * (sizes/(np.sum(p_true*sizes)))
+    prob = grammy_fit(df["classification_number"].values, init=p_true, draws=read_count, species_number=len(targets),
+                      c_all=c_all)
     barcode_df, task = barcode_output_calculations(df, task)
     df = process_centrifuge_barcode_data(df, barcode_df, task, tax_rank_filter)
     to_save_df, classified_per_barcode, iteration_count = output_aggregator(
@@ -823,5 +909,10 @@ def run_centrifuge_pipeline(flowcell_job_id, streamed_reads=None):
     )
     save_analyses_output_in_db(to_save_df, True, task, iteration_count)
     update_metadata_and_task(
-        last_read, read_count, flowcell_job_id, total_centrifuge_output, reads_classified, reads_unclassified
+        last_read,
+        read_count,
+        flowcell_job_id,
+        total_centrifuge_output,
+        reads_classified,
+        reads_unclassified,
     )
