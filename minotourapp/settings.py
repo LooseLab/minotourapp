@@ -49,9 +49,10 @@ INSTALLED_APPS = [
     'communication',
     'metagenomics',
     'readuntil',
-    'guardian',
     'artic',
-    'minknow_data'
+    'minknow_data',
+    'guardian',
+
 ]
 
 MIDDLEWARE = [

@@ -601,127 +601,80 @@ class MinionInfo(models.Model):
     :minKNOW_warnings: If minKNOW is about to shutdown a warning is added here.
     :minknow_version: Version of minknow
     """
-
     minion = models.OneToOneField(
-
         Minion,
         related_name='currentdetails',
         on_delete=models.CASCADE,
 
     )
-
     minKNOW_status = models.CharField(
-
         max_length=64
-
     )
-
     minKNOW_current_script = models.CharField(
-
         max_length=256,
         blank=True,
         null=True
-
     )
-
     minKNOW_sample_name = models.CharField(
-
         max_length=256,
         blank=True,
         null=True
-
     )
-
     minKNOW_exp_script_purpose = models.CharField(
-
         max_length=256,
         blank=True,
         null=True
-
     )
-
     minKNOW_flow_cell_id = models.CharField(
-
         max_length=64,
         blank=True,
         null=True
-
     )
-
     minKNOW_run_name = models.CharField(
-
         max_length=256,
         blank=True,
         null=True
-
     )
-
     minKNOW_hash_run_id = models.CharField(
-
         max_length=256,
         blank=True,
         null=True
-
     )
-
     minKNOW_script_run_id = models.CharField(
-
         max_length=256,
         blank=True,
         null=True
-
     )
-
     minKNOW_real_sample_rate = models.IntegerField(
         blank=True,
         null=True
-
     )
-
     # minKNOW_voltage_offset = models.IntegerField(blank=True, null=True)
-
     # minKNOW_yield = models.IntegerField(blank=True, null=True)
-
     minKNOW_asic_id = models.CharField(
-
         max_length=256,
         blank=True,
         null=True
-
     )
-
     minKNOW_total_drive_space = models.FloatField(
-
         blank=True,
         null=True
-
     )
-
     minKNOW_disk_space_till_shutdown = models.FloatField(
-
         blank=True,
         null=True
-
     )
-
     minKNOW_disk_available = models.FloatField(
-
         blank=True,
         null=True
-
     )
-
     minKNOW_warnings = models.BooleanField(
-
         default=False
-
     )
-
     minknow_version = models.CharField(
         max_length=64,
         null=True
     )
-
     last_modified = models.DateTimeField(
         auto_now=True
     )
