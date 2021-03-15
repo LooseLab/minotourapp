@@ -1,31 +1,9 @@
 """
 Functions for calculating the abundance and uncertainty models a la michael
 """
-from statistics import NormalDist
-
 import numpy as np
 
 from .models import CAllValues
-
-
-def confidence_interval(data, confidence=0.95):
-    """
-    Calculate confidence intervals
-    Parameters
-    ----------
-    data: np.ndarray
-        Classifications or the output of the grammy?
-    confidence: float
-        confidence level
-
-    Returns
-    -------
-
-    """
-    dist = NormalDist.from_samples(data)
-    z = NormalDist().inv_cdf((1 + confidence) / 2.)
-    h = dist.stdev * z / ((len(data) - 1) ** .5)
-    return dist.mean - h, dist.mean + h
 
 
 def generate_c_all_values(df, task):

@@ -1304,7 +1304,6 @@ def barcode_list(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 @api_view(["GET", "POST"])
 def flowcell_sharing(request, pk):
     """
