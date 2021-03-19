@@ -1,6 +1,6 @@
 numpy
 django>=3.0.7
-flower
+#flower
 djangorestframework
 mysqlclient
 python-dateutil

@@ -1,0 +1,214 @@
+{% load humanize %}
+{% if artic_barcode_VoC.sample_id %}
+
+        <div class="card-header">
+            <h4 class="card-title" id="coverage-card-title">
+                <i class="fas fa-chart-bar"></i>
+                Variant of Concern Report for {{ artic_barcode_VoC.sample_id }}
+            </h4>
+
+        </div>
+        <div class="card-body">
+            <div class="row"><p>If a genome is analysed, this will provide a report for the variant or variants found based on
+                        current PHE Variant Definitions. This analysis will report all possible VoCs and caution should
+                        be taken in interpretation of low coverage/quality genomes.</p></div>
+            <div class="row"><p>Reported VuI/VoCs:</p>{{ artic_barcode_VoC.hidden_html_string2 | safe }}</div>
+            <div class="row"><p>Observed mutations:</p>{{ artic_barcode_VoC.hidden_html_string | safe }}</div>
+            <div class="row">
+                <div class="col-md-12">
+
+
+                    {% for key in artic_barcode_VoC.typing %}
+
+                        {% if key.sample_typing_result.variant_status != None %}
+
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        Sample_ID: {{ artic_barcode_VoC.sample_id }} <br>
+                                        {% for classifier in key.sample_typing_summary.belongs_to_lineage %}
+                                            {% for argument,lineage in classifier.items %}
+                                                {{ argument }}:{{ lineage }} <br>
+                                            {% endfor %}
+                                        {% endfor %}
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if key.sample_typing_result.variant_status == "confirmed" %}
+                                        <div class="alert alert-danger" role="alert">
+                                    {% elif key.sample_typing_result.variant_status == "probable" %}
+                                        <div class="alert alert-warning" role="alert">
+                                    {% else %}
+                                        <div class="alert alert-secondary" role="alert">
+                                    {% endif %}
+                                    Variant Status: {{ key.sample_typing_result.variant_status }}
+                                    </div>
+                                    <h6 class="card-subtitle mb-2">
+                                        PHE-Label: {{ key.sample_typing_summary.phe_label }}</h6>
+                                    <h6 class="card-subtitle mb-2">Alternate Names:
+                                        {% for altname in key.sample_typing_summary.alternate_names %}
+
+                                            {{ altname }},
+
+                                        {% endfor %}
+                                    </h6>
+
+                                    <p class="card-text">
+                                    <p><i>Description:</i></p>
+                                    <p>{{ key.sample_typing_summary.description }}</p>
+                                    <p><i>Information Sources</i>
+                                        {% for info_source in key.sample_typing_summary.information_sources %}
+                                            <a href="{{ info_source }}" target="blank"
+                                               class="card-link">Source_{{ forloop.counter }}</a>
+                                        {% endfor %}</p>
+
+                                    <br>
+                                    <h6>Variant Calls Detected:</h6>
+                                    <table class="table table-sm">
+                                        <caption>One based position - notes on sites detected in this sample.</caption>
+                                        <thead>
+                                        <tr>
+                                            <th scope="col">Position</th>
+                                            <th scope="col">gene</th>
+                                            <th scope="col">protein</th>
+                                            <th scope="col">ref</th>
+                                            <th scope="col">variant</th>
+                                            <th scope="col">sample call</th>
+                                            <th scope="col">type</th>
+                                            <th scope="col">status</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for variant in key.sample_typing_result.master.variants|dictsort:"one_based_reference_position" %}
+                                            <tr>
+                                                <td>{{ variant.one_based_reference_position }}</td>
+                                                <td>{{ variant.gene }}</td>
+                                                <td>{{ variant.protein }}</td>
+                                                <td>{{ variant.reference_base }}</td>
+                                                <td>{{ variant.variant_base }}</td>
+                                                <td>{{ variant.sample_call }}</td>
+                                                <td>{{ variant.type }}</td>
+                                                {%  if variant.status == "detect" %}
+                                                <td class="table-warning">{{ variant.status }}</td>
+                                                {%  elif variant.status == "no-call" %}
+                                                <td class="table-info">{{ variant.status }}</td>
+                                                    {% else %}
+                                                    <td>{{ variant.status }}</td>
+                                                {% endif %}
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+
+                                    <p>The observed calls were:</p>
+                                    {% for class,value in  key.sample_typing_result.master.calls.items %}
+                                        {{ class }}: {{ value }}
+                                    {% endfor %}
+                                    <br>
+
+                                    <p>Classification rules:</p>
+                                    {% for class,value in  key.sample_typing_result.master.calling_definition.items %}
+                                        <p>{{ class }}
+                                            {% for label,threshold in value.items %}
+                                                {{ label }}: {{ threshold }}
+                                            {% endfor %}
+                                        </p>
+                                    {% endfor %}
+                                    {% if key.sample_typing_result.alt_probable %}
+                                        <p>This VoC may be classified as alt probable - in which case the observed calls were:</p>
+                                        {% for class,value in  key.sample_typing_result.alt_probable.calls.items %}
+                                        {{ class }}: {{ value }}
+                                        {% endfor %}
+                                        <br>
+                                        <p>Classification rules:</p>
+                                        {% for class,value in  key.sample_typing_result.alt_probable.calling_definition.items %}
+                                        <p>{{ class }}
+                                            {% for label,threshold in value.items %}
+                                                {{ label }}: {{ threshold }}
+                                            {% endfor %}
+                                        </p>
+                                    {% endfor %}
+
+                                        {% endif %}
+                                    {% if key.sample_typing_result.alt_low_qc %}
+                                        <p>This VoC may be classified as alt low qc - in which case the observed calls were:</p>
+                                        {% for class,value in  key.sample_typing_result.alt_low_qc.calls.items %}
+                                        {{ class }}: {{ value }}
+                                        {% endfor %}
+                                        <br>
+                                        <p>Classification rules:</p>
+                                        {% for class,value in  key.sample_typing_result.alt_low_qc.calling_definition.items %}
+                                        <p>{{ class }}
+                                            {% for label,threshold in value.items %}
+                                                {{ label }}: {{ threshold }}
+                                            {% endfor %}
+                                        </p>
+                                    {% endfor %}
+                                        {% endif %}
+
+
+
+
+
+                                    <p><i>Acknowledgements:</i></p>
+                                    {% for acks in key.sample_typing_summary.acknowledgements %}
+                                        {{ acks }}
+                                    {% endfor %}
+                                    <p><i>Curators:</i>
+                                        {% for curator in key.sample_typing_summary.curators %}
+                                            {{ curator }}
+                                        {% endfor %}</p>
+
+                                    <p>Unique-ID: {{ key.sample_typing_summary.unique_id }}</p>
+
+
+
+                    <p>The complete list of variants of concern scanned included:</p>
+                    {% for key in artic_barcode_VoC.typing %}
+                        {{ key.sample_typing_summary.phe_label }}
+                    {% endfor %}
+
+
+
+                                    </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+
+
+
+
+
+                </div>
+
+            </div>
+
+
+
+
+{% else %}
+    <div class="card card-primary card-outline">
+        <div class="card-header">
+            <h4 class="card-title" id="coverage-card-title">
+                <i class="fas fa-chart-bar"></i>
+                Variant of Concern Reports not available.
+            </h4>
+
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-12">
+                    <p>If a genome is complete and has a Variant of Concern lineage assigned to it, summary reports will
+                        be provided here based on current PHE Variant Definitions.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+{% endif %}

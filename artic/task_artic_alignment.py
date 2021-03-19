@@ -108,8 +108,10 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
         "-barplot.png",
         "-boxplot.png",
         ".consensus.fasta",
+        ".muscle.out.fasta",
         ".counts.dat",
         ".coverage.dat",
+        "_ARTIC_medaka.csv"
     ]
     if int(
         get_env_variable("MT_DESTROY_ARTIC_EVIDENCE")
@@ -127,11 +129,15 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
     files_to_keep_full.extend([f"{el}.gz" for el in files_to_keep_full])
     files_to_keep_full.append("lineage_report.csv")
     files_to_keep_full.append("lineage_report.csv.gz")
+    files_to_keep_full.append("json_files/{sample_name}_ARTIC_medaka.json.gz")
+    files_to_keep_full.append("csv_files/{sample_name}_ARTIC_medaka.csv")
     artic_results_pathlib = Path(artic_results_path)
     for filey in artic_results_pathlib.iterdir():
         # delete pangolin tree files
         if filey.is_dir():
-            rmtree(filey, ignore_errors=True)
+            #protect the json for lineage analysis
+            if os.path.basename(os.path.normpath(filey)) != "json_files" and os.path.basename(os.path.normpath(filey)) != "csv_files":
+                rmtree(filey, ignore_errors=True)
         elif f"{filey.name}" not in files_to_keep_full:
             filey.unlink()
         elif not filey.suffix == ".gz" and filey.suffix not in [".dat", ".png"]:
@@ -150,6 +156,44 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
                 str(filey), f"{static_path}/{artic_results_pathlib.parent.stem}",
             )
 
+@app.task
+def run_variant_command(base_results_directory, barcode_name):
+    """
+
+    """
+    #ToDo: Update variants to the latest version by running a git pull
+    re_gzip = False
+    os.chdir(f"{base_results_directory}/{barcode_name}")
+    if (
+        not Path(f"{barcode_name}.muscle.out.fasta").exists()
+        and Path(f"{barcode_name}.muscle.out.fasta.gz").exists()
+    ):
+        logger.debug(f"Unzipping {barcode_name}.muscle.out.fasta.gz")
+        subprocess.Popen(
+            ["gzip", "-d", f"{barcode_name}.muscle.out.fasta.gz"]
+        ).communicate()
+        re_gzip = True
+    cmd = [
+        "bash",
+        "-c",
+        f"source /Users/matt/.miniconda3/etc/profile.d/conda.sh && conda activate artic && aln2type json_files csv_files {barcode_name}_ARTIC_medaka.csv MN908947.3  {barcode_name}.muscle.out.fasta ../../../../variants/variant_definitions/variant_yaml/*.yml",
+    ]
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    out, err = proc.communicate()
+    if not out and err:
+        logger.debug(out)
+        logger.debug(err)
+    else:
+        logger.info("¯\_(ツ)_/¯")
+        logger.info(str(out))
+        logger.info(err)
+    if re_gzip:
+        logger.debug(f"ReGzipping {barcode_name}.muscle.out.fasta")
+        subprocess.Popen(
+            ["gzip", "-9", f"{barcode_name}.muscle.out.fasta"]
+        ).communicate()
+    pass
 
 @app.task
 def run_pangolin_command(base_results_directory, barcode_name):
@@ -171,10 +215,15 @@ def run_pangolin_command(base_results_directory, barcode_name):
             ["gzip", "-d", f"{barcode_name}.consensus.fasta.gz"]
         ).communicate()
         re_gzip = True
+    #cmd = [
+    #    "bash",
+    #    "-c",
+    #    f"source /Users/matt/.miniconda3/etc/profile.d/conda.sh && conda activate pangolin && pangolin -p --write-tree {barcode_name}.consensus.fasta",
+    #]
     cmd = [
         "bash",
         "-c",
-        f"source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate pangolin && pangolin -p --write-tree {barcode_name}.consensus.fasta",
+        f"source /Users/matt/.miniconda3/etc/profile.d/conda.sh && conda activate pangolin && pangolin {barcode_name}.consensus.fasta",
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -212,7 +261,8 @@ def clear_old_data(artic_results_path, barcode_name):
 
     """
     files_to_keep_suffix = [
-        "consensus.fasta",
+        ".consensus.fasta",
+        ".muscle.out.fasta",
         ".counts.dat",
         ".coverage.dat",
         ".fasta.gz",
@@ -257,7 +307,7 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     cmd = [
         "bash",
         "-c",
-        f"source $CONDA_PREFIX/etc/profile.d/conda.sh && conda activate artic-ncov2019 && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V3 {barcode_name}",
+        f"source /Users/matt/.miniconda3/etc/profile.d/conda.sh && conda activate artic && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V3 {barcode_name}",
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
@@ -271,6 +321,11 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         logger.warning(err)
     # if out and err:
     #     raise Exception(out)
+
+
+    # Now run the aln2type artic screen.
+
+    run_variant_command(base_results_directory, barcode_name)
 
     run_pangolin_command(base_results_directory, barcode_name)
     # Update the Barcode Metadata to show the task has been run on this barcode

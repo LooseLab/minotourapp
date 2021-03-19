@@ -582,6 +582,7 @@ class ArticController {
       })
     }
     this._setBarcodeMetaDataHTMLTable(flowcellId, barcodeChosen)
+    this._setVariantOfConcernHTML(flowcellId, barcodeChosen)
     this._renderPngs(flowcellId, barcodeChosen, true)
   }
 
@@ -626,6 +627,7 @@ class ArticController {
       // update the detail master charts
       if (this._barcodeChosen) {
         that._setBarcodeMetaDataHTMLTable(flowcellId, that._barcodeChosen)
+        that._setVariantOfConcernHTML(flowcellId, that._barcodeChosen)
         that._drawSelectedBarcode(flowcellId, that._barcodeChosen)
         that._renderPngs(flowcellId, that._barcodeChosen, true)
       }
@@ -758,15 +760,16 @@ class ArticController {
           },
           { targets: 5, data: `average_read_length` },
           { targets: 6, data: `coverage` },
-          { targets: 7, data: `partial_amplicon_count` },
-          { targets: 8, data: `failed_amplicon_count` },
-          { targets: 9, data: `success_amplicon_count` },
+          { targets: 7, data: `success_amplicon_count` },
+          { targets: 8, data: `partial_amplicon_count` },
+          { targets: 9, data: `failed_amplicon_count` },
           { targets: 10, data: `mean_of_amplicon_means` },
           { targets: 11, data: `variance` },
           { targets: 12, data: `std_dev` },
           { targets: 13, data: `lineage` },
           { targets: 14, data: `has_sufficient_coverage` },
-          { targets: 15, data: `projected_to_finish` }
+          { targets: 15, data: `projected_to_finish` },
+          { targets: 16, data: `VoC-Warn`}
         ]
       }
       )
@@ -787,6 +790,25 @@ class ArticController {
       }
     }).then(response => {
       $(`#articMetaInfo`).html(response.data)
+    }).catch(error => {
+      console.error(error)
+    })
+  }
+
+  /**
+   * Fetch data on potential variants of concern
+   * @param flowcellId {number} Primary key of the flowcell record in the database.
+   * @param selectedBarcode {string} The buser selected barcode in the drop down.
+   * @private
+   */
+  _setVariantOfConcernHTML (flowcellId, selectedBarcode) {
+    this._axiosInstance.get(`/api/v1/artic/barcode-voc`, {
+      params: {
+        flowcellId,
+        selectedBarcode
+      }
+    }).then(response => {
+      $(`#articVoCInfo`).html(response.data)
     }).catch(error => {
       console.error(error)
     })

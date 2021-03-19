@@ -1,5 +1,5 @@
 import datetime
-import json
+import json,gzip
 from collections import defaultdict
 from urllib.parse import parse_qs
 
@@ -359,6 +359,7 @@ def get_artic_summary_table_data(request):
             paf_summary_cov["has_sufficient_coverage"] = artic_metadata[
                 barcode_name
             ].has_sufficient_coverage
+        paf_summary_cov["VoC-Warn"] = "ToDo"
         amp_stats_dict = amplicon_stats._asdict()
         amp_stats_dict.pop("amplicon_coverage_medians")
         amp_stats_dict.pop("amplicon_coverage_means")
@@ -371,6 +372,87 @@ def get_artic_summary_table_data(request):
             status=status.HTTP_204_NO_CONTENT,
         )
     return Response({"data": queryset})
+
+@api_view(("GET",))
+@renderer_classes((TemplateHTMLRenderer, JSONRenderer))
+def get_artic_voc_html(request):
+    """
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        Request body, params: the flowcell PK and selected barcode
+
+    Returns
+    -------
+    """
+    flowcell_id = request.GET.get("flowcellId", None)
+    selected_barcode = request.GET.get("selectedBarcode", None)
+    if not flowcell_id or not selected_barcode:
+        return Response(
+            "No flowcell ID or barcode provided.", status=status.HTTP_400_BAD_REQUEST
+        )
+    ## Now we check to see if a json report exists for this flowcell and barcode.
+    flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(flowcell_id)
+    json_path = artic_results_path / selected_barcode / "json_files" /  f"{selected_barcode}_ARTIC_medaka.json.gz"
+    if json_path.exists():
+        with gzip.open(json_path, 'r') as fin:
+            data = json.loads(fin.read().decode('utf-8'))
+            #datastring = json.dumps(data)
+            #datastring = datastring.replace("-","_")
+            #data = json.loads(datastring)
+            data = hyphen_to_underscore(data)
+    else:
+        data = {}
+    csv_path = artic_results_path / selected_barcode / "csv_files" / f"{selected_barcode}_ARTIC_medaka.csv"
+    if csv_path.exists():
+        df = pd.read_csv(
+            csv_path
+        )
+        html_string = df.T.to_html(classes="table table-sm table-responsive", border=0, justify="left")
+        data["hidden_html_string"] = html_string
+
+    csv_path = artic_results_path / selected_barcode / f"{selected_barcode}_ARTIC_medaka.csv.gz"
+    if csv_path.exists():
+        df = pd.read_csv(
+            csv_path
+        )
+        html_string = df.to_html(classes="table table-sm table-responsive", border=0, index=False, justify="left")
+        data["hidden_html_string2"] = html_string
+
+
+    return render(
+        request,
+        "artic-variant-of-concern.html",
+        context={"artic_barcode_VoC": data},
+    )
+
+def hyphen_to_underscore(dictionary):
+    """
+    Takes an Array or dictionary and replace all the hyphen('-') in any of its keys with a underscore('_')
+    :param dictionary:
+    :return: the same object with all hyphens replaced by underscore
+    """
+    # By default return the same object
+    final_dict = dictionary
+
+    # for Array perform this method on every object
+    if type(dictionary) is type([]):
+        final_dict = []
+        for item in dictionary:
+            final_dict.append(hyphen_to_underscore(item))
+
+    # for dictionary traverse all the keys and replace hyphen with underscore
+    elif type(dictionary) is type({}):
+        final_dict = {}
+        for k, v in dictionary.items():
+            # If there is a sub dictionary or an array perform this method of it recursively
+            if type(dictionary[k]) is type({}) or type(dictionary[k]) is type([]):
+                value = hyphen_to_underscore(v)
+                final_dict[k.replace('-', '_')] = value
+            else:
+                final_dict[k.replace('-', '_')] = v
+
+    return final_dict
 
 
 @api_view(("GET",))
