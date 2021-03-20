@@ -766,9 +766,9 @@ class ArticController {
           { targets: 10, data: `mean_of_amplicon_means` },
           { targets: 11, data: `variance` },
           { targets: 12, data: `std_dev` },
-          { targets: 13, data: `lineage` },
-          { targets: 14, data: `has_sufficient_coverage` },
-          { targets: 15, data: `projected_to_finish` },
+          { targets: 13, data: `has_sufficient_coverage` },
+          { targets: 14, data: `projected_to_finish` },
+          { targets: 15, data: `lineage` },
           { targets: 16, data: `VoC-Warn`}
         ]
       }

@@ -351,15 +351,24 @@ def get_artic_summary_table_data(request):
                 )["lineage"][0]
             except FileNotFoundError:
                 lineage = "Unknown"
+
+            try:
+                VoCs_df = pd.read_csv(
+                    artic_results_path / barcode_name / f"{barcode_name}_ARTIC_medaka.csv.gz"
+                )
+                VoCs=VoCs_df['phe-label']
+            except FileNotFoundError:
+                VoCs = "None Found"
         else:
             lineage = "Currently unknown"
+            VoCs = "Not Tested"
         if barcode_name == "unclassified":
             paf_summary_cov["has_sufficient_coverage"] = "ignore"
         else:
             paf_summary_cov["has_sufficient_coverage"] = artic_metadata[
                 barcode_name
             ].has_sufficient_coverage
-        paf_summary_cov["VoC-Warn"] = "ToDo"
+        paf_summary_cov["VoC-Warn"] = VoCs
         amp_stats_dict = amplicon_stats._asdict()
         amp_stats_dict.pop("amplicon_coverage_medians")
         amp_stats_dict.pop("amplicon_coverage_means")
