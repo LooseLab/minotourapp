@@ -778,6 +778,6 @@ def get_fastq_df(desired_yield, flowcell_pk, avg_read_len, task):
         print("No fastq found. Skipping this iteration.")
         task.running = False
         task.save()
-        return None, None, None
+        return None, None, pd.DataFrame()
     read_count = fasta_df_barcode.shape[0]
     return read_count, last_read, fasta_df_barcode
