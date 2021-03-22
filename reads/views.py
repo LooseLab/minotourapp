@@ -1173,7 +1173,7 @@ def flowcell_tabs_list(request, pk):
     minion_run_stats_list = MinionRunStats.objects.filter(run_id__flowcell__id=pk)
     if minion_run_stats_list.count():
         tabs.append("live-event-data")
-    if PafSummaryCov.objects.filter(job_master__flowcell_id=pk).exclude(job_master__job_type__id=16).count():
+    if PafSummaryCov.objects.filter(job_master__flowcell_id=pk).exclude(job_master__job_type__id=16).first():
         tabs.append("sequence-mapping")
     chromosome = ExpectedBenefitChromosomes.objects.filter(task__flowcell__id=pk).last()
     if chromosome is not None:
