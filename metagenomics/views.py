@@ -2,16 +2,22 @@
 views.py
 """
 import math
+import tarfile
 
 import numpy as np
 import pandas as pd
+from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Q
+from django.http import HttpResponse
+from django.shortcuts import render
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from weasyprint import HTML, CSS
 
+from alignment.models import PafSummaryCov
 from metagenomics.models import (
     CentrifugeOutput,
     MappingResult,
@@ -19,11 +25,125 @@ from metagenomics.models import (
     SankeyLink,
     DonutData,
     MappingTarget,
+    EstimatedAbundance,
 )
+from metagenomics.utils import calculate_proportion_for_table, get_metagenomics_data
 from minknow_data.models import Flowcell
-from reads.models import JobMaster
+from reads.models import JobMaster, JobType
 
 pd.options.mode.chained_assignment = None
+
+
+@api_view(["GET", "POST"])
+def export_report(request, pk):
+    """
+    Export the reach back report to the user upon request
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The request object
+    pk: int
+        Flowcell primary key
+
+    Returns
+    -------
+    A PDF blob to be downloaded
+    """
+    flowcell = Flowcell.objects.get(pk=pk)
+    task = JobMaster.objects.filter(flowcell_id=pk, job_type_id=10).last()
+    run = flowcell.runs.first()
+    metagenomics_run = True if task else False
+    alignment_data = PafSummaryCov.objects.filter(job_master__flowcell_id=pk).exclude(job_master__job_type__id=16).values()
+
+    report_info = {
+        "run_id": run.name,
+        "read_count": run.summary.read_count,
+        "yield": run.summary.total_read_length,
+        "avg_read_length": run.summary.avg_read_length,
+        "run_date": run.summary.first_read_start_time.strftime("%d/%m/%Y"),
+        "run_duration": str(
+            run.summary.last_read_start_time - run.summary.first_read_start_time
+        ),
+        "alignment_data": bool(alignment_data),
+        "metagenomics_data": metagenomics_run
+    }
+    if metagenomics_run:
+        metadata = Metadata.objects.get(task=task)
+        meta_dict = {
+            "unclassified": metadata.unclassified,
+            "classified": metadata.classified,
+            "percent_classified": round(
+                metadata.classified / run.summary.read_count * 100, 2
+            ),
+            "percent_unclassified": round(
+                metadata.unclassified / run.summary.read_count * 100, 2
+            ),
+        }
+        report_info.update(meta_dict)
+    if alignment_data:
+        alignment_dict = {
+            "alignment_values": alignment_data
+        }
+        report_info.update(alignment_dict)
+    print(request.data["basecalledSummaryHTML"])
+    print(request.data["liveEventSummaryHTML"])
+    report_info.update(request.data)
+    cent_df = get_metagenomics_data(task, flowcell)
+    cent_df.to_csv(f"/tmp/meta_csv_{run.name}.csv.gz", encoding="utf-8")
+    HTML(
+        string=render(
+            request, "metagenomics/report.html", context={"report_data": report_info}
+        ).getvalue()
+    ).write_pdf(
+        f"/tmp/{task.id}_run_{run.name}_report.pdf",
+        stylesheets=[
+            CSS("web/static/web/css/report.css"),
+            CSS("web/static/web/libraries/bootstrap-4.5.0-dist/css/bootstrap.css"),
+        ],
+    )
+    tar_file_path = f"/tmp/{task.id}_run_{run.name}_report.tar.gz"
+    tar_file_name = f"{task.id}_run_{run.name}_report.tar.gz"
+    with tarfile.open(tar_file_path, "w:gz") as tar:
+        try:
+            tar.add(f"/tmp/{task.id}_run_{run.name}_report.pdf", recursive=False)
+            tar.add(f"/tmp/meta_csv_{run.name}.csv.gz", recursive=False)
+        except FileNotFoundError as e:
+            print("file not found")
+
+    with open(tar_file_path, "rb") as fh:
+        response = HttpResponse(fh.read(), content_type="application/zip")
+        response[
+            "Content-Disposition"
+        ] = f"attachment; filename={tar_file_name}"
+        response["x-file-name"] = tar_file_name
+
+    return response
+
+
+@api_view(["GET"])
+def get_abundance_table_html(request, pk):
+    """
+
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The AJAX request
+    pk: int
+        The primary key of the flowcell that the metagenomics task is on
+
+    Returns
+    -------
+    str
+        Pre formated HTML string
+    """
+    task = JobMaster.objects.filter(job_type_id=10, flowcell_id=pk).last()
+    return Response(
+        pd.DataFrame.from_records(
+            EstimatedAbundance.objects.filter(task=task).values(
+                "tax_id", "abundance", "name"
+            )
+        ).to_html(classes="table table-striped", border=0, justify="left")
+    )
 
 
 def check_run_is_legit(flowcell, task):
@@ -47,8 +167,15 @@ def check_run_is_legit(flowcell, task):
     classified_ratio = 20
     num_reads_check = task.read_count <= read_threshold
     # data_generated_hour_rate_check =
-    twenty_classified_check =( queryset.classified/task.read_count * 100) <= classified_ratio
-    reason = np.array([f"Number reads is below threshold {read_threshold}", f"Ratio of classified to unclassified is below {classified_ratio}"])
+    twenty_classified_check = (
+        queryset.classified / task.read_count * 100
+    ) <= classified_ratio
+    reason = np.array(
+        [
+            f"Number reads is below threshold {read_threshold}",
+            f"Ratio of classified to unclassified is below {classified_ratio}",
+        ]
+    )
     success = [num_reads_check, twenty_classified_check]
     reason = reason[success]
     return any(success), reason.tolist()
@@ -79,12 +206,33 @@ def super_simple_alert_list(request, pk, barcode_name):
     ).values()
     results_df = pd.DataFrame.from_records(queryset)
     results_df["detected"] = np.where(results_df["num_mapped"] > 0, True, False)
-    results_df["percent"] = results_df["num_mapped"].div(task.read_count).mul(100).round(2).astype(str)
-    results_df["reason"] = "Species " + results_df["species"] + " identified at " + results_df["percent"] + "% of reads sampled."
-    alert = results_df["detected"].any()
+    results_df["percent"] = (
+        results_df["num_mapped"].div(task.read_count).mul(100).round(2).astype(str)
+    )
+    results_df["reason"] = (
+        "Species "
+        + results_df["species"]
+        + " identified at "
+        + results_df["percent"]
+        + "% of reads sequenced."
+    )
     run_status_bool, run_reasons = check_run_is_legit(flowcell, task)
-    return Response([{"Alert": alert, "run_status": run_status_bool, "run_status_reasons": run_reasons, "alert_reasons": results_df[results_df["detected"]]["reason"].values.tolist()}], status=status.HTTP_200_OK)
-    # results_df
+    alert = results_df["detected"].any()
+    if not alert and not run_status_bool:
+        run_reasons = ["No target species detected and Run is of sufficient quality."]
+    return Response(
+        [
+            {
+                "Alert": alert,
+                "run_status": run_status_bool,
+                "run_status_reasons": run_reasons,
+                "alert_reasons": results_df[results_df["detected"]][
+                    "reason"
+                ].values.tolist(),
+            }
+        ],
+        status=status.HTTP_200_OK,
+    )
 
 
 def alert_level(col):
@@ -419,7 +567,7 @@ def donut_data(request):
 @api_view(["GET"])
 def get_target_mapping(request):
     """
-    Get the target species
+    Get the target species data for creating the more complex table
     :param request:
     :return:
     """
@@ -430,23 +578,33 @@ def get_target_mapping(request):
     if flowcell_id == 0:
         return Response("Flowcell id has failed to be delivered", status=404)
     # Get the most recent jobmaster id, although there should only be one
-    task_id = (
+    task = (
         JobMaster.objects.filter(
             flowcell__id=flowcell_id, job_type__name="Metagenomics"
         )
         .order_by("id")
         .last()
-        .id
     )
     # If the barcode is All reads, there is always four
-    queryset = MappingResult.objects.filter(
-        task__id=task_id, barcode_name=barcode
-    ).values()
+    queryset = MappingResult.objects.filter(task=task, barcode_name=barcode).values()
     results_df = pd.DataFrame(list(queryset))
     if results_df.empty:
         return Response(
             "No data has yet been produced for the target mappings", status=204
         )
+    results_df[
+        [
+            "proportion_of_classified",
+            "mapped_proportion_of_classified",
+            "red_reads_proportion_of_classified",
+        ]
+    ] = pd.DataFrame(
+        np.array(
+            results_df.apply(
+                calculate_proportion_for_table, args=(task,), axis=1
+            ).values.tolist()
+        )
+    )
     results_df.rename(
         columns={
             "num_mapped": "Num. mapped",
@@ -462,6 +620,7 @@ def get_target_mapping(request):
         },
         inplace=True,
     )
+    ## calculate proportion mapped
     results = results_df.to_dict(orient="records")
     return_dict = {"table": results}
     return Response(return_dict)
@@ -721,3 +880,24 @@ def get_target_sets(request):
             .distinct()
         )
     return Response(target_sets)
+
+
+@login_required
+def metagenomics_data_download(request, pk):
+    """
+    Send the Metagenomics data back in CSV format, used by the download button found on the metagenomics tab
+    metagenomics/templates/metagenomics/visualisation.html
+    :param request:
+    :return:
+    """
+    flowcell_id = request.GET.get("flowcellId", 0)
+    flowcell = Flowcell.objects.get(pk=pk)
+    job_type = JobType.objects.get(name="Metagenomics")
+    metagenomics_task = JobMaster.objects.get(flowcell=flowcell, job_type=job_type)
+    response = HttpResponse(content_type="text/csv")
+    response[
+        "Content-Disposition"
+    ] = "attachment; filename={}_centrifuge_output.csv".format(flowcell.name)
+    cent_df = get_metagenomics_data(metagenomics_task, flowcell)
+    cent_df.to_csv(response)
+    return response
