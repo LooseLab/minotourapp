@@ -4,7 +4,7 @@
 class BasecalledDataController {
   /**
      *
-     * @param flowcellId {string} The PK of the flowcell record in the database.
+     * @param flowcellId {number} The PK of the flowcell record in the database.
      */
   constructor (flowcellId) {
     // TODO BUG could clash if multiple browser tabs open
