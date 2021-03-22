@@ -38,7 +38,7 @@ The following tools must be installed:
  Otherwise you can create a user using the mysql shell, whilst logged in as the root user or as an admin user:
     ```bash
     CREATE USER minotour;
-    CREATE TABLE minotourdb;
+    CREATE DATABASE minotourdb;
     GRANT ALL PRIVILEGES ON minotourdb TO 'minotour'@'localhost' IDENTIFIED BY '<password>'
     ```
 
