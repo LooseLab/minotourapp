@@ -5,15 +5,18 @@ class SummaryTabController {
     this._axiosInstance = axios.create({
       headers: { 'X-CSRFToken': getCookie(`csrftoken`) }
     })
+    this._htmlTables = [[`flowcell-run-basecalled-summary-html`, `#flowcell-run-basecalled-summary-html-div`], [`run-summaries-html`, `#run-summaries-div`]]
+    this._htmlTables.forEach(([urlEnd, divId]) => {
+      this._requestHtmlSummaries(this._flowcellId, urlEnd, divId)
+    })
   }
 
   /**
    * Update tab function, called from the FlowcellTabController
    */
   updateTab () {
-    const htmlTables = [[`flowcell-run-basecalled-summary-html`, `#flowcell-run-basecalled-summary-html-div`], [`run-summaries-html`, `#run-summaries-div`]]
     this._dataTableObj ? this._dataTableObj.ajax.reload(null, false) : this._drawMinknowMessagesTable(this._flowcellId)
-    htmlTables.forEach(([urlEnd, divId]) => {
+    this._htmlTables.forEach(([urlEnd, divId]) => {
       this._requestHtmlSummaries(this._flowcellId, urlEnd, divId)
     })
   }
