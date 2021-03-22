@@ -1,0 +1,136 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reachback report</title>
+    <meta name="reachback report" content="Report example">
+</head>
+<body>
+    <div id="date">{% now "jS F Y H:i" %}</div>
+    <article id="report">
+        <h4 id="report-title"> Report for run {{ report_data.run_id }} generated {% now "jS F Y H:i" %} </h4>
+        <section id="run-basecalled-metadata">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Run  date</th>
+                            <th>Run  duration</th>
+                            <th>Read Count</th>
+                            <th>Yield</th>
+                            <th>Reads classified</th>
+                            <th>Reads Unclassified</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>{{ report_data.run_date }}</td>
+                        <td>{{ report_data.run_duration }}</td>
+                        <td>{{ report_data.read_count | intcomma}}</td>
+                        <td>{{ report_data.yield | intcomma }}</td>
+                        <td>{{ report_data.classified | intcomma}} ({{ report_data.percent_classified }}%)</td>
+                        <td>{{ report_data.unclassified | intcomma}} ({{ report_data.percent_unclassified }}%)</td>
+                    </tr>
+                    </tbody>
+                </table>
+            <div style="height: 2rem"></div>
+                {% if report_data.liveEventSummaryHTML %} }}
+                    <h5 style="text-decoration: underline"> Live minKNOW data capture summaries for each run.</h5>
+                    {{ report_data.liveEventSummaryHTML  | safe }}
+                {% endif %}
+                {% if report_data.basecalledSummaryHTML %}
+                    <h5 style="text-decoration: underline">Live base-called data summaries for each run</h5>
+                    {{ report_data.basecalledSummaryHTML  | safe }}
+                {% endif %}
+        </section>
+
+    </article>
+    <article id="metagenomics">
+        <h4 class="new-page">Metagenomics summaries for {{ report_data.run_id}}</h4>
+        <section id="metagenomics-output-table">
+            {{ report_data.alertTableHtml  | safe }}
+        </section>
+        {#        centered on page #}
+        <section id="species-breakdown-donut">
+            <h5>Composition of the top 10 species in the sample.</h5>
+            {{ report_data.donutSVG  | safe }}
+        </section>
+        {# table beneath #}
+        <section>
+            {{ report_data.donutTable  | safe }}
+        </section>
+    </article>
+    {% if report_data.alignment_data %}
+        <article>
+            <h4 class="new-page">Alignment Data reports</h4>
+            {{ report_data.perGenomeSGV | safe }}
+            {{ report_data.perGenomeRL | safe }}
+            <div style="height: 10px"></div>
+            <h5> Barcode Coverage on each chromosome.</h5>
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Chromosome Name</th>
+                        <th>Barcode</th>
+                        <th>Coverage</th>
+                        <th># Aligned</th>
+                        <th>Yield</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for summary_cov in report_data.alignment_values.values %}
+                    <tr>
+                        <td>
+                            {{ summary_cov.chromosome_name }}
+                        </td>
+                        <td>
+                            {{ summary_cov.barcode_name }}
+                        </td>
+                        <td>
+                            {{ summary_cov.coverage }}
+                        </td>
+                        <td>
+                            {{ summary_cov.read_count }}
+                        </td>
+                        <td>
+                            {{ summary_cov.total_yield }}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </article>
+    {% endif %}
+    {% if report_data.cumulativeYield %}
+        <article>
+            <h4 class="new-page">Basecalled Data Summaries</h4>
+            {{ report_data.barcodeProportionReads | safe }}
+            {{ report_data.barcodeClasifiedProportion | safe }}
+            {{ report_data.cumulativeYield | safe }}
+            {{ report_data.cumulativeReadNum | safe }}
+            {{ report_data.histogramsByReadLen | safe }}
+            {{ report_data.histogramReadlength | safe }}
+            {{ report_data.collectHistogramReadLen | safe }}
+            {{ report_data.collectHistogramYieldRL | safe }}
+            {{ report_data.sequencingRate | safe }}
+            {{ report_data.avgReadLen | safe }}
+            {{ report_data.readsPerPoreHeat | safe }}
+            {{ report_data.basesPerPoreHeat | safe }}
+        </article>
+    {% endif %}
+    {% if report_data.yieldOverTime %}
+        <article>
+            <h4 class="new-page">Live MinKNOW Run Summaries</h4>
+            {{ report_data.yieldOverTime | safe }}
+            {{ report_data.poreStatesChart | safe }}
+            {{ report_data.liveHistogramChart | safe }}
+            {{ report_data.liveStrand | safe }}
+            {{ report_data.liveOccupancy | safe }}
+            {{ report_data.liveTemperature | safe }}
+            {{ report_data.liveVoltage | safe }}
+        </article>
+    {% endif %}
+
+
+</body>
+</html>
