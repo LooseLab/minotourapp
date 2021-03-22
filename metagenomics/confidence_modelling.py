@@ -98,7 +98,6 @@ def grammy_fit(classifications, init, draws, species_number, c_all, tolerance=10
     z = np.zeros((len(classifications), species_number))
     while err > tolerance:
         for i, classification in enumerate(classifications):
-            print(classification)
             class_prob = c_all[:, classification]
             # todo check with michael what kr, kp, ki represent
             kr = class_prob * init
