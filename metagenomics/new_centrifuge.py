@@ -3,7 +3,6 @@
 
 import os
 import subprocess
-import sys
 from collections import defaultdict
 from io import StringIO
 from itertools import combinations
@@ -17,16 +16,21 @@ from ete3 import NCBITaxa
 
 from metagenomics.centrifuge_validation import (
     separate_target_cent_output,
-    create_mapping_result_objects,
     fetch_concat_reference_path,
     map_target_reads,
     save_mapping_results,
 )
-from metagenomics.confidence_modelling import generate_c_all, generate_c_all_values, grammy_fit
+from metagenomics.confidence_modelling import (
+    generate_c_all,
+    generate_c_all_values,
+    grammy_fit,
+)
 from metagenomics.models import (
     CentrifugeOutput,
     Metadata,
     DonutData,
+    MappingTarget,
+    EstimatedAbundance,
 )
 from metagenomics.utils import (
     convert_species_to_subspecies,
@@ -90,7 +94,7 @@ def run_centrifuge(flowcell_job_id, streamed_reads=None):
         read_count = fasta_df_barcode.shape[0]
     if fasta_df_barcode.empty:
         return pd.DataFrame(), None, None, None, None, 0, 0
-    print("Flowcell id: {} - number of reads found {}".format(flowcell.id, read_count))
+    logger.debug("Flowcell id: {} - number of reads found {}".format(flowcell.id, read_count))
     # Create a fastq string to pass to Centrifuge
     fasta_df_barcode["fasta"] = (
         ">read_id="
@@ -101,7 +105,7 @@ def run_centrifuge(flowcell_job_id, streamed_reads=None):
         + fasta_df_barcode["sequence"]
     )
     fastqs_data = "\n".join(list(fasta_df_barcode["fasta"]))
-    print("Flowcell id: {} - Loading index and Centrifuging".format(flowcell.id))
+    logger.info("Flowcell id: {} - Loading index and Centrifuging".format(flowcell.id))
     # Write the generated fastq file to stdin, passing it to the command
     # Use Popen to run the metagenomics command
     # The path to the metagenomics executable
@@ -119,7 +123,7 @@ def run_centrifuge(flowcell_job_id, streamed_reads=None):
             stderr=subprocess.PIPE,
         ).communicate(input=str.encode(fastqs_data))
     except subprocess.SubprocessError as e:
-        print(f"{e}, running with standard niceness index.")
+        logger.warning(f"{e}, running with standard niceness index.")
         out, err = subprocess.Popen(
             cmd.split(),
             stdout=subprocess.PIPE,
@@ -127,21 +131,19 @@ def run_centrifuge(flowcell_job_id, streamed_reads=None):
             stderr=subprocess.PIPE,
         ).communicate(input=str.encode(fastqs_data))
     # The standard error
-    if err:
-        print("Flowcell id: {} - Centrifuge error!! {}".format(flowcell.id, err))
     # out is a bytestring so it needs decoding
     if not out:
-        print(
+        logger.info(
             "Flowcell id: {} - No reads found or no metagenomics output."
             " Check above for error".format(flowcell.id)
         )
         task.running = False
         task.save()
-        sys.exit(0)
+        return None
     centrifuge_output = out.decode()
     # total number of lines of metagenomics output dealt with
     total_centrifuge_output = centrifuge_output.count("\n") - 1
-    print(
+    logger.info(
         "Flowcell id: {} - number of metagenomics output lines is {}".format(
             flowcell.id, total_centrifuge_output
         )
@@ -391,7 +393,6 @@ def calculate_lineages_df(ncbi, df, tax_rank_filter, flowcell):
     for series in ["subspecies", "strain", "subStrainSpecies"]:
         if series not in lineages_df.keys():
             lineages_df[series] = np.NaN
-    print("Flowcell id: {} - Determining Subspecies".format(flowcell.id))
     # create new additional subspecies column, from strains column which has subspecies above it in taxa level
     lineages_df["subStrainSpecies"] = lineages_df["strain"].map(
         convert_species_to_subspecies
@@ -426,11 +427,8 @@ def calculate_donut_data(df, flowcell, tax_rank_filter):
 
     """
     # Merge the lineages dataframe onto the metagenomics output dataframe so each species has it's lineage
-    print(df.keys())
     if "classy" in df.keys():
         df.rename(columns={"classy": "class"}, inplace=True)
-    print(df.keys())
-    print(df.head())
     data_df = df
     data_df.fillna("Unclassified", inplace=True)
     # Set the index to a multi index of all 7 taxonomic ranks
@@ -463,7 +461,6 @@ def calculate_donut_data(df, flowcell, tax_rank_filter):
     donut_df.index.name = "name"
     # Reset the index
     donut_df.reset_index(inplace=True)
-
     logger.info(
         "Flowcell id: {} - Bulk inserting new species donut data".format(flowcell.id)
     )
@@ -521,7 +518,6 @@ def process_centrifuge_barcode_data(df, barcode_df, task, tax_rank_filter):
     cent_to_create_df = pd.merge(
         df, lineages_df, how="inner", left_on="tax_id", right_index=True,
     )
-    print("Merged in lineages")
     cent_to_create_df["task"] = task
     cent_to_create_df = cent_to_create_df[cent_to_create_df["barcode_name"] != "No"]
     return cent_to_create_df
@@ -747,15 +743,14 @@ def update_metadata_and_task(
     task.read_count = task.read_count + read_count
     # Save the new task values
     task.save()
-    print(
+    logger.debug(
         "Flowcell id: {} - New last_read_id is - {}".format(flowcell.id, task.last_read)
     )
-    print(
+    logger.debug(
         "Flowcell id: {} - Total CentOut lines - {}".format(
             flowcell.id, total_centrifuge_output
         )
     )
-    print("Flowcell id: {} - Finished!".format(flowcell.id))
 
 
 def get_all_reads_that_have_targets(df, target_read_ids, task):
@@ -779,7 +774,11 @@ def get_all_reads_that_have_targets(df, target_read_ids, task):
     all_classifcation_targets_df = (
         df.reset_index().set_index("read_id").loc[target_read_ids]
     )
-    targets = (261594, 1491, 632, 263)
+    targets = (
+        MappingTarget.objects.filter(target_set=task.target_set)
+        .values_list("tax_id", flat=True)
+        .distinct()
+    )
     class_number = 0
     classification_converter = {}
     for x in range(1, len(targets) + 1):
@@ -819,11 +818,39 @@ def set_classification_number(df, classification_num_series, unclassed_number):
         The core centrifuge dataframe, with the classification series dataframe on it
     """
     df = df.reset_index().set_index("read_id")
-    df["classification_number"] = classification_num_series
-    df["classification_number"] = df["classification_number"].fillna(unclassed_number)
-    df["classification_number"] = df["classification_number"].astype(int)
+    if not classification_num_series.empty:
+        df["classification_number"] = classification_num_series
+        df["classification_number"] = df["classification_number"].fillna(
+            unclassed_number
+        )
+        df["classification_number"] = df["classification_number"].astype(int)
+    else:
+        df["classification_number"] = unclassed_number
+        df["classification_number"] = df["classification_number"].astype(int)
     df = df.reset_index().set_index("tax_id")
     return df
+
+
+def save_abundances(tax_id_2_prob, names, task):
+    """
+    Save the abundances by tax_id
+    Parameters
+    ----------
+    tax_id_2_prob: dict
+        Dictionary keyed tax_id to estimated abundance value
+    names: dict
+        tax_ids keyed to names
+
+    Returns
+    -------
+    None
+    """
+    for k, v in tax_id_2_prob.items():
+        orm, created = EstimatedAbundance.objects.get_or_create(
+            tax_id=k, task=task, name=names[k]
+        )
+        orm.abundance = v
+        orm.save()
 
 
 @app.task
@@ -840,7 +867,7 @@ def run_centrifuge_pipeline(flowcell_job_id, streamed_reads=None):
     -------
 
     """
-    # flowcell_job_id = 341
+    # flowcell_job_id = 370
     # streamed_reads = None
     tax_rank_filter = [
         "superkingdom",
@@ -862,9 +889,9 @@ def run_centrifuge_pipeline(flowcell_job_id, streamed_reads=None):
         reads_unclassified,
     ) = run_centrifuge(flowcell_job_id, streamed_reads)
 
-    # if df.empty:
-    #     logger.info("No Centrifuge output, skipping iteration...")
-    #     return
+    if df.empty:
+        logger.info("No Centrifuge output, skipping iteration...")
+        return
     df, task, barcodes = process_centrifuge_output(df, task)
     (
         all_target_reads_class_series,
@@ -879,21 +906,43 @@ def run_centrifuge_pipeline(flowcell_job_id, streamed_reads=None):
         targets, classification_converter, c_all_probabilities_series
     )
     # todo apparently p_true is a garbo approximation of a starting point so that's something worth noting
-    p_true = np.random.default_rng().dirichlet(size=1, alpha=[1]*len(targets))
-    sizes = np.array([1, 3, 5, 7])
-    p_true = p_true * (sizes/(np.sum(p_true*sizes)))
-    prob = grammy_fit(df["classification_number"].values, init=p_true, draws=read_count, species_number=len(targets),
-                      c_all=c_all)
+    # p_true = np.random.default_rng().dirichlet(size=1, alpha=[1]*len(targets))
+    # sizes = np.array([1, 3])
+    # p_true = p_true * (sizes/(np.sum(p_true*sizes)))
+    prob = grammy_fit(
+        df["classification_number"].values,
+        init=1,
+        draws=read_count,
+        species_number=len(targets),
+        c_all=c_all,
+    )
+    # assign probable abundances to tax_ids (is this totally made up???)
+    order = list(df["classification_number"].unique())
+    order.remove(unclassed_number)
+    tax_id2prob_index = {v: k for k, v in classification_converter.items()}
+    taxId2prob = {tax_id2prob_index[ordy][0]: prob[i] for i, ordy in enumerate(order)}
+    names = (
+        df.loc[df.index.isin(targets)]
+        .loc[~df.loc[df.index.isin(targets)].index.duplicated()]["name"]
+        .to_dict()
+    )
+    save_abundances(taxId2prob, names, task)
     barcode_df, task = barcode_output_calculations(df, task)
     df = process_centrifuge_barcode_data(df, barcode_df, task, tax_rank_filter)
     to_save_df, classified_per_barcode, iteration_count = output_aggregator(
         task, df, False
     )
     save_analyses_output_in_db(
-        to_save_df, False, task, iteration_count, classified_per_barcode
+        to_save_df,
+        task=task,
+        iteration_count=iteration_count,
+        classed_per_barcode=classified_per_barcode,
+        donut=False,
     )
     # ## mapping section
-    target_region_df = create_mapping_result_objects(barcodes, task)
+    target_region_df = pd.DataFrame.from_records(
+        MappingTarget.objects.filter(target_set=task.target_set).values()
+    )
     path_to_reference = fetch_concat_reference_path(task)
     if not targets_df.empty:
         map_output_df = map_target_reads(
@@ -901,7 +950,11 @@ def run_centrifuge_pipeline(flowcell_job_id, streamed_reads=None):
         )
         if not map_output_df.empty:
             map_output_df.apply(save_mapping_results, axis=1, args=(task,))
-
+            a = map_output_df.groupby("tax_id")[
+                ["num_matches", "sum_unique", "num_mapped", "num_red_reads"]
+            ].agg("sum").reset_index()
+            a["name_y"] = a["tax_id"].map(map_output_df.set_index("tax_id")["name_y"].to_dict())
+            a.apply(save_mapping_results, axis=1, args=(task,))
     # #####  donut chart calculations
     donut_df = calculate_donut_data(df, task.flowcell, tax_rank_filter)
     to_save_df, classified_per_barcode, iteration_count = output_aggregator(
