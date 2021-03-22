@@ -41,6 +41,9 @@
         "MessageView": "writable",
         "d3": "readonly",
         "LiveMinKnowController": "readonly",
-        "SummaryTabController": "readonly"
+        "SummaryTabController": "readonly",
+        "flowcellController": "readonly",
+        "flowcellTabController": "readonly",
+        "MetagenomicsController": "readonly"
     }
 }
