@@ -27,6 +27,7 @@ class AlignmentController {
     // this._requestMappedChromosomes(flowcellId)
     // this._drawPafSummaryTable(flowcellId)
     this._createColumnCharts()
+    this._fetchChromosomeInGenomeCoverageData(flowcellId)
     this._addListenerToResetButton()
     this._interval = setInterval(this._reloadPageData, 45000, flowcellId, this)
     $(window).on(`unload`, function () {
