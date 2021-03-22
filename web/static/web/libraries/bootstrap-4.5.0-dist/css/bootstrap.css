@@ -10255,7 +10255,7 @@ a.text-dark:hover, a.text-dark:focus {
   }
   .table td,
   .table th {
-    background-color: #fff !important;
+    background-color: #fff;
   }
   .table-bordered th,
   .table-bordered td {
