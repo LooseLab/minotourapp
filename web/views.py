@@ -8,11 +8,9 @@ from django.shortcuts import redirect, render
 from rest_framework.authtoken.models import Token
 
 from communication.models import Message
-from metagenomics.models import CentrifugeOutput
 from minknow_data.models import MinionRunStats, Run, Flowcell
 from minotourapp.utils import get_env_variable
-from reads.models import (FastqRead, JobMaster, JobType,
-                          UserOptions)
+from reads.models import (FastqRead, UserOptions)
 from reads.tasks.redis_tasks_functions import split_flowcell
 from web.forms import SignUpForm, UserOptionsForm
 from web.utils import get_run_details
@@ -239,10 +237,6 @@ def flowcell_reads_data(request):
 def remotecontrol(request):
     return render(request, "web/remotecontrol.html")
 
-
-
-
-
 @login_required
 def flowcell_run_stats_download(request, pk):
     """
@@ -258,9 +252,7 @@ def flowcell_run_stats_download(request, pk):
 
     """
     flowcell = Flowcell.objects.get(pk=pk)
-
     minionrunstats_list = MinionRunStats.objects.filter(run_id__in=flowcell.runs.all())
-
     runstats_dataframe = pd.DataFrame(list(minionrunstats_list.values()))
     runstats_dataframe = runstats_dataframe.set_index("sample_time")
     runstats_dataframe = runstats_dataframe.drop("created_date", axis=1)
@@ -300,49 +292,8 @@ def flowcell_run_stats_download(request, pk):
         "minKNOW_histogram_values",
     ]
     runstats_dataframe[column_order].to_csv(response)
-
     return response
 
-
-@login_required
-def metagenomics_data_download(request, pk):
-    """
-    Send the Metagenomics data back in CSV format, used by the download button found on the metagenomics tab
-    metagenomics/templates/metagenomics/visualisation.html
-    :param request:
-    :return:
-    """
-    flowcell_id = request.GET.get("flowcellId", 0)
-    flowcell = Flowcell.objects.get(pk=pk)
-    job_type = JobType.objects.get(name="Metagenomics")
-    metagenomics_task = JobMaster.objects.get(flowcell=flowcell, job_type=job_type)
-    centrifuge_df = pd.DataFrame(
-        list(
-            CentrifugeOutput.objects.filter(task=metagenomics_task)
-            .exclude(barcode_name="No")
-            .values()
-        )
-    )
-    centrifuge_df.rename(columns={"classy": "class"}, inplace=True)
-    response = HttpResponse(content_type="text/csv")
-    response[
-        "Content-Disposition"
-    ] = "attachment; filename={}_centrifuge_output.csv".format(flowcell.name)
-    column_order = [
-        "barcode_name",
-        "tax_id",
-        "superkingdom",
-        "phylum",
-        "class",
-        "order",
-        "family",
-        "genus",
-        "species",
-        "num_matches",
-        "proportion_of_classified",
-    ]
-    centrifuge_df[column_order].to_csv(response)
-    return response
 
 
 def flowcell_manager(request):
