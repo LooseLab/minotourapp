@@ -1,11 +1,9 @@
 """contains utility functions for the  centrifuge.py file """
-from collections import defaultdict
 
 import numpy as np
 import pandas as pd
-from ete3 import NCBITaxa
 
-from metagenomics.models import MappingResult, CentrifugeOutput, DonutData
+from metagenomics.models import CentrifugeOutput, DonutData, Metadata
 
 
 def convert_species_to_subspecies(name):
@@ -49,42 +47,6 @@ def delete_series(series, df):
         if type(df[s]).__name__ == "Series":
             df = df.drop(s, 1)
     return df
-
-
-def create_mapping_results_objects(barcodes, task, temp_targets):
-    """
-    Create the mapping results objects for the
-    Parameters
-    ----------
-    barcodes: list
-        The list of barcodes that we have to create the mapping results objects for
-    task: reads.models.JobMaster
-        The django ORM task of this metagenomics task
-    temp_targets: list
-        The list of targets we have
-
-    Returns
-    -------
-
-    """
-    ncbi = NCBITaxa()
-    already_created_barcodes = list(
-        MappingResult.objects.filter(task=task)
-        .values_list("barcode_name", flat=True)
-        .distinct()
-    )
-    # for each barcode in the target_df
-    for barcode in barcodes:
-        # Check if barcode has mapping result objects created for it already
-        if barcode not in already_created_barcodes:
-            # for each target, create a Mapping result
-            for target in temp_targets:
-                # get the tax_id for this target
-                tax_id = ncbi.get_name_translator([target])[target][0]
-                mr = MappingResult(
-                    task=task, barcode_name=barcode, species=target, tax_id=tax_id,
-                )
-                mr.save()
 
 
 def divd(row, cl_bar):
@@ -156,96 +118,6 @@ def create_donut_data_models(row, task):
     )
 
 
-def calculate_lineages_df(ncbi, df, tax_rank_filter, flowcell):
-    """
-    Insert any new lineages of species that are in our results into the database, and fetch all that we need for these
-    results
-    :param ncbi: The instance of the NCBITaxa class
-    :param df: The data frame of our results
-    :param tax_rank_filter: The order of our taxonomic ranks
-    :param flowcell: The flowcell object
-    :return lineages_Df: a DataFrame of all the lineages
-    """
-    # create new defaultDict which creates a default dict for missing values
-    lineage_dict = defaultdict(lambda: defaultdict())
-    # Get the current taxIDs in the Dataframe
-    taxid_list = df["tax_id"].values
-    # Check the taxIDs we have in the dataframe, to see if they have matching lineages already.
-    # If not the set subtraction means that unique, lineage-less taxIDs end up in the not_prev_lineaged dict
-    # Get the lineages for these taxIDs in the new metagenomics output,
-    # returns a dict keyed by taxID,
-    # value is listof taxIDS in lineage
-    lineages_taxidlist_dict = ncbi.get_lineage_translator(taxid_list)
-    # loop over the new lineages dictionary, the values of which is a list of taxIDs from root to the organism,
-    # key is a int taxID
-    # TODO rewrite into pandas mapping function, low priority, or magic datafame magic
-    for key, value in lineages_taxidlist_dict.items():
-        # get the ranks of a list of taxID. Returns a dict with keys of the taxID in the list of taxIDS,
-        # value is the rank, i.e root, kingdom etc.
-        # TODO vectorise this sucka
-        lineage_ranked = ncbi.get_rank(value)
-        # a dict where key is taxID, value is the name i.e {562: Escherichia coli}
-        taxid_species_lookup_dict = ncbi.get_taxid_translator(value)
-        # Populate the defaultDict, by looping the lineage ranked dict and adding it where they fit the
-        # condition, the if key==taxID is if they are subspecies or strain
-        lineage_dict[key] = {
-            rank: taxid_species_lookup_dict[tax_id]
-            for tax_id, rank in lineage_ranked.items()
-            if rank in tax_rank_filter or key == tax_id
-        }
-    # create dataframe, the .T means that the dataframe is transposed, so dict key is the series title
-    lineages_df = pd.DataFrame.from_records(lineage_dict).T
-    # rename the no rank column to strain
-    lineages_df = lineages_df.rename(columns={"no rank": "strain"})
-    # if these series don't exist add them and populate with numpy NaN so there's no key errors
-    for series in ["subspecies", "strain", "subStrainSpecies"]:
-        if series not in lineages_df.keys():
-            lineages_df[series] = np.NaN
-    print("Flowcell id: {} - Determining Subspecies".format(flowcell.id))
-    # create new additional subspecies column, from strains column which has subspecies above it in taxa level
-    lineages_df["subStrainSpecies"] = lineages_df["strain"].map(
-        convert_species_to_subspecies
-    )
-    # merge new subspecies column with existing column
-    lineages_df["subspecies"].fillna(
-        lineages_df["subStrainSpecies"], inplace=True
-    )
-    unclassified_row = {key: np.NaN for key in lineages_df.keys()}
-    row = pd.DataFrame(unclassified_row, index=[0])
-    lineages_df = lineages_df.append(row, sort=True)
-    # delete the new subspecies column
-    delete_series(["subStrainSpecies"], lineages_df)
-    return lineages_df
-
-
-def update_targets_no_mapping(row, task):
-    """
-    Update the targets to reflect the number of matches, if we've classified reads that don't map
-
-    :param row: The target dataframe row
-    :param task: The task database model object
-    :return: None
-    """
-    # Get the Mapping result object for each target reads
-    obj = MappingResult.objects.get(
-        tax_id=row["tax_id"], task=task, barcode_name=row["barcode_name"]
-    )
-    # Set the number of matches
-    obj.num_matches = row["num_matches"]
-    # Set the number of unique matches
-    obj.sum_unique = row["sum_unique"]
-    # Get the number of mapped from teh database
-    nm = obj.num_mapped
-    # Get the proportion of classified
-    obj.proportion_of_classified = row["prop_classed"]
-    # Calculate the new proportion of mapped against total reads classified
-    obj.mapped_proportion_of_classified = round(
-        nm / row["num_matches"] * 100, 3
-    )
-    # Save the new values
-    obj.save()
-
-
 def falls_in_region(row, map_df):
     """
     Does this reads mapping fall within or encompass any of the regions we have defined?
@@ -274,3 +146,60 @@ def falls_in_region(row, map_df):
         (map_bool_df[0] & map_bool_df[1]) | (map_bool_df[2] & map_bool_df[3] | map_bool_df[4]), 1, 0
     )
     return map_bool_df["keep"].any()
+
+
+def calculate_proportion_for_table(row, task):
+    """
+
+    Parameters
+    ----------
+    row: pandas.core.series.Series
+        Dataframe row
+    task: reads.models.JobMaster
+        Task orm from the centrifuge job
+    Returns
+    -------
+    list
+    """
+    species_as_percent_of_total = round(row["num_matches"]/Metadata.objects.get(task=task).classified*100, 2)
+    mapped_as_percent_of_classed = round(row["num_mapped"]/row["num_matches"]*100, 2)
+    mapped_to_target_area_percent = round(row["red_reads"]/row["num_mapped"]*100, 2)
+    return [species_as_percent_of_total, mapped_as_percent_of_classed, mapped_to_target_area_percent]
+
+
+def get_metagenomics_data(task, flowcell):
+    """
+    Get metagenomics output for given task
+    Parameters
+    ----------
+    task: reads.models.JobMaster
+        Metagenomics JobMaster
+    flowcell: minknow_data.models.Flowcell
+        Flowcell that run was on
+
+    Returns
+    -------
+    pandas.DataFrame
+    """
+    centrifuge_df = pd.DataFrame(
+        list(
+            CentrifugeOutput.objects.filter(task=task)
+            .exclude(barcode_name="No")
+            .values()
+        )
+    )
+    centrifuge_df.rename(columns={"classy": "class"}, inplace=True)
+    column_order = [
+        "barcode_name",
+        "tax_id",
+        "superkingdom",
+        "phylum",
+        "class",
+        "order",
+        "family",
+        "genus",
+        "species",
+        "num_matches",
+        "proportion_of_classified",
+    ]
+    return centrifuge_df[column_order]
