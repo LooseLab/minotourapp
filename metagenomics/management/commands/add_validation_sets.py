@@ -15,7 +15,8 @@ from reference.models import ReferenceInfo
 
 
 def find_files_of_type(file_or_directory, file_extensions):
-    """Return a list of pathlib.Path of files with chosen extensions
+    """
+    Return a list of pathlib.Path of files with chosen extensions
     Parameters
     ----------
     file_or_directory : str
@@ -142,6 +143,7 @@ class Command(BaseCommand):
             "--private",
             action="store_true",
             help="Whether or not this target_set will be hidden from other users. Default - false.",
+            default=False
         )
 
     def handle(self, *args, **options):
@@ -160,21 +162,16 @@ class Command(BaseCommand):
                 gff_files.extend(find_files_of_type(file_or_directory, endings))
             # remove none from gff_files
             gff_files = list(filter(None.__ne__, gff_files))
-
             user = Token.objects.get(key=options["key"]).user
-
             reference_list = list(
                 ReferenceInfo.objects.filter(Q(private=False) | Q(uploader=user)).values_list("name", flat=True)
             )
-
             set_name_list = list(
                 MappingTarget.objects.all().values_list("target_set", flat=True)
             )
             # Whether to make this target set visible to everyone
             private = options["private"]
-
             for gff_file in gff_files:
-
                 species_name = str(gff_file.stem).partition(".")[0].replace(" ", "_")
                 # If we have a set name provided
                 if options["set"]:
@@ -191,7 +188,6 @@ class Command(BaseCommand):
                         "a reference with"
                         " the exact species name" % species_name
                     )
-
                 # If we do have a reference, proceed
                 else:
                     print(
@@ -199,16 +195,6 @@ class Command(BaseCommand):
                             species_name
                         )
                     )
-
-                    # reference = ReferenceInfo.objects.filter(name=species_name)
-                    #
-                    # if len(reference > 1):
-                    #     for refer in reference:
-                    #         if refer.private
-                    # print(
-                    #     f"\033[1;35;1m setting this Reference - {reference.name}"
-                    # )
-
                 # Check if the set already exists
                 if set_name in set_name_list:
                     print(
@@ -223,9 +209,7 @@ class Command(BaseCommand):
                             set_name, species_name
                         )
                     )
-
                 species_name = species_name.replace("_", " ")
-
                 print(
                     "\033[1;37;1m Processing gff3 file {} with a set name of {}".format(
                         options["gff"], species_name
