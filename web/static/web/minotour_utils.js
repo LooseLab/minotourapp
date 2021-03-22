@@ -348,7 +348,8 @@ function makeAreaPlot (divName, chartTitle, yAxisTitle) {
       range: 1 * 360 * 1000 // set range to last hour of data
     },
     rangeSelector: {
-      enabled: false
+      enabled: true,
+      selected: 2
     },
     yAxis: {
       // max: 512,
@@ -362,8 +363,7 @@ function makeAreaPlot (divName, chartTitle, yAxisTitle) {
       align: `right`,
       verticalAlign: `top`,
       layout: `vertical`,
-      x: 0,
-      y: 50
+      x: 10,
     },
     plotOptions: {
       area: {
