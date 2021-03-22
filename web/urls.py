@@ -25,9 +25,6 @@ urlpatterns = [
         views.flowcell_run_stats_download,
         name="flowcell_run_stats_download"
     ),
-    # Return the netagenomics data in CSV format
-    url(r'^private/flowcells/(?P<pk>[0-9]+)/flowcell_metagenomics_csv/$', views.metagenomics_data_download,
-        name="metagenomics_data_download"),
     url(r'private/remote-control', views.electric_boogaloo, name='remote-control'),
 
 ]
