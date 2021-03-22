@@ -14,7 +14,6 @@ from alignment.tasks_alignment import run_minimap2_alignment
 from metagenomics.models import (
     MappingTarget,
     MappingResult,
-    CentrifugeOutput,
 )
 from metagenomics.utils import falls_in_region
 from minotourapp.utils import get_env_variable
@@ -54,52 +53,6 @@ def separate_target_cent_output(df, task, fasta_df_barcode):
     target_species_df.rename(columns={"barcode_name_x": "barcode_name"}, inplace=True)
     # Get the results into  a dataframe
     return target_species_df
-
-
-def create_mapping_result_objects(barcodes, task):
-    """
-    Create the mapping results objects for the all reads barcode and any barcode that is in this iteration
-    Parameters
-    ----------
-    barcodes: list of str
-        The barcodes that we have identified reads for, plus ALl reads
-    task: reads.models.JobMaster
-        The Django ORM object for this task
-
-    Returns
-    -------
-    pandas.core.frame.DataFrame
-        A dataframe of mapping target information
-
-    """
-    target_regions_df = pd.DataFrame.from_records(
-        MappingTarget.objects.filter(target_set=task.target_set).values()
-    )
-    # If there are no target regions found for the set name
-    if target_regions_df.empty:
-        logger.info(f"No target set pk {task.target_set}")
-        return
-    # Get np array of the target species
-    target_species = target_regions_df["species"].unique()
-    # Get np array of their tax_ids
-    target_tax_id = target_regions_df["tax_id"].unique()
-    # Combine into tuple, one for each
-    target_tuple = list(zip(target_species, target_tax_id))
-    # create one MappingResults entry for each target species
-    for target in target_tuple:
-        for barcode in barcodes:
-            obj, created = MappingResult.objects.get_or_create(
-                task=task,
-                species=target[0],
-                tax_id=target[1],
-                barcode_name=barcode,
-                defaults={"red_reads": 0, "num_mapped": 0},
-            )
-            if created:
-                logger.info(
-                    f"Flowcell id: {task.flowcell.id} - Result Mapping object created for {obj.species}, barcode {barcode}"
-                )
-    return target_regions_df
 
 
 def create_concat_reference_info(task, concat_file_path):
@@ -305,7 +258,7 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
     )
     map_out_df["read_is_red"] = np.where(map_out_df["read_is_red"], 1, 0)
     map_out_df["name"] = map_out_df["name"].str.replace("_", " ")
-    map_out_df = pd.merge(map_out_df, target_df, how="left", on=["read_id", "name"])
+    map_out_df = pd.merge(map_out_df, target_df, how="left", on=["read_id"])
     map_out_df["barcode_name"] = map_out_df["read_id"].map(
         target_df.set_index("read_id")["barcode_name"].loc[
             ~target_df.set_index("read_id")["barcode_name"].index.duplicated()
@@ -317,15 +270,13 @@ def map_target_reads(task, path_to_reference, target_df, to_save_df, target_regi
         "All reads",
         map_out_df["barcode_name"],
     )
-    gb = map_out_df.groupby(["barcode_name", "name"])
-    map_out_df.set_index(["barcode_name", "name"], inplace=True)
+    gb = map_out_df.groupby(["barcode_name", "name_y"])
+    map_out_df.set_index(["barcode_name", "name_y"], inplace=True)
     map_out_df["num_mapped"] = gb.size()
     map_out_df["num_red_reads"] = gb["read_is_red"].sum()
     map_out_df = map_out_df.loc[~map_out_df.index.duplicated()]
     map_out_df.reset_index(inplace=True)
     return map_out_df
-
-    # target_df[]
 
 
 def save_mapping_results(row, task):
@@ -335,17 +286,11 @@ def save_mapping_results(row, task):
     -------
 
     """
-    species_info = CentrifugeOutput.objects.filter(
-        task=task, species=row["name"], barcode_name=row["barcode_name"]
-    ).last()
-    num_matches, sum_unique = (
-        (species_info.num_matches, species_info.sum_unique)
-        if species_info
-        else (row["num_matches"], row["sum_unique"])
-    )
-    species = " ".join(row["name"].split(" ")[:2])
-    map_result = MappingResult.objects.get(
-        task=task, species=species, barcode_name=row["barcode_name"]
+    num_matches, sum_unique = (row["num_matches"], row["sum_unique"])
+    barcode_name = row["barcode_name"] if "barcode_name" in row else "All reads"
+    # species = " ".join(row["name_y"].split(" ")[:2])
+    map_result, created = MappingResult.objects.get_or_create(
+        task=task, tax_id=row["tax_id"], barcode_name=barcode_name, species=row["name_y"]
     )
     map_result.num_mapped += row["num_mapped"]
     map_result.num_matches += num_matches
