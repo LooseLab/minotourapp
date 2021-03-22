@@ -81,7 +81,7 @@ class LiveMinKnowController {
   }
 
   updateTab () {
-    if (!$(`#tab-live-event-data`).hasClass(`loaded`)){
+    if (!$(`#tab-live-event-data`).hasClass(`loaded`) || getSelectedTab() === `metagenomics`){
       this._makePageUnscrollable()
     }
     this.fetchLiveEventsData(this._flowcellId, this)
@@ -122,21 +122,6 @@ class LiveMinKnowController {
       },
       id: `plot-band-2`
     })
-    // this._liveHistogramChart.xAxis[0].removePlotBand(`plot-band-3`)
-    // this._liveHistogramChart.xAxis[0].addPlotBand({
-    //   color: `black`,
-    //   width: 2,
-    //   dashStyle: `longdashdot`,
-    //   value: (Math.floor(this.totalyield / this.readcount / this.datain2)),
-    //   label: {
-    //     text: `Estimated Read Average - ` + Math.round(this.totalyield / this.readcount / 1000 * 100) / 100 + ` K events`,
-    //     align: `left`,
-    //     rotation: 0,
-    //     x: +10,
-    //     y: +30 // Amount of pixels the label will be repositioned according to the alignment.
-    //   },
-    //   id: `plot-band-3`
-    // })
     this._liveHistogramChart.reflow()
   }
 
@@ -194,7 +179,7 @@ class LiveMinKnowController {
   }
 
   fetchLiveEventsData (flowcellId, that) {
-    if (getSelectedTab() !== `live-event-data`) {
+    if (![`live-event-data`, `metagenomics`].includes(getSelectedTab())) {
       return
     }
     that._axiosInstance.get(`/api/v1/minknow/flowcells/${flowcellId}/runstats/${that._lastMinionRunStatsId}`).then(
