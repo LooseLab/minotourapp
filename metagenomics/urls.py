@@ -24,5 +24,11 @@ urlpatterns = [
     url(r'^api/v1/metagenomics/target-sets$', views.get_target_sets),
     # Return the simple alert table data
     url(r'^api/v1/metagenomics/(?P<pk>[0-9]+)/simple-alert/(?P<barcode_name>[0-9A-Za-z-_]+)/$', views.super_simple_alert_list),
-
+    url(
+        r"^api/v1/metagenomics/(?P<pk>[0-9]+)/abundances/$", views.get_abundance_table_html
+    ),
+    url(r"^api/v1/metagenomics/(?P<pk>[0-9]+)/export-report/$", views.export_report),
+    # Return the netagenomics data in CSV format
+    url(r'^api/v1/metagenomics/(?P<pk>[0-9]+)/flowcell_metagenomics_csv/$', views.metagenomics_data_download,
+        name="metagenomics_data_download"),
 ]
