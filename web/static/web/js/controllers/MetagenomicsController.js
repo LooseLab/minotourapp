@@ -290,7 +290,7 @@ class MetagenomicsController {
       let maxReadLenOverTime = ``
       let readsPerPoreHeat = ``
       let basesPerPoreHeat = ``
-      let yieldOverTime = ``
+      let yieldOvertime = ``
       let poreStatesChart = ``
       let liveHistogramChart = ``
       let liveStrand = ``
@@ -306,17 +306,15 @@ class MetagenomicsController {
       console.log(flowcellController.flowcellTabController.tabs)
       if (flowcellController.flowcellTabController.tabs.includes(`live-event-data`)) {
         liveEventSummaryHTML = $(`#run-summaries-div`).html()
-        if (!$(`#chart-yield`).highcharts().series.length) {
-          flowcellController.flowcellTabController.liveEventController.updateTab()
-        }
+        flowcellController.flowcellTabController.liveEventController.updateTab()
         const yieldOT = $(`#chart-yield`).find(`.highcharts-root`)
-        const poreStates = $(`#chart-yield`).find(`.highcharts-root`)
+        const poreStates = $(`#pore-states`).find(`.highcharts-root`)
         const liveHistogram = $(`#live-histogram`).find(`.highcharts-root`)
         const yieldOverTimeWidth = yieldOT.attr(`width`)
         yieldOT.attr(`width`, 950)
         poreStates.attr(`width`, 950)
         liveHistogram.attr(`width`, 950)
-        yieldOverTime = `<img src="data:image/svg+xml,${encodeURIComponent(yieldOT[0].outerHTML)}">`
+        yieldOvertime = `<img src="data:image/svg+xml,${encodeURIComponent(yieldOT[0].outerHTML)}">`
         poreStatesChart = `<img src="data:image/svg+xml,${encodeURIComponent(poreStates[0].outerHTML)}">`
         liveHistogramChart = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString(liveHistogram[0]))}">`
         yieldOT.attr(`width`, yieldOverTimeWidth)
@@ -374,7 +372,7 @@ class MetagenomicsController {
         maxReadLenOverTime,
         readsPerPoreHeat,
         basesPerPoreHeat,
-        yieldOverTime,
+        yieldOvertime,
         poreStatesChart,
         liveHistogramChart,
         liveStrand,
