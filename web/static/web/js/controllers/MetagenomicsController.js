@@ -24,6 +24,8 @@ class MetagenomicsController {
     this._barcodesSet = new Set()
     this._barcodeDivElement = $(`#nav-tabs-meta-barcodes`)
     this._addListenerToRangeSlider()
+    this._addListenerToExportButton()
+    this._addListenerToDownloadButton()
   }
 
   updateTab () {
@@ -35,6 +37,22 @@ class MetagenomicsController {
     this._updateMappingTable(this._flowcellId)
     this._drawSimpleTable(this._flowcellId)
     this._initialiseSankey(this._flowcellId)
+    this._fetchAbundanceTableHTML(this._flowcellId)
+  }
+
+  _fetchAbundanceTableHTML (flowcellId) {
+    /**
+     * Fetch the HTML for the abundance table in the predicted abundances card
+     */
+    this._axiosInstance.get(`/api/v1/metagenomics/${flowcellId}/abundances`).then(
+      response => {
+        $(`#abundance-table`).html(response.data)
+      }
+    ).catch(
+      error => {
+        console.error(error)
+      }
+    )
   }
 
   _addExpandButtonListener () {
@@ -62,7 +80,7 @@ class MetagenomicsController {
     if ($.fn.DataTable.isDataTable(table)) {
       table.DataTable().ajax.reload(null, false)
     } else {
-      // else the databale must be initialised
+      // else the datatable must be initialised
       table.DataTable({
         processing: true,
         serverSide: true,
@@ -108,7 +126,7 @@ class MetagenomicsController {
     // enter your data, returned from pie(countedData, insert a path, set d to data provided by arc function)
     // Update existing donut slices
     slice.attr(`class`, `slice`)
-      .style(`fill`, (d, i) => color(i))
+      .attr(`fill`, (d, i) => color(i))
       .attr(`stroke`, `black`)
       .attr(`stroke-width`, 0.2)
       .attr(`d`, arc).select(`title`)
@@ -117,7 +135,7 @@ class MetagenomicsController {
     slice.enter()
       .insert(`path`)
       .attr(`class`, `slice`)
-      .style(`fill`, (d, i) => color(d.data.label))
+      .attr(`fill`, (d, i) => color(d.data.label))
       .attr(`stroke`, `black`)
       .attr(`stroke-width`, 0.2)
       .attr(`d`, arc).append(`title`)
@@ -167,6 +185,7 @@ class MetagenomicsController {
       // If no extant svg, append a new svg and g element
       svg = d3.select(`.donutContainer`).append(`svg`)
         .attr(`class`, `donut-svg`)
+        .attr(`id`, `donut-svg`)
         .attr(`width`, width)
         .attr(`height`, height)
         .attr(`margin`, `auto`)
@@ -218,6 +237,10 @@ class MetagenomicsController {
     )
   }
 
+  _addListenerToDownloadButton () {
+    $(`.meta-download`).attr(`href`, `/api/v1/metagenomics/${this._flowcellId}/flowcell_metagenomics_csv`)
+  }
+
   _addListenerToRangeSlider () {
     /**
      * Add the on change listener to redraw the charts to the range slider.
@@ -237,6 +260,147 @@ class MetagenomicsController {
       that._drawPie(sortedData, that._pie, that._arc, that._svg)
       const tableData = that._formatTableData(sortedData, that.colour)
       this._drawTables(`rank-table-container`, tableData)
+    })
+  }
+
+  _addListenerToExportButton () {
+    /**
+     * Add listener to export the pdf reachback report to the listener button
+     */
+    const that = this
+    $(`#export-report`).on(`click`, () => {
+      // Gather images
+      const alertTableHtml = $(`#alert-table-complex`).html()
+      const donutSVG = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString(document.getElementById(`donut-svg`)))}">`
+      const donutTable = $(`.rank-table-container`).html()
+      let perGenomeSGV = ``
+      let perGenomeRL = ``
+      let basecalledSummaryHTML = ``
+      let liveEventSummaryHTML = ``
+      let barcodeProportionReads = ``
+      let barcodeClasifiedProportion = ``
+      let cumulativeYield = ``
+      let cumulativeReadNum = ``
+      let histogramsByReadLen = ``
+      let histogramReadlength = ``
+      let collectHistogramReadLen = ``
+      let collectHistogramYieldRL = ``
+      let sequencingRate = ``
+      let avgReadLen = ``
+      let maxReadLenOverTime = ``
+      let readsPerPoreHeat = ``
+      let basesPerPoreHeat = ``
+      let yieldOvertime = ``
+      let poreStatesChart = ``
+      let liveHistogramChart = ``
+      let liveStrand = ``
+      let liveOccupancy = ``
+      let liveTemperature = ``
+      let liveVoltage = ``
+      try {
+        perGenomeSGV = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString($(`#per-genome-cov`).find(`.highcharts-root`)[0]))}">`
+        perGenomeRL = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString($(`#per-genome-avg`).find(`.highcharts-root`)[0]))}">`
+      } catch {
+        console.log(`No mapping data`)
+      }
+      console.log(flowcellController.flowcellTabController.tabs)
+      if (flowcellController.flowcellTabController.tabs.includes(`live-event-data`)) {
+        liveEventSummaryHTML = $(`#run-summaries-div`).html()
+        flowcellController.flowcellTabController.liveEventController.updateTab()
+        const yieldOT = $(`#chart-yield`).find(`.highcharts-root`)
+        const poreStates = $(`#pore-states`).find(`.highcharts-root`)
+        const liveHistogram = $(`#live-histogram`).find(`.highcharts-root`)
+        const yieldOverTimeWidth = yieldOT.attr(`width`)
+        yieldOT.attr(`width`, 950)
+        poreStates.attr(`width`, 950)
+        liveHistogram.attr(`width`, 950)
+        yieldOvertime = `<img src="data:image/svg+xml,${encodeURIComponent(yieldOT[0].outerHTML)}">`
+        poreStatesChart = `<img src="data:image/svg+xml,${encodeURIComponent(poreStates[0].outerHTML)}">`
+        liveHistogramChart = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString(liveHistogram[0]))}">`
+        yieldOT.attr(`width`, yieldOverTimeWidth)
+        poreStates.attr(`width`, yieldOverTimeWidth)
+        liveHistogram.attr(`width`, yieldOverTimeWidth)
+        liveStrand = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString($(`#live-strand`).find(`.highcharts-root`)[0]))}">`
+        liveOccupancy = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString($(`#live-occupancy`).find(`.highcharts-root`)[0]))}">`
+        liveTemperature = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString($(`#live-temperature`).find(`.highcharts-root`)[0]))}">`
+        liveVoltage = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString($(`#live-voltage`).find(`.highcharts-root`)[0]))}">`
+      }
+      if (flowcellController.flowcellTabController.tabs.includes(`basecalled-data`)) {
+        const readsHeat = $(`#reads-per-pore`).find(`.highcharts-root`)
+        const basesHeat = $(`#bases-per-pore`).find(`.highcharts-root`)
+        const readsHeatOGWidth = readsHeat.attr(`width`)
+        readsHeat.attr(`width`, 950)
+        basesHeat.attr(`width`, 950)
+        readsPerPoreHeat = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString(readsHeat[0]))}">`
+        basesPerPoreHeat = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString(basesHeat[0]))}">`
+        readsHeat.attr(`width`, readsHeatOGWidth)
+        basesHeat.attr(`width`, readsHeatOGWidth)
+        basecalledSummaryHTML = $(`#flowcell-run-basecalled-summary-html-div`).html()
+        if (flowcellController.flowcellTabController.baseCalledDataController.barcodesList.length > 2) {
+          barcodeProportionReads = `<img src="data:image/svg+xml,${encodeURIComponent($(`#barcode-proportion`).find(`.highcharts-root`)[0].outerHTML)}">`
+          barcodeClasifiedProportion = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString($(`#unclass-pie-proportion`).find(`.highcharts-root`)[0]))}">`
+        }
+        cumulativeYield = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString($(`#cumulative-yield-over-time`).find(`.highcharts-root`)[0]))}">`
+        cumulativeReadNum = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString($(`#cumulative-number-reads-over-time`).find(`.highcharts-root`)[0]))}">`
+        histogramsByReadLen = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString($(`#histogram-bases-sequenced-by-read-length`).find(`.highcharts-root`)[0]))}">`
+        histogramReadlength = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString($(`#histogram-read-lengths`).find(`.highcharts-root`)[0]))}">`
+        collectHistogramReadLen = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString($(`#collect-histogram-bases-sequenced-by-read-length`).find(`.highcharts-root`)[0]))}">`
+        collectHistogramYieldRL = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString($(`#collect-histogram-read-lengths`).find(`.highcharts-root`)[0]))}">`
+        sequencingRate = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString($(`#sequencing-rate`).find(`.highcharts-root`)[0]))}">`
+        avgReadLen = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString($(`#average-read-lengths-over-time`).find(`.highcharts-root`)[0]))}">`
+        maxReadLenOverTime = `<img src="data:image/svg+xml;base64,${btoa(new XMLSerializer().serializeToString($(`#max-read-lengths-over-time`).find(`.highcharts-root`)[0]))}">`
+      }
+
+      const data = {
+        alertTableHtml,
+        donutSVG,
+        donutTable,
+        perGenomeSGV,
+        perGenomeRL,
+        liveEventSummaryHTML,
+        basecalledSummaryHTML,
+        barcodeProportionReads,
+        barcodeClasifiedProportion,
+        cumulativeYield,
+        cumulativeReadNum,
+        histogramsByReadLen,
+        histogramReadlength,
+        collectHistogramReadLen,
+        collectHistogramYieldRL,
+        sequencingRate,
+        avgReadLen,
+        maxReadLenOverTime,
+        readsPerPoreHeat,
+        basesPerPoreHeat,
+        yieldOvertime,
+        poreStatesChart,
+        liveHistogramChart,
+        liveStrand,
+        liveOccupancy,
+        liveTemperature,
+        liveVoltage
+      }
+      that._axiosInstance({
+        url: `/api/v1/metagenomics/${that._flowcellId}/export-report/`,
+        data,
+        method: `post`,
+        Accept: `application/gzip`,
+        'Content-Type': `application/gzip`,
+        responseType: `blob`
+      }).then(
+        response => {
+          const url = window.URL.createObjectURL(new Blob([response.data]))
+          const link = document.createElement(`a`)
+          link.href = url
+          link.setAttribute(`download`, response.headers[`x-file-name`])
+          document.body.appendChild(link)
+          link.click()
+        }
+      ).catch(
+        error => {
+          console.error(error)
+        }
+      )
     })
   }
 
@@ -283,25 +447,18 @@ class MetagenomicsController {
       // }
     })).enter().append(`td`)
     cells = rows.selectAll(`td`)
-    cells.data(row => columns.map(column => ({ column, value: row[column] }))).attr(`class`, (d, i) => columns[i])
+    cells.data(row => columns.map(column => ({ column, value: row[column] }))).attr(`class`, (d, i) => `${columns[i]}`)
       .style(`background-color`, (d, i) => {
       // if the cell contains the key, set the background colour to the rgb value in the data
-        if (typeof d.value === `string`) {
-          if (d.value.includes(`#`)) {
-            return d.value
-          } else {
-          // else set the background to white
-            return `white`
-          }
+        console.log(d)
+        if (d.column === `Key`) {
+          console.log(d.value)
+          return d.value
         }
       })
     // fill the cell with the string by setting the inner html
       .html(d => {
-        if (typeof d.value === `string`) {
-          if (!d.value.includes(`#`)) {
-            return d.value
-          }
-        } else {
+        if (d.column !== `Key`) {
           return d.value
         }
       })
@@ -365,10 +522,10 @@ class MetagenomicsController {
           if (barcode === selectedBarcode) {
             active = `active`
           }
-          barcodeTabElements.push(`<li class="barcode-meta-tab nav-item ${tabLevel}"><a class="nav-link ${active}" id="meta-barcode-link">${barcode}</a></li>`)
+          barcodeTabElements.push(`<li class="barcode-meta-tab nav-item ${tabLevel}"><a class="nav-link ${active} meta-barcode-link">${barcode}</a></li>`)
         })
         this._barcodeDivElement.html(barcodeTabElements)
-        $(`#meta-barcode-link`).on(`click`, () => {
+        $(`.meta-barcode-link`).on(`click`, () => {
           const clickedBarcode = event.srcElement.innerText
           setSelectedBarcode(clickedBarcode, `Metagenomics`)
           this.updateTab()
@@ -489,8 +646,6 @@ class MetagenomicsController {
   }
 
   _drawSuperSimpleTable (flowcellId) {
-    console.log(`hello`)
-    // declare variables at scope start
     let table
     let thead
     let tbody
@@ -693,7 +848,7 @@ class MetagenomicsController {
             // a nice pastely red colour
             return `rgba(255, 0, 0, 0.7)`
           }
-        }).html(
+        }).style(`text-align`, `center`).html(
           d => {
             // set the validation species html to not have a underscore
             d3.select(`#Validation species`).html(`Validation species`)
