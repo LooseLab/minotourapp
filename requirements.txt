@@ -23,3 +23,4 @@ numba
 pyfastx
 mappy
 wheel
+WeasyPrint
