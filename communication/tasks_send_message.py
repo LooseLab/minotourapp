@@ -388,7 +388,7 @@ def check_artic_run_until(condition):
 
 def check_artic_has_fired(condition):
     """
-    check if a barocde in the artic task has gone through the pipelin
+    check if a barocde in the artic task has gone through the pipeline
     Parameters
     ----------
     condition: communication.models.NotificationConditions

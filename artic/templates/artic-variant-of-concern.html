@@ -4,16 +4,18 @@
         <div class="card-header">
             <h4 class="card-title" id="coverage-card-title">
                 <i class="fas fa-chart-bar"></i>
-                Variant of Concern Report for {{ artic_barcode_VoC.sample_id }}
+                Variant of Concern Report for {{ artic_barcode_VoC.sample_id }}{{ artic_barcode_VoC.hidden_html_string3 }}
             </h4>
 
         </div>
+
         <div class="card-body">
-            <div class="row"><p>If a genome is analysed, this will provide a report for the variant or variants found based on
+            <div class="row">If a genome is analysed, this will provide a report for the variant or variants found based on
                         current PHE Variant Definitions. This analysis will report all possible VoCs and caution should
-                        be taken in interpretation of low coverage/quality genomes.</p></div>
-            <div class="row"><p>Reported VuI/VoCs:</p>{{ artic_barcode_VoC.hidden_html_string2 | safe }}</div>
-            <div class="row"><p>Observed mutations:</p>{{ artic_barcode_VoC.hidden_html_string | safe }}</div>
+                        be taken in interpretation of low coverage/quality genomes.</div>
+    <br>
+            <div class="row">Reported VuI/VoCs:</div><div class="row">{{ artic_barcode_VoC.hidden_html_string2 | safe }}</div>
+            <div class="row">Observed mutations:</div><div class="row">{{ artic_barcode_VoC.hidden_html_string | safe }}</div>
             <div class="row">
                 <div class="col-md-12">
 
@@ -54,14 +56,14 @@
                                         {% endfor %}
                                     </h6>
 
-                                    <p class="card-text">
-                                    <p><i>Description:</i></p>
-                                    <p>{{ key.sample_typing_summary.description }}</p>
-                                    <p><i>Information Sources</i>
+
+                                    <div><i>Description:</i></div>
+                                    <div>{{ key.sample_typing_summary.description }}</div>
+                                    <div><i>Information Sources</i>
                                         {% for info_source in key.sample_typing_summary.information_sources %}
                                             <a href="{{ info_source }}" target="blank"
                                                class="card-link">Source_{{ forloop.counter }}</a>
-                                        {% endfor %}</p>
+                                        {% endfor %}</div>
 
                                     <br>
                                     <h6>Variant Calls Detected:</h6>
@@ -101,49 +103,52 @@
                                         </tbody>
                                     </table>
 
-                                    <p>The observed calls were:</p>
+                                    <div class="row">The observed calls were:</div>
+                                <div class="row">
                                     {% for class,value in  key.sample_typing_result.master.calls.items %}
                                         {{ class }}: {{ value }}
                                     {% endfor %}
-                                    <br>
+                                </div>
 
-                                    <p>Classification rules:</p>
+                                    <div class="row">Classification rules:</div>
                                     {% for class,value in  key.sample_typing_result.master.calling_definition.items %}
-                                        <p>{{ class }}
+                                        <div class="row">{{ class }}
                                             {% for label,threshold in value.items %}
                                                 {{ label }}: {{ threshold }}
                                             {% endfor %}
-                                        </p>
+
+                                        </div>
                                     {% endfor %}
+
                                     {% if key.sample_typing_result.alt_probable %}
-                                        <p>This VoC may be classified as alt probable - in which case the observed calls were:</p>
+                                        <div class="row">This VoC may be classified as alt probable - in which case the observed calls were:</div>
                                         {% for class,value in  key.sample_typing_result.alt_probable.calls.items %}
-                                        {{ class }}: {{ value }}
+                                        <div class="row">{{ class }}: {{ value }}</div>
                                         {% endfor %}
                                         <br>
-                                        <p>Classification rules:</p>
+                                        <div class="row">Classification rules:</div>
                                         {% for class,value in  key.sample_typing_result.alt_probable.calling_definition.items %}
-                                        <p>{{ class }}
+                                        <div class="row">{{ class }}
                                             {% for label,threshold in value.items %}
                                                 {{ label }}: {{ threshold }}
                                             {% endfor %}
-                                        </p>
+                                        </div>
                                     {% endfor %}
 
                                         {% endif %}
                                     {% if key.sample_typing_result.alt_low_qc %}
-                                        <p>This VoC may be classified as alt low qc - in which case the observed calls were:</p>
+                                        <div class="row">This VoC may be classified as alt low qc - in which case the observed calls were:</div>
                                         {% for class,value in  key.sample_typing_result.alt_low_qc.calls.items %}
-                                        {{ class }}: {{ value }}
+                                            <div class="row">{{ class }}: {{ value }}</div>
                                         {% endfor %}
                                         <br>
-                                        <p>Classification rules:</p>
+                                        <div class="row">Classification rules:</div>
                                         {% for class,value in  key.sample_typing_result.alt_low_qc.calling_definition.items %}
-                                        <p>{{ class }}
+                                        <div class="row">{{ class }}
                                             {% for label,threshold in value.items %}
                                                 {{ label }}: {{ threshold }}
                                             {% endfor %}
-                                        </p>
+                                        </div>
                                     {% endfor %}
                                         {% endif %}
 
@@ -151,23 +156,23 @@
 
 
 
-                                    <p><i>Acknowledgements:</i></p>
+                                    <div class="row"><i>Acknowledgements:</i></div>
                                     {% for acks in key.sample_typing_summary.acknowledgements %}
-                                        {{ acks }}
+                                        <div class="row">{{ acks }}</div>
                                     {% endfor %}
-                                    <p><i>Curators:</i>
+                                    <div class="row"><i>Curators:</i>
                                         {% for curator in key.sample_typing_summary.curators %}
                                             {{ curator }}
-                                        {% endfor %}</p>
+                                        {% endfor %}</div>
 
-                                    <p>Unique-ID: {{ key.sample_typing_summary.unique_id }}</p>
+                                    <div class="row">Unique-ID: {{ key.sample_typing_summary.unique_id }}</div>
 
 
 
-                    <p>The complete list of variants of concern scanned included:</p>
-                    {% for key in artic_barcode_VoC.typing %}
+                    <div class="row">The complete list of variants of concern scanned included:</div>
+                    <div class="row">{% for key in artic_barcode_VoC.typing %}
                         {{ key.sample_typing_summary.phe_label }}
-                    {% endfor %}
+                    {% endfor %}</div>
 
 
 

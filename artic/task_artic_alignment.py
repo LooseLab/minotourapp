@@ -164,6 +164,7 @@ def run_variant_command(base_results_directory, barcode_name):
     #ToDo: Update variants to the latest version by running a git pull
     re_gzip = False
     os.chdir(f"{base_results_directory}/{barcode_name}")
+    MT_VoC_PATH = get_env_variable("MT_VoC_PATH")
     if (
         not Path(f"{barcode_name}.muscle.out.fasta").exists()
         and Path(f"{barcode_name}.muscle.out.fasta.gz").exists()
@@ -176,7 +177,7 @@ def run_variant_command(base_results_directory, barcode_name):
     cmd = [
         "bash",
         "-c",
-        f"source /Users/matt/.miniconda3/etc/profile.d/conda.sh && conda activate artic && aln2type json_files csv_files {barcode_name}_ARTIC_medaka.csv MN908947.3  {barcode_name}.muscle.out.fasta ../../../../variants/variant_definitions/variant_yaml/*.yml",
+        f"aln2type json_files csv_files {barcode_name}_ARTIC_medaka.csv MN908947.3  {barcode_name}.muscle.out.fasta {MT_VoC_PATH}/variant_yaml/*.yml",
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -206,6 +207,7 @@ def run_pangolin_command(base_results_directory, barcode_name):
     # jm = JobMaster.objects.get(pk=job_master_pk)
     re_gzip = False
     os.chdir(f"{base_results_directory}/{barcode_name}")
+    MT_CONDA_PREFIX=get_env_variable("MT_CONDA_PREFIX")
     if (
         not Path(f"{barcode_name}.consensus.fasta").exists()
         and Path(f"{barcode_name}.consensus.fasta.gz").exists()
@@ -223,7 +225,7 @@ def run_pangolin_command(base_results_directory, barcode_name):
     cmd = [
         "bash",
         "-c",
-        f"source /Users/matt/.miniconda3/etc/profile.d/conda.sh && conda activate pangolin && pangolin {barcode_name}.consensus.fasta",
+        f"source /{MT_CONDA_PREFIX} && conda activate pangolin && pangolin {barcode_name}.consensus.fasta",
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -296,6 +298,7 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     jm = JobMaster.objects.get(pk=job_master_pk)
     jm.running = True
     jm.save()
+    MT_CONDA_PREFIX=get_env_variable("MT_CONDA_PREFIX")
     # Path to barcode fastq
     fastq_path = f"{base_results_directory}/{barcode_name}/{barcode_name}.fastq"
     if not Path(fastq_path).exists():
@@ -307,7 +310,7 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     cmd = [
         "bash",
         "-c",
-        f"source /Users/matt/.miniconda3/etc/profile.d/conda.sh && conda activate artic && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V3 {barcode_name}",
+        f"source {MT_CONDA_PREFIX} && conda activate artic && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V3 {barcode_name}",
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()

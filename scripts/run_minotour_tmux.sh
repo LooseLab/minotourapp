@@ -53,7 +53,7 @@ tmux split-window -h \;
 #tmux send-keys "cd .." C-m \;
 tmux send-keys "source $PYTHON_VENV" C-m \;
 tmux send-keys "source $ENVIRONMENT_FILE" C-m \;
-tmux send-keys "celery beat -A minotourapp -l info" C-m \;
+tmux send-keys "celery -A minotourapp beat -l info" C-m \;
 tmux split-window -v \;
 tmux send-keys "mtlog | grep align" C-m \;
 tmux new-window -a -n mysql \;

@@ -428,6 +428,11 @@ def get_artic_voc_html(request):
         html_string = df.to_html(classes="table table-sm table-responsive", border=0, index=False, justify="left")
         data["hidden_html_string2"] = html_string
 
+    #vcf_path = artic_results_path / selected_barcode / f"{selected_barcode}.annotated.vcf"
+
+    #if vcf_path.exists():
+    #    data["hidden_html_string3"] = "found it"
+
 
     return render(
         request,
