@@ -388,7 +388,7 @@ def calculate_lineages_df(ncbi, df, tax_rank_filter, flowcell):
     # create dataframe, the .T means that the dataframe is transposed, so dict key is the series title
     lineages_df = pd.DataFrame.from_records(lineage_dict).T
     # rename the no rank column to strain
-    lineages_df = lineages_df.rename(columns={"no rank": "strain"})
+    # lineages_df = lineages_df.rename(columns={"no rank": "strain"})
     # if these series don't exist add them and populate with numpy NaN so there's no key errors
     for series in ["subspecies", "strain", "subStrainSpecies"]:
         if series not in lineages_df.keys():
