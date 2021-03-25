@@ -105,21 +105,32 @@
 
                                     <div class="row">The observed calls were:</div>
                                 <div class="row">
+                                <ul class="list-group list-group-flush">
                                     {% for class,value in  key.sample_typing_result.master.calls.items %}
-                                        {{ class }}: {{ value }}
+                                       <li class="list-group-item"> {{ class }}: {{ value }}</li>
                                     {% endfor %}
+                                </ul>
                                 </div>
 
                                     <div class="row">Classification rules:</div>
+                                    <div class="container-flex">
+                                    <div class="row">
                                     {% for class,value in  key.sample_typing_result.master.calling_definition.items %}
-                                        <div class="row">{{ class }}
+
+                                        <div class="col-sm">
+                                            {{ class }}
+                                        <ul class="list-group list-group-flush">
                                             {% for label,threshold in value.items %}
-                                                {{ label }}: {{ threshold }}
+                                                <li class="list-group-item"> {{ label }}: {{ threshold }} </li>
                                             {% endfor %}
-
+                                        </ul>
                                         </div>
-                                    {% endfor %}
 
+
+
+                                    {% endfor %}
+                                    </div>
+                                    </div>
                                     {% if key.sample_typing_result.alt_probable %}
                                         <div class="row">This VoC may be classified as alt probable - in which case the observed calls were:</div>
                                         {% for class,value in  key.sample_typing_result.alt_probable.calls.items %}
@@ -155,7 +166,7 @@
 
 
 
-
+                      <hr>
                                     <div class="row"><i>Acknowledgements:</i></div>
                                     {% for acks in key.sample_typing_summary.acknowledgements %}
                                         <div class="row">{{ acks }}</div>
@@ -165,8 +176,8 @@
                                             {{ curator }}
                                         {% endfor %}</div>
 
-                                    <div class="row">Unique-ID: {{ key.sample_typing_summary.unique_id }}</div>
 
+                   <hr>
 
 
                     <div class="row">The complete list of variants of concern scanned included:</div>

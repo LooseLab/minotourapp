@@ -11,6 +11,9 @@ from io import StringIO
 from shutil import copy, rmtree
 
 from celery.utils.log import get_task_logger
+
+from celery.schedules import crontab
+
 from django.conf import settings
 
 from alignment.models import PafSummaryCov
@@ -25,6 +28,8 @@ from artic.utils import (
     get_amplicon_stats,
     predict_barcode_will_finish,
 )
+from communication.models import NotificationConditions, Message
+
 from minknow_data.models import Flowcell
 from minotourapp.celery import app, MyTask
 from minotourapp.settings import BASE_DIR, STATIC_ROOT
@@ -37,8 +42,39 @@ from reads.models import (
     FastqRead,
 )
 from readuntil.functions_EB import *
+import pandas as pd
+
+from minotourapp.celery import app
 
 logger = get_task_logger(__name__)
+
+
+
+@app.on_after_finalize.connect
+def setup_periodic_tasks(sender, **kwargs):
+    #check for update of VoCs every 24 hours.
+    sender.add_periodic_task(
+        crontab(hour=0, minute=0),
+        #test.s('Happy Mondays!'),
+        Update_VoCs.s(),
+    )
+
+@app.task
+def Update_VoCs():
+    MT_VoC_PATH = get_env_variable("MT_VoC_PATH")
+    if Path(f"{MT_VoC_PATH}").exists():
+        print("VoC Path Found")
+        ##Check if
+        # cloned_repo = Repo.clone(os.path.join("https://github.com/phe-genomics/variant_definitions", Path(f"{MT_VoC_PATH}")))
+        if Path(f"{MT_VoC_PATH}/variant_definitions/").exists():
+            # already cloned so....
+            print("Updating path")
+            repo = Repo(Path(f"{MT_VoC_PATH}/variant_definitions/"))
+            print(repo.remotes.origin.pull())
+            pass
+        else:
+            cloned_repo = Repo.clone_from("https://github.com/phe-genomics/variant_definitions",
+                                          f"{MT_VoC_PATH}/variant_definitions/")
 
 
 def check_afc_values_met(afc, coverage_array, num_amplicons):
@@ -157,9 +193,9 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
             )
 
 @app.task
-def run_variant_command(base_results_directory, barcode_name):
+def run_variant_command(base_results_directory, barcode_name,jm):
     """
-
+    jm: jobmaster
     """
     #ToDo: Update variants to the latest version by running a git pull
     re_gzip = False
@@ -177,7 +213,7 @@ def run_variant_command(base_results_directory, barcode_name):
     cmd = [
         "bash",
         "-c",
-        f"aln2type json_files csv_files {barcode_name}_ARTIC_medaka.csv MN908947.3  {barcode_name}.muscle.out.fasta {MT_VoC_PATH}/variant_yaml/*.yml",
+        f"aln2type json_files csv_files {barcode_name}_ARTIC_medaka.csv MN908947.3  {barcode_name}.muscle.out.fasta {MT_VoC_PATH}/variant_definitions/variant_yaml/*.yml",
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -194,6 +230,28 @@ def run_variant_command(base_results_directory, barcode_name):
         subprocess.Popen(
             ["gzip", "-9", f"{barcode_name}.muscle.out.fasta"]
         ).communicate()
+    try:
+        VoCs_df = pd.read_csv(
+            f"{barcode_name}_ARTIC_medaka.csv"
+        )
+        separator = ", "
+        VoCs = separator.join(VoCs_df['phe-label'].to_list())
+
+        if len(VoCs_df)> 0:
+            m, created = Message.objects.get_or_create(
+                recipient=jm.flowcell.owner,
+                sender=jm.flowcell.owner,
+                #title__startswith=f"Artic pipeline has finished for barcode {['barcode__name']}",
+                flowcell=jm.flowcell,
+                #defaults={
+                #    "title": f"Artic pipeline has finished for barcode {barcode['barcode__name']} at {time}"
+                #},
+                title= f"One or more VoCs - {VoCs} - has been detected on {jm.flowcell.name} on {barcode_name}."
+            )
+
+    except FileNotFoundError as e:
+        VoCs = "None Found"
+        logger.error(e)
     pass
 
 @app.task
@@ -328,7 +386,7 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
 
     # Now run the aln2type artic screen.
 
-    run_variant_command(base_results_directory, barcode_name)
+    run_variant_command(base_results_directory, barcode_name, jm)
 
     run_pangolin_command(base_results_directory, barcode_name)
     # Update the Barcode Metadata to show the task has been run on this barcode
