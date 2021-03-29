@@ -364,11 +364,12 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     # TODO get the barcode from the posix path for the sample name
     logger.info(fastq_path)
     scheme_dir = get_env_variable("MT_ARTIC_SCEHEME_DIR")
+    artic_env = get_env_variable("MT_ARTIC_ENV")
     os.chdir(f"{base_results_directory}/{barcode_name}")
     cmd = [
         "bash",
         "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate artic && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V3 {barcode_name}",
+        f"source {MT_CONDA_PREFIX} && conda activate {artic_env} && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V3 {barcode_name}",
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
