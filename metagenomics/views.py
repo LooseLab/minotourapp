@@ -54,7 +54,6 @@ def export_report(request, pk):
     run = flowcell.runs.first()
     metagenomics_run = True if task else False
     alignment_data = PafSummaryCov.objects.filter(job_master__flowcell_id=pk).exclude(job_master__job_type__id=16).values()
-
     report_info = {
         "run_id": run.name,
         "read_count": run.summary.read_count,
