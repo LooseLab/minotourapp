@@ -39,6 +39,9 @@ class FlowcellTableController {
           window.location.href = `/web/private/${that._linkDestination}/${data.id}`
         })
       },
+      responsive: {
+        details: false
+      },
       order: [[3, `desc`]],
       ajax: {
         url: `/api/v1/reads/flowcells/`,
