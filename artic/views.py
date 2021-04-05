@@ -573,7 +573,7 @@ def get_artic_barcode_metadata_html(request):
             df = pd.read_csv(
                 artic_results_path / selected_barcode / "lineage_report.csv.gz"
             )
-            html_string = df.T.to_html(classes="table table-striped", border=0)
+            html_string = df.T.to_html(classes="table-responsive table-striped", border=0)
             context_dict["hidden_html_string"] = html_string
     return render(
         request,
