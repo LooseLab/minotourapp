@@ -518,6 +518,7 @@ line-height: 1.5;
 }
 
 /* Increase all font sizes on mobile */
+/* Revert this to a small font increase not a big one!) */
 @media (max-width: 767px) {
     .mobile{
         display: block;
@@ -527,7 +528,7 @@ line-height: 1.5;
     }
     body {
     /* default is 1rem or 16px */
-    font-size: 25px;
+    font-size: 14px;
     }
 }
 
