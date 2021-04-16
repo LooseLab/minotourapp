@@ -21,16 +21,17 @@ from metagenomics.centrifuge_validation import (
     save_mapping_results,
 )
 from metagenomics.confidence_modelling import (
-    generate_c_all,
-    generate_c_all_values,
+    grammy_uncertainty,
     grammy_fit,
+    save_abundances,
+    save_uncertainty_prob, generate_c_all_values
 )
 from metagenomics.models import (
     CentrifugeOutput,
     Metadata,
     DonutData,
     MappingTarget,
-    EstimatedAbundance,
+    ClassificationProbabilites, CAllValues,
 )
 from metagenomics.utils import (
     convert_species_to_subspecies,
@@ -94,7 +95,9 @@ def run_centrifuge(flowcell_job_id, streamed_reads=None):
         read_count = fasta_df_barcode.shape[0]
     if fasta_df_barcode.empty:
         return pd.DataFrame(), None, None, None, None, 0, 0
-    logger.debug("Flowcell id: {} - number of reads found {}".format(flowcell.id, read_count))
+    logger.debug(
+        "Flowcell id: {} - number of reads found {}".format(flowcell.id, read_count)
+    )
     # Create a fastq string to pass to Centrifuge
     fasta_df_barcode["fasta"] = (
         ">read_id="
@@ -831,28 +834,6 @@ def set_classification_number(df, classification_num_series, unclassed_number):
     return df
 
 
-def save_abundances(tax_id_2_prob, names, task):
-    """
-    Save the abundances by tax_id
-    Parameters
-    ----------
-    tax_id_2_prob: dict
-        Dictionary keyed tax_id to estimated abundance value
-    names: dict
-        tax_ids keyed to names
-
-    Returns
-    -------
-    None
-    """
-    for k, v in tax_id_2_prob.items():
-        orm, created = EstimatedAbundance.objects.get_or_create(
-            tax_id=k, task=task, name=names[k]
-        )
-        orm.abundance = v
-        orm.save()
-
-
 @app.task
 def run_centrifuge_pipeline(flowcell_job_id, streamed_reads=None):
     """
@@ -867,8 +848,6 @@ def run_centrifuge_pipeline(flowcell_job_id, streamed_reads=None):
     -------
 
     """
-    # flowcell_job_id = 370
-    # streamed_reads = None
     tax_rank_filter = [
         "superkingdom",
         "phylum",
@@ -901,21 +880,35 @@ def run_centrifuge_pipeline(flowcell_job_id, streamed_reads=None):
     ) = get_all_reads_that_have_targets(df, targets_df["read_id"], task)
     df = set_classification_number(df, all_target_reads_class_series, unclassed_number)
     # time for some shiny new modelling
-    c_all_probabilities_series = generate_c_all_values(df, task)
-    c_all = generate_c_all(
-        targets, classification_converter, c_all_probabilities_series
-    )
+    # c_all = generate_c_all(
+    #     targets, classification_converter, c_all_probabilities_series
+    # )
     # todo apparently p_true is a garbo approximation of a starting point so that's something worth noting
     # p_true = np.random.default_rng().dirichlet(size=1, alpha=[1]*len(targets))
     # sizes = np.array([1, 3])
     # p_true = p_true * (sizes/(np.sum(p_true*sizes)))
+    class_probs = np.array(
+        ClassificationProbabilites.objects.all().values_list("probability", flat=True)
+    ).reshape((len(targets), len(targets)**2))
+    previous_classification_counts = CAllValues.objects.filter(task=task).values()
+    current_classification_counts = df["classification_number"].values.tolist()
+    for previous_c_all in previous_classification_counts:
+        previous_counts_for_class_num = [previous_c_all.get("classification_number", 0)] * previous_c_all.get("classification_count", 0)
+        current_classification_counts.extend(previous_counts_for_class_num)
     prob = grammy_fit(
-        df["classification_number"].values,
-        init=1,
+        current_classification_counts,
+        init=np.array(0.5),
         draws=read_count,
         species_number=len(targets),
-        c_all=c_all,
+        class_probs=class_probs,
     )
+    uncertainties = grammy_uncertainty(
+        class_prob=class_probs,
+        prob_est=prob,
+        classifications=current_classification_counts,
+    )
+    c_all_probabilities_series = generate_c_all_values(df, task)
+
     # assign probable abundances to tax_ids (is this totally made up???)
     order = list(df["classification_number"].unique())
     order.remove(unclassed_number)
@@ -926,7 +919,8 @@ def run_centrifuge_pipeline(flowcell_job_id, streamed_reads=None):
         .loc[~df.loc[df.index.isin(targets)].index.duplicated()]["name"]
         .to_dict()
     )
-    save_abundances(taxId2prob, names, task)
+    save_abundances(taxId2prob, names, task, classification_converter)
+    save_uncertainty_prob(uncertainties, task, classification_converter)
     barcode_df, task = barcode_output_calculations(df, task)
     df = process_centrifuge_barcode_data(df, barcode_df, task, tax_rank_filter)
     to_save_df, classified_per_barcode, iteration_count = output_aggregator(
@@ -950,11 +944,18 @@ def run_centrifuge_pipeline(flowcell_job_id, streamed_reads=None):
         )
         if not map_output_df.empty:
             map_output_df.apply(save_mapping_results, axis=1, args=(task,))
-            a = map_output_df.groupby("tax_id")[
-                ["num_matches", "sum_unique", "num_mapped", "num_red_reads"]
-            ].agg("sum").reset_index()
-            a["name_y"] = a["tax_id"].map(map_output_df.set_index("tax_id")["name_y"].to_dict())
+            a = (
+                map_output_df.groupby("tax_id")[
+                    ["num_matches", "sum_unique", "num_mapped", "num_red_reads"]
+                ]
+                .agg("sum")
+                .reset_index()
+            )
+            a["name_y"] = a["tax_id"].map(
+                map_output_df.set_index("tax_id")["name_y"].to_dict()
+            )
             a.apply(save_mapping_results, axis=1, args=(task,))
+
     # #####  donut chart calculations
     donut_df = calculate_donut_data(df, task.flowcell, tax_rank_filter)
     to_save_df, classified_per_barcode, iteration_count = output_aggregator(

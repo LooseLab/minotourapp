@@ -25,7 +25,7 @@ from metagenomics.models import (
     SankeyLink,
     DonutData,
     MappingTarget,
-    EstimatedAbundance,
+    EstimatedAbundance, UncertaintyProbability,
 )
 from metagenomics.utils import calculate_proportion_for_table, get_metagenomics_data
 from minknow_data.models import Flowcell
@@ -136,12 +136,27 @@ def get_abundance_table_html(request, pk):
         Pre formated HTML string
     """
     task = JobMaster.objects.filter(job_type_id=10, flowcell_id=pk).last()
+    targets = MappingTarget.objects.filter(target_set=task.target_set)
+    uncertainties = UncertaintyProbability.objects.filter(task=task).values_list("lower_ci_value", "upper_ci_value")
+    df = pd.DataFrame.from_records(
+        EstimatedAbundance.objects.filter(task=task).values(
+            "tax_id", "abundance", "name"
+        )
+    )
+    df["Lower Conf. bound"] = 0
+    df["Higher Conf. bound"] = 0
+    for ind, (low, high) in enumerate(uncertainties):
+        print(low)
+        df.loc[ind, "Lower Conf. bound"] = low
+        df.loc[ind, "Higher Conf. bound"] = high
+    df = df.set_index("tax_id")
+    for target in targets:
+        if int(target.tax_id) not in df.index:
+            df.loc[int(target.tax_id)] = [0, target.species, 0, 0]
+
+    df = df.reset_index()
     return Response(
-        pd.DataFrame.from_records(
-            EstimatedAbundance.objects.filter(task=task).values(
-                "tax_id", "abundance", "name"
-            )
-        ).to_html(classes="table table-striped", border=0, justify="left")
+        df.to_html(classes="table table-striped", border=0, justify="left")
     )
 
 
