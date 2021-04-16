@@ -10,6 +10,38 @@ from reads.models import Barcode, JobMaster
 from reference.models import ReferenceInfo
 
 
+class ClassificationProbabilites(models.Model):
+    """
+    Purpose
+    -------
+    Store the classification probabilities for certain targets
+
+    Fields
+    ------
+    tax_ids
+        The tax id of the species that are in this combination
+    probability
+        The probability Centrifuge will classify this read
+    classification_number
+        The classification number in the set, so 1, 2, 3, 4 for a set of 2 targets
+    target_set_name
+        name of the target set that we are predicting abundances for
+    """
+    tax_ids = models.CharField(
+        default="",
+        max_length=256
+    )
+    probability = models.FloatField(
+        default=0.0
+    )
+    classification_number = models.IntegerField(
+        default=0
+    )
+    target_set_name = models.CharField(
+        max_length=256
+    )
+
+
 class EstimatedAbundance(models.Model):
     """
     :purpose: Store estimated abundances of targets in a metagenomics run
@@ -48,6 +80,31 @@ class CAllValues(models.Model):
     )
     classification_number = models.IntegerField(
         default=0
+    )
+
+
+class UncertaintyProbability(models.Model):
+    """
+    :purpose: Store the uncertainty probabilites for Confidence intervals for metagenomics modelling
+    :author: Rory Munro
+    """
+    task = models.ForeignKey(
+        JobMaster,
+        related_name="conf_int",
+        on_delete=models.CASCADE
+    )
+    upper_ci_value = models.FloatField(
+        default=0
+    )
+    lower_ci_value = models.FloatField(
+        default=0
+    )
+    classification_number = models.IntegerField(
+        default=0
+    )
+    tax_ids = models.CharField(
+        null=True,
+        max_length=256
     )
 
 

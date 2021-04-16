@@ -25,7 +25,6 @@ export MT_CELERY_RESULT_BACKEND='redis://localhost:6379/0' # Redis URl - where w
 export MT_ARTIC_RESULTS_DIR='/path/to/artic/directory' # Store the Artic results in this directory. Please ensure directory exists.
 export MT_ARTIC_SCEHEME_DIR='<Path/To/Artic/Code/Scheme_Directories>' # Read the Artic scheme directories, found where the Artic NCOV pipeline github repo was cloned. Example  /home/rory/Projects/artic-ncov2019/primer_schemes
 export MT_ARTIC_MAX_PIPELINES="1" # Maximum number of Artic tasks to be run at any one time
-export MT_ARTIC_ENV="artic-ncov2019" # The artic environment to activate to run artic commands.
 export MT_CELERY_WORKER_COUNT="2" # Number of Celery workers to start, no more than number of CPU cores
 export MT_CELERY_MINIMAP2_WORKER_COUNT="1" # Number of celery minimap2 threads to start, no more than num CPU cores
 export MT_TIME_UNTIL_INACTIVE="7" # Number of days since last flowcell activity until a flowcell is listed as inactive
@@ -37,4 +36,5 @@ export MT_TWEET_CELERY_FAILURES=1 # Boolean value if True, failures in some cele
 export MT_SERVER_URL="localhost" # if not setting up a server don't worry about this - it just shows the url on the client page for the example commands
 export MT_VoC_PATH="<path/to/VoC/Definitions>" # If not setting up to use artic for Covid-19 this does not need to be set.
 export MT_CONDA_PREFIX="" # The path and command used to activate conda in your system. On ubuntu this might be "/home/django/miniconda3/etc/profile.d/conda.sh" whereas on OSX it might be "/Users/username/.miniconda3/etc/profile.d/conda.sh"
+export MT_ARTIC_ENV="artic-ncov2019" # The artic environment to activate to run artic commands.
 

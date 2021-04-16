@@ -1,5 +1,6 @@
 import datetime
-import json,gzip
+import gzip
+import json
 from collections import defaultdict
 from urllib.parse import parse_qs
 
@@ -294,7 +295,7 @@ def get_artic_summary_table_data(request):
         Request object that contains the flowcell Primary key
     Returns
     -------
-
+    celery -A minotourapp beat -l info -f /home/ubuntu/minotour_logs/celerybeat --detach
     """
     flowcell_id = request.GET.get("flowcellId", None)
     if not flowcell_id:

@@ -10,10 +10,9 @@ from datetime import datetime, timezone, timedelta
 from io import StringIO
 from shutil import copy, rmtree
 
-from celery.utils.log import get_task_logger
-
+import pandas as pd
 from celery.schedules import crontab
-
+from celery.utils.log import get_task_logger
 from django.conf import settings
 
 from alignment.models import PafSummaryCov
@@ -28,10 +27,10 @@ from artic.utils import (
     get_amplicon_stats,
     predict_barcode_will_finish,
 )
-from communication.models import NotificationConditions, Message
-
+from communication.models import Message
 from minknow_data.models import Flowcell
-from minotourapp.celery import app, MyTask
+from minotourapp.celery import MyTask
+from minotourapp.celery import app
 from minotourapp.settings import BASE_DIR, STATIC_ROOT
 from minotourapp.utils import get_env_variable
 from reads.models import (
@@ -42,9 +41,6 @@ from reads.models import (
     FastqRead,
 )
 from readuntil.functions_EB import *
-import pandas as pd
-
-from minotourapp.celery import app
 
 logger = get_task_logger(__name__)
 
@@ -197,7 +193,6 @@ def run_variant_command(base_results_directory, barcode_name,jm):
     """
     jm: jobmaster
     """
-    #ToDo: Update variants to the latest version by running a git pull
     re_gzip = False
     os.chdir(f"{base_results_directory}/{barcode_name}")
     MT_VoC_PATH = get_env_variable("MT_VoC_PATH")
@@ -216,7 +211,7 @@ def run_variant_command(base_results_directory, barcode_name,jm):
         f"aln2type json_files csv_files {barcode_name}_ARTIC_medaka.csv MN908947.3  {barcode_name}.muscle.out.fasta {MT_VoC_PATH}/variant_definitions/variant_yaml/*.yml",
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+    
     out, err = proc.communicate()
     if not out and err:
         logger.debug(out)
