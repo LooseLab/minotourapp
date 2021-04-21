@@ -10,10 +10,10 @@ from datetime import datetime, timezone, timedelta
 from io import StringIO
 from shutil import copy, rmtree
 
-import pandas as pd
 from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 from django.conf import settings
+from git import Repo
 
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
