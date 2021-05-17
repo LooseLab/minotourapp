@@ -1,15 +1,19 @@
 import datetime
 import gzip
 import json
+import tarfile
 from collections import defaultdict
 from urllib.parse import parse_qs
 
 import pandas as pd
+from django.http import HttpResponse
 from django.shortcuts import render
+from matplotlib.figure import Figure
 from rest_framework import status
 from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
+from weasyprint import HTML, CSS
 
 from alignment.models import PafSummaryCov
 # Create your views here.
@@ -20,12 +24,131 @@ from artic.utils import (
     quick_get_artic_results_directory,
     remove_duplicate_sequences_numpy,
     get_all_results,
-    get_amplicon_stats,
+    get_amplicon_stats, get_artic_run_stats,
 )
 from minknow_data.models import Flowcell
 from minotourapp.utils import get_env_variable
 from reads.models import JobMaster, FlowcellSummaryBarcode, Barcode
 from reference.models import ReferenceInfo
+
+
+@api_view(["POST"])
+def export_artic_report(request, pk):
+    """
+    Export a pdf report of the artic page upon user request
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The request object containing sgv data
+    pk: int
+        The primary key of the flowcell to generate the report for
+
+    Returns
+    -------
+    A PDF blob to be downloaded
+    """
+    flowcell = Flowcell.objects.get(pk=pk)
+    task = JobMaster.objects.filter(flowcell_id=pk, job_type_id=16).last()
+    tar_file_path = f"/tmp/{task.id}_artic_report.tar.gz"
+    tar_file_name = f"{task.id}_artic_report.tar.gz"
+    with tarfile.open(tar_file_path, "w:gz") as tar:
+
+        for abm in ArticBarcodeMetadata.objects.filter(job_master=task):
+            data_2 = {}
+            selected_barcode = str(abm.barcode.name)
+            print(selected_barcode)
+            (
+                flowcell,
+                artic_results_path,
+                artic_task_id,
+                coverage_path,
+            ) = quick_get_artic_results_directory(flowcell.id, selected_barcode)
+            with open(str(coverage_path), "rb") as fh:
+                arr = np.fromfile(fh, dtype=np.uint16)
+                fig = Figure(figsize=(8, 2))
+                ax = fig.subplots()
+                ax.plot(arr)
+                fig.suptitle(f"{selected_barcode} Coverage across genome")
+                ax.set_xlabel(f"Reference position")
+                ax.set_ylabel(f"Coverage")
+                fig.savefig(f"/tmp/{task.id}_{selected_barcode}.png")
+                data_2["coverage_graph"] = f"file:///tmp/{task.id}_{selected_barcode}.png"
+            json_path = (
+                artic_results_path
+                / selected_barcode
+                / "json_files"
+                / f"{selected_barcode}_ARTIC_medaka.json.gz"
+            )
+            if json_path.exists():
+                with gzip.open(json_path, "r") as fin:
+                    data = json.loads(fin.read().decode("utf-8"))
+                    data = hyphen_to_underscore(data)
+            else:
+                data = {}
+            csv_path = (
+                artic_results_path
+                / selected_barcode
+                / "csv_files"
+                / f"{selected_barcode}_ARTIC_medaka.csv"
+            )
+            if csv_path.exists():
+                df = pd.read_csv(csv_path)
+                html_string = df.T.to_html(
+                    classes="table table-sm table-responsive", border=0, justify="left"
+                )
+                data["hidden_html_string"] = html_string
+
+            csv_path = (
+                artic_results_path
+                / selected_barcode
+                / f"{selected_barcode}_ARTIC_medaka.csv.gz"
+            )
+            if csv_path.exists():
+                df = pd.read_csv(csv_path)
+                html_string = df.to_html(
+                    classes="table table-sm table-responsive",
+                    border=0,
+                    index=False,
+                    justify="left",
+                )
+                data["hidden_html_string2"] = html_string
+            voc_report_html_string = render(
+                request,
+                "artic-variant-of-concern.html",
+                context={"artic_barcode_VoC": data},
+            ).getvalue().decode()
+            data["barcode_name"] = selected_barcode
+            data["voc_report_html"] = voc_report_html_string
+            data["artic_bar_plot_path"] = f"file:///{str(artic_results_path)}/{selected_barcode}/{selected_barcode}-barplot.png"
+            data["artic_box_plot_path"] = f"file:///{str(artic_results_path)}/{selected_barcode}/{selected_barcode}-boxplot.png"
+            data.update(data_2)
+            HTML(
+                string=render(
+                    request, "barcode_report.html", context={"data": data}
+                ).getvalue()
+            ).write_pdf(
+                f"/tmp/{task.id}_{selected_barcode}_artic_report.pdf",
+                stylesheets=[
+                    CSS("web/static/web/css/artic-report.css"),
+                    CSS("web/static/web/libraries/bootstrap-4.5.0-dist/css/bootstrap.css"),
+                ],
+            )
+            try:
+                tar.add(f"/tmp/{task.id}_{selected_barcode}_artic_report.pdf", recursive=False)
+            except FileNotFoundError as e:
+                print("file not found")
+        artic_summary_pdf_path = get_artic_run_stats(pk, request.data, request, task)
+        try:
+            tar.add(artic_summary_pdf_path, recursive=False)
+        except FileNotFoundError as e:
+            print("file not found")
+    with open(tar_file_path, "rb") as fh:
+        response = HttpResponse(fh.read(), content_type="application/zip")
+        response[
+            "Content-Disposition"
+        ] = f"attachment; filename={tar_file_name}"
+        response["x-file-name"] = tar_file_name
+    return response
 
 
 @api_view(["GET", "POST"])
@@ -303,7 +426,9 @@ def get_artic_summary_table_data(request):
             "Please specify a flowcellId parameter.",
             status=status.HTTP_400_BAD_REQUEST,
         )
-    flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(flowcell_id)
+    flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(
+        flowcell_id
+    )
     artic_task = JobMaster.objects.get(pk=jm_id)
     if not artic_task:
         return Response(
@@ -355,9 +480,11 @@ def get_artic_summary_table_data(request):
 
             try:
                 VoCs_df = pd.read_csv(
-                    artic_results_path / barcode_name / f"{barcode_name}_ARTIC_medaka.csv.gz"
+                    artic_results_path
+                    / barcode_name
+                    / f"{barcode_name}_ARTIC_medaka.csv.gz"
                 )
-                VoCs=VoCs_df['phe-label']
+                VoCs = VoCs_df["phe-label"]
             except FileNotFoundError:
                 VoCs = "None Found"
         else:
@@ -369,19 +496,22 @@ def get_artic_summary_table_data(request):
             paf_summary_cov["has_sufficient_coverage"] = artic_metadata[
                 barcode_name
             ].has_sufficient_coverage
-        paf_summary_cov["VoC-Warn"] = VoCs
+        paf_summary_cov["VoC_Warn"] = VoCs
         amp_stats_dict = amplicon_stats._asdict()
         amp_stats_dict.pop("amplicon_coverage_medians")
         amp_stats_dict.pop("amplicon_coverage_means")
         paf_summary_cov.update(amp_stats_dict)
         paf_summary_cov["lineage"] = lineage
-        paf_summary_cov["projected_to_finish"] = artic_metadata[barcode_name].projected_to_finish
+        paf_summary_cov["projected_to_finish"] = artic_metadata[
+            barcode_name
+        ].projected_to_finish
     if not queryset:
         return Response(
             f"No coverage summaries found for this task {artic_task.id}.",
             status=status.HTTP_204_NO_CONTENT,
         )
     return Response({"data": queryset})
+
 
 @api_view(("GET",))
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
@@ -402,44 +532,61 @@ def get_artic_voc_html(request):
             "No flowcell ID or barcode provided.", status=status.HTTP_400_BAD_REQUEST
         )
     ## Now we check to see if a json report exists for this flowcell and barcode.
-    flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(flowcell_id)
-    json_path = artic_results_path / selected_barcode / "json_files" /  f"{selected_barcode}_ARTIC_medaka.json.gz"
+    flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(
+        flowcell_id
+    )
+    json_path = (
+        artic_results_path
+        / selected_barcode
+        / "json_files"
+        / f"{selected_barcode}_ARTIC_medaka.json.gz"
+    )
     if json_path.exists():
-        with gzip.open(json_path, 'r') as fin:
-            data = json.loads(fin.read().decode('utf-8'))
-            #datastring = json.dumps(data)
-            #datastring = datastring.replace("-","_")
-            #data = json.loads(datastring)
+        with gzip.open(json_path, "r") as fin:
+            data = json.loads(fin.read().decode("utf-8"))
+            # datastring = json.dumps(data)
+            # datastring = datastring.replace("-","_")
+            # data = json.loads(datastring)
             data = hyphen_to_underscore(data)
     else:
         data = {}
-    csv_path = artic_results_path / selected_barcode / "csv_files" / f"{selected_barcode}_ARTIC_medaka.csv"
+    csv_path = (
+        artic_results_path
+        / selected_barcode
+        / "csv_files"
+        / f"{selected_barcode}_ARTIC_medaka.csv"
+    )
     if csv_path.exists():
-        df = pd.read_csv(
-            csv_path
+        df = pd.read_csv(csv_path)
+        html_string = df.T.to_html(
+            classes="table table-sm table-responsive", border=0, justify="left"
         )
-        html_string = df.T.to_html(classes="table table-sm table-responsive", border=0, justify="left")
         data["hidden_html_string"] = html_string
 
-    csv_path = artic_results_path / selected_barcode / f"{selected_barcode}_ARTIC_medaka.csv.gz"
+    csv_path = (
+        artic_results_path
+        / selected_barcode
+        / f"{selected_barcode}_ARTIC_medaka.csv.gz"
+    )
     if csv_path.exists():
-        df = pd.read_csv(
-            csv_path
+        df = pd.read_csv(csv_path)
+        html_string = df.to_html(
+            classes="table table-sm table-responsive",
+            border=0,
+            index=False,
+            justify="left",
         )
-        html_string = df.to_html(classes="table table-sm table-responsive", border=0, index=False, justify="left")
         data["hidden_html_string2"] = html_string
 
-    #vcf_path = artic_results_path / selected_barcode / f"{selected_barcode}.annotated.vcf"
+    # vcf_path = artic_results_path / selected_barcode / f"{selected_barcode}.annotated.vcf"
 
-    #if vcf_path.exists():
+    # if vcf_path.exists():
     #    data["hidden_html_string3"] = "found it"
 
-
     return render(
-        request,
-        "artic-variant-of-concern.html",
-        context={"artic_barcode_VoC": data},
+        request, "artic-variant-of-concern.html", context={"artic_barcode_VoC": data},
     )
+
 
 def hyphen_to_underscore(dictionary):
     """
@@ -463,9 +610,9 @@ def hyphen_to_underscore(dictionary):
             # If there is a sub dictionary or an array perform this method of it recursively
             if type(dictionary[k]) is type({}) or type(dictionary[k]) is type([]):
                 value = hyphen_to_underscore(v)
-                final_dict[k.replace('-', '_')] = value
+                final_dict[k.replace("-", "_")] = value
             else:
-                final_dict[k.replace('-', '_')] = v
+                final_dict[k.replace("-", "_")] = v
 
     return final_dict
 
@@ -569,7 +716,7 @@ def get_artic_barcode_metadata_html(request):
     fastq_path_gz = fastq_path.with_suffix(".fastq.gz")
     context_dict["hidden_has_fastq"] = fastq_path.exists() or fastq_path_gz.exists()
     if context_dict["hidden_has_finished"]:
-        csv_path =artic_results_path / selected_barcode / "lineage_report.csv.gz"
+        csv_path = artic_results_path / selected_barcode / "lineage_report.csv.gz"
         if csv_path.exists():
             df = pd.read_csv(
                 artic_results_path / selected_barcode / "lineage_report.csv.gz"
