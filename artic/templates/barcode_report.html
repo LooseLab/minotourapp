@@ -1,0 +1,26 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+ <style> @page { size: 22in 11in ; margin: 1cm; } </style>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ data.barcode_name }} Report</title>
+</head>
+<body style="width:100%">
+ <div id="date">{% now "jS F Y H:i" %}</div>
+    <article id="coverage">
+        <h4 id="report-title"> Report for artic output of {{ data.barcode_name }} generated {% now "jS F Y H:i" %} </h4>
+        <section id="coverage">
+            <img src="{{ data.coverage_graph }}" alt="Coverage across the genome">
+            <img style="width:6in" src="{{ data.artic_bar_plot_path }}" alt="artic_bar_plot.png should be displayed here.">
+            <img style="width:6in" src="{{ data.artic_box_plot_path }}" alt="artic_box_plot.png should be displayed here.">
+        </section>
+    </article>
+    <article id="vocs">
+        <h4 class="new-page">Artic variant summaries for {{ data.barcode_name }}</h4>
+        <div>
+            {{ data.voc_report_html | safe }}
+        </div>
+    </article>
+</body>
+</html>
