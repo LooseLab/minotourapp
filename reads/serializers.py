@@ -10,7 +10,7 @@ from metagenomics.models import CentrifugeOutput
 from minknow_data.models import Run, Flowcell
 from reads.models import (Barcode, FastqFile, FastqRead,
                           FastqReadType, UserOptions, ChannelSummary, HistogramSummary,
-                          RunStatisticBarcode, RunSummaryBarcode, FlowcellSummaryBarcode, JobType, JobMaster)
+                          RunStatisticBarcode, FlowcellSummaryBarcode, JobType, JobMaster)
 
 
 class FastqFileSerializer(serializers.HyperlinkedModelSerializer):
@@ -98,38 +98,6 @@ class FastqReadNameSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = FastqRead
         fields = ('read_id',)
-
-
-class RunSummaryBarcodeSerializer(serializers.HyperlinkedModelSerializer):
-
-    typename = serializers.ReadOnlyField(
-        source="type.name"
-    )
-
-    barcodename = serializers.ReadOnlyField(
-        source="barcode.name"
-    )
-
-    class Meta:
-        model = RunSummaryBarcode
-
-        fields = (
-            'url',
-            'total_length',
-            'read_count',
-            'type',
-            'typename',
-            'max_length',
-            'min_length',
-            'is_pass',
-            'id',
-            'barcode',
-            'barcodename',
-            'channel_presence'
-            # 'number_active_channels'
-        )
-
-        read_only = ('id',)
 
 
 class RunStatisticBarcodeSerializer(serializers.ModelSerializer):
