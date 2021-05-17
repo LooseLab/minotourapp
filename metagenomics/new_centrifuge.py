@@ -24,14 +24,14 @@ from metagenomics.confidence_modelling import (
     grammy_uncertainty,
     grammy_fit,
     save_abundances,
-    save_uncertainty_prob, generate_c_all_values
+    save_uncertainty_prob, generate_c_all_values, class_probs
 )
 from metagenomics.models import (
     CentrifugeOutput,
     Metadata,
     DonutData,
     MappingTarget,
-    ClassificationProbabilites, CAllValues,
+    CAllValues,
 )
 from metagenomics.utils import (
     convert_species_to_subspecies,
@@ -887,40 +887,43 @@ def run_centrifuge_pipeline(flowcell_job_id, streamed_reads=None):
     # p_true = np.random.default_rng().dirichlet(size=1, alpha=[1]*len(targets))
     # sizes = np.array([1, 3])
     # p_true = p_true * (sizes/(np.sum(p_true*sizes)))
-    class_probs = np.array(
-        ClassificationProbabilites.objects.all().values_list("probability", flat=True)
-    ).reshape((len(targets), len(targets)**2))
-    previous_classification_counts = CAllValues.objects.filter(task=task).values()
-    current_classification_counts = df["classification_number"].values.tolist()
-    for previous_c_all in previous_classification_counts:
-        previous_counts_for_class_num = [previous_c_all.get("classification_number", 0)] * previous_c_all.get("classification_count", 0)
-        current_classification_counts.extend(previous_counts_for_class_num)
-    prob = grammy_fit(
-        current_classification_counts,
-        init=np.array(0.5),
-        draws=read_count,
-        species_number=len(targets),
-        class_probs=class_probs,
-    )
-    uncertainties = grammy_uncertainty(
-        class_prob=class_probs,
-        prob_est=prob,
-        classifications=current_classification_counts,
-    )
-    c_all_probabilities_series = generate_c_all_values(df, task)
+    # class_probs = np.array(
+    #     ClassificationProbabilites.objects.all().values_list("probability", flat=True)
+    # ).reshape((len(targets), len(targets)**2))
+    if targets:
+        previous_classification_counts = CAllValues.objects.filter(task=task).values()
+        current_classification_counts = df["classification_number"].values.tolist()
+        for previous_c_all in previous_classification_counts:
+            previous_counts_for_class_num = [previous_c_all.get("classification_number", 0)] * previous_c_all.get("classification_count", 0)
+            current_classification_counts.extend(previous_counts_for_class_num)
+        prob = grammy_fit(
+            current_classification_counts,
+            init=np.array(0.5),
+            draws=len(current_classification_counts),
+            species_number=len(targets),
+            class_probs=class_probs,
+        )
+        print(f"prob {prob}")
+        uncertainties = grammy_uncertainty(
+            class_prob=class_probs,
+            prob_est=prob,
+            classifications=current_classification_counts,
+        )
+        print(f"uncertainties")
+        c_all_probabilities_series = generate_c_all_values(df, task)
 
-    # assign probable abundances to tax_ids (is this totally made up???)
-    order = list(df["classification_number"].unique())
-    order.remove(unclassed_number)
-    tax_id2prob_index = {v: k for k, v in classification_converter.items()}
-    taxId2prob = {tax_id2prob_index[ordy][0]: prob[i] for i, ordy in enumerate(order)}
-    names = (
-        df.loc[df.index.isin(targets)]
-        .loc[~df.loc[df.index.isin(targets)].index.duplicated()]["name"]
-        .to_dict()
-    )
-    save_abundances(taxId2prob, names, task, classification_converter)
-    save_uncertainty_prob(uncertainties, task, classification_converter)
+        # assign probable abundances to tax_ids (is this totally made up???)
+        order = list(df["classification_number"].unique())
+        order.remove(unclassed_number)
+        tax_id2prob_index = {v: k for k, v in classification_converter.items()}
+        taxId2prob = {tax_id2prob_index[ordy][0]: prob[i] for i, ordy in enumerate(order)}
+        names = (
+            df.loc[df.index.isin(targets)]
+            .loc[~df.loc[df.index.isin(targets)].index.duplicated()]["name"]
+            .to_dict()
+        )
+        save_abundances(taxId2prob, names, task, classification_converter)
+        save_uncertainty_prob(uncertainties, task, classification_converter)
     barcode_df, task = barcode_output_calculations(df, task)
     df = process_centrifuge_barcode_data(df, barcode_df, task, tax_rank_filter)
     to_save_df, classified_per_barcode, iteration_count = output_aggregator(
