@@ -34,7 +34,7 @@ from reads.models import JobMaster, JobType
 pd.options.mode.chained_assignment = None
 
 
-@api_view(["GET", "POST"])
+@api_view(["POST"])
 def export_report(request, pk):
     """
     Export the reach back report to the user upon request
