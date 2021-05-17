@@ -73,7 +73,7 @@ def Update_VoCs():
                                           f"{MT_VoC_PATH}/variant_definitions/")
 
 
-def check_afc_values_met(afc, coverage_array, num_amplicons):
+def check_afc_values_met(afc, coverage_array, num_amplicons, run_id, barcode_name, task):
     """
     Check if this artic fire condition has been met on this barcode
     Parameters
@@ -84,15 +84,32 @@ def check_afc_values_met(afc, coverage_array, num_amplicons):
         Array with the mean coverage of each amplicon
     num_amplicons: int
         The number of amplicons
+    run_id: int
+        The primary key of this run
+    barcode_name: str
+        The name of this barcode as a string
+    task: reads.models.JobMaster
+        The job master for this artic task
     Returns
     -------
     bool
         Whether the Artic Firing Condition has been met
 
     """
-    return (
+    try:
+        barcode = Barcode.objects.get(run_id=run_id, name=barcode_name)
+        abm, created = ArticBarcodeMetadata.objects.get_or_create(flowcell=task.flowcell, job_master=task, barcode=barcode)
+    except Barcode.DoesNotExist as e:
+        logger.warning(f"Failed to update the Barcode metadata error: {e}")
+    # check if the percent of amplicons median coverage is more than our preset and we haven't already fired
+    # on this condition
+    met_for_this_afc = (
         coverage_array[coverage_array > afc.x_coverage].size / num_amplicons * 100
-    ) >= afc.percent_of_amplicons
+    ) >= afc.percent_of_amplicons and afc not in abm.artic_fire_conditions.all()
+    if met_for_this_afc:
+        # we are firing on this condition so add it to the ABM so we don't fire on it again
+        abm.artic_fire_conditions.add(afc)
+    return met_for_this_afc
 
 
 def get_amplicon_infos():
@@ -376,9 +393,6 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         logger.debug("¯\_(ツ)_/¯")
         logger.warning(str(out))
         logger.warning(err)
-    # if out and err:
-    #     raise Exception(out)
-
 
     # Now run the aln2type artic screen.
 
@@ -430,7 +444,11 @@ def save_artic_command_job_masters(flowcell, barcode_name, reference_info, run_i
         flowcell=flowcell,
     )
     if not created:
-        logger.debug("Artic command JobMaster already exists.")
+        logger.info("Firing artic due to condition being met again")
+        # todo the below could be a problem
+        job_master.running = False
+        job_master.complete = False
+        job_master.save()
     return
 
 
@@ -637,19 +655,20 @@ def save_artic_barcode_metadata_info(
     barcodes_maximum_coverage = round(coverage.max(), 2)
     barcodes_variance_coverage = round(coverage.var(), 2)
     barcodes_average_coverage = round(coverage.mean(), 2)
-    orm_object, created = ArticBarcodeMetadata.objects.update_or_create(
-        flowcell=flowcell,
-        job_master=job_master,
-        barcode=barcode,
-        defaults={
+    defaults = {
             "average_coverage": barcodes_average_coverage,
             "maximum_coverage": barcodes_maximum_coverage,
             "minimum_coverage": barcodes_minimum_coverage,
             "variance_coverage": barcodes_variance_coverage,
             "percentage_of_reads_in_barcode": round(proportion, 2),
-            "has_sufficient_coverage": has_sufficient_coverage,
-            "projected_to_finish": projected_to_finish
-        },
+        }
+    if has_sufficient_coverage:
+        defaults.update({"has_sufficient_coverage": has_sufficient_coverage})
+    orm_object, created = ArticBarcodeMetadata.objects.update_or_create(
+        flowcell=flowcell,
+        job_master=job_master,
+        barcode=barcode,
+        defaults=defaults
     )
 
 
@@ -775,7 +794,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
         if paf:
             reference_count_dict = {}
             chromosomes_seen_now = set()
-            # Dictionary to store reads that have mapped under the correct barcode
+            # Dictionary to store reads that have mapped under the correct barcode_name
             barcode_sorted_fastq_cache = defaultdict(list)
             reference_path = reference_info.file_location.path
             base_result_dir_path = make_results_directory_artic(flowcell.id, task.id)
@@ -795,8 +814,8 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     )
             run_id = fasta_df_barcode["run_id"].unique()[0]
             barcodes = np.unique(fasta_df_barcode["barcode_name"])
-            for barcode in barcodes:
-                barcode_orm = Barcode.objects.get(run_id=run_id, name=barcode)
+            for barcode_name in barcodes:
+                barcode_orm = Barcode.objects.get(run_id=run_id, name=barcode_name)
                 orm_object, created = ArticBarcodeMetadata.objects.get_or_create(
                     flowcell=flowcell, job_master=task, barcode=barcode_orm
                 )
@@ -917,16 +936,16 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             # TODO split into own function
             for chrom_key in chromosomes_seen_now:
                 # Write out the coverage
-                for barcode in barcodes_with_mapped_results:
+                for barcode_name in barcodes_with_mapped_results:
                     barcode_sorted_fastq_path = Path(
-                        f"{base_result_dir_path}/{barcode}/{barcode}.fastq"
+                        f"{base_result_dir_path}/{barcode_name}/{barcode_name}.fastq"
                     )
                     # TODO NOTE REMOVED CHROMOSOME FROM PATH SO WILL NOT WORK FOR MULTI CHROMOSOME DATA
                     coverage_path = Path(
-                        f"{base_result_dir_path}/{barcode}/{barcode}.coverage.dat"
+                        f"{base_result_dir_path}/{barcode_name}/{barcode_name}.coverage.dat"
                     )
                     counts_path = Path(
-                        f"{base_result_dir_path}/{barcode}/{barcode}.counts.dat"
+                        f"{base_result_dir_path}/{barcode_name}/{barcode_name}.counts.dat"
                     )
                     ############################################################################
                     # ###################### read in the Counts ############################ #
@@ -951,20 +970,20 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                                 ],
                             )
                         # Add the sum of each position counts to the old array, by each base type
-                        for name in barcoded_counts_dict[barcode][
+                        for name in barcoded_counts_dict[barcode_name][
                             chrom_key
                         ].dtype.names:
                             # Don't update U as True + True = 2, which would ruin everything
                             if name != "U":
-                                barcoded_counts_dict[barcode][chrom_key][
+                                barcoded_counts_dict[barcode_name][chrom_key][
                                     name
                                 ] += old_counts_array[name]
-                                a = barcoded_counts_dict[barcode][chrom_key][name].max()
+                                a = barcoded_counts_dict[barcode_name][chrom_key][name].max()
                                 if a > max_values:
                                     max_values = a
                     coverage = np.sum(
                         np.array(
-                            barcoded_counts_dict[barcode][chrom_key][
+                            barcoded_counts_dict[barcode_name][chrom_key][
                                 ["A", "C", "G", "T"]
                             ].tolist(),
                             dtype=np.int16,
@@ -982,11 +1001,11 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     # ################### Write out counts arrays ######################
                     ####################################################################
                     with open(counts_path, "wb") as fhc:
-                        fhc.write(barcoded_counts_dict[barcode][chrom_key].data)
+                        fhc.write(barcoded_counts_dict[barcode_name][chrom_key].data)
                     with open(barcode_sorted_fastq_path, "a") as fh:
-                        fh.write("\n".join(barcode_sorted_fastq_cache[barcode]))
+                        fh.write("\n".join(barcode_sorted_fastq_cache[barcode_name]))
                     logger.debug(
-                        f"Avg Coverage at iteration {task.iteration_count} for barcode {barcode} is {coverage.mean()}"
+                        f"Avg Coverage at iteration {task.iteration_count} for barcode_name {barcode_name} is {coverage.mean()}"
                     )
                     # get artic fire conditions
                     afcs = ArticFireConditions.objects.filter(flowcell=flowcell)
@@ -995,9 +1014,9 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         amplicon_band_coords=amplicon_band_coords,
                         num_amplicons=num_amplicons,
                         flowcell_id=flowcell.id,
-                        barcode_name=barcode,
+                        barcode_name=barcode_name,
                         time_stamp=time_stamp,
-                        read_count=read_counts_dict[barcode],
+                        read_count=read_counts_dict[barcode_name],
                         coverage_array=coverage,
                     )
                     if any(
@@ -1006,17 +1025,20 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                                 afc,
                                 amplicon_stats.amplicon_coverage_medians,
                                 num_amplicons,
+                                run_id,
+                                barcode_name,
+                                task
                             )
                             for afc in afcs
                         ]
                     ):
-                        if barcode not in barcodes_already_fired:
-                            add_barcode_to_tofire_file(barcode, base_result_dir_path)
-                            save_artic_command_job_masters(
-                                flowcell, barcode, reference_info, run_id
-                            )
+                        if barcode_name not in barcodes_already_fired:
+                            add_barcode_to_tofire_file(barcode_name, base_result_dir_path)
+                        save_artic_command_job_masters(
+                            flowcell, barcode_name, reference_info, run_id
+                        )
                         has_sufficient_coverage = True
-                    # save the artic per barcode metadata
+                    # save the artic per barcode_name metadata
                     projected_to_finish = predict_barcode_will_finish(
                         amplicon_stats.amplicon_coverage_medians,
                         flowcell.number_barcodes,
@@ -1027,7 +1049,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         flowcell,
                         task,
                         run_id,
-                        barcode,
+                        barcode_name,
                         has_sufficient_coverage,
                         projected_to_finish
                     )
@@ -1036,7 +1058,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                     amp_stat_dict["total_read_count"] = task.read_count + read_count
                     df_new_dict.update(
                         {
-                            barcode: amp_stat_dict
+                            barcode_name: amp_stat_dict
                         }
                     )
             df_new = pd.DataFrame.from_dict(df_new_dict, orient="index")
