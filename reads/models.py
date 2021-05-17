@@ -617,153 +617,55 @@ class RunSummary(models.Model):
     This class keep summary information about individual runs
     There should be a task updating this information regularly
     """
-
     run = models.OneToOneField(
-
         Run,
         on_delete=models.CASCADE,
         related_name='summary'
     )
-
     read_count = models.IntegerField(
-
         null=True,
         blank=True
     )
-
     total_read_length = models.BigIntegerField(
-
         null=True,
         blank=True
     )
-
     max_read_length = models.BigIntegerField(
-
         null=True,
         blank=True
     )
-
     avg_read_length = models.BigIntegerField(
-
         null=True,
         blank=True
     )
-
     min_read_length = models.BigIntegerField(
-
         null=True,
         blank=True
     )
-
     first_read_start_time = models.DateTimeField(
-
         null=True,
         blank=True
     )
-
     last_read_start_time = models.DateTimeField(
-
         null=True,
         blank=True
     )
 
     last_read = models.BigIntegerField(
-
         default=0
     )
-
     running = models.BooleanField(
         default=False
     )
 
-
-
     class Meta:
-
         verbose_name = 'Run Summary'
         verbose_name_plural = 'Run Summaries'
         db_table = 'run_summary'
-
+        
     def __str__(self):
-
         return self.run.name
 
-
-class RunSummaryBarcode(models.Model):  # TODO to be deleted
-
-    run = models.ForeignKey(
-        Run,
-        on_delete=models.CASCADE,
-        related_name='runsummariesbarcodes'
-    )
-
-    type = models.ForeignKey(
-        FastqReadType,
-        on_delete=models.DO_NOTHING,
-    )
-
-    barcode = models.ForeignKey(
-        Barcode,
-        on_delete=models.CASCADE,
-        related_name='runsummaries',
-        null=True
-    )
-
-    is_pass = models.BooleanField(
-        default=True
-    )  # pass = true, fail = false
-
-    quality_sum = models.DecimalField(
-        decimal_places=2,
-        max_digits=12,
-        default=0
-    )
-
-    read_count = models.IntegerField(
-        default=0
-    )
-
-    total_length = models.BigIntegerField(
-        default=0
-    )
-
-    max_length = models.IntegerField(
-        default=0
-    )
-
-    min_length = models.IntegerField(
-        default=0
-    )
-
-    channel_presence = models.CharField(
-        max_length=3000,
-        default='0' * 3000
-    )
-
-    channel_count = models.IntegerField(
-        default=0
-    )
-
-    class Meta:
-        verbose_name = 'Run Summary Barcode'
-        verbose_name_plural = 'Run Summary Barcodes'
-        db_table = 'run_summary_barcode'
-
-    def __str__(self):
-        return "{} {} {} {} {}".format(
-            self.run,
-            self.total_length,
-            self.read_count,
-            self.type,
-            self.barcode
-        )
-
-    def number_active_channels(self):
-        """
-        TODO Remove
-        """
-
-        return len(self.channel_presence.replace('0', ''))
 
 
 class FlowcellSummaryBarcode(models.Model):
@@ -786,71 +688,48 @@ class FlowcellSummaryBarcode(models.Model):
     :channel_presence: (str) Sequence of 3000 zeros and ones representing the presence or absence of a strand
     :channel_count: (int) Retuns the sum of ones in the channel_presence
     """
-
     flowcell = models.ForeignKey(
-
         Flowcell,
         on_delete=models.CASCADE,
         related_name='flowcellsummariesbarcodes'
     )
-
     read_type_name = models.CharField(
-
         max_length=32
     )
-
     barcode_name = models.CharField(
-
         max_length=32
     )
-
     rejection_status = models.CharField(
         max_length=32,
         default="Sequenced",
         null=True,
         blank=True,
     )
-
     status = models.CharField(
-
         max_length=32
     )
-
     quality_sum = models.DecimalField(
-
         decimal_places=2,
         max_digits=12,
         default=0
     )
-
     read_count = models.IntegerField(
-
         default=0
     )
-
     total_length = models.BigIntegerField(
-
         default=0
     )
-
     max_length = models.IntegerField(
-
         default=0
     )
-
     min_length = models.IntegerField(
-
         default=0
     )
-
     channel_presence = models.CharField(
-
         max_length=3000,
         default='0' * 3000
     )
-
     channel_count = models.IntegerField(
-
         default=0
     )
 
@@ -878,7 +757,6 @@ class FlowcellSummaryBarcode(models.Model):
         """
         TODO
         """
-
         if self.read_count > 0:
             return self.total_length / self.read_count
         else:
@@ -888,52 +766,58 @@ class FlowcellSummaryBarcode(models.Model):
         """
         TODO
         """
-
         return len(self.channel_presence.replace('0', ''))
 
 
 class JobType(models.Model):
+    """
+    Purpose
+    -------
+    Store different tasks types metadata to be carried out by celery. FK to JobMaster
 
+    Fields
+    ------
+    name: str
+        The name of the job type
+    description: str
+        Longer description of what the task type is for
+    long_description: str
+        Largely redundant even longer description of the task type
+    reference: boolean
+        Whether or not this job type requires a reference
+    transcriptome: Boolean
+        Whether or not this job type is to do with the trasncriptome (deprecated)
+    read_count: Boolean
+        Whether or not this Job Type should store a read count (deprecated)
+    private: boolean
+        Whether or not JobMasters of this job type should be visible to Users
+    """
     name = models.CharField(
-
         max_length=256,
     )
-
     description = models.TextField(
-
         max_length=256,
         blank=True,
         null=True,
     )
-
     long_description = models.TextField(
-
         blank=True,
         null=True,
     )
-
     reference = models.BooleanField(
-
         default=False,
     )
-
     transcriptome = models.BooleanField(
-
         default=False,
     )
-
     readcount = models.BooleanField(
-
         default=False,
     )
-
     private = models.BooleanField(
-
         default=True,
     )
 
     def __str__(self):
-
         return "{}".format(self.name)
 
 

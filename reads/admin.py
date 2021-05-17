@@ -6,7 +6,7 @@ from django.contrib import admin
 from minknow_data.models import Run, Flowcell
 from .models import (Barcode, FastqFile, FastqRead, FastqReadType,
                      RunSummary, UserOptions, ChannelSummary, HistogramSummary,
-                     RunStatisticBarcode, RunSummaryBarcode, FlowcellHistogramSummary,
+                     RunStatisticBarcode, FlowcellHistogramSummary,
                      FlowcellStatisticBarcode,
                      FlowcellSummaryBarcode, JobMaster, JobType, SampleTag)
 
@@ -15,12 +15,6 @@ class RunStatisticsBarcodeAdmin(admin.ModelAdmin):
     list_display = ('run_id', 'type')
     list_filter = ('run_id', )
     ordering = ('run_id', 'type__name')
-
-
-class RunSummaryBarcodeAdmin(admin.ModelAdmin):
-    list_display = ('run_id', 'barcode', 'type')
-    list_filter = ('run_id', )
-    ordering = ('run_id', 'barcode', 'type')
 
 
 class FlowcellAdmin(admin.ModelAdmin):
@@ -34,7 +28,6 @@ admin.site.register(FlowcellSummaryBarcode)
 admin.site.register(FlowcellHistogramSummary)
 admin.site.register(Run)
 admin.site.register(RunStatisticBarcode, RunStatisticsBarcodeAdmin)
-admin.site.register(RunSummaryBarcode, RunSummaryBarcodeAdmin)
 admin.site.register(ChannelSummary)
 admin.site.register(HistogramSummary)
 admin.site.register(UserOptions)
