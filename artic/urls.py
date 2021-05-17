@@ -89,4 +89,9 @@ url(
         views.mark_all_barcodes_for_pipeline,
         name="run-all-incomplete",
     ),
+    url(
+        r"^api/v1/artic/(?P<pk>[0-9]+)/export-report/",
+        views.export_artic_report,
+        name="export-artic-report"
+    )
 ]
