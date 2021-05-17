@@ -5,6 +5,20 @@ from minknow_data.models import Flowcell
 from reads.models import JobMaster, Barcode
 
 
+class ArticFireConditions(models.Model):
+    """
+    Shows the conditions for each task that wil cause the Fire Artic JobMaster to be created
+    """
+    flowcell = models.ForeignKey(
+        Flowcell,
+        related_name="flowcell_firing_conditions",
+        on_delete=models.CASCADE,
+    )
+    percent_of_amplicons = models.IntegerField(default=90)
+    x_coverage = models.IntegerField(default=20)
+    percent_amp_at_x_cov = models.FloatField(default=0.0)
+
+
 class ArticBarcodeMetadata(models.Model):
     """
     Contains the metadata for each barcode in an artic track coverage task.
@@ -36,20 +50,7 @@ class ArticBarcodeMetadata(models.Model):
         on_delete=models.CASCADE,
         null=True
     )
+    artic_fire_conditions = models.ManyToManyField(ArticFireConditions)
 
     def __str__(self):
         return f"{self.flowcell} {self.job_master} {self.barcode}"
-
-
-class ArticFireConditions(models.Model):
-    """
-    Shows the conditions for each task that wil cause the Fire Artic JobMaster to be created
-    """
-    flowcell = models.ForeignKey(
-        Flowcell,
-        related_name="flowcell_firing_conditions",
-        on_delete=models.CASCADE,
-    )
-    percent_of_amplicons = models.IntegerField(default=90)
-    x_coverage = models.IntegerField(default=20)
-    percent_amp_at_x_cov = models.FloatField(default=0.0)
