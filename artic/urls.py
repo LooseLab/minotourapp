@@ -33,7 +33,7 @@ urlpatterns = [
         views.get_artic_barcode_metadata_html,
         name="get-barcode-metadata",
     ),
-url(
+    url(
         r"^api/v1/artic/barcode-voc/$",
         views.get_artic_voc_html,
         name="get-barcode-voc",
