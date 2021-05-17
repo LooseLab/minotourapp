@@ -39,7 +39,10 @@ def write_out_artic_metrics(df_new, df_old, dir_to_write_to):
     -------
 
     """
-    df_old = df_old.append(df_new)
+    if df_old.empty:
+        df_old = df_new
+    else:
+        df_old = df_old.append(df_new)
     if not df_old.empty:
         df_old.to_pickle(str(dir_to_write_to / DATAFRAME_NAME))
 
