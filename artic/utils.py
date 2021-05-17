@@ -5,13 +5,16 @@ import json
 import os
 import tarfile
 from collections import namedtuple
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render
+from weasyprint import CSS, HTML
 
+from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata
 from minknow_data.models import Flowcell
 from minotourapp.settings import BASE_DIR
@@ -20,6 +23,121 @@ from reads.models import JobMaster
 
 # Colour palette of amplicon bands
 colour_palette = ["#ffd9dc", "#ffefdc", "#ffffbc", "#dcffe4", "#bae1ff"]
+
+def get_sequencing_stats_pdf():
+    """
+    Get the stats for a sequencing report into a pdf
+    """
+    pass
+
+
+def get_artic_run_stats(pk, svg_data, request, task):
+    """
+    Generate a one page pdf on the artic run that we generated
+    Parameters
+    ----------
+    pk: int
+        The flowcell primary key
+    svg_data: dict
+        Dictionary containing sgv strings for each chart to be drawn onto PDF
+    request: rest_framework.request.Request
+        AJAX request instance
+    task: reads.models.JobMaster
+        The job master ORM instance for this artic task
+    Returns
+    -------
+    str
+        File path to artic summary PDF
+    """
+    flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(
+        pk
+    )
+    artic_task = JobMaster.objects.get(pk=jm_id)
+    queryset = PafSummaryCov.objects.filter(job_master=artic_task).values(
+        "barcode_name",
+        "chromosome__line_name",
+        "average_read_length",
+        "coverage",
+        "job_master__id",
+        "read_count",
+        "total_yield",
+        "reference_line_length",
+    )
+    artic_metadata = {
+        d.barcode.name: d
+        for d in ArticBarcodeMetadata.objects.filter(
+            flowcell_id=pk, job_master=artic_task
+        )
+    }
+    # dictionaries change in place
+    scheme = "nCoV-2019"
+    scheme_version = "V3"
+    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
+    num_amplicons = len(amplicon_band_coords)
+    time_stamp = datetime.now()
+    for paf_summary_cov in queryset:
+        barcode_name = paf_summary_cov["barcode_name"]
+        amplicon_stats = get_amplicon_stats(
+            amplicon_band_coords,
+            num_amplicons,
+            pk,
+            barcode_name,
+            time_stamp,
+            paf_summary_cov.get("read_count", "Unknown"),
+        )
+        paf_summary_cov["has_finished"] = artic_metadata[barcode_name].has_finished
+
+        # get the lineage if it's finished
+        if paf_summary_cov["has_finished"]:
+            try:
+                lineage = pd.read_csv(
+                    artic_results_path / barcode_name / "lineage_report.csv.gz"
+                )["lineage"][0]
+            except FileNotFoundError:
+                lineage = "Unknown"
+
+            try:
+                VoCs_df = pd.read_csv(
+                    artic_results_path
+                    / barcode_name
+                    / f"{barcode_name}_ARTIC_medaka.csv.gz"
+                )
+                VoCs = VoCs_df["phe-label"]
+            except FileNotFoundError:
+                VoCs = "None Found"
+        else:
+            lineage = "Currently unknown"
+            VoCs = "Not Tested"
+        if barcode_name == "unclassified":
+            paf_summary_cov["has_sufficient_coverage"] = "ignore"
+        else:
+            paf_summary_cov["has_sufficient_coverage"] = artic_metadata[
+                barcode_name
+            ].has_sufficient_coverage
+        paf_summary_cov["VoC_Warn"] = VoCs
+        amp_stats_dict = amplicon_stats._asdict()
+        amp_stats_dict.pop("amplicon_coverage_medians")
+        amp_stats_dict.pop("amplicon_coverage_means")
+        paf_summary_cov.update(amp_stats_dict)
+        paf_summary_cov["lineage"] = lineage
+        paf_summary_cov["projected_to_finish"] = artic_metadata[
+            barcode_name
+        ].projected_to_finish
+    l = sorted(list(queryset), key=lambda x: x["barcode_name"])
+    svg_data["overall_results"] = l
+    print(svg_data)
+    HTML(string=render(
+        request, "artic-report.html", context={"data": svg_data}
+    ).getvalue()).write_pdf(
+        f"/tmp/{task.id}_artic_report.pdf",
+        stylesheets=[
+            CSS("web/static/web/css/report.css"),
+            CSS("web/static/web/libraries/bootstrap-4.5.0-dist/css/bootstrap.css"),
+        ],
+    )
+    return f"/tmp/{task.id}_artic_report.pdf"
+
+
 
 
 def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
@@ -485,8 +603,10 @@ def predict_barcode_will_finish(
         If this equation thinks the barcode will finish given enough time sequencing
 
     """
-    ideal_reads_count_constant = 100000
-    minimum_required_amplicons = 70
+    # 100000 reads per barcode in a run
+    ideal_reads_count_constant = int(get_env_variable("MT_IDEAL_READ_CONSTANT"))
+    minimum_required_amplicons = int(get_env_variable("MT_ARTIC_MIN_AMPS_PERC"))
+    coverage_per_amplicon = int(get_env_variable("MT_COVERAGE_PER_AMPLICON"))
     predicted_coverages = (
         amplicon_median_array
         / total_mapped_reads_count
@@ -494,6 +614,6 @@ def predict_barcode_will_finish(
         * ideal_reads_count_constant
     )
     return (
-        predicted_coverages[predicted_coverages > 20].size / amplicon_median_array.size
+        predicted_coverages[predicted_coverages > coverage_per_amplicon].size / amplicon_median_array.size
     ) * 100 > minimum_required_amplicons
 
