@@ -1,0 +1,58 @@
+@page {
+  @top-left {
+    background: #476efb;
+    content: counter(page);
+    height: 1cm;
+    text-align: center;
+    width: 1cm; }
+  @top-center {
+    background: #476efb;
+    content: '';
+    display: block;
+    height: .05cm;
+    opacity: .5;
+    width: 100%; }
+  @top-right {
+    content: string(date);
+    font-size: 10pt;
+    height: 1cm;
+    vertical-align: middle;
+    width: 100%; }
+}
+
+html body div#date {
+    visibility: hidden;
+    font-size: 4pt;
+    string-set: date content();
+}
+html body h4 {
+  padding: 20px 0 20px 0;
+}
+html body h4.new-page{
+  break-before: always;
+}
+html body h5 {
+  padding: 10px 0 10px 0;
+}
+.red-alert {
+    background-color: rgba(255, 0, 0, 0.7);
+}
+
+.orange-alert {
+    background-color: rgba(255, 179, 42, 0.8);
+}
+
+.yellow-alert {
+    background-color: rgba(242, 249, 17, 0.8);
+}
+
+.green-alert {
+    background-color: rgba(0, 128, 0, 0.7);
+}
+.artic-report-table {
+    width: 80% !important;
+}
+.ar {
+    width: 90% !important;
+}
+
