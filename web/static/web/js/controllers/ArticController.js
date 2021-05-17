@@ -17,7 +17,7 @@ class ArticController {
     this._coverageSummaryTable = $(`#artic-coverage-summary-table`)
     this._articProportionPieChart = null
     // this._drawArticCharts(this)
-    this._interval = setInterval(this._drawArticCharts, 10000, this)
+    this._interval = setInterval(this._drawArticCharts, 60000, this)
     $(window).on(`unload`, function () {
       console.log(`clearing Artic interval`)
       clearInterval(this._interval)
@@ -769,7 +769,7 @@ class ArticController {
           { targets: 13, data: `has_sufficient_coverage` },
           { targets: 14, data: `projected_to_finish` },
           { targets: 15, data: `lineage` },
-          { targets: 16, data: `VoC-Warn`}
+          { targets: 16, data: `VoC_Warn` }
         ]
       }
       )
@@ -1070,6 +1070,49 @@ class ArticController {
   }
 
   /**
+   * Export a PDF report of Artic and run data by gathering SVGs
+   * and posting them to the server to be assembled and sent back as a pdf
+   * @private
+   * @param flowcellId {number} Primary key of this flowcell
+   */
+  _exportArticReport (flowcellId) {
+    const that = this
+    const pie = $(`#artic-per-barcode-classification`).find(`.highcharts-root`)
+    pie.attr(`height`, 400)
+    pie.attr(`width`, 400)
+    pie.attr(`viewbox`, `0 0 600 600`)
+    const proportionClassifiedSGV = `<img src="data:image/svg+xml,${encodeURIComponent(pie[0].outerHTML)}">`
+    const readCountsPerBarcodeSGV = `<img src="data:image/svg+xml,${encodeURIComponent($(`#artic-per-barcode-coverage`).find(`.highcharts-root`)[0].outerHTML)}">`
+    const readLengthPerBarcodeSGV = `<img src="data:image/svg+xml,${encodeURIComponent($(`#artic-per-barcode-average-length`).find(`.highcharts-root`)[0].outerHTML)}">`
+    pie.attr(`height`, 300)
+    pie.attr(`width`, 300)
+    pie.attr(`viewbox`, `0 0 300 300`)
+    // const table = ``
+    const data = { proportionClassifiedSGV, readCountsPerBarcodeSGV, readLengthPerBarcodeSGV }
+    that._axiosInstance({
+      url: `/api/v1/artic/${that._flowcellId}/export-report/`,
+      data,
+      method: `post`,
+      Accept: `application/gzip`,
+      'Content-Type': `application/gzip`,
+      responseType: `blob`
+    }).then(
+      response => {
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement(`a`)
+        link.href = url
+        link.setAttribute(`download`, response.headers[`x-file-name`])
+        document.body.appendChild(link)
+        link.click()
+      }
+    ).catch(
+      error => {
+        console.error(error)
+      }
+    )
+  }
+
+  /**
    * Add listeners to Rerun all and Run incomplete buttons
    * @private
    */
@@ -1079,6 +1122,9 @@ class ArticController {
     })
     $(`#run-all-incomplete`).on(`click`, event => {
       this._runAllIncomplete(this._flowcellId)
+    })
+    $(`#export-artic-report`).on(`click`, event => {
+      this._exportArticReport(this._flowcellId)
     })
   }
 }
