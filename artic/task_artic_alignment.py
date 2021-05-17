@@ -617,6 +617,8 @@ def save_artic_barcode_metadata_info(
     has_sufficient_coverage: bool
         If True, the barcode has sufficient coverage to fire the artic command
 
+    projected_to_finish: bool
+        If the barcode is projected to finish by our algorithm
 
     Returns
     -------
@@ -661,6 +663,7 @@ def save_artic_barcode_metadata_info(
             "minimum_coverage": barcodes_minimum_coverage,
             "variance_coverage": barcodes_variance_coverage,
             "percentage_of_reads_in_barcode": round(proportion, 2),
+            "projected_to_finish": projected_to_finish
         }
     if has_sufficient_coverage:
         defaults.update({"has_sufficient_coverage": has_sufficient_coverage})
