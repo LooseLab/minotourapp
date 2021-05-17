@@ -37,4 +37,7 @@ export MT_SERVER_URL="localhost" # if not setting up a server don't worry about 
 export MT_VoC_PATH="<path/to/VoC/Definitions>" # If not setting up to use artic for Covid-19 this does not need to be set.
 export MT_CONDA_PREFIX="" # The path and command used to activate conda in your system. On ubuntu this might be "/home/django/miniconda3/etc/profile.d/conda.sh" whereas on OSX it might be "/Users/username/.miniconda3/etc/profile.d/conda.sh"
 export MT_ARTIC_ENV="artic-ncov2019" # The artic environment to activate to run artic commands.
+export MT_ARTIC_MIN_AMPS_PERC="90"
+export MT_IDEAL_READ_CONSTANT="100000"
+export MT_COVERAGE_PER_AMPLICON="20"
 
