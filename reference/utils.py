@@ -6,7 +6,6 @@ import hashlib
 import subprocess
 from pathlib import Path
 
-from django.conf import settings
 from django.core.files.uploadedfile import TemporaryUploadedFile, InMemoryUploadedFile
 from django.db.models import Q
 
@@ -86,22 +85,6 @@ def generate_sha256_hash(ref_file, user):
     duplicated, duplicated_file = check_for_duplicate_references(hash_string, user=user)
 
     return duplicated, hash_string
-
-def check_media_roots_exist():
-    """
-    Check the django specified media root exists, and if not creates them
-    Returns
-    -------
-
-    """
-    media_root = Path(settings.MEDIA_ROOT)
-
-    if not media_root.exists():
-        media_root.mkdir()
-    if not (media_root / "minimap2_indexes").exists():
-        (media_root / "minimap2_indexes").mkdir()
-    if not (media_root / "reference_files").exists():
-        (media_root / "reference_files").mkdir()
 
 
 def validate_reference_checks(ref_file, user):
