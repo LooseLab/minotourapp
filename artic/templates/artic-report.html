@@ -1,0 +1,54 @@
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Artic report for sample {{ data.sample_name }}</title>
+</head>
+<body>
+<div id="date">{% now "jS F Y H:i" %}</div>
+<article id="coverage">
+    <h4 id="report-title"> Report for artic output of {{ data.sample_name }} generated {% now "jS F Y H:i" %} </h4>
+    <section id="overall-stats">
+        {{ data.proportionClassifiedSGV | safe }}
+        {{ data.readCountsPerBarcodeSGV | safe }}
+        {{ data.readLengthPerBarcodeSGV | safe }}
+    </section>
+    <table class="table table-hover">
+        <thead>
+        <tr>
+            <th>Barcode Name</th>
+            <th>Chromosome</th>
+            <th>Read Len</th>
+            <th>Read Count</th>
+            <th>Yield</th>
+            <th>Coverage</th>
+            <th># Success <br> Amplicons</th>
+            <th># Partial <br> Amplicons</th>
+            <th># Failed <br> Amplicons</th>
+            <th>Lineage</th>
+            <th>VoC found</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for row in data.overall_results %}
+            <tr>
+            <td>{{ row.barcode_name }}</td>
+            <td>{{ row.chromosome__line_name }}</td>
+            <td>{{ row.average_read_len | intcomma }}</td>
+            <td>{{ row.read_count | intcomma }}</td>
+            <td>{{ row.total_yield | intcomma }}</td>
+            <td>{{ row.coverage | intcomma }}</td>
+            <td>{{ row.success_amplicon_count }}</td>
+            <td>{{ row.partial_amplicon_count }}</td>
+            <td>{{ row.failed_amplicon_count }}</td>
+            <td>{{ row.lineage }}</td>
+            <td>{{ row.VoC_Warn }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</article>
+
+</body>
+</html>
