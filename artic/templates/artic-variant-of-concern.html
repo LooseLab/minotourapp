@@ -1,4 +1,25 @@
 {% load humanize %}
+
+{% if artic_barcode_VoC.lineage  %}
+
+    <div class="card-header">
+                <i class="fas fa-chart-bar"></i>
+                Lineage Information for {{ artic_barcode_VoC.sample_id }} - {{ artic_barcode_VoC.lineage }}
+            </h4>
+  </div>
+  <div class="card-body">
+    <p class="card-text">These buttons link out to sites providing information about the detected PANGO lineage.</p>
+    <a href="https://cov-lineages.org/lineages/lineage_{{ artic_barcode_VoC.lineage }}.html" class="btn btn-primary" target="_blank">PANGO Info</a>
+      <a href="https://outbreak.info/situation-reports?pango={{ artic_barcode_VoC.lineage }}" class="btn btn-primary" target="_blank">Outbreak Info</a>
+  </div>
+
+{% else %}
+
+
+
+{% endif %}
+
+
 {% if artic_barcode_VoC.sample_id %}
 
         <div class="card-header">
@@ -15,7 +36,20 @@
                         be taken in interpretation of low coverage/quality genomes.</div>
     <br>
             <div class="row">Reported VuI/VoCs:</div><div class="row">{{ artic_barcode_VoC.hidden_html_string2 | safe }}</div>
-            <div class="row">Observed mutations:</div><div class="row">{{ artic_barcode_VoC.hidden_html_string | safe }}</div>
+
+    <p>
+
+  <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#obsMut" aria-expanded="false" aria-controls="obsMut">
+Observed Mutations
+  </button>
+</p>
+<div class="collapse" id="obsMut">
+  <div class="card card-body">
+    <div class="row">Observed mutations:</div><div class="row">{{ artic_barcode_VoC.hidden_html_string | safe }}</div>
+  </div>
+</div>
+
+
             <div class="row">
                 <div class="col-md-12">
 
@@ -103,7 +137,15 @@
                                         </tbody>
                                     </table>
 
-                                    <div class="row">The observed calls were:</div>
+                                <p>
+
+  <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+    Call Information
+  </button>
+</p>
+<div class="collapse" id="collapseExample">
+  <div class="card card-body">
+    <div class="row">The observed calls were:</div>
                                 <div class="row">
                                 <ul class="list-group list-group-flush">
                                     {% for class,value in  key.sample_typing_result.master.calls.items %}
@@ -162,6 +204,10 @@
                                         </div>
                                     {% endfor %}
                                         {% endif %}
+  </div>
+</div>
+
+
 
 
 
