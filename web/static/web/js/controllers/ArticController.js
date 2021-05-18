@@ -798,7 +798,7 @@ class ArticController {
   /**
    * Fetch data on potential variants of concern
    * @param flowcellId {number} Primary key of the flowcell record in the database.
-   * @param selectedBarcode {string} The buser selected barcode in the drop down.
+   * @param selectedBarcode {string} The user selected barcode in the drop down.
    * @private
    */
   _setVariantOfConcernHTML (flowcellId, selectedBarcode) {
