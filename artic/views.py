@@ -433,6 +433,15 @@ def get_artic_voc_html(request):
     #if vcf_path.exists():
     #    data["hidden_html_string3"] = "found it"
 
+    lineage_path = artic_results_path / selected_barcode / "lineage_report.csv.gz"
+    if lineage_path.exists():
+        try:
+            data["lineage"] = pd.read_csv(
+                artic_results_path / selected_barcode / "lineage_report.csv.gz"
+            )["lineage"][0]
+        except FileNotFoundError:
+            data["lineage"] = "Unknown"
+
 
     return render(
         request,
