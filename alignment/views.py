@@ -7,7 +7,8 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from alignment.models import PafRoughCov, PafSummaryCov
+from alignment.models import PafRoughCov, PafSummaryCov, MattsAmazingAlignmentSum
+from reads.models import Barcode
 
 
 @api_view(["GET"])
@@ -33,17 +34,42 @@ def rough_coverage_complete_chromosome_flowcell(
     -------
 
     """
-    queryset = (
-        PafRoughCov.objects.filter(
-            job_master__id=task_id,
+    test = MattsAmazingAlignmentSum.objects.filter(job_master__id=task_id,
             flowcell__owner=request.user,
             barcode_id=barcode_id,
             chromosome_pk=chromosome_id,
-            read_type_id=read_type_id,
-        ).order_by("bin_position_start")
-    ).values_list("bin_position_start", "bin_coverage")
-    # Sum is used client side to check if we have different data and whether to upload or not
-    sum_to_check = np.array(queryset).sum()
+            read_type_id=read_type_id,)
+    testDF = pd.DataFrame.from_records(test.values())
+    func = lambda s: np.fromstring(s, dtype=int, sep=",")
+    testDF['Numpy_bin_position_start'] = testDF['bin_position_start_str'].str.strip("[]").apply(func)
+    testDF['Numpy_bin_change'] = testDF['bin_coverage_str'].str.strip("[]").apply(func)
+    # testDF['Numpy_bin_position_start'] = testDF['bin_position_start_str'].apply(lambda x: np.array(eval(x)))
+    # testDF['Numpy_bin_change'] = testDF['bin_coverage_str'].apply(lambda x: np.array(eval(x)))
+    testarray = testDF[['Numpy_bin_position_start', 'Numpy_bin_change', 'rejected_barcode_id']]
+    testarray = testarray.set_index(['rejected_barcode_id']).apply(pd.Series.explode).reset_index().astype('int64')
+    ###This will generate the old style data we need for now:
+    testarray2 = testarray.groupby(['Numpy_bin_position_start'], as_index=False).agg(
+                {'Numpy_bin_change': np.sum})
+    testarray2['cumsum'] = testarray2['Numpy_bin_change'].transform(np.cumsum)
+    testarray2 = testarray2.rename(columns={'Numpy_bin_position_start': 'bin_position_start', 'cumsum': 'bin_coverage'})
+
+
+    ### This generates the new data set which will have a labelled dictionary.
+    testarray = testarray.groupby(['rejected_barcode_id', 'Numpy_bin_position_start'], as_index=False).agg(
+        {'Numpy_bin_change': np.sum})
+    testarray['cumsum'] = testarray.groupby(['rejected_barcode_id'])['Numpy_bin_change'].transform(np.cumsum)
+    testarray = testarray.set_index('rejected_barcode_id')
+    testarray = testarray.rename(columns={'Numpy_bin_position_start': 'bin_position_start', 'cumsum': 'bin_coverage'})
+
+    results_dict = dict()
+    for name, group in testarray.groupby(['rejected_barcode_id']):
+        mybarcode = Barcode.objects.get(pk=name)
+        results_dict[mybarcode.name] = group.values.tolist()
+
+    queryset = testarray2[['bin_position_start', 'bin_coverage']].values
+    new_data = results_dict
+    sum_to_check=queryset.sum()
+
     # TODO limits to just one reference here when fetching length, could be an issue
     #  in the future displaying multiple rferences on a plot
     length = (
@@ -52,7 +78,7 @@ def rough_coverage_complete_chromosome_flowcell(
         .reference_line_length
     )
     return Response(
-        {"chartData": queryset, "refLength": length, "sumToCheck": sum_to_check},
+        {"newChartData": new_data, "chartData": queryset, "refLength": length, "sumToCheck": sum_to_check},
         status=status.HTTP_200_OK,
     )
 
