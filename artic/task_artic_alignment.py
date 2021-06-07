@@ -45,6 +45,7 @@ from readuntil.functions_EB import *
 import pandas as pd
 
 from minotourapp.celery import app
+from git import Repo
 
 logger = get_task_logger(__name__)
 
@@ -213,7 +214,7 @@ def run_variant_command(base_results_directory, barcode_name,jm):
     cmd = [
         "bash",
         "-c",
-        f"aln2type json_files csv_files {barcode_name}_ARTIC_medaka.csv MN908947.3  {barcode_name}.muscle.out.fasta {MT_VoC_PATH}/variant_definitions/variant_yaml/*.yml",
+        f"aln2type --no_call_deletion json_files csv_files {barcode_name}_ARTIC_medaka.csv MN908947.3  {barcode_name}.muscle.out.fasta {MT_VoC_PATH}/variant_definitions/variant_yaml/*.yml",
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
