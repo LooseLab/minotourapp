@@ -58,6 +58,7 @@ def rough_coverage_complete_chromosome_flowcell(
     testarray = testarray.groupby(['rejected_barcode_id', 'Numpy_bin_position_start'], as_index=False).agg(
         {'Numpy_bin_change': np.sum})
     testarray['cumsum'] = testarray.groupby(['rejected_barcode_id'])['Numpy_bin_change'].transform(np.cumsum)
+    testarray = testarray.drop(columns=['Numpy_bin_change'])
     testarray = testarray.set_index('rejected_barcode_id')
     testarray = testarray.rename(columns={'Numpy_bin_position_start': 'bin_position_start', 'cumsum': 'bin_coverage'})
 
