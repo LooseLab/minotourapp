@@ -1,4 +1,20 @@
 {% load humanize %}
+{% if artic_barcode_VoC.lineage %}
+    <div class="card-header">
+            <h4 class="card-title">
+        <i class="fas fa-chart-bar"></i>
+        Lineage Information for {{ artic_barcode_VoC.sample_id }} - {{ artic_barcode_VoC.lineage }}
+        </h4>
+    </div>
+    <div class="card-body">
+        <p class="card-text">These buttons link out to sites providing information about the detected PANGO lineage.</p>
+        <a href="https://cov-lineages.org/lineages/lineage_{{ artic_barcode_VoC.lineage }}.html" class="btn btn-primary"
+           target="_blank">PANGO Info</a>
+        <a href="https://outbreak.info/situation-reports?pango={{ artic_barcode_VoC.lineage }}" class="btn btn-primary"
+           target="_blank">Outbreak Info</a>
+    </div>
+{% else %}
+{% endif %}
 {% if artic_barcode_VoC.sample_id %}
     <div class="card-header">
         <h4 class="card-title" id="coverage-card-title">
@@ -16,156 +32,156 @@
     <div class="row">{{ artic_barcode_VoC.hidden_html_string2 | safe }}</div>
     <div class="row">Observed mutations:</div>
     <div class="row">{{ artic_barcode_VoC.hidden_html_string | safe }}</div>
-            {% for key in artic_barcode_VoC.typing %}
-                {% if key.sample_typing_result.variant_status != None %}
-                        <div class="row">
-                            <h5 class="card-title">
-                                Sample_ID: {{ artic_barcode_VoC.sample_id }} <br>
-                                {% for classifier in key.sample_typing_summary.belongs_to_lineage %}
-                                    {% for argument,lineage in classifier.items %}
-                                        {{ argument }}:{{ lineage }} <br>
-                                    {% endfor %}
+    {% for key in artic_barcode_VoC.typing %}
+        {% if key.sample_typing_result.variant_status != None %}
+            <div class="row">
+                <h5 class="card-title">
+                    Sample_ID: {{ artic_barcode_VoC.sample_id }} <br>
+                    {% for classifier in key.sample_typing_summary.belongs_to_lineage %}
+                        {% for argument,lineage in classifier.items %}
+                            {{ argument }}:{{ lineage }} <br>
+                        {% endfor %}
+                    {% endfor %}
+                </h5>
+            </div>
+            <div>
+            {% if key.sample_typing_result.variant_status == "confirmed" %}
+                <div class="alert alert-danger ar" role="alert">
+            {% elif key.sample_typing_result.variant_status == "probable" %}
+                <div class="alert alert-warning ar" role="alert">
+            {% else %}
+                <div class="alert alert-secondary ar" role="alert">
+
+            {% endif %}
+        Variant Status: {{ key.sample_typing_result.variant_status }}</div>
+            <h6 class="card-subtitle mb-2">
+                PHE-Label: {{ key.sample_typing_summary.phe_label }}</h6>
+            <h6 class="card-subtitle mb-2">Alternate Names:
+                {% for altname in key.sample_typing_summary.alternate_names %}
+
+                    {{ altname }},
+
+                {% endfor %}
+            </h6>
+            <div><i>Description:</i></div>
+            <div>{{ key.sample_typing_summary.description }}</div>
+            <div><i>Information Sources</i>
+                {% for info_source in key.sample_typing_summary.information_sources %}
+                    <a href="{{ info_source }}" target="blank"
+                       class="card-link">Source_{{ forloop.counter }}</a>
+                {% endfor %}</div>
+            <br>
+            <h6>Variant Calls Detected:</h6>
+            <table class="table table-sm artic-report-table">
+                <caption>One based position - notes on sites detected in this sample.</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Position</th>
+                    <th scope="col">gene</th>
+                    <th scope="col">protein</th>
+                    <th scope="col">ref</th>
+                    <th scope="col">variant</th>
+                    <th scope="col">sample call</th>
+                    <th scope="col">type</th>
+                    <th scope="col">status</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for variant in key.sample_typing_result.master.variants|dictsort:"one_based_reference_position" %}
+                    <tr>
+                        <td>{{ variant.one_based_reference_position }}</td>
+                        <td>{{ variant.gene }}</td>
+                        <td>{{ variant.protein }}</td>
+                        <td>{{ variant.reference_base }}</td>
+                        <td>{{ variant.variant_base }}</td>
+                        <td>{{ variant.sample_call }}</td>
+                        <td>{{ variant.type }}</td>
+                        {% if variant.status == "detect" %}
+                            <td class="table-warning">{{ variant.status }}</td>
+                        {% elif variant.status == "no-call" %}
+                            <td class="table-info">{{ variant.status }}</td>
+                        {% else %}
+                            <td>{{ variant.status }}</td>
+                        {% endif %}
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <div class="row">The observed calls were:</div>
+            <div class="row">
+                <ul class="list-group list-group-flush">
+                    {% for class,value in  key.sample_typing_result.master.calls.items %}
+                        <li class="list-group-item"> {{ class }}: {{ value }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="row">Classification rules:</div>
+            <div class="container-flex">
+                <div class="row">
+                    {% for class,value in  key.sample_typing_result.master.calling_definition.items %}
+
+                        <div class="col-sm">
+                            {{ class }}
+                            <ul class="list-group list-group-flush">
+                                {% for label,threshold in value.items %}
+                                    <li class="list-group-item"> {{ label }}: {{ threshold }} </li>
                                 {% endfor %}
-                            </h5>
+                            </ul>
                         </div>
-                        <div >
-                            {% if key.sample_typing_result.variant_status == "confirmed" %}
-                                <div class="alert alert-danger ar" role="alert">
-                            {% elif key.sample_typing_result.variant_status == "probable" %}
-                                <div class="alert alert-warning ar" role="alert">
-                            {% else %}
-                                <div class="alert alert-secondary ar" role="alert">
-
-                            {% endif %}
-                            Variant Status: {{ key.sample_typing_result.variant_status }}</div>
-                            <h6 class="card-subtitle mb-2">
-                                PHE-Label: {{ key.sample_typing_summary.phe_label }}</h6>
-                            <h6 class="card-subtitle mb-2">Alternate Names:
-                                {% for altname in key.sample_typing_summary.alternate_names %}
-
-                                    {{ altname }},
-
-                                {% endfor %}
-                            </h6>
-                            <div><i>Description:</i></div>
-                            <div>{{ key.sample_typing_summary.description }}</div>
-                            <div><i>Information Sources</i>
-                                {% for info_source in key.sample_typing_summary.information_sources %}
-                                    <a href="{{ info_source }}" target="blank"
-                                       class="card-link">Source_{{ forloop.counter }}</a>
-                                {% endfor %}</div>
-                            <br>
-                            <h6>Variant Calls Detected:</h6>
-                            <table class="table table-sm artic-report-table">
-                                <caption>One based position - notes on sites detected in this sample.</caption>
-                                <thead>
-                                <tr>
-                                    <th scope="col">Position</th>
-                                    <th scope="col">gene</th>
-                                    <th scope="col">protein</th>
-                                    <th scope="col">ref</th>
-                                    <th scope="col">variant</th>
-                                    <th scope="col">sample call</th>
-                                    <th scope="col">type</th>
-                                    <th scope="col">status</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% for variant in key.sample_typing_result.master.variants|dictsort:"one_based_reference_position" %}
-                                    <tr>
-                                        <td>{{ variant.one_based_reference_position }}</td>
-                                        <td>{{ variant.gene }}</td>
-                                        <td>{{ variant.protein }}</td>
-                                        <td>{{ variant.reference_base }}</td>
-                                        <td>{{ variant.variant_base }}</td>
-                                        <td>{{ variant.sample_call }}</td>
-                                        <td>{{ variant.type }}</td>
-                                        {% if variant.status == "detect" %}
-                                            <td class="table-warning">{{ variant.status }}</td>
-                                        {% elif variant.status == "no-call" %}
-                                            <td class="table-info">{{ variant.status }}</td>
-                                        {% else %}
-                                            <td>{{ variant.status }}</td>
-                                        {% endif %}
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                            <div class="row">The observed calls were:</div>
-                            <div class="row">
-                                <ul class="list-group list-group-flush">
-                                    {% for class,value in  key.sample_typing_result.master.calls.items %}
-                                        <li class="list-group-item"> {{ class }}: {{ value }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                            <div class="row">Classification rules:</div>
-                            <div class="container-flex">
-                                <div class="row">
-                                    {% for class,value in  key.sample_typing_result.master.calling_definition.items %}
-
-                                        <div class="col-sm">
-                                            {{ class }}
-                                            <ul class="list-group list-group-flush">
-                                                {% for label,threshold in value.items %}
-                                                    <li class="list-group-item"> {{ label }}: {{ threshold }} </li>
-                                                {% endfor %}
-                                            </ul>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            {% if key.sample_typing_result.alt_probable %}
-                                <div class="row">This VoC may be classified as alt probable - in which case the observed
-                                    calls were:
-                                </div>
-                                {% for class,value in  key.sample_typing_result.alt_probable.calls.items %}
-                                    <div class="row">{{ class }}: {{ value }}</div>
-                                {% endfor %}
-                                <br>
-                                <div class="row">Classification rules:</div>
-                                {% for class,value in  key.sample_typing_result.alt_probable.calling_definition.items %}
-                                    <div class="row">{{ class }}
-                                        {% for label,threshold in value.items %}
-                                            {{ label }}: {{ threshold }}
-                                        {% endfor %}
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
-                            {% if key.sample_typing_result.alt_low_qc %}
-                                <div class="row">This VoC may be classified as alt low qc - in which case the observed
-                                    calls were:
-                                </div>
-                                {% for class,value in  key.sample_typing_result.alt_low_qc.calls.items %}
-                                    <div class="row">{{ class }}: {{ value }}</div>
-                                {% endfor %}
-                                <br>
-                                <div class="row">Classification rules:</div>
-                                {% for class,value in  key.sample_typing_result.alt_low_qc.calling_definition.items %}
-                                    <div class="row">{{ class }}
-                                        {% for label,threshold in value.items %}
-                                            {{ label }}: {{ threshold }}
-                                        {% endfor %}
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
-                            <hr>
-                            <div class="row"><i>Acknowledgements:</i></div>
-                            {% for acks in key.sample_typing_summary.acknowledgements %}
-                                <div class="row">{{ acks }}</div>
-                            {% endfor %}
-                            <div class="row"><i>Curators:</i>
-                                {% for curator in key.sample_typing_summary.curators %}
-                                    {{ curator }}
-                                {% endfor %}</div>
-                            <hr>
-                            <div class="row">The complete list of variants of concern scanned included:</div>
-                            <div class="row">{% for key in artic_barcode_VoC.typing %}
-                                {{ key.sample_typing_summary.phe_label }}
-                            {% endfor %}</div>
-                {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% if key.sample_typing_result.alt_probable %}
+                <div class="row">This VoC may be classified as alt probable - in which case the observed
+                    calls were:
+                </div>
+                {% for class,value in  key.sample_typing_result.alt_probable.calls.items %}
+                    <div class="row">{{ class }}: {{ value }}</div>
+                {% endfor %}
+                <br>
+                <div class="row">Classification rules:</div>
+                {% for class,value in  key.sample_typing_result.alt_probable.calling_definition.items %}
+                    <div class="row">{{ class }}
+                        {% for label,threshold in value.items %}
+                            {{ label }}: {{ threshold }}
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            {% if key.sample_typing_result.alt_low_qc %}
+                <div class="row">This VoC may be classified as alt low qc - in which case the observed
+                    calls were:
+                </div>
+                {% for class,value in  key.sample_typing_result.alt_low_qc.calls.items %}
+                    <div class="row">{{ class }}: {{ value }}</div>
+                {% endfor %}
+                <br>
+                <div class="row">Classification rules:</div>
+                {% for class,value in  key.sample_typing_result.alt_low_qc.calling_definition.items %}
+                    <div class="row">{{ class }}
+                        {% for label,threshold in value.items %}
+                            {{ label }}: {{ threshold }}
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            <hr>
+            <div class="row"><i>Acknowledgements:</i></div>
+            {% for acks in key.sample_typing_summary.acknowledgements %}
+                <div class="row">{{ acks }}</div>
             {% endfor %}
-    </div>
+            <div class="row"><i>Curators:</i>
+                {% for curator in key.sample_typing_summary.curators %}
+                    {{ curator }}
+                {% endfor %}</div>
+            <hr>
+            <div class="row">The complete list of variants of concern scanned included:</div>
+            <div class="row">{% for key in artic_barcode_VoC.typing %}
+                {{ key.sample_typing_summary.phe_label }}
+            {% endfor %}</div>
+        {% endif %}
+    {% endfor %}
+</div>
 {% else %}
     <div class="card card-primary card-outline">
         <div class="card-header">

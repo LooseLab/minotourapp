@@ -10,7 +10,7 @@ from django.db.models import F, Max
 from numba import njit
 
 from alignment.mapper import MAP
-from alignment.models import PafRoughCov, PafSummaryCov, PafRoughCovIntermediate
+from alignment.models import PafRoughCov, PafSummaryCov, PafRoughCovIntermediate, MattsAmazingAlignmentSum
 from minotourapp.celery import app
 from minotourapp.redis import redis_instance
 from reads.models import FastqRead, JobMaster, Barcode
@@ -28,6 +28,8 @@ def aggregate_intermediate_table():
     -------
 
     """
+    #pass
+    #Commented out for now
     fetch_intmd_rough_cov_to_aggregate()
 
 
@@ -102,7 +104,7 @@ def run_minimap2_alignment(job_master_id, streamed_reads=None):
         fasta_df_barcode = pd.DataFrame(streamed_reads)
         if not fasta_df_barcode.empty:
             fasta_df_barcode = fasta_df_barcode.rename(
-                columns={"type": "read_type_id", "barcode": "barcode_id"}
+                columns={"type": "read_type_id", "barcode": "barcode_id", "rejected_barcode": "rejected_barcode_id"}
             )
             fasta_df_barcode["type__name"] = fasta_df_barcode["read_type_id"]
     read_count = fasta_df_barcode.shape[0]
@@ -317,18 +319,39 @@ def fetch_intmd_rough_cov_to_aggregate():
     -------
     pd.core.frame.DataFrame
     """
-    querysets = PafRoughCovIntermediate.objects.all()[:50000]
+    querysets = PafRoughCovIntermediate.objects.all()
     if not querysets:
         logger.info("No Intermediate data found, exiting.")
         return
     # lookup_dict = {prc.id: prc for prc in querysets}
     df_to_aggregate = pd.DataFrame.from_records(querysets.values())
-    last_id = df_to_aggregate.iloc[-1].id
+
+    df_to_aggregate["bin_window"] = df_to_aggregate['bin_position_start'] // 10000000 #this bins data into 10 million base windows
+
+    #THIS BUILDS A NEW DATAFRAME WITH ALL SORTS OF FUNKY BITS OF INFO
+    testing = df_to_aggregate.groupby(
+        ['job_master_id', 'run_id', 'flowcell_id', 'read_type_id', 'is_pass', 'barcode_id','rejected_barcode_id', 'reference_id',
+         'chromosome_id', 'reference_pk','reference_name','chromosome_length','chromosome_pk','chromosome_name','bin_window'])['bin_position_start','bin_change'].agg(list).reset_index()
+
+    #Now we need to add the testing data to the database somehow....
+
+    if not testing.empty:
+        testing["model_objects"] = testing.apply(
+            generate_matt_objects,
+            axis=1,
+            args=(MattsAmazingAlignmentSum,),
+        )
+        MattsAmazingAlignmentSum.objects.bulk_create(
+            testing["model_objects"].values.tolist(), batch_size=5000
+        )
+
+    last_id = querysets.last().id
     with connection.cursor() as cursor:
         cursor.execute(
             "DELETE FROM alignment_pafroughcovintermediate where id<=%s", [last_id],
         )
-    # querysets.delete()
+    #querysets.delete()
+    """
     # df_to_aggregate["ORM"] = df_to_aggregate["id"].map(lookup_dict)
     df_to_aggregate["bin_shift"] = df_to_aggregate["bin_position_start"].shift(-1)
     df_to_aggregate["next_is_start"] = df_to_aggregate["is_start"].shift(-1)
@@ -341,7 +364,10 @@ def fetch_intmd_rough_cov_to_aggregate():
             "bin_position_start",
         ]
     )
+    print ("!!!!!!!!!!!!!")
+    print (df_to_aggregate)
     fetch_final_rough_cov_to_update(df_to_aggregate)
+    """
 
 def update_orm_objects(row):
     """
@@ -357,6 +383,34 @@ def update_orm_objects(row):
     """
     row["ORM"].bin_coverage = row["bin_coverage"]
     return row["ORM"]
+
+
+def generate_matt_objects(row,model):
+    """
+    Dunno what goes here.
+    """
+    a = model(
+        job_master_id=row["job_master_id"],
+        run_id=row["run_id"],
+        flowcell_id=row["flowcell_id"],
+        read_type_id=row["read_type_id"],
+        is_pass=row["is_pass"],
+        barcode_id=row["barcode_id"],
+        rejected_barcode_id=row["rejected_barcode_id"],
+        reference_id=row["reference_id"],
+        chromosome_id=row["chromosome_id"],
+        bin_position_start_str=row["bin_position_start"],
+        bin_coverage_str=row["bin_change"],
+        chromosome_pk=row["chromosome_pk"],
+        reference_pk=row["reference_pk"],
+        reference_name=row["reference_name"],
+        chromosome_length=row["chromosome_length"],
+        chromosome_name=row["chromosome_name"],
+        bin_window=row["bin_window"],
+
+    )
+    return a
+
 
 
 def generate_paf_rough_cov_objects(
@@ -392,6 +446,7 @@ def generate_paf_rough_cov_objects(
         reference_name=row["reference_name"],
         chromosome_length=row["chromosome_length"],
         chromosome_name=row[key],
+        rejected_barcode_id=row["rejected_barcode_id"],
     )
     if model == PafRoughCovIntermediate:
         a.bin_change = row["bin_change"]
@@ -464,28 +519,28 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     if len(df.index.names) > 1:
         df.reset_index(inplace=True)
     df.set_index(
-        ["read_type_id", "chromosome_pk", "barcode_id", "mapping_start_bin_start"],
+        ["read_type_id", "chromosome_pk", "barcode_id","rejected_barcode_id", "mapping_start_bin_start"],
         inplace=True,
     )
     # df.sort_index(inplace=True)
     df["bin_change"] = df.groupby(
-        ["read_type_id", "chromosome_pk", "barcode_id", "mapping_start_bin_start"]
+        ["read_type_id", "chromosome_pk", "barcode_id","rejected_barcode_id", "mapping_start_bin_start"]
     ).size()
     df_mapping_start_bins = df.loc[~df.index.duplicated()][
         ["bin_change", "run_id", "is_pass", "chromosome_length", "tsn"]
     ]
     df_mapping_start_bins["is_start"] = True
     df_mapping_start_bins.index = df_mapping_start_bins.index.rename(
-        ["read_type_id", "chromosome_pk", "barcode_id", "bin_position_start"]
+        ["read_type_id", "chromosome_pk", "barcode_id","rejected_barcode_id", "bin_position_start"]
     )
     df.reset_index(inplace=True)
     df.set_index(
-        ["read_type_id", "chromosome_pk", "barcode_id", "mapping_end_bin_start"],
+        ["read_type_id", "chromosome_pk", "barcode_id","rejected_barcode_id", "mapping_end_bin_start"],
         inplace=True,
     )
     # df.sort_index(inplace=True)
     df["end_bin_change"] = df.groupby(
-        ["read_type_id", "chromosome_pk", "barcode_id", "mapping_end_bin_start"]
+        ["read_type_id", "chromosome_pk", "barcode_id","rejected_barcode_id", "mapping_end_bin_start"]
     ).size()
     # end_bins are
     df_mapping_end_bins = df.loc[~df.index.duplicated()][
@@ -499,7 +554,7 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     # If a read ends in a bin, it still covers it, so shift the neg incr to the next bin
     # df_mapping_end_bins["bin_change"] = df_mapping_end_bins["bin_change"].shift().fillna(0)
     df_mapping_end_bins.index = df_mapping_end_bins.index.rename(
-        ["read_type_id", "chromosome_pk", "barcode_id", "bin_position_start"]
+        ["read_type_id", "chromosome_pk", "barcode_id","rejected_barcode_id", "bin_position_start"]
     )
     results = df_mapping_start_bins.append(df_mapping_end_bins).sort_index()
     # Collapse duplicates on their start + end value
@@ -511,7 +566,7 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     results.reset_index(inplace=True)
     # compile the code that runs this, so it will run super fast for the next one
     results.set_index(
-        ["read_type_id", "chromosome_pk", "barcode_id", "bin_position_start"],
+        ["read_type_id", "chromosome_pk", "barcode_id","rejected_barcode_id", "bin_position_start"],
         inplace=True,
     )
     results = results.loc[~results.index.duplicated()]
@@ -522,6 +577,7 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     logger.debug("results")
     if not results.empty:
         results.reset_index(inplace=True)
+
         results["model_objects"] = results.apply(
             generate_paf_rough_cov_objects,
             axis=1,
@@ -646,6 +702,7 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
                 "type__name",
                 "read_type_id",
                 "barcode_id",
+                "rejected_barcode_id",
                 "is_pass",
                 "run_id",
             ]
@@ -658,6 +715,9 @@ def align_reads_factory(job_master_id, fasta_df_barcode, super_function):
     # All reads barcode Id
     run_id = np.unique(df["run_id"].values)[0]
     all_reads_barcode_id = int(Barcode.objects.get(run_id=run_id, name="ALl reads").id)
+    # TODO do we have a way of including sequenced and ublocked?
+    # TODO if we can find the we have unblocked reads?
+
     # TODO should these go to a chain, final in chain deletes the paf results in redis
     if "No barcode" in fasta_df_barcode["barcode_name"].unique():
         df["barcode_name"] = "All reads"
