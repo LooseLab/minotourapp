@@ -317,18 +317,18 @@ def fetch_intmd_rough_cov_to_aggregate():
     -------
     pd.core.frame.DataFrame
     """
-    querysets = PafRoughCovIntermediate.objects.all()
+    querysets = PafRoughCovIntermediate.objects.all()[:50000]
     if not querysets:
         logger.info("No Intermediate data found, exiting.")
         return
     # lookup_dict = {prc.id: prc for prc in querysets}
     df_to_aggregate = pd.DataFrame.from_records(querysets.values())
-    last_id = querysets.last().id
+    last_id = df_to_aggregate.iloc[-1].id
     with connection.cursor() as cursor:
         cursor.execute(
             "DELETE FROM alignment_pafroughcovintermediate where id<=%s", [last_id],
         )
-    querysets.delete()
+    # querysets.delete()
     # df_to_aggregate["ORM"] = df_to_aggregate["id"].map(lookup_dict)
     df_to_aggregate["bin_shift"] = df_to_aggregate["bin_position_start"].shift(-1)
     df_to_aggregate["next_is_start"] = df_to_aggregate["is_start"].shift(-1)
