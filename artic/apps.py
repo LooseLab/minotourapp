@@ -1,6 +1,7 @@
-from django.apps import AppConfig
-import os
 from pathlib import Path
+
+import git
+from django.apps import AppConfig
 from git import Repo
 
 
@@ -28,10 +29,16 @@ class ArticConfig(AppConfig):
             if Path(f"{MT_VoC_PATH}/variant_definitions/").exists():
                 #already cloned so....
                 print ("Updating path")
-                repo = Repo(Path(f"{MT_VoC_PATH}/variant_definitions/"))
-                print(repo.remotes.origin.pull())
-                pass
+                try:
+                    repo = Repo(Path(f"{MT_VoC_PATH}/variant_definitions/"))
+                    print(repo.remotes.origin.pull())
+                    pass
+                except git.GitCommandError as e:
+                    print(f"Git error, presumably being updated simultaneously {repr(e)}")
             else:
-                cloned_repo = Repo.clone_from("https://github.com/phe-genomics/variant_definitions", f"{MT_VoC_PATH}/variant_definitions/")
+                try:
+                    cloned_repo = Repo.clone_from("https://github.com/phe-genomics/variant_definitions", f"{MT_VoC_PATH}/variant_definitions/")
+                except git.GitCommandError as e:
+                    print(f"Git error, presumably being updated simultaneously {repr(e)}")
 
 
