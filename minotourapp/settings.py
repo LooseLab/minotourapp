@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'django_extensions',
+    'artic',
     'reads',
     'web',
     'alignment',
@@ -49,7 +50,6 @@ INSTALLED_APPS = [
     'communication',
     'metagenomics',
     'readuntil',
-    'artic',
     'minknow_data',
     'guardian',
 
@@ -208,7 +208,7 @@ CELERY_QUEUES = (
     Queue('minimap', default_exchange, routing_key='alignment#', consumer_arguments={'x-priority': 5}),
 )
 CELERY_IMPORTS = ('web.tasks', 'communication.tasks_send_message',
-                  'alignment.tasks_alignment', 'reads.tasks.tasks_archive_flowcell')
+                  'alignment.tasks_alignment', 'reads.tasks.tasks_archive_flowcell', 'artic.task_secure_artic_runs')
 CELERY_ROUTES = ({
     'run_minimap2_alignment': {
         'queue': 'minimap',

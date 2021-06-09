@@ -264,6 +264,9 @@ class TasksController {
             console.error(code)
           }
         },
+        responsive: {
+          details: false
+        },
         columns: [
           { data: `id` },
           { data: `task_type_name` },
