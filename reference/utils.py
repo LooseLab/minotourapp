@@ -10,6 +10,7 @@ from django.core.files.uploadedfile import TemporaryUploadedFile, InMemoryUpload
 from django.db.models import Q
 
 from minotourapp.settings import MINIMAP2, MEDIA_ROOT
+from minotourapp.utils import get_env_variable
 from reference.models import ReferenceInfo
 
 
@@ -28,8 +29,13 @@ def create_minimap2_index(ref_info, file_name):
     str
         File path to the newly created minimap2 index file
     """
+    index_dir_path = (
+        MEDIA_ROOT
+        if not get_env_variable("MT_MINIMAP2_INDEX_DIR").isdigit()
+        else get_env_variable("MT_MINIMAP2_INDEX_DIR")
+    )
     minimap2_index_file_location = (
-        f"{MEDIA_ROOT}/minimap2_indexes/{file_name.stem}.mmi"
+        f"{index_dir_path}/minimap2_indexes/{file_name.stem}.mmi"
     )
     subprocess.Popen(
         f"{MINIMAP2} -d {minimap2_index_file_location}"
@@ -60,9 +66,10 @@ def check_for_duplicate_references(hash_string, user):
         print(
             f"Exact reference already exists, please use {queryset.values_list('name', flat=True)[0]}"
         )
-        return True, queryset.values_list('name')[0]
+        return True, queryset.values_list("name")[0]
     else:
         return False, []
+
 
 def generate_sha256_hash(ref_file, user):
     """
@@ -121,9 +128,6 @@ def validate_reference_checks(ref_file, user):
         return duplicated, hash_string
     else:
         read_handle = open
-    with read_handle(
-        ref_file,
-        "rb",
-    ) as f:
+    with read_handle(ref_file, "rb",) as f:
         duplicated, hash_string = generate_sha256_hash(f, user)
         return duplicated, hash_string

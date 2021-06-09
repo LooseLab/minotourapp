@@ -40,4 +40,5 @@ export MT_ARTIC_ENV="artic-ncov2019" # The artic environment to activate to run 
 export MT_ARTIC_MIN_AMPS_PERC="90"
 export MT_IDEAL_READ_CONSTANT="100000"
 export MT_COVERAGE_PER_AMPLICON="20"
+export MT_MINIMAP2_INDEX_DIR="0" # by default these are stored in ../data/minimap2_indexes relative to the minotourapp base directory (not the app), but if specified indexes will be stored inside the given directory in a minimap2_indexes folder
 
