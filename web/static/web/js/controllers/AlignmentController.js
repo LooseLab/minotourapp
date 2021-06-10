@@ -15,6 +15,7 @@ class AlignmentController {
     this._referenceSelect = $(`#referenceSelect`)
     this._chromosomeSelect = $(`#chromosomeSelect`)
     this._barcodeSelect = $(`#barcodeSelect`)
+    this._readUntilSelect = $(`#ruSelect`)
     this._lookupDownStreamSelects = {
       referenceSelect: [this._readTypeSelect, this._chromosomeSelect, this._barcodeSelect],
       readTypeSelect: [this._chromosomeSelect, this._barcodeSelect],
@@ -66,14 +67,14 @@ class AlignmentController {
   _updateOptionDropDowns (flowcellId) {
     this._axiosInstance.get(`/api/v1/alignment/${flowcellId}/mapped-references`).then(response => {
       const referenceId = $(`#referenceSelect`).val()
-      const readTypes = new Set(response.data.map(el => {
+      const readTypes = new Set(response.data.references.map(el => {
         if (el.referenceId === parseInt(referenceId)) {
           return `<option value="${el.referenceId}" data-jm-id="${el.jmId}" selected>${el.referenceName}</option>`
         } else {
           return `<option value="${el.referenceId}" data-jm-id="${el.jmId}">${el.referenceName}</option>`
         }
       }))
-      this._selectData = response.data
+      this._selectData = response.data.references
       this._referenceSelect.html([...readTypes])
       this._selectOnChange({ srcElement: { id: `referenceSelect` } }, false)
     }).catch(error => {
@@ -147,7 +148,7 @@ class AlignmentController {
     if (this._selects.every(select => {
       return Boolean(select.children().length) === true && select.val() !== `-1`
     })) {
-      // undisable the rest button
+      // enable the reset button
       $(`#reset-chart-zoom`).attr(`disabled`, false)
       barcodeId = this._barcodeSelect.val()
       readTypeId = this._readTypeSelect.val()

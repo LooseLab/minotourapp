@@ -10,7 +10,11 @@ from django.db.models import F, Max
 from numba import njit
 
 from alignment.mapper import MAP
-from alignment.models import PafRoughCov, PafSummaryCov, PafRoughCovIntermediate, MattsAmazingAlignmentSum
+from alignment.models import (
+    PafSummaryCov,
+    PafRoughCovIntermediate,
+    MattsAmazingAlignmentSum,
+)
 from minotourapp.celery import app
 from minotourapp.redis import redis_instance
 from reads.models import FastqRead, JobMaster, Barcode
@@ -28,8 +32,8 @@ def aggregate_intermediate_table():
     -------
 
     """
-    #pass
-    #Commented out for now
+    # pass
+    # Commented out for now
     fetch_intmd_rough_cov_to_aggregate()
 
 
@@ -43,6 +47,7 @@ def remove_old_references():
 
     """
     MAP.reference_monitor()
+
 
 @app.task
 def run_minimap2_alignment(job_master_id, streamed_reads=None):
@@ -104,7 +109,11 @@ def run_minimap2_alignment(job_master_id, streamed_reads=None):
         fasta_df_barcode = pd.DataFrame(streamed_reads)
         if not fasta_df_barcode.empty:
             fasta_df_barcode = fasta_df_barcode.rename(
-                columns={"type": "read_type_id", "barcode": "barcode_id", "rejected_barcode": "rejected_barcode_id"}
+                columns={
+                    "type": "read_type_id",
+                    "barcode": "barcode_id",
+                    "rejected_barcode": "rejected_barcode_id",
+                }
             )
             fasta_df_barcode["type__name"] = fasta_df_barcode["read_type_id"]
     read_count = fasta_df_barcode.shape[0]
@@ -171,145 +180,145 @@ def save_summary_coverage(row, job_master_id, reference_id, reference_name):
     paf_summary_cov.save()
 
 
-def update_final_rough_coverage(df_to_process):
-    """
-    Update the final rough coverage of by combining existing values with new values and saving them
+# def update_final_rough_coverage(df_to_process):
+#     """
+#     Update the final rough coverage of by combining existing values with new values and saving them
+#
+#     Parameters
+#     ----------
+#     df_to_process: pandas.core.frame.DataFrame
+#         The datframe of Intermediate PafRoughCovValues
+#     Returns
+#     -------
+#
+#     """
+#     if "bin_coverage" not in df_to_process.keys():
+#         df_to_process["bin_coverage"] = 0
+#     else:
+#         df_to_process["bin_coverage"] = (
+#             df_to_process["bin_coverage"].fillna(method="ffill").fillna(0)
+#         )
+#     df_to_process["bin_change"] = df_to_process["bin_change"].fillna(0)
+#     logger.debug(df_to_process.head())
+#     logger.debug(df_to_process.index)
+#     logger.debug(df_to_process.keys())
+#     df_to_process["summed_bin_change"] = df_to_process.groupby(
+#         df_to_process.index.names[:-2]
+#     )["bin_change"].agg(np.cumsum)
+#     df_to_process["bin_coverage"] = (
+#         df_to_process["summed_bin_change"] + df_to_process["bin_coverage"]
+#     )
+#     df_to_process = df_to_process.loc[~df_to_process.index.duplicated(keep="last")]
+#     logger.debug(df_to_process.head())
+#     if "ORM" in df_to_process.keys():
+#         logger.info("Coverage needs updating")
+#         df_to_update = df_to_process[~df_to_process["ORM"].isnull()]
+#         df_to_create = df_to_process[df_to_process["ORM"].isnull()]
+#         # Don't save where the change is 0
+#         df_to_update = df_to_update[df_to_update["summed_bin_change"].ne(0)]
+#         df_to_update["ORM"] = df_to_update.apply(update_orm_objects, axis=1)
+#         PafRoughCov.objects.bulk_update(
+#             df_to_update["ORM"].values, ["bin_coverage"], batch_size=5000
+#         )
+#     else:
+#         df_to_create = df_to_process
+#     logger.debug(df_to_create)
+#     logger.debug(df_to_create.keys())
+#     if not df_to_create.empty:
+#         df_to_create.reset_index(inplace=True)
+#         df_to_create["model_objects"] = df_to_create.apply(
+#             generate_paf_rough_cov_objects,
+#             axis=1,
+#             args=(PafRoughCov, "chromosome_name"),
+#         )
+#         PafRoughCov.objects.bulk_create(
+#             df_to_create["model_objects"].values.tolist(), batch_size=5000
+#         )
 
-    Parameters
-    ----------
-    df_to_process: pandas.core.frame.DataFrame
-        The datframe of Intermediate PafRoughCovValues
-    Returns
-    -------
-
-    """
-    if "bin_coverage" not in df_to_process.keys():
-        df_to_process["bin_coverage"] = 0
-    else:
-        df_to_process["bin_coverage"] = (
-            df_to_process["bin_coverage"].fillna(method="ffill").fillna(0)
-        )
-    df_to_process["bin_change"] = df_to_process["bin_change"].fillna(0)
-    logger.debug(df_to_process.head())
-    logger.debug(df_to_process.index)
-    logger.debug(df_to_process.keys())
-    df_to_process["summed_bin_change"] = df_to_process.groupby(
-        df_to_process.index.names[:-2]
-    )["bin_change"].agg(np.cumsum)
-    df_to_process["bin_coverage"] = (
-        df_to_process["summed_bin_change"] + df_to_process["bin_coverage"]
-    )
-    df_to_process = df_to_process.loc[~df_to_process.index.duplicated(keep="last")]
-    logger.debug(df_to_process.head())
-    if "ORM" in df_to_process.keys():
-        logger.info("Coverage needs updating")
-        df_to_update = df_to_process[~df_to_process["ORM"].isnull()]
-        df_to_create = df_to_process[df_to_process["ORM"].isnull()]
-        # Don't save where the change is 0
-        df_to_update = df_to_update[df_to_update["summed_bin_change"].ne(0)]
-        df_to_update["ORM"] = df_to_update.apply(update_orm_objects, axis=1)
-        PafRoughCov.objects.bulk_update(
-            df_to_update["ORM"].values, ["bin_coverage"], batch_size=5000
-        )
-    else:
-        df_to_create = df_to_process
-    logger.debug(df_to_create)
-    logger.debug(df_to_create.keys())
-    if not df_to_create.empty:
-        df_to_create.reset_index(inplace=True)
-        df_to_create["model_objects"] = df_to_create.apply(
-            generate_paf_rough_cov_objects,
-            axis=1,
-            args=(PafRoughCov, "chromosome_name"),
-        )
-        PafRoughCov.objects.bulk_create(
-            df_to_create["model_objects"].values.tolist(), batch_size=5000
-        )
-
-def fetch_final_rough_cov_to_update(df_aggregate_intmd):
-    """
-    Fetch the final data from the paf rough cov table to update
-    Parameters
-    ----------
-    df_aggregate_intmd: pd.core.frame.DataFrame
-        The aggregated dataframe of all the results in the intermediate table, grouped by job_master, position,
-        chromosome and read type
-    Returns
-    -------
-
-    """
-    go_fast2(np.array([[0, 10, 0, 0]], dtype=np.uint32), np.uint32(10))
-    df_aggregate_intmd.reset_index(inplace=True)
-    bin_width = 10
-    positions = (
-        df_aggregate_intmd.set_index(["job_master_id", "read_type_id", "chromosome_pk"])
-        .groupby(["job_master_id", "read_type_id", "chromosome_pk"])
-        .apply(
-            lambda x: go_fast2(
-                x[["bin_position_start", "bin_shift", "is_start", "next_is_start"]]
-                .fillna(0)
-                .values.astype(np.uint32),
-                np.uint32(bin_width),
-            )
-        )
-    )
-    logger.info(f"Positions {positions.head()}")
-    logger.info(f"positions length {positions.shape}")
-    querysets = (
-        positions.groupby(["job_master_id", "chromosome_pk"]).apply(lambda x: PafRoughCov.objects.filter(
-            chromosome_id=x.name[1], job_master_id=x.name[0], bin_position_start__in=x.values[0]
-        )).values
-    )
-    if not querysets[0]:
-        logger.info("No previous bins found")
-        df_old_coverage = pd.DataFrame()
-        df_aggregate_intmd.set_index([
-            "read_type_id",
-            "chromosome_pk",
-            "barcode_id",
-            "bin_position_start",
-            "job_master_id"
-        ], inplace=True)
-        df_to_process = df_aggregate_intmd.append(df_old_coverage, sort=True).sort_index()
-        update_final_rough_coverage(df_to_process)
-        return
-
-    s = pd.Series(querysets).explode().to_frame()
-    s.dropna(inplace=True)
-    if not s.empty:
-        lookup_dict = {rough_cov.id: rough_cov for rough_cov in s[0].values.tolist()}
-        df_old_coverage = pd.DataFrame(
-            s[0].apply(lambda x: x.__dict__).values.tolist()
-        )
-    else:
-        df_old_coverage = pd.DataFrame()
-        lookup_dict = {}
-    if not df_old_coverage.empty:
-        df_old_coverage.drop(
-            columns=["_state", "bin_position_end", "is_pass", "chromosome_id"], inplace=True
-        )
-        # df_old_coverage.rename(columns={"chromosome_id": "chromosome_pk"}, inplace=True)
-        df_old_coverage["ORM"] = df_old_coverage["id"].map(lookup_dict)
-        df_old_coverage.set_index(
-            [
-                "read_type_id",
-                "chromosome_pk",
-                "barcode_id",
-                "bin_position_start",
-                "job_master_id"
-            ], inplace=True
-        )
-        logger.debug(df_old_coverage)
-        df_old_coverage = df_old_coverage.loc[~df_old_coverage.index.duplicated()]
-    df_aggregate_intmd.set_index([
-                "read_type_id",
-                "chromosome_pk",
-                "barcode_id",
-                "bin_position_start",
-                "job_master_id"
-            ], inplace=True)
-    df_to_process = df_aggregate_intmd.append(df_old_coverage, sort=True).sort_index()
-    update_final_rough_coverage(df_to_process)
+# def fetch_final_rough_cov_to_update(df_aggregate_intmd):
+#     """
+#     Fetch the final data from the paf rough cov table to update
+#     Parameters
+#     ----------
+#     df_aggregate_intmd: pd.core.frame.DataFrame
+#         The aggregated dataframe of all the results in the intermediate table, grouped by job_master, position,
+#         chromosome and read type
+#     Returns
+#     -------
+#
+#     """
+#     go_fast2(np.array([[0, 10, 0, 0]], dtype=np.uint32), np.uint32(10))
+#     df_aggregate_intmd.reset_index(inplace=True)
+#     bin_width = 10
+#     positions = (
+#         df_aggregate_intmd.set_index(["job_master_id", "read_type_id", "chromosome_pk"])
+#         .groupby(["job_master_id", "read_type_id", "chromosome_pk"])
+#         .apply(
+#             lambda x: go_fast2(
+#                 x[["bin_position_start", "bin_shift", "is_start", "next_is_start"]]
+#                 .fillna(0)
+#                 .values.astype(np.uint32),
+#                 np.uint32(bin_width),
+#             )
+#         )
+#     )
+#     logger.info(f"Positions {positions.head()}")
+#     logger.info(f"positions length {positions.shape}")
+#     querysets = (
+#         positions.groupby(["job_master_id", "chromosome_pk"]).apply(lambda x: PafRoughCov.objects.filter(
+#             chromosome_id=x.name[1], job_master_id=x.name[0], bin_position_start__in=x.values[0]
+#         )).values
+#     )
+#     if not querysets[0]:
+#         logger.info("No previous bins found")
+#         df_old_coverage = pd.DataFrame()
+#         df_aggregate_intmd.set_index([
+#             "read_type_id",
+#             "chromosome_pk",
+#             "barcode_id",
+#             "bin_position_start",
+#             "job_master_id"
+#         ], inplace=True)
+#         df_to_process = df_aggregate_intmd.append(df_old_coverage, sort=True).sort_index()
+#         update_final_rough_coverage(df_to_process)
+#         return
+#
+#     s = pd.Series(querysets).explode().to_frame()
+#     s.dropna(inplace=True)
+#     if not s.empty:
+#         lookup_dict = {rough_cov.id: rough_cov for rough_cov in s[0].values.tolist()}
+#         df_old_coverage = pd.DataFrame(
+#             s[0].apply(lambda x: x.__dict__).values.tolist()
+#         )
+#     else:
+#         df_old_coverage = pd.DataFrame()
+#         lookup_dict = {}
+#     if not df_old_coverage.empty:
+#         df_old_coverage.drop(
+#             columns=["_state", "bin_position_end", "is_pass", "chromosome_id"], inplace=True
+#         )
+#         # df_old_coverage.rename(columns={"chromosome_id": "chromosome_pk"}, inplace=True)
+#         df_old_coverage["ORM"] = df_old_coverage["id"].map(lookup_dict)
+#         df_old_coverage.set_index(
+#             [
+#                 "read_type_id",
+#                 "chromosome_pk",
+#                 "barcode_id",
+#                 "bin_position_start",
+#                 "job_master_id"
+#             ], inplace=True
+#         )
+#         logger.debug(df_old_coverage)
+#         df_old_coverage = df_old_coverage.loc[~df_old_coverage.index.duplicated()]
+#     df_aggregate_intmd.set_index([
+#                 "read_type_id",
+#                 "chromosome_pk",
+#                 "barcode_id",
+#                 "bin_position_start",
+#                 "job_master_id"
+#             ], inplace=True)
+#     df_to_process = df_aggregate_intmd.append(df_old_coverage, sort=True).sort_index()
+#     update_final_rough_coverage(df_to_process)
 
 
 def fetch_intmd_rough_cov_to_aggregate():
@@ -326,20 +335,40 @@ def fetch_intmd_rough_cov_to_aggregate():
     # lookup_dict = {prc.id: prc for prc in querysets}
     df_to_aggregate = pd.DataFrame.from_records(querysets.values())
 
-    df_to_aggregate["bin_window"] = df_to_aggregate['bin_position_start'] // 10000000 #this bins data into 10 million base windows
+    df_to_aggregate["bin_window"] = (
+        df_to_aggregate["bin_position_start"] // 10000000
+    )  # this bins data into 10 million base windows
 
-    #THIS BUILDS A NEW DATAFRAME WITH ALL SORTS OF FUNKY BITS OF INFO
-    testing = df_to_aggregate.groupby(
-        ['job_master_id', 'run_id', 'flowcell_id', 'read_type_id', 'is_pass', 'barcode_id','rejected_barcode_id', 'reference_id',
-         'chromosome_id', 'reference_pk','reference_name','chromosome_length','chromosome_pk','chromosome_name','bin_window'])['bin_position_start','bin_change'].agg(list).reset_index()
+    # THIS BUILDS A NEW DATAFRAME WITH ALL SORTS OF FUNKY BITS OF INFO
+    testing = (
+        df_to_aggregate.groupby(
+            [
+                "job_master_id",
+                "run_id",
+                "flowcell_id",
+                "read_type_id",
+                "is_pass",
+                "barcode_id",
+                "rejected_barcode_id",
+                "reference_id",
+                "chromosome_id",
+                "reference_pk",
+                "reference_name",
+                "chromosome_length",
+                "chromosome_pk",
+                "chromosome_name",
+                "bin_window",
+            ]
+        )["bin_position_start", "bin_change"]
+        .agg(list)
+        .reset_index()
+    )
 
-    #Now we need to add the testing data to the database somehow....
+    # Now we need to add the testing data to the database somehow....
 
     if not testing.empty:
         testing["model_objects"] = testing.apply(
-            generate_matt_objects,
-            axis=1,
-            args=(MattsAmazingAlignmentSum,),
+            generate_matt_objects, axis=1, args=(MattsAmazingAlignmentSum,),
         )
         MattsAmazingAlignmentSum.objects.bulk_create(
             testing["model_objects"].values.tolist(), batch_size=5000
@@ -350,7 +379,7 @@ def fetch_intmd_rough_cov_to_aggregate():
         cursor.execute(
             "DELETE FROM alignment_pafroughcovintermediate where id<=%s", [last_id],
         )
-    #querysets.delete()
+    # querysets.delete()
     """
     # df_to_aggregate["ORM"] = df_to_aggregate["id"].map(lookup_dict)
     df_to_aggregate["bin_shift"] = df_to_aggregate["bin_position_start"].shift(-1)
@@ -369,6 +398,7 @@ def fetch_intmd_rough_cov_to_aggregate():
     fetch_final_rough_cov_to_update(df_to_aggregate)
     """
 
+
 def update_orm_objects(row):
     """
     Update the orm objects for bulk updating
@@ -385,7 +415,7 @@ def update_orm_objects(row):
     return row["ORM"]
 
 
-def generate_matt_objects(row,model):
+def generate_matt_objects(row, model):
     """
     Dunno what goes here.
     """
@@ -407,15 +437,11 @@ def generate_matt_objects(row,model):
         chromosome_length=row["chromosome_length"],
         chromosome_name=row["chromosome_name"],
         bin_window=row["bin_window"],
-
     )
     return a
 
 
-
-def generate_paf_rough_cov_objects(
-    row, model, key="tsn"
-):
+def generate_paf_rough_cov_objects(row, model, key="tsn"):
     """
     Generate Paf summary coverage ORM objects on a dataframe row
     Parameters
@@ -430,7 +456,7 @@ def generate_paf_rough_cov_objects(
     -------
     alignment.models.PafSummaryCov
 
-    """#
+    """  #
     a = model(
         job_master_id=row["job_master_id"],
         run_id=row["run_id"],
@@ -455,7 +481,6 @@ def generate_paf_rough_cov_objects(
     else:
         a.bin_coverage = row["bin_coverage"]
     return a
-
 
 
 @njit
@@ -519,28 +544,58 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     if len(df.index.names) > 1:
         df.reset_index(inplace=True)
     df.set_index(
-        ["read_type_id", "chromosome_pk", "barcode_id","rejected_barcode_id", "mapping_start_bin_start"],
+        [
+            "read_type_id",
+            "chromosome_pk",
+            "barcode_id",
+            "rejected_barcode_id",
+            "mapping_start_bin_start",
+        ],
         inplace=True,
     )
     # df.sort_index(inplace=True)
     df["bin_change"] = df.groupby(
-        ["read_type_id", "chromosome_pk", "barcode_id","rejected_barcode_id", "mapping_start_bin_start"]
+        [
+            "read_type_id",
+            "chromosome_pk",
+            "barcode_id",
+            "rejected_barcode_id",
+            "mapping_start_bin_start",
+        ]
     ).size()
     df_mapping_start_bins = df.loc[~df.index.duplicated()][
         ["bin_change", "run_id", "is_pass", "chromosome_length", "tsn"]
     ]
     df_mapping_start_bins["is_start"] = True
     df_mapping_start_bins.index = df_mapping_start_bins.index.rename(
-        ["read_type_id", "chromosome_pk", "barcode_id","rejected_barcode_id", "bin_position_start"]
+        [
+            "read_type_id",
+            "chromosome_pk",
+            "barcode_id",
+            "rejected_barcode_id",
+            "bin_position_start",
+        ]
     )
     df.reset_index(inplace=True)
     df.set_index(
-        ["read_type_id", "chromosome_pk", "barcode_id","rejected_barcode_id", "mapping_end_bin_start"],
+        [
+            "read_type_id",
+            "chromosome_pk",
+            "barcode_id",
+            "rejected_barcode_id",
+            "mapping_end_bin_start",
+        ],
         inplace=True,
     )
     # df.sort_index(inplace=True)
     df["end_bin_change"] = df.groupby(
-        ["read_type_id", "chromosome_pk", "barcode_id","rejected_barcode_id", "mapping_end_bin_start"]
+        [
+            "read_type_id",
+            "chromosome_pk",
+            "barcode_id",
+            "rejected_barcode_id",
+            "mapping_end_bin_start",
+        ]
     ).size()
     # end_bins are
     df_mapping_end_bins = df.loc[~df.index.duplicated()][
@@ -554,7 +609,13 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     # If a read ends in a bin, it still covers it, so shift the neg incr to the next bin
     # df_mapping_end_bins["bin_change"] = df_mapping_end_bins["bin_change"].shift().fillna(0)
     df_mapping_end_bins.index = df_mapping_end_bins.index.rename(
-        ["read_type_id", "chromosome_pk", "barcode_id","rejected_barcode_id", "bin_position_start"]
+        [
+            "read_type_id",
+            "chromosome_pk",
+            "barcode_id",
+            "rejected_barcode_id",
+            "bin_position_start",
+        ]
     )
     results = df_mapping_start_bins.append(df_mapping_end_bins).sort_index()
     # Collapse duplicates on their start + end value
@@ -566,7 +627,13 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
     results.reset_index(inplace=True)
     # compile the code that runs this, so it will run super fast for the next one
     results.set_index(
-        ["read_type_id", "chromosome_pk", "barcode_id","rejected_barcode_id", "bin_position_start"],
+        [
+            "read_type_id",
+            "chromosome_pk",
+            "barcode_id",
+            "rejected_barcode_id",
+            "bin_position_start",
+        ],
         inplace=True,
     )
     results = results.loc[~results.index.duplicated()]
@@ -579,9 +646,7 @@ def paf_rough_coverage_calculations(df, job_master, longest_chromosome):
         results.reset_index(inplace=True)
 
         results["model_objects"] = results.apply(
-            generate_paf_rough_cov_objects,
-            axis=1,
-            args=(PafRoughCovIntermediate,),
+            generate_paf_rough_cov_objects, axis=1, args=(PafRoughCovIntermediate,),
         )
         PafRoughCovIntermediate.objects.bulk_create(
             results["model_objects"].values.tolist(), batch_size=5000

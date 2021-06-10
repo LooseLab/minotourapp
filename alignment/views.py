@@ -245,9 +245,10 @@ def mapped_references_by_flowcell_list(request, flowcell_id):
             readTypeName=F("read_type__name"),
         )
     )
+    read_until = MattsAmazingAlignmentSum.objects.filter(job_master__flowcell__id=85).values(jm_id=F("job_master_id"), referenceId=F("reference_pk"), readTypeId=F("read_type_id"), barcodeId=F("barcode_id"), chromosomeId=F("chromosome_pk"), rejectedBarcodeId=F("rejected_barcode_id")).distinct()
     if not references:
         return Response("No data found", status=status.HTTP_204_NO_CONTENT)
-    return Response(references, status=status.HTTP_200_OK)
+    return Response({"references": references, "read_until": read_until}, status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])

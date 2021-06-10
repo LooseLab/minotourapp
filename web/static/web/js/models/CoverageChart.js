@@ -91,7 +91,12 @@ class CoverageChart {
       },
       series: [{
         type: `area`,
-        name: null,
+        name: `sequenced`,
+        data: [],
+        step: true
+      }, {
+        type: `area`,
+        name: `unblocked`,
         data: [],
         step: true
       }],
@@ -177,9 +182,14 @@ class CoverageChart {
       },
       series: [{
         type: `area`,
-        name: null,
+        name: `sequenced`,
         data: [],
         step: `left`
+      }, {
+        type: `area`,
+        name: `unblocked`,
+        data: [],
+        step: true
       }],
       exporting: {
         enabled: true

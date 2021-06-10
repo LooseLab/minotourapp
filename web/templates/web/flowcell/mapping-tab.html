@@ -79,13 +79,19 @@
                             <select id="referenceSelect" class="custom-select ms">
                             </select>
                             <label for="readTypeSelect" style="display: inline">Read Type:</label>
-                            <select id="readTypeSelect" class="custom-select ms" >
+                            <select id="readTypeSelect" class="custom-select ms">
                             </select>
                             <label for="chromosomeSelect" style="display: inline">Contig:</label>
-                            <select id="chromosomeSelect" class="custom-select ms" ></select>
+                            <select id="chromosomeSelect" class="custom-select ms"></select>
                             <label for="barcodeSelect" style="display: inline">Barcode:</label>
-                            <select id="barcodeSelect" class="custom-select ms" ></select>
-                            <button type="button" class="btn btn-light" id="reset-chart-zoom" disabled>Reset chart zoom</button>
+                            <select id="barcodeSelect" class="custom-select ms"></select>
+                            <label for="ruSelect" style="display: inline">Read Until filter:</label>
+                            <select id="ruSelect" class="custom-select ms">
+                                <option value="0">None</option>
+                            </select>
+                            <button type="button" class="btn btn-light" id="reset-chart-zoom" disabled>Reset chart
+                                zoom
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -108,6 +114,7 @@
         <div class="row">
             <div id="coverage_div" class="col-md-12 highcharts" style="width:100%">
                 <div id="coverage_div_detail" class="detail_chart" style="height: 400px"></div>
+
                 <div id="coverage_div_master" class="master_chart" style="height: 10rem"></div>
             </div>
         </div>

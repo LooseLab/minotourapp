@@ -31,13 +31,17 @@ class CoverageChartController {
                         <span class = "sr-only"> Loading...</span></div>`)
     this._axiosInstance.get(url).then(
       response => {
-        const data = response.data.chartData
+        const data = response.data.newChartData
+        console.log(data)
         const sumToCheck = response.data.sumToCheck
         self._refLength = response.data.refLength
         if (!checkHighChartsDataIsIdentical([sumToCheck], [this._oldSumToCheck])) {
+          console.log(`setting data`)
           self._coverageChart.masterChart.xAxis[0].setExtremes(0, response.data.refLength)
-          self._coverageChart.masterChart.series[0].setData(data)
-          self._coverageChart.detailChart.series[0].setData(data)
+          self._coverageChart.masterChart.series[0].setData(data.Sequenced)
+          self._coverageChart.masterChart.series[1].setData(data.Unblocked)
+          self._coverageChart.detailChart.series[0].setData(data.Sequenced)
+          self._coverageChart.detailChart.series[1].setData(data.Unblocked)
           self._coverageChart.masterChart.xAxis[0].removePlotBand(`mask-before`)
           self._coverageChart.detailChart.hideLoading()
           self._coverageChart.masterChart.hideLoading()
