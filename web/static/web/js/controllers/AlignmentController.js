@@ -20,10 +20,12 @@ class AlignmentController {
       referenceSelect: [this._readTypeSelect, this._chromosomeSelect, this._barcodeSelect],
       readTypeSelect: [this._chromosomeSelect, this._barcodeSelect],
       chromosomeSelect: [this._barcodeSelect],
-      barcodeSelect: []
+      barcodeSelect: [],
+      ruSelect: []
     }
     this._sumToCheck = 0
-    this._selects = [this._readTypeSelect, this._referenceSelect, this._chromosomeSelect, this._barcodeSelect]
+    this._readUntilIdDisplayed = new Set()
+    this._selects = [this._readTypeSelect, this._referenceSelect, this._chromosomeSelect, this._barcodeSelect, this._readUntilSelect]
     this._addChangeListenerToSelects()
     // this._requestMappedChromosomes(flowcellId)
     // this._drawPafSummaryTable(flowcellId)
@@ -76,6 +78,18 @@ class AlignmentController {
       }))
       this._selectData = response.data.references
       this._referenceSelect.html([...readTypes])
+      // Update the read until filter drop downs
+      const ruOptions = new Set(response.data.read_until.map(
+        el => {
+          if (!this._readUntilIdDisplayed.has(el.rejectedBarcodeId)) {
+            this._readUntilIdDisplayed.add(el.rejectedBarcodeId)
+            return `<option value="${el.rejectedBarcodeId}" data-jm-id="${el.jmId}">${el.rejectedBarcodeName}</option>`
+          }
+        }
+      ))
+      if (ruOptions.size) {
+        this._readUntilSelect.append([...ruOptions])
+      }
       this._selectOnChange({ srcElement: { id: `referenceSelect` } }, false)
     }).catch(error => {
       console.error(error)
@@ -114,6 +128,7 @@ class AlignmentController {
     let barcodeId
     let readTypeId
     let chromosomeId
+    const readUntilId = this._readUntilSelect.val()
     const changedSelectId = event.srcElement.id
     const taskId = $(`#referenceSelect option:selected`).attr(`data-jm-id`)
     // Filter the data to only be for the selected value downstream via jobmaster pk
@@ -153,7 +168,7 @@ class AlignmentController {
       barcodeId = this._barcodeSelect.val()
       readTypeId = this._readTypeSelect.val()
       chromosomeId = this._chromosomeSelect.val()
-      url = `/api/v1/alignment/coverage/${taskId}/${barcodeId}/${readTypeId}/${chromosomeId}`
+      url = `/api/v1/alignment/coverage/${taskId}/${barcodeId}/${readTypeId}/${chromosomeId}/${readUntilId}`
       if (userActivated) {
         this.coverageChartController.reloadCoverageCharts(url)
         this.coverageChartController.resetDetailChartZoom()

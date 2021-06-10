@@ -4,7 +4,7 @@ from alignment import views
 
 urlpatterns = [
     url(
-        r'^api/v1/alignment/coverage/(?P<task_id>[0-9]+)/(?P<barcode_id>[a-zA-Z0-9 ]+)/(?P<read_type_id>[0-9]+)/(?P<chromosome_id>[0-9]+)/$',
+        r'^api/v1/alignment/coverage/(?P<task_id>[0-9]+)/(?P<barcode_id>[a-zA-Z0-9 ]+)/(?P<read_type_id>[0-9]+)/(?P<chromosome_id>[0-9]+)/(?P<rejection_id>[0-9]+)/$',
         views.rough_coverage_complete_chromosome_flowcell,
         name="rough_coverage_complete_chromosome_flowcell"
     ),
