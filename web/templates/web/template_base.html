@@ -23,13 +23,18 @@
     <link rel="stylesheet" href="{% static 'web/css/minotour.css' %}">
     <link rel="stylesheet" href="{% static 'web/css/loader.css' %}">
     <script src="{% static 'web/libraries/axios/axios.min.js' %}"></script>
-    <script src="{% static 'web/libraries/highstock.js' %}"></script>
-    <script src="{% static 'web/libraries/exporting.js' %}"></script>
-    <script src="{% static 'web/libraries/highcharts-more.js' %}"></script>
-    <script src="{% static 'web/libraries/boost.js' %}"></script>
-    <script src="{% static 'web/libraries/solid-gauge.src.js' %}"></script>
+    <!--<script src="{% static 'web/libraries/highstock.js' %}"></script>-->
+    <script src="https://code.highcharts.com/stock/highstock.js"</script>
+    <!--<script src="{% static 'web/libraries/exporting.js' %}"></script>-->
+    <script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+    <!--<script src="{% static 'web/libraries/highcharts-more.js' %}"></script>-->
+    <script src="https://code.highcharts.com/stock/highcharts-more.js"</script>
+
+    <!--<script src="{% static 'web/libraries/solid-gauge.src.js' %}"></script>-->
+    <script src="https://code.highcharts.com/stock/modules/solid-gauge.js"></script>
     <script src="{% static 'web/libraries/grid-light-custom.js' %}"></script>
-    <script src="{% static 'web/libraries/heatmap.js' %}"></script>
+    <!--<script src="{% static 'web/libraries/heatmap.js' %}"></script>-->
+    <script src="https://code.highcharts.com/modules/heatmap.js"></script>
     <script src="{% static 'web/libraries/no-data-to-display.js' %}"></script>
     <script src="{% static 'web/libraries/cookie.js' %}"></script>
     <script src="{% static 'web/libraries/d3.v6.min.js' %}"></script>{#    <script src="{% static 'web/libraries/d3-sankey-0.12.3/src/sankey.js' %}"></script>#}
@@ -40,6 +45,8 @@
     <script src="{% static 'web/js/models/CoverageChart.js' %}"></script>
     <script src="{% static 'web/js/flowcell/requestData.js' %}"></script>
     <script src="{% static 'web/js/models/Message.js' %}"></script>
+    <!--<script src="{% static 'web/libraries/boost.js' %}"></script>-->
+    <script src="https://code.highcharts.com/modules/boost.js"></script>
     <!--Controller for tabs and pages -->
     <script src="{% static 'web/js/controllers/CoverageChartController.js' %}"></script>
     <script src="{% static 'web/js/controllers/MetagenomicsController.js' %}"></script>
