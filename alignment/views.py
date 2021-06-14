@@ -11,6 +11,21 @@ from alignment.models import PafSummaryCov, MattsAmazingAlignmentSum
 from reads.models import Barcode
 
 
+def sampler(array,array_length=5000):
+    """
+    If the array is too large > 50000 points, take a sample using steps until we have 50000 or less points
+    :param array: A list of tuple values for expected benefit steps
+    :type array: list
+    :return: a smaller sampled numpy array
+    """
+    # Get the step size for slicing, getting the array to 50000 points
+    step_size = int(len(array) / array_length)
+    # Slice is step size
+    sampled_array = array[0::step_size]
+    return sampled_array
+
+
+
 @api_view(["GET"])
 def rough_coverage_complete_chromosome_flowcell(
     request, task_id, barcode_id, read_type_id, chromosome_id
@@ -47,16 +62,21 @@ def rough_coverage_complete_chromosome_flowcell(
     # testDF['Numpy_bin_change'] = testDF['bin_coverage_str'].apply(lambda x: np.array(eval(x)))
     testarray = testDF[['Numpy_bin_position_start', 'Numpy_bin_change', 'rejected_barcode_id']]
     testarray = testarray.set_index(['rejected_barcode_id']).apply(pd.Series.explode).reset_index().astype('int64')
+
+
     ###This will generate the old style data we need for now:
-    testarray2 = testarray.groupby(['Numpy_bin_position_start'], as_index=False).agg(
-                {'Numpy_bin_change': np.sum})
-    testarray2['cumsum'] = testarray2['Numpy_bin_change'].transform(np.cumsum)
-    testarray2 = testarray2.rename(columns={'Numpy_bin_position_start': 'bin_position_start', 'cumsum': 'bin_coverage'})
+    #testarray2 = testarray.groupby(['Numpy_bin_position_start'], as_index=False).agg(
+    #            {'Numpy_bin_change': np.sum})
+    #testarray2['cumsum'] = testarray2['Numpy_bin_change'].transform(np.cumsum)
+    #testarray2 = testarray2.rename(columns={'Numpy_bin_position_start': 'bin_position_start', 'cumsum': 'bin_coverage'})
 
 
     ### This generates the new data set which will have a labelled dictionary.
     testarray = testarray.groupby(['rejected_barcode_id', 'Numpy_bin_position_start'], as_index=False).agg(
         {'Numpy_bin_change': np.sum})
+    testarray = testarray.set_index(['Numpy_bin_position_start','rejected_barcode_id']).unstack().fillna(0).stack().reset_index()
+    ## If we want to manipulate the positions we are looking at we must do it now.
+    #testarray = testarray[testarray["Numpy_bin_position_start"].gt(2000000)]
     testarray['cumsum'] = testarray.groupby(['rejected_barcode_id'])['Numpy_bin_change'].transform(np.cumsum)
     testarray = testarray.drop(columns=['Numpy_bin_change'])
     testarray = testarray.set_index('rejected_barcode_id')
@@ -65,11 +85,11 @@ def rough_coverage_complete_chromosome_flowcell(
     results_dict = dict()
     for name, group in testarray.groupby(['rejected_barcode_id']):
         mybarcode = Barcode.objects.get(pk=name)
-        results_dict[mybarcode.name] = group.values.tolist()
+        results_dict[mybarcode.name] = sampler(group.values.tolist(),array_length=10000)
 
-    queryset = testarray2[['bin_position_start', 'bin_coverage']].values
+    #queryset = testarray2[['bin_position_start', 'bin_coverage']].values
     new_data = results_dict
-    sum_to_check=queryset.sum()
+    sum_to_check=test.count()
 
     # TODO limits to just one reference here when fetching length, could be an issue
     #  in the future displaying multiple rferences on a plot
@@ -79,9 +99,13 @@ def rough_coverage_complete_chromosome_flowcell(
         .reference_line_length
     )
     return Response(
-        {"newChartData": new_data, "chartData": queryset, "refLength": length, "sumToCheck": sum_to_check},
+        {"newChartData": new_data, "refLength": length, "sumToCheck": sum_to_check},
         status=status.HTTP_200_OK,
     )
+    #return Response(
+    #    {"newChartData": queryset, "chartData": queryset, "refLength": length, "sumToCheck": sum_to_check},
+    #    status=status.HTTP_200_OK,
+    #)
 
 
 @api_view(["GET"])
