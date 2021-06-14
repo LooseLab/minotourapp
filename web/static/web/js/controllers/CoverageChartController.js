@@ -32,19 +32,29 @@ class CoverageChartController {
     this._axiosInstance.get(url).then(
       response => {
         const data = response.data.newChartData
-        console.log(data)
+        //console.log(data.Sequenced)
         const sumToCheck = response.data.sumToCheck
         self._refLength = response.data.refLength
         if (!checkHighChartsDataIsIdentical([sumToCheck], [this._oldSumToCheck])) {
           console.log(`setting data`)
           self._coverageChart.masterChart.xAxis[0].setExtremes(0, response.data.refLength)
-          self._coverageChart.masterChart.series[0].setData(data.Sequenced)
-          self._coverageChart.masterChart.series[1].setData(data.Unblocked)
-          self._coverageChart.detailChart.series[0].setData(data.Sequenced)
-          self._coverageChart.detailChart.series[1].setData(data.Unblocked)
+          self._coverageChart.masterChart.series[0].setData(data.Sequenced,false,false,false)
+          self._coverageChart.masterChart.series[1].setData(data.Unblocked,false,false,false)
+          console.log('sequenced detail')
+          self._coverageChart.detailChart.series[0].setData(data.Sequenced,false,false,false)
+          console.log('unblocked detail')
+          self._coverageChart.detailChart.series[1].setData(data.Unblocked,false,false,false)
+          console.log('mask before')
           self._coverageChart.masterChart.xAxis[0].removePlotBand(`mask-before`)
+          console.log('hide loading 1')
           self._coverageChart.detailChart.hideLoading()
+          console.log('hide loading 2')
           self._coverageChart.masterChart.hideLoading()
+          console.log('detail redraw')
+          self._coverageChart.detailChart.redraw()
+          console.log('master redraw')
+          self._coverageChart.masterChart.redraw()
+          console.log('set data')
         } else {
           self._coverageChart.detailChart.hideLoading()
           self._coverageChart.masterChart.hideLoading()
@@ -64,3 +74,4 @@ class CoverageChartController {
     this._coverageChart.masterChart.xAxis[0].removePlotBand(`mask-before`)
   }
 }
+

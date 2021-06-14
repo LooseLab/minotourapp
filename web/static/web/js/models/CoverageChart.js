@@ -32,7 +32,6 @@ class CoverageChart {
         marginLeft: 50,
         marginRight: 20,
         zoomType: `x`,
-        step: true,
         events: {
           selection: self.afterSelection.bind(self)
         }
@@ -41,7 +40,7 @@ class CoverageChart {
         text: null
       },
       xAxis: {
-        type: `line`,
+        type: `area`,
         showLastTickLabel: true,
         plotBands: [{
           id: `mask-before`,
@@ -69,6 +68,7 @@ class CoverageChart {
       },
       plotOptions: {
         series: {
+          stacking: 'normal',
           fillColor: {
             // linearGradient: [0, 0, 0, 70],
             stops: [
@@ -90,12 +90,10 @@ class CoverageChart {
         }
       },
       series: [{
-        type: `area`,
         name: `sequenced`,
         data: [],
         step: true
       }, {
-        type: `area`,
         name: `unblocked`,
         data: [],
         step: true
@@ -110,6 +108,7 @@ class CoverageChart {
     const self = this
     return Highcharts.chart({
       chart: {
+        type: 'area',
         renderTo: this._divIdDetail,
         reflow: true,
         marginLeft: 50,
@@ -141,7 +140,6 @@ class CoverageChart {
             }
           }
         },
-        step: true,
         zoomType: `x`,
         events: {
           selection: self.afterSelection.bind(self)
@@ -165,10 +163,11 @@ class CoverageChart {
         min: 0
       },
       legend: {
-        enabled: false
+        enabled: true
       },
       plotOptions: {
         series: {
+          stacking: 'normal',
           marker: {
             enabled: false,
             states: {
@@ -181,18 +180,16 @@ class CoverageChart {
         }
       },
       series: [{
-        type: `area`,
         name: `sequenced`,
         data: [],
-        step: `left`
+        step: true
       }, {
-        type: `area`,
         name: `unblocked`,
         data: [],
         step: true
       }],
       exporting: {
-        enabled: true
+        enabled: false
       },
       tooltip: {
         pointFormat: `<span style="color:{point.color}">●</span> The coverage for bin starting {point.x}: <b>{point.y}</b><br/>`
