@@ -23,3 +23,4 @@ git+git://github.com/connor-lab/aln2type@main
 Gitpython
 WeasyPrint
 matplotlib
+scipy

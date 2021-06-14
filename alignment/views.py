@@ -28,7 +28,7 @@ def sampler(array,array_length=5000):
 
 @api_view(["GET"])
 def rough_coverage_complete_chromosome_flowcell(
-    request, task_id, barcode_id, read_type_id, chromosome_id
+    request, task_id, barcode_id, read_type_id, chromosome_id, rejection_id
 ):
     """
     Fetch data for coverage master charts
@@ -44,6 +44,8 @@ def rough_coverage_complete_chromosome_flowcell(
         The PK of the read type database entry.
     chromosome_id: int
         The PK of the chromosome.
+    rejection_id: int
+        The rejection id of the barcode - 0 if both, otherwise the respective sequenced/unblocked barcode ID
 
     Returns
     -------
@@ -54,7 +56,10 @@ def rough_coverage_complete_chromosome_flowcell(
             barcode_id=barcode_id,
             chromosome_pk=chromosome_id,
             read_type_id=read_type_id,)
+    if int(rejection_id):
+        test = test.filter(rejected_barcode_id=rejection_id)
     testDF = pd.DataFrame.from_records(test.values())
+    print(testDF["rejected_barcode_id"].unique())
     func = lambda s: np.fromstring(s, dtype=int, sep=",")
     testDF['Numpy_bin_position_start'] = testDF['bin_position_start_str'].str.strip("[]").apply(func)
     testDF['Numpy_bin_change'] = testDF['bin_coverage_str'].str.strip("[]").apply(func)
@@ -269,7 +274,7 @@ def mapped_references_by_flowcell_list(request, flowcell_id):
             readTypeName=F("read_type__name"),
         )
     )
-    read_until = MattsAmazingAlignmentSum.objects.filter(job_master__flowcell__id=85).values(jm_id=F("job_master_id"), referenceId=F("reference_pk"), readTypeId=F("read_type_id"), barcodeId=F("barcode_id"), chromosomeId=F("chromosome_pk"), rejectedBarcodeId=F("rejected_barcode_id")).distinct()
+    read_until = MattsAmazingAlignmentSum.objects.filter(job_master__flowcell__id=85).values(jmId=F("job_master_id"), referenceId=F("reference_pk"), rejectedBarcodeName=F("rejected_barcode__name"), rejectedBarcodeId=F("rejected_barcode_id")).distinct()
     if not references:
         return Response("No data found", status=status.HTTP_204_NO_CONTENT)
     return Response({"references": references, "read_until": read_until}, status=status.HTTP_200_OK)
