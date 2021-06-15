@@ -26,7 +26,7 @@ def sampler(array,array_length=5000):
 
 @api_view(["GET"])
 def rough_coverage_partial_chromosome_flowcell(
-    request, task_id, barcode_id, read_type_id, chromosome_id, rejection_id,start,end
+    request, task_id, barcode_id, read_type_id, chromosome_id, start, end
 ):
     """
     Fetch data for coverage master charts
@@ -42,6 +42,10 @@ def rough_coverage_partial_chromosome_flowcell(
         The PK of the read type database entry.
     chromosome_id: int
         The PK of the chromosome.
+    start: int
+        Position from which you want data on a chromosome
+    end: int
+        Position from which you want data to end on a chromosome.
 
     Returns
     -------
@@ -110,7 +114,7 @@ def rough_coverage_partial_chromosome_flowcell(
 
 @api_view(["GET"])
 def rough_coverage_complete_chromosome_flowcell(
-    request, task_id, barcode_id, read_type_id, chromosome_id, rejection_id
+    request, task_id, barcode_id, read_type_id, chromosome_id
 ):
     """
     Fetch data for coverage master charts
