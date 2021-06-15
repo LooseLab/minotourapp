@@ -134,6 +134,8 @@ class PafRoughCovIntermediate(models.Model):
     def __str__(self):
         return f"{self.flowcell} {self.bin_position_start} - {self.bin_position_end}, Change: {self.bin_change}"
 
+
+
 class MattsAmazingAlignmentSum(models.Model):
     """
     This is a vain attempt to provide real time coverage plots that scale to the human genome

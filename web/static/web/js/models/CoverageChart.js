@@ -27,6 +27,7 @@ class CoverageChart {
     return Highcharts.chart({
 
       chart: {
+        type: 'area',
         renderTo: this._divIdMaster,
         reflow: true,
         marginLeft: 50,
