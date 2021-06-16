@@ -238,7 +238,7 @@ def get_artic_barcodes(request):
     barcodes_list = []
     if not artic_results_path.exists():
         return Response(
-            "Artic results directory not found.", status=status.HTTP_404_NOT_FOUND
+            "Artic results directory not found. {}".format(artic_results_path), status=status.HTTP_404_NOT_FOUND
         )
     for item in artic_results_path.iterdir():
         if item.is_dir():
@@ -484,7 +484,7 @@ def get_artic_summary_table_data(request):
                     / barcode_name
                     / f"{barcode_name}_ARTIC_medaka.csv.gz"
                 )
-                VoCs = VoCs_df["phe-label"]
+                VoCs = VoCs_df['phe-label'] + " (" + VoCs_df['status'] +")"
             except FileNotFoundError:
                 VoCs = "None Found"
         else:
