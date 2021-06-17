@@ -716,6 +716,16 @@ class ArticController {
     } else {
       // else the datatable must be initialised
       datatableObj.DataTable({
+        dom: `Bfrtip`,
+        buttons: [
+          `copyHtml5`,
+          `csvHtml5`,
+          {
+            extend: `pdfHtml5`,
+            orientation: `landscape`,
+            pageSize: `A3`
+          }
+        ],
         // callback run on each row create
         createdRow: (row, data, index) => {
           if (data.has_finished) {

@@ -19,7 +19,8 @@
     <link rel="stylesheet" href="{% static 'web/libraries/AdminLTE-3.0.4/dist/css/adminlte.min.css' %}">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="{% static 'web/libraries/fontawesome-free-5.7.2-web/css/all.min.css' %}">
-    <link rel="stylesheet" href="{% static 'web/libraries/DataTables/datatables.css' %}">
+    <link rel="stylesheet" href="{% static 'web/libraries/DataTables/Buttons-1.6.2/css/buttons.dataTables.min.css' %}">
+    <link rel="stylesheet" href="{% static 'web/libraries/DataTables/datatables.min.css' %}">
     <link rel="stylesheet" href="{% static 'web/css/minotour.css' %}">
     <link rel="stylesheet" href="{% static 'web/css/loader.css' %}">
     <script src="{% static 'web/libraries/axios/axios.min.js' %}"></script>
@@ -47,6 +48,7 @@
     <script src="{% static 'web/js/models/Message.js' %}"></script>
     <!--<script src="{% static 'web/libraries/boost.js' %}"></script>-->
     <script src="https://code.highcharts.com/modules/boost.js"></script>
+    <script src="https://code.highcharts.com/modules/boost.js"></script>
     <!--Controller for tabs and pages -->
     <script src="{% static 'web/js/controllers/CoverageChartController.js' %}"></script>
     <script src="{% static 'web/js/controllers/MetagenomicsController.js' %}"></script>
@@ -70,6 +72,10 @@
     <script src="{% static 'web/FlowcellPageApp.js' %}"></script>
     <!-- Data tables -->
     <script src="{% static 'web/libraries/DataTables/datatables.min.js' %}"></script>
+    <script src="{% static 'web/libraries/DataTables/Buttons-1.6.2/js/dataTables.buttons.min.js' %}"></script>
+    <script src="{% static 'web/libraries/DataTables/pdfmake-0.1.36/pdfmake.min.js' %}"></script>
+    <script src="{% static 'web/libraries/DataTables/pdfmake-0.1.36/vfs_fonts.js' %}"></script>
+    <script src="{% static 'web/libraries/DataTables/Buttons-1.6.2/js/buttons.html5.min.js' %}"></script>
     <script src="{% static 'web/libraries/AdminLTE-3.0.4/dist/js/adminlte.min.js' %}"></script>
 
 </head>
@@ -102,7 +108,7 @@
                     <div class="pull-left hidden-xs" style="text-align: left">
                         &copy; Loose Lab {% now 'Y' %} <a href="https://www.nottingham.ac.uk">University
                             of
-                            Nottingham</a>.</>
+                            Nottingham</a>.
                         Contact @mattloose for more information.
                     </div>
                 </div>
