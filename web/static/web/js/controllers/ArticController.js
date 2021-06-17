@@ -724,7 +724,8 @@ class ArticController {
             extend: `pdfHtml5`,
             orientation: `landscape`,
             pageSize: `A3`
-          }
+          },
+          `pageLength`,
         ],
         // callback run on each row create
         createdRow: (row, data, index) => {
