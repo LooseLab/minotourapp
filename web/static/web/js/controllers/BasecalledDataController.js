@@ -16,7 +16,7 @@ class BasecalledDataController {
       headers: { "X-CSRFToken": getCookie(`csrftoken`) }
     })
     this._barcodesHtmlElement = $(`#nav-tabs-barcodes`)
-    this.barcodesList = []
+    this.barcodesList = new Set()
     this._ruBarcodesSet = new Set()
     this._basecalledSummaryTable = null
     this.initialiseCharts(flowcellId, this._currentBarcode)
@@ -85,6 +85,7 @@ class BasecalledDataController {
      */
   _updateBarcodeNavTab (flowcellId) {
     let index
+    let update = false
     let barcodeNames = []; let active; const newBarcodeElementsArray = []
     const that = this
     const firstIteration = this.barcodesList.length === 0
@@ -100,26 +101,31 @@ class BasecalledDataController {
         return ![`No barcode`, `Sequenced`, `Unblocked`].includes(el)
       })
       // If we already have HTML elements
-      if (!firstIteration) {
-        that.barcodesList.forEach(presBarcode => {
-          // if the barcode in controller in the list of barcodes fetched from the server
-          if (barcodeNames.includes(presBarcode)) {
-            // get the index,
-            index = barcodeNames.findIndex(b => b === presBarcode)
-            // remove it from the freshly fetched barcodes
-            barcodeNames.splice(index, 1)
-          }
-        })
-      }
+      // if (!firstIteration) {
+      //   that.barcodesList.forEach(presBarcode => {
+      //     // if the barcode in controller in the list of barcodes fetched from the server
+      //     if (barcodeNames.includes(presBarcode)) {
+      //       // get the index,
+      //       index = barcodeNames.findIndex(b => b === presBarcode)
+      //       // remove it from the freshly fetched barcodes
+      //       barcodeNames.splice(index, 1)
+      //     }
+      //   })
+      // }
+
       barcodeNames.forEach(barcode => {
-        that.barcodesList.push(barcode)
-        active = barcode === that._currentBarcode ? `active` : ``
-        newBarcodeElementsArray.push(`<li class="barcode-tab nav-item">
+        console.log(barcode)
+        if (!this.barcodesList.has(barcode)) {
+          that.barcodesList.add(barcode)
+          active = barcode === that._currentBarcode ? `active` : ``
+          newBarcodeElementsArray.push(`<li class="barcode-tab nav-item">
                                             <a class="nav-link ${active}" data-toggle="pill" id="${barcode.replace(` `, `_`)}" onclick="flowcellController.flowcellTabController.baseCalledDataController._changeBarcode(event)">${barcode}</a>
                                         </li>`)
+          update = true
+        }
       })
       // this.barcodesElementsList = this.barcodesElementsList.sort()
-      if (barcodeNames.length > 0) {
+      if (update) {
         // TODO this means that they won't be ordered. Go back to setting HTML ?
 
         this._barcodesHtmlElement.append(newBarcodeElementsArray)
