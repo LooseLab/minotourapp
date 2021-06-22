@@ -299,9 +299,10 @@ class BasecalledDataController {
      * @param flowcellId {string} The primary key of the flowcell record in the database.
      * @param barcodeName {string} The name of the selected barcode.
      * @param changeBarcode {boolean} If update is triggered by barcode change.
+     * @param ruBarcodeName {string} Name of RU barcode to filter on
      * @private
      */
-  _updateHistogramChartsData (flowcellId, barcodeName, changeBarcode) {
+  _updateHistogramChartsData (flowcellId, barcodeName, changeBarcode, ruBarcodeName = `None`) {
     const charts = [[`read_length`, this._chartHistogramBasesSequencedByReadLength],
       [`read_count`, this._chartHistogramReadLength],
       [`collect_read_length`, this._collectchartHistogramBasesSequencedByReadLength],
@@ -309,7 +310,7 @@ class BasecalledDataController {
     let preExistingSeriesNames
     let chartData
 
-    this._axiosInstance.get(`/api/v1/reads/flowcells/${flowcellId}/histogram-summary/`, { params: { barcodeName } }).then(response => {
+    this._axiosInstance.get(`/api/v1/reads/flowcells/${flowcellId}/histogram-summary/`, { params: { barcodeName, ruBarcodeName } }).then(response => {
       const chartPoints = response.data.data
       if (response.status !== 200) {
         console.error(`Error, incorrect status, expected 200, got ${response.status}`)
@@ -678,7 +679,7 @@ class BasecalledDataController {
       return
     }
     that._fetchSummaryDataHtmlTable(flowcellId)
-    that._updateHistogramChartsData(flowcellId, barcode, changeBarcode)
+    that._updateHistogramChartsData(flowcellId, barcode, changeBarcode, ruBarcodeName)
     that._updateBaseCalledReadCharts(flowcellId, barcode, changeBarcode, ruBarcodeName)
     that._updateBarcodeNavTab(flowcellId, changeBarcode)
     if (!changeBarcode) {

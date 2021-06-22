@@ -838,6 +838,8 @@ def flowcell_histogram_summary(request, pk):
     """
     Return the data for histograms on the basecalled data page
     # TODO this is a bit complex
+    # fixme actually this is just bad
+    # fixme hits database 3 times
     :param request: Get request body
     :type request: rest_framework.request.Request
     :param pk: The primary key of the flowcell that the basecalled data metrics are attached to
@@ -846,6 +848,7 @@ def flowcell_histogram_summary(request, pk):
     """
     # Get the barcode we are doing this for, default to all reads
     barcode_name = request.GET.get("barcodeName", "All reads").replace("_", " ")
+    ru_barcode_name = request.GET.get("ruBarcodeName", "None")
     # Get the information for the flowcell the data is attached to
     flowcell = Flowcell.objects.get(pk=pk)
     initialise = request.GET.get("initialise", False)
@@ -870,15 +873,13 @@ def flowcell_histogram_summary(request, pk):
         return Response(categories, status=status.HTTP_200_OK)
 
     # A list of tuples, distinct on barcode name, pass/fail, template
-    key_list = (
-        FlowcellHistogramSummary.objects.filter(flowcell=flowcell)
-        .filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
-        .values_list("barcode_name", "read_type_name", "rejection_status", "status")
-        .distinct()
-    )
-
+    key_list = FlowcellHistogramSummary.objects.filter(flowcell=flowcell).filter(Q(barcode_name=barcode_name) | Q(rejection_status=barcode_name))
+    if ru_barcode_name != "None":
+        key_list = key_list.filter(rejection_status=ru_barcode_name)
+    key_list = key_list.values_list("barcode_name", "read_type_name", "rejection_status", "status").distinct()
     chart_data = defaultdict(list)
     # unpack the tuple and create data using it, for each tuple
+    # todo bad bad bad
     for (barcode_name, read_type_name, rejection_status, is_pass) in key_list:
         # query flowcell Histogram summary objects for all of the combinations under this barcode
         histogram_queryset = (
