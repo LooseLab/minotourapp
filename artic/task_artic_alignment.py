@@ -131,6 +131,7 @@ def get_amplicon_infos():
 
 # TODO parsing cigar lends itself to numba nicely
 # TODO split artic task into a sexy chain, rather than blocking a worker for so long, start here
+@app.task
 def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
     """
     Clear the leftover files from the artic command from the directory, gzip remaining files
@@ -393,14 +394,10 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         logger.debug("¯\_(ツ)_/¯")
         logger.warning(str(out))
         logger.warning(err)
-
     # Now run the aln2type artic screen.
-
     run_variant_command(base_results_directory, barcode_name, jm)
-
     run_pangolin_command(base_results_directory, barcode_name)
     # Update the Barcode Metadata to show the task has been run on this barcode
-
     ArticBarcodeMetadata.objects.filter(
         flowcell=jm.flowcell, job_master__job_type_id=16, barcode__name=barcode_name
     ).update(has_finished=True, marked_for_rerun=False)
