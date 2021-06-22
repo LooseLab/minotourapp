@@ -21,7 +21,11 @@ class Minion(models.Model):
         blank=True,
         null=True
     )
-
+    computer = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         related_name='minIONs',
