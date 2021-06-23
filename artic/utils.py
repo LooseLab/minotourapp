@@ -267,14 +267,15 @@ def get_amplicon_json_file_path(scheme, scheme_version):
         File path to the JSON primer file.
 
     """
-    scheme_dir = Path(get_env_variable("MT_ARTIC_SCEHEME_DIR"))
+    scheme_dir = Path(get_env_variable("MT_ARTIC_SCHEME_DIR"))
+    scheme_name = get_env_variable("MT_ARTIC_SCHEME_NAME")
     artic_results_dir_primers = (
         Path(get_env_variable("MT_ARTIC_RESULTS_DIR")) / "artic/" / "primers_files"
     )
     if not (Path(get_env_variable("MT_ARTIC_RESULTS_DIR")) / "artic/").exists():
         (Path(get_env_variable("MT_ARTIC_RESULTS_DIR")) / "artic/").mkdir()
     # Needs to be dynamic here
-    bed_file = "nCoV-2019.scheme.bed"
+    bed_file = f"{scheme_name}.scheme.bed"
     json_file = f"{scheme}.primers.json"
     full_path_to_bed_file = scheme_dir / scheme / scheme_version / bed_file
     if not (artic_results_dir_primers / json_file).exists():
