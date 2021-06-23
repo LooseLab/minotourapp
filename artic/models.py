@@ -32,7 +32,7 @@ class ArticBarcodeMetadata(models.Model):
     has_finished = models.BooleanField(default=False)
     marked_for_rerun = models.BooleanField(default=False)
     projected_to_finish = models.BooleanField(default=False)
-    final_completion = models.BooleanField(default=False)
+    final_completion = models.BooleanField(default=False,null=True)
     flowcell = models.ForeignKey(
         Flowcell,
         related_name="FlowcellsArticBarcodeMetadatas",
