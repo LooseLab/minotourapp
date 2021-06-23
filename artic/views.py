@@ -346,8 +346,8 @@ def get_artic_detail_chart_data(request):
         coverage, minimum=mini
     )
     # Get the primer bands
-    scheme = "nCoV-2019"
-    scheme_version = "V3"
+    scheme = get_env_variable("MT_ARTIC_SCHEME_NAME")
+    scheme_version = get_env_variable("MT_ARTIC_SCHEME_VER")
     amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
     data_dict = {
         "coverage": {"xmax": xmax_cov, "ymax": ymax_cov, "data": x_y_cov},
@@ -452,8 +452,8 @@ def get_artic_summary_table_data(request):
         )
     }
     # dictionaries change in place
-    scheme = "nCoV-2019"
-    scheme_version = "V3"
+    scheme = get_env_variable("MT_ARTIC_SCHEME_NAME")
+    scheme_version = get_env_variable("MT_ARTIC_SCHEME_VER")
     amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
     num_amplicons = len(amplicon_band_coords)
     time_stamp = datetime.datetime.now()
@@ -922,8 +922,8 @@ def get_amplicon_bands_for_master(request):
 
     """
     # Get the primer bands
-    scheme = "nCoV-2019"
-    scheme_version = "V3"
+    scheme = get_env_variable("MT_ARTIC_SCHEME_NAME")
+    scheme_version = get_env_variable("MT_ARTIC_SCHEME_VER")
     amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
     data_dict = {"amplicon_band_coords": amplicon_band_coords, "colours": colours}
     return Response(data_dict, status=status.HTTP_200_OK)
