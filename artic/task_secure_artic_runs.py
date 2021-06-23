@@ -61,7 +61,7 @@ def secure_artic_runs():
     for artic_job in jobs:
         flowcell = artic_job.flowcell
         last_activity_date = flowcell.last_activity_date
-        twelve_hours = datetime.timedelta(hours=12)
+        twelve_hours = datetime.timedelta(hours=int(get_env_variable("MT_ARTIC_TIME_UNTIL_CLEARING")))
         three_hours = datetime.timedelta(hours=3)
         active = (
                 last_activity_date
@@ -80,7 +80,6 @@ def secure_artic_runs():
             # when we upload a read batch
             # TOdo ideally we would add a run last activity time for this
             last_activity_date = flowcell.last_activity_date
-            twelve_hours = datetime.timedelta(hours=12)
             active = (
                 last_activity_date
                 > datetime.datetime.now(datetime.timezone.utc) - twelve_hours

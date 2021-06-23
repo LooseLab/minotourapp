@@ -166,7 +166,7 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
     if int(
         get_env_variable("MT_DESTROY_ARTIC_EVIDENCE")
     ) and flowcell.last_activity_date < datetime.now(timezone.utc) - timedelta(
-        hours=12
+        hours=int(get_env_variable("MT_ARTIC_TIME_UNTIL_CLEARING"))
     ):
         logger.debug(
             f"Clearing sensitive files from {artic_results_path} for sample name {sample_name}"
@@ -389,8 +389,10 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         "-c",
         f"source {MT_CONDA_PREFIX} && conda activate {artic_env} && artic minion --medaka --normalise {normalise} --threads {threads} --scheme-directory {scheme_dir} --read-file {fastq_path} {scheme_name}/{scheme_ver} {barcode_name}",
     ]
+    logger.info(cmd)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
+    logger.info(err)
     if not out and err:
         logger.debug("We are done here. Artic out!")
         logger.debug(out)

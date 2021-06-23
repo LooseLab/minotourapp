@@ -54,3 +54,4 @@ export MT_DESTROY_ARTIC_EVIDENCE=0 # Boolean value if True, data that could pote
 export MT_COVERAGE_PER_AMPLICON="20"
 export MT_ARTIC_RESULTS_DIR='/path/to/artic/directory' # Store the Artic results in this directory. Please ensure directory exists.
 export MT_ARTIC_MAX_PIPELINES="1" # Maximum number of Artic tasks to be run at any one time
+export MT_ARTIC_TIME_UNTIL_CLEARING="12" # Number of hours from final read upload until minoTour treats
