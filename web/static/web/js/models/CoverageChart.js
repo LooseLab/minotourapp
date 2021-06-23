@@ -8,9 +8,15 @@ class CoverageChart {
     // the chart
     this._divIdMaster = `${divId}_master`
     this._divIdDetail = `${divId}_detail`
-
+    this._axiosInstance = axios.create({
+      headers: { 'X-CSRFToken': getCookie(`csrftoken`) }
+    })
     this._masterChart = this.createMasterChart()
     this._detailChart = this.createDetailChart()
+    this._readTypeSelect = $(`#readTypeSelect`)
+    this._referenceSelect = $(`#referenceSelect`)
+    this._chromosomeSelect = $(`#chromosomeSelect`)
+    this._barcodeSelect = $(`#barcodeSelect`)
   }
 
   get masterChart () {
@@ -27,7 +33,7 @@ class CoverageChart {
     return Highcharts.chart({
 
       chart: {
-        type: 'area',
+        type: `area`,
         renderTo: this._divIdMaster,
         reflow: true,
         marginLeft: 50,
@@ -69,7 +75,7 @@ class CoverageChart {
       },
       plotOptions: {
         series: {
-          stacking: 'normal',
+          stacking: `normal`,
           fillColor: {
             // linearGradient: [0, 0, 0, 70],
             stops: [
@@ -109,7 +115,7 @@ class CoverageChart {
     const self = this
     return Highcharts.chart({
       chart: {
-        type: 'area',
+        type: `area`,
         renderTo: this._divIdDetail,
         reflow: true,
         marginLeft: 50,
@@ -168,7 +174,7 @@ class CoverageChart {
       },
       plotOptions: {
         series: {
-          stacking: 'normal',
+          stacking: `normal`,
           marker: {
             enabled: false,
             states: {
@@ -203,9 +209,15 @@ class CoverageChart {
      * @param event {Object} Dom event object
      */
   afterSelection (event) {
+    event.preventDefault()
+    const self = this
     const min = Math.trunc(event.xAxis[0].min)
     const max = Math.trunc(event.xAxis[0].max)
-    event.preventDefault()
+    const taskId = $(`#referenceSelect option:selected`).attr(`data-jm-id`)
+    const barcodeId = this._barcodeSelect.val()
+    const readTypeId = this._readTypeSelect.val()
+    const chromosomeId = this._chromosomeSelect.val()
+    const url = `/api/v1/alignment/coverage/${taskId}/${barcodeId}/${readTypeId}/${chromosomeId}/${min}/${max}`
     this._masterChart.xAxis[0].removePlotBand(`mask-before`)
     this._masterChart.xAxis[0].addPlotBand({
       id: `mask-before`,
@@ -213,6 +225,33 @@ class CoverageChart {
       to: max,
       color: `rgba(0, 0, 0, 0.2)`
     })
+    self._detailChart.showLoading(`<div class="spinner-border text-success" role="status">
+                        <span class = "sr-only"> Loading...</span></div>`)
+    this._axiosInstance.get(url).then(
+      response => {
+        const data = response.data.newChartData
+        const sumToCheck = response.data.sumToCheck
+        self._refLength = response.data.refLength
+        if (!checkHighChartsDataIsIdentical([sumToCheck], [this._oldSumToCheck])) {
+          // self._coverageChart.masterChart.xAxis[0].setExtremes(0, response.data.refLength)
+          // self._coverageChart.masterChart.series[0].setData(data.Sequenced, false, false, false)
+          // self._coverageChart.masterChart.series[1].setData(data.Unblocked, false, false, false)
+          self._detailChart.series[0].setData(data.Sequenced, false, false, false)
+          self._detailChart.series[1].setData(data.Unblocked, false, false, false)
+          self._masterChart.xAxis[0].removePlotBand(`mask-before`)
+          self._detailChart.hideLoading()
+          // self._coverageChart.masterChart.hideLoading()
+          self._detailChart.redraw()
+          // self._coverageChart.masterChart.redraw()
+        } else {
+          self._detailChart.hideLoading()
+          // self._coverageChart.masterChart.hideLoading()
+        }
+        this._oldSumToCheck = sumToCheck
+      }).catch(
+      error => {
+        console.error(error)
+      })
     this._detailChart.xAxis[0].setExtremes(min, max)
   }
 }
