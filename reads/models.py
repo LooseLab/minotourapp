@@ -113,6 +113,12 @@ class Barcode(models.Model):
         max_length=32
     )
 
+    alt_name = models.CharField(
+        max_length=128,
+        null=True,
+        blank=True
+    )
+
     def __str__(self):
         return "{} {} {}".format(self.run, self.run.runid, self.name)
 
