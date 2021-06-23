@@ -151,7 +151,7 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
     logger.debug(
         f"Clearing non necessary results for {artic_results_path} for sample name {sample_name}"
     )
-    files_to_keep_extra = [".fastq", ".fastq.gz",".sorted.bam", ".sorted.bam.bai"]
+    files_to_keep_extra = [".fastq", ".sorted.bam", ".sorted.bam.bai"]
     files_to_keep = [
         ".pass.vcf",
         ".fail.vcf",
@@ -190,7 +190,7 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
                 rmtree(filey, ignore_errors=True)
         elif f"{filey.name}" not in files_to_keep_full:
             filey.unlink()
-        elif not filey.suffix == ".gz" and filey.suffix not in [".dat", ".png"]:
+        elif not filey.suffix == ".gz" and filey.suffix not in [".dat", ".png", ".fastq"]:
             subprocess.Popen(["gzip", "-9", "-f", str(filey)]).communicate()
         elif filey.suffix == ".png":
             debug = int(get_env_variable("MT_DJANGO_DEBUG"))

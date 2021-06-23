@@ -70,8 +70,10 @@ def get_artic_run_stats(pk, svg_data, request, task):
         )
     }
     # dictionaries change in place
-    scheme = "nCoV-2019"
-    scheme_version = "V3"
+    scheme = get_env_variable("MT_ARTIC_SCHEME_NAME")
+    scheme_version = get_env_variable("MT_ARTIC_SCHEME_VER")
+    #scheme = "nCoV-2019"
+    #scheme_version = "V3"
     amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
     num_amplicons = len(amplicon_band_coords)
     time_stamp = datetime.now()
