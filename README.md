@@ -1,6 +1,6 @@
 # minoTour
 
-minoTour is a **work in progress**, therefore features may change, and any bug reports/feature requests and pull requests will be gratefully recieved.
+minoTour is a **work in progress**, therefore features may change, and any bug reports/feature requests/pull requests will be gratefully recieved.
 
 minoTour is a web-based real-time laboratory information management system (LIMS) for Oxford Nanopore Technology (ONT) sequencers built using the Django framework. minoTour can be hosted offline and locally on a laptop, or online and accessed remotely.  It aims to enable monitoring of Nanopore sequencers in real time, allowing for analysis of performance and basic downstream data analysis. minoTour can monitor the activity of a sequencer in real time independent of analysing basecalled files providing a breakdown and analysis of live sequencing metrics via integration with ONT’s minKNOW API and parsing of sequence files as they are generated. These features enable remote control of a sequencer, as well as tracking flow cell QC and all messages received by MinKNOW during a sequencing run. The client for monitoring and uploading data, minFQ, is available via PyPI. Simple analyses, such as base calling summaries, alignment and metagenomics can be completed in real-time or after sequencing. minoTour is open source (https://www.github.com/LooseLab/minotourapp). 
 
@@ -32,19 +32,19 @@ Minotour uses MySQL as a database backend, Celery (asynchronous workers responsi
 
 The following tools must be installed:
 
-* [Redis](https://redis.io/download) - Minotour uses **Redis** as a memory cache system and message broker for Celery. Follow the linked installation instructions.
+* [Redis](https://redis.io/download#installation) - Minotour uses **Redis** as a memory cache system and message broker for Celery. Follow the linked installation instructions.
 
 * [MySQL Community edition](https://dev.mysql.com/downloads/) - Minotour requires a running instance of mySQL server. To set up mySQL community edition follow the instructions found in the [official installation documentation](https://dev.mysql.com/doc/mysql-getting-started/en/). Another good tutorial can be found [here](https://www.digitalocean.com/community/tutorials/how-to-install-mysql-on-ubuntu-16-04). Once the server is up and running, you can either use the root user created during set up, setting it in the below environment variables file.   
  Otherwise you can create a user using the mysql shell, whilst logged in as the root user or as an admin user:
-    ```bash
-    CREATE USER minotour;
-    CREATE DATABASE minotourdb;
-    GRANT ALL PRIVILEGES ON minotourdb TO 'minotour'@'localhost' IDENTIFIED BY '<password>'
+    ```sql
+    CREATE USER 'minotour'@'localhost' IDENTIFIED BY '<password>';
+    CREATE DATABASE minotour;
+    GRANT ALL PRIVILEGES ON 'minotour'.* TO 'minotour'@'localhost' 
     ```
 
 * [Python 3](https://www.python.org) - Minotour uses **Python >=3.6**, so please make sure it is available on your system.
 
-To upload data, it is also necessary to install the upload client, [minFQ](https://github.com/LooseLab/minotourcli)
+To upload data, it is also necessary to install the upload client, [minFQ](https://github.com/LooseLab/minotourcli), wherever you are uploading data from.
 ## <a name="setup"></a> Setting up the minoTour environment
 
 

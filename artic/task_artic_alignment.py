@@ -8,7 +8,7 @@ from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime, timezone, timedelta
 from io import StringIO
-from shutil import copy, rmtree
+from shutil import rmtree
 
 from celery.schedules import crontab
 from celery.utils.log import get_task_logger
@@ -31,7 +31,6 @@ from communication.models import Message
 from minknow_data.models import Flowcell
 from minotourapp.celery import MyTask
 from minotourapp.celery import app
-from minotourapp.settings import BASE_DIR, STATIC_ROOT
 from minotourapp.utils import get_env_variable
 from reads.models import (
     JobMaster,
@@ -192,19 +191,19 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
             filey.unlink()
         elif not filey.suffix == ".gz" and filey.suffix not in [".dat", ".png", ".fastq"]:
             subprocess.Popen(["gzip", "-9", "-f", str(filey)]).communicate()
-        elif filey.suffix == ".png":
-            debug = int(get_env_variable("MT_DJANGO_DEBUG"))
-            static_path = (
-                f"{BASE_DIR}/artic/static/artic" if debug else f"{STATIC_ROOT}/artic"
-            )
-            # Copy the pngs to the artic static directory to be served
-            if not Path(f"{static_path}/{artic_results_pathlib.parent.stem}").exists():
-                Path(
-                    f"{static_path}/{artic_results_pathlib.parent.stem}", parents=True
-                ).mkdir()
-            copy(
-                str(filey), f"{static_path}/{artic_results_pathlib.parent.stem}",
-            )
+        # elif filey.suffix == ".png":
+        #     debug = int(get_env_variable("MT_DJANGO_DEBUG"))
+        #     static_path = (
+        #         f"{BASE_DIR}/artic/static/artic" if debug else f"{STATIC_ROOT}/artic"
+        #     )
+        #     # Copy the pngs to the artic static directory to be served
+        #     if not Path(f"{static_path}/{artic_results_pathlib.parent.stem}").exists():
+        #         Path(
+        #             f"{static_path}/{artic_results_pathlib.parent.stem}", parents=True
+        #         ).mkdir()
+        #     copy(
+        #         str(filey), f"{static_path}/{artic_results_pathlib.parent.stem}",
+        #     )
 
 @app.task
 def run_variant_command(base_results_directory, barcode_name,jm):
@@ -229,8 +228,10 @@ def run_variant_command(base_results_directory, barcode_name,jm):
         f"aln2type --no_call_deletion json_files csv_files {barcode_name}_ARTIC_medaka.csv MN908947.3  {barcode_name}.muscle.out.fasta {MT_VoC_PATH}/variant_definitions/variant_yaml/*.yml",
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    
+    logger.warning(cmd)
     out, err = proc.communicate()
+    logger.warning(out)
+    logger.warning(err)
     if not out and err:
         logger.debug(out)
         logger.debug(err)
@@ -382,12 +383,16 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     artic_env = get_env_variable("MT_ARTIC_ENV")
     normalise = get_env_variable("MT_ARTIC_NORMALIZE")
     threads = get_env_variable("MT_ARTIC_THREADS")
-
+    medaka_model = get_env_variable("MT_ARTIC_MEDAKA_MODEL")
     os.chdir(f"{base_results_directory}/{barcode_name}")
+    cmd_version = ["bash", "-c", f"source {MT_CONDA_PREFIX} && conda activate {artic_env} && artic --version"]
+    proc = subprocess.Popen(cmd_version, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = proc.communicate()
+    med_model = f"--medaka-model {medaka_model}" if not out.decode().strip().split(" ")[-1][:3] == "1.1" else ""
     cmd = [
         "bash",
         "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate {artic_env} && artic minion --medaka --normalise {normalise} --threads {threads} --scheme-directory {scheme_dir} --read-file {fastq_path} {scheme_name}/{scheme_ver} {barcode_name}",
+        f"source {MT_CONDA_PREFIX} && conda activate {artic_env} && artic minion --medaka {med_model} --normalise {normalise} --threads {threads} --scheme-directory {scheme_dir} --read-file {fastq_path} {scheme_name}/{scheme_ver} {barcode_name}",
     ]
     logger.info(cmd)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

@@ -43,6 +43,7 @@ export MT_ARTIC_SCHEME_NAME='nCoV-2019' # The artic scheme name - e.g nCoV-2019 
 export MT_ARTIC_SCHEME_VER='V3' # The artic scheme version
 export MT_ARTIC_ENV="artic-ncov2019" # The artic environment to activate to run artic commands.
 export MT_VoC_PATH="<path/to/VoC/Definitions>" # If not setting up to use artic for Covid-19 this does not need to be set.
+export MT_ARTIC_MEDAKA_MODEL="r941_min_high_g351"
 ## These parameters specify the read lengths that minoTour will use to filter reads for the ARTIC pipeline. They are x
 export MT_ARTIC_MIN_LEN=400
 export MT_ARTIC_MAX_LEN=800
