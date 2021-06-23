@@ -122,8 +122,8 @@ def get_amplicon_infos():
 
     """
     # todo hardcoded scheme atm, need to attach to JobMaster somehow
-    scheme = "nCoV-2019"
-    scheme_version = "V3"
+    scheme = get_env_variable("MT_ARTIC_SCHEME_NAME") #"nCoV-2019"
+    scheme_version = get_env_variable("MT_ARTIC_SCHEME_VER") # "V3"
     amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
     num_amplicons = len(amplicon_band_coords)
     return (num_amplicons, amplicon_band_coords)
@@ -151,7 +151,7 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
     logger.debug(
         f"Clearing non necessary results for {artic_results_path} for sample name {sample_name}"
     )
-    files_to_keep_extra = [".fastq", ".sorted.bam", ".sorted.bam.bai"]
+    files_to_keep_extra = [".fastq", ".fastq.gz",".sorted.bam", ".sorted.bam.bai"]
     files_to_keep = [
         ".pass.vcf",
         ".fail.vcf",
@@ -376,13 +376,18 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         fastq_path += ".gz"
     # TODO get the barcode from the posix path for the sample name
     logger.info(fastq_path)
-    scheme_dir = get_env_variable("MT_ARTIC_SCEHEME_DIR")
+    scheme_name = get_env_variable("MT_ARTIC_SCHEME_NAME")
+    scheme_ver = get_env_variable("MT_ARTIC_SCHEME_VER")
+    scheme_dir = get_env_variable("MT_ARTIC_SCHEME_DIR")
     artic_env = get_env_variable("MT_ARTIC_ENV")
+    normalise = get_env_variable("MT_ARTIC_NORMALIZE")
+    threads = get_env_variable("MT_ARTIC_THREADS")
+
     os.chdir(f"{base_results_directory}/{barcode_name}")
     cmd = [
         "bash",
         "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate {artic_env} && artic minion --medaka --normalise 200 --threads 4 --scheme-directory {scheme_dir} --read-file {fastq_path} nCoV-2019/V3 {barcode_name}",
+        f"source {MT_CONDA_PREFIX} && conda activate {artic_env} && artic minion --medaka --normalise {normalise} --threads {threads} --scheme-directory {scheme_dir} --read-file {fastq_path} {scheme_name}/{scheme_ver} {barcode_name}",
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
@@ -394,14 +399,18 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         logger.debug("¯\_(ツ)_/¯")
         logger.warning(str(out))
         logger.warning(err)
-    # Now run the aln2type artic screen.
-    run_variant_command(base_results_directory, barcode_name, jm)
-    run_pangolin_command(base_results_directory, barcode_name)
+    ### Some of the following commands are specific to nCoV-2019 so should only be run IF we are looking at nCoV-2019
+    ### To do this we explicitly check for SARS-CoV-2 or nCoV-2019 in the environment
+    if scheme_name in ['SARS-CoV-2','nCoV-2019']:
+        # Now run the aln2type artic screen.
+        run_variant_command(base_results_directory, barcode_name, jm)
+        run_pangolin_command(base_results_directory, barcode_name)
     # Update the Barcode Metadata to show the task has been run on this barcode
     ArticBarcodeMetadata.objects.filter(
         flowcell=jm.flowcell, job_master__job_type_id=16, barcode__name=barcode_name
     ).update(has_finished=True, marked_for_rerun=False)
 
+    # This shouldn't be run until you clean up the artic run.
     clear_unused_artic_files(
         f"{base_results_directory}/{barcode_name}", barcode_name, jm.flowcell.id
     )
@@ -726,8 +735,8 @@ def run_artic_pipeline(task_id, streamed_reads=None):
     read_count = fasta_df_barcode.shape[0]
     logger.debug(f"Fetched reads.")
     logger.debug(fasta_df_barcode.shape)
-    min_read_length = 400
-    max_read_length = 700
+    min_read_length = int(get_env_variable("MT_ARTIC_MIN_LEN"))
+    max_read_length = int(get_env_variable("MT_ARTIC_MAX_LEN"))
     fasta_df_barcode["sequence_length"] = fasta_df_barcode["sequence"].str.len()
     fasta_df_barcode = fasta_df_barcode[
         fasta_df_barcode["sequence_length"].between(
