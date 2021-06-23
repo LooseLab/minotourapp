@@ -31,7 +31,7 @@ ENV MT_CELERY_RESULT_BACKEND='redis://localhost:6379/0'
 # Store the Artic results in this directory
 ENV MT_ARTIC_RESULTS_DIR='/var/lib/minotour/apps/data'
  # Read the Artic scheme directories, found where the Artic NCOV piprline github repo was clones. Example  Projects/artic-ncov2019/primer_schemes
-ENV MT_ARTIC_SCEHEME_DIR='<Path/To/Artic/Code/Scheme_Directories>'
+ENV MT_ARTIC_SCHEME_DIR='<Path/To/Artic/Code/Scheme_Directories>'
 # Maximum number of Artic tasks to be run at any one time
 ENV MT_ARTIC_MAX_PIPELINES="1"
 # Number of Celery workers to start, no more than number of CPU cores
