@@ -4,7 +4,7 @@ Contains code relating to tasks that interact with our redis cache for storing r
 """
 import json
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
@@ -547,6 +547,7 @@ def save_reads_bulk(reads):
             f = Flowcell.objects.get(pk=read["flowcell_id"])
             if f.archived:
                 f.archived = False
+                f.last_activity_date = datetime.now(timezone.utc)
                 f.save()
             flowcell_dict[read["flowcell_id"]] = 1
         fastq_read = FastqRead(
