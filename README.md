@@ -81,6 +81,13 @@ $ python manage.py shell -c 'from django.core.management import utils; print(uti
 ```
 And stored under MT_SECRET_KEY in envs.sh.
 
+### Setting the media root
+The media root is found in minotourapp/settings.py. This is the directory that references and minimap2 
+indexes are saved to. For example -
+```python
+MEDIA_ROOT = "/home/user/data/"
+```
+
 ### Skipping the saving of sequence data
 
 At the cost of not being able to go back and run analyses outside of real time against your upload of data,
@@ -117,7 +124,7 @@ To install tmux on mac, use homebrew:
 ```bash
 brew install tmux
 ```
-Once installed, minoTour has a [bash script](scripts/run_minotour_tmux.sh) that runs all the tmux commands to open minoTour in Tmux. The file may need configuring to provide all the correct paths, but should run without any issue.
+Once installed, minoTour has a [bash script](cripts/run_minotour_tmux.sh) that runs all the tmux commands to open minoTour in Tmux. *__The file may need configuring to provide all the correct paths__*, but with paths set should run without any issue.
 It can be run simply from the **main minotourapp directory**:
 ```bash
 ./scripts/run_minotour_tmux.sh
