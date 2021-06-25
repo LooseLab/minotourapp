@@ -64,6 +64,11 @@ To use the python package mysqlclient, it is necessary to have two dependencies 
     sudo apt-get install libmysqlclient-dev
     sudo apt-get install python3-dev
 
+To use weasyprint for pdf making we need to install it's dependencies
+```bash
+sudo apt-get install build-essential python3-dev python3-pip python3-setuptools python3-wheel python3-cffi libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libffi-dev shared-mime-info
+```
+
 Now create a virtual environment for the project dependencies and install them:
 
     cd /path/to/minotourapp/
