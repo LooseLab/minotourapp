@@ -29,9 +29,9 @@ ENV MT_CENTRIFUGE_INDEX="/var/lib/minotour/apps/data"
  # Write Celery log file in this directory. Make sure you have write access
 ENV MT_LOG_FOLDER='/var/lib/minotour/logs'
  # Redis url. Probably this value already, unless configured to run with sockets
-ENV MT_CELERY_BROKER_URL='redis://localhost:6379/0'
+ENV MT_CELERY_REDIS_URL='redis+socket:///var/lib/minotour/apps/data/redis.sock'
  # Redis URl - where we store celery results
-ENV MT_CELERY_RESULT_BACKEND='redis://localhost:6379/0'
+ENV MT_DJANGO_REDIS_URL='redis+socket:///var/lib/minotour/apps/data/redis.sock'
 # Number of Celery workers to start, no more than number of CPU cores
 ENV MT_CELERY_WORKER_COUNT="2"
 # Number of celery minimap2 threads to start, no more than num CPU cores
@@ -152,8 +152,8 @@ RUN usermod -a -G root www-data
 RUN apt-get install -y build-essential python3-dev python3-pip python3-setuptools python3-wheel python3-cffi libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libffi-dev shared-mime-info
 
 RUN python manage.py collectstatic
-RUN python manage.py makemigrations
-RUN python manage.py migrate
+
+RUN mkdir -p /redis_data
 
 RUN chmod -R 755 extra/* && chmod 755 /etc/init.d/celeryd && chmod 640 /etc/default/celeryd && chmod 755 /etc/init.d/celerybeat
 EXPOSE 8100

@@ -89,7 +89,7 @@ WSGI_APPLICATION = 'minotourapp.wsgi.application'
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": get_env_variable("MT_DJANGO_REDIS_URL"),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
@@ -223,8 +223,8 @@ CELERY_ROUTES = ({
     }
 })
 
-CELERY_BROKER_URL = get_env_variable("MT_CELERY_BROKER_URL")
-CELERY_RESULT_BACKEND = get_env_variable("MT_CELERY_RESULT_BACKEND")
+CELERY_BROKER_URL = get_env_variable("MT_CELERY_REDIS_URL")
+CELERY_RESULT_BACKEND = get_env_variable("MT_CELERY_REDIS_URL")
 # Celery Data Format
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
