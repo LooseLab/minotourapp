@@ -47,7 +47,7 @@ services:
             MT_CELERY_REDIS_URL: 'redis+socket:///redis_data/redis.sock'
             MT_DJANGO_REDIS_URL: 'redis+socket:///redis_data/redis.sock'
             MT_ARTIC_RESULTS_DIR: '/var/lib/minotour/apps/data' # Store the Artic results in this directory
-            MT_ARTIC_SCHEME_DIR: '<Path/To/Artic/Code/Scheme_Directories>' # Read the Artic scheme directories, found where the Artic NCOV piprline github repo was clones.
+            MT_ARTIC_SCHEME_DIR: '/var/lib/minotour/apps/data' # Read the Artic scheme directories, found where the Artic NCOV piprline github repo was clones.
             MT_ARTIC_MAX_PIPELINES: "1" # Maximum number of Artic tasks to be run at any one time
             MT_CELERY_WORKER_COUNT: "2" # Number of Celery workers to start, no more than number of CPU cores
             MT_CELERY_MINIMAP2_WORKER_COUNT: "1" # Number of celery minimap2 threads to start, no more than num CPU cores
