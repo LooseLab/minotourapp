@@ -29,9 +29,9 @@ ENV MT_CENTRIFUGE_INDEX="/var/lib/minotour/apps/data"
  # Write Celery log file in this directory. Make sure you have write access
 ENV MT_LOG_FOLDER='/var/lib/minotour/logs'
  # Redis url. Probably this value already, unless configured to run with sockets
-ENV MT_CELERY_REDIS_URL='redis+socket:///var/lib/minotour/apps/data/redis.sock'
+ENV MT_CELERY_REDIS_URL='redis+socket:///redis_data/redis.sock'
  # Redis URl - where we store celery results
-ENV MT_DJANGO_REDIS_URL='redis+socket:///var/lib/minotour/apps/data/redis.sock'
+ENV MT_DJANGO_REDIS_URL='redis+socket:///redis_data/redis.sock'
 # Number of Celery workers to start, no more than number of CPU cores
 ENV MT_CELERY_WORKER_COUNT="2"
 # Number of celery minimap2 threads to start, no more than num CPU cores
@@ -78,7 +78,7 @@ ENV MT_IDEAL_READ_CONSTANT="100000"
 ENV MT_DESTROY_ARTIC_EVIDENCE=1
 ENV MT_COVERAGE_PER_AMPLICON="20"
  # Store the Artic results in this directory. Please ensure directory exists.
-ENV MT_ARTIC_RESULTS_DIR='/var/lib/minotour/data'
+ENV MT_ARTIC_RESULTS_DIR='/var/lib/minotour/apps/data'
  # Maximum number of Artic tasks to be run at any one time
 ENV MT_ARTIC_MAX_PIPELINES="1"
  # Number of hours until clearing artic files
