@@ -114,6 +114,7 @@ RUN git clone https://github.com/cov-lineages/pangolin.git
 WORKDIR /var/lib/minotour/apps/fieldbioinformatics
 RUN conda install -c conda-forge mamba
 RUN mamba env create -f environment.yml
+RUN source /root/.bashrc
 RUN conda activate artic
 RUN python setup.py install
 RUN artic -v
