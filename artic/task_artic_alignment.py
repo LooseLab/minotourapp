@@ -222,16 +222,15 @@ def run_variant_command(base_results_directory, barcode_name,jm):
             ["gzip", "-d", f"{barcode_name}.muscle.out.fasta.gz"]
         ).communicate()
         re_gzip = True
-    cmd = [
-        "bash",
-        "-c",
-        f"aln2type --no_call_deletion json_files csv_files {barcode_name}_ARTIC_medaka.csv MN908947.3  {barcode_name}.muscle.out.fasta {MT_VoC_PATH}/variant_definitions/variant_yaml/*.yml",
-    ]
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    logger.warning(cmd)
+    my_env = os.environ.copy()
+    my_env["PATH"] = f"{get_env_variable('MT_ALN2TYPE_BIN')}:" + my_env["PATH"]
+    cmd = ["bash", "-c", f"aln2type --no_call_deletion json_files csv_files {barcode_name}_ARTIC_medaka.csv MN908947.3  {barcode_name}.muscle.out.fasta {MT_VoC_PATH}/variant_definitions/variant_yaml/*.yml"]
+    logger.info(cmd)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env)
     out, err = proc.communicate()
-    logger.warning(out)
-    logger.warning(err)
+    logger.info(out)
+    logger.info(err)
+
     if not out and err:
         logger.debug(out)
         logger.debug(err)

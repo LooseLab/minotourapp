@@ -66,6 +66,8 @@ services:
           # Boolean value if True, data that could potentially hold sensitive patient data that is fed into the artic pipeline is removed 12 hours after the run is finished.
             ENV MT_DESTROY_ARTIC_EVIDENCE: 1
             ENV MT_COVERAGE_PER_AMPLICON: "20"
+            # the bin which aln2type is under todo add to dockerfile when i have time
+            MT_ALN2TYPE_BIN: "/root/miniconda3/bin/"
 
         ports:
             - 8100:8100
