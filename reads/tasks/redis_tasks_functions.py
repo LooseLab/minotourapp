@@ -410,7 +410,7 @@ def harvest_reads():
     """
     # Check that we aren't currently running this task
     if (
-        not redis_instance.get("harvesting")
+        not int(redis_instance.get("harvesting"))
         or not redis_instance.get("harvesting") == "1"
     ):
         redis_instance.set("harvesting", 1)
