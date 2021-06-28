@@ -105,6 +105,7 @@ RUN wget --quiet \
     && rm -f Miniconda3-latest-Linux-x86_64.sh
 
 RUN conda init bash
+RUN exec bash
 WORKDIR /var/lib/minotour/apps
 
 RUN git clone https://github.com/artic-network/fieldbioinformatics.git
@@ -114,19 +115,19 @@ RUN git clone https://github.com/cov-lineages/pangolin.git
 WORKDIR /var/lib/minotour/apps/fieldbioinformatics
 RUN conda install -c conda-forge mamba
 RUN mamba env create -f environment.yml
-RUN source /root/.bashrc
-RUN conda activate artic
-RUN python setup.py install
-RUN artic -v
-RUN conda deactivate
+#RUN source /root/.bashrc
+#RUN conda activate artic
+#RUN python setup.py install
+#RUN artic -v
+#RUN conda deactivate
 
 WORKDIR /var/lib/minotour/apps/pangolin
 
 RUN mamba env create -f environment.yml
-RUN conda activate pangolin
-RUN pip install .
-RUN pangolin --version
-RUN conda deactivate
+#RUN conda activate pangolin
+#RUN pip install .
+#RUN pangolin --version
+#RUN conda deactivate
 
 RUN mamba install -y -c conda-forge uwsgi
 
