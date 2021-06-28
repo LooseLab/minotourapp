@@ -31,16 +31,18 @@ def create_minimap2_index(ref_info, file_name):
     """
     index_dir_path = (
         MEDIA_ROOT
-        if not get_env_variable("MT_MINIMAP2_INDEX_DIR").isdigit()
+        if get_env_variable("MT_MINIMAP2_INDEX_DIR").isdigit()
         else get_env_variable("MT_MINIMAP2_INDEX_DIR")
     )
     minimap2_index_file_location = (
         f"{index_dir_path}/minimap2_indexes/{file_name.stem}.mmi"
     )
-    subprocess.Popen(
+    out, err = subprocess.Popen(
         f"{MINIMAP2} -d {minimap2_index_file_location}"
         f" {ref_info.file_location.path}".split()
     ).communicate()
+    print(out)
+    print(err)
     return minimap2_index_file_location
 
 
