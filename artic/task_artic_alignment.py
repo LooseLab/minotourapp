@@ -178,8 +178,8 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
     files_to_keep_full.extend([f"{el}.gz" for el in files_to_keep_full])
     files_to_keep_full.append("lineage_report.csv")
     files_to_keep_full.append("lineage_report.csv.gz")
-    files_to_keep_full.append("json_files/{sample_name}_ARTIC_medaka.json.gz")
-    files_to_keep_full.append("csv_files/{sample_name}_ARTIC_medaka.csv")
+    files_to_keep_full.append(f"{sample_name}_ARTIC_medaka.json.gz")
+    files_to_keep_full.append(f"{sample_name}_ARTIC_medaka.csv")
     artic_results_pathlib = Path(artic_results_path)
     for filey in artic_results_pathlib.iterdir():
         # delete pangolin tree files
