@@ -136,14 +136,6 @@ RUN pip install -U wheel
 
 RUN pip install -r /var/lib/minotour/apps/minotourapp/requirements.txt && apt-get install -y nginx
 
-WORKDIR /var/lib/minotour/apps
-
-RUN git clone https://github.com/connor-lab/aln2type
-
-RUN cd aln2type
-
-RUN pip install .
-
 COPY . /var/lib/minotour/apps/minotourapp/
 
 WORKDIR /var/lib/minotour/apps/minotourapp
