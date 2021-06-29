@@ -258,8 +258,28 @@ def paf_summary_table_json(request, pk):
             "average_read_length",
         )
     )
+    df = pd.DataFrame.from_records(
+                queryset.values(
+        "barcode_name",
+        "chromosome_name",
+        "reference_name",
+        "job_master_id",
+        "read_count",
+        "total_yield",
+        "reference_line_length",
+        "coverage",
+        "average_read_length",
+        )
+    )
+    df2 = df.groupby(
+        by=['barcode_name', 'chromosome_name', 'job_master_id', 'reference_line_length','reference_name']).sum().reset_index()
+    df2['average_read_length'] = (df2['total_yield'] / df2['read_count']).astype(int)
+    df2['coverage'] = (df2['total_yield'] / df2['reference_line_length']).astype(float)
+
+
     result = {
-        "data": queryset,
+        #"data": queryset,
+        "data": df2.to_dict('records'),
     }
     return Response(result, status=200)
 
