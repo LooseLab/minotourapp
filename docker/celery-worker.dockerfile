@@ -105,6 +105,7 @@ RUN wget --quiet \
     && rm -f Miniconda3-latest-Linux-x86_64.sh
 
 RUN conda init bash
+
 WORKDIR /var/lib/minotour/apps
 
 RUN git clone https://github.com/artic-network/fieldbioinformatics.git

@@ -17,10 +17,6 @@ from git import Repo
 
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
-from artic.task_write_out_artic_metrics import (
-    write_out_artic_metrics,
-    get_or_create_metrics_df,
-)
 from artic.utils import (
     get_amplicon_band_data,
     make_results_directory_artic,
@@ -946,7 +942,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             barcodes_already_fired = fetch_barcode_to_fire_list(base_result_dir_path)
             num_amplicons, amplicon_band_coords = get_amplicon_infos()
             time_stamp = datetime.now()
-            df_old = get_or_create_metrics_df(base_result_dir_path)
             df_new_dict = {}
             # TODO split into own function
             for chrom_key in chromosomes_seen_now:
@@ -1077,9 +1072,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         }
                     )
             df_new = pd.DataFrame.from_dict(df_new_dict, orient="index")
-            write_out_artic_metrics(
-                df_old=df_old, df_new=df_new, dir_to_write_to=base_result_dir_path
-            )
     task.last_read = last_read
     task.iteration_count += 1
     logger.debug("Finishing this batch of reads.")
