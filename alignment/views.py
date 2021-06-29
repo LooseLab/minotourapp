@@ -10,7 +10,7 @@ import random
 
 from alignment.models import PafSummaryCov, MattsAmazingAlignmentSum
 from reads.models import Barcode
-
+from alignment.utils import _human_key
 
 def sampler(array,array_length=5000):
     """
@@ -409,7 +409,8 @@ def per_genome_coverage_summary(request, flowcell_pk):
     query = PafSummaryCov.objects.filter(job_master__flowcell_id=flowcell_pk).exclude(
         job_master__job_type_id=16
     )
-    categories = query.values_list("chromosome_name", flat=True).distinct()
+    categories = list(query.values_list("chromosome_name", flat=True).distinct())
+    categories.sort(key=_human_key)
     queryset = list(
         query
         .values("chromosome_name", "barcode_name", "reference_line_length")
