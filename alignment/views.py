@@ -6,6 +6,7 @@ from django.db.models import F, Sum, Avg
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+import random
 
 from alignment.models import PafSummaryCov, MattsAmazingAlignmentSum
 from reads.models import Barcode
@@ -58,7 +59,7 @@ def rough_coverage_partial_chromosome_flowcell(
             read_type_id=read_type_id,)
 
     testDF = pd.DataFrame.from_records(test.values())
-    if len(testDF)>0:
+    if not testDF.empty:
         func = lambda s: np.fromstring(s, dtype=int, sep=",")
         testDF['Numpy_bin_position_start'] = testDF['bin_position_start_str'].str.strip("[]").apply(func)
         testDF['Numpy_bin_change'] = testDF['bin_coverage_str'].str.strip("[]").apply(func)
@@ -93,7 +94,8 @@ def rough_coverage_partial_chromosome_flowcell(
 
         #queryset = testarray2[['bin_position_start', 'bin_coverage']].values
         new_data = results_dict
-        sum_to_check=test.count()
+        #sum_to_check=test.count()
+        sum_to_check = random.randint(1,100)
 
         # TODO limits to just one reference here when fetching length, could be an issue
         #  in the future displaying multiple rferences on a plot
@@ -142,7 +144,7 @@ def rough_coverage_complete_chromosome_flowcell(
             read_type_id=read_type_id,)
 
     testDF = pd.DataFrame.from_records(test.values())
-    if len(testDF)>0:
+    if not testDF.empty:
         func = lambda s: np.fromstring(s, dtype=int, sep=",")
         testDF['Numpy_bin_position_start'] = testDF['bin_position_start_str'].str.strip("[]").apply(func)
         testDF['Numpy_bin_change'] = testDF['bin_coverage_str'].str.strip("[]").apply(func)
@@ -198,6 +200,7 @@ def rough_coverage_complete_chromosome_flowcell(
         #queryset = testarray2[['bin_position_start', 'bin_coverage']].values
         new_data = results_dict
         sum_to_check=test.count()
+
 
         # TODO limits to just one reference here when fetching length, could be an issue
         #  in the future displaying multiple rferences on a plot
