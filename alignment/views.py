@@ -52,11 +52,17 @@ def rough_coverage_partial_chromosome_flowcell(
     -------
 
     """
+
+    # Get the barcode name so we can recover all the results for this run.
+
+    my_barcode = Barcode.objects.get(pk=barcode_id)
+
     test = MattsAmazingAlignmentSum.objects.filter(job_master__id=task_id,
-            flowcell__owner=request.user,
-            barcode_id=barcode_id,
-            chromosome_pk=chromosome_id,
-            read_type_id=read_type_id,)
+                                                   flowcell__owner=request.user,
+                                                   barcode__name=my_barcode.name,
+                                                   chromosome_pk=chromosome_id,
+                                                   read_type_id=read_type_id, )
+
 
     testDF = pd.DataFrame.from_records(test.values())
     if not testDF.empty:
@@ -137,9 +143,13 @@ def rough_coverage_complete_chromosome_flowcell(
     -------
 
     """
+    #Get the barcode name so we can recover all the results for this run.
+
+    my_barcode = Barcode.objects.get(pk=barcode_id)
+
     test = MattsAmazingAlignmentSum.objects.filter(job_master__id=task_id,
             flowcell__owner=request.user,
-            barcode_id=barcode_id,
+            barcode__name=my_barcode.name,
             chromosome_pk=chromosome_id,
             read_type_id=read_type_id,)
 
@@ -203,7 +213,7 @@ def rough_coverage_complete_chromosome_flowcell(
 
 
         # TODO limits to just one reference here when fetching length, could be an issue
-        #  in the future displaying multiple rferences on a plot
+        #  in the future displaying multiple references on a plot
         length = (
             PafSummaryCov.objects.filter(job_master_id=task_id, chromosome_pk=chromosome_id)
             .first()
@@ -390,6 +400,8 @@ def mapped_references_by_flowcell_list(request, flowcell_id):
         return Response(
             "No flowcell ID slug provided", status=status.HTTP_400_BAD_REQUEST
         )
+
+    #ToDo: This is returning multiple barcodes when really we want to return just one.
     references = (
         PafSummaryCov.objects.filter(job_master__flowcell__id=flowcell_id)
         .exclude(job_master__job_type_id=16)
