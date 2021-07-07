@@ -1,1 +1,15 @@
-*00*.py
+*/migrations/0*.py
+celerybeat.pid
+celerybeat-schedule*
+package-lock.json
+package.json
+pylintrc
+.github/*
+.idea
+**pyc
+artic/static*
+artic/tests/*
+*.log
+*.out
+minotour.log
+*.json

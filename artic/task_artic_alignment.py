@@ -17,10 +17,6 @@ from git import Repo
 
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
-from artic.task_write_out_artic_metrics import (
-    write_out_artic_metrics,
-    get_or_create_metrics_df,
-)
 from artic.utils import (
     get_amplicon_band_data,
     make_results_directory_artic,
@@ -178,8 +174,8 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
     files_to_keep_full.extend([f"{el}.gz" for el in files_to_keep_full])
     files_to_keep_full.append("lineage_report.csv")
     files_to_keep_full.append("lineage_report.csv.gz")
-    files_to_keep_full.append("json_files/{sample_name}_ARTIC_medaka.json.gz")
-    files_to_keep_full.append("csv_files/{sample_name}_ARTIC_medaka.csv")
+    files_to_keep_full.append(f"{sample_name}_ARTIC_medaka.json.gz")
+    files_to_keep_full.append(f"{sample_name}_ARTIC_medaka.csv")
     artic_results_pathlib = Path(artic_results_path)
     for filey in artic_results_pathlib.iterdir():
         # delete pangolin tree files
@@ -222,16 +218,15 @@ def run_variant_command(base_results_directory, barcode_name,jm):
             ["gzip", "-d", f"{barcode_name}.muscle.out.fasta.gz"]
         ).communicate()
         re_gzip = True
-    cmd = [
-        "bash",
-        "-c",
-        f"aln2type --no_call_deletion json_files csv_files {barcode_name}_ARTIC_medaka.csv MN908947.3  {barcode_name}.muscle.out.fasta {MT_VoC_PATH}/variant_definitions/variant_yaml/*.yml",
-    ]
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    logger.warning(cmd)
+    my_env = os.environ.copy()
+    my_env["PATH"] = f"{get_env_variable('MT_ALN2TYPE_BIN')}:" + my_env["PATH"]
+    cmd = ["bash", "-c", f"aln2type --no_call_deletion json_files csv_files {barcode_name}_ARTIC_medaka.csv MN908947.3  {barcode_name}.muscle.out.fasta {MT_VoC_PATH}/variant_definitions/variant_yaml/*.yml"]
+    logger.info(cmd)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env)
     out, err = proc.communicate()
-    logger.warning(out)
-    logger.warning(err)
+    logger.info(out)
+    logger.info(err)
+
     if not out and err:
         logger.debug(out)
         logger.debug(err)
@@ -947,7 +942,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             barcodes_already_fired = fetch_barcode_to_fire_list(base_result_dir_path)
             num_amplicons, amplicon_band_coords = get_amplicon_infos()
             time_stamp = datetime.now()
-            df_old = get_or_create_metrics_df(base_result_dir_path)
             df_new_dict = {}
             # TODO split into own function
             for chrom_key in chromosomes_seen_now:
@@ -1078,9 +1072,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         }
                     )
             df_new = pd.DataFrame.from_dict(df_new_dict, orient="index")
-            write_out_artic_metrics(
-                df_old=df_old, df_new=df_new, dir_to_write_to=base_result_dir_path
-            )
     task.last_read = last_read
     task.iteration_count += 1
     logger.debug("Finishing this batch of reads.")

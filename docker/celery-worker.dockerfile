@@ -16,7 +16,7 @@ ENV MT_DJANGO_DEBUG=0
 ENV MT_MAILGUN_ACCESS_KEY=''
  # CURRENTLY UNUSED
 ENV MT_MAILGUN_SERVER_NAME=''
-ENV MT_MINIMAP2='extra/minimap2-2.17_x64-linux/minimap2'
+ENV MT_MINIMAP2='/var/lib/minotour/apps/minotourapp/extra/minimap2-2.17_x64-linux/minimap2'
 ENV MT_TWITCONSUMER_KEY='<Twitter consumer key>'
 ENV MT_TWITCONSUMER_SECRET='<Twitter consumer secret>'
 ENV MT_TWITTOKEN='<Twitter token>'
@@ -29,9 +29,9 @@ ENV MT_CENTRIFUGE_INDEX="/var/lib/minotour/apps/data"
  # Write Celery log file in this directory. Make sure you have write access
 ENV MT_LOG_FOLDER='/var/lib/minotour/logs'
  # Redis url. Probably this value already, unless configured to run with sockets
-ENV MT_CELERY_BROKER_URL='redis://localhost:6379/0'
+ENV MT_CELERY_REDIS_URL='redis+socket:///redis_data/redis.sock'
  # Redis URl - where we store celery results
-ENV MT_CELERY_RESULT_BACKEND='redis://localhost:6379/0'
+ENV MT_DJANGO_REDIS_URL='redis+socket:///redis_data/redis.sock'
 # Number of Celery workers to start, no more than number of CPU cores
 ENV MT_CELERY_WORKER_COUNT="2"
 # Number of celery minimap2 threads to start, no more than num CPU cores
@@ -78,7 +78,7 @@ ENV MT_IDEAL_READ_CONSTANT="100000"
 ENV MT_DESTROY_ARTIC_EVIDENCE=1
 ENV MT_COVERAGE_PER_AMPLICON="20"
  # Store the Artic results in this directory. Please ensure directory exists.
-ENV MT_ARTIC_RESULTS_DIR='/var/lib/minotour/data'
+ENV MT_ARTIC_RESULTS_DIR='/var/lib/minotour/apps/data'
  # Maximum number of Artic tasks to be run at any one time
 ENV MT_ARTIC_MAX_PIPELINES="1"
  # Number of hours until clearing artic files
@@ -102,9 +102,10 @@ RUN wget --quiet \
     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     && mkdir /root/.conda \
     && bash Miniconda3-latest-Linux-x86_64.sh -b \
-    && rm -f Miniconda3-latest-Linux-x86_64.sh \
+    && rm -f Miniconda3-latest-Linux-x86_64.sh
 
 RUN conda init bash
+
 WORKDIR /var/lib/minotour/apps
 
 RUN git clone https://github.com/artic-network/fieldbioinformatics.git
@@ -114,10 +115,19 @@ RUN git clone https://github.com/cov-lineages/pangolin.git
 WORKDIR /var/lib/minotour/apps/fieldbioinformatics
 RUN conda install -c conda-forge mamba
 RUN mamba env create -f environment.yml
+#RUN source /root/.bashrc
+#RUN conda activate artic
+#RUN python setup.py install
+#RUN artic -v
+#RUN conda deactivate
 
 WORKDIR /var/lib/minotour/apps/pangolin
 
 RUN mamba env create -f environment.yml
+#RUN conda activate pangolin
+#RUN pip install .
+#RUN pangolin --version
+#RUN conda deactivate
 
 RUN mamba install -y -c conda-forge uwsgi
 
@@ -152,9 +162,9 @@ RUN usermod -a -G root www-data
 RUN apt-get install -y build-essential python3-dev python3-pip python3-setuptools python3-wheel python3-cffi libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 libffi-dev shared-mime-info
 
 RUN python manage.py collectstatic
-RUN python manage.py makemigrations
-RUN python manage.py migrate
 
-RUN chmod -R 755 extra/* && chmod 755 /etc/init.d/celeryd && chmod 640 /etc/default/celeryd && chmod 755 /etc/init.d/celerybeat
+RUN mkdir -p /redis_data
+
+RUN chmod -R 755 extra/* && chmod 755 /etc/init.d/celeryd && chmod 640 /etc/default/celeryd && chmod 755 /etc/init.d/celerybeat && chmod 755 docker/init_conda.sh
 EXPOSE 8100
 

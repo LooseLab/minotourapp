@@ -20,8 +20,8 @@ export MT_SECRET_KEY='<Add secret key here>'
 export MT_CENTRIFUGE="</path/to/minotourapp/extra/centrifuge-1.0.4-beta/centrifuge>" # use full path
 export MT_CENTRIFUGE_INDEX="/var/lib/minotour/apps/data" # Read centrifuge index from this directory
 export MT_LOG_FOLDER='</path/to/logfile/directory/celery.log>' # Write Celery log file in this directory. Make sure you have write access
-export MT_CELERY_BROKER_URL='redis://localhost:6379/0' # Redis url. Probably this value already, unless configured to run with sockets
-export MT_CELERY_RESULT_BACKEND='redis://localhost:6379/0' # Redis URl - where we store celery results
+export MT_CELERY_REDIS_URL='redis://localhost:6379/0'
+export MT_DJANGO_REDIS_URL='redis://localhost:6379/1'
 export MT_CELERY_WORKER_COUNT="2" # Number of Celery workers to start, no more than number of CPU cores
 export MT_CELERY_MINIMAP2_WORKER_COUNT="1" # Number of celery minimap2 threads to start, no more than num CPU cores
 export MT_TIME_UNTIL_INACTIVE="7" # Number of days since last flowcell activity until a flowcell is listed as inactive
@@ -56,3 +56,5 @@ export MT_COVERAGE_PER_AMPLICON="20"
 export MT_ARTIC_RESULTS_DIR='/path/to/artic/directory' # Store the Artic results in this directory. Please ensure directory exists.
 export MT_ARTIC_MAX_PIPELINES="1" # Maximum number of Artic tasks to be run at any one time
 export MT_ARTIC_TIME_UNTIL_CLEARING="12" # Number of hours from final read upload until minoTour treats
+export MT_ALN2TYPE_BIN=""
+

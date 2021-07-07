@@ -1,10 +1,14 @@
-version: '3'
+version: '3.7'
 
 services:
 
     redis:
-        image: redis
+        build:
+            dockerfile: docker/redis.dockerfile
+            context: .
         container_name: redis
+        volumes:
+            - redis_minotour:/redis_files
 
     db:
         image: mariadb
@@ -15,13 +19,13 @@ services:
             MYSQL_USER: dba
             MYSQL_PASSWORD: dba
         volumes:
-            - ../db_data_dir:/var/lib/mysql
+            - db_data_dir:/var/lib/mysql
 
     web:
         build:
             dockerfile: docker/celery-worker.dockerfile
             context: .
-        command: bash -c "uwsgi --ini minotourapp_uwsgi.ini && /etc/init.d/celeryd start &&  cd /var/lib/minotour/apps/minotourapp && celery -A minotourapp beat -l debug -f /var/lib/minotour/logs/celerybeat.log --detach && nginx -g 'daemon off;'"
+        command: bash -c "uwsgi --ini minotourapp_uwsgi.ini && python manage.py makemigrations && python manage.py migrate && python manage.py loaddata fixtures/auxiliary_data.json && /etc/init.d/celeryd start && celery -A minotourapp beat -l debug -f /var/lib/minotour/logs/celerybeat.log --detach && nginx -g 'daemon off;'  && echo done"
         container_name: web
         environment:
             MT_DB_ENGINE: 'django.db.backends.mysql'
@@ -32,18 +36,11 @@ services:
             MT_DB_HOST: db
             MT_SECRET_KEY: 'hello_secret_key!!'
             MT_DJANGO_DEBUG: '0'
-            MT_MAILGUN_ACCESS_KEY: ''
-            MT_MAILGUN_SERVER_NAME: ''
             MT_TWITTOKEN: ''
             MT_TWITTOKEN_SECRET: ''
             MT_TWITCONSUMER_KEY: ''
             MT_TWITCONSUMER_SECRET: ''
-            MT_REFERENCE_LOCATION: '/var/lib/minotour/apps/data'
-            MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2-2.17_x64-linux/minimap2'
-            MT_CELERY_BROKER_URL: 'redis://redis:6379/0'
-            MT_CELERY_RESULT_BACKEND: 'redis://redis:6379/0'
-            MT_ARTIC_RESULTS_DIR: '/var/lib/minotour/apps/data' # Store the Artic results in this directory
-            MT_ARTIC_SCHEME_DIR: '<Path/To/Artic/Code/Scheme_Directories>' # Read the Artic scheme directories, found where the Artic NCOV piprline github repo was clones.
+            MT_ARTIC_SCHEME_DIR: '/var/lib/minotour/apps/minotourapp/extra/primer_schemes' # Read the Artic scheme directories, found where the Artic NCOV piprline github repo was clones.
             MT_ARTIC_MAX_PIPELINES: "1" # Maximum number of Artic tasks to be run at any one time
             MT_CELERY_WORKER_COUNT: "2" # Number of Celery workers to start, no more than number of CPU cores
             MT_CELERY_MINIMAP2_WORKER_COUNT: "1" # Number of celery minimap2 threads to start, no more than num CPU cores
@@ -54,12 +51,40 @@ services:
             MT_DESTROY_ARTIC_EVIDENCE: "0" # Boolean value if True, data that could potentially hold sensitive patient data that is fed into the artic pipeline is removed 12 hours after the run is finished.
             MT_TWEET_CELERY_FAILURES: 0 # Boolean value if True, failures in some celery tasks are tweeted to the administrator account for this minoTour instance.
             MT_SERVER_URL: "localhost" # if not setting up a server don't worry about this - it just shows the url on the client page for the example commands
+            MT_ARTIC_SCHEME_NAME: 'SARS-CoV-2'
+            MT_ARTIC_SCHEME_VER: 'V4'
+            ENV MT_ARTIC_ENV: "artic"
+            ENV MT_ARTIC_MEDAKA_MODEL: "r941_min_high_g351"
+            ENV MT_ARTIC_MIN_LEN: 400
+            ENV MT_ARTIC_MAX_LEN: 800
+          # preferred coverage depth for artic
+            ENV MT_ARTIC_NORMALIZE: 200
+            ENV MT_ARTIC_THREADS: 4
+            ENV MT_ARTIC_MIN_AMPS_PERC: "90"
+            ENV MT_IDEAL_READ_CONSTANT: "100000"
+          # Boolean value if True, data that could potentially hold sensitive patient data that is fed into the artic pipeline is removed 12 hours after the run is finished.
+            ENV MT_DESTROY_ARTIC_EVIDENCE: 1
+            ENV MT_COVERAGE_PER_AMPLICON: "20"
+            # the bin which aln2type is under todo add to dockerfile when i have time
+            MT_ALN2TYPE_BIN: "/root/miniconda3/bin/"
+
         ports:
-            - 8100:42000
+            - 8100:8100
         depends_on:
             - db
             - redis
         volumes:
-            - .:/var/lib/minotour/apps/minotourapp
-            - ../data_minotour:/var/lib/minotour/apps/data
+            - type: volume
+              source: data_minotour
+              target: /var/lib/minotour/apps/data
+            - type: volume
+              source: redis_minotour
+              target: /redis_data
+              volume:
+                  nocopy: true
         restart: on-failure
+
+volumes:
+    data_minotour:
+    db_data_dir:
+    redis_minotour:
