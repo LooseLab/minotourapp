@@ -16,7 +16,7 @@ ENV MT_DJANGO_DEBUG=0
 ENV MT_MAILGUN_ACCESS_KEY=''
  # CURRENTLY UNUSED
 ENV MT_MAILGUN_SERVER_NAME=''
-ENV MT_MINIMAP2='extra/minimap2-2.17_x64-linux/minimap2'
+ENV MT_MINIMAP2='/var/lib/minotour/apps/minotourapp/extra/minimap2-2.17_x64-linux/minimap2'
 ENV MT_TWITCONSUMER_KEY='<Twitter consumer key>'
 ENV MT_TWITCONSUMER_SECRET='<Twitter consumer secret>'
 ENV MT_TWITTOKEN='<Twitter token>'
@@ -165,6 +165,6 @@ RUN python manage.py collectstatic
 
 RUN mkdir -p /redis_data
 
-RUN chmod -R 755 extra/* && chmod 755 /etc/init.d/celeryd && chmod 640 /etc/default/celeryd && chmod 755 /etc/init.d/celerybeat
+RUN chmod -R 755 extra/* && chmod 755 /etc/init.d/celeryd && chmod 640 /etc/default/celeryd && chmod 755 /etc/init.d/celerybeat && chmod 755 docker/init_conda.sh
 EXPOSE 8100
 
