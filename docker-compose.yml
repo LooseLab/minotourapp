@@ -2,11 +2,11 @@ version: '3.7'
 
 services:
 
-    minotour_redis:
+    redis:
         build:
             dockerfile: docker/redis.dockerfile
             context: .
-        container_name: minotour_redis
+        container_name: redis
         volumes:
             - redis_minotour:/redis_files
 
@@ -25,7 +25,7 @@ services:
         build:
             dockerfile: docker/celery-worker.dockerfile
             context: .
-        command: bash -c "uwsgi --ini minotourapp_uwsgi.ini && cd /var/lib/minotour/apps/minotourapp && python manage.py makemigrations && python manage.py migrate && python manage.py loaddata fixtures/auxiliary_data.json && /etc/init.d/celeryd start && celery -A minotourapp beat -l debug -f /var/lib/minotour/logs/celerybeat.log --detach && nginx -g 'daemon off;'  && echo done"
+        command: bash -c "uwsgi --ini minotourapp_uwsgi.ini && python manage.py makemigrations && python manage.py migrate && python manage.py loaddata fixtures/auxiliary_data.json && /etc/init.d/celeryd start && celery -A minotourapp beat -l debug -f /var/lib/minotour/logs/celerybeat.log --detach && nginx -g 'daemon off;'  && echo done"
         container_name: web
         environment:
             MT_DB_ENGINE: 'django.db.backends.mysql'
@@ -40,7 +40,6 @@ services:
             MT_TWITTOKEN_SECRET: ''
             MT_TWITCONSUMER_KEY: ''
             MT_TWITCONSUMER_SECRET: ''
-            MT_MINIMAP2: '/var/lib/minotour/apps/minotourapp/extra/minimap2-2.17_x64-linux/minimap2'
             MT_ARTIC_SCHEME_DIR: '/var/lib/minotour/apps/minotourapp/extra/primer_schemes' # Read the Artic scheme directories, found where the Artic NCOV piprline github repo was clones.
             MT_ARTIC_MAX_PIPELINES: "1" # Maximum number of Artic tasks to be run at any one time
             MT_CELERY_WORKER_COUNT: "2" # Number of Celery workers to start, no more than number of CPU cores
@@ -73,7 +72,7 @@ services:
             - 8100:8100
         depends_on:
             - db
-            - minotour_redis
+            - redis
         volumes:
             - type: volume
               source: data_minotour
