@@ -48,23 +48,22 @@ services:
             MT_TIME_UNTIL_ARCHIVE: "14" # Number of days since last flowcell activity until a flowcell is archived and fastq data deleted
             MT_SKIP_SAVING_SEQUENCE: "1"
             MT_ALLOW_UPLOAD: "1" # Boolean value, 1 or 0. If true, data can be uplaoded to the server. If false, it cannot be.
-            MT_DESTROY_ARTIC_EVIDENCE: "0" # Boolean value if True, data that could potentially hold sensitive patient data that is fed into the artic pipeline is removed 12 hours after the run is finished.
             MT_TWEET_CELERY_FAILURES: 0 # Boolean value if True, failures in some celery tasks are tweeted to the administrator account for this minoTour instance.
             MT_SERVER_URL: "localhost" # if not setting up a server don't worry about this - it just shows the url on the client page for the example commands
             MT_ARTIC_SCHEME_NAME: 'SARS-CoV-2'
             MT_ARTIC_SCHEME_VER: 'V4'
-            ENV MT_ARTIC_ENV: "artic"
-            ENV MT_ARTIC_MEDAKA_MODEL: "r941_min_high_g351"
-            ENV MT_ARTIC_MIN_LEN: 400
-            ENV MT_ARTIC_MAX_LEN: 800
+            MT_ARTIC_ENV: "artic"
+            MT_ARTIC_MEDAKA_MODEL: "r941_min_high_g351"
+            MT_ARTIC_MIN_LEN: 400
+            MT_ARTIC_MAX_LEN: 800
           # preferred coverage depth for artic
-            ENV MT_ARTIC_NORMALIZE: 200
-            ENV MT_ARTIC_THREADS: 4
-            ENV MT_ARTIC_MIN_AMPS_PERC: "90"
-            ENV MT_IDEAL_READ_CONSTANT: "100000"
+            MT_ARTIC_NORMALIZE: 200
+            MT_ARTIC_THREADS: 4
+            MT_ARTIC_MIN_AMPS_PERC: "90"
+            MT_IDEAL_READ_CONSTANT: "100000"
           # Boolean value if True, data that could potentially hold sensitive patient data that is fed into the artic pipeline is removed 12 hours after the run is finished.
-            ENV MT_DESTROY_ARTIC_EVIDENCE: 1
-            ENV MT_COVERAGE_PER_AMPLICON: "20"
+            MT_DESTROY_ARTIC_EVIDENCE: 1
+            MT_COVERAGE_PER_AMPLICON: "20"
             # the bin which aln2type is under todo add to dockerfile when i have time
             MT_ALN2TYPE_BIN: "/root/miniconda3/bin/"
 
