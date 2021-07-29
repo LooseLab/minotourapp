@@ -31,6 +31,32 @@ def get_sequencing_stats_pdf():
     pass
 
 
+def unique_amplicon_coordinates(scheme_bed_file):
+    """
+    Filter out overlaps between amplicon scheme files
+    Parameters
+    ----------
+    scheme_bed_file: pathlib.PosixPath
+        Full path to the scheme file
+    Returns
+    -------
+    numpy.ndarray
+
+    """
+    df = pd.read_csv(scheme_bed_file, sep="\t", header=None,
+                     names=["chromosome", "start", "end", "name", "even", "plus_sign"])
+    df["primer_position"] = df["name"].str.split("_").str[1]
+    df = df.set_index("primer_position")
+    df[["primer_start", "primer_end"]] = df.groupby("primer_position").agg({"start": np.min, "end": np.max})
+    df = df.loc[~df.index.duplicated(keep="last")]
+    df["primer_end"] = ((df["primer_start"].shift(-1) - 1).fillna(df["primer_end"])).astype(int)
+    df["pair_end"] = ((df["primer_start"].shift(-1) - 1).fillna(df["primer_end"])).astype(int)
+    df["previous_end"] = df["end"].shift()
+    unqiue_amplicon_coords = np.column_stack((np.where(df["primer_start"] < df["previous_end"], df["previous_end"],
+                                                       df["primer_start"]), df["primer_end"].values))
+    unqiue_amplicon_coords = unqiue_amplicon_coords.astype(int)
+    return unqiue_amplicon_coords
+
 def get_artic_run_stats(pk, svg_data, request, task):
     """
     Generate a one page pdf on the artic run that we generated
@@ -138,8 +164,6 @@ def get_artic_run_stats(pk, svg_data, request, task):
         ],
     )
     return f"/tmp/{task.id}_artic_report.pdf"
-
-
 
 
 def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
@@ -278,7 +302,7 @@ def get_amplicon_json_file_path(scheme, scheme_version):
         (Path(get_env_variable("MT_ARTIC_RESULTS_DIR")) / "artic/").mkdir()
     # Needs to be dynamic here
     bed_file = f"{scheme_name}.scheme.bed"
-    json_file = f"{scheme}.primers.json"
+    json_file = f"{scheme}_{scheme_version}.primers.json"
     full_path_to_bed_file = scheme_dir / scheme / scheme_version / bed_file
     if not (artic_results_dir_primers / json_file).exists():
         json_file_path = convert_amplicon_bed_file_to_json(
@@ -320,6 +344,7 @@ def convert_amplicon_bed_file_to_json(filepath, json_file, artic_results_primer_
     df = df.set_index(["primer_start", "primer_end"])
     df = df.loc[~df.index.duplicated(keep="first")]
     df = df.reset_index()
+    df[["primer_start", "primer_end"]] = unique_amplicon_coordinates(filepath)
     json_data = {
         "amplicons": df[["primer_start", "primer_end", 4]].to_json(orient="values"),
         "name": f"{df[0].unique()[0]}_primer_scheme",
