@@ -387,7 +387,7 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     cmd = [
         "bash",
         "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate {artic_env} && artic minion --medaka {med_model} --normalise {normalise} --threads {threads} --scheme-directory {scheme_dir} --read-file {fastq_path} {scheme_name}/{scheme_ver} {barcode_name}",
+        f"source {MT_CONDA_PREFIX} && conda activate {artic_env} && artic minion --medaka {med_model} --normalise {normalise} --threads {threads} --scheme-directory {scheme_dir} --scheme-version {scheme_ver} --read-file {fastq_path} {scheme_name} {barcode_name}",
     ]
     logger.info(cmd)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
