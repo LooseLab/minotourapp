@@ -582,6 +582,29 @@ def get_artic_voc_html(request):
 
     # if vcf_path.exists():
     #    data["hidden_html_string3"] = "found it"
+    # get the lineage if it's finished
+
+    try:
+        lineage = pd.read_csv(
+            artic_results_path / selected_barcode / "lineage_report.csv.gz"
+        )["lineage"][0]
+    except FileNotFoundError:
+        lineage = "Unknown"
+
+    data["lineage"]=lineage
+
+    #try:
+    #    VoCs_df = pd.read_csv(
+    #        artic_results_path
+    #        / barcode_name
+    #        / f"{barcode_name}_ARTIC_medaka.csv.gz"
+    #    )
+    #    VoCs = VoCs_df['phe-label'] + " (" + VoCs_df['status'] + ")"
+    #except FileNotFoundError:
+    #    VoCs = "None Found"
+    #else:
+    #    lineage = "Currently unknown"
+    #    VoCs = "Not Tested"
 
     return render(
         request, "artic-variant-of-concern.html", context={"artic_barcode_VoC": data},
