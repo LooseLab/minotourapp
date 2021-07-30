@@ -588,23 +588,10 @@ def get_artic_voc_html(request):
         lineage = pd.read_csv(
             artic_results_path / selected_barcode / "lineage_report.csv.gz"
         )["lineage"][0]
+        data["lineage"] = lineage
     except FileNotFoundError:
         lineage = "Unknown"
 
-    data["lineage"]=lineage
-
-    #try:
-    #    VoCs_df = pd.read_csv(
-    #        artic_results_path
-    #        / barcode_name
-    #        / f"{barcode_name}_ARTIC_medaka.csv.gz"
-    #    )
-    #    VoCs = VoCs_df['phe-label'] + " (" + VoCs_df['status'] + ")"
-    #except FileNotFoundError:
-    #    VoCs = "None Found"
-    #else:
-    #    lineage = "Currently unknown"
-    #    VoCs = "Not Tested"
 
     return render(
         request, "artic-variant-of-concern.html", context={"artic_barcode_VoC": data},
@@ -663,7 +650,7 @@ def get_artic_barcode_metadata_html(request):
     # see if we have a command waiting to be run
     try:
         artic_command_jm = bool(
-            JobMaster.objects.get(
+            JobMaster.objects.filter(
                 job_type_id=17, barcode__name=selected_barcode, flowcell_id=flowcell_id
             )
         )
