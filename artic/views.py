@@ -558,7 +558,8 @@ def get_artic_voc_html(request):
     )
     if csv_path.exists():
         df = pd.read_csv(csv_path)
-        html_string = df.T.to_html(
+        df = df.drop(['sampleID'], axis=1)
+        html_string = df.set_index('type').T.to_html(
             classes="table table-sm table-responsive", border=0, justify="left"
         )
         data["hidden_html_string"] = html_string
