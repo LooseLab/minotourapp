@@ -512,6 +512,36 @@ def get_artic_summary_table_data(request):
         )
     return Response({"data": queryset})
 
+@api_view(("GET",))
+@renderer_classes((TemplateHTMLRenderer, JSONRenderer))
+def get_artic_analysis_html(request):
+    data={}
+    flowcell_id = request.GET.get("flowcellId", None)
+    if not flowcell_id:
+        return Response(
+            "No flowcell ID provided.", status=status.HTTP_400_BAD_REQUEST
+        )
+    ## Now we check to see if a json report exists for this flowcell and barcode.
+    flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(
+        flowcell_id
+    )
+    tree_path = (
+        artic_results_path
+        /
+        "iqtree_.treefile"
+    )
+
+    if tree_path.exists():
+        with open(tree_path,"r") as tree:
+            contents = tree.readlines()
+        tree = contents[0]
+        data["tree"]=tree.strip()
+        print (tree)
+    return render(
+        request, "artic-analysis.html", context={"artic_analysis": data},
+    )
+
+
 
 @api_view(("GET",))
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))

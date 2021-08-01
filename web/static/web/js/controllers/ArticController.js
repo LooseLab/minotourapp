@@ -615,9 +615,11 @@ class ArticController {
       that._drawColumnCharts()
       that._createArticPieChart(flowcellId)
       that._drawOrUpdateSummaryTable(that._coverageSummaryTable, flowcellId)
+      that._setArticAnalysisHTML(flowcellId)
       that._first = false
     } else {
       // update the column charts
+      that._setArticAnalysisHTML(flowcellId)
       that._updateColumnCharts(flowcellId)
       that._updateArticPieChart(flowcellId)
       // update the table
@@ -820,6 +822,24 @@ class ArticController {
       }
     }).then(response => {
       $(`#articVoCInfo`).html(response.data)
+    }).catch(error => {
+      console.error(error)
+    })
+  }
+
+  /**
+   * Fetch data on potential variants of concern
+   * @param flowcellId {number} Primary key of the flowcell record in the database.
+   * @param selectedBarcode {string} The user selected barcode in the drop down.
+   * @private
+   */
+  _setArticAnalysisHTML (flowcellId) {
+    this._axiosInstance.get(`/api/v1/artic/artic-analysis`, {
+      params: {
+        flowcellId
+      }
+    }).then(response => {
+      $(`#articPHYLO`).html(response.data)
     }).catch(error => {
       console.error(error)
     })

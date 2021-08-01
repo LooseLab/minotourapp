@@ -1,10 +1,195 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% load static %}
+<div id="articPHYLO">
+        <div class="card-body">
+            <div id="tooltip" display="none" style="position: absolute; display: none;"></div>
+            <div>
+
+                <style>
+
+                    .branch {
+                        fill: none;
+                        stroke: #541753;
+                        stroke-width: 2px;
+                        stroke-linecap: round;
+                        stroke-linejoin: round;
+                    }
+
+                    .branch.hovered {
+                        stroke-width: 4px;
+                    }
+
+                    .external-node .node-shape:not(.rough) {
+                        fill: #22b680;
+                        stroke: rgb(255, 255, 255);
+                        stroke-width: 1;
+                    }
+
+                    .external-node .node-shape.hovered {
+                        stroke: rgb(0, 0, 0);
+                        /*stroke-width: 1;*/
+                    }
+
+                    .external-node .node-shape.unselected {
+                        fill: #22b680;
+                        /*stroke: rgb(255, 255, 255);*/
+                    }
+
+                    .external-node .node-shape.selected {
+                        fill: #edb23b;
+                        /*stroke: rgb(0,0,0);*/
+                    }
+
+                    .internal-node .node-shape {
+                        fill: #29c5ef;
+                        /*stroke: rgb(255, 255, 255);*/
+                        /*stroke-width: 1;*/
+                    }
+
+                    .internal-node .node-shape.hovered {
+                        stroke: rgb(0, 0, 0);
+                    }
+
+
+                    #root .node-shape {
+                        fill: #e31e58;
+                        /*stroke: rgb(255, 255, 255);*/
+                        /*stroke-width: 1;*/
+                    }
+
+                    .node-background {
+                        fill: rgb(255, 255, 255);
+                        /*stroke: rgb(255, 255, 255);*/
+                        /*stroke-width: 1;*/
+                    }
+
+                    .node-label {
+                        font-family: "helvetica-neue", "helvetica", "sans-serif";
+                        font-size: 14pt;
+                        font-weight: 300;
+                    }
+
+                    .trend-line {
+                        stroke: rgb(0, 0, 0);
+                        stroke-width: 2px;
+                        stroke-linecap: round;
+                    }
+
+                    .axis text {
+                        font-family: "helvetica-neue", "helvetica", "sans-serif";
+                        font-size: 12pt;
+                        font-weight: 300;
+                    }
+
+                    .axis-label text {
+                        font-family: "helvetica-neue", "helvetica", "sans-serif";
+                        font-size: 12pt;
+                        font-weight: bold;
+                    }
+
+                    .node-label.support {
+                        font-size: 10pt;
+                    }
+
+                    .branch-label.length {
+                        display: none;
+                        font-size: 8pt;
+                    }
+
+                    #tooltip {
+                        background: #F6EECA;
+                        border: 1px solid #005C68;
+                        color: #005C68;
+                        border-radius: 5px;
+                        padding: 5px;
+                        font-family: "helvetica-neue", "helvetica", "sans-serif";
+                        font-size: 12pt;
+                        font-weight: 300;
+                    }
+                </style>
+
+                <figure>
+                    <svg id="mycustomtree" width="600" height="500"></svg>
+                </figure>
+            </div>
+
+
+            <script type="module">
+                import {
+                    Tree,
+                    FigTree,
+                    rectangularLayout,
+                    branch,
+                    circle,
+                    tipLabel,
+                    internalNodeLabel
+                } from "{% static 'web/libraries/figtree.esm.min.js' %}"
+
+
+                //const newickString =
+                //    '((virus1:0.1,virus2:0.12):0.04,((virus3:0.011,virus4:0.0087):0.15,(virus5:0.21,((virus6:0.45,virus7:0.4):0.02,(virus8:0.4,((virus9:0.04,virus10:0.03):0.6)#old-root:0.1):0.1):0.2):0.03):0.04)#root;';
+                const newickString =
+                    "{{ artic_analysis.tree }};";
+                console.log(newickString);
+                const tree = Tree.parseNewick(newickString);
+                const treeSVG = document.getElementById('mycustomtree');
+                const margins = {top: 20, bottom: 20, left: 20, right: 150};
+                const branchSettings = branch().hilightOnHover().reRootOnClick().curve(d3.curveStepBefore);
+                const figTree = new FigTree(treeSVG, margins, tree)
+                    .layout(rectangularLayout)
+                    .nodes(
+                        circle()
+                            .filter(d => {
+                                return d.id !== 'old-root'
+                            })
+                            .attr("r", 5)
+                            .hilightOnHover(10)
+                            .rotateOnClick(),
+                        tipLabel(d => d.name),
+                        circle()
+                            .filter(d => {
+                                return d.id === 'old-root'
+                            })
+                            .attr("r", 5)
+                            .hilightOnHover(10)
+                            .on("click", (d, i, n) => {
+                                const oldRoot = tree.getNode(d.id);
+                                tree.reroot(oldRoot, 1.0)
+                                d3.select(treeSVG)
+                                    .select(".node#old-root")
+                                    .attr("display", "none");
+                                d3.select(treeSVG)
+                                    .select(".node-background#old-root")
+                                    .attr("display", "none");
+
+                                d3.select(treeSVG)
+                                    .select(".node#root")
+                                    .attr("display", "inline");
+                                d3.select(treeSVG)
+                                    .select(".node-background#root")
+                                    .attr("display", "inline");
+
+                            })
+                    )
+                    .nodeBackgrounds(
+                        circle()
+                            .attr("r", 7)
+                    )
+                    .branches(branchSettings);
+
+                //d3.select(treeSVG)
+                ////    .select(".node#root")
+                //    .attr("display", "none");
+                //d3.select(treeSVG)
+                //    .select(".node-background#root")
+                //    .attr("display", "none");
+
+                figTree.addToolTip('#old-root', "This is the position of the root node<br>in the rooted trees, above.<br><br>Click on it to root the tree\n");
+
+                console.log("Hello")
+                //ToDO: Work out how to redraw tree without clicking on it.
+            </script>
+        </div>
+
+    </div>
+</div>
+
