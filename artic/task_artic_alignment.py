@@ -4,11 +4,13 @@ import gzip
 import os
 import pickle
 import subprocess
-from collections import defaultdict
+from collections import defaultdict,Counter
 from copy import deepcopy
 from datetime import datetime, timezone, timedelta
 from io import StringIO
 from shutil import rmtree
+from Bio import SeqIO
+
 
 from celery.schedules import crontab
 from celery.utils.log import get_task_logger
@@ -39,6 +41,26 @@ from readuntil.functions_EB import *
 
 logger = get_task_logger(__name__)
 
+
+
+def remove_dups(infasta,outfasta):
+    records_collection = dict()
+    for record in SeqIO.parse(infasta, 'fasta'):
+        if record.id not in records_collection.keys():
+            records_collection[record.id] = dict()
+            records_collection[record.id]["seq"] = record
+            records_collection[record.id]['proportionN'] = percent_N(record.seq)
+        elif percent_N(record.seq) <= records_collection[record.id]['proportionN']:
+            records_collection[record.id]["seq"] = record
+            records_collection[record.id]['proportionN'] = percent_N(record.seq)
+    with open(outfasta, 'w') as outFile:
+        for record in records_collection:
+            SeqIO.write(records_collection[record]["seq"],outFile,'fasta')
+
+
+def percent_N(seq):
+    res=Counter(seq.upper())
+    return float(res['N']/sum(res.values())*100)
 
 
 @app.on_after_finalize.connect
@@ -363,6 +385,8 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
 
     """
     jm = JobMaster.objects.get(pk=job_master_pk)
+    reference_name = jm.reference.file_name
+    ref_location = get_env_variable("MT_REFERENCE_LOCATION")
     jm.running = True
     jm.save()
     MT_CONDA_PREFIX=get_env_variable("MT_CONDA_PREFIX")
@@ -407,15 +431,76 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         # Now run the aln2type artic screen.
         run_variant_command(base_results_directory, barcode_name, jm)
         run_pangolin_command(base_results_directory, barcode_name)
+
+    # Start building a tree for visualisation
+    # collate sequences into a single file.
+
+    ## Collect all compressed files
+
+    cmd = [
+        "bash",
+        "-c",
+        f"source {MT_CONDA_PREFIX} && conda activate tree_building && cat {base_results_directory}/barcode*/*.consensus.fasta.gz > {base_results_directory}/zip_all_barcodes.fasta.gz"
+    ]
+    logger.info(cmd)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = proc.communicate()
+    logger.info(err)
+
+    subprocess.Popen(["gunzip", "-f", f"{base_results_directory}/zip_all_barcodes.fasta.gz"]).communicate()
+
+    cmd = [
+        "bash",
+        "-c",
+        f"source {MT_CONDA_PREFIX} && conda activate tree_building && touch {base_results_directory}/zip_all_barcodes.fasta && cat {ref_location}/{reference_name} {base_results_directory}/zip_all_barcodes.fasta {base_results_directory}/barcode*/*.consensus.fasta > {base_results_directory}/all_barcodes.fasta"
+        #f"source {MT_CONDA_PREFIX} && conda activate tree_building && touch {base_results_directory}/zip_all_barcodes.fasta && cat {base_results_directory}/zip_all_barcodes.fasta > {base_results_directory}/all_barcodes.fasta"
+    ]
+    logger.info(cmd)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = proc.communicate()
+    logger.info(err)
+
+    ## We may have duplicated sequences by mistake - so we need to get rid of them
+
+    remove_dups(f"{base_results_directory}/all_barcodes.fasta", f"{base_results_directory}/all_barcodes_clean.fasta")
+
+
+    ## Build tree
+
+    cmd = [
+        "bash",
+        "-c",
+        f"source {MT_CONDA_PREFIX} && conda activate tree_building && mafft --auto --clustalout {base_results_directory}/all_barcodes_clean.fasta  > {base_results_directory}/all_barcodes.clustal"
+    ]
+
+    logger.info(cmd)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = proc.communicate()
+    logger.info(err)
+
+    cmd = [
+        "bash",
+        "-c",
+        f"source {MT_CONDA_PREFIX} && conda activate tree_building && iqtree -redo -s  {base_results_directory}/all_barcodes.clustal -m MFP --prefix {base_results_directory}/iqtree_"
+    ]
+
+    logger.info(cmd)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = proc.communicate()
+    logger.info(err)
+
     # Update the Barcode Metadata to show the task has been run on this barcode
     ArticBarcodeMetadata.objects.filter(
         flowcell=jm.flowcell, job_master__job_type_id=16, barcode__name=barcode_name
     ).update(has_finished=True, marked_for_rerun=False)
 
+
+
     # This shouldn't be run until you clean up the artic run.
     clear_unused_artic_files(
         f"{base_results_directory}/{barcode_name}", barcode_name, jm.flowcell.id
     )
+
     jm = JobMaster.objects.get(pk=job_master_pk)
     jm.running = False
     jm.complete = True
