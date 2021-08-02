@@ -1,0 +1,10 @@
+name: tree_building                          # Our env was made with --prefix
+channels:
+  - conda-forge                     # We added a third party channel
+  - defaults
+dependencies:
+  - mafft
+  - iqtree
+  - python=3.9
+  - pip=21.2.1
+  - snipit

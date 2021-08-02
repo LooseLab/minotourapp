@@ -39,7 +39,9 @@ from reads.models import (
 )
 from readuntil.functions_EB import *
 
+
 logger = get_task_logger(__name__)
+
 
 
 
@@ -470,7 +472,7 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     cmd = [
         "bash",
         "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate tree_building && mafft --auto --clustalout {base_results_directory}/all_barcodes_clean.fasta  > {base_results_directory}/all_barcodes.clustal"
+        f"source {MT_CONDA_PREFIX} && conda activate tree_building && mafft --auto {base_results_directory}/all_barcodes_clean.fasta  > {base_results_directory}/all_barcodes.aln"
     ]
 
     logger.info(cmd)
@@ -481,7 +483,7 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     cmd = [
         "bash",
         "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate tree_building && iqtree -redo -s  {base_results_directory}/all_barcodes.clustal -m MFP --prefix {base_results_directory}/iqtree_"
+        f"source {MT_CONDA_PREFIX} && conda activate tree_building && iqtree -redo -s  {base_results_directory}/all_barcodes.aln -m MFP --prefix {base_results_directory}/iqtree_"
     ]
 
     logger.info(cmd)
@@ -489,6 +491,16 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     out, err = proc.communicate()
     logger.info(err)
 
+
+    cmd = [
+        "bash",
+        "-c",
+        f"source {MT_CONDA_PREFIX} && conda activate tree_building && snipit {base_results_directory}/all_barcodes.aln -f svg --height 4 --width 18 --size-option scale -o {base_results_directory}/snp_plot"
+    ]
+    logger.info(cmd)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = proc.communicate()
+    logger.info(err)
     # Update the Barcode Metadata to show the task has been run on this barcode
     ArticBarcodeMetadata.objects.filter(
         flowcell=jm.flowcell, job_master__job_type_id=16, barcode__name=barcode_name

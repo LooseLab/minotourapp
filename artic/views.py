@@ -31,6 +31,10 @@ from minotourapp.utils import get_env_variable
 from reads.models import JobMaster, FlowcellSummaryBarcode, Barcode
 from reference.models import ReferenceInfo
 
+import fnmatch
+
+
+
 
 @api_view(["POST"])
 def export_artic_report(request, pk):
@@ -512,6 +516,23 @@ def get_artic_summary_table_data(request):
         )
     return Response({"data": queryset})
 
+
+def relabel_tree(tree,artic_results_path):
+    tree = tree.replace("/ARTIC/medaka","")
+    query = 'barcode??'
+    subbarcodes = fnmatch.filter((tree[i:i + len(query)] for i in range(len(tree) - len(query))), query)
+    for barcode in subbarcodes:
+        try:
+            lineage = pd.read_csv(
+                artic_results_path / barcode / "lineage_report.csv.gz"
+            )["lineage"][0]
+            tree = tree.replace(barcode,f"{barcode} {lineage}")
+        except FileNotFoundError:
+            pass
+    return tree
+
+
+
 @api_view(("GET",))
 @renderer_classes((TemplateHTMLRenderer, JSONRenderer))
 def get_artic_analysis_html(request):
@@ -526,17 +547,35 @@ def get_artic_analysis_html(request):
         flowcell_id
     )
     tree_path = (
-        artic_results_path
-        /
-        "iqtree_.treefile"
+            artic_results_path
+            /
+            "iqtree_.treefile"
     )
 
     if tree_path.exists():
         with open(tree_path,"r") as tree:
             contents = tree.readlines()
-        tree = contents[0]
-        data["tree"]=tree.strip()
-        print (tree)
+        tree = contents[0].strip()
+        tree = relabel_tree(tree,artic_results_path)
+        data["tree"]=tree
+
+    svg_path = (
+            artic_results_path
+            /
+            "snp_plot.svg"
+    )
+
+    if svg_path.exists():
+        snipit_svg=""
+        with open(svg_path, "r") as f:
+            for l in f:
+                l = l.rstrip("\n")
+                snipit_svg += f"{l}\n"
+        #with open(svg_path,"r") as svg:
+        #    contents = svg.readlines()
+        data["svg"]=snipit_svg
+
+
     return render(
         request, "artic-analysis.html", context={"artic_analysis": data},
     )

@@ -39,6 +39,11 @@ urlpatterns = [
         name="get-barcode-voc",
     ),
     url(
+        r"^api/v1/artic/artic-analysis/$",
+        views.get_artic_analysis_html,
+        name="get-artic-analysis",
+    ),
+    url(
         r"^api/v1/artic/manual-trigger/$",
         views.manually_create_artic_command_job_master,
         name="manual-trigger",
