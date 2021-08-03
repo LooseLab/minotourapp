@@ -56,6 +56,8 @@
         Variant Status: {{ key.sample_typing_result.variant_status }}</div>
             <h6 class="card-subtitle mb-2">
                 PHE-Label: {{ key.sample_typing_summary.phe_label }}</h6>
+            <h6 class="card-subtitle mb-2">
+                WHO Label: {{ key.sample_typing_summary.who_label }}</h6>
             <h6 class="card-subtitle mb-2">Alternate Names:
                 {% for altname in key.sample_typing_summary.alternate_names %}
 

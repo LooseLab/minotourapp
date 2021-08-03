@@ -292,6 +292,7 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',  # default
     'guardian.backends.ObjectPermissionBackend',
 )
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 # if DEBUG:
 #    INTERNAL_IPS = ('127.0.0.1', 'localhost',)
