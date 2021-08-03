@@ -7,7 +7,7 @@
         </h4>
     </div>
     <div class="card-body">
-        <p class="card-text">These buttons link out to sites providing information about the detected PANGO lineage.</p>
+        <div class="row">Links to information on lineage {{ artic_barcode_VoC.lineage }}</div>
         <a href="https://cov-lineages.org/lineages/lineage_{{ artic_barcode_VoC.lineage }}.html" class="btn btn-primary"
            target="_blank">PANGO Info</a>
         <a href="https://outbreak.info/situation-reports?pango={{ artic_barcode_VoC.lineage }}" class="btn btn-primary"

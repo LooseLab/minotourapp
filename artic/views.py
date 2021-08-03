@@ -558,7 +558,8 @@ def get_artic_voc_html(request):
     )
     if csv_path.exists():
         df = pd.read_csv(csv_path)
-        html_string = df.T.to_html(
+        df = df.drop(['sampleID'], axis=1)
+        html_string = df.set_index('type').T.to_html(
             classes="table table-sm table-responsive", border=0, justify="left"
         )
         data["hidden_html_string"] = html_string
@@ -582,6 +583,16 @@ def get_artic_voc_html(request):
 
     # if vcf_path.exists():
     #    data["hidden_html_string3"] = "found it"
+    # get the lineage if it's finished
+
+    try:
+        lineage = pd.read_csv(
+            artic_results_path / selected_barcode / "lineage_report.csv.gz"
+        )["lineage"][0]
+        data["lineage"] = lineage
+    except FileNotFoundError:
+        lineage = "Unknown"
+
 
     return render(
         request, "artic-variant-of-concern.html", context={"artic_barcode_VoC": data},
@@ -640,7 +651,7 @@ def get_artic_barcode_metadata_html(request):
     # see if we have a command waiting to be run
     try:
         artic_command_jm = bool(
-            JobMaster.objects.get(
+            JobMaster.objects.filter(
                 job_type_id=17, barcode__name=selected_barcode, flowcell_id=flowcell_id
             )
         )
