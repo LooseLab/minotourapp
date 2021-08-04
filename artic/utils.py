@@ -657,6 +657,7 @@ def update_pangolin():
     -------
 
     """
+    logger.info("updating pangolin")
     cmd = [
         "bash",
         "-c",
