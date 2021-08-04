@@ -55,7 +55,7 @@ class Minion(models.Model):
 
     def status(self):
         try:
-            status = self.events.order_by('datetime').last().event.name
+            status = self.events.last().event.name
         except AttributeError:
             status = "undefined"
         return status
@@ -70,7 +70,7 @@ class Minion(models.Model):
 
     def computer(self):
         try:
-            computer = self.events.order_by('datetime').last().computer_name
+            computer = self.events.last().computer_name
         except AttributeError:
             computer = "undefined"
         return computer
@@ -138,13 +138,13 @@ class Minion(models.Model):
 
     def event_yield(self):
         try:
-            return self.currentrunstats.order_by('sample_time').last().event_yield
+            return self.currentrunstats.last().event_yield
         except AttributeError:
             return 0
 
     def voltage_value(self):
         try:
-            return self.currentrunstats.order_by('sample_time').last().voltage_value
+            return self.currentrunstats.last().voltage_value
         except AttributeError:
             return 0
 
@@ -156,7 +156,7 @@ class Minion(models.Model):
         int
         """
         try:
-            return self.currentrunstats.order_by('sample_time').last().actual_max_val
+            return self.currentrunstats.last().actual_max_val
         except AttributeError:
             return "Unknown"
 
@@ -736,187 +736,120 @@ class MinionRunStats(models.Model):
     """
 
     minion = models.ForeignKey(
-
         Minion,
         related_name='currentrunstats',
         on_delete=models.CASCADE,
         null=True
-
-
     )
-
     run = models.ForeignKey(
-
         Run,
         related_name='RunStats',
         on_delete=models.CASCADE,
-
     )
-
     sample_time = models.DateTimeField(
 
-
     )
-
     event_yield = models.BigIntegerField(
-
         default=0
     )
-
     asic_temp = models.FloatField(
-
         default=0
     )
-
     heat_sink_temp = models.FloatField(
-
         default=0
     )
-
     voltage_value = models.FloatField(
-
         default=0
     )
-
     mean_ratio = models.FloatField(
-
         default=0
     )
-
     open_pore = models.FloatField(
-
         default=0
     )
-
     in_strand = models.FloatField(
-
         default=0
     )
-
     multiple = models.IntegerField(
-
         default=0
     )
-
     unavailable = models.IntegerField(
-
         default=0
     )
-
     unknown = models.IntegerField(
-
         default=0
     )
-
     adapter = models.IntegerField(
-
         default=0
     )
-
     pending_mux_change = models.IntegerField(
-
         default=0
     )
-
     unclassified = models.IntegerField(
-
         default=0
     )
-
     below = models.IntegerField(
-
         default=0
     )
-
     unblocking = models.IntegerField(
-
         default=0
     )
-
     above = models.IntegerField(
-
         default=0
     )
-
     good_single = models.IntegerField(
-
         default=0
     )
-
     saturated = models.IntegerField(
-
         default=0
     )
-
     inrange = models.IntegerField(
-
         default=0
     )
-
     strand = models.IntegerField(
-
         default=0
     )
-
     no_pore = models.IntegerField(
-
         default=0
     )
-
     zero = models.IntegerField(
-
         default=0
     )
-
     pore = models.IntegerField(
-
         default=0
     )
-
     minKNOW_read_count = models.IntegerField(
-
         default=0
     )
-
     minKNOW_histogram_values = models.TextField(
-
         blank=True, null=True
     )
-
     minKNOW_histogram_bin_width = models.IntegerField(
         default=900
     )
-
     created_date = models.DateTimeField(
-
         auto_now_add=True
     )
-
     actual_max_val = models.IntegerField(
         default=0,
         null=True
     )
-
     n50_data = models.IntegerField(
         default=0,
         null=True
     )
-
     estimated_selected_bases = models.BigIntegerField(
         default=0,
         null=True
     )
-
     basecalled_bases = models.BigIntegerField(
         default=0,
         null=True
     )
-
     basecalled_fail_read_count = models.IntegerField(
         default=0,
         null=True
     )
-
     basecalled_pass_read_count = models.IntegerField(
         default=0,
         null=True
