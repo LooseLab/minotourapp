@@ -725,8 +725,11 @@ class ArticController {
             orientation: `landscape`,
             pageSize: `A3`
           },
-          `pageLength`,
+          `pageLength`
         ],
+        // responsive: {
+        //   details: false
+        // },
         // callback run on each row create
         createdRow: (row, data, index) => {
           if (data.has_finished) {
