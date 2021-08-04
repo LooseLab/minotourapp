@@ -35,6 +35,7 @@ def active_minion_list(request):
     extra_data = {}
     blank_stats = {
         "id": -1,
+        "state": "",
         "minion_id": -1,
         "run_id": -1,
         "sample_time": datetime.datetime.now(),
@@ -112,10 +113,7 @@ def active_minion_list(request):
                         data[minion.name] = mrs.__dict__
 
                 active_minion_list.append(minion)
-    serializer = MinionSerializer(
-        active_minion_list, many=True, context={"request": request}
-    )
-    return_data = list(serializer.data)
+    return_data = [am.__dict__ for am in active_minion_list]
     for active_minion in return_data:
         active_minion.update(extra_data[active_minion["name"]])
         if active_minion.get("name", 0) in data:
@@ -123,9 +121,10 @@ def active_minion_list(request):
             # Remove the minion run stats id so we don't overwrite the minion ID
             data_to_add.pop("id")
             active_minion.update(data.get(active_minion["name"], blank_stats))
+            active_minion.pop("state")
             active_minion.update(extra_data[active_minion["name"]])
 
-    return Response(serializer.data)
+    return Response(return_data)
 
 
 @api_view(["GET", "POST"],)
