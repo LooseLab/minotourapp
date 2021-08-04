@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'readuntil',
     'minknow_data',
     'guardian',
-
+    'readfish'
 ]
 
 MIDDLEWARE = [

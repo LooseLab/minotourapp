@@ -7,6 +7,7 @@ import tarfile
 from collections import namedtuple
 from datetime import datetime
 from pathlib import Path
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -23,6 +24,7 @@ from reads.models import JobMaster
 
 # Colour palette of amplicon bands
 colour_palette = ["#ffd9dc", "#ffefdc", "#ffffbc", "#dcffe4", "#bae1ff"]
+
 
 def get_sequencing_stats_pdf():
     """
@@ -43,19 +45,38 @@ def unique_amplicon_coordinates(scheme_bed_file):
     numpy.ndarray
 
     """
-    df = pd.read_csv(scheme_bed_file, sep="\t", header=None,
-                     names=["chromosome", "start", "end", "name", "even", "plus_sign"])
+    df = pd.read_csv(
+        scheme_bed_file,
+        sep="\t",
+        header=None,
+        names=["chromosome", "start", "end", "name", "even", "plus_sign"],
+    )
     df["primer_position"] = df["name"].str.split("_").str[1]
     df = df.set_index("primer_position")
-    df[["primer_start", "primer_end"]] = df.groupby("primer_position").agg({"start": np.min, "end": np.max})
+    df[["primer_start", "primer_end"]] = df.groupby("primer_position").agg(
+        {"start": np.min, "end": np.max}
+    )
     df = df.loc[~df.index.duplicated(keep="last")]
-    df["primer_end"] = ((df["primer_start"].shift(-1) - 1).fillna(df["primer_end"])).astype(int)
-    df["pair_end"] = ((df["primer_start"].shift(-1) - 1).fillna(df["primer_end"])).astype(int)
+    df["primer_end"] = (
+        (df["primer_start"].shift(-1) - 1).fillna(df["primer_end"])
+    ).astype(int)
+    df["pair_end"] = (
+        (df["primer_start"].shift(-1) - 1).fillna(df["primer_end"])
+    ).astype(int)
     df["previous_end"] = df["end"].shift()
-    unqiue_amplicon_coords = np.column_stack((np.where(df["primer_start"] < df["previous_end"], df["previous_end"],
-                                                       df["primer_start"]), df["primer_end"].values))
+    unqiue_amplicon_coords = np.column_stack(
+        (
+            np.where(
+                df["primer_start"] < df["previous_end"],
+                df["previous_end"],
+                df["primer_start"],
+            ),
+            df["primer_end"].values,
+        )
+    )
     unqiue_amplicon_coords = unqiue_amplicon_coords.astype(int)
     return unqiue_amplicon_coords
+
 
 def get_artic_run_stats(pk, svg_data, request, task):
     """
@@ -75,9 +96,7 @@ def get_artic_run_stats(pk, svg_data, request, task):
     str
         File path to artic summary PDF
     """
-    flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(
-        pk
-    )
+    flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(pk)
     artic_task = JobMaster.objects.get(pk=jm_id)
     queryset = PafSummaryCov.objects.filter(job_master=artic_task).values(
         "barcode_name",
@@ -98,8 +117,8 @@ def get_artic_run_stats(pk, svg_data, request, task):
     # dictionaries change in place
     scheme = get_env_variable("MT_ARTIC_SCHEME_NAME")
     scheme_version = get_env_variable("MT_ARTIC_SCHEME_VER")
-    #scheme = "nCoV-2019"
-    #scheme_version = "V3"
+    # scheme = "nCoV-2019"
+    # scheme_version = "V3"
     amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
     num_amplicons = len(amplicon_band_coords)
     time_stamp = datetime.now()
@@ -154,9 +173,11 @@ def get_artic_run_stats(pk, svg_data, request, task):
     l = sorted(list(queryset), key=lambda x: x["barcode_name"])
     svg_data["overall_results"] = l
     print(svg_data)
-    HTML(string=render(
-        request, "artic-report.html", context={"data": svg_data}
-    ).getvalue()).write_pdf(
+    HTML(
+        string=render(
+            request, "artic-report.html", context={"data": svg_data}
+        ).getvalue()
+    ).write_pdf(
         f"/tmp/{task.id}_artic_report.pdf",
         stylesheets=[
             CSS("web/static/web/css/report.css"),
@@ -251,7 +272,7 @@ def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
         return response
 
 
-def get_amplicon_band_data(scheme, scheme_version):
+def get_amplicon_band_data(scheme, scheme_version, no_overlap_only=True):
     """
     Retrieve coordinates on reference for amplicon bands, and a colour scheme for any amplicon pools
     Parameters
@@ -260,6 +281,8 @@ def get_amplicon_band_data(scheme, scheme_version):
         Artic primer scheme to get data from
     scheme_version: str
         The version, if any
+    no_overlap_only: bool
+        Only return no overlapping amplicon region coordinates
     Returns
     -------
     (list of string, dict)
@@ -270,12 +293,17 @@ def get_amplicon_band_data(scheme, scheme_version):
     with open(json_file_path, "r") as fh:
         amplicon_bands = json.load(fh)
     # Get data
-    amplicon_band_coords = json.loads(amplicon_bands["amplicons"])
-    colours = {
-        amplicon_bands["pools"][index]: colour_palette[index]
-        for index in range(len(amplicon_bands["pools"]))
-    }
-    return amplicon_band_coords, colours
+    if no_overlap_only:
+        amplicon_band_coords = json.loads(amplicon_bands["amplicons_no_overlap"])
+        colours = {
+            amplicon_bands["pools"][index]: colour_palette[index]
+            for index in range(len(amplicon_bands["pools"]))
+        }
+        return amplicon_band_coords, colours
+    else:
+        no_overlap_amp_coords = json.loads(amplicon_bands["amplicons_no_overlap"])
+        overlap_amp_coords = json.loads(amplicon_bands["amplicons"])
+        return no_overlap_amp_coords, overlap_amp_coords
 
 
 def get_amplicon_json_file_path(scheme, scheme_version):
@@ -344,9 +372,10 @@ def convert_amplicon_bed_file_to_json(filepath, json_file, artic_results_primer_
     df = df.set_index(["primer_start", "primer_end"])
     df = df.loc[~df.index.duplicated(keep="first")]
     df = df.reset_index()
-    df[["primer_start", "primer_end"]] = unique_amplicon_coordinates(filepath)
+    df[["primer_start_unique", "primer_end_unique"]] = unique_amplicon_coordinates(filepath)
     json_data = {
         "amplicons": df[["primer_start", "primer_end", 4]].to_json(orient="values"),
+        "amplicons_no_overlap": df[["primer_start_unique", "primer_end_unique", 4]].to_json(orient="values"),
         "name": f"{df[0].unique()[0]}_primer_scheme",
         "pools": df[4].unique().tolist(),
     }
@@ -504,6 +533,77 @@ def make_results_directory_artic(flowcell_id, task_id, allow_create=True):
     return results_dir
 
 
+def slice_coverage_array(
+    amplicon_band_coords,
+    flowcell_id,
+    barcode_name,
+    num_amplicons=None,
+    coverage_array=None,
+):
+    """
+    Slice the artic coverage array up into amplicon chunks and do stats on them
+    Parameters
+    ----------
+    amplicon_band_coords: list of Tuple
+        The unique start stop coordinates of the array
+    flowcell_id: int
+        Primary key of the flowcell
+    barcode_name: str
+        Name of the barcode
+    num_amplicons: int
+        Number of amplicons in the scheme, default None in which case len(amplicon_band_coords) is used
+
+    coverage_array: np.ndarray
+        The coverage array across the genome
+    Returns
+    -------
+    Tuple
+        (amplicon_coverage_mean, amplicon_coverage_median, partial_amplicon_count, failed_amplicon_count)
+    """
+    num_amplicons = (
+        len(amplicon_band_coords) if num_amplicons is None else num_amplicons
+    )
+    a = np.array(amplicon_band_coords)[:, :2]
+    a = a.astype(np.int16)
+    (
+        flowcell,
+        artic_results_path,
+        artic_task_id,
+        coverage_path,
+    ) = quick_get_artic_results_directory(flowcell_id, barcode_name)
+    if coverage_array is None:
+        try:
+            with open(coverage_path, "rb") as fh:
+                coverage = np.fromfile(fh, dtype=np.uint16)
+        except FileNotFoundError as e:
+            raise e
+    else:
+        coverage = coverage_array
+    amplicon_coverages_median = []
+    amplicon_coverages_mean = []
+    failed_amplicon_count = 0
+    partial_amplicon_count = 0
+    for bin_start, bin_end in a:
+        amplicon_coverage = coverage[bin_start:bin_end]
+        amplicon_coverages_mean.append(np.mean(amplicon_coverage))
+        amplicon_median_coverage = np.median(amplicon_coverage)
+        amplicon_coverages_median.append(amplicon_median_coverage)
+        if int(amplicon_median_coverage) == 0:
+            failed_amplicon_count += 1
+        elif int(amplicon_median_coverage) < 20:
+            partial_amplicon_count += 1
+    successful_amplicon_counts = (
+        num_amplicons - partial_amplicon_count - failed_amplicon_count
+    )
+    return (
+        amplicon_coverages_mean,
+        amplicon_coverages_median,
+        partial_amplicon_count,
+        failed_amplicon_count,
+        successful_amplicon_counts,
+    )
+
+
 def get_amplicon_stats(
     amplicon_band_coords,
     num_amplicons,
@@ -517,7 +617,7 @@ def get_amplicon_stats(
     Get statistics about each amplicon across the coverage array, such as # failed, partial and succesful, mean, std dev
     Parameters
     ----------
-    amplicon_band_coords: list of tuple
+    amplicon_band_coords: list of Tuple
         list of tuples of start stop across the genome
     num_amplicons: int
         The number of amplicons, equivalent to len(amplicon_band_coords)
@@ -553,38 +653,13 @@ def get_amplicon_stats(
             "amplicon_coverage_medians",
         ],
     )
-    a = np.array(amplicon_band_coords)[:, :2]
-    a = a.astype(np.int16)
     (
-        flowcell,
-        artic_results_path,
-        artic_task_id,
-        coverage_path,
-    ) = quick_get_artic_results_directory(flowcell_id, barcode_name)
-    if coverage_array is None:
-        try:
-            with open(coverage_path, "rb") as fh:
-                coverage = np.fromfile(fh, dtype=np.uint16)
-        except FileNotFoundError as e:
-            raise e
-    else:
-        coverage = coverage_array
-    amplicon_coverages_median = []
-    amplicon_coverages_mean = []
-    failed_amplicon_count = 0
-    partial_amplicon_count = 0
-    for bin_start, bin_end in a:
-        amplicon_coverage = coverage[bin_start:bin_end]
-        amplicon_coverages_mean.append(np.mean(amplicon_coverage))
-        amplicon_median_coverage = np.median(amplicon_coverage)
-        amplicon_coverages_median.append(amplicon_median_coverage)
-        if int(amplicon_median_coverage) == 0:
-            failed_amplicon_count += 1
-        elif int(amplicon_median_coverage) < 20:
-            partial_amplicon_count += 1
-    successful_amplicon_counts = (
-        num_amplicons - partial_amplicon_count - failed_amplicon_count
-    )
+        amplicon_coverages_mean,
+        amplicon_coverages_median,
+        partial_amplicon_count,
+        failed_amplicon_count,
+        successful_amplicon_counts,
+    ) = slice_coverage_array(amplicon_band_coords, flowcell_id, barcode_name)
     amplicon_mean_array = np.array(amplicon_coverages_mean)
     amplicon_median_array = np.array(amplicon_coverages_median)
     mean_of_amplicon_means = round(amplicon_mean_array.mean(), 2)
@@ -642,6 +717,6 @@ def predict_barcode_will_finish(
         * ideal_reads_count_constant
     )
     return (
-        predicted_coverages[predicted_coverages > coverage_per_amplicon].size / amplicon_median_array.size
+        predicted_coverages[predicted_coverages > coverage_per_amplicon].size
+        / amplicon_median_array.size
     ) * 100 > minimum_required_amplicons
-
