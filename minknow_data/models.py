@@ -55,7 +55,7 @@ class Minion(models.Model):
 
     def status(self):
         try:
-            status = self.events.order_by('datetime').last().event.name
+            status = self.events.last().event.name
         except AttributeError:
             status = "undefined"
         return status
@@ -70,7 +70,7 @@ class Minion(models.Model):
 
     def computer(self):
         try:
-            computer = self.events.order_by('datetime').last().computer_name
+            computer = self.events.last().computer_name
         except AttributeError:
             computer = "undefined"
         return computer
@@ -138,7 +138,7 @@ class Minion(models.Model):
 
     def event_yield(self):
         try:
-            return self.currentrunstats.order_by('sample_time').last().event_yield
+            return self.currentrunstats.last().event_yield
         except AttributeError:
             return 0
 
