@@ -109,7 +109,7 @@ def active_minion_list(request):
                     ] = minion.experiment_name()
                     mrs = MinionRunStats.objects.filter(minion=minion).last()
                     if mrs:
-                        data[minion.name] = mrs.values()
+                        data[minion.name] = mrs.__dict__
 
                 active_minion_list.append(minion)
     serializer = MinionSerializer(
