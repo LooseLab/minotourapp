@@ -3,6 +3,7 @@ from django.db import models
 
 from minknow_data.models import Flowcell
 from reads.models import JobMaster, Barcode
+from reference.models import ReferenceInfo
 
 
 class ArticFireConditions(models.Model):
@@ -55,3 +56,23 @@ class ArticBarcodeMetadata(models.Model):
 
     def __str__(self):
         return f"{self.flowcell} {self.job_master} {self.barcode}"
+
+
+class PrimerScheme(models.Model):
+    """
+    Store primer schemes uploaded to minoTour, stores scheme species and version
+    """
+    scheme_species = models.CharField(max_length=32)
+    scheme_versions = models.CharField(max_length=32)
+    bed_file = models.FileField(
+        upload_to="primer_schemes",
+        default="",
+        null=True,
+        max_length=256
+    )
+    reference = models.ForeignKey(
+        ReferenceInfo,
+        on_delete=models.CASCADE,
+        related_name="primer_reference"
+    )
+
