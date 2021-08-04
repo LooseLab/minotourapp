@@ -72,23 +72,19 @@ def active_minion_list(request):
     for minion in Minion.objects.filter(owner=request.user):
         # Store extra data about actively sequencing minions here
         extra_data[minion.name] = {}
-        minion_event_list = MinionEvent.objects.filter(minION=minion).order_by(
-            "datetime"
-        )
+        last_minion_event = MinionEvent.objects.filter(minION=minion).last()
         extra_data[minion.name]["freespace"] = minion.space_available()
         extra_data[minion.name]["space_till_shutdown"] = minion.space_till_shutdown()
         extra_data[minion.name]["minknow_version"] = minion.minknow_version()
-        if minion_event_list.count() > 0:
-            last_minion_event = minion_event_list.last()
+        if last_minion_event:
             five_minute_check = datetime.datetime.now(
                 datetime.timezone.utc
             ) - datetime.timedelta(minutes=5)
-
             if (
                 last_minion_event.event.name != "unplugged"
                 and minion.currentdetails.last_modified > five_minute_check
             ):
-                if minion.currentdetails.minKNOW_status in [
+                if minion.currentdetails.minKNOW_status in {
                     "ACQUISITION_COMPLETED",
                     "ACQUISITION_STARTING",
                     "No Run",
@@ -96,7 +92,7 @@ def active_minion_list(request):
                     "ACQUISITION_PROCESSING",
                     "ACQUISITION_FINISHING",
                     "Nothing running"
-                ]:
+                }:
                     # Get the run start time and other deets
                     extra_data[minion.name]["start_time"] = str(minion.start_time())
                     extra_data[minion.name][
@@ -111,14 +107,9 @@ def active_minion_list(request):
                     extra_data[minion.name][
                         "experiment_name"
                     ] = minion.experiment_name()
-
                     mrs = MinionRunStats.objects.filter(minion=minion).last()
-
                     if mrs:
-                        mrs_serialiser = MinionRunStatsSerializer(
-                            mrs, context={"request": request}
-                        )
-                        data[minion.name] = mrs_serialiser.data
+                        data[minion.name] = mrs.values()
 
                 active_minion_list.append(minion)
     serializer = MinionSerializer(
