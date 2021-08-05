@@ -1,12 +1,10 @@
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from rest_framework.authtoken.models import Token
 
 from minknow_data.models import Minion, Run, Flowcell
-from minotourapp.utils import get_env_variable
 from reference.models import ReferenceInfo
 
 
@@ -559,17 +557,6 @@ def create_run_barcodes(sender, instance=None, created=False, **kwargs):
         Barcode.objects.update_or_create(run=instance, name="No barcode")
 
 
-fs = FileSystemStorage(location=get_env_variable("MT_ARTIC_SCHEME_DIR"))
-
-
-def primer_scheme_directory(instance, filename):
-    # file will be uploaded to MEDIA_ROOT/user_<id>/<filename>
-    scheme_versions = (
-        instance.scheme_versions
-        if instance.scheme_versions.startswith("V")
-        else f"V{instance.scheme_versions}"
-    )
-    return f"{instance.scheme_species}/{scheme_versions}/{filename}"
 
 
 class PrimerScheme(models.Model):
