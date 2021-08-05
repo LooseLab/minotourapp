@@ -1,0 +1,110 @@
+{% extends "web/template_private.html" %}
+
+{% load humanize %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-primary card-outline">
+                    <div class="card-header">
+                        <h4 class="card-title"><i class="fas fa-address-card"></i>
+                            Primer Scheme Management
+                        </h4>
+                    </div>
+                    <div class="card-body ">
+                        <table id="scheme-table" class="table table-bordered table-striped table-hover"
+                               style="width:100%"
+                               cellspacing="0">
+                            <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Version</th>
+                                <th>Public/Private</th>
+                                <th style="text-align: center"><i id="addition" class="fa fa-plus-square"
+                                                                  data-toggle="modal" data-target="#add-scheme"
+                                                                  style="color: green; font-size: 1rem"></i></th>
+                            </tr>
+                            </thead>
+                            <tfoot>
+                            <tr>
+                                <th>Name</th>
+                                <th>Length</th>
+                                <th>Public/Private</th>
+                                <th></th>
+                            </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="add-scheme" tabindex="-1" role="dialog"
+         aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div style="border-radius: 3.8px" class="modal-content">
+                <div id="file-upload"></div>
+                <div class="modal-body" id="" ondrop="">
+                    <div class="card card-primary card-outline">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="far fa-comment-alt"></i>
+                                Add Scheme
+                            </h3>
+                        </div>
+                        <div>
+                            <form id="scheme-settings">
+                                <div class="form-group" style="padding-left: 1rem">
+                                    <div class="form-check form-check-inline">
+                                        <label for="private" class="minotour-label">Private:</label>
+                                        <input type="checkbox" name="private" id="private"
+                                               class="form-control-sm noti-control">
+                                    </div>
+                                </div>
+                                <div class="form-group" style="padding-left: 1rem">
+                                    <label for="scheme-name">Scheme Species Name:</label>
+                                    <input type="text" id="scheme-name" disabled> <i
+                                        class="fab fa-galactic-republic disallowed" ></i>
+                                </div>
+                                <div class="form-group" style="padding-left: 1rem">
+                                    <label for="scheme-version">Scheme Version:</label>
+                                    <input type="text" id="scheme-version"> <i
+                                        class="fab fa-galactic-republic disallowed"></i>
+                                </div>
+                            </form>
+                            <div id="list-uploaded files" style="padding-left: 1rem">
+                                <label>Chosen Files:</label>
+                                <ul>
+                                    <li id="bed-file-name"></li>
+                                    <li id="reference-file-name"></li>
+                                </ul>
+                            </div>
+                            <hr>
+                            <div id="drop-zone-wrapper">
+                                <label id="drop-zone" class="dropzone" for="scheme-upload"
+                                       ondrop="primerManager._dropHandler(event, true)">
+                                    Drag and drop or click to upload ...
+                                </label>
+                                <input type="file" id="scheme-upload" style="display: none"
+                                       accept=".fsa,.fna,.fa,.fa.gz,.fsa.gz,.fna.gz,.fasta,.fasta.gz,.bed,.scheme.bed"
+                                       multiple>
+                                <div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light">
+                            <button href="#" id="submit-scheme" class="btn btn-success success" disabled>Submit</button>
+                            <button type="button" id="cancel-scheme" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block javascript %}
+    <script>
+      const primerManager = new PrimerManagementController()
+    </script>
+{% endblock %}
