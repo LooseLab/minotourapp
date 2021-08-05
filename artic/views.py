@@ -4,13 +4,15 @@ import json
 import os
 import tarfile
 from collections import defaultdict
+from pathlib import Path
+from shutil import rmtree
 from urllib.parse import parse_qs
 
 import pandas as pd
 from django.db.models import Q
 from django.db.utils import IntegrityError
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from matplotlib.figure import Figure
 from rest_framework import status
 from rest_framework.decorators import api_view, renderer_classes
@@ -1129,17 +1131,38 @@ class PrimerSchemeList(APIView):
         print(request.POST)
         file_dict = {}
         bool_dict = {"false": False, "true": True}
+        scheme_versions = (
+            request.POST["scheme_version"]
+            if request.POST["scheme_version"].startswith("V")
+            else f"V{request.POST['scheme_version']}"
+        )
+        user_destination = (
+            f'{get_env_variable("MT_ARTIC_SCHEME_DIR")}/{request.user.get_username()}/'
+            f'{request.POST["scheme_name"]}/'
+            f"{scheme_versions}"
+        )
+        Path(user_destination).mkdir(exist_ok=True, parents=True)
         for file in files:
-            with open(
-                f'{get_env_variable("MT_ARTIC_SCHEME_DIR")}/'
-                f'{request.POST["scheme_name"]}/'
-                f'{request.POST["scheme_version"]}/'
-                f'{file.name}',
-                "wb+",
-            ) as destination:
+            pathy = f"{user_destination}/{file.name}"
+            if os.path.exists(pathy):
+                return Response(
+                    f"Primer scheme and version already contains file {file.name} for user {request.user.get_username()}",
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            if file.name.endswith(".scheme.bed"):
+                file_dict["bed_file"] = pathy
+            elif file.name.endswith(".reference.fasta"):
+                file_dict["ref_file"] = pathy
+            else:
+                return Response(
+                    "File with unnacceptable ending found. Files must end .scheme.bed or .reference.fasta",
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        for file in files:
+            pathy = f"{user_destination}/{file.name}"
+            with open(pathy, "wb+") as destination:
                 for chunk in file.chunks():
                     destination.write(chunk)
-
         ps = PrimerScheme(
             scheme_species=request.POST["scheme_name"],
             private=bool_dict[request.POST["private"]],
@@ -1152,13 +1175,26 @@ class PrimerSchemeList(APIView):
             ps.save()
         except IntegrityError as e:
             print(ps.__dict__)
-            os.unlink(ps.bed_file.path)
-            os.unlink(ps.reference_file.path)
+            os.unlink(ps.bed_file)
+            os.unlink(ps.reference_file)
             return Response(
                 "Primer scheme and version already exist.",
                 status=status.HTTP_403_FORBIDDEN,
             )
         return Response(status=status.HTTP_201_CREATED)
+
+    def delete(self, request):
+        pk = request.data.get("pk", False)
+        if not pk:
+            return Response(
+                "Primary key for primer scheme to be deleted not provided.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        ps = get_object_or_404(PrimerScheme, pk=pk)
+        version_dir = Path(ps.bed_file).parent
+        rmtree(version_dir)
+        ps.delete()
+        return Response("Scheme successfully destroyed.", status=status.HTTP_200_OK)
 
 
 @api_view(["GET"])

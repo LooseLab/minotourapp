@@ -22,8 +22,17 @@ class PrimerManagementController {
     })
   }
 
-  _deleteScheme () {
-    console.log(`todo`)
+  _deleteScheme (pk) {
+    this._axiosInstance.delete(`/api/v1/artic/schemes`, { data: { pk } }).then(response => {
+      alert(response.data)
+      this._datatableObj.DataTable().ajax.reload(null, false)
+    }
+    ).catch(
+      error => {
+        console.error(error.response)
+        alert(`Scheme failed to delete`)
+      }
+    )
   }
 
   _getUsersSchemesTable () {
@@ -131,20 +140,27 @@ class PrimerManagementController {
       method: `post`
     })
       .then(response => {
-        this._formData = new FormData()
+        this._clearModalData()
+        this._getUsersSchemesTable()
       })
       .catch(error => {
-        this._formData = new FormData()
+        this._clearModalData()
+        alert(error.message)
         console.error(error)
       })
   }
 
-  _cancelModal () {
+  _clearModalData () {
     $(`#reference-file-name`).empty()
     $(`#bed-file-name`).empty()
     $(`#scheme-version`).val(``)
     $(`#scheme-name`).val(``)
     this._formData = new FormData()
+    $(`#add-scheme`).modal(`hide`)
+  }
+
+  _cancelModal () {
+    this._clearModalData()
   }
 
   _addEventsToDropZone () {
