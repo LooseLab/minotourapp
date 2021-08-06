@@ -367,9 +367,13 @@ def get_artic_detail_chart_data(request):
         coverage, minimum=mini
     )
     # Get the primer bands
-    scheme = get_env_variable("MT_ARTIC_SCHEME_NAME")
-    scheme_version = get_env_variable("MT_ARTIC_SCHEME_VER")
-    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
+    artic_task = get_object_or_404(JobMaster, pk=artic_task_id)
+    scheme_dir = artic_task.primer_scheme.scheme_directory
+    scheme = artic_task.primer_scheme.scheme_species
+    scheme_version = artic_task.primer_scheme.scheme_version
+    amplicon_band_coords, colours = get_amplicon_band_data(
+        scheme, scheme_version, scheme_dir
+    )
     data_dict = {
         "coverage": {"xmax": xmax_cov, "ymax": ymax_cov, "data": x_y_cov},
         "amplicon_bands": amplicon_band_coords,
@@ -450,7 +454,7 @@ def get_artic_summary_table_data(request):
     flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(
         flowcell_id
     )
-    artic_task = JobMaster.objects.get(pk=jm_id)
+    artic_task = get_object_or_404(JobMaster, pk=jm_id)
     if not artic_task:
         return Response(
             "no coverage tracking task running on this flowcell.",
@@ -473,9 +477,12 @@ def get_artic_summary_table_data(request):
         )
     }
     # dictionaries change in place
-    scheme = get_env_variable("MT_ARTIC_SCHEME_NAME")
-    scheme_version = get_env_variable("MT_ARTIC_SCHEME_VER")
-    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
+    scheme_dir = artic_task.primer_scheme.scheme_directory
+    scheme = artic_task.primer_scheme.scheme_species
+    scheme_version = artic_task.primer_scheme.scheme_version
+    amplicon_band_coords, colours = get_amplicon_band_data(
+        scheme, scheme_version, scheme_dir
+    )
     num_amplicons = len(amplicon_band_coords)
     time_stamp = datetime.datetime.now()
     for paf_summary_cov in queryset:
@@ -938,9 +945,8 @@ def png_html(request):
 
 
 @api_view(["GET"])
-def get_amplicon_bands_for_master(request):
+def get_amplicon_bands_for_master(request, pk):
     """
-    TODO should contain scheme and scheme version
     Get the amplicon x and y coordinates for the master chart on initialisation
     Parameters
     ----------
@@ -953,9 +959,19 @@ def get_amplicon_bands_for_master(request):
 
     """
     # Get the primer bands
-    scheme = get_env_variable("MT_ARTIC_SCHEME_NAME")
-    scheme_version = get_env_variable("MT_ARTIC_SCHEME_VER")
-    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
+    (
+        flowcell,
+        artic_results_path,
+        artic_task_id,
+        _,
+    ) = quick_get_artic_results_directory(pk)
+    jm = get_object_or_404(JobMaster, pk=int(artic_task_id))
+    scheme = jm.primer_scheme.scheme_species
+    scheme_version = jm.primer_scheme.scheme_version
+    scheme_dir = jm.primer_scheme.scheme_directory
+    amplicon_band_coords, colours = get_amplicon_band_data(
+        scheme, scheme_version, scheme_dir
+    )
     data_dict = {"amplicon_band_coords": amplicon_band_coords, "colours": colours}
     return Response(data_dict, status=status.HTTP_200_OK)
 
@@ -1118,11 +1134,17 @@ class PrimerSchemeList(APIView):
     """
 
     def get(self, request):
-        qs = PrimerScheme.objects.filter(
-            Q(owner=request.user) | Q(private=False)
-        ).values()
-        for q in qs:
-            q["deletable"] = q["owner_id"] == request.user.id
+        qs = list(PrimerScheme.objects.filter(Q(owner=request.user) | Q(private=False)))
+        qs = [
+            {   "id": q.id,
+                "deletable": q.owner.id == request.user.id,
+                "scheme_version": q.scheme_version,
+                "scheme_species": q.scheme_species,
+                "private": q.private,
+            }
+            for q in qs
+        ]
+
         return Response({"data": qs}, status=status.HTTP_200_OK,)
 
     def post(self, request):
@@ -1166,7 +1188,8 @@ class PrimerSchemeList(APIView):
         ps = PrimerScheme(
             scheme_species=request.POST["scheme_name"],
             private=bool_dict[request.POST["private"]],
-            scheme_versions=request.POST["scheme_version"],
+            _scheme_version=scheme_versions,
+            _scheme_directory=f'{get_env_variable("MT_ARTIC_SCHEME_DIR")}/{request.user.get_username()}/',
             bed_file=file_dict["bed_file"],
             reference_file=file_dict["ref_file"],
             owner=request.user,
