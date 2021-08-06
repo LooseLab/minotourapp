@@ -65,7 +65,7 @@ def run_monitor():
             if flowcell_job.job_type.name == "CalculateMetagenomicsSankey":
                 run_sankey(flowcell_job.id)
             if flowcell_job.job_type.name == "Delete Flowcell":
-                delete_flowcell.delay(flowcell_job.id)
+                delete_flowcell.delay(flowcell_job.flowcell.id)
             if flowcell_job.job_type.name == "Archive Flowcell":
                 archive_flowcell.delay(flowcell_job.id)
             if flowcell_job.job_type.name == "ExpectedBenefit":
