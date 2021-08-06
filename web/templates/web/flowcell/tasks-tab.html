@@ -26,15 +26,21 @@
                         <label id="select-label" for="reference-select">Reference</label>
                         <select class="form-control" name="reference" id="reference-select" disabled></select>
                     </div>
+                    <div class="form-group" style="display: none" id="primer-scheme-select">
+                        <label for="primer-select">Primer Scheme</label>
+                        <select class="form-control" name="reference" id="primer-select" disabled></select>
+                    </div>
                     <div class="form-check form-check-inline" style="display: none" id="run-from-database">
                         <label class="form-check-label" id="checkbox-label" for="from-database">Run from
                             database
-                            <span data-tooltip="Run task with reads already in the database. Leave unchecked to use reads being uploaded to flowcell." data-flow="top"><i style="padding-right: 3px" class="fas fa-question-circle" id="run-from-database"></i></span>
+                            <span data-tooltip="Run task with reads already in the database. Leave unchecked to use reads being uploaded to flowcell."
+                                  data-flow="top"><i style="padding-right: 3px" class="fas fa-question-circle"
+                                                     id="run-from-database"></i></span>
                         </label>
                         <input class="form-check-input" name="from-database" id="from-database" type="checkbox">
                     </div>
-                    <input type="submit" value="Create" class="btn btn-primary" id="btn_task_create">
 
+                    <input type="submit" value="Create" class="btn btn-primary" id="btn_task_create">
                 </form>
             </div>
         </div>
@@ -159,16 +165,20 @@
                 </button>
             </div>
             <form class="form" id="fire-conditions" method="POST"
-                  >
+            >
                 {% csrf_token %}
                 <div class="modal-body">
                     <p>Please set a condition to fire the artic pipeline. More can be created on the task page.</p>
                     <div class="form-group">
                         <div class="col-md-12 control-label" style="height: 100%; text-align: left;">
-                            <label for="num-amplicons-input" style="display: inline"><input type="number" id="x-coverage-input-task" class="ms"
-                                                                                 min="15" max="1000" value="30">X Coverage at
+                            <label for="num-amplicons-input" style="display: inline"><input type="number"
+                                                                                            id="x-coverage-input-task"
+                                                                                            class="ms"
+                                                                                            min="15" max="1000"
+                                                                                            value="30">X Coverage at
                                 <input
-                                        type="number" id="num-amplicons-input-task" class="ms" min="50" max="100" value="90">% of
+                                        type="number" id="num-amplicons-input-task" class="ms" min="50" max="100"
+                                        value="90">% of
                                 amplicons</label>
                         </div>
                     </div>
