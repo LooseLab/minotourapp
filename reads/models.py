@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.conf import settings
 from django.db import models
 from django.db.models.signals import post_save
@@ -465,7 +467,6 @@ class JobType(models.Model):
     private: boolean
         Whether or not JobMasters of this job type should be visible to Users
     """
-
     name = models.CharField(max_length=256,)
     description = models.TextField(max_length=256, blank=True, null=True,)
     long_description = models.TextField(blank=True, null=True,)
@@ -478,11 +479,85 @@ class JobType(models.Model):
         return "{}".format(self.name)
 
 
+class PrimerScheme(models.Model):
+    """
+    Store primer schemes uploaded to minoTour, stores scheme species and version
+    Shouldn't really be here, but avoids a circular import of JobMaster
+    """
+
+    scheme_species = models.CharField(max_length=32)
+    _scheme_version = models.CharField(max_length=32)
+    _scheme_directory = models.CharField(max_length=256)
+    bed_file = models.CharField(
+        max_length=256
+    )
+    reference_file = models.CharField(
+        max_length=256
+    )
+    private = models.BooleanField(default=False)
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="users_primer_schemes",
+        on_delete=models.CASCADE,
+        null=True
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["scheme_species", "_scheme_version", "owner"],
+                name="primers unique",
+            )
+        ]
+
+    @property
+    def bed_file_path(self):
+        """
+        Return a resolved, absolute path to the bed file in case it is a relative path
+        Returns
+        -------
+        Path
+        """
+        return Path(self.bed_file).resolve()
+
+    @property
+    def ref_file_path(self):
+        """
+        Return a resolved, absolute path to the reference file in case it is a relative path
+        Returns
+        -------
+        Path
+        """
+        return Path(self.reference_file).resolve()
+
+    @property
+    def scheme_version(self):
+        """
+        Return a resolved, absolute path to the reference file in case it is a relative path
+        Returns
+        -------
+        str
+        """
+        return self._scheme_version if self._scheme_version.startswith("V") else f"V{self._scheme_version}"
+
+    @property
+    def scheme_directory(self):
+        """
+        Return a resolved, absolute string path to the scheme_directory in case it is a relative path
+        Returns
+        -------
+        str
+        """
+        return str(Path(self._scheme_directory).resolve())
+
+    def __str__(self):
+        return f"{self.owner} - {self.scheme_species} - {self.scheme_version}"
+
+
 class JobMaster(models.Model):
     """
     The JobMaster model is used to store the tasks that we wish celery to pick up and run
     """
-
     run = models.ForeignKey(
         Run,
         on_delete=models.DO_NOTHING,
@@ -513,6 +588,14 @@ class JobMaster(models.Model):
         related_name="jobs_barcode",
         null=True,
         blank=True,
+    )
+    primer_scheme = models.ForeignKey(
+        PrimerScheme,
+        on_delete=models.SET_NULL,
+        related_name="jobs_primer_scheme",
+        default=4,
+        blank=True,
+        null=True,
     )
     last_read = models.BigIntegerField(default=0,)
     tempfile_name = models.CharField(max_length=256, blank=True, null=True,)
@@ -555,38 +638,3 @@ def create_run_barcodes(sender, instance=None, created=False, **kwargs):
     if created:
         Barcode.objects.update_or_create(run=instance, name="All reads")
         Barcode.objects.update_or_create(run=instance, name="No barcode")
-
-
-
-
-class PrimerScheme(models.Model):
-    """
-    Store primer schemes uploaded to minoTour, stores scheme species and version
-    Shouldn't really be here, but avoids a circular import of JobMaster
-    """
-
-    scheme_species = models.CharField(max_length=32)
-    scheme_versions = models.CharField(max_length=32)
-    bed_file = models.CharField(
-        max_length=256
-    )
-    reference_file = models.CharField(
-        max_length=256
-    )
-    private = models.BooleanField(default=False)
-    owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name="users_primer_schemes",
-        on_delete=models.CASCADE,
-    )
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["scheme_species", "scheme_versions", "owner"],
-                name="primers unique",
-            )
-        ]
-
-    def __str__(self):
-        return f"{self.owner} - {self.scheme_species} - {self.scheme_versions}"
