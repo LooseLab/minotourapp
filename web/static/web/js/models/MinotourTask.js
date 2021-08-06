@@ -1,12 +1,13 @@
 class MinotourTask {
   // a class for a Job to be created - stores all the attributes we might need
-  constructor (flowcellId, jobTypeId, referenceId, taretSetId, fromDatabase) {
+  constructor (flowcellId, jobTypeId, referenceId, taretSetId, fromDatabase, primerScheme) {
     // construct all the attributes we might need
     this._flowcellId = flowcellId
     this._jobTypeId = jobTypeId
     this._referenceId = referenceId
     this._targetSetId = taretSetId
     this._fromDatabase = fromDatabase
+    this._primerScheme = primerScheme
   }
 
   // getter for flowcell id
@@ -31,5 +32,9 @@ class MinotourTask {
 
   get fromDatabase () {
     return this._fromDatabase
+  }
+
+  get primerScheme () {
+    return this._primerScheme
   }
 }
