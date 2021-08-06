@@ -50,7 +50,7 @@ urlpatterns = [
     ),
     url(r"^api/v1/artic/fetch-png-html/$", views.png_html, name="png-html"),
     url(
-        r"^api/v1/artic/fetch-amplicon-bands/$",
+        r"^api/v1/artic/(?P<pk>[0-9]+)/fetch-amplicon-bands/$",
         views.get_amplicon_bands_for_master,
         name="amplicon-bands",
     ),
