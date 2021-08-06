@@ -107,19 +107,22 @@ def check_afc_values_met(afc, coverage_array, num_amplicons, run_id, barcode_nam
     return met_for_this_afc
 
 
-def get_amplicon_infos():
+def get_amplicon_infos(job_master):
     """
     get amplicon band coordinates
+    Parameters
+    ----------
+    job_master: reads.models.JobMaster
+        Artic Task
     Returns
     -------
     (num_amplicons, amplicon_band_coords): (int, list)
         Tuple containing number of amplicons and the amplicon band coordinates
-
     """
-    # todo hardcoded scheme atm, need to attach to JobMaster somehow
-    scheme = get_env_variable("MT_ARTIC_SCHEME_NAME") #"nCoV-2019"
-    scheme_version = get_env_variable("MT_ARTIC_SCHEME_VER") # "V3"
-    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
+    scheme = job_master.primer_scheme.scheme_species
+    scheme_version = job_master.primer_scheme.scheme_version
+    scheme_dir = job_master.primer_scheme.scheme_directory
+    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version, scheme_dir)
     num_amplicons = len(amplicon_band_coords)
     return (num_amplicons, amplicon_band_coords)
 
@@ -372,9 +375,9 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         fastq_path += ".gz"
     # TODO get the barcode from the posix path for the sample name
     logger.info(fastq_path)
-    scheme_name = get_env_variable("MT_ARTIC_SCHEME_NAME")
-    scheme_ver = get_env_variable("MT_ARTIC_SCHEME_VER")
-    scheme_dir = get_env_variable("MT_ARTIC_SCHEME_DIR")
+    scheme_name = jm.primer_scheme.scheme_species
+    scheme_ver = jm.primer_scheme.scheme_version
+    scheme_dir = jm.primer_scheme.scheme_directory
     artic_env = get_env_variable("MT_ARTIC_ENV")
     normalise = get_env_variable("MT_ARTIC_NORMALIZE")
     threads = get_env_variable("MT_ARTIC_THREADS")
@@ -940,7 +943,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                 paf_summary_cov_orm.save()
             # TODO only ever see one chromosome, so we can remove for loop?
             barcodes_already_fired = fetch_barcode_to_fire_list(base_result_dir_path)
-            num_amplicons, amplicon_band_coords = get_amplicon_infos()
+            num_amplicons, amplicon_band_coords = get_amplicon_infos(task)
             time_stamp = datetime.now()
             df_new_dict = {}
             # TODO split into own function
