@@ -40,7 +40,7 @@ def unique_amplicon_coordinates(scheme_bed_file):
     Filter out overlaps between amplicon scheme files
     Parameters
     ----------
-    scheme_bed_file: pathlib.PosixPath
+    scheme_bed_file: Path
         Full path to the scheme file
     Returns
     -------
@@ -100,11 +100,10 @@ def get_artic_run_stats(pk, svg_data, request, task):
         )
     }
     # dictionaries change in place
-    scheme = get_env_variable("MT_ARTIC_SCHEME_NAME")
-    scheme_version = get_env_variable("MT_ARTIC_SCHEME_VER")
-    #scheme = "nCoV-2019"
-    #scheme_version = "V3"
-    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
+    scheme = task.primer_scheme.scheme_species
+    scheme_version = task.primer_scheme.scheme_version
+    scheme_dir = task.primer_scheme.scheme_directory
+    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version, scheme_dir)
     num_amplicons = len(amplicon_band_coords)
     time_stamp = datetime.now()
     for paf_summary_cov in queryset:
@@ -236,7 +235,6 @@ def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
     chosen_files = [results_files[key] for key in chosen]
     # change into the directory
     os.chdir(artic_results_dir)
-
     results_file = artic_results_dir / f"results_artic_{flowcell.name}.tar.gz"
     with tarfile.open(results_file, "w:gz") as tar:
         for filey in chosen_files:
@@ -255,7 +253,7 @@ def get_all_results(artic_results_dir, flowcell, selected_barcode, chosen):
         return response
 
 
-def get_amplicon_band_data(scheme, scheme_version):
+def get_amplicon_band_data(scheme, scheme_version, scheme_dir):
     """
     Retrieve coordinates on reference for amplicon bands, and a colour scheme for any amplicon pools
     Parameters
@@ -264,13 +262,15 @@ def get_amplicon_band_data(scheme, scheme_version):
         Artic primer scheme to get data from
     scheme_version: str
         The version, if any
+    scheme_dir: str
+        The scheme directory path
     Returns
     -------
     (list of string, dict)
         A list of coordinates, start and stop on x axis, and a colour scheme lookup dictionary for amplicon pools.
 
     """
-    json_file_path = get_amplicon_json_file_path(scheme, scheme_version)
+    json_file_path = get_amplicon_json_file_path(scheme, scheme_version, Path(scheme_dir))
     with open(json_file_path, "r") as fh:
         amplicon_bands = json.load(fh)
     # Get data
@@ -282,30 +282,30 @@ def get_amplicon_band_data(scheme, scheme_version):
     return amplicon_band_coords, colours
 
 
-def get_amplicon_json_file_path(scheme, scheme_version):
+def get_amplicon_json_file_path(scheme, scheme_version, scheme_dir):
     """
     Get the file path to the amplicon primer JSON file
     Parameters
     ----------
-    scheme: str
+    scheme: Path
         Artic primer scheme to get data from
     scheme_version: str
         The version, if any
+    scheme_dir: str
+        The scheme directory
     Returns
     -------
     pathlib.PosixPath
         File path to the JSON primer file.
 
     """
-    scheme_dir = Path(get_env_variable("MT_ARTIC_SCHEME_DIR"))
-    scheme_name = get_env_variable("MT_ARTIC_SCHEME_NAME")
     artic_results_dir_primers = (
         Path(get_env_variable("MT_ARTIC_RESULTS_DIR")) / "artic/" / "primers_files"
     )
     if not (Path(get_env_variable("MT_ARTIC_RESULTS_DIR")) / "artic/").exists():
         (Path(get_env_variable("MT_ARTIC_RESULTS_DIR")) / "artic/").mkdir()
     # Needs to be dynamic here
-    bed_file = f"{scheme_name}.scheme.bed"
+    bed_file = f"{scheme}.scheme.bed"
     json_file = f"{scheme}_{scheme_version}.primers.json"
     full_path_to_bed_file = scheme_dir / scheme / scheme_version / bed_file
     if not (artic_results_dir_primers / json_file).exists():
@@ -323,11 +323,11 @@ def convert_amplicon_bed_file_to_json(filepath, json_file, artic_results_primer_
     Convert an amplicon primer scheme bed file to JSON listing the primer start and end
     Parameters
     ----------
-    filepath: pathlib.PosixPath
+    filepath: Path
         Absolute file path to the primer scheme bed file
     json_file: str
         Name to give the JSON file created from the bed file
-    artic_results_primer_dir: pathlib.PosixPath
+    artic_results_primer_dir: Path
         Absolute path to the directory to store amplicon JSON in
 
     Returns
