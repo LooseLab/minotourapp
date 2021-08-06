@@ -8,8 +8,11 @@ from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime, timezone, timedelta
 from io import StringIO
+from pathlib import Path
 from shutil import rmtree
 
+import numpy as np
+import pandas as pd
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from git import Repo
@@ -34,20 +37,80 @@ from reads.models import (
     FlowcellSummaryBarcode,
     FastqRead,
 )
-from readuntil.functions_EB import *
 
 logger = get_task_logger(__name__)
 
 
 
-# @app.on_after_finalize.connect
-# def setup_periodic_tasks(sender, **kwargs):
-#     #check for update of VoCs every 24 hours.
-#     sender.add_periodic_task(
-#         crontab(hour=0, minute=0),
-#         #test.s('Happy Mondays!'),
-#         Update_VoCs.s(),
-#     )
+def multi_array_results(ref_length):
+    """
+    Create a structured array to contain the counts of the nucleotide bases mapped to each position on the reference
+    :param ref_length: The length of the reference chromosome
+    :type ref_length: int
+    :return: A filled multi dimensional array, the length of the reference chromosome
+    """
+    # multiply out a list to create as many copies as there are bases
+    a = [tuple(0 for i in range(9))] * ref_length
+    # Create a structure data array with named data types - create 9 copies of the above list in a list,
+    # and make the structured array with them
+    multi_arr = np.array(
+        [a for i in range(8)][0],
+        dtype=[
+            ("A", np.uint16),
+            ("C", np.uint16),
+            ("G", np.uint16),
+            ("T", np.uint16),
+            ("D", np.uint16),
+            ("I", np.uint16),
+            ("IC", np.uint16),
+            ("M", np.uint16),
+            ("U", np.bool),
+        ],
+    )
+    # return our new numpy array
+    return multi_arr
+
+
+def readfq(fp):
+    """
+    DocString
+    """
+    # this is a generator function
+    last = None  # this is a buffer keeping the last unprocessed line
+    while True:  # mimic closure; is it a bad idea?
+        if not last:  # the first record or a record following a fastq
+            for l in fp:  # search for the start of the next record
+                if l[0] in ">@":  # fasta/q header line
+                    last = l[:-1]  # save this line
+                    break
+        if not last:
+            break
+        desc, name, seqs, last = last[1:], last[1:].partition(" ")[0], [], None
+        for l in fp:  # read the sequence
+            if l[0] in "@+>":
+                last = l[:-1]
+                break
+            seqs.append(l[:-1])
+        if not last or last[0] != "+":  # this is a fasta record
+            yield desc, name, "".join(seqs), None  # yield a fasta record
+            if not last:
+                break
+        else:  # this is a fastq record
+            seq, leng, seqs = "".join(seqs), 0, []
+            for l in fp:  # read the quality
+                seqs.append(l[:-1])
+                leng += len(l) - 1
+                if leng >= len(seq):  # have read enough quality
+                    last = None
+                    yield desc, name, seq, "".join(
+                        seqs
+                    )  # yield a fastq record
+                    break
+            if last:  # reach EOF before reading enough quality
+                yield desc, name, seq, None  # yield a fasta record instead
+                break
+
+
 
 @app.task
 def update_vocs():

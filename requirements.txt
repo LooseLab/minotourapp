@@ -24,3 +24,4 @@ Gitpython
 WeasyPrint
 matplotlib
 scipy
+readpaf
