@@ -33,6 +33,8 @@ class TasksController {
     this._addListenerToTasksForm()
     this._addListenerToReactivateButton()
     this._targetSetSet.add(`<option value="-1">-- Please Choose --</option>`)
+    this._primerSchemeSelect = $(`#primer-select`)
+    this._primerSelectDiv = $(`#primer-scheme-select`)
     this._runFromDatabase = $(`#run-from-database`)
     this._numAmpliconsInput = $(`#num-amplicons-input-task`)
     this._xCoverageInput = $(`#x-coverage-input-task`)
@@ -117,9 +119,11 @@ class TasksController {
     const referenceId = this._selectReference.val() === `-1` ? null : this._selectReference.val()
     const jobTypeId = this._selectJobType.val()
     const targetSetId = this._selectReference.val()
+    const primerSchemeId = this._primerSchemeSelect.val() ? this._primerSchemeSelect.val() : null
     // create an instance of the MinotourTask class for this new task
     const taskNew = new MinotourTask(this._flowcellId, jobTypeId, referenceId,
-      targetSetId, fromDatabase)
+      targetSetId, fromDatabase, primerSchemeId)
+    console.log(taskNew)
     const taskTable = $(`.tasktable`)
     const self = this
 
@@ -179,7 +183,8 @@ class TasksController {
       reference: taskNew.referenceId,
       job_type: taskNew.jobTypeId,
       target_set: taskNew.targetSetId,
-      from_database: taskNew.fromDatabase
+      from_database: taskNew.fromDatabase,
+      primer_scheme: taskNew.primerScheme
     })
       .then(
         response => {
@@ -268,8 +273,8 @@ class TasksController {
           details: false
         },
         columns: [
-          { data: `id` },
-          { data: `task_type_name` },
+          { data: `id`, responsivePriority: 3 },
+          { data: `task_type_name`, responsivePriority: 1 },
           { data: `read_count` },
           { data: `running` },
           { data: `complete` },
@@ -280,6 +285,7 @@ class TasksController {
             data: null,
             orderable: false,
             width: `15%`,
+            responsivePriority: 1,
             render: (data, type, full) => {
               if (!data.server_initiated) {
                 return [`<a class="btn icon-task"  id="pause_${data.id}" onclick="flowcellController.flowcellTabController.tasksController.performActionOnTask(event, ${data.id}, 2)" ><i class="fa fa-${data.icon} task-icon"></i> ${data.iconText} </a>·
@@ -303,6 +309,11 @@ class TasksController {
       const jobTypeId = this._selectJobType.val()
       // If there is not a value set
       const label = $(`#select-label`)
+      if (jobTypeId !== `16`) {
+        this._primerSelectDiv.css(`display`, `none`)
+        this._primerSchemeSelect.empty()
+        this._primerSchemeSelect.attr(`disabled`, true)
+      }
       if (jobTypeId === `10`) {
         label.html(`Target Sets`)
         referenceSelect.empty()
@@ -323,6 +334,27 @@ class TasksController {
           this._runFromDatabase.css(`display`, `inline-flex`)
         } else {
           this._runFromDatabase.css(`display`, `none`)
+        }
+        if (jobTypeId === `16`) {
+          this._primerSelectDiv.css(`display`, `inline-flex`)
+          this._runFromDatabase.css(`display`, `inline-flex`)
+          referenceSelect.attr(`disabled`, false)
+          this._primerSchemeSelect.attr(`disabled`, false)
+          const primerSchemeSet = new Set()
+          this._axiosInstance.get(`/api/v1/artic/schemes`).then(
+            response => {
+              response.data.data.forEach(primerScheme => {
+                console.log(primerScheme)
+                primerSchemeSet.add(`<option value="${primerScheme.id}">${primerScheme.scheme_species} - ${primerScheme.scheme_version}</option>`)
+              })
+              this._primerSchemeSelect.html([...primerSchemeSet].join(``))
+            }
+          ).catch(
+            error => {
+              console.log(error)
+            }
+          )
+          console.log(primerSchemeSet)
         }
         if (label.html() !== `Reference`) {
           label.html(`Reference`)
