@@ -61,7 +61,7 @@ class PrimerManagementController {
           },
           {
             targets: 1,
-            data: `scheme_versions`
+            data: `scheme_version`
           },
           {
             targets: 2,
@@ -179,6 +179,9 @@ class PrimerManagementController {
       this._dropHandler(event, false)
     })
     $(`#cancel-scheme`).on(`click`, event => { this._cancelModal() })
+    $(`#add-scheme`).on(`hidden.bs.modal`, event => {
+      this._clearModalData()
+    })
   }
 
   _dragOverHandler (ev) {
