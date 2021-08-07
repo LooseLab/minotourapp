@@ -3,14 +3,21 @@
     <div class="card-body">
         <br>
         <div>
+            {% if artic_analysis.svg_available %}
+                A SNIPIT plot (see <a href="https://github.com/aineniamh/snipit" target="_blank">https://github.com/aineniamh/snipit)</a> for consensus sequences for samples completed so far.
+                <br>
+                Sequences will be added or updated as consensus sequences are generated over time. When a new sequence is generated, the most complete will be used in this plot. <b>Only sequences with less than 50% N calls are included in this analysis.</b>
             <div class="overflow-auto">
         {{ artic_analysis.svg | safe }}
             </div>
+            {% else %}
+            No SNIPIT plot is available for these data.
+            {% endif %}
         <br>
+
+        {%  if artic_analysis.tree_available %}
+            A simple phylogenetic tree for sequences. Trees are generated using <a href="http://www.iqtree.org/" target="_blank">iqtree</a> after alignment with <a href="https://mafft.cbrc.jp/alignment/software/" target="_blank">mafft</a>. The reference sequence provided for the <a href="https://artic.network/" target="_blank">artic</a> pipeline is used as an outgroup. Trees are visualised using <a href="https://github.com/rambaut/figtree.js" target="_blank">figtree.js</a>. <b>Only sequences with less than 50% N calls are included in this analysis.</b>
         <div id="tooltip" display="none" style="position: absolute; display: none;"></div>
-
-
-
             <style>
 
                 .branch {
@@ -115,10 +122,8 @@
             </style>
 
             <figure>
-                <svg id="mycustomtree" width="600" height="500"></svg>
+                <svg id="mycustomtree" width="50%" height="800"></svg>
             </figure>
-        </div>
-
 
         <script type="module">
             import {
@@ -136,46 +141,45 @@
             //    '((virus1:0.1,virus2:0.12):0.04,((virus3:0.011,virus4:0.0087):0.15,(virus5:0.21,((virus6:0.45,virus7:0.4):0.02,(virus8:0.4,((virus9:0.04,virus10:0.03):0.6)#old-root:0.1):0.1):0.2):0.03):0.04)#root;';
             const newickString =
                 "{{ artic_analysis.tree }};";
-            console.log(newickString);
-            const tree = Tree.parseNewick(newickString);
+
+                const tree = Tree.parseNewick(newickString);
             const treeSVG = document.getElementById('mycustomtree');
-            const margins = {top: 20, bottom: 20, left: 20, right: 150};
+            const margins = {top: 20, bottom: 20, left: 20, right: 250};
             const branchSettings = branch().hilightOnHover().reRootOnClick().curve(d3.curveStepBefore);
             const figTree = new FigTree(treeSVG, margins, tree)
                 .layout(rectangularLayout)
                 .nodes(
                     circle()
-                        .filter(d => {
-                            return d.id !== 'old-root'
-                        })
+                        //.filter(d => {
+                        //    return d.id !== 'old-root'
+                        //})
                         .attr("r", 5)
                         .hilightOnHover(10)
                         .rotateOnClick(),
                     tipLabel(d => d.name),
                     circle()
-                        .filter(d => {
-                            return d.id === 'old-root'
-                        })
+                        //.filter(d => {
+                        //    return d.id === 'old-root'
+                        //})
                         .attr("r", 5)
                         .hilightOnHover(10)
-                        .on("click", (d, i, n) => {
-                            const oldRoot = tree.getNode(d.id);
-                            tree.reroot(oldRoot, 1.0)
-                            d3.select(treeSVG)
-                                .select(".node#old-root")
-                                .attr("display", "none");
-                            d3.select(treeSVG)
-                                .select(".node-background#old-root")
-                                .attr("display", "none");
+                        //.on("click", (d, i, n) => {
+                        //    const oldRoot = tree.getNode(d.id);
+                        //    tree.reroot(oldRoot, 1.0)
+                        //    d3.select(treeSVG)
+                        //        .select(".node#old-root")
+                        //        .attr("display", "none");
+                        //    d3.select(treeSVG)
+                        //        .select(".node-background#old-root")
+                        //        .attr("display", "none");
+                        //    d3.select(treeSVG)
+                        //        .select(".node#root")
+                        //        .attr("display", "inline");
+                        //    d3.select(treeSVG)
+                        //        .select(".node-background#root")
+                        //       .attr("display", "inline");
 
-                            d3.select(treeSVG)
-                                .select(".node#root")
-                                .attr("display", "inline");
-                            d3.select(treeSVG)
-                                .select(".node-background#root")
-                                .attr("display", "inline");
-
-                        })
+                        //})
                 )
                 .nodeBackgrounds(
                     circle()
@@ -192,9 +196,13 @@
 
             figTree.addToolTip('#old-root', "This is the position of the root node<br>in the rooted trees, above.<br><br>Click on it to root the tree\n");
 
-            console.log("Hello")
+
             //ToDO: Work out how to redraw tree without clicking on it.
         </script>
+        {% else %}
+        Tree not computed for these data.
+        {% endif %}
+        </div>
     </div>
 
 </div>
