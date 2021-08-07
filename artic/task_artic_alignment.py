@@ -12,7 +12,6 @@ from shutil import rmtree
 from Bio import SeqIO
 
 
-from celery.schedules import crontab
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from git import Repo
@@ -44,7 +43,6 @@ logger = get_task_logger(__name__)
 
 
 
-
 def remove_dups(infasta,outfasta, maxN=50):
     records_collection = dict()
     for record in SeqIO.parse(infasta, 'fasta'):
@@ -70,29 +68,31 @@ def percent_N(seq):
 
 
 
-@app.on_after_finalize.connect
-def setup_periodic_tasks(sender, **kwargs):
-    #check for update of VoCs every 24 hours.
-    sender.add_periodic_task(
-        crontab(hour=0, minute=0),
-        #test.s('Happy Mondays!'),
-        Update_VoCs.s(),
-    )
+
+# @app.on_after_finalize.connect
+# def setup_periodic_tasks(sender, **kwargs):
+#     #check for update of VoCs every 24 hours.
+#     sender.add_periodic_task(
+#         crontab(hour=0, minute=0),
+#         #test.s('Happy Mondays!'),
+#         Update_VoCs.s(),
+#     )
 
 @app.task
-def Update_VoCs():
+def update_vocs():
     MT_VoC_PATH = get_env_variable("MT_VoC_PATH")
     if Path(f"{MT_VoC_PATH}").exists():
-        print("VoC Path Found")
+        logger.info("VoC Path Found")
         ##Check if
         # cloned_repo = Repo.clone(os.path.join("https://github.com/phe-genomics/variant_definitions", Path(f"{MT_VoC_PATH}")))
         if Path(f"{MT_VoC_PATH}/variant_definitions/").exists():
             # already cloned so....
-            print("Updating path")
+            logger.info("Updating repo")
             repo = Repo(Path(f"{MT_VoC_PATH}/variant_definitions/"))
             print(repo.remotes.origin.pull())
             pass
         else:
+            logger.info("Creating VOCS repo")
             cloned_repo = Repo.clone_from("https://github.com/phe-genomics/variant_definitions",
                                           f"{MT_VoC_PATH}/variant_definitions/")
 

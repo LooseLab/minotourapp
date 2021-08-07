@@ -3,6 +3,7 @@ Useful functions that don't belong in views or tasks
 """
 import json
 import os
+import subprocess
 import tarfile
 from collections import namedtuple
 from datetime import datetime
@@ -10,6 +11,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from celery.utils.log import get_task_logger
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from weasyprint import CSS, HTML
@@ -17,12 +19,14 @@ from weasyprint import CSS, HTML
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata
 from minknow_data.models import Flowcell
+from minotourapp.celery import app
 from minotourapp.settings import BASE_DIR
 from minotourapp.utils import get_env_variable
 from reads.models import JobMaster
 
 # Colour palette of amplicon bands
 colour_palette = ["#ffd9dc", "#ffefdc", "#ffffbc", "#dcffe4", "#bae1ff"]
+logger = get_task_logger(__name__)
 
 def get_sequencing_stats_pdf():
     """
@@ -645,3 +649,21 @@ def predict_barcode_will_finish(
         predicted_coverages[predicted_coverages > coverage_per_amplicon].size / amplicon_median_array.size
     ) * 100 > minimum_required_amplicons
 
+@app.task()
+def update_pangolin():
+    """
+
+    Returns
+    -------
+
+    """
+    logger.info("updating pangolin")
+    cmd = [
+        "bash",
+        "-c",
+        f"source {get_env_variable('MT_CONDA_PREFIX')} && conda activate pangolin && pangolin --update",
+    ]
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = proc.communicate()
+    logger.info(out)
+    logger.info(err)

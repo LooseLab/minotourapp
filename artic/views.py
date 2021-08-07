@@ -1167,6 +1167,8 @@ def mark_all_barcodes_for_pipeline(request, pk):
     jm = JobMaster.objects.get(flowcell_id=pk, job_type_id=16)
     barcodes = jm.JobMastersArticBarcodeMetadatas.all()
     for barcode in barcodes:
+        if barcode.name == "unclassified":
+            continue
         job_master, created = JobMaster.objects.get_or_create(
             job_type_id=17,
             reference=jm.reference,
