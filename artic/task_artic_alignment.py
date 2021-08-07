@@ -45,16 +45,17 @@ logger = get_task_logger(__name__)
 
 
 
-def remove_dups(infasta,outfasta):
+def remove_dups(infasta,outfasta, maxN=50):
     records_collection = dict()
     for record in SeqIO.parse(infasta, 'fasta'):
-        if record.id not in records_collection.keys():
-            records_collection[record.id] = dict()
-            records_collection[record.id]["seq"] = record
-            records_collection[record.id]['proportionN'] = percent_N(record.seq)
-        elif percent_N(record.seq) <= records_collection[record.id]['proportionN']:
-            records_collection[record.id]["seq"] = record
-            records_collection[record.id]['proportionN'] = percent_N(record.seq)
+        if percent_N(record.seq) <= maxN:
+            if record.id not in records_collection.keys():
+                records_collection[record.id] = dict()
+                records_collection[record.id]["seq"] = record
+                records_collection[record.id]['proportionN'] = percent_N(record.seq)
+            elif percent_N(record.seq) <= records_collection[record.id]['proportionN']:
+                records_collection[record.id]["seq"] = record
+                records_collection[record.id]['proportionN'] = percent_N(record.seq)
     with open(outfasta, 'w') as outFile:
         for record in records_collection:
             SeqIO.write(records_collection[record]["seq"],outFile,'fasta')
@@ -62,7 +63,11 @@ def remove_dups(infasta,outfasta):
 
 def percent_N(seq):
     res=Counter(seq.upper())
-    return float(res['N']/sum(res.values())*100)
+    try:
+        return float(res['N'] / sum(res.values()) * 100)
+    except:
+        return float(100)
+
 
 
 @app.on_after_finalize.connect
@@ -464,6 +469,8 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
 
     ## We may have duplicated sequences by mistake - so we need to get rid of them
 
+    ## We also need to remove all sequences below some completeness threshold. In this case we are going to use 90%
+
     remove_dups(f"{base_results_directory}/all_barcodes.fasta", f"{base_results_directory}/all_barcodes_clean.fasta")
 
 
@@ -495,7 +502,7 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     cmd = [
         "bash",
         "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate tree_building && snipit {base_results_directory}/all_barcodes.aln -f svg --height 4 --width 18 --size-option scale -o {base_results_directory}/snp_plot"
+        f"source {MT_CONDA_PREFIX} && conda activate tree_building && snipit {base_results_directory}/all_barcodes.aln -f svg --size-option scale -o {base_results_directory}/snp_plot"
     ]
     logger.info(cmd)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
