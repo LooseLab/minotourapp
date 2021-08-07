@@ -518,6 +518,7 @@ def get_artic_summary_table_data(request):
 
 
 def relabel_tree(tree,artic_results_path):
+    ### This code finds labels if they exist and uses them to decorate the tree.
     tree = tree.replace("/ARTIC/medaka","")
     query = 'barcode??'
     subbarcodes = fnmatch.filter((tree[i:i + len(query)] for i in range(len(tree) - len(query))), query)
@@ -529,6 +530,25 @@ def relabel_tree(tree,artic_results_path):
             tree = tree.replace(barcode,f"{barcode} {lineage}")
         except FileNotFoundError:
             pass
+        try:
+            with gzip.open(artic_results_path / barcode / "json_files" / f"{barcode}_ARTIC_medaka.json.gz", 'rt', encoding='UTF-8') as zipfile:
+                my_object = json.load(zipfile)
+            extra_string = ""
+            for result in my_object['typing']:
+                if result['sample-typing-result']['variant-status'] != None:
+                    if 'phe-label' in result['sample-typing-summary'].keys():
+                        phe_label = result['sample-typing-summary']['phe-label']
+                    else:
+                        phe_label = ""
+                    if 'who-label' in result['sample-typing-summary'].keys():
+                        who_label = result['sample-typing-summary']['who-label']
+                    else:
+                        who_label = ""
+                    extra_string = f"{extra_string} {phe_label} {who_label}"
+            tree = tree.replace(barcode, f"{barcode} {extra_string}")
+        except FileNotFoundError:
+            pass
+
     return tree
 
 
@@ -558,6 +578,7 @@ def get_artic_analysis_html(request):
         tree = contents[0].strip()
         tree = relabel_tree(tree,artic_results_path)
         data["tree"]=tree
+        data["tree_available"]=True
 
     svg_path = (
             artic_results_path
@@ -574,6 +595,7 @@ def get_artic_analysis_html(request):
         #with open(svg_path,"r") as svg:
         #    contents = svg.readlines()
         data["svg"]=snipit_svg
+        data["svg_available"]=True
 
 
     return render(
