@@ -1,12 +1,12 @@
 {% load static %}
-
+<div id="tooltip" display="none" style="position: absolute; display: none;"></div>
     <div class="card-body">
         <br>
         <div>
             {% if artic_analysis.svg_available %}
                 A SNIPIT plot (see <a href="https://github.com/aineniamh/snipit" target="_blank">https://github.com/aineniamh/snipit)</a> for consensus sequences for samples completed so far.
                 <br>
-                Sequences will be added or updated as consensus sequences are generated over time. When a new sequence is generated, the most complete will be used in this plot. <b>Only sequences with less than 50% N calls are included in this analysis.</b>
+                Sequences will be added or updated as consensus sequences are generated over time. When a new sequence is generated, the most complete will be used in this plot. <br><b>Only sequences with less than 50% N calls are included in this analysis.</b>
             <div class="overflow-auto">
         {{ artic_analysis.svg | safe }}
             </div>
@@ -16,14 +16,16 @@
         <br>
 
         {%  if artic_analysis.tree_available %}
-            A simple phylogenetic tree for sequences. Trees are generated using <a href="http://www.iqtree.org/" target="_blank">iqtree</a> after alignment with <a href="https://mafft.cbrc.jp/alignment/software/" target="_blank">mafft</a>. The reference sequence provided for the <a href="https://artic.network/" target="_blank">artic</a> pipeline is used as an outgroup. Trees are visualised using <a href="https://github.com/rambaut/figtree.js" target="_blank">figtree.js</a>. <b>Only sequences with less than 50% N calls are included in this analysis.</b>
-        <div id="tooltip" display="none" style="position: absolute; display: none;"></div>
+            A simple phylogenetic tree for sequences. Trees are generated using <a href="http://www.iqtree.org/" target="_blank">iqtree</a> after alignment with <a href="https://mafft.cbrc.jp/alignment/software/" target="_blank">mafft</a>. The reference sequence provided for the <a href="https://artic.network/" target="_blank">artic</a> pipeline is used as an outgroup. Trees are visualised using <a href="https://github.com/rambaut/figtree.js" target="_blank">figtree.js</a>. <br>
+            <b>Only sequences with less than 50% N calls are included in this analysis.</b>
+            <b>Use the slider to adjust the height of the tree image.</b>
+
             <style>
 
                 .branch {
                     fill: none;
                     stroke: #541753;
-                    stroke-width: 2px;
+                    stroke-width: 1px;
                     stroke-linecap: round;
                     stroke-linejoin: round;
                 }
@@ -56,7 +58,8 @@
                 .internal-node .node-shape {
                     fill: #29c5ef;
                     /*stroke: rgb(255, 255, 255);*/
-                    /*stroke-width: 1;*/
+                    stroke-width: 0px;
+
                 }
 
                 .internal-node .node-shape.hovered {
@@ -78,7 +81,7 @@
 
                 .node-label {
                     font-family: "helvetica-neue", "helvetica", "sans-serif";
-                    font-size: 14pt;
+                    font-size: 12pt;
                     font-weight: 300;
                 }
 
@@ -120,12 +123,21 @@
                     font-weight: 300;
                 }
             </style>
-
+            <div class="slidecontainer">
+                <input type="range" min="1" max="5000" value="500" class="slider" id="myRange">
+            </div>
             <figure>
-                <svg id="mycustomtree" width="50%" height="800"></svg>
+                <svg id="mycustomtree" width="100%" height="500"></svg>
             </figure>
 
+
+
         <script type="module">
+            var slider = document.getElementById("myRange");
+            var output = document.getElementById("demo");
+            const height = document.getElementById("mycustomtree");
+            const initialHeight = height.getAttribute("height");
+            console.log(initialHeight);
             import {
                 Tree,
                 FigTree,
@@ -142,59 +154,50 @@
             const newickString =
                 "{{ artic_analysis.tree }};";
 
-                const tree = Tree.parseNewick(newickString);
+            const tree = Tree.parseNewick(newickString);
+            tree.annotateNode(tree.root,{root:true})
             const treeSVG = document.getElementById('mycustomtree');
             const margins = {top: 20, bottom: 20, left: 20, right: 250};
             const branchSettings = branch().hilightOnHover().reRootOnClick().curve(d3.curveStepBefore);
-            const figTree = new FigTree(treeSVG, margins, tree)
+            const figTree = new FigTree(treeSVG,margins,tree)
                 .layout(rectangularLayout)
                 .nodes(
-                    circle()
-                        //.filter(d => {
-                        //    return d.id !== 'old-root'
-                        //})
-                        .attr("r", 5)
-                        .hilightOnHover(10)
-                        .rotateOnClick(),
-                    tipLabel(d => d.name),
-                    circle()
-                        //.filter(d => {
-                        //    return d.id === 'old-root'
-                        //})
-                        .attr("r", 5)
-                        .hilightOnHover(10)
-                        //.on("click", (d, i, n) => {
-                        //    const oldRoot = tree.getNode(d.id);
-                        //    tree.reroot(oldRoot, 1.0)
-                        //    d3.select(treeSVG)
-                        //        .select(".node#old-root")
-                        //        .attr("display", "none");
-                        //    d3.select(treeSVG)
-                        //        .select(".node-background#old-root")
-                        //        .attr("display", "none");
-                        //    d3.select(treeSVG)
-                        //        .select(".node#root")
-                        //        .attr("display", "inline");
-                        //    d3.select(treeSVG)
-                        //        .select(".node-background#root")
-                        //       .attr("display", "inline");
+                circle()
+                    .attr("r",5)
+                    .hilightOnHover(15)
+                    .rotateOnClick(),
+                    tipLabel(d => {
+                        if (d.name.startsWith("barcode")) {
+                            return d.name;
+                        } else {
+                            return d.name;
+                        }
 
-                        //})
+                    }),
+                    internalNodeLabel(d=>{d.label})
+
                 )
                 .nodeBackgrounds(
                     circle()
-                        .attr("r", 7)
+                        .attr("r",7)
                 )
                 .branches(branchSettings);
 
-            //d3.select(treeSVG)
-            ////    .select(".node#root")
-            //    .attr("display", "none");
-            //d3.select(treeSVG)
-            //    .select(".node-background#root")
-            //    .attr("display", "none");
+            console.log(slider);
+            slider.oninput = function() {
+                height.setAttribute("height", this.value);
+                figTree.update();
+            }
 
-            figTree.addToolTip('#old-root', "This is the position of the root node<br>in the rooted trees, above.<br><br>Click on it to root the tree\n");
+            layout.internalNodeLabels="probability";
+
+            figTree.addToolTip('.internal-node .node-shape', "This is an internal node - it is the most recent<br>common ancestor of the viruses to the right.<br>Click the node to change the order of the descendents." );
+            figTree.addToolTip('.label', "This is a support value - it gives the degree<br>of statistical support that the viruses to the<br>right cluster together");
+            figTree.addToolTip('.external-node', "This is an external, leaf, or tip node - it represents<br>a sampled, sequenced virus");
+            figTree.addToolTip('.branch', "This is a branch - it represents an<br>evolutionary lineage joining two nodes");
+            figTree.addToolTip('.internal-node.root .node-shape ', "The root node - represents the most recent<br>common ancestor of the whole tree");
+
+
 
 
             //ToDO: Work out how to redraw tree without clicking on it.

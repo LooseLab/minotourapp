@@ -37,6 +37,7 @@ from reads.models import (
     FastqRead,
 )
 from readuntil.functions_EB import *
+from pathlib import Path
 
 
 logger = get_task_logger(__name__)
@@ -456,10 +457,18 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
 
     subprocess.Popen(["gunzip", "-f", f"{base_results_directory}/zip_all_barcodes.fasta.gz"]).communicate()
 
+    extraseqs_path = Path(scheme_dir).joinpath(scheme_name,"additional_resources","sequences.fasta")
+
+
+    if extraseqs_path.exists():
+        addthese = str(extraseqs_path)
+    else:
+        addthese = ""
+
     cmd = [
         "bash",
         "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate tree_building && touch {base_results_directory}/zip_all_barcodes.fasta && cat {ref_location}/{reference_name} {base_results_directory}/zip_all_barcodes.fasta {base_results_directory}/barcode*/*.consensus.fasta > {base_results_directory}/all_barcodes.fasta"
+        f"source {MT_CONDA_PREFIX} && conda activate tree_building && touch {base_results_directory}/zip_all_barcodes.fasta && cat {ref_location}/{reference_name} {addthese} {base_results_directory}/zip_all_barcodes.fasta {base_results_directory}/barcode*/*.consensus.fasta > {base_results_directory}/all_barcodes.fasta"
         #f"source {MT_CONDA_PREFIX} && conda activate tree_building && touch {base_results_directory}/zip_all_barcodes.fasta && cat {base_results_directory}/zip_all_barcodes.fasta > {base_results_directory}/all_barcodes.fasta"
     ]
     logger.info(cmd)
@@ -499,10 +508,14 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     logger.info(err)
 
 
+    ## A potential issue here is that the alignment includes files which have been added from elsewhere on the run. These are not interesting for us to look at - so we need to remove them.
+
+    thin_aln(f"{base_results_directory}/all_barcodes.aln", f"{base_results_directory}/all_barcodes_thin.aln",f"{ref_location}/{reference_name}")
+
     cmd = [
         "bash",
         "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate tree_building && snipit {base_results_directory}/all_barcodes.aln -f svg --size-option scale -o {base_results_directory}/snp_plot"
+        f"source {MT_CONDA_PREFIX} && conda activate tree_building && snipit {base_results_directory}/all_barcodes_thin.aln -f svg --size-option scale -o {base_results_directory}/snp_plot"
     ]
     logger.info(cmd)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -524,6 +537,18 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     jm.running = False
     jm.complete = True
     jm.save()
+
+
+def thin_aln(inaln, outaln, reference_file):
+    reference_ids = set()
+    for record in SeqIO.parse(reference_file, 'fasta'):
+        reference_ids.add(record.id)
+    ## Loop through aln file - if the sequence starts with the reference name or barcode write it out.
+    with open(outaln, 'w') as outFile:
+        for record in SeqIO.parse(inaln, 'fasta'):
+            if record.id.startswith("barcode") or record.id in reference_ids:
+                SeqIO.write(record, outFile, 'fasta')
+
 
 
 def save_artic_command_job_masters(flowcell, barcode_name, reference_info, run_id):

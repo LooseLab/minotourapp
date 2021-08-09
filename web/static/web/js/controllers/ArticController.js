@@ -14,6 +14,7 @@ class ArticController {
     })
     this._perBarcodeAverageReadLengthChart = null
     this._perBarcodeCoverageChart = null
+    this._BarcodeCompleteChart = null
     this._coverageSummaryTable = $(`#artic-coverage-summary-table`)
     this._articProportionPieChart = null
     // this._drawArticCharts(this)
@@ -613,6 +614,7 @@ class ArticController {
       that._createOrUpdateSelectionBox(flowcellId)
       that._addListenerToLogSlider(flowcellId)
       that._drawColumnCharts()
+      that._drawBarcodeCompleteChart()
       that._createArticPieChart(flowcellId)
       that._drawOrUpdateSummaryTable(that._coverageSummaryTable, flowcellId)
       that._setArticAnalysisHTML(flowcellId)
@@ -635,6 +637,37 @@ class ArticController {
       }
     }
     console.timeEnd(`scatter`)
+  }
+
+  _drawBarcodeCompleteChart (){
+    if (!this._BarcodeCompleteChart) {
+      this._BarcodeCompleteChart = makeColumnChart(
+          `artic-completed-barcodes`,
+        `BARCODE COMPLETION`,
+        `BARCODE COUNT`
+      )
+    }
+  }
+
+  /**
+   * Update the barcode chart at the top of the page.
+   * @param flowcellId {number} The number of the flowcell charts
+   * @private
+   */
+  _updateBarcodeCompleteChart (barcode_data) {
+    const chartSeries = this._BarcodeCompleteChart.series
+    const indexInArray = chartSeries.findIndex(obj => obj.name === `Seen`)
+    console.log(indexInArray)
+    if (typeof chartSeries !== 'undefined') {
+      while (this._BarcodeCompleteChart.series.length > 0)
+        this._BarcodeCompleteChart.series[0].remove(true);
+    }
+    console.log(barcode_data["Seen"])
+    for (const [key, value] of Object.entries(barcode_data)) {
+      console.log(`${key}: ${value}`);
+      this._BarcodeCompleteChart.addSeries({ name: key, data: value});
+    }
+
   }
 
   /**
@@ -691,6 +724,7 @@ class ArticController {
           chartSeriesReadLength[indexInArray].setData(data.average_read_length)
         }
       } else { // Add the series
+        console.log(data.read_counts)
         this._perBarcodeCoverageChart.addSeries({ name: `Read Counts`, data: data.read_counts })
         this._perBarcodeAverageReadLengthChart.addSeries({
           name: `Average read length`,
@@ -716,6 +750,7 @@ class ArticController {
       // null for callback function, false for reset paging
       datatableObj.DataTable().ajax.reload(null, false)
     } else {
+      var that = this;
       // else the datatable must be initialised
       datatableObj.DataTable({
         dom: `Bfrtip`,
@@ -756,12 +791,32 @@ class ArticController {
           data: {
             flowcellId
           },
+          "dataSrc": function ( json ) {
+                var barcode_data  = {}
+          barcode_data['Seen']=[Object.keys(json['data'].filter(function (el){
+                return el.barcode_name!=='unclassified';
+            })).length]
+          barcode_data['Projected']=[Object.keys(json['data'].filter(function (el){
+                return el.barcode_name!=='unclassified' && el.projected_to_finish;
+            })).length]
+          barcode_data['Sufficient']=[Object.keys(json['data'].filter(function (el){
+                return el.barcode_name!=='unclassified' && el.has_sufficient_coverage;
+            })).length]
+            barcode_data['Finished']=[Object.keys(json['data'].filter(function (el){
+                return el.barcode_name!=='unclassified' && el.has_finished;
+            })).length]
+          that._updateBarcodeCompleteChart(barcode_data);
+                //Make your callback here.
+                //alert("Done!");
+                console.log(json['data']);
+                return json.data;
+            },
           async: true,
           error: (xhr, error, code) => {
             console.error(xhr)
             console.error(error)
-          }
-        },
+          },
+           },
         columnDefs: [
           { targets: 0, data: `barcode_name` },
           { targets: 1, data: `chromosome__line_name` },
