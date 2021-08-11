@@ -175,7 +175,7 @@ class AlignmentController {
     if ($.fn.DataTable.isDataTable(table)) {
       table.DataTable().ajax.reload(null, false)
     } else {
-      // else the databale must be initialised
+      // else the datatable must be initialised
       table.DataTable(
         {
           ajax: {

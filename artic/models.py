@@ -1,8 +1,10 @@
 """Model classes for the artic app."""
+from django.contrib.auth.models import User
 from django.db import models
 
 from minknow_data.models import Flowcell
 from reads.models import JobMaster, Barcode
+from reference.models import ReferenceInfo
 
 
 class ArticFireConditions(models.Model):
@@ -55,3 +57,4 @@ class ArticBarcodeMetadata(models.Model):
 
     def __str__(self):
         return f"{self.flowcell} {self.job_master} {self.barcode}"
+

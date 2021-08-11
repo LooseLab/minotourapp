@@ -11,7 +11,6 @@ from django.db import connection
 from alignment.models import PafRoughCov
 from minknow_data.models import Flowcell
 from minotourapp.celery import app, MyTask
-from minotourapp.settings import BASE_DIR
 from minotourapp.utils import get_env_variable
 from reads.models import JobMaster, FastqRead, FastqFile, FlowcellChannelSummary, FlowcellHistogramSummary, \
     FlowcellSummaryBarcode, FlowcellStatisticBarcode
@@ -57,16 +56,15 @@ def clear_artic_data(job_master):
     )
 
     if not results_dir.exists():
-        exit_code = 1
+        return 1
     else:
         # clear pngs from artic static dir
-        rmtree(Path(f"{BASE_DIR}/artic/static/artic/{job_master.flowcell.id}_{job_master.id}_artic/"), onerror=on_delete_error)
         rmtree(results_dir, onerror=on_delete_error)
         return 0
 
 
 @app.task
-def delete_flowcell(flowcell_job_id):
+def delete_flowcell(flowcell_id):
     """
     Delete all reads from a flowcell, then delete the flowcell itself.
     Parameters
@@ -80,7 +78,7 @@ def delete_flowcell(flowcell_job_id):
     """
     # Get the flowcell jobMaster entry
     start_time = time.time()
-    flowcell_job = JobMaster.objects.get(pk=flowcell_job_id)
+    flowcell_job = JobMaster.objects.filter(flowcell_id=flowcell_id, job_type_id=12).last()
     # Get the flowcell
     flowcell = flowcell_job.flowcell
     delete_chunk_size = 5000
@@ -96,7 +94,7 @@ def delete_flowcell(flowcell_job_id):
     # if we have both a first and last read PK
     if last_fastq_read:
         # Get the last fastqread primary key
-        # Counter is the first read primary key
+        # Counter is the first 2read primary key
         # Whilst we still have reads left
         # counter = counter + 20000
         logger.info(
@@ -111,7 +109,7 @@ def delete_flowcell(flowcell_job_id):
             f"Flowcell id: {flowcell.id} - Deleted {delete_chunk_size} fastqread records in {time.time()-start_time}."
         )
         # TODO could this be rewritten into celery chunks?
-        delete_flowcell.apply_async(args=(flowcell_job_id,))
+        delete_flowcell.apply_async(args=(flowcell_id,))
     else:
         if PafRoughCov.objects.filter(flowcell=flowcell).count() > 50000:
             fj = flowcell.flowcell_jobs.filter(job_type_id=4)

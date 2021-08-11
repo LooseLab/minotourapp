@@ -55,7 +55,7 @@ urlpatterns = [
     ),
     url(r"^api/v1/artic/fetch-png-html/$", views.png_html, name="png-html"),
     url(
-        r"^api/v1/artic/fetch-amplicon-bands/$",
+        r"^api/v1/artic/(?P<pk>[0-9]+)/fetch-amplicon-bands/$",
         views.get_amplicon_bands_for_master,
         name="amplicon-bands",
     ),
@@ -98,5 +98,15 @@ urlpatterns = [
         r"^api/v1/artic/(?P<pk>[0-9]+)/export-report/",
         views.export_artic_report,
         name="export-artic-report"
+    ),
+    url(
+        r"^api/v1/artic/manager/",
+        views.primer_manager,
+        name="primers-manager"
+    ),
+    url(
+        r"^api/v1/artic/schemes/",
+        views.PrimerSchemeList.as_view(),
+        name="schemey"
     )
 ]

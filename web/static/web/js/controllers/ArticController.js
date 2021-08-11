@@ -160,7 +160,7 @@ class ArticController {
    */
   _createCoverageMaster (data, flowcellId) {
     const that = this
-    this._axiosInstance.get(`/api/v1/artic/fetch-amplicon-bands`).then(response => {
+    this._axiosInstance.get(`/api/v1/artic/${flowcellId}/fetch-amplicon-bands`).then(response => {
       const bands = response.data.amplicon_band_coords
       const colourLookup = response.data.colours
       const highChartsBands = []

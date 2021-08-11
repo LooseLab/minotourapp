@@ -8,10 +8,13 @@ from collections import defaultdict,Counter
 from copy import deepcopy
 from datetime import datetime, timezone, timedelta
 from io import StringIO
+from pathlib import Path
 from shutil import rmtree
 from Bio import SeqIO
 
 
+import numpy as np
+import pandas as pd
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from git import Repo
@@ -31,16 +34,19 @@ from minotourapp.celery import app
 from minotourapp.utils import get_env_variable
 from reads.models import (
     JobMaster,
+    PrimerScheme,
     JobType,
     Barcode,
     FlowcellSummaryBarcode,
     FastqRead,
 )
+
 from readuntil.functions_EB import *
 from pathlib import Path
 
 
 logger = get_task_logger(__name__)
+
 
 
 
@@ -78,6 +84,77 @@ def percent_N(seq):
 #         #test.s('Happy Mondays!'),
 #         Update_VoCs.s(),
 #     )
+
+def multi_array_results(ref_length):
+    """
+    Create a structured array to contain the counts of the nucleotide bases mapped to each position on the reference
+    :param ref_length: The length of the reference chromosome
+    :type ref_length: int
+    :return: A filled multi dimensional array, the length of the reference chromosome
+    """
+    # multiply out a list to create as many copies as there are bases
+    a = [tuple(0 for i in range(9))] * ref_length
+    # Create a structure data array with named data types - create 9 copies of the above list in a list,
+    # and make the structured array with them
+    multi_arr = np.array(
+        [a for i in range(8)][0],
+        dtype=[
+            ("A", np.uint16),
+            ("C", np.uint16),
+            ("G", np.uint16),
+            ("T", np.uint16),
+            ("D", np.uint16),
+            ("I", np.uint16),
+            ("IC", np.uint16),
+            ("M", np.uint16),
+            ("U", np.bool),
+        ],
+    )
+    # return our new numpy array
+    return multi_arr
+
+
+def readfq(fp):
+    """
+    DocString
+    """
+    # this is a generator function
+    last = None  # this is a buffer keeping the last unprocessed line
+    while True:  # mimic closure; is it a bad idea?
+        if not last:  # the first record or a record following a fastq
+            for l in fp:  # search for the start of the next record
+                if l[0] in ">@":  # fasta/q header line
+                    last = l[:-1]  # save this line
+                    break
+        if not last:
+            break
+        desc, name, seqs, last = last[1:], last[1:].partition(" ")[0], [], None
+        for l in fp:  # read the sequence
+            if l[0] in "@+>":
+                last = l[:-1]
+                break
+            seqs.append(l[:-1])
+        if not last or last[0] != "+":  # this is a fasta record
+            yield desc, name, "".join(seqs), None  # yield a fasta record
+            if not last:
+                break
+        else:  # this is a fastq record
+            seq, leng, seqs = "".join(seqs), 0, []
+            for l in fp:  # read the quality
+                seqs.append(l[:-1])
+                leng += len(l) - 1
+                if leng >= len(seq):  # have read enough quality
+                    last = None
+                    yield desc, name, seq, "".join(
+                        seqs
+                    )  # yield a fastq record
+                    break
+            if last:  # reach EOF before reading enough quality
+                yield desc, name, seq, None  # yield a fasta record instead
+                break
+
+
+
 
 @app.task
 def update_vocs():
@@ -137,19 +214,22 @@ def check_afc_values_met(afc, coverage_array, num_amplicons, run_id, barcode_nam
     return met_for_this_afc
 
 
-def get_amplicon_infos():
+def get_amplicon_infos(job_master):
     """
     get amplicon band coordinates
+    Parameters
+    ----------
+    job_master: reads.models.JobMaster
+        Artic Task
     Returns
     -------
     (num_amplicons, amplicon_band_coords): (int, list)
         Tuple containing number of amplicons and the amplicon band coordinates
-
     """
-    # todo hardcoded scheme atm, need to attach to JobMaster somehow
-    scheme = get_env_variable("MT_ARTIC_SCHEME_NAME") #"nCoV-2019"
-    scheme_version = get_env_variable("MT_ARTIC_SCHEME_VER") # "V3"
-    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
+    scheme = job_master.primer_scheme.scheme_species
+    scheme_version = job_master.primer_scheme.scheme_version
+    scheme_dir = job_master.primer_scheme.scheme_directory
+    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version, scheme_dir)
     num_amplicons = len(amplicon_band_coords)
     return (num_amplicons, amplicon_band_coords)
 
@@ -404,9 +484,9 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         fastq_path += ".gz"
     # TODO get the barcode from the posix path for the sample name
     logger.info(fastq_path)
-    scheme_name = get_env_variable("MT_ARTIC_SCHEME_NAME")
-    scheme_ver = get_env_variable("MT_ARTIC_SCHEME_VER")
-    scheme_dir = get_env_variable("MT_ARTIC_SCHEME_DIR")
+    scheme_name = jm.primer_scheme.scheme_species
+    scheme_ver = jm.primer_scheme.scheme_version
+    scheme_dir = jm.primer_scheme.scheme_directory
     artic_env = get_env_variable("MT_ARTIC_ENV")
     normalise = get_env_variable("MT_ARTIC_NORMALIZE")
     threads = get_env_variable("MT_ARTIC_THREADS")
@@ -551,7 +631,7 @@ def thin_aln(inaln, outaln, reference_file):
 
 
 
-def save_artic_command_job_masters(flowcell, barcode_name, reference_info, run_id):
+def save_artic_command_job_masters(flowcell, barcode_name, reference_info, run_id, primer_scheme):
     """
     Save the JobMasters that we need to manage the queue of tasks.
     Parameters
@@ -572,13 +652,14 @@ def save_artic_command_job_masters(flowcell, barcode_name, reference_info, run_i
     if barcode_name == "unclassified":
         return
     job_type = JobType.objects.get(name="Run Artic")
-    # TODO potential bug here where the barcode name on the reads is not the barcode name we save and alos multiple runs. if force unique is false
+    # TODO potential bug here where the barcode name on the reads is not the barcode name we save and also multiple runs. if force unique is false
     barcode_object = Barcode.objects.get(run_id=run_id, name=barcode_name)
     job_master, created = JobMaster.objects.get_or_create(
         job_type=job_type,
         reference=reference_info,
         barcode=barcode_object,
         flowcell=flowcell,
+        primer_scheme=primer_scheme
     )
     if not created:
         logger.info("Firing artic due to condition being met again")
@@ -830,6 +911,10 @@ def run_artic_pipeline(task_id, streamed_reads=None):
     # The location of the mimimap2 executable
     minimap2 = getattr(settings, "MINIMAP2", None)
     task = JobMaster.objects.get(pk=task_id)
+    ### The primer scheme being used is:
+    primer_scheme = task.primer_scheme
+
+
     if not task.reference:
         raise ValueError("Missing Reference file. Please sort out.")
     flowcell = task.flowcell
@@ -1069,7 +1154,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                 paf_summary_cov_orm.save()
             # TODO only ever see one chromosome, so we can remove for loop?
             barcodes_already_fired = fetch_barcode_to_fire_list(base_result_dir_path)
-            num_amplicons, amplicon_band_coords = get_amplicon_infos()
+            num_amplicons, amplicon_band_coords = get_amplicon_infos(task)
             time_stamp = datetime.now()
             df_new_dict = {}
             # TODO split into own function
@@ -1174,7 +1259,7 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         if barcode_name not in barcodes_already_fired:
                             add_barcode_to_tofire_file(barcode_name, base_result_dir_path)
                         save_artic_command_job_masters(
-                            flowcell, barcode_name, reference_info, run_id
+                            flowcell, barcode_name, reference_info, run_id, primer_scheme
                         )
                         has_sufficient_coverage = True
                     # save the artic per barcode_name metadata

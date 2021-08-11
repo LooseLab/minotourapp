@@ -1,18 +1,24 @@
 import datetime
 import gzip
 import json
+import os
 import tarfile
 from collections import defaultdict
+from pathlib import Path
+from shutil import rmtree
 from urllib.parse import parse_qs
 
 import pandas as pd
+from django.db.models import Q
+from django.db.utils import IntegrityError
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from matplotlib.figure import Figure
 from rest_framework import status
 from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.renderers import JSONRenderer, TemplateHTMLRenderer
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from weasyprint import HTML, CSS
 
 from alignment.models import PafSummaryCov
@@ -24,11 +30,12 @@ from artic.utils import (
     quick_get_artic_results_directory,
     remove_duplicate_sequences_numpy,
     get_all_results,
-    get_amplicon_stats, get_artic_run_stats,
+    get_amplicon_stats,
+    get_artic_run_stats,
 )
 from minknow_data.models import Flowcell
 from minotourapp.utils import get_env_variable
-from reads.models import JobMaster, FlowcellSummaryBarcode, Barcode
+from reads.models import JobMaster, FlowcellSummaryBarcode, Barcode, PrimerScheme
 from reference.models import ReferenceInfo
 
 import fnmatch
@@ -76,7 +83,9 @@ def export_artic_report(request, pk):
                 ax.set_xlabel(f"Reference position")
                 ax.set_ylabel(f"Coverage")
                 fig.savefig(f"/tmp/{task.id}_{selected_barcode}.png")
-                data_2["coverage_graph"] = f"file:///tmp/{task.id}_{selected_barcode}.png"
+                data_2[
+                    "coverage_graph"
+                ] = f"file:///tmp/{task.id}_{selected_barcode}.png"
             json_path = (
                 artic_results_path
                 / selected_barcode
@@ -116,15 +125,23 @@ def export_artic_report(request, pk):
                     justify="left",
                 )
                 data["hidden_html_string2"] = html_string
-            voc_report_html_string = render(
-                request,
-                "artic-variant-of-concern.html",
-                context={"artic_barcode_VoC": data},
-            ).getvalue().decode()
+            voc_report_html_string = (
+                render(
+                    request,
+                    "artic-variant-of-concern.html",
+                    context={"artic_barcode_VoC": data},
+                )
+                .getvalue()
+                .decode()
+            )
             data["barcode_name"] = selected_barcode
             data["voc_report_html"] = voc_report_html_string
-            data["artic_bar_plot_path"] = f"file:///{str(artic_results_path)}/{selected_barcode}/{selected_barcode}-barplot.png"
-            data["artic_box_plot_path"] = f"file:///{str(artic_results_path)}/{selected_barcode}/{selected_barcode}-boxplot.png"
+            data[
+                "artic_bar_plot_path"
+            ] = f"file:///{str(artic_results_path)}/{selected_barcode}/{selected_barcode}-barplot.png"
+            data[
+                "artic_box_plot_path"
+            ] = f"file:///{str(artic_results_path)}/{selected_barcode}/{selected_barcode}-boxplot.png"
             data.update(data_2)
             HTML(
                 string=render(
@@ -134,11 +151,16 @@ def export_artic_report(request, pk):
                 f"/tmp/{task.id}_{selected_barcode}_artic_report.pdf",
                 stylesheets=[
                     CSS("web/static/web/css/artic-report.css"),
-                    CSS("web/static/web/libraries/bootstrap-4.5.0-dist/css/bootstrap.css"),
+                    CSS(
+                        "web/static/web/libraries/bootstrap-4.5.0-dist/css/bootstrap.css"
+                    ),
                 ],
             )
             try:
-                tar.add(f"/tmp/{task.id}_{selected_barcode}_artic_report.pdf", recursive=False)
+                tar.add(
+                    f"/tmp/{task.id}_{selected_barcode}_artic_report.pdf",
+                    recursive=False,
+                )
             except FileNotFoundError as e:
                 print("file not found")
         artic_summary_pdf_path = get_artic_run_stats(pk, request.data, request, task)
@@ -148,9 +170,7 @@ def export_artic_report(request, pk):
             print("file not found")
     with open(tar_file_path, "rb") as fh:
         response = HttpResponse(fh.read(), content_type="application/zip")
-        response[
-            "Content-Disposition"
-        ] = f"attachment; filename={tar_file_name}"
+        response["Content-Disposition"] = f"attachment; filename={tar_file_name}"
         response["x-file-name"] = tar_file_name
     return response
 
@@ -242,7 +262,8 @@ def get_artic_barcodes(request):
     barcodes_list = []
     if not artic_results_path.exists():
         return Response(
-            "Artic results directory not found. {}".format(artic_results_path), status=status.HTTP_404_NOT_FOUND
+            "Artic results directory not found. {}".format(artic_results_path),
+            status=status.HTTP_404_NOT_FOUND,
         )
     for item in artic_results_path.iterdir():
         if item.is_dir():
@@ -350,9 +371,13 @@ def get_artic_detail_chart_data(request):
         coverage, minimum=mini
     )
     # Get the primer bands
-    scheme = get_env_variable("MT_ARTIC_SCHEME_NAME")
-    scheme_version = get_env_variable("MT_ARTIC_SCHEME_VER")
-    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
+    artic_task = get_object_or_404(JobMaster, pk=artic_task_id)
+    scheme_dir = artic_task.primer_scheme.scheme_directory
+    scheme = artic_task.primer_scheme.scheme_species
+    scheme_version = artic_task.primer_scheme.scheme_version
+    amplicon_band_coords, colours = get_amplicon_band_data(
+        scheme, scheme_version, scheme_dir
+    )
     data_dict = {
         "coverage": {"xmax": xmax_cov, "ymax": ymax_cov, "data": x_y_cov},
         "amplicon_bands": amplicon_band_coords,
@@ -433,7 +458,7 @@ def get_artic_summary_table_data(request):
     flowcell, artic_results_path, jm_id, _ = quick_get_artic_results_directory(
         flowcell_id
     )
-    artic_task = JobMaster.objects.get(pk=jm_id)
+    artic_task = get_object_or_404(JobMaster, pk=jm_id)
     if not artic_task:
         return Response(
             "no coverage tracking task running on this flowcell.",
@@ -456,9 +481,12 @@ def get_artic_summary_table_data(request):
         )
     }
     # dictionaries change in place
-    scheme = get_env_variable("MT_ARTIC_SCHEME_NAME")
-    scheme_version = get_env_variable("MT_ARTIC_SCHEME_VER")
-    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
+    scheme_dir = artic_task.primer_scheme.scheme_directory
+    scheme = artic_task.primer_scheme.scheme_species
+    scheme_version = artic_task.primer_scheme.scheme_version
+    amplicon_band_coords, colours = get_amplicon_band_data(
+        scheme, scheme_version, scheme_dir
+    )
     num_amplicons = len(amplicon_band_coords)
     time_stamp = datetime.datetime.now()
     for paf_summary_cov in queryset:
@@ -488,7 +516,7 @@ def get_artic_summary_table_data(request):
                     / barcode_name
                     / f"{barcode_name}_ARTIC_medaka.csv.gz"
                 )
-                VoCs = VoCs_df['phe-label'] + " (" + VoCs_df['status'] +")"
+                VoCs = VoCs_df["phe-label"] + " (" + VoCs_df["status"] + ")"
             except FileNotFoundError:
                 VoCs = "None Found"
         else:
@@ -649,8 +677,8 @@ def get_artic_voc_html(request):
     )
     if csv_path.exists():
         df = pd.read_csv(csv_path)
-        df = df.drop(['sampleID'], axis=1)
-        html_string = df.set_index('type').T.to_html(
+        df = df.drop(["sampleID"], axis=1)
+        html_string = df.set_index("type").T.to_html(
             classes="table table-sm table-responsive", border=0, justify="left"
         )
         data["hidden_html_string"] = html_string
@@ -683,7 +711,6 @@ def get_artic_voc_html(request):
         data["lineage"] = lineage
     except FileNotFoundError:
         lineage = "Unknown"
-
 
     return render(
         request, "artic-variant-of-concern.html", context={"artic_barcode_VoC": data},
@@ -1009,9 +1036,8 @@ def png_html(request):
 
 
 @api_view(["GET"])
-def get_amplicon_bands_for_master(request):
+def get_amplicon_bands_for_master(request, pk):
     """
-    TODO should contain scheme and scheme version
     Get the amplicon x and y coordinates for the master chart on initialisation
     Parameters
     ----------
@@ -1024,9 +1050,19 @@ def get_amplicon_bands_for_master(request):
 
     """
     # Get the primer bands
-    scheme = get_env_variable("MT_ARTIC_SCHEME_NAME")
-    scheme_version = get_env_variable("MT_ARTIC_SCHEME_VER")
-    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version)
+    (
+        flowcell,
+        artic_results_path,
+        artic_task_id,
+        _,
+    ) = quick_get_artic_results_directory(pk)
+    jm = get_object_or_404(JobMaster, pk=int(artic_task_id))
+    scheme = jm.primer_scheme.scheme_species
+    scheme_version = jm.primer_scheme.scheme_version
+    scheme_dir = jm.primer_scheme.scheme_directory
+    amplicon_band_coords, colours = get_amplicon_band_data(
+        scheme, scheme_version, scheme_dir
+    )
     data_dict = {"amplicon_band_coords": amplicon_band_coords, "colours": colours}
     return Response(data_dict, status=status.HTTP_200_OK)
 
@@ -1181,3 +1217,110 @@ def mark_all_barcodes_for_pipeline(request, pk):
             barcode.marked_for_rerun = True
             barcode.save()
     return Response("Marked all barcodes to be run.")
+
+
+class PrimerSchemeList(APIView):
+    """
+    Upload Primer schemes via the GUI
+    """
+
+    def get(self, request):
+        qs = list(PrimerScheme.objects.filter(Q(owner=request.user) | Q(private=False)))
+        qs = [
+            {   "id": q.id,
+                "deletable": q.owner.id == request.user.id,
+                "scheme_version": q.scheme_version,
+                "scheme_species": q.scheme_species,
+                "private": q.private,
+            }
+            for q in qs
+        ]
+
+        return Response({"data": qs}, status=status.HTTP_200_OK,)
+
+    def post(self, request):
+        print(request.FILES)
+        files = request.FILES.getlist("file_location")
+        print(request.POST)
+        file_dict = {}
+        bool_dict = {"false": False, "true": True}
+        scheme_versions = (
+            request.POST["scheme_version"]
+            if request.POST["scheme_version"].startswith("V")
+            else f"V{request.POST['scheme_version']}"
+        )
+        user_destination = (
+            f'{get_env_variable("MT_ARTIC_SCHEME_DIR")}/{request.user.get_username()}/'
+            f'{request.POST["scheme_name"]}/'
+            f"{scheme_versions}"
+        )
+        Path(user_destination).mkdir(exist_ok=True, parents=True)
+        for file in files:
+            pathy = f"{user_destination}/{file.name}"
+            if os.path.exists(pathy):
+                return Response(
+                    f"Primer scheme and version already contains file {file.name} for user {request.user.get_username()}",
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            if file.name.endswith(".scheme.bed"):
+                file_dict["bed_file"] = pathy
+            elif file.name.endswith(".reference.fasta"):
+                file_dict["ref_file"] = pathy
+            else:
+                return Response(
+                    "File with unnacceptable ending found. Files must end .scheme.bed or .reference.fasta",
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        for file in files:
+            pathy = f"{user_destination}/{file.name}"
+            with open(pathy, "wb+") as destination:
+                for chunk in file.chunks():
+                    destination.write(chunk)
+        ps = PrimerScheme(
+            scheme_species=request.POST["scheme_name"],
+            private=bool_dict[request.POST["private"]],
+            _scheme_version=scheme_versions,
+            _scheme_directory=f'{get_env_variable("MT_ARTIC_SCHEME_DIR")}/{request.user.get_username()}/',
+            bed_file=file_dict["bed_file"],
+            reference_file=file_dict["ref_file"],
+            owner=request.user,
+        )
+        try:
+            ps.save()
+        except IntegrityError as e:
+            print(ps.__dict__)
+            os.unlink(ps.bed_file)
+            os.unlink(ps.reference_file)
+            return Response(
+                "Primer scheme and version already exist.",
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return Response(status=status.HTTP_201_CREATED)
+
+    def delete(self, request):
+        pk = request.data.get("pk", False)
+        if not pk:
+            return Response(
+                "Primary key for primer scheme to be deleted not provided.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        ps = get_object_or_404(PrimerScheme, pk=pk)
+        version_dir = Path(ps.bed_file).parent
+        rmtree(version_dir)
+        ps.delete()
+        return Response("Scheme successfully destroyed.", status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def primer_manager(request):
+    """
+
+    Parameters
+    ----------
+    request: rest_framework.request.Request
+        The request object of the AJAX request
+    Returns
+    -------
+
+    """
+    return render(request, "primer_scheme_manager.html", context={"request": request})

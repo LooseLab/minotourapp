@@ -1412,7 +1412,7 @@ def job_master_list(request):
                 )
             # Get all the JobMasters for this flowcell, excluding job type other - which are for background sub tasks
             tasks_list = JobMaster.objects.filter(
-                flowcell__id=int(flowcell_id)
+                flowcell_id=int(flowcell_id)
             ).exclude(job_type__name__in=["Other", "Run Artic"])
             # Serialise the data to a python object
             serializer = JobMasterSerializer(tasks_list, many=True)
@@ -1430,7 +1430,7 @@ def job_master_list(request):
             return Response(
                 "Bad search criteria provided", status=status.HTTP_400_BAD_REQUEST
             )
-    # Its a post request to create a new task
+    # Its a post request to create a new task todo this is literally the worst code ever
     else:
         try:
             # Get the flowcell by name
