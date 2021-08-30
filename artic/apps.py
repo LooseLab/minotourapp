@@ -20,10 +20,8 @@ class ArticConfig(AppConfig):
 
         """
         from artic.utils import check_artic_static_exists, update_pangolin
-
         check_artic_static_exists()
         from minotourapp.utils import get_env_variable
-
         MT_VoC_PATH = get_env_variable("MT_VoC_PATH")
         if Path(f"{MT_VoC_PATH}").exists():
             print("VoC Path Found")
