@@ -1,4 +1,5 @@
 import datetime
+import fnmatch
 import gzip
 import json
 import os
@@ -37,10 +38,6 @@ from minknow_data.models import Flowcell
 from minotourapp.utils import get_env_variable
 from reads.models import JobMaster, FlowcellSummaryBarcode, Barcode, PrimerScheme
 from reference.models import ReferenceInfo
-
-import fnmatch
-
-
 
 
 @api_view(["POST"])
@@ -1285,7 +1282,16 @@ class PrimerSchemeList(APIView):
             reference_file=file_dict["ref_file"],
             owner=request.user,
         )
+        coords, cols = get_amplicon_band_data(ps.scheme_species, ps.scheme_version, ps.scheme_directory)
+        print(coords)
+        coords = np.array(coords)[:,:2].astype(int)
+        coords = (coords[:,1:2] - coords[:,:1]) + 150
+        mean_length = coords.mean()
+        min_length = mean_length - mean_length * 0.3
+        max_length = mean_length + mean_length * 0.5
         try:
+            ps.min_read_len = int(min_length)
+            ps.max_read_len = int(max_length)
             ps.save()
         except IntegrityError as e:
             print(ps.__dict__)
