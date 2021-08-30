@@ -4,20 +4,19 @@ import gzip
 import os
 import pickle
 import subprocess
-from collections import defaultdict,Counter
+from collections import defaultdict, Counter
 from copy import deepcopy
 from datetime import datetime, timezone, timedelta
 from io import StringIO
 from pathlib import Path
 from shutil import rmtree
-from Bio import SeqIO
-
+from textwrap import fill
 
 import numpy as np
-import pandas as pd
 from celery.utils.log import get_task_logger
 from django.conf import settings
 from git import Repo
+from pyfastx import Fastx, Fasta
 
 from alignment.models import PafSummaryCov
 from artic.models import ArticBarcodeMetadata, ArticFireConditions
@@ -34,56 +33,67 @@ from minotourapp.celery import app
 from minotourapp.utils import get_env_variable
 from reads.models import (
     JobMaster,
-    PrimerScheme,
     JobType,
     Barcode,
     FlowcellSummaryBarcode,
     FastqRead,
 )
-
 from readuntil.functions_EB import *
-from pathlib import Path
-
 
 logger = get_task_logger(__name__)
 
 
+def remove_dups(infasta, outfasta, maxN=50):
+    """
 
+    Parameters
+    ----------
+    infasta: str
+        path to the input, potentially duplicated fasta
+    outfasta: str
+        Path to write the new cleaned fasta to
+    maxN: int
+        The maximum tolerated percent of Ns in the sequence
 
-def remove_dups(infasta,outfasta, maxN=50):
-    records_collection = dict()
-    for record in SeqIO.parse(infasta, 'fasta'):
-        if percent_N(record.seq) <= maxN:
-            if record.id not in records_collection.keys():
-                records_collection[record.id] = dict()
-                records_collection[record.id]["seq"] = record
-                records_collection[record.id]['proportionN'] = percent_N(record.seq)
-            elif percent_N(record.seq) <= records_collection[record.id]['proportionN']:
-                records_collection[record.id]["seq"] = record
-                records_collection[record.id]['proportionN'] = percent_N(record.seq)
-    with open(outfasta, 'w') as outFile:
-        for record in records_collection:
-            SeqIO.write(records_collection[record]["seq"],outFile,'fasta')
+    Returns
+    -------
+
+    """
+    records_collection = {}
+    for name, seq, comment in Fastx(infasta, uppercase=True):
+        if percent_N(seq) <= maxN:
+            if name not in records_collection:
+                records_collection[name] = {
+                    "seq": seq,
+                    "proportionN": percent_N(seq)
+                }
+            elif percent_N(seq) <= records_collection[name]["proportionN"]:
+                records_collection[name]["seq"] = seq
+                records_collection[name]["proportionN"] = percent_N(seq)
+    with open(outfasta, "w") as cleaned_fasta:
+        fasta_str = "\n".join([f">{seq_id}\n{fill(info['seq'], width=80)}" for seq_id, info in records_collection.items()])
+        cleaned_fasta.write(fasta_str)
 
 
 def percent_N(seq):
-    res=Counter(seq.upper())
+    """
+    Return Percentage of bases unknown in a sequence
+    Parameters
+    ----------
+    seq: str
+        FASTA seequnce string
+
+    Returns
+    -------
+    float
+        Percentage of Ns
+    """
+    res = Counter(seq.upper())
     try:
-        return float(res['N'] / sum(res.values()) * 100)
+        return float(res["N"] / len(seq) * 100)
     except:
-        return float(100)
+        return 100.0
 
-
-
-
-# @app.on_after_finalize.connect
-# def setup_periodic_tasks(sender, **kwargs):
-#     #check for update of VoCs every 24 hours.
-#     sender.add_periodic_task(
-#         crontab(hour=0, minute=0),
-#         #test.s('Happy Mondays!'),
-#         Update_VoCs.s(),
-#     )
 
 def multi_array_results(ref_length):
     """
@@ -145,15 +155,11 @@ def readfq(fp):
                 leng += len(l) - 1
                 if leng >= len(seq):  # have read enough quality
                     last = None
-                    yield desc, name, seq, "".join(
-                        seqs
-                    )  # yield a fastq record
+                    yield desc, name, seq, "".join(seqs)  # yield a fastq record
                     break
             if last:  # reach EOF before reading enough quality
                 yield desc, name, seq, None  # yield a fasta record instead
                 break
-
-
 
 
 @app.task
@@ -171,11 +177,15 @@ def update_vocs():
             pass
         else:
             logger.info("Creating VOCS repo")
-            cloned_repo = Repo.clone_from("https://github.com/phe-genomics/variant_definitions",
-                                          f"{MT_VoC_PATH}/variant_definitions/")
+            cloned_repo = Repo.clone_from(
+                "https://github.com/phe-genomics/variant_definitions",
+                f"{MT_VoC_PATH}/variant_definitions/",
+            )
 
 
-def check_afc_values_met(afc, coverage_array, num_amplicons, run_id, barcode_name, task):
+def check_afc_values_met(
+    afc, coverage_array, num_amplicons, run_id, barcode_name, task
+):
     """
     Check if this artic fire condition has been met on this barcode
     Parameters
@@ -200,7 +210,9 @@ def check_afc_values_met(afc, coverage_array, num_amplicons, run_id, barcode_nam
     """
     try:
         barcode = Barcode.objects.get(run_id=run_id, name=barcode_name)
-        abm, created = ArticBarcodeMetadata.objects.get_or_create(flowcell=task.flowcell, job_master=task, barcode=barcode)
+        abm, created = ArticBarcodeMetadata.objects.get_or_create(
+            flowcell=task.flowcell, job_master=task, barcode=barcode
+        )
     except Barcode.DoesNotExist as e:
         logger.warning(f"Failed to update the Barcode metadata error: {e}")
     # check if the percent of amplicons median coverage is more than our preset and we haven't already fired
@@ -229,7 +241,9 @@ def get_amplicon_infos(job_master):
     scheme = job_master.primer_scheme.scheme_species
     scheme_version = job_master.primer_scheme.scheme_version
     scheme_dir = job_master.primer_scheme.scheme_directory
-    amplicon_band_coords, colours = get_amplicon_band_data(scheme, scheme_version, scheme_dir)
+    amplicon_band_coords, colours = get_amplicon_band_data(
+        scheme, scheme_version, scheme_dir
+    )
     num_amplicons = len(amplicon_band_coords)
     return (num_amplicons, amplicon_band_coords)
 
@@ -266,7 +280,7 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
         ".muscle.out.fasta",
         ".counts.dat",
         ".coverage.dat",
-        "_ARTIC_medaka.csv"
+        "_ARTIC_medaka.csv",
     ]
     if int(
         get_env_variable("MT_DESTROY_ARTIC_EVIDENCE")
@@ -290,12 +304,19 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
     for filey in artic_results_pathlib.iterdir():
         # delete pangolin tree files
         if filey.is_dir():
-            #protect the json for lineage analysis
-            if os.path.basename(os.path.normpath(filey)) != "json_files" and os.path.basename(os.path.normpath(filey)) != "csv_files":
+            # protect the json for lineage analysis
+            if (
+                os.path.basename(os.path.normpath(filey)) != "json_files"
+                and os.path.basename(os.path.normpath(filey)) != "csv_files"
+            ):
                 rmtree(filey, ignore_errors=True)
         elif f"{filey.name}" not in files_to_keep_full:
             filey.unlink()
-        elif not filey.suffix == ".gz" and filey.suffix not in [".dat", ".png", ".fastq"]:
+        elif not filey.suffix == ".gz" and filey.suffix not in [
+            ".dat",
+            ".png",
+            ".fastq",
+        ]:
             subprocess.Popen(["gzip", "-9", "-f", str(filey)]).communicate()
         # elif filey.suffix == ".png":
         #     debug = int(get_env_variable("MT_DJANGO_DEBUG"))
@@ -311,8 +332,9 @@ def clear_unused_artic_files(artic_results_path, sample_name, flowcell_id):
         #         str(filey), f"{static_path}/{artic_results_pathlib.parent.stem}",
         #     )
 
+
 @app.task
-def run_variant_command(base_results_directory, barcode_name,jm):
+def run_variant_command(base_results_directory, barcode_name, jm):
     """
     jm: jobmaster
     """
@@ -330,9 +352,15 @@ def run_variant_command(base_results_directory, barcode_name,jm):
         re_gzip = True
     my_env = os.environ.copy()
     my_env["PATH"] = f"{get_env_variable('MT_ALN2TYPE_BIN')}:" + my_env["PATH"]
-    cmd = ["bash", "-c", f"aln2type --no_call_deletion json_files csv_files {barcode_name}_ARTIC_medaka.csv MN908947.3  {barcode_name}.muscle.out.fasta {MT_VoC_PATH}/variant_definitions/variant_yaml/*.yml"]
+    cmd = [
+        "bash",
+        "-c",
+        f"aln2type --no_call_deletion json_files csv_files {barcode_name}_ARTIC_medaka.csv MN908947.3  {barcode_name}.muscle.out.fasta {MT_VoC_PATH}/variant_definitions/variant_yaml/*.yml",
+    ]
     logger.info(cmd)
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env)
+    proc = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=my_env
+    )
     out, err = proc.communicate()
     logger.info(out)
     logger.info(err)
@@ -350,28 +378,27 @@ def run_variant_command(base_results_directory, barcode_name,jm):
             ["gzip", "-9", f"{barcode_name}.muscle.out.fasta"]
         ).communicate()
     try:
-        VoCs_df = pd.read_csv(
-            f"{barcode_name}_ARTIC_medaka.csv"
-        )
+        VoCs_df = pd.read_csv(f"{barcode_name}_ARTIC_medaka.csv")
         separator = ", "
-        VoCs = separator.join(VoCs_df['phe-label'].to_list())
+        VoCs = separator.join(VoCs_df["phe-label"].to_list())
 
-        if len(VoCs_df)> 0:
+        if len(VoCs_df) > 0:
             m, created = Message.objects.get_or_create(
                 recipient=jm.flowcell.owner,
                 sender=jm.flowcell.owner,
-                #title__startswith=f"Artic pipeline has finished for barcode {['barcode__name']}",
+                # title__startswith=f"Artic pipeline has finished for barcode {['barcode__name']}",
                 flowcell=jm.flowcell,
-                #defaults={
+                # defaults={
                 #    "title": f"Artic pipeline has finished for barcode {barcode['barcode__name']} at {time}"
-                #},
-                title= f"One or more VoCs - {VoCs} - has been detected on {jm.flowcell.name} on {barcode_name}."
+                # },
+                title=f"One or more VoCs - {VoCs} - has been detected on {jm.flowcell.name} on {barcode_name}.",
             )
 
     except FileNotFoundError as e:
         VoCs = "None Found"
         logger.error(e)
     pass
+
 
 @app.task
 def run_pangolin_command(base_results_directory, barcode_name):
@@ -384,7 +411,7 @@ def run_pangolin_command(base_results_directory, barcode_name):
     # jm = JobMaster.objects.get(pk=job_master_pk)
     re_gzip = False
     os.chdir(f"{base_results_directory}/{barcode_name}")
-    MT_CONDA_PREFIX=get_env_variable("MT_CONDA_PREFIX")
+    MT_CONDA_PREFIX = get_env_variable("MT_CONDA_PREFIX")
     if (
         not Path(f"{barcode_name}.consensus.fasta").exists()
         and Path(f"{barcode_name}.consensus.fasta.gz").exists()
@@ -394,11 +421,11 @@ def run_pangolin_command(base_results_directory, barcode_name):
             ["gzip", "-d", f"{barcode_name}.consensus.fasta.gz"]
         ).communicate()
         re_gzip = True
-    #cmd = [
+    # cmd = [
     #    "bash",
     #    "-c",
     #    f"source /Users/matt/.miniconda3/etc/profile.d/conda.sh && conda activate pangolin && pangolin -p --write-tree {barcode_name}.consensus.fasta",
-    #]
+    # ]
     cmd = [
         "bash",
         "-c",
@@ -473,11 +500,10 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
 
     """
     jm = JobMaster.objects.get(pk=job_master_pk)
-    reference_name = jm.reference.file_name
-    ref_location = get_env_variable("MT_REFERENCE_LOCATION")
+    reference_path = jm.reference.file_location.path
     jm.running = True
     jm.save()
-    MT_CONDA_PREFIX=get_env_variable("MT_CONDA_PREFIX")
+    MT_CONDA_PREFIX = get_env_variable("MT_CONDA_PREFIX")
     # Path to barcode fastq
     fastq_path = f"{base_results_directory}/{barcode_name}/{barcode_name}.fastq"
     if not Path(fastq_path).exists():
@@ -492,10 +518,18 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     threads = get_env_variable("MT_ARTIC_THREADS")
     medaka_model = get_env_variable("MT_ARTIC_MEDAKA_MODEL")
     os.chdir(f"{base_results_directory}/{barcode_name}")
-    cmd_version = ["bash", "-c", f"source {MT_CONDA_PREFIX} && conda activate {artic_env} && artic --version"]
+    cmd_version = [
+        "bash",
+        "-c",
+        f"source {MT_CONDA_PREFIX} && conda activate {artic_env} && artic --version",
+    ]
     proc = subprocess.Popen(cmd_version, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
-    med_model = f"--medaka-model {medaka_model}" if not out.decode().strip().split(" ")[-1][:3] == "1.1" else ""
+    med_model = (
+        f"--medaka-model {medaka_model}"
+        if not out.decode().strip().split(" ")[-1][:3] == "1.1"
+        else ""
+    )
     cmd = [
         "bash",
         "-c",
@@ -515,7 +549,7 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
         logger.warning(err)
     ### Some of the following commands are specific to nCoV-2019 so should only be run IF we are looking at nCoV-2019
     ### To do this we explicitly check for SARS-CoV-2 or nCoV-2019 in the environment
-    if scheme_name in ['SARS-CoV-2','nCoV-2019']:
+    if scheme_name in ["SARS-CoV-2", "nCoV-2019"]:
         # Now run the aln2type artic screen.
         run_variant_command(base_results_directory, barcode_name, jm)
         run_pangolin_command(base_results_directory, barcode_name)
@@ -524,32 +558,33 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     # collate sequences into a single file.
 
     ## Collect all compressed files
+    ## Todo - only do this every few (10?) minutes?
 
     cmd = [
         "bash",
         "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate tree_building && cat {base_results_directory}/barcode*/*.consensus.fasta.gz > {base_results_directory}/zip_all_barcodes.fasta.gz"
+        f"source {MT_CONDA_PREFIX} && conda activate tree_building && cat {base_results_directory}/barcode*/*.consensus.fasta.gz > "
+        f"{base_results_directory}/zip_all_barcodes.fasta.gz",
     ]
     logger.info(cmd)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
     logger.info(err)
-
-    subprocess.Popen(["gunzip", "-f", f"{base_results_directory}/zip_all_barcodes.fasta.gz"]).communicate()
-
-    extraseqs_path = Path(scheme_dir).joinpath(scheme_name,"additional_resources","sequences.fasta")
-
-
-    if extraseqs_path.exists():
-        addthese = str(extraseqs_path)
-    else:
-        addthese = ""
-
+    subprocess.Popen(
+        ["gunzip", "-f", f"{base_results_directory}/zip_all_barcodes.fasta.gz"]
+    ).communicate()
+    extraseqs_path = Path(scheme_dir).joinpath(
+        scheme_name, "additional_resources", "sequences.fasta"
+    )
+    addthese = str(extraseqs_path) if extraseqs_path.exists() else ""
     cmd = [
         "bash",
         "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate tree_building && touch {base_results_directory}/zip_all_barcodes.fasta && cat {ref_location}/{reference_name} {addthese} {base_results_directory}/zip_all_barcodes.fasta {base_results_directory}/barcode*/*.consensus.fasta > {base_results_directory}/all_barcodes.fasta"
-        #f"source {MT_CONDA_PREFIX} && conda activate tree_building && touch {base_results_directory}/zip_all_barcodes.fasta && cat {base_results_directory}/zip_all_barcodes.fasta > {base_results_directory}/all_barcodes.fasta"
+        f"source {MT_CONDA_PREFIX} && conda activate tree_building "
+        f"&& touch {base_results_directory}/zip_all_barcodes.fasta"
+        f"&& cat {reference_path} {addthese} {base_results_directory}/zip_all_barcodes.fasta {base_results_directory}/barcode*/*.consensus.fasta"
+        f" > {base_results_directory}/all_barcodes.fasta"
+        # f"source {MT_CONDA_PREFIX} && conda activate tree_building && touch {base_results_directory}/zip_all_barcodes.fasta && cat {base_results_directory}/zip_all_barcodes.fasta > {base_results_directory}/all_barcodes.fasta"
     ]
     logger.info(cmd)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -557,20 +592,19 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     logger.info(err)
 
     ## We may have duplicated sequences by mistake - so we need to get rid of them
-
     ## We also need to remove all sequences below some completeness threshold. In this case we are going to use 90%
-
-    remove_dups(f"{base_results_directory}/all_barcodes.fasta", f"{base_results_directory}/all_barcodes_clean.fasta")
-
+    remove_dups(
+        f"{base_results_directory}/all_barcodes.fasta",
+        f"{base_results_directory}/all_barcodes_clean.fasta",
+    )
 
     ## Build tree
-
     cmd = [
         "bash",
         "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate tree_building && mafft --auto {base_results_directory}/all_barcodes_clean.fasta  > {base_results_directory}/all_barcodes.aln"
+        f"source {MT_CONDA_PREFIX} && conda activate tree_building && mafft --auto"
+        f" {base_results_directory}/all_barcodes_clean.fasta  > {base_results_directory}/all_barcodes.aln",
     ]
-
     logger.info(cmd)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
@@ -579,23 +613,26 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     cmd = [
         "bash",
         "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate tree_building && iqtree -redo -s  {base_results_directory}/all_barcodes.aln -m MFP --prefix {base_results_directory}/iqtree_"
+        f"source {MT_CONDA_PREFIX} && conda activate tree_building && iqtree -redo -s "
+        f"{base_results_directory}/all_barcodes.aln -m MFP --prefix {base_results_directory}/iqtree_",
     ]
-
     logger.info(cmd)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
     logger.info(err)
-
-
     ## A potential issue here is that the alignment includes files which have been added from elsewhere on the run. These are not interesting for us to look at - so we need to remove them.
-
-    thin_aln(f"{base_results_directory}/all_barcodes.aln", f"{base_results_directory}/all_barcodes_thin.aln",f"{ref_location}/{reference_name}")
+    thin_aln(
+        f"{base_results_directory}/all_barcodes.aln",
+        f"{base_results_directory}/all_barcodes_thin.aln",
+        reference_path,
+    )
 
     cmd = [
         "bash",
         "-c",
-        f"source {MT_CONDA_PREFIX} && conda activate tree_building && snipit {base_results_directory}/all_barcodes_thin.aln -f svg --size-option scale -o {base_results_directory}/snp_plot"
+        f"source {MT_CONDA_PREFIX} && conda activate tree_building && snipit "
+        f"{base_results_directory}/all_barcodes_thin.aln -f svg --size-option scale -o"
+        f" {base_results_directory}/snp_plot",
     ]
     logger.info(cmd)
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -605,8 +642,6 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
     ArticBarcodeMetadata.objects.filter(
         flowcell=jm.flowcell, job_master__job_type_id=16, barcode__name=barcode_name
     ).update(has_finished=True, marked_for_rerun=False)
-
-
 
     # This shouldn't be run until you clean up the artic run.
     clear_unused_artic_files(
@@ -620,18 +655,33 @@ def run_artic_command(base_results_directory, barcode_name, job_master_pk):
 
 
 def thin_aln(inaln, outaln, reference_file):
+    """
+    Docstring plz
+    Parameters
+    ----------
+    inaln
+    outaln
+    reference_file
+
+    Returns
+    -------
+
+    """
     reference_ids = set()
-    for record in SeqIO.parse(reference_file, 'fasta'):
-        reference_ids.add(record.id)
+    for seq in Fasta(reference_file):
+        reference_ids.add(seq.name)
     ## Loop through aln file - if the sequence starts with the reference name or barcode write it out.
-    with open(outaln, 'w') as outFile:
-        for record in SeqIO.parse(inaln, 'fasta'):
-            if record.id.startswith("barcode") or record.id in reference_ids:
-                SeqIO.write(record, outFile, 'fasta')
+    with open(outaln, "w") as filtered_aln_fasta:
+        sequences = []
+        for name, seq, comment in Fastx(inaln, uppercase=True):
+            if name.startswith("barcode") or name in reference_ids:
+                sequences.append(f">{name}\n{fill(seq, width=80)}")
+        filtered_aln_fasta.write("\n".join(sequences))
 
 
-
-def save_artic_command_job_masters(flowcell, barcode_name, reference_info, run_id, primer_scheme):
+def save_artic_command_job_masters(
+    flowcell, barcode_name, reference_info, run_id, primer_scheme
+):
     """
     Save the JobMasters that we need to manage the queue of tasks.
     Parameters
@@ -659,7 +709,7 @@ def save_artic_command_job_masters(flowcell, barcode_name, reference_info, run_i
         reference=reference_info,
         barcode=barcode_object,
         flowcell=flowcell,
-        primer_scheme=primer_scheme
+        primer_scheme=primer_scheme,
     )
     if not created:
         logger.info("Firing artic due to condition being met again")
@@ -876,20 +926,17 @@ def save_artic_barcode_metadata_info(
     barcodes_variance_coverage = round(coverage.var(), 2)
     barcodes_average_coverage = round(coverage.mean(), 2)
     defaults = {
-            "average_coverage": barcodes_average_coverage,
-            "maximum_coverage": barcodes_maximum_coverage,
-            "minimum_coverage": barcodes_minimum_coverage,
-            "variance_coverage": barcodes_variance_coverage,
-            "percentage_of_reads_in_barcode": round(proportion, 2),
-            "projected_to_finish": projected_to_finish
-        }
+        "average_coverage": barcodes_average_coverage,
+        "maximum_coverage": barcodes_maximum_coverage,
+        "minimum_coverage": barcodes_minimum_coverage,
+        "variance_coverage": barcodes_variance_coverage,
+        "percentage_of_reads_in_barcode": round(proportion, 2),
+        "projected_to_finish": projected_to_finish,
+    }
     if has_sufficient_coverage:
         defaults.update({"has_sufficient_coverage": has_sufficient_coverage})
     orm_object, created = ArticBarcodeMetadata.objects.update_or_create(
-        flowcell=flowcell,
-        job_master=job_master,
-        barcode=barcode,
-        defaults=defaults
+        flowcell=flowcell, job_master=job_master, barcode=barcode, defaults=defaults
     )
 
 
@@ -913,7 +960,6 @@ def run_artic_pipeline(task_id, streamed_reads=None):
     task = JobMaster.objects.get(pk=task_id)
     ### The primer scheme being used is:
     primer_scheme = task.primer_scheme
-
 
     if not task.reference:
         raise ValueError("Missing Reference file. Please sort out.")
@@ -951,8 +997,8 @@ def run_artic_pipeline(task_id, streamed_reads=None):
     read_count = fasta_df_barcode.shape[0]
     logger.debug(f"Fetched reads.")
     logger.debug(fasta_df_barcode.shape)
-    min_read_length = int(get_env_variable("MT_ARTIC_MIN_LEN"))
-    max_read_length = int(get_env_variable("MT_ARTIC_MAX_LEN"))
+    min_read_length = task.primer_scheme.min_read_len
+    max_read_length = task.primer_scheme.max_read_len
     fasta_df_barcode["sequence_length"] = fasta_df_barcode["sequence"].str.len()
     fasta_df_barcode = fasta_df_barcode[
         fasta_df_barcode["sequence_length"].between(
@@ -1130,7 +1176,9 @@ def run_artic_pipeline(task_id, streamed_reads=None):
             # iterate the paf_summary_cov objects
             read_counts_dict = {}
             for paf_summary_barcode, paf_summary_cov in paf_summary_cov_dict.items():
-                logger.debug(f"Creating PafSummaryCov objects for {paf_summary_barcode}")
+                logger.debug(
+                    f"Creating PafSummaryCov objects for {paf_summary_barcode}"
+                )
                 paf_summary_cov_orm, created = PafSummaryCov.objects.get_or_create(
                     job_master=task,
                     barcode_name=paf_summary_cov["barcode_name"],
@@ -1202,7 +1250,9 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                                 barcoded_counts_dict[barcode_name][chrom_key][
                                     name
                                 ] += old_counts_array[name]
-                                a = barcoded_counts_dict[barcode_name][chrom_key][name].max()
+                                a = barcoded_counts_dict[barcode_name][chrom_key][
+                                    name
+                                ].max()
                                 if a > max_values:
                                     max_values = a
                     coverage = np.sum(
@@ -1251,15 +1301,21 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                                 num_amplicons,
                                 run_id,
                                 barcode_name,
-                                task
+                                task,
                             )
                             for afc in afcs
                         ]
                     ):
                         if barcode_name not in barcodes_already_fired:
-                            add_barcode_to_tofire_file(barcode_name, base_result_dir_path)
+                            add_barcode_to_tofire_file(
+                                barcode_name, base_result_dir_path
+                            )
                         save_artic_command_job_masters(
-                            flowcell, barcode_name, reference_info, run_id, primer_scheme
+                            flowcell,
+                            barcode_name,
+                            reference_info,
+                            run_id,
+                            primer_scheme,
                         )
                         has_sufficient_coverage = True
                     # save the artic per barcode_name metadata
@@ -1275,16 +1331,12 @@ def run_artic_pipeline(task_id, streamed_reads=None):
                         run_id,
                         barcode_name,
                         has_sufficient_coverage,
-                        projected_to_finish
+                        projected_to_finish,
                     )
                     amp_stat_dict = amplicon_stats._asdict()
                     amp_stat_dict["projected_to_finish"] = projected_to_finish
                     amp_stat_dict["total_read_count"] = task.read_count + read_count
-                    df_new_dict.update(
-                        {
-                            barcode_name: amp_stat_dict
-                        }
-                    )
+                    df_new_dict.update({barcode_name: amp_stat_dict})
             df_new = pd.DataFrame.from_dict(df_new_dict, orient="index")
     task.last_read = last_read
     task.iteration_count += 1
