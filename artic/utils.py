@@ -8,6 +8,7 @@ import tarfile
 from collections import namedtuple
 from datetime import datetime
 from pathlib import Path
+import math
 
 import numpy as np
 import pandas as pd
@@ -577,20 +578,25 @@ def get_amplicon_stats(
     amplicon_coverages_mean = []
     failed_amplicon_count = 0
     partial_amplicon_count = 0
+    cant_count = 0
     for bin_start, bin_end in a:
         amplicon_coverage = coverage[bin_start:bin_end]
         amplicon_coverages_mean.append(np.mean(amplicon_coverage))
         amplicon_median_coverage = np.median(amplicon_coverage)
         amplicon_coverages_median.append(amplicon_median_coverage)
-        if int(amplicon_median_coverage) == 0:
+        #For some amplicon schemes we end up with a situation where amplicons basically don't exits so need to chack for nan
+        if math.isnan(amplicon_median_coverage):
+            cant_count +=1
+        elif int(amplicon_median_coverage) == 0:
             failed_amplicon_count += 1
         elif int(amplicon_median_coverage) < 20:
             partial_amplicon_count += 1
     successful_amplicon_counts = (
-        num_amplicons - partial_amplicon_count - failed_amplicon_count
+        num_amplicons - partial_amplicon_count - failed_amplicon_count - cant_count
     )
-    amplicon_mean_array = np.array(amplicon_coverages_mean)
-    amplicon_median_array = np.array(amplicon_coverages_median)
+    ## We need to pick up when we have nan and replace with 0s
+    amplicon_mean_array = np.nan_to_num(np.array(amplicon_coverages_mean))
+    amplicon_median_array = np.nan_to_num(np.array(amplicon_coverages_median))
     mean_of_amplicon_means = round(amplicon_mean_array.mean(), 2)
     std_dev = round(amplicon_mean_array.std(), 2)
     variance = round(amplicon_mean_array.var(), 2)
