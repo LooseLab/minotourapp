@@ -876,6 +876,8 @@ def manually_create_artic_command_job_master(request):
     barcode_pk = request.data.get("barcodePk", None)
     flowcell_id = request.data.get("flowcellId", None)
     job_master_pk = request.data.get("jobPk", None)
+    #ToDo this is hard coded to check against job type 16.
+    primer_scheme = JobMaster.objects.get(flowcell_id=flowcell_id, job_type=16).primer_scheme
     if not job_type_id or not barcode_pk or not flowcell_id:
         return Response(
             "Flowcell id, barcode id, jobTypeId are required fields.",
@@ -896,6 +898,7 @@ def manually_create_artic_command_job_master(request):
         reference=reference,
         barcode=barcode,
         flowcell_id=flowcell_id,
+        primer_scheme=primer_scheme
     )
     if created:
         return Response(
@@ -1179,6 +1182,7 @@ def run_all_incomplete(request, pk):
             reference=jm.reference,
             barcode=barcode.barcode,
             flowcell=jm.flowcell,
+            primer_scheme=jm.primer_scheme
         )
     return Response("Marked all incomplete barcodes for rerun.")
 
@@ -1210,6 +1214,7 @@ def mark_all_barcodes_for_pipeline(request, pk):
             reference=jm.reference,
             barcode=barcode.barcode,
             flowcell=jm.flowcell,
+            primer_scheme=jm.primer_scheme
         )
         if not created:
             job_master.complete = False
