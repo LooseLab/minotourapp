@@ -78,7 +78,7 @@ def delete_flowcell(flowcell_id):
     """
     # Get the flowcell jobMaster entry
     start_time = time.time()
-    flowcell_job = JobMaster.objects.filter(flowcell_id=flowcell_id, job_type_id=12).last()
+    flowcell_job = JobMaster.objects.filter(flowcell_id=flowcell_id, job_type_id=11).last()
     # Get the flowcell
     flowcell = flowcell_job.flowcell
     delete_chunk_size = 5000

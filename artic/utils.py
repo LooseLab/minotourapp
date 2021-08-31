@@ -663,7 +663,8 @@ def update_pangolin():
     -------
 
     """
-    logger.info("updating pangolin")
+    print("Updating pangolin")
+    logger.info("Updating pangolin")
     cmd = [
         "bash",
         "-c",
@@ -671,5 +672,7 @@ def update_pangolin():
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
+    print(out)
     logger.info(out)
-    logger.info(err)
+    print(repr(err))
+    logger.error(err)

@@ -501,7 +501,8 @@ class PrimerScheme(models.Model):
         on_delete=models.CASCADE,
         null=True
     )
-
+    min_read_len = models.IntegerField(default=400)
+    max_read_len = models.IntegerField(default=800)
     class Meta:
         constraints = [
             models.UniqueConstraint(
