@@ -1,5 +1,9 @@
+import os
+
 from django.conf import settings
 from django.db import models
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
 
 class ReferenceInfo(models.Model):
@@ -58,6 +62,7 @@ class ReferenceInfo(models.Model):
         return f"Name: {self.name}, Private: {self.private}"
 
 
+
 class ReferenceLine(models.Model):
     """
     Represents contigs inside the reference
@@ -74,3 +79,13 @@ class ReferenceLine(models.Model):
     )
     def __str__(self):
         return f"{self.reference} {self.line_name}"
+
+
+@receiver(post_delete, sender=ReferenceInfo)
+def delete_reference_files(sender, instance=None, created=False, **kwargs):
+    """
+    Delete the actual reference files when a reference info is deleted
+    """
+    os.unlink(f"{instance.file_location.path}.fxi")
+    instance.file_location.delete(save=False)
+    os.unlink(instance.minimap2_index_file_location)
