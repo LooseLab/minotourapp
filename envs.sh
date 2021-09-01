@@ -45,8 +45,8 @@ export MT_ARTIC_ENV="artic-ncov2019" # The artic environment to activate to run 
 export MT_VoC_PATH="<path/to/VoC/Definitions>" # If not setting up to use artic for Covid-19 this does not need to be set.
 export MT_ARTIC_MEDAKA_MODEL="r941_min_high_g351"
 ## These parameters specify the read lengths that minoTour will use to filter reads for the ARTIC pipeline. They are x
-export MT_ARTIC_MIN_LEN=400
-export MT_ARTIC_MAX_LEN=800
+#export MT_ARTIC_MIN_LEN=400
+#export MT_ARTIC_MAX_LEN=800
 export MT_ARTIC_NORMALIZE=200 # preferred coverage depth for artic
 export MT_ARTIC_THREADS=4 # Number of threads to run an artic job
 export MT_ARTIC_MIN_AMPS_PERC="90"
