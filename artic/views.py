@@ -1229,8 +1229,9 @@ class PrimerSchemeList(APIView):
     def get(self, request):
         qs = list(PrimerScheme.objects.filter(Q(owner=request.user) | Q(private=False)))
         qs = [
-            {   "id": q.id,
-                "deletable": q.owner.id == request.user.id,
+            {
+                "id": q.id,
+                "deletable": q.owner.id == request.user.id if q.owner is not None else False,
                 "scheme_version": q.scheme_version,
                 "scheme_species": q.scheme_species,
                 "private": q.private,
@@ -1241,9 +1242,7 @@ class PrimerSchemeList(APIView):
         return Response({"data": qs}, status=status.HTTP_200_OK,)
 
     def post(self, request):
-        print(request.FILES)
         files = request.FILES.getlist("file_location")
-        print(request.POST)
         file_dict = {}
         bool_dict = {"false": False, "true": True}
         scheme_versions = (
@@ -1288,7 +1287,6 @@ class PrimerSchemeList(APIView):
             owner=request.user,
         )
         coords, cols = get_amplicon_band_data(ps.scheme_species, ps.scheme_version, ps.scheme_directory)
-        print(coords)
         coords = np.array(coords)[:,:2].astype(int)
         coords = (coords[:,1:2] - coords[:,:1]) + 150
         mean_length = coords.mean()

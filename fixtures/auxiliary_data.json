@@ -293,7 +293,7 @@
       "bed_file": "../extra/primer_schemes/nCoV-2019/V1/nCoV-2019.scheme.bed",
       "reference_file": "../extra/primer_schemes/nCoV-2019/V1/nCoV-2019.reference.fasta",
       "private": false,
-      "owner": 1
+      "owner": null
     }
   },
   {
@@ -306,7 +306,7 @@
       "bed_file": "../extra/primer_schemes/SARS-CoV-2/V4/SARS-CoV-2.scheme.bed",
       "reference_file": "../extra/primer_schemes/SARS-CoV-2/V4/SARS-CoV-2.reference.fasta",
       "private": false,
-      "owner": 2
+      "owner": null
     }
   }
 ]
