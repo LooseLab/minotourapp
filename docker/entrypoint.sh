@@ -1,6 +1,5 @@
-#!/bin/bash
+#!/bin/bash --login
+set -e
+conda activate $ENV_PREFIX
+exec "$@"
 
-#/etc/init.d/celeryd start
-#/etc/init.d/celerybeat start
-uwsgi --ini minotourapp_uwgsi.ini
-nginx -g 'daemon off;'

@@ -83,9 +83,10 @@ ENV MT_ARTIC_RESULTS_DIR='/var/lib/minotour/apps/data'
 ENV MT_ARTIC_MAX_PIPELINES="1"
  # Number of hours until clearing artic files
 ENV MT_ARTIC_TIME_UNTIL_CLEARING="12"
-ARG PATH="/root/miniconda3/bin:${PATH}"
-ENV PATH="/root/miniconda3/bin:${PATH}"
 ENV TZ=Europe/London
+
+ENV CONDA_DIR="/root/miniconda3"
+RUN echo "$CONDA_DIR"
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 ENV PYTHONUNBUFFERED 1
 
@@ -98,36 +99,25 @@ COPY requirements.txt /var/lib/minotour/apps/minotourapp/
 RUN apt-get update && apt-get install -y git build-essential libz-dev python3-dev libssl-dev python3-pip mariadb-client default-libmysqlclient-dev
 
 RUN apt-get install wget
-RUN wget --quiet \
-    https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-    && mkdir /root/.conda \
-    && bash Miniconda3-latest-Linux-x86_64.sh -b \
-    && rm -f Miniconda3-latest-Linux-x86_64.sh
-
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+    chmod +x ~/miniconda.sh && \
+    ~/miniconda.sh -b -p $CONDA_DIR && \
+    rm ~/miniconda.sh
+ENV PATH=$CONDA_DIR/bin:$PATH
+RUN echo ". $CONDA_DIR/etc/profile.d/conda.sh" >> ~/.profile
 RUN conda init bash
 
 WORKDIR /var/lib/minotour/apps
 
 RUN git clone https://github.com/artic-network/fieldbioinformatics.git
-
 RUN git clone https://github.com/cov-lineages/pangolin.git
-# todo get the primer schemes?
 WORKDIR /var/lib/minotour/apps/fieldbioinformatics
 RUN conda install -c conda-forge mamba
 RUN mamba env create -f environment.yml
-#RUN source /root/.bashrc
-#RUN conda activate artic
-#RUN python setup.py install
-#RUN artic -v
-#RUN conda deactivate
 
 WORKDIR /var/lib/minotour/apps/pangolin
 
 RUN mamba env create -f environment.yml
-#RUN conda activate pangolin
-#RUN pip install .
-#RUN pangolin --version
-#RUN conda deactivate
 
 RUN mamba install -y -c conda-forge uwsgi
 
@@ -167,4 +157,5 @@ RUN mkdir -p /redis_data
 
 RUN chmod -R 755 extra/* && chmod 755 /etc/init.d/celeryd && chmod 640 /etc/default/celeryd && chmod 755 /etc/init.d/celerybeat && chmod 755 docker/init_conda.sh
 EXPOSE 8100
+ENTRYPOINT [ "/var/lib/minotour/apps/minotourapp/docker/init_conda.sh" ]
 

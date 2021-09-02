@@ -25,7 +25,7 @@ services:
         build:
             dockerfile: docker/celery-worker.dockerfile
             context: .
-        command: bash -c "uwsgi --ini minotourapp_uwsgi.ini && python manage.py makemigrations && python manage.py migrate && python manage.py loaddata fixtures/auxiliary_data.json && /etc/init.d/celeryd start && celery -A minotourapp beat -l debug -f /var/lib/minotour/logs/celerybeat.log --detach && nginx -g 'daemon off;'  && echo done"
+        command: bash --login -c "conda deactivate && uwsgi --ini minotourapp_uwsgi.ini && python manage.py makemigrations && python manage.py migrate && python manage.py loaddata fixtures/auxiliary_data.json && /etc/init.d/celeryd start && celery -A minotourapp beat -l debug -f /var/lib/minotour/logs/celerybeat.log --detach && nginx -g 'daemon off;'  && echo done"
         container_name: web
         environment:
             MT_DB_ENGINE: 'django.db.backends.mysql'
