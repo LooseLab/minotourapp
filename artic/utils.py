@@ -2,16 +2,18 @@
 Useful functions that don't belong in views or tasks
 """
 import json
+import math
 import os
 import subprocess
 import tarfile
 from collections import namedtuple
 from datetime import datetime
 from pathlib import Path
-import math
 
 import numpy as np
 import pandas as pd
+import toyplot.svg
+import toytree as toytree
 from celery.utils.log import get_task_logger
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
@@ -61,6 +63,7 @@ def unique_amplicon_coordinates(scheme_bed_file):
                                                        df["primer_start"]), df["primer_end"].values))
     unqiue_amplicon_coords = unqiue_amplicon_coords.astype(int)
     return unqiue_amplicon_coords
+
 
 def get_artic_run_stats(pk, svg_data, request, task):
     """
@@ -155,16 +158,51 @@ def get_artic_run_stats(pk, svg_data, request, task):
         paf_summary_cov["projected_to_finish"] = artic_metadata[
             barcode_name
         ].projected_to_finish
+    svg_data["sample_name"] = flowcell.name
     l = sorted(list(queryset), key=lambda x: x["barcode_name"])
+    svg_path = (
+            artic_results_path / "snp_plot.svg"
+    )
+    tree_path = (
+            artic_results_path
+            /
+            "iqtree_.treefile"
+    )
+    svg_data["treesnstuff"] = False
+    if tree_path.exists():
+        with open("/home/rory/Projects/data/Artic/artic/Temp_results/10_103_artic/iqtree_.treefile", "r") as fh:
+            trey = toytree.tree(fh.read(), tree_format=0)
+            canvas, axes, mark = trey.draw(width=1000, height=700,
+
+                                          node_sizes=12,
+                                          node_style={
+                                              "fill": "green",
+                                              "stroke": "black",
+                                              "stroke-width": 0.75,
+                                          });
+            tree_path_svg = f"/tmp/{flowcell.id}_tree-plot.svg"
+            toyplot.svg.render(canvas, tree_path_svg)
+        svg_data["treesnstuff"] = True
+        svg_data["tree_path_svg"] = f"file:///{tree_path_svg}"
+
+    svg_data["snipit_svg_available"] = False
+    if svg_path.exists():
+        svg_data[
+            "snipit_path"
+        ] = f"file:///{svg_path}"
+        svg_data["snipit_svg_available"] = True
+
     svg_data["overall_results"] = l
-    print(svg_data)
+    # print(svg_data)
     HTML(string=render(
         request, "artic-report.html", context={"data": svg_data}
     ).getvalue()).write_pdf(
         f"/tmp/{task.id}_artic_report.pdf",
         stylesheets=[
-            CSS("web/static/web/css/report.css"),
-            CSS("web/static/web/libraries/bootstrap-4.5.0-dist/css/bootstrap.css"),
+            CSS("web/static/web/css/artic-report.css"),
+            CSS(
+                "web/static/web/libraries/bootstrap-4.5.0-dist/css/bootstrap.css"
+            ),
         ],
     )
     return f"/tmp/{task.id}_artic_report.pdf"
