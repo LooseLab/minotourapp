@@ -4,6 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <title>Artic report for sample {{ data.sample_name }}</title>
+    <style> @page {
+        size: 22in 11in ;
+        margin: 1cm;
+
+    }
+    body {font-family: 'Helvetica', sans-serif !important;}</style>
 </head>
 <body>
 <div id="date">{% now "jS F Y H:i" %}</div>
@@ -33,22 +39,37 @@
         <tbody>
         {% for row in data.overall_results %}
             <tr>
-            <td>{{ row.barcode_name }}</td>
-            <td>{{ row.chromosome__line_name }}</td>
-            <td>{{ row.average_read_len | intcomma }}</td>
-            <td>{{ row.read_count | intcomma }}</td>
-            <td>{{ row.total_yield | intcomma }}</td>
-            <td>{{ row.coverage | intcomma }}</td>
-            <td>{{ row.success_amplicon_count }}</td>
-            <td>{{ row.partial_amplicon_count }}</td>
-            <td>{{ row.failed_amplicon_count }}</td>
-            <td>{{ row.lineage }}</td>
-            <td>{{ row.VoC_Warn }}</td>
+                <td>{{ row.barcode_name }}</td>
+                <td>{{ row.chromosome__line_name }}</td>
+                <td>{{ row.average_read_length | intcomma }}</td>
+                <td>{{ row.read_count | intcomma }}</td>
+                <td>{{ row.total_yield | intcomma }}</td>
+                <td>{{ row.coverage | intcomma }}</td>
+                <td>{{ row.success_amplicon_count }}</td>
+                <td>{{ row.partial_amplicon_count }}</td>
+                <td>{{ row.failed_amplicon_count }}</td>
+                <td>{{ row.lineage }}</td>
+                <td>{{ row.VoC_Warn }}</td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
 </article>
+{% if data.snipit_svg_available or data.treesnstuff %}
+    <article id="vocs">
+        <h4 class="new-page">Artic generated SNIPIT plot and tree for {{ data.sample_name }}</h4>
+        <div style="width:100%">
+            {% if data.snipit_svg_available %}
+                <img style="width:21in" src="{{ data.snipit_path }}" alt="snipitsvg should be displayed here.">
+            {% endif %}
+        </div>
+        <figure>
+            {% if data.treesnstuff %}
+                <img style="width: 14in" src="{{ data.tree_path_svg }}" alt="snipitsvg should be displayed here.">
+            {% endif %}
+        </figure>
+    </article>
+{% endif %}
 
 </body>
 </html>
