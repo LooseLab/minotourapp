@@ -86,7 +86,7 @@
                 height.setAttribute("height", this.value);
                 figTree.update();
             }
-            layout.internalNodeLabels="probability";
+            {#layout.internalNodeLabels="probability";#}
             figTree.addToolTip('.internal-node .node-shape', "This is an internal node - it is the most recent<br>common ancestor of the viruses to the right.<br>Click the node to change the order of the descendents." );
             figTree.addToolTip('.label', "This is a support value - it gives the degree<br>of statistical support that the viruses to the<br>right cluster together");
             figTree.addToolTip('.external-node', "This is an external, leaf, or tip node - it represents<br>a sampled, sequenced virus");
