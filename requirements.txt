@@ -25,3 +25,4 @@ WeasyPrint
 matplotlib
 scipy
 readpaf
+toytree
