@@ -81,7 +81,6 @@ services:
               target: /redis_data
               volume:
                   nocopy: true
-        restart: on-failure
 
 volumes:
     data_minotour:
