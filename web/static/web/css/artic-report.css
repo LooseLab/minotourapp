@@ -1,4 +1,5 @@
 @page {
+    /*size:A3;*/
   @top-left {
     background: #476efb;
     content: counter(page);
@@ -34,25 +35,3 @@ html body h4.new-page{
 html body h5 {
   padding: 10px 0 10px 0;
 }
-.red-alert {
-    background-color: rgba(255, 0, 0, 0.7);
-}
-
-.orange-alert {
-    background-color: rgba(255, 179, 42, 0.8);
-}
-
-.yellow-alert {
-    background-color: rgba(242, 249, 17, 0.8);
-}
-
-.green-alert {
-    background-color: rgba(0, 128, 0, 0.7);
-}
-.artic-report-table {
-    width: 80% !important;
-}
-.ar {
-    width: 90% !important;
-}
-
