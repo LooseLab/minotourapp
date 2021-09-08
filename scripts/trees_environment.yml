@@ -2,6 +2,7 @@ name: tree_building                          # Our env was made with --prefix
 channels:
   - conda-forge                     # We added a third party channel
   - defaults
+  - bioconda
 dependencies:
   - mafft
   - iqtree
