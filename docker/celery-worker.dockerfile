@@ -130,6 +130,7 @@ RUN pip install -r /var/lib/minotour/apps/minotourapp/requirements.txt && apt-ge
 COPY . /var/lib/minotour/apps/minotourapp/
 
 WORKDIR /var/lib/minotour/apps/minotourapp
+RUN mamba env create -f scripts/trees_environment.yml
 
 COPY docker/celeryd /etc/init.d/celeryd
 
